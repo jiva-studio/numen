@@ -23,12 +23,12 @@ func TestABookNothingHasReadCarriesARecognitionThatIsNothing(t *testing.T) {
 
 	// A scan carries its recognition and that recognition put right: what a proofreader
 	// writes is another thing to ask about, and is asked about here.
-	held := getArtifactStates(t, api, book)
-	if len(held) != 2 {
-		t.Fatalf("a book carries %v", held)
+	target := getArtifactStates(t, api, book)
+	if len(target) != 2 {
+		t.Fatalf("a book carries %v", target)
 	}
-	if held[readingOf] != v1.State_STATE_NONE {
-		t.Errorf("the recognition of a book nothing read is %s", held[readingOf])
+	if target[readingOf] != v1.State_STATE_NONE {
+		t.Errorf("the recognition of a book nothing read is %s", target[readingOf])
 	}
 }
 
@@ -45,15 +45,15 @@ func TestABookAModelHasReadCarriesTheRecognition(t *testing.T) {
 	if err != nil {
 		t.Fatalf("asked what the book carries and failed: %v", err)
 	}
-	held := out.Msg.GetArtifacts()
-	if len(held) != 2 {
-		t.Fatalf("a book carries %v", held)
+	target := out.Msg.GetArtifacts()
+	if len(target) != 2 {
+		t.Fatalf("a book carries %v", target)
 	}
-	if held[0].GetState() != v1.State_STATE_DONE {
-		t.Errorf("a book a model read is %s", held[0].GetState())
+	if target[0].GetState() != v1.State_STATE_DONE {
+		t.Errorf("a book a model read is %s", target[0].GetState())
 	}
-	if held[0].GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
-		t.Errorf("the recognition is a %s", held[0].GetKind())
+	if target[0].GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
+		t.Errorf("the recognition is a %s", target[0].GetKind())
 	}
 }
 
@@ -70,11 +70,11 @@ func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
 		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 	}
-	held := out.Msg.GetArtifacts()
-	if len(held) != len(want) {
-		t.Fatalf("a recording carries %v", held)
+	target := out.Msg.GetArtifacts()
+	if len(target) != len(want) {
+		t.Fatalf("a recording carries %v", target)
 	}
-	for at, one := range held {
+	for at, one := range target {
 		if one.GetKind() != want[at] {
 			t.Errorf("the artifact at %d is a %s, want %s", at, one.GetKind(), want[at])
 		}
@@ -89,8 +89,8 @@ func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
 func TestAFileNothingIsMadeFromCarriesNothing(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	if held := getArtifactStates(t, api, idea); len(held) != 0 {
-		t.Errorf("a note carries %v", held)
+	if target := getArtifactStates(t, api, idea); len(target) != 0 {
+		t.Errorf("a note carries %v", target)
 	}
 }
 
@@ -110,7 +110,7 @@ func TestWhatAPathTheVaultDoesNotHoldCarriesIsNotFound(t *testing.T) {
 // A run that got no words out of a recording is what the recording carries, and
 // what the run said about it stands with it.
 func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
-	const said = "mp3: MPEG version 2.5 is not supported"
+	const response = "mp3: MPEG version 2.5 is not supported"
 	for _, one := range []struct {
 		name  string
 		gave  string
@@ -118,7 +118,7 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 		why   string
 	}{
 		{"heard no speech", derived.Silent + "\n", v1.State_STATE_EMPTY, ""},
-		{"could not be opened", derived.Unopened + ": " + said + "\n", v1.State_STATE_FAILED, said},
+		{"could not be opened", derived.Unopened + ": " + response + "\n", v1.State_STATE_FAILED, response},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := openRunWindow(t,
@@ -133,12 +133,12 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 			if err != nil {
 				t.Fatalf("asked what the recording carries and failed: %v", err)
 			}
-			heard := out.Msg.GetArtifacts()[0]
-			if heard.GetState() != one.state {
-				t.Fatalf("the recording carries %s", heard.GetState())
+			received := out.Msg.GetArtifacts()[0]
+			if received.GetState() != one.state {
+				t.Fatalf("the recording carries %s", received.GetState())
 			}
-			if heard.GetError() != one.why {
-				t.Errorf("it says %q came of it", heard.GetError())
+			if received.GetError() != one.why {
+				t.Errorf("it says %q came of it", received.GetError())
 			}
 		})
 	}
@@ -159,8 +159,8 @@ func TestAWindowStandingOnNothingCarriesNothing(t *testing.T) {
 func TestANoteThatPointsNowhereCarriesNothing(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	if held := getArtifactStates(t, api, idea); len(held) != 0 {
-		t.Errorf("an ordinary note carries %v", held)
+	if target := getArtifactStates(t, api, idea); len(target) != 0 {
+		t.Errorf("an ordinary note carries %v", target)
 	}
 	if code := getRefusedCode(t, api, idea, transcriptOf); code != connect.CodeInvalidArgument {
 		t.Errorf("fetching for an ordinary note failed with %s", code)
@@ -172,12 +172,12 @@ func TestANoteThatPointsNowhereCarriesNothing(t *testing.T) {
 func TestALinkNoteCarriesWhatIsAtItsAddress(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	held := getArtifactStates(t, api, pointed)
-	if len(held) != 2 {
-		t.Fatalf("a link note carries %v", held)
+	target := getArtifactStates(t, api, pointed)
+	if len(target) != 2 {
+		t.Fatalf("a link note carries %v", target)
 	}
-	if held[transcriptOf] != v1.State_STATE_NONE {
-		t.Errorf("a link note nothing has fetched for carries %s", held[transcriptOf])
+	if target[transcriptOf] != v1.State_STATE_NONE {
+		t.Errorf("a link note nothing has fetched for carries %s", target[transcriptOf])
 	}
 }
 
@@ -192,9 +192,9 @@ func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 		newEmptyIndex(), willRun(), willRun(),
 	)
 
-	held := getArtifactStates(t, api, pointed)
-	if held[transcriptOf] != v1.State_STATE_DONE {
-		t.Errorf("a link note the words were fetched for carries %s", held[transcriptOf])
+	target := getArtifactStates(t, api, pointed)
+	if target[transcriptOf] != v1.State_STATE_DONE {
+		t.Errorf("a link note the words were fetched for carries %s", target[transcriptOf])
 	}
 }
 
@@ -239,8 +239,8 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 // pointing where it pointed.
 func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 	hash := derived.Fingerprint([]byte(pointsAt))
-	held := stored{domain.NewCopyName(hash): []byte("the bytes of a video")}
-	api, _ := openRunWindow(t, held, newEmptyIndex(), willRun(), willRun())
+	target := stored{domain.NewCopyName(hash): []byte("the bytes of a video")}
+	api, _ := openRunWindow(t, target, newEmptyIndex(), willRun(), willRun())
 
 	if getArtifactStates(t, api, pointed)[copyOf] != v1.State_STATE_DONE {
 		t.Fatalf("a note with a copy carries %v", getArtifactStates(t, api, pointed))
@@ -254,7 +254,7 @@ func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 	if getArtifactStates(t, api, pointed)[copyOf] != v1.State_STATE_NONE {
 		t.Errorf("the copy is still here: %v", getArtifactStates(t, api, pointed))
 	}
-	if _, held := held[domain.NewCopyName(hash)]; held {
+	if _, targetVal := target[domain.NewCopyName(hash)]; targetVal {
 		t.Error("the bytes are still in the store")
 	}
 }

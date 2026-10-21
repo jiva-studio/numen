@@ -13,12 +13,12 @@ import (
 // and no error.
 func TestAPathTheVaultLeavesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 	vs := newVaults(t)
-	left := faulty{inner: vs.ports.Readers,
+	remaining := faulty{inner: vs.ports.Readers,
 		stat: map[string]error{"decks/Birds.md": ports.ErrNotANote},
 		read: map[string]error{"decks/Birds.md": errOutOfReach},
 	}
 
-	got, err := cards.NewRead(left, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
+	got, err := cards.NewRead(remaining, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -32,9 +32,9 @@ func TestAPathTheVaultLeavesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 // what it was when it was looked at.
 func TestADeckGoneBetweenBeingLookedAtAndReadSaysWhatItWas(t *testing.T) {
 	vs := newVaults(t)
-	gone := faulty{inner: vs.ports.Readers, read: map[string]error{"decks/Birds.md": fs.ErrNotExist}}
+	removed := faulty{inner: vs.ports.Readers, read: map[string]error{"decks/Birds.md": fs.ErrNotExist}}
 
-	got, err := cards.NewRead(gone, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
+	got, err := cards.NewRead(removed, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}

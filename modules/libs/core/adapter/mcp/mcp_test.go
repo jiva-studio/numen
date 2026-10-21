@@ -189,10 +189,10 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 // book is asked, which is what nothing about one tool's arguments can say.
 func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	said := session.InitializeResult().Instructions
+	response := session.InitializeResult().Instructions
 	for _, rule := range []string{"source_focus", "source_read", "own words", "numen:"} {
-		if !strings.Contains(said, rule) {
-			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
+		if !strings.Contains(response, rule) {
+			t.Errorf("the instructions say nothing about %q:\n%s", rule, response)
 		}
 	}
 }
@@ -201,10 +201,10 @@ func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 // are the form that takes.
 func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	said := session.InitializeResult().Instructions
+	response := session.InitializeResult().Instructions
 	for _, rule := range []string{"[[Harmonic oscillator]]", "[[note://<identifier>]]"} {
-		if !strings.Contains(said, rule) {
-			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
+		if !strings.Contains(response, rule) {
+			t.Errorf("the instructions say nothing about %q:\n%s", rule, response)
 		}
 	}
 }
@@ -258,13 +258,13 @@ func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
 		"source_recognise":  filesystem.OCRDir,
 		"source_transcribe": filesystem.TranscriptDir,
 	} {
-		said := getToolDescription(t, session, tool)
+		response := getToolDescription(t, session, tool)
 		for _, rule := range []string{
 			"into the vault",
 			filesystem.DefaultServiceDir + "/" + area,
 		} {
-			if !strings.Contains(said, rule) {
-				t.Errorf("%s says nothing about %q:\n%s", tool, rule, said)
+			if !strings.Contains(response, rule) {
+				t.Errorf("%s says nothing about %q:\n%s", tool, rule, response)
 			}
 		}
 	}

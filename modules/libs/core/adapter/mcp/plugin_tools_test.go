@@ -147,7 +147,7 @@ func TestAToolThatRefusedOrFailedAnswersAsARefusal(t *testing.T) {
 		core.Plugins = plugintool.NewTools(plugins)
 		session := sessionOf(t, mcp.New(core))
 
-		if said := getToolError(t, session, "sample_read", map[string]any{"deckPath": "x.md"}); said == "" {
+		if response := getToolError(t, session, "sample_read", map[string]any{"deckPath": "x.md"}); response == "" {
 			t.Errorf("a tool that %s said nothing", name)
 		}
 	}

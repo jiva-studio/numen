@@ -221,9 +221,9 @@ func TestATruncatedEncryptionFileLocksNothing(t *testing.T) {
 }
 
 func TestAnElementHoldsNoTextOfItsOwn(t *testing.T) {
-	_, drawn := readOne(t, `<p>Hello <b>big</b> world<img src="x.png"/></p><p>end</p>`)
+	_, rendered := readOne(t, `<p>Hello <b>big</b> world<img src="x.png"/></p><p>end</p>`)
 
-	for _, node := range getEveryNode(drawn.Nodes) {
+	for _, node := range getEveryNode(rendered.Nodes) {
 		if node.Name != "" && node.Text != "" {
 			t.Errorf("the %s element says %q itself", node.Name, node.Text)
 		}
@@ -352,23 +352,23 @@ func buildCommentBook(t *testing.T, sizes []int) []byte {
 
 func TestTheMarkupIsWrittenIntoOneAllocation(t *testing.T) {
 	const runs, width = 50, 200
-	drawn := &epub.Markup{Length: runs * width}
+	rendered := &epub.Markup{Length: runs * width}
 	for i := range runs {
-		drawn.Nodes = append(drawn.Nodes, epub.Node{Offset: i, Text: strings.Repeat("a", width)})
+		rendered.Nodes = append(rendered.Nodes, epub.Node{Offset: i, Text: strings.Repeat("a", width)})
 	}
-	if got := len(drawn.HTML()); got <= drawn.Length || got >= 2*drawn.Length {
-		t.Fatalf("the page is %d bytes for a text of %d: the fixture does not fit between one and two times it", got, drawn.Length)
+	if got := len(rendered.HTML()); got <= rendered.Length || got >= 2*rendered.Length {
+		t.Fatalf("the page is %d bytes for a text of %d: the fixture does not fit between one and two times it", got, rendered.Length)
 	}
 
-	if got := testing.AllocsPerRun(10, func() { _ = drawn.HTML() }); got > 1 {
+	if got := testing.AllocsPerRun(10, func() { _ = rendered.HTML() }); got > 1 {
 		t.Errorf("the page took %v allocations, want the one that holds it", got)
 	}
 }
 
 func TestALineEndAfterATableHoldingOnlyAnElementBelongsToThatTable(t *testing.T) {
-	_, drawn := readOne(t, `<table><template><b>X</b></template></table><table><tr><td>Y</td></tr></table>`)
+	_, rendered := readOne(t, `<table><template><b>X</b></template></table><table><tr><td>Y</td></tr></table>`)
 
-	if got := getNodeText(element(t, drawn.Nodes, "td").Children); got != "Y\n" {
+	if got := getNodeText(element(t, rendered.Nodes, "td").Children); got != "Y\n" {
 		t.Errorf("the cell says %q, want %q", got, "Y\n")
 	}
 }

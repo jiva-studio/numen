@@ -32,24 +32,24 @@ func proofreadRecognitionCommand(
 		return errors.New("nothing to proofread with: none is configured")
 	}
 
-	proofread, cut := open.Proofread, source.NewCutSource(open.Cut)
+	proofread, trimmed := open.Proofread, source.NewCutSource(open.Cut)
 	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.GetProofreaderName())
 	started := time.Now()
 
 	// The line of pages rewrites itself, and is closed once it stops.
-	shown := false
-	proofread.Cut = cut.Execute
+	displayed := false
+	proofread.Cut = trimmed.Execute
 	proofread.OnProgress = func(res recognition.ProofreadResult) {
 		if res.Pages > 0 {
 			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
-			shown = true
+			displayed = true
 		}
 	}
 	res, err := proofread.Execute(ctx, v, path)
 	if err != nil {
 		return err
 	}
-	if shown {
+	if displayed {
 		fmt.Fprintln(out)
 	}
 

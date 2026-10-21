@@ -107,9 +107,9 @@ func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
 	})
 
 	read := deck(t, f, "Animals.md")
-	held := read.GetDeck().GetCards()
-	if len(held) != 3 {
-		t.Fatalf("the deck came back with %d cards", len(held))
+	target := read.GetDeck().GetCards()
+	if len(target) != 3 {
+		t.Fatalf("the deck came back with %d cards", len(target))
 	}
 	problems := read.GetDeck().GetProblems()
 	if len(problems) != 1 {
@@ -122,7 +122,7 @@ func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
 	if problems[0].Card == nil {
 		t.Fatal("a problem about a card came back standing against none")
 	}
-	if name := getFieldValue(held[at], "Name"); name != "Alpaca" {
+	if name := getFieldValue(target[at], "Name"); name != "Alpaca" {
 		t.Errorf("the problem stands against card %d, which is %q", at, name)
 	}
 }
@@ -135,12 +135,12 @@ func TestACardComesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 		"Animals.md": threeCards,
 	})
 
-	held := deck(t, f, "Animals.md").GetDeck().GetCards()
-	if len(held) != 3 {
-		t.Fatalf("the deck came back with %d cards", len(held))
+	target := deck(t, f, "Animals.md").GetDeck().GetCards()
+	if len(target) != 3 {
+		t.Fatalf("the deck came back with %d cards", len(target))
 	}
 	marks := []string{"k7m2xq9fzp", "3n8vr4tqch", "9wq2xr4t8h"}
-	for at, card := range held {
+	for at, card := range target {
 		if card.GetMark() != marks[at] {
 			t.Errorf("card %d carries the mark %q, and the file writes %q",
 				at, card.GetMark(), marks[at])
@@ -168,16 +168,16 @@ func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
 	if lead := sections[1].GetPreamble(); lead != "what a person wrote about this run of it" {
 		t.Errorf("what a person wrote under the second section came back as %q", lead)
 	}
-	held := read.GetCards()
-	if len(held) != 2 {
-		t.Fatalf("the deck came back with %d cards", len(held))
+	target := read.GetCards()
+	if len(target) != 2 {
+		t.Fatalf("the deck came back with %d cards", len(target))
 	}
-	if held[0].SectionIndex != nil {
+	if target[0].SectionIndex != nil {
 		t.Errorf("the card standing above the first section came back under section %d",
-			held[0].GetSectionIndex())
+			target[0].GetSectionIndex())
 	}
-	if held[1].SectionIndex == nil || held[1].GetSectionIndex() != 0 {
-		t.Errorf("the card under the first section came back as %+v", held[1].SectionIndex)
+	if target[1].SectionIndex == nil || target[1].GetSectionIndex() != 0 {
+		t.Errorf("the card under the first section came back as %+v", target[1].SectionIndex)
 	}
 }
 
@@ -235,8 +235,8 @@ func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "Animals.md"); held != theirs {
-		t.Errorf("the deck on disk is now %q", held)
+	if target := onDisk(t, f.root, "Animals.md"); target != theirs {
+		t.Errorf("the deck on disk is now %q", target)
 	}
 }
 
@@ -264,8 +264,8 @@ func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(held, dividedRun) {
-		t.Errorf("the deck came back as %q", held)
+	if target := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(target, dividedRun) {
+		t.Errorf("the deck came back as %q", target)
 	}
 }
 
@@ -298,11 +298,11 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	}
 
 	after := deck(t, f, "Animals.md")
-	if held := len(after.GetDeck().GetCards()); held != 2 {
-		t.Errorf("the deck now holds %d cards, and two were written", held)
+	if target := len(after.GetDeck().GetCards()); target != 2 {
+		t.Errorf("the deck now holds %d cards, and two were written", target)
 	}
-	if held := onDisk(t, f.root, "Animals.md"); strings.Contains(held, "Injected") {
-		t.Errorf("a card was smuggled into the file: %q", held)
+	if targetVal := onDisk(t, f.root, "Animals.md"); strings.Contains(targetVal, "Injected") {
+		t.Errorf("a card was smuggled into the file: %q", targetVal)
 	}
 }
 
@@ -328,8 +328,8 @@ func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("the write answered %v", err)
 	}
-	if held := onDisk(t, f.root, "Animals.md"); held != before {
-		t.Errorf("the deck was written anyway: %q", held)
+	if target := onDisk(t, f.root, "Animals.md"); target != before {
+		t.Errorf("the deck was written anyway: %q", target)
 	}
 }
 
@@ -344,8 +344,8 @@ func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 	})
 
 	read := deck(t, f, "Animals.md")
-	if held := read.GetDeck().GetCards()[1].GetHeading(); held != "Alpaca" {
-		t.Fatalf("the card under no wikilink came back under the heading %q", held)
+	if target := read.GetDeck().GetCards()[1].GetHeading(); target != "Alpaca" {
+		t.Fatalf("the card under no wikilink came back under the heading %q", target)
 	}
 	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
 		Path:     "Animals.md",
@@ -361,8 +361,8 @@ func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(held, cardRun) {
-		t.Errorf("the deck came back as %q", held)
+	if targetVal := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(targetVal, cardRun) {
+		t.Errorf("the deck came back as %q", targetVal)
 	}
 }
 
@@ -381,8 +381,8 @@ func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held := answer.Msg.GetStencils(); len(held) != 2 {
-		t.Fatalf("a list asked for two came back with %d", len(held))
+	if target := answer.Msg.GetStencils(); len(target) != 2 {
+		t.Fatalf("a list asked for two came back with %d", len(target))
 	}
 	if total := answer.Msg.GetTotal(); total != 3 {
 		t.Errorf("the vault holds three stencils and the answer says %d", total)
@@ -410,8 +410,8 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	if path := answer.Msg.GetPath(); path != "decks/Camelids.md" {
 		t.Fatalf("the deck was filed at %q", path)
 	}
-	if held := onDisk(t, f.root, "decks/Camelids.md"); !strings.Contains(held, "type: deck\n") {
-		t.Errorf("the file does not say what it is: %q", held)
+	if target := onDisk(t, f.root, "decks/Camelids.md"); !strings.Contains(target, "type: deck\n") {
+		t.Errorf("the file does not say what it is: %q", target)
 	}
 
 	read := deck(t, f, "decks/Camelids.md")
@@ -483,11 +483,11 @@ func TestRenamingAFieldReachesTheDecksThatStencilCuts(t *testing.T) {
 	if len(answer.Msg.GetNotWritten()) != 0 {
 		t.Errorf("not written = %+v", answer.Msg.GetNotWritten())
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); !strings.Contains(held, "  - Shoulder height\n") {
-		t.Errorf("the stencil was not renamed: %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); !strings.Contains(target, "  - Shoulder height\n") {
+		t.Errorf("the stencil was not renamed: %q", target)
 	}
-	if held := onDisk(t, f.root, "Animals.md"); !strings.Contains(held, "### Shoulder height\n") {
-		t.Errorf("the card was not renamed: %q", held)
+	if targetVal := onDisk(t, f.root, "Animals.md"); !strings.Contains(targetVal, "### Shoulder height\n") {
+		t.Errorf("the card was not renamed: %q", targetVal)
 	}
 }
 
@@ -568,12 +568,12 @@ func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a rename over a stencil the person had edited answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {
-		t.Errorf("the stencil on disk is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
+		t.Errorf("the stencil on disk is now %q", target)
 	}
 	// The stencil leads, so a rename it rejected reaches no deck.
-	if held := onDisk(t, f.root, "Animals.md"); held != deckBefore {
-		t.Errorf("a deck was written\n was %q\n now %q", deckBefore, held)
+	if targetVal := onDisk(t, f.root, "Animals.md"); targetVal != deckBefore {
+		t.Errorf("a deck was written\n was %q\n now %q", deckBefore, targetVal)
 	}
 }
 
@@ -603,18 +603,18 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 			"## Vicuña\n\n[[Nowhere]]\n\n### Name\n\nVicuña\n",
 	})
 
-	held := deck(t, f, "Animals.md").GetDeck().GetCards()
-	if len(held) != 3 {
-		t.Fatalf("the deck came back with %d cards", len(held))
+	target := deck(t, f, "Animals.md").GetDeck().GetCards()
+	if len(target) != 3 {
+		t.Fatalf("the deck came back with %d cards", len(target))
 	}
 	filed := map[string]string{"Llama": "cards/Animal.md", "Alpaca": "cards/Animal.md", "Vicuña": ""}
-	for _, card := range held {
+	for _, card := range target {
 		name := getFieldValue(card, "Name")
 		if at := card.GetStencilPath(); at != filed[name] {
 			t.Errorf("the stencil of %s is filed at %q, want %q", name, at, filed[name])
 		}
 	}
-	if written := held[0].GetStencilLink(); written != "cards/Animal" {
-		t.Errorf("the wikilink of the first card came back as %q", written)
+	if content := target[0].GetStencilLink(); content != "cards/Animal" {
+		t.Errorf("the wikilink of the first card came back as %q", content)
 	}
 }

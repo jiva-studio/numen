@@ -29,14 +29,14 @@ func (h *cardsHandler) ListStencils(
 	if err != nil {
 		return nil, err
 	}
-	held, count, err := h.scenarios().cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
+	target, count, err := h.scenarios().cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	out := &v1.ListStencilsResponse{Total: int32(count)}
-	out.Stencils = make([]*v1.StencilSummary, 0, len(held))
-	for _, stencil := range held {
+	out.Stencils = make([]*v1.StencilSummary, 0, len(target))
+	for _, stencil := range target {
 		out.Stencils = append(out.Stencils, cardwire.NewWireSummary(stencil))
 	}
 	return connect.NewResponse(out), nil

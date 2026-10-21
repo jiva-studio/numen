@@ -27,12 +27,12 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 		}
 	}
 
-	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Answers) != 0 {
-		t.Errorf("the vault holds %d answers, want none", len(held.Answers))
+	if len(target.Answers) != 0 {
+		t.Errorf("the vault holds %d answers, want none", len(target.Answers))
 	}
 }
 
@@ -78,8 +78,8 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	}
 
 	name := run.GetName()
-	held := getRunFiles(t, s)
-	if len(held) != 1 || held[0] != name+".jsonl" {
-		t.Errorf("the run is known as %q and the vault holds %v", name, held)
+	target := getRunFiles(t, s)
+	if len(target) != 1 || target[0] != name+".jsonl" {
+		t.Errorf("the run is known as %q and the vault holds %v", name, target)
 	}
 }

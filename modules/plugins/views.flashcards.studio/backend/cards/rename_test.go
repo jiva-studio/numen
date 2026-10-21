@@ -302,8 +302,8 @@ func (q byType) GetTypes(
 // every other write in the application waiting behind a vault-sized loop.
 func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	vs := newVaults(t)
-	var asked int
-	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.queries, t: t, asked: &asked})
+	var request int
+	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.queries, t: t, asked: &request})
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
@@ -314,8 +314,8 @@ func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	if !slices.Equal(got.Decks, []string{"decks/Birds.md", "decks/Mammals.md"}) {
 		t.Errorf("decks = %v", got.Decks)
 	}
-	if asked != 1 {
-		t.Errorf("the index was asked for the decks %d times, want once", asked)
+	if request != 1 {
+		t.Errorf("the index was asked for the decks %d times, want once", request)
 	}
 }
 

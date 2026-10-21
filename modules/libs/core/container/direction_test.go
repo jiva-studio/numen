@@ -28,14 +28,14 @@ var outward = []string{
 // and the schema is the one thing it may not name. An adapter and what only a
 // test builds answer for nothing; so does a shared adapter library.
 func getRefusedImports(path string) (refuses []string, named bool) {
-	held := strings.TrimPrefix(path, module)
+	target := strings.TrimPrefix(path, module)
 	switch {
-	case held == "container":
+	case target == "container":
 		return []string{wire}, true
-	case strings.HasPrefix(held, "adapter/"),
-		strings.HasPrefix(held, "internal/adapter/"),
-		strings.HasPrefix(held, "internal/test"),
-		isShared(held):
+	case strings.HasPrefix(target, "adapter/"),
+		strings.HasPrefix(target, "internal/adapter/"),
+		strings.HasPrefix(target, "internal/test"),
+		isShared(target):
 		return nil, false
 	}
 	return outward, false
@@ -143,7 +143,7 @@ func inward(t *testing.T, goos, goarch string, tags ...string) {
 	listing := exec.CommandContext(t.Context(), "go", args...)
 	listing.Dir = ".."
 	listing.Env = append(os.Environ(), "GOOS="+goos, "GOARCH="+goarch)
-	listed, err := listing.Output()
+	items, err := listing.Output()
 	if err != nil {
 		var ran *exec.ExitError
 		if errors.As(err, &ran) {
@@ -153,7 +153,7 @@ func inward(t *testing.T, goos, goarch string, tags ...string) {
 	}
 
 	packages := 0
-	decoder := json.NewDecoder(bytes.NewReader(listed))
+	decoder := json.NewDecoder(bytes.NewReader(items))
 	for {
 		var pkg struct {
 			ImportPath string
@@ -178,11 +178,11 @@ func inward(t *testing.T, goos, goarch string, tags ...string) {
 		if named {
 			reaching = pkg.Imports
 		}
-		held := strings.TrimPrefix(pkg.ImportPath, module)
+		target := strings.TrimPrefix(pkg.ImportPath, module)
 		for _, dep := range reaching {
 			for _, blocked := range refuses {
 				if strings.HasPrefix(dep, blocked) {
-					t.Errorf("%s reaches %s", held, strings.TrimPrefix(dep, module))
+					t.Errorf("%s reaches %s", target, strings.TrimPrefix(dep, module))
 				}
 			}
 		}

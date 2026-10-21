@@ -6,6 +6,6 @@ import (
 )
 
 func (c Config) GetKnownVaults(registry port.VaultRegistry) *vault.GetKnownVaults {
-	known := vault.NewGetKnownVaults(registry, c.VaultReaders())
-	return &known
+	recognized := vault.NewGetKnownVaults(registry, c.VaultReaders())
+	return &recognized
 }

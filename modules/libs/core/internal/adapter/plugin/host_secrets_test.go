@@ -281,7 +281,7 @@ func TestAKeyStoreThatCannotBeReadFailsLoudly(t *testing.T) {
 	if probe.last(t).GetValues()["model"] != "sonnet" {
 		t.Error("the other settings were not passed on")
 	}
-	if _, sent := probe.last(t).GetValues()["apiKey"]; sent {
+	if _, dispatched := probe.last(t).GetValues()["apiKey"]; dispatched {
 		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
 	}
 }
@@ -505,7 +505,7 @@ func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 		t.Errorf("a change of a setting: %v", err)
 	}
 	call := probe.last(t)
-	if _, sent := call.GetValues()["apiKey"]; sent {
+	if _, dispatched := call.GetValues()["apiKey"]; dispatched {
 		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
 	}
 	if call.GetValues()["model"] != "opus" {
@@ -549,10 +549,10 @@ func TestAStoredSecretIsRecordedByName(t *testing.T) {
 	if got, ok := persisted[record].([]string); !ok || !slices.Equal(got, []string{declared}) {
 		t.Errorf("recorded %#v, want the name of the secret", persisted[record])
 	}
-	if _, seen := host.GetPluginSettings(secretPluginID)[port.SettingStoredSecrets]; seen {
+	if _, observed := host.GetPluginSettings(secretPluginID)[port.SettingStoredSecrets]; observed {
 		t.Error("the window sees the record")
 	}
-	if _, seen := probe.last(t).GetValues()[port.SettingStoredSecrets]; seen {
+	if _, observedVal := probe.last(t).GetValues()[port.SettingStoredSecrets]; observedVal {
 		t.Error("the plugin sees the record")
 	}
 

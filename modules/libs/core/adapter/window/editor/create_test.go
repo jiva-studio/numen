@@ -134,8 +134,8 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
 // filesystem's to answer at the moment the file is made, and what is there is
 // left currently.
 func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
-	const held = "---\ntitle: Ontology\n---\n\n# Ontology\n"
-	f := openWindow(t, nil, map[string]string{"Ontology.md": held})
+	const target = "---\ntitle: Ontology\n---\n\n# Ontology\n"
+	f := openWindow(t, nil, map[string]string{"Ontology.md": target})
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Ontology",
@@ -149,7 +149,7 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 	if answer.Msg.GetPath() != "" {
 		t.Errorf("a note that was not made was filed at %q", answer.Msg.GetPath())
 	}
-	if now := fileAt(t, f.root, "Ontology.md"); now != held {
+	if now := fileAt(t, f.root, "Ontology.md"); now != target {
 		t.Errorf("the note that was already there was written:\n%s", now)
 	}
 }

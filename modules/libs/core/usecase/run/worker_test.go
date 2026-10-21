@@ -70,8 +70,8 @@ func (c *instant) nameOnce(name func() port.StartOutcome) {
 func (c *instant) getOutcome(t *testing.T) port.StartOutcome {
 	t.Helper()
 	select {
-	case taken := <-c.taken:
-		return taken
+	case acquired := <-c.taken:
+		return acquired
 	case <-time.After(10 * time.Second):
 		t.Fatal("the ask made as the line emptied was never answered")
 		return port.Queued
@@ -139,8 +139,8 @@ func TestASourceNamedAsTheLineEmptiesIsRun(t *testing.T) {
 	}
 	close(r.first)
 
-	if taken := crossed.getOutcome(t); taken != port.Began {
-		t.Fatalf("the source named as the line emptied was told %v", taken)
+	if acquired := crossed.getOutcome(t); acquired != port.Began {
+		t.Fatalf("the source named as the line emptied was told %v", acquired)
 	}
 	if n := waitForRun(t, r.reached); n != 2 {
 		t.Fatalf("the source named as the line emptied is the %dth", n)

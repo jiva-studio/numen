@@ -15,9 +15,9 @@ func newWholeRun(
 	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
 ) (Proofread, domain.Vault, *shelf, string) {
 	t.Helper()
-	u, v, kept, by, hash := newProofreadTranscript(t, told, words...)
+	u, v, retained, by, hash := newProofreadTranscript(t, told, words...)
 	by.limit = len(words)
-	return u, v, kept, hash
+	return u, v, retained, hash
 }
 
 // A sentence the recording broke across two spans comes back as one line,
@@ -60,9 +60,9 @@ func TestJoiningLeavesWhatWasHeardWhereItIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	heard := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash))
-	if len(heard) != 2 || heard[0].Text != words[0] || heard[1].Text != words[1] {
-		t.Errorf("what was heard now says %+v", heard)
+	received := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash))
+	if len(received) != 2 || received[0].Text != words[0] || received[1].Text != words[1] {
+		t.Errorf("what was heard now says %+v", received)
 	}
 }
 
@@ -72,11 +72,11 @@ func newOverlappingRun(
 	t *testing.T, lines int, told map[int]domain.ProofreadCorrection,
 ) (Proofread, domain.Vault, *shelf, string) {
 	t.Helper()
-	u, v, kept, by, hash := newProofreadTranscript(t,
+	u, v, retained, by, hash := newProofreadTranscript(t,
 		told,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
 	by.limit = lines
-	return u, v, kept, hash
+	return u, v, retained, hash
 }
 
 // The joined sentence, and the transcript it leaves behind it.
@@ -225,19 +225,19 @@ func TestARunTakingUpATranscriptRefusesACorrectionOfALineItDidNotAsk(t *testing.
 		IsDone:      true,
 	}})
 	name := domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)
-	left := readCues(t, shelved, name)
+	remaining := readCues(t, shelved, name)
 
 	if _, err := again.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionUnasked) {
 		t.Fatalf("got %v, want %v", err, errCorrectionUnasked)
 	}
 
 	cues := readCues(t, shelved, name)
-	if len(cues) != len(left) || cues[0].Text != putTogether {
+	if len(cues) != len(remaining) || cues[0].Text != putTogether {
 		t.Fatalf("the transcript says %+v", cues)
 	}
 	for at := range cues {
-		if cues[at].Text != left[at].Text {
-			t.Errorf("line %d says %q, the run before left %q", at, cues[at].Text, left[at].Text)
+		if cues[at].Text != remaining[at].Text {
+			t.Errorf("line %d says %q, the run before left %q", at, cues[at].Text, remaining[at].Text)
 		}
 	}
 }

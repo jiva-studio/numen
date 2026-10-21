@@ -96,12 +96,12 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written, err := replace(ctx, root, name, bytes.NewReader(content), mode)
+	contentVal, err := replace(ctx, root, name, bytes.NewReader(content), mode)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written.Path = path
-	return written, nil
+	contentVal.Path = path
+	return contentVal, nil
 }
 
 func (w *VaultWriter) Move(ctx context.Context, from, to string) error {

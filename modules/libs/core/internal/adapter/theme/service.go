@@ -75,16 +75,16 @@ func (s *Service) ListThemes(
 	_ context.Context,
 	_ *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
-	worn := s.getAppearance()
-	applied, missing := s.Catalogue.GetApplied(worn.ThemeName)
+	aged := s.getAppearance()
+	applied, missing := s.Catalogue.GetApplied(aged.ThemeName)
 	if missing != "" {
 		s.warn(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
 	}
 
 	themes := s.Catalogue.Themes()
-	listed := make([]*v1.Theme, 0, len(themes))
+	items := make([]*v1.Theme, 0, len(themes))
 	for _, one := range themes {
-		listed = append(listed, &v1.Theme{
+		items = append(items, &v1.Theme{
 			Name:     one.Name,
 			Title:    one.Title,
 			Origin:   encodeOrigin(one.Origin),
@@ -92,11 +92,11 @@ func (s *Service) ListThemes(
 		})
 	}
 	return connect.NewResponse(&v1.ListThemesResponse{
-		Themes:               listed,
+		Themes:               items,
 		Applied:              applied,
-		Mode:                 wire.ConvertModeToWire(worn.Mode),
-		InterfaceScale:       worn.InterfaceScale,
-		TextScale:            worn.TextScale,
+		Mode:                 wire.ConvertModeToWire(aged.Mode),
+		InterfaceScale:       aged.InterfaceScale,
+		TextScale:            aged.TextScale,
 		InterfaceScaleBounds: encodeBounds(s.InterfaceScaleBounds),
 		TextScaleBounds:      encodeBounds(s.TextScaleBounds),
 	}), nil
@@ -150,13 +150,13 @@ func (s *Service) WriteAppearance(
 	if s.Settings == nil {
 		return respond("this build writes no settings")
 	}
-	chosen := Appearance{
+	selected := Appearance{
 		ThemeName:      name,
 		Mode:           wire.ConvertModeFromWire(req.Msg.GetMode()),
 		InterfaceScale: req.Msg.GetInterfaceScale(),
 		TextScale:      req.Msg.GetTextScale(),
 	}
-	if err := s.Settings.Write(chosen); err != nil {
+	if err := s.Settings.Write(selected); err != nil {
 		return respond(err.Error())
 	}
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
@@ -211,31 +211,31 @@ const keepaliveInterval = time.Second
 // was designed at, under the system's choice, where they say nothing or could
 // not be read.
 func (s *Service) getAppearance() Appearance {
-	worn := Appearance{
+	aged := Appearance{
 		ThemeName:      Default,
 		Mode:           appearance.System,
 		InterfaceScale: AsDesigned,
 		TextScale:      AsDesigned,
 	}
 	if s.Settings == nil {
-		return worn
+		return aged
 	}
-	said, err := s.Settings.Read()
+	response, err := s.Settings.Read()
 	if err != nil {
 		s.warn(fmt.Sprintf("the settings could not be read, so the window wears %s: %v", Default, err))
-		return worn
+		return aged
 	}
-	if said.ThemeName != "" {
-		worn.ThemeName = said.ThemeName
+	if response.ThemeName != "" {
+		aged.ThemeName = response.ThemeName
 	}
-	worn.Mode = said.Mode
-	if said.InterfaceScale > 0 {
-		worn.InterfaceScale = said.InterfaceScale
+	aged.Mode = response.Mode
+	if response.InterfaceScale > 0 {
+		aged.InterfaceScale = response.InterfaceScale
 	}
-	if said.TextScale > 0 {
-		worn.TextScale = said.TextScale
+	if response.TextScale > 0 {
+		aged.TextScale = response.TextScale
 	}
-	return worn
+	return aged
 }
 
 func (s *Service) warn(why string) {

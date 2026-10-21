@@ -101,18 +101,18 @@ func (a *reviewHandler) WatchCardsDue(
 	ctx context.Context, _ *connect.Request[v1.WatchCardsDueRequest],
 	out *connect.ServerStream[v1.WatchCardsDueResponse],
 ) error {
-	known, err := a.vault.GetVaults(ctx)
+	recognized, err := a.vault.GetVaults(ctx)
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, err)
 	}
 
-	listed := make([]*v1.VaultCardsDue, 0, len(known))
-	for _, one := range known {
-		listed = append(listed, &v1.VaultCardsDue{Id: string(one.ID), Name: one.Name, Path: one.Path})
+	items := make([]*v1.VaultCardsDue, 0, len(recognized))
+	for _, one := range recognized {
+		items = append(items, &v1.VaultCardsDue{Id: string(one.ID), Name: one.Name, Path: one.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	standing := func() *v1.WatchCardsDueResponse {
-		return &v1.WatchCardsDueResponse{Day: a.scenarios().day.GetName(a.now()), Vaults: listed}
+		return &v1.WatchCardsDueResponse{Day: a.scenarios().day.GetName(a.now()), Vaults: items}
 	}
 	if err := out.Send(standing()); err != nil {
 		return err
@@ -132,7 +132,7 @@ func (a *reviewHandler) WatchCardsDue(
 	repeat := time.NewTicker(again)
 	defer repeat.Stop()
 
-	counted := a.countVaults(ctx, known)
+	counted := a.countVaults(ctx, recognized)
 	for counted != nil {
 		select {
 		case one, open := <-counted:
@@ -337,7 +337,7 @@ func (a *reviewHandler) AnswerCard(
 	}
 
 	on := review.CardFaceID{Card: r.Msg.GetMark(), Face: r.Msg.GetFace()}
-	given, err := a.scenarios().flash.Record.Answer(ctx, run, on, parseRating(r.Msg.GetRating()),
+	provided, err := a.scenarios().flash.Record.Answer(ctx, run, on, parseRating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)
 	if err != nil {
 		if errors.Is(err, flashcards.ErrNoRating) {
@@ -346,7 +346,7 @@ func (a *reviewHandler) AnswerCard(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(&v1.AnswerCardResponse{Answer: given.ID}), nil
+	return connect.NewResponse(&v1.AnswerCardResponse{Answer: provided.ID}), nil
 }
 
 // parseRating is the four a person may say. Anything else is refused by the use

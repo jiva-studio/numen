@@ -41,8 +41,8 @@ func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
 	if !reflect.DeepEqual(got[0], lines[0]) {
 		t.Errorf("unpacked %+v, want %+v", got[0], lines[0])
 	}
-	if left := correction.Unpack(raw[:6]); len(left) != 0 {
-		t.Errorf("unpacked %d corrections from less than one header", len(left))
+	if remaining := correction.Unpack(raw[:6]); len(remaining) != 0 {
+		t.Errorf("unpacked %d corrections from less than one header", len(remaining))
 	}
 }
 

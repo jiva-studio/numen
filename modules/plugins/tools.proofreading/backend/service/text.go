@@ -82,8 +82,8 @@ func proofreadSpeech(
 	}
 	answers = append(answers, more...)
 
-	put, _ := gatherAnswers(answers)
-	out := textResult{corrections: sortLines(put)}
+	placed, _ := gatherAnswers(answers)
+	out := textResult{corrections: sortLines(placed)}
 	for _, one := range answers {
 		if !one.isAnswer {
 			out.uncorrected++

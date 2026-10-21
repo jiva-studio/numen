@@ -72,14 +72,14 @@ func TestADeckWhoseLinksCannotBeResolvedIsNotWritten(t *testing.T) {
 func TestAStaleWriteHandsBackNothing(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
-	seen, err := cards.NewRead(vs.ports.Readers, vs.queries).
+	observed, err := cards.NewRead(vs.ports.Readers, vs.queries).
 		Deck(t.Context(), vs.first, "decks/Wrens.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 	write(t, vs.first, "decks/Wrens.md", "---\ntype: deck\n---\n"+wrenDeck+"\nChanged under the reader.\n")
 
-	got, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, seen.Fingerprint)
+	got, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, observed.Fingerprint)
 	if !errors.Is(err, ports.ErrStale) {
 		t.Fatalf("write = %v, want stale", err)
 	}

@@ -21,18 +21,18 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 	backing := make([]float32, rows*dimensions)
 	for row := range rows {
 		vector := backing[row*dimensions : (row+1)*dimensions]
-		kept := 0
+		retained := 0
 		rowOffset := row * seq
 		for token := 0; token < seq; token++ {
 			if mask[rowOffset+token] == 0 {
 				continue
 			}
-			kept++
+			retained++
 			at := (rowOffset + token) * dimensions
 			addRow(vector, flat[at:at+dimensions])
 		}
-		if kept > 0 {
-			k := float32(kept)
+		if retained > 0 {
+			k := float32(retained)
 			d := 0
 			for ; d+8 <= dimensions; d += 8 {
 				vector[d] /= k

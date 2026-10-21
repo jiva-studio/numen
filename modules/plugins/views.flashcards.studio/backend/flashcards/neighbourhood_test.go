@@ -353,9 +353,9 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 	for _, one := range j.Notes {
 		byPath[one.Path] = one
 	}
-	gone := byPath["Migration.md"]
-	if gone.Outcome != note.Missing || gone.Body != "" {
-		t.Errorf("the deleted note came back as %+v", gone)
+	removed := byPath["Migration.md"]
+	if removed.Outcome != note.Missing || removed.Body != "" {
+		t.Errorf("the deleted note came back as %+v", removed)
 	}
 	if !strings.Contains(byPath["Feathers.md"].Body, "Barbs on a shaft") {
 		t.Errorf("the note beside it came back as %+v", byPath["Feathers.md"])

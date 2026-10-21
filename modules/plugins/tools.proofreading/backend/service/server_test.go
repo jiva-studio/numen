@@ -117,11 +117,11 @@ func TestProofreadTextHoldsAScanToTheDistanceItIsGiven(t *testing.T) {
 		return len(res.Msg.GetCorrections())
 	}
 
-	if kept := request(0); kept != 0 {
-		t.Errorf("the proofreader's own limit kept %d", kept)
+	if retained := request(0); retained != 0 {
+		t.Errorf("the proofreader's own limit kept %d", retained)
 	}
-	if kept := request(0.9); kept != 1 {
-		t.Errorf("a limit of 0.9 kept %d", kept)
+	if retainedVal := request(0.9); retainedVal != 1 {
+		t.Errorf("a limit of 0.9 kept %d", retainedVal)
 	}
 }
 

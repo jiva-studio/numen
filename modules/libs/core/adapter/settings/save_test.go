@@ -343,18 +343,18 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 		"a link to a file that is not yet": false,
 	} {
 		dir := t.TempDir()
-		kept := filepath.Join(dir, "dotfiles", "numen.json")
-		if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+		retained := filepath.Join(dir, "dotfiles", "numen.json")
+		if err := os.MkdirAll(filepath.Dir(retained), 0o755); err != nil {
 			t.Fatal(err)
 		}
 		if exists {
-			held := []byte(`{"appearance":{"theme":"preset:numen"}}`)
-			if err := os.WriteFile(kept, held, 0o600); err != nil {
+			target := []byte(`{"appearance":{"theme":"preset:numen"}}`)
+			if err := os.WriteFile(retained, target, 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}
 		link := filepath.Join(dir, "numen.json")
-		if err := os.Symlink(kept, link); err != nil {
+		if err := os.Symlink(retained, link); err != nil {
 			t.Fatal(err)
 		}
 
@@ -367,7 +367,7 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 		} else if info.Mode()&os.ModeSymlink == 0 {
 			t.Errorf("%s: the link is now a file of its own", what)
 		}
-		raw, err := os.ReadFile(kept)
+		raw, err := os.ReadFile(retained)
 		if err != nil {
 			t.Fatalf("%s: %v", what, err)
 		}
@@ -381,12 +381,12 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 // bytes land in the file the link leads to and the link stays a link.
 func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
 	dir := t.TempDir()
-	kept := filepath.Join(dir, "dotfiles", "numen.json")
-	if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+	retained := filepath.Join(dir, "dotfiles", "numen.json")
+	if err := os.MkdirAll(filepath.Dir(retained), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	link := filepath.Join(dir, "numen.json")
-	if err := os.Symlink(kept, link); err != nil {
+	if err := os.Symlink(retained, link); err != nil {
 		t.Fatal(err)
 	}
 
@@ -399,7 +399,7 @@ func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
 	} else if info.Mode()&os.ModeSymlink == 0 {
 		t.Error("the link is now a file of its own")
 	}
-	if _, err := os.Stat(kept); err != nil {
+	if _, err := os.Stat(retained); err != nil {
 		t.Errorf("the file the link leads to is not there: %v", err)
 	}
 }
@@ -408,8 +408,8 @@ func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
 // file already held is the person's to put right, and every other setting stays
 // reachable while they do.
 func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
-	const held = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
-	path := write(t, held)
+	const target = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
+	path := write(t, target)
 
 	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatalf("a theme could not be saved beside a size out of its band: %v", err)
@@ -418,7 +418,7 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := strings.Replace(held, `"preset:numen"`, `"preset:nord"`, 1)
+	want := strings.Replace(target, `"preset:numen"`, `"preset:nord"`, 1)
 	if string(raw) != want {
 		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
 	}

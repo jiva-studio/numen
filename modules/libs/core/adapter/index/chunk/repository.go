@@ -262,8 +262,8 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	first, past := getRangeUnder(from)
 	// What a path keeps is counted off it in characters: that is what the
 	// statement cuts by, and a path is not Latin alone.
-	kept := utf8.RuneCountInString(from) + 1
-	if err := exec(ctx, tx, "move_sources", to, kept, vault, from, first, past); err != nil {
+	retained := utf8.RuneCountInString(from) + 1
+	if err := exec(ctx, tx, "move_sources", to, retained, vault, from, first, past); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -342,16 +342,16 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 	if err != nil {
 		return fmt.Errorf("what the note %s is called: %w", from, err)
 	}
-	shown := title
+	displayed := title
 	if !named {
-		shown = name
+		displayed = name
 	} else if filed, _ := domain.GetReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
 		return nil
 	}
-	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), shown, vault, from); err != nil {
+	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), displayed, vault, from); err != nil {
 		return err
 	}
-	return exec(ctx, tx, "rename_title", vault, from, shown)
+	return exec(ctx, tx, "rename_title", vault, from, displayed)
 }
 
 // getRangeUnder is the range every path a folder holds falls in: from the
@@ -391,7 +391,7 @@ func Clear(ctx context.Context, tx *sqlwrite.Transaction, source int64) error {
 // Only leaf chunks are indexed for the words they hold, so that a search asked
 // by words finds the smallest enclosing passage.
 func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64, chunks []Chunk) error {
-	held, err := chunksOf(ctx, tx, source)
+	target, err := chunksOf(ctx, tx, source)
 	if err != nil {
 		return err
 	}
@@ -402,20 +402,20 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 	}
 
 	for _, large := range chunks {
-		row, err := upsertChunk(ctx, tx, held, source, vault, large, nil, len(large.Small) == 0)
+		row, err := upsertChunk(ctx, tx, target, source, vault, large, nil, len(large.Small) == 0)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := upsertChunk(ctx, tx, held, source, vault, small, row, true); err != nil {
+			if _, err := upsertChunk(ctx, tx, target, source, vault, small, row, true); err != nil {
 				return err
 			}
 		}
 	}
-	if err := deleteRows(ctx, tx, held.getUnusedRows()); err != nil {
+	if err := deleteRows(ctx, tx, target.getUnusedRows()); err != nil {
 		return err
 	}
-	return deleteOrphanVectors(ctx, tx, held.getRemovedHashes())
+	return deleteOrphanVectors(ctx, tx, target.getRemovedHashes())
 }
 
 // upsertChunk is the row one chunk is held on, and moves or writes it.
@@ -427,7 +427,7 @@ func upsertChunk(
 	source, vault int64, c Chunk, parent any, isLeaf bool,
 ) (int64, error) {
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
-	if row, kept := held.takeUnusedRow(key); kept {
+	if row, retained := held.takeUnusedRow(key); retained {
 		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)

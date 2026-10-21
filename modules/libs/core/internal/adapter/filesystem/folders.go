@@ -94,9 +94,9 @@ func (f *folders) removeFolder(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	delete(f.known, path)
-	for held := range f.known {
-		if strings.HasPrefix(held, path+"/") {
-			delete(f.known, held)
+	for target := range f.known {
+		if strings.HasPrefix(target, path+"/") {
+			delete(f.known, target)
 		}
 	}
 }

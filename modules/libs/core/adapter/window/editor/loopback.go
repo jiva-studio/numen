@@ -59,13 +59,13 @@ type Loopback struct {
 // stopped is told where the socket stops answering under the window, which is
 // nobody's doing and nothing anybody asked for.
 func Listen(files *fileServer, stopped func(error)) (*Loopback, error) {
-	held, err := net.Listen("tcp", "127.0.0.1:0")
+	target, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
-	back, err := newLoopback(held, files, stopped)
+	back, err := newLoopback(target, files, stopped)
 	if err != nil {
-		held.Close()
+		target.Close()
 		return nil, err
 	}
 	return back, nil
@@ -110,14 +110,14 @@ func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Lo
 // the vault's own reader. That is the boundary, and it is the same one every
 // other question crosses.
 func (l *Loopback) getHandler() http.Handler {
-	held := "/" + l.token + "/"
+	target := "/" + l.token + "/"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		escaped := r.URL.EscapedPath()
-		if !strings.HasPrefix(escaped, held) {
+		if !strings.HasPrefix(escaped, target) {
 			http.Error(w, "not an address this run gave out", http.StatusForbidden)
 			return
 		}
-		id, rest, found := strings.Cut(strings.TrimPrefix(escaped, held), "/")
+		id, rest, found := strings.Cut(strings.TrimPrefix(escaped, target), "/")
 		if !found {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
 			return
@@ -177,7 +177,7 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	held, ok := h.findVault(id)
+	target, ok := h.findVault(id)
 	if !ok {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
 		return
@@ -190,10 +190,10 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 	// which the vault's reader is refused, so it is served from the store it
 	// was written to. Every other file of the vault is
 	// served as the file it is.
-	if strings.HasSuffix(at, domain.URLExtension) && h.serveCopy(w, r, held, at, named) {
+	if strings.HasSuffix(at, domain.URLExtension) && h.serveCopy(w, r, target, at, named) {
 		return
 	}
-	opened, err := h.openFile.Execute(r.Context(), held, at, named)
+	opened, err := h.openFile.Execute(r.Context(), target, at, named)
 	if err != nil {
 		refuse(w, err)
 		return

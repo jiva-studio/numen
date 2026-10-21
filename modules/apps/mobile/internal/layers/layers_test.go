@@ -81,14 +81,14 @@ func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 // everything a person has to act on is said in the window they are looking at.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
-	for _, held := range readSources(t) {
-		for _, one := range held.file.Imports {
+	for _, target := range readSources(t) {
+		for _, one := range target.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, held.at+" imports "+to)
+				wrong = append(wrong, target.at+" imports "+to)
 			}
 		}
 	}

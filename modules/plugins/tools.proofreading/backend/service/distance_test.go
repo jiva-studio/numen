@@ -19,23 +19,23 @@ func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
 		t.Fatalf("the two stand %.2f apart, which the recognition's own limit allows", apart)
 	}
 
-	put, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asSaid, 0)
+	placed, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asSaid, 0)
 	if !ok {
 		t.Fatal("the batch failed")
 	}
-	if len(put) != 1 || put[0].Text != asSaid {
-		t.Errorf("the line was put right to %v", put)
+	if len(placed) != 1 || placed[0].Text != asSaid {
+		t.Errorf("the line was put right to %v", placed)
 	}
 }
 
 // The recognition's own limit still holds where it is given.
 func TestACorrectionBeyondTheLimitGivenIsDropped(t *testing.T) {
-	put, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asSaid, MaxEditDistance)
+	placed, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asSaid, MaxEditDistance)
 	if !ok {
 		t.Fatal("the batch failed")
 	}
-	if len(put) != 0 {
-		t.Errorf("the line was put right to %v", put)
+	if len(placed) != 0 {
+		t.Errorf("the line was put right to %v", placed)
 	}
 }
 

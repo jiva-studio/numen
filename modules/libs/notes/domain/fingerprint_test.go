@@ -70,12 +70,12 @@ func TestAStampCarryingAMonotonicReadingIsTheSameFileWithoutIt(t *testing.T) {
 // A field named for a moment holds a moment. An integer here is a unit nobody
 // stated, and anything counting anything assigns to it.
 func TestTheStampIsAnInstant(t *testing.T) {
-	held, found := reflect.TypeOf(domain.Fingerprint{}).FieldByName("ModTime")
+	target, found := reflect.TypeOf(domain.Fingerprint{}).FieldByName("ModTime")
 	if !found {
 		t.Fatal("a fingerprint carries no modification time")
 	}
-	if held.Type != reflect.TypeOf(time.Time{}) {
-		t.Errorf("the stamp is %v, and a file's modification time is an instant", held.Type)
+	if target.Type != reflect.TypeOf(time.Time{}) {
+		t.Errorf("the stamp is %v, and a file's modification time is an instant", target.Type)
 	}
 }
 

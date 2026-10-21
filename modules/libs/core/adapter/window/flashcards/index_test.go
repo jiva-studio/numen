@@ -50,15 +50,15 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 // A vault the index already carries is drawn from what it holds, so indexing it
 // again is work drawn only once it has lasted. An instant walk says nothing.
 func TestIndexingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
-	held := domain.Vault{ID: "held", Name: "Held"}
-	api := newAPI(t, held)
+	target := domain.Vault{ID: "held", Name: "Held"}
+	api := newAPI(t, target)
 	holding := make(chan struct{})
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		<-holding
 		return nil
 	})
 
-	if _, err := api.EnsureIndexed(t.Context(), held); err != nil {
+	if _, err := api.EnsureIndexed(t.Context(), target); err != nil {
 		t.Fatal(err)
 	}
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
@@ -146,8 +146,8 @@ func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
 	if !stream.Receive() {
 		t.Fatalf("nothing was said: %v", stream.Err())
 	}
-	if said := stream.Msg().GetTasks(); len(said) != 0 {
-		t.Errorf("a window doing nothing said %+v", said)
+	if response := stream.Msg().GetTasks(); len(response) != 0 {
+		t.Errorf("a window doing nothing said %+v", response)
 	}
 }
 

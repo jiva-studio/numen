@@ -75,11 +75,11 @@ func recordHistoryAnswers(t *testing.T, s vaulted) {
 // and how many of them there are is counted the same way.
 func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces int) {
 	t.Helper()
-	held, err := s.standings.GetDeckPaths(t.Context(), s.vault)
+	target, err := s.standings.GetDeckPaths(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, deck := range held {
+	for _, deck := range target {
 		p, err := s.presets.GetForDeck(t.Context(), s.vault, deck)
 		if err != nil {
 			t.Fatal(err)

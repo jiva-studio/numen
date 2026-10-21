@@ -21,8 +21,8 @@ func makeLines(said ...string) []Line {
 func getListedWords(t *testing.T, about string) string {
 	t.Helper()
 	for _, line := range strings.Split(about, "\n") {
-		if said, listed := strings.CutPrefix(line, "Words recurring through it, as the machine transcribed them: "); listed {
-			return said
+		if response, items := strings.CutPrefix(line, "Words recurring through it, as the machine transcribed them: "); items {
+			return response
 		}
 	}
 	return ""
@@ -39,16 +39,16 @@ func TestADigestSaysWhatTheRecordingHolds(t *testing.T) {
 	if !strings.Contains(about, "The speech opens: The assembly at Mithila heard Ganaka.") {
 		t.Errorf("the digest says %q", about)
 	}
-	if said := getListedWords(t, about); said != "Mithila, Ganaka" {
-		t.Errorf("the digest lists %q", said)
+	if response := getListedWords(t, about); response != "Mithila, Ganaka" {
+		t.Errorf("the digest lists %q", response)
 	}
 }
 
 // A word said once is not a word that recurs.
 func TestADigestListsOnlyWhatRecurs(t *testing.T) {
 	about := describeSpeech(makeLines("The teacher named Ganaka once.", "Nothing else was said of him."))
-	if said := getListedWords(t, about); said != "" {
-		t.Errorf("the digest lists %q", said)
+	if response := getListedWords(t, about); response != "" {
+		t.Errorf("the digest lists %q", response)
 	}
 }
 
@@ -56,16 +56,16 @@ func TestADigestListsOnlyWhatRecurs(t *testing.T) {
 // word and not a name, however often it is said.
 func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
 	about := describeSpeech(makeLines("Ganaka spoke. Ganaka listened. Ganaka left."))
-	if said := getListedWords(t, about); said != "" {
-		t.Errorf("the digest lists %q", said)
+	if response := getListedWords(t, about); response != "" {
+		t.Errorf("the digest lists %q", response)
 	}
 }
 
 // A shortening ends no sentence, so the name it stands before is a name.
 func TestANameBehindAShorteningIsStillAName(t *testing.T) {
 	about := describeSpeech(makeLines("Mr. Ganaka arrived. Mr. Ganaka left."))
-	if said := getListedWords(t, about); said != "Ganaka" {
-		t.Errorf("the digest lists %q", said)
+	if response := getListedWords(t, about); response != "Ganaka" {
+		t.Errorf("the digest lists %q", response)
 	}
 }
 
@@ -75,19 +75,19 @@ func TestTheWordAPersonCallsHimselfIsNotAName(t *testing.T) {
 		"So I was saying that I think Ganaka is here.",
 		"And I told him that I would go. I'm sure I've said so.",
 	))
-	if said := getListedWords(t, about); said != "" {
-		t.Errorf("the digest lists %q", said)
+	if response := getListedWords(t, about); response != "" {
+		t.Errorf("the digest lists %q", response)
 	}
 }
 
 // The opening is as much of the speech as the digest quotes, and says it was
 // cut short.
 func TestTheOpeningIsCutShort(t *testing.T) {
-	var said []string
+	var response []string
 	for at := range 200 {
-		said = append(said, "word"+strconv.Itoa(at))
+		response = append(response, "word"+strconv.Itoa(at))
 	}
-	about := describeSpeech(makeLines(strings.Join(said, " ")))
+	about := describeSpeech(makeLines(strings.Join(response, " ")))
 
 	if !strings.Contains(about, "word0 word1 ") || strings.Contains(about, "word199") {
 		t.Errorf("the digest says %q", about)

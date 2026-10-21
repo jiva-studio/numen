@@ -86,15 +86,15 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 		if at < 1 || at >= len(lines) {
 			continue
 		}
-		var bound int
+		var linked int
 		if i+1 < len(items.Content) {
-			bound = items.Content[i+1].Line - 1
+			linked = items.Content[i+1].Line - 1
 		} else {
-			bound = offsetLine(lines, end) - 1
+			linked = offsetLine(lines, end) - 1
 		}
 		last := d.endLine(lines, item, items.Column)
-		if last > bound {
-			last = bound
+		if last > linked {
+			last = linked
 		}
 		if last < at {
 			last = at
@@ -164,17 +164,17 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 		return 0, err
 	}
 
-	removed, kept := 0, 0
+	removed, retained := 0, 0
 	for i := len(b.entries) - 1; i >= 0; i-- {
 		e := b.entries[i]
 		if e.link.Target != to || (role != "" && e.link.Role != role) {
-			kept++
+			retained++
 			continue
 		}
 		d.splice(e.start, e.end, nil)
 		removed++
 	}
-	if removed > 0 && kept == 0 {
+	if removed > 0 && retained == 0 {
 		if err := d.set("links", nil); err != nil {
 			return removed, err
 		}
@@ -193,10 +193,10 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 // cannot read is left as it was written.
 func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 	var carrying []int
-	kept := 0
+	retained := 0
 	for i, e := range entries {
 		if e.link.Type != kind || !e.isReadable {
-			kept++
+			retained++
 			continue
 		}
 		if !e.isOwned {
@@ -204,7 +204,7 @@ func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 		}
 		carrying = append(carrying, i)
 	}
-	return carrying, kept, nil
+	return carrying, retained, nil
 }
 
 func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to domain.Address) error {
@@ -252,7 +252,7 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 		return err
 	}
 
-	carrying, kept, err := findTypedEntries(b.entries, kind)
+	carrying, retained, err := findTypedEntries(b.entries, kind)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 	}
 
 	if to.Value == "" {
-		if len(carrying) > 0 && kept == 0 {
+		if len(carrying) > 0 && retained == 0 {
 			return d.set("links", nil)
 		}
 		return nil
@@ -361,11 +361,11 @@ func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 		if !ok {
 			continue
 		}
-		written, err := scalarLike(keepLinkNotation(e.address.Value, to), e.address.Style)
+		content, err := scalarLike(keepLinkNotation(e.address.Value, to), e.address.Style)
 		if err != nil {
 			return moved, err
 		}
-		d.splice(start, end, []byte(written))
+		d.splice(start, end, []byte(content))
 		moved++
 	}
 	return moved, nil

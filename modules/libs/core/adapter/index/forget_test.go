@@ -150,11 +150,11 @@ func numbers(t *testing.T, db *DB, statement string, args ...any) []int64 {
 // list writes row numbers as an SQL list, for a question asked of rows that the
 // answer is allowed to have taken away.
 func list(rows []int64) string {
-	written := make([]string, len(rows))
+	content := make([]string, len(rows))
 	for i, row := range rows {
-		written[i] = strconv.FormatInt(row, 10)
+		content[i] = strconv.FormatInt(row, 10)
 	}
-	return "(" + strings.Join(written, ",") + ")"
+	return "(" + strings.Join(content, ",") + ")"
 }
 
 func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
@@ -166,14 +166,14 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	fillVault(t, db, first, "first", 0x0f)
 	fillVault(t, db, second, "second", 0xf0)
 
-	gone := getVaultContents(t, db, first)
-	kept := getVaultContents(t, db, second)
-	goneVirtual, goneOrdinary := virtual(t, db, gone), ordinary(t, db, gone)
-	keptVirtual, keptOrdinary := virtual(t, db, kept), ordinary(t, db, kept)
+	removed := getVaultContents(t, db, first)
+	retained := getVaultContents(t, db, second)
+	goneVirtual, goneOrdinary := virtual(t, db, removed), ordinary(t, db, removed)
+	keptVirtual, keptOrdinary := virtual(t, db, retained), ordinary(t, db, retained)
 
 	vectors := countRows(t, db, `SELECT COUNT(*) FROM vectors`)
 	bought := numbers(t, db, `SELECT rowid FROM vectors WHERE hash IN
-		(SELECT unhex(hash) FROM chunks WHERE id IN `+list(gone.chunks)+`)`)
+		(SELECT unhex(hash) FROM chunks WHERE id IN `+list(removed.chunks)+`)`)
 	if len(bought) == 0 {
 		t.Fatal("the vault that is forgotten paid for no vector, so this test would pass either way")
 	}
@@ -194,12 +194,12 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for table, n := range virtual(t, db, gone) {
+	for table, n := range virtual(t, db, removed) {
 		if n != 0 {
 			t.Errorf("%s holds %d rows of the vault that was forgotten", table, n)
 		}
 	}
-	for table, n := range ordinary(t, db, gone) {
+	for table, n := range ordinary(t, db, removed) {
 		if n != 0 {
 			t.Errorf("%s holds %d rows of the vault that was forgotten", table, n)
 		}
@@ -208,21 +208,21 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 		t.Errorf("the forgotten vault still has %d rows of its own", got)
 	}
 
-	for table, n := range virtual(t, db, kept) {
+	for table, n := range virtual(t, db, retained) {
 		if n != keptVirtual[table] {
 			t.Errorf("%s holds %d rows of the other vault, and held %d", table, n, keptVirtual[table])
 		}
 	}
-	for table, n := range ordinary(t, db, kept) {
+	for table, n := range ordinary(t, db, retained) {
 		if n != keptOrdinary[table] {
 			t.Errorf("%s holds %d rows of the other vault, and held %d", table, n, keptOrdinary[table])
 		}
 	}
-	if now := getVaultContents(t, db, second); !slices.Equal(now.chunks, kept.chunks) ||
-		!slices.Equal(now.sources, kept.sources) ||
-		!slices.Equal(now.notes, kept.notes) ||
-		!slices.Equal(now.headings, kept.headings) {
-		t.Errorf("the second vault holds %+v, and held %+v", now, kept)
+	if now := getVaultContents(t, db, second); !slices.Equal(now.chunks, retained.chunks) ||
+		!slices.Equal(now.sources, retained.sources) ||
+		!slices.Equal(now.notes, retained.notes) ||
+		!slices.Equal(now.headings, retained.headings) {
+		t.Errorf("the second vault holds %+v, and held %+v", now, retained)
 	}
 
 	// A vector is addressed by the text it was made from, so chunks of several

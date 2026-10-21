@@ -214,16 +214,16 @@ func TestAMoveThatStopsBeforeTheFileMovedSaysSo(t *testing.T) {
 // Whoever is drawing the note is told where it went.
 func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 	c := openLinked(t)
-	var told []domain.Move
+	var notified []domain.Move
 	moving := c.move()
-	moving.Drawing = func(_ context.Context, went domain.Move) { told = append(told, went) }
+	moving.Drawing = func(_ context.Context, went domain.Move) { notified = append(notified, went) }
 
 	if _, err := moving.Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md"); err != nil {
 		t.Fatal(err)
 	}
 	want := []domain.Move{{From: "physics/Entropy.md", To: "archive/Thermodynamics.md"}}
-	if !slices.Equal(told, want) {
-		t.Errorf("told %+v", told)
+	if !slices.Equal(notified, want) {
+		t.Errorf("told %+v", notified)
 	}
 }
 
@@ -232,12 +232,12 @@ func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 // level with notes nothing was written into.
 func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	c := openLinked(t)
-	var asked [][]string
+	var request [][]string
 	parts := moveParts{
 		names:    failingNames{err: errors.New("no names")},
 		hasIndex: true,
 		index: func(_ context.Context, _ domain.Vault, paths []string) error {
-			asked = append(asked, paths)
+			request = append(request, paths)
 			return errors.New("the index was asked")
 		},
 	}
@@ -249,8 +249,8 @@ func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	if !res.IsLanded || len(res.Repaired) != 0 || len(res.Dangling) != 0 {
 		t.Errorf("got %+v", res)
 	}
-	if len(asked) != 0 {
-		t.Errorf("the index was brought level with %v", asked)
+	if len(request) != 0 {
+		t.Errorf("the index was brought level with %v", request)
 	}
 }
 

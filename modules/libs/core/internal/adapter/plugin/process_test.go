@@ -82,44 +82,44 @@ func TestSanitizeEnvironment(t *testing.T) {
 
 	cleaned := sanitizeEnvironment(inputEnv, pluginVars, nil)
 
-	seen := make(map[string]string)
+	observed := make(map[string]string)
 	for _, entry := range cleaned {
 		k, v, ok := stringsCut(entry, "=")
 		if ok {
-			seen[k] = v
+			observed[k] = v
 		}
 	}
 
-	if seen["PATH"] != "/usr/bin:/bin" {
-		t.Errorf("expected PATH to be preserved, got %q", seen["PATH"])
+	if observed["PATH"] != "/usr/bin:/bin" {
+		t.Errorf("expected PATH to be preserved, got %q", observed["PATH"])
 	}
-	if seen["TMPDIR"] != "/custom/tmp" {
-		t.Errorf("expected TMPDIR to be preserved, got %q", seen["TMPDIR"])
+	if observed["TMPDIR"] != "/custom/tmp" {
+		t.Errorf("expected TMPDIR to be preserved, got %q", observed["TMPDIR"])
 	}
-	if seen["HOME"] != "/home/user" {
-		t.Errorf("expected HOME to be preserved, got %q", seen["HOME"])
+	if observed["HOME"] != "/home/user" {
+		t.Errorf("expected HOME to be preserved, got %q", observed["HOME"])
 	}
-	if seen["LANG"] != "en_US.UTF-8" {
-		t.Errorf("expected LANG to be preserved, got %q", seen["LANG"])
+	if observed["LANG"] != "en_US.UTF-8" {
+		t.Errorf("expected LANG to be preserved, got %q", observed["LANG"])
 	}
-	if seen["LC_ALL"] != "C" {
-		t.Errorf("expected LC_ALL to be preserved, got %q", seen["LC_ALL"])
+	if observed["LC_ALL"] != "C" {
+		t.Errorf("expected LC_ALL to be preserved, got %q", observed["LC_ALL"])
 	}
 
 	for _, secret := range []string{"OPENAI_API_KEY", "GITHUB_TOKEN", "AWS_SECRET_ACCESS_KEY", "DATABASE_URL"} {
-		if _, exists := seen[secret]; exists {
+		if _, exists := observed[secret]; exists {
 			t.Errorf("expected secret %s to be scrubbed from environment", secret)
 		}
 	}
 
-	if seen["NUMEN_VAULT_PATH"] != "/vault" {
-		t.Errorf("expected NUMEN_VAULT_PATH to be present, got %q", seen["NUMEN_VAULT_PATH"])
+	if observed["NUMEN_VAULT_PATH"] != "/vault" {
+		t.Errorf("expected NUMEN_VAULT_PATH to be present, got %q", observed["NUMEN_VAULT_PATH"])
 	}
-	if seen["NUMEN_PLUGIN_PORT"] != "8080" {
-		t.Errorf("expected NUMEN_PLUGIN_PORT to be present, got %q", seen["NUMEN_PLUGIN_PORT"])
+	if observed["NUMEN_PLUGIN_PORT"] != "8080" {
+		t.Errorf("expected NUMEN_PLUGIN_PORT to be present, got %q", observed["NUMEN_PLUGIN_PORT"])
 	}
-	if seen["NUMEN_PLUGIN_TOKEN"] != "plugin-token-xyz" {
-		t.Errorf("expected NUMEN_PLUGIN_TOKEN to be present, got %q", seen["NUMEN_PLUGIN_TOKEN"])
+	if observed["NUMEN_PLUGIN_TOKEN"] != "plugin-token-xyz" {
+		t.Errorf("expected NUMEN_PLUGIN_TOKEN to be present, got %q", observed["NUMEN_PLUGIN_TOKEN"])
 	}
 }
 
@@ -330,32 +330,32 @@ var runtimeVarNames = []string{
 
 // readEnvironment returns the launch environment as a map.
 func readEnvironment(env []string) map[string]string {
-	seen := make(map[string]string, len(env))
+	observed := make(map[string]string, len(env))
 	for _, entry := range env {
 		if k, v, ok := stringsCut(entry, "="); ok {
-			seen[k] = v
+			observed[k] = v
 		}
 	}
-	return seen
+	return observed
 }
 
 func TestAnONNXRuntimePluginIsLaunchedWithTheLoaderAndAcceleratorVariables(t *testing.T) {
 	pluginVars := []string{"NUMEN_ONNX_RUNTIME_LIB=/models/libonnxruntime.so", "NUMEN_ONNX_PROVIDER=auto"}
-	seen := readEnvironment(sanitizeEnvironment(gpuEnvironment, pluginVars, []string{"onnxruntime"}))
+	observed := readEnvironment(sanitizeEnvironment(gpuEnvironment, pluginVars, []string{"onnxruntime"}))
 
 	for _, name := range runtimeVarNames {
-		if _, ok := seen[name]; !ok {
+		if _, ok := observed[name]; !ok {
 			t.Errorf("%s is missing from the launch environment", name)
 		}
 	}
-	if seen["CUDA_VISIBLE_DEVICES"] != "0" || seen["LD_LIBRARY_PATH"] != "/opt/cuda/lib64" {
-		t.Errorf("the variables changed on the way: %v", seen)
+	if observed["CUDA_VISIBLE_DEVICES"] != "0" || observed["LD_LIBRARY_PATH"] != "/opt/cuda/lib64" {
+		t.Errorf("the variables changed on the way: %v", observed)
 	}
-	if seen["NUMEN_ONNX_RUNTIME_LIB"] != "/models/libonnxruntime.so" || seen["NUMEN_ONNX_PROVIDER"] != "auto" {
-		t.Errorf("the host's own NUMEN variables reached the plugin: %v", seen)
+	if observed["NUMEN_ONNX_RUNTIME_LIB"] != "/models/libonnxruntime.so" || observed["NUMEN_ONNX_PROVIDER"] != "auto" {
+		t.Errorf("the host's own NUMEN variables reached the plugin: %v", observed)
 	}
 	for _, secret := range []string{"CUDA_API_KEY", "OPENAI_API_KEY"} {
-		if _, ok := seen[secret]; ok {
+		if _, ok := observed[secret]; ok {
 			t.Errorf("%s reached an ONNX Runtime plugin", secret)
 		}
 	}
@@ -363,14 +363,14 @@ func TestAnONNXRuntimePluginIsLaunchedWithTheLoaderAndAcceleratorVariables(t *te
 
 func TestAPluginWithoutTheRuntimeIsNotLaunchedWithTheAcceleratorVariables(t *testing.T) {
 	for _, runtimes := range [][]string{nil, {}} {
-		seen := readEnvironment(sanitizeEnvironment(gpuEnvironment, nil, runtimes))
+		observed := readEnvironment(sanitizeEnvironment(gpuEnvironment, nil, runtimes))
 		for _, name := range append(runtimeVarNames, "NUMEN_ONNX_PROVIDER", "NUMEN_ONNX_RUNTIME_LIB", "OPENAI_API_KEY") {
-			if _, ok := seen[name]; ok {
+			if _, ok := observed[name]; ok {
 				t.Errorf("%s reached a plugin that declares no runtime", name)
 			}
 		}
-		if seen["PATH"] != "/usr/bin" {
-			t.Errorf("PATH = %q, want /usr/bin", seen["PATH"])
+		if observed["PATH"] != "/usr/bin" {
+			t.Errorf("PATH = %q, want /usr/bin", observed["PATH"])
 		}
 	}
 }

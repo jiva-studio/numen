@@ -32,7 +32,7 @@ func (f *fakeVault) Open(context.Context, string) (io.ReadSeekCloser, error) {
 }
 
 func (f *fakeVault) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
-	if _, held := f.content[path]; !held {
+	if _, target := f.content[path]; !target {
 		return domain.Fingerprint{}, fs.ErrNotExist
 	}
 	return domain.Fingerprint{Path: path, Kind: domain.KindNote}, nil
@@ -43,8 +43,8 @@ func (f *fakeVault) Read(_ context.Context, path string) ([]byte, error) {
 	f.calls[path]++
 	f.order = append(f.order, path)
 	f.mu.Unlock()
-	raw, held := f.content[path]
-	if !held {
+	raw, target := f.content[path]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return []byte(raw), nil

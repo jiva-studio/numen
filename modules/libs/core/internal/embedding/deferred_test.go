@@ -43,29 +43,29 @@ func (s *shut) Close() error {
 // vector index is fitted to its width and a vector is claimed under its recipe
 // while it comes down.
 func TestAModelSaysWhatItIsBeforeItIsHere(t *testing.T) {
-	arriving := embedding.NewDeferredEmbedder(bge)
-	if got := arriving.GetImpatientEmbedder().GetModel().Recipe(); got != bge.Recipe() {
+	incoming := embedding.NewDeferredEmbedder(bge)
+	if got := incoming.GetImpatientEmbedder().GetModel().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
 	}
-	if got := arriving.GetWaitingEmbedder().GetModel().Recipe(); got != bge.Recipe() {
+	if got := incoming.GetWaitingEmbedder().GetModel().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
 	}
 }
 
 func TestAQuestionIsNotMadeToWaitForAModelStillArriving(t *testing.T) {
-	arriving := embedding.NewDeferredEmbedder(bge)
-	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrModelNotReady) {
+	incoming := embedding.NewDeferredEmbedder(bge)
+	if _, err := incoming.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrModelNotReady) {
 		t.Fatalf("got %v", err)
 	}
 }
 
 func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
-	arriving := embedding.NewDeferredEmbedder(bge)
+	incoming := embedding.NewDeferredEmbedder(bge)
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		arriving.SetModel(landed{}, nil)
+		incoming.SetModel(landed{}, nil)
 	}()
-	got, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"})
+	got, err := incoming.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,13 +76,13 @@ func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
 
 func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 	unreachable := errors.New("dial tcp: network is unreachable")
-	arriving := embedding.NewDeferredEmbedder(bge)
-	arriving.SetModel(nil, unreachable)
+	incoming := embedding.NewDeferredEmbedder(bge)
+	incoming.SetModel(nil, unreachable)
 
-	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
+	if _, err := incoming.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
 		t.Errorf("got %v", err)
 	}
-	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
+	if _, err := incoming.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -91,20 +91,20 @@ func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 // nothing is asked of it again.
 func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	wrong := errors.New("not one model")
-	held := &shut{}
-	arriving := embedding.NewDeferredEmbedder(bge)
-	arriving.SetModel(held, nil)
+	target := &shut{}
+	incoming := embedding.NewDeferredEmbedder(bge)
+	incoming.SetModel(target, nil)
 
-	if err := arriving.DiscardModel(wrong); err != nil {
+	if err := incoming.DiscardModel(wrong); err != nil {
 		t.Fatal(err)
 	}
-	if !held.isClosed {
+	if !target.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
-	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+	if _, err := incoming.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
 	}
-	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+	if _, err := incoming.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -112,11 +112,11 @@ func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 // A model disowned before it turned up is one nobody waits for.
 func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 	wrong := errors.New("not one model")
-	arriving := embedding.NewDeferredEmbedder(bge)
-	if err := arriving.DiscardModel(wrong); err != nil {
+	incoming := embedding.NewDeferredEmbedder(bge)
+	if err := incoming.DiscardModel(wrong); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+	if _, err := incoming.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -124,27 +124,27 @@ func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 // A model release before it arrived is release when it does: the weights
 // are compiled by then and nothing else holds them.
 func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
-	arriving := embedding.NewDeferredEmbedder(bge)
-	if err := arriving.DiscardModel(errors.New("not one model")); err != nil {
+	incoming := embedding.NewDeferredEmbedder(bge)
+	if err := incoming.DiscardModel(errors.New("not one model")); err != nil {
 		t.Fatal(err)
 	}
 
-	held := &shut{}
-	arriving.SetModel(held, nil)
-	if !held.isClosed {
+	target := &shut{}
+	incoming.SetModel(target, nil)
+	if !target.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
 }
 
 func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
-	arriving := embedding.NewDeferredEmbedder(bge)
-	if err := arriving.Close(); err != nil {
+	incoming := embedding.NewDeferredEmbedder(bge)
+	if err := incoming.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	held := &shut{}
-	arriving.SetModel(held, nil)
-	if !held.isClosed {
+	target := &shut{}
+	incoming.SetModel(target, nil)
+	if !target.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
 }
@@ -154,21 +154,21 @@ func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
 func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 	wrong := errors.New("not one model")
 	for range 2000 {
-		arriving := embedding.NewDeferredEmbedder(bge)
+		incoming := embedding.NewDeferredEmbedder(bge)
 
 		waiting := make(chan struct{}, 8)
 		waited := make(chan error, cap(waiting))
 		for range cap(waited) {
 			go func() {
 				waiting <- struct{}{}
-				waited <- arriving.Wait(t.Context())
+				waited <- incoming.Wait(t.Context())
 			}()
 		}
 		for range cap(waiting) {
 			<-waiting
 		}
 
-		if err := arriving.DiscardModel(wrong); err != nil {
+		if err := incoming.DiscardModel(wrong); err != nil {
 			t.Fatal(err)
 		}
 		for range cap(waited) {
@@ -180,10 +180,10 @@ func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 }
 
 func TestAPassStoppedWhileTheModelArrivesIsStopped(t *testing.T) {
-	arriving := embedding.NewDeferredEmbedder(bge)
+	incoming := embedding.NewDeferredEmbedder(bge)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := arriving.GetWaitingEmbedder().Embed(ctx, []string{"anything"}); !errors.Is(err, context.Canceled) {
+	if _, err := incoming.GetWaitingEmbedder().Embed(ctx, []string{"anything"}); !errors.Is(err, context.Canceled) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -204,13 +204,13 @@ func (sized) Concurrency() int { return 3 }
 // lock left held does to it.
 func closesPromptly(t *testing.T, e *embedding.Embedder) {
 	t.Helper()
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		_ = e.Close()
-		close(done)
+		close(isDone)
 	}()
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(5 * time.Second):
 		t.Fatal("Close did not return")
 	}
@@ -306,12 +306,12 @@ func TestConcurrencyIsWhatTheModelRunsAndOneUntilItArrives(t *testing.T) {
 				}
 				return c.Concurrency()
 			}
-			arriving := embedding.NewDeferredEmbedder(bge)
-			if got := counted(get(arriving)); got != 1 {
+			incoming := embedding.NewDeferredEmbedder(bge)
+			if got := counted(get(incoming)); got != 1 {
 				t.Errorf("before the model: got %d, want 1", got)
 			}
-			arriving.SetModel(sized{}, nil)
-			if got := counted(get(arriving)); got != 3 {
+			incoming.SetModel(sized{}, nil)
+			if got := counted(get(incoming)); got != 3 {
 				t.Errorf("sized model: got %d, want 3", got)
 			}
 			direct := embedding.NewDeferredEmbedder(bge)
@@ -319,7 +319,7 @@ func TestConcurrencyIsWhatTheModelRunsAndOneUntilItArrives(t *testing.T) {
 			if got := counted(get(direct)); got != 1 {
 				t.Errorf("model without a count: got %d, want 1", got)
 			}
-			closesPromptly(t, arriving)
+			closesPromptly(t, incoming)
 		})
 	}
 }

@@ -14,27 +14,27 @@ func makeBrokenBatch() Batch {
 // A run of lines is answered for as one, and the answer says which lines it
 // covers.
 func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
-	put, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Radha, Krishna is connected with Radhika.", 0)
+	placed, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Radha, Krishna is connected with Radhika.", 0)
 	if !ok {
 		t.Fatal("the batch failed")
 	}
-	if len(put) != 1 {
-		t.Fatalf("%v put right, want one line", put)
+	if len(placed) != 1 {
+		t.Fatalf("%v put right, want one line", placed)
 	}
-	if put[0].Number != 4 || put[0].Last != 5 || !put[0].IsJoined() {
-		t.Errorf("the run stands at %d-%d", put[0].Number, put[0].Last)
+	if placed[0].Number != 4 || placed[0].Last != 5 || !placed[0].IsJoined() {
+		t.Errorf("the run stands at %d-%d", placed[0].Number, placed[0].Last)
 	}
 }
 
 // A run answered with exactly what its lines already say still puts them
 // together.
 func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
-	put, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Raj. Krishna is connected with Raj Dila.", 0)
+	placed, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Raj. Krishna is connected with Raj Dila.", 0)
 	if !ok {
 		t.Fatal("the batch failed")
 	}
-	if len(put) != 1 || !put[0].IsJoined() {
-		t.Errorf("%v put right", put)
+	if len(placed) != 1 || !placed[0].IsJoined() {
+		t.Errorf("%v put right", placed)
 	}
 }
 
@@ -42,12 +42,12 @@ func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 // a model reading it. That run is dropped, the rest of the batch stands, and
 // the reply says a sentence ran past the end.
 func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
-	put, past, ok := GetFixedLines(makeBrokenBatch(), "5-9 | whatever it says\n6 | Sure of it.", 0)
+	placed, past, ok := GetFixedLines(makeBrokenBatch(), "5-9 | whatever it says\n6 | Sure of it.", 0)
 	if !ok {
 		t.Fatal("the batch failed")
 	}
-	if len(put) != 1 || put[0].Number != 6 || put[0].Text != "Sure of it." {
-		t.Errorf("%v put right", put)
+	if len(placed) != 1 || placed[0].Number != 6 || placed[0].Text != "Sure of it." {
+		t.Errorf("%v put right", placed)
 	}
 	if !past {
 		t.Error("the reply does not say a sentence ran past the end")
@@ -102,14 +102,14 @@ func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
 		{Number: 4, Last: 4, Text: "we should go. And then"},
 		{Number: 5, Last: 5, Text: "the next day he left."},
 	}}
-	said := "We should go. And then the next day he left."
+	response := "We should go. And then the next day he left."
 
-	put, _, ok := GetFixedLines(batch, "4-5 | "+said, 0)
+	placed, _, ok := GetFixedLines(batch, "4-5 | "+response, 0)
 	if !ok {
 		t.Fatal("the batch failed")
 	}
-	if len(put) != 1 || put[0].Number != 4 || put[0].Last != 5 || put[0].Text != said {
-		t.Errorf("%v put right", put)
+	if len(placed) != 1 || placed[0].Number != 4 || placed[0].Last != 5 || placed[0].Text != response {
+		t.Errorf("%v put right", placed)
 	}
 }
 

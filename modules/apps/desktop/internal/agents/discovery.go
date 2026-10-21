@@ -55,8 +55,8 @@ func GetToken(cfg container.Config) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if kept, err := os.ReadFile(path); err == nil && len(kept) > 0 {
-		return string(kept), nil
+	if retained, err := os.ReadFile(path); err == nil && len(retained) > 0 {
+		return string(retained), nil
 	}
 
 	token, err := CreateToken()

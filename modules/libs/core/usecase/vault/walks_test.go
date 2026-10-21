@@ -60,30 +60,30 @@ func (h heldWalks) Open(domain.Vault) (port.VaultReader, error) { return h.reade
 // for the first to finish.
 func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 	t.Parallel()
-	held := newHeldWalk()
-	readers := heldWalks{reader: held}
+	target := newHeldWalk()
+	readers := heldWalks{reader: target}
 	db := openIndex(t)
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
-	done := make(chan error, 2)
+	isDone := make(chan error, 2)
 	first, second := scanner(readers, db), scanner(readers, db)
-	go func() { _, err := first.Execute(t.Context(), v); done <- err }()
-	if !held.hasWalkBegun() {
+	go func() { _, err := first.Execute(t.Context(), v); isDone <- err }()
+	if !target.hasWalkBegun() {
 		t.Fatal("the first walk never began")
 	}
-	go func() { _, err := second.Execute(t.Context(), v); done <- err }()
+	go func() { _, err := second.Execute(t.Context(), v); isDone <- err }()
 
 	select {
-	case <-held.began:
+	case <-target.began:
 		t.Fatal("a second walk of the vault began while the first was still going")
 	case <-time.After(100 * time.Millisecond):
 	}
-	close(held.let)
-	if !held.hasWalkBegun() {
+	close(target.let)
+	if !target.hasWalkBegun() {
 		t.Fatal("the second walk never took its turn")
 	}
 	for range 2 {
-		if err := <-done; err != nil {
+		if err := <-isDone; err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -94,23 +94,23 @@ func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 // a vault they each keep their own index of.
 func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {
 	t.Parallel()
-	held := newHeldWalk()
-	readers := heldWalks{reader: held}
+	target := newHeldWalk()
+	readers := heldWalks{reader: target}
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
-	done := make(chan error, 2)
+	isDone := make(chan error, 2)
 	for _, db := range []*container.Index{openIndex(t), openIndex(t)} {
 		scan := scanner(readers, db)
-		go func() { _, err := scan.Execute(t.Context(), v); done <- err }()
+		go func() { _, err := scan.Execute(t.Context(), v); isDone <- err }()
 	}
 	for range 2 {
-		if !held.hasWalkBegun() {
+		if !target.hasWalkBegun() {
 			t.Fatal("a walk of one index waited on a walk of another")
 		}
 	}
-	close(held.let)
+	close(target.let)
 	for range 2 {
-		if err := <-done; err != nil {
+		if err := <-isDone; err != nil {
 			t.Fatal(err)
 		}
 	}

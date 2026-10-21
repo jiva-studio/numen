@@ -31,17 +31,17 @@ func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
 		cards := rapid.IntRange(0, 60).Draw(t, "cards")
 
 		var debt, begun int
-		for taken := 1; taken <= cards; taken++ {
+		for acquired := 1; acquired <= cards; acquired++ {
 			if day.IsNextCardDebt(debt, begun, true, true) {
 				debt++
 			} else {
 				begun++
 			}
 			// The share of a whole number of cards, rounded up.
-			want := (taken*day.Backlog + review.AllBacklog - 1) / review.AllBacklog
+			want := (acquired*day.Backlog + review.AllBacklog - 1) / review.AllBacklog
 			if debt != want {
 				t.Fatalf("a day at a share of %d took %d of its first %d cards "+
-					"from the debt, want %d", day.Backlog, debt, taken, want)
+					"from the debt, want %d", day.Backlog, debt, acquired, want)
 			}
 		}
 	})

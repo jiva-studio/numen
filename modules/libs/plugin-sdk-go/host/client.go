@@ -394,9 +394,9 @@ func (c *Client) Watch(ctx context.Context) (<-chan Change, error) {
 }
 
 func (c *Client) With(id domain.VaultID) Vault {
-	bound := *c
-	bound.vault = string(id)
-	return &bound
+	linked := *c
+	linked.vault = string(id)
+	return &linked
 }
 
 func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {

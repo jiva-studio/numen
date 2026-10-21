@@ -39,7 +39,7 @@ func TestALeadingDotIsPartOfTheName(t *testing.T) {
 // Only a note's extension comes off a written name, and every other dot in it
 // is part of the name. It is what the scan stores beside each link.
 func TestALinkIsWrittenByItsLastSegment(t *testing.T) {
-	for written, want := range map[string]string{
+	for content, want := range map[string]string{
 		"Entropy":                    "Entropy",
 		"notes/Entropy":              "Entropy",
 		"notes/Entropy.md":           "Entropy",
@@ -49,8 +49,8 @@ func TestALinkIsWrittenByItsLastSegment(t *testing.T) {
 		".md":                        ".md",
 		"":                           "",
 	} {
-		if got := domain.LinkName(written); got != want {
-			t.Errorf("[[%s]] is written by %q, want %q", written, got, want)
+		if got := domain.LinkName(content); got != want {
+			t.Errorf("[[%s]] is written by %q, want %q", content, got, want)
 		}
 	}
 }
@@ -58,14 +58,14 @@ func TestALinkIsWrittenByItsLastSegment(t *testing.T) {
 // A name is compared without regard to case, and the extension is part of what
 // is compared.
 func TestTheExtensionComesOffALinkHoweverItIsSpelled(t *testing.T) {
-	for written, want := range map[string]string{
+	for content, want := range map[string]string{
 		"Entropy.MD":       "Entropy",
 		"Entropy.Md":       "Entropy",
 		"notes/Entropy.mD": "Entropy",
 		".MD":              ".MD",
 	} {
-		if got := domain.LinkName(written); got != want {
-			t.Errorf("[[%s]] is written by %q, want %q", written, got, want)
+		if got := domain.LinkName(content); got != want {
+			t.Errorf("[[%s]] is written by %q, want %q", content, got, want)
 		}
 	}
 }
@@ -84,15 +84,15 @@ func TestAPathFromTheRootIsFoundByItsLastSegment(t *testing.T) {
 			t.Errorf("%q is found by %q, want %q", path, got, want)
 		}
 	}
-	for written, want := range map[string]string{
+	for content, want := range map[string]string{
 		"/Entropy": "Entropy",
 		"/.md":     ".md",
 		"a/.md":    ".md",
 		"x.md":     "x",
 		"a.md":     "a",
 	} {
-		if got := domain.LinkName(written); got != want {
-			t.Errorf("[[%s]] is written by %q, want %q", written, got, want)
+		if got := domain.LinkName(content); got != want {
+			t.Errorf("[[%s]] is written by %q, want %q", content, got, want)
 		}
 	}
 }

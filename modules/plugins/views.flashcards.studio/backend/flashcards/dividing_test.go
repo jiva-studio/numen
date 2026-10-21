@@ -36,11 +36,11 @@ func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := make(map[string]int, len(out.Decks))
+	target := make(map[string]int, len(out.Decks))
 	for _, one := range out.Decks {
-		held[one.Deck] = one.Due + one.New
+		target[one.Deck] = one.Due + one.New
 	}
-	return held
+	return target
 }
 
 // pressDeck is how many card faces pressing one deck hands over.

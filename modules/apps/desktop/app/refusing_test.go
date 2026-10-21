@@ -22,7 +22,7 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	said := string(page)
+	response := string(page)
 
 	for _, want := range []string{
 		readingTheSettings,        // what could not be read
@@ -31,7 +31,7 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 		"as far as the size goes", // what it may be
 		"Write a number",          // what to do
 	} {
-		if !strings.Contains(said, want) {
+		if !strings.Contains(response, want) {
 			t.Errorf("the page does not say %q", want)
 		}
 	}
@@ -44,7 +44,7 @@ func TestARefusalSaysAnythingElseTooRatherThanNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said := string(page); !strings.Contains(said, "the settings could not be read") {
+	if response := string(page); !strings.Contains(response, "the settings could not be read") {
 		t.Error("the page says nothing about what stopped it")
 	}
 }
@@ -142,8 +142,8 @@ func openIndex(t *testing.T, path string) error {
 // read is the trouble a settings file comes back with.
 func read(t *testing.T, path string) error {
 	t.Helper()
-	held := container.DefaultSettings()
-	err := settings.OpenAt(path, &held)
+	target := container.DefaultSettings()
+	err := settings.OpenAt(path, &target)
 	if err == nil {
 		t.Fatalf("%s was read as settings", path)
 	}
@@ -158,22 +158,22 @@ func TestEveryRefusalSaysWhatToDoAboutIt(t *testing.T) {
 	}
 	for _, one := range getStoppings(t) {
 		t.Run(one.name, func(t *testing.T) {
-			said := getFatalReport(one.cfg, one.why)
-			if said.Heading == "" {
+			response := getFatalReport(one.cfg, one.why)
+			if response.Heading == "" {
 				t.Error("the page is drawn under no heading")
 			}
-			if said.Sentence == "" {
+			if response.Sentence == "" {
 				t.Error("the page says nothing about what stopped it")
 			}
-			if len(said.Facts) == 0 {
+			if len(response.Facts) == 0 {
 				t.Error("the page holds no facts about the state it found")
 			}
-			if said.Remedy == "" {
+			if response.Remedy == "" {
 				t.Error("the page offers nothing to do about it")
 			}
-			for _, held := range said.Facts {
-				if held.Content == "" {
-					t.Errorf("the page holds %q with nothing beside it", held.Name)
+			for _, target := range response.Facts {
+				if target.Content == "" {
+					t.Errorf("the page holds %q with nothing beside it", target.Name)
 				}
 			}
 		})
@@ -196,11 +196,11 @@ func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
 		"a size the command line does not take":  startingAtAll,
 	}
 	for _, one := range getStoppings(t) {
-		said := getFatalReport(one.cfg, one.why)
-		if said.Heading != want[one.name] {
-			t.Errorf("%s is drawn under %q, want %q", one.name, said.Heading, want[one.name])
+		response := getFatalReport(one.cfg, one.why)
+		if response.Heading != want[one.name] {
+			t.Errorf("%s is drawn under %q, want %q", one.name, response.Heading, want[one.name])
 		}
-		if strings.Contains(said.Heading, "vault") {
+		if strings.Contains(response.Heading, "vault") {
 			t.Errorf("%s is drawn under a heading naming a vault", one.name)
 		}
 	}

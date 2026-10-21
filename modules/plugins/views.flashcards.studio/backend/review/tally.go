@@ -35,20 +35,20 @@ type Tally struct {
 // later ones have been counted adds to the day it belongs to and disturbs
 // nothing, which is what lets these be worked out one file at a time and kept.
 func GetDayTallies(d Day, answers []Answer) map[string]Tally {
-	taken := make(map[string]bool)
+	acquired := make(map[string]bool)
 	for _, a := range answers {
 		if a.IsUndo() {
-			taken[a.Undoes] = true
+			acquired[a.Undoes] = true
 		}
 	}
 
-	seen := make(map[string]bool, len(answers))
+	observed := make(map[string]bool, len(answers))
 	out := make(map[string]Tally)
 	for _, a := range answers {
-		if a.IsUndo() || taken[a.ID] || seen[a.ID] {
+		if a.IsUndo() || acquired[a.ID] || observed[a.ID] {
 			continue
 		}
-		seen[a.ID] = true
+		observed[a.ID] = true
 
 		day := d.GetName(a.At)
 		one := out[day]
@@ -117,8 +117,8 @@ func (h History) GetSpentUnder(
 		if d.GetName(a.At) != day {
 			continue
 		}
-		path, held := under[a.CardFace]
-		if !held {
+		path, target := under[a.CardFace]
+		if !target {
 			continue
 		}
 		one := out[path]

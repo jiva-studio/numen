@@ -127,8 +127,8 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 	if err != nil || u.index == nil {
 		return out, err
 	}
-	written := append([]string{in.Stencil}, out.Decks...)
-	return out, note.WrapUnlevelled(u.index(ctx, v, written), written...)
+	content := append([]string{in.Stencil}, out.Decks...)
+	return out, note.WrapUnlevelled(u.index(ctx, v, content), content...)
 }
 
 // MaxDecksPerRename is the most decks an agent's rename reads and writes at once.
@@ -141,15 +141,15 @@ func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
 	if u.maxDecks <= 0 || u.maxDecks == UnboundedDecks {
 		return nil
 	}
-	held, err := u.getDeckPaths(ctx, v)
+	target, err := u.getDeckPaths(ctx, v)
 	if err != nil {
 		return err
 	}
-	if len(held) > u.maxDecks {
+	if len(target) > u.maxDecks {
 		return fmt.Errorf(
 			"this rename reads and writes every deck in the vault, and there are %d of them, "+
 				"which is more than the %d this does at once: rename the field in the window",
-			len(held), u.maxDecks)
+			len(target), u.maxDecks)
 	}
 	return nil
 }

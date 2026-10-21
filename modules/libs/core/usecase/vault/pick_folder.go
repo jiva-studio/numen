@@ -24,9 +24,9 @@ func NewPickFolder(dialog port.FolderDialog) PickFolder {
 
 // Execute returns the folder the person chose.
 func (u PickFolder) Execute(ctx context.Context) (PickedFolder, error) {
-	chosen, isChosen, err := u.dialog.ChooseFolder(ctx, "Choose a folder for a vault", "")
+	selected, isChosen, err := u.dialog.ChooseFolder(ctx, "Choose a folder for a vault", "")
 	if err != nil {
 		return PickedFolder{}, err
 	}
-	return PickedFolder{Path: chosen, IsChosen: isChosen}, nil
+	return PickedFolder{Path: selected, IsChosen: isChosen}, nil
 }

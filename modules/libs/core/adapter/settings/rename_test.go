@@ -7,7 +7,7 @@ import "testing"
 // by a person and by the window, and what one of them wrote between a read and
 // a write is still there when the write lands.
 func TestWhatIsNotRenamed(t *testing.T) {
-	for what, held := range map[string]struct {
+	for what, target := range map[string]struct {
 		file string
 		at   []string
 	}{
@@ -33,11 +33,11 @@ func TestWhatIsNotRenamed(t *testing.T) {
 			`{"appearance":{"zoom":1.5}}`, nil,
 		},
 	} {
-		back, done := renameMember([]byte(held.file), held.at, "interface_scale")
-		if done {
+		back, isDone := renameMember([]byte(target.file), target.at, "interface_scale")
+		if isDone {
 			t.Errorf("%s: renamed, leaving %s", what, back)
 		}
-		if string(back) != held.file {
+		if string(back) != target.file {
 			t.Errorf("%s: the file is now %s", what, back)
 		}
 	}
@@ -46,9 +46,9 @@ func TestWhatIsNotRenamed(t *testing.T) {
 // The name is replaced where it is written and the value is left where it is located,
 // whatever lies between the two.
 func TestARenamedFieldKeepsItsValueAndItsPlace(t *testing.T) {
-	const held = "{\n  \"appearance\": {\n    \"zoom\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"
-	back, done := renameMember([]byte(held), []string{"appearance", "zoom"}, "interface_scale")
-	if !done {
+	const target = "{\n  \"appearance\": {\n    \"zoom\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"
+	back, isDone := renameMember([]byte(target), []string{"appearance", "zoom"}, "interface_scale")
+	if !isDone {
 		t.Fatal("nothing was renamed")
 	}
 	want := "{\n  \"appearance\": {\n    \"interface_scale\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"

@@ -83,8 +83,8 @@ func TestOffsetsAreIntoTheTextAsItStands(t *testing.T) {
 	if got := text[at[0].From:at[0].To]; got != "«дa»" {
 		t.Errorf("the offsets cover %q", got)
 	}
-	if left := text[:at[0].From]; left != "before " {
-		t.Errorf("what stands before is %q", left)
+	if remaining := text[:at[0].From]; remaining != "before " {
+		t.Errorf("what stands before is %q", remaining)
 	}
 }
 

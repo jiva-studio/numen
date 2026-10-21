@@ -25,11 +25,11 @@ func (h handedOver) GetName(handle string) string { return h.names[handle] }
 
 func (h handedOver) GetImportedFile(_ context.Context, handle string) (port.ImportedFile, error) {
 	one := port.ImportedFile{Name: h.names[handle], Handle: handle}
-	if _, held := h.holding[handle]; held {
+	if _, target := h.holding[handle]; target {
 		one.IsFolder = true
 		return one, nil
 	}
-	if _, held := h.bodies[handle]; held {
+	if _, targetVal := h.bodies[handle]; targetVal {
 		one.IsFile = true
 		return one, nil
 	}
@@ -45,8 +45,8 @@ func (h handedOver) List(_ context.Context, handle string) ([]port.ImportedFile,
 }
 
 func (h handedOver) Open(_ context.Context, handle string) (io.ReadCloser, error) {
-	body, held := h.bodies[handle]
-	if !held {
+	body, target := h.bodies[handle]
+	if !target {
 		return nil, io.ErrUnexpectedEOF
 	}
 	return io.NopCloser(strings.NewReader(body)), nil

@@ -26,8 +26,8 @@ func (b *Backend) addCardCurrent(registry *tools.Registry) error {
 			"back empty.",
 		Effect: tools.Reads, Servers: []tools.Server{tools.Review},
 	}, func(ctx context.Context, _ struct{}) (CurrentCard, error) {
-		asked := tools.Asked(ctx)
-		return CurrentCard{Deck: asked[askedFocus], Card: asked[askedMark], Face: asked[askedFace]}, nil
+		request := tools.Asked(ctx)
+		return CurrentCard{Deck: request[askedFocus], Card: request[askedMark], Face: request[askedFace]}, nil
 	})
 }
 

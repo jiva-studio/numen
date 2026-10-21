@@ -81,7 +81,7 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 		return nil, fmt.Errorf("pdf: page %d cannot be drawn at %d DPI: it is %.0f pixels, and %d is the most",
 			index, dpi, pixels, mostPixels)
 	}
-	drawn, err := s.doc.worker.RenderPageInDPI(&requests.RenderPageInDPI{
+	rendered, err := s.doc.worker.RenderPageInDPI(&requests.RenderPageInDPI{
 		DPI:  dpi,
 		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}},
 	})
@@ -93,16 +93,16 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	// memory back. The pixels are copied out, because what is drawn outlives the
 	// call that drew it. A page is drawn in colour unless a format was asked
 	// for, and none is.
-	page, isColour := drawn.Result.RenderedImage.(*image.RGBA)
+	page, isColour := rendered.Result.RenderedImage.(*image.RGBA)
 	// gomutants:disable-next-line BRANCH_IF reason="non-RGBA render output is rejected"
 	if !isColour {
-		drawn.Cleanup()
-		return nil, fmt.Errorf("pdf: page %d was drawn as %T", index, drawn.Result.RenderedImage)
+		rendered.Cleanup()
+		return nil, fmt.Errorf("pdf: page %d was drawn as %T", index, rendered.Result.RenderedImage)
 	}
 	out := image.NewRGBA(page.Bounds())
 	copy(out.Pix, page.Pix)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="worker render buffer is released after copying pixels"
-	drawn.Cleanup()
+	rendered.Cleanup()
 	return out, nil
 }
 

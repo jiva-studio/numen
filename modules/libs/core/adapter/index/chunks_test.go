@@ -161,12 +161,12 @@ func saveSeededVectors(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 func hashOf(t *testing.T, db *DB, chunk int64) []byte {
 	t.Helper()
 
-	var held string
+	var target string
 	if err := db.write.QueryRowContext(t.Context(),
-		`SELECT hash FROM chunks WHERE id = ?`, chunk).Scan(&held); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		`SELECT hash FROM chunks WHERE id = ?`, chunk).Scan(&target); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		t.Fatal(err)
 	}
-	raw, err := hex.DecodeString(held)
+	raw, err := hex.DecodeString(target)
 	if err != nil || len(raw) == 0 {
 		// A fixture that stored no text still needs a key of its own.
 		sum := sha256.Sum256([]byte(strconv.FormatInt(chunk, 10)))
@@ -581,12 +581,12 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	known, err := db.NoteQueries().GetFingerprints(ctx, first.ID)
+	recognized, err := db.NoteQueries().GetFingerprints(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 {
-		t.Errorf("a note scan sees %v, want only the note", known)
+	if len(recognized) != 1 {
+		t.Errorf("a note scan sees %v, want only the note", recognized)
 	}
 	books, err := db.ChunkQueries().GetFingerprints(ctx, first.ID, "book")
 	if err != nil {
@@ -698,10 +698,10 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s", p.Path)
 		}
 	}
-	if done, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10); err != nil {
+	if isDone, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10); err != nil {
 		t.Fatal(err)
-	} else if len(done) != 0 {
-		t.Errorf("%d chunks owe a vector from the model that made theirs", len(done))
+	} else if len(isDone) != 0 {
+		t.Errorf("%d chunks owe a vector from the model that made theirs", len(isDone))
 	}
 }
 
@@ -796,7 +796,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, embedded, err := db.ChunkQueries().GetProgress(ctx, vault.ID, "model")
+	target, embedded, err := db.ChunkQueries().GetProgress(ctx, vault.ID, "model")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -809,13 +809,13 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 		t.Errorf("nothing is embedded yet, and %d are counted", embedded)
 	}
 	// The invariant: everything held either carries a vector or owes one.
-	if int(held) != int(embedded)+len(owing) {
-		t.Errorf("%d held is not %d embedded and %d owing", held, embedded, len(owing))
+	if int(target) != int(embedded)+len(owing) {
+		t.Errorf("%d held is not %d embedded and %d owing", target, embedded, len(owing))
 	}
 
 	saveSeededVectors(t, db, vault, 1)
 
-	held, embedded, err = db.ChunkQueries().GetProgress(ctx, vault.ID, "model")
+	target, embedded, err = db.ChunkQueries().GetProgress(ctx, vault.ID, "model")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -828,10 +828,10 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	}
 	// The total is reached. A count that never reaches it is the defect this
 	// asks about.
-	if held != embedded {
-		t.Errorf("%d held, %d embedded", held, embedded)
+	if target != embedded {
+		t.Errorf("%d held, %d embedded", target, embedded)
 	}
-	if held == 0 {
+	if target == 0 {
 		t.Error("nothing was counted at all")
 	}
 }
@@ -847,14 +847,14 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 	}); err != nil {
 		t.Fatal(err)
 	}
-	cut := make([]chunk.Chunk, 0, len(texts))
+	trimmed := make([]chunk.Chunk, 0, len(texts))
 	for i, text := range texts {
-		cut = append(cut, chunk.Chunk{
+		trimmed = append(trimmed, chunk.Chunk{
 			Start: i * 100, Length: 100, Text: path + " " + text,
 			Small: []chunk.Chunk{{Start: i * 100, Length: 50, Text: text}},
 		})
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, cut); err != nil {
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, trimmed); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -892,26 +892,26 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 
 	// Both halves of a vector follow the chunk: the one still held carries
 	// both, the one that went carries neither.
-	var gone int
+	var removed int
 	for _, p := range owing {
-		held := countRows(t, db, `SELECT count(*) FROM chunks WHERE id = ?`, p.Chunk)
-		if held == 0 {
-			gone++
+		target := countRows(t, db, `SELECT count(*) FROM chunks WHERE id = ?`, p.Chunk)
+		if target == 0 {
+			removed++
 		}
 		if got := countRows(t, db,
-			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`, p.Chunk); got != held {
+			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`, p.Chunk); got != target {
 			t.Errorf("chunk %d is held %d times and stands in %d rows of the coarse index",
-				p.Chunk, held, got)
+				p.Chunk, target, got)
 		}
 		if got := countRows(t, db, `SELECT count(*) FROM chunks c
 		                            JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
-		                            WHERE c.id = ?`, testRecipe, p.Chunk); got != held {
+		                            WHERE c.id = ?`, testRecipe, p.Chunk); got != target {
 			t.Errorf("chunk %d is held %d times and stands in %d rows of vectors",
-				p.Chunk, held, got)
+				p.Chunk, target, got)
 		}
 	}
-	if gone != 1 {
-		t.Fatalf("%d of the chunks the pass was given went, want the one that was cut again", gone)
+	if removed != 1 {
+		t.Fatalf("%d of the chunks the pass was given went, want the one that was cut again", removed)
 	}
 }
 
@@ -1026,14 +1026,14 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 		t.Fatalf("%d vectors survived a rebuild of the chunks, want none", got)
 	}
 
-	kept, err := db.ChunkQueries().GetKeptVectors(ctx, "a recipe", [][]byte{sum[:]})
+	retained, err := db.ChunkQueries().GetKeptVectors(ctx, "a recipe", [][]byte{sum[:]})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(kept) != 1 {
-		t.Fatalf("the index kept %d vectors for text it paid for, want 1", len(kept))
+	if len(retained) != 1 {
+		t.Fatalf("the index kept %d vectors for text it paid for, want 1", len(retained))
 	}
-	if got := kept[hex.EncodeToString(sum[:])]; !bytes.Equal(got, value) {
+	if got := retained[hex.EncodeToString(sum[:])]; !bytes.Equal(got, value) {
 		t.Errorf("what was kept is %d bytes, want the %d that were paid for", len(got), len(value))
 	}
 
@@ -1200,11 +1200,11 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 	cutInto(t, db, first, "library/one.epub", "something else entirely")
 
 	sum := sha256.Sum256([]byte(shared))
-	kept, err := db.ChunkQueries().GetKeptVectors(ctx, "model", [][]byte{sum[:]})
+	retained, err := db.ChunkQueries().GetKeptVectors(ctx, "model", [][]byte{sum[:]})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(kept) != 1 {
+	if len(retained) != 1 {
 		t.Error("the vector for text a book still holds was taken out")
 	}
 }
@@ -1269,7 +1269,7 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	cut := []chunk.Chunk{
+	trimmed := []chunk.Chunk{
 		{
 			Start: 0, Length: 100, Location: "Madhavendra Puri",
 			Opens: []string{"Madhavendra Puri"},
@@ -1296,7 +1296,7 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 			Small: []chunk.Chunk{{Start: 200, Length: 100, Text: "Alice Fenn met him."}},
 		},
 	}
-	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, cut); err != nil {
+	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, trimmed); err != nil {
 		t.Fatal(err)
 	}
 }

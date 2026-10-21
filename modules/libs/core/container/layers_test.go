@@ -126,9 +126,9 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 			if err != nil || !strings.HasPrefix(to, module) {
 				continue
 			}
-			held := strings.TrimPrefix(to, module)
-			if isAdapter(held) || held == "container" {
-				wrong = append(wrong, path+" is tested through "+held)
+			target := strings.TrimPrefix(to, module)
+			if isAdapter(target) || target == "container" {
+				wrong = append(wrong, path+" is tested through "+target)
 			}
 		}
 		return nil
@@ -241,8 +241,8 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 			if err != nil || !strings.HasPrefix(to, module) {
 				continue
 			}
-			if held := strings.TrimPrefix(to, module); isAdapter(held) {
-				wrong = append(wrong, path+" builds "+held+" from inside "+pkg)
+			if target := strings.TrimPrefix(to, module); isAdapter(target) {
+				wrong = append(wrong, path+" builds "+target+" from inside "+pkg)
 			}
 		}
 		return nil
@@ -626,11 +626,11 @@ func identities(file *ast.File) []identity {
 		if !is {
 			return true
 		}
-		held, is := spec.Type.(*ast.StructType)
+		target, is := spec.Type.(*ast.StructType)
 		if !is {
 			return true
 		}
-		for _, one := range held.Fields.List {
+		for _, one := range target.Fields.List {
 			for _, name := range one.Names {
 				if name.IsExported() && strings.HasSuffix(name.Name, "ID") {
 					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
@@ -645,12 +645,12 @@ func identities(file *ast.File) []identity {
 // getTypeName is a type as it is written, and empty for one this rule reads
 // nothing into.
 func getTypeName(at ast.Expr) string {
-	switch held := at.(type) {
+	switch target := at.(type) {
 	case *ast.Ident:
-		return held.Name
+		return target.Name
 	case *ast.SelectorExpr:
-		if from, is := held.X.(*ast.Ident); is {
-			return from.Name + "." + held.Sel.Name
+		if from, is := target.X.(*ast.Ident); is {
+			return from.Name + "." + target.Sel.Name
 		}
 	}
 	return ""
@@ -669,11 +669,11 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var read int
 	for _, at := range []string{"domain", "port"} {
 		dir := getPackageDir(at)
-		held, err := os.ReadDir(dir)
+		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, one := range held {
+		for _, one := range target {
 			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 				strings.HasSuffix(one.Name(), "_test.go") {
 				continue
@@ -738,7 +738,7 @@ type Thing struct {
 // package's own. A variable that holds a port is not one: it is given the
 // adapter, and names what it was given.
 func getClaimedPorts(file *ast.File) []string {
-	var held []string
+	var target []string
 	ast.Inspect(file, func(node ast.Node) bool {
 		decl, is := node.(*ast.GenDecl)
 		if !is || decl.Tok != token.VAR {
@@ -753,13 +753,13 @@ func getClaimedPorts(file *ast.File) []string {
 			}
 			if at, is := named.Type.(*ast.SelectorExpr); is {
 				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-					held = append(held, at.Sel.Name)
+					target = append(target, at.Sel.Name)
 				}
 			}
 		}
 		return true
 	})
-	return held
+	return target
 }
 
 // What the rule refuses, read against a file written to be refused. The three
@@ -772,12 +772,12 @@ var _ port.VaultReader = (*Reader)(nil)
 
 var _, _ port.VaultWriter = (*Writer)(nil), (*Writer)(nil)
 
-var held port.DerivedStore
+var storePort port.DerivedStore
 
 func mount() {
 	var _ port.Recording = (*sound)(nil)
-	var kept port.Agent
-	_, _ = held, kept
+	var agentPort port.Agent
+	_, _ = storePort, agentPort
 }
 `, 0)
 	if err != nil {
@@ -976,12 +976,12 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 // keyed as Interface.Method and giving the method's own name. An embedded
 // interface is the other one's declaration and is read there.
 func methodsIn(dir string) (map[string]string, error) {
-	held, err := os.ReadDir(dir)
+	target, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	declared := map[string]string{}
-	for _, one := range held {
+	for _, one := range target {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
 			continue
@@ -1077,12 +1077,12 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 // getDeclaredTypes are the exported types a folder's own files declare, each
 // said to be an interface or not.
 func getDeclaredTypes(dir string) (map[string]bool, error) {
-	held, err := os.ReadDir(dir)
+	target, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	declared := map[string]bool{}
-	for _, one := range held {
+	for _, one := range target {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
 			continue
@@ -1139,11 +1139,11 @@ func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
 			if !layers[one.Name.Name] {
 				continue
 			}
-			held, err := strconv.Unquote(one.Path.Value)
+			target, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
 				return err
 			}
-			wrong = append(wrong, path+" names "+held+" "+one.Name.Name)
+			wrong = append(wrong, path+" names "+target+" "+one.Name.Name)
 		}
 		return nil
 	})
@@ -1194,11 +1194,11 @@ import (
 
 // getPackage is the package a file belongs to, as the rules name it.
 func getPackage(root, path string) string {
-	held, err := filepath.Rel(root, filepath.Dir(path))
+	target, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
 		return path
 	}
-	return filepath.ToSlash(held)
+	return filepath.ToSlash(target)
 }
 
 // isAdapter says whether a package is an adapter, wherever it stands. An
@@ -1275,11 +1275,11 @@ func family(pkg string) string {
 			depth = max(depth, strings.Count(one, "/")+2)
 		}
 	}
-	held := strings.Split(pkg, "/")
-	if len(held) < depth {
+	target := strings.Split(pkg, "/")
+	if len(target) < depth {
 		return pkg
 	}
-	return strings.Join(held[:depth], "/")
+	return strings.Join(target[:depth], "/")
 }
 
 // getAdaptersIn are the adapters in one folder, named under it. A folder that
@@ -1458,11 +1458,11 @@ func getInstants(file *ast.File) []identity {
 		if !is {
 			return true
 		}
-		held, is := spec.Type.(*ast.StructType)
+		target, is := spec.Type.(*ast.StructType)
 		if !is {
 			return true
 		}
-		for _, one := range held.Fields.List {
+		for _, one := range target.Fields.List {
 			for _, name := range one.Names {
 				if name.IsExported() && strings.HasSuffix(name.Name, "Time") {
 					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
@@ -1486,11 +1486,11 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var read int
 	for _, at := range []string{"domain", "port"} {
 		dir := getPackageDir(at)
-		held, err := os.ReadDir(dir)
+		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, one := range held {
+		for _, one := range target {
 			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 				strings.HasSuffix(one.Name(), "_test.go") {
 				continue
@@ -1561,11 +1561,11 @@ func getMethodIdentities(file *ast.File) []identity {
 		if !is {
 			return true
 		}
-		held, is := spec.Type.(*ast.InterfaceType)
+		target, is := spec.Type.(*ast.InterfaceType)
 		if !is {
 			return true
 		}
-		for _, method := range held.Methods.List {
+		for _, method := range target.Methods.List {
 			signature, is := method.Type.(*ast.FuncType)
 			if !is || len(method.Names) == 0 {
 				continue
@@ -1598,11 +1598,11 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	var wrong []string
 	var read int
 	dir := filepath.Join("..", "port")
-	held, err := os.ReadDir(dir)
+	target, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range held {
+	for _, one := range target {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
 			continue

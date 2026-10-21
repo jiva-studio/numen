@@ -278,16 +278,16 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		started.Run(t.Context())
-		close(done)
+		close(isDone)
 	}()
 
 	close(watcher.changes)
 
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the watch went on after its watcher stopped")
 	}

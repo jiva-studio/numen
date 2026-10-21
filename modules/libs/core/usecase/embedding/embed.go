@@ -425,7 +425,7 @@ func (u Embed) prepareBatch(
 		}
 		hashes[i] = raw
 	}
-	kept, err := u.vectors.GetKeptVectors(ctx, recipe, hashes)
+	retained, err := u.vectors.GetKeptVectors(ctx, recipe, hashes)
 	if err != nil {
 		return preparedBatch{}, fmt.Errorf("what is already made: %w", err)
 	}
@@ -444,7 +444,7 @@ func (u Embed) prepareBatch(
 		deduplicated = make(map[string]int, len(texts))
 	}
 	for i := range texts {
-		value, exists := kept[hex.EncodeToString(hashes[i])]
+		value, exists := retained[hex.EncodeToString(hashes[i])]
 		if !exists || len(hashes[i]) == 0 {
 			key := owing[i].ChunkHash
 			if key == "" {

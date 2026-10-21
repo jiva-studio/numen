@@ -44,7 +44,7 @@ func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
 	if to := answer.Msg.GetMoved().GetTo(); to != "notes/Entropy.md" {
 		t.Errorf("the file the vault holds at notes/Entropy.md is answered for as %q", to)
 	}
-	if held := onDisk(t, f.root, "notes/Entropy.md"); held == "" {
+	if target := onDisk(t, f.root, "notes/Entropy.md"); target == "" {
 		t.Error("the file the client was told about holds nothing")
 	}
 }

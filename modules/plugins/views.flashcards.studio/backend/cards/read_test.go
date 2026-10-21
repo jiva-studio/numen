@@ -197,8 +197,8 @@ func TestTheOneCardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get the card stencils: %v", err)
 	}
-	if held, ok := by["Weather"]; !ok || !reflect.DeepEqual(held, format.Stencil{}) {
-		t.Errorf("the card is cut by %+v, want a stencil of nothing", held)
+	if target, ok := by["Weather"]; !ok || !reflect.DeepEqual(target, format.Stencil{}) {
+		t.Errorf("the card is cut by %+v, want a stencil of nothing", target)
 	}
 }
 

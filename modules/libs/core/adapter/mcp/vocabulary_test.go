@@ -89,8 +89,8 @@ func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for name, said := range words {
-			if said.Kind == domain.StepToolCall {
+		for name, response := range words {
+			if response.Kind == domain.StepToolCall {
 				t.Errorf("%s says nothing about what it does", name)
 			}
 		}

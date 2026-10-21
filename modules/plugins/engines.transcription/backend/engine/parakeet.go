@@ -188,11 +188,11 @@ func (t *Transcriber) Transcribe(ctx context.Context, audio Audio) (string, erro
 		defer v.Destroy()
 	}
 
-	said, err := t.decode(ctx, out)
+	response, err := t.decode(ctx, out)
 	if err != nil {
 		return "", err
 	}
-	return t.pieces.text(said), nil
+	return t.pieces.text(response), nil
 }
 
 // decode is what the encoder's frames say, read one at a time.

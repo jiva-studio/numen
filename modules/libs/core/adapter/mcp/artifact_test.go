@@ -88,18 +88,18 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 		Hash:        derived.Fingerprint([]byte(aVideo)),
 	}
 
-	listed := call[struct {
+	items := call[struct {
 		Artifacts []mcp.Artifact `json:"artifacts"`
 	}](t, session, "artifact_list", map[string]any{"path": made.Path})
 
 	hasCopy := false
-	for _, one := range listed.Artifacts {
+	for _, one := range items.Artifacts {
 		if one.Kind == "copy" {
 			hasCopy = true
 		}
 	}
 	if !hasCopy {
-		t.Fatalf("no copy artifact was listed: %+v", listed.Artifacts)
+		t.Fatalf("no copy artifact was listed: %+v", items.Artifacts)
 	}
 	if len(closed) == 0 {
 		t.Fatal("artifact_list opened no file")

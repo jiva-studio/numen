@@ -21,11 +21,11 @@ var quantising = port.EmbeddingModel{
 func atScale(t *testing.T, m port.EmbeddingModel, scale float64) string {
 	t.Helper()
 
-	recipe, held := m.Recipe(), fmt.Sprintf("@%g", port.Int8Scale)
-	if !strings.HasSuffix(recipe, held) {
+	recipe, target := m.Recipe(), fmt.Sprintf("@%g", port.Int8Scale)
+	if !strings.HasSuffix(recipe, target) {
 		t.Fatalf("the recipe says nothing about the scale its bytes sit on: %s", recipe)
 	}
-	return strings.TrimSuffix(recipe, held) + fmt.Sprintf("@%g", scale)
+	return strings.TrimSuffix(recipe, target) + fmt.Sprintf("@%g", scale)
 }
 
 // TestAScaleThatMovedBuysTheVectorsAgain is the guarantee the recipe exists
@@ -93,12 +93,12 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Errorf("%d chunks are asked for again after the scale moved, want 2", len(owed))
 	}
 
-	kept, err := db.ChunkQueries().GetKeptVectors(ctx, quantising.Recipe(), hashes)
+	retained, err := db.ChunkQueries().GetKeptVectors(ctx, quantising.Recipe(), hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, hash := range hashes {
-		if _, held := kept[hex.EncodeToString(hash)]; held {
+		if _, target := retained[hex.EncodeToString(hash)]; target {
 			t.Errorf("a vector quantised at another scale is handed back for %x", hash)
 		}
 	}

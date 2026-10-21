@@ -52,16 +52,16 @@ func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 	if len(marked.Unwritten) != 0 {
 		t.Fatalf("the deck was written and is named as unwritten: %v", marked.Unwritten)
 	}
-	if held := read(t, s.vault, "decks/Own.md"); !strings.Contains(held, "## Leaf mould ^") {
-		t.Errorf("the deck carries no mark: %q", held)
+	if target := read(t, s.vault, "decks/Own.md"); !strings.Contains(target, "## Leaf mould ^") {
+		t.Errorf("the deck carries no mark: %q", target)
 	}
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 {
-		t.Errorf("the marked card stands %d times, want once", len(stood))
+	if len(status) != 1 {
+		t.Errorf("the marked card stands %d times, want once", len(status))
 	}
 }
 

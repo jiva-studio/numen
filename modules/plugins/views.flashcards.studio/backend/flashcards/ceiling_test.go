@@ -156,8 +156,8 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 	}
 
 	whole := 0
-	for _, held := range byDeck(sits(flashcards.Scope{})) {
-		whole += held
+	for _, target := range byDeck(sits(flashcards.Scope{})) {
+		whole += target
 	}
 	if whole != 30 {
 		t.Errorf("the whole vault hands over %d card faces, and the day holds 30", whole)

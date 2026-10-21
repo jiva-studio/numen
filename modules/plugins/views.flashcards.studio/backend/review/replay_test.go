@@ -28,9 +28,9 @@ func TestAnswersAreCountedInTheOrderTheyWereGiven(t *testing.T) {
 	want := review.OrderAnswers([]review.Answer{first, second, third}).Replay(ahead, review.ScheduleBy(by))
 	got := review.OrderAnswers([]review.Answer{third, first, second}).Replay(ahead, review.ScheduleBy(by))
 
-	shown := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if got[shown] != want[shown] {
-		t.Errorf("read out of order gave %+v, want %+v", got[shown], want[shown])
+	displayed := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if got[displayed] != want[displayed] {
+		t.Errorf("read out of order gave %+v, want %+v", got[displayed], want[displayed])
 	}
 }
 
@@ -41,9 +41,9 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 	late := makeAnswer("01B", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
 
 	by := review.NewFSRS()
-	shown := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	one := review.OrderAnswers([]review.Answer{early, late}).Replay(ahead, review.ScheduleBy(by))[shown]
-	other := review.OrderAnswers([]review.Answer{late, early}).Replay(ahead, review.ScheduleBy(by))[shown]
+	displayed := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	one := review.OrderAnswers([]review.Answer{early, late}).Replay(ahead, review.ScheduleBy(by))[displayed]
+	other := review.OrderAnswers([]review.Answer{late, early}).Replay(ahead, review.ScheduleBy(by))[displayed]
 	if one != other {
 		t.Errorf("one history read two ways gave %+v and %+v", one, other)
 	}
@@ -52,12 +52,12 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 // A person who took an answer back is not counted as having given it, and both
 // lines stay in the file.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
-	given := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
+	provided := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
 	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:00:04Z"), Undoes: "01A"}
 
-	left := review.OrderAnswers([]review.Answer{given, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
-	if len(left) != 0 {
-		t.Errorf("a card face whose only answer was taken back has no schedule, got %+v", left)
+	remaining := review.OrderAnswers([]review.Answer{provided, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	if len(remaining) != 0 {
+		t.Errorf("a card face whose only answer was taken back has no schedule, got %+v", remaining)
 	}
 }
 
@@ -66,12 +66,12 @@ func TestEachFaceOfACardIsScheduledOnItsOwn(t *testing.T) {
 	recognise := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
 	name := makeAnswer("01B", "k7m2xq9fzp", "Name it", "2026-08-20T09:00:10Z", review.Again)
 
-	left := review.OrderAnswers([]review.Answer{recognise, name}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
-	if len(left) != 2 {
-		t.Fatalf("two faces answered left %d schedules", len(left))
+	remaining := review.OrderAnswers([]review.Answer{recognise, name}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	if len(remaining) != 2 {
+		t.Fatalf("two faces answered left %d schedules", len(remaining))
 	}
-	easy := left[review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}]
-	again := left[review.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}]
+	easy := remaining[review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}]
+	again := remaining[review.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}]
 	if !easy.Due.After(again.Due) {
 		t.Errorf("the face that came back easily is due %v, the one that did not %v", easy.Due, again.Due)
 	}
@@ -92,8 +92,8 @@ func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 	}
 
 	by := review.NewFSRS()
-	shown := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if one, other := review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(by))[shown], review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(by))[shown]; one != other {
+	displayed := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if one, other := review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(by))[displayed], review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(by))[displayed]; one != other {
 		t.Errorf("one history gave %+v and then %+v", one, other)
 	}
 }
@@ -103,43 +103,43 @@ func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 // counted: a card that came through this twice would be sent away for longer
 // than it was earned.
 func TestALineThatStandsTwiceIsCountedOnce(t *testing.T) {
-	shown := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	one := makeAnswer("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", review.Good)
-	two := makeAnswer("01B", shown.Card, shown.Face, "2026-08-21T09:00:00Z", review.Good)
+	displayed := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	one := makeAnswer("01A", displayed.Card, displayed.Face, "2026-08-20T09:00:00Z", review.Good)
+	two := makeAnswer("01B", displayed.Card, displayed.Face, "2026-08-21T09:00:00Z", review.Good)
 
 	by := review.NewFSRS()
 	once := review.OrderAnswers([]review.Answer{one, two}).Replay(ahead, review.ScheduleBy(by))
 	// The whole run again, as a conflicted copy of the file lands beside it.
 	twice := review.OrderAnswers([]review.Answer{one, two, one, two}).Replay(ahead, review.ScheduleBy(by))
 
-	if once[shown] != twice[shown] {
+	if once[displayed] != twice[displayed] {
 		t.Errorf("the same run twice left the card at %+v, once leaves it at %+v",
-			twice[shown], once[shown])
+			twice[displayed], once[displayed])
 	}
-	if twice[shown].Reps != 2 {
-		t.Errorf("the card was answered twice and has been through %d", twice[shown].Reps)
+	if twice[displayed].Reps != 2 {
+		t.Errorf("the card was answered twice and has been through %d", twice[displayed].Reps)
 	}
 }
 
 // An answer taken back stays taken back however many copies of the line that
 // took it back arrive.
 func TestALineTakingAnAnswerBackTwiceTakesItBackOnce(t *testing.T) {
-	shown := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	given := makeAnswer("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", review.Good)
-	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:01:00Z"), Undoes: given.ID}
+	displayed := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	provided := makeAnswer("01A", displayed.Card, displayed.Face, "2026-08-20T09:00:00Z", review.Good)
+	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:01:00Z"), Undoes: provided.ID}
 
-	left := review.OrderAnswers([]review.Answer{given, back, given, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
-	if _, held := left[shown]; held {
-		t.Errorf("the answer was taken back and the card stands at %+v", left[shown])
+	remaining := review.OrderAnswers([]review.Answer{provided, back, provided, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	if _, target := remaining[displayed]; target {
+		t.Errorf("the answer was taken back and the card stands at %+v", remaining[displayed])
 	}
 }
 
 // A card face nobody has answered has no schedule, and that is what a person
 // means by a new card.
 func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
-	left := review.OrderAnswers(nil).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
-	if len(left) != 0 {
-		t.Errorf("no answers left %d schedules", len(left))
+	remaining := review.OrderAnswers(nil).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	if len(remaining) != 0 {
+		t.Errorf("no answers left %d schedules", len(remaining))
 	}
 	if !(review.Schedule{}).IsNew() {
 		t.Error("a schedule nobody has answered says it is not new")

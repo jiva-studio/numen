@@ -21,8 +21,8 @@ const putRight = "The name and the named are not two, said Rupa."
 type shelf map[domain.ArtifactName][]byte
 
 func (b shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
-	raw, held := b[name]
-	if !held {
+	raw, target := b[name]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return raw, nil
@@ -30,8 +30,8 @@ func (b shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte
 
 // Open is one file of the store, which a copy of a video is played from.
 func (b shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
-	raw, held := b[name]
-	if !held {
+	raw, target := b[name]
+	if !target {
 		return nil, 0, fs.ErrNotExist
 	}
 	return readingBytes{bytes.NewReader(raw)}, int64(len(raw)), nil
@@ -116,8 +116,8 @@ func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): writeCorrections(),
 	}
-	for _, held := range domain.GetArtifactNames(domain.ASR, "abc123") {
-		if err := store.RemoveArtifact(t.Context(), held); err != nil {
+	for _, target := range domain.GetArtifactNames(domain.ASR, "abc123") {
+		if err := store.RemoveArtifact(t.Context(), target); err != nil {
 			t.Fatal(err)
 		}
 	}

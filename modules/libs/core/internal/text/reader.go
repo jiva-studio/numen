@@ -177,13 +177,13 @@ func ReadComposed(
 	raw []byte,
 ) (*Document, error) {
 	if domain.IsTimedProducer(producer) {
-		put, err := readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash))
+		placed, err := readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash))
 		if err != nil {
 			return nil, err
 		}
 		// A file beside the artifact holding no words is nothing put right, and
 		// the recording says what was heard in it.
-		if doc := ReadTranscript(put); doc.Text != "" {
+		if doc := ReadTranscript(placed); doc.Text != "" {
 			return doc, nil
 		}
 		return ReadTranscript(raw), nil
@@ -230,8 +230,8 @@ func readOptional(ctx context.Context, store port.DerivedStore, name domain.Arti
 func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
-	if put := correction.Unpack(corrections); len(put) > 0 {
-		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, put)
+	if placed := correction.Unpack(corrections); len(placed) > 0 {
+		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, placed)
 	}
 	doc := &Document{Text: prose}
 	for _, p := range getPartStarts(prose, named) {
@@ -314,7 +314,7 @@ func ReadAnswer(raw []byte) (kind, detail string) {
 		if line == one {
 			return one, ""
 		}
-		if rest, cut := strings.CutPrefix(line, one+": "); cut {
+		if rest, trimmed := strings.CutPrefix(line, one+": "); trimmed {
 			return one, rest
 		}
 	}

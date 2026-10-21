@@ -345,11 +345,11 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	} {
 		t.Run(at.name, func(t *testing.T) {
 			root := t.TempDir()
-			held := filepath.Join(root, filepath.FromSlash(at.makes))
-			if err := os.MkdirAll(filepath.Dir(held), 0o755); err != nil {
+			target := filepath.Join(root, filepath.FromSlash(at.makes))
+			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(held, []byte("what was there\n"), 0o644); err != nil {
+			if err := os.WriteFile(target, []byte("what was there\n"), 0o644); err != nil {
 				t.Fatal(err)
 			}
 			if err := os.Symlink(filepath.FromSlash(at.makes), filepath.Join(root, "Note.md")); err != nil {
@@ -367,7 +367,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 			case at.sentinel != nil && !errors.Is(err, at.sentinel):
 				t.Errorf("writing through the link gave %v, want %v", err, at.sentinel)
 			}
-			raw, readErr := os.ReadFile(held)
+			raw, readErr := os.ReadFile(target)
 			if readErr != nil {
 				t.Fatal(readErr)
 			}
@@ -410,12 +410,12 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("PNG")); err != nil {
 		t.Fatalf("the file failed: %v", err)
 	}
-	held, err := os.ReadFile(filepath.Join(root, "scans", "Cover.png"))
+	target, err := os.ReadFile(filepath.Join(root, "scans", "Cover.png"))
 	if err != nil {
 		t.Fatalf("the file did not arrive: %v", err)
 	}
-	if string(held) != "PNG" {
-		t.Errorf("the file arrived as %q", held)
+	if string(target) != "PNG" {
+		t.Errorf("the file arrived as %q", target)
 	}
 
 	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, port.ErrOccupied) {
@@ -464,12 +464,12 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
-	held := filepath.Join(root, filesystem.DefaultServiceDir, "ocr")
-	if err := os.MkdirAll(held, 0o755); err != nil {
+	target := filepath.Join(root, filesystem.DefaultServiceDir, "ocr")
+	if err := os.MkdirAll(target, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	kept := filepath.Join(held, "abc.txt")
-	if err := os.WriteFile(kept, []byte("what was recognised\n"), 0o644); err != nil {
+	retained := filepath.Join(target, "abc.txt")
+	if err := os.WriteFile(retained, []byte("what was recognised\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// The link is written the way a sync tool writes one, relative to the
@@ -492,14 +492,14 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		}
 	}
 
-	body, err := os.ReadFile(kept)
+	body, err := os.ReadFile(retained)
 	if err != nil {
 		t.Fatalf("the derived file did not survive: %v", err)
 	}
 	if string(body) != "what was recognised\n" {
 		t.Errorf("the derived file holds %q", body)
 	}
-	if entries, err := os.ReadDir(held); err != nil || len(entries) != 1 {
+	if entries, err := os.ReadDir(target); err != nil || len(entries) != 1 {
 		t.Errorf("the application's folder holds %v, %v", entries, err)
 	}
 }
@@ -560,8 +560,8 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
-	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), held); err != nil {
+	target := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
+	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), target); err != nil {
 		t.Fatalf("the note could not be saved: %v", err)
 	}
 	if err := w.Import(ctx, stem+".png", strings.NewReader("PNG")); err != nil {

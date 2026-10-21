@@ -23,8 +23,8 @@ func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	}
 
 	for _, limit := range []int{64, 512} {
-		cut := note.CutNotes{Sizes: chunking.Sizes{Limit: limit}}.Execute([]domain.Note{n})
-		chunks := cut[0].Chunks
+		trimmed := note.CutNotes{Sizes: chunking.Sizes{Limit: limit}}.Execute([]domain.Note{n})
+		chunks := trimmed[0].Chunks
 		if len(chunks) != 1 {
 			t.Fatalf("a note is one large chunk, and it was cut into %d", len(chunks))
 		}
@@ -35,8 +35,8 @@ func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 			t.Fatalf("nothing inside the note carries a vector at a limit of %d", limit)
 		}
 		for _, small := range chunks[0].Small {
-			if held := utf8.RuneCountInString(small.Text); held > limit {
-				t.Errorf("a chunk holds %d characters, told to hold %d", held, limit)
+			if target := utf8.RuneCountInString(small.Text); target > limit {
+				t.Errorf("a chunk holds %d characters, told to hold %d", target, limit)
 			}
 		}
 	}
@@ -60,18 +60,18 @@ func TestANoteOfADeclaredTypeIsKeptAsItsProfileSays(t *testing.T) {
 	bareNote := domain.Note{Type: "bare", Title: "B", Headings: []domain.Heading{{Level: 1, Text: "Face"}}}
 	ordinary := domain.Note{Type: domain.TypeNote, Title: "O", Body: "# One\n", Headings: []domain.Heading{{Level: 1, Text: "One ^kept"}}}
 
-	cut := cuts.Execute([]domain.Note{sheet, bareNote, ordinary})
+	trimmed := cuts.Execute([]domain.Note{sheet, bareNote, ordinary})
 
-	if len(cut[0].Chunks) == 0 {
-		t.Errorf("a profile that says nothing of chunks has the note cut: %+v", cut[0])
+	if len(trimmed[0].Chunks) == 0 {
+		t.Errorf("a profile that says nothing of chunks has the note cut: %+v", trimmed[0])
 	}
-	if got := cut[0].Headings; len(got) != 2 || got[0].Text != "Part" || got[1].Text != "Q" {
+	if got := trimmed[0].Headings; len(got) != 2 || got[0].Text != "Part" || got[1].Text != "Q" {
 		t.Errorf("the sheet keeps its section and its card without the mark, got %+v", got)
 	}
-	if len(cut[1].Headings) != 0 {
-		t.Errorf("a type with no headings keeps %+v", cut[1].Headings)
+	if len(trimmed[1].Headings) != 0 {
+		t.Errorf("a type with no headings keeps %+v", trimmed[1].Headings)
 	}
-	if got := cut[2].Headings; len(got) != 1 || got[0].Text != "One ^kept" {
+	if got := trimmed[2].Headings; len(got) != 1 || got[0].Text != "One ^kept" {
 		t.Errorf("an ordinary note keeps every heading as it is, got %+v", got)
 	}
 }
@@ -82,9 +82,9 @@ func TestANoteOfATypeWithNoChunksIsNotCut(t *testing.T) {
 	}}
 	deck := domain.Note{Type: "deck", Title: "Deck", Body: "# Part\n"}
 
-	cut := cuts.Execute([]domain.Note{deck})
+	trimmed := cuts.Execute([]domain.Note{deck})
 
-	if len(cut[0].Chunks) != 0 {
-		t.Errorf("a note whose type has no chunks was cut: %+v", cut[0].Chunks)
+	if len(trimmed[0].Chunks) != 0 {
+		t.Errorf("a note whose type has no chunks was cut: %+v", trimmed[0].Chunks)
 	}
 }

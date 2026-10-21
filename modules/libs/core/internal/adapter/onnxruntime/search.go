@@ -208,15 +208,15 @@ func isConfigSeparator(r rune) bool {
 // removeDuplicates returns the paths with each file kept once, at the first
 // path that names it.
 func removeDuplicates(paths []string) []string {
-	seen := make(map[string]bool, len(paths))
+	observed := make(map[string]bool, len(paths))
 	var out []string
 	for _, at := range paths {
 		resolved, err := filepath.EvalSymlinks(at)
 		if err != nil {
 			resolved = at
 		}
-		if !seen[resolved] {
-			seen[resolved] = true
+		if !observed[resolved] {
+			observed[resolved] = true
 			out = append(out, at)
 		}
 	}

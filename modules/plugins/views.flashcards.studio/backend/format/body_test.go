@@ -129,10 +129,10 @@ func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
 	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
-	held := append([]format.FaceTemplate(nil), read.Faces...)
-	held[0].Back = "**{{Height}}**"
+	target := append([]format.FaceTemplate(nil), read.Faces...)
+	target[0].Back = "**{{Height}}**"
 
-	body, err := format.StencilBody(read.Preamble, held, read.Tail)
+	body, err := format.StencilBody(read.Preamble, target, read.Tail)
 	if err != nil {
 		t.Fatalf("stencil body: %v", err)
 	}

@@ -120,10 +120,10 @@ func TestOnlyAWrittenSchemeIsReadAsOne(t *testing.T) {
 		"`", "{", "@", "[", "/", ":", "*", ",", "_", "é", "Я",
 		"a_", "_a", "a b", "ab!", "!ab", "ab{", "a`b", "a@b", "a[b", "a/b", "a:b", "a*b", "a,b",
 	} {
-		written := scheme + "://v"
-		got := domain.ParseAddress(written)
-		if got != (domain.Address{Scheme: domain.SchemeName, Value: written}) {
-			t.Errorf("%q is read as %+v", written, got)
+		content := scheme + "://v"
+		got := domain.ParseAddress(content)
+		if got != (domain.Address{Scheme: domain.SchemeName, Value: content}) {
+			t.Errorf("%q is read as %+v", content, got)
 		}
 	}
 }

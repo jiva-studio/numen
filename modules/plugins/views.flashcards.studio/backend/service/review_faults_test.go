@@ -27,11 +27,11 @@ func (unopenable) Open(domain.Vault) (ports.DerivedStore, error) {
 // A session whose run cannot be opened is an internal error, and the page is
 // handed no run to answer on.
 func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
+	api, target := newAPI(t, deck)
 	api.scenarios().flash.Log = flashcards.Log{Stores: unopenable{}}
 
 	out, err := api.StartSession(t.Context(),
-		connect.NewRequest(&v1.StartSessionRequest{Vault: string(held[0].ID)}))
+		connect.NewRequest(&v1.StartSessionRequest{Vault: string(target[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
@@ -43,12 +43,12 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 // A vault whose answers cannot be counted is an internal error and no list of
 // days.
 func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
+	api, target := newAPI(t, deck)
 	api.scenarios().flash.GetReviewDays = flashcards.NewGetReviewDays(
 		flashcards.NewCountReviews(unopenable{}, api.scenarios().flash.Schedules, reviewDay, time.Now))
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(held[0].ID)}))
+		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
@@ -79,8 +79,8 @@ func TestAnAnswerAndATakingBackNameTheVaultNobodyHolds(t *testing.T) {
 
 // Taking an answer back answers with a response, which is empty.
 func TestTakingAnAnswerBackIsAnsweredWithAResponse(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 	session := startSession(t, api, v)
 	answer := answerCard(t, api, string(v.ID), session)
 
@@ -113,8 +113,8 @@ func TestACardWithNoProjectionCarriesNone(t *testing.T) {
 // A stretch reaches every day of a long history, answered and still to come:
 // the days outside it do not end the walk through the days inside it.
 func TestAStretchOfALongHistoryHoldsEveryDayInsideIt(t *testing.T) {
-	api, held := newAPI(t, lived)
-	v := held[0]
+	api, target := newAPI(t, lived)
+	v := target[0]
 	runDays(t, api, v, 14)
 
 	list := func(from, to string) *v1.ListReviewDaysResponse {
@@ -165,9 +165,9 @@ func (refusingStores) Open(domain.Vault) (ports.DerivedStore, error) { return ap
 // An answer the run's file would not take is an internal error, and so is the
 // taking back of one.
 func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
+	api, target := newAPI(t, deck)
 	api.scenarios().flash.Log = flashcards.Log{Stores: refusingStores{}}
-	v := held[0]
+	v := target[0]
 	session := startSession(t, api, v)
 	card := session.GetCards()[0]
 
@@ -189,11 +189,11 @@ func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 
 // A session that cannot be worked out is an internal error and opens no run.
 func TestASessionThatCannotBeWorkedOutIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
+	api, target := newAPI(t, deck)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	out, err := api.StartSession(ctx, connect.NewRequest(&v1.StartSessionRequest{Vault: string(held[0].ID)}))
+	out, err := api.StartSession(ctx, connect.NewRequest(&v1.StartSessionRequest{Vault: string(target[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal || out != nil {
 		t.Errorf("a session that could not be worked out came back with %+v and %v", out, err)
 	}

@@ -124,17 +124,17 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var held *flashcards.PresetCardsDue
+	var target *flashcards.PresetCardsDue
 	for at, one := range owing.Presets {
 		if one.Preset == "Empty.md" {
-			held = &owing.Presets[at]
+			target = &owing.Presets[at]
 		}
 	}
-	if held == nil {
+	if target == nil {
 		t.Fatalf("the preset nothing points at is not in the count: %+v", owing.Presets)
 	}
-	if *held != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
-		t.Errorf("it came to %+v, want a preset nothing stands under", *held)
+	if *target != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
+		t.Errorf("it came to %+v, want a preset nothing stands under", *target)
 	}
 }
 
@@ -148,8 +148,8 @@ func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 	answer(t, before, "k7m2xq9fzp", 6*time.Second)
 
 	session := s.run(t, saturday)
-	given := answer(t, session, "zpqrstvwxy", 9*time.Second)
-	if _, err := session.TakeBack(t.Context(), given); err != nil {
+	provided := answer(t, session, "zpqrstvwxy", 9*time.Second)
+	if _, err := session.TakeBack(t.Context(), provided); err != nil {
 		t.Fatal(err)
 	}
 
@@ -257,12 +257,12 @@ func answerWith(
 	rating review.Rating, took time.Duration,
 ) string {
 	t.Helper()
-	given, err := record.Answer(
+	provided, err := record.Answer(
 		t.Context(), review.CardFaceID{Card: card, Face: "Say it"}, rating, took)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return given.ID
+	return provided.ID
 }
 
 // A preset a deck names is pointed at whatever the deck holds, and how many
@@ -329,14 +329,14 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 // first check can run.
 func TestACountIsDroppedOnceTheWindowHasGone(t *testing.T) {
 	t.Parallel()
-	gone, went := context.WithCancel(t.Context())
+	removed, went := context.WithCancel(t.Context())
 	went()
 
 	u := flashcards.NewCountCardsDue(
 		flashcards.ListCardFaces{}, flashcards.Schedules{}, flashcards.Presets{},
 		review.Day{}, time.Now,
 	)
-	_, err := u.Execute(gone, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
+	_, err := u.Execute(removed, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("the count came back with %v", err)
 	}

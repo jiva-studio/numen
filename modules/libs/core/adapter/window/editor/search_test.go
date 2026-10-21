@@ -91,7 +91,7 @@ func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
 		"Animals.md": "deck",
 	}
 	for path, is := range want {
-		if got, held := types[path]; !held || got != is {
+		if got, target := types[path]; !target || got != is {
 			t.Errorf("the name found in %s is drawn as %v, want %v", path, got, is)
 		}
 	}
@@ -142,7 +142,7 @@ func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
 		for _, one := range answer.Msg.GetFound() {
 			kinds[one.GetPath()] = one.GetKind()
 		}
-		if _, held := kinds["library/A Book.epub"]; held {
+		if _, target := kinds["library/A Book.epub"]; target {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -153,7 +153,7 @@ func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
 		"library/A Book.epub": v1.SourceKind_SOURCE_KIND_BOOK,
 	}
 	for path, is := range want {
-		if got, held := kinds[path]; !held || got != is {
+		if got, targetVal := kinds[path]; !targetVal || got != is {
 			t.Errorf("the passage out of %s came back as %v, want %v", path, got, is)
 		}
 	}
@@ -339,7 +339,7 @@ func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
 		"Animal.md":  "stencil",
 	}
 	for path, is := range want {
-		if got, held := types[path]; !held || got != is {
+		if got, target := types[path]; !target || got != is {
 			t.Errorf("the node %s is drawn as %v, want %v", path, got, is)
 		}
 	}

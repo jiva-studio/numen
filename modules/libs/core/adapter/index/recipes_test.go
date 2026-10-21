@@ -56,20 +56,20 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		}
 	}
 
-	gone, err := db.DeleteOtherRecipeVectors(ctx, now)
+	removed, err := db.DeleteOtherRecipeVectors(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gone != int64(len(hashes)) {
-		t.Errorf("%d vectors went, want %d", gone, len(hashes))
+	if removed != int64(len(hashes)) {
+		t.Errorf("%d vectors went, want %d", removed, len(hashes))
 	}
 
-	kept, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes)
+	retained, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, hash := range hashes {
-		if _, held := kept[hex.EncodeToString(hash)]; !held {
+		if _, target := retained[hex.EncodeToString(hash)]; !target {
 			t.Errorf("the vector under the recipe in use went with the rest: %x", hash)
 		}
 	}
@@ -83,14 +83,14 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 
 	// A recipe nobody named takes nothing out: the store is not emptied by a
 	// run that has no model to say what it is holding vectors for.
-	if gone, err := db.DeleteOtherRecipeVectors(ctx, ""); err != nil || gone != 0 {
-		t.Errorf("forgetting under no recipe took %d vectors out: %v", gone, err)
+	if removedVal, err := db.DeleteOtherRecipeVectors(ctx, ""); err != nil || removedVal != 0 {
+		t.Errorf("forgetting under no recipe took %d vectors out: %v", removedVal, err)
 	}
 	if err := db.Compact(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if held, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes); err != nil || len(held) != len(hashes) {
-		t.Errorf("%d vectors survived the vacuum, want %d: %v", len(held), len(hashes), err)
+	if targetVal, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes); err != nil || len(targetVal) != len(hashes) {
+		t.Errorf("%d vectors survived the vacuum, want %d: %v", len(targetVal), len(hashes), err)
 	}
 }
 

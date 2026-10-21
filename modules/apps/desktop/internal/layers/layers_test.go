@@ -99,9 +99,9 @@ func readSources(t *testing.T) []standing {
 func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	var wrong []string
 	var read int
-	for _, held := range readSources(t) {
-		from := held.in
-		for _, one := range held.file.Imports {
+	for _, target := range readSources(t) {
+		from := target.in
+		for _, one := range target.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
 				t.Fatal(err)
@@ -154,14 +154,14 @@ func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 // window they are looking at. A logger would write to neither.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
-	for _, held := range readSources(t) {
-		for _, one := range held.file.Imports {
+	for _, target := range readSources(t) {
+		for _, one := range target.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, held.at+" imports "+to)
+				wrong = append(wrong, target.at+" imports "+to)
 			}
 		}
 	}
@@ -196,9 +196,9 @@ func TestWhatTheLoggingRuleRefuses(t *testing.T) {
 // nothing yet asks it for that method.
 func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
-	for _, held := range readSources(t) {
-		for _, one := range getClaimedPorts(held.file) {
-			wrong = append(wrong, held.at+" names port."+one)
+	for _, target := range readSources(t) {
+		for _, one := range getClaimedPorts(target.file) {
+			wrong = append(wrong, target.at+" names port."+one)
 		}
 	}
 	for _, one := range wrong {
@@ -214,7 +214,7 @@ func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 // package's own. A variable that holds a port is not one: it is given what
 // answers the port, and names what it was given.
 func getClaimedPorts(file *ast.File) []string {
-	var held []string
+	var target []string
 	ast.Inspect(file, func(node ast.Node) bool {
 		decl, is := node.(*ast.GenDecl)
 		if !is || decl.Tok != token.VAR {
@@ -229,13 +229,13 @@ func getClaimedPorts(file *ast.File) []string {
 			}
 			if at, is := named.Type.(*ast.SelectorExpr); is {
 				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-					held = append(held, at.Sel.Name)
+					target = append(target, at.Sel.Name)
 				}
 			}
 		}
 		return true
 	})
-	return held
+	return target
 }
 
 // What the rule refuses, read against a file written to be refused. The three
@@ -248,12 +248,12 @@ var _ port.Agent = (*Agent)(nil)
 
 var _, _ port.Trash = (*Bin)(nil), (*Bin)(nil)
 
-var held port.Clock
+var clockPort port.Clock
 
 func mount() {
 	var _ port.Recording = (*sound)(nil)
-	var kept port.Agent
-	_, _ = held, kept
+	var agentPort port.Agent
+	_, _ = clockPort, agentPort
 }
 `, 0)
 	if err != nil {
@@ -267,18 +267,18 @@ func mount() {
 
 // getPackage is the package a file belongs to, as the rules name it.
 func getPackage(root, path string) string {
-	held, err := filepath.Rel(root, filepath.Dir(path))
+	target, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
 		return path
 	}
-	return filepath.ToSlash(held)
+	return filepath.ToSlash(target)
 }
 
 // application is the one a package belongs to.
 func application(pkg string) string {
-	held, _, _ := strings.Cut(pkg, "/")
-	if held == "desktop-monolith" {
+	target, _, _ := strings.Cut(pkg, "/")
+	if target == "desktop-monolith" {
 		return "desktop"
 	}
-	return held
+	return target
 }

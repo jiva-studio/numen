@@ -37,10 +37,10 @@ func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
 // to close what that step has open.
 func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 	running := make(chan struct{})
-	held := make(chan struct{})
+	target := make(chan struct{})
 	steps := NewSequence(func() {
 		close(running)
-		<-held
+		<-target
 	})
 
 	go steps.Run()
@@ -58,7 +58,7 @@ func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 	case <-time.After(300 * time.Millisecond):
 	}
 
-	close(held)
+	close(target)
 	select {
 	case <-returned:
 	case <-time.After(5 * time.Second):

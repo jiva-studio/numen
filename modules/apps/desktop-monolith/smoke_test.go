@@ -48,11 +48,11 @@ func newChatAPI(t *testing.T) *httptest.Server {
 			_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "small-model", "name": "Small"}}})
 			return
 		}
-		var asked struct {
+		var request struct {
 			Stream bool `json:"stream"`
 		}
-		_ = json.NewDecoder(r.Body).Decode(&asked)
-		if !asked.Stream {
+		_ = json.NewDecoder(r.Body).Decode(&request)
+		if !request.Stream {
 			_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{
 				{"message": map[string]string{"role": "assistant", "content": modelReply}, "finish_reason": "stop"},
 			}})
@@ -181,14 +181,14 @@ func ask(t *testing.T, client numenv1connect.AgentServiceClient, task *numenv1.A
 	if err != nil {
 		t.Fatalf("AskAgent: %v", err)
 	}
-	var said strings.Builder
+	var response strings.Builder
 	for stream.Receive() {
-		said.WriteString(stream.Msg().GetText())
+		response.WriteString(stream.Msg().GetText())
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatalf("AskAgent stream: %v", err)
 	}
-	return said.String()
+	return response.String()
 }
 
 // newClient is the HTTP client that reaches an endpoint, in-process or on a port.
@@ -271,7 +271,7 @@ func listCodingAgentPrograms(t *testing.T, host port.PluginManager) map[string][
 	t.Helper()
 	// Codex is asked for its models through a command that does not exist, so no installed CLI is started.
 	absentCodex := []*numenv1.AgentProgramCommand{{Program: "codex", Command: []string{filepath.Join(t.TempDir(), "absent")}}}
-	listed := make(map[string][]string, len(codingAgentIDs))
+	items := make(map[string][]string, len(codingAgentIDs))
 	for _, id := range codingAgentIDs {
 		endpoint, err := host.EnsureActive(t.Context(), id)
 		if err != nil {
@@ -282,10 +282,10 @@ func listCodingAgentPrograms(t *testing.T, host port.PluginManager) map[string][
 		if err != nil {
 			t.Fatalf("GetAgentPrograms of %s: %v", id, err)
 		}
-		listed[id] = nil
+		items[id] = nil
 		for _, program := range res.Msg.GetPrograms() {
-			listed[id] = append(listed[id], program.GetName())
+			items[id] = append(items[id], program.GetName())
 		}
 	}
-	return listed
+	return items
 }

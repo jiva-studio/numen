@@ -109,8 +109,8 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 			// A map hands its keys over in whatever order it holds them, and a
 			// note read twice says the same both times.
 			for _, name := range slices.Sorted(maps.Keys(days)) {
-				day, known := Weekday(name)
-				if !known {
+				day, recognized := Weekday(name)
+				if !recognized {
 					problems = append(problems, "the load of "+name+" is not a day of the week")
 					continue
 				}
@@ -149,8 +149,8 @@ var weekdays = map[string]time.Weekday{
 
 // Weekday is the day one of those names, and whether it names one.
 func Weekday(name string) (time.Weekday, bool) {
-	day, known := weekdays[strings.ToLower(strings.TrimSpace(name))]
-	return day, known
+	day, recognized := weekdays[strings.ToLower(strings.TrimSpace(name))]
+	return day, recognized
 }
 
 // DayName is how a preset writes a day of the week.

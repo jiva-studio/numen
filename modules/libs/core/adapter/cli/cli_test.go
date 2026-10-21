@@ -137,9 +137,9 @@ func TestAddScanSearch(t *testing.T) {
 		t.Errorf("vault has no identity after being added: %v", err)
 	}
 
-	listed := s.mustRun("vault", "list")
-	if !strings.Contains(listed, "demo") {
-		t.Errorf("vault list said:\n%s", listed)
+	items := s.mustRun("vault", "list")
+	if !strings.Contains(items, "demo") {
+		t.Errorf("vault list said:\n%s", items)
 	}
 
 	scanned := s.mustRun("scan", "demo")
@@ -266,9 +266,9 @@ func TestACopiedVaultIsRefusedRatherThanIndexed(t *testing.T) {
 	}
 
 	// The first vault is untouched, and still the only one.
-	listed := s.mustRun("vault", "list")
-	if strings.Count(listed, s.vault) != 1 || strings.Contains(listed, copied) {
-		t.Errorf("vault list after the rejection:\n%s", listed)
+	items := s.mustRun("vault", "list")
+	if strings.Count(items, s.vault) != 1 || strings.Contains(items, copied) {
+		t.Errorf("vault list after the rejection:\n%s", items)
 	}
 }
 
@@ -290,12 +290,12 @@ func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
 		t.Fatalf("a moved vault failed: %v\n%s", err, out)
 	}
 
-	listed := s.mustRun("vault", "list")
-	if strings.Count(listed, "moved") != 1 {
-		t.Errorf("the move produced a second entry:\n%s", listed)
+	items := s.mustRun("vault", "list")
+	if strings.Count(items, "moved") != 1 {
+		t.Errorf("the move produced a second entry:\n%s", items)
 	}
-	if !strings.Contains(listed, moved) {
-		t.Errorf("the registry still points at the old location:\n%s", listed)
+	if !strings.Contains(items, moved) {
+		t.Errorf("the registry still points at the old location:\n%s", items)
 	}
 
 	// The identity travelled with the folder, so the index it already built is
@@ -313,16 +313,16 @@ func readIdentity(t *testing.T, path string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var held struct {
+	var target struct {
 		ID string `json:"id"`
 	}
-	if err := json.Unmarshal(raw, &held); err != nil {
+	if err := json.Unmarshal(raw, &target); err != nil {
 		t.Fatal(err)
 	}
-	if held.ID == "" {
+	if target.ID == "" {
 		t.Fatalf("the vault at %s calls itself nothing", path)
 	}
-	return held.ID
+	return target.ID
 }
 
 func TestLinksShowsBothDirections(t *testing.T) {
@@ -364,9 +364,9 @@ func TestRenamingLeavesTheFolderWhereItIs(t *testing.T) {
 		t.Errorf("the folder is not where it was: %v", err)
 	}
 
-	listed := s.mustRun("vault", "list")
-	if !strings.Contains(listed, "after") || strings.Contains(listed, "before") {
-		t.Errorf("vault list after the rename:\n%s", listed)
+	items := s.mustRun("vault", "list")
+	if !strings.Contains(items, "after") || strings.Contains(items, "before") {
+		t.Errorf("vault list after the rename:\n%s", items)
 	}
 }
 
@@ -382,8 +382,8 @@ func TestForgettingKeepsTheFolderAndSaysSo(t *testing.T) {
 	if _, err := os.Stat(s.vault); err != nil {
 		t.Errorf("the folder went with the entry: %v", err)
 	}
-	if listed := s.mustRun("vault", "list"); strings.Contains(listed, "leaving") {
-		t.Errorf("the vault is still on the list:\n%s", listed)
+	if items := s.mustRun("vault", "list"); strings.Contains(items, "leaving") {
+		t.Errorf("the vault is still on the list:\n%s", items)
 	}
 
 	// The identity stayed in the folder, so the vault that comes back is the one
@@ -417,8 +417,8 @@ func TestErasingAsksBeforeItActs(t *testing.T) {
 	if _, err := os.Stat(s.vault); err != nil {
 		t.Errorf("the folder went: %v", err)
 	}
-	if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "asked") {
-		t.Errorf("the vault left the list:\n%s", listed)
+	if items := s.mustRun("vault", "list"); !strings.Contains(items, "asked") {
+		t.Errorf("the vault left the list:\n%s", items)
 	}
 }
 
@@ -438,8 +438,8 @@ func TestErasingWithYesTrashesTheFolderAndForgetsTheVault(t *testing.T) {
 	if _, err := os.Stat(s.vault); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("the folder is still at %s: %v", s.vault, err)
 	}
-	if listed := s.mustRun("vault", "list"); strings.Contains(listed, "erased") {
-		t.Errorf("the vault is still on the list:\n%s", listed)
+	if items := s.mustRun("vault", "list"); strings.Contains(items, "erased") {
+		t.Errorf("the vault is still on the list:\n%s", items)
 	}
 }
 
@@ -456,8 +456,8 @@ func TestAMachineWithNowhereToPutItDeletesNothing(t *testing.T) {
 	if _, err := os.Stat(s.vault); err != nil {
 		t.Errorf("the folder went with nowhere to put it: %v", err)
 	}
-	if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "kept") {
-		t.Errorf("the vault left the list:\n%s", listed)
+	if items := s.mustRun("vault", "list"); !strings.Contains(items, "kept") {
+		t.Errorf("the vault left the list:\n%s", items)
 	}
 }
 
@@ -475,12 +475,12 @@ func TestOpenRecordsTheVaultTheNextWindowOpens(t *testing.T) {
 		t.Errorf("vault open said:\n%s", out)
 	}
 
-	listed := s.mustRun("vault", "list")
-	if mark := getListMarks(listed, "second"); mark != "* " {
-		t.Errorf("the vault opened last is marked %q:\n%s", mark, listed)
+	items := s.mustRun("vault", "list")
+	if mark := getListMarks(items, "second"); mark != "* " {
+		t.Errorf("the vault opened last is marked %q:\n%s", mark, items)
 	}
-	if mark := getListMarks(listed, "first"); mark != "  " {
-		t.Errorf("a vault that was not opened is marked %q:\n%s", mark, listed)
+	if mark := getListMarks(items, "first"); mark != "  " {
+		t.Errorf("a vault that was not opened is marked %q:\n%s", mark, items)
 	}
 
 	// The mark for a folder that is not there is its own, and a vault can carry
@@ -535,8 +535,8 @@ func TestTheOnlyVaultAnInstallationHasStays(t *testing.T) {
 	if _, err := os.Stat(s.vault); err != nil {
 		t.Errorf("the folder went: %v", err)
 	}
-	if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "single") {
-		t.Errorf("the vault left the list:\n%s", listed)
+	if items := s.mustRun("vault", "list"); !strings.Contains(items, "single") {
+		t.Errorf("the vault left the list:\n%s", items)
 	}
 }
 

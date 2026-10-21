@@ -79,11 +79,11 @@ func TestLinkEditsAreHeldToTheFingerprintTheCallerPresents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
-			held := c.openNote(t, "Heat.md").Fingerprint
+			target := c.openNote(t, "Heat.md").Fingerprint
 			theirs := linkedHeat + "\nSaved in the meantime.\n"
 			c.overwrite(t, "Heat.md", theirs)
 
-			if err := edit(c, held); !errors.Is(err, port.ErrStale) {
+			if err := edit(c, target); !errors.Is(err, port.ErrStale) {
 				t.Errorf("want ErrStale, got %v", err)
 			}
 			if body := c.read(t, "Heat.md"); body != theirs {

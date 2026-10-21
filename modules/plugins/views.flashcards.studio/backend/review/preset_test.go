@@ -125,11 +125,11 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 
 	// Every field left empty, which is a preset built from settings that name
 	// no rule at all.
-	var said review.Preset
-	if said.IsLearned(targetSchedule, now) {
+	var response review.Preset
+	if response.IsLearned(targetSchedule, now) {
 		t.Error("a card face sixteen days off is learned under a preset naming no rule")
 	}
-	if !said.IsLearned(far, now) {
+	if !response.IsLearned(far, now) {
 		t.Error("a card face twenty-one days off is not learned at the default interval")
 	}
 

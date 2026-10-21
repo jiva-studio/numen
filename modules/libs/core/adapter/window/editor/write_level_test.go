@@ -58,14 +58,14 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	installation := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	written, err := installation.Services.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	content, err := installation.Services.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rejected := written.Msg.GetError(); rejected != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if rejected := content.Msg.GetError(); rejected != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the save failed: %v", rejected)
 	}
 

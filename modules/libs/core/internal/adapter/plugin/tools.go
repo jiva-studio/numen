@@ -57,7 +57,7 @@ func (b *ToolsBridge) Close() error {
 // permission their effect needs. A plugin that cannot be started or reached is left out.
 func (b *ToolsBridge) ListTools(ctx context.Context) []port.PluginTool {
 	var found []port.PluginTool
-	listed := map[toolKey]port.ToolEffect{}
+	items := map[toolKey]port.ToolEffect{}
 	for _, one := range b.host.ResolveCapabilities(CapabilityTools) {
 		tools, err := b.ListPluginTools(ctx, one.Manifest.ID)
 		if err != nil {
@@ -67,12 +67,12 @@ func (b *ToolsBridge) ListTools(ctx context.Context) []port.PluginTool {
 			if b.host.CheckPluginPermission(tool.PluginID, getToolPermission(tool.Effect)) != nil {
 				continue
 			}
-			listed[toolKey{tool.PluginID, tool.Name}] = tool.Effect
+			items[toolKey{tool.PluginID, tool.Name}] = tool.Effect
 			found = append(found, tool)
 		}
 	}
 	b.mu.Lock()
-	b.listed = listed
+	b.listed = items
 	b.mu.Unlock()
 	return found
 }
@@ -83,9 +83,9 @@ func (b *ToolsBridge) CallTool(
 	ctx context.Context, pluginID, name string, arguments []byte, asked map[string]string,
 ) (port.PluginToolResult, error) {
 	b.mu.Lock()
-	effect, known := b.listed[toolKey{pluginID, name}]
+	effect, recognized := b.listed[toolKey{pluginID, name}]
 	b.mu.Unlock()
-	if !known {
+	if !recognized {
 		return port.PluginToolResult{}, ErrUnknownTool
 	}
 	if err := b.host.CheckPluginPermission(pluginID, getToolPermission(effect)); err != nil {

@@ -125,11 +125,11 @@ func TestNoWindowMeansNoTool(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 	session := newSessionOver(t, core)
 
-	listed, err := session.ListTools(t.Context(), nil)
+	items, err := session.ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, tool := range listed.Tools {
+	for _, tool := range items.Tools {
 		if tool.Name == "note_focus" || tool.Name == "source_focus" {
 			t.Fatalf("a headless vault serves %s, which needs somebody looking", tool.Name)
 		}

@@ -55,9 +55,9 @@ func newResidentWorker(t *testing.T, keep bool, recordings ...string) (*Worker, 
 }
 
 func TestARoundOpensTheModelsOnceAndClosesThemAtTheEnd(t *testing.T) {
-	listening, models, known, v := newResidentWorker(t, true, "a.mp3", "b.mp3", "c.mp3")
+	listening, models, recognized, v := newResidentWorker(t, true, "a.mp3", "b.mp3", "c.mp3")
 
-	listening.round(t.Context(), known, v)
+	listening.round(t.Context(), recognized, v)
 
 	if opened, closed := models.counts(); opened != 1 || closed != 1 {
 		t.Errorf("opened %d, closed %d", opened, closed)
@@ -71,9 +71,9 @@ func TestARoundOpensTheModelsOnceAndClosesThemAtTheEnd(t *testing.T) {
 }
 
 func TestModelsAreOpenedForEachRecordingWhenTheyCannotStayLoaded(t *testing.T) {
-	listening, models, known, v := newResidentWorker(t, false, "a.mp3", "b.mp3", "c.mp3")
+	listening, models, recognized, v := newResidentWorker(t, false, "a.mp3", "b.mp3", "c.mp3")
 
-	listening.round(t.Context(), known, v)
+	listening.round(t.Context(), recognized, v)
 
 	if opened, closed := models.counts(); opened != 3 || closed != 3 {
 		t.Errorf("opened %d, closed %d", opened, closed)
@@ -81,10 +81,10 @@ func TestModelsAreOpenedForEachRecordingWhenTheyCannotStayLoaded(t *testing.T) {
 }
 
 func TestModelsAreOpenedForEachRecordingWhenNoPredicateIsGiven(t *testing.T) {
-	listening, models, known, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
+	listening, models, recognized, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
 	listening.with.Runtime.CanKeep = nil
 
-	listening.round(t.Context(), known, v)
+	listening.round(t.Context(), recognized, v)
 
 	if opened, _ := models.counts(); opened != 2 {
 		t.Errorf("opened %d", opened)
@@ -92,7 +92,7 @@ func TestModelsAreOpenedForEachRecordingWhenNoPredicateIsGiven(t *testing.T) {
 }
 
 func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
-	listening, models, known, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
+	listening, models, recognized, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
 
 	granted := make(chan func(), 1)
 	listening.with.Runtime.Open = func(ctx context.Context, tell func(string, int64, int64)) (port.Transcriber, func() error, error) {
@@ -112,15 +112,15 @@ func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
 		return by, letGo, err
 	}
 
-	done := make(chan struct{})
-	go func() { listening.round(t.Context(), known, v); close(done) }()
+	isDone := make(chan struct{})
+	go func() { listening.round(t.Context(), recognized, v); close(isDone) }()
 
 	release := <-granted
 	if _, closed := models.counts(); closed != 1 {
 		t.Errorf("the models were not closed before the waiter took the lock: %d", closed)
 	}
 	release()
-	<-done
+	<-isDone
 
 	if opened, closed := models.counts(); opened != 2 || closed != 2 {
 		t.Errorf("opened %d, closed %d", opened, closed)
@@ -156,7 +156,7 @@ func TestAFailureMidRoundReleasesTheModels(t *testing.T) {
 }
 
 func TestCancellationReleasesTheModels(t *testing.T) {
-	listening, models, known, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
+	listening, models, recognized, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	open := listening.with.Runtime.Open
@@ -165,7 +165,7 @@ func TestCancellationReleasesTheModels(t *testing.T) {
 		return open(c, tell)
 	}
 
-	listening.round(ctx, known, v)
+	listening.round(ctx, recognized, v)
 
 	if opened, closed := models.counts(); opened != closed {
 		t.Errorf("opened %d, closed %d", opened, closed)

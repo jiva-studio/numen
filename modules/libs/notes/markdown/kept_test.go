@@ -76,8 +76,8 @@ func drawNote(t *rapid.T) (raw string, foreign []string) {
 }
 
 func contains(all []string, one string) bool {
-	for _, held := range all {
-		if held == one {
+	for _, target := range all {
+		if target == one {
 			return true
 		}
 	}
@@ -207,16 +207,16 @@ func TestAnOwnedKeyReadsBackAsItWasWritten(t *testing.T) {
 			return
 		}
 
-		if got, held := doc.Title(); got != strings.TrimSpace(title) || !held {
+		if got, target := doc.Title(); got != strings.TrimSpace(title) || !target {
 			t.Fatalf("a note written as %q is called %q", title, got)
 		}
-		if got, held := doc.Identifier(); got != identifier || !held {
+		if got, targetVal := doc.Identifier(); got != identifier || !targetVal {
 			t.Fatalf("a note stamped %q carries %q", identifier, got)
 		}
 		// A key written no names at all is a key the note does not carry.
-		got, held := doc.List("fields")
-		if held != (len(names) > 0) || !equal(got, names) {
-			t.Fatalf("a note written the fields %v holds %v, %v", names, got, held)
+		got, targetItem := doc.List("fields")
+		if targetItem != (len(names) > 0) || !equal(got, names) {
+			t.Fatalf("a note written the fields %v holds %v, %v", names, got, targetItem)
 		}
 
 		// And the reader of a whole note reads what the writer wrote.

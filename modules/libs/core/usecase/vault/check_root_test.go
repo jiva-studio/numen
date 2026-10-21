@@ -38,15 +38,15 @@ func TestCheckRootRefusesWhatIsNotAFolderForNotes(t *testing.T) {
 	shortcut := filepath.Join(sep, "shortcut")
 	check := vaults.NewCheckRoot(linked{to: map[string]string{shortcut: home}}, fakeHome{path: home})
 
-	for root, said := range map[string]string{
+	for root, response := range map[string]string{
 		"notes":                          "not an absolute path",
 		sep:                              "root of this filesystem",
 		home:                             "home directory",
 		filepath.Join(home, "..", "ann"): "home directory",
 		shortcut:                         "home directory",
 	} {
-		if err := check.Execute(root); err == nil || !strings.Contains(err.Error(), said) {
-			t.Errorf("%s was answered with %v, want an error naming %q", root, err, said)
+		if err := check.Execute(root); err == nil || !strings.Contains(err.Error(), response) {
+			t.Errorf("%s was answered with %v, want an error naming %q", root, err, response)
 		}
 	}
 }

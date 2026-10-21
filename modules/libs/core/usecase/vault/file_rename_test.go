@@ -18,11 +18,11 @@ import (
 // and not of the file: it is the answer the person sees.
 func (f filing) title(t *testing.T, path string) string {
 	t.Helper()
-	shown, err := f.db.Queries().GetNotes(t.Context(), f.vault.ID, []string{path})
+	displayed, err := f.db.Queries().GetNotes(t.Context(), f.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return shown[path].Title
+	return displayed[path].Title
 }
 
 // Whichever of the title and the filename names the note is the one brought
@@ -60,9 +60,9 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 				t.Fatal("the file did not move")
 			}
 			body := f.read(t, "Disorder.md")
-			for _, kept := range c.holds {
-				if !strings.Contains(body, kept) {
-					t.Errorf("want %q in\n%s", kept, body)
+			for _, retained := range c.holds {
+				if !strings.Contains(body, retained) {
+					t.Errorf("want %q in\n%s", retained, body)
 				}
 			}
 			for _, missing := range c.lacks {

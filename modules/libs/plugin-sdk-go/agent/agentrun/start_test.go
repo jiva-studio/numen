@@ -337,11 +337,11 @@ func TestStartEndsTheChildThatIgnoresTheClosedOutputAfterALineTooLong(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan []*numenv1.AskAgentResponse, 1)
-	go func() { done <- drain(work) }()
+	isDone := make(chan []*numenv1.AskAgentResponse, 1)
+	go func() { isDone <- drain(work) }()
 
 	select {
-	case got := <-done:
+	case got := <-isDone:
 		if len(got) != 1 || got[0].GetStopped() == "" {
 			t.Errorf("got %v", got)
 		}

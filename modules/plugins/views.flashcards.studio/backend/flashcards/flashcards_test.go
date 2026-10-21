@@ -192,16 +192,16 @@ func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 5 {
-		t.Fatalf("two cards of two faces and one of one face is five, got %d", len(stood))
+	if len(status) != 5 {
+		t.Fatalf("two cards of two faces and one of one face is five, got %d", len(status))
 	}
 
 	faces := map[string]int{}
-	for _, one := range stood {
+	for _, one := range status {
 		faces[one.ID.Face]++
 		front, back := one.Lay()
 		if one.ID.Card == "" || front == "" || back == "" {
@@ -221,11 +221,11 @@ func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range stood {
+	for _, one := range status {
 		if one.ID.Card != "k7m2xq9fzp" || one.ID.Face != "Name it" {
 			continue
 		}
@@ -256,12 +256,12 @@ func TestACardWithNoMarkStandsForNothing(t *testing.T) {
 	s := openVault(t, handwritten)
 	before := read(t, s.vault, "decks/Own.md")
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 0 {
-		t.Errorf("stands = %+v, want nothing", stood)
+	if len(status) != 0 {
+		t.Errorf("stands = %+v, want nothing", status)
 	}
 	if after := read(t, s.vault, "decks/Own.md"); after != before {
 		t.Errorf("the deck was written\n was %q\n now %q", before, after)
@@ -297,23 +297,23 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 	if !strings.Contains(after, "## Leaf mould ^k7m2xq9fzp") {
 		t.Error("the mark the card already carried is not the mark it carries now")
 	}
-	for _, kept := range []string{
+	for _, retained := range []string{
 		"What I keep meaning to learn, and never do.",
 		"# The ones from the garden",
 		"Sand, silt and clay in the right measure",
 		"### Слово",
 	} {
-		if !strings.Contains(after, kept) {
-			t.Errorf("%q is not in the deck any more", kept)
+		if !strings.Contains(after, retained) {
+			t.Errorf("%q is not in the deck any more", retained)
 		}
 	}
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 2 {
-		t.Fatalf("two cards of a one-faced stencil stand twice, got %d", len(stood))
+	if len(status) != 2 {
+		t.Fatalf("two cards of a one-faced stencil stand twice, got %d", len(status))
 	}
 
 	if after == before {
@@ -359,14 +359,14 @@ func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 	if _, err := s.marking.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 {
-		t.Fatalf("one card of a one-faced stencil appears once, got %d", len(stood))
+	if len(status) != 1 {
+		t.Fatalf("one card of a one-faced stencil appears once, got %d", len(status))
 	}
-	if stood[0].ID.Card == "" {
+	if status[0].ID.Card == "" {
 		t.Error("the card came back with no mark to record an answer against")
 	}
 }
@@ -399,12 +399,12 @@ func TestACardWithNoStencilIsLeftOut(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 || stood[0].ID.Card != "3f4g5h6j7k" {
-		t.Errorf("stands = %+v, want the one card whose stencil is one", stood)
+	if len(status) != 1 || status[0].ID.Card != "3f4g5h6j7k" {
+		t.Errorf("stands = %+v, want the one card whose stencil is one", status)
 	}
 }
 
@@ -422,12 +422,12 @@ func TestAFaceMissingASideIsNotAsked(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 || stood[0].ID.Face != "Say it" {
-		t.Errorf("stands = %+v, want the one face with both its sides", stood)
+	if len(status) != 1 || status[0].ID.Face != "Say it" {
+		t.Errorf("stands = %+v, want the one face with both its sides", status)
 	}
 }
 
@@ -442,14 +442,14 @@ func TestACardLeavingAFieldEmptyIsStillAsked(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 {
-		t.Fatalf("stands = %+v, want the one card", stood)
+	if len(status) != 1 {
+		t.Fatalf("stands = %+v, want the one card", status)
 	}
-	if front, back := stood[0].Lay(); front != "Leaf mould" || back != "" {
+	if front, back := status[0].Lay(); front != "Leaf mould" || back != "" {
 		t.Errorf("laid out front %q, back %q", front, back)
 	}
 }
@@ -563,8 +563,8 @@ func TestAnAnswerIsWrittenDownAndReadBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, held := schedules[on]
-	if !held {
+	got, target := schedules[on]
+	if !target {
 		t.Fatalf("the answer left no schedule: %+v", schedules)
 	}
 	if got.IsNew() || got.Reps != 1 {
@@ -584,11 +584,11 @@ func TestAnAnswerTakenBackLeavesTheCardUnanswered(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, when)
-	given, err := record.Answer(t.Context(), on, review.Good, time.Second)
+	provided, err := record.Answer(t.Context(), on, review.Good, time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := record.TakeBack(t.Context(), given.ID); err != nil {
+	if _, err := record.TakeBack(t.Context(), provided.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -596,7 +596,7 @@ func TestAnAnswerTakenBackLeavesTheCardUnanswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, held := schedules[on]; held {
+	if _, target := schedules[on]; target {
 		t.Errorf("the answer was taken back and the schedule stands: %+v", schedules)
 	}
 }
@@ -636,18 +636,18 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := session.Queue
-	if len(asked) < 2 {
-		t.Fatalf("asked %d", len(asked))
+	request := session.Queue
+	if len(request) < 2 {
+		t.Fatalf("asked %d", len(request))
 	}
-	if asked[0].ID != waited {
-		t.Errorf("asked %+v first, want the one waiting longest", asked[0].ID)
+	if request[0].ID != waited {
+		t.Errorf("asked %+v first, want the one waiting longest", request[0].ID)
 	}
-	for i, one := range asked {
+	for i, one := range request {
 		if !one.Schedule.IsNew() {
 			continue
 		}
-		for _, after := range asked[i:] {
+		for _, after := range request[i:] {
 			if !after.Schedule.IsNew() {
 				t.Errorf("a card nobody reached stands at %d, in front of one that was", i)
 				break
@@ -666,9 +666,9 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := session.Queue
-	if len(asked) != 1 || asked[0].Deck != "decks/Words.md" {
-		t.Errorf("asked %+v, want the one card of that deck", asked)
+	request := session.Queue
+	if len(request) != 1 || request[0].Deck != "decks/Words.md" {
+		t.Errorf("asked %+v, want the one card of that deck", request)
 	}
 }
 
@@ -697,11 +697,11 @@ func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed := review.OrderAnswers(held.Answers).Replay(today, review.ScheduleBy(review.NewFSRS()))
+	replayed := review.OrderAnswers(target.Answers).Replay(today, review.ScheduleBy(review.NewFSRS()))
 
 	if len(cached) != len(replayed) {
 		t.Fatalf("the cache holds %d card faces and the answers say %d", len(cached), len(replayed))
@@ -739,7 +739,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, held := got[invented]; held {
+	if _, target := got[invented]; target {
 		t.Error("a cache of another shape was read")
 	}
 	if got[on].Reps != 1 {
@@ -822,7 +822,7 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	record := s.run(t, time.Now())
 
-	given, err := record.Answer(t.Context(), on, review.Good, 0)
+	provided, err := record.Answer(t.Context(), on, review.Good, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -830,14 +830,14 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := record.TakeBack(t.Context(), given.ID); err != nil {
+	if _, err := record.TakeBack(t.Context(), provided.ID); err != nil {
 		t.Fatal(err)
 	}
 	after, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, held := after[on]; held {
+	if _, target := after[on]; target {
 		t.Errorf("the answer was taken back and the schedule stands: %+v", after[on])
 	}
 }
@@ -879,7 +879,7 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	if got[on].Reps != 1 {
 		t.Errorf("the answers were not read again: %+v", got[on])
 	}
-	if _, held := got[invented]; held {
+	if _, target := got[invented]; target {
 		t.Error("a card face only the other scheduler's cache names came back")
 	}
 }

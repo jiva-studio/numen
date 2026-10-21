@@ -141,15 +141,15 @@ func (b *builder) openElement(n *html.Node, offset int) bool {
 }
 
 func (b *builder) close() {
-	done := b.stack[len(b.stack)-1]
+	isDone := b.stack[len(b.stack)-1]
 	b.stack = b.stack[:len(b.stack)-1]
 	// A table that opened no cell keeps the runs written inside it, in the
 	// order they stand.
-	if len(b.waiting) > 0 && tabular[done.Name] && !tabular[b.stack[len(b.stack)-1].Name] {
-		done.Children, done.Offset = append(b.waiting, done.Children...), b.waiting[0].Offset
+	if len(b.waiting) > 0 && tabular[isDone.Name] && !tabular[b.stack[len(b.stack)-1].Name] {
+		isDone.Children, isDone.Offset = append(b.waiting, isDone.Children...), b.waiting[0].Offset
 		b.waiting = nil
 	}
-	b.appendChild(done)
+	b.appendChild(isDone)
 }
 
 // run marks a run of text written at an offset, whether it was written from the
@@ -320,8 +320,8 @@ var reachable = map[string]bool{
 
 // isInlineImage reports whether an address is a base64 image written into the markup.
 func isInlineImage(url string) bool {
-	head, _, written := strings.Cut(strings.ToLower(url), ",")
-	return written && strings.HasPrefix(head, "data:image/") && strings.HasSuffix(head, ";base64")
+	head, _, content := strings.Cut(strings.ToLower(url), ",")
+	return content && strings.HasPrefix(head, "data:image/") && strings.HasSuffix(head, ";base64")
 }
 
 // removeSpacesAndControls returns an address with its spaces and control

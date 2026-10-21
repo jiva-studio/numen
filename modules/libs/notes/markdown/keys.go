@@ -115,13 +115,13 @@ func (d *Document) EntryNames(key string) ([]string, bool) {
 	if err != nil {
 		return nil, false
 	}
-	held := d.entries(node, key)
-	if held == nil {
+	target := d.entries(node, key)
+	if target == nil {
 		return nil, false
 	}
-	out := make([]string, 0, len(held.Content)/2)
-	for i := 0; i+1 < len(held.Content); i += 2 {
-		out = append(out, held.Content[i].Value)
+	out := make([]string, 0, len(target.Content)/2)
+	for i := 0; i+1 < len(target.Content); i += 2 {
+		out = append(out, target.Content[i].Value)
 	}
 	return out, true
 }
@@ -132,14 +132,14 @@ func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
 	if node == nil {
 		return &yaml.Node{Kind: yaml.MappingNode}
 	}
-	held := valueOf(node, key)
+	target := valueOf(node, key)
 	switch {
-	case held == nil || isNullValue(held):
+	case target == nil || isNullValue(target):
 		return &yaml.Node{Kind: yaml.MappingNode}
-	case held.Kind != yaml.MappingNode:
+	case target.Kind != yaml.MappingNode:
 		return nil
 	}
-	return held
+	return target
 }
 
 // SetMapping writes the entries one top-level frontmatter key holds from now
@@ -161,19 +161,19 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 	mapping := &yaml.Node{Kind: yaml.MappingNode}
 	for _, one := range entries {
 		was := pair(existing, one.Key)
-		held := was.value
+		target := was.value
 		if !one.IsVerbatim {
-			held = &yaml.Node{}
-			if err := held.Encode(one.Value); err != nil {
+			target = &yaml.Node{}
+			if err := target.Encode(one.Value); err != nil {
 				return err
 			}
 		}
-		if held == nil {
+		if target == nil {
 			continue
 		}
 		name := &yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}
-		was.copyLineComment(name, held)
-		mapping.Content = append(mapping.Content, name, held)
+		was.copyLineComment(name, target)
+		mapping.Content = append(mapping.Content, name, target)
 	}
 	if len(mapping.Content) == 0 {
 		return d.set(key, nil)

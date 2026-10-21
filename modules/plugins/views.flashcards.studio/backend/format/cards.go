@@ -139,17 +139,17 @@ func (c Card) Value(field string) (string, bool) {
 // the two a person meant.
 func (d Deck) Card(carried cardid.ID) (Card, error) {
 	found := Card{}
-	held := false
+	target := false
 	for _, c := range d.Cards {
 		if c.Mark != carried {
 			continue
 		}
-		if held {
+		if target {
 			return Card{}, fmt.Errorf("%w: %s", ErrTwoCards, carried)
 		}
-		found, held = c, true
+		found, target = c, true
 	}
-	if !held {
+	if !target {
 		return Card{}, fmt.Errorf("%w: %s", ErrNoSuchCard, carried)
 	}
 	return found, nil

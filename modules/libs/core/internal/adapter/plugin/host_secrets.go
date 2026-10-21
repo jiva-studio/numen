@@ -128,11 +128,11 @@ func (h *Host) recordStoredSecret(pluginID, name string, isStored bool) error {
 // are recorded as stored, among those its manifest declares.
 func (h *Host) getStoredSecretsLocked(pluginID string) []string {
 	var recorded []string
-	switch held := h.settings[pluginID][port.SettingStoredSecrets].(type) {
+	switch target := h.settings[pluginID][port.SettingStoredSecrets].(type) {
 	case []string:
-		recorded = held
+		recorded = target
 	case []any:
-		for _, entry := range held {
+		for _, entry := range target {
 			if name, ok := entry.(string); ok {
 				recorded = append(recorded, name)
 			}
@@ -188,13 +188,13 @@ func readPluginSecrets(
 // of. A machine without a key store is reported once through the error handler
 // and is not returned.
 func (h *Host) getSecretsError(failures []error) error {
-	var told []error
+	var notified []error
 	for _, failure := range failures {
 		if errors.Is(failure, port.ErrNoKeyStore) {
 			h.noKeyStoreOnce.Do(func() { h.reportError(failure) })
 			continue
 		}
-		told = append(told, failure)
+		notified = append(notified, failure)
 	}
-	return errors.Join(told...)
+	return errors.Join(notified...)
 }

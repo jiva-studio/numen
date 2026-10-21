@@ -156,11 +156,11 @@ func (r *Registry) ListTools(
 ) (*connect.Response[numenv1.ListToolsResponse], error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	listed := make([]*numenv1.PluginTool, 0, len(r.tools))
+	items := make([]*numenv1.PluginTool, 0, len(r.tools))
 	for _, one := range r.tools {
-		listed = append(listed, one.listed)
+		items = append(items, one.listed)
 	}
-	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: listed}), nil
+	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: items}), nil
 }
 
 // CallTool runs the tool named. A name nothing was added under, and arguments that are no JSON
@@ -192,8 +192,8 @@ type askedKey struct{}
 // window that shows the person nothing in particular. A tool reads it as data about the call, and it
 // is no part of the arguments.
 func Asked(ctx context.Context) map[string]string {
-	asked, _ := ctx.Value(askedKey{}).(map[string]string)
-	return asked
+	request, _ := ctx.Value(askedKey{}).(map[string]string)
+	return request
 }
 
 func isObject(raw []byte) bool {

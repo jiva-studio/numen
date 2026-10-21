@@ -216,14 +216,14 @@ func (u Highlight) layer(
 // getPagesOfRuns is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
 func getPagesOfRuns(book domain.TextLayer, runs []domain.ByteSpan) []int {
-	held := map[int]bool{}
+	target := map[int]bool{}
 	var out []int
 	for _, one := range runs {
 		for _, page := range getPages(book, one.From, one.To) {
-			if held[page] {
+			if target[page] {
 				continue
 			}
-			held[page] = true
+			target[page] = true
 			out = append(out, page)
 		}
 	}

@@ -64,11 +64,11 @@ func addArtifactTools(server *sdk.Server, core Core) {
 		type out = struct {
 			Artifacts []Artifact `json:"artifacts"`
 		}
-		held, err := core.Sources.GetArtifactList.Execute(ctx, core.getCurrentVault().Vault, in.Path)
+		target, err := core.Sources.GetArtifactList.Execute(ctx, core.getCurrentVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Artifacts: newArtifacts(held)}, nil
+		return nil, out{Artifacts: newArtifacts(target)}, nil
 	})
 
 	addTool(server, &sdk.Tool{

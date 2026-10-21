@@ -130,7 +130,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		}
 	}
 
-	if done, err := u.recordSource(ctx, v, store, ref, hash, area, &res); done {
+	if isDone, err := u.recordSource(ctx, v, store, ref, hash, area, &res); isDone {
 		return res, err
 	}
 
@@ -211,15 +211,15 @@ func (u Transcribe) recordSource(
 	hash, area string,
 	res *TranscribeResult,
 ) (bool, error) {
-	if held, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash)); err == nil {
-		if _, cues := transcript.Parse(held); len(cues) > 0 {
+	if target, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash)); err == nil {
+		if _, cues := transcript.Parse(target); len(cues) > 0 {
 			res.Heard = cues[len(cues)-1].To
 			res.Length = res.Heard
 		}
 		return true, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area)
 	}
-	if held, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, area, hash)); err == nil {
-		gave, _ := text.ReadAnswer(held)
+	if targetVal, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, area, hash)); err == nil {
+		gave, _ := text.ReadAnswer(targetVal)
 		res.IsSilent = gave == text.Silent
 		res.IsUnopened = gave == text.Unopened
 		return true, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")

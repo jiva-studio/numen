@@ -161,16 +161,16 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 		Hash:        derived.Fingerprint([]byte(aVideo)),
 	}
 
-	listed := call[struct {
+	items := call[struct {
 		Artifacts []mcp.Artifact `json:"artifacts"`
 	}](t, session, "artifact_list", map[string]any{"path": made.Path})
-	if len(listed.Artifacts) == 0 {
+	if len(items.Artifacts) == 0 {
 		t.Fatal("the note carries nothing an agent can reach")
 	}
 	// Words with the times they were said at are a transcript, whoever made
 	// them: a site publishing them is another producer and not another kind.
-	if listed.Artifacts[0].Kind != "transcript" {
-		t.Errorf("it carries %q", listed.Artifacts[0].Kind)
+	if items.Artifacts[0].Kind != "transcript" {
+		t.Errorf("it carries %q", items.Artifacts[0].Kind)
 	}
 
 	read := call[struct {
@@ -190,8 +190,8 @@ type sourced struct {
 func (s *sourced) GetSourceText(
 	_ context.Context, _ domain.VaultID, path string,
 ) (port.SourceText, bool, error) {
-	one, held := s.known[path]
-	return one, held, nil
+	one, target := s.known[path]
+	return one, target, nil
 }
 
 // A copy that cannot be made is said beside the file it followed, which stands.

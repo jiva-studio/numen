@@ -36,12 +36,12 @@ func neighbourhoodOf(t *testing.T, files map[string]string, path string) domain.
 // say the same thing, so A must be B's child either way it was written.
 func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 	t.Parallel()
-	written := neighbourhoodOf(t, map[string]string{
+	content := neighbourhoodOf(t, map[string]string{
 		"Area.md":  "---\ntitle: Area\n---\n\n# Area\n",
 		"Idea.md":  "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Idea\n",
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
 	}, "Area.md")
-	if got := relationsOf(written); !slices.Equal(got, []string{"child Idea.md"}) {
+	if got := relationsOf(content); !slices.Equal(got, []string{"child Idea.md"}) {
 		t.Errorf("a note that names Area its parent is not Area's child: %v", got)
 	}
 
@@ -62,14 +62,14 @@ func describeEdge(t *testing.T, files map[string]string, from, to string) string
 		if r.Path != to {
 			continue
 		}
-		drawn := []string{string(r.Relation)}
+		rendered := []string{string(r.Relation)}
 		if r.Label != "" {
-			drawn = append(drawn, r.Label)
+			rendered = append(rendered, r.Label)
 		}
 		if r.IsMutual {
-			drawn = append(drawn, "mutual")
+			rendered = append(rendered, "mutual")
 		}
-		return strings.Join(drawn, " ")
+		return strings.Join(rendered, " ")
 	}
 	return "nothing"
 }
@@ -81,7 +81,7 @@ func describeEdge(t *testing.T, files map[string]string, from, to string) string
 // two notes read the same edge in their own language.
 func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 	t.Parallel()
-	written := func(title, links string) string {
+	content := func(title, links string) string {
 		if links == "" {
 			return "---\ntitle: " + title + "\n---\n\n# " + title + "\n"
 		}
@@ -131,8 +131,8 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			files := map[string]string{
-				"Area.md": written("Area", c.area),
-				"Idea.md": written("Idea", c.idea),
+				"Area.md": content("Area", c.area),
+				"Idea.md": content("Idea", c.idea),
 			}
 			if got := describeEdge(t, files, "Area.md", "Idea.md"); got != c.fromArea {
 				t.Errorf("from Area: got %q, want %q", got, c.fromArea)

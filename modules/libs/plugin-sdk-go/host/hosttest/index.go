@@ -41,8 +41,8 @@ func isIgnored(filePath string) bool {
 // caller holds the lock.
 func (v *Vault) parsed() map[string]domain.Note {
 	out := make(map[string]domain.Note, len(v.indexed))
-	for filePath, held := range v.indexed {
-		out[filePath] = held
+	for filePath, target := range v.indexed {
+		out[filePath] = target
 	}
 	return out
 }
@@ -121,16 +121,16 @@ func (v *Vault) vaultsHolding() []*Vault { return v.world.members }
 // dedupe folds links that turn out to point at the same note: the described one wins over a mention
 // in prose.
 func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
-	seen := map[string]int{}
+	observed := map[string]int{}
 	var out []domain.ResolvedLink
 	for _, l := range links {
 		key := l.To
 		if key == "" {
 			key = "\x00" + l.Target.String()
 		}
-		at, known := seen[key]
-		if !known {
-			seen[key] = len(out)
+		at, recognized := observed[key]
+		if !recognized {
+			observed[key] = len(out)
 			out = append(out, l)
 			continue
 		}

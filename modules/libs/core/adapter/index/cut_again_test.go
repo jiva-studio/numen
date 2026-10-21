@@ -35,11 +35,11 @@ func generateChunks(t *rapid.T, name string) []chunk.Chunk {
 	at := 0
 	for i := range out {
 		out[i].Start, out[i].Length = at, len(out[i].Text)
-		held := at
+		target := at
 		for j := range out[i].Small {
-			out[i].Small[j].Start = held
+			out[i].Small[j].Start = target
 			out[i].Small[j].Length = len(out[i].Small[j].Text)
-			held += len(out[i].Small[j].Text)
+			target += len(out[i].Small[j].Text)
 		}
 		at += len(out[i].Text)
 	}
@@ -99,8 +99,8 @@ func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 // countByText is what a set of rows evaluates to, one key at a time.
 func countByText(rows map[textOf][]int64) map[textOf]int {
 	out := make(map[textOf]int, len(rows))
-	for key, held := range rows {
-		out[key] = len(held)
+	for key, target := range rows {
+		out[key] = len(target)
 	}
 	return out
 }
@@ -137,7 +137,7 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 	t.Parallel()
 	outer := t
 
-	var kept, twice, gone int
+	var retained, twice, removed int
 	rapid.Check(t, func(t *rapid.T) {
 		was := generateChunks(t, "the first cut")
 		now := generateChunks(t, "the second cut")
@@ -159,9 +159,9 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 
 		// The text it held before, at the size it held it at, keeps the rows it
 		// stood on — as many of them as both cuts ask for.
-		for key, held := range after {
+		for key, target := range after {
 			survived := 0
-			for _, row := range held {
+			for _, row := range target {
 				for _, already := range before[key] {
 					if row == already {
 						survived++
@@ -169,26 +169,26 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 					}
 				}
 			}
-			if want := min(len(before[key]), len(held)); survived != want {
+			if want := min(len(before[key]), len(target)); survived != want {
 				t.Fatalf("%d of the rows holding %v survived %v cut again as %v, want %d",
 					survived, key, was, now, want)
 			}
-			kept += survived
-			if len(held) > 1 {
+			retained += survived
+			if len(target) > 1 {
 				twice++
 			}
 		}
-		for key, held := range before {
-			if len(held) > len(after[key]) {
-				gone++
+		for key, targetVal := range before {
+			if len(targetVal) > len(after[key]) {
+				removed++
 			}
 		}
 	})
 	// A run in which no row was ever kept, or one where a source never held one
 	// text twice, or one where nothing was ever cut away, asks nothing of any of
 	// the three rules.
-	if kept < 20 || twice < 10 || gone < 25 {
+	if retained < 20 || twice < 10 || removed < 25 {
 		t.Fatalf("%d rows were kept, %d texts stood twice in one source, "+
-			"and %d texts were cut away", kept, twice, gone)
+			"and %d texts were cut away", retained, twice, removed)
 	}
 }

@@ -11,11 +11,11 @@ import (
 // person may have downloaded, and this is the whole of what stops one reaching
 // the network.
 func TestAWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self'; media-src 'self'; frame-src 'self'; " +
+	const target = "default-src 'self'; img-src 'self'; media-src 'self'; frame-src 'self'; " +
 		"style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
-	if got := (csp.Sources{}).Policy(); got != held {
+	if got := (csp.Sources{}).Policy(); got != target {
 		t.Errorf("the policy reads %q", got)
 	}
 }

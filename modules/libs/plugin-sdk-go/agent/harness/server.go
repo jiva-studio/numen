@@ -245,12 +245,12 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 		defer s.mu.Unlock()
 		return s.models, nil
 	}
-	asked := chat{baseURL: s.baseURL, key: s.key, client: s.Client}
+	request := chat{baseURL: s.baseURL, key: s.key, client: s.Client}
 	s.mu.Unlock()
 
 	listing, stop := context.WithTimeout(ctx, modelsLimit)
 	defer stop()
-	models, err := asked.listModels(listing)
+	models, err := request.listModels(listing)
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -258,7 +258,7 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 	// A failure is asked again, and what was listed under settings that have changed since is not kept.
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if err == nil && s.baseURL == asked.baseURL && s.key == asked.key {
+	if err == nil && s.baseURL == request.baseURL && s.key == request.key {
 		s.models, s.isListed = models, true
 	}
 	return models, err

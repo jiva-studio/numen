@@ -18,11 +18,11 @@ type artifactShelf struct {
 // getHash is the hash everything made from one file is placed under. A url stands
 // under its address, and the index recorded that when it walked past.
 func (s artifactShelf) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
-	said, held, err := s.queries.GetSourceText(ctx, v.ID, path)
-	if err != nil || !held {
+	response, target, err := s.queries.GetSourceText(ctx, v.ID, path)
+	if err != nil || !target {
 		return "", err
 	}
-	return said.Hash, nil
+	return response.Hash, nil
 }
 
 // artifactFile is the file one producer's artifact stands in, and its size.

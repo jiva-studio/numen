@@ -76,11 +76,11 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 func (f *DeckFile) Whole(
 	stencils map[string]Stencil, createID func() cardid.ID,
 ) ([]CardMark, error) {
-	body, given := Whole(markdown.Normalise(f.doc.Body()), stencils, createID)
+	body, provided := Whole(markdown.Normalise(f.doc.Body()), stencils, createID)
 	if err := f.doc.SetBody(body); err != nil {
 		return nil, err
 	}
-	return given, nil
+	return provided, nil
 }
 
 // SetValue writes what the card of a mark holds under one field. A field the
@@ -129,16 +129,16 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 		// The blank line under the value went with it, so what follows closes
 		// up against what the value stood beneath.
 		head, to := v.head, v.to
-		written := ""
+		content := ""
 		// A value nothing stood under was last in the file, and what is above
 		// it now ends on the one break a file ends with.
 		if to == len(body) {
 			head = getTrimmedEnd(body, 0, head)
 			if head > 0 {
-				written = "\n"
+				content = "\n"
 			}
 		}
-		return f.doc.SpliceBody(head, to, written)
+		return f.doc.SpliceBody(head, to, content)
 	}
 	return fmt.Errorf("%w: %s", ErrNoSuchValue, field)
 }
@@ -170,16 +170,16 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 	// The blank line under the card went with it, so what follows closes up
 	// against what the card stood beneath.
 	head, to := span.head, span.end
-	written := ""
+	content := ""
 	// A card nothing stood under was last, and what is above it now ends on the
 	// one break a file ends with.
 	if to == len(body) {
 		head = getTrimmedEnd(body, 0, head)
 		if head > 0 {
-			written = "\n"
+			content = "\n"
 		}
 	}
-	return f.doc.SpliceBody(head, to, written)
+	return f.doc.SpliceBody(head, to, content)
 }
 
 // getCardSpan is where the card of a mark stands. A deck holding none of that
@@ -237,14 +237,14 @@ func (f *DeckFile) RemoveSection(at int) error {
 	}
 	// A section with nothing under it stood last, and what is above it now ends
 	// on the one break a file ends with.
-	written := ""
+	content := ""
 	if to == len(body) {
 		head = getTrimmedEnd(body, 0, head)
 		if head > 0 {
-			written = "\n"
+			content = "\n"
 		}
 	}
-	return f.doc.SpliceBody(head, to, written)
+	return f.doc.SpliceBody(head, to, content)
 }
 
 // AddSection writes a section at the end of the deck. What a person wrote under
@@ -275,11 +275,11 @@ func (f *DeckFile) AddCardUnder(at int, card Card) error {
 	if at < 0 || at >= len(heads) {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, at)
 	}
-	written := len(body)
+	content := len(body)
 	if at+1 < len(heads) {
-		written = heads[at+1].head
+		content = heads[at+1].head
 	}
-	return f.doc.SpliceBody(written, written, insert(body, written, cardBlock(card)))
+	return f.doc.SpliceBody(content, content, insert(body, content, cardBlock(card)))
 }
 
 // cardBlock is the markdown one card is written as: its heading, the wikilink

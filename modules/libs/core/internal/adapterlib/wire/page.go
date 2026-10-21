@@ -26,23 +26,23 @@ var OpenedAt = []string{"", "/", "/" + OpensAt}
 // without one says so, in the words of the person who has to fix it.
 func GetInterface(pages fs.FS) (fs.FS, error) {
 	missing := fmt.Errorf("no interface in this binary — run: make interface")
-	built, err := fs.Sub(pages, "pages/app")
+	constructed, err := fs.Sub(pages, "pages/app")
 	if err != nil {
 		return nil, missing
 	}
-	if _, err := fs.Stat(built, OpensAt); err != nil {
+	if _, err := fs.Stat(constructed, OpensAt); err != nil {
 		return nil, missing
 	}
-	return built, nil
+	return constructed, nil
 }
 
 // NewInterfaceServer is the built interface as a file server.
 func NewInterfaceServer(pages fs.FS) (http.Handler, error) {
-	built, err := GetInterface(pages)
+	constructed, err := GetInterface(pages)
 	if err != nil {
 		return nil, err
 	}
-	return http.FileServerFS(built), nil
+	return http.FileServerFS(constructed), nil
 }
 
 // WritePage writes the document a window opens at, already showing what the settings
@@ -58,18 +58,18 @@ func WritePage(
 	themes numenv1connect.ThemeServiceHandler,
 	files http.Handler,
 ) {
-	built, err := GetInterface(pages)
+	constructed, err := GetInterface(pages)
 	if err != nil {
 		files.ServeHTTP(w, r)
 		return
 	}
-	text, err := fs.ReadFile(built, OpensAt)
+	text, err := fs.ReadFile(constructed, OpensAt)
 	if err != nil {
 		files.ServeHTTP(w, r)
 		return
 	}
-	if said, is := readAppearanceSettings(r.Context(), themes); is {
-		text = appearance.AddStyles(text, said.Styles())
+	if response, is := readAppearanceSettings(r.Context(), themes); is {
+		text = appearance.AddStyles(text, response.Styles())
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -91,16 +91,16 @@ func readAppearanceSettings(
 	if themes == nil {
 		return appearance.Settings{}, false
 	}
-	worn, err := themes.ListThemes(ctx, connect.NewRequest(&v1.ListThemesRequest{}))
+	aged, err := themes.ListThemes(ctx, connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		return appearance.Settings{}, false
 	}
 	out := appearance.Settings{
-		Mode:           ConvertModeFromWire(worn.Msg.GetMode()),
-		InterfaceScale: worn.Msg.GetInterfaceScale(),
-		TextScale:      worn.Msg.GetTextScale(),
+		Mode:           ConvertModeFromWire(aged.Msg.GetMode()),
+		InterfaceScale: aged.Msg.GetInterfaceScale(),
+		TextScale:      aged.Msg.GetTextScale(),
 	}
-	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: worn.Msg.GetApplied()}))
+	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: aged.Msg.GetApplied()}))
 	if err == nil {
 		out.Theme = text.Msg.GetCss()
 	}

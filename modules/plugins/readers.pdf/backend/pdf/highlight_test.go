@@ -39,7 +39,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			defer doc.close()
 
 			for i := 0; i < doc.pages; i++ {
-				said := doc.text(i)
+				response := doc.text(i)
 				read, err := doc.worker.GetPageTextStructured(&requests.GetPageTextStructured{
 					Page: requests.Page{ByIndex: &requests.PageByIndex{Document: doc.ref, Index: i}},
 					Mode: requests.GetPageTextStructuredModeChars,
@@ -51,9 +51,9 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 				for _, one := range read.Chars {
 					joined.WriteString(one.Text)
 				}
-				if joined.String() != said {
+				if joined.String() != response {
 					t.Errorf("page %d: the characters say %q and the page says %q",
-						i, joined.String(), said)
+						i, joined.String(), response)
 				}
 			}
 		})

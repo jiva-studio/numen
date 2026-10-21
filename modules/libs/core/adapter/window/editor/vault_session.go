@@ -71,10 +71,10 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	defer o.shutdown.endKeepOpen()
 
 	// A page that says nothing is waited for HandedOverIn and no longer.
-	held, spent := context.WithTimeout(ctx, FlushTimeout)
-	defer spent()
+	target, elapsed := context.WithTimeout(ctx, FlushTimeout)
+	defer elapsed()
 
-	if !flushPending(held, o.State.Window, &o.State.Writing) {
+	if !flushPending(target, o.State.Window, &o.State.Writing) {
 		return errAnswerPending
 	}
 
@@ -134,7 +134,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 // and the watch behind it, the extraction of the documents it holds, and the
 // batches left with a proofreader.
 func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession, error) {
-	known, err := o.vaults.List.Execute()
+	recognized, err := o.vaults.List.Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 
 	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
-	recognising.TakeUp(watching, sources, known...)
+	recognising.TakeUp(watching, sources, recognized...)
 
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
@@ -168,7 +168,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 	// A transcript's proofreading stands at the line it reached, and is taken up
 	// here whether or not this installation listens to recordings on its own.
 	// Every vault this installation holds is asked after.
-	transcribing.TakeUp(watching, sources, known...)
+	transcribing.TakeUp(watching, sources, recognized...)
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.

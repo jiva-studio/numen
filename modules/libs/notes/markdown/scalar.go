@@ -140,11 +140,11 @@ func scalarLike(value string, style yaml.Style) (string, error) {
 	if err := enc.Close(); err != nil {
 		return "", err
 	}
-	written := strings.TrimRight(out.String(), "\n")
+	content := strings.TrimRight(out.String(), "\n")
 
 	var parsed string
-	if err := yaml.Unmarshal([]byte(written), &parsed); err != nil || parsed != value {
+	if err := yaml.Unmarshal([]byte(content), &parsed); err != nil || parsed != value {
 		return scalar(value)
 	}
-	return written, nil
+	return content, nil
 }

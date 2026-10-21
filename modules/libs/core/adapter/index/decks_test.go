@@ -287,12 +287,12 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"decks/mammals.md"})
+	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"decks/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held["decks/mammals.md"] != deckType {
-		t.Errorf("the index calls it %q, want %q", held["decks/mammals.md"], deckType)
+	if target["decks/mammals.md"] != deckType {
+		t.Errorf("the index calls it %q, want %q", target["decks/mammals.md"], deckType)
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM notes n JOIN vaults v ON v.id = n.vault_id
 	                          WHERE v.identifier = ? AND n.title = 'Mammals'

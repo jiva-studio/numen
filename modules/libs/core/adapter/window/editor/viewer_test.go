@@ -92,13 +92,13 @@ func (p *paper) RenderPage(index, dpi int) (image.Image, error) {
 	p.each[index]++
 	p.mu.Unlock()
 
-	drawn := image.NewRGBA(image.Rect(0, 0, p.wide*dpi/pool.PointsDPI, p.high*dpi/pool.PointsDPI))
-	for y := drawn.Bounds().Min.Y; y < drawn.Bounds().Max.Y; y++ {
-		for x := drawn.Bounds().Min.X; x < drawn.Bounds().Max.X; x++ {
-			drawn.Set(x, y, color.RGBA{R: uint8(x), G: uint8(y), B: uint8(index), A: 255})
+	rendered := image.NewRGBA(image.Rect(0, 0, p.wide*dpi/pool.PointsDPI, p.high*dpi/pool.PointsDPI))
+	for y := rendered.Bounds().Min.Y; y < rendered.Bounds().Max.Y; y++ {
+		for x := rendered.Bounds().Min.X; x < rendered.Bounds().Max.X; x++ {
+			rendered.Set(x, y, color.RGBA{R: uint8(x), G: uint8(y), B: uint8(index), A: 255})
 		}
 	}
-	return drawn, nil
+	return rendered, nil
 }
 
 func (p *paper) Close() {
@@ -248,19 +248,19 @@ func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
 			if out.Code != http.StatusOK {
 				t.Fatalf("asked for a page and got %d: %s", out.Code, out.Body)
 			}
-			if said := out.Header().Get("Content-Type"); said != "image/jpeg" {
-				t.Errorf("the page came back as %q", said)
+			if response := out.Header().Get("Content-Type"); response != "image/jpeg" {
+				t.Errorf("the page came back as %q", response)
 			}
-			drawn, err := jpeg.Decode(out.Body)
+			rendered, err := jpeg.Decode(out.Body)
 			if err != nil {
 				t.Fatalf("what came back is not a picture: %v", err)
 			}
-			got := drawn.Bounds().Dx()
+			got := rendered.Bounds().Dx()
 			if got < width {
 				t.Errorf("asked for %d pixels wide and got %d", width, got)
 			}
 			// The page keeps its shape: 612 by 792 units of its own.
-			high := drawn.Bounds().Dy()
+			high := rendered.Bounds().Dy()
 			if want := got * 792 / 612; high < want-2 || high > want+2 {
 				t.Errorf("a page %d wide came back %d high, not about %d", got, high, want)
 			}
@@ -273,11 +273,11 @@ func TestWhatADocumentIsIsHowManyPagesAndWhatEachMeasures(t *testing.T) {
 	api, _ := openViewerWindow(t, sheets(4))
 	stopReadAhead(api)
 
-	told := getDocument(t, api)
-	if len(told.GetPages()) != 4 {
-		t.Fatalf("the document came back as %+v", told)
+	notified := getDocument(t, api)
+	if len(notified.GetPages()) != 4 {
+		t.Fatalf("the document came back as %+v", notified)
 	}
-	for i, page := range told.GetPages() {
+	for i, page := range notified.GetPages() {
 		if page.GetWidth() != 612 || page.GetHeight() != 792 {
 			t.Errorf("page %d came back %gx%g", i, page.GetWidth(), page.GetHeight())
 		}
@@ -340,8 +340,8 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 		{"0", "?wide=0", http.StatusBadRequest},
 		{"0", "?wide=99999", http.StatusBadRequest},
 	} {
-		asked := one.at + one.wide
-		t.Run(asked, func(t *testing.T) {
+		request := one.at + one.wide
+		t.Run(request, func(t *testing.T) {
 			api, handler := openViewerWindow(t, sheets(4))
 			stopReadAhead(api)
 
@@ -349,11 +349,11 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 			if one.wide == "" {
 				join = "?"
 			}
-			at := assetURL(book) + "/" + pagesName + "/" + asked +
+			at := assetURL(book) + "/" + pagesName + "/" + request +
 				join + formatFingerprint(printOf(t, api, book))
 			out := ask(handler, at)
 			if out.Code != one.want {
-				t.Errorf("asking for %s was answered %d, not %d", asked, out.Code, one.want)
+				t.Errorf("asking for %s was answered %d, not %d", request, out.Code, one.want)
 			}
 		})
 	}
@@ -369,12 +369,12 @@ func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 	stopReadAhead(api)
 
 	mark := printOf(t, api, book)
-	held := ask(handler, pageURL(book, 0, 400, mark))
-	if held.Code != http.StatusOK {
-		t.Fatalf("asked for a page and got %d: %s", held.Code, held.Body)
+	target := ask(handler, pageURL(book, 0, 400, mark))
+	if target.Code != http.StatusOK {
+		t.Fatalf("asked for a page and got %d: %s", target.Code, target.Body)
 	}
-	if said := held.Header().Get("Cache-Control"); said != immutable {
-		t.Errorf("a page that may be kept was answered %q", said)
+	if response := target.Header().Get("Cache-Control"); response != immutable {
+		t.Errorf("a page that may be kept was answered %q", response)
 	}
 
 	mark.Mtime++
@@ -394,7 +394,7 @@ func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 	if first.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", first.Code, first.Body)
 	}
-	opens, drawn, _ := from.getCounts()
+	opens, rendered, _ := from.getCounts()
 	if opens != 1 {
 		t.Fatalf("the document was opened %d times", opens)
 	}
@@ -406,9 +406,9 @@ func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 	if first.Body.String() != again.Body.String() {
 		t.Error("the page came back drawn differently the second time")
 	}
-	if opensAgain, drawnAgain, _ := from.getCounts(); drawnAgain != drawn || opensAgain != opens {
+	if opensAgain, drawnAgain, _ := from.getCounts(); drawnAgain != rendered || opensAgain != opens {
 		t.Errorf("the second ask opened %d and drew %d, having opened %d and drawn %d",
-			opensAgain, drawnAgain, opens, drawn)
+			opensAgain, drawnAgain, opens, rendered)
 	}
 
 	// Another page of the same document is drawn out of the document already
@@ -432,13 +432,13 @@ func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
-	_, drawn, _ := from.getCounts()
+	_, rendered, _ := from.getCounts()
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
-	if _, drawnAgain, _ := from.getCounts(); drawnAgain <= drawn {
-		t.Errorf("the page was not drawn again: %d drawings both times", drawn)
+	if _, drawnAgain, _ := from.getCounts(); drawnAgain <= rendered {
+		t.Errorf("the page was not drawn again: %d drawings both times", rendered)
 	}
 }
 
@@ -471,12 +471,12 @@ func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 			t.Errorf("two asks for one page came back drawn differently")
 		}
 	}
-	opens, drawn, _ := from.getCounts()
+	opens, rendered, _ := from.getCounts()
 	if opens != 1 {
 		t.Errorf("%d asks opened the document %d times", askers, opens)
 	}
-	if drawn != 1 {
-		t.Errorf("%d asks for one page drew it %d times", askers, drawn)
+	if rendered != 1 {
+		t.Errorf("%d asks for one page drew it %d times", askers, rendered)
 	}
 }
 
@@ -520,8 +520,8 @@ func TestTheNextPageIsDrawnBeforeItIsAsked(t *testing.T) {
 		t.Fatalf("asked for the next page and got %d", out.Code)
 	}
 	// Asking for it draws the page after it, and not it again.
-	if drawn := from.getPageDraws(1); drawn != 1 {
-		t.Errorf("the page drawn ahead was drawn %d times", drawn)
+	if rendered := from.getPageDraws(1); rendered != 1 {
+		t.Errorf("the page drawn ahead was drawn %d times", rendered)
 	}
 }
 
@@ -614,19 +614,19 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 	}
 	api, handler := fromTheLibrary(t, string(raw))
 
-	if told := getDocument(t, api); len(told.GetPages()) < 1 {
-		t.Fatalf("the document came back as %+v", told)
+	if notified := getDocument(t, api); len(notified.GetPages()) < 1 {
+		t.Fatalf("the document came back as %+v", notified)
 	}
 
 	page := ask(handler, getPageAddress(t, api, book, 0, 500))
 	if page.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", page.Code, page.Body)
 	}
-	drawn, err := jpeg.Decode(page.Body)
+	rendered, err := jpeg.Decode(page.Body)
 	if err != nil {
 		t.Fatalf("what came back is not a picture: %v", err)
 	}
-	if dx := drawn.Bounds().Dx(); dx < 500 || dx > 502 {
+	if dx := rendered.Bounds().Dx(); dx < 500 || dx > 502 {
 		t.Errorf("asked for 500 pixels wide and got %d", dx)
 	}
 }
@@ -667,14 +667,14 @@ func TestTheApplicationDrawsWithTheRenderer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	drawn, err := newViewer(libraryRenderer{}).open(file)
+	rendered, err := newViewer(libraryRenderer{}).open(file)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer drawn.Close()
+	defer rendered.Close()
 
-	if drawn.GetPageCount() != 2 {
-		t.Errorf("the viewer opened %d pages, expected 2", drawn.GetPageCount())
+	if rendered.GetPageCount() != 2 {
+		t.Errorf("the viewer opened %d pages, expected 2", rendered.GetPageCount())
 	}
 }
 

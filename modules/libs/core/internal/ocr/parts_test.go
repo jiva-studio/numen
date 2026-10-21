@@ -40,7 +40,7 @@ func TestATornTailGivesBackTheWholeParts(t *testing.T) {
 	if !reflect.DeepEqual(got[0], parts[0]) {
 		t.Errorf("unpacked %+v, want %+v", got[0], parts[0])
 	}
-	if left := ocr.Unpack(raw[:7]); len(left) != 0 {
-		t.Errorf("unpacked %d parts from less than one record", len(left))
+	if remaining := ocr.Unpack(raw[:7]); len(remaining) != 0 {
+		t.Errorf("unpacked %d parts from less than one record", len(remaining))
 	}
 }

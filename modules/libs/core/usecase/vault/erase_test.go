@@ -43,10 +43,10 @@ func newErase(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows,
 
 func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	erase, trash, index, steps := newErase(registry)
 
-	res, err := erase.Execute(t.Context(), gone)
+	res, err := erase.Execute(t.Context(), removed)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,28 +57,28 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	if !slices.Equal(*steps, []string{"trash", "forget"}) {
 		t.Errorf("what happened, in order: %v", *steps)
 	}
-	if !slices.Equal(trash.moved, []string{gone.Path}) {
-		t.Errorf("trashed %v, want %s", trash.moved, gone.Path)
+	if !slices.Equal(trash.moved, []string{removed.Path}) {
+		t.Errorf("trashed %v, want %s", trash.moved, removed.Path)
 	}
-	if !slices.Equal(index.unregistered, []domain.VaultID{gone.ID}) {
-		t.Errorf("the index was told to forget %v, want %s", index.unregistered, gone.ID)
+	if !slices.Equal(index.unregistered, []domain.VaultID{removed.ID}) {
+		t.Errorf("the index was told to forget %v, want %s", index.unregistered, removed.ID)
 	}
-	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || found {
+	if _, found, err := registry.FindVault(string(removed.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 }
 
 func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	erase, trash, index, _ := newErase(registry)
 
 	// The folder at the path a registry entry names is some other folder now.
-	if err := os.RemoveAll(filepath.Join(gone.Path, ".numen")); err != nil {
+	if err := os.RemoveAll(filepath.Join(removed.Path, ".numen")); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := erase.Execute(t.Context(), gone); !errors.Is(err, vaults.ErrUnreadable) {
+	if _, err := erase.Execute(t.Context(), removed); !errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("a folder that is not the vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {
@@ -87,21 +87,21 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 	if len(index.unregistered) != 0 {
 		t.Errorf("the index was told to forget %v", index.unregistered)
 	}
-	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || !found {
+	if _, found, err := registry.FindVault(string(removed.ID)); err != nil || !found {
 		t.Errorf("the vault left the list: %v %v", found, err)
 	}
 }
 
 func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	erase, trash, index, _ := newErase(registry)
 
-	if err := os.RemoveAll(gone.Path); err != nil {
+	if err := os.RemoveAll(removed.Path); err != nil {
 		t.Fatal(err)
 	}
 
-	res, err := erase.Execute(t.Context(), gone)
+	res, err := erase.Execute(t.Context(), removed)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,10 +111,10 @@ func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 	if len(trash.moved) != 0 {
 		t.Errorf("trashed %v, and there was nothing there", trash.moved)
 	}
-	if !slices.Equal(index.unregistered, []domain.VaultID{gone.ID}) {
-		t.Errorf("the index was told to forget %v, want %s", index.unregistered, gone.ID)
+	if !slices.Equal(index.unregistered, []domain.VaultID{removed.ID}) {
+		t.Errorf("the index was told to forget %v, want %s", index.unregistered, removed.ID)
 	}
-	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || found {
+	if _, found, err := registry.FindVault(string(removed.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 }
@@ -141,7 +141,7 @@ func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
 
 func TestEraseTouchesNothingWhenTheFolderCannotBeRead(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	index := &indexRows{}
 	trash := &bin{}
 	erase := vaults.NewErase(
@@ -150,7 +150,7 @@ func TestEraseTouchesNothingWhenTheFolderCannotBeRead(t *testing.T) {
 		vaults.NewUnregister(registry, index),
 	)
 
-	res, err := erase.Execute(t.Context(), gone)
+	res, err := erase.Execute(t.Context(), removed)
 	if !errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("want ErrUnreadable, got %v", err)
 	}
@@ -161,7 +161,7 @@ func TestEraseTouchesNothingWhenTheFolderCannotBeRead(t *testing.T) {
 
 func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	index := &indexRows{}
 	trash := &bin{}
 	erase := vaults.NewErase(
@@ -170,7 +170,7 @@ func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
 		vaults.NewUnregister(registry, index),
 	)
 
-	_, err := erase.Execute(t.Context(), gone)
+	_, err := erase.Execute(t.Context(), removed)
 	if !errors.Is(err, errRefused) || errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("want the rejection itself back, got %v", err)
 	}
@@ -192,19 +192,19 @@ func TestEraseRefusesAFolderWhoseIdentityIsNotThisVaults(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			_, gone, registry := twoVaults(t)
+			_, removed, registry := twoVaults(t)
 			index := &indexRows{}
 			trash := &bin{}
 			erase := vaults.NewErase(
 				refusingIdentity{vaultID: func(string) (domain.VaultID, bool, error) {
-					id, does := tc.answers(gone)
+					id, does := tc.answers(removed)
 					return id, does, nil
 				}},
 				trash,
 				vaults.NewUnregister(registry, index),
 			)
 
-			if _, err := erase.Execute(t.Context(), gone); !errors.Is(err, vaults.ErrUnreadable) {
+			if _, err := erase.Execute(t.Context(), removed); !errors.Is(err, vaults.ErrUnreadable) {
 				t.Fatalf("want ErrUnreadable, got %v", err)
 			}
 			if len(trash.moved) != 0 || len(index.unregistered) != 0 {
@@ -216,32 +216,32 @@ func TestEraseRefusesAFolderWhoseIdentityIsNotThisVaults(t *testing.T) {
 
 func TestAFolderThatCannotBeTrashedStaysOnTheList(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	erase, trash, index, _ := newErase(registry)
 	trash.fails = errRefused
 
-	res, err := erase.Execute(t.Context(), gone)
+	res, err := erase.Execute(t.Context(), removed)
 	if !errors.Is(err, errRefused) {
 		t.Fatalf("want the rejection back, got %v", err)
 	}
 	if res.IsTrashed || len(index.unregistered) != 0 {
 		t.Errorf("result %+v, unregistered %v", res, index.unregistered)
 	}
-	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || !found {
+	if _, found, err := registry.FindVault(string(removed.ID)); err != nil || !found {
 		t.Errorf("the vault left the list: %v %v", found, err)
 	}
 }
 
 func TestEraseKeepsTheCauseWhenTheFolderCannotBeRead(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	erase := vaults.NewErase(
 		refusingIdentity{checkReadable: errRefused},
 		&bin{},
 		vaults.NewUnregister(registry, &indexRows{}),
 	)
 
-	_, err := erase.Execute(t.Context(), gone)
+	_, err := erase.Execute(t.Context(), removed)
 	if !errors.Is(err, vaults.ErrUnreadable) || !errors.Is(err, errRefused) {
 		t.Fatalf("want both the sentinel and the cause, got %v", err)
 	}

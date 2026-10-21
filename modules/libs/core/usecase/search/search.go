@@ -412,7 +412,7 @@ func groupBySource(found []domain.Passage) (map[string][]int, []string) {
 	groups := make(map[string][]int, len(found))
 	order := make([]string, 0, len(found))
 	for i, p := range found {
-		if _, held := groups[p.Source]; !held {
+		if _, target := groups[p.Source]; !target {
 			order = append(order, p.Source)
 		}
 		groups[p.Source] = append(groups[p.Source], i)

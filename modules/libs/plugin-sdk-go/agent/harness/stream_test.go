@@ -32,8 +32,8 @@ func TestTheReplyIsSaidPieceByPieceInTheOrderItIsWritten(t *testing.T) {
 	if !requests[0].Stream {
 		t.Error("the request did not ask for a stream")
 	}
-	if kept := requests[1].Messages[2]; kept.Role != "assistant" || kept.Content == nil || *kept.Content != "Water the garden today." {
-		t.Errorf("the conversation kept %+v", kept)
+	if retained := requests[1].Messages[2]; retained.Role != "assistant" || retained.Content == nil || *retained.Content != "Water the garden today." {
+		t.Errorf("the conversation kept %+v", retained)
 	}
 }
 
@@ -62,15 +62,15 @@ func TestStreamedToolCallFragmentsAreAssembledByIndex(t *testing.T) {
 	if calls, want := vault.getCalls(), []string{`{"path":"A.md"}`, `{"path":"B.md"}`}; !slices.Equal(calls, want) {
 		t.Errorf("the vault was called with %v, want %v", calls, want)
 	}
-	told := model.getRequests()[1].Messages
-	asked := told[len(told)-3]
-	if len(asked.ToolCalls) != 2 || asked.ToolCalls[0].ID != "c1" || asked.ToolCalls[1].ID != "c2" ||
-		asked.ToolCalls[1].Function.Name != "note_read" || asked.ToolCalls[1].Type != "function" ||
-		asked.Content == nil || *asked.Content != "Reading both." {
-		t.Errorf("the model was told back %+v", asked)
+	notified := model.getRequests()[1].Messages
+	request := notified[len(notified)-3]
+	if len(request.ToolCalls) != 2 || request.ToolCalls[0].ID != "c1" || request.ToolCalls[1].ID != "c2" ||
+		request.ToolCalls[1].Function.Name != "note_read" || request.ToolCalls[1].Type != "function" ||
+		request.Content == nil || *request.Content != "Reading both." {
+		t.Errorf("the model was told back %+v", request)
 	}
-	if told[len(told)-2].ToolCallID != "c1" || told[len(told)-1].ToolCallID != "c2" {
-		t.Errorf("the results were told back as %+v", told[len(told)-2:])
+	if notified[len(notified)-2].ToolCallID != "c1" || notified[len(notified)-1].ToolCallID != "c2" {
+		t.Errorf("the results were told back as %+v", notified[len(notified)-2:])
 	}
 }
 
@@ -166,7 +166,7 @@ func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("Water the garden.")}}
 	s := newServer(model.serve(t).URL)
-	gone := errors.New("the window is gone")
+	removed := errors.New("the window is gone")
 
 	pieces := 0
 	err := s.Ask(t.Context(), newTask("", "Plan?"), func(r *numenv1.AskAgentResponse) error {
@@ -174,10 +174,10 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 			return nil
 		}
 		pieces++
-		return gone
+		return removed
 	})
 
-	if !errors.Is(err, gone) || pieces != 1 {
+	if !errors.Is(err, removed) || pieces != 1 {
 		t.Errorf("Ask returned %v after %d pieces", err, pieces)
 	}
 }

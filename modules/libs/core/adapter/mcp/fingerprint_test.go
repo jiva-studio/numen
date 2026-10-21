@@ -14,8 +14,8 @@ func TestTheFingerprintAnAgentCarriesIsSizeAndNanoseconds(t *testing.T) {
 	ref := domain.Fingerprint{Path: "notes/Compost.md", Size: 12, ModTime: at}
 
 	want := "12-1788433445123456789"
-	if held := fingerprintOf(ref); held != want {
-		t.Errorf("the agent is handed %q, want %q", held, want)
+	if target := fingerprintOf(ref); target != want {
+		t.Errorf("the agent is handed %q, want %q", target, want)
 	}
 }
 

@@ -141,11 +141,11 @@ func TestADeckThatIsDeletedLeavesNoEntryBehind(t *testing.T) {
 	}
 
 	remove(t, s, "decks/Words.md")
-	left, err := faces.Execute(t.Context(), s.vault)
+	remaining, err := faces.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range left {
+	for _, one := range remaining {
 		if one.Deck == "decks/Words.md" {
 			t.Fatalf("a deleted deck stands: %+v", one.ID)
 		}

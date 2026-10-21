@@ -32,9 +32,9 @@ func startPlugin(t *testing.T) string {
 		t.Fatal(err)
 	}
 	ctx, stop := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() { done <- s.ServeContext(ctx) }()
-	t.Cleanup(func() { stop(); <-done })
+	isDone := make(chan error, 1)
+	go func() { isDone <- s.ServeContext(ctx) }()
+	t.Cleanup(func() { stop(); <-isDone })
 	return "http://127.0.0.1:" + strconv.Itoa(port)
 }
 

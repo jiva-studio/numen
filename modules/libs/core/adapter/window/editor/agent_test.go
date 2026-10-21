@@ -141,15 +141,15 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	if steps[0].GetModelStarted() == nil {
 		t.Errorf("the first step is %+v, want a wait beginning", steps[0])
 	}
-	doing := steps[1].GetToolCall()
-	if doing.GetTool() != "note_rewrite" || doing.GetAbout() != "notes/Fugue.md" || doing.GetLength() != 240 {
-		t.Errorf("the tool in hand is %+v, want note_rewrite over notes/Fugue.md at 240", doing)
+	executing := steps[1].GetToolCall()
+	if executing.GetTool() != "note_rewrite" || executing.GetAbout() != "notes/Fugue.md" || executing.GetLength() != 240 {
+		t.Errorf("the tool in hand is %+v, want note_rewrite over notes/Fugue.md at 240", executing)
 	}
 	if steps[2].GetToolFinished() == nil {
 		t.Errorf("the third step is %+v, want the tool answering", steps[2])
 	}
-	if said := steps[3].GetText(); said != "Rewritten." {
-		t.Errorf("the agent said %q, want %q", said, "Rewritten.")
+	if response := steps[3].GetText(); response != "Rewritten." {
+		t.Errorf("the agent said %q, want %q", response, "Rewritten.")
 	}
 	if why := steps[4].GetStopped(); why != "out of turns" {
 		t.Errorf("it stopped saying %q, want %q", why, "out of turns")
@@ -171,10 +171,10 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	steps := getSteps(t, client, &v1.AskAgentRequest{Prompt: "show me where that is"})
-	doing := steps[0].GetToolCall()
-	if doing.GetPath() != "library/A Book.epub" ||
-		doing.GetSpan().GetFrom() != 1200 || doing.GetSpan().GetTo() != 1280 {
-		t.Errorf("the call is working at %+v", doing)
+	executing := steps[0].GetToolCall()
+	if executing.GetPath() != "library/A Book.epub" ||
+		executing.GetSpan().GetFrom() != 1200 || executing.GetSpan().GetTo() != 1280 {
+		t.Errorf("the call is working at %+v", executing)
 	}
 }
 

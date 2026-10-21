@@ -94,7 +94,7 @@ Which animal lives {{Life span}}?
 // A stencil declaring no field has no name to put in a card's heading, so it
 // cuts nothing and says so. The rest of the file is read.
 func TestAStencilDeclaringNoField(t *testing.T) {
-	for name, written := range map[string]string{
+	for name, content := range map[string]string{
 		"no key at all":     "",
 		"an empty list":     "fields: []\n",
 		"a name on its own": "fields: Height\n",
@@ -102,7 +102,7 @@ func TestAStencilDeclaringNoField(t *testing.T) {
 		"an empty name":     "fields:\n  - \"  \"\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := format.ReadStencil(note(t, "---\ntype: stencil\n"+written+
+			s := format.ReadStencil(note(t, "---\ntype: stencil\n"+content+
 				"---\n\n## Recognise\n\n### Front\n\n{{Height}}\n\n### Back\n\nnothing\n"))
 
 			if s.Fields != nil {
@@ -194,7 +194,7 @@ func TestAFaceMissingASideLaysOutNothing(t *testing.T) {
 // A file ending on a heading ends where the heading's line ends, and what
 // is placed under it is nothing.
 func TestAStencilEndingOnAHeading(t *testing.T) {
-	for name, written := range map[string]string{
+	for name, content := range map[string]string{
 		"a face":  "## Recognise",
 		"a side":  "## Recognise\n\n### Front\n\n{{Name}}\n\n### Back",
 		"a lead":  "## Recognise\n\nThe one to start with.\n\n### Front",
@@ -202,7 +202,7 @@ func TestAStencilEndingOnAHeading(t *testing.T) {
 		"nothing": "##",
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := format.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n\n"+written))
+			s := format.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n\n"+content))
 
 			if len(s.Faces) != 1 {
 				t.Fatalf("faces = %+v, want the one the file opens", s.Faces)

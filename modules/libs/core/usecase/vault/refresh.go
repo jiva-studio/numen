@@ -218,11 +218,11 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	u.writeLedger(v, recorded)
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
-	gone := append(append([]string(nil), res.Removed...), res.LeftAlone...)
-	if err := u.notes.Remove(ctx, v.ID, gone); err != nil {
+	removed := append(append([]string(nil), res.Removed...), res.LeftAlone...)
+	if err := u.notes.Remove(ctx, v.ID, removed); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
-	if err := u.dropSources(ctx, v, gone); err != nil {
+	if err := u.dropSources(ctx, v, removed); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
 	return res, nil
@@ -323,7 +323,7 @@ func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 // filed by kind and leave through their own, with their chunks and their vectors.
 func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string) error {
 	// A path names one file, and a folder names everything under it.
-	held := make(map[domain.SourceKind][]string)
+	target := make(map[domain.SourceKind][]string)
 	for _, path := range paths {
 		under, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
 		if err != nil {
@@ -333,11 +333,11 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 			if ref.Kind == domain.KindNote {
 				continue
 			}
-			held[ref.Kind] = append(held[ref.Kind], ref.Path)
+			target[ref.Kind] = append(target[ref.Kind], ref.Path)
 		}
 	}
-	for _, kind := range slices.Sorted(maps.Keys(held)) {
-		if err := u.sources.RemoveSources(ctx, v.ID, kind, held[kind]); err != nil {
+	for _, kind := range slices.Sorted(maps.Keys(target)) {
+		if err := u.sources.RemoveSources(ctx, v.ID, kind, target[kind]); err != nil {
 			return err
 		}
 	}
@@ -346,14 +346,14 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 
 // isCurrent reports whether the index already holds the note as the file is.
 func (u Refresh) isCurrent(ctx context.Context, reader port.VaultReader, v domain.Vault, ref domain.Fingerprint) bool {
-	held, err := u.queries.GetSourcesUnder(ctx, v.ID, ref.Path)
+	target, err := u.queries.GetSourcesUnder(ctx, v.ID, ref.Path)
 	if err != nil {
 		return false
 	}
-	at := slices.IndexFunc(held, func(f domain.Fingerprint) bool {
+	at := slices.IndexFunc(target, func(f domain.Fingerprint) bool {
 		return f.Path == ref.Path && f.Kind == domain.KindNote
 	})
-	if at < 0 || !held[at].IsUnchanged(ref) {
+	if at < 0 || !target[at].IsUnchanged(ref) {
 		return false
 	}
 	entry, ok := u.Ledger.get(u.now(), v.ID, ref.Path)

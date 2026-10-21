@@ -106,8 +106,8 @@ func TestThisProductsOwnPaletteLeavesTheModeSomethingToChoose(t *testing.T) {
 func TestAThemeSaysWhetherItIsAPair(t *testing.T) {
 	pinned := map[string]bool{"preset:dracula": true, "preset:solarized": false}
 	for _, one := range createThemeFolder(t).Themes() {
-		want, asked := pinned[one.Name]
-		if asked && one.IsPinned != want {
+		want, request := pinned[one.Name]
+		if request && one.IsPinned != want {
 			t.Errorf("%s is pinned: %v", one.Name, one.IsPinned)
 		}
 	}

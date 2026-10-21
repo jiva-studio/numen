@@ -12,9 +12,9 @@ func NewGetFile(read func() (written, path string, err error)) *GetFile {
 // Execute answers a Current holding the file and at its current position, and nothing
 // else.
 func (u *GetFile) Execute() (Current, error) {
-	written, path, err := u.read()
+	content, path, err := u.read()
 	if err != nil {
 		return Current{}, err
 	}
-	return Current{Written: written, Path: path}, nil
+	return Current{Written: content, Path: path}, nil
 }

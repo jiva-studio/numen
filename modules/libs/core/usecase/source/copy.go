@@ -64,9 +64,9 @@ func (u ImportURL) Copy(
 	}
 	defer release()
 
-	if size, held, err := u.getExistingCopy(ctx, v, store, hash, besidePath); err != nil {
+	if size, target, err := u.getExistingCopy(ctx, v, store, hash, besidePath); err != nil {
 		return res, err
-	} else if held {
+	} else if target {
 		res.IsExisted, res.Bytes, res.At = true, size, u.landing(besidePath)
 		return res, nil
 	}
@@ -92,12 +92,12 @@ func (u ImportURL) Copy(
 		_ = write.CloseWithError(err)
 		going <- err
 	}()
-	arriving := limitReader(read, u.CopyMaxSize)
+	incoming := limitReader(read, u.CopyMaxSize)
 	if progress != nil {
 		progress(0, meta.Bytes)
-		arriving = &passing{from: arriving, total: meta.Bytes, report: progress}
+		incoming = &passing{from: incoming, total: meta.Bytes, report: progress}
 	}
-	size, err := u.writeCopy(ctx, v, store, domain.NewCopyName(hash), besidePath, arriving)
+	size, err := u.writeCopy(ctx, v, store, domain.NewCopyName(hash), besidePath, incoming)
 	// The read end is closed before the download is waited for: whoever stopped
 	// reading unblocks whoever is writing into it.
 	_ = read.CloseWithError(err)

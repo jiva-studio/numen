@@ -32,7 +32,7 @@ func benchRecognition(n, step int) (string, []domain.OCRPageStart, []domain.High
 		})
 		at += len(line) + 1
 	}
-	var put []domain.CorrectionLine
+	var placed []domain.CorrectionLine
 	for i := 0; i < n; i += step {
 		text := lines[i]
 		switch (i / step) % 3 {
@@ -41,12 +41,12 @@ func benchRecognition(n, step int) (string, []domain.OCRPageStart, []domain.High
 		case 1:
 			text = text[:len(text)/2]
 		}
-		put = append(put, domain.CorrectionLine{Number: i, Text: text})
+		placed = append(placed, domain.CorrectionLine{Number: i, Text: text})
 	}
-	if len(put) > 1 {
-		put = append(put, domain.CorrectionLine{Number: put[0].Number, Text: "again"})
+	if len(placed) > 1 {
+		placed = append(placed, domain.CorrectionLine{Number: placed[0].Number, Text: "again"})
 	}
-	return strings.Join(lines, "\n"), marks, boxes, parts, put
+	return strings.Join(lines, "\n"), marks, boxes, parts, placed
 }
 
 var benchCases = []struct {
@@ -62,11 +62,11 @@ var benchCases = []struct {
 
 func BenchmarkBoxes(b *testing.B) {
 	for _, c := range benchCases {
-		_, _, boxes, _, put := benchRecognition(c.n, c.step)
+		_, _, boxes, _, placed := benchRecognition(c.n, c.step)
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				domain.GetCorrectedBoxes(boxes, put)
+				domain.GetCorrectedBoxes(boxes, placed)
 			}
 		})
 	}
@@ -74,11 +74,11 @@ func BenchmarkBoxes(b *testing.B) {
 
 func BenchmarkProse(b *testing.B) {
 	for _, c := range benchCases {
-		prose, marks, boxes, parts, put := benchRecognition(c.n, c.step)
+		prose, marks, boxes, parts, placed := benchRecognition(c.n, c.step)
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				domain.GetCorrectedProse(prose, marks, boxes, parts, put)
+				domain.GetCorrectedProse(prose, marks, boxes, parts, placed)
 			}
 		})
 	}

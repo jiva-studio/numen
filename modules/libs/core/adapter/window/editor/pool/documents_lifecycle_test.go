@@ -226,9 +226,9 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	docs.Close()
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(isDone)
 		for range 2 {
 			if _, _, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{})); !errors.Is(err, ErrBusy) {
 				t.Errorf("answered %v", err)
@@ -236,7 +236,7 @@ func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
 		}
 	}()
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the second ask waited on a lock the first kept")
 	}
@@ -401,10 +401,10 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 		}
 	}
 
-	gone := make(chan struct{})
+	removed := make(chan struct{})
 	go func() {
 		docs.Close()
-		close(gone)
+		close(removed)
 	}()
 
 	for i, s := range idle {
@@ -419,7 +419,7 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 		}
 	}
 	select {
-	case <-gone:
+	case <-removed:
 		t.Fatal("the window went with documents in use")
 	default:
 	}
@@ -428,7 +428,7 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 		give()
 	}
 	select {
-	case <-gone:
+	case <-removed:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the window never went")
 	}

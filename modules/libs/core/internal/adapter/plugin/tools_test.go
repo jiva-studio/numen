@@ -88,8 +88,8 @@ func (h *toolsHost) EnsureActive(_ context.Context, id string) (port.Endpoint, e
 func (h *toolsHost) Release(string) { h.released++ }
 
 func (h *toolsHost) CheckPluginPermission(id, permission string) error {
-	for _, held := range h.holds[id] {
-		if held == permission {
+	for _, target := range h.holds[id] {
+		if target == permission {
 			return nil
 		}
 	}

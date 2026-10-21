@@ -260,20 +260,20 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 	// asks it to be, and the library holds a document per worker.
 	raw := fixture(t, tiny)
 
-	done := make(chan string, 8)
-	for i := 0; i < cap(done); i++ {
+	isDone := make(chan string, 8)
+	for i := 0; i < cap(isDone); i++ {
 		go func() {
 			book, err := pdf.Read(raw)
 			if err != nil {
-				done <- "error: " + err.Error()
+				isDone <- "error: " + err.Error()
 				return
 			}
-			done <- book.Text
+			isDone <- book.Text
 		}()
 	}
 	want := read(t, tiny).Text
-	for i := 0; i < cap(done); i++ {
-		if got := <-done; got != want {
+	for i := 0; i < cap(isDone); i++ {
+		if got := <-isDone; got != want {
 			t.Errorf("one reading gave %q, want %q", got, want)
 		}
 	}
@@ -282,21 +282,21 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 // A page is drawn up to a number of pixels and no further. The same page at a
 // resolution that keeps it inside the bound is drawn.
 func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
-	held, err := pdf.OpenReader(readerOf(fixture(t, vast)))
+	target, err := pdf.OpenReader(readerOf(fixture(t, vast)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer held.Close()
+	defer target.Close()
 
-	if _, err := held.RenderPage(0, 300); err == nil {
+	if _, err := target.RenderPage(0, 300); err == nil {
 		t.Error("a page of 3.6 billion pixels was drawn")
 	}
-	drawn, err := held.RenderPage(0, 4)
+	rendered, err := target.RenderPage(0, 4)
 	if err != nil {
 		t.Fatalf("the page was not drawn at 4 DPI: %v", err)
 	}
-	if drawn.Bounds().Dx() < 700 {
-		t.Errorf("the page is drawn %d across", drawn.Bounds().Dx())
+	if rendered.Bounds().Dx() < 700 {
+		t.Errorf("the page is drawn %d across", rendered.Bounds().Dx())
 	}
 }
 
@@ -306,24 +306,24 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 func TestAPageSaysHowBigItIs(t *testing.T) {
 	for _, name := range []string{tiny, turned, labels} {
 		t.Run(name, func(t *testing.T) {
-			held, err := pdf.OpenReader(readerOf(fixture(t, name)))
+			target, err := pdf.OpenReader(readerOf(fixture(t, name)))
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer held.Close()
+			defer target.Close()
 
-			for page := range held.GetPageCount() {
-				wide, high, err := held.GetPageSize(page)
+			for page := range target.GetPageCount() {
+				wide, high, err := target.GetPageSize(page)
 				if err != nil {
 					t.Fatalf("page %d: %v", page, err)
 				}
-				drawn, err := held.RenderPage(page, 72)
+				rendered, err := target.RenderPage(page, 72)
 				if err != nil {
 					t.Fatalf("page %d: %v", page, err)
 				}
-				rgba, ok := drawn.(*image.RGBA)
+				rgba, ok := rendered.(*image.RGBA)
 				if !ok {
-					t.Fatalf("page %d: expected *image.RGBA, got %T", page, drawn)
+					t.Fatalf("page %d: expected *image.RGBA, got %T", page, rendered)
 				}
 				hasPixels := false
 				for _, b := range rgba.Pix {
@@ -335,30 +335,30 @@ func TestAPageSaysHowBigItIs(t *testing.T) {
 				if !hasPixels {
 					t.Errorf("page %d: expected non-zero pixel data", page)
 				}
-				if got := float64(drawn.Bounds().Dx()); got < wide-1 || got > wide+1 {
+				if got := float64(rendered.Bounds().Dx()); got < wide-1 || got > wide+1 {
 					t.Errorf("page %d says it is %g across and is drawn %g", page, wide, got)
 				}
-				if got := float64(drawn.Bounds().Dy()); got < high-1 || got > high+1 {
+				if got := float64(rendered.Bounds().Dy()); got < high-1 || got > high+1 {
 					t.Errorf("page %d says it is %g high and is drawn %g", page, high, got)
 				}
 			}
-			if _, _, err := held.GetPageSize(-1); err == nil {
+			if _, _, err := target.GetPageSize(-1); err == nil {
 				t.Error("a negative page index was measured")
 			}
-			if _, _, err := held.GetPageSize(held.GetPageCount()); err == nil {
+			if _, _, err := target.GetPageSize(target.GetPageCount()); err == nil {
 				t.Error("a page the document does not have was measured")
 			}
-			if _, err := held.RenderPage(-1, 72); err == nil {
+			if _, err := target.RenderPage(-1, 72); err == nil {
 				t.Error("a negative page index was rendered")
 			}
-			if _, err := held.RenderPage(held.GetPageCount(), 72); err == nil {
+			if _, err := target.RenderPage(target.GetPageCount(), 72); err == nil {
 				t.Error("a page the document does not have was rendered")
 			}
-			drawnDefault, err := held.RenderPage(0, 0)
+			drawnDefault, err := target.RenderPage(0, 0)
 			if err != nil {
 				t.Fatalf("render with 0 DPI failed: %v", err)
 			}
-			drawn300, err := held.RenderPage(0, 300)
+			drawn300, err := target.RenderPage(0, 300)
 			if err != nil {
 				t.Fatalf("render with 300 DPI failed: %v", err)
 			}

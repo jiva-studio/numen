@@ -48,29 +48,29 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	}
 	defer closeIfOpen(open.Close)
 
-	transcribe, cut := open.Transcribe, source.NewCutSource(open.Cut)
+	transcribe, trimmed := open.Transcribe, source.NewCutSource(open.Cut)
 	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By().GetTranscriptionModel())
 	started := time.Now()
 
 	// The line of minutes is closed once it stops, so what follows it relies on
 	// a line of its own.
-	shown := false
+	displayed := false
 	transcribe.IsRepeat = again
-	transcribe.Cut = cut.Execute
+	transcribe.Cut = trimmed.Execute
 	// A terminal that prints nothing for an hour looks broken, and this takes
 	// about that. The line rewrites itself.
 	transcribe.OnProgress = func(res transcription.TranscribeResult) {
 		if res.Length > 0 {
 			fmt.Fprintf(out, "  %s of %s\r",
 				transcript.FormatTimestamp(res.Heard), transcript.FormatTimestamp(res.Length))
-			shown = true
+			displayed = true
 		}
 	}
 	res, err := transcribe.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
-	if shown {
+	if displayed {
 		fmt.Fprintln(out)
 	}
 

@@ -54,13 +54,13 @@ func (h *presetsHandler) ListPresets(
 	if err != nil {
 		return nil, err
 	}
-	held, err := h.scenarios().flash.Presets.List(ctx, showing)
+	target, err := h.scenarios().flash.Presets.List(ctx, showing)
 	if err != nil {
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(held))}
-	for _, one := range held {
+	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(target))}
+	for _, one := range target {
 		out.Presets = append(out.Presets, &v1.PresetSummary{Path: one.Path, Title: one.Title})
 	}
 	return connect.NewResponse(out), nil
@@ -190,9 +190,9 @@ func (h *presetsHandler) ComputeCurve(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	held, err := h.scenarios().flash.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
+	target, err := h.scenarios().flash.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
 	if err != nil {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(held)}), nil
+	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(target)}), nil
 }

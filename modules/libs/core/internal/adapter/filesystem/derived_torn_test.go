@@ -65,8 +65,8 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	// cap against the offset the file was opened at, so the length of the
 	// append is what reaches past it.
 	lift := capFileSize(t, fileCap)
-	torn := strings.Repeat("b", 4*fileCap) + "\n"
-	err := derived.Append(ctx, "ocr/run.txt", []byte(torn))
+	divided := strings.Repeat("b", 4*fileCap) + "\n"
+	err := derived.Append(ctx, "ocr/run.txt", []byte(divided))
 	if err == nil {
 		t.Fatal("an append that could not land said it had")
 	}

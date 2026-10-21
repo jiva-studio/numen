@@ -27,12 +27,12 @@ func (u GetVaultToShow) Execute(name string) (domain.Vault, error) {
 	if found {
 		return last, nil
 	}
-	held, err := u.list.Execute()
+	target, err := u.list.Execute()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if len(held) > 0 {
-		return held[0], nil
+	if len(target) > 0 {
+		return target[0], nil
 	}
 	return domain.Vault{}, nil
 }

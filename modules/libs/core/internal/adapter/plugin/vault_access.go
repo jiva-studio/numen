@@ -73,9 +73,9 @@ func (a Vault) With(id domain.VaultID) (port.PluginVault, error) {
 	} else {
 		return nil, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
 	}
-	bound := a
-	bound.Current = func() (domain.Vault, bool) { return found, true }
-	return bound, nil
+	linked := a
+	linked.Current = func() (domain.Vault, bool) { return found, true }
+	return linked, nil
 }
 
 func (a Vault) EnsureIndexed(ctx context.Context) (port.PluginIndexState, error) {

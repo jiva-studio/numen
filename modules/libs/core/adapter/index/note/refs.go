@@ -74,11 +74,11 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 	defer rows.Close()
 
 	for rows.Next() {
-		var path, held string
-		if err := rows.Scan(&path, &held); err != nil {
+		var path, target string
+		if err := rows.Scan(&path, &target); err != nil {
 			return nil, err
 		}
-		out[path] = domain.NoteType(held)
+		out[path] = domain.NoteType(target)
 	}
 	return out, rows.Err()
 }

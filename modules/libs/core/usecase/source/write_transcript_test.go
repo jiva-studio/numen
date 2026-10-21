@@ -21,14 +21,14 @@ func TestTranscriptWriteKeepsWhatWasHeard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	heard, _ := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, talkHash))
-	if string(heard) != "heard" {
-		t.Errorf("what was heard became %q", heard)
+	received, _ := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, talkHash))
+	if string(received) != "heard" {
+		t.Errorf("what was heard became %q", received)
 	}
-	written, _ := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, talkHash))
+	content, _ := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, talkHash))
 	want := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
-	if string(written) != string(want) {
-		t.Errorf("corrections are %q, want %q", written, want)
+	if string(content) != string(want) {
+		t.Errorf("corrections are %q, want %q", content, want)
 	}
 	if cutAt != recordingPath {
 		t.Errorf("the recording was cut again at %q", cutAt)
@@ -39,14 +39,14 @@ func TestTranscriptWriteSurvivesACutFailure(t *testing.T) {
 	s := newTextScene(t)
 	failure := errors.New("no cutter")
 
-	written, err := s.texts.WriteTranscript.Execute(t.Context(), s.vault, recordingPath,
+	content, err := s.texts.WriteTranscript.Execute(t.Context(), s.vault, recordingPath,
 		[]domain.TranscriptCue{{Text: "right", From: 0, To: 1}},
 		func(context.Context, domain.Vault, string) error { return failure })
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !errors.Is(written.CutError, failure) {
-		t.Errorf("cut error is %v, want the cutter's", written.CutError)
+	if !errors.Is(content.CutError, failure) {
+		t.Errorf("cut error is %v, want the cutter's", content.CutError)
 	}
 	if _, err := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, talkHash)); err != nil {
 		t.Errorf("the corrections did not land: %v", err)

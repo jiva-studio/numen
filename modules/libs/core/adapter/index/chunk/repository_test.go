@@ -107,7 +107,7 @@ func TestTheCoarseRowReadsTheChunkItBelongsTo(t *testing.T) {
 	if !strings.Contains(statement, "FROM chunks WHERE id = ?") {
 		t.Errorf("insert_vec writes without reading the chunk it belongs to: %s", statement)
 	}
-	if kept := withoutComments(stmt.Get("keep_vector")); strings.Contains(kept, "FROM chunks") {
-		t.Errorf("keep_vector reads a chunk, and a vector outlives every chunk: %s", kept)
+	if retained := withoutComments(stmt.Get("keep_vector")); strings.Contains(retained, "FROM chunks") {
+		t.Errorf("keep_vector reads a chunk, and a vector outlives every chunk: %s", retained)
 	}
 }

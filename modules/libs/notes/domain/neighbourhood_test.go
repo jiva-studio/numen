@@ -21,16 +21,16 @@ func TestARelationIsTakenInOneOrder(t *testing.T) {
 }
 
 func TestTheFocusIsNotRelatedToItself(t *testing.T) {
-	held := domain.Neighbourhood{Focus: domain.NoteRef{Path: "notes/Entropy.md"}}
-	held.AddNeighbour(domain.NoteRef{Path: "notes/Entropy.md"}, domain.Neighbour{Relation: domain.RelationParent})
-	if len(held.Related) != 0 {
-		t.Fatalf("the focus was added beside itself: %v", held.Related)
+	target := domain.Neighbourhood{Focus: domain.NoteRef{Path: "notes/Entropy.md"}}
+	target.AddNeighbour(domain.NoteRef{Path: "notes/Entropy.md"}, domain.Neighbour{Relation: domain.RelationParent})
+	if len(target.Related) != 0 {
+		t.Fatalf("the focus was added beside itself: %v", target.Related)
 	}
-	held.AddNeighbour(domain.NoteRef{Path: "notes/Order.md", Title: "Order"}, domain.Neighbour{Relation: domain.RelationChild})
-	if len(held.Related) != 1 {
-		t.Fatalf("got %v", held.Related)
+	target.AddNeighbour(domain.NoteRef{Path: "notes/Order.md", Title: "Order"}, domain.Neighbour{Relation: domain.RelationChild})
+	if len(target.Related) != 1 {
+		t.Fatalf("got %v", target.Related)
 	}
-	if held.Related[0].Path != "notes/Order.md" || held.Related[0].Title != "Order" {
-		t.Errorf("the note added is %+v", held.Related[0])
+	if target.Related[0].Path != "notes/Order.md" || target.Related[0].Title != "Order" {
+		t.Errorf("the note added is %+v", target.Related[0])
 	}
 }

@@ -183,9 +183,9 @@ func peakHeap(run func()) int {
 	runtime.ReadMemStats(&base)
 
 	var peak atomic.Uint64
-	stop, done := make(chan struct{}), make(chan struct{})
+	stop, isDone := make(chan struct{}), make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(isDone)
 		var now runtime.MemStats
 		for {
 			runtime.ReadMemStats(&now)
@@ -201,7 +201,7 @@ func peakHeap(run func()) int {
 	}()
 	run()
 	close(stop)
-	<-done
+	<-isDone
 	return int(peak.Load()) - int(base.HeapAlloc)
 }
 

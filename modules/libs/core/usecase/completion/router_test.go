@@ -177,9 +177,9 @@ func TestAMissingAgentFailsTheQuestionWithNoOtherAgentAsked(t *testing.T) {
 	if len(fake.tasks) != 0 {
 		t.Errorf("started %v", fake.tasks)
 	}
-	for _, asked := range fake.asked {
-		if asked != "absent" {
-			t.Errorf("asked for %q", asked)
+	for _, request := range fake.asked {
+		if request != "absent" {
+			t.Errorf("asked for %q", request)
 		}
 	}
 }
@@ -264,8 +264,8 @@ func TestAQuestionNoAgentCanAnswerIsRefused(t *testing.T) {
 func TestAChoiceEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	fake := &programs{}
 	config := completion.Config{Default: completion.Route{Agent: "early"}}
-	chosen := choices{}
-	router, err := completion.NewRouter(func() completion.Config { return config }, chosen, fake)
+	selected := choices{}
+	router, err := completion.NewRouter(func() completion.Config { return config }, selected, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func TestAChoiceEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	chosen["plugin.a"] = port.CompletionChoice{Agent: "own"}
+	selected["plugin.a"] = port.CompletionChoice{Agent: "own"}
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
@@ -320,9 +320,9 @@ func TestAnAgentAnswersNoMoreQuestionsAtOnceThanTheLimit(t *testing.T) {
 	block := newBlocker()
 	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 2}}, choices{}, &programs{answer: block.answer})
 
-	const asked = 5
+	const request = 5
 	var wg sync.WaitGroup
-	for range asked {
+	for range request {
 		wg.Go(func() {
 			if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 				t.Error(err)

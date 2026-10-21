@@ -123,12 +123,12 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 		t.Errorf("the exact title is not in the note:\n%s", body)
 	}
 
-	shown, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
+	displayed, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if shown[created.Path].Title != "TCP/IP" {
-		t.Errorf("want the title back, got %q", shown[created.Path].Title)
+	if displayed[created.Path].Title != "TCP/IP" {
+		t.Errorf("want the title back, got %q", displayed[created.Path].Title)
 	}
 }
 

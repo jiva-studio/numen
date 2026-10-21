@@ -37,16 +37,16 @@ func TestAnAddressIsAnsweredWithTheNoteItReaches(t *testing.T) {
 	}
 
 	landed := getResolved(t, answer.Msg)
-	for _, written := range []string{"name://Entropy", "note://" + identified} {
-		one := landed[written]
+	for _, content := range []string{"name://Entropy", "note://" + identified} {
+		one := landed[content]
 		if one.GetPath() != "physics/Entropy.md" {
-			t.Errorf("%q lands at %q", written, one.GetPath())
+			t.Errorf("%q lands at %q", content, one.GetPath())
 		}
 		if one.GetVault() == "" || one.GetIsCrossed() {
-			t.Errorf("%q lands in vault %q, crossed %v", written, one.GetVault(), one.GetIsCrossed())
+			t.Errorf("%q lands in vault %q, crossed %v", content, one.GetVault(), one.GetIsCrossed())
 		}
 		if one.GetIsAmbiguous() {
-			t.Errorf("%q is called ambiguous", written)
+			t.Errorf("%q is called ambiguous", content)
 		}
 	}
 	if one, found := landed["name://Nowhere"]; found {

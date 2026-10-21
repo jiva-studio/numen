@@ -40,18 +40,18 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 		{Card: "zpqrstvwxy", Face: "Say it"}: "Sanskrit.md",
 	}
 
-	given := review.OrderAnswers(answers)
-	if len(given) != 2 {
-		t.Fatalf("the history came to %d answers, want 2", len(given))
+	provided := review.OrderAnswers(answers)
+	if len(provided) != 2 {
+		t.Fatalf("the history came to %d answers, want 2", len(provided))
 	}
 
 	for path, want := range review.GetSpentUnder(day, named, answers, underMap, nil) {
-		if got := given.GetSpentUnder(day, named, underMap, nil)[path]; got != want {
+		if got := provided.GetSpentUnder(day, named, underMap, nil)[path]; got != want {
 			t.Errorf("%s spent %+v, want %+v", path, got, want)
 		}
 	}
 	for face, want := range review.GetFaced(day, named, answers) {
-		if got := given.GetFaced(day, named)[face]; got != want {
+		if got := provided.GetFaced(day, named)[face]; got != want {
 			t.Errorf("%+v was faced %v, want %v", face, got, want)
 		}
 	}

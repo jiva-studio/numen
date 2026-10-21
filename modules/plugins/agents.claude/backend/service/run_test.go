@@ -208,13 +208,13 @@ func awaitUp(t *testing.T, stream *connect.ServerStreamForClient[numenv1.AskAgen
 // endsWithin runs the function and fails the test if it has not returned in time.
 func endsWithin(t *testing.T, what string, limit time.Duration, run func()) {
 	t.Helper()
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		run()
-		close(done)
+		close(isDone)
 	}()
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(limit):
 		t.Fatalf("%s did not end", what)
 	}

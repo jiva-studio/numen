@@ -89,11 +89,11 @@ func FuzzExpression(f *testing.F) {
 			}
 			return
 		}
-		if asked := words(t, expression, growing); len(asked) != len(fields) {
+		if request := words(t, expression, growing); len(request) != len(fields) {
 			t.Fatalf("%q holds %d words and was asked as %q, which holds %d",
-				typed, len(fields), expression, len(asked))
+				typed, len(fields), expression, len(request))
 		} else {
-			for i, word := range asked {
+			for i, word := range request {
 				if word != fields[i] {
 					t.Fatalf("%q asks for %q where %q was typed", expression, word, fields[i])
 				}
@@ -108,8 +108,8 @@ func FuzzExpression(f *testing.F) {
 func words(t *testing.T, expression string, growing bool) []string {
 	t.Helper()
 	if growing {
-		last, cut := strings.CutSuffix(expression, "*")
-		if !cut {
+		last, trimmed := strings.CutSuffix(expression, "*")
+		if !trimmed {
 			t.Fatalf("%q asks for a word still being typed and carries no prefix mark", expression)
 		}
 		expression = last

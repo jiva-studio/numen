@@ -165,7 +165,7 @@ func (s *Disk) trim() {
 	if s == nil {
 		return
 	}
-	held, err := os.ReadDir(s.dir)
+	target, err := os.ReadDir(s.dir)
 	if err != nil {
 		return
 	}
@@ -175,9 +175,9 @@ func (s *Disk) trim() {
 		mtime time.Time
 	}
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="a leading zero-valued page removes the folder itself, which fails while the folder holds the files that put the total over the bound"
-	pages := make([]page, 0, len(held))
+	pages := make([]page, 0, len(target))
 	var total int64
-	for _, one := range held {
+	for _, one := range target {
 		info, err := one.Info()
 		if err != nil {
 			continue

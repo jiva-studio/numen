@@ -42,9 +42,9 @@ func request(t *testing.T, address, sum string) Request {
 
 func TestFetchKeepsAPinnedFileUnderItsSum(t *testing.T) {
 	srv := serve(t, "weights")
-	var told bool
+	var notified bool
 	r := request(t, srv.URL+"/m/model.onnx", sumOf("weights"))
-	r.Progress = func(what string, _, _ int64) { told = told || what == "model.onnx" }
+	r.Progress = func(what string, _, _ int64) { notified = notified || what == "model.onnx" }
 
 	at, err := Fetch(context.Background(), r)
 	if err != nil {
@@ -56,7 +56,7 @@ func TestFetchKeepsAPinnedFileUnderItsSum(t *testing.T) {
 	if got, _ := os.ReadFile(at); string(got) != "weights" {
 		t.Fatalf("file holds %q", got)
 	}
-	if !told {
+	if !notified {
 		t.Fatal("progress was not reported")
 	}
 	if _, err := os.Stat(at + ".part"); !os.IsNotExist(err) {

@@ -13,20 +13,20 @@ func TestTheDigestStandsBeforeTheFirstLine(t *testing.T) {
 		{Number: 1, Text: "to the assembly."},
 	}}
 
-	asked := buildPrompt(batch)
-	if !strings.HasPrefix(asked, "The speech opens: Ganaka spoke.\n\n") {
-		t.Fatalf("the question is %q", asked)
+	request := buildPrompt(batch)
+	if !strings.HasPrefix(request, "The speech opens: Ganaka spoke.\n\n") {
+		t.Fatalf("the question is %q", request)
 	}
-	if !strings.HasSuffix(asked, Opens+"0"+Closes+"Ganaka spoke "+
+	if !strings.HasSuffix(request, Opens+"0"+Closes+"Ganaka spoke "+
 		Opens+"1"+Closes+"to the assembly.") {
-		t.Errorf("the question is %q", asked)
+		t.Errorf("the question is %q", request)
 	}
 }
 
 // A batch nothing was said about is the lines alone.
 func TestABatchWithNoDigestIsTheLinesAlone(t *testing.T) {
 	batch := Batch{Number: 0, Lines: []Line{{Number: 0, Text: "Ganaka spoke"}}}
-	if asked := buildPrompt(batch); asked != Opens+"0"+Closes+"Ganaka spoke" {
-		t.Errorf("the question is %q", asked)
+	if request := buildPrompt(batch); request != Opens+"0"+Closes+"Ganaka spoke" {
+		t.Errorf("the question is %q", request)
 	}
 }

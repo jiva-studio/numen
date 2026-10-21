@@ -308,7 +308,7 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 func listBackendSources(t *testing.T, backend string) []string {
 	t.Helper()
 	var files []string
-	seen := []string{backend}
+	observed := []string{backend}
 	queue := []string{backend}
 	for len(queue) > 0 {
 		dir := queue[0]
@@ -322,8 +322,8 @@ func listBackendSources(t *testing.T, backend string) []string {
 			for _, spec := range parsed.Imports {
 				rest, local := strings.CutPrefix(strings.Trim(spec.Path.Value, `"`), modulesPath)
 				imported := filepath.Join(modulesRoot, filepath.FromSlash(rest))
-				if local && !slices.Contains(seen, imported) {
-					seen = append(seen, imported)
+				if local && !slices.Contains(observed, imported) {
+					observed = append(observed, imported)
 					queue = append(queue, imported)
 				}
 			}

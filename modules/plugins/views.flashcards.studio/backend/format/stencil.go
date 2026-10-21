@@ -181,18 +181,18 @@ func fields(frontmatter map[string]any) ([]string, []Problem) {
 
 	var out []string
 	var problems []Problem
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 	for _, entry := range list {
 		name, isText := entry.(string)
 		if !isText || strings.TrimSpace(name) == "" {
 			continue
 		}
 		switch {
-		case seen[name]:
+		case observed[name]:
 			problems = append(problems, onField(name, FaultTwoFields,
 				"two fields are called "+name+", and the first stands"))
 		default:
-			seen[name] = true
+			observed[name] = true
 			out = append(out, name)
 		}
 	}

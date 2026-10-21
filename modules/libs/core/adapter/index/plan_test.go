@@ -165,13 +165,13 @@ func openPopulatedDB(t *testing.T) *DB {
 				 VALUES (?, ?, 'note', 1, 1) RETURNING id`, vault, "folder/"+name+".md")
 			// A few of them are stencils, so that a question about the stencils
 			// of a vault is answered against a table where both answers occur.
-			held := "note"
+			targetVal := "note"
 			if i%250 == 0 {
-				held = "stencil"
+				targetVal = "stencil"
 			}
 			exec(`INSERT INTO notes (source_id, vault_id, folded_name, title, type, identifier)
 			      VALUES (?, ?, ?, ?, ?, ?)`,
-				source, vault, name, name, held, fmt.Sprintf("01M%d%022d", vault, i))
+				source, vault, name, name, targetVal, fmt.Sprintf("01M%d%022d", vault, i))
 			for j := range 3 {
 				target := fmt.Sprintf("%s-%05d", prefix, (i+j+1)%notes)
 				exec(`INSERT INTO links (note_id, position, scheme, target, folded_name, role)

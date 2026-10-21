@@ -26,8 +26,8 @@ var ErrNoAddress = errors.New("this file names no address")
 // not required and the key is matched without regard to case.
 func Read(raw []byte) (domain.URL, error) {
 	for line := range strings.Lines(string(raw)) {
-		name, value, split := strings.Cut(strings.TrimSpace(line), "=")
-		if !split || !strings.EqualFold(strings.TrimSpace(name), key) {
+		name, value, divided := strings.Cut(strings.TrimSpace(line), "=")
+		if !divided || !strings.EqualFold(strings.TrimSpace(name), key) {
 			continue
 		}
 		return domain.ParseURL(strings.TrimSpace(value))

@@ -44,8 +44,8 @@ func TestAMovedFolderTakesEverythingUnderIt(t *testing.T) {
 	saveNamedNote(t, db, first, "physics/heat/Heat.md", "Heat")
 	saveNamedNote(t, db, first, "physics-old/Stray.md", "Stray")
 	book(t, db, first, "physics/A Book.epub", 1)
-	held := chunksOf(t, db, first, "physics/Entropy.md")
-	if len(held) == 0 {
+	target := chunksOf(t, db, first, "physics/Entropy.md")
+	if len(target) == 0 {
 		t.Fatal("the note was indexed with no chunks, and this test asks what happens to them")
 	}
 
@@ -67,8 +67,8 @@ func TestAMovedFolderTakesEverythingUnderIt(t *testing.T) {
 	if got := getPathsUnder(t, db, first, "physics-old"); !slices.Equal(got, []string{"physics-old/Stray.md"}) {
 		t.Errorf("a folder whose name begins with the one that moved travelled: %v", got)
 	}
-	if got := chunksOf(t, db, first, "science/physics/Entropy.md"); !slices.Equal(got, held) {
-		t.Errorf("the note's chunks are %v, and were %v", got, held)
+	if got := chunksOf(t, db, first, "science/physics/Entropy.md"); !slices.Equal(got, target) {
+		t.Errorf("the note's chunks are %v, and were %v", got, target)
 	}
 }
 
@@ -114,8 +114,8 @@ func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "Old.md", "Old", "Entropy is")
 	saveNamedNote(t, db, first, "Entropy.md", "Old")
-	held := chunksOf(t, db, first, "Old.md")
-	if len(held) == 0 {
+	target := chunksOf(t, db, first, "Old.md")
+	if len(target) == 0 {
 		t.Fatal("the note was indexed with no chunks, and this test asks what happens to them")
 	}
 
@@ -129,8 +129,8 @@ func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
 	if got := getPathsUnder(t, db, first, "Old.md"); len(got) != 0 {
 		t.Errorf("the path it left still holds %v", got)
 	}
-	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, held) {
-		t.Errorf("the note's chunks are %v, and were %v", got, held)
+	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, target) {
+		t.Errorf("the note's chunks are %v, and were %v", got, target)
 	}
 }
 
@@ -139,7 +139,7 @@ func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
 func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "Entropy.md", "Entropy", "Entropy is")
-	held := chunksOf(t, db, first, "Entropy.md")
+	target := chunksOf(t, db, first, "Entropy.md")
 
 	if err := db.Sources().MoveSources(t.Context(), first.ID, "Entropy.md", "Entropy.md"); err != nil {
 		t.Fatal(err)
@@ -148,8 +148,8 @@ func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
 	if got := getPathsUnder(t, db, first, "Entropy.md"); !slices.Equal(got, []string{"Entropy.md"}) {
 		t.Errorf("the vault holds %v at the path", got)
 	}
-	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, held) {
-		t.Errorf("the note's chunks are %v, and were %v", got, held)
+	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, target) {
+		t.Errorf("the note's chunks are %v, and were %v", got, target)
 	}
 }
 

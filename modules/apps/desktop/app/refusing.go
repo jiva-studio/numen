@@ -75,21 +75,21 @@ const (
 // build that could not open its own index cannot serve its own interface
 // either.
 func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
-	said := getFatalReport(cfg, why)
+	response := getFatalReport(cfg, why)
 
-	if built, ok := debug.ReadBuildInfo(); ok {
-		if version := built.Main.Version; version != "" && version != "(devel)" {
-			said.Facts = append(said.Facts, detail{"this build", version})
+	if constructed, ok := debug.ReadBuildInfo(); ok {
+		if version := constructed.Main.Version; version != "" && version != "(devel)" {
+			response.Facts = append(response.Facts, detail{"this build", version})
 		}
-		for _, setting := range built.Settings {
+		for _, setting := range constructed.Settings {
 			if setting.Key == "vcs.revision" {
-				said.Facts = append(said.Facts, detail{"revision", setting.Value})
+				response.Facts = append(response.Facts, detail{"revision", setting.Value})
 			}
 		}
 	}
 
 	var out strings.Builder
-	if err := fatalPage.Execute(&out, said); err != nil {
+	if err := fatalPage.Execute(&out, response); err != nil {
 		return nil, err
 	}
 	return []byte(out.String()), nil
@@ -134,7 +134,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 // command line.
 func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) fatalReport {
 	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
-	written := fmt.Sprint(outside.Number)
+	content := fmt.Sprint(outside.Number)
 
 	if strings.HasPrefix(outside.At, "-") {
 		return fatalReport{
@@ -142,7 +142,7 @@ func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) f
 			Sentence: fmt.Sprintf("%s was given a number the size does not take.", outside.At),
 			Facts: []detail{
 				{"on the command line", outside.At},
-				{"given", written},
+				{"given", content},
 				{"as far as the size goes", far},
 			},
 			Remedy: fmt.Sprintf("Give %s a number from %s, or leave it out.", outside.At, far),
@@ -154,7 +154,7 @@ func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) f
 		Facts: []detail{
 			{"settings", getSettingsPath(cfg)},
 			{"field", outside.At},
-			{"written", written},
+			{"written", content},
 			{"as far as the size goes", far},
 		},
 		Remedy: fmt.Sprintf("Write a number from %s in %s, or take the field out to run at 1.",
@@ -173,7 +173,7 @@ const (
 // way a path can fail to be an index.
 func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport {
 	at := getIndexPath(cfg)
-	said := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", at}}}
+	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", at}}}
 
 	folder := false
 	if info, err := os.Stat(at); err == nil {
@@ -182,22 +182,22 @@ func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport 
 
 	switch {
 	case code == notADatabase:
-		said.Sentence = "This file is not a numen index."
-		said.Remedy = "Move it aside. The index is a cache: numen makes a new one " +
+		response.Sentence = "This file is not a numen index."
+		response.Remedy = "Move it aside. The index is a cache: numen makes a new one " +
 			"and fills it from your vaults."
 	case code == cannotOpen && folder:
-		said.Sentence = "An index is a file, and this path is a folder."
-		said.Remedy = "Point -index at a file, or move the folder out of the way."
+		response.Sentence = "An index is a file, and this path is a folder."
+		response.Remedy = "Point -index at a file, or move the folder out of the way."
 	case code == cannotOpen:
-		said.Sentence = "numen could neither open an index here nor make one."
-		said.Facts = append(said.Facts, detail{"folder", filepath.Dir(at)})
-		said.Remedy = "Give yourself permission to write in the folder, " +
+		response.Sentence = "numen could neither open an index here nor make one."
+		response.Facts = append(response.Facts, detail{"folder", filepath.Dir(at)})
+		response.Remedy = "Give yourself permission to write in the folder, " +
 			"or point -index somewhere you can write."
 	default:
-		said.Sentence = why.Error()
-		said.Remedy = "Point -index at another path, and report what this window says."
+		response.Sentence = why.Error()
+		response.Remedy = "Point -index at another path, and report what this window says."
 	}
-	return said
+	return response
 }
 
 // getIndexPath is the file the index is kept in, whether or not one was named.

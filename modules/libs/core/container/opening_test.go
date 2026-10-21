@@ -50,21 +50,21 @@ func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
 func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 
-	held := makeGatedReaders()
-	opening := cfg.VaultOpenerWith(db, held, cfg.VaultWatcher())
+	target := makeGatedReaders()
+	opening := cfg.VaultOpenerWith(db, target, cfg.VaultWatcher())
 	open := opening.Begin(t.Context(), v)
 
 	// The first walk goes through, and the second is held with the note's old
 	// bytes in the walk's hand.
-	held.release()
+	target.release()
 	if _, err := open.Read(t.Context(), nil); err != nil {
 		t.Fatal(err)
 	}
 
 	// Changed on disk, so the second walk has the note to read again.
 	write(t, v, "Leaf.md", "---\ntitle: Middle\n---\n\n# Middle\n")
-	held.forget()
-	held.hold()
+	target.forget()
+	target.hold()
 
 	walked := make(chan error, 1)
 	go func() {
@@ -72,14 +72,14 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 		walked <- err
 	}()
 
-	if path := <-held.begun; path != "Leaf.md" {
+	if path := <-target.begun; path != "Leaf.md" {
 		t.Fatalf("the walk is reading %q", path)
 	}
 	write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 	if err := opening.Level(t.Context(), v, []string{"Leaf.md"}); err != nil {
 		t.Fatal(err)
 	}
-	held.release()
+	target.release()
 
 	if err := <-walked; err != nil {
 		t.Fatal(err)
@@ -116,8 +116,8 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	readers := makeStagedReaders()
 	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
-	told := make(chan container.VaultChanges, 8)
-	opening.Told = func(m container.VaultChanges) { told <- m }
+	notified := make(chan container.VaultChanges, 8)
+	opening.Told = func(m container.VaultChanges) { notified <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())
@@ -138,7 +138,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	// reading the vault again.
 	watcher.lost <- struct{}{}
 	select {
-	case m := <-told:
+	case m := <-notified:
 		t.Fatalf("the vault was read again beside the first walk: %+v", m)
 	case <-time.After(250 * time.Millisecond):
 	}
@@ -147,7 +147,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	if err := receiveFrom(t, walked, "the first walk did not finish"); err != nil {
 		t.Fatal(err)
 	}
-	if m := receiveFrom(t, told, "the vault was never read again"); !m.ShouldReload {
+	if m := receiveFrom(t, notified, "the vault was never read again"); !m.ShouldReload {
 		t.Fatalf("reported %+v", m)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Renamed" {
@@ -346,11 +346,11 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
 
-	held, err := db.Queries().GetNotes(t.Context(), v.ID, []string{path})
+	target, err := db.Queries().GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
-	one, there := held[path]
+	one, there := target[path]
 	if !there {
 		t.Fatalf("the index holds no note at %s", path)
 	}

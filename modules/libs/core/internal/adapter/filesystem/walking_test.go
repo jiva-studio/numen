@@ -69,12 +69,12 @@ func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
 		t.Fatalf("the folder was not handed over to be walked: %q", walk)
 	}
 
-	held, whole := shape.getPathsUnder(t.Context(), walk)
+	target, whole := shape.getPathsUnder(t.Context(), walk)
 	if whole {
 		t.Fatal("a folder of three notes was answered as the whole vault")
 	}
-	if len(held) != 3 {
-		t.Errorf("the walk of the folder found %v", held)
+	if len(target) != 3 {
+		t.Errorf("the walk of the folder found %v", target)
 	}
 }
 
@@ -86,8 +86,8 @@ func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 
 	ctx, stop := context.WithCancel(t.Context())
 	stop()
-	if held, whole := shape.getPathsUnder(ctx, at); whole || len(held) != 0 {
-		t.Errorf("a walk under a context that is done found %v (whole %v)", held, whole)
+	if target, whole := shape.getPathsUnder(ctx, at); whole || len(target) != 0 {
+		t.Errorf("a walk under a context that is done found %v (whole %v)", target, whole)
 	}
 }
 
@@ -99,22 +99,22 @@ func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 
 	raw := make(chan notify.EventInfo, 4)
 	changes := make(chan []string)
-	lost := make(chan struct{}, 1)
+	missing := make(chan struct{}, 1)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	waiting := newQueue(64)
 	go forwardEvents(ctx, raw, waiting)
-	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
 
 	raw <- event{path: at}
 
 	select {
-	case told := <-changes:
-		slices.Sort(told)
-		if len(told) != 2 {
-			t.Fatalf("the folder that arrived was reported as %v", told)
+	case notified := <-changes:
+		slices.Sort(notified)
+		if len(notified) != 2 {
+			t.Fatalf("the folder that arrived was reported as %v", notified)
 		}
-	case <-lost:
+	case <-missing:
 		t.Fatal("a folder of two notes was answered as the whole vault")
 	case <-time.After(10 * time.Second):
 		t.Fatal("the folder that arrived was never reported")

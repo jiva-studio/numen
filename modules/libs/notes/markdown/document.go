@@ -159,14 +159,14 @@ func (d *Document) SpliceBody(start, end int, text string) error {
 		return fmt.Errorf("splice %d:%d is outside a body of %d bytes", start, end, len(d.body))
 	}
 
-	written := Normalise(text)
+	content := Normalise(text)
 	if d.eol == "\r\n" {
-		written = strings.ReplaceAll(written, "\n", "\r\n")
+		content = strings.ReplaceAll(content, "\n", "\r\n")
 	}
 
-	body := make([]byte, 0, len(d.body)-(end-start)+len(written))
+	body := make([]byte, 0, len(d.body)-(end-start)+len(content))
 	body = append(body, d.body[:start]...)
-	body = append(body, written...)
+	body = append(body, content...)
 	d.body = append(body, d.body[end:]...)
 	return nil
 }

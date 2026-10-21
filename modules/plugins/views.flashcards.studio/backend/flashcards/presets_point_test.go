@@ -35,18 +35,18 @@ func TestThePresetsOfAVaultAreListed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
-	held, err := s.presets.List(t.Context(), s.vault)
+	target, err := s.presets.List(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held) != 2 {
-		t.Fatalf("listed %+v", held)
+	if len(target) != 2 {
+		t.Fatalf("listed %+v", target)
 	}
-	if held[0].Path != "Sanskrit.md" || held[0].Title != "Sanskrit" {
-		t.Errorf("the first is %+v", held[0])
+	if target[0].Path != "Sanskrit.md" || target[0].Title != "Sanskrit" {
+		t.Errorf("the first is %+v", target[0])
 	}
-	if held[1].Path != "presets/Slow.md" || held[1].Title != "Slow going" {
-		t.Errorf("the second is %+v", held[1])
+	if target[1].Path != "presets/Slow.md" || target[1].Title != "Slow going" {
+		t.Errorf("the second is %+v", target[1])
 	}
 }
 
@@ -56,12 +56,12 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	held, err := s.presets.List(t.Context(), s.vault)
+	target, err := s.presets.List(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held) != 0 {
-		t.Errorf("listed %+v", held)
+	if len(target) != 0 {
+		t.Errorf("listed %+v", target)
 	}
 }
 
@@ -98,12 +98,12 @@ func TestADeckIsPutOnAPreset(t *testing.T) {
 		t.Errorf("the card was not left alone:\n%s", got)
 	}
 
-	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Path != "Sanskrit.md" || held.Settings.MinutesADay != 20 {
-		t.Errorf("the deck is scheduled by %q at %+v", held.Path, held.Settings)
+	if target.Path != "Sanskrit.md" || target.Settings.MinutesADay != 20 {
+		t.Errorf("the deck is scheduled by %q at %+v", target.Path, target.Settings)
 	}
 }
 
@@ -126,15 +126,15 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 		t.Errorf("the deck names more than one preset:\n%s", got)
 	}
 
-	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Path != "presets/Slow.md" {
-		t.Errorf("the deck is scheduled by %q", held.Path)
+	if target.Path != "presets/Slow.md" {
+		t.Errorf("the deck is scheduled by %q", target.Path)
 	}
-	if len(held.Problems) != 0 {
-		t.Errorf("problems = %v", held.Problems)
+	if len(target.Problems) != 0 {
+		t.Errorf("problems = %v", target.Problems)
 	}
 }
 
@@ -154,12 +154,12 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 		t.Errorf("the deck still names a preset:\n%s", got)
 	}
 
-	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Path != "" {
-		t.Errorf("the deck is scheduled by %q", held.Path)
+	if target.Path != "" {
+		t.Errorf("the deck is scheduled by %q", target.Path)
 	}
 }
 
@@ -181,13 +181,13 @@ func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
 	}
 
 	got := read(t, s.vault, "decks/Roots.md")
-	for _, kept := range []string{
+	for _, retained := range []string{
 		"id: 01J8F3K2M9QRSTVWXYZ012\n", "tags: [grammar, roots]\n",
 		"# the ones I keep coming back to\n",
 		"  - to: Grammar\n    role: parent\n    note: where these come from\n",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("%q was written over in\n%s", kept, got)
+		if !strings.Contains(got, retained) {
+			t.Errorf("%q was written over in\n%s", retained, got)
 		}
 	}
 	if !strings.Contains(got, "type: preset\n") {
@@ -289,12 +289,12 @@ func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Path != "presets/Slow.md" {
-		t.Errorf("the deck is scheduled by %q", held.Path)
+	if target.Path != "presets/Slow.md" {
+		t.Errorf("the deck is scheduled by %q", target.Path)
 	}
 }
 
@@ -409,12 +409,12 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 	if got := read(t, s.vault, "decks/Roots.md"); strings.Count(got, "type: preset") != 1 {
 		t.Errorf("the deck still names more than one preset:\n%s", got)
 	}
-	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Path != "presets/Slow.md" || len(held.Problems) != 0 {
-		t.Errorf("the deck is scheduled by %q with %v", held.Path, held.Problems)
+	if target.Path != "presets/Slow.md" || len(target.Problems) != 0 {
+		t.Errorf("the deck is scheduled by %q with %v", target.Path, target.Problems)
 	}
 }
 

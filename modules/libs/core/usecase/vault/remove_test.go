@@ -19,14 +19,14 @@ func newRemove(registry *appstate.VaultRegistry) (vaults.Remove, *bin, *indexRow
 
 func TestRemoveTakesAVaultOffTheListAndLeavesItsFolder(t *testing.T) {
 	t.Parallel()
-	kept, gone, registry := twoVaults(t)
+	retained, removed, registry := twoVaults(t)
 	remove, trash, _ := newRemove(registry)
 
-	if err := remove.Execute(t.Context(), string(gone.ID), kept.ID, false); err != nil {
+	if err := remove.Execute(t.Context(), string(removed.ID), retained.ID, false); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || found {
+	if _, found, err := registry.FindVault(string(removed.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 	if len(trash.moved) != 0 {
@@ -36,15 +36,15 @@ func TestRemoveTakesAVaultOffTheListAndLeavesItsFolder(t *testing.T) {
 
 func TestRemoveTrashesTheFolderWhenAskedTo(t *testing.T) {
 	t.Parallel()
-	kept, gone, registry := twoVaults(t)
+	retained, removed, registry := twoVaults(t)
 	remove, trash, _ := newRemove(registry)
 
-	if err := remove.Execute(t.Context(), string(gone.ID), kept.ID, true); err != nil {
+	if err := remove.Execute(t.Context(), string(removed.ID), retained.ID, true); err != nil {
 		t.Fatal(err)
 	}
 
-	if len(trash.moved) != 1 || trash.moved[0] != gone.Path {
-		t.Errorf("trashed %v, want %s", trash.moved, gone.Path)
+	if len(trash.moved) != 1 || trash.moved[0] != removed.Path {
+		t.Errorf("trashed %v, want %s", trash.moved, removed.Path)
 	}
 }
 
@@ -70,10 +70,10 @@ func TestRemoveKeepsTheVaultInFrontOfThePerson(t *testing.T) {
 
 func TestRemoveRefusesAVaultThatIsNotOnTheList(t *testing.T) {
 	t.Parallel()
-	kept, _, registry := twoVaults(t)
+	retained, _, registry := twoVaults(t)
 	remove, _, _ := newRemove(registry)
 
-	err := remove.Execute(t.Context(), "nothing", kept.ID, false)
+	err := remove.Execute(t.Context(), "nothing", retained.ID, false)
 
 	if !errors.Is(err, vaults.ErrUnknown) {
 		t.Fatalf("error is %v, want ErrUnknown", err)

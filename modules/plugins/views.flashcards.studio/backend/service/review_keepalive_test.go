@@ -71,9 +71,9 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	// come back does to the stream is what is under test here.
 	front(t, api)
 
-	held := make(chan struct{})
-	defer close(held)
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(waiting{until: held}))
+	target := make(chan struct{})
+	defer close(target)
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(waiting{until: target}))
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
 		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
@@ -94,12 +94,12 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	if !stream.Receive() {
 		t.Fatalf("the stream said nothing while the count ran: %v", stream.Err())
 	}
-	said := stream.Msg()
-	if said.GetCounted() != nil {
-		t.Fatalf("a count arrived for a vault nothing could read: %+v", said.GetCounted())
+	response := stream.Msg()
+	if response.GetCounted() != nil {
+		t.Fatalf("a count arrived for a vault nothing could read: %+v", response.GetCounted())
 	}
-	if len(said.GetVaults()) != 1 {
-		t.Errorf("the stream said again and listed %+v", said.GetVaults())
+	if len(response.GetVaults()) != 1 {
+		t.Errorf("the stream said again and listed %+v", response.GetVaults())
 	}
 }
 

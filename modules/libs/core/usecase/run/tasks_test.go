@@ -167,10 +167,10 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 
 	// The stream ends with its context after the last list is in it, so what
 	// comes out of it last is what a person is left looking at.
-	doing := tasks.List()
+	executing := tasks.List()
 	stop()
-	if last := <-ended; !slices.Equal(last, doing) {
-		t.Errorf("left showing %+v, want what is being done, %+v", last, doing)
+	if last := <-ended; !slices.Equal(last, executing) {
+		t.Errorf("left showing %+v, want what is being done, %+v", last, executing)
 	}
 }
 

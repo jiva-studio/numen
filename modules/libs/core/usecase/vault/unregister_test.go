@@ -67,34 +67,34 @@ func twoVaults(t *testing.T) (domain.Vault, domain.Vault, *appstate.VaultRegistr
 
 func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 	t.Parallel()
-	kept, gone, registry := twoVaults(t)
+	retained, removed, registry := twoVaults(t)
 	index := &indexRows{}
 
-	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), gone); err != nil {
+	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), removed); err != nil {
 		t.Fatal(err)
 	}
 
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 || known[0].ID != kept.ID {
-		t.Errorf("the list holds %v, want only %s", known, kept.Name)
+	if len(recognized) != 1 || recognized[0].ID != retained.ID {
+		t.Errorf("the list holds %v, want only %s", recognized, retained.Name)
 	}
-	if len(index.unregistered) != 1 || index.unregistered[0] != gone.ID {
-		t.Errorf("the index was told to forget %v, want %s", index.unregistered, gone.ID)
+	if len(index.unregistered) != 1 || index.unregistered[0] != removed.ID {
+		t.Errorf("the index was told to forget %v, want %s", index.unregistered, removed.ID)
 	}
 }
 
 func TestForgetLeavesTheFolderWhereItIs(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 
-	if err := vaults.NewUnregister(registry, &indexRows{}).Execute(t.Context(), gone); err != nil {
+	if err := vaults.NewUnregister(registry, &indexRows{}).Execute(t.Context(), removed); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := os.Stat(filepath.Join(gone.Path, ".numen", "config.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(removed.Path, ".numen", "config.json")); err != nil {
 		t.Errorf("the folder no longer carries its identity: %v", err)
 	}
 }
@@ -112,12 +112,12 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 	if !errors.Is(err, vaults.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 {
-		t.Errorf("the list holds %v, want the vault still on it", known)
+	if len(recognized) != 1 {
+		t.Errorf("the list holds %v, want the vault still on it", recognized)
 	}
 	if len(index.unregistered) != 0 {
 		t.Errorf("the index was told to forget %v", index.unregistered)
@@ -126,33 +126,33 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 
 func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	index := &indexRows{fails: errors.New("the index is locked")}
 
-	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), gone); err == nil {
+	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), removed); err == nil {
 		t.Fatal("an index that failed was reported as success")
 	}
-	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || !found {
+	if _, found, err := registry.FindVault(string(removed.ID)); err != nil || !found {
 		t.Errorf("the vault left the list with its rows still in the index: %v %v", found, err)
 	}
 }
 
 func TestForgetKeepsTheCauseWhenTheIndexRefuses(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	index := &indexRows{fails: errRefused}
 
-	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), gone); !errors.Is(err, errRefused) {
+	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), removed); !errors.Is(err, errRefused) {
 		t.Fatalf("want the index's error inside the error, got %v", err)
 	}
 }
 
 func TestForgetStopsWhenTheListCannotBeRead(t *testing.T) {
 	t.Parallel()
-	_, gone, registry := twoVaults(t)
+	_, removed, registry := twoVaults(t)
 	index := &indexRows{}
 
-	err := vaults.NewUnregister(refusingRegistry{VaultRegistry: registry, list: errRefused}, index).Execute(t.Context(), gone)
+	err := vaults.NewUnregister(refusingRegistry{VaultRegistry: registry, list: errRefused}, index).Execute(t.Context(), removed)
 	if !errors.Is(err, errRefused) {
 		t.Fatalf("want the rejection back, got %v", err)
 	}
@@ -168,12 +168,12 @@ func TestEitherVaultOfTwoMayBeForgotten(t *testing.T) {
 	if err := vaults.NewUnregister(registry, &indexRows{}).Execute(t.Context(), first); err != nil {
 		t.Fatalf("the vault listed first failed: %v", err)
 	}
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 || known[0].ID != second.ID {
-		t.Errorf("the list holds %v, want only %s", known, second.Name)
+	if len(recognized) != 1 || recognized[0].ID != second.ID {
+		t.Errorf("the list holds %v, want only %s", recognized, second.Name)
 	}
 }
 
@@ -188,11 +188,11 @@ func TestAVaultNotOnTheListIsNotTheLastVault(t *testing.T) {
 	if err := vaults.NewUnregister(registry, &indexRows{}).Execute(t.Context(), first); err != nil {
 		t.Fatalf("a vault that is not on the list failed: %v", err)
 	}
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 {
-		t.Errorf("the list holds %v, want the other vault still on it", known)
+	if len(recognized) != 1 {
+		t.Errorf("the list holds %v, want the other vault still on it", recognized)
 	}
 }

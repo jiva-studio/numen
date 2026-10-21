@@ -60,11 +60,11 @@ func (h *settingsHandler) WriteSettings(
 	if h.write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	written := make([]settings.Setting, 0, len(r.Msg.GetSettings()))
+	content := make([]settings.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
-		written = append(written, settings.Setting{Path: one.GetAt(), JSON: one.GetValue()})
+		content = append(content, settings.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	if err := h.write.Execute(written); err != nil {
+	if err := h.write.Execute(content); err != nil {
 		if errors.Is(err, settings.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
@@ -141,11 +141,11 @@ var presences = map[settings.Presence]v1.Presence{
 
 // newWireSettings is what choosing a model writes, as the wire carries it.
 func newWireSettings(held []settings.Setting) []*v1.Setting {
-	written := make([]*v1.Setting, 0, len(held))
+	content := make([]*v1.Setting, 0, len(held))
 	for _, one := range held {
-		written = append(written, &v1.Setting{At: one.Path, Value: one.JSON})
+		content = append(content, &v1.Setting{At: one.Path, Value: one.JSON})
 	}
-	return written
+	return content
 }
 
 // newWirePluginInfos is the discovered plugins and their declarative settings, as the wire carries it.

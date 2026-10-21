@@ -99,14 +99,14 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 // refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := csp.Sources{
+	target := csp.Sources{
 		Connect: []string{"https://dl.numen.md", "https://numen-dl.b-cdn.net"},
 	}.Policy()
 
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetURL("a.pdf")} {
-		if said := getResponse(handler, path).Header().Get("Content-Security-Policy"); said != held {
-			t.Errorf("%q is held to %q", path, said)
+		if response := getResponse(handler, path).Header().Get("Content-Security-Policy"); response != target {
+			t.Errorf("%q is held to %q", path, response)
 		}
 	}
 }
@@ -122,19 +122,19 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 		t.Errorf("the window may frame %q", got)
 	}
 
-	said := getResponse(newBareServices().NewHandler(http.NotFoundHandler()), "/").
+	response := getResponse(newBareServices().NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
-	if !strings.Contains(said, "frame-src 'self';") {
-		t.Errorf("the policy reads %q", said)
+	if !strings.Contains(response, "frame-src 'self';") {
+		t.Errorf("the policy reads %q", response)
 	}
-	if strings.Contains(said, "youtube") {
-		t.Errorf("the window names a host of its own to frame: %q", said)
+	if strings.Contains(response, "youtube") {
+		t.Errorf("the window names a host of its own to frame: %q", response)
 	}
 
 	// A frame is what widens, and a script is not: what runs in the window is
 	// what the window served, which is `default-src`.
-	if strings.Contains(said, "script-src") {
-		t.Errorf("the policy names where a script comes from: %q", said)
+	if strings.Contains(response, "script-src") {
+		t.Errorf("the policy names where a script comes from: %q", response)
 	}
 }
 
@@ -174,9 +174,9 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	services := newBareServices()
 	handler := services.NewHandler(http.NotFoundHandler())
 	questions, _ := numenv1connect.NewVaultServiceHandler(services.Vault)
-	asked := []string{"", "/", "/index.html", assetURL("a.pdf"), questions + "Find"}
+	request := []string{"", "/", "/index.html", assetURL("a.pdf"), questions + "Find"}
 
-	for _, path := range asked {
+	for _, path := range request {
 		if code := getResponse(handler, path).Code; code == http.StatusServiceUnavailable {
 			t.Errorf("%q failed at %d with the window still open", path, code)
 		}
@@ -184,7 +184,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 
 	services.state.Close()
 
-	for _, path := range asked {
+	for _, path := range request {
 		if code := getResponse(handler, path).Code; code != http.StatusServiceUnavailable {
 			t.Errorf("%q was answered %d by a window being taken away", path, code)
 		}
@@ -204,14 +204,14 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 			if out.Code != http.StatusOK {
 				t.Fatalf("answered %d", out.Code)
 			}
-			if said := out.Header().Get("Content-Type"); !strings.HasPrefix(said, "text/html") {
-				t.Errorf("came back as %q", said)
+			if response := out.Header().Get("Content-Type"); !strings.HasPrefix(response, "text/html") {
+				t.Errorf("came back as %q", response)
 			}
 			if !strings.Contains(out.Body.String(), mine) {
 				t.Error("the page is not wearing the theme")
 			}
-			if said := out.Header().Get("Content-Length"); said != strconv.Itoa(out.Body.Len()) {
-				t.Errorf("%s bytes were announced and %d written", said, out.Body.Len())
+			if responseVal := out.Header().Get("Content-Length"); responseVal != strconv.Itoa(out.Body.Len()) {
+				t.Errorf("%s bytes were announced and %d written", responseVal, out.Body.Len())
 			}
 		})
 	}
@@ -242,22 +242,22 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 		t.Fatal("the page has no head")
 	}
 
-	const drawn = `<style data-appearance="sizes">` +
+	const rendered = `<style data-appearance="sizes">` +
 		":root { --numen-interface-scale: 1.25; --numen-text-scale: 1.5; }</style>"
 	link := strings.LastIndex(head, "<link")
 	mode := strings.Index(head,
 		`<style data-appearance="mode">`+":root { color-scheme: dark; }</style>")
-	worn := strings.Index(head, mine)
-	sizes := strings.Index(head, drawn)
-	if link < 0 || mode < 0 || worn < 0 || sizes < 0 {
+	aged := strings.Index(head, mine)
+	sizes := strings.Index(head, rendered)
+	if link < 0 || mode < 0 || aged < 0 || sizes < 0 {
 		t.Fatalf("the link is at %d, the mode at %d, the theme at %d, the sizes at %d",
-			link, mode, worn, sizes)
+			link, mode, aged, sizes)
 	}
-	if link > mode || mode > worn || worn > sizes {
+	if link > mode || mode > aged || aged > sizes {
 		t.Errorf("the link is at %d, the mode at %d, the theme at %d, the sizes at %d",
-			link, mode, worn, sizes)
+			link, mode, aged, sizes)
 	}
-	if after := strings.TrimSpace(head[sizes+len(drawn):]); after != "" {
+	if after := strings.TrimSpace(head[sizes+len(rendered):]); after != "" {
 		t.Errorf("the head ends with %q", after)
 	}
 }
@@ -279,18 +279,18 @@ func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 // The built stylesheet declares `color-scheme` at zero weight alone, so the
 // element the page carries stands unopposed whatever a theme says.
 func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
-	built, err := wire.GetInterface(pages)
+	constructed, err := wire.GetInterface(pages)
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
 
-	sheets, err := fs.Glob(built, "built/*.css")
+	sheets, err := fs.Glob(constructed, "built/*.css")
 	if err != nil || len(sheets) == 0 {
 		t.Fatalf("the build has no stylesheet: %v", err)
 	}
 	var declaresScheme bool
 	for _, name := range sheets {
-		text, err := fs.ReadFile(built, name)
+		text, err := fs.ReadFile(constructed, name)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -418,9 +418,9 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	api.state.setVault(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
 	handler := api.NewHandler(http.NotFoundHandler())
 
-	answered := make(chan struct{})
+	reply := make(chan struct{})
 	go func() {
-		defer close(answered)
+		defer close(reply)
 		at := pageURL("Note.pdf", 0, 800, document.Fingerprint{})
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
@@ -444,7 +444,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("the door never shut")
 	}
-	<-answered
+	<-reply
 }
 
 func TestPluginAssetsAreServed(t *testing.T) {

@@ -48,8 +48,8 @@ func getDeckPreset(t *testing.T, api *API, v domain.Vault, path string) *v1.Pres
 // holds. The window is over every vault at once, and the two decks here stand
 // at the same path.
 func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
-	api, held := newAPI(t, pointed, elsewhere)
-	one, two := held[0], held[1]
+	api, target := newAPI(t, pointed, elsewhere)
+	one, two := target[0], target[1]
 
 	first := getDeckPreset(t, api, one, "decks/Words.md")
 	if first.GetPath() != "Sanskrit.md" || first.GetTitle() != "Sanskrit" {
@@ -88,8 +88,8 @@ const typedByHand = "---\ntype: deck\nlinks:\n" +
 // writes is level in the index by the time the session is handed over. Nothing
 // else is running over the vault, and nothing rescans it.
 func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
-	api, held := newAPI(t, handwritten)
-	v := held[0]
+	api, target := newAPI(t, handwritten)
+	v := target[0]
 
 	at := filepath.Join(v.Path, "decks", "Words.md")
 	if err := os.WriteFile(at, []byte(typedByHand), 0o644); err != nil {
@@ -103,12 +103,12 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 
 	startSession(t, api, v)
 
-	written, err := os.ReadFile(at)
+	content, err := os.ReadFile(at)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(written), "## Yaffle ^") {
-		t.Fatalf("the card was given no mark: %q", written)
+	if !strings.Contains(string(content), "## Yaffle ^") {
+		t.Fatalf("the card was given no mark: %q", content)
 	}
 
 	after := getDeckPreset(t, api, v, "decks/Words.md")
@@ -139,11 +139,11 @@ func (brokenPresetLinks) GetLinks(context.Context, domain.VaultID, string) ([]do
 // The index being out of reach is an internal failure and not a deck on the
 // defaults.
 func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
-	api, held := newAPI(t, pointed)
+	api, target := newAPI(t, pointed)
 	api.scenarios().flash.Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, api.scenarios().day, nil)
 
 	_, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
-		&v1.GetVaultDeckPresetRequest{Vault: string(held[0].ID), Deck: "decks/Words.md"}))
+		&v1.GetVaultDeckPresetRequest{Vault: string(target[0].ID), Deck: "decks/Words.md"}))
 	if code := connect.CodeOf(err); code != connect.CodeInternal {
 		t.Errorf("reading answered %v", err)
 	}
@@ -152,8 +152,8 @@ func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 // A preset the deck names that cannot be read comes back rejected as the editor
 // refuses a note, and carries no preset.
 func TestAPresetThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
-	api, held := newAPI(t, pointed)
-	v := held[0]
+	api, target := newAPI(t, pointed)
+	v := target[0]
 	if err := os.Remove(filepath.Join(v.Path, "Sanskrit.md")); err != nil {
 		t.Fatal(err)
 	}

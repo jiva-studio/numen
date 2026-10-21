@@ -86,12 +86,12 @@ func TestASecretWrittenThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	if jar["md.numen.agents.numen/apiKey"] != "value-1" {
 		t.Errorf("the store holds %v", jar)
 	}
-	written, err := os.ReadFile(settingsPath)
+	content, err := os.ReadFile(settingsPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(written), `"storedSecrets"`) || strings.Contains(string(written), "value-1") {
-		t.Errorf("the settings file holds:\n%s", written)
+	if !strings.Contains(string(content), `"storedSecrets"`) || strings.Contains(string(content), "value-1") {
+		t.Errorf("the settings file holds:\n%s", content)
 	}
 	if err := cfg.GetPluginSecretDeleter()(t.Context(), "md.numen.agents.numen", "apiKey"); err != nil {
 		t.Fatal(err)

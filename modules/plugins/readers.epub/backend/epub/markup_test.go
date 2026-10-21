@@ -13,7 +13,7 @@ import (
 // takes every offset it needs off the markup it was handed.
 func TestMarkup(t *testing.T) {
 	book := read(t, tinyBook(t, map[string]string{secondDoc: "variant/drawn.xhtml"}))
-	drawn, err := book.Markup(secondDoc)
+	rendered, err := book.Markup(secondDoc)
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
@@ -21,57 +21,57 @@ func TestMarkup(t *testing.T) {
 	t.Run("the words are the words of the text", func(t *testing.T) {
 		doc := document(t, book, secondDoc)
 		want := book.Text[doc.Offset : doc.Offset+doc.Length]
-		if got := getNodeText(drawn.Nodes); got != want {
+		if got := getNodeText(rendered.Nodes); got != want {
 			t.Fatalf("the markup says\n%q\nand the text is\n%q", got, want)
 		}
 	})
 
 	t.Run("every run stands where it says", func(t *testing.T) {
-		for _, run := range getTextNodes(drawn.Nodes) {
+		for _, run := range getTextNodes(rendered.Nodes) {
 			if !strings.HasPrefix(book.Text[run.Offset:], run.Text) {
 				t.Errorf("%q says it begins at %d, where the text is %q",
 					run.Text, run.Offset, excerpt(book.Text, run.Offset))
 			}
 		}
-		if quoted := element(t, drawn.Nodes, "blockquote"); !strings.Contains(getNodeText(quoted.Children), "Eta") {
+		if quoted := element(t, rendered.Nodes, "blockquote"); !strings.Contains(getNodeText(quoted.Children), "Eta") {
 			t.Error("the quotation is not a quotation")
 		}
-		if em := element(t, drawn.Nodes, "em"); getNodeText(em.Children) != "emphatic" {
+		if em := element(t, rendered.Nodes, "em"); getNodeText(em.Children) != "emphatic" {
 			t.Errorf("the emphasis says %q", getNodeText(em.Children))
 		}
 	})
 
 	t.Run("the book's own styling does not survive", func(t *testing.T) {
-		for _, node := range getEveryNode(drawn.Nodes) {
+		for _, node := range getEveryNode(rendered.Nodes) {
 			for _, a := range node.Attributes {
 				if a.Name == "class" || a.Name == "style" {
 					t.Errorf("%s carries %s=%q", node.Name, a.Name, a.Value)
 				}
 			}
 		}
-		if head := element(t, drawn.Nodes, "h4"); attribute(head, "id") != "three" {
+		if head := element(t, rendered.Nodes, "h4"); attribute(head, "id") != "three" {
 			t.Errorf("the heading lost its id, which is what a link inside the book lands on")
 		}
 	})
 
 	t.Run("what carries no words of the book is gone", func(t *testing.T) {
 		for _, name := range []string{"script", "style", "link", "head", "title", "form"} {
-			if found := find(drawn.Nodes, name); found != nil {
+			if found := find(rendered.Nodes, name); found != nil {
 				t.Errorf("a %s element was drawn", name)
 			}
 		}
-		if strings.Contains(getNodeText(drawn.Nodes), "forbidden") {
+		if strings.Contains(getNodeText(rendered.Nodes), "forbidden") {
 			t.Error("a script or a stylesheet reached the markup")
 		}
 		// A form is not drawn and the words inside it are: the text carries
 		// them, and the two say the same thing.
-		if !strings.Contains(getNodeText(drawn.Nodes), "Iota") {
+		if !strings.Contains(getNodeText(rendered.Nodes), "Iota") {
 			t.Error("the words inside the form are missing")
 		}
 	})
 
 	t.Run("an address inside the book names an entry of the archive", func(t *testing.T) {
-		links := findAll(drawn.Nodes, "a")
+		links := findAll(rendered.Nodes, "a")
 		if len(links) != 5 {
 			t.Fatalf("links = %d, want the five the document holds", len(links))
 		}
@@ -82,10 +82,10 @@ func TestMarkup(t *testing.T) {
 		if got := attribute(links[1], "href"); got != "https://example.org/away" {
 			t.Errorf("the link out of the book points at %q", got)
 		}
-		if got := attribute(element(t, drawn.Nodes, "img"), "src"); got != "OEBPS/pictures/plate.png" {
+		if got := attribute(element(t, rendered.Nodes, "img"), "src"); got != "OEBPS/pictures/plate.png" {
 			t.Errorf("the picture is at %q, want the entry of the archive", got)
 		}
-		if got := attribute(element(t, drawn.Nodes, "img"), "alt"); got != "A plate" {
+		if got := attribute(element(t, rendered.Nodes, "img"), "alt"); got != "A plate" {
 			t.Errorf("the picture is described as %q", got)
 		}
 	})
@@ -94,14 +94,14 @@ func TestMarkup(t *testing.T) {
 	// leads nowhere, and one that hides its scheme behind a line ending is that
 	// address and not a file of the book.
 	t.Run("an address that runs a program leads nowhere", func(t *testing.T) {
-		for _, link := range findAll(drawn.Nodes, "a")[2:] {
+		for _, link := range findAll(rendered.Nodes, "a")[2:] {
 			if got := attribute(link, "href"); got != "" {
 				t.Errorf("a link points at %q", got)
 			}
 		}
 		// A book draws the files it carries, and asks nobody for a picture: a
 		// picture fetched is a book reporting that it was opened.
-		pictures := findAll(drawn.Nodes, "img")
+		pictures := findAll(rendered.Nodes, "img")
 		if len(pictures) != 2 {
 			t.Fatalf("pictures = %d, want the two the document holds", len(pictures))
 		}
@@ -129,22 +129,22 @@ func TestASpineDocumentThatIsACoverDrawnAroundAPicture(t *testing.T) {
 		xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 800">
 		<image width="600" height="800" xlink:href="pictures/plate.png"/></svg>`))
 
-	drawn, err := book.Markup("OEBPS/cover.svg")
+	rendered, err := book.Markup("OEBPS/cover.svg")
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
-	if len(drawn.Nodes) == 0 || drawn.Nodes[0].Name != "img" {
-		t.Fatalf("the cover was drawn as %v", drawn.Nodes)
+	if len(rendered.Nodes) == 0 || rendered.Nodes[0].Name != "img" {
+		t.Fatalf("the cover was drawn as %v", rendered.Nodes)
 	}
-	if got := attribute(&drawn.Nodes[0], "src"); got != "OEBPS/pictures/plate.png" {
+	if got := attribute(&rendered.Nodes[0], "src"); got != "OEBPS/pictures/plate.png" {
 		t.Errorf("the cover is drawn from %q", got)
 	}
-	if _, err := book.Entry(attribute(&drawn.Nodes[0], "src")); err != nil {
+	if _, err := book.Entry(attribute(&rendered.Nodes[0], "src")); err != nil {
 		t.Errorf("the cover is drawn from an address the archive answers with %v", err)
 	}
 	doc := document(t, book, "OEBPS/cover.svg")
-	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; getNodeText(drawn.Nodes) != want {
-		t.Errorf("the picture says %q and its text is %q", getNodeText(drawn.Nodes), want)
+	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; getNodeText(rendered.Nodes) != want {
+		t.Errorf("the picture says %q and its text is %q", getNodeText(rendered.Nodes), want)
 	}
 }
 
@@ -163,11 +163,11 @@ func TestACoverThatWrapsNoPictureDrawsNone(t *testing.T) {
 			<image title="pictures/plate.png"/></svg>`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			drawn, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
+			rendered, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
 			if err != nil {
 				t.Fatalf("markup: %v", err)
 			}
-			if found := findAll(drawn.Nodes, "img"); len(found) != 0 {
+			if found := findAll(rendered.Nodes, "img"); len(found) != 0 {
 				t.Errorf("the cover drew %d pictures", len(found))
 			}
 		})
@@ -177,11 +177,11 @@ func TestACoverThatWrapsNoPictureDrawsNone(t *testing.T) {
 // A cover written in the version of SVG that names what it draws with href, and
 // one carrying the picture itself.
 func TestACoverNamesThePictureItDraws(t *testing.T) {
-	const written = "data:image/png;base64,iVBORw0KGgo="
+	const content = "data:image/png;base64,iVBORw0KGgo="
 	for _, one := range []struct{ svg, want string }{
 		{`<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,
 			"OEBPS/pictures/plate.png"},
-		{`<svg xmlns="http://www.w3.org/2000/svg"><g><image href="` + written + `"/></g></svg>`, written},
+		{`<svg xmlns="http://www.w3.org/2000/svg"><g><image href="` + content + `"/></g></svg>`, content},
 		// An entity the SVG does not declare and an encoding other than UTF-8
 		// still draw the picture.
 		{`<svg xmlns="http://www.w3.org/2000/svg"><title>Plate&nbsp;one</title>
@@ -190,11 +190,11 @@ func TestACoverNamesThePictureItDraws(t *testing.T) {
 			<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,
 			"OEBPS/pictures/plate.png"},
 	} {
-		drawn, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
+		rendered, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
 		if err != nil {
 			t.Fatalf("markup: %v", err)
 		}
-		found := findAll(drawn.Nodes, "img")
+		found := findAll(rendered.Nodes, "img")
 		if len(found) != 1 {
 			t.Fatalf("the cover drew %d pictures", len(found))
 		}
@@ -309,8 +309,8 @@ func TestWhereALinkLeads(t *testing.T) {
 		{"", ""},
 	} {
 		t.Run(c.href, func(t *testing.T) {
-			_, drawn := readOne(t, `<p><a href="`+c.href+`">x</a></p>`)
-			if got := attribute(element(t, drawn.Nodes, "a"), "href"); got != c.want {
+			_, rendered := readOne(t, `<p><a href="`+c.href+`">x</a></p>`)
+			if got := attribute(element(t, rendered.Nodes, "a"), "href"); got != c.want {
 				t.Errorf("the link points at %q, want %q", got, c.want)
 			}
 		})
@@ -325,8 +325,8 @@ func TestWhatAPictureIsDrawnFrom(t *testing.T) {
 		{"data:image/svg+xml,%3Csvg%2F%3E", ""},
 	} {
 		t.Run(c.src, func(t *testing.T) {
-			_, drawn := readOne(t, `<p><img src="`+c.src+`" alt="A"/></p>`)
-			if got := attribute(element(t, drawn.Nodes, "img"), "src"); got != c.want {
+			_, rendered := readOne(t, `<p><img src="`+c.src+`" alt="A"/></p>`)
+			if got := attribute(element(t, rendered.Nodes, "img"), "src"); got != c.want {
 				t.Errorf("the picture is drawn from %q, want %q", got, c.want)
 			}
 		})
@@ -335,13 +335,13 @@ func TestWhatAPictureIsDrawnFrom(t *testing.T) {
 
 // An address that leads nowhere goes, and the attributes after it stay.
 func TestAnAddressThatLeadsNowhereTakesNothingElse(t *testing.T) {
-	_, drawn := readOne(t, `<p><a href="javascript:void(0)" id="k">x</a>`+
+	_, rendered := readOne(t, `<p><a href="javascript:void(0)" id="k">x</a>`+
 		`<img src="https://example.org/p.png" alt="A plate"/></p>`)
-	link := element(t, drawn.Nodes, "a")
+	link := element(t, rendered.Nodes, "a")
 	if want := []epub.Attribute{{Name: "id", Value: "k"}}; !slices.Equal(link.Attributes, want) {
 		t.Errorf("the link carries %v, want %v", link.Attributes, want)
 	}
-	picture := element(t, drawn.Nodes, "img")
+	picture := element(t, rendered.Nodes, "img")
 	if want := []epub.Attribute{{Name: "alt", Value: "A plate"}}; !slices.Equal(picture.Attributes, want) {
 		t.Errorf("the picture carries %v, want %v", picture.Attributes, want)
 	}
@@ -350,14 +350,14 @@ func TestAnAddressThatLeadsNowhereTakesNothingElse(t *testing.T) {
 // An element standing on the space a line's end takes back stands where the
 // line ends.
 func TestAnElementOnASpaceTakenBackStandsAtTheLineEnd(t *testing.T) {
-	book, drawn := readOne(t, `<p>A <b></b></p>`)
+	book, rendered := readOne(t, `<p>A <b></b></p>`)
 	if book.Text != "A\n" {
 		t.Fatalf("the text is %q", book.Text)
 	}
-	if got := element(t, drawn.Nodes, "b").Offset; got != 1 {
+	if got := element(t, rendered.Nodes, "b").Offset; got != 1 {
 		t.Errorf("the element stands at %d, want 1", got)
 	}
-	if got := getNodeText(drawn.Nodes); got != book.Text {
+	if got := getNodeText(rendered.Nodes); got != book.Text {
 		t.Errorf("the markup says %q, want %q", got, book.Text)
 	}
 }
@@ -385,11 +385,11 @@ func TestRunsInATable(t *testing.T) {
 			`<table><template><b>X</b></template></table>`, "table", "X\n"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			book, drawn := readOne(t, c.markup)
-			if got := getNodeText(drawn.Nodes); got != book.Text {
+			book, rendered := readOne(t, c.markup)
+			if got := getNodeText(rendered.Nodes); got != book.Text {
 				t.Fatalf("the markup says %q and the text is %q", got, book.Text)
 			}
-			holder := element(t, drawn.Nodes, c.in)
+			holder := element(t, rendered.Nodes, c.in)
 			if got := getNodeText(holder.Children); got != c.want {
 				t.Errorf("the %s says %q, want %q", c.in, got, c.want)
 			}
@@ -398,9 +398,9 @@ func TestRunsInATable(t *testing.T) {
 					c.in, holder.Offset, holder.Children[0].Offset)
 			}
 			if c.in == "td" {
-				for _, held := range element(t, drawn.Nodes, "table").Children {
-					if held.Name == "" {
-						t.Errorf("the table holds %q outside its cell", held.Text)
+				for _, target := range element(t, rendered.Nodes, "table").Children {
+					if target.Name == "" {
+						t.Errorf("the table holds %q outside its cell", target.Text)
 					}
 				}
 			}

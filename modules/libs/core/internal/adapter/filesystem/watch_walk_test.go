@@ -28,7 +28,7 @@ func TestAFolderTooLargeToWalkIsTheWholeVault(t *testing.T) {
 		}
 	}
 
-	_, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	_, missing, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestAFolderTooLargeToWalkIsTheWholeVault(t *testing.T) {
 	}
 
 	select {
-	case <-lost:
+	case <-missing:
 	case <-time.After(10 * time.Second):
 		t.Fatal("a folder larger than the watch follows through arrived and nothing was said")
 	}

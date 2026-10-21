@@ -18,9 +18,9 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg.TranscriptProofreading = Proofread{Profile: "speech"}
 	cfg.ScanProofreading = Proofread{Profile: "scans", IsAutomatic: true}
 
-	held := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
-	_, err := held.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
-	held.Wait()
+	target := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
+	_, err := target.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
+	target.Wait()
 
 	if err == nil || !strings.Contains(err.Error(), `"speech"`) {
 		t.Errorf("a transcript was put right with %v, want the profile named for speech", err)

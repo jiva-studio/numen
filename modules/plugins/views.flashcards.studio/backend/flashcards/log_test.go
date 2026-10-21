@@ -59,23 +59,23 @@ func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Answers) != 2 {
-		t.Errorf("the vault holds %d answers, want the two written", len(held.Answers))
+	if len(target.Answers) != 2 {
+		t.Errorf("the vault holds %d answers, want the two written", len(target.Answers))
 	}
-	if len(held.Files) != 2 {
-		t.Errorf("read from %d runs, want the two sessions", len(held.Files))
+	if len(target.Files) != 2 {
+		t.Errorf("read from %d runs, want the two sessions", len(target.Files))
 	}
-	for _, one := range held.Files {
+	for _, one := range target.Files {
 		if one.Size == 0 {
 			t.Errorf("%s was read at no length at all", one.Name)
 		}
 	}
-	if held.Skipped != 0 {
-		t.Errorf("%d lines could not be acted on, want none", held.Skipped)
+	if target.Skipped != 0 {
+		t.Errorf("%d lines could not be acted on, want none", target.Skipped)
 	}
 }
 
@@ -101,11 +101,11 @@ type listing struct {
 }
 
 func (l listing) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
-	held, err := l.DerivedStore.ListReviewLogs(ctx)
+	target, err := l.DerivedStore.ListReviewLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return append(held, ports.Entry{Name: l.name, Size: 120}), nil
+	return append(target, ports.Entry{Name: l.name, Size: 120}), nil
 }
 
 // A run taken away between the listing and the reading is left out, and the
@@ -119,16 +119,16 @@ func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gone := phantom{DerivedStores: s.logs, name: domain.NewReviewLogName("01ARZ3NDEKTSV4RRFFQ69G5FAV")}
-	held, err := flashcards.Log{Stores: gone}.Read(t.Context(), s.vault)
+	removed := phantom{DerivedStores: s.logs, name: domain.NewReviewLogName("01ARZ3NDEKTSV4RRFFQ69G5FAV")}
+	target, err := flashcards.Log{Stores: removed}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatalf("a run taken away failed the whole history: %v", err)
 	}
-	if len(held.Answers) != 1 {
-		t.Errorf("the vault holds %d answers, want the one written", len(held.Answers))
+	if len(target.Answers) != 1 {
+		t.Errorf("the vault holds %d answers, want the one written", len(target.Answers))
 	}
-	if len(held.Files) != 1 {
-		t.Errorf("read from %d runs, want the one that is there", len(held.Files))
+	if len(target.Files) != 1 {
+		t.Errorf("read from %d runs, want the one that is there", len(target.Files))
 	}
 }
 
@@ -141,11 +141,11 @@ type reordered struct {
 }
 
 func (r *reordered) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
-	held, err := r.DerivedStore.ListReviewLogs(ctx)
+	target, err := r.DerivedStore.ListReviewLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	out := slices.Clone(held)
+	out := slices.Clone(target)
 	if r.reverse {
 		slices.Reverse(out)
 	}
@@ -348,13 +348,13 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 			full.store.asked)
 	}
 
-	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Answers) != 1 || held.Skipped != 0 {
+	if len(target.Answers) != 1 || target.Skipped != 0 {
 		t.Errorf("the vault holds %d answers and %d lines it could not act on, want the one that landed",
-			len(held.Answers), held.Skipped)
+			len(target.Answers), target.Skipped)
 	}
 }
 
@@ -380,19 +380,19 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	}
 	s.env.Host.RefuseData(yesterdayRun.GetName()+".jsonl", fs.ErrPermission)
 
-	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatalf("one file nobody may open failed the whole history: %v", err)
 	}
-	if len(held.Answers) != 1 {
-		t.Errorf("the vault holds %d answers, want the one that could be read", len(held.Answers))
+	if len(target.Answers) != 1 {
+		t.Errorf("the vault holds %d answers, want the one that could be read", len(target.Answers))
 	}
-	if len(held.Files) != 1 {
-		t.Errorf("read from %d runs, want the one that could be read", len(held.Files))
+	if len(target.Files) != 1 {
+		t.Errorf("read from %d runs, want the one that could be read", len(target.Files))
 	}
-	if held.Skipped != 1 {
+	if target.Skipped != 1 {
 		t.Errorf("%d could not be acted on, want the one file that could not be opened",
-			held.Skipped)
+			target.Skipped)
 	}
 
 	if _, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{}); err != nil {
@@ -409,11 +409,11 @@ func TestAVaultNobodyReviewedHoldsNoRuns(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Answers) != 0 || len(held.Files) != 0 {
-		t.Errorf("read %+v", held)
+	if len(target.Answers) != 0 || len(target.Files) != 0 {
+		t.Errorf("read %+v", target)
 	}
 }

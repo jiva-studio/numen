@@ -40,16 +40,16 @@ func TestNoTokenIsPresentedAsNone(t *testing.T) {
 }
 
 func TestTheTokenIsPresentedOnAUnaryCall(t *testing.T) {
-	var seen string
+	var observed string
 	next := func(_ context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		seen = req.Header().Get("Authorization")
+		observed = req.Header().Get("Authorization")
 		return nil, nil
 	}
 
 	_, _ = hostcall.Bearer("u").WrapUnary(next)(context.Background(), connect.NewRequest(&struct{}{}))
 
-	if seen != "Bearer u" {
-		t.Errorf("got %q", seen)
+	if observed != "Bearer u" {
+		t.Errorf("got %q", observed)
 	}
 }
 

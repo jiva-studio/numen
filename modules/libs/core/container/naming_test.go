@@ -12,14 +12,14 @@ import (
 // installation pointed somewhere of its own keeps one.
 func writeSettings(t *testing.T, body string) container.Config {
 	t.Helper()
-	held := t.TempDir()
+	target := t.TempDir()
 	if body != "" {
-		path := filepath.Join(held, "numen.json")
+		path := filepath.Join(target, "numen.json")
 		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	return container.Config{RegistryPath: filepath.Join(held, "vaults.json")}
+	return container.Config{RegistryPath: filepath.Join(target, "vaults.json")}
 }
 
 // The setting is read as each rename is made, so a person who turns it in the

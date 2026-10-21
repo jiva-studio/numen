@@ -58,9 +58,9 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 // The model is read while Configure changes it.
 func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	srv := newEmbeddingServer()
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(isDone)
 		for range 200 {
 			srv.updateConfig(map[string]string{"model": "other-model"})
 		}
@@ -71,7 +71,7 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	<-done
+	<-isDone
 }
 
 // A dimension or a token limit the model answer cannot hold is not taken from the environment.

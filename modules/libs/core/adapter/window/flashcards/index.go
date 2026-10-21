@@ -55,7 +55,7 @@ func (r *indexRuns) tryStart(
 	if r.indexed[v.ID] {
 		return nil, nil, false, ""
 	}
-	if why, told := r.failures[v.ID]; told {
+	if why, notified := r.failures[v.ID]; notified {
 		return nil, nil, false, why
 	}
 	if r.running[v.ID] {

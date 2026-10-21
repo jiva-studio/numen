@@ -94,9 +94,9 @@ func LinkName(written string) string {
 	if i := strings.LastIndexByte(name, '/'); i >= 0 {
 		name = name[i+1:]
 	}
-	if cut := len(name) - len(NoteExtension); cut > 0 &&
-		FoldName(name[cut:]) == NoteExtension {
-		return name[:cut]
+	if trimmed := len(name) - len(NoteExtension); trimmed > 0 &&
+		FoldName(name[trimmed:]) == NoteExtension {
+		return name[:trimmed]
 	}
 	return name
 }

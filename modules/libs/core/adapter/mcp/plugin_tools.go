@@ -116,16 +116,16 @@ const askedVault = "vault"
 // getAsked is what the plugins are told of the window the agent was started from: the vault the
 // agent works, and what the person is looking at there.
 func getAsked(core Core) map[string]string {
-	asked := map[string]string{}
+	request := map[string]string{}
 	if core.Showing != nil {
 		if showing := core.Showing().Vault; showing.ID != "" {
-			asked[askedVault] = string(showing.ID)
+			request[askedVault] = string(showing.ID)
 		}
 	}
 	if core.GetAsked != nil {
 		for key, value := range core.GetAsked() {
-			asked[key] = value
+			request[key] = value
 		}
 	}
-	return asked
+	return request
 }

@@ -76,12 +76,12 @@ func (u GetDocumentText) Execute(
 	// the same answer a search sliced its passage at.
 	var from, hash string
 	if u.sources != nil {
-		said, held, err := u.sources.GetSourceText(ctx, v.ID, path)
+		response, target, err := u.sources.GetSourceText(ctx, v.ID, path)
 		if err != nil {
 			return res, err
 		}
-		if held {
-			from, hash = said.Producer, said.Hash
+		if target {
+			from, hash = response.Producer, response.Hash
 		}
 	}
 

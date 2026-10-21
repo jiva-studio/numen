@@ -122,13 +122,13 @@ func (a *Agent) readSection(key string, section json.RawMessage) error {
 // MarshalJSON writes the section with the programs beside the two keys of it. A choice left to the
 // default is written as null, which reads back the same.
 func (a Agent) MarshalJSON() ([]byte, error) {
-	written := make(map[string]any, len(a.Programs)+2)
+	content := make(map[string]any, len(a.Programs)+2)
 	for name, program := range a.Programs {
-		written[name] = program
+		content[name] = program
 	}
-	written["use"] = a.Use
-	written["serve_tools"] = a.ShouldServeTools
-	return json.Marshal(written)
+	content["use"] = a.Use
+	content["serve_tools"] = a.ShouldServeTools
+	return json.Marshal(content)
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits. A key the section does
@@ -170,13 +170,13 @@ func (p *AgentProgram) readField(key string, value json.RawMessage) error {
 
 // MarshalJSON writes the section of a program with its options beside its own keys.
 func (p AgentProgram) MarshalJSON() ([]byte, error) {
-	written := make(map[string]any, len(p.Options)+4)
+	content := make(map[string]any, len(p.Options)+4)
 	for key, value := range p.Options {
-		written[key] = json.RawMessage(value)
+		content[key] = json.RawMessage(value)
 	}
-	written["command"] = p.Command
-	written["model"] = p.Model
-	written["reasoning"] = p.Reasoning
-	written["max_steps"] = p.MaxSteps
-	return json.Marshal(written)
+	content["command"] = p.Command
+	content["model"] = p.Model
+	content["reasoning"] = p.Reasoning
+	content["max_steps"] = p.MaxSteps
+	return json.Marshal(content)
 }

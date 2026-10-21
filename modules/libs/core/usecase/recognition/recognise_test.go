@@ -46,15 +46,15 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlo
 	}
 	// No two pages say the same thing, so a coordinate read at the wrong offset
 	// names the wrong words.
-	said := fmt.Sprintf("%s %d", s.says, s.pages)
+	response := fmt.Sprintf("%s %d", s.says, s.pages)
 	var out []domain.OCRBlock
 	if s.heads != "" {
 		out = append(out, domain.OCRBlock{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
 	}
 	return append(out, domain.OCRBlock{
 		Label: "text",
-		Text:  said,
-		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
+		Text:  response,
+		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(response)}}},
 	}), nil
 }
 
@@ -142,7 +142,7 @@ func TestADocumentSayingNothingWritesNothing(t *testing.T) {
 	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if src, held := index.sources[v.ID][documentPath]; held && src.Producer != "" {
+	if src, target := index.sources[v.ID][documentPath]; target && src.Producer != "" {
 		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 }
@@ -237,8 +237,8 @@ func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	stood := index.sources[v.ID][documentPath]
-	if stood.Producer == "" {
+	status := index.sources[v.ID][documentPath]
+	if status.Producer == "" {
 		t.Fatal("the source does not stand on a recognition")
 	}
 
@@ -252,7 +252,7 @@ func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
 		t.Fatal("the source was not cut, so this cannot tell anything")
 	}
 
-	if err := shelf.RemoveArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, stood.Producer, stood.Hash)); err != nil {
+	if err := shelf.RemoveArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, status.Producer, status.Hash)); err != nil {
 		t.Fatal(err)
 	}
 	res, err := extract.Execute(t.Context(), v)
@@ -312,7 +312,7 @@ func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
 	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if _, held := index.sources[v.ID][documentPath]; held {
+	if _, target := index.sources[v.ID][documentPath]; target {
 		t.Error("the source was recorded")
 	}
 }
@@ -432,11 +432,11 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 
 	// The tail of an append that never finished.
 	partial := domain.NewArtifactName(domain.ArtifactPartial, "ocr", documentHash())
-	torn, err := shelf.ReadArtifact(t.Context(), partial)
+	divided, err := shelf.ReadArtifact(t.Context(), partial)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shelf.WriteArtifact(t.Context(), partial, append(torn, "A pa"...)); err != nil {
+	if err := shelf.WriteArtifact(t.Context(), partial, append(divided, "A pa"...)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -483,12 +483,12 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	}
 
 	partial := domain.NewArtifactName(domain.ArtifactPartial, "ocr", documentHash())
-	held, err := shelf.ReadArtifact(t.Context(), partial)
+	target, err := shelf.ReadArtifact(t.Context(), partial)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var without []string
-	for _, line := range strings.SplitAfter(string(held), "\n") {
+	for _, line := range strings.SplitAfter(string(target), "\n") {
 		if !strings.HasPrefix(line, resumeMark) {
 			without = append(without, line)
 		}

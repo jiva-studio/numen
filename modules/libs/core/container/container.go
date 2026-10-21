@@ -157,8 +157,8 @@ func (c Config) handleError(err error) {
 // name, which is what an installation nobody has configured does.
 func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
-		held, _ := c.Settings()
-		return note.SyncTitleAndFilename(held.Sync())
+		target, _ := c.Settings()
+		return note.SyncTitleAndFilename(target.Sync())
 	}
 }
 
@@ -170,12 +170,12 @@ func (c Config) ReadSettings() func() (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		held, err := c.getSettingsAt(path)
+		target, err := c.getSettingsAt(path)
 		if err != nil {
 			return "", path, err
 		}
-		written, err := held.WriteJSON()
-		return written, path, err
+		content, err := target.WriteJSON()
+		return content, path, err
 	}
 }
 
@@ -207,13 +207,13 @@ func (c Config) WriteConfiguredFile() func(written string, baseline *string) err
 		if err != nil {
 			return err
 		}
-		held := DefaultSettings()
-		if err := settings.Write(path, []byte(written), baseline, &held); err != nil {
+		target := DefaultSettings()
+		if err := settings.Write(path, []byte(written), baseline, &target); err != nil {
 			return err
 		}
 		if c.PluginHost != nil {
-			if held.Plugins != nil {
-				c.PluginHost.SetSettings(held.Plugins)
+			if target.Plugins != nil {
+				c.PluginHost.SetSettings(target.Plugins)
 			}
 			_ = c.PluginHost.NotifyAllPluginConfigs(context.Background())
 		}
@@ -233,20 +233,20 @@ func (Config) NestedHeadingLimitBounds() settings.Bounds {
 // could not be read out of again is refused before anything is written.
 func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 	return func(written []port.Setting) error {
-		held := make([]settings.Setting, 0, len(written))
+		target := make([]settings.Setting, 0, len(written))
 		for _, one := range written {
 			var value json.RawMessage
 			if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
 				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
 			}
-			held = append(held, settings.Setting{At: one.Path, Written: value})
+			target = append(target, settings.Setting{At: one.Path, Written: value})
 		}
 		path, err := c.settingsFile()
 		if err != nil {
 			return err
 		}
 		into := DefaultSettings()
-		if err := settings.Save(path, &into, held...); err != nil {
+		if err := settings.Save(path, &into, target...); err != nil {
 			return err
 		}
 		notifyPluginSettings(c.PluginHost, written)
@@ -274,7 +274,7 @@ func (c Config) settingsFile() (string, error) {
 	if c.SettingsPath != "" {
 		return c.SettingsPath, nil
 	}
-	if file, chosen := c.getPathBeside("numen.json"); chosen {
+	if file, selected := c.getPathBeside("numen.json"); selected {
 		return file, nil
 	}
 	return settings.Path()

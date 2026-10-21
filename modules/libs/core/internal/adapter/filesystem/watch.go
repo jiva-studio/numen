@@ -53,12 +53,12 @@ func (w Watcher) WatchVault(
 	}
 
 	debounced := make(chan []string)
-	gone := make(chan struct{}, 1)
+	removed := make(chan struct{}, 1)
 
 	// A shape short of a folder the walk could not enter cannot tell a folder
 	// that has gone from a file that has, so the vault is read again.
 	if why != nil {
-		gone <- struct{}{}
+		removed <- struct{}{}
 	}
 
 	go func() {
@@ -66,10 +66,10 @@ func (w Watcher) WatchVault(
 		defer close(debounced)
 		waiting := newQueue(Backlog)
 		go forwardEvents(ctx, raw, waiting)
-		debounce(ctx, shape, opts, waiting, debounced, gone)
+		debounce(ctx, shape, opts, waiting, debounced, removed)
 	}()
 
-	return debounced, gone, nil
+	return debounced, removed, nil
 }
 
 // File follows one file and reports each time it changes.

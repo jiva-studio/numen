@@ -43,9 +43,9 @@ func proofreadWords(t *testing.T, vars map[string]string) error {
 
 // A linked handler asks the host its variables name, with its own token.
 func TestTheLinkedHandlerAsksTheHostOfItsVariables(t *testing.T) {
-	asked := &askedHost{}
+	request := &askedHost{}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostServiceHandler(asked))
+	mux.Handle(numenv1connect.NewHostServiceHandler(request))
 	host := httptest.NewServer(mux)
 	defer host.Close()
 
@@ -57,8 +57,8 @@ func TestTheLinkedHandlerAsksTheHostOfItsVariables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ProofreadText: %v", err)
 	}
-	if len(asked.purposes) == 0 || asked.purposes[0] != purpose || asked.auth != "Bearer linked-token" {
-		t.Fatalf("the host was asked %v with %q", asked.purposes, asked.auth)
+	if len(request.purposes) == 0 || request.purposes[0] != purpose || request.auth != "Bearer linked-token" {
+		t.Fatalf("the host was asked %v with %q", request.purposes, request.auth)
 	}
 }
 

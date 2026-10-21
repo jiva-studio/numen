@@ -18,7 +18,7 @@ func parseTime(s string) time.Time {
 
 // An answer written down and read back is the answer that was given.
 func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
-	given := review.Answer{
+	provided := review.Answer{
 		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
 		CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
 		At:       parseTime("2026-08-29T09:12:33.412Z"),
@@ -26,7 +26,7 @@ func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
 		Took:     4210 * time.Millisecond,
 	}
 
-	raw, err := review.Write(given)
+	raw, err := review.Write(provided)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,8 +38,8 @@ func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
 	if skipped != 0 {
 		t.Errorf("skipped %d of one good line", skipped)
 	}
-	if len(back) != 1 || back[0] != given {
-		t.Errorf("read back %+v, want %+v", back, given)
+	if len(back) != 1 || back[0] != provided {
+		t.Errorf("read back %+v, want %+v", back, provided)
 	}
 }
 
@@ -75,9 +75,9 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	torn := append(append([]byte(nil), whole...), []byte(`{"v":1,"id":"01K3ZQ7`)...)
+	divided := append(append([]byte(nil), whole...), []byte(`{"v":1,"id":"01K3ZQ7`)...)
 
-	back, skipped := review.Read(torn)
+	back, skipped := review.Read(divided)
 	if len(back) != 1 {
 		t.Errorf("read %d answers, want the one that landed", len(back))
 	}

@@ -29,7 +29,7 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if dims <= 0 {
 		return fmt.Errorf("a vector of %d dimensions is not a vector", dims)
 	}
-	held, err := getVectorWidth(ctx, d.write)
+	target, err := getVectorWidth(ctx, d.write)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if err != nil {
 		return err
 	}
-	if held == dims && recorded && filledBy == recipe {
+	if target == dims && recorded && filledBy == recipe {
 		return nil
 	}
 
@@ -101,7 +101,7 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 		chunk, vault int64
 		bits         []byte
 	}
-	var held []coarse
+	var target []coarse
 	for rows.Next() {
 		var one coarse
 		var value []byte
@@ -109,7 +109,7 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 			return fmt.Errorf("the vectors the recipe holds: %w", err)
 		}
 		one.bits = embedding.Coarse(embedding.Dimensions(value))
-		held = append(held, one)
+		target = append(target, one)
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("the vectors the recipe holds: %w", err)
@@ -117,7 +117,7 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 
 	// `vec_bit` says the blob is one bit per dimension. Its length alone does
 	// not distinguish that from float32.
-	for _, one := range held {
+	for _, one := range target {
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO chunks_vec (chunk_id, vault_id, coarse) VALUES (?, ?, vec_bit(?))`,
 			one.chunk, one.vault, one.bits); err != nil {

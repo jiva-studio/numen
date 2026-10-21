@@ -262,11 +262,11 @@ func TestAPathHoldingAFolderIsSaidToBeOne(t *testing.T) {
 // of a file does not reach into it.
 func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
-	kept := filepath.Join(v.Path, filesystem.DefaultServiceDir, "kept.txt")
-	if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+	retained := filepath.Join(v.Path, filesystem.DefaultServiceDir, "kept.txt")
+	if err := os.MkdirAll(filepath.Dir(retained), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(kept, []byte("ours"), 0o600); err != nil {
+	if err := os.WriteFile(retained, []byte("ours"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -281,13 +281,13 @@ func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 func TestARangeNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
 
-	for _, asked := range []struct{ start, length int }{
+	for _, request := range []struct{ start, length int }{
 		{-1, 10},
 		{0, -1},
 		{0, file.MostRead + 1},
 	} {
-		if _, err := u.Execute(t.Context(), v, "lecture.txt", asked.start, asked.length); err == nil {
-			t.Errorf("a range beginning at %d for %d bytes was not rejected", asked.start, asked.length)
+		if _, err := u.Execute(t.Context(), v, "lecture.txt", request.start, request.length); err == nil {
+			t.Errorf("a range beginning at %d for %d bytes was not rejected", request.start, request.length)
 		}
 	}
 }
@@ -458,8 +458,8 @@ func TestAFileThatShrankWhileItWasReadComesBackAsWhatItHolds(t *testing.T) {
 		t.Errorf("a file that shrank came back as %+v", got)
 	}
 
-	gone := faulty{file: &shifting{data: []byte("ab"), size: 10}}
-	got, err = file.Read{Readers: gone}.Execute(t.Context(), v, "lecture.txt", 5, 0)
+	removed := faulty{file: &shifting{data: []byte("ab"), size: 10}}
+	got, err = file.Read{Readers: removed}.Execute(t.Context(), v, "lecture.txt", 5, 0)
 	if err != nil {
 		t.Fatalf("read past what is left: %v", err)
 	}
@@ -518,9 +518,9 @@ func TestACharacterCutShortInsideTheRangeIsNotText(t *testing.T) {
 // by the time its bytes come.
 func TestAFileThatGrewWhileItWasReadIsReadOnlyToWhereItWasMeasured(t *testing.T) {
 	_, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
-	grown := faulty{file: &shifting{data: []byte("said and said"), size: 4}}
+	expanded := faulty{file: &shifting{data: []byte("said and said"), size: 4}}
 
-	got, err := file.Read{Readers: grown}.Execute(t.Context(), v, "lecture.txt", 2, 0)
+	got, err := file.Read{Readers: expanded}.Execute(t.Context(), v, "lecture.txt", 2, 0)
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}

@@ -66,11 +66,11 @@ func TestMarkupBecomesText(t *testing.T) {
 			`<div><p>One</p></span><p>Two</p></div>`, "One\nTwo\n"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			book, drawn := readOne(t, c.markup)
+			book, rendered := readOne(t, c.markup)
 			if book.Text != c.want {
 				t.Errorf("the text is %q, want %q", book.Text, c.want)
 			}
-			if got := getNodeText(drawn.Nodes); got != c.want {
+			if got := getNodeText(rendered.Nodes); got != c.want {
 				t.Errorf("the markup says %q, want %q", got, c.want)
 			}
 		})
@@ -239,11 +239,11 @@ const twoDocumentOpf = `<?xml version="1.0"?>
 func readOne(t *testing.T, markup string) (*epub.Book, *epub.Markup) {
 	t.Helper()
 	book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{"OEBPS/one.xhtml": markup}))
-	drawn, err := book.Markup("OEBPS/one.xhtml")
+	rendered, err := book.Markup("OEBPS/one.xhtml")
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
-	return book, drawn
+	return book, rendered
 }
 
 // A pre left open at the end of a document does not keep the next document
@@ -261,12 +261,12 @@ func TestPreLeftOpenEndsWithItsDocument(t *testing.T) {
 
 // A line break holds no text, and what follows it stands beside it.
 func TestLineBreakHoldsNoText(t *testing.T) {
-	_, drawn := readOne(t, `<p>a<br/>b</p>`)
-	if len(drawn.Nodes) != 1 || drawn.Nodes[0].Name != "p" {
-		t.Fatalf("nodes = %+v, want one paragraph", drawn.Nodes)
+	_, rendered := readOne(t, `<p>a<br/>b</p>`)
+	if len(rendered.Nodes) != 1 || rendered.Nodes[0].Name != "p" {
+		t.Fatalf("nodes = %+v, want one paragraph", rendered.Nodes)
 	}
 	var names []string
-	for _, child := range drawn.Nodes[0].Children {
+	for _, child := range rendered.Nodes[0].Children {
 		names = append(names, child.Name)
 		if child.Name == "br" && len(child.Children) != 0 {
 			t.Errorf("the break holds %+v, want nothing", child.Children)

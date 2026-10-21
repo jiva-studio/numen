@@ -72,7 +72,7 @@ func (s *debounceState) handleWalkResult(one walkResult, delay time.Duration, lo
 }
 
 func (s *debounceState) handleWaitingEvents(shape *folders, waiting *queue, delay time.Duration, lost chan<- struct{}) bool {
-	events, over, done := waiting.take()
+	events, over, isDone := waiting.take()
 	if over {
 		s.rescan(lost)
 		shape.reloadShape()
@@ -91,7 +91,7 @@ func (s *debounceState) handleWaitingEvents(shape *folders, waiting *queue, dela
 		}
 	}
 	s.startHold(delay)
-	return done
+	return isDone
 }
 
 func (s *debounceState) flushPendingToReady() {
@@ -128,7 +128,7 @@ func debounce(
 	lost chan<- struct{},
 ) {
 	state := newDebounceState()
-	asked := make(chan string)
+	request := make(chan string)
 	walked := make(chan walkResult)
 
 	going := make(chan struct{})
@@ -136,7 +136,7 @@ func debounce(
 	walking.Add(1)
 	go func() {
 		defer walking.Done()
-		walkFolders(ctx, shape, going, asked, walked)
+		walkFolders(ctx, shape, going, request, walked)
 	}()
 	defer walking.Wait()
 	defer close(going)
@@ -144,7 +144,7 @@ func debounce(
 	delay := opts.getDebounceDelay()
 	for {
 		out := state.deliverChan(changes)
-		walk, next := state.walkChan(asked)
+		walk, next := state.walkChan(request)
 
 		select {
 		case <-ctx.Done():

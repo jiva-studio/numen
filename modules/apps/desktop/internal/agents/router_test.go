@@ -116,8 +116,8 @@ func TestATaskGoesToTheProgramItNamesOrTheConfiguredOne(t *testing.T) {
 	provider := &fakeProvider{}
 	router, out := makeRouter(t, provider, settings.Agent{Use: settings.UseProgram("codex")}, EditPreview{})
 
-	for _, asked := range []string{"", "claude"} {
-		run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: asked})
+	for _, request := range []string{"", "claude"} {
+		run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: request})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -310,8 +310,8 @@ func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
 		draftOf("c-1", "a.md", "old", "new text"),
 		{Kind: domain.StepStop},
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(true))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
@@ -327,11 +327,11 @@ func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
 		{Change: "c-1", Path: "a.md", From: 10, To: 13, Text: "new text"},
 		{Change: "c-1", IsDone: true},
 	}
-	if !slices.Equal(seen.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", seen.edits, want)
+	if !slices.Equal(observed.edits, want) {
+		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
 	}
-	if !slices.Equal(seen.located, []string{"a.md:old"}) {
-		t.Errorf("the stretch was looked for as %q, and once is enough", seen.located)
+	if !slices.Equal(observed.located, []string{"a.md:old"}) {
+		t.Errorf("the stretch was looked for as %q, and once is enough", observed.located)
 	}
 }
 
@@ -341,8 +341,8 @@ func TestAStretchThatIsNotUniqueIsNotDrawn(t *testing.T) {
 		draftOf("c-1", "a.md", "old", "x"),
 		draftOf("c-1", "a.md", "old", "xy"),
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(false))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(false))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
@@ -351,8 +351,8 @@ func TestAStretchThatIsNotUniqueIsNotDrawn(t *testing.T) {
 	if steps := drain(run); len(steps) != 0 {
 		t.Errorf("the person is shown %+v", steps)
 	}
-	if len(seen.edits) != 0 || len(seen.located) != 1 {
-		t.Errorf("drawn %+v after looking %q", seen.edits, seen.located)
+	if len(observed.edits) != 0 || len(observed.located) != 1 {
+		t.Errorf("drawn %+v after looking %q", observed.edits, observed.located)
 	}
 }
 
@@ -364,25 +364,25 @@ func TestAnotherChangeIsLookedForAgain(t *testing.T) {
 		draftOf("c-2", "b.md", "old", "x"),
 		draftOf("c-2", "b.md", "older", "x"),
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(true))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	drain(run)
-	if want := []string{"a.md:old", "a.md:old", "b.md:old", "b.md:older"}; !slices.Equal(seen.located, want) {
-		t.Errorf("looked for %q, want %q", seen.located, want)
+	if want := []string{"a.md:old", "a.md:old", "b.md:old", "b.md:older"}; !slices.Equal(observed.located, want) {
+		t.Errorf("looked for %q, want %q", observed.located, want)
 	}
-	done := 0
-	for _, one := range seen.edits {
+	isDone := 0
+	for _, one := range observed.edits {
 		if one.IsDone {
-			done++
+			isDone++
 		}
 	}
-	if len(seen.edits) != 6 || done != 2 {
-		t.Errorf("drawn %+v", seen.edits)
+	if len(observed.edits) != 6 || isDone != 2 {
+		t.Errorf("drawn %+v", observed.edits)
 	}
 }
 
@@ -394,14 +394,14 @@ func TestADraftThatSaysNothingIsNotDrawn(t *testing.T) {
 		draftOf("c-1", "a.md", "old", "x"),
 	}
 
-	var seen drawn
-	router, _ := makeRouter(t, &fakeProvider{steps: steps[:2]}, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, &fakeProvider{steps: steps[:2]}, settings.Agent{}, observed.preview(true))
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if shown := drain(run); len(shown) != 0 || len(seen.edits) != 0 || len(seen.located) != 0 {
-		t.Errorf("shown %+v, drawn %+v, looked for %q", shown, seen.edits, seen.located)
+	if displayed := drain(run); len(displayed) != 0 || len(observed.edits) != 0 || len(observed.located) != 0 {
+		t.Errorf("shown %+v, drawn %+v, looked for %q", displayed, observed.edits, observed.located)
 	}
 
 	router, _ = makeRouter(t, &fakeProvider{steps: steps[2:]}, settings.Agent{}, EditPreview{})
@@ -409,8 +409,8 @@ func TestADraftThatSaysNothingIsNotDrawn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if shown := drain(run); len(shown) != 0 {
-		t.Errorf("a draft was shown as %+v", shown)
+	if displayedVal := drain(run); len(displayedVal) != 0 {
+		t.Errorf("a draft was shown as %+v", displayedVal)
 	}
 }
 
@@ -484,8 +484,8 @@ func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 		{Kind: domain.StepToolDone},
 		{Kind: domain.StepSay, Text: "after"},
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(true))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
@@ -497,8 +497,8 @@ func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 		{Change: "c-1", Path: "a.md", From: 10, To: 13, Text: "x"},
 		{Change: "c-1", IsDone: true},
 	}
-	if !slices.Equal(seen.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", seen.edits, want)
+	if !slices.Equal(observed.edits, want) {
+		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
 	}
 }
 

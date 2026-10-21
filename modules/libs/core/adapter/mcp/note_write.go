@@ -99,11 +99,11 @@ func rewriteNote(ctx context.Context, core Core, in noteRewriteInput) (noteRewri
 		return noteRewriteOutput{}, err
 	}
 	// The fingerprint after the write; the next write to this note presents it.
-	written, err := core.Notes.Write.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Body, ref)
+	content, err := core.Notes.Write.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Body, ref)
 	if err != nil {
 		return noteRewriteOutput{}, err
 	}
-	return noteRewriteOutput{Path: in.Path, Fingerprint: fingerprintOf(written)}, nil
+	return noteRewriteOutput{Path: in.Path, Fingerprint: fingerprintOf(content)}, nil
 }
 
 type noteEditInput struct {
@@ -144,7 +144,7 @@ func editNote(ctx context.Context, core Core, in noteEditInput) (noteEditOutput,
 	if err != nil {
 		return noteEditOutput{}, err
 	}
-	done, err := core.Notes.Replace.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Match, in.Text, baseline)
+	isDone, err := core.Notes.Replace.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Match, in.Text, baseline)
 	if err != nil {
 		return noteEditOutput{}, err
 	}
@@ -152,8 +152,8 @@ func editNote(ctx context.Context, core Core, in noteEditInput) (noteEditOutput,
 	// is not the requested text.
 	return noteEditOutput{
 		Path:        in.Path,
-		Fingerprint: fingerprintOf(done.Fingerprint),
-		Match:       done.Matched,
-		IsLoose:     done.IsPlain,
+		Fingerprint: fingerprintOf(isDone.Fingerprint),
+		Match:       isDone.Matched,
+		IsLoose:     isDone.IsPlain,
 	}, nil
 }

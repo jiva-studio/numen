@@ -217,10 +217,10 @@ func registerVault(cfg container.Config, root string) (string, error) {
 	if resolved, err := filepath.EvalSymlinks(root); err == nil {
 		root = resolved
 	}
-	if held, found, err := registry.FindVault(root); err != nil {
+	if target, found, err := registry.FindVault(root); err != nil {
 		return "", err
 	} else if found {
-		return held.Path, nil
+		return target.Path, nil
 	}
 	added, err := cfg.AddVault(registry, root, "numen")
 	if err != nil {
@@ -237,16 +237,16 @@ const Seeded = "Physics.md"
 // seedVault writes a small graph into a vault that holds none, so that a picture has
 // something to draw.
 func seedVault(root string) error {
-	held, err := os.ReadDir(root)
+	target, err := os.ReadDir(root)
 	if err != nil {
 		return err
 	}
-	for _, entry := range held {
+	for _, entry := range target {
 		if strings.HasSuffix(entry.Name(), ".md") {
 			return nil
 		}
 	}
-	written := map[string]string{
+	content := map[string]string{
 		"Sciences.md": "---\ntitle: Sciences\nlinks:\n" +
 			"  - to: \"[[Physics]]\"\n    role: child\n" +
 			"  - to: \"[[Optics]]\"\n    role: child\n---\n\n" +
@@ -262,7 +262,7 @@ func seedVault(root string) error {
 		"Tides.md":   "# Tides\n\nTwo bulges, one turning planet, and a day with four of them in it.\n",
 		"Vellum.md":  "# Vellum\n\nA skin scraped thin enough to write on and thick enough to fold.\n",
 	}
-	for name, text := range written {
+	for name, text := range content {
 		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o644); err != nil {
 			return fmt.Errorf("seeding %s: %w", name, err)
 		}

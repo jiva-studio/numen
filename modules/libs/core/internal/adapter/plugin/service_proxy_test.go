@@ -166,12 +166,12 @@ func TestAPluginThatCannotBeStartedIsAnUnavailableService(t *testing.T) {
 
 	OpenServiceProxy(host).ServeHTTP(recorded, httptest.NewRequest(http.MethodPost, "/numen.v1.CardsService/ReadDeck", nil))
 
-	var said map[string]string
-	if err := json.Unmarshal(recorded.Body.Bytes(), &said); err != nil {
+	var response map[string]string
+	if err := json.Unmarshal(recorded.Body.Bytes(), &response); err != nil {
 		t.Fatal(err)
 	}
-	if recorded.Code != http.StatusServiceUnavailable || said["code"] != "unavailable" {
-		t.Errorf("the answer was %d %v", recorded.Code, said)
+	if recorded.Code != http.StatusServiceUnavailable || response["code"] != "unavailable" {
+		t.Errorf("the answer was %d %v", recorded.Code, response)
 	}
 	if host.getReleased() != 0 {
 		t.Errorf("a plugin that never started was released %d times", host.getReleased())

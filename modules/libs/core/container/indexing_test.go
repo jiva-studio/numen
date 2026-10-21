@@ -12,26 +12,26 @@ import (
 // is built from. A section left behind is a part of the application that does
 // nothing, and turning a model off is done by naming none, so nothing says it.
 func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
-	said := container.DefaultIndexing()
-	held := container.Settings{Indexing: said}
-	cfg := container.Config{IndexPath: "/somewhere/index.db"}.SetSettings(held)
+	response := container.DefaultIndexing()
+	target := container.Settings{Indexing: response}
+	cfg := container.Config{IndexPath: "/somewhere/index.db"}.SetSettings(target)
 
-	if !reflect.DeepEqual(cfg.Embedding, said.Embedding) {
+	if !reflect.DeepEqual(cfg.Embedding, response.Embedding) {
 		t.Error("the embedding section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.Proofreading, said.Proofreading) {
+	if !reflect.DeepEqual(cfg.Proofreading, response.Proofreading) {
 		t.Error("the proofreading section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.ScanProofreading, said.Recognition.Proofread) {
+	if !reflect.DeepEqual(cfg.ScanProofreading, response.Recognition.Proofread) {
 		t.Error("what puts a recognition right did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.TranscriptProofreading, said.Transcription.Proofread) {
+	if !reflect.DeepEqual(cfg.TranscriptProofreading, response.Transcription.Proofread) {
 		t.Error("what puts a transcript right did not arrive")
 	}
-	if cfg.ShouldTranscribe != said.CanTranscribe() {
+	if cfg.ShouldTranscribe != response.CanTranscribe() {
 		t.Error("whether a recording is heard without being asked did not arrive")
 	}
-	if cfg.TranscribesUnder != said.GetTranscribeLimit() {
+	if cfg.TranscribesUnder != response.GetTranscribeLimit() {
 		t.Error("how large a recording heard unasked may be did not arrive")
 	}
 	if cfg.IndexPath != "/somewhere/index.db" {
@@ -43,14 +43,14 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 // until it is carried, which is the failure the sections themselves cannot
 // have: an unconfigured model is a model nobody asked for.
 func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
-	if held := reflect.TypeOf(container.Indexing{}).NumField(); held != 6 {
-		t.Errorf("indexing holds %d sections; carry the new one in Config.SetSettings", held)
+	if target := reflect.TypeOf(container.Indexing{}).NumField(); target != 6 {
+		t.Errorf("indexing holds %d sections; carry the new one in Config.SetSettings", target)
 	}
 	// The document holds the sections the file does, and the line a person is
 	// left about what it says. The ai section is carried by the router the host is
 	// given, which reads it at every question.
-	if held := reflect.TypeOf(container.Settings{}).NumField(); held != 10 {
-		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", held)
+	if targetVal := reflect.TypeOf(container.Settings{}).NumField(); targetVal != 10 {
+		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", targetVal)
 	}
 }
 

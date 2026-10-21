@@ -26,9 +26,9 @@ func (unreachable) GetNamedPaths(context.Context, domain.VaultID, string) ([]str
 
 func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
 	t.Parallel()
-	held := named{"Untitled note": {"allotments/Untitled note.md"}}
+	target := named{"Untitled note": {"allotments/Untitled note.md"}}
 
-	to, err := note.GetAddress(t.Context(), held, "v", "allotments/Untitled note.md")
+	to, err := note.GetAddress(t.Context(), target, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -44,9 +44,9 @@ func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
 // by writing where it is filed.
 func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 	t.Parallel()
-	held := named{"Untitled note": {"Untitled note.md", "allotments/Untitled note.md"}}
+	target := named{"Untitled note": {"Untitled note.md", "allotments/Untitled note.md"}}
 
-	to, err := note.GetAddress(t.Context(), held, "v", "allotments/Untitled note.md")
+	to, err := note.GetAddress(t.Context(), target, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -101,9 +101,9 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 		"study/Verbs | strong.md",
 		"study/#1.md",
 	} {
-		held := named{domain.Basename(path): {path}}
+		target := named{domain.Basename(path): {path}}
 
-		to, err := note.GetAddress(t.Context(), held, "v", path)
+		to, err := note.GetAddress(t.Context(), target, "v", path)
 		if !errors.Is(err, note.ErrUnaddressable) {
 			t.Errorf("%s is addressed as %v %q, and answered %v",
 				path, to.Scheme, to.Value, err)

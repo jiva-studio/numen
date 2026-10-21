@@ -68,12 +68,12 @@ func TestThePageHoldingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
 	handler.ServeHTTP(answer,
 		httptest.NewRequest(http.MethodGet, back.Embed(parseURL(t, pointsAtAVideo)), nil))
 
-	said := answer.Header().Get("Content-Security-Policy")
-	if !strings.Contains(said, "default-src 'none'") {
-		t.Errorf("the page may reach anywhere: %q", said)
+	response := answer.Header().Get("Content-Security-Policy")
+	if !strings.Contains(response, "default-src 'none'") {
+		t.Errorf("the page may reach anywhere: %q", response)
 	}
-	if !strings.Contains(said, "frame-src "+embedHosts[0]) {
-		t.Errorf("the page frames %q", said)
+	if !strings.Contains(response, "frame-src "+embedHosts[0]) {
+		t.Errorf("the page frames %q", response)
 	}
 }
 

@@ -36,11 +36,11 @@ func TestSetLeavesEveryOtherKeyAlone(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, retained := range []string{
 		"# a note to myself\n", "zebra:   1\n", "# about apples\n", "apple: 'two'\n", "body\n",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("lost %q from\n%s", kept, got)
+		if !strings.Contains(got, retained) {
+			t.Errorf("lost %q from\n%s", retained, got)
 		}
 	}
 	if !strings.Contains(got, "to: Old") {
@@ -186,12 +186,12 @@ func TestWritingOneLinkLeavesTheOthersAsBytes(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, retained := range []string{
 		"# why this one exists\n", "- to: Entropy\n", "role: supersedes\n",
 		"mine: keep me\n", "- to: Heat\n",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("lost %q from\n%s", kept, got)
+		if !strings.Contains(got, retained) {
+			t.Errorf("lost %q from\n%s", retained, got)
 		}
 	}
 	if !strings.Contains(got, "- to: Work") {
@@ -274,12 +274,12 @@ func TestPointingALinkSomewhereElseChangesOnlyTheAddress(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, retained := range []string{
 		"# the old place", "role: parent\n", "label: follows from\n",
 		"[[Entropy|entropy]]", "[[Heat]]",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("lost %q from\n%s", kept, got)
+		if !strings.Contains(got, retained) {
+			t.Errorf("lost %q from\n%s", retained, got)
 		}
 	}
 	if strings.Contains(got, "notes/Entropy") {
@@ -397,9 +397,9 @@ func TestAValueOnOneLineLeavesTheKeysAroundItWritable(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{"links: [{to: A, role: jump}]", "light_days: [sat]", "id: 01J8"} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("%q is not in the note:\n%s", kept, got)
+	for _, retained := range []string{"links: [{to: A, role: jump}]", "light_days: [sat]", "id: 01J8"} {
+		if !strings.Contains(got, retained) {
+			t.Errorf("%q is not in the note:\n%s", retained, got)
 		}
 	}
 	if _, err := Open([]byte(got)); err != nil {
@@ -523,9 +523,9 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 			if len(links) != 1 || links[0].Target.Value != "Marrowfield" {
 				t.Errorf("want the link at Marrowfield, got %+v\n%s", links, got)
 			}
-			for _, kept := range []string{"# where it sat", "role: child\n"} {
-				if !strings.Contains(got, kept) {
-					t.Errorf("lost %q from\n%s", kept, got)
+			for _, retained := range []string{"# where it sat", "role: child\n"} {
+				if !strings.Contains(got, retained) {
+					t.Errorf("lost %q from\n%s", retained, got)
 				}
 			}
 			if strings.Contains(got, "corner") {
@@ -773,7 +773,7 @@ func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, retained := range []string{
 		"id: 01J9 # the one it was made with\n",
 		"title: New # what I called it\n",
 		"minutes_a_day: 35 # twenty is plenty\n",
@@ -781,8 +781,8 @@ func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
 		"sat: 20 # half a Saturday\n",
 		"tags: # what it is about\n",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("want %q in\n%s", kept, got)
+		if !strings.Contains(got, retained) {
+			t.Errorf("want %q in\n%s", retained, got)
 		}
 	}
 }

@@ -86,12 +86,12 @@ func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T)
 		t.Errorf("the window opened on %+v, want no vault", got)
 	}
 
-	held, err := os.ReadDir(f.elsewhere)
+	target, err := os.ReadDir(f.elsewhere)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held) != 0 {
-		t.Errorf("%d things were made where this person keeps documents: %v", len(held), held)
+	if len(target) != 0 {
+		t.Errorf("%d things were made where this person keeps documents: %v", len(target), target)
 	}
 	if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), "Documents")); err == nil {
 		t.Error("a documents folder was made in this person's home")
@@ -141,20 +141,20 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 		t.Errorf("the window opens on %q, and holds no vault to hold it", note.GetPath())
 	}
 
-	shown, err := f.drawn.GetCurrentVault(t.Context(),
+	displayed, err := f.drawn.GetCurrentVault(t.Context(),
 		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatalf("the window cannot say which vault it is showing: %v", err)
 	}
-	if got := shown.Msg.GetVault(); got != "" {
+	if got := displayed.Msg.GetVault(); got != "" {
 		t.Errorf("the window says it is showing %q", got)
 	}
 
-	listed, err := f.holds.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
+	items, err := f.holds.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 	if err != nil {
 		t.Fatalf("the window cannot list the vaults this installation holds: %v", err)
 	}
-	if got := listed.Msg.GetVaults(); len(got) != 0 {
+	if got := items.Msg.GetVaults(); len(got) != 0 {
 		t.Errorf("the list holds %d vaults, and none were added", len(got))
 	}
 }
@@ -194,8 +194,8 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	if !tasks.Receive() {
 		t.Fatalf("the tasks stream never opened: %v", tasks.Err())
 	}
-	if doing := tasks.Msg().GetTasks(); len(doing) != 0 {
-		t.Errorf("a window standing on nothing is doing %+v", doing)
+	if executing := tasks.Msg().GetTasks(); len(executing) != 0 {
+		t.Errorf("a window standing on nothing is doing %+v", executing)
 	}
 
 	// Focus opens on the first place asked for, and a place reaches only a
@@ -214,8 +214,8 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		}
 	}()
 
-	waiting, spent := context.WithTimeout(listening, 5*time.Second)
-	defer spent()
+	waiting, elapsed := context.WithTimeout(listening, 5*time.Second)
+	defer elapsed()
 
 	focus, err := f.vault.WatchFocus(waiting, connect.NewRequest(&v1.WatchFocusRequest{}))
 	if err != nil {
@@ -237,7 +237,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 	f := openEmptyWindow(t)
 
-	asked := map[string]func() error{
+	request := map[string]func() error{
 		"list a folder of the vault": func() error {
 			_, err := f.vault.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{}))
 			return err
@@ -293,7 +293,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 		},
 	}
 
-	for what, ask := range asked {
+	for what, ask := range request {
 		t.Run(what, func(t *testing.T) {
 			err := ask()
 			if err == nil {
@@ -356,7 +356,7 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 	documents := numenv1connect.NewDocumentServiceClient(f.server.Client(), f.server.URL)
 	recordings := numenv1connect.NewRecordingServiceClient(f.server.Client(), f.server.URL)
 	ocrClient := numenv1connect.NewOcrServiceClient(f.server.Client(), f.server.URL)
-	asked := map[string]func() error{
+	request := map[string]func() error{
 		"what a document is": func() error {
 			_, err := documents.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
 				Path: file,
@@ -377,7 +377,7 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 			return err
 		},
 	}
-	for what, asking := range asked {
+	for what, asking := range request {
 		if code := connect.CodeOf(asking()); code != connect.CodeFailedPrecondition {
 			t.Errorf("%s failed %s, and the window has no vault", what, code)
 		}

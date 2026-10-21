@@ -75,7 +75,7 @@ func (t *Tasks) Set(task Task) {
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if _, held := t.held[task.ID]; !held {
+	if _, target := t.held[task.ID]; !target {
 		t.order = append(t.order, task.ID)
 	}
 	t.held[task.ID] = task
@@ -86,7 +86,7 @@ func (t *Tasks) Set(task Task) {
 func (t *Tasks) Remove(id string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if _, held := t.held[id]; !held {
+	if _, target := t.held[id]; !target {
 		return
 	}
 	delete(t.held, id)
@@ -118,7 +118,7 @@ func (t *Tasks) List() []Task {
 func (t *Tasks) list() []Task {
 	out := make([]Task, 0, len(t.order))
 	for _, id := range t.order {
-		if task, held := t.held[id]; held {
+		if task, target := t.held[id]; target {
 			out = append(out, task)
 		}
 	}
@@ -133,21 +133,21 @@ func (t *Tasks) list() []Task {
 // old ones: what the work was doing a second ago is of no interest to anybody.
 func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 2: tell drains before it sends, so the channel never holds more than one list"
-	told := make(chan []Task, 1)
+	notified := make(chan []Task, 1)
 
 	t.mu.Lock()
-	t.waiting = append(t.waiting, told)
-	told <- t.list()
+	t.waiting = append(t.waiting, notified)
+	notified <- t.list()
 	t.mu.Unlock()
 
 	go func() {
 		<-ctx.Done()
 		t.mu.Lock()
 		defer t.mu.Unlock()
-		t.waiting = slices.DeleteFunc(t.waiting, func(at chan []Task) bool { return at == told })
-		close(told)
+		t.waiting = slices.DeleteFunc(t.waiting, func(at chan []Task) bool { return at == notified })
+		close(notified)
 	}()
-	return told
+	return notified
 }
 
 // notifyWatchers hands the list to everybody watching, dropping what a listener has not
@@ -157,13 +157,13 @@ func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 // list a listener is left holding is the newest one.
 func (t *Tasks) notifyWatchers() {
 	list := t.list()
-	for _, told := range t.waiting {
+	for _, notified := range t.waiting {
 		select {
-		case <-told:
+		case <-notified:
 		default:
 		}
 		select {
-		case told <- list:
+		case notified <- list:
 		default:
 		}
 	}

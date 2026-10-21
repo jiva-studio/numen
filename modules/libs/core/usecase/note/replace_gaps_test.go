@@ -89,13 +89,13 @@ func TestAReplacementAnswersWithTheFileItWrote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.Fingerprint{})
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	written := c.read(t, "Aggressor.md")
-	if done.Fingerprint.Path != "Aggressor.md" || done.Fingerprint.Size != int64(len(written)) {
-		t.Errorf("the answer describes %+v, and the file is %d bytes", done.Fingerprint, len(written))
+	content := c.read(t, "Aggressor.md")
+	if isDone.Fingerprint.Path != "Aggressor.md" || isDone.Fingerprint.Size != int64(len(content)) {
+		t.Errorf("the answer describes %+v, and the file is %d bytes", isDone.Fingerprint, len(content))
 	}
 }
 
@@ -133,17 +133,17 @@ func TestAReplacementInANoteWhoseFrontmatterIsNeverClosedIsRefused(t *testing.T)
 func TestWhoeverIsDrawingTheNoteIsToldTheStretchInUTF16(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
-	var told []domain.Edit
+	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, said domain.Edit) { told = append(told, said) }
+	replacing.Drawing = func(_ context.Context, said domain.Edit) { notified = append(notified, said) }
 
 	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
-	if len(told) != 2 {
-		t.Fatalf("told %d times: %+v", len(told), told)
+	if len(notified) != 2 {
+		t.Fatalf("told %d times: %+v", len(notified), notified)
 	}
-	begun, ended := told[0], told[1]
+	begun, ended := notified[0], notified[1]
 	if begun.Path != "Aggressor.md" || begun.From != 7 || begun.To != 13 || begun.Text != "goal" || begun.IsDone {
 		t.Errorf("the change began as %+v", begun)
 	}
@@ -221,16 +221,16 @@ func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
 func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
-	var told []domain.Edit
+	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, said domain.Edit) { told = append(told, said) }
+	replacing.Drawing = func(_ context.Context, said domain.Edit) { notified = append(notified, said) }
 
 	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.Fingerprint{})
 	if err == nil || !strings.HasPrefix(err.Error(), "Aggressor.md: ") {
 		t.Errorf("want the error to name the note, got %v", err)
 	}
-	if len(told) != 0 {
-		t.Errorf("a rejected change was drawn: %+v", told)
+	if len(notified) != 0 {
+		t.Errorf("a rejected change was drawn: %+v", notified)
 	}
 }
 

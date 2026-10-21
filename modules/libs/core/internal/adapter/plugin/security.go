@@ -161,7 +161,7 @@ func isSystemTempDir(path string) bool {
 }
 
 func getSystemTempDirs() []string {
-	seen := make(map[string]struct{})
+	observed := make(map[string]struct{})
 	var dirs []string
 	record := func(p string) {
 		if strings.TrimSpace(p) == "" {
@@ -169,14 +169,14 @@ func getSystemTempDirs() []string {
 		}
 		clean, err := filepath.Abs(filepath.Clean(p))
 		if err == nil {
-			if _, ok := seen[clean]; !ok {
-				seen[clean] = struct{}{}
+			if _, ok := observed[clean]; !ok {
+				observed[clean] = struct{}{}
 				dirs = append(dirs, clean)
 			}
 		}
 		if eval, err := filepath.EvalSymlinks(clean); err == nil {
-			if _, ok := seen[eval]; !ok {
-				seen[eval] = struct{}{}
+			if _, ok := observed[eval]; !ok {
+				observed[eval] = struct{}{}
 				dirs = append(dirs, eval)
 			}
 		}

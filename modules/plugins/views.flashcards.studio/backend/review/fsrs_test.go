@@ -45,12 +45,12 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 		t.Fatalf("a card answered well twice has %d lapses", learnt.Lapses)
 	}
 
-	forgotten := by.Next(learnt, learnt.Due, review.Again)
-	if forgotten.Lapses != 1 {
-		t.Errorf("a card that did not come back has %d lapses, want 1", forgotten.Lapses)
+	cleared := by.Next(learnt, learnt.Due, review.Again)
+	if cleared.Lapses != 1 {
+		t.Errorf("a card that did not come back has %d lapses, want 1", cleared.Lapses)
 	}
-	if forgotten.Reps != learnt.Reps+1 {
-		t.Errorf("answers counted %d, want %d", forgotten.Reps, learnt.Reps+1)
+	if cleared.Reps != learnt.Reps+1 {
+		t.Errorf("answers counted %d, want %d", cleared.Reps, learnt.Reps+1)
 	}
 }
 

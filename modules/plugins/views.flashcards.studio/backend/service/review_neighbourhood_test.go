@@ -54,8 +54,8 @@ func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T
 // editor names it, so a person meets one vocabulary for a rejected note and not
 // one for each window.
 func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
-	api, held := newAPI(t, joined)
-	v := held[0]
+	api, target := newAPI(t, joined)
+	v := target[0]
 
 	// The index still resolves the link; the file behind it is gone. That is
 	// the ordinary way a person meets this — a note deleted since the scan.
@@ -111,12 +111,12 @@ var backlinked = map[string]string{
 // The index being out of reach is an internal failure and not an empty
 // neighbourhood.
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
-	api, held := newAPI(t, joined)
+	api, target := newAPI(t, joined)
 	api.scenarios().neighbourhood = flashcards.NewShowNeighbourhood(
 		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(api.ports.Readers))
 
 	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
-		Vault: string(held[0].ID), Deck: "decks/Words.md",
+		Vault: string(target[0].ID), Deck: "decks/Words.md",
 	}))
 	if code := connect.CodeOf(err); code != connect.CodeInternal {
 		t.Errorf("reading around answered %v", err)
@@ -126,10 +126,10 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 // A note the deck points at is said to be pointed at, and a note pointing at
 // the deck is not. Every entry is a note of the vault.
 func TestANoteIsSaidToBePointedAtOnlyWhereTheDeckPointsAtIt(t *testing.T) {
-	api, held := newAPI(t, backlinked)
+	api, target := newAPI(t, backlinked)
 
 	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
-		Vault: string(held[0].ID), Deck: "decks/Words.md",
+		Vault: string(target[0].ID), Deck: "decks/Words.md",
 	}))
 	if err != nil {
 		t.Fatal(err)

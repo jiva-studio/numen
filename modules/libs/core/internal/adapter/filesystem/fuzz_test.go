@@ -182,9 +182,9 @@ func FuzzReadConfig(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		held, err := ReadConfig(root, DefaultServiceDir)
-		if err == nil && !ulid.Valid(held.ID) {
-			t.Fatalf("a vault was read as carrying %q, which no vault carries", held.ID)
+		target, err := ReadConfig(root, DefaultServiceDir)
+		if err == nil && !ulid.Valid(target.ID) {
+			t.Fatalf("a vault was read as carrying %q, which no vault carries", target.ID)
 		}
 		if errors.Is(err, ErrNotAVault) {
 			t.Fatalf("%q stands in the folder and it was read as never having been added", raw)
@@ -192,8 +192,8 @@ func FuzzReadConfig(f *testing.F) {
 
 		made, adding := Initialize(root, DefaultServiceDir, time.Unix(1, 0))
 		switch {
-		case err == nil && (adding != nil || made.ID != held.ID):
-			t.Fatalf("a vault carrying %q was added again as %q, %v", held.ID, made.ID, adding)
+		case err == nil && (adding != nil || made.ID != target.ID):
+			t.Fatalf("a vault carrying %q was added again as %q, %v", target.ID, made.ID, adding)
 		case err != nil && adding == nil:
 			t.Fatalf("%q could not be read (%v) and the folder was added all the same", raw, err)
 		}

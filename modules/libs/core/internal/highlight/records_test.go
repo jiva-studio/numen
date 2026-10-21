@@ -42,8 +42,8 @@ func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
 	if !reflect.DeepEqual(got[0], boxes[0]) {
 		t.Errorf("unpacked %+v, want %+v", got[0], boxes[0])
 	}
-	if left := highlight.Unpack(raw[:12]); len(left) != 0 {
-		t.Errorf("unpacked %d boxes from less than one record", len(left))
+	if remaining := highlight.Unpack(raw[:12]); len(remaining) != 0 {
+		t.Errorf("unpacked %d boxes from less than one record", len(remaining))
 	}
 }
 

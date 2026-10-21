@@ -126,9 +126,9 @@ func (b *AgentBridge) EndConversation(ctx context.Context, conversation string) 
 // GetPrograms lists the programs the plugin runs, with the models each offers. Commands are the
 // command lines the installation set, by program.
 func (b *AgentBridge) GetPrograms(ctx context.Context, commands map[string][]string) ([]port.AgentProgram, error) {
-	asked := make([]*v1.AgentProgramCommand, 0, len(commands))
+	request := make([]*v1.AgentProgramCommand, 0, len(commands))
 	for program, command := range commands {
-		asked = append(asked, &v1.AgentProgramCommand{Program: program, Command: command})
+		request = append(request, &v1.AgentProgramCommand{Program: program, Command: command})
 	}
 	client, call, err := b.service.open(ctx)
 	if err != nil {
@@ -136,7 +136,7 @@ func (b *AgentBridge) GetPrograms(ctx context.Context, commands map[string][]str
 	}
 	defer func() { _ = call.Close() }()
 
-	resp, err := client.GetAgentPrograms(ctx, connect.NewRequest(&v1.GetAgentProgramsRequest{Commands: asked}))
+	resp, err := client.GetAgentPrograms(ctx, connect.NewRequest(&v1.GetAgentProgramsRequest{Commands: request}))
 	if err != nil {
 		return nil, fmt.Errorf("rpc get agent programs: %w", err)
 	}

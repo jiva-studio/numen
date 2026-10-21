@@ -104,13 +104,13 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error
 	}
 	defer session.Close()
 
-	listed, err := session.ListTools(ctx, nil)
+	items, err := session.ListTools(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	words := make(map[string]Tool, len(listed.Tools))
-	for _, tool := range listed.Tools {
+	words := make(map[string]Tool, len(items.Tools))
+	for _, tool := range items.Tools {
 		about := firstRequired(tool.InputSchema)
 		words[tool.Name] = Tool{
 			Title:  titleOf(tool),

@@ -332,18 +332,18 @@ func TestAGroupThatFailsWhenFullStopsTheScanWithWhatWasCounted(t *testing.T) {
 
 func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
-	held := newHeldWalk()
-	readers := heldWalks{reader: held}
+	target := newHeldWalk()
+	readers := heldWalks{reader: target}
 	db := openIndex(t)
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
 	first := scanner(readers, db)
-	done := make(chan error, 1)
-	go func() { _, err := first.Execute(t.Context(), v); done <- err }()
-	if !held.hasWalkBegun() {
+	isDone := make(chan error, 1)
+	go func() { _, err := first.Execute(t.Context(), v); isDone <- err }()
+	if !target.hasWalkBegun() {
 		t.Fatal("the first walk never began")
 	}
-	t.Cleanup(func() { close(held.let); <-done })
+	t.Cleanup(func() { close(target.let); <-isDone })
 
 	ctx, cancel := context.WithCancel(t.Context())
 	waiting := make(chan error, 1)

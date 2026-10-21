@@ -31,12 +31,12 @@ func (ImportedFiles) GetImportedFile(_ context.Context, handle string) (port.Imp
 }
 
 func (ImportedFiles) List(_ context.Context, handle string) ([]port.ImportedFile, error) {
-	held, err := os.ReadDir(handle)
+	target, err := os.ReadDir(handle)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.ImportedFile, 0, len(held))
-	for _, one := range held {
+	out := make([]port.ImportedFile, 0, len(target))
+	for _, one := range target {
 		out = append(out, port.ImportedFile{
 			Name:   one.Name(),
 			Handle: filepath.Join(handle, one.Name()),

@@ -45,7 +45,7 @@ func (h *Host) registerDiscoveredLocked(discovered []DiscoveredPlugin) []string 
 	for _, p := range discovered {
 		id := p.Manifest.ID
 		present[id] = true
-		if known, ok := h.plugins[id]; ok && !reflect.DeepEqual(known, p) {
+		if recognized, ok := h.plugins[id]; ok && !reflect.DeepEqual(recognized, p) {
 			stale = append(stale, id)
 		}
 		h.plugins[id] = p

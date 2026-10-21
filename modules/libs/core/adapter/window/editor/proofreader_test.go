@@ -157,10 +157,10 @@ func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 // The corrections a recording carries are what stands beside the transcript,
 // and asking what it carries begins no run.
 func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
-	const put = "the name and the named are not two"
-	held := onTheShelf()
-	held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = []byte(put)
-	api, _, by := newProofreadWindow(t, held, newTranscriptIndex())
+	const placed = "the name and the named are not two"
+	target := onTheShelf()
+	target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = []byte(placed)
+	api, _, by := newProofreadWindow(t, target, newTranscriptIndex())
 
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {

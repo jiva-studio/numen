@@ -16,8 +16,8 @@ func batch() Batch {
 func TestAMarkOfOursComingBackRefusesTheBatch(t *testing.T) {
 	reply := "10|the " + Opens + "12" + Closes + "Södërby garden hedge."
 
-	fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance)
-	if answered {
+	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
+	if replyVal {
 		t.Errorf("a reply carrying %s was taken as an answer", Opens)
 	}
 	if fixed != nil {
@@ -28,8 +28,8 @@ func TestAMarkOfOursComingBackRefusesTheBatch(t *testing.T) {
 func TestALineTheBatchDidNotNameRefusesTheBatch(t *testing.T) {
 	reply := "10|the Södërby garden hedge.\n999|a line this batch never carried"
 
-	fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance)
-	if answered {
+	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
+	if replyVal {
 		t.Errorf("a reply naming line 999 was taken as an answer")
 	}
 	if fixed != nil {
@@ -40,7 +40,7 @@ func TestALineTheBatchDidNotNameRefusesTheBatch(t *testing.T) {
 func TestAReplyLineWithoutANumberAndABarRefusesTheBatch(t *testing.T) {
 	reply := "Here are the lines I would put right:\n10|the Södërby garden hedge."
 
-	if fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance); answered {
+	if fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance); replyVal {
 		t.Errorf("a reply that talks was taken as an answer, giving %v", fixed)
 	}
 }
@@ -48,8 +48,8 @@ func TestAReplyLineWithoutANumberAndABarRefusesTheBatch(t *testing.T) {
 func TestAFencedReplyIsUnwrapped(t *testing.T) {
 	reply := "```text\n10|the Södërby garden hedge.\n20|blessings!\n```"
 
-	fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance)
-	if !answered {
+	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
+	if !replyVal {
 		t.Fatalf("a fenced reply failed")
 	}
 	if len(fixed) != 2 {
@@ -79,8 +79,8 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 		if apart < one.least || apart > one.most {
 			t.Errorf("%q -> %q stands %.4f apart, want between %v and %v", one.was, one.put, apart, one.least, one.most)
 		}
-		if kept := apart <= MaxEditDistance; kept != one.isKept {
-			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.put, apart, kept, one.isKept)
+		if retained := apart <= MaxEditDistance; retained != one.isKept {
+			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.put, apart, retained, one.isKept)
 		}
 	}
 }
@@ -91,8 +91,8 @@ func TestACorrectionThatMovedTooFarIsDroppedAndTheBatchKept(t *testing.T) {
 		"12|TRÄDGÅRD HANDBÖK At the request of the Sodërby committee\n" +
 		"13|hedge"
 
-	fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance)
-	if !answered {
+	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
+	if !replyVal {
 		t.Fatalf("one correction that moved too far failed the whole batch")
 	}
 	var numbers []int
@@ -107,8 +107,8 @@ func TestACorrectionThatMovedTooFarIsDroppedAndTheBatchKept(t *testing.T) {
 func TestACorrectionSayingWhatTheLineSaysIsNotACorrection(t *testing.T) {
 	reply := "20|blessings.\n10|the Södërby garden hedge."
 
-	fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance)
-	if !answered {
+	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
+	if !replyVal {
 		t.Fatalf("a line answered with as it was read rejected the batch")
 	}
 	if len(fixed) != 1 || fixed[0].Number != 10 {
@@ -117,8 +117,8 @@ func TestACorrectionSayingWhatTheLineSaysIsNotACorrection(t *testing.T) {
 }
 
 func TestAnEmptyReplyIsAnAnswerOfNoCorrections(t *testing.T) {
-	fixed, _, answered := GetFixedLines(batch(), "", MaxEditDistance)
-	if !answered {
+	fixed, _, reply := GetFixedLines(batch(), "", MaxEditDistance)
+	if !reply {
 		t.Errorf("a batch the proofreader would leave alone failed")
 	}
 	if fixed != nil {
@@ -138,8 +138,8 @@ func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
 		"10 the Södërby garden hedge.",
 		"10 | the Södërby garden hedge.",
 	} {
-		fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance)
-		if !answered {
+		fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
+		if !replyVal {
 			t.Errorf("%q failed", reply)
 			continue
 		}
@@ -152,7 +152,7 @@ func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
 func TestANumberRunningIntoTheLineRefusesTheBatch(t *testing.T) {
 	reply := "10the Södërby garden hedge."
 
-	if fixed, _, answered := GetFixedLines(batch(), reply, MaxEditDistance); answered {
+	if fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance); replyVal {
 		t.Errorf("a row whose number is part of a word was taken as an answer, giving %v", fixed)
 	}
 }
@@ -160,19 +160,19 @@ func TestANumberRunningIntoTheLineRefusesTheBatch(t *testing.T) {
 // A separator the reply invented stands where the line begins, and the letters
 // either side of it are the same, so the third gate cannot see it.
 func TestAWordlessThingPutInFrontOfALineIsNoCorrection(t *testing.T) {
-	for _, put := range []string{
+	for _, placed := range []string{
 		"10 - the Sodërby gardin hcdge.",
 		"10 — the Sodërby gardin hcdge.",
 		"10 → the Sodërby gardin hcdge.",
 		"10 : the Sodërby gardin hcdge.",
 	} {
-		fixed, _, answered := GetFixedLines(batch(), put, MaxEditDistance)
-		if !answered {
-			t.Errorf("%q rejected the batch", put)
+		fixed, _, reply := GetFixedLines(batch(), placed, MaxEditDistance)
+		if !reply {
+			t.Errorf("%q rejected the batch", placed)
 			continue
 		}
 		if len(fixed) != 0 {
-			t.Errorf("%q put %q in front of the line", put, fixed[0].Text)
+			t.Errorf("%q put %q in front of the line", placed, fixed[0].Text)
 		}
 	}
 }
@@ -180,9 +180,9 @@ func TestAWordlessThingPutInFrontOfALineIsNoCorrection(t *testing.T) {
 // The same line, corrected as well as fronted, is a correction: what stands in
 // front of it is not all that changed.
 func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
-	fixed, _, answered := GetFixedLines(batch(), "10|— the Södërby garden hedge.", MaxEditDistance)
-	if !answered || len(fixed) != 1 {
-		t.Fatalf("answered=%v gave %v", answered, fixed)
+	fixed, _, reply := GetFixedLines(batch(), "10|— the Södërby garden hedge.", MaxEditDistance)
+	if !reply || len(fixed) != 1 {
+		t.Fatalf("answered=%v gave %v", reply, fixed)
 	}
 }
 
@@ -193,12 +193,12 @@ func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesTheBatch(t *testing.T) {
 	}}
 
 	// The number is there, and the line is put right after it.
-	if fixed, _, answered := GetFixedLines(dated, "1|1 January 1970 was a Thursday, they say", MaxEditDistance); !answered || len(fixed) != 1 {
-		t.Fatalf("a row carrying its number failed: answered=%v %v", answered, fixed)
+	if fixed, _, reply := GetFixedLines(dated, "1|1 January 1970 was a Thursday, they say", MaxEditDistance); !reply || len(fixed) != 1 {
+		t.Fatalf("a row carrying its number failed: answered=%v %v", reply, fixed)
 	}
 
 	// The number was left out, and the line's own first word reads as one.
-	if fixed, _, answered := GetFixedLines(dated, "1 January 1970 was a Thursday, they say", MaxEditDistance); answered {
+	if fixed, _, replyVal := GetFixedLines(dated, "1 January 1970 was a Thursday, they say", MaxEditDistance); replyVal {
 		t.Errorf("a row that ate the line's own digits was taken as an answer: %v", fixed)
 	}
 }

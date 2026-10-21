@@ -117,11 +117,11 @@ func Parse(raw []byte) (string, []domain.TranscriptCue) {
 		outBuf, cues, cueLens = parseBlock(lines, outBuf, cues, cueLens)
 	}
 
-	said := string(outBuf)
+	response := string(outBuf)
 	for i := range cues {
-		cues[i].Text = said[cues[i].Offset : cues[i].Offset+cueLens[i]]
+		cues[i].Text = response[cues[i].Offset : cues[i].Offset+cueLens[i]]
 	}
-	return said, cues
+	return response, cues
 }
 
 // parseBlock is one block of the file as a cue, and whether it is one. The

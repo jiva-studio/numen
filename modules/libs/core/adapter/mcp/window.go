@@ -106,8 +106,8 @@ var tabPresenters = map[string]tabPresenter{
 
 // tabPosition returns the position string for the given tab.
 func tabPosition(t domain.Tab) string {
-	presenter, known := tabPresenters[t.Kind]
-	if !known || presenter.position == nil {
+	presenter, recognized := tabPresenters[t.Kind]
+	if !recognized || presenter.position == nil {
 		return ""
 	}
 	return presenter.position(t)
@@ -115,8 +115,8 @@ func tabPosition(t domain.Tab) string {
 
 // describeTab returns the description of the tab currently in front.
 func describeTab(t domain.Tab) string {
-	presenter, known := tabPresenters[t.Kind]
-	if !known {
+	presenter, recognized := tabPresenters[t.Kind]
+	if !recognized {
 		return fmt.Sprintf("a tab of kind %q is in front of them", t.Kind)
 	}
 	return presenter.describe(t, formatTabName(t), tabPosition(t))

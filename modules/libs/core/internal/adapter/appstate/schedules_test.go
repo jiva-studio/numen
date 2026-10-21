@@ -15,18 +15,18 @@ import (
 // What was worked out is kept by the vault it was worked out for, and comes
 // back as it was written.
 func TestSchedulesAreKeptByVault(t *testing.T) {
-	kept := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
+	retained := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
 	ctx := t.Context()
 
-	if err := kept.Write(ctx, "01J8F3K2M9QRSTVWXYZ012", []byte(`{"v":1}`)); err != nil {
+	if err := retained.Write(ctx, "01J8F3K2M9QRSTVWXYZ012", []byte(`{"v":1}`)); err != nil {
 		t.Fatal(err)
 	}
-	got, err := kept.Read(ctx, "01J8F3K2M9QRSTVWXYZ012")
+	got, err := retained.Read(ctx, "01J8F3K2M9QRSTVWXYZ012")
 	if err != nil || string(got) != `{"v":1}` {
 		t.Errorf("read back %q, %v", got, err)
 	}
 
-	if _, err := kept.Read(ctx, "01J8F3K2M9QRSTVWXYZ999"); !errors.Is(err, fs.ErrNotExist) {
+	if _, err := retained.Read(ctx, "01J8F3K2M9QRSTVWXYZ999"); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("a vault nothing was kept for answers %v", err)
 	}
 }
@@ -34,9 +34,9 @@ func TestSchedulesAreKeptByVault(t *testing.T) {
 // The identity is written into a file's name, so a name that is not one is
 // refused: anything else could reach a file this folder does not hold.
 func TestAnIdentityThatIsNotOneNamesNoFile(t *testing.T) {
-	kept := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
+	retained := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
 	for _, id := range []domain.VaultID{"", "../numen.json", "a/b", `a\b`, "one.json"} {
-		if err := kept.Write(t.Context(), id, []byte("{}")); err == nil {
+		if err := retained.Write(t.Context(), id, []byte("{}")); err == nil {
 			t.Errorf("wrote under %q", id)
 		}
 	}
@@ -97,9 +97,9 @@ func TestNoCacheLocationOpensNothing(t *testing.T) {
 
 // A vault whose identity is not one is read as an error.
 func TestAnIdentityThatIsNotOneReadsNothing(t *testing.T) {
-	kept := appstate.SchedulesAt(t.TempDir())
+	retained := appstate.SchedulesAt(t.TempDir())
 	for _, id := range []domain.VaultID{"", "a/b", "one.json"} {
-		if _, err := kept.Read(t.Context(), id); err == nil {
+		if _, err := retained.Read(t.Context(), id); err == nil {
 			t.Errorf("read under %q", id)
 		}
 	}
@@ -114,8 +114,8 @@ func TestAFolderThatCannotBeMadeFailsTheWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kept := appstate.SchedulesAt(filepath.Join(file, "flashcards"))
-	if err := kept.Write(t.Context(), "vault-a", []byte("{}")); err == nil {
+	retained := appstate.SchedulesAt(filepath.Join(file, "flashcards"))
+	if err := retained.Write(t.Context(), "vault-a", []byte("{}")); err == nil {
 		t.Error("wrote under a folder that is a file")
 	}
 }

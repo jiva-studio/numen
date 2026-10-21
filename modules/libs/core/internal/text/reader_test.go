@@ -59,14 +59,14 @@ func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
 // A transcript is composed from what it was put right to, and what was heard
 // is placed under its own name.
 func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
-	put := transcript.Marshal([]domain.TranscriptCue{
+	placed := transcript.Marshal([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: "The name and the Named are not two.", From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
 	})
 	store := shelf{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
-		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): append(put, transcript.GetHandWrittenMark()...),
+		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): append(placed, transcript.GetHandWrittenMark()...),
 	}
 
 	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
@@ -111,10 +111,10 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 // A run stopped part way through a cue leaves a block that is not one. It is
 // passed over, and the cues before it stand where they were said.
 func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
-	torn := append(writeTranscript(), "\n00:1"...)
+	divided := append(writeTranscript(), "\n00:1"...)
 	store := shelf{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
-		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): torn,
+		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): divided,
 	}
 
 	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())

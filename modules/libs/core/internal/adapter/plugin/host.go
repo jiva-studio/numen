@@ -666,8 +666,8 @@ func (h *Host) ensureActiveDuringDiscovery(ctx context.Context, pluginID string)
 
 		if state := sup.GetState(); state != StateDormant {
 			h.mu.Unlock()
-			endpoint, done, err := h.settlePluginInState(ctx, pluginID, sup, state)
-			if done {
+			endpoint, isDone, err := h.settlePluginInState(ctx, pluginID, sup, state)
+			if isDone {
 				return endpoint, err
 			}
 			continue
@@ -1458,17 +1458,17 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 // NotifyAllPluginConfigs sends resolved configurations to all running plugins.
 func (h *Host) NotifyAllPluginConfigs(ctx context.Context) error {
 	h.mu.RLock()
-	seen := make(map[string]struct{}, len(h.plugins))
+	observed := make(map[string]struct{}, len(h.plugins))
 	for id := range h.plugins {
-		seen[id] = struct{}{}
+		observed[id] = struct{}{}
 	}
 	for id := range h.supervisors {
-		seen[id] = struct{}{}
+		observed[id] = struct{}{}
 	}
 	h.mu.RUnlock()
 
 	var firstErr error
-	for id := range seen {
+	for id := range observed {
 		if err := h.NotifyPluginConfig(ctx, id); err != nil && firstErr == nil {
 			firstErr = err
 		}
@@ -1659,10 +1659,10 @@ func (h *Host) clearFailure(pluginID string, sup *Supervisor) {
 // again, and the host suspends it at once.
 func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*port.PluginFailure, error) {
 	h.mu.RLock()
-	_, known := h.plugins[pluginID]
+	_, recognized := h.plugins[pluginID]
 	sup := h.supervisors[pluginID]
 	h.mu.RUnlock()
-	if !known {
+	if !recognized {
 		return nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginNotInstalled, Err: errPluginNotFound}
 	}
 	if sup != nil {

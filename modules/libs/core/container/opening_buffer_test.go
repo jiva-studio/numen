@@ -126,8 +126,8 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 			cfg.VaultReaders(), db.Vaults(), repositoryAnswering{err: broken},
 			db.SourcesKnown(), db.Sources(), cfg.Clock(),
 		)
-		var heard []error
-		opening.ErrorHandler = func(err error) { heard = append(heard, err) }
+		var received []error
+		opening.ErrorHandler = func(err error) { received = append(received, err) }
 		open := opening.Begin(t.Context(), v)
 
 		got, err := open.Read(t.Context(), func() {
@@ -141,10 +141,10 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		if got != 1 {
 			t.Errorf("%s: the walk read %d notes", one.what, got)
 		}
-		if len(heard) != one.reports {
-			t.Errorf("%s: %d failures reported, want %d: %v", one.what, len(heard), one.reports, heard)
+		if len(received) != one.reports {
+			t.Errorf("%s: %d failures reported, want %d: %v", one.what, len(received), one.reports, received)
 		}
-		for _, err := range heard {
+		for _, err := range received {
 			if !errors.Is(err, broken) {
 				t.Errorf("%s: reported %v", one.what, err)
 			}

@@ -95,7 +95,7 @@ func TestEveryLineIsInABatchHoweverSpeechIsCut(t *testing.T) {
 				cues := makeTranscript(count)
 				batches := speechBatches(cues, size, overlap)
 
-				seen := make(map[int]bool, count)
+				observed := make(map[int]bool, count)
 				for i, batch := range batches {
 					if len(batch.Lines) == 0 {
 						t.Fatalf("%d cues by %d sharing %d: batch %d holds nothing", count, size, overlap, i)
@@ -107,11 +107,11 @@ func TestEveryLineIsInABatchHoweverSpeechIsCut(t *testing.T) {
 						t.Errorf("%d cues by %d sharing %d: batch %d is numbered %d", count, size, overlap, i, batch.Number)
 					}
 					for _, line := range batch.Lines {
-						seen[line.Number] = true
+						observed[line.Number] = true
 					}
 				}
 				for at := range cues {
-					if !seen[at] {
+					if !observed[at] {
 						t.Errorf("%d cues by %d sharing %d: cue %d is in no batch", count, size, overlap, at)
 					}
 				}
@@ -280,12 +280,12 @@ func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 
 // hasLines reports whether a batch holds every line of a run, first to last.
 func hasLines(batch Batch, at, through int) bool {
-	held := make(map[int]bool, len(batch.Lines))
+	target := make(map[int]bool, len(batch.Lines))
 	for _, line := range batch.Lines {
-		held[line.Number] = true
+		target[line.Number] = true
 	}
 	for line := at; line <= through; line++ {
-		if !held[line] {
+		if !target[line] {
 			return false
 		}
 	}

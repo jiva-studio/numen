@@ -57,13 +57,13 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		return domain.Neighbourhood{}, err
 	}
 
-	focus, known := notes[path]
-	if !known {
+	focus, recognized := notes[path]
+	if !recognized {
 		return domain.Neighbourhood{}, nil
 	}
 	out := domain.Neighbourhood{Focus: focus}
 	for _, s := range neighbour {
-		if note, known := notes[s.Path]; known {
+		if note, recognizedVal := notes[s.Path]; recognizedVal {
 			out.AddNeighbour(note, s)
 		}
 	}

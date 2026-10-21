@@ -157,11 +157,11 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		return res, nil
 	}
 
-	stood, err := u.readCheckpoint(ctx, store, progressName)
+	status, err := u.readCheckpoint(ctx, store, progressName)
 	if err != nil {
 		return res, err
 	}
-	if beside && (transcript.IsWrittenByHand(whole) || stood.By != u.by.GetName()) {
+	if beside && (transcript.IsWrittenByHand(whole) || status.By != u.by.GetName()) {
 		// The words as they stand are somebody's own, and a model does not
 		// correct them. Deleting the file beside the artifact gives back what
 		// was heard.
@@ -169,10 +169,10 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		return res, nil
 	}
 	if !beside {
-		stood = putting{}
+		status = putting{}
 	}
 
-	job := newTranscriptJob(v, store, path, correctionsName, progressName, cues, stood)
+	job := newTranscriptJob(v, store, path, correctionsName, progressName, cues, status)
 	res.Lines = linesBefore(cues, len(cues))
 	res.Resumed = linesBefore(cues, job.from)
 	res.Read, res.Left = res.Resumed, 0
@@ -188,7 +188,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	// Who is putting this transcript right stands before the first words do,
 	// and the count of what they have asked about stands after the lines it
 	// claims.
-	if err := u.writeCheckpoint(ctx, store, progressName, stood); err != nil {
+	if err := u.writeCheckpoint(ctx, store, progressName, status); err != nil {
 		return res, err
 	}
 	err = u.askWindows(ctx, job, &res)
@@ -342,13 +342,13 @@ func (p *transcriptProofreadJob) applyCorrections(
 			return false, fmt.Errorf("%w: %d-%d", errCorrectionOutside, one.Number, one.Last)
 		}
 	}
-	var asked []domain.ProofreadLine
+	var request []domain.ProofreadLine
 	for _, line := range p.lines {
 		if line.Number >= from {
-			asked = append(asked, line)
+			request = append(request, line)
 		}
 	}
-	if one, ok := domain.FindUnaskedCorrection(asked, corrections); ok {
+	if one, ok := domain.FindUnaskedCorrection(request, corrections); ok {
 		return false, fmt.Errorf("%w: %d", errCorrectionUnasked, one.Number)
 	}
 	sorted := slices.Clone(corrections)
@@ -383,11 +383,11 @@ func (p *transcriptProofreadJob) putLine(one domain.ProofreadCorrection) bool {
 // transcript writes them as.
 func (p *transcriptProofreadJob) joinCues(line, last int) {
 	p.merged[line] = true
-	for gone := line + 1; gone <= last; gone++ {
-		p.cues[line].To = max(p.cues[line].To, p.cues[gone].To)
-		p.cues[gone].Text = ""
-		p.merged[gone] = true
-		p.fixed[gone] = true
+	for removed := line + 1; removed <= last; removed++ {
+		p.cues[line].To = max(p.cues[line].To, p.cues[removed].To)
+		p.cues[removed].Text = ""
+		p.merged[removed] = true
+		p.fixed[removed] = true
 	}
 }
 
@@ -427,11 +427,11 @@ func (u Proofread) readCheckpoint(
 	if err != nil {
 		return putting{}, err
 	}
-	var stood putting
-	if err := json.Unmarshal(raw, &stood); err != nil {
+	var status putting
+	if err := json.Unmarshal(raw, &status); err != nil {
 		return putting{}, fmt.Errorf("read checkpoint %s: %w", progressName, err)
 	}
-	return stood, nil
+	return status, nil
 }
 
 // writeCheckpoint writes down who is putting this transcript right and how far

@@ -73,16 +73,16 @@ func TestEveryBoxStillNamesItsWords(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
 
 	moved := domain.GetCorrectedBoxes(boxes, put)
-	said, _, _ := domain.GetCorrectedProse(prose, marks, boxes, parts, put)
+	response, _, _ := domain.GetCorrectedProse(prose, marks, boxes, parts, put)
 
 	if len(moved) != len(read) {
 		t.Fatalf("%d boxes, want %d", len(moved), len(read))
 	}
 	for i, box := range moved {
-		if box.From < 0 || box.To > len(said) {
-			t.Fatalf("box %d covers %d..%d of %d bytes", i, box.From, box.To, len(said))
+		if box.From < 0 || box.To > len(response) {
+			t.Fatalf("box %d covers %d..%d of %d bytes", i, box.From, box.To, len(response))
 		}
-		if got := said[box.From:box.To]; got != right[i] {
+		if got := response[box.From:box.To]; got != right[i] {
 			t.Errorf("box %d says %q, want %q", i, got, right[i])
 		}
 	}
@@ -95,9 +95,9 @@ func TestACorrectedRecognitionIsTheRecognitionItShouldHaveBeen(t *testing.T) {
 	if got := domain.GetCorrectedBoxes(boxes, put); !reflect.DeepEqual(got, wantBoxes) {
 		t.Errorf("boxes %+v, want %+v", got, wantBoxes)
 	}
-	said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, put)
-	if said != wantProse {
-		t.Errorf("prose %q, want %q", said, wantProse)
+	response, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, put)
+	if response != wantProse {
+		t.Errorf("prose %q, want %q", response, wantProse)
 	}
 	if !reflect.DeepEqual(pages, wantMarks) {
 		t.Errorf("marks %+v, want %+v", pages, wantMarks)
@@ -131,9 +131,9 @@ func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 	if got := domain.GetCorrectedBoxes(boxes, stray); !reflect.DeepEqual(got, boxes) {
 		t.Errorf("boxes %+v, want them untouched", got)
 	}
-	said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, stray)
-	if said != prose {
-		t.Errorf("prose %q, want it untouched", said)
+	response, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, stray)
+	if response != prose {
+		t.Errorf("prose %q, want it untouched", response)
 	}
 	if !reflect.DeepEqual(pages, marks) || !reflect.DeepEqual(named, parts) {
 		t.Errorf("marks %+v and parts %+v, want them untouched", pages, named)
@@ -144,14 +144,14 @@ func TestTheLastWordOnALineWins(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
 	twice := []domain.CorrectionLine{{Number: 1, Text: "a first thought"}, {Number: 1, Text: right[1]}}
 
-	said, _, _ := domain.GetCorrectedProse(prose, marks, boxes, parts, twice)
+	response, _, _ := domain.GetCorrectedProse(prose, marks, boxes, parts, twice)
 	moved := domain.GetCorrectedBoxes(boxes, twice)
 
-	if got := said[moved[1].From:moved[1].To]; got != right[1] {
+	if got := response[moved[1].From:moved[1].To]; got != right[1] {
 		t.Errorf("the line says %q, want %q", got, right[1])
 	}
-	if strings.Contains(said, "a first thought") {
-		t.Errorf("prose %q still carries the correction that was replaced", said)
+	if strings.Contains(response, "a first thought") {
+		t.Errorf("prose %q still carries the correction that was replaced", response)
 	}
 }
 
@@ -162,9 +162,9 @@ func TestNoCorrectionsChangesNothing(t *testing.T) {
 		if got := domain.GetCorrectedBoxes(boxes, lines); !reflect.DeepEqual(got, boxes) {
 			t.Errorf("boxes %+v, want them untouched", got)
 		}
-		said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, lines)
-		if said != prose {
-			t.Errorf("prose %q, want it untouched", said)
+		response, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, lines)
+		if response != prose {
+			t.Errorf("prose %q, want it untouched", response)
 		}
 		if !reflect.DeepEqual(pages, marks) || !reflect.DeepEqual(named, parts) {
 			t.Errorf("marks %+v and parts %+v, want them untouched", pages, named)
@@ -181,8 +181,8 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 
 	lines := []domain.CorrectionLine{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}
 
-	said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, lines)
-	if said == "" {
+	response, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, lines)
+	if response == "" {
 		t.Errorf("prose came back empty")
 	}
 	moved := domain.GetCorrectedBoxes(boxes, lines)

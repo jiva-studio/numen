@@ -41,16 +41,16 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 		s.marking, s.standings, s.kept,
 		s.presets, today, func() time.Time { return at },
 	)
-	held, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
+	target, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Queue) != 2 {
-		t.Fatalf("%d cards were asked", len(held.Queue))
+	if len(target.Queue) != 2 {
+		t.Fatalf("%d cards were asked", len(target.Queue))
 	}
 
-	seen := map[float64]time.Duration{}
-	for _, one := range held.Queue {
+	observed := map[float64]time.Duration{}
+	for _, one := range target.Queue {
 		share, named := shares[one.Deck]
 		if !named {
 			t.Fatalf("a card of %s was asked", one.Deck)
@@ -60,9 +60,9 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 			t.Errorf("%s comes back in %v at a share of %g, and the window says %v",
 				one.Deck, want, share, one.Ahead[review.Good])
 		}
-		seen[share] = want
+		observed[share] = want
 	}
-	if seen[0.99] == seen[0.9] {
+	if observed[0.99] == observed[0.9] {
 		t.Fatal("the two presets leave the card in the same place, and this test says nothing")
 	}
 }
@@ -98,7 +98,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 		// stays the one day and nothing but the placement can move a card off
 		// the day the scheduler named. What a button names is a day, so the day
 		// is what is compared.
-		asked, differ, worst := 0, 0, time.Duration(0)
+		request, differ, worst := 0, 0, time.Duration(0)
 		for step := range 60 {
 			at := saturday.Add(time.Duration(step) * time.Second)
 			sat := s.sessionAt(t, today, at)
@@ -106,7 +106,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 				break
 			}
 			card := sat.Queue[0]
-			said, named := card.Ahead[review.Good]
+			response, named := card.Ahead[review.Good]
 			if !named {
 				t.Fatalf("under %s a card was asked with no window under its buttons", one.what)
 			}
@@ -119,8 +119,8 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			asked++
-			came, names := schedules[card.ID].Due, at.Add(said)
+			request++
+			came, names := schedules[card.ID].Due, at.Add(response)
 			if today.GetName(came) != today.GetName(names) {
 				differ++
 				if off := came.Sub(names); off > worst || -off > worst {
@@ -128,12 +128,12 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 				}
 			}
 		}
-		if asked == 0 {
+		if request == 0 {
 			t.Fatalf("under %s no card was asked, and this test says nothing", one.what)
 		}
 		if differ != 0 {
 			t.Errorf("under %s %d of %d cards came back somewhere else than their button said, "+
-				"the worst by %v", one.what, differ, asked, worst)
+				"the worst by %v", one.what, differ, request, worst)
 		}
 	}
 }

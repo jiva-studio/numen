@@ -47,7 +47,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 // A vault the index was brought level with is counted again, and the walk of a
 // vault is the one the window's own opening makes.
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
-	cfg, db, vaults, _, held := makeWindow(t)
+	cfg, db, vaults, _, target := makeWindow(t)
 	notes := makeNotes(cfg, db, vaults)
 	api := makeWindowAPI(cfg, notes)
 
@@ -56,43 +56,43 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	if vaults.RecordVault == nil {
 		t.Fatal("a vault brought level is recorded nowhere")
 	}
-	vaults.RecordVault(held[0])
+	vaults.RecordVault(target[0])
 }
 
 // The plugins are lent every vault the installation holds, each worked by its identity, and a vault
 // that is not in the index is read into it when a plugin asks.
 func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
-	cfg, db, vaults, _, held := makeWindow(t)
+	cfg, db, vaults, _, target := makeWindow(t)
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, v := range held {
+	for _, v := range target {
 		if err := registry.Save(v); err != nil {
 			t.Fatal(err)
 		}
 	}
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 	api.SetVaultIndexer(t.Context(), nil)
-	var told []domain.VaultID
-	api.Opened = func(_ context.Context, v domain.Vault) { told = append(told, v.ID) }
+	var notified []domain.VaultID
+	api.Opened = func(_ context.Context, v domain.Vault) { notified = append(notified, v.ID) }
 
 	lent, err := openPluginVault(cfg, registry, db, api)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	known, listErr := lent.GetVaults()
-	bound, withErr := lent.With(held[1].ID)
-	_, shown := lent.GetVault()
-	inUse := bound.SetInUse(t.Context())
-	state, stateErr := bound.EnsureIndexed(t.Context())
+	recognized, listErr := lent.GetVaults()
+	linked, withErr := lent.With(target[1].ID)
+	_, displayed := lent.GetVault()
+	inUse := linked.SetInUse(t.Context())
+	state, stateErr := linked.EnsureIndexed(t.Context())
 
-	if listErr != nil || len(known) != 2 || withErr != nil || shown {
-		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", known, listErr, withErr, shown)
+	if listErr != nil || len(recognized) != 2 || withErr != nil || displayed {
+		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, displayed)
 	}
-	if inUse != nil || len(told) != 1 || told[0] != held[1].ID {
-		t.Errorf("the window was told %v (%v)", told, inUse)
+	if inUse != nil || len(notified) != 1 || notified[0] != target[1].ID {
+		t.Errorf("the window was told %v (%v)", notified, inUse)
 	}
 	if stateErr != nil || state.Status != port.PluginIndexFailed {
 		t.Errorf("a vault nothing reads into the index stands as %+v (%v)", state, stateErr)

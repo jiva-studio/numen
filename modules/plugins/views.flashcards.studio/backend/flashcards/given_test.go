@@ -9,11 +9,11 @@ func TestALoadedLogIsPutInOrderOnce(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 
-	held, err := l.logRead(t)
+	target, err := l.logRead(t)
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, again := held.GetHistory(), held.GetHistory()
+	first, again := target.GetHistory(), target.GetHistory()
 	if len(first) != loadDays*loadPerDay {
 		t.Fatalf("the log came to %d answers where the vault holds %d",
 			len(first), loadDays*loadPerDay)

@@ -65,13 +65,13 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]HighlightBox, error) {
 // getOrderedPages is the pages asked for, each of them once and in reading order. A
 // page the document does not have is not a page.
 func getOrderedPages(pages []int, most int) []int {
-	seen := make(map[int]bool, len(pages))
+	observed := make(map[int]bool, len(pages))
 	out := make([]int, 0, len(pages))
 	for _, page := range pages {
-		if page < 0 || page >= most || seen[page] {
+		if page < 0 || page >= most || observed[page] {
 			continue
 		}
-		seen[page] = true
+		observed[page] = true
 		out = append(out, page)
 	}
 	sort.Ints(out)

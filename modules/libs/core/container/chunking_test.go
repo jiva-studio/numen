@@ -28,14 +28,14 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 
 	cfg := container.DefaultEmbedding()
 	cfg.Model.MaxTokens = 512
-	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
+	target := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 
-	cut, err := held.Extract(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
+	trimmed, err := target.Extract(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cut.Sizes != held.CutNotes().Sizes {
-		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.CutNotes().Sizes)
+	if trimmed.Sizes != target.CutNotes().Sizes {
+		t.Errorf("cut at %+v, and the settings say %+v", trimmed.Sizes, target.CutNotes().Sizes)
 	}
 }
 
@@ -67,10 +67,10 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 
 	cfg := container.DefaultEmbedding()
 	cfg.Model.MaxTokens = 8
-	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
+	target := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	_, err = held.ReadWholeVault(t.Context(), db, wide{384}, v)
+	_, err = target.ReadWholeVault(t.Context(), db, wide{384}, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		Title:       "Cut",
 		Body:        body,
 	}
-	if err := db.Notes().Save(t.Context(), v.ID, held.CutNotes().Execute([]domain.Note{n})); err != nil {
+	if err := db.Notes().Save(t.Context(), v.ID, target.CutNotes().Execute([]domain.Note{n})); err != nil {
 		t.Fatal(err)
 	}
 
@@ -112,15 +112,15 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
+	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	if _, err := held.ReadWholeVault(t.Context(), db, wide{384}, v); err != nil {
+	if _, err := target.ReadWholeVault(t.Context(), db, wide{384}, v); err != nil {
 		t.Fatal(err)
 	}
 	// A width the index cannot be built for is the reason nothing is made
 	// searchable, and it is found before a vector is asked of anything.
-	_, err = held.ReadWholeVault(t.Context(), db, wide{0}, v)
+	_, err = target.ReadWholeVault(t.Context(), db, wide{0}, v)
 	if err == nil || !strings.Contains(err.Error(), "not a vector") {
 		t.Fatalf("got %v", err)
 	}
@@ -146,7 +146,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 	isWithin := func(path, dir string) bool {
 		return strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(filepath.Join(root, dir))+"/")
 	}
-	var built, sized, untold []string
+	var constructed, sized, untold []string
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -164,7 +164,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			// package's own defaults.
 			if call, ok := n.(*ast.CallExpr); ok {
 				if named, ok := call.Fun.(*ast.SelectorExpr); ok && named.Sel.Name == "Notes" {
-					if held, ok := named.X.(*ast.Ident); ok && held.Name == "db" {
+					if target, ok := named.X.(*ast.Ident); ok && target.Name == "db" {
 						untold = append(untold, path)
 					}
 				}
@@ -184,7 +184,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			switch {
 			case pkg.Name == "source" && named.Sel.Name == "Extract" &&
 				!isWithin(path, "usecase/source"):
-				built = append(built, path)
+				constructed = append(constructed, path)
 			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility") &&
 				!isWithin(path, "usecase/note"):
 				sized = append(sized, path)
@@ -196,8 +196,8 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(built) != 0 {
-		t.Errorf("a cut is assembled outside the composition root: %v", built)
+	if len(constructed) != 0 {
+		t.Errorf("a cut is assembled outside the composition root: %v", constructed)
 	}
 	if len(sized) != 0 {
 		t.Errorf("a cut's sizes or thresholds are assembled outside usecase/note: %v", sized)

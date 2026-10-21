@@ -10,14 +10,14 @@ import (
 // it does not stop for, and a configuration naming nowhere to say it is a
 // failure nobody is ever told about.
 func TestTheCoreSaysWhatItCarriedOnPast(t *testing.T) {
-	var said strings.Builder
-	cfg := makeConfig(&said)
+	var response strings.Builder
+	cfg := makeConfig(&response)
 	if cfg.ErrorHandler == nil {
 		t.Fatal("the core has nowhere to say what it carried on past")
 	}
 
 	cfg.ErrorHandler(errors.New("the days are counted again at every launch"))
-	if !strings.Contains(said.String(), "numen-flashcards: the days are counted again at every launch") {
-		t.Errorf("what the core said came out as %q", said.String())
+	if !strings.Contains(response.String(), "numen-flashcards: the days are counted again at every launch") {
+		t.Errorf("what the core said came out as %q", response.String())
 	}
 }

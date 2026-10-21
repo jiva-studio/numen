@@ -248,13 +248,13 @@ func TestTheListMarksAFolderThatIsGone(t *testing.T) {
 		t.Errorf("%s is marked missing, and its folder is at %s",
 			here.GetName(), here.GetPath())
 	}
-	gone := onList(t, list, string(f.second.ID))
-	if !gone.GetIsMissing() {
+	removed := onList(t, list, string(f.second.ID))
+	if !removed.GetIsMissing() {
 		t.Errorf("%s is not marked missing, and there is nothing at %s",
-			gone.GetName(), gone.GetPath())
+			removed.GetName(), removed.GetPath())
 	}
-	if gone.GetName() != f.second.Name || gone.GetPath() != f.second.Path {
-		t.Errorf("the vault that is gone is answered as %v", gone)
+	if removed.GetName() != f.second.Name || removed.GetPath() != f.second.Path {
+		t.Errorf("the vault that is gone is answered as %v", removed)
 	}
 }
 
@@ -409,13 +409,13 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	// A window standing on nothing is not what keeps this vault: the list is.
 	f.api.state.setVault(domain.Vault{})
 
-	gone, err := f.client.RemoveVault(t.Context(),
+	removed, err := f.client.RemoveVault(t.Context(),
 		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gone.Msg.Error != nil {
-		t.Fatalf("the second vault was not removed: %v", gone.Msg.GetError())
+	if removed.Msg.Error != nil {
+		t.Fatalf("the second vault was not removed: %v", removed.Msg.GetError())
 	}
 
 	only, err := f.client.RemoveVault(t.Context(),
@@ -465,8 +465,8 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 			t.Errorf("%s of an identity on no list was answered %v", what, got)
 		}
 	}
-	if shown := f.getShown(); len(shown) != 0 {
-		t.Errorf("the window was asked to show %v", shown)
+	if displayed := f.getShown(); len(displayed) != 0 {
+		t.Errorf("the window was asked to show %v", displayed)
 	}
 }
 
@@ -527,8 +527,8 @@ func TestAnotherVaultIsPutInTheWindow(t *testing.T) {
 	if out.Msg.Error != nil {
 		t.Fatalf("the vault was not shown: %v", out.Msg.GetError())
 	}
-	if shown := f.getShown(); len(shown) != 1 || shown[0].ID != f.second.ID {
-		t.Errorf("the window was asked to show %v", shown)
+	if displayed := f.getShown(); len(displayed) != 1 || displayed[0].ID != f.second.ID {
+		t.Errorf("the window was asked to show %v", displayed)
 	}
 }
 
@@ -629,7 +629,7 @@ func TestABuildThatDoesNotServeTheListAnswersNothingAboutIt(t *testing.T) {
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewVaultsServiceClient(server.Client(), server.URL)
 
-	asked := map[string]func() error{
+	request := map[string]func() error{
 		"list": func() error {
 			_, err := client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 			return err
@@ -655,7 +655,7 @@ func TestABuildThatDoesNotServeTheListAnswersNothingAboutIt(t *testing.T) {
 			return err
 		},
 	}
-	for what, ask := range asked {
+	for what, ask := range request {
 		if got := connect.CodeOf(ask()); got != connect.CodeUnimplemented {
 			t.Errorf("%s answered %v, want %v", what, got, connect.CodeUnimplemented)
 		}

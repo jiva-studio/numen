@@ -198,7 +198,7 @@ func (t *Worker) getUntranscribed(ctx context.Context, known port.SourceQueries,
 	if known == nil {
 		return nil
 	}
-	held, err := known.GetFingerprints(ctx, v.ID, domain.KindRecording)
+	target, err := known.GetFingerprints(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
@@ -207,14 +207,14 @@ func (t *Worker) getUntranscribed(ctx context.Context, known port.SourceQueries,
 		return nil
 	}
 	for _, one := range recognised {
-		delete(held, one.Path)
+		delete(target, one.Path)
 	}
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	underVal := t.with.Unasked
-	out := make([]string, 0, len(held))
-	for path, ref := range held {
+	out := make([]string, 0, len(target))
+	for path, ref := range target {
 		if t.answered[run.GetKey(v, path)] {
 			continue
 		}
@@ -344,12 +344,12 @@ func (t *Worker) proofreadTranscript(
 		t.reportTask(run.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserStarted)
 	}
 
-	right, held, err := CreateProofread(proofreading, t.with.Readers, t.with.Derived)
+	right, target, err := CreateProofread(proofreading, t.with.Readers, t.with.Derived)
 	if err != nil {
 		fail(err)
 		return ProofreadResult{Path: path}, err
 	}
-	if !held {
+	if !target {
 		t.finishTask(id)
 		return ProofreadResult{Path: path}, nil
 	}
@@ -459,8 +459,8 @@ func (t *Worker) acquireModels(
 	id, path string,
 	isUserStarted bool,
 ) (by port.Transcriber, finish func(ran error) error, err error) {
-	if kept, ok := t.resident.take(); ok {
-		return kept, func(ran error) error { return t.finishResident(ctx, ran) }, nil
+	if retained, ok := t.resident.take(); ok {
+		return retained, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}
 
 	release, err := t.with.Models.Acquire(ctx, isUserStarted, func() {

@@ -10,8 +10,8 @@ import (
 // A listener that fell behind is told to read everything again.
 func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 	following := newChangeBroadcaster()
-	line, done := following.subscribe()
-	defer done()
+	line, isDone := following.subscribe()
+	defer isDone()
 
 	// Fill what it may be owed, then one more it cannot take.
 	room := following.getCapacity()
@@ -34,8 +34,8 @@ func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 // busy replaces the one it has not read.
 func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 	focusing := newPlaceBroadcaster()
-	line, done := focusing.subscribe()
-	defer done()
+	line, isDone := focusing.subscribe()
+	defer isDone()
 
 	focusing.publish(domain.Place{Path: "notes/one.md"})
 	focusing.publish(domain.Place{Path: "notes/two.md"})
@@ -54,8 +54,8 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 
 func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
 	focusing := newPlaceBroadcaster()
-	line, done := focusing.subscribe()
-	done()
+	line, isDone := focusing.subscribe()
+	isDone()
 
 	focusing.publish(domain.Place{Path: "notes/one.md"})
 
@@ -68,7 +68,7 @@ func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
 // in the order they were told, never out of order and never twice.
 func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
 	counting := broadcaster[int]{capacity: 16}
-	line, done := counting.subscribe()
+	line, isDone := counting.subscribe()
 
 	const total = 20000
 
@@ -89,7 +89,7 @@ func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
 		counting.publish(n)
 	}
 	<-receivedFirst
-	done()
+	isDone()
 	<-read
 
 	last := -1

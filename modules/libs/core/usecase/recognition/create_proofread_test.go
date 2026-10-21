@@ -47,9 +47,9 @@ func TestARecognitionIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	by := &replying{}
 	readers, derived := somewhereToProofread()
 
-	right, held, err := CreateProofread(newProofreadingConfig(by), readers, derived)
-	if err != nil || !held {
-		t.Fatalf("held %v, %v", held, err)
+	right, target, err := CreateProofread(newProofreadingConfig(by), readers, derived)
+	if err != nil || !target {
+		t.Fatalf("held %v, %v", target, err)
 	}
 	if right.by != port.Proofreader(by) {
 		t.Error("a recognition is put right by something the installation did not place")
@@ -61,13 +61,13 @@ func TestARecognitionIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 	t.Parallel()
 	readers, derived := somewhereToProofread()
-	for _, said := range []run.ProofreadingConfig{
+	for _, response := range []run.ProofreadingConfig{
 		{},
 		{By: func() (port.Proofreader, error) { return nil, nil }},
 	} {
-		right, held, err := CreateProofread(said, readers, derived)
-		if err != nil || held || right.by != nil {
-			t.Errorf("a recognition came back: held %v, %v", held, err)
+		right, target, err := CreateProofread(response, readers, derived)
+		if err != nil || target || right.by != nil {
+			t.Errorf("a recognition came back: held %v, %v", target, err)
 		}
 	}
 }
@@ -77,15 +77,15 @@ func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 func TestAProofreaderThatCannotBeOpenedSaysWhatCouldNotBeDone(t *testing.T) {
 	t.Parallel()
 	absent := errors.New("no proofreading plugin is installed")
-	said := run.ProofreadingConfig{
+	response := run.ProofreadingConfig{
 		IsNamed: true,
 		By:      func() (port.Proofreader, error) { return nil, absent },
 	}
 	readers, derived := somewhereToProofread()
 
-	_, held, err := CreateProofread(said, readers, derived)
-	if held || !errors.Is(err, absent) {
-		t.Fatalf("held %v, %v", held, err)
+	_, target, err := CreateProofread(response, readers, derived)
+	if target || !errors.Is(err, absent) {
+		t.Fatalf("held %v, %v", target, err)
 	}
 	if !strings.Contains(err.Error(), "nothing to proofread with") {
 		t.Errorf("%q does not say what could not be done", err)

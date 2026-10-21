@@ -11,7 +11,7 @@ import (
 func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 	var g Lock
 
-	held, err := g.Acquire(t.Context(), false, nil)
+	target, err := g.Acquire(t.Context(), false, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 	queue(false)
 	queue(true)
 
-	held()
+	target()
 	for want := range []bool{true, false} {
 		select {
 		case got := <-took:
@@ -51,17 +51,17 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
 	var g Lock
 
-	held, err := g.Acquire(t.Context(), true, nil)
+	target, err := g.Acquire(t.Context(), true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gone, stop := context.WithCancel(t.Context())
-	left := make(chan error, 1)
+	removed, stop := context.WithCancel(t.Context())
+	remaining := make(chan error, 1)
 	waiting := make(chan struct{})
 	go func() {
-		_, err := g.Acquire(gone, true, func() { close(waiting) })
-		left <- err
+		_, err := g.Acquire(removed, true, func() { close(waiting) })
+		remaining <- err
 	}()
 	<-waiting
 
@@ -78,10 +78,10 @@ func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
 	<-queued
 
 	stop()
-	if err := <-left; err == nil {
+	if err := <-remaining; err == nil {
 		t.Error("a run that gave up was handed the lock")
 	}
-	held()
+	target()
 
 	select {
 	case <-after:

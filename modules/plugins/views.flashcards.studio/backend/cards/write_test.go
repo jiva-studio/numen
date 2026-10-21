@@ -61,19 +61,19 @@ func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 		t.Errorf("the stencil was written %d times", writers.writes)
 	}
 
-	held := read(t, vs.first, "Animal.md")
-	if !strings.Contains(held, "fields:\n  - Name\n  - Wingspan\n") {
-		t.Errorf("the stencil declares something else: %q", held)
+	target := read(t, vs.first, "Animal.md")
+	if !strings.Contains(target, "fields:\n  - Name\n  - Wingspan\n") {
+		t.Errorf("the stencil declares something else: %q", target)
 	}
-	if !strings.Contains(held, "{{Wingspan}}") {
-		t.Errorf("the faces are not the ones written: %q", held)
+	if !strings.Contains(target, "{{Wingspan}}") {
+		t.Errorf("the faces are not the ones written: %q", target)
 	}
-	if !strings.Contains(held, "mine: keep me verbatim") {
-		t.Errorf("a key nobody owns was rewritten: %q", held)
+	if !strings.Contains(target, "mine: keep me verbatim") {
+		t.Errorf("a key nobody owns was rewritten: %q", target)
 	}
 	// The fingerprint that comes back is the file on disk, so the next write of
 	// it lands.
-	if at.Size != int64(len(held)) {
+	if at.Size != int64(len(target)) {
 		t.Errorf("the fingerprint is not the file: %+v", at)
 	}
 }
@@ -97,12 +97,12 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing
 		t.Fatalf("write: %v", err)
 	}
 
-	held := read(t, vs.first, "Kept.md")
-	if !strings.Contains(held, "  # the one the card is named by\n") {
-		t.Errorf("the fields were written over: %q", held)
+	target := read(t, vs.first, "Kept.md")
+	if !strings.Contains(target, "  # the one the card is named by\n") {
+		t.Errorf("the fields were written over: %q", target)
 	}
-	if !strings.Contains(held, "{{Height}}") {
-		t.Errorf("the faces are not the ones written: %q", held)
+	if !strings.Contains(target, "{{Height}}") {
+		t.Errorf("the faces are not the ones written: %q", target)
 	}
 }
 

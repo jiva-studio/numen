@@ -110,19 +110,19 @@ func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
 	if got.CountAdmitted() != 12 {
 		t.Fatalf("a fortnight with the Sundays at nothing admitted %d days", got.CountAdmitted())
 	}
-	answered := 0
-	var spent time.Duration
+	reply := 0
+	var elapsed time.Duration
 	for day := range got.Load {
-		answered += got.Load[day]
-		spent += got.Spent[day]
+		reply += got.Load[day]
+		elapsed += got.Spent[day]
 	}
-	if want := float64(answered) / 12; got.ReviewsADay != want {
+	if want := float64(reply) / 12; got.ReviewsADay != want {
 		t.Errorf("%d answers over twelve days of review are %v a day, want %v",
-			answered, got.ReviewsADay, want)
+			reply, got.ReviewsADay, want)
 	}
-	if want := spent.Minutes() / 12; got.MinutesADay != want {
+	if want := elapsed.Minutes() / 12; got.MinutesADay != want {
 		t.Errorf("%v over twelve days of review is %v minutes a day, want %v",
-			spent, got.MinutesADay, want)
+			elapsed, got.MinutesADay, want)
 	}
 }
 
@@ -133,14 +133,14 @@ func TestWhatStandsOverdue(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.GetEnd(now).AddDate(0, 0, -1)
-	answered := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
+	reply := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
 		return review.CardFaceID{Card: name, Face: "Say it"}, review.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
 			Reps: 3, Stability: 20, Difficulty: 5, Phase: 2,
 		}
 	}
-	late, lateAt := answered("late", 10, -1)
-	soon, soonAt := answered("soon", 4, 0)
+	late, lateAt := reply("late", 10, -1)
+	soon, soonAt := reply("soon", 4, 0)
 	soonAt.Due = now.Add(6 * time.Hour)
 	unbegun := review.CardFaceID{Card: "unbegun", Face: "Say it"}
 
@@ -412,18 +412,18 @@ func TestALongerDayAnswersMore(t *testing.T) {
 	at := makeLearnedFaces(by, now, 60)
 	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 45}
 
-	var answered, owed []int
+	var reply, owed []int
 	for minutes := 2; minutes <= 40; minutes += 2 {
 		got := runProjection(t, run, now, review.Preset{
 			MinutesADay: minutes, ReviewsADay: 9999, NewADay: 5,
 		}, at, 40)
-		answered = append(answered, got.Answered)
+		reply = append(reply, got.Answered)
 		owed = append(owed, got.Owed)
 	}
 
-	for i := 1; i < len(answered); i++ {
-		if answered[i] < answered[i-1] {
-			t.Errorf("a longer day gave %d answers, a shorter one %d", answered[i], answered[i-1])
+	for i := 1; i < len(reply); i++ {
+		if reply[i] < reply[i-1] {
+			t.Errorf("a longer day gave %d answers, a shorter one %d", reply[i], reply[i-1])
 		}
 		if owed[i] > owed[i-1] {
 			t.Errorf("a longer day left %d owed, a shorter one %d", owed[i], owed[i-1])
@@ -1089,11 +1089,11 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	// One card face worn down to no stability at all, among forty nobody has
 	// begun.
-	worn := review.Schedule{
+	aged := review.Schedule{
 		Last: now.AddDate(0, 0, -1), Due: now.AddDate(0, 0, -1),
 		Difficulty: 9, Reps: 300, Lapses: 300, Phase: 2,
 	}
-	at := map[review.CardFaceID]review.Schedule{{Card: "worn", Face: "Say it"}: worn}
+	at := map[review.CardFaceID]review.Schedule{{Card: "worn", Face: "Say it"}: aged}
 
 	p := review.Defaults()
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1440
@@ -1166,10 +1166,10 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 		By: by, Day: ahead, Cost: review.DefaultCost, Days: 1, Retains: []int{0},
 	}
 
-	kept := run
-	kept.Recalls = review.GetFullRecall
+	retained := run
+	retained.Recalls = review.GetFullRecall
 	modelled := runProjection(t, run, now, p, at, 0)
-	nothing := runProjection(t, kept, now, p, at, 0)
+	nothing := runProjection(t, retained, now, p, at, 0)
 
 	// The two runs answer the same cards, and leave them in different places.
 	if modelled.Answered != nothing.Answered || modelled.Answered == 0 {
@@ -1183,9 +1183,9 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	}
 
 	// A run told what the model says is the run told nothing.
-	said := run
-	said.Recalls = review.GetModelledRecall
-	if got, _ := runProjection(t, said, now, p, at, 0).Retained.GetShare(0); got != middle {
+	response := run
+	response.Recalls = review.GetModelledRecall
+	if got, _ := runProjection(t, response, now, p, at, 0).Retained.GetShare(0); got != middle {
 		t.Errorf("told what the model says the run retained %v, and told nothing %v",
 			got, middle)
 	}

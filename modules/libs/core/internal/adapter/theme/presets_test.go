@@ -99,16 +99,16 @@ func getThemeFields(t *testing.T) map[string]valueKind {
 	}
 	for _, block := range splitBlocks(stripComments(string(css))) {
 		sets := map[string]valueKind{}
-		held := map[string]string{}
+		target := map[string]string{}
 		for _, one := range getDeclarations(block) {
 			if strings.HasPrefix(one.property, "--") {
-				held[one.property] = one.value
+				target[one.property] = one.value
 			}
 		}
-		for property, value := range held {
+		for property, value := range target {
 			// A token given as another token takes the shape that one takes:
 			// two names for one value are one value.
-			sets[property] = getValueKind(resolveToken(value, held))
+			sets[property] = getValueKind(resolveToken(value, target))
 		}
 		if len(sets) > 0 {
 			return sets

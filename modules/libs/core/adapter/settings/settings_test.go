@@ -39,8 +39,8 @@ func openAt(path string) (container.Settings, error) {
 // newDocument is the whole file as the installation declares it, holding what
 // an installation nobody has configured does.
 func newDocument() *container.Settings {
-	held := container.DefaultSettings()
-	return &held
+	target := container.DefaultSettings()
+	return &target
 }
 
 func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) {
@@ -113,8 +113,8 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	}
 	// What is wrong is the number and how far the setting goes, in the sentence
 	// a person is shown.
-	if said := outside.Error(); !strings.Contains(said, "appearance.text_scale is 3") {
-		t.Errorf("says %q", said)
+	if response := outside.Error(); !strings.Contains(response, "appearance.text_scale is 3") {
+		t.Errorf("says %q", response)
 	}
 }
 
@@ -301,7 +301,7 @@ func TestAFileNamingNoSizeIsDrawnAtWhatTheDesktopAsksFor(t *testing.T) {
 // A file naming a size is drawn at it, under either name.
 func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
-	for body, drawn := range map[string]float64{
+	for body, rendered := range map[string]float64{
 		`{"appearance":{"interface_scale":1.25}}`: 1.25,
 		`{"appearance":{"zoom":1.25}}`:            1.25,
 	} {
@@ -309,7 +309,7 @@ func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Appearance.InterfaceScale != drawn {
+		if cfg.Appearance.InterfaceScale != rendered {
 			t.Errorf("%s is drawn at %v", body, cfg.Appearance.InterfaceScale)
 		}
 	}
@@ -332,8 +332,8 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 // the launch after this one is not rejected over a number a person never wrote
 // under that name.
 func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
-	const held = `{"appearance":{"zoom":3}}`
-	path := write(t, held)
+	const target = `{"appearance":{"zoom":3}}`
+	path := write(t, target)
 	cfg, err := openAt(path)
 	if err != nil {
 		t.Fatal(err)
@@ -345,7 +345,7 @@ func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(raw) != held {
+	if string(raw) != target {
 		t.Errorf("the file is now %s", raw)
 	}
 
@@ -387,8 +387,8 @@ func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
 		if len(cfg.Notices) != 1 {
 			t.Fatalf("%s: the person is told %q", zoom, cfg.Notices)
 		}
-		if said := cfg.Notices[0]; len(said) > 62 {
-			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(said), said)
+		if response := cfg.Notices[0]; len(response) > 62 {
+			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(response), response)
 		}
 	}
 }
@@ -873,7 +873,7 @@ func TestACountOfHeadingsOutsideWhatItGoesToIsRefused(t *testing.T) {
 		outside.Most != settings.NestedHeadingLimitBounds.Most {
 		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
 	}
-	if said := outside.Error(); !strings.Contains(said, "appearance.nested_heading_limit is 20") {
-		t.Errorf("says %q", said)
+	if response := outside.Error(); !strings.Contains(response, "appearance.nested_heading_limit is 20") {
+		t.Errorf("says %q", response)
 	}
 }

@@ -53,8 +53,8 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 			if !strings.Contains(err.Error(), one.reason) {
 				t.Errorf("the rejection of %s says %q, and names nothing of %q", one.what, err, one.reason)
 			}
-			if held := read(t, s.vault, "Sanskrit.md"); held != was {
-				t.Errorf("the note was written:\n%s", held)
+			if target := read(t, s.vault, "Sanskrit.md"); target != was {
+				t.Errorf("the note was written:\n%s", target)
 			}
 		})
 	}

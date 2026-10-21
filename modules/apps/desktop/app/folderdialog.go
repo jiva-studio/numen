@@ -51,11 +51,11 @@ func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string)
 		asking.SetDirectory(startingAt)
 	}
 
-	chosen, err := asking.PromptForSingleSelection()
+	selected, err := asking.PromptForSingleSelection()
 	if err != nil {
 		return "", false, err
 	}
-	return chosen, chosen != "", nil
+	return selected, selected != "", nil
 }
 
 // tryAcquire takes the dialog, and answers false where it is already up.

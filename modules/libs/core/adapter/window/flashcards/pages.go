@@ -31,7 +31,7 @@ func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 // forwards, and the files the page is made of.
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	asking, agent := numenv1connect.NewAgentServiceHandler(a)
-	drawn, itself := numenv1connect.NewWindowServiceHandler(a.Window)
+	rendered, itself := numenv1connect.NewWindowServiceHandler(a.Window)
 	var dressing string
 	var themes http.Handler
 	if a.Themes != nil {
@@ -43,7 +43,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 		switch {
 		case strings.HasPrefix(r.URL.Path, asking):
 			agent.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, drawn):
+		case strings.HasPrefix(r.URL.Path, rendered):
 			itself.ServeHTTP(w, r)
 		case themes != nil && strings.HasPrefix(r.URL.Path, dressing):
 			themes.ServeHTTP(w, r)

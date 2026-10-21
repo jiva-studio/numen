@@ -70,7 +70,7 @@ func (b *Backend) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutco
 		return WriteOutcome{}, err
 	}
 	var added cards.AddedCard
-	written, err := b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+	content, err := b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
 		var err error
 		added, err = b.scenarios().cards.AddCard.Execute(ctx, v, at, in.Stencil, values(in.Values), in.Section)
 		return added.EditResult, err
@@ -78,8 +78,8 @@ func (b *Backend) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutco
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	written.Mark = added.Mark
-	return written, nil
+	content.Mark = added.Mark
+	return content, nil
 }
 
 type cardEditInput struct {

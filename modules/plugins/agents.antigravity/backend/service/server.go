@@ -73,9 +73,9 @@ func (s *agentServer) GetAgentPrograms(
 // getFamilies are the models the program lists, the ones that differ by level folded into one.
 func (s *agentServer) getFamilies(ctx context.Context, command []string) []reasoning.Family {
 	list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
-	listed := s.models.Get(ctx, strings.Join(command, " "), list)
-	models := make([]reasoning.Listed, 0, len(listed))
-	for _, one := range listed {
+	items := s.models.Get(ctx, strings.Join(command, " "), list)
+	models := make([]reasoning.Listed, 0, len(items))
+	for _, one := range items {
 		models = append(models, reasoning.Listed{Name: one.Name, Title: one.Title})
 	}
 	return reasoning.Fold(models)

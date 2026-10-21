@@ -91,11 +91,11 @@ func (s *providerServer) GetAgentPrograms(
 	s.commands = req.Msg.GetCommands()
 	s.mu.Unlock()
 	if s.onlyWith != "" {
-		listed := false
+		items := false
 		for _, one := range req.Msg.GetCommands() {
-			listed = listed || one.GetProgram() == s.onlyWith
+			items = items || one.GetProgram() == s.onlyWith
 		}
-		if !listed {
+		if !items {
 			return connect.NewResponse(&v1.GetAgentProgramsResponse{}), nil
 		}
 	}
@@ -388,15 +388,15 @@ func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
 	if err := os.WriteFile(settingsFile, []byte(`{}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	var told []error
+	var notified []error
 	cfg := container.Config{
 		PluginHost: host, SettingsPath: settingsFile,
-		ErrorHandler: func(err error) { told = append(told, err) },
+		ErrorHandler: func(err error) { notified = append(notified, err) },
 	}
 	models := cfg.Models()()
 
-	if len(told) != 1 || !strings.Contains(told[0].Error(), providerOne) {
-		t.Errorf("the error handler was told %v", told)
+	if len(notified) != 1 || !strings.Contains(notified[0].Error(), providerOne) {
+		t.Errorf("the error handler was told %v", notified)
 	}
 	var names []string
 	for _, one := range models {
@@ -433,7 +433,7 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 	}
 	for range run.GetSteps() {
 	}
-	if asked := served.getAsked(); len(asked) != 1 || !slices.Equal(asked[0].GetCommand(), []string{"/opt/gamma"}) {
-		t.Errorf("the plugin was asked %v", asked)
+	if request := served.getAsked(); len(request) != 1 || !slices.Equal(request[0].GetCommand(), []string{"/opt/gamma"}) {
+		t.Errorf("the plugin was asked %v", request)
 	}
 }

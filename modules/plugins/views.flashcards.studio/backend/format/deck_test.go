@@ -143,8 +143,8 @@ about 46"
 	if err != nil {
 		t.Fatalf("the second card is not addressed by its mark: %v", err)
 	}
-	if held, _ := got.Value("Height"); held != `about 46"` {
-		t.Errorf("the mark reached the wrong card: %q", held)
+	if target, _ := got.Value("Height"); target != `about 46"` {
+		t.Errorf("the mark reached the wrong card: %q", target)
 	}
 }
 
@@ -385,12 +385,12 @@ The ones I began with.
 		t.Errorf("preamble = %q, want what stands above the first of them", deck.Preamble)
 	}
 	// Two sections may carry one name, and an empty section is kept.
-	var held []string
+	var target []string
 	for _, s := range deck.Sections {
-		held = append(held, s.Name)
+		target = append(target, s.Name)
 	}
-	if !slices.Equal(held, []string{"Roots", "Roots", "Empty"}) {
-		t.Fatalf("sections = %v", held)
+	if !slices.Equal(target, []string{"Roots", "Roots", "Empty"}) {
+		t.Fatalf("sections = %v", target)
 	}
 	// Text between a section's heading and its first card is the section's.
 	if deck.Sections[0].Preamble != "The ones I began with." {

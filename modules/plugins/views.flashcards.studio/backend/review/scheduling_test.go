@@ -130,7 +130,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	p := review.Defaults()
 
 	face := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	stood := review.OrderAnswers([]review.Answer{
+	status := review.OrderAnswers([]review.Answer{
 		makeAnswer("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
 		makeAnswer("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
 	}).Replay(day, review.ScheduleBy(by))[face]
@@ -140,7 +140,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	// may be moved within reaches back over it.
 	local := time.Date(2026, 10, 15, 10, 0, 0, 0, in)
 	changes := time.Date(2026, 10, 25, 3, 0, 0, 0, in)
-	due := by.Next(stood, local, review.Good).Due
+	due := by.Next(status, local, review.Good).Due
 	if !due.After(changes) {
 		t.Fatalf("the card comes back on %v, which is not past the clock change", due.In(in))
 	}
@@ -165,7 +165,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	}
 
 	button := p.GetDueDay(loaded(due), local, due)
-	replayed := p.AssignDueDay(loaded(due.UTC()), stamp, by.Next(stood, stamp, review.Good).Due)
+	replayed := p.AssignDueDay(loaded(due.UTC()), stamp, by.Next(status, stamp, review.Good).Due)
 	if button.Equal(due) {
 		t.Fatalf("the placement left the card on %v, where the scheduler put it", due.In(in))
 	}

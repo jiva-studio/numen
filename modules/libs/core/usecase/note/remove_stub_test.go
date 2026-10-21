@@ -71,10 +71,10 @@ type trashing struct {
 }
 
 func newTrashing() *trashing {
-	moves, asked, levelled := &[]string{}, &[]string{}, &[][]string{}
-	tr := &trashing{moves: moves, asked: asked, levelled: levelled}
+	moves, request, levelled := &[]string{}, &[]string{}, &[][]string{}
+	tr := &trashing{moves: moves, asked: request, levelled: levelled}
 	tr.sources = trashSources{}
-	tr.links = trashLinks{asked: asked}
+	tr.links = trashLinks{asked: request}
 	tr.writers = trashWriters{writer: trashWriter{
 		move: func(_, to string) error {
 			*moves = append(*moves, to)

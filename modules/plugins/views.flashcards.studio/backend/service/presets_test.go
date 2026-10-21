@@ -176,9 +176,9 @@ func TestADeckWhosePresetLinkHasNoRoleIsToldSo(t *testing.T) {
 	if path := answer.Msg.GetPreset().GetPath(); path != "" {
 		t.Fatalf("a deck whose link has no role was answered from %q", path)
 	}
-	said := answer.Msg.GetPreset().GetProblems()
-	if len(said) != 1 || !strings.Contains(said[0], "no role") {
-		t.Errorf("the deck is shown %v", said)
+	response := answer.Msg.GetPreset().GetProblems()
+	if len(response) != 1 || !strings.Contains(response[0], "no role") {
+		t.Errorf("the deck is shown %v", response)
 	}
 }
 
@@ -371,24 +371,24 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if stops := read.Msg.GetPreset().GetStops(); stops != v1.StopReason_STOP_REASON_NOTHING {
 		t.Errorf("the preset just made schedules nothing, and says %v", stops)
 	}
-	settled := read.Msg.GetPreset().GetSettings()
-	if settled.GetGoal() != v1.Goal_GOAL_MINUTES_A_DAY || settled.GetMinutesADay() != 20 {
-		t.Errorf("the goal is %v at %d minutes", settled.GetGoal(), settled.GetMinutesADay())
+	resolved := read.Msg.GetPreset().GetSettings()
+	if resolved.GetGoal() != v1.Goal_GOAL_MINUTES_A_DAY || resolved.GetMinutesADay() != 20 {
+		t.Errorf("the goal is %v at %d minutes", resolved.GetGoal(), resolved.GetMinutesADay())
 	}
-	if settled.GetNewADay() != 10 || settled.GetReviewsADay() != 200 {
+	if resolved.GetNewADay() != 10 || resolved.GetReviewsADay() != 200 {
 		t.Errorf("a day holds %d new and %d reviews",
-			settled.GetNewADay(), settled.GetReviewsADay())
+			resolved.GetNewADay(), resolved.GetReviewsADay())
 	}
-	if settled.GetRetention() != 0.9 || settled.GetInterval() != 21 {
+	if resolved.GetRetention() != 0.9 || resolved.GetInterval() != 21 {
 		t.Errorf("retention %g at an interval of %d days",
-			settled.GetRetention(), settled.GetInterval())
+			resolved.GetRetention(), resolved.GetInterval())
 	}
-	if settled.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_CARDS || settled.GetBacklog() != 100 {
+	if resolved.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_CARDS || resolved.GetBacklog() != 100 {
 		t.Errorf("a day counts %v and gives %d to the debt",
-			settled.GetCounts(), settled.GetBacklog())
+			resolved.GetCounts(), resolved.GetBacklog())
 	}
-	if len(settled.GetLoad()) != 0 || !settled.GetHasEvenLoad() {
-		t.Errorf("the load is %v, evened %t", settled.GetLoad(), settled.GetHasEvenLoad())
+	if len(resolved.GetLoad()) != 0 || !resolved.GetHasEvenLoad() {
+		t.Errorf("the load is %v, evened %t", resolved.GetLoad(), resolved.GetHasEvenLoad())
 	}
 }
 
@@ -407,12 +407,12 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listed := make([]string, 0, len(answer.Msg.GetPresets()))
+	items := make([]string, 0, len(answer.Msg.GetPresets()))
 	for _, one := range answer.Msg.GetPresets() {
-		listed = append(listed, one.GetPath())
+		items = append(items, one.GetPath())
 	}
-	if !slices.Contains(listed, "presets/Prosody.md") {
-		t.Errorf("the vault lists %v", listed)
+	if !slices.Contains(items, "presets/Prosody.md") {
+		t.Errorf("the vault lists %v", items)
 	}
 }
 
@@ -421,16 +421,16 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	put, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
+	placed, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if put.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the write failed: %+v", put.Msg)
+	if placed.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the write failed: %+v", placed.Msg)
 	}
-	if put.Msg.GetAt() == nil {
+	if placed.Msg.GetAt() == nil {
 		t.Error("the write says nothing about the file it made")
 	}
 
@@ -449,7 +449,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 
 	// The fingerprint the write answered with is what the next write presents.
 	off, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
-		Deck: "decks/Terms.md", Baseline: put.Msg.GetAt(),
+		Deck: "decks/Terms.md", Baseline: placed.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)

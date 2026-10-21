@@ -37,7 +37,7 @@ func NewGet(
 }
 
 func (u *Get) Execute() (Current, error) {
-	written, path, err := u.read()
+	content, path, err := u.read()
 	if err != nil {
 		return Current{}, err
 	}
@@ -50,7 +50,7 @@ func (u *Get) Execute() (Current, error) {
 		pluginInfos = u.plugins()
 	}
 	return Current{
-		Written:                  written,
+		Written:                  content,
 		Path:                     path,
 		Models:                   models,
 		NestedHeadingLimitBounds: u.nestedHeadingLimitBounds,

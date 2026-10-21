@@ -324,10 +324,10 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 	cfg.Dir = t.TempDir()
 	provisioner := onnxruntime.New(cfg)
 
-	done := make(chan error, 1)
+	isDone := make(chan error, 1)
 	go func() {
 		_, _, err := provisioner.Provision(context.WithoutCancel(t.Context()), t.TempDir())
-		done <- err
+		isDone <- err
 	}()
 	<-entered
 
@@ -337,7 +337,7 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 		t.Error("a caller whose context ended was held to the provisioning of another")
 	}
 	close(release)
-	if err := <-done; err != nil {
+	if err := <-isDone; err != nil {
 		t.Fatalf("the first caller = %v", err)
 	}
 }
@@ -532,12 +532,12 @@ func TestProvisionUsesALibraryTheMachineHolds(t *testing.T) {
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
 	shared := t.TempDir()
-	held := writeLibrary(t, shared)
+	target := writeLibrary(t, shared)
 	cfg.Machine = []string{t.TempDir(), shared}
 
 	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
-	if err != nil || got != held {
-		t.Fatalf("Provision() = %q, %v, want %q", got, err, held)
+	if err != nil || got != target {
+		t.Fatalf("Provision() = %q, %v, want %q", got, err, target)
 	}
 	if hits.Load() != 0 {
 		t.Errorf("the server was asked %d times", hits.Load())
@@ -638,15 +638,15 @@ func TestProvisionTriesTheNextLibraryWhenOneDoesNotOpen(t *testing.T) {
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
-	old, held := writeLibraryDir(t), writeLibraryDir(t)
-	cfg.Machine = []string{old, held}
+	old, target := writeLibraryDir(t), writeLibraryDir(t)
+	cfg.Machine = []string{old, target}
 	plugin := t.TempDir()
 	siblingPath := writeLibrary(t, filepath.Join(plugin, "bin"))
 	cfg.Check = refuse(siblingPath, filepath.Join(old, filepath.Base(siblingPath)))
 
 	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), plugin)
-	if err != nil || got != filepath.Join(held, filepath.Base(siblingPath)) {
-		t.Fatalf("Provision() = %q, %v, want the library in %s", got, err, held)
+	if err != nil || got != filepath.Join(target, filepath.Base(siblingPath)) {
+		t.Fatalf("Provision() = %q, %v, want the library in %s", got, err, target)
 	}
 	if hits.Load() != 0 {
 		t.Errorf("the server was asked %d times", hits.Load())

@@ -152,10 +152,10 @@ func TestSpeechPastTheEndIsDone(t *testing.T) {
 }
 
 func TestACutBatchIsAskedWhereARunReachedPastABatch(t *testing.T) {
-	asked := 0
+	request := 0
 	m := &model{script: func(prompt string) string {
-		asked++
-		if asked == 1 {
+		request++
+		if request == 1 {
 			return "2-9|a run reaching past the first batch"
 		}
 		return ""

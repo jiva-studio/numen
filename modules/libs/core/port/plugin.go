@@ -47,19 +47,19 @@ func (e *UnavailableError) Error() string {
 	if e.PluginID == "" {
 		subject = "the plugin for " + e.Capability
 	}
-	var said string
+	var response string
 	switch e.Reason {
 	case PluginNotInstalled:
-		said = subject + " is not installed"
+		response = subject + " is not installed"
 	case PluginDisabled:
-		said = subject + " is disabled"
+		response = subject + " is disabled"
 	default:
-		said = subject + " failed to start"
+		response = subject + " failed to start"
 	}
 	if e.Err != nil {
-		return said + ": " + e.Err.Error()
+		return response + ": " + e.Err.Error()
 	}
-	return said
+	return response
 }
 
 // Is reports that the error is ErrUnavailable.

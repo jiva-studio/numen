@@ -9,8 +9,8 @@ import (
 func gatherReplies(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
 	var answers []answer
 	for _, batch := range asked {
-		reply, answered := replies[batch.Number]
-		if !answered {
+		reply, replyVal := replies[batch.Number]
+		if !replyVal {
 			continue
 		}
 		answers = append(answers, readAnswer(batch, reply, maxDistance))
@@ -48,16 +48,16 @@ func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 		1: "3|we spoke of the harbor lite",
 	}
 
-	for _, asked := range [][]Batch{
+	for _, request := range [][]Batch{
 		{wide(), narrow()},
 		{narrow(), wide()},
 	} {
-		put, _ := gatherReplies(asked, replies, MaxEditDistance)
-		if len(put) != 1 {
-			t.Fatalf("%v put right, want line 3 alone", put)
+		placed, _ := gatherReplies(request, replies, MaxEditDistance)
+		if len(placed) != 1 {
+			t.Fatalf("%v put right, want line 3 alone", placed)
 		}
-		if put[3].Text != "we spoke of the harbour lights" {
-			t.Errorf("line 3 says %q, want the batch that saw the four lines after it", put[3].Text)
+		if placed[3].Text != "we spoke of the harbour lights" {
+			t.Errorf("line 3 says %q, want the batch that saw the four lines after it", placed[3].Text)
 		}
 	}
 }
@@ -70,9 +70,9 @@ func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
 		1: "3|we spoke of the harbor lite",
 	}
 
-	put, _ := gatherReplies([]Batch{early, late}, replies, MaxEditDistance)
-	if put[3].Text != "we spoke of the harbor lite" {
-		t.Errorf("line 3 says %q, want the later batch", put[3].Text)
+	placed, _ := gatherReplies([]Batch{early, late}, replies, MaxEditDistance)
+	if placed[3].Text != "we spoke of the harbor lite" {
+		t.Errorf("line 3 says %q, want the later batch", placed[3].Text)
 	}
 }
 
@@ -82,21 +82,21 @@ func TestARefusedReplyLeavesItsLinesToTheOtherBatch(t *testing.T) {
 		1: "3|we spoke of the harbor lite\n4|until the fogg came in",
 	}
 
-	put, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
-	if put[3].Text != "we spoke of the harbor lite" {
-		t.Errorf("line 3 says %q, want the batch whose reply was an answer", put[3].Text)
+	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
+	if placed[3].Text != "we spoke of the harbor lite" {
+		t.Errorf("line 3 says %q, want the batch whose reply was an answer", placed[3].Text)
 	}
-	if put[4].Text != "until the fogg came in" {
-		t.Errorf("line 4 says %q, want the batch whose reply was an answer", put[4].Text)
+	if placed[4].Text != "until the fogg came in" {
+		t.Errorf("line 4 says %q, want the batch whose reply was an answer", placed[4].Text)
 	}
 }
 
 func TestALineNoAnsweredBatchCoversIsLeftAsItWasHeard(t *testing.T) {
 	replies := map[int]string{0: "3|we spoke of the harbour lights"}
 
-	put, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
+	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
 	for _, at := range []int{1, 2, 4, 5} {
-		if text, named := put[at]; named {
+		if text, named := placed[at]; named {
 			t.Errorf("line %d was put right to %q with nothing answered about it", at, text.Text)
 		}
 	}
@@ -105,18 +105,18 @@ func TestALineNoAnsweredBatchCoversIsLeftAsItWasHeard(t *testing.T) {
 func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 	replies := map[int]string{1: "3|we spoke of the harbour lights\n4|fog"}
 
-	put, _ := gatherReplies([]Batch{narrow()}, replies, MaxEditDistance)
-	if _, named := put[4]; named {
-		t.Errorf("line 4 was put right to %q, whose letters moved too far", put[4].Text)
+	placed, _ := gatherReplies([]Batch{narrow()}, replies, MaxEditDistance)
+	if _, named := placed[4]; named {
+		t.Errorf("line 4 was put right to %q, whose letters moved too far", placed[4].Text)
 	}
-	if put[3].Text != "we spoke of the harbour lights" {
-		t.Errorf("line 3 says %q, want the correction that stayed put", put[3].Text)
+	if placed[3].Text != "we spoke of the harbour lights" {
+		t.Errorf("line 3 says %q, want the correction that stayed put", placed[3].Text)
 	}
 }
 
 func TestABatchNothingCameBackAboutPutsNothingRight(t *testing.T) {
-	if put, _ := gatherReplies([]Batch{wide()}, nil, MaxEditDistance); len(put) != 0 {
-		t.Errorf("a batch with no reply put %v right", put)
+	if placed, _ := gatherReplies([]Batch{wide()}, nil, MaxEditDistance); len(placed) != 0 {
+		t.Errorf("a batch with no reply put %v right", placed)
 	}
 }
 
@@ -130,9 +130,9 @@ func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 		2: "4-5 | Krishna is Radha, Krishna is connected with Radhika.",
 	}
 
-	put, past := gatherReplies([]Batch{first, second}, replies, 0)
-	if len(put) != 1 {
-		t.Fatalf("%v put right", put)
+	placed, past := gatherReplies([]Batch{first, second}, replies, 0)
+	if len(placed) != 1 {
+		t.Fatalf("%v put right", placed)
 	}
 	if !reflect.DeepEqual(past, []int{1}) {
 		t.Errorf("the batches a run went past are %v, want the first alone", past)
@@ -169,13 +169,13 @@ func joinable(number, first, last int) Batch {
 // coveredOnce fails for a line two corrections cover.
 func coveredOnce(t *testing.T, put map[int]Line) {
 	t.Helper()
-	seen := map[int]int{}
+	observed := map[int]int{}
 	for first, line := range put {
 		for at := first; at <= max(line.Last, line.Number); at++ {
-			if other, twice := seen[at]; twice {
+			if other, twice := observed[at]; twice {
 				t.Errorf("line %d is covered by the corrections of %d and %d", at, other, first)
 			}
-			seen[at] = first
+			observed[at] = first
 		}
 	}
 }
@@ -187,14 +187,14 @@ func TestARunSeenFromFurtherBackTakesTheLineOfASingleCorrection(t *testing.T) {
 	}
 	single, run := joinable(0, 3, 5), joinable(1, 2, 5)
 
-	put, _ := gatherReplies([]Batch{single, run}, replies, 0)
-	coveredOnce(t, put)
-	if len(put) != 1 || put[3].Last != 4 {
-		t.Errorf("gathered %v, want the run of lines 3 to 4 alone", put)
+	placed, _ := gatherReplies([]Batch{single, run}, replies, 0)
+	coveredOnce(t, placed)
+	if len(placed) != 1 || placed[3].Last != 4 {
+		t.Errorf("gathered %v, want the run of lines 3 to 4 alone", placed)
 	}
 
-	put, _ = gatherReplies([]Batch{run, single}, replies, 0)
-	coveredOnce(t, put)
+	placed, _ = gatherReplies([]Batch{run, single}, replies, 0)
+	coveredOnce(t, placed)
 }
 
 func TestTwoRunsSharingALineAreNotBothKept(t *testing.T) {
@@ -204,11 +204,11 @@ func TestTwoRunsSharingALineAreNotBothKept(t *testing.T) {
 	}
 	earlier, later := joinable(0, 1, 4), joinable(1, 3, 5)
 
-	for _, asked := range [][]Batch{{earlier, later}, {later, earlier}} {
-		put, _ := gatherReplies(asked, replies, 0)
-		coveredOnce(t, put)
-		if len(put) != 1 {
-			t.Errorf("gathered %v, want one run", put)
+	for _, request := range [][]Batch{{earlier, later}, {later, earlier}} {
+		placed, _ := gatherReplies(request, replies, 0)
+		coveredOnce(t, placed)
+		if len(placed) != 1 {
+			t.Errorf("gathered %v, want one run", placed)
 		}
 	}
 }

@@ -40,7 +40,7 @@ func isLinked(deps []string, pkg string) bool {
 func TestNothingOfTheToolsIsLinkedIntoTheTerminal(t *testing.T) {
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./cmd/...")
 	listing.Dir = "../../"
-	listed, err := listing.Output()
+	items, err := listing.Output()
 	if err != nil {
 		var ran *exec.ExitError
 		if errors.As(err, &ran) {
@@ -51,7 +51,7 @@ func TestNothingOfTheToolsIsLinkedIntoTheTerminal(t *testing.T) {
 
 	var binaries []string
 	var serving []string
-	decoder := json.NewDecoder(bytes.NewReader(listed))
+	decoder := json.NewDecoder(bytes.NewReader(items))
 	for {
 		var pkg struct {
 			ImportPath string

@@ -41,12 +41,12 @@ func (h *recordingHandler) GetRecording(
 	if err != nil {
 		return nil, err
 	}
-	heard, err := h.getHeardTranscript.Execute(ctx, showing, ref.Path)
+	received, err := h.getHeardTranscript.Execute(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	transcribed, _ := transcript.ReadReached(heard.Words)
-	_, cues := transcript.Parse(heard.Words)
+	transcribed, _ := transcript.ReadReached(received.Words)
+	_, cues := transcript.Parse(received.Words)
 	// Where a recording is played from and what it is played as are answered
 	// here: the socket is opened afresh for every run, and what counts as a
 	// recording is this application's to say.

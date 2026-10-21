@@ -16,17 +16,17 @@ import (
 // the person does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	state := &State{Edits: newEditBroadcaster()}
-	line, done := state.Edits.subscribe()
-	t.Cleanup(done)
+	line, isDone := state.Edits.subscribe()
+	t.Cleanup(isDone)
 
-	said := domain.Edit{
+	response := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := state.GetWindow().ShowEdit(t.Context(), said); err != nil {
+	if err := state.GetWindow().ShowEdit(t.Context(), response); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := <-line; got != said {
+	if got := <-line; got != response {
 		t.Errorf("what arrived is %+v", got)
 	}
 }
@@ -35,8 +35,8 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 // has not read one is given the newest and not the backlog.
 func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
 	drawing := newEditBroadcaster()
-	line, done := drawing.subscribe()
-	t.Cleanup(done)
+	line, isDone := drawing.subscribe()
+	t.Cleanup(isDone)
 
 	drawing.publish(domain.Edit{Change: "one", Text: "first"})
 	drawing.publish(domain.Edit{Change: "one", Text: "second"})
@@ -50,8 +50,8 @@ func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
 // that is never ended stays on the screen.
 func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 	drawing := newEditBroadcaster()
-	line, done := drawing.subscribe()
-	t.Cleanup(done)
+	line, isDone := drawing.subscribe()
+	t.Cleanup(isDone)
 
 	drawing.publish(domain.Edit{Change: "one", IsDone: true})
 	drawing.publish(domain.Edit{Change: "one", Text: "more of it"})
@@ -71,8 +71,8 @@ func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 // another.
 func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
 	drawing := newEditBroadcaster()
-	line, done := drawing.subscribe()
-	t.Cleanup(done)
+	line, isDone := drawing.subscribe()
+	t.Cleanup(isDone)
 
 	drawing.publish(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
 	drawing.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})

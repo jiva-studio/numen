@@ -214,12 +214,12 @@ func TestThePartsOfAPageAreTheOnesTheModelKnowsUnlessTheFileSaysOtherwise(t *tes
 }
 
 func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
-	var told string
+	var notified string
 	cfg := Config{
 		Runtime:        "lib.so",
 		Dir:            "models",
 		ShouldDownload: true,
-		Progress:       func(what string, _, _ int64) { told = what },
+		Progress:       func(what string, _, _ int64) { notified = what },
 	}
 	if got := onnx.ResolveLibrary(cfg.Runtime, cfg.Dir); got != "lib.so" {
 		t.Errorf("runtime = %q, want lib.so", got)
@@ -229,7 +229,7 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 		t.Errorf("got %+v", got)
 	}
 	got.Progress("a model", 1, 2)
-	if told != "a model" {
+	if notified != "a model" {
 		t.Error("a download does not reach whoever is listening")
 	}
 }

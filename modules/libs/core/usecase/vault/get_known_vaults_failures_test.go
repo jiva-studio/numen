@@ -15,12 +15,12 @@ func TestAListThatCannotBeReadIsAnError(t *testing.T) {
 	list.fails = errors.New("the list cannot be read")
 	list.rows = nil
 
-	known, err := vaults.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := vaults.NewGetKnownVaults(list, there).Execute("")
 	if !errors.Is(err, list.fails) {
 		t.Fatalf("got %v", err)
 	}
-	if known != nil {
-		t.Errorf("the vaults came back with the error: %v", known)
+	if recognized != nil {
+		t.Errorf("the vaults came back with the error: %v", recognized)
 	}
 }
 
@@ -40,12 +40,12 @@ func TestTheLastVaultThatCannotBeReadIsAnError(t *testing.T) {
 	list, there := twoRows()
 	cannot := errors.New("the last vault cannot be read")
 
-	known, err := vaults.NewGetKnownVaults(forgetful{theList: list, err: cannot}, there).Execute("")
+	recognized, err := vaults.NewGetKnownVaults(forgetful{theList: list, err: cannot}, there).Execute("")
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
 	}
-	if known != nil {
-		t.Errorf("the vaults came back with the error: %v", known)
+	if recognized != nil {
+		t.Errorf("the vaults came back with the error: %v", recognized)
 	}
 }
 
@@ -55,14 +55,14 @@ func TestNoVaultIsCurrentWhereNoneIsNamedAndNoneWasOpened(t *testing.T) {
 	t.Parallel()
 	list := &theList{rows: []domain.Vault{{ID: "", Name: "Nameless", Path: "/notes/nameless"}}}
 
-	known, err := vaults.NewGetKnownVaults(list, folders{"": true}).Execute("")
+	recognized, err := vaults.NewGetKnownVaults(list, folders{"": true}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 {
-		t.Fatalf("%d vaults of a list of one", len(known))
+	if len(recognized) != 1 {
+		t.Fatalf("%d vaults of a list of one", len(recognized))
 	}
-	if known[0].IsCurrent {
+	if recognized[0].IsCurrent {
 		t.Error("a vault was called current when nobody named one")
 	}
 }

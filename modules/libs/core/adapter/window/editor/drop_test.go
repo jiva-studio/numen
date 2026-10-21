@@ -66,16 +66,16 @@ func deleteTranscript(api *Services) error {
 // Everything one run of listening produced goes, and the recording is left
 // owing its text.
 func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
-	held := whole(newCues())
-	held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = held[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]
-	held[domain.NewArtifactName(domain.ArtifactProducer, asr, hashed)] = []byte(`{"model":"parakeet"}`)
-	api, index, _ := dropper(t, held, newTranscriptIndex())
+	target := whole(newCues())
+	target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = target[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]
+	target[domain.NewArtifactName(domain.ArtifactProducer, asr, hashed)] = []byte(`{"model":"parakeet"}`)
+	api, index, _ := dropper(t, target, newTranscriptIndex())
 
 	if err := deleteTranscript(api); err != nil {
 		t.Fatalf("dropped the transcript and failed: %v", err)
 	}
-	if len(held) != 0 {
-		t.Errorf("the store still holds %v", held)
+	if len(target) != 0 {
+		t.Errorf("the store still holds %v", target)
 	}
 	if len(index.written) != 1 {
 		t.Fatalf("the index was written %d times", len(index.written))
@@ -91,21 +91,21 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))
 	}
 
-	if told := readTranscript(t, api); len(told.GetCues()) != 0 {
-		t.Errorf("the recording still says %+v", told.GetCues())
+	if notified := readTranscript(t, api); len(notified.GetCues()) != 0 {
+		t.Errorf("the recording still says %+v", notified.GetCues())
 	}
 }
 
 // A run appends to the transcript, and what is being appended to is not taken
 // out from under it.
 func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: whole(newCues()), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
-	api, index, _ := dropper(t, held, newTranscriptIndex())
+	target := heldBy{stored: whole(newCues()), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
+	api, index, _ := dropper(t, target, newTranscriptIndex())
 
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("dropped a transcript being written and failed %v", err)
 	}
-	if _, kept := held.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !kept {
+	if _, retained := target.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !retained {
 		t.Error("the transcript went out from under the run")
 	}
 	if len(index.written) != 0 {

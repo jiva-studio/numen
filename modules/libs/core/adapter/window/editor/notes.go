@@ -299,16 +299,16 @@ func (h *noteHandler) ResolveAddresses(
 	// In the order they were asked about, and an address asked about twice is
 	// one answer.
 	out := &v1.ResolveAddressesResponse{}
-	seen := make(map[string]bool, len(found))
-	for _, written := range r.Msg.GetWritten() {
-		one, reached := found[written]
-		if !reached || seen[written] {
+	observed := make(map[string]bool, len(found))
+	for _, content := range r.Msg.GetWritten() {
+		one, reached := found[content]
+		if !reached || observed[content] {
 			continue
 		}
-		seen[written] = true
+		observed[content] = true
 		vault, crossed := one.InVault(showing.ID)
 		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
-			Written:     written,
+			Written:     content,
 			Path:        one.To,
 			Vault:       string(vault),
 			IsCrossed:   crossed,
@@ -448,8 +448,8 @@ func (h *noteHandler) ListHeadings(
 	// In the order the filter named them.
 	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
 	for _, path := range paths {
-		headings, held := found[path]
-		if !held {
+		headings, target := found[path]
+		if !target {
 			continue
 		}
 		one := &v1.NoteHeadings{Path: path, Headings: make([]*v1.Heading, 0, len(headings))}
@@ -472,8 +472,8 @@ func (h *noteHandler) WatchEdits(
 	_ *connect.Request[v1.WatchEditsRequest],
 	out *connect.ServerStream[v1.WatchEditsResponse],
 ) error {
-	line, done := h.state.Edits.subscribe()
-	defer done()
+	line, isDone := h.state.Edits.subscribe()
+	defer isDone()
 
 	// A stream that says nothing until a note is changed is indistinguishable
 	// from one that never opened.
@@ -492,16 +492,16 @@ func (h *noteHandler) WatchEdits(
 			if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
 				return err
 			}
-		case said, open := <-line:
+		case response, open := <-line:
 			if !open {
 				return nil
 			}
 			if err := out.Send(&v1.WatchEditsResponse{
-				Change:  said.Change,
-				Path:    said.Path,
-				Span:    &v1.Span{From: int32(said.From), To: int32(said.To)},
-				Text:    said.Text,
-				IsFinal: said.IsDone,
+				Change:  response.Change,
+				Path:    response.Path,
+				Span:    &v1.Span{From: int32(response.From), To: int32(response.To)},
+				Text:    response.Text,
+				IsFinal: response.IsDone,
 			}); err != nil {
 				return err
 			}

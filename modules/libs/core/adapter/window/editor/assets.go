@@ -53,20 +53,20 @@ func parseAssetAddress(r *http.Request) (address, bool) {
 	if err != nil || path == "" {
 		return address{}, false
 	}
-	held := address{path: path}
+	target := address{path: path}
 	if len(parts) == 1 {
-		return held, true
+		return target, true
 	}
-	asked := make([]string, 0, len(parts)-1)
+	request := make([]string, 0, len(parts)-1)
 	for _, one := range parts[1:] {
-		said, err := url.PathUnescape(one)
+		response, err := url.PathUnescape(one)
 		if err != nil {
 			return address{}, false
 		}
-		asked = append(asked, said)
+		request = append(request, response)
 	}
-	held.where = strings.Join(asked, "/")
-	return held, true
+	target.where = strings.Join(request, "/")
+	return target, true
 }
 
 // Asset answers with the bytes of one file of the vault, at the place asked of

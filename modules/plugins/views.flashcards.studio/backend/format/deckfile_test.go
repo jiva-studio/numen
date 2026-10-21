@@ -555,8 +555,8 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 // The wikilink under a card's heading is an ordinary link, so a card is cut by
 // the note that link lands on, whatever the brackets spell.
 func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
-	written := "---\ntype: deck\n---\n\n## Llama\n\n[[Animal|the beast]]\n\n### Height\n\nabout 45\"\n"
-	f, err := format.OpenDeck([]byte(written))
+	content := "---\ntype: deck\n---\n\n## Llama\n\n[[Animal|the beast]]\n\n### Height\n\nabout 45\"\n"
+	f, err := format.OpenDeck([]byte(content))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -684,12 +684,12 @@ func TestWholeSaysWhichCardsItGave(t *testing.T) {
 		return out
 	}
 
-	_, given := format.Whole(body, map[string]format.Stencil{
+	_, provided := format.Whole(body, map[string]format.Stencil{
 		"Animal": {Fields: []string{"Name"}},
 	}, createID)
 	want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
-	if !slices.Equal(given, want) {
-		t.Errorf("given = %+v, want %+v", given, want)
+	if !slices.Equal(provided, want) {
+		t.Errorf("given = %+v, want %+v", provided, want)
 	}
 }
 
@@ -789,12 +789,12 @@ func TestChangingOneCardLeavesEveryOtherTheBytesItWas(t *testing.T) {
 			if err := change(file); err != nil {
 				t.Fatalf("change: %v", err)
 			}
-			written := file.Body()
+			content := file.Body()
 			for _, mark := range []cardid.ID{alpaca, vicuna} {
 				was := cardRun(t, rough, mark)
-				if !strings.Contains(written, was) {
+				if !strings.Contains(content, was) {
 					t.Errorf("the card of %s was rewritten\n was %q\n now %q",
-						mark, was, cardRun(t, written, mark))
+						mark, was, cardRun(t, content, mark))
 				}
 			}
 		})
@@ -877,9 +877,9 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 
 	for name, change := range map[string]func(*format.DeckFile) error{
 		"whole": func(f *format.DeckFile) error {
-			given, err := f.Whole(stencils, createID)
-			if given != nil {
-				t.Errorf("marks given = %+v, want none", given)
+			provided, err := f.Whole(stencils, createID)
+			if provided != nil {
+				t.Errorf("marks given = %+v, want none", provided)
 			}
 			return err
 		},
@@ -925,13 +925,13 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 // which cards were given one.
 func TestDeckFileWholeWritesTheMarksItGives(t *testing.T) {
 	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
-	given, err := f.Whole(map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}},
+	provided, err := f.Whole(map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}},
 		func() cardid.ID { return "m9n8b7v6c5" })
 	if err != nil {
 		t.Fatalf("whole: %v", err)
 	}
-	if want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}}; !slices.Equal(given, want) {
-		t.Errorf("given = %+v, want %+v", given, want)
+	if want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}}; !slices.Equal(provided, want) {
+		t.Errorf("given = %+v, want %+v", provided, want)
 	}
 	if want := "## Llama ^m9n8b7v6c5\n\n[[Animal]]\n\n### Name\n\nLlama\n"; f.Body() != want {
 		t.Errorf("body\n want %q\n  got %q", want, f.Body())

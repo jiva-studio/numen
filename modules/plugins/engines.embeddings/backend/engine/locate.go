@@ -165,7 +165,7 @@ func reportProgress(dir string, files []string, sizes map[string]int64, total in
 	if progress == nil || total <= 0 {
 		return func() {}
 	}
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	doneCh := make(chan struct{})
 	go func() {
 		defer close(doneCh)
@@ -173,7 +173,7 @@ func reportProgress(dir string, files []string, sizes map[string]int64, total in
 		defer tick.Stop()
 		for {
 			select {
-			case <-done:
+			case <-isDone:
 				return
 			case <-tick.C:
 				progress(min(sumBytes(dir, files, sizes), total), total)
@@ -181,7 +181,7 @@ func reportProgress(dir string, files []string, sizes map[string]int64, total in
 		}
 	}()
 	return func() {
-		close(done)
+		close(isDone)
 		<-doneCh
 	}
 }

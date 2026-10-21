@@ -78,7 +78,7 @@ func drawAtoms(t *rapid.T) []atom {
 		mark := emphasis.Draw(t, "emphasis")
 		return mark + inner.Draw(t, "before") + link.Draw(t, "link") + mark
 	})
-	held := rapid.Custom(func(t *rapid.T) string {
+	targetVal := rapid.Custom(func(t *rapid.T) string {
 		return "[[" + target.Draw(t, "target") + " ![[" +
 			target.Draw(t, "embedded") + "]] " + target.Draw(t, "after") + "]]"
 	})
@@ -92,7 +92,7 @@ func drawAtoms(t *rapid.T) []atom {
 		case 2:
 			return atom{text: nested.Draw(t, "nested"), isUnbroken: true}
 		case 3:
-			return atom{text: held.Draw(t, "held"), isUnbroken: true}
+			return atom{text: targetVal.Draw(t, "held"), isUnbroken: true}
 		}
 		return atom{text: prose.Draw(t, "prose")}
 	})
@@ -104,7 +104,7 @@ func drawAtoms(t *rapid.T) []atom {
 // a link is markup a person is shown as the name of their card.
 func TestTheCutNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 	t.Parallel()
-	var cut, straddled int
+	var trimmed, straddled int
 	rapid.Check(t, func(t *rapid.T) {
 		atoms := drawAtoms(t)
 
@@ -133,7 +133,7 @@ func TestTheCutNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 
 		whole := len([]rune(strings.TrimSpace(value)))
 		if whole > format.HeadingRunes {
-			cut++
+			trimmed++
 			for _, one := range runs {
 				if one.from < format.HeadingRunes && format.HeadingRunes < one.to {
 					straddled++
@@ -153,8 +153,8 @@ func TestTheCutNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 	// The property says where a cut may fall, so a run of it that never cut
 	// anything, or never met a link straddling the place the cut falls, has
 	// asked nothing.
-	if cut < 25 || straddled < 15 {
+	if trimmed < 25 || straddled < 15 {
 		t.Fatalf("%d lines were cut and %d of those had a run standing across the cut",
-			cut, straddled)
+			trimmed, straddled)
 	}
 }

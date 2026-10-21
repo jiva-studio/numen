@@ -219,8 +219,8 @@ type deckRows map[string]*DeckCardsDue
 
 // get is the row of a deck, created when it is new.
 func (r deckRows) get(deck string) *DeckCardsDue {
-	one, held := r[deck]
-	if !held {
+	one, target := r[deck]
+	if !target {
 		one = &DeckCardsDue{Deck: deck}
 		r[deck] = one
 	}

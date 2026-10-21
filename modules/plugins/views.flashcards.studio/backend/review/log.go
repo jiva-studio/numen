@@ -62,10 +62,10 @@ func Write(a Answer) ([]byte, error) {
 // reason to refuse the rest of somebody's history.
 func Read(raw []byte) (answers []Answer, skipped int) {
 	// What stands after the last newline is a line that did not land whole.
-	if cut := bytes.LastIndexByte(raw, '\n'); cut < 0 {
+	if trimmed := bytes.LastIndexByte(raw, '\n'); trimmed < 0 {
 		return nil, whole(raw)
-	} else if cut+1 < len(raw) {
-		skipped, raw = 1, raw[:cut+1]
+	} else if trimmed+1 < len(raw) {
+		skipped, raw = 1, raw[:trimmed+1]
 	}
 
 	for _, one := range bytes.Split(raw, []byte("\n")) {

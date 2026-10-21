@@ -23,9 +23,9 @@ func TestTheLeastRecentlyUsedDeckIsForgottenAloneWhenTheFacesPassTheBound(t *tes
 	if c.hasDeck(keyOf("b")) {
 		t.Error("the least recently used deck is still held")
 	}
-	for _, kept := range []string{"a", "c", "d"} {
-		if !c.hasDeck(keyOf(kept)) {
-			t.Errorf("deck %s was forgotten with it", kept)
+	for _, retained := range []string{"a", "c", "d"} {
+		if !c.hasDeck(keyOf(retained)) {
+			t.Errorf("deck %s was forgotten with it", retained)
 		}
 	}
 	if c.getSize() != 6 {

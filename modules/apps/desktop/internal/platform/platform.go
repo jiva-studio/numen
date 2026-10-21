@@ -52,7 +52,7 @@ func GetConfigFor(target string) container.Config {
 
 func getPluginsDirs() []string {
 	var dirs []string
-	seen := make(map[string]bool)
+	observed := make(map[string]bool)
 	addDir := func(dir string) {
 		if dir == "" {
 			return
@@ -61,8 +61,8 @@ func getPluginsDirs() []string {
 		if abs, err := filepath.Abs(clean); err == nil {
 			clean = abs
 		}
-		if !seen[clean] {
-			seen[clean] = true
+		if !observed[clean] {
+			observed[clean] = true
 			dirs = append(dirs, clean)
 		}
 	}

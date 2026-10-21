@@ -32,9 +32,9 @@ func TestANegativeThresholdAsksForNone(t *testing.T) {
 	rubbish := "|| $$ ?? %%% ### @@@ ~~~ ^^^"
 	sampleText := "the quick brown fox jumps over the lazy dog"
 
-	kept := Legibility{Alphabetic: -1, Dirty: -1}
+	retained := Legibility{Alphabetic: -1, Dirty: -1}
 	for _, text := range []string{rubbish, sampleText} {
-		if !isLegible(text, kept) {
+		if !isLegible(text, retained) {
 			t.Errorf("with no threshold, %q failed", text)
 		}
 	}

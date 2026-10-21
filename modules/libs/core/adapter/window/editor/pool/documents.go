@@ -130,8 +130,8 @@ func (d *Documents) Acquire(
 		d.mu.Unlock()
 		return nil, nil, ErrBusy
 	}
-	doc, held := d.open[mark]
-	if !held {
+	doc, target := d.open[mark]
+	if !target {
 		doc = &Document{
 			lock:   make(chan struct{}, 1),
 			ready:  make(chan struct{}),
@@ -256,9 +256,9 @@ func (d *Documents) Close() {
 		doc.Close()
 	}
 	d.order = nil
-	held := len(d.open)
+	target := len(d.open)
 	d.mu.Unlock()
-	if held == 0 {
+	if target == 0 {
 		return
 	}
 	<-d.empty
@@ -298,8 +298,8 @@ func (d *Documents) Touch(mark document.Fingerprint) {
 }
 
 func (d *Documents) RemoveFromOrder(mark document.Fingerprint) {
-	for i, held := range d.order {
-		if held == mark {
+	for i, target := range d.order {
+		if target == mark {
 			d.order = append(d.order[:i], d.order[i+1:]...)
 			return
 		}
@@ -341,9 +341,9 @@ func (d *Document) Render(at, width int) (image.Image, error) {
 		d.points[at] = points
 	}
 	dpi := (width*PointsDPI + points - 1) / points
-	drawn, err := d.Scan.RenderPage(at, max(dpi, 1))
+	rendered, err := d.Scan.RenderPage(at, max(dpi, 1))
 	if err != nil {
 		return nil, err
 	}
-	return drawn, nil
+	return rendered, nil
 }

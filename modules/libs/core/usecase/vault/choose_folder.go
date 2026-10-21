@@ -23,11 +23,11 @@ func NewChooseFolder(dialog port.FolderDialog) ChooseFolder {
 // Execute returns the folder the person chose. IsChosen is false when the person
 // closed the dialog and chose none.
 func (u ChooseFolder) Execute(ctx context.Context, title, startingAt string) (PickedFolder, error) {
-	chosen, isChosen, err := u.dialog.ChooseFolder(ctx, title, startingAt)
+	selected, isChosen, err := u.dialog.ChooseFolder(ctx, title, startingAt)
 	if err != nil {
 		return PickedFolder{}, err
 	}
-	return PickedFolder{Path: chosen, IsChosen: isChosen}, nil
+	return PickedFolder{Path: selected, IsChosen: isChosen}, nil
 }
 
 // GetPickFolder is the use case that puts the same dialog in front of the person

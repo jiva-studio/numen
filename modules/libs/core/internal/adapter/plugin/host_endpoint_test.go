@@ -115,9 +115,9 @@ func readCode(t *testing.T, err error) connect.Code {
 // A plugin holding the permission is answered with the text, and the completer
 // is told the question as the plugin put it.
 func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
-	var asked port.Question
+	var requestVal port.Question
 	fakeCallers := newCallers(completerFunc(func(_ context.Context, question port.Question) (string, error) {
-		asked = question
+		requestVal = question
 		return "fixed", nil
 	}))
 	request := newHostQuestion()
@@ -129,9 +129,9 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 	if res.Msg.GetAnswer().GetText() != "fixed" || res.Msg.GetError() != v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("answered %v", res.Msg)
 	}
-	if asked.Purpose != "proofreading" || len(asked.Messages) != 1 || asked.Messages[0].Text != "fix this" ||
-		asked.Messages[0].Role != "user" {
-		t.Errorf("the completer was asked %+v", asked)
+	if requestVal.Purpose != "proofreading" || len(requestVal.Messages) != 1 || requestVal.Messages[0].Text != "fix this" ||
+		requestVal.Messages[0].Role != "user" {
+		t.Errorf("the completer was asked %+v", requestVal)
 	}
 	if len(fakeCallers.checked) != 2 || fakeCallers.checked[0] != "md.numen.a ai:complete" || fakeCallers.checked[1] != "md.numen.a consent" {
 		t.Errorf("checked %v, want md.numen.a ai:complete, then its consent", fakeCallers.checked)
@@ -140,9 +140,9 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 
 // A plugin without the ai:complete permission fails, and nothing is asked of a model.
 func TestAPluginWithoutThePermissionIsRefused(t *testing.T) {
-	asked := false
+	request := false
 	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
-		asked = true
+		request = true
 		return "", nil
 	}))
 
@@ -150,7 +150,7 @@ func TestAPluginWithoutThePermissionIsRefused(t *testing.T) {
 	if got := readCode(t, err); got != connect.CodePermissionDenied {
 		t.Errorf("code = %v, want permission denied", got)
 	}
-	if asked {
+	if request {
 		t.Error("a model was asked for a plugin without the permission")
 	}
 }
@@ -454,9 +454,9 @@ func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
 // A plugin the person has not let ask a model is answered NO_CONSENT, and
 // nothing is asked of a model.
 func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
-	asked := false
+	request := false
 	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
-		asked = true
+		request = true
 		return "", nil
 	}))
 	res, err := newHostClient(t, fakeCallers, "token-c").Complete(t.Context(), newHostQuestion())
@@ -466,7 +466,7 @@ func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
 	if res.Msg.GetError() != v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT || res.Msg.GetAnswer() != nil {
 		t.Errorf("answered %v, want NO_CONSENT", res.Msg)
 	}
-	if asked {
+	if request {
 		t.Error("a model was asked for a plugin without consent")
 	}
 }
@@ -497,10 +497,10 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 
 // A question nothing can answer is an invalid argument, not an error.
 func TestAQuestionNothingCanAnswerIsAnInvalidArgument(t *testing.T) {
-	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+	target := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
 		return "", fmt.Errorf("%w: no message", port.ErrInvalidQuestion)
 	}))
-	_, err := newHostClient(t, held, "token-a").Complete(t.Context(), newHostQuestion())
+	_, err := newHostClient(t, target, "token-a").Complete(t.Context(), newHostQuestion())
 	if got := readCode(t, err); got != connect.CodeInvalidArgument {
 		t.Errorf("code = %v, want invalid argument", got)
 	}

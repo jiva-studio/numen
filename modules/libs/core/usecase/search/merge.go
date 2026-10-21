@@ -25,18 +25,18 @@ const rankConstant = 60
 // answer.
 func merge(rankings ...[]domain.Passage) []domain.Passage {
 	score := map[domain.ChunkID]float64{}
-	seen := map[domain.ChunkID]domain.Passage{}
+	observed := map[domain.ChunkID]domain.Passage{}
 	for _, ranking := range rankings {
 		for i, p := range ranking {
 			score[p.ChunkID] += 1 / float64(rankConstant+i+1)
-			if _, held := seen[p.ChunkID]; !held {
-				seen[p.ChunkID] = p
+			if _, target := observed[p.ChunkID]; !target {
+				observed[p.ChunkID] = p
 			}
 		}
 	}
 
-	fused := make([]domain.Passage, 0, len(seen))
-	for _, p := range seen {
+	fused := make([]domain.Passage, 0, len(observed))
+	for _, p := range observed {
 		fused = append(fused, p)
 	}
 	slices.SortFunc(fused, func(a, b domain.Passage) int {
@@ -67,23 +67,23 @@ type passageID struct {
 func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
 	sections := map[string]domain.Passage{}
 	for _, p := range named {
-		if _, held := sections[p.Source]; !held {
+		if _, target := sections[p.Source]; !target {
 			sections[p.Source] = p
 		}
 	}
 
 	out := make([]domain.Passage, 0, min(limit, len(fused)))
-	taken := map[string]int{}
+	acquired := map[string]int{}
 	opened := map[string]bool{}
-	held := map[passageID]bool{}
+	targetVal := map[passageID]bool{}
 
 	keep := func(p domain.Passage) bool {
 		at := passageID{p.Source, p.Start, p.Length}
-		if held[at] || taken[p.Source] >= each {
+		if targetVal[at] || acquired[p.Source] >= each {
 			return true
 		}
-		held[at] = true
-		taken[p.Source]++
+		targetVal[at] = true
+		acquired[p.Source]++
 		out = append(out, p)
 		return len(out) < limit
 	}

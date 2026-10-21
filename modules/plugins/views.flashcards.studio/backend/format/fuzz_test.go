@@ -49,7 +49,7 @@ func FuzzWhole(f *testing.F) {
 			"empty":   {},
 		}
 
-		out, given := format.Whole(body, stencils, createIDs())
+		out, provided := format.Whole(body, stencils, createIDs())
 		was := format.ReadDeck(domain.Note{Body: body})
 		now := format.ReadDeck(domain.Note{Body: out})
 		if len(now.Cards) != len(was.Cards) {
@@ -62,7 +62,7 @@ func FuzzWhole(f *testing.F) {
 					i, card.Mark, out)
 			}
 		}
-		for _, one := range given {
+		for _, one := range provided {
 			if one.Card < 0 || one.Card >= len(now.Cards) {
 				t.Fatalf("a mark was given to the card at %d, of %d cards",
 					one.Card, len(now.Cards))

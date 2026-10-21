@@ -16,12 +16,12 @@ import (
 // outside p.mu by any of the three.
 func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 	cache := NewMemory(MaxMemoryBytes)
-	drawn := func() ([]byte, error) { return make([]byte, 100), nil }
+	rendered := func() ([]byte, error) { return make([]byte, 100), nil }
 
-	held := make([]document.PageKey, 10)
-	for at := range held {
-		held[at] = newTestID(at)
-		cache.GetOrRender(t.Context(), held[at], drawn)
+	target := make([]document.PageKey, 10)
+	for at := range target {
+		target[at] = newTestID(at)
+		cache.GetOrRender(t.Context(), target[at], rendered)
 	}
 
 	var wg sync.WaitGroup
@@ -29,11 +29,11 @@ func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 		wg.Add(2)
 		go func(at int) {
 			defer wg.Done()
-			cache.GetOrRender(t.Context(), newTestID(1000+at), drawn)
+			cache.GetOrRender(t.Context(), newTestID(1000+at), rendered)
 		}(at)
 		go func(at int) {
 			defer wg.Done()
-			key := held[at%len(held)]
+			key := target[at%len(target)]
 			cache.Has(key)
 			cache.Remove(key)
 		}(at)

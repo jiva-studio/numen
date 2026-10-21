@@ -51,7 +51,7 @@ func newSettler(answers ...bool) *settler {
 
 func (s *settler) settle(context.Context) bool {
 	s.mu.Lock()
-	held := s.until
+	target := s.until
 	answer := true
 	if s.asked < len(s.answers) {
 		answer = s.answers[s.asked]
@@ -63,8 +63,8 @@ func (s *settler) settle(context.Context) bool {
 	case s.begun <- struct{}{}:
 	default:
 	}
-	if held != nil {
-		<-held
+	if target != nil {
+		<-target
 	}
 	return answer
 }
@@ -206,13 +206,13 @@ func TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain(t *testing.T) {
 	g := &vaultFlush{flush: vault.settle}
 
 	person := make(chan struct{})
-	answered := func(context.Context) bool {
+	reply := func(context.Context) bool {
 		<-person
 		return true
 	}
 	again := make(chan struct{}, 1)
 
-	if closeWindow(t.Context(), g, makeScreen().sight(), answered, func() { again <- struct{}{} }) {
+	if closeWindow(t.Context(), g, makeScreen().sight(), reply, func() { again <- struct{}{} }) {
 		t.Fatal("a question standing let the window go")
 	}
 	select {
@@ -266,14 +266,14 @@ func TestWindowWithFlushedVaultIsDestroyed(t *testing.T) {
 // TestWindowIsHiddenBeforeFlushBegins. The window goes from the
 // screen when the close is asked for, and everything owed lands behind it.
 func TestWindowIsHiddenBeforeFlushBegins(t *testing.T) {
-	seen := makeScreen()
+	observed := makeScreen()
 	begun := make(chan []string, 1)
 	g := &vaultFlush{flush: func(context.Context) bool {
-		begun <- seen.was()
+		begun <- observed.was()
 		return true
 	}}
 
-	if !closeWindow(t.Context(), g, seen.sight(), func(context.Context) bool {
+	if !closeWindow(t.Context(), g, observed.sight(), func(context.Context) bool {
 		t.Error("a settled vault was waited on for an answer")
 		return false
 	}, func() { t.Error("a settled vault asked for the close again") }) {
@@ -288,7 +288,7 @@ func TestWindowIsHiddenBeforeFlushBegins(t *testing.T) {
 	default:
 		t.Fatal("the vault was never settled")
 	}
-	if was := seen.was(); !slices.Equal(was, []string{"hide"}) {
+	if was := observed.was(); !slices.Equal(was, []string{"hide"}) {
 		t.Errorf("the window that went was %v", was)
 	}
 }
@@ -297,11 +297,11 @@ func TestWindowIsHiddenBeforeFlushBegins(t *testing.T) {
 // question standing is a window on the screen the person answers on, and an
 // application that has not gone.
 func TestQuestionRestoresWindowAndBlocksQuit(t *testing.T) {
-	seen := makeScreen()
+	observed := makeScreen()
 	g := &vaultFlush{flush: newSettler(false).settle}
 
 	quit := make(chan struct{}, 1)
-	if requestQuit(g, seen.sight(), func() { quit <- struct{}{} }) {
+	if requestQuit(g, observed.sight(), func() { quit <- struct{}{} }) {
 		t.Fatal("the quit went before the vault settled")
 	}
 
@@ -310,7 +310,7 @@ func TestQuestionRestoresWindowAndBlocksQuit(t *testing.T) {
 		t.Fatal("a question standing quit the application")
 	case <-time.After(300 * time.Millisecond):
 	}
-	if was := seen.was(); !slices.Equal(was, []string{"hide", "show"}) {
+	if was := observed.was(); !slices.Equal(was, []string{"hide", "show"}) {
 		t.Errorf("the window a question was asked in was %v", was)
 	}
 }
@@ -376,9 +376,9 @@ func TestHandleWindowClosingSecondaryWindowClosesWithoutFlushing(t *testing.T) {
 
 	settler := newSettler(true)
 	g := &vaultFlush{flush: settler.settle}
-	seen := makeScreen()
+	observed := makeScreen()
 
-	closed := handleWindowClosing(t.Context(), tracker, g, seen.sight(), func(context.Context) bool {
+	closed := handleWindowClosing(t.Context(), tracker, g, observed.sight(), func(context.Context) bool {
 		t.Error("secondary window close should not wait for flush answers")
 		return false
 	}, func() {
@@ -396,7 +396,7 @@ func TestHandleWindowClosingSecondaryWindowClosesWithoutFlushing(t *testing.T) {
 	}
 
 	// Now close the last remaining window
-	lastClosed := handleWindowClosing(t.Context(), tracker, g, seen.sight(), func(context.Context) bool {
+	lastClosed := handleWindowClosing(t.Context(), tracker, g, observed.sight(), func(context.Context) bool {
 		return false
 	}, func() {})
 

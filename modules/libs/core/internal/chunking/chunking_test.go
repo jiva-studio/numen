@@ -198,16 +198,16 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			sizes := Sizes{Small: 50, Limit: test.limit}
 			out := Cut(test.text, nil, sizes, Legibility{})
-			seen := 0
+			observed := 0
 			for _, large := range out {
 				for _, small := range large.Small {
 					if n := utf8.RuneCountInString(small.ExtractText(test.text)); n > test.limit {
 						t.Errorf("small chunk of %d characters, limit %d", n, test.limit)
 					}
-					seen++
+					observed++
 				}
 			}
-			if seen == 0 {
+			if observed == 0 {
 				t.Fatal("no small chunks produced")
 			}
 			assertCutRules(t, test.text, nil, sizes, out)
@@ -224,18 +224,18 @@ func TestCutIsPure(t *testing.T) {
 		{Title: "Third", Offset: 2*len(line(40)) + len("\nSecond\n") + 1},
 		{Title: "Second", Offset: len(line(40)) + 1},
 	}
-	given := append([]domain.PartStart(nil), parts...)
+	provided := append([]domain.PartStart(nil), parts...)
 	sizes := Sizes{Large: 12, Small: 5}
 
-	first := Cut(text, given, sizes, Legibility{})
-	second := Cut(text, given, sizes, Legibility{})
+	first := Cut(text, provided, sizes, Legibility{})
+	second := Cut(text, provided, sizes, Legibility{})
 
 	if !isSame(first, second) {
 		t.Error("two cuts of the same text disagree")
 	}
-	for i := range given {
-		if given[i] != parts[i] {
-			t.Errorf("Cut changed the parts it was given: %v, want %v", given[i], parts[i])
+	for i := range provided {
+		if provided[i] != parts[i] {
+			t.Errorf("Cut changed the parts it was given: %v, want %v", provided[i], parts[i])
 		}
 	}
 }
@@ -349,13 +349,13 @@ func countSmall(out []Chunk) int {
 }
 
 func locations(out []Chunk) []string {
-	var seen []string
+	var observed []string
 	for _, c := range out {
-		if len(seen) == 0 || seen[len(seen)-1] != c.Location {
-			seen = append(seen, c.Location)
+		if len(observed) == 0 || observed[len(observed)-1] != c.Location {
+			observed = append(observed, c.Location)
 		}
 	}
-	return seen
+	return observed
 }
 
 func equal(got, want []string) bool {

@@ -37,12 +37,12 @@ func listSources(ctx context.Context, core Core) (sourceListOutput, error) {
 	if core.Sources.GetDocumentList == nil {
 		return sourceListOutput{}, fmt.Errorf("this vault's sources are not open")
 	}
-	listed, err := core.Sources.GetDocumentList.Execute(ctx, core.getCurrentVault().Vault)
+	items, err := core.Sources.GetDocumentList.Execute(ctx, core.getCurrentVault().Vault)
 	if err != nil {
 		return sourceListOutput{}, err
 	}
-	documents := make([]Source, 0, len(listed))
-	for _, one := range listed {
+	documents := make([]Source, 0, len(items))
+	for _, one := range items {
 		documents = append(documents, Source{Path: one.Path, ShouldRead: one.IsRead})
 	}
 	return sourceListOutput{Documents: documents, Recognition: getRecognitionBlocker(core.Sources.GetRecognitionStatus)}, nil

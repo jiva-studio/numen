@@ -42,14 +42,14 @@ func TestThePagesABookIsRead(t *testing.T) {
 // A page is a number of letters, not of bytes, so the same book in two scripts
 // is the same number of pages, and a page of either begins at a letter.
 func TestAPageIsThatManyLetters(t *testing.T) {
-	written := func(letter string) *epub.Book {
+	content := func(letter string) *epub.Book {
 		t.Helper()
 		return read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
 			"OEBPS/one.xhtml": "<html><body><p>" + strings.Repeat(letter, 20_000) + "</p></body></html>",
 		}))
 	}
 
-	latin, cyrillic := written("a"), written("б")
+	latin, cyrillic := content("a"), content("б")
 	if latin.PageCount() != cyrillic.PageCount() {
 		t.Errorf("twenty thousand letters are %d pages in Latin and %d in Cyrillic",
 			latin.PageCount(), cyrillic.PageCount())

@@ -263,8 +263,8 @@ func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
 // title that leaves nothing to name it. The titles that exercise the rule are
 // the core's, in TestRenamingRefusesATitleNoNoteCanBeGiven.
 func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
-	const held = "# Old\n"
-	f := openWindow(t, nil, map[string]string{"Old.md": held})
+	const target = "# Old\n"
+	f := openWindow(t, nil, map[string]string{"Old.md": target})
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Old.md", Title: "   ",
@@ -275,7 +275,7 @@ func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNNAMEABLE {
 		t.Errorf("a title with no filename in it was answered with %v", code)
 	}
-	if now := fileAt(t, f.root, "Old.md"); now != held {
+	if now := fileAt(t, f.root, "Old.md"); now != target {
 		t.Errorf("the rejected rename wrote to the note:\n%s", now)
 	}
 }

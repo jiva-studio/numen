@@ -161,8 +161,8 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 		t.Fatal(err)
 	}
-	if left := countRows(t, db, `SELECT count(*) FROM vectors`); left != made {
-		t.Errorf("%d of %d vectors survived a change of width", left, made)
+	if remaining := countRows(t, db, `SELECT count(*) FROM vectors`); remaining != made {
+		t.Errorf("%d of %d vectors survived a change of width", remaining, made)
 	}
 
 	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
@@ -250,17 +250,17 @@ func TestAnIndexOpenedToSkipTheFlushDoesNotWaitForTheDisk(t *testing.T) {
 // The write pool holds one connection: SQLite has one writer.
 func TestTheWritePoolHoldsOneConnection(t *testing.T) {
 	db := openDB(t)
-	if held := db.write.Stats().MaxOpenConnections; held != 1 {
-		t.Errorf("the write pool holds up to %d connections, want 1", held)
+	if target := db.write.Stats().MaxOpenConnections; target != 1 {
+		t.Errorf("the write pool holds up to %d connections, want 1", target)
 	}
 }
 
 // The read pool admits a reader for every core, and at least four.
 func TestTheReadPoolAdmitsAReaderForEveryCore(t *testing.T) {
 	db := openDB(t)
-	held := db.read.Stats().MaxOpenConnections
-	if held != max(4, runtime.NumCPU()) {
-		t.Errorf("the read pool holds up to %d connections over %d cores", held, runtime.NumCPU())
+	target := db.read.Stats().MaxOpenConnections
+	if target != max(4, runtime.NumCPU()) {
+		t.Errorf("the read pool holds up to %d connections over %d cores", target, runtime.NumCPU())
 	}
 }
 
@@ -270,9 +270,9 @@ func TestFinishedReadersLeaveHalfTheCoresConnected(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	held := db.read.Stats().MaxOpenConnections
-	conns := make([]*sql.Conn, 0, held)
-	for range held {
+	target := db.read.Stats().MaxOpenConnections
+	conns := make([]*sql.Conn, 0, target)
+	for range target {
 		conn, err := db.read.Conn(ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -287,7 +287,7 @@ func TestFinishedReadersLeaveHalfTheCoresConnected(t *testing.T) {
 
 	want := max(2, runtime.NumCPU()/2)
 	if idle := db.read.Stats().Idle; idle != want {
-		t.Errorf("%d of %d readers stayed connected, want %d", idle, held, want)
+		t.Errorf("%d of %d readers stayed connected, want %d", idle, target, want)
 	}
 }
 

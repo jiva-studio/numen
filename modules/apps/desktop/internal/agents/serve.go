@@ -94,13 +94,13 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	}
 	forget := func() {}
 	if opts.IsAnnouncing {
-		gone, err := WriteDiscovery(opts.Config, opts.Root, endpoint.URL, secret)
+		removed, err := WriteDiscovery(opts.Config, opts.Root, endpoint.URL, secret)
 		if err != nil {
 			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
 			endpoint.Close(context.Background())
 			return nil, err
 		}
-		forget = gone
+		forget = removed
 	}
 
 	fmt.Fprintf(opts.Out, "agents: %s\n", endpoint.URL)

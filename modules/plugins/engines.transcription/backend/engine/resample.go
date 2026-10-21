@@ -95,12 +95,12 @@ type kernel struct {
 // buildKernel works the kernel out over its whole reach.
 func buildKernel(cutoff, reach float64) kernel {
 	step := float64(kernelSteps)
-	held := make([]float64, int(reach*step)+2)
-	for i := range held {
+	target := make([]float64, int(reach*step)+2)
+	for i := range target {
 		d := float64(i) / step
-		held[i] = getSinc(cutoff*d) * getBlackmanWindow(d/reach)
+		target[i] = getSinc(cutoff*d) * getBlackmanWindow(d/reach)
 	}
-	return kernel{held: held, step: step}
+	return kernel{held: target, step: step}
 }
 
 // getValueAt is the kernel at a distance, between the two steps it falls

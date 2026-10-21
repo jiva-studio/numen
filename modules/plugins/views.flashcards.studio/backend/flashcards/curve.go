@@ -84,7 +84,7 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 	faces := u.cardFaces.GetFaces(ctx, v, scheduled)
-	held, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -95,7 +95,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	schedules := u.schedules.getSchedules(held, asks)
+	schedules := u.schedules.getSchedules(target, asks)
 
 	mine, err := u.readScheduledFaces(ctx, v, reads, path, faces, schedules)
 	if err != nil {
@@ -110,7 +110,7 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 
-	cost, costed := review.GetCostUnder(u.schedules.by, held.Answers, under)[path]
+	cost, costed := review.GetCostUnder(u.schedules.by, target.Answers, under)[path]
 	if !costed {
 		cost = review.DefaultCost
 	}
@@ -120,7 +120,7 @@ func (u ProjectCurve) Execute(
 	// already partway through.
 	run := review.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
-		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), held.Answers, under,
+		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, under,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
 	out, err := run.Curve(ctx, now, p, at, unbegunCount, u.getScheduler, u.computePlaces)
@@ -158,21 +158,21 @@ func (u ProjectCurve) readScheduledFaces(
 		under: make(map[review.CardFaceID]string),
 	}
 	for _, one := range faces {
-		mine, asked := out.decks[one.Deck]
-		if !asked {
-			held, err := reads.GetForDeck(ctx, v, one.Deck)
+		mine, request := out.decks[one.Deck]
+		if !request {
+			target, err := reads.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return scheduledFaces{}, err
 			}
-			mine = held.Path == path
+			mine = target.Path == path
 			out.decks[one.Deck] = mine
 		}
 		if !mine {
 			continue
 		}
 		out.under[one.ID] = path
-		s, answered := schedules[one.ID]
-		if !answered {
+		s, reply := schedules[one.ID]
+		if !reply {
 			out.unseen++
 			continue
 		}
@@ -226,8 +226,8 @@ func (u ProjectCurve) countPointingDecks(
 ) (int, error) {
 	out := 0
 	for _, deck := range decks {
-		points, held := asked[deck]
-		if !held {
+		points, target := asked[deck]
+		if !target {
 			p, err := reads.GetForDeck(ctx, v, deck)
 			if err != nil {
 				return 0, err

@@ -74,21 +74,21 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	}
 
 	client := newThemeClient(t, cfg)
-	chosen, err := client.WriteAppearance(t.Context(),
+	selected, err := client.WriteAppearance(t.Context(),
 		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := chosen.Msg.GetError(); reason != "" {
+	if reason := selected.Msg.GetError(); reason != "" {
 		t.Fatalf("failed: %s", reason)
 	}
 
-	said := container.DefaultSettings()
-	if err := settings.OpenAt(file, &said); err != nil {
+	response := container.DefaultSettings()
+	if err := settings.OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
-	if said.Appearance.Theme != "preset:nord" || said.Appearance.Mode != settings.ModeDark {
-		t.Errorf("the file says %+v", said.Appearance)
+	if response.Appearance.Theme != "preset:nord" || response.Appearance.Mode != settings.ModeDark {
+		t.Errorf("the file says %+v", response.Appearance)
 	}
 	// The key sits in the half the settings are not on, which nothing reads
 	// through a provider. What it is still doing there is what the file says.
@@ -115,25 +115,25 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	client := newThemeClient(t, cfg)
 
-	drawn := 1.5
-	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+	rendered := 1.5
+	selected, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
-		InterfaceScale: &drawn,
+		InterfaceScale: &rendered,
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := chosen.Msg.GetError(); reason != "" {
+	if reason := selected.Msg.GetError(); reason != "" {
 		t.Fatalf("failed: %s", reason)
 	}
 
-	said := container.DefaultSettings()
-	if err := settings.OpenAt(file, &said); err != nil {
+	response := container.DefaultSettings()
+	if err := settings.OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
-	if said.Appearance.InterfaceScale != 1.5 || said.Appearance.TextScale != 1 {
-		t.Errorf("the file says %+v", said.Appearance)
+	if response.Appearance.InterfaceScale != 1.5 || response.Appearance.TextScale != 1 {
+		t.Errorf("the file says %+v", response.Appearance)
 	}
 
 	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
@@ -156,7 +156,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 
 	client := newThemeClient(t, cfg)
 	set := 4.0
-	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+	selected, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:      settings.DefaultTheme,
 		Mode:      v1.Mode_MODE_LIGHT,
 		TextScale: &set,
@@ -164,16 +164,16 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := chosen.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
+	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
 		t.Errorf("failed with %q", reason)
 	}
 
-	held, err := os.ReadFile(file)
+	target, err := os.ReadFile(file)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(held) != `{"appearance":{"theme":"preset:nord"}}` {
-		t.Errorf("the file now reads %s", held)
+	if string(target) != `{"appearance":{"theme":"preset:nord"}}` {
+		t.Errorf("the file now reads %s", target)
 	}
 }
 
@@ -192,11 +192,11 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 		t.Errorf("drawn at %v", answer.Msg.GetInterfaceScale())
 	}
 
-	drawn := 1.5
+	rendered := 1.5
 	if _, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
-		InterfaceScale: &drawn,
+		InterfaceScale: &rendered,
 	})); err != nil {
 		t.Fatal(err)
 	}

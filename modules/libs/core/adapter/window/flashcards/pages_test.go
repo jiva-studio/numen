@@ -116,8 +116,8 @@ func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
 // request, and it is the whole of what this window widens: no script, no form submitted anywhere, and
 // nothing fetched off the machine.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := csp.Sources{Images: []string{"data:"}}.Policy()
-	if policy != held {
+	target := csp.Sources{Images: []string{"data:"}}.Policy()
+	if policy != target {
 		t.Errorf("the policy reads %q", policy)
 	}
 
@@ -127,8 +127,8 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 		r.URL.Path = path
 		out := httptest.NewRecorder()
 		handler.ServeHTTP(out, r)
-		if said := out.Header().Get("Content-Security-Policy"); said != held {
-			t.Errorf("%q is held to %q", path, said)
+		if response := out.Header().Get("Content-Security-Policy"); response != target {
+			t.Errorf("%q is held to %q", path, response)
 		}
 	}
 }

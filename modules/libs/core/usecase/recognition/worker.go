@@ -249,12 +249,12 @@ func (r *Worker) proofreadRecognition(
 	onBegan func(ProofreadResult),
 ) (ProofreadResult, error) {
 	proofreading := r.with.Proofreading
-	right, held, err := CreateProofread(proofreading, r.with.Readers, r.with.Derived)
+	right, target, err := CreateProofread(proofreading, r.with.Readers, r.with.Derived)
 	if err != nil {
 		r.reportTask(run.Task{ID: run.GetProofreadID(path), Title: "Proofreading a recognition", About: path, Error: run.GetProofreadError(err)})
 		return ProofreadResult{Path: path}, err
 	}
-	if !held {
+	if !target {
 		return ProofreadResult{Path: path, IsNone: true}, nil
 	}
 

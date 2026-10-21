@@ -56,8 +56,8 @@ func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the save is answered as findable and search does not hold it")
 	}
-	if held := onDisk(t, f.root, "Note.md"); !strings.Contains(held, "what the person typed") {
-		t.Errorf("the note on disk is %q", held)
+	if target := onDisk(t, f.root, "Note.md"); !strings.Contains(target, "what the person typed") {
+		t.Errorf("the note on disk is %q", target)
 	}
 }
 

@@ -178,8 +178,8 @@ func (u Presets) OpenReads() *PresetReads {
 
 // GetForDeck is the preset the deck at path is scheduled by.
 func (r *PresetReads) GetForDeck(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
-	if held, ok := r.scheduling[deck]; ok {
-		return held, nil
+	if target, ok := r.scheduling[deck]; ok {
+		return target, nil
 	}
 	out, err := r.getSchedulingPreset(ctx, v, deck)
 	if err != nil {
@@ -269,8 +269,8 @@ func (r *PresetReads) readRolelessProblems(ctx context.Context, v domain.Vault, 
 
 // read is the preset at path, opened once however many decks name it.
 func (r *PresetReads) read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
-	if held, ok := r.held[path]; ok {
-		return held, nil
+	if target, ok := r.held[path]; ok {
+		return target, nil
 	}
 	out, err := r.Read(ctx, v, path)
 	if err != nil {
@@ -306,9 +306,9 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 	// The vault says what is at a path without opening it: a note, a file it
 	// leaves alone, or nothing.
 	ref, err := reader.GetFingerprint(ctx, path)
-	held := err == nil
+	target := err == nil
 	switch {
-	case held:
+	case target:
 		out.Fingerprint = ref
 		if ref.Kind != domain.KindNote {
 			out.Outcome = note.NotANote
@@ -330,7 +330,7 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 	case errors.Is(err, fs.ErrNotExist):
 		out.Outcome = note.Missing
 		return out, nil
-	case !held && err == nil:
+	case !target && err == nil:
 		out.Outcome = note.NotANote
 		return out, nil
 	case err != nil:

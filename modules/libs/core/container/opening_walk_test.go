@@ -55,12 +55,12 @@ func TestRunningAVaultThatCannotBeWatchedReturns(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
 
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		open.Run(t.Context())
-		close(done)
+		close(isDone)
 	}()
-	receiveFrom(t, done, "running an unwatched vault went on")
+	receiveFrom(t, isDone, "running an unwatched vault went on")
 }
 
 // The walk an opener makes rebuilds the index exactly when the opener says so.
@@ -87,19 +87,19 @@ func TestTheOpenersHandlerHearsHowFollowingTheVaultWent(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	watcher := makeWatcher()
 	opening := cfg.VaultOpenerWith(db, cfg.VaultReaders(), watcher)
-	heard := make(chan error, 4)
-	opening.ErrorHandler = func(err error) { heard <- err }
-	told := make(chan container.VaultChanges, 4)
-	opening.Told = func(m container.VaultChanges) { told <- m }
+	received := make(chan error, 4)
+	opening.ErrorHandler = func(err error) { received <- err }
+	notified := make(chan container.VaultChanges, 4)
+	opening.Told = func(m container.VaultChanges) { notified <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())
 
 	watcher.lost <- struct{}{}
-	if err := receiveFrom(t, heard, "the handler heard nothing"); err != nil {
+	if err := receiveFrom(t, received, "the handler heard nothing"); err != nil {
 		t.Errorf("the handler heard %v, where the vault was read again without trouble", err)
 	}
-	receiveFrom(t, told, "the vault was not read again")
+	receiveFrom(t, notified, "the vault was not read again")
 }
 
 // An index path below a plain file has no folder to be kept in.

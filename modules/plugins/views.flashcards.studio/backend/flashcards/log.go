@@ -134,11 +134,11 @@ func (u Log) ReadFile(
 
 // readLogFiles returns the files of the log, sorted by name.
 func readLogFiles(ctx context.Context, store ports.DerivedStore) ([]ports.Entry, error) {
-	held, err := store.ListReviewLogs(ctx)
+	target, err := store.ListReviewLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	out := slices.Clone(held)
+	out := slices.Clone(target)
 	slices.SortFunc(out, func(a, b ports.Entry) int {
 		return strings.Compare(a.Name.Hash, b.Name.Hash)
 	})

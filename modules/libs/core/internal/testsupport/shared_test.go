@@ -22,7 +22,7 @@ const shared = "numen/v1/shared.proto"
 // buf's STANDARD set has no rule for either, and neither has any other category
 // it carries, so the assertion stands here beside the other walk of the schema.
 func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
-	var held protoreflect.FileDescriptor
+	var target protoreflect.FileDescriptor
 	files := 0
 	protoregistry.GlobalFiles.RangeFiles(func(file protoreflect.FileDescriptor) bool {
 		if file.Package() != "numen.v1" {
@@ -30,7 +30,7 @@ func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
 		}
 		files++
 		if file.Path() == shared {
-			held = file
+			target = file
 		}
 		return true
 	})
@@ -41,11 +41,11 @@ func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
 	if files < 10 {
 		t.Fatalf("%d files of the schema read: the walk is not reading it", files)
 	}
-	if held == nil {
+	if target == nil {
 		t.Fatalf("%s is not in the schema: the walk is reading something else", shared)
 	}
 
-	for _, why := range describeOwnership(held) {
+	for _, why := range describeOwnership(target) {
 		t.Errorf("%s %s, and the file three services share owns no subject", shared, why)
 	}
 }

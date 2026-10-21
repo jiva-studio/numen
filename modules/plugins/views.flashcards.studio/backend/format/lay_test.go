@@ -100,15 +100,15 @@ func corpusOf(t *testing.T) table {
 		t.Fatalf("the table holds %d faces and declares %d, %d of which the slots change",
 			len(read.Faces), read.Count, read.Changed)
 	}
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 	for _, one := range read.Faces {
 		if one.Name == "" || one.Construct == "" {
 			t.Fatalf("a face of the table is called %q and pins %q", one.Name, one.Construct)
 		}
-		if seen[one.Name] {
+		if observed[one.Name] {
 			t.Fatalf("two faces of the table are called %q", one.Name)
 		}
-		seen[one.Name] = true
+		observed[one.Name] = true
 	}
 	return read
 }

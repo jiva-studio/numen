@@ -216,11 +216,11 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	read, held, err := sources.GetSourceText(ctx, first.ID, "library/scan.pdf")
+	read, target, err := sources.GetSourceText(ctx, first.ID, "library/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !held {
+	if !target {
 		t.Fatal("the source saved is not held")
 	}
 	if read.Size != 4321 || !read.ModTime.Equal(thisYear) || read.Hash != "hash-scan" || read.Producer != "ocr" {
@@ -240,11 +240,11 @@ func TestAPathWithNoSourceIsNotHeld(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, second, "library/a.epub", thisYear, "violins tune")
 
-	read, held, err := db.Sources().GetSourceText(t.Context(), first.ID, "library/a.epub")
+	read, target, err := db.Sources().GetSourceText(t.Context(), first.ID, "library/a.epub")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held {
+	if target {
 		t.Errorf("the first vault holds %+v, which only the second vault was given", read)
 	}
 }
@@ -274,8 +274,8 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 	if err := db.Sources().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
-	if left := getUnembeddedPassages(t, db, first); len(left) != 0 {
-		t.Errorf("%d chunks still owe a vector", len(left))
+	if remaining := getUnembeddedPassages(t, db, first); len(remaining) != 0 {
+		t.Errorf("%d chunks still owe a vector", len(remaining))
 	}
 
 	stranger := port.Vector{ChunkID: "x", Hash: []byte{1}, Model: benchModel, Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}

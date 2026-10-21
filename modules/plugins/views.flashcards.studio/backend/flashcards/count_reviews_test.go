@@ -84,16 +84,16 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 
 	// The run is left at its current position and its content is replaced with a line
 	// nothing can read. A count that read it again would lose the day it holds.
-	held := getRunFiles(t, s)
-	if len(held) != 1 {
-		t.Fatalf("the vault holds %v", held)
+	target := getRunFiles(t, s)
+	if len(target) != 1 {
+		t.Fatalf("the vault holds %v", target)
 	}
-	torn := filepath.Join(s.vault.Path, ".numen", "flashcards", held[0])
-	was, err := os.ReadFile(torn)
+	divided := filepath.Join(s.vault.Path, ".numen", "flashcards", target[0])
+	was, err := os.ReadFile(divided)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(torn, spaces(len(was)), 0o644); err != nil {
+	if err := os.WriteFile(divided, spaces(len(was)), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -313,7 +313,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, held := got.Days["1999-01-01"]; held {
+	if _, target := got.Days["1999-01-01"]; target {
 		t.Errorf("a cache of another shape was believed: %v", got.Days)
 	}
 	if got.Answered != 1 {
@@ -352,10 +352,10 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kept := s.counted
-	kept.Cache = nil
+	retained := s.counted
+	retained.Cache = nil
 
-	got, err := kept.Execute(t.Context(), s.vault)
+	got, err := retained.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

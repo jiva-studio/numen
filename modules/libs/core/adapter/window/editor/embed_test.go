@@ -167,13 +167,13 @@ func (r counts) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error
 
 // getVectorProgress is how many of the vault's chunks can carry a vector and how many
 // carry one from the model in use.
-func getVectorProgress(t *testing.T, f *behind, model port.Embedder) (held, embedded int64) {
+func getVectorProgress(t *testing.T, f *behind, model port.Embedder) (target, embedded int64) {
 	t.Helper()
-	held, embedded, err := f.index.Progress().GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
+	target, embedded, err := f.index.Progress().GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
-	return held, embedded
+	return target, embedded
 }
 
 // TestANoteSavedGetsItsVectorsBack. A save cuts the note again, and its chunks
@@ -188,8 +188,8 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	}, watcher, readers, model, 20*time.Millisecond)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
-		held, embedded := getVectorProgress(t, f, model)
-		return held > 0 && held == embedded
+		target, embedded := getVectorProgress(t, f, model)
+		return target > 0 && target == embedded
 	})
 	walks := readers.walks.Load()
 
@@ -197,8 +197,8 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "the note stayed out of search by meaning", func() bool {
-		held, embedded := getVectorProgress(t, f, model)
-		return held > 0 && held == embedded && model.saw(after[0])
+		targetVal, embedded := getVectorProgress(t, f, model)
+		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
 	})
 	if got := readers.walks.Load(); got != walks {
 		t.Errorf("the vault was walked %d times over to embed one note", got-walks)
@@ -220,8 +220,8 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	}, watcher, readers, model, time.Second)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
-		held, embedded := getVectorProgress(t, f, model)
-		return held > 0 && held == embedded
+		target, embedded := getVectorProgress(t, f, model)
+		return target > 0 && target == embedded
 	})
 	first := model.times()
 
@@ -233,8 +233,8 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	}
 
 	waitFor(t, "the saves were never embedded", func() bool {
-		held, embedded := getVectorProgress(t, f, model)
-		return held > 0 && held == embedded && model.saw(after[0])
+		targetVal, embedded := getVectorProgress(t, f, model)
+		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
 	})
 
 	switch passes := model.times() - first; {
@@ -261,9 +261,9 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	if why := f.api.state.WatchError.Why(); why == "" {
 		t.Fatal("a vault whose watch never started is shown as followed")
 	}
-	held, embedded := getVectorProgress(t, f, model)
-	if held == 0 || embedded > 0 {
-		t.Fatalf("%d of %d chunks carry a vector with nothing saved yet", embedded, held)
+	target, embedded := getVectorProgress(t, f, model)
+	if target == 0 || embedded > 0 {
+		t.Fatalf("%d of %d chunks carry a vector with nothing saved yet", embedded, target)
 	}
 
 	// Longer than what is on disk, so every chunk's place is still inside the
@@ -271,8 +271,8 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	save(t, f, "Note.md", prose(after, 240))
 
 	waitFor(t, "what was saved stayed out of search by meaning", func() bool {
-		held, embedded := getVectorProgress(t, f, model)
-		return held > 0 && held == embedded && model.saw(after[0])
+		targetVal, embedded := getVectorProgress(t, f, model)
+		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
 	})
 }
 
@@ -294,7 +294,7 @@ func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "what was written stayed out of search by meaning", func() bool {
-		held, embedded := getVectorProgress(t, f, model)
-		return held > 0 && held == embedded && model.saw(after[0])
+		target, embedded := getVectorProgress(t, f, model)
+		return target > 0 && target == embedded && model.saw(after[0])
 	})
 }

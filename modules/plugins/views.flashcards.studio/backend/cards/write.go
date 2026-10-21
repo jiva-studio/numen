@@ -69,7 +69,7 @@ func (u Write) Deck(
 	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
 		return WriteResult{}, err
 	}
-	whole, given, err := u.createWholeBody(ctx, v, path, body)
+	whole, provided, err := u.createWholeBody(ctx, v, path, body)
 	if err != nil {
 		return WriteResult{}, err
 	}
@@ -79,7 +79,7 @@ func (u Write) Deck(
 	}
 	// The file is on disk, so what it now stands at comes back beside a
 	// levelling that failed, and the caller can tell the two apart.
-	return WriteResult{Fingerprint: at, Given: given}, err
+	return WriteResult{Fingerprint: at, Given: provided}, err
 }
 
 // createWholeBody returns the body with every card made whole, and the marks that
@@ -93,8 +93,8 @@ func (u Write) createWholeBody(
 	if err != nil {
 		return "", nil, err
 	}
-	whole, given := format.Whole(body, by, cardid.New)
-	return whole, given, nil
+	whole, provided := format.Whole(body, by, cardid.New)
+	return whole, provided, nil
 }
 
 // Stencil puts the faces and the fields into the stencil at path. A stencil is

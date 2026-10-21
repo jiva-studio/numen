@@ -209,8 +209,8 @@ func openingWith(
 		api.state.Indexing.Model.Store(embedder.GetModel().String())
 		api.state.Indexing.Progress = db.Progress()
 	}
-	line, done := api.state.ChangeEvents.subscribe()
-	t.Cleanup(done)
+	line, isDone := api.state.ChangeEvents.subscribe()
+	t.Cleanup(isDone)
 
 	made := newWatched(cfg, db, readers, watcher)
 	worker := newIndexWorker(made, api.state, embedder, still, io.Discard)
@@ -458,8 +458,8 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 // vault arriving in the window does.
 func modifySession(api *Services, change func(*vaultSession)) {
 	on := vaultSession{}
-	if held := api.state.session.Load(); held != nil {
-		on = *held
+	if target := api.state.session.Load(); target != nil {
+		on = *target
 	}
 	change(&on)
 	api.state.setSession(&on)
@@ -487,11 +487,11 @@ func (s *saying) getBooks(t *testing.T) []int {
 
 	var out []int
 	for _, line := range strings.Split(s.said.String(), "\n") {
-		_, said, found := strings.Cut(line, ": ")
+		_, response, found := strings.Cut(line, ": ")
 		if !found {
 			continue
 		}
-		count, _, found := strings.Cut(said, " books,")
+		count, _, found := strings.Cut(response, " books,")
 		if !found {
 			continue
 		}
@@ -510,12 +510,12 @@ func (s *saying) getBooks(t *testing.T) []int {
 // thousands is taken apart afresh for one file dropped into it.
 func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	const (
-		held    = "library/A Book.epub"
+		target    = "library/A Book.epub"
 		dropped = "library/Another Book.epub"
 	)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	testsupport.WriteBook(t, v.Path, held)
+	testsupport.WriteBook(t, v.Path, target)
 
 	cfg := container.Config{
 		IndexPath:          filepath.Join(t.TempDir(), "index.db"),

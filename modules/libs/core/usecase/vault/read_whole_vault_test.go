@@ -63,18 +63,18 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	if _, err := making.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	seen := map[string]int{}
+	observed := map[string]int{}
 	for i, what := range order {
-		if _, held := seen[what]; !held {
-			seen[what] = i
+		if _, target := observed[what]; !target {
+			observed[what] = i
 		}
 	}
 	for _, what := range []string{"notes", "books", "vectors"} {
-		if _, held := seen[what]; !held {
+		if _, targetVal := observed[what]; !targetVal {
 			t.Fatalf("the %s pass did not run: %v", what, order)
 		}
 	}
-	if seen["notes"] > seen["books"] || seen["books"] > seen["vectors"] {
+	if observed["notes"] > observed["books"] || observed["books"] > observed["vectors"] {
 		t.Errorf("the passes ran in the order %v", order)
 	}
 }

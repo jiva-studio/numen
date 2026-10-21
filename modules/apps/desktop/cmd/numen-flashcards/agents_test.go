@@ -52,7 +52,7 @@ func makeWindow(
 	}
 	t.Cleanup(func() { db.Close() })
 
-	held := []domain.Vault{
+	target := []domain.Vault{
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
@@ -61,7 +61,7 @@ func makeWindow(
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
-	return cfg, db, vaults, &window.API{}, held
+	return cfg, db, vaults, &window.API{}, target
 }
 
 // vaultOf is a folder holding one stencil and one deck, as a vault.
@@ -307,9 +307,9 @@ func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
 	for stream.Receive() {
 	}
 
-	asked := core.GetAsked()
+	request := core.GetAsked()
 	want := map[string]string{"focus": "decks/Words.md", "mark": "3f4g5h6j7k", "face": "Back"}
-	if !reflect.DeepEqual(asked, want) {
-		t.Errorf("the tools are told the person is on %v", asked)
+	if !reflect.DeepEqual(request, want) {
+		t.Errorf("the tools are told the person is on %v", request)
 	}
 }

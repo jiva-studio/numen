@@ -420,14 +420,14 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 
 	queries := db.Queries()
 
-	known, err := queries.GetFingerprints(ctx, first.ID)
+	recognized, err := queries.GetFingerprints(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 {
-		t.Errorf("the first vault knows %d files, want 1: %v", len(known), known)
+	if len(recognized) != 1 {
+		t.Errorf("the first vault knows %d files, want 1: %v", len(recognized), recognized)
 	}
-	if _, leaked := known["extra.md"]; leaked {
+	if _, leaked := recognized["extra.md"]; leaked {
 		t.Error("the first vault knows a file that belongs to the second")
 	}
 
@@ -552,8 +552,8 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gone := "notes/Entropy.md"
-	res, err := scanner(vanishingReaders{VaultReaders: readers, gone: gone}, db).Execute(ctx, v)
+	removed := "notes/Entropy.md"
+	res, err := scanner(vanishingReaders{VaultReaders: readers, gone: removed}, db).Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,11 +561,11 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Errorf("removed %d notes, want 0", res.Removed)
 	}
 
-	known, err := db.Queries().GetFingerprints(ctx, v.ID)
+	recognized, err := db.Queries().GetFingerprints(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, kept := known[gone]; !kept {
+	if _, retained := recognized[removed]; !retained {
 		t.Error("a note that was briefly absent was dropped from the index")
 	}
 	if matches := searchNotes(t, db, v, "uncertainty"); len(matches) != 1 {
@@ -609,15 +609,15 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 
 	// Asked of the order the notes reach the index in: what the index holds
 	// part-way through is whole groups, which says nothing about order.
-	written := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Vaults(), written, db.Queries(), db.Maintenance())
+	content := &groupedWrites{}
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.Queries(), db.Maintenance())
 	scan.Walks = db.Walks()
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
 
-	if len(written.groups) == 0 || written.groups[0][0] != "edge/unicode.md" {
-		t.Errorf("first note indexed was %v, want edge/unicode.md", written.groups)
+	if len(content.groups) == 0 || content.groups[0][0] != "edge/unicode.md" {
+		t.Errorf("first note indexed was %v, want edge/unicode.md", content.groups)
 	}
 }
 
@@ -644,12 +644,12 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
-	known, err := db.Queries().GetFingerprints(t.Context(), v.ID)
+	recognized, err := db.Queries().GetFingerprints(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 500 {
-		t.Errorf("a cancelled scan left %d notes indexed, want the 500 it committed", len(known))
+	if len(recognized) != 500 {
+		t.Errorf("a cancelled scan left %d notes indexed, want the 500 it committed", len(recognized))
 	}
 }
 

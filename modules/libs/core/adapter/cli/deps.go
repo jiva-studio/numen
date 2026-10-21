@@ -89,11 +89,11 @@ type Vaults struct {
 // find resolves what the person typed against the list and, where it resolves
 // to nothing, says what to do about it. Talking to a person belongs here.
 func (v Vaults) find(nameOrPath string) (domain.Vault, error) {
-	held, err := vault.NewFind(v.Registry).Execute(nameOrPath)
+	target, err := vault.NewFind(v.Registry).Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
 	}
-	return held, nil
+	return target, nil
 }
 
 // VaultRows is what the index remembers about vaults, open.

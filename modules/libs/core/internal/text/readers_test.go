@@ -21,10 +21,10 @@ import (
 // stamped with the same unmatched recipe, and selected again — a library
 // re-extracted for ever, with nothing said anywhere.
 func TestEveryReaderDeclaredIsOneReadersAnswersWith(t *testing.T) {
-	answered := text.Readers()
+	reply := text.Readers()
 	for name, value := range findDeclaredReaders(t) {
-		if !slices.Contains(answered, value) {
-			t.Errorf("%s is %q, and Readers() answers with %q", name, value, answered)
+		if !slices.Contains(reply, value) {
+			t.Errorf("%s is %q, and Readers() answers with %q", name, value, reply)
 		}
 	}
 }

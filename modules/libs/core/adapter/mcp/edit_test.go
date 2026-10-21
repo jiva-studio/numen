@@ -50,12 +50,12 @@ func TestEditingRefusesASpanThatStandsTwice(t *testing.T) {
 	})
 	s := newSessionOver(t, core)
 
-	said := getToolError(t, s, "note_edit", map[string]any{
+	response := getToolError(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "foe advances", "text": "foe retreats",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
-	if !strings.Contains(said, "2 places") {
-		t.Errorf("the rejection reads: %s", said)
+	if !strings.Contains(response, "2 places") {
+		t.Errorf("the rejection reads: %s", response)
 	}
 }
 
@@ -67,12 +67,12 @@ func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
 	})
 	s := newSessionOver(t, core)
 
-	said := getToolError(t, s, "note_edit", map[string]any{
+	response := getToolError(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "the wrath of the retreating foe", "text": "nothing",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
-	if !strings.Contains(said, "advancing") {
-		t.Errorf("the rejection does not say what stands there: %s", said)
+	if !strings.Contains(response, "advancing") {
+		t.Errorf("the rejection does not say what stands there: %s", response)
 	}
 }
 
@@ -175,9 +175,9 @@ func TestARefusedEditIsStillEnded(t *testing.T) {
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	for _, said := range looking.drawn {
-		if !said.IsDone {
-			t.Fatalf("a change was begun and not ended: %+v", said)
+	for _, response := range looking.drawn {
+		if !response.IsDone {
+			t.Fatalf("a change was begun and not ended: %+v", response)
 		}
 	}
 }
@@ -250,9 +250,9 @@ func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
 	for _, w := range writes {
 		t.Run(w.tool, func(t *testing.T) {
 			w.args["fingerprint"] = ""
-			said := getToolError(t, session, w.tool, w.args)
-			if !strings.Contains(said, "note_read") {
-				t.Errorf("the rejection does not say where a fingerprint comes from: %s", said)
+			response := getToolError(t, session, w.tool, w.args)
+			if !strings.Contains(response, "note_read") {
+				t.Errorf("the rejection does not say where a fingerprint comes from: %s", response)
 			}
 		})
 	}

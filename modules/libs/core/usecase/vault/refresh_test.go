@@ -199,12 +199,12 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	if found := passages(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
-	held, err := db.SourcesKnown().GetSourcesUnder(t.Context(), v.ID, "library")
+	target, err := db.SourcesKnown().GetSourcesUnder(t.Context(), v.ID, "library")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held) != 0 {
-		t.Errorf("the index still holds %v", held)
+	if len(target) != 0 {
+		t.Errorf("the index still holds %v", target)
 	}
 }
 
@@ -308,25 +308,25 @@ func TestARefreshWritesInGroups(t *testing.T) {
 
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	written := &countingNotes{}
+	content := &countingNotes{}
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, &indexRows{}, written, db.SourcesKnown(), db.Sources(), time.Now,
+		filesystem.VaultReaders{}, &indexRows{}, content, db.SourcesKnown(), db.Sources(), time.Now,
 	)
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
 	}
-	if written.groups < 3 {
+	if content.groups < 3 {
 		t.Errorf("wrote %d notes in %d groups, want groups of at most 500",
-			written.notes, written.groups)
+			content.notes, content.groups)
 	}
-	for _, size := range written.sizes {
+	for _, size := range content.sizes {
 		if size > 500 {
 			t.Errorf("a group held %d notes", size)
 		}
 	}
-	if written.notes != 1200 {
-		t.Errorf("wrote %d notes of 1200", written.notes)
+	if content.notes != 1200 {
+		t.Errorf("wrote %d notes of 1200", content.notes)
 	}
 }
 

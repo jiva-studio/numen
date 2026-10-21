@@ -35,11 +35,11 @@ func newTextScene(t *testing.T) textScene {
 		Fingerprint: domain.Fingerprint{Path: recordingPath, Kind: domain.KindRecording},
 		Producer:    domain.ASR, Hash: talkHash,
 	})
-	kept := newShelf()
+	retained := newShelf()
 	readers := vaults{first.ID: library}
 	return textScene{
-		texts:   NewTexts(readers, nil, index, shelves{kept}),
-		shelf:   kept,
+		texts:   NewTexts(readers, nil, index, shelves{retained}),
+		shelf:   retained,
 		index:   index,
 		readers: readers,
 		vault:   first,

@@ -97,13 +97,13 @@ func TestASpineDocumentCrossesAsTheCorpusSaysItDoes(t *testing.T) {
 // so the window reading them off it is reading the book's own numbers.
 func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 	book := read(t, seamBook(t))
-	drawn := seamMarkup(t)
+	rendered := seamMarkup(t)
 
-	runs := offsets(t, parseHTML(t, drawn.HTML()))
+	runs := offsets(t, parseHTML(t, rendered.HTML()))
 	if len(runs) == 0 {
 		t.Fatal("the corpus says no offsets")
 	}
-	if drawn.Offset == 0 {
+	if rendered.Offset == 0 {
 		t.Error("the corpus is taken from the first document, and its offsets say nothing")
 	}
 	var out strings.Builder
@@ -114,7 +114,7 @@ func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 		}
 		out.WriteString(run.said)
 	}
-	if want := book.Text[drawn.Offset : drawn.Offset+drawn.Length]; out.String() != want {
+	if want := book.Text[rendered.Offset : rendered.Offset+rendered.Length]; out.String() != want {
 		t.Errorf("the runs say\n%q\nand the document is\n%q", out.String(), want)
 	}
 }
@@ -123,9 +123,9 @@ func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 // names it by is the name that entry is answered under.
 func TestAPictureIsNamedByTheEntryItIsDrawnFrom(t *testing.T) {
 	book := read(t, seamBook(t))
-	drawn := seamMarkup(t)
+	rendered := seamMarkup(t)
 
-	named := pictures(parseHTML(t, drawn.HTML()))
+	named := pictures(parseHTML(t, rendered.HTML()))
 	if len(named) == 0 {
 		t.Fatal("the document draws no picture")
 	}
@@ -141,9 +141,9 @@ func TestAPictureIsNamedByTheEntryItIsDrawnFrom(t *testing.T) {
 // the window is sent to.
 func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
 	book := read(t, seamBook(t))
-	held := map[string]bool{}
+	targetVal := map[string]bool{}
 	for _, doc := range book.Documents {
-		held[doc.Path] = true
+		targetVal[doc.Path] = true
 	}
 
 	var within, down, away int
@@ -154,7 +154,7 @@ func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
 		case strings.Contains(target, ":"):
 			away++
 		case target != "":
-			if !held[target] {
+			if !targetVal[target] {
 				t.Errorf("a link names %q, and the book is not read in it", target)
 			}
 			within++
@@ -173,11 +173,11 @@ func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
 // seamMarkup is the spine document the corpus is taken from.
 func seamMarkup(t *testing.T) *epub.Markup {
 	t.Helper()
-	drawn, err := read(t, seamBook(t)).Markup(middleDoc)
+	rendered, err := read(t, seamBook(t)).Markup(middleDoc)
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
-	return drawn
+	return rendered
 }
 
 // seamBook zips the committed fixture the corpus is drawn from.

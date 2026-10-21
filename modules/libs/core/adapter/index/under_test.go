@@ -57,18 +57,18 @@ func TestWhatIsUnderAPathSaysWhichKindEachSourceIs(t *testing.T) {
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	book(t, db, first, "physics/A Book.epub", 1)
 
-	held := map[string]domain.SourceKind{}
+	target := map[string]domain.SourceKind{}
 	found, err := db.Sources().GetSourcesUnder(t.Context(), first.ID, "physics")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, ref := range found {
-		held[ref.Path] = ref.Kind
+		target[ref.Path] = ref.Kind
 	}
-	if kind := held["physics/Entropy.md"]; kind != domain.KindNote {
+	if kind := target["physics/Entropy.md"]; kind != domain.KindNote {
 		t.Errorf("the note came back as %q", kind)
 	}
-	if kind := held["physics/A Book.epub"]; kind != domain.KindBook {
+	if kind := target["physics/A Book.epub"]; kind != domain.KindBook {
 		t.Errorf("the book came back as %q", kind)
 	}
 }

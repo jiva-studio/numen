@@ -70,32 +70,32 @@ func TestARegionFoundTwiceIsReadOnce(t *testing.T) {
 		{Label: "paragraph_title", Score: 0.7, Rect: image.Rect(10, 10, 90, 20), Order: 3},
 		{Label: "text", Score: 0.95, Rect: image.Rect(0, 200, 100, 300), Order: 4},
 	}
-	kept := ocr.Distinct(regions, 0.6)
+	retained := ocr.Distinct(regions, 0.6)
 
-	if len(kept) != 2 {
+	if len(retained) != 2 {
 		var got []string
-		for _, r := range kept {
+		for _, r := range retained {
 			got = append(got, r.Label)
 		}
-		t.Fatalf("kept %d regions (%s), want the two that do not cover each other", len(kept), strings.Join(got, ", "))
+		t.Fatalf("kept %d regions (%s), want the two that do not cover each other", len(retained), strings.Join(got, ", "))
 	}
-	if kept[0].Order != 1 || kept[1].Order != 4 {
-		t.Errorf("kept the regions at %d and %d, want 1 and 4", kept[0].Order, kept[1].Order)
+	if retained[0].Order != 1 || retained[1].Order != 4 {
+		t.Errorf("kept the regions at %d and %d, want 1 and 4", retained[0].Order, retained[1].Order)
 	}
 }
 
 func TestRegionsComeBackInReadingOrder(t *testing.T) {
 	// The model answers in whatever order it found them, and says where each
 	// belongs. Sorting on that is what keeps the second column after the first.
-	kept := ocr.Distinct([]ocr.Region{
+	retained := ocr.Distinct([]ocr.Region{
 		{Label: "text", Score: 0.9, Rect: image.Rect(200, 0, 300, 100), Order: 3},
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 0, 100, 100), Order: 1},
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 200, 100, 300), Order: 2},
 	}, 0.6)
 
 	for i, want := range []int{1, 2, 3} {
-		if kept[i].Order != want {
-			t.Errorf("region %d is at %d, want %d", i, kept[i].Order, want)
+		if retained[i].Order != want {
+			t.Errorf("region %d is at %d, want %d", i, retained[i].Order, want)
 		}
 	}
 }
@@ -451,7 +451,7 @@ var oldHyphen = regexp.MustCompile(`(\pL)[-‐‑\x{00ad}]$`)
 // matching the whole text written so far.
 func assembleByRegexp(lines []ocr.Line) (string, []domain.OCRBox) {
 	var out strings.Builder
-	var kept []domain.OCRBox
+	var retained []domain.OCRBox
 	for _, l := range lines {
 		text := strings.TrimSpace(l.Text)
 		if text == "" {
@@ -461,17 +461,17 @@ func assembleByRegexp(lines []ocr.Line) (string, []domain.OCRBox) {
 		if oldHyphen.MatchString(joined) {
 			out.Reset()
 			out.WriteString(oldHyphen.ReplaceAllString(joined, "$1"))
-			if n := len(kept); n > 0 {
-				kept[n-1].Span.To -= len(joined) - out.Len()
+			if n := len(retained); n > 0 {
+				retained[n-1].Span.To -= len(joined) - out.Len()
 			}
 		} else if joined != "" {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		kept = append(kept, domain.OCRBox{Rect: l.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
+		retained = append(retained, domain.OCRBox{Rect: l.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
 		out.WriteString(text)
 	}
-	return out.String(), kept
+	return out.String(), retained
 }
 
 func TestAssembleMatchesTheRegexpJoin(t *testing.T) {
@@ -562,10 +562,10 @@ func BenchmarkGroup(b *testing.B) {
 func distinctByCopy(regions []ocr.Region, most float64) []ocr.Region {
 	byScore := append([]ocr.Region(nil), regions...)
 	sort.SliceStable(byScore, func(a, b int) bool { return byScore[a].Score > byScore[b].Score })
-	kept := make([]ocr.Region, 0, len(byScore))
+	retained := make([]ocr.Region, 0, len(byScore))
 	for _, r := range byScore {
 		covered := false
-		for _, k := range kept {
+		for _, k := range retained {
 			both := r.Rect.Intersect(k.Rect)
 			if both.Empty() {
 				continue
@@ -578,11 +578,11 @@ func distinctByCopy(regions []ocr.Region, most float64) []ocr.Region {
 			}
 		}
 		if !covered {
-			kept = append(kept, r)
+			retained = append(retained, r)
 		}
 	}
-	sort.SliceStable(kept, func(a, b int) bool { return kept[a].Order < kept[b].Order })
-	return kept
+	sort.SliceStable(retained, func(a, b int) bool { return retained[a].Order < retained[b].Order })
+	return retained
 }
 
 func createRandomRegions(random *rand.Rand, n int) []ocr.Region {

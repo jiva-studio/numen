@@ -58,14 +58,14 @@ func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
-	held, v := newTranscriptionWorker(t, &deaf{})
-	known := &holding{asked: make(chan struct{}, 1), let: make(chan struct{})}
+	target, v := newTranscriptionWorker(t, &deaf{})
+	recognized := &holding{asked: make(chan struct{}, 1), let: make(chan struct{})}
 
 	// A call that does not come back is a window that never opens.
 	came := make(chan struct{})
 	go func() {
 		defer close(came)
-		held.Queue(ctx, known, time.Hour, v)
+		target.Queue(ctx, recognized, time.Hour, v)
 	}()
 	select {
 	case <-came:
@@ -78,7 +78,7 @@ func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	waited := make(chan struct{})
 	go func() {
 		defer close(waited)
-		held.Wait()
+		target.Wait()
 	}()
 	select {
 	case <-waited:
@@ -87,13 +87,13 @@ func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	}
 
 	select {
-	case <-known.asked:
+	case <-recognized.asked:
 	case <-time.After(10 * time.Second):
 		t.Fatal("no round of the queue ran behind the caller")
 	}
 
 	stop()
-	close(known.let)
+	close(recognized.let)
 	select {
 	case <-waited:
 	case <-time.After(10 * time.Second):

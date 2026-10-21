@@ -18,17 +18,17 @@ const (
 // the speech opens, and the words that recur through it. A transcript saying
 // nothing is described as nothing.
 func describeSpeech(lines []Line) string {
-	var said []string
+	var response []string
 	for _, line := range lines {
-		said = append(said, strings.Fields(line.Text)...)
+		response = append(response, strings.Fields(line.Text)...)
 	}
-	if len(said) == 0 {
+	if len(response) == 0 {
 		return ""
 	}
 
 	var out strings.Builder
-	out.WriteString("The speech opens: " + getOpeningWords(said, quoted) + "\n")
-	if recurring := getRecurringNames(said); len(recurring) > 0 {
+	out.WriteString("The speech opens: " + getOpeningWords(response, quoted) + "\n")
+	if recurring := getRecurringNames(response); len(recurring) > 0 {
 		out.WriteString("\nWords recurring through it, as the machine transcribed them: " +
 			strings.Join(recurring, ", ") + "\n")
 	}
@@ -49,7 +49,7 @@ func getOpeningWords(said []string, words int) string {
 // first said.
 func getRecurringNames(said []string) []string {
 	times := map[string]int{}
-	written := map[string]string{}
+	content := map[string]string{}
 	var order []string
 
 	opens := true
@@ -66,7 +66,7 @@ func getRecurringNames(said []string) []string {
 		key := strings.ToLower(trimmed)
 		if times[key] == 0 {
 			order = append(order, key)
-			written[key] = trimmed
+			content[key] = trimmed
 		}
 		times[key]++
 	}
@@ -76,7 +76,7 @@ func getRecurringNames(said []string) []string {
 		if times[key] < recurs {
 			continue
 		}
-		out = append(out, written[key])
+		out = append(out, content[key])
 		if len(out) == listed {
 			break
 		}

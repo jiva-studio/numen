@@ -164,10 +164,10 @@ func TestADropCancelledInsideAFolderBringsNothingUnderIt(t *testing.T) {
 func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
-	gone := errors.New("the file is gone")
+	removed := errors.New("the file is gone")
 	machine := flawed{
 		handedOver: handedOver{names: map[string]string{"content://held/9": "Gone.png"}},
-		statFails:  map[string]error{"content://held/9": gone},
+		statFails:  map[string]error{"content://held/9": removed},
 	}
 	bring := vaults.NewImport(filesystem.VaultWriters{}, machine)
 
@@ -175,7 +175,7 @@ func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Gone.png" || !errors.Is(brought.Errors[0].Why, gone) {
+	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Gone.png" || !errors.Is(brought.Errors[0].Why, removed) {
 		t.Errorf("what stayed outside: %+v", brought.Errors)
 	}
 	if len(brought.Landed) != 0 {
@@ -253,10 +253,10 @@ func TestOneFileOfAFolderThatCannotBeReadIsNamedAndTheRestArrive(t *testing.T) {
 func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
-	gone := errors.New("the entry is gone")
+	removed := errors.New("the entry is gone")
 	machine := flawed{
 		handedOver: aFolderOfTwo(),
-		statFails:  map[string]error{"content://held/3": gone},
+		statFails:  map[string]error{"content://held/3": removed},
 	}
 	bring := vaults.NewImport(filesystem.VaultWriters{}, machine)
 
@@ -264,7 +264,7 @@ func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Kelvin.md" || !errors.Is(brought.Errors[0].Why, gone) {
+	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Kelvin.md" || !errors.Is(brought.Errors[0].Why, removed) {
 		t.Errorf("what stayed outside: %+v", brought.Errors)
 	}
 }

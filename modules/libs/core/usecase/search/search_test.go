@@ -221,7 +221,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 	// Every note of the first vault is a fair answer; nothing of the second is.
 	for _, p := range near {
-		if _, held := firstNotes[p.Source]; !held {
+		if _, target := firstNotes[p.Source]; !target {
 			t.Errorf("the dense half answered with %s, which the first vault does not hold", p.Source)
 		}
 	}
@@ -436,7 +436,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 	c := newCorpus(t)
 
 	const path = "notes/Isotherm.md"
-	const held = "The curve holds throughout."
+	const target = "The curve holds throughout."
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
 	scan := vaults.NewScan(
 		filesystem.VaultReaders{}, c.db.Vaults(), c.db.Notes(),
@@ -446,10 +446,10 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	at := strings.Index(isotherm, held)
+	at := strings.Index(isotherm, target)
 	whole := chunk.Chunk{
 		Start: 0, Length: len(isotherm), Text: isotherm,
-		Small: []chunk.Chunk{{Start: at, Length: len(held), Text: held}},
+		Small: []chunk.Chunk{{Start: at, Length: len(target), Text: target}},
 	}
 	if err := c.db.Chunks().ReplaceChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
 		t.Fatal(err)

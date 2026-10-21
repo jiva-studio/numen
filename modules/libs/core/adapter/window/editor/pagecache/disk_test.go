@@ -272,14 +272,14 @@ func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 	cache.every = 1
 	// The sweep is held until the test releases it, so Close has a sweep to wait
 	// for.
-	held, release := make(chan struct{}), make(chan struct{})
+	target, release := make(chan struct{}), make(chan struct{})
 	cache.beforeSweep = func() {
-		close(held)
+		close(target)
 		<-release
 	}
 
 	cache.Put(newDrawingID(0), []byte("page"))
-	<-held
+	<-target
 	closed := make(chan struct{})
 	go func() {
 		cache.Close()

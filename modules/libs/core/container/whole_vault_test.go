@@ -68,23 +68,23 @@ func TestAScanTakesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 func TestTheCutOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
-	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
 
-	cut, err := held.Extract(db.Sources(), db.SourcesKnown(), v)
+	trimmed, err := target.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cut.Derived == nil {
+	if trimmed.Derived == nil {
 		t.Error("the cut has no place to keep what it derives")
 	}
-	if cut.Documents == nil {
+	if trimmed.Documents == nil {
 		t.Error("the cut cannot take the text out of a document")
 	}
-	if !cut.ShouldRebuildIndex {
+	if !trimmed.ShouldRebuildIndex {
 		t.Error("a rebuild was asked for and the cut skips sources the index remembers")
 	}
-	if cut.Sizes != held.CutNotes().Sizes {
-		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.CutNotes().Sizes)
+	if trimmed.Sizes != target.CutNotes().Sizes {
+		t.Errorf("cut at %+v, and the settings say %+v", trimmed.Sizes, target.CutNotes().Sizes)
 	}
 }
 
@@ -110,16 +110,16 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 
 func TestAVaultWhoseFolderIsGoneIsNotMadeSearchable(t *testing.T) {
 	db := makeIndex(t)
-	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
+	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	v := missingVault(t)
 
-	if _, err := held.Extract(db.Sources(), db.SourcesKnown(), v); err == nil {
+	if _, err := target.Extract(db.Sources(), db.SourcesKnown(), v); err == nil {
 		t.Error("the sources of a folder that is not there were cut")
 	}
-	if _, err := held.Embed(db, nil, v); err == nil {
+	if _, err := target.Embed(db, nil, v); err == nil {
 		t.Error("the vectors of a folder that is not there were made")
 	}
-	if _, err := held.ReadWholeVault(t.Context(), db, nil, v); err == nil {
+	if _, err := target.ReadWholeVault(t.Context(), db, nil, v); err == nil {
 		t.Error("a folder that is not there was read")
 	}
 }
@@ -141,10 +141,10 @@ func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
-	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
+	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	first, second := unit{"first"}, unit{"second"}
 
-	whole, err := held.ReadWholeVault(t.Context(), db, first, v)
+	whole, err := target.ReadWholeVault(t.Context(), db, first, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,12 +158,12 @@ func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 		t.Fatal("the vault holds no chunk to be embedded")
 	}
 
-	held.ShouldRebuildIndex = shouldRebuild
-	if _, err := held.ReadWholeVault(t.Context(), db, second, v); err != nil {
+	target.ShouldRebuildIndex = shouldRebuild
+	if _, err := target.ReadWholeVault(t.Context(), db, second, v); err != nil {
 		t.Fatal(err)
 	}
-	held.ShouldRebuildIndex = false
-	if _, err := held.ReadWholeVault(t.Context(), db, first, v); err != nil {
+	target.ShouldRebuildIndex = false
+	if _, err := target.ReadWholeVault(t.Context(), db, first, v); err != nil {
 		t.Fatal(err)
 	}
 	return owingTo(t, db, v, first)
@@ -211,8 +211,8 @@ func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
-	if _, err := held.ReadWholeVault(t.Context(), db, unit{"second"}, v); err == nil || !strings.Contains(err.Error(), "kept") {
+	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+	if _, err := target.ReadWholeVault(t.Context(), db, unit{"second"}, v); err == nil || !strings.Contains(err.Error(), "kept") {
 		t.Errorf("got %v", err)
 	}
 }

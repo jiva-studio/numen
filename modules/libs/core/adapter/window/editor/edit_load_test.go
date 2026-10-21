@@ -72,8 +72,8 @@ func TestEditLoad(t *testing.T) {
 	}
 	t.Logf("read %d notes in %s", notes, time.Since(reading).Round(time.Millisecond))
 
-	line, done := api.state.ChangeEvents.subscribe()
-	t.Cleanup(done)
+	line, isDone := api.state.ChangeEvents.subscribe()
+	t.Cleanup(isDone)
 
 	// One save, the way a quiet interval makes it, and then the wait until the
 	// index answers with what was written and the window is told.
@@ -86,24 +86,24 @@ func TestEditLoad(t *testing.T) {
 	}
 	wrote := time.Since(saving)
 
-	told := make(chan time.Duration, 1)
+	notified := make(chan time.Duration, 1)
 	go func() {
 		for what := range line {
 			for _, p := range what.paths {
 				if p == path {
-					told <- time.Since(saving)
+					notified <- time.Since(saving)
 					return
 				}
 			}
 			if what.shouldReload {
-				told <- time.Since(saving)
+				notified <- time.Since(saving)
 				return
 			}
 		}
 	}()
 
 	select {
-	case reached := <-told:
+	case reached := <-notified:
 		t.Logf("save %s, the window told after %s",
 			wrote.Round(time.Millisecond), reached.Round(time.Millisecond))
 	case <-time.After(2 * time.Minute):

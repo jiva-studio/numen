@@ -98,11 +98,11 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	index := newStore()
-	kept := newShelf()
+	retained := newShelf()
 	model := &voice{words: words}
-	tr := NewTranscribe(vaults{first.ID: shelved}, index, shelves{kept}, model)
+	tr := NewTranscribe(vaults{first.ID: shelved}, index, shelves{retained}, model)
 	tr.Batch = 1
-	return tr, first, index, kept, model, text.Fingerprint(raw)
+	return tr, first, index, retained, model, text.Fingerprint(raw)
 }
 
 // getWords is the words of an artifact, in the order they were said.
@@ -147,8 +147,8 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if !bytes.HasPrefix(raw, []byte(transcript.Head+"\n")) {
 		t.Fatalf("the artifact is not WebVTT: %q", raw)
 	}
-	if said := getWords(t, raw); !slices.Equal(said, model.words) {
-		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
+	if response := getWords(t, raw); !slices.Equal(response, model.words) {
+		t.Errorf("the artifact says %q and the recording says %q", response, model.words)
 	}
 	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, "asr", hash)); err == nil {
 		t.Error("the partial is still there")
@@ -189,8 +189,8 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said := getWords(t, raw); !slices.Equal(said, model.words) {
-		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
+	if response := getWords(t, raw); !slices.Equal(response, model.words) {
+		t.Errorf("the artifact says %q and the recording says %q", response, model.words)
 	}
 	// The stretch the stopped run did not write down is the only one heard
 	// twice.
@@ -204,11 +204,11 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	// note are a batch nothing claims.
 	u, v, _, shelf, model, hash := listener(t, "one", "two", "three")
 
-	torn := transcript.Marshal([]domain.TranscriptCue{{Text: "one", From: 0, To: 800}})
-	torn = append(torn, transcript.GetReachMarker(800)...)
+	divided := transcript.Marshal([]domain.TranscriptCue{{Text: "one", From: 0, To: 800}})
+	divided = append(divided, transcript.GetReachMarker(800)...)
 	looseCues := transcript.Marshal([]domain.TranscriptCue{{Text: "half a thought", From: 1000, To: 1800}})
-	torn = append(torn, bytes.TrimPrefix(looseCues, []byte(transcript.Head+"\n"))...)
-	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, "asr", hash), torn); err != nil {
+	divided = append(divided, bytes.TrimPrefix(looseCues, []byte(transcript.Head+"\n"))...)
+	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, "asr", hash), divided); err != nil {
 		t.Fatal(err)
 	}
 
@@ -224,8 +224,8 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said := getWords(t, raw); !slices.Equal(said, model.words) {
-		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
+	if response := getWords(t, raw); !slices.Equal(response, model.words) {
+		t.Errorf("the artifact says %q and the recording says %q", response, model.words)
 	}
 	if bytes.Contains(raw, []byte("half a thought")) {
 		t.Error("the artifact holds a cue no note claimed")
@@ -249,7 +249,7 @@ func TestOneRunToARecording(t *testing.T) {
 	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if _, held := index.sources[v.ID][recordingPath]; held {
+	if _, target := index.sources[v.ID][recordingPath]; target {
 		t.Error("it recorded a source")
 	}
 }
@@ -278,7 +278,7 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 
-	heard := len(model.heard)
+	received := len(model.heard)
 	again, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -286,8 +286,8 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if !again.IsSilent {
 		t.Error("the answer was not read back")
 	}
-	if len(model.heard) != heard {
-		t.Errorf("the model was handed %d more stretches", len(model.heard)-heard)
+	if len(model.heard) != received {
+		t.Errorf("the model was handed %d more stretches", len(model.heard)-received)
 	}
 	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, "asr", hash)); err != nil {
 		t.Errorf("nothing says what the recording answered: %v", err)
@@ -408,8 +408,8 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nothing was written the second time: %v", err)
 	}
-	if said := getWords(t, raw); len(said) != 2 {
-		t.Errorf("the transcript reads back as %v", said)
+	if response := getWords(t, raw); len(response) != 2 {
+		t.Errorf("the transcript reads back as %v", response)
 	}
 }
 

@@ -191,8 +191,8 @@ func (s sources) GetKeptVectors(ctx context.Context, recipe string, of [][]byte)
 // GetSourceText is what one source's text came from, and false where the index holds
 // no source at that path.
 func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
-	found, held, err := s.read.GetSourceText(ctx, vaultID, path)
-	if err != nil || !held {
+	found, target, err := s.read.GetSourceText(ctx, vaultID, path)
+	if err != nil || !target {
 		return port.SourceText{}, false, err
 	}
 	return port.SourceText{

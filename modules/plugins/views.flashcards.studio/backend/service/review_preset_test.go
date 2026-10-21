@@ -46,8 +46,8 @@ func newPresetName(preset string) *string { return &preset }
 // The window draws a tile per preset, and pressing one opens a session over the
 // cards of every deck pointing at it, held to that preset's budget.
 func TestASessionIsOpenedOverOnePreset(t *testing.T) {
-	api, held := newAPI(t, presetted)
-	v := held[0]
+	api, target := newAPI(t, presetted)
+	v := target[0]
 
 	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Preset: newPresetName("Steady.md"),
@@ -55,11 +55,11 @@ func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := out.Msg.GetCards()
-	if len(asked) != 2 {
-		t.Fatalf("a preset of two cards a day offered %d", len(asked))
+	request := out.Msg.GetCards()
+	if len(request) != 2 {
+		t.Fatalf("a preset of two cards a day offered %d", len(request))
 	}
-	for _, one := range asked {
+	for _, one := range request {
 		if one.GetDeck() != "decks/Birds.md" {
 			t.Errorf("the session asked %s, which another preset schedules", one.GetDeck())
 		}
@@ -68,8 +68,8 @@ func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 
 // Which cards were meant is a question, and the window is asked it again.
 func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
-	api, held := newAPI(t, presetted)
-	v := held[0]
+	api, target := newAPI(t, presetted)
+	v := target[0]
 
 	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: newPresetName("Steady.md"),
@@ -121,7 +121,7 @@ func TestEachPresetOnTheFrontDoorSaysWhyItSchedulesNothing(t *testing.T) {
 // The preset a deck is scheduled by carries the same verdict, which is what a
 // window has before any curve exists.
 func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
-	api, held := newAPI(t, map[string]string{
+	api, target := newAPI(t, map[string]string{
 		"Term.md": deck["Term.md"],
 		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\n" +
 			"minutes_a_day: 0\n---\n\n# Quiet\n",
@@ -130,7 +130,7 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 
 	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
 		&v1.GetVaultDeckPresetRequest{
-			Vault: string(held[0].ID), Deck: "decks/Birds.md",
+			Vault: string(target[0].ID), Deck: "decks/Birds.md",
 		}))
 	if err != nil {
 		t.Fatal(err)
@@ -147,8 +147,8 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 // A preset with nothing to ask is refused with the reason, which is what the
 // window shows in place of an empty session.
 func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
-	api, held := newAPI(t, presetted)
-	v := held[0]
+	api, target := newAPI(t, presetted)
+	v := target[0]
 
 	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Preset: newPresetName("Lonely.md"),

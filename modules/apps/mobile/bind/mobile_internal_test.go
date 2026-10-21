@@ -56,15 +56,15 @@ func captureStderr(t *testing.T) func() string {
 	previous := os.Stderr
 	os.Stderr = writer
 	var collected bytes.Buffer
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		_, _ = io.Copy(&collected, reader)
-		close(done)
+		close(isDone)
 	}()
 	return func() string {
 		os.Stderr = previous
 		_ = writer.Close()
-		<-done
+		<-isDone
 		_ = reader.Close()
 		return collected.String()
 	}
@@ -205,16 +205,16 @@ func TestStartSaysWhenTheThemesFolderCannotBeMadeAndStillStarts(t *testing.T) {
 	}
 	read := captureStderr(t)
 	startIn(t, dir)
-	if said := read(); !strings.Contains(said, "themes:") {
-		t.Errorf("nothing said the themes folder could not be made: %q", said)
+	if response := read(); !strings.Contains(response, "themes:") {
+		t.Errorf("nothing said the themes folder could not be made: %q", response)
 	}
 }
 
 func TestStartSaysNothingOfThemesWhenTheirFolderIsThere(t *testing.T) {
 	read := captureStderr(t)
 	startIn(t, t.TempDir())
-	if said := read(); strings.Contains(said, "themes:") {
-		t.Errorf("themes were complained of: %q", said)
+	if response := read(); strings.Contains(response, "themes:") {
+		t.Errorf("themes were complained of: %q", response)
 	}
 }
 
@@ -259,8 +259,8 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 	}
 	// A server closed by Stop is not one that ended on its own, and says nothing.
 	time.Sleep(300 * time.Millisecond)
-	if said := read(); strings.Contains(said, "numen:") {
-		t.Errorf("stopping was reported as a failure: %q", said)
+	if response := read(); strings.Contains(response, "numen:") {
+		t.Errorf("stopping was reported as a failure: %q", response)
 	}
 }
 
@@ -284,12 +284,12 @@ func TestSeedLeavesAVaultThatHoldsANoteAsItIs(t *testing.T) {
 	if err := seedVault(root); err != nil {
 		t.Fatal(err)
 	}
-	held, err := os.ReadDir(root)
+	target, err := os.ReadDir(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held) != 2 {
-		t.Errorf("the vault holds %d entries after seeding, want the 2 it had", len(held))
+	if len(target) != 2 {
+		t.Errorf("the vault holds %d entries after seeding, want the 2 it had", len(target))
 	}
 }
 
@@ -384,12 +384,12 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotWrite(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser writes into any folder")
 	}
-	kept := t.TempDir()
-	if err := os.Chmod(kept, 0o500); err != nil {
+	retained := t.TempDir()
+	if err := os.Chmod(retained, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(kept, 0o700) })
-	filed, err := registerVault(makeConfig(kept, io.Discard), t.TempDir())
+	t.Cleanup(func() { _ = os.Chmod(retained, 0o700) })
+	filed, err := registerVault(makeConfig(retained, io.Discard), t.TempDir())
 	if !errors.Is(err, fs.ErrPermission) || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a list it cannot write, want no path and the permission error", filed, err)
 	}
@@ -446,12 +446,12 @@ func checkCORSHeaders(t *testing.T, head http.Header) {
 			"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin",
 		},
 	} {
-		listed := map[string]bool{}
+		items := map[string]bool{}
 		for _, one := range strings.Split(head.Get(name), ", ") {
-			listed[one] = true
+			items[one] = true
 		}
 		for _, one := range wanted {
-			if !listed[one] {
+			if !items[one] {
 				t.Errorf("%s = %q, missing %s", name, head.Get(name), one)
 			}
 		}
@@ -517,11 +517,11 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 	if err := syscall.Mkfifo(path, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		for {
 			select {
-			case <-done:
+			case <-isDone:
 				return
 			default:
 			}
@@ -538,7 +538,7 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 		}
 	}()
 	t.Cleanup(func() {
-		close(done)
+		close(isDone)
 		if release, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0); err == nil {
 			_ = release.Close()
 		}
@@ -580,13 +580,13 @@ func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *t
 // countOpenFiles is how many file descriptors the process holds. A limit of
 // that many leaves room for the new ones only in the gaps below its highest.
 func countOpenFiles() int {
-	held := 0
+	target := 0
 	for fd := 0; fd < 4096; fd++ {
 		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno == 0 {
-			held++
+			target++
 		}
 	}
-	return held
+	return target
 }
 
 func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding(t *testing.T) {
@@ -743,11 +743,11 @@ func getListenersOf(server *http.Server) []net.Listener {
 	lockField := elem.FieldByName("mu")
 	lock := reflect.NewAt(lockField.Type(), unsafe.Pointer(lockField.UnsafeAddr())).Interface().(*sync.Mutex)
 	setField := elem.FieldByName("listeners")
-	held := reflect.NewAt(setField.Type(), unsafe.Pointer(setField.UnsafeAddr())).Elem()
+	target := reflect.NewAt(setField.Type(), unsafe.Pointer(setField.UnsafeAddr())).Elem()
 	lock.Lock()
 	defer lock.Unlock()
 	var found []net.Listener
-	for _, key := range held.MapKeys() {
+	for _, key := range target.MapKeys() {
 		found = append(found, *(*net.Listener)(key.UnsafePointer()))
 	}
 	return found
@@ -790,7 +790,7 @@ func TestPortIsZeroAndTheErrorIsSaidOnceTheServerStopsAcceptingOnItsOwn(t *testi
 	if err := Stop(); err != nil {
 		t.Logf("Stop() = %v", err)
 	}
-	if said := read(); !strings.Contains(said, "numen: accept") {
-		t.Errorf("nothing said the server stopped accepting: %q", said)
+	if response := read(); !strings.Contains(response, "numen: accept") {
+		t.Errorf("nothing said the server stopped accepting: %q", response)
 	}
 }

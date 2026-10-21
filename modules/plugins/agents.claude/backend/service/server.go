@@ -359,8 +359,8 @@ func (s *agentServer) getReasoning(model, asked string) string {
 	if model == "" {
 		model = defaultModelName
 	}
-	levels, listed := s.models.find(model)
-	if listed {
+	levels, items := s.models.find(model)
+	if items {
 		return reasoning.Pick(levels, asked)
 	}
 	if reasoning.IsKnown(asked) {

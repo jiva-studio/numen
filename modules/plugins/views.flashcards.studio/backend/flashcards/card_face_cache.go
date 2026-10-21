@@ -33,8 +33,8 @@ func (e deckFaces) isCurrent(deck domain.Fingerprint, stencils map[string]domain
 		return false
 	}
 	for path, one := range e.stencils {
-		other, held := stencils[path]
-		if !held || !one.IsUnchanged(other) {
+		other, target := stencils[path]
+		if !target || !one.IsUnchanged(other) {
 			return false
 		}
 	}
@@ -80,8 +80,8 @@ func (c *faceCache) get(key deckKey) (deckFaces, bool) {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	at, held := c.decks[key]
-	if !held {
+	at, target := c.decks[key]
+	if !target {
 		return deckFaces{}, false
 	}
 	c.order.MoveToFront(at)
@@ -110,7 +110,7 @@ func (c *faceCache) put(epoch uint64, key deckKey, e deckFaces, limit int) {
 
 // remove forgets the deck at key. The caller holds the lock.
 func (c *faceCache) remove(key deckKey) {
-	if at, held := c.decks[key]; held {
+	if at, target := c.decks[key]; target {
 		c.removeElement(at)
 	}
 }
@@ -166,7 +166,7 @@ func (c *faceCache) invalidate(vault domain.VaultID, paths []string) {
 
 func usesAny(stencils map[string]domain.Fingerprint, paths []string) bool {
 	for _, path := range paths {
-		if _, held := stencils[path]; held {
+		if _, target := stencils[path]; target {
 			return true
 		}
 	}
@@ -196,8 +196,8 @@ func (c *faceCache) getSize() int {
 func (c *faceCache) hasDeck(key deckKey) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_, held := c.decks[key]
-	return held
+	_, target := c.decks[key]
+	return target
 }
 
 // getEntry returns the deck an element of the order stands for. Only decks are put in

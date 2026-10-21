@@ -338,13 +338,13 @@ func (h *documentHandler) prefetchNextPage(v domain.Vault, key document.PageKey)
 // device it draws on. A document is asked for a page of it and no other place
 // in it.
 func parsePageQuery(where string, query url.Values) (at, width int, named document.Fingerprint, err error) {
-	asked, found := strings.CutPrefix(where, pagesName+"/")
+	request, found := strings.CutPrefix(where, pagesName+"/")
 	if !found {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
 	}
-	at, err = strconv.Atoi(asked)
+	at, err = strconv.Atoi(request)
 	if err != nil || at < 0 || at > math.MaxInt32 {
-		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", asked)
+		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", request)
 	}
 	width, err = strconv.Atoi(query.Get("width"))
 	if err != nil || width < 1 || width > widestPage {

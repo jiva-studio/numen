@@ -73,10 +73,10 @@ func TestAnswerToAnotherRequestOrWithoutModelsIsAnError(t *testing.T) {
 
 // The program is asked over stdin and its answer carries the id of the request.
 func TestTheProgramIsAskedForItsModels(t *testing.T) {
-	asked := t.TempDir() + "/asked"
+	request := t.TempDir() + "/asked"
 	answer := strings.Replace(readFixture(t), `"r1"`, `"numen-models"`, 1)
 	answer = strings.ReplaceAll(answer, "'", "")
-	script := writeScript(t, "claude", "read line\nprintf '%s\\n' \"$line\" > "+asked+"\ncat <<'EOF'\n"+answer+"EOF\nsleep 30\n")
+	script := writeScript(t, "claude", "read line\nprintf '%s\\n' \"$line\" > "+request+"\ncat <<'EOF'\n"+answer+"EOF\nsleep 30\n")
 	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
 	client := startAgent(t, &agentServer{})
 
@@ -88,7 +88,7 @@ func TestTheProgramIsAskedForItsModels(t *testing.T) {
 	if len(models) != 13 {
 		t.Fatalf("the models are %v", models)
 	}
-	raw, err := os.ReadFile(asked)
+	raw, err := os.ReadFile(request)
 	if err != nil {
 		t.Fatal(err)
 	}

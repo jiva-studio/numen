@@ -220,11 +220,11 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
 
-	told := make(chan bool, 1)
+	notified := make(chan bool, 1)
 	go func() {
 		for changes.Receive() {
 			if changes.Msg().GetReload() {
-				told <- true
+				notified <- true
 				return
 			}
 		}
@@ -255,7 +255,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	}
 
 	select {
-	case <-told:
+	case <-notified:
 	case <-time.After(5 * time.Second):
 		t.Error("no page was told that what it holds is from another vault")
 	}
@@ -438,8 +438,8 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 	f := openTwoVaults(t)
 
 	// A page that listens and answers nothing.
-	_, done := f.watchQuit(t)
-	defer done()
+	_, isDone := f.watchQuit(t)
+	defer isDone()
 
 	swapped := make(chan error, 1)
 	go func() { swapped <- f.installation.Show(t.Context(), f.second) }()
@@ -463,12 +463,12 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, done := f.watchQuit(t)
-	defer done()
+	stream, isDone := f.watchQuit(t)
+	defer isDone()
 
-	asked := make(chan struct{})
+	request := make(chan struct{})
 	go func() {
-		defer close(asked)
+		defer close(request)
 		for stream.Receive() {
 			if !stream.Msg().GetFlush() {
 				continue
@@ -491,7 +491,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	}
 
 	select {
-	case <-asked:
+	case <-request:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page was never asked for what it holds")
 	}
@@ -508,10 +508,10 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, done := f.watchQuit(t)
-	defer done()
+	stream, isDone := f.watchQuit(t)
+	defer isDone()
 
-	told := make(chan struct{})
+	notified := make(chan struct{})
 	release := make(chan struct{})
 	wrote := make(chan struct{})
 	go func() {
@@ -520,7 +520,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			close(told)
+			close(notified)
 			<-release
 			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
@@ -533,15 +533,15 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 		}
 	}()
 
-	settled := make(chan bool, 1)
+	resolved := make(chan bool, 1)
 	go func() {
 		ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 		defer cancel()
-		settled <- f.installation.FlushPending(ctx)
+		resolved <- f.installation.FlushPending(ctx)
 	}()
 
 	select {
-	case <-told:
+	case <-notified:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the close never asked the page for what it holds")
 	}
@@ -552,7 +552,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	close(release)
 
 	select {
-	case ok := <-settled:
+	case ok := <-resolved:
 		if !ok {
 			t.Error("the close was called off by the vault asked for beside it")
 		}
@@ -577,15 +577,15 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 	f := openTwoVaults(t)
 
 	asking, stop := context.WithCancel(t.Context())
-	var asked sync.WaitGroup
+	var request sync.WaitGroup
 	for _, of := range []v1.ArtifactKind{
 		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		v1.ArtifactKind_ARTIFACT_KIND_OCR,
 		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	} {
-		asked.Add(1)
+		request.Add(1)
 		go func() {
-			defer asked.Done()
+			defer request.Done()
 			for asking.Err() == nil {
 				f.installation.Services.Artifact.CreateArtifact(asking, connect.NewRequest(&v1.CreateArtifactRequest{
 					Path: entropy, Kind: of,
@@ -606,5 +606,5 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 	}
 
 	stop()
-	asked.Wait()
+	request.Wait()
 }

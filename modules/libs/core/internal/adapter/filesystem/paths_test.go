@@ -103,7 +103,7 @@ func TestAWindowsDeviceNameIsNotAPathInTheVault(t *testing.T) {
 
 	for _, path := range []string{"NUL", "notes/con.md", "c:notes.md"} {
 		_, _, err := resolveVaultPath(resolved, path, DefaultServiceDir)
-		if held := err == nil; held == (runtime.GOOS == "windows") {
+		if target := err == nil; target == (runtime.GOOS == "windows") {
 			t.Errorf("resolveVaultPath(%q) gave %v on %s", path, err, runtime.GOOS)
 		}
 	}

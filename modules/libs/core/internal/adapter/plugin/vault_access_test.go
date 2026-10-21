@@ -98,13 +98,13 @@ func TestTheDataOfAPluginIsKeptInItsFolderAndNoOther(t *testing.T) {
 		t.Fatal(err)
 	}
 	content, err := store.Read(t.Context(), "run.log")
-	listed, listErr := store.List(t.Context())
+	items, listErr := store.List(t.Context())
 
 	if err != nil || string(content) != "one\ntwo\n" {
 		t.Errorf("read %q (%v)", content, err)
 	}
-	if listErr != nil || !slices.Equal(listed, []port.PluginDataFile{{Name: "run.log", Size: 8}}) {
-		t.Errorf("listed %v (%v)", listed, listErr)
+	if listErr != nil || !slices.Equal(items, []port.PluginDataFile{{Name: "run.log", Size: 8}}) {
+		t.Errorf("listed %v (%v)", items, listErr)
 	}
 	for _, name := range []string{"", "../run.log", "a/b", ".hidden"} {
 		if _, err := store.Read(t.Context(), name); !errors.Is(err, filesystem.ErrOutside) {

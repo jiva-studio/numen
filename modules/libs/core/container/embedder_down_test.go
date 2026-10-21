@@ -54,14 +54,14 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 func TestAnEmbeddingPluginThatIsDownLeavesTheVectorsOfTheIndex(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
-	held := container.Config{
+	target := container.Config{
 		Embedding:          container.DefaultEmbedding(),
 		ServiceDir:         ".numen",
 		PluginHost:         host,
 		ShouldRebuildIndex: true,
 	}
 
-	indexing, asking, _, err := held.Embedders(t.Context(), nil)
+	indexing, asking, _, err := target.Embedders(t.Context(), nil)
 	if err == nil {
 		t.Fatal("an embedding plugin that is down was opened")
 	}
@@ -72,7 +72,7 @@ func TestAnEmbeddingPluginThatIsDownLeavesTheVectorsOfTheIndex(t *testing.T) {
 		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 	}
 
-	whole, err := held.ReadWholeVault(t.Context(), db, indexing, v)
+	whole, err := target.ReadWholeVault(t.Context(), db, indexing, v)
 	if err != nil {
 		t.Fatal(err)
 	}

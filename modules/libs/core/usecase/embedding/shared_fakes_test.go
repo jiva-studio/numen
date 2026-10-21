@@ -28,8 +28,8 @@ func newShelf() *shelf {
 func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, 0, fs.ErrNotExist
 	}
 	s.opens++
@@ -65,8 +65,8 @@ func (c trackedCloser) Close() error {
 func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return raw, nil

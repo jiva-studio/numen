@@ -104,9 +104,9 @@ func FuzzRead(f *testing.F) {
 
 	// A document that is not well formed: a tag that never closes, and an
 	// entity that is no entity.
-	torn := clone(parts)
-	torn["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
-	f.Add(buildReversedArchive(f, torn))
+	divided := clone(parts)
+	divided["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
+	f.Add(buildReversedArchive(f, divided))
 
 	// An entry of nothing but zeros, which deflates to a few hundred bytes and
 	// is read back as seventeen megabytes: a byte past what one document may
@@ -190,7 +190,7 @@ func FuzzRead(f *testing.F) {
 			}
 		}
 
-		if told := book.Tier != epub.FromNothing; told != (len(book.Parts) >= 2) {
+		if notified := book.Tier != epub.FromNothing; notified != (len(book.Parts) >= 2) {
 			t.Fatalf("%d parts came back and the book says they came from %q",
 				len(book.Parts), book.Tier)
 		}
@@ -300,9 +300,9 @@ func FuzzMarkup(f *testing.F) {
 
 	// A document that is not well formed, and one whose markup is nothing but
 	// elements the reader does not draw.
-	torn := clone(tinyParts(f))
-	torn["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
-	f.Add(buildReversedArchive(f, torn))
+	divided := clone(tinyParts(f))
+	divided["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
+	f.Add(buildReversedArchive(f, divided))
 	undrawn := clone(tinyParts(f))
 	undrawn["OEBPS/first.xhtml"] = []byte(
 		`<html><body><form><object><embed>Alpha</embed></object></form><iframe>Beta</iframe></body></html>`)
@@ -322,22 +322,22 @@ func FuzzMarkup(f *testing.F) {
 			}
 			read += doc.Length
 
-			drawn, err := book.Markup(doc.Path)
+			rendered, err := book.Markup(doc.Path)
 			if err != nil {
 				t.Fatalf("%s is a document of the book and failed as %v", doc.Path, err)
 			}
-			if drawn.Offset != doc.Offset || drawn.Length != doc.Length {
+			if rendered.Offset != doc.Offset || rendered.Length != doc.Length {
 				t.Fatalf("%s runs from %d for %d as markup and from %d for %d as text",
-					doc.Path, drawn.Offset, drawn.Length, doc.Offset, doc.Length)
+					doc.Path, rendered.Offset, rendered.Length, doc.Offset, doc.Length)
 			}
 			want := book.Text[doc.Offset : doc.Offset+doc.Length]
-			if got := getNodeText(drawn.Nodes); got != want {
+			if got := getNodeText(rendered.Nodes); got != want {
 				t.Fatalf("the markup of %s says %d bytes and its text is %d",
 					doc.Path, len(got), len(want))
 			}
-			checkNodeShape(t, doc, drawn.Nodes)
-			checkSpans(t, book.Text, doc, drawn.Nodes, doc.Offset+doc.Length)
-			checkHTML(t, book, doc, drawn)
+			checkNodeShape(t, doc, rendered.Nodes)
+			checkSpans(t, book.Text, doc, rendered.Nodes, doc.Offset+doc.Length)
+			checkHTML(t, book, doc, rendered)
 		}
 		if _, err := book.Markup("nothing/the-spine-names.xhtml"); !errors.Is(err, epub.ErrNoDocument) {
 			t.Fatalf("a document the book was not read from was answered with %v", err)
@@ -381,13 +381,13 @@ func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Mar
 	}
 	walk(root)
 
-	var said strings.Builder
+	var response strings.Builder
 	for _, one := range offsets(t, root) {
-		said.WriteString(one.said)
+		response.WriteString(one.said)
 	}
-	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; said.String() != want {
+	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; response.String() != want {
 		t.Fatalf("the runs of %s say %d bytes and the document is %d",
-			doc.Path, said.Len(), len(want))
+			doc.Path, response.Len(), len(want))
 	}
 }
 

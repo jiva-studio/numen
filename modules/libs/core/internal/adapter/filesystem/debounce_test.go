@@ -63,9 +63,9 @@ func waitForQueue(t *testing.T, q *queue, is func() bool) {
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		q.mu.Lock()
-		done := is()
+		isDone := is()
 		q.mu.Unlock()
-		if done {
+		if isDone {
 			return
 		}
 		if time.Now().After(deadline) {
@@ -91,11 +91,11 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 	waitForQueue(t, waiting, func() bool { return waiting.isOver })
 
 	changes := make(chan []string)
-	lost := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
+	missing := make(chan struct{}, 1)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
 
 	select {
-	case <-lost:
+	case <-missing:
 	case paths := <-changes:
 		t.Fatalf("reported %v — what a burst past the backlog dropped cannot be named", paths)
 	case <-time.After(5 * time.Second):
@@ -117,11 +117,11 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 	waitForQueue(t, waiting, func() bool { return len(waiting.events) == 4 })
 
 	changes := make(chan []string)
-	lost := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
+	missing := make(chan struct{}, 1)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
 
 	select {
-	case <-lost:
+	case <-missing:
 		t.Fatal("a backlog that was never past its bound was read again")
 	case paths := <-changes:
 		slices.Sort(paths)
@@ -148,8 +148,8 @@ func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 	go forwardEvents(ctx, raw, waiting)
 
 	changes := make(chan []string)
-	lost := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
+	missing := make(chan struct{}, 1)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
 
 	// One note, debounced and held, leaves the goroutine with a batch nobody is
 	// taking.
@@ -163,7 +163,7 @@ func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 	deadline := time.After(5 * time.Second)
 	for {
 		select {
-		case <-lost:
+		case <-missing:
 			t.Fatal("nothing was dropped and the whole vault was read again")
 		case paths := <-changes:
 			if slices.Contains(paths, "Note8.md") {

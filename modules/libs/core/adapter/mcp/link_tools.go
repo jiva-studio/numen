@@ -134,7 +134,7 @@ func addLinkUpdate(server *sdk.Server, core Core) {
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		written, err := core.Notes.Linking.Update(
+		content, err := core.Notes.Linking.Update(
 			ctx, core.getCurrentVault().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
 				Role:  domain.LinkRole(in.Role),
 				Type:  in.Type,
@@ -144,7 +144,7 @@ func addLinkUpdate(server *sdk.Server, core Core) {
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
+		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(content)}, nil
 	}))
 }
 
@@ -168,11 +168,11 @@ func addLinkRemove(server *sdk.Server, core Core) {
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		written, err := core.Notes.Linking.Remove(ctx, core.getCurrentVault().Vault, in.From,
+		content, err := core.Notes.Linking.Remove(ctx, core.getCurrentVault().Vault, in.From,
 			domain.ParseAddress(in.To), domain.LinkRole(in.Role), baseline)
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
+		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(content)}, nil
 	}))
 }

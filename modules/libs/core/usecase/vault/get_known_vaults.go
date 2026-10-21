@@ -43,11 +43,11 @@ func NewGetKnownVaults(registry port.VaultRegistry, readers port.VaultReaders) G
 // asks the list which vault the next window opens, which is the answer where
 // nobody is sitting in front of one.
 func (u GetKnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
-	held, err := u.registry.List()
+	target, err := u.registry.List()
 	if err != nil {
 		return nil, err
 	}
-	if len(held) == 0 {
+	if len(target) == 0 {
 		return nil, nil
 	}
 	if showing == "" {
@@ -60,18 +60,18 @@ func (u GetKnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 		}
 	}
 
-	known := make([]KnownVault, 0, len(held))
-	for _, v := range held {
+	recognized := make([]KnownVault, 0, len(target))
+	for _, v := range target {
 		one := KnownVault{
 			Vault:     v,
 			IsMissing: u.folders.Execute(v),
 			IsCurrent: showing != "" && v.ID == showing,
 		}
 		if one.IsCurrent {
-			known = slices.Insert(known, 0, one)
+			recognized = slices.Insert(recognized, 0, one)
 			continue
 		}
-		known = append(known, one)
+		recognized = append(recognized, one)
 	}
-	return known, nil
+	return recognized, nil
 }

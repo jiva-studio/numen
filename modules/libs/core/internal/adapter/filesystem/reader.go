@@ -163,7 +163,7 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 
 	entries := make([]domain.Entry, 0, len(read))
 	for _, d := range read {
-		if entry, listed := s.getEntry(target, folder, d); listed {
+		if entry, items := s.getEntry(target, folder, d); items {
 			entries = append(entries, entry)
 		}
 	}
@@ -273,12 +273,12 @@ func readAll(r io.Reader, size int64) ([]byte, error) {
 // are read a part at a time by a caller that knows how large the thing it is
 // reading is.
 func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
-	bound := s.opts.maxNoteBytes()
-	if !s.opts.isNote(pathpkg.Base(path)) || info.Size() <= bound {
+	linked := s.opts.maxNoteBytes()
+	if !s.opts.isNote(pathpkg.Base(path)) || info.Size() <= linked {
 		return nil
 	}
 	return fmt.Errorf("%s is %d bytes, and %d is the most a note is read at: %w",
-		path, info.Size(), bound, ErrNotANote)
+		path, info.Size(), linked, ErrNotANote)
 }
 
 // Open is one file, to read a part of. The path is checked by the same rule
@@ -339,8 +339,8 @@ func (s *VaultReader) GetFingerprint(ctx context.Context, path string) (domain.F
 	if ctx.Err() != nil {
 		return domain.Fingerprint{}, ctx.Err()
 	}
-	kind, held := s.getKind(path)
-	if !held {
+	kind, targetVal := s.getKind(path)
+	if !targetVal {
 		return domain.Fingerprint{}, s.getNotANoteError(path)
 	}
 	target, err := getContainedPath(s.root, path, s.opts.serviceDir())

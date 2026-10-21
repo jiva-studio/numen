@@ -160,22 +160,22 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	if err := cfg.MigratePluginSettings(); err != nil {
 		return err
 	}
-	chosen, err := cfg.Settings()
+	selected, err := cfg.Settings()
 	if err != nil {
 		return err
 	}
-	cfg = cfg.SetSettings(chosen)
+	cfg = cfg.SetSettings(selected)
 	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
 
-	shown, err := openInstallation(ctx, cfg, vault)
+	displayed, err := openInstallation(ctx, cfg, vault)
 	if err != nil {
 		return err
 	}
-	pages, opened := shown.pages, shown.opened
+	pages, opened := displayed.pages, displayed.opened
 	opened.Services.Themes = themes.Load(cfg.Themes, opened.SayTheme, os.Stdout)
 
-	opened.Report(chosen.Notices)
+	opened.Report(selected.Notices)
 
 	reachable := makeEndpoint(ctx, cfg, opened, mcp)
 	going := &vaultFlush{flush: opened.FlushPending}
@@ -199,18 +199,18 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	tracker := newWindowTracker()
 	var window *application.WebviewWindow
-	seen := visibility{
+	observed := visibility{
 		hide: func() { window.Hide() },
 		show: func() { window.Show() },
 	}
 
-	app := makeApplication(opened, pages, shutdownSeq, going, seen)
+	app := makeApplication(opened, pages, shutdownSeq, going, observed)
 	window = makeWindow(app, opened)
 	tracker.addWindow()
 	connectWindow(ctx, app, cfg, window, opened, reachable, tracker, going)
 
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !handleWindowClosing(ctx, tracker, going, seen, opened.WaitForFlush, window.Close) {
+		if !handleWindowClosing(ctx, tracker, going, observed, opened.WaitForFlush, window.Close) {
 			event.Cancel()
 		}
 	})
@@ -377,7 +377,7 @@ func importDroppedFiles(ctx context.Context, opened *editor.Installation, event 
 const droppedInto = "data-file-drop-target"
 
 func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
-	if front, held := open.GetFrontTab(); held && front.Path != "" {
+	if front, target := open.GetFrontTab(); target && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}
 	if v.Name == "" {

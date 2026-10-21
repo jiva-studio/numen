@@ -18,23 +18,23 @@ import (
 func getInterfaceProbes(file *ast.File) []string {
 	var found []string
 	probe := func(target ast.Expr) {
-		switch held := target.(type) {
+		switch targetVal := target.(type) {
 		case *ast.InterfaceType:
 			found = append(found, "interface{...}")
 		case *ast.SelectorExpr:
-			if from, is := held.X.(*ast.Ident); is && from.Name == "port" {
-				found = append(found, "port."+held.Sel.Name)
+			if from, is := targetVal.X.(*ast.Ident); is && from.Name == "port" {
+				found = append(found, "port."+targetVal.Sel.Name)
 			}
 		}
 	}
 	ast.Inspect(file, func(node ast.Node) bool {
-		switch held := node.(type) {
+		switch targetItem := node.(type) {
 		case *ast.TypeAssertExpr:
-			if held.Type != nil {
-				probe(held.Type)
+			if targetItem.Type != nil {
+				probe(targetItem.Type)
 			}
 		case *ast.CaseClause:
-			for _, one := range held.List {
+			for _, one := range targetItem.List {
 				probe(one)
 			}
 		}
@@ -120,11 +120,11 @@ func probe(held any, reader port.VaultReader) {
 func internalTypes(file *ast.File) []string {
 	local := map[string]bool{}
 	for _, one := range file.Imports {
-		held, err := strconv.Unquote(one.Path.Value)
-		if err != nil || !strings.HasPrefix(held, module+"internal/") {
+		target, err := strconv.Unquote(one.Path.Value)
+		if err != nil || !strings.HasPrefix(target, module+"internal/") {
 			continue
 		}
-		name := path.Base(held)
+		name := path.Base(target)
 		if one.Name != nil {
 			name = one.Name.Name
 		}

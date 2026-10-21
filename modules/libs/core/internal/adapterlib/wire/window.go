@@ -133,8 +133,8 @@ func (w *Window) WatchQuit(
 	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return err
 	}
-	token, told, done := w.clients.registerClient()
-	defer done()
+	token, notified, isDone := w.clients.registerClient()
+	defer isDone()
 
 	// The token before anything is asked. A client that has not been given one
 	// cannot answer, and a stream that says nothing until the window goes is
@@ -157,11 +157,11 @@ func (w *Window) WatchQuit(
 			if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 				return err
 			}
-		case asked, listening := <-told:
+		case request, listening := <-notified:
 			if !listening {
 				return nil
 			}
-			if err := out.Send(&v1.WatchQuitResponse{Token: asked, Flush: true}); err != nil {
+			if err := out.Send(&v1.WatchQuitResponse{Token: request, Flush: true}); err != nil {
 				return err
 			}
 		}

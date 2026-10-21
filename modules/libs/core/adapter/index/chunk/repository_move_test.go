@@ -54,7 +54,7 @@ func TestAMovedFolderTakesEverythingUnderItAndNothingBesides(t *testing.T) {
 	s.saveNote(repoVaultA, "physics0/Next.md", "Next", false)
 	s.saveNote(repoVaultB, "physics/Other.md", "Other", false)
 	s.cut(repoVaultA, "book", "physics/A Book.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "book words"}})
-	held := s.rowsOf(repoVaultA, "physics/A Book.epub")
+	target := s.rowsOf(repoVaultA, "physics/A Book.epub")
 
 	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "physics", "science/physics"); err != nil {
 		t.Fatal(err)
@@ -70,8 +70,8 @@ func TestAMovedFolderTakesEverythingUnderItAndNothingBesides(t *testing.T) {
 	if got := s.paths(repoVaultB); !slices.Equal(got, []string{"physics/Other.md"}) {
 		t.Errorf("the other vault holds %v", got)
 	}
-	if got := s.rowsOf(repoVaultA, "science/physics/A Book.epub"); !slices.Equal(got, held) {
-		t.Errorf("the book's chunks are %v, were %v", got, held)
+	if got := s.rowsOf(repoVaultA, "science/physics/A Book.epub"); !slices.Equal(got, target) {
+		t.Errorf("the book's chunks are %v, were %v", got, target)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestAMoveOntoWhereAScanAlreadyFiledTheFileKeepsTheRowThatTravels(t *testing
 	s.cut(repoVaultA, "book", "Old.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "old words"}})
 	s.cut(repoVaultA, "book", "New.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "fresh words"}})
 	s.cut(repoVaultA, "book", "New.epub.d/inner.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "inner words"}})
-	held := s.rowsOf(repoVaultA, "Old.epub")
+	target := s.rowsOf(repoVaultA, "Old.epub")
 	standing := s.rowsOf(repoVaultA, "New.epub")
 	if err := s.db.Chunks().SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(standing[0], "m", 1)}); err != nil {
 		t.Fatal(err)
@@ -120,8 +120,8 @@ func TestAMoveOntoWhereAScanAlreadyFiledTheFileKeepsTheRowThatTravels(t *testing
 	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"New.epub", "New.epub.d/inner.epub"}) {
 		t.Errorf("the vault holds %v", got)
 	}
-	if got := s.rowsOf(repoVaultA, "New.epub"); !slices.Equal(got, held) {
-		t.Errorf("the file at the landing holds %v, want the travelling %v", got, held)
+	if got := s.rowsOf(repoVaultA, "New.epub"); !slices.Equal(got, target) {
+		t.Errorf("the file at the landing holds %v, want the travelling %v", got, target)
 	}
 	if n := s.count(`SELECT count(*) FROM chunks_fts WHERE rowid = ?`, standing[0]); n != 0 {
 		t.Error("the words of the displaced file are still indexed")
@@ -171,14 +171,14 @@ func TestAFolderMovedInsideItselfKeepsWhatIsMoving(t *testing.T) {
 func TestAMoveOntoItsOwnPathChangesNothing(t *testing.T) {
 	s := newStore(t)
 	s.cut(repoVaultA, "book", "Same.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "words"}})
-	held := s.rowsOf(repoVaultA, "Same.epub")
+	target := s.rowsOf(repoVaultA, "Same.epub")
 
 	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Same.epub", "Same.epub"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.rowsOf(repoVaultA, "Same.epub"); !slices.Equal(got, held) {
-		t.Errorf("the chunks are %v, were %v", got, held)
+	if got := s.rowsOf(repoVaultA, "Same.epub"); !slices.Equal(got, target) {
+		t.Errorf("the chunks are %v, were %v", got, target)
 	}
 }
 

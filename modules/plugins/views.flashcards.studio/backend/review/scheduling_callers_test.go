@@ -24,13 +24,13 @@ var scheduling = []string{"History.Replay", "Simulation.step"}
 // walk is over this package's own files, because AssignDueDay is where a day is
 // decided and the deciding is all here.
 func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
-	held, err := os.ReadDir(".")
+	target, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)
 	}
 	var calls []string
 	read, declared := 0, 0
-	for _, one := range held {
+	for _, one := range target {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
 			continue
@@ -166,8 +166,8 @@ func getFuncName(at *ast.FuncDecl) string {
 	if star, is := of.(*ast.StarExpr); is {
 		of = star.X
 	}
-	if held, is := of.(*ast.Ident); is {
-		return held.Name + "." + at.Name.Name
+	if target, is := of.(*ast.Ident); is {
+		return target.Name + "." + at.Name.Name
 	}
 	return at.Name.Name
 }

@@ -115,13 +115,13 @@ func getUnwritten(reservation string, info fs.FileInfo) int64 {
 	if err != nil {
 		return 0
 	}
-	var written int64
+	var content int64
 	if part != "" {
-		if held, err := os.Stat(part); err == nil {
-			written = held.Size()
+		if target, err := os.Stat(part); err == nil {
+			content = target.Size()
 		}
 	}
-	return max(promised-written, 0)
+	return max(promised-content, 0)
 }
 
 // CheckQuota returns an error when need more bytes would take dir past the quota.

@@ -33,12 +33,12 @@ func TestTokensReadsTheFilePublishedBesideAModel(t *testing.T) {
 	if err := os.WriteFile(at, []byte("<unk> 0\n▁a 1\n▁b 2\n<blk> 3\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	said, err := tokens(at)
+	response, err := tokens(at)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(said) != 4 || said[1] != " a" || said.getIndex("<blk>") != 3 {
-		t.Errorf("the file names %v", said)
+	if len(response) != 4 || response[1] != " a" || response.getIndex("<blk>") != 3 {
+		t.Errorf("the file names %v", response)
 	}
 }
 
@@ -78,13 +78,13 @@ func TestTokensTextMatchesReference(t *testing.T) {
 	}
 	rng := rand.New(rand.NewSource(362))
 	for range 5000 {
-		said := make([]int, rng.Intn(24))
-		for i := range said {
-			said[i] = rng.Intn(len(vocabularyWords)+4) - 2
+		response := make([]int, rng.Intn(24))
+		for i := range response {
+			response[i] = rng.Intn(len(vocabularyWords)+4) - 2
 		}
-		want := decodeReference(pieces(vocabularyWords), said)
-		if got := loaded.text(said); got != want {
-			t.Fatalf("tokens %v say %q, want %q", said, got, want)
+		want := decodeReference(pieces(vocabularyWords), response)
+		if got := loaded.text(response); got != want {
+			t.Fatalf("tokens %v say %q, want %q", response, got, want)
 		}
 	}
 }
@@ -107,12 +107,12 @@ func BenchmarkTokensText(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	said := make([]int, 200)
-	for i := range said {
-		said[i] = (i * 7) % len(words)
+	response := make([]int, 200)
+	for i := range response {
+		response[i] = (i * 7) % len(words)
 	}
 	b.ReportAllocs()
 	for b.Loop() {
-		_ = loaded.text(said)
+		_ = loaded.text(response)
 	}
 }

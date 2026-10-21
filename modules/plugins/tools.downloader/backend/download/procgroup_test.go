@@ -96,9 +96,9 @@ func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
 	folder := t.TempDir()
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(isDone)
 		_, _ = run(ctx, spawningScript(t), nil, folder)
 	}()
 	waitFor(t, "the tool starting its child", func() bool {
@@ -106,7 +106,7 @@ func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
 		return ok
 	})
 	cancel()
-	<-done
+	<-isDone
 	if err := os.RemoveAll(folder); err != nil {
 		t.Fatal(err)
 	}

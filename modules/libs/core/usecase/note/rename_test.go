@@ -33,11 +33,11 @@ func (c changing) renameApart() note.Rename {
 // and not of the file: it is the answer the person sees.
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
-	shown, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{path})
+	displayed, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return shown[path].Title
+	return displayed[path].Title
 }
 
 // Whichever of the title and the filename names the note is the one brought
@@ -105,14 +105,14 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			}
 
 			body := v.read(t, renamed.Path)
-			for _, kept := range c.holds {
-				if !strings.Contains(body, kept) {
-					t.Errorf("want %q in\n%s", kept, body)
+			for _, retained := range c.holds {
+				if !strings.Contains(body, retained) {
+					t.Errorf("want %q in\n%s", retained, body)
 				}
 			}
-			for _, gone := range c.lacks {
-				if strings.Contains(body, gone) {
-					t.Errorf("want no %q in\n%s", gone, body)
+			for _, removed := range c.lacks {
+				if strings.Contains(body, removed) {
+					t.Errorf("want no %q in\n%s", removed, body)
 				}
 			}
 			if got := v.title(t, renamed.Path); got != c.title {

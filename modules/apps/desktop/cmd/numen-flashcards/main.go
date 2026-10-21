@@ -77,11 +77,11 @@ func run(cfg container.Config, noAgent bool) error {
 	if err := cfg.MigratePluginSettings(); err != nil {
 		return err
 	}
-	chosen, err := cfg.Settings()
+	selected, err := cfg.Settings()
 	if err != nil {
 		return err
 	}
-	cfg = cfg.SetSettings(chosen)
+	cfg = cfg.SetSettings(selected)
 
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -117,13 +117,13 @@ func run(cfg container.Config, noAgent bool) error {
 	away := serveAgents(ctx, cfg, db, notes, api, noAgent, os.Stderr)
 
 	// The agents stop, then the walk and the watch, then the index they write to closes.
-	held := shutdown.NewSequence(
+	target := shutdown.NewSequence(
 		shutdown.Report("numen-flashcards", os.Stderr, "agents", away),
 		stop,
 		vaults.CloseAndWait,
 		shutdown.Report("numen-flashcards", os.Stderr, "", db.Close),
 	)
-	defer held.Run()
+	defer target.Run()
 
 	followChanges(ctx, cfg, api)
 	api.Themes = themes.Load(cfg.Themes, func(said string) { fmt.Fprintln(os.Stderr, "themes:", said) }, os.Stderr)
@@ -132,7 +132,7 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		return err
 	}
-	return runApplication(api, pages, held)
+	return runApplication(api, pages, target)
 }
 
 // makeWindowAPI is the window's API: the notes it answers about and the plugins' services it forwards.

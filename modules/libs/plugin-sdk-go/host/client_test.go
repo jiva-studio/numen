@@ -194,9 +194,9 @@ func TestAVaultNamedByIdentityIsAskedForByHeader(t *testing.T) {
 	if !errors.Is(unknown, host.ErrUnknownVault) {
 		t.Errorf("an unknown vault was answered %v", unknown)
 	}
-	shown, err := client.GetVault(context.Background())
-	if err != nil || a.named != "" || shown.ID != "" {
-		t.Errorf("the shown vault was asked for with the header %q (%+v, %v)", a.named, shown, err)
+	displayed, err := client.GetVault(context.Background())
+	if err != nil || a.named != "" || displayed.ID != "" {
+		t.Errorf("the shown vault was asked for with the header %q (%+v, %v)", a.named, displayed, err)
 	}
 }
 

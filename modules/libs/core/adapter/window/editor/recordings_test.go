@@ -43,8 +43,8 @@ func (s storing) Open(domain.Vault) (port.DerivedStore, error) { return s.Derive
 
 // Open is one file of the store, which a copy of a video is played from.
 func (s stored) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
-	raw, held := s[name]
-	if !held {
+	raw, target := s[name]
+	if !target {
 		return nil, 0, fs.ErrNotExist
 	}
 	return readingBytes{bytes.NewReader(raw)}, int64(len(raw)), nil
@@ -66,8 +66,8 @@ type readingBytes struct{ *bytes.Reader }
 func (readingBytes) Close() error { return nil }
 
 func (s stored) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
-	raw, held := s[name]
-	if !held {
+	raw, target := s[name]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return raw, nil
@@ -198,11 +198,11 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _ := openRecordingWindow(t, one.held)
 
-			told := readTranscript(t, api)
-			if len(told.GetCues()) != 2 {
-				t.Fatalf("what was heard came back as %+v", told)
+			notified := readTranscript(t, api)
+			if len(notified.GetCues()) != 2 {
+				t.Fatalf("what was heard came back as %+v", notified)
 			}
-			if first := told.GetCues()[0]; first.GetText() != "what was said" ||
+			if first := notified.GetCues()[0]; first.GetText() != "what was said" ||
 				first.GetFrom() != 1500 || first.GetTo() != 4200 {
 				t.Errorf("the first thing said came back as %+v", first)
 			}
@@ -215,8 +215,8 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 
-	if told := readTranscript(t, api); len(told.GetCues()) != 0 {
-		t.Errorf("a recording nobody heard says %+v", told.GetCues())
+	if notified := readTranscript(t, api); len(notified.GetCues()) != 0 {
+		t.Errorf("a recording nobody heard says %+v", notified.GetCues())
 	}
 	back, playing := openLoopback(t, api)
 	if out := ask(playing, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))); out.Code != http.StatusOK {
@@ -246,9 +246,9 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 			if err != nil {
 				t.Fatalf("asked what the recording is and failed: %v", err)
 			}
-			told := out.Msg
-			if told.GetDurationMs() != one.length {
-				t.Errorf("the recording came back as %+v, want %d long", told, one.length)
+			notified := out.Msg
+			if notified.GetDurationMs() != one.length {
+				t.Errorf("the recording came back as %+v, want %d long", notified, one.length)
 			}
 		})
 	}
@@ -316,8 +316,8 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 func TestAQuestionNamingNoRunIsAboutTheWholeTranscript(t *testing.T) {
 	api, _ := openRecordingWindow(t, whole(newCues()))
 
-	if told := readTranscript(t, api); len(told.GetCues()) != 2 {
-		t.Errorf("the whole transcript came back as %+v", told.GetCues())
+	if notified := readTranscript(t, api); len(notified.GetCues()) != 2 {
+		t.Errorf("the whole transcript came back as %+v", notified.GetCues())
 	}
 }
 
@@ -351,8 +351,8 @@ func cueOf(text string, from, to int32) *v1.Cue {
 // What a transcript was put right to is kept along with what was heard, and what
 // was heard stays where it is.
 func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
-	held := whole(newCues())
-	api, _ := openRecordingWindow(t, held)
+	target := whole(newCues())
+	api, _ := openRecordingWindow(t, target)
 
 	if err := writeTranscript(api,
 		cueOf("what was said", 1500, 4200),
@@ -361,28 +361,28 @@ func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 
-	put, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]
-	if !kept {
-		t.Fatalf("nothing was kept beside the transcript: %v", held)
+	placed, retained := target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]
+	if !retained {
+		t.Fatalf("nothing was kept beside the transcript: %v", target)
 	}
-	if _, cues := transcript.Parse(put); len(cues) != 2 || cues[1].Text != "what Rupa said next" {
-		t.Errorf("the transcript was put right to %q", put)
+	if _, cues := transcript.Parse(placed); len(cues) != 2 || cues[1].Text != "what Rupa said next" {
+		t.Errorf("the transcript was put right to %q", placed)
 	}
-	if _, cues := transcript.Parse(held[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]); cues[1].Text != "what was said next" {
+	if _, cues := transcript.Parse(target[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]); cues[1].Text != "what was said next" {
 		t.Error("what was heard was written over")
 	}
 }
 
 // What a person wrote says so, so a proofreader leaves it alone.
 func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
-	held := whole(newCues())
-	api, _ := openRecordingWindow(t, held)
+	target := whole(newCues())
+	api, _ := openRecordingWindow(t, target)
 
 	if err := writeTranscript(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and failed: %v", err)
 	}
-	if !transcript.IsWrittenByHand(held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]) {
-		t.Errorf("the transcript does not say a person wrote it:\n%s", held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)])
+	if !transcript.IsWrittenByHand(target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]) {
+		t.Errorf("the transcript does not say a person wrote it:\n%s", target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)])
 	}
 }
 
@@ -391,10 +391,10 @@ func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 	api, _ := openRecordingWindow(t, whole(newCues()))
 
-	var asked []string
+	var request []string
 	modifySession(api, func(on *vaultSession) {
 		on.rechunk = func(_ context.Context, _ domain.Vault, path string) error {
-			asked = append(asked, path)
+			request = append(request, path)
 			return nil
 		}
 	})
@@ -402,16 +402,16 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 	if err := writeTranscript(api, cueOf("what was said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and failed: %v", err)
 	}
-	if len(asked) != 1 || asked[0] != talk {
-		t.Errorf("the sources cut again are %v", asked)
+	if len(request) != 1 || request[0] != talk {
+		t.Errorf("the sources cut again are %v", request)
 	}
 }
 
 // A cut that could not be asked for is not a write that failed: the correction
 // is on disk either way.
 func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
-	held := whole(newCues())
-	api, _ := openRecordingWindow(t, held)
+	target := whole(newCues())
+	api, _ := openRecordingWindow(t, target)
 	modifySession(api, func(on *vaultSession) {
 		on.rechunk = func(context.Context, domain.Vault, string) error {
 			return errors.New("nothing is cutting")
@@ -421,7 +421,7 @@ func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	if err := writeTranscript(api, cueOf("what was said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and failed: %v", err)
 	}
-	if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; !kept {
+	if _, retained := target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; !retained {
 		t.Error("the correction was not kept")
 	}
 }
@@ -429,8 +429,8 @@ func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 // The window is told the transcript as it now stands, and taking away what it
 // was put right to gives back what was heard.
 func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
-	held := whole(newCues())
-	api, _ := openRecordingWindow(t, held)
+	target := whole(newCues())
+	api, _ := openRecordingWindow(t, target)
 
 	if err := writeTranscript(api,
 		cueOf("what was said", 1500, 4200),
@@ -438,13 +438,13 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 	); err != nil {
 		t.Fatalf("put the transcript right and failed: %v", err)
 	}
-	if told := readTranscript(t, api); told.GetCues()[1].GetText() != "what Rupa said next" {
-		t.Errorf("the window is told %+v", told.GetCues())
+	if notified := readTranscript(t, api); notified.GetCues()[1].GetText() != "what Rupa said next" {
+		t.Errorf("the window is told %+v", notified.GetCues())
 	}
 
-	delete(held, domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed))
-	if told := readTranscript(t, api); told.GetCues()[1].GetText() != "what was said next" {
-		t.Errorf("what was heard did not come back: %+v", told.GetCues())
+	delete(target, domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed))
+	if notifiedVal := readTranscript(t, api); notifiedVal.GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("what was heard did not come back: %+v", notifiedVal.GetCues())
 	}
 }
 
@@ -482,8 +482,8 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 		{"a cue carrying a carriage return", []*v1.Cue{cueOf("said\rand said next", 1500, 4200)}},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			held := whole(newCues())
-			api, _ := openRecordingWindow(t, held)
+			target := whole(newCues())
+			api, _ := openRecordingWindow(t, target)
 
 			err := writeTranscript(api, one.cues...)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -492,7 +492,7 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 			if err.Error() == "" {
 				t.Error("the transcript failed without saying why")
 			}
-			if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
+			if _, retained := target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; retained {
 				t.Error("a transcript that failed was written")
 			}
 		})
@@ -501,8 +501,8 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 
 // A cue whose words trim away is silence, and Marshal writes none.
 func TestACueWithNoWordsIsDropped(t *testing.T) {
-	held := whole(newCues())
-	api, _ := openRecordingWindow(t, held)
+	target := whole(newCues())
+	api, _ := openRecordingWindow(t, target)
 
 	if err := writeTranscript(api,
 		cueOf("what was said", 1500, 4200),
@@ -511,7 +511,7 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 	); err != nil {
 		t.Fatalf("put the transcript right and failed: %v", err)
 	}
-	if _, cues := transcript.Parse(held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]); len(cues) != 2 {
+	if _, cues := transcript.Parse(target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]); len(cues) != 2 {
 		t.Errorf("the transcript was written down as %v", cues)
 	}
 }
@@ -519,14 +519,14 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 // A run appends to the transcript, and what is being appended to is not edited
 // underneath.
 func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: newPartialStore(newCues(), 9100), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
-	api, _ := windowOn(t, held)
+	target := heldBy{stored: newPartialStore(newCues(), 9100), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
+	api, _ := windowOn(t, target)
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("edited a recording being listened to and failed %v", err)
 	}
-	if _, kept := held.stored[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
+	if _, retained := target.stored[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; retained {
 		t.Error("the transcript was written while a run held the recording")
 	}
 
@@ -546,18 +546,18 @@ func TestTheWindowIsToldATranscriptMayBePutRight(t *testing.T) {
 
 // A recording nobody has listened to has no transcript to put right.
 func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
-	held := stored{}
-	api, _ := openRecordingWindow(t, held)
-	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, storing{held})
+	target := stored{}
+	api, _ := openRecordingWindow(t, target)
+	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, storing{target})
 	api.Ocr.highlight = &hl
-	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, indexed{}, storing{held}))
+	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, indexed{}, storing{target}))
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("put right a recording nothing heard and failed %v", err)
 	}
-	if len(held) != 0 {
-		t.Errorf("a transcript was written for a recording nothing heard: %v", held)
+	if len(target) != 0 {
+		t.Errorf("a transcript was written for a recording nothing heard: %v", target)
 	}
 }
 
@@ -572,18 +572,18 @@ func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
 		{"a transcript of empty cues", []*v1.Cue{cueOf("  ", 1500, 4200)}},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			held := whole(newCues())
-			api, _ := openRecordingWindow(t, held)
+			target := whole(newCues())
+			api, _ := openRecordingWindow(t, target)
 
 			err := writeTranscript(api, one.cues...)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Fatalf("the transcript was answered with %v", err)
 			}
-			if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
+			if _, retained := target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; retained {
 				t.Error("a transcript of no words was written over the recording")
 			}
-			if told := readTranscript(t, api); len(told.GetCues()) != 2 {
-				t.Errorf("the recording now says %+v", told.GetCues())
+			if notified := readTranscript(t, api); len(notified.GetCues()) != 2 {
+				t.Errorf("the recording now says %+v", notified.GetCues())
 			}
 		})
 	}
@@ -619,8 +619,8 @@ func (s stating) GetFingerprint(ctx context.Context, path string) (domain.Finger
 // to another vault while the write was being made does not cut this recording
 // there.
 func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
-	held := whole(newCues())
-	api, _ := openRecordingWindow(t, held)
+	target := whole(newCues())
+	api, _ := openRecordingWindow(t, target)
 	showing := api.state.GetCurrentVault()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
@@ -661,13 +661,13 @@ func (r refusing) WriteArtifact(ctx context.Context, name domain.ArtifactName, c
 // A correction that could not be written is said so, and the source is not cut
 // again from words that are not on disk.
 func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
-	held := refusing{stored: whole(newCues()), why: errors.New("the disk is full")}
-	api, _ := windowOn(t, held)
+	target := refusing{stored: whole(newCues()), why: errors.New("the disk is full")}
+	api, _ := windowOn(t, target)
 
-	var asked []string
+	var request []string
 	modifySession(api, func(on *vaultSession) {
 		on.rechunk = func(_ context.Context, _ domain.Vault, path string) error {
-			asked = append(asked, path)
+			request = append(request, path)
 			return nil
 		}
 	})
@@ -675,10 +675,10 @@ func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 	if err := writeTranscript(api, cueOf("what Rupa said", 1500, 4200)); err == nil {
 		t.Fatal("a correction that was not written was answered as one that was")
 	}
-	if len(asked) != 0 {
-		t.Errorf("the source was cut again from words nothing holds: %v", asked)
+	if len(request) != 0 {
+		t.Errorf("the source was cut again from words nothing holds: %v", request)
 	}
-	if told := readTranscript(t, api); told.GetCues()[1].GetText() != "what was said next" {
-		t.Errorf("the recording now says %+v", told.GetCues())
+	if notified := readTranscript(t, api); notified.GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("the recording now says %+v", notified.GetCues())
 	}
 }

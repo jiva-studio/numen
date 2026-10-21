@@ -378,14 +378,14 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 	}()
 
 	// The child says other things first, and the claim is the line waited for.
-	said := bufio.NewScanner(stdout)
-	for said.Scan() {
-		if said.Text() == claimHeld {
+	response := bufio.NewScanner(stdout)
+	for response.Scan() {
+		if response.Text() == claimHeld {
 			break
 		}
 	}
-	if said.Text() != claimHeld {
-		t.Fatalf("the child never took the claim: %v", said.Err())
+	if response.Text() != claimHeld {
+		t.Fatalf("the child never took the claim: %v", response.Err())
 	}
 
 	if _, err := derived.ClaimName(t.Context(), "ocr/held.txt"); !errors.Is(err, port.ErrClaimed) {
@@ -507,7 +507,7 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 // files on another disk, a person moving them — is where the store writes from
 // then on, so the answer is the folder as it is and not as it was.
 func TestAStoreFollowsItsFolderWhereItIsPutAfterwards(t *testing.T) {
-	held := t.TempDir()
+	target := t.TempDir()
 	root := filepath.Join(t.TempDir(), "vault")
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
@@ -516,7 +516,7 @@ func TestAStoreFollowsItsFolderWhereItIsPutAfterwards(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Symlink(held, filepath.Join(root, filesystem.DefaultServiceDir)); err != nil {
+	if err := os.Symlink(target, filepath.Join(root, filesystem.DefaultServiceDir)); err != nil {
 		t.Skipf("this filesystem has no links: %v", err)
 	}
 
@@ -528,7 +528,7 @@ func TestAStoreFollowsItsFolderWhereItIsPutAfterwards(t *testing.T) {
 	if err != nil || string(got) != "read" {
 		t.Errorf("read %q, %v", got, err)
 	}
-	if _, err := os.Stat(filepath.Join(held, filesystem.OCRDir, "abc.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(target, filesystem.OCRDir, "abc.txt")); err != nil {
 		t.Errorf("the file did not land where the folder is: %v", err)
 	}
 }
@@ -582,10 +582,10 @@ func TestAnAreaThatIsALinkHoldsNothing(t *testing.T) {
 // the old area, which is no area of the store now, and the store opened before
 // the move refuses it as one opened after would.
 func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
-	held := t.TempDir()
-	old := filepath.Join(held, "old")
+	target := t.TempDir()
+	old := filepath.Join(target, "old")
 	root := filepath.Join(t.TempDir(), "vault")
-	for _, folder := range []string{old, root, filepath.Join(held, filesystem.OCRDir)} {
+	for _, folder := range []string{old, root, filepath.Join(target, filesystem.OCRDir)} {
 		if err := os.MkdirAll(folder, 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -606,16 +606,16 @@ func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 		t.Fatalf("writing into the folder the store has: %v", err)
 	}
 
-	if err := os.Rename(filepath.Join(old, "config.json"), filepath.Join(held, "config.json")); err != nil {
+	if err := os.Rename(filepath.Join(old, "config.json"), filepath.Join(target, "config.json")); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Remove(service); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Symlink(held, service); err != nil {
+	if err := os.Symlink(target, service); err != nil {
 		t.Fatal(err)
 	}
-	back := filepath.Join(held, filesystem.OCRDir, "back")
+	back := filepath.Join(target, filesystem.OCRDir, "back")
 	if err := os.Symlink(filepath.Join("..", "old", filesystem.OCRDir), back); err != nil {
 		t.Fatal(err)
 	}
@@ -636,7 +636,7 @@ func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 	if err := derived.Write(ctx, "ocr/b.txt", []byte("four")); err != nil {
 		t.Errorf("writing into the folder the store now has: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(held, filesystem.OCRDir, "b.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(target, filesystem.OCRDir, "b.txt")); err != nil {
 		t.Errorf("the file did not land where the folder is: %v", err)
 	}
 }

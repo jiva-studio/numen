@@ -65,7 +65,7 @@ type drawn struct {
 }
 
 func (d *drawn) GetPage(_ context.Context, key document.PageKey, draw func() ([]byte, error)) ([]byte, error) {
-	if body, held := d.pages[key]; held {
+	if body, target := d.pages[key]; target {
 		return body, nil
 	}
 	body, err := draw()
@@ -105,8 +105,8 @@ func (a *archive) ReadEntry(_ context.Context, mark domain.Fingerprint, entry st
 	if a.failure != nil {
 		return nil, a.failure
 	}
-	body, held := a.entries[entry]
-	if !held {
+	body, target := a.entries[entry]
+	if !target {
 		return nil, document.ErrNoEntry
 	}
 	return body, nil
@@ -134,8 +134,8 @@ func (a *archive) ReadBookMarkup(_ context.Context, _, section string, baseline 
 	if a.failure != nil {
 		return "", a.failure
 	}
-	body, held := a.entries[section]
-	if !held {
+	body, target := a.entries[section]
+	if !target {
 		return "", document.ErrNoEntry
 	}
 	return string(body), nil

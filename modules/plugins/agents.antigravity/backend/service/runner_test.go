@@ -148,15 +148,15 @@ func TestTheAnswerOfTheCliIsSaidOnce(t *testing.T) {
 
 	got, reg := collect(t, script)
 
-	var said strings.Builder
+	var response strings.Builder
 	for _, resp := range got {
 		if resp.GetStopped() != "" {
 			t.Fatalf("stopped: %v", resp)
 		}
-		said.WriteString(resp.GetText())
+		response.WriteString(resp.GetText())
 	}
-	if said.String() != "ok\n" {
-		t.Errorf("said %q, want %q", said.String(), "ok\n")
+	if response.String() != "ok\n" {
+		t.Errorf("said %q, want %q", response.String(), "ok\n")
 	}
 	if session := reg.GetSession("c-1"); session != "s-1" {
 		t.Errorf("session %q, want s-1", session)

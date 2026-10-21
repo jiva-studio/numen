@@ -99,7 +99,7 @@ func (u Replace) Execute(
 		return ReplaceResult{}, fmt.Errorf("name the text to replace")
 	}
 
-	done := ReplaceResult{}
+	isDone := ReplaceResult{}
 	ends := func() {}
 	defer func() { ends() }()
 
@@ -121,8 +121,8 @@ func (u Replace) Execute(
 		}
 
 		span := where[0]
-		written := body[:span.From] + becomes + body[span.To:]
-		if err := doc.SetBody(written); err != nil {
+		content := body[:span.From] + becomes + body[span.To:]
+		if err := doc.SetBody(content); err != nil {
 			return err
 		}
 
@@ -135,16 +135,16 @@ func (u Replace) Execute(
 			Text: becomes,
 		})
 
-		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
-		done.Matched = body[span.From:span.To]
-		done.IsPlain = plainly
+		isDone.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
+		isDone.Matched = body[span.From:span.To]
+		isDone.IsPlain = plainly
 		return nil
 	})
 	if err != nil {
 		return ReplaceResult{}, err
 	}
-	done.Fingerprint = at
-	return done, nil
+	isDone.Fingerprint = at
+	return isDone, nil
 }
 
 // newMissingSpan is what to say about a span that is not in the note: how much of

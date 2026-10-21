@@ -185,11 +185,11 @@ func (g *vaultFlush) run(this *flushAttempt) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), quitBound)
 	defer cancel()
-	settled := g.flush(ctx)
+	resolved := g.flush(ctx)
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	this.isFlushed = settled
-	g.isDone = settled
+	this.isFlushed = resolved
+	g.isDone = resolved
 	g.turn = nil
 }

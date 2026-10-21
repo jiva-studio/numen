@@ -88,12 +88,12 @@ func (u Read) Execute(
 	defer file.Close()
 
 	// A listing of the folder above is the vault saying what it holds there.
-	held, err := getReadOutcome(ctx, reader, path)
+	target, err := getReadOutcome(ctx, reader, path)
 	if err != nil {
 		return ReadResult{}, err
 	}
-	if held != Ok {
-		out.Outcome = held
+	if target != Ok {
+		out.Outcome = target
 		return out, nil
 	}
 

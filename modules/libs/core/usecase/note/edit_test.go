@@ -98,12 +98,12 @@ func TestAnEditNeedsNoIndexToLeaveTheNoteWritten(t *testing.T) {
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	edit := note.NewEdit(filesystem.VaultReaders{}, filesystem.VaultWriters{}, nil, time.Now)
 
-	written, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
+	content, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 	if err != nil {
 		t.Fatalf("an edit with no index to level failed: %v", err)
 	}
 
-	if written.IsZero() {
+	if content.IsZero() {
 		t.Error("the write landed and no fingerprint came back")
 	}
 	if body := c.read(t, "Heat.md"); body == "# Heat\n" {
@@ -127,14 +127,14 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 
-			written, err := note.NewEdit(tc.readers, tc.writers, c.index, time.Now).
+			content, err := note.NewEdit(tc.readers, tc.writers, c.index, time.Now).
 				Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
 			if !errors.Is(err, errDiskGone) {
 				t.Errorf("want the error the vault gave, got %v", err)
 			}
-			if !written.IsZero() {
-				t.Errorf("a fingerprint came back for a write that never landed: %+v", written)
+			if !content.IsZero() {
+				t.Errorf("a fingerprint came back for a write that never landed: %+v", content)
 			}
 			if body := c.read(t, "Heat.md"); body != "# Heat\n" {
 				t.Errorf("the note was written anyway:\n%s", body)
@@ -166,9 +166,9 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 			current := c.openNote(t, "Heat.md")
-			asked := 0
+			request := 0
 			edit := note.NewEdit(
-				watchedReaders{inner: filesystem.VaultReaders{}, stat: func(string) { asked++ }},
+				watchedReaders{inner: filesystem.VaultReaders{}, stat: func(string) { request++ }},
 				filesystem.VaultWriters{}, c.index, time.Now)
 			if tc.known {
 				edit.Fingerprint = current.Fingerprint
@@ -182,7 +182,7 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 				t.Fatal(err)
 			}
 
-			if got := asked > 0; got != tc.wantStat {
+			if got := request > 0; got != tc.wantStat {
 				t.Errorf("asked what the file is = %v, want %v", got, tc.wantStat)
 			}
 		})
@@ -241,9 +241,9 @@ func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	elsewhere := c.openNote(t, "Entropy.md").Fingerprint
 
-	for _, held := range []domain.Fingerprint{{}, elsewhere} {
+	for _, target := range []domain.Fingerprint{{}, elsewhere} {
 		edit := c.editWith(filesystem.VaultReaders{}, filesystem.VaultWriters{})
-		edit.Fingerprint = held
+		edit.Fingerprint = target
 
 		_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 

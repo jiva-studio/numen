@@ -114,7 +114,7 @@ func (s *store) GetKeptVectors(_ context.Context, recipe string, of [][]byte) (m
 	}
 	out := map[string][]byte{}
 	for _, one := range of {
-		if v, held := s.kept[recipe+"/"+hex.EncodeToString(one)]; held {
+		if v, target := s.kept[recipe+"/"+hex.EncodeToString(one)]; target {
 			out[hex.EncodeToString(one)] = v
 		}
 	}
@@ -236,10 +236,10 @@ func (s *store) put(vaultID domain.VaultID, src domain.Source) {
 // RemoveSources takes the sources out, and their chunks and vectors with them,
 // the way a foreign key does in the database.
 func (s *store) RemoveSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, paths []string) error {
-	held := s.sources[vaultID]
+	target := s.sources[vaultID]
 	for _, path := range paths {
-		if src, ok := held[path]; ok && src.Fingerprint.Kind == kind {
-			delete(held, path)
+		if src, ok := target[path]; ok && src.Fingerprint.Kind == kind {
+			delete(target, path)
 			s.clear(vaultID, path)
 		}
 	}
@@ -249,15 +249,15 @@ func (s *store) RemoveSources(_ context.Context, vaultID domain.VaultID, kind do
 // MoveSources files what was at one path, and everything under it, where it now
 // is. The chunks travel with the source, as they do in the database.
 func (s *store) MoveSources(_ context.Context, vaultID domain.VaultID, from, to string) error {
-	held := s.sources[vaultID]
-	for path, src := range held {
+	target := s.sources[vaultID]
+	for path, src := range target {
 		if path != from && !strings.HasPrefix(path, from+"/") {
 			continue
 		}
 		landed := to + path[len(from):]
-		delete(held, path)
+		delete(target, path)
 		src.Fingerprint.Path = landed
-		held[landed] = src
+		target[landed] = src
 		for i, c := range s.chunks {
 			if c.vault == vaultID && c.path == path {
 				s.chunks[i].path = landed
@@ -270,8 +270,8 @@ func (s *store) MoveSources(_ context.Context, vaultID domain.VaultID, from, to 
 // Under is every source the store holds at a path and beneath it.
 func (s *store) GetSourcesUnder(_ context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
 	var out []domain.Fingerprint
-	for held, src := range s.sources[vaultID] {
-		if held == path || strings.HasPrefix(held, path+"/") {
+	for target, src := range s.sources[vaultID] {
+		if target == path || strings.HasPrefix(target, path+"/") {
 			out = append(out, src.Fingerprint)
 		}
 	}
@@ -280,15 +280,15 @@ func (s *store) GetSourcesUnder(_ context.Context, vaultID domain.VaultID, path 
 }
 
 func (s *store) clear(vaultID domain.VaultID, path string) {
-	kept := s.chunks[:0]
+	retained := s.chunks[:0]
 	for _, c := range s.chunks {
 		if c.vault == vaultID && c.path == path {
 			delete(s.vectors, chunkID(c.id))
 			continue
 		}
-		kept = append(kept, c)
+		retained = append(retained, c)
 	}
-	s.chunks = kept
+	s.chunks = retained
 }
 
 func (s *store) insert(vaultID domain.VaultID, ref domain.Fingerprint, c domain.Chunk, parent int64) int64 {
@@ -407,10 +407,10 @@ func documentOf(raw []byte) document {
 	var read document
 	for _, line := range strings.Split(strings.TrimRight(string(raw), "\n"), "\n") {
 		words := strings.Fields(line)
-		said := strings.Join(words, " ") + "\n"
+		response := strings.Join(words, " ") + "\n"
 		read.pages = append(read.pages, words)
 		read.Pages = append(read.Pages, len(read.Text))
-		read.Text += said
+		read.Text += response
 	}
 	return read
 }
@@ -517,21 +517,21 @@ func (l *library) WalkFiles(_ context.Context, fn func(domain.Fingerprint) error
 }
 
 func (l *library) Read(_ context.Context, path string) ([]byte, error) {
-	held, ok := l.files[path]
+	target, ok := l.files[path]
 	if !ok {
 		return nil, fmt.Errorf("read %s: %w", path, fs.ErrNotExist)
 	}
 	l.reads[path]++
-	return held.raw, nil
+	return target.raw, nil
 }
 
 func (l *library) Open(_ context.Context, path string) (io.ReadSeekCloser, error) {
-	held, ok := l.files[path]
+	target, ok := l.files[path]
 	if !ok {
 		return nil, fmt.Errorf("open %s: %w", path, fs.ErrNotExist)
 	}
 	l.reads[path]++
-	return nopCloser{bytes.NewReader(held.raw)}, nil
+	return nopCloser{bytes.NewReader(target.raw)}, nil
 }
 
 // nopCloser is a file held in memory, with nothing to release.
@@ -547,9 +547,9 @@ func (l *library) GetFingerprint(_ context.Context, path string) (domain.Fingerp
 }
 
 func (l *library) ref(path string) domain.Fingerprint {
-	held := l.files[path]
+	target := l.files[path]
 	return domain.Fingerprint{
-		Path: path, Kind: held.kind, Size: int64(len(held.raw)), ModTime: time.Unix(0, held.mtime),
+		Path: path, Kind: target.kind, Size: int64(len(target.raw)), ModTime: time.Unix(0, target.mtime),
 	}
 }
 
@@ -575,8 +575,8 @@ func words(vocabulary []string, n int) string {
 }
 
 func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
-	src, held := s.sources[vaultID][path]
-	if !held {
+	src, target := s.sources[vaultID][path]
+	if !target {
 		return port.SourceText{}, false, nil
 	}
 	// The row says what the file was when it was read, as the query does.
@@ -613,7 +613,7 @@ type writing struct {
 }
 
 func (w writing) Import(_ context.Context, path string, from io.Reader) error {
-	if _, held := w.to.files[path]; held {
+	if _, target := w.to.files[path]; target {
 		return port.ErrOccupied
 	}
 	raw, err := io.ReadAll(from)
@@ -628,11 +628,11 @@ func (w writing) Import(_ context.Context, path string, from io.Reader) error {
 type writers map[domain.VaultID]*library
 
 func (w writers) Open(vault domain.Vault) (port.VaultWriter, error) {
-	held, ok := w[vault.ID]
+	target, ok := w[vault.ID]
 	if !ok {
 		return nil, fmt.Errorf("no vault %s", vault.ID)
 	}
-	return writing{to: held}, nil
+	return writing{to: target}, nil
 }
 
 func (w writers) Lock(context.Context, domain.Vault) (func(), error) {

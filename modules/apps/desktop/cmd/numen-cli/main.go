@@ -36,11 +36,11 @@ func run() (code int) {
 		}
 	}()
 
-	chosen, err := cfg.Settings()
+	selected, err := cfg.Settings()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-cli:", err)
 		return 1
 	}
-	cfg = cfg.SetSettings(chosen)
+	cfg = cfg.SetSettings(selected)
 	return cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], makeDeps(cfg))
 }

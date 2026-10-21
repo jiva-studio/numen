@@ -62,13 +62,13 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 
 // getDirectChildren returns items in the target folder.
 func getDirectChildren(into string, landed []string) []string {
-	shown := make([]string, 0, len(landed))
+	displayed := make([]string, 0, len(landed))
 	for _, path := range landed {
 		if pathpkg.Dir(path) == into || (into == "" && !strings.Contains(path, "/")) {
-			shown = append(shown, path)
+			displayed = append(displayed, path)
 		}
 	}
-	return shown
+	return displayed
 }
 
 // describeImportFailures formats import failures into a single descriptive message.

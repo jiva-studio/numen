@@ -28,11 +28,11 @@ var profiles = map[domain.NoteType]domain.NoteProfile{
 
 // saveCut stores notes cut at the default sizes, the way a scan hands them over.
 func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain.Note) error {
-	cut := notecase.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
+	trimmed := notecase.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
 		profile, declared := profiles[t]
 		return profile, declared
 	}}
-	return db.Notes().Save(ctx, vaultID, cut.Execute(notes))
+	return db.Notes().Save(ctx, vaultID, trimmed.Execute(notes))
 }
 
 // saveNote saves one note of a title of its own through the opening given.

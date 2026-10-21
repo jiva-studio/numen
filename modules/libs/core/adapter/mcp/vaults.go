@@ -62,13 +62,13 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := core.Vaults.GetKnownVaults.
+		target, err := core.Vaults.GetKnownVaults.
 			Execute(core.getCurrentVault().Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
-		list := make([]Vault, 0, len(held))
-		for _, one := range held {
+		list := make([]Vault, 0, len(target))
+		for _, one := range target {
 			list = append(list, newVault(one))
 		}
 		return nil, out{Vaults: list}, nil

@@ -8,8 +8,8 @@ import (
 )
 
 func TestFillResultKeepsExistingContent(t *testing.T) {
-	kept := &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: "x"}}}
-	if got := fillResult(kept, struct{}{}); got != kept || got.StructuredContent != nil {
+	retained := &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: "x"}}}
+	if got := fillResult(retained, struct{}{}); got != retained || got.StructuredContent != nil {
 		t.Fatalf("a result with content must be returned as it is, got %+v", got)
 	}
 }

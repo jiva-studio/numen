@@ -16,8 +16,8 @@ var counting = review.Day{Starts: review.DayStartTime}
 // What a vault was answered on comes back a day at a time, oldest first,
 // because what draws it draws it along a line of time.
 func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 
 	session := startSession(t, api, v)
 	for _, card := range session.GetCards() {
@@ -35,17 +35,17 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	said := out.Msg
-	if said.GetAnswered() != int32(len(session.GetCards())) {
-		t.Errorf("the vault holds %d answers, want %d", said.GetAnswered(), len(session.GetCards()))
+	response := out.Msg
+	if response.GetAnswered() != int32(len(session.GetCards())) {
+		t.Errorf("the vault holds %d answers, want %d", response.GetAnswered(), len(session.GetCards()))
 	}
-	if said.GetStreak() != 1 {
-		t.Errorf("the streak is %d on the first day, want 1", said.GetStreak())
+	if response.GetStreak() != 1 {
+		t.Errorf("the streak is %d on the first day, want 1", response.GetStreak())
 	}
-	if len(said.GetDays()) != 1 {
-		t.Fatalf("answered on %d days, want the one", len(said.GetDays()))
+	if len(response.GetDays()) != 1 {
+		t.Fatalf("answered on %d days, want the one", len(response.GetDays()))
 	}
-	if got := said.GetDays()[0]; got.GetDay() != counting.GetName(time.Now()) {
+	if got := response.GetDays()[0]; got.GetDay() != counting.GetName(time.Now()) {
 		t.Errorf("the day is %q, want %q", got.GetDay(), counting.GetName(time.Now()))
 	}
 }
@@ -53,10 +53,10 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 // A vault nobody answered has nothing to draw, which is an answer and not a
 // failure.
 func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
-	api, held := newAPI(t, deck)
+	api, target := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(held[0].ID)}))
+		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,8 +69,8 @@ func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
 // week ahead as well as the weeks behind. A card answered easily is sent days
 // away, and the day it is sent to is a day nobody has answered on.
 func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 
 	session := startSession(t, api, v)
 	if len(session.GetCards()) == 0 {
@@ -90,12 +90,12 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	said := out.Msg
+	response := out.Msg
 
-	if len(said.GetDue()) != 1 {
-		t.Fatalf("%d days ahead hold anything, want the one", len(said.GetDue()))
+	if len(response.GetDue()) != 1 {
+		t.Fatalf("%d days ahead hold anything, want the one", len(response.GetDue()))
 	}
-	coming := said.GetDue()[0]
+	coming := response.GetDue()[0]
 	if coming.GetAnswered() != 1 {
 		t.Errorf("%d cards fall on %s, want the one", coming.GetAnswered(), coming.GetDay())
 	}
@@ -104,8 +104,8 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 		t.Errorf("what is coming falls on %s, which is not after %s", coming.GetDay(), today)
 	}
 	// What was answered is still answered: the two are counted apart.
-	if len(said.GetDays()) != 1 || said.GetDays()[0].GetEasy() != 1 {
-		t.Errorf("the day behind came back as %+v", said.GetDays())
+	if len(response.GetDays()) != 1 || response.GetDays()[0].GetEasy() != 1 {
+		t.Errorf("the day behind came back as %+v", response.GetDays())
 	}
 }
 
@@ -113,10 +113,10 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 // who answered everything this morning has an empty grid behind them and a full
 // one ahead.
 func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
-	api, held := newAPI(t, deck)
+	api, target := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(held[0].ID)}))
+		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
 // The days are drawn along a line of time, so they are handed over along one,
 // whatever order they were counted in.
 func TestTheDaysComeBackOldestFirst(t *testing.T) {
-	said := sortReviewDays([]*v1.ReviewDay{
+	response := sortReviewDays([]*v1.ReviewDay{
 		{Day: "2026-08-30"},
 		{Day: "2026-07-01"},
 		{Day: "2027-01-02"},
@@ -137,7 +137,7 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 	})
 
 	want := []string{"2026-07-01", "2026-08-09", "2026-08-30", "2026-08-30", "2027-01-02"}
-	for at, one := range said {
+	for at, one := range response {
 		if one.GetDay() != want[at] {
 			t.Errorf("the day at %d is %s, want %s", at, one.GetDay(), want[at])
 		}
@@ -158,8 +158,8 @@ func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
 // The stretch reaches the answer itself: a day outside
 // what was asked for is in neither list.
 func TestAStretchNothingFallsInComesBackEmpty(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 
 	session := startSession(t, api, v)
 	for _, card := range session.GetCards() {

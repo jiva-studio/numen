@@ -25,7 +25,7 @@ func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kept, err := s.kept.Execute(t.Context(), s.vault)
+	retained, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,11 +37,11 @@ func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(worked) != len(kept) {
-		t.Fatalf("kept %d schedules, worked out %d", len(kept), len(worked))
+	if len(worked) != len(retained) {
+		t.Fatalf("kept %d schedules, worked out %d", len(retained), len(worked))
 	}
-	if !worked[on].Due.Equal(kept[on].Due) || worked[on].Reps != kept[on].Reps {
-		t.Errorf("worked out %+v, kept %+v", worked[on], kept[on])
+	if !worked[on].Due.Equal(retained[on].Due) || worked[on].Reps != retained[on].Reps {
+		t.Errorf("worked out %+v, kept %+v", worked[on], retained[on])
 	}
 }
 
@@ -391,11 +391,11 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	answered, err := s.kept.Execute(t.Context(), s.vault)
+	reply, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	stands := dayFrom(when, answered[on].Due)
+	stands := dayFrom(when, reply[on].Due)
 
 	if comes == 0 || comes != stands {
 		t.Errorf("the projection has the card back on day %d and the answer on day %d",
@@ -443,20 +443,20 @@ func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	answered, err := s.kept.Execute(t.Context(), s.vault)
+	reply, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := answered[on].Due; !got.Equal(fell) {
+	if got := reply[on].Due; !got.Equal(fell) {
 		t.Fatalf("the card comes round at %v, and the scheduler put it at %v", got, fell)
 	}
 
 	opens := today.GetEnd(fell).AddDate(0, 0, -1)
-	if asked := s.sessionAt(t, today, opens.Add(6*time.Hour)).Queue; len(asked) != 0 {
-		t.Errorf("a %v carrying none of the load asked %d cards", fell.Weekday(), len(asked))
+	if request := s.sessionAt(t, today, opens.Add(6*time.Hour)).Queue; len(request) != 0 {
+		t.Errorf("a %v carrying none of the load asked %d cards", fell.Weekday(), len(request))
 	}
 	after := today.GetEnd(fell).Add(6 * time.Hour)
-	if asked := s.sessionAt(t, today, after).Queue; len(asked) != 1 {
-		t.Errorf("the day after asked %d cards, want the one standing over", len(asked))
+	if requestVal := s.sessionAt(t, today, after).Queue; len(requestVal) != 1 {
+		t.Errorf("the day after asked %d cards, want the one standing over", len(requestVal))
 	}
 }

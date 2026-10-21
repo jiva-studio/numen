@@ -51,16 +51,16 @@ func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
-	held := onDisk(t, f.root, "cards/Animal.md")
-	if !strings.Contains(held, "{{Height}} at the shoulder") {
-		t.Errorf("the face is not the one written: %q", held)
+	target := onDisk(t, f.root, "cards/Animal.md")
+	if !strings.Contains(target, "{{Height}} at the shoulder") {
+		t.Errorf("the face is not the one written: %q", target)
 	}
-	if !strings.Contains(held, "fields:\n  - Name\n  - Height\n") {
-		t.Errorf("the stencil declares something else: %q", held)
+	if !strings.Contains(target, "fields:\n  - Name\n  - Height\n") {
+		t.Errorf("the stencil declares something else: %q", target)
 	}
 	// The fingerprint that comes back is the file on disk, so the write that
 	// follows this one lands.
-	if answer.Msg.GetAt().GetSize() != int64(len(held)) {
+	if answer.Msg.GetAt().GetSize() != int64(len(target)) {
 		t.Errorf("the fingerprint is not the file: %+v", answer.Msg.GetAt())
 	}
 }
@@ -127,8 +127,8 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatalf("a write over a stencil the person had edited answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {
-		t.Errorf("the stencil on disk is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
+		t.Errorf("the stencil on disk is now %q", target)
 	}
 }
 
@@ -166,8 +166,8 @@ func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a stencil on a name already taken answered %v", code)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
-		t.Errorf("the stencil that was there is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
+		t.Errorf("the stencil that was there is now %q", target)
 	}
 }
 
@@ -185,8 +185,8 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a deck on a name already taken answered %v", code)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
-		t.Errorf("the file that was there is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
+		t.Errorf("the file that was there is now %q", target)
 	}
 }
 
@@ -231,8 +231,8 @@ func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
 		t.Errorf("renaming a field onto a declared name answered %v (%v)", got, err)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
-		t.Errorf("the stencil is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
+		t.Errorf("the stencil is now %q", target)
 	}
 }
 
@@ -251,7 +251,7 @@ func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a deck under a file answered %v", code)
 	}
-	if held := onDisk(t, f.root, "Entropy.md"); held != "# Entropy\n" {
-		t.Errorf("the file in the way is now %q", held)
+	if target := onDisk(t, f.root, "Entropy.md"); target != "# Entropy\n" {
+		t.Errorf("the file in the way is now %q", target)
 	}
 }

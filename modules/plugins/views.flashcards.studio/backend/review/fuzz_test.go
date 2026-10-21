@@ -40,9 +40,9 @@ func FuzzReadLog(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
 		answers, skipped := review.Read([]byte(raw))
-		if held := lines(raw); len(answers)+skipped != held {
+		if target := lines(raw); len(answers)+skipped != target {
 			t.Fatalf("%q holds %d lines and was read as %d answers and %d skipped",
-				raw, held, len(answers), skipped)
+				raw, target, len(answers), skipped)
 		}
 		for _, a := range answers {
 			if a.ID == "" {
@@ -62,23 +62,23 @@ func FuzzReadLog(f *testing.F) {
 // something, and the run after the last newline, which is a line that did not
 // land whole whatever it holds.
 func lines(raw string) int {
-	cut := strings.LastIndex(raw, "\n")
-	if cut < 0 {
+	trimmed := strings.LastIndex(raw, "\n")
+	if trimmed < 0 {
 		if strings.TrimSpace(raw) == "" {
 			return 0
 		}
 		return 1
 	}
-	held := 0
-	if cut+1 < len(raw) {
-		held++
+	target := 0
+	if trimmed+1 < len(raw) {
+		target++
 	}
-	for _, line := range strings.Split(raw[:cut], "\n") {
+	for _, line := range strings.Split(raw[:trimmed], "\n") {
 		if strings.TrimSpace(line) != "" {
-			held++
+			target++
 		}
 	}
-	return held
+	return target
 }
 
 // An answer written to the log comes back as itself. The file is the history a
@@ -102,8 +102,8 @@ func FuzzWriteAnswer(f *testing.F) {
 		// Crockford base32 and an identifier is minted here, so nothing this
 		// application writes carries one; a face's name comes off a stencil's
 		// heading and could.
-		for _, said := range []string{id, card, face, undoes} {
-			if !utf8.ValidString(said) {
+		for _, response := range []string{id, card, face, undoes} {
+			if !utf8.ValidString(response) {
 				return
 			}
 		}

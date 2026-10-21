@@ -95,14 +95,14 @@ func onTheList(t *testing.T) *installation {
 
 	registry := appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 	adding := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now)
-	held := &rows{}
-	renaming := vaults.NewRename(registry, held)
-	forgetting := vaults.NewUnregister(registry, held)
+	target := &rows{}
+	renaming := vaults.NewRename(registry, target)
+	forgetting := vaults.NewUnregister(registry, target)
 	finding := vaults.NewFind(registry)
 
 	f := &installation{
 		registry: registry,
-		rows:     held,
+		rows:     target,
 		dialog:   &folders{},
 		first:    addVaultFolder(t, adding, "one"),
 		second:   addVaultFolder(t, adding, "two"),
@@ -175,11 +175,11 @@ type joining struct {
 func getToolDescription(t *testing.T, s *sdk.ClientSession, name string) string {
 	t.Helper()
 
-	listed, err := s.ListTools(t.Context(), nil)
+	items, err := s.ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, tool := range listed.Tools {
+	for _, tool := range items.Tools {
 		if tool.Name == name {
 			return tool.Description
 		}
@@ -192,11 +192,11 @@ func getToolDescription(t *testing.T, s *sdk.ClientSession, name string) string 
 func hasTool(t *testing.T, s *sdk.ClientSession, name string) bool {
 	t.Helper()
 
-	listed, err := s.ListTools(t.Context(), nil)
+	items, err := s.ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, tool := range listed.Tools {
+	for _, tool := range items.Tools {
 		if tool.Name == name {
 			return true
 		}
@@ -234,12 +234,12 @@ func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
 // A vault added with no path is the person's own choice, made in front of them.
 func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 	f := onTheList(t)
-	chosen := folderNamed(t, "three")
-	f.dialog.choose(chosen, true)
+	selected := folderNamed(t, "three")
+	f.dialog.choose(selected, true)
 	session := newSessionOver(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
-	if !out.IsAdded || out.Folder != chosen || out.Name != "three" {
+	if !out.IsAdded || out.Folder != selected || out.Name != "three" {
 		t.Fatalf("the vault added is %+v", out)
 	}
 	if f.dialog.getTitle() == "" {
@@ -255,16 +255,16 @@ func TestAddingSaysTheIdentityIsWrittenIntoTheFolder(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	said := getToolDescription(t, session, "vault_add")
+	response := getToolDescription(t, session, "vault_add")
 	for _, rule := range []string{"identity", filesystem.DefaultServiceDir} {
-		if !strings.Contains(said, rule) {
-			t.Errorf("vault_add says nothing about %q:\n%s", rule, said)
+		if !strings.Contains(response, rule) {
+			t.Errorf("vault_add says nothing about %q:\n%s", rule, response)
 		}
 	}
 
-	chosen := folderNamed(t, "four")
-	call[joining](t, session, "vault_add", map[string]any{"path": chosen})
-	if _, err := os.Stat(filepath.Join(chosen, filesystem.DefaultServiceDir)); err != nil {
+	selected := folderNamed(t, "four")
+	call[joining](t, session, "vault_add", map[string]any{"path": selected})
+	if _, err := os.Stat(filepath.Join(selected, filesystem.DefaultServiceDir)); err != nil {
 		t.Errorf("the folder holds no identity: %v", err)
 	}
 }
@@ -282,9 +282,9 @@ func TestAFolderDialogThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
 	if !strings.Contains(out.Why, "picker") {
 		t.Errorf("the answer says %q", out.Why)
 	}
-	held, err := f.registry.List()
-	if err != nil || len(held) != 2 {
-		t.Errorf("the list holds %v: %v", held, err)
+	target, err := f.registry.List()
+	if err != nil || len(target) != 2 {
+		t.Errorf("the list holds %v: %v", target, err)
 	}
 }
 
@@ -302,21 +302,21 @@ func TestAFilesystemRootAndAHomeDirectoryAreRefused(t *testing.T) {
 	// path on a machine that names no volume.
 	top := filepath.VolumeName(home) + string(filepath.Separator)
 
-	for root, said := range map[string]string{
+	for root, response := range map[string]string{
 		top:  "root of this filesystem",
 		home: "home directory",
 	} {
 		why := getToolError(t, session, "vault_add", map[string]any{"path": root})
-		if !strings.Contains(why, said) {
+		if !strings.Contains(why, response) {
 			t.Errorf("%s failed with %q", root, why)
 		}
 		if _, err := os.Stat(filepath.Join(root, filesystem.DefaultServiceDir)); err == nil {
 			t.Errorf("%s was made into a vault before it failed", root)
 		}
 	}
-	held, err := f.registry.List()
-	if err != nil || len(held) != 2 {
-		t.Errorf("the list holds %v: %v", held, err)
+	target, err := f.registry.List()
+	if err != nil || len(target) != 2 {
+		t.Errorf("the list holds %v: %v", target, err)
 	}
 }
 
@@ -411,9 +411,9 @@ func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	if !strings.Contains(why, "only vault") {
 		t.Errorf("the last vault failed with %q", why)
 	}
-	held, err := f.registry.List()
-	if err != nil || len(held) != 1 {
-		t.Errorf("the list holds %v: %v", held, err)
+	target, err := f.registry.List()
+	if err != nil || len(target) != 1 {
+		t.Errorf("the list holds %v: %v", target, err)
 	}
 }
 
@@ -440,9 +440,9 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 	}
 
 	select {
-	case shown := <-f.swapped:
-		if shown.ID != f.second.ID {
-			t.Errorf("the window was asked to show %+v", shown)
+	case displayed := <-f.swapped:
+		if displayed.ID != f.second.ID {
+			t.Errorf("the window was asked to show %+v", displayed)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("the window was never asked to show another vault")
@@ -455,8 +455,8 @@ func TestOpeningSaysThatTheSessionEnds(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	if said := getToolDescription(t, session, "vault_open"); !strings.Contains(said, "session ends") {
-		t.Errorf("vault_open says %q", said)
+	if response := getToolDescription(t, session, "vault_open"); !strings.Contains(response, "session ends") {
+		t.Errorf("vault_open says %q", response)
 	}
 }
 
@@ -470,8 +470,8 @@ func TestOpeningTheVaultInFrontIsRefused(t *testing.T) {
 		t.Errorf("the vault in front failed with %q", why)
 	}
 	select {
-	case shown := <-f.swapped:
-		t.Errorf("the window was asked to show %+v", shown)
+	case displayed := <-f.swapped:
+		t.Errorf("the window was asked to show %+v", displayed)
 	default:
 	}
 }

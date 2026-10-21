@@ -22,7 +22,7 @@ func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
@@ -35,10 +35,10 @@ func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 	if !strings.Contains(body, "# The aggressor\n") || !strings.Contains(body, "And nothing else.\n") {
 		t.Errorf("what was not asked for changed:\n%s", body)
 	}
-	if done.Matched != "A hedgehog" {
-		t.Errorf("what stood there is reported as %q", done.Matched)
+	if isDone.Matched != "A hedgehog" {
+		t.Errorf("what stood there is reported as %q", isDone.Matched)
 	}
-	if done.IsPlain {
+	if isDone.IsPlain {
 		t.Error("a stretch that stood exactly is reported as read plainly")
 	}
 }
@@ -49,12 +49,12 @@ func TestAReplacementSaysWhereItLanded(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.Fingerprint{})
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if done.Span.From != 4 || done.Span.To != 8 {
-		t.Errorf("landed at %d..%d, wanted 4..8", done.Span.From, done.Span.To)
+	if isDone.Span.From != 4 || isDone.Span.To != 8 {
+		t.Errorf("landed at %d..%d, wanted 4..8", isDone.Span.From, isDone.Span.To)
 	}
 }
 
@@ -136,16 +136,16 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 		"Aggressor.md": "Он сказал «да» — и ушёл.\n",
 	})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"сказал \"да\" - и ушёл", "промолчал", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !done.IsPlain {
+	if !isDone.IsPlain {
 		t.Error("the reading was not reported")
 	}
-	if done.Matched != "сказал «да» — и ушёл" {
-		t.Errorf("what stood there is reported as %q", done.Matched)
+	if isDone.Matched != "сказал «да» — и ушёл" {
+		t.Errorf("what stood there is reported as %q", isDone.Matched)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasSuffix(body, "Он промолчал.\n") {
 		t.Errorf("the note reads:\n%q", body)

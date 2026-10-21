@@ -129,9 +129,9 @@ func TestASecondProviderIsNotWaitedForOnceTheFirstNeverArrives(t *testing.T) {
 // the first.
 func TestAFirstProviderIsNotAskedOnceTheSecondNeverArrives(t *testing.T) {
 	first := newSaying("first", 1, 0, 0)
-	asked := make(chan struct{})
-	t.Cleanup(func() { close(asked) })
-	blocked := blocking{saying: first, until: asked}
+	request := make(chan struct{})
+	t.Cleanup(func() { close(request) })
+	blocked := blocking{saying: first, until: request}
 
 	_, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewReached(first.model, "first", blocked),
@@ -221,14 +221,14 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 
 // A run with no list to tell opens a model that arrives, and tells nobody.
 func TestAModelOpenedWithNoListToTellArrives(t *testing.T) {
-	held := newSaying("a/model", 1, 0, 0)
+	target := newSaying("a/model", 1, 0, 0)
 	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
 		tell(1, 10)
-		return held, nil
+		return target, nil
 	}
 
 	filling, _, letGo := embedding.Open(t.Context(), nil,
-		embedding.NewFetched(held.model, "a/model", opening), embedding.Provider{})
+		embedding.NewFetched(target.model, "a/model", opening), embedding.Provider{})
 	defer func() { _ = letGo() }()
 
 	if _, err := filling.Embed(t.Context(), []string{"anything"}); err != nil {
@@ -239,10 +239,10 @@ func TestAModelOpenedWithNoListToTellArrives(t *testing.T) {
 // The first byte of a model that is here is a share drawn, and a line that has
 // counted nothing draws none.
 func TestTheFirstByteOfTheModelIsDrawnAsAShare(t *testing.T) {
-	told := make(chan func(done, total int64), 1)
+	notified := make(chan func(done, total int64), 1)
 	stop := make(chan struct{})
 	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
-		told <- tell
+		notified <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
 	}
@@ -257,7 +257,7 @@ func TestTheFirstByteOfTheModelIsDrawnAsAShare(t *testing.T) {
 		t.Errorf("a line that has counted nothing is drawn as %d %v", at.Count, at.Unit)
 	}
 
-	(<-told)(1, 10)
+	(<-notified)(1, 10)
 	at := getOnlyTask(t, tasks)
 	if at.Count != 1 || at.Total != 10 || at.Unit != run.Bytes {
 		t.Errorf("the first byte is drawn as %d of %d %v", at.Count, at.Total, at.Unit)

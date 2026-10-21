@@ -85,7 +85,7 @@ func (c Config) getCatalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
 		return theme.OpenAt(c.ThemesPath)
 	}
-	if folder, chosen := c.getPathBeside("themes"); chosen {
+	if folder, selected := c.getPathBeside("themes"); selected {
 		return theme.OpenAt(folder)
 	}
 	return theme.Open()
@@ -102,14 +102,14 @@ func (c Config) readAppearance(scales *scales) (theme.Appearance, error) {
 	if err != nil {
 		return theme.Appearance{}, err
 	}
-	worn := theme.Appearance{
+	aged := theme.Appearance{
 		ThemeName:      activeSettings.Appearance.Theme,
 		Mode:           settings.Mode(activeSettings.Appearance.Mode),
 		InterfaceScale: activeSettings.Appearance.InterfaceScale,
 		TextScale:      activeSettings.Appearance.TextScale,
 	}
-	scales.apply(&worn)
-	return worn, nil
+	scales.apply(&aged)
+	return aged, nil
 }
 
 // writeAppearance writes a choice into the file. Both sizes are checked before any of it

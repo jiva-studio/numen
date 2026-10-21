@@ -38,8 +38,8 @@ func answerCard(t *testing.T, api *API, vault string, session *v1.StartSessionRe
 // has been seen, and it is due at an instant the page can read. A card nobody
 // has answered carries neither.
 func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 
 	first := startSession(t, api, v)
 	for _, card := range first.GetCards() {
@@ -70,14 +70,14 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 // A person hits the wrong key and takes it back, and what they took back is
 // not part of what they answered.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 
 	session := startSession(t, api, v)
-	given := answerCard(t, api, string(v.ID), session)
+	provided := answerCard(t, api, string(v.ID), session)
 
 	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
-		Vault: string(v.ID), Run: session.GetRun(), Answer: given,
+		Vault: string(v.ID), Run: session.GetRun(), Answer: provided,
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -98,8 +98,8 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 // Taking back an answer nobody named is the caller's mistake, and fails as
 // one.
 func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 	session := startSession(t, api, v)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
@@ -113,13 +113,13 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 // An answer is taken back on the run it was given on. A run this window never
 // opened is not one to write into.
 func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 	session := startSession(t, api, v)
-	given := answerCard(t, api, string(v.ID), session)
+	provided := answerCard(t, api, string(v.ID), session)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
-		Vault: string(v.ID), Run: "nothing", Answer: given,
+		Vault: string(v.ID), Run: "nothing", Answer: provided,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("failed with %v", connect.CodeOf(err))

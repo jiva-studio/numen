@@ -137,9 +137,9 @@ func TestAFamilyAskedWithoutALevelRunsTheModelOfItsDefaultLevel(t *testing.T) {
 	}
 	for _, one := range cases {
 		t.Run(one.name, func(t *testing.T) {
-			said, stopped := askStub(t, stubCli(t, one.listing), "m", one.level)
-			if said != one.want || stopped != "" {
-				t.Errorf("said %q and stopped %q, want %q", said, stopped, one.want)
+			response, stopped := askStub(t, stubCli(t, one.listing), "m", one.level)
+			if response != one.want || stopped != "" {
+				t.Errorf("said %q and stopped %q, want %q", response, stopped, one.want)
 			}
 		})
 	}
@@ -160,9 +160,9 @@ func TestAFamilyOfOneListedModelRunsThatModel(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 
-	said, stopped := askStub(t, stubCli(t, "solo\\tSolo\\n"), "solo", "")
+	response, stopped := askStub(t, stubCli(t, "solo\\tSolo\\n"), "solo", "")
 
-	if said != "ran solo" || stopped != "" {
-		t.Errorf("said %q and stopped %q", said, stopped)
+	if response != "ran solo" || stopped != "" {
+		t.Errorf("said %q and stopped %q", response, stopped)
 	}
 }

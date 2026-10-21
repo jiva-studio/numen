@@ -151,9 +151,9 @@ func (s *Session) RequestCut(v domain.Vault, path string) {
 func (s *Session) drain() map[string]domain.Vault {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	held := s.pending
+	target := s.pending
 	s.pending = nil
-	return held
+	return target
 }
 
 // Run is the first indexing of a vault, and then every indexing that arrives
@@ -227,19 +227,19 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 
 // indexSources indexes the books, again in full where the first launch asked for it.
 func (p *pass) indexSources(ctx context.Context) {
-	asked := p.owes
+	request := p.owes
 	p.owes = false
-	p.readBooks(ctx, asked)
+	p.readBooks(ctx, request)
 }
 
 // embedRecognised cuts and embeds what has been read of a document while the
 // rest of it is still being read.
 func (p *pass) embedRecognised(ctx context.Context) {
-	held := p.session.drain()
-	if len(held) == 0 {
+	target := p.session.drain()
+	if len(target) == 0 {
 		return
 	}
-	for path, of := range held {
+	for path, of := range target {
 		p.cutSource(ctx, of, path)
 	}
 	p.embed(ctx)
@@ -345,11 +345,11 @@ func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int6
 	if w.owed == nil {
 		return 0, true
 	}
-	held, embedded, err := w.owed(ctx, v)
+	target, embedded, err := w.owed(ctx, v)
 	if err != nil {
 		return 0, true
 	}
-	owing = max(0, held-embedded)
+	owing = max(0, target-embedded)
 	return owing, owing > 0
 }
 
@@ -360,9 +360,9 @@ func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int6
 // still has it.
 func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func()) {
 	under, end := context.WithCancel(ctx)
-	woken := make(chan struct{})
+	awakened := make(chan struct{})
 	go func() {
-		defer close(woken)
+		defer close(awakened)
 		select {
 		case <-under.Done():
 		case <-wake:
@@ -372,7 +372,7 @@ func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func(
 	}()
 	return under, func() {
 		end()
-		<-woken
+		<-awakened
 	}
 }
 

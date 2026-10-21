@@ -25,11 +25,11 @@ import (
 func BenchmarkFrontDoor(b *testing.B) {
 	const vaults, cards, days, perDay = 4, 5000, 60, 100
 
-	held := make([]map[string]string, 0, vaults)
+	target := make([]map[string]string, 0, vaults)
 	for range vaults {
-		held = append(held, benchDeck(cards))
+		target = append(target, benchDeck(cards))
 	}
-	api, all := newAPI(b, held...)
+	api, all := newAPI(b, target...)
 	for _, v := range all {
 		benchAnswers(b, api, v, cards, days, perDay)
 	}
@@ -102,17 +102,17 @@ func BenchmarkFrontDoor(b *testing.B) {
 func benchDeck(cards int) map[string]string {
 	const decks = 20
 	out := map[string]string{"Term.md": deck["Term.md"]}
-	built := make([]*strings.Builder, decks)
-	for at := range built {
-		built[at] = &strings.Builder{}
-		built[at].WriteString("---\ntype: deck\n---\n")
+	constructed := make([]*strings.Builder, decks)
+	for at := range constructed {
+		constructed[at] = &strings.Builder{}
+		constructed[at].WriteString("---\ntype: deck\n---\n")
 	}
 	for at := range cards {
-		fmt.Fprintf(built[at%decks],
+		fmt.Fprintf(constructed[at%decks],
 			"\n## Card %d ^%s\n\n[[Term]]\n\n### Word\n\nword %d\n\n### Meaning\n\nmeaning %d\n",
 			at, benchMark(at), at, at)
 	}
-	for at, one := range built {
+	for at, one := range constructed {
 		out[fmt.Sprintf("decks/Deck%02d.md", at)] = one.String()
 	}
 	return out

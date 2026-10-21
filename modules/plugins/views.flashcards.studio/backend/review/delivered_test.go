@@ -110,12 +110,12 @@ func TestAnAnswerTakenBackLeavesTheScheduleItWasNeverGivenIn(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		answers := session(t)
 
-		kept := make([]review.Answer, 0, len(answers))
+		retained := make([]review.Answer, 0, len(answers))
 		with := make([]review.Answer, 0, 2*len(answers))
 		for _, a := range answers {
 			with = append(with, a)
 			if !rapid.Bool().Draw(t, "taken back") {
-				kept = append(kept, a)
+				retained = append(retained, a)
 				continue
 			}
 			took++
@@ -135,7 +135,7 @@ func TestAnAnswerTakenBackLeavesTheScheduleItWasNeverGivenIn(t *testing.T) {
 		}
 
 		by := review.NewFSRS()
-		want := review.OrderAnswers(kept).Replay(ahead, review.ScheduleBy(by))
+		want := review.OrderAnswers(retained).Replay(ahead, review.ScheduleBy(by))
 		got := review.OrderAnswers(with).Replay(ahead, review.ScheduleBy(by))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d of %d answers taken back gave %+v, want %+v",

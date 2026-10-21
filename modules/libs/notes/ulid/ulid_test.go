@@ -36,13 +36,13 @@ func TestOrderMatchesTime(t *testing.T) {
 
 func TestDistinctWithinTheSameMillisecond(t *testing.T) {
 	at := time.Now()
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 	for range 1000 {
 		id := ulid.New(at)
-		if seen[id] {
+		if observed[id] {
 			t.Fatalf("duplicate within one millisecond: %s", id)
 		}
-		seen[id] = true
+		observed[id] = true
 	}
 }
 

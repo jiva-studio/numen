@@ -63,11 +63,11 @@ func checkUnchanged(path string, baseline *string) error {
 	if baseline == nil {
 		return nil
 	}
-	held, err := Read(path)
+	target, err := Read(path)
 	if err != nil {
 		return err
 	}
-	if string(held) != *baseline {
+	if string(target) != *baseline {
 		return port.ErrStale
 	}
 	return nil

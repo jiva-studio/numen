@@ -21,6 +21,6 @@ func (u *IsVaultIndexed) Execute(ctx context.Context, v domain.Vault) bool {
 	if u == nil || u.queries == nil {
 		return false
 	}
-	held, err := u.queries.Has(ctx, v.ID)
-	return err == nil && held
+	target, err := u.queries.Has(ctx, v.ID)
+	return err == nil && target
 }

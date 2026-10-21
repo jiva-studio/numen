@@ -60,10 +60,10 @@ func Distinct(regions []Region, most float64) []Region {
 		return 0
 	})
 
-	kept := regions[:0]
+	retained := regions[:0]
 	for _, r := range regions {
 		covered := false
-		for _, k := range kept {
+		for _, k := range retained {
 			if overlap(r.Rect, k.Rect) > most || isInside(r.Rect, k.Rect) {
 				covered = true
 				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="covered is already true; continuing the loop checks further kept regions with identical results"
@@ -71,11 +71,11 @@ func Distinct(regions []Region, most float64) []Region {
 			}
 		}
 		if !covered {
-			kept = append(kept, r)
+			retained = append(retained, r)
 		}
 	}
-	slices.SortStableFunc(kept, func(a, b Region) int { return cmp.Compare(a.Order, b.Order) })
-	return kept
+	slices.SortStableFunc(retained, func(a, b Region) int { return cmp.Compare(a.Order, b.Order) })
+	return retained
 }
 
 func overlap(a, b image.Rectangle) float64 {
@@ -110,7 +110,7 @@ func Assemble(lines []Line) (string, []Box) {
 		size += len(one.Text)
 	}
 	out := make([]byte, 0, size)
-	kept := make([]Box, 0, len(lines))
+	retained := make([]Box, 0, len(lines))
 	for line := range group(lines) {
 		text, boxes := writeLine(line)
 		if text == "" {
@@ -119,8 +119,8 @@ func Assemble(lines []Line) (string, []Box) {
 		if n := getHyphenLength(out); n > 0 {
 			out = out[:len(out)-n]
 			// gomutants:disable-next-line INTEGER_DECREMENT reason="len(kept) is at least 1 whenever out holds text"
-			if k := len(kept); k > 0 {
-				kept[k-1].Span.To -= n
+			if k := len(retained); k > 0 {
+				retained[k-1].Span.To -= n
 			}
 		} else if len(out) > 0 {
 			out = append(out, ' ')
@@ -129,11 +129,11 @@ func Assemble(lines []Line) (string, []Box) {
 		for _, box := range boxes {
 			box.Span.From += at
 			box.Span.To += at
-			kept = append(kept, box)
+			retained = append(retained, box)
 		}
 		out = append(out, text...)
 	}
-	return string(out), kept
+	return string(out), retained
 }
 
 func getHyphenLength(text []byte) int {
@@ -205,7 +205,7 @@ func writeLine(line []Line) (string, []Box) {
 	var out strings.Builder
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Grow sets capacity only; strings.Builder grows dynamically when omitted"
 	out.Grow(size)
-	kept := make([]Box, 0, len(line))
+	retained := make([]Box, 0, len(line))
 	for _, one := range line {
 		text := strings.TrimSpace(one.Text)
 		if text == "" {
@@ -215,8 +215,8 @@ func writeLine(line []Line) (string, []Box) {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		kept = append(kept, Box{Rect: one.Box, Span: ByteSpan{From: at, To: at + len(text)}})
+		retained = append(retained, Box{Rect: one.Box, Span: ByteSpan{From: at, To: at + len(text)}})
 		out.WriteString(text)
 	}
-	return out.String(), kept
+	return out.String(), retained
 }

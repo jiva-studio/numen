@@ -121,15 +121,15 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Entropy.md": tc.was})
-			var told []domain.Edit
+			var notified []domain.Edit
 
-			if _, err := c.newDrawingWrite(&told).Execute(t.Context(), c.vault, "Entropy.md", tc.now, domain.Fingerprint{}); err != nil {
+			if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", tc.now, domain.Fingerprint{}); err != nil {
 				t.Fatal(err)
 			}
-			if len(told) != 2 {
-				t.Fatalf("told %+v, want the change and its end", told)
+			if len(notified) != 2 {
+				t.Fatalf("told %+v, want the change and its end", notified)
 			}
-			begin, end := told[0], told[1]
+			begin, end := notified[0], notified[1]
 			if begin.Path != "Entropy.md" || begin.From != tc.want.From || begin.To != tc.want.To || begin.Text != tc.want.Text {
 				t.Errorf("told %+v, want %+v", begin, tc.want)
 			}
@@ -146,13 +146,13 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 func TestAWriteOfTheSameProseTellsNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "alpha beta\n"})
-	var told []domain.Edit
+	var notified []domain.Edit
 
-	if _, err := c.newDrawingWrite(&told).Execute(t.Context(), c.vault, "Entropy.md", "alpha beta\n", domain.Fingerprint{}); err != nil {
+	if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", "alpha beta\n", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
-	if len(told) != 0 {
-		t.Errorf("told %+v of a note that did not change", told)
+	if len(notified) != 0 {
+		t.Errorf("told %+v of a note that did not change", notified)
 	}
 }
 
@@ -160,14 +160,14 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 	t.Parallel()
 	half := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\ntitle: Heat death\n"
 	c := openChanging(t, map[string]string{"Heat.md": half})
-	var told []domain.Edit
+	var notified []domain.Edit
 
-	_, err := c.newDrawingWrite(&told).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.Fingerprint{})
+	_, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.Fingerprint{})
 	if !errors.Is(err, note.ErrUnterminated) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
-	if len(told) != 0 {
-		t.Errorf("told %+v of a change that failed", told)
+	if len(notified) != 0 {
+		t.Errorf("told %+v of a change that failed", notified)
 	}
 }
 

@@ -86,7 +86,7 @@ func TestFileReadRefusesAPathThatLeavesTheVault(t *testing.T) {
 	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	for _, path := range []string{"../secret.txt", "notes/../../secret.txt", v.Path + "/Entropy.md"} {
-		if said := getToolError(t, session, "file_read", map[string]any{"path": path}); said == "" {
+		if response := getToolError(t, session, "file_read", map[string]any{"path": path}); response == "" {
 			t.Errorf("read %q: nothing said about a path outside the vault", path)
 		}
 	}

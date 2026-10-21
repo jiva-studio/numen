@@ -34,13 +34,13 @@ func unit(rng *rand.Rand, d int) []float32 {
 // exact is the cosine of two vectors before either is quantised, which is what
 // the rerank would order by if it could afford to keep floats.
 func exact(a, b []float32) float64 {
-	var dot, left, right float64
+	var dot, remaining, right float64
 	for i := range a {
 		dot += float64(a[i]) * float64(b[i])
-		left += float64(a[i]) * float64(a[i])
+		remaining += float64(a[i]) * float64(a[i])
 		right += float64(b[i]) * float64(b[i])
 	}
-	return dot / math.Sqrt(left*right)
+	return dot / math.Sqrt(remaining*right)
 }
 
 // TestOneScaleServesEveryWidth is why the scale is one number and not a number

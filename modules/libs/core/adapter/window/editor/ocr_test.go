@@ -24,8 +24,8 @@ import (
 type indexed map[string]port.SourceText
 
 func (i indexed) GetSourceText(_ context.Context, _ domain.VaultID, path string) (port.SourceText, bool, error) {
-	found, held := i[path]
-	return found, held, nil
+	found, target := i[path]
+	return found, target, nil
 }
 
 func (i indexed) GetFingerprints(context.Context, domain.VaultID, domain.SourceKind) (map[string]domain.Fingerprint, error) {

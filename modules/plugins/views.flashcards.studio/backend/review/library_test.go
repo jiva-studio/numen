@@ -96,17 +96,17 @@ func libraryAgrees(
 	if fsrs.State(s.Phase) == fsrs.Review && s.Stability <= 0 {
 		return
 	}
-	stood := clampLastAnswer(s)
+	status := clampLastAnswer(s)
 	for _, r := range libraryRatings {
-		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
+		want := asSchedule(engine.Next(asCard(status), libraryNow, r).Card)
 		got := by.Next(s, libraryNow, review.Rating(r))
 		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, describe(s)), got, want)
 	}
 	good, again := by.Endings(s, libraryNow)
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it came back on of %s", retention, describe(s)),
-		good, asSchedule(engine.Next(asCard(stood), libraryNow, fsrs.Good).Card))
+		good, asSchedule(engine.Next(asCard(status), libraryNow, fsrs.Good).Card))
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it did not of %s", retention, describe(s)),
-		again, asSchedule(engine.Next(asCard(stood), libraryNow, fsrs.Again).Card))
+		again, asSchedule(engine.Next(asCard(status), libraryNow, fsrs.Again).Card))
 }
 
 // clampLastAnswer is a card face at the days it stood away. One answered no
@@ -137,11 +137,11 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 	}
 
 	// The same card face as one that stood no time away.
-	stood := ahead
-	stood.Last = libraryNow
+	status := ahead
+	status.Last = libraryNow
 
 	for _, r := range libraryRatings {
-		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
+		want := asSchedule(engine.Next(asCard(status), libraryNow, r).Card)
 		for _, dur := range []time.Duration{
 			time.Second, time.Hour, 24 * time.Hour, 400 * 24 * time.Hour,
 		} {

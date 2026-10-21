@@ -487,8 +487,8 @@ func TestVectorsAreWrittenForEveryChunkTheyNameAndReplacedWhenWrittenAgain(t *te
 		t.Fatalf("%d vectors from none", n)
 	}
 
-	gone := withHash(9999, []byte("no chunk holds this"), "m", 7)
-	if err := repo.SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(rows[0], "m", 1), gone, s.vectorFor(rows[1], "m", 2)}); err != nil {
+	removed := withHash(9999, []byte("no chunk holds this"), "m", 7)
+	if err := repo.SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(rows[0], "m", 1), removed, s.vectorFor(rows[1], "m", 2)}); err != nil {
 		t.Fatal(err)
 	}
 	if got := s.ints(`SELECT chunk_id FROM chunks_vec ORDER BY chunk_id`); !slices.Equal(got, rows) {
@@ -524,11 +524,11 @@ func TestVectorsGoInBatchesEachCommittedOnItsOwn(t *testing.T) {
 			was := chunk.VectorBatchSize
 			chunk.VectorBatchSize = size
 			t.Cleanup(func() { chunk.VectorBatchSize = was })
-			var cut []chunk.Chunk
+			var trimmed []chunk.Chunk
 			for i := range 6 {
-				cut = append(cut, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
+				trimmed = append(trimmed, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
 			}
-			s.cut(repoVaultA, "book", "a.epub", cut)
+			s.cut(repoVaultA, "book", "a.epub", trimmed)
 			var vectors []chunk.Vector
 			for _, row := range s.rowsOf(repoVaultA, "a.epub") {
 				vectors = append(vectors, s.vectorFor(row, "m", 1))
@@ -553,11 +553,11 @@ func TestAVectorThatFailsLeavesTheBatchesBeforeItWritten(t *testing.T) {
 	was := chunk.VectorBatchSize
 	chunk.VectorBatchSize = 2
 	t.Cleanup(func() { chunk.VectorBatchSize = was })
-	var cut []chunk.Chunk
+	var trimmed []chunk.Chunk
 	for i := range 5 {
-		cut = append(cut, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
+		trimmed = append(trimmed, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
 	}
-	s.cut(repoVaultA, "book", "a.epub", cut)
+	s.cut(repoVaultA, "book", "a.epub", trimmed)
 	rows := s.rowsOf(repoVaultA, "a.epub")
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON vectors WHEN NEW.recipe = 'poison' BEGIN SELECT RAISE(ABORT, 'boom'); END`)
 	vectors := []chunk.Vector{
@@ -578,11 +578,11 @@ func TestAVectorThatFailsLeavesTheBatchesBeforeItWritten(t *testing.T) {
 
 func TestAThousandVectorsAreOneBatchAndTheThousandAndFirstIsAnother(t *testing.T) {
 	s := newStore(t)
-	var cut []chunk.Chunk
+	var trimmed []chunk.Chunk
 	for i := range 1001 {
-		cut = append(cut, chunk.Chunk{Start: i, Length: 1, Text: fmt.Sprintf("chunk %d", i)})
+		trimmed = append(trimmed, chunk.Chunk{Start: i, Length: 1, Text: fmt.Sprintf("chunk %d", i)})
 	}
-	s.cut(repoVaultA, "book", "a.epub", cut)
+	s.cut(repoVaultA, "book", "a.epub", trimmed)
 	rows := s.rowsOf(repoVaultA, "a.epub")
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON vectors WHEN NEW.recipe = 'poison' BEGIN SELECT RAISE(ABORT, 'boom'); END`)
 	vectors := make([]chunk.Vector, 0, len(rows))
@@ -642,10 +642,10 @@ func TestRemovedSourcesTakeEverythingMadeFromThem(t *testing.T) {
 		t.Errorf("%d chunks are held", n)
 	}
 	for _, table := range []string{"chunks_fts", "chunks_vec", "sections_fts"} {
-		kept := s.count(`SELECT count(*) FROM ` + table)
+		retained := s.count(`SELECT count(*) FROM ` + table)
 		want := map[string]int{"chunks_fts": 3, "chunks_vec": 0, "sections_fts": 1}[table]
-		if kept != want {
-			t.Errorf("%s holds %d rows, want %d", table, kept, want)
+		if retained != want {
+			t.Errorf("%s holds %d rows, want %d", table, retained, want)
 		}
 	}
 	if n := s.count(`SELECT count(*) FROM vectors`); n != 2 {

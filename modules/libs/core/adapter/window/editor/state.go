@@ -303,8 +303,8 @@ func (h *vaultHandler) GetVaultState(
 	// the state is answered currently. A window standing on nothing holds no
 	// chunks and counts none.
 	if h.state.Indexing.Progress != nil && showing.ID != "" {
-		if held, embedded, err := h.state.Indexing.Progress.GetProgress(ctx, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
-			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = held, embedded
+		if target, embedded, err := h.state.Indexing.Progress.GetProgress(ctx, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
+			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = target, embedded
 		}
 	}
 	return connect.NewResponse(out), nil
@@ -316,8 +316,8 @@ func (h *vaultHandler) WatchVaultChanges(
 	_ *connect.Request[v1.WatchVaultChangesRequest],
 	out *connect.ServerStream[v1.WatchVaultChangesResponse],
 ) error {
-	line, done := h.state.ChangeEvents.subscribe()
-	defer done()
+	line, isDone := h.state.ChangeEvents.subscribe()
+	defer isDone()
 
 	// Named as following before anything has changed. A stream that says
 	// nothing until the vault moves is indistinguishable from one that never

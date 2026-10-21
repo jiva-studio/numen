@@ -187,13 +187,13 @@ func TestARunThatEndedInTheBooksIsToldWhatTheBooksHadDone(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	stopped := errors.New("the books cannot be cut")
-	cut := uncuttable{SourceQueries: db.SourcesKnown(), err: stopped, onUnchunked: cancel}
+	trimmed := uncuttable{SourceQueries: db.SourcesKnown(), err: stopped, onUnchunked: cancel}
 	counted := &counting{VaultReaders: readers}
 	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), cut),
+		source.NewExtract(readers, db.Sources(), trimmed),
 		vectors,
 	)
 
@@ -217,8 +217,8 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	db := openIndex(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	cut := uncuttable{SourceQueries: db.SourcesKnown(), onRecipe: cancel}
-	books := source.NewExtract(readers, db.Sources(), cut)
+	trimmed := uncuttable{SourceQueries: db.SourcesKnown(), onRecipe: cancel}
+	books := source.NewExtract(readers, db.Sources(), trimmed)
 	books.Kinds = []domain.SourceKind{domain.KindBook}
 	counted := &counting{VaultReaders: readers}
 	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())

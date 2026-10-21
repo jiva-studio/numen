@@ -56,17 +56,17 @@ even_load: true
 // What a day's budget is spent on is read from the file, and a preset saying
 // nothing spends it on cards.
 func TestWhatABudgetIsSpentOn(t *testing.T) {
-	for written, want := range map[string]review.BudgetUnit{
+	for content, want := range map[string]review.BudgetUnit{
 		"":                review.BudgetUnitCards,
 		"counts: cards\n": review.BudgetUnitCards,
 		"counts: shows\n": review.BudgetUnitShows,
 	} {
-		p, problems := review.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, content))
 		if len(problems) != 0 {
-			t.Fatalf("%q: problems = %v", written, problems)
+			t.Fatalf("%q: problems = %v", content, problems)
 		}
 		if p.Counts != want {
-			t.Errorf("%q: counts = %q, want %q", written, p.Counts, want)
+			t.Errorf("%q: counts = %q, want %q", content, p.Counts, want)
 		}
 	}
 }
@@ -89,7 +89,7 @@ func TestWhatAPresetLeavesUnsaid(t *testing.T) {
 // A key that cannot be read is a problem against the note and keeps its
 // default.
 func TestAKeyThatCannotBeRead(t *testing.T) {
-	for written, says := range map[string]string{
+	for content, says := range map[string]string{
 		"goal: sideways\n":        "goal",
 		"new_a_day: many\n":       "new_a_day",
 		"new_a_day: 2.5\n":        "whole numbers",
@@ -107,28 +107,28 @@ func TestAKeyThatCannotBeRead(t *testing.T) {
 		"learned: sideways\n":     "learned",
 		"interval: 400\n":         "outside",
 	} {
-		p, problems := review.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, content))
 		if len(problems) != 1 || !strings.Contains(problems[0], says) {
-			t.Errorf("%q: problems = %v", written, problems)
+			t.Errorf("%q: problems = %v", content, problems)
 		}
-		if written == "new_a_day: many\n" && p.NewADay != review.Defaults().NewADay {
-			t.Errorf("%q: new a day = %d", written, p.NewADay)
+		if content == "new_a_day: many\n" && p.NewADay != review.Defaults().NewADay {
+			t.Errorf("%q: new a day = %d", content, p.NewADay)
 		}
 	}
 }
 
 // A day it aims at is read whether the file quotes it or not.
 func TestTheDayItAimsAt(t *testing.T) {
-	for _, written := range []string{
+	for _, content := range []string{
 		"goal: by_date\nby_date: 2026-09-30\n",
 		"goal: by_date\nby_date: \"2026-09-30\"\n",
 	} {
-		p, problems := review.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, content))
 		if len(problems) != 0 {
-			t.Fatalf("%q: problems = %v", written, problems)
+			t.Fatalf("%q: problems = %v", content, problems)
 		}
 		if p.By.Format(review.DayLayout) != "2026-09-30" {
-			t.Errorf("%q: by = %v", written, p.By)
+			t.Errorf("%q: by = %v", content, p.By)
 		}
 	}
 }
@@ -161,17 +161,17 @@ func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
 // What counts as learned is read from the file, and a preset saying nothing
 // learns a card face by the interval it is sent away for.
 func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
-	for written, want := range map[string]review.LearnedRule{
+	for content, want := range map[string]review.LearnedRule{
 		"":                     review.RuleInterval,
 		"learned: interval\n":  review.RuleInterval,
 		"learned: retention\n": review.RuleRetention,
 	} {
-		p, problems := review.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, content))
 		if len(problems) != 0 {
-			t.Fatalf("%q: problems = %v", written, problems)
+			t.Fatalf("%q: problems = %v", content, problems)
 		}
 		if p.Rule != want {
-			t.Errorf("%q: learned = %q, want %q", written, p.Rule, want)
+			t.Errorf("%q: learned = %q, want %q", content, p.Rule, want)
 		}
 	}
 

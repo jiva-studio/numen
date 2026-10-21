@@ -456,12 +456,12 @@ func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte
 	if len(wanted) == 0 {
 		return nil, nil
 	}
-	asked, err := json.Marshal(wanted)
+	request, err := json.Marshal(wanted)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("kept_vectors"), string(asked), recipe)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("kept_vectors"), string(request), recipe)
 	if err != nil {
 		return nil, err
 	}

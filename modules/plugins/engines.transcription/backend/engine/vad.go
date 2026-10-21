@@ -298,11 +298,11 @@ func (t *Transcriber) scoreWindow(inputs map[string]*ort.Value, dst []float32) (
 		}
 	}()
 
-	said, ok := out[speechScore]
+	response, ok := out[speechScore]
 	if !ok {
 		return 0, fmt.Errorf("the speech model answered with %v and not %s", getNames(out), speechScore)
 	}
-	score, err := ort.GetTensorData[float32](said)
+	score, err := ort.GetTensorData[float32](response)
 	if err != nil {
 		return 0, err
 	}
@@ -337,13 +337,13 @@ func getSpans(scores []float32, threshold float32, silence, pad, longest, shorte
 	out := findSpeechSpans(scores, threshold, silence)
 	wider := widenSpans(out, pad, len(scores))
 
-	var cut []span
+	var trimmed []span
 	for _, one := range wider {
-		cut = append(cut, splitLongSpan(one, scores, longest)...)
+		trimmed = append(trimmed, splitLongSpan(one, scores, longest)...)
 	}
 
 	out = out[:0]
-	for _, one := range cut {
+	for _, one := range trimmed {
 		if one.To-one.From >= shortest {
 			out = append(out, one)
 		}

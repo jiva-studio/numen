@@ -122,21 +122,21 @@ func TestWithNoProgramsNothingAnswersByDefault(t *testing.T) {
 // The models of a program are those it lists, the one it marks or else the first the default, each
 // writing where the program's section keeps its model.
 func TestAProgramOffersTheModelsItListsAndTheFirstByDefault(t *testing.T) {
-	held := modelsAt(t, settings.Agent{}, listedPrograms(), agentModelAt)
-	if len(held) != 2 || held[0].Name != "big" || held[1].Name != "small" {
-		t.Fatalf("the program offers %+v", held)
+	target := modelsAt(t, settings.Agent{}, listedPrograms(), agentModelAt)
+	if len(target) != 2 || target[0].Name != "big" || target[1].Name != "small" {
+		t.Fatalf("the program offers %+v", target)
 	}
-	if !held[0].IsDefault || held[1].IsDefault {
-		t.Errorf("the default is %+v", held)
+	if !target[0].IsDefault || target[1].IsDefault {
+		t.Errorf("the default is %+v", target)
 	}
-	if held[1].Title != "small" || held[0].Title != "Big" {
-		t.Errorf("the titles are %q and %q", held[0].Title, held[1].Title)
+	if target[1].Title != "small" || target[0].Title != "Big" {
+		t.Errorf("the titles are %q and %q", target[0].Title, target[1].Title)
 	}
-	if got := held[1].Writes; len(got) != 1 || formatPath(got[0].Path) != "agent.alpha.model" || got[0].JSON != `"small"` {
+	if got := target[1].Writes; len(got) != 1 || formatPath(got[0].Path) != "agent.alpha.model" || got[0].JSON != `"small"` {
 		t.Errorf("choosing small writes %+v", got)
 	}
-	if held[0].Presence != port.NothingToFetch {
-		t.Errorf("the presence is %v", held[0].Presence)
+	if target[0].Presence != port.NothingToFetch {
+		t.Errorf("the presence is %v", target[0].Presence)
 	}
 }
 
@@ -146,9 +146,9 @@ func TestTheModelAProgramMarksIsTheDefault(t *testing.T) {
 		Name: "alpha", Title: "Alpha", IsInstalled: true,
 		Models: []port.AgentModel{{Name: "one"}, {Name: "two", IsDefault: true}},
 	}}
-	held := modelsAt(t, settings.Agent{}, programs, agentModelAt)
-	if held[0].IsDefault || !held[1].IsDefault {
-		t.Errorf("the default is %+v", held)
+	target := modelsAt(t, settings.Agent{}, programs, agentModelAt)
+	if target[0].IsDefault || !target[1].IsDefault {
+		t.Errorf("the default is %+v", target)
 	}
 }
 
@@ -157,35 +157,35 @@ func TestTheModelAProgramMarksIsTheDefault(t *testing.T) {
 func TestTheModelTheSettingsNameIsKept(t *testing.T) {
 	named := settings.Agent{}
 	named.Programs = map[string]settings.AgentProgram{"alpha": {Model: "small"}}
-	held := modelsAt(t, named, listedPrograms(), agentModelAt)
-	if held[0].IsDefault || !held[1].IsDefault {
-		t.Errorf("the model in force is %+v", held)
+	target := modelsAt(t, named, listedPrograms(), agentModelAt)
+	if target[0].IsDefault || !target[1].IsDefault {
+		t.Errorf("the model in force is %+v", target)
 	}
 
 	named.Programs = map[string]settings.AgentProgram{"alpha": {Model: "custom-1"}}
-	held = modelsAt(t, named, listedPrograms(), agentModelAt)
-	last := held[len(held)-1]
-	if len(held) != 3 || last.Name != "custom-1" || last.Group != "Named in the settings" || last.IsDefault {
-		t.Errorf("the models are %+v", held)
+	target = modelsAt(t, named, listedPrograms(), agentModelAt)
+	last := target[len(target)-1]
+	if len(target) != 3 || last.Name != "custom-1" || last.Group != "Named in the settings" || last.IsDefault {
+		t.Errorf("the models are %+v", target)
 	}
-	if held[0].Group != "In full" || !held[0].IsDefault {
-		t.Errorf("the models are %+v", held)
+	if target[0].Group != "In full" || !target[0].IsDefault {
+		t.Errorf("the models are %+v", target)
 	}
 }
 
 // A program that lists no models offers the model that answers by default, alone, until a person
 // names one.
 func TestAProgramThatListsNoModelsOffersTheDefaultAlone(t *testing.T) {
-	held := modelsAt(t, settings.Agent{}, listedPrograms(), []string{"agent", "beta", "model"})
-	if len(held) != 1 || held[0].Name != "" || !held[0].IsDefault {
-		t.Errorf("the program opens on %+v", held)
+	target := modelsAt(t, settings.Agent{}, listedPrograms(), []string{"agent", "beta", "model"})
+	if len(target) != 1 || target[0].Name != "" || !target[0].IsDefault {
+		t.Errorf("the program opens on %+v", target)
 	}
 
 	named := settings.Agent{}
 	named.Programs = map[string]settings.AgentProgram{"beta": {Model: "mine"}}
-	held = modelsAt(t, named, listedPrograms(), []string{"agent", "beta", "model"})
-	if len(held) != 1 || held[0].Name != "mine" || held[0].Title != "mine" || !held[0].IsDefault {
-		t.Errorf("the program opens on %+v", held)
+	target = modelsAt(t, named, listedPrograms(), []string{"agent", "beta", "model"})
+	if len(target) != 1 || target[0].Name != "mine" || target[0].Title != "mine" || !target[0].IsDefault {
+		t.Errorf("the program opens on %+v", target)
 	}
 }
 
@@ -200,9 +200,9 @@ func TestAProgramNotInstalledOffersModelsOnlyWhereTheSettingsNameIt(t *testing.T
 
 	named := settings.Agent{}
 	named.Use = settings.UseProgram("gamma")
-	held := modelsAt(t, named, listedPrograms(), []string{"agent", "gamma", "model"})
-	if len(held) != 1 || held[0].Name != "g1" {
-		t.Errorf("the named program offers %+v", held)
+	target := modelsAt(t, named, listedPrograms(), []string{"agent", "gamma", "model"})
+	if len(target) != 1 || target[0].Name != "g1" {
+		t.Errorf("the named program offers %+v", target)
 	}
 }
 
@@ -237,11 +237,11 @@ func TestAModelKeepsTheLevelsOfReasoningItLists(t *testing.T) {
 			{Name: "plain"},
 		},
 	}}
-	held := modelsAt(t, settings.Agent{}, programs, agentModelAt)
-	if len(held[0].ReasoningLevels) != 2 || held[0].ReasoningLevels[1].Name != "high" || held[0].DefaultReasoning != "low" {
-		t.Errorf("the model offers %+v", held[0])
+	target := modelsAt(t, settings.Agent{}, programs, agentModelAt)
+	if len(target[0].ReasoningLevels) != 2 || target[0].ReasoningLevels[1].Name != "high" || target[0].DefaultReasoning != "low" {
+		t.Errorf("the model offers %+v", target[0])
 	}
-	if len(held[1].ReasoningLevels) != 0 {
-		t.Errorf("a model listing none offers %+v", held[1].ReasoningLevels)
+	if len(target[1].ReasoningLevels) != 0 {
+		t.Errorf("a model listing none offers %+v", target[1].ReasoningLevels)
 	}
 }

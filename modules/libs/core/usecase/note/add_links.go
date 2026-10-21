@@ -53,11 +53,11 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 			return nil, err
 		}
 		group := groups.links[from]
-		written, err := u.linking.Add(ctx, v, from, groups.fingerprints[from], group[0], group[1:]...)
+		content, err := u.linking.Add(ctx, v, from, groups.fingerprints[from], group[0], group[1:]...)
 		for _, i := range groups.positions[from] {
 			results[i].Error = err
 			if err == nil {
-				results[i].Fingerprint = written
+				results[i].Fingerprint = content
 			}
 		}
 	}

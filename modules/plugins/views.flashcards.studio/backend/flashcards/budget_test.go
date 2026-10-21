@@ -374,10 +374,10 @@ func TestTheMinutesCloseTheDayUnderAGoalOfMinutes(t *testing.T) {
 		"decks/Short.md": deckOf("Short", 10, 0),
 	})
 
-	held := int(time.Minute / review.DefaultCost.New)
+	target := int(time.Minute / review.DefaultCost.New)
 	got := byDeck(s.sessionAt(t, today, saturday))
-	if got["decks/Short.md"] != held {
-		t.Errorf("a day of one minute was asked %d cards, want %d", got["decks/Short.md"], held)
+	if got["decks/Short.md"] != target {
+		t.Errorf("a day of one minute was asked %d cards, want %d", got["decks/Short.md"], target)
 	}
 }
 
@@ -524,13 +524,13 @@ func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 		"decks/Two.md": deckOf("", 80, 100),
 	})
 
-	held := int(time.Duration(review.Defaults().MinutesADay) *
+	target := int(time.Duration(review.Defaults().MinutesADay) *
 		time.Minute / review.DefaultCost.New)
-	if got := countQueue(one.sessionAt(t, today, saturday)); got != held {
-		t.Fatalf("one deck on the defaults was asked %d cards, want %d", got, held)
+	if got := countQueue(one.sessionAt(t, today, saturday)); got != target {
+		t.Fatalf("one deck on the defaults was asked %d cards, want %d", got, target)
 	}
-	if got := countQueue(two.sessionAt(t, today, saturday)); got != held {
-		t.Errorf("two decks on the defaults were asked %d cards, want %d", got, held)
+	if got := countQueue(two.sessionAt(t, today, saturday)); got != target {
+		t.Errorf("two decks on the defaults were asked %d cards, want %d", got, target)
 	}
 }
 
@@ -575,12 +575,12 @@ func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 		"decks/Two.md": deckOf("First", 20, 100),
 	})
 
-	held := int(time.Minute / review.DefaultCost.New)
-	if got := countQueue(together.sessionAt(t, today, saturday)); got != held {
-		t.Fatalf("one minute over both decks was asked %d cards, want %d", got, held)
+	target := int(time.Minute / review.DefaultCost.New)
+	if got := countQueue(together.sessionAt(t, today, saturday)); got != target {
+		t.Fatalf("one minute over both decks was asked %d cards, want %d", got, target)
 	}
-	if got := countQueue(apart.sessionAt(t, today, saturday)); got != 2*held {
-		t.Errorf("a minute under each of two presets was asked %d cards, want %d", got, 2*held)
+	if got := countQueue(apart.sessionAt(t, today, saturday)); got != 2*target {
+		t.Errorf("a minute under each of two presets was asked %d cards, want %d", got, 2*target)
 	}
 }
 
@@ -1061,10 +1061,10 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 				t.Fatalf("the value the preset holds stands nowhere on the grid %v", curve.Grid)
 			}
 
-			drawn := curve.Points[curve.Now.Index].Reviews
+			rendered := curve.Points[curve.Now.Index].Reviews
 			faces := s.countDayFaces(t, today, getNextAdmittedDay(read.Settings, today, saturday))
-			if drawn != float64(faces) {
-				t.Errorf("the curve draws %v and the day hands over %d", drawn, faces)
+			if rendered != float64(faces) {
+				t.Errorf("the curve draws %v and the day hands over %d", rendered, faces)
 			}
 		})
 	}
@@ -1239,21 +1239,21 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 	// close the day.
 	const target = "goal: retention\nnew_a_day: 20\nreviews_a_day: 20\nminutes_a_day: 0\n"
 
-	spent := make(map[string]map[int]int, 2)
+	elapsed := make(map[string]map[int]int, 2)
 	for name, day := range map[string]string{"minutes": minutes, "retention": target} {
-		spent[name] = make(map[int]int)
+		elapsed[name] = make(map[int]int)
 		for _, share := range []int{100, 50, 0} {
 			one := s0(t, newBacklogVault(t, fmt.Sprintf("%sbacklog: %d\n", day, share)))
-			spent[name][share] = one.owed
+			elapsed[name][share] = one.owed
 		}
 	}
-	if spent["minutes"][100] == spent["minutes"][0] {
-		t.Errorf("a day of one pot asked %d of the debt at every share", spent["minutes"][100])
+	if elapsed["minutes"][100] == elapsed["minutes"][0] {
+		t.Errorf("a day of one pot asked %d of the debt at every share", elapsed["minutes"][100])
 	}
-	if spent["retention"][100] != spent["retention"][0] ||
-		spent["retention"][100] != spent["retention"][50] {
+	if elapsed["retention"][100] != elapsed["retention"][0] ||
+		elapsed["retention"][100] != elapsed["retention"][50] {
 		t.Errorf("a day of a count for each side asked %v of the debt, and the share "+
-			"decides nothing there", spent["retention"])
+			"decides nothing there", elapsed["retention"])
 	}
 }
 
@@ -1279,23 +1279,23 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 			answer(t, before, mark(i), 6*time.Second)
 		}
 
-		spent := time.Duration(0)
-		asked := 0
+		elapsed := time.Duration(0)
+		request := 0
 		for range 4 {
-			sat := s.sessionAt(t, today, saturday.Add(spent))
+			sat := s.sessionAt(t, today, saturday.Add(elapsed))
 			if len(sat.Queue) == 0 {
 				break
 			}
-			given := s.run(t, saturday.Add(spent))
+			provided := s.run(t, saturday.Add(elapsed))
 			for _, one := range sat.Queue {
-				answerAgain(t, given, one.ID.Card, 6*time.Second)
-				spent += 6 * time.Second
-				asked++
+				answerAgain(t, provided, one.ID.Card, 6*time.Second)
+				elapsed += 6 * time.Second
+				request++
 			}
 		}
-		if spent > 90*time.Second {
+		if elapsed > 90*time.Second {
 			t.Errorf("counting %s, a day of one minute asked %d card faces and ran %v",
-				counts, asked, spent)
+				counts, request, elapsed)
 		}
 	}
 }

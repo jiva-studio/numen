@@ -147,9 +147,9 @@ func (u Move) rewriteNoteLinks(
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		settled, err := u.notes.RepairLinks(ctx, v, source.Path, getMovedPath(from, to, source.Path), pointing[source.Path])
-		res.Repaired = append(res.Repaired, settled.Repaired...)
-		res.Dangling = append(res.Dangling, settled.Dangling...)
+		resolved, err := u.notes.RepairLinks(ctx, v, source.Path, getMovedPath(from, to, source.Path), pointing[source.Path])
+		res.Repaired = append(res.Repaired, resolved.Repaired...)
+		res.Dangling = append(res.Dangling, resolved.Dangling...)
 		if err != nil {
 			return err
 		}

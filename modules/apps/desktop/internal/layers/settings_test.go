@@ -21,25 +21,25 @@ func TestEveryPathThePageReadsStandsInTheFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var drawn map[string][]string
-	if err := json.Unmarshal(raw, &drawn); err != nil {
+	var rendered map[string][]string
+	if err := json.Unmarshal(raw, &rendered); err != nil {
 		t.Fatal(err)
 	}
-	if len(drawn) == 0 {
+	if len(rendered) == 0 {
 		t.Fatal("the page draws no rows")
 	}
 
-	written, err := container.DefaultSettings().WriteJSON()
+	content, err := container.DefaultSettings().WriteJSON()
 	if err != nil {
 		t.Fatal(err)
 	}
-	var held any
-	if err := json.Unmarshal([]byte(written), &held); err != nil {
+	var target any
+	if err := json.Unmarshal([]byte(content), &target); err != nil {
 		t.Fatal(err)
 	}
 
-	for row, at := range drawn {
-		value := held
+	for row, at := range rendered {
+		value := target
 		ok := true
 		for _, step := range at {
 			object, is := value.(map[string]any)

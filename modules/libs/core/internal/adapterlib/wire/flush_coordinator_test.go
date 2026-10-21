@@ -34,12 +34,12 @@ func TestAVaultNothingIsDrawnFromOwesNothing(t *testing.T) {
 func TestAPageSaysNothingUntilItIsAsked(t *testing.T) {
 	var pages flushCoordinator
 
-	token, told, done := pages.registerClient()
-	defer done()
+	token, notified, isDone := pages.registerClient()
+	defer isDone()
 
 	select {
-	case asked := <-told:
-		t.Errorf("the page was told to flush %q before anything asked", asked)
+	case requestVal := <-notified:
+		t.Errorf("the page was told to flush %q before anything asked", requestVal)
 	default:
 	}
 
@@ -48,9 +48,9 @@ func TestAPageSaysNothingUntilItIsAsked(t *testing.T) {
 		t.Error("a page that has said nothing was counted as having written")
 	}
 	select {
-	case asked := <-told:
-		if asked != token {
-			t.Errorf("the page was told to flush under %q and listens under %q", asked, token)
+	case requestItem := <-notified:
+		if requestItem != token {
+			t.Errorf("the page was told to flush under %q and listens under %q", requestItem, token)
 		}
 	default:
 		t.Fatal("the page was never told to flush")
@@ -71,11 +71,11 @@ func TestAPageSaysNothingUntilItIsAsked(t *testing.T) {
 func TestAQuestionEndsTheRoundAndNotTheWait(t *testing.T) {
 	var pages flushCoordinator
 
-	token, told, done := pages.registerClient()
-	defer done()
+	token, notified, isDone := pages.registerClient()
+	defer isDone()
 
 	request := pages.startRequest()
-	<-told
+	<-notified
 	pages.recordFlush(token, flushAsking)
 
 	if !request.isPending() {
@@ -124,11 +124,11 @@ func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
 func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 	var pages flushCoordinator
 
-	token, told, done := pages.registerClient()
-	defer done()
+	token, notified, isDone := pages.registerClient()
+	defer isDone()
 
 	first := pages.startRequest()
-	<-told
+	<-notified
 	pages.recordFlush(token, flushWritten)
 	if !isClosed(first.allWritten) {
 		t.Fatal("the page wrote what it owed and the request is still owed something")
@@ -142,9 +142,9 @@ func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 		t.Error("the second request took the first request's answer for its own")
 	}
 	select {
-	case asked := <-told:
-		if asked != token {
-			t.Errorf("the page was told to flush under %q and listens under %q", asked, token)
+	case request := <-notified:
+		if request != token {
+			t.Errorf("the page was told to flush under %q and listens under %q", request, token)
 		}
 	default:
 		t.Fatal("the second request never told the page to flush")
@@ -165,13 +165,13 @@ func TestAPageThatOpensWhileTheWindowIsGoingIsAsked(t *testing.T) {
 		t.Fatal("a vault with no page open was owed something")
 	}
 
-	token, told, done := pages.registerClient()
-	defer done()
+	token, notified, isDone := pages.registerClient()
+	defer isDone()
 
 	select {
-	case asked := <-told:
-		if asked != token {
-			t.Errorf("the page was told to flush under %q and listens under %q", asked, token)
+	case requestVal := <-notified:
+		if requestVal != token {
+			t.Errorf("the page was told to flush under %q and listens under %q", requestVal, token)
 		}
 	default:
 		t.Error("a page that opened while the window was going was never asked")
@@ -182,14 +182,14 @@ func TestAPageThatOpensWhileTheWindowIsGoingIsAsked(t *testing.T) {
 func TestAPageThatGoesWithNothingStandingStopsBeingOwed(t *testing.T) {
 	var pages flushCoordinator
 
-	_, _, done := pages.registerClient()
+	_, _, isDone := pages.registerClient()
 
 	request := pages.startRequest()
 	if isClosed(request.allWritten) {
 		t.Fatal("a page that has said nothing was counted as having written")
 	}
 
-	done()
+	isDone()
 	if !isClosed(request.allWritten) {
 		t.Error("a page that stopped listening is still owed")
 	}
@@ -201,12 +201,12 @@ func TestAPageThatGoesWithNothingStandingStopsBeingOwed(t *testing.T) {
 func TestAPageThatGoesWithAQuestionStandingIsStillOwed(t *testing.T) {
 	var pages flushCoordinator
 
-	token, told, done := pages.registerClient()
+	token, notified, isDone := pages.registerClient()
 	first := pages.startRequest()
-	<-told
+	<-notified
 	pages.recordFlush(token, flushAsking)
 
-	done()
+	isDone()
 
 	if isClosed(first.allWritten) {
 		t.Fatal("the window went with the buffer of a page that had a question standing")
@@ -223,9 +223,9 @@ func TestAPageThatGoesWithAQuestionStandingIsStillOwed(t *testing.T) {
 		t.Fatalf("the page that came back listens under the token that went, %q", again)
 	}
 	select {
-	case asked := <-toldAgain:
-		if asked != again {
-			t.Errorf("the page was told to flush under %q and listens under %q", asked, again)
+	case request := <-toldAgain:
+		if request != again {
+			t.Errorf("the page was told to flush under %q and listens under %q", request, again)
 		}
 	default:
 		t.Fatal("the page that came back was never asked")
@@ -247,11 +247,11 @@ func TestAPageThatGoesWithAQuestionStandingIsStillOwed(t *testing.T) {
 func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testing.T) {
 	var pages flushCoordinator
 
-	token, told, done := pages.registerClient()
+	token, notified, isDone := pages.registerClient()
 	pages.startRequest()
-	<-told
+	<-notified
 	pages.recordFlush(token, flushAsking)
-	done()
+	isDone()
 
 	request := pages.startRequest()
 	if isClosed(request.allWritten) {
@@ -272,19 +272,19 @@ func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testin
 
 // TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo.
 func TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo(t *testing.T) {
-	for name, said := range map[string]flushState{
+	for name, response := range map[string]flushState{
 		"nothing owed":       parseFlushResult(v1.FlushResult_FLUSH_RESULT_NOTHING),
 		"everything written": parseFlushResult(v1.FlushResult_FLUSH_RESULT_WRITTEN),
 	} {
 		t.Run(name, func(t *testing.T) {
 			var pages flushCoordinator
 
-			token, told, done := pages.registerClient()
-			defer done()
+			token, notified, isDone := pages.registerClient()
+			defer isDone()
 
 			request := pages.startRequest()
-			<-told
-			pages.recordFlush(token, said)
+			<-notified
+			pages.recordFlush(token, response)
 
 			if !isClosed(request.allWritten) {
 				t.Error("the window was held by a page that had nothing left")

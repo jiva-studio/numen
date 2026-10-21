@@ -133,18 +133,18 @@ func parseStreamWithClock(
 }
 
 func (p *streamParser) parseLine(ctx context.Context, line string) {
-	var said event
-	if err := json.Unmarshal([]byte(line), &said); err != nil {
+	var response event
+	if err := json.Unmarshal([]byte(line), &response); err != nil {
 		return
 	}
 
-	switch said.Type {
+	switch response.Type {
 	case "stream_event":
-		p.parseStreamEvent(ctx, said.Event)
+		p.parseStreamEvent(ctx, response.Event)
 	case "assistant":
-		p.parseAssistantMessage(ctx, said)
+		p.parseAssistantMessage(ctx, response)
 	case "user":
-		if said.hasToolAnswer() {
+		if response.hasToolAnswer() {
 			_ = p.send(&numenv1.AskAgentResponse{
 				Step: &numenv1.AskAgentResponse_ToolFinished{
 					ToolFinished: &numenv1.ToolFinished{},
@@ -152,14 +152,14 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 			})
 		}
 	case "system":
-		switch said.Subtype {
+		switch response.Subtype {
 		case "init":
-			if said.Session != "" && p.record != nil {
-				p.record(said.Session)
+			if response.Session != "" && p.record != nil {
+				p.record(response.Session)
 			}
-			p.setReason(getUnreachableReason(said))
+			p.setReason(getUnreachableReason(response))
 		case "status":
-			if said.Status == "requesting" {
+			if response.Status == "requesting" {
 				_ = p.send(&numenv1.AskAgentResponse{
 					Step: &numenv1.AskAgentResponse_ModelStarted{
 						ModelStarted: &numenv1.ModelStarted{},
@@ -168,8 +168,8 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 			}
 		}
 	case "result":
-		if said.IsError {
-			p.setReason(getResultError(said))
+		if response.IsError {
+			p.setReason(getResultError(response))
 			return
 		}
 		p.setReason("")

@@ -11,7 +11,7 @@ import (
 // One key says what a note is, and any word will do: a plugin gives a note the type it works
 // with.
 func TestOneKeySaysWhatANoteIs(t *testing.T) {
-	for written, want := range map[string]domain.NoteType{
+	for content, want := range map[string]domain.NoteType{
 		"---\ntype: note\n---\n":     domain.TypeNote,
 		"---\ntype: deck\n---\n":     "deck",
 		"---\ntype: Deck\n---\n":     "Deck",
@@ -22,12 +22,12 @@ func TestOneKeySaysWhatANoteIs(t *testing.T) {
 		"---\ntype: \"\"\n---\n":     domain.TypeNote,
 		"# Entropy\n":                domain.TypeNote,
 	} {
-		n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(written))
+		n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(content))
 		if n.Type != want {
-			t.Errorf("%q: type = %q, want %q", written, n.Type, want)
+			t.Errorf("%q: type = %q, want %q", content, n.Type, want)
 		}
 		if len(n.Problems) != 0 {
-			t.Errorf("%q: problems = %v", written, n.Problems)
+			t.Errorf("%q: problems = %v", content, n.Problems)
 		}
 	}
 }
@@ -35,16 +35,16 @@ func TestOneKeySaysWhatANoteIs(t *testing.T) {
 // A value that is not text is a problem against the note, and the note is read as an ordinary
 // note.
 func TestATypeThatIsNotText(t *testing.T) {
-	for _, written := range []string{
+	for _, content := range []string{
 		"---\ntype: 12\n---\n",
 		"---\ntype:\n  - deck\n---\n",
 	} {
-		n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(written))
+		n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(content))
 		if n.Type != domain.TypeNote {
-			t.Errorf("%q: type = %q, want it read as an ordinary note", written, n.Type)
+			t.Errorf("%q: type = %q, want it read as an ordinary note", content, n.Type)
 		}
 		if len(n.Problems) != 1 || !strings.Contains(n.Problems[0], "type") {
-			t.Errorf("%q: problems = %v", written, n.Problems)
+			t.Errorf("%q: problems = %v", content, n.Problems)
 		}
 	}
 }

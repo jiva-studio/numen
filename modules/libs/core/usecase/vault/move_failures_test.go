@@ -411,11 +411,11 @@ func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
 	cannot := errors.New("the other index cannot be written")
 	other := unfiling{SourceRepository: f.db.Sources(), err: cannot}
 
-	given := f.move().WithSources(other)
-	if _, ok := given.Sources().(unfiling); !ok {
-		t.Fatalf("the move files through %T", given.Sources())
+	provided := f.move().WithSources(other)
+	if _, ok := provided.Sources().(unfiling); !ok {
+		t.Fatalf("the move files through %T", provided.Sources())
 	}
-	if _, err := given.Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md"); !errors.Is(err, cannot) {
+	if _, err := provided.Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md"); !errors.Is(err, cannot) {
 		t.Errorf("got %v", err)
 	}
 }

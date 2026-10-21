@@ -261,8 +261,8 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			held := host.acquired.Load()
-			if tc.isLeased() && held == 0 {
+			target := host.acquired.Load()
+			if tc.isLeased() && target == 0 {
 				t.Fatal("opening the bridge acquired no reference")
 			}
 			if got := host.released.Load(); got != 0 {
@@ -273,8 +273,8 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if got := host.released.Load(); got != held {
-				t.Errorf("held %d references, gave back %d", held, got)
+			if got := host.released.Load(); got != target {
+				t.Errorf("held %d references, gave back %d", target, got)
 			}
 		})
 	}

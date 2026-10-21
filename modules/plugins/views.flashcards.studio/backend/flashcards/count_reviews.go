@@ -157,8 +157,8 @@ func (u CountReviews) countFile(
 	var ran LogFile
 	var opened bool
 	var err error
-	one, kept := run.was[file.Name.Hash]
-	isStale := !kept || one.Size != file.Size
+	one, retained := run.was[file.Name.Hash]
+	isStale := !retained || one.Size != file.Size
 	if isStale || run.coming {
 		ran, err = log.ReadFile(ctx, store, file)
 		if err != nil {

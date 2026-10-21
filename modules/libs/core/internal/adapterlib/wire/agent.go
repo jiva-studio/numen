@@ -49,7 +49,7 @@ func StreamAgentTask(
 			if !working {
 				return nil
 			}
-			if done, err := sendStep(stream, step); err != nil || done {
+			if isDone, err := sendStep(stream, step); err != nil || isDone {
 				return err
 			}
 		}

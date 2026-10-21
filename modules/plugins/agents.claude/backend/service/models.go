@@ -167,9 +167,9 @@ func (c *modelCache) find(model string) ([]reasoning.Level, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, one := range c.lists {
-		for _, listed := range one.models {
-			if listed.Value == model {
-				return listed.getLevels(), true
+		for _, items := range one.models {
+			if items.Value == model {
+				return items.getLevels(), true
 			}
 		}
 	}

@@ -22,15 +22,15 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 		</body></html>`,
 		"OEBPS/plate.png": "\x89PNG\r\n\x1a\n",
 	}))
-	drawn, err := book.Markup("OEBPS/one.xhtml")
+	rendered, err := book.Markup("OEBPS/one.xhtml")
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
-	page := drawn.HTML()
+	page := rendered.HTML()
 
-	for _, written := range []string{"<script", "alert(1)</", "alert(2)</"} {
-		if strings.Contains(page, written) {
-			t.Errorf("the markup carries %q:\n%s", written, page)
+	for _, content := range []string{"<script", "alert(1)</", "alert(2)</"} {
+		if strings.Contains(page, content) {
+			t.Errorf("the markup carries %q:\n%s", content, page)
 		}
 	}
 	root := parseHTML(t, page)
@@ -38,8 +38,8 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 		t.Errorf("a script element was written:\n%s", page)
 	}
 	// What the book wrote is the book's words, and a reader sees them as words.
-	if said := text(root); !strings.Contains(said, "</p><script>alert(1)</script>") {
-		t.Errorf("the book's own markup is not among its words: %q", said)
+	if response := text(root); !strings.Contains(response, "</p><script>alert(1)</script>") {
+		t.Errorf("the book's own markup is not among its words: %q", response)
 	}
 	for _, one := range []struct {
 		name, attribute, want string
@@ -49,8 +49,8 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 	} {
 		got := ""
 		for _, found := range elements(root, one.name) {
-			if said := getAttribute(found, one.attribute); said != "" {
-				got = said
+			if responseVal := getAttribute(found, one.attribute); responseVal != "" {
+				got = responseVal
 			}
 		}
 		if got != one.want {
@@ -63,12 +63,12 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 // them off it and counts none itself.
 func TestEveryRunOfTextSaysWhereItStands(t *testing.T) {
 	book := read(t, tinyBook(t, map[string]string{secondDoc: "variant/drawn.xhtml"}))
-	drawn, err := book.Markup(secondDoc)
+	rendered, err := book.Markup(secondDoc)
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
 
-	runs := offsets(t, parseHTML(t, drawn.HTML()))
+	runs := offsets(t, parseHTML(t, rendered.HTML()))
 	if len(runs) == 0 {
 		t.Fatal("the markup says no offsets")
 	}
@@ -80,7 +80,7 @@ func TestEveryRunOfTextSaysWhereItStands(t *testing.T) {
 		}
 		out.WriteString(run.said)
 	}
-	if want := book.Text[drawn.Offset : drawn.Offset+drawn.Length]; out.String() != want {
+	if want := book.Text[rendered.Offset : rendered.Offset+rendered.Length]; out.String() != want {
 		t.Errorf("the runs say\n%q\nand the document is\n%q", out.String(), want)
 	}
 }
@@ -130,10 +130,10 @@ func offsets(t *testing.T, root *html.Node) []run {
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			// A book writes spans of its own, and the run is the one that says
 			// at its current position.
-			if said := getAttribute(c, epub.OffsetAttribute); said != "" {
-				at, err := strconv.Atoi(said)
+			if response := getAttribute(c, epub.OffsetAttribute); response != "" {
+				at, err := strconv.Atoi(response)
 				if err != nil {
-					t.Fatalf("a run says it stands at %q", said)
+					t.Fatalf("a run says it stands at %q", response)
 				}
 				out = append(out, run{at: at, said: text(c)})
 				continue

@@ -117,8 +117,8 @@ func TestNothingNamesNoVault(t *testing.T) {
 
 func TestRemoveTakesAVaultOffTheList(t *testing.T) {
 	r := newRegistry(t)
-	kept := domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}
-	if err := r.Save(kept); err != nil {
+	retained := domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}
+	if err := r.Save(retained); err != nil {
 		t.Fatal(err)
 	}
 	if err := r.Save(domain.Vault{ID: "01BBB", Name: "work", Path: "/work"}); err != nil {
@@ -131,8 +131,8 @@ func TestRemoveTakesAVaultOffTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0] != kept {
-		t.Errorf("got %v, want only %v", got, kept)
+	if len(got) != 1 || got[0] != retained {
+		t.Errorf("got %v, want only %v", got, retained)
 	}
 }
 

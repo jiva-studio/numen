@@ -146,7 +146,7 @@ func TestClientCompleteReturnsRefusalOfHost(t *testing.T) {
 }
 
 func TestReadRefusalWalksEveryCode(t *testing.T) {
-	seen := map[error]numenv1.CompletionErrorCode{}
+	observed := map[error]numenv1.CompletionErrorCode{}
 	for value := range numenv1.CompletionErrorCode_name {
 		code := numenv1.CompletionErrorCode(value)
 		err := readRefusal(code, "")
@@ -159,10 +159,10 @@ func TestReadRefusalWalksEveryCode(t *testing.T) {
 		if err == nil || err.Error() == "" {
 			t.Fatalf("%v has no error", code)
 		}
-		if other, dup := seen[err]; dup {
+		if other, dup := observed[err]; dup {
 			t.Errorf("%v and %v share an error", code, other)
 		}
-		seen[err] = code
+		observed[err] = code
 	}
 	if err := readRefusal(numenv1.CompletionErrorCode(99), ""); err == nil {
 		t.Error("an unknown code must be an error")

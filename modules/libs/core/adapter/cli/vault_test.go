@@ -63,14 +63,14 @@ func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, e
 	s.t.Helper()
 	var out bytes.Buffer
 	err := cli.Run(s.t.Context(), &out, &s.said, append(s.base, args...), func(where cli.Locations) cli.Deps {
-		given := s.deps(where)
-		open := given.Vaults
-		given.Vaults = func() (cli.Vaults, error) {
+		provided := s.deps(where)
+		open := provided.Vaults
+		provided.Vaults = func() (cli.Vaults, error) {
 			v, err := open()
 			adjust(&v)
 			return v, err
 		}
-		return given
+		return provided
 	})
 	return out.String(), err
 }
@@ -104,7 +104,7 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 
 func TestAVaultCommandReturnsWhatWentWrongOpeningTheList(t *testing.T) {
 	t.Parallel()
-	given := cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }}
+	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }}
 	for _, args := range [][]string{
 		{"vault", "add", "somewhere"},
 		{"vault", "list"},
@@ -113,7 +113,7 @@ func TestAVaultCommandReturnsWhatWentWrongOpeningTheList(t *testing.T) {
 		{"vault", "erase", "notebook", "--yes"},
 		{"vault", "open", "notebook"},
 	} {
-		out, err := runWithDeps(given, args...)
+		out, err := runWithDeps(provided, args...)
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -135,14 +135,14 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsWritten(t *testing.T)
 	t.Cleanup(func() { os.Stderr = was; file.Close() })
 
 	opened := false
-	given := cli.Deps{Vaults: func() (cli.Vaults, error) { opened = true; return cli.Vaults{}, errRefused }}
+	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { opened = true; return cli.Vaults{}, errRefused }}
 	for _, args := range [][]string{
 		{"vault", "add", "--no-such-flag"},
 		{"vault", "add", "somewhere", "--no-such-flag"},
 		{"vault", "erase", "--no-such-flag"},
 		{"vault", "erase", "notebook", "--no-such-flag"},
 	} {
-		_, err := runWithDeps(given, args...)
+		_, err := runWithDeps(provided, args...)
 		if err == nil || !strings.Contains(err.Error(), "no-such-flag") {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -150,8 +150,8 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsWritten(t *testing.T)
 	if opened {
 		t.Error("the list was opened for a command line that did not parse")
 	}
-	if said, _ := os.ReadFile(file.Name()); len(said) != 0 {
-		t.Errorf("the flag package wrote to the terminal:\n%s", said)
+	if response, _ := os.ReadFile(file.Name()); len(response) != 0 {
+		t.Errorf("the flag package wrote to the terminal:\n%s", response)
 	}
 }
 
@@ -215,8 +215,8 @@ func TestAVaultCommandReturnsWhatTheIndexRefuses(t *testing.T) {
 		if len(b.took) != 0 {
 			t.Errorf("%v: a folder went to the trash: %v", args, b.took)
 		}
-		if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "first") {
-			t.Errorf("%v: the vault left the list:\n%s", args, listed)
+		if items := s.mustRun("vault", "list"); !strings.Contains(items, "first") {
+			t.Errorf("%v: the vault left the list:\n%s", args, items)
 		}
 	}
 }
@@ -247,8 +247,8 @@ func TestAnIndexThatRefusesToForgetKeepsTheListAndTheFolder(t *testing.T) {
 			t.Errorf("%v said it forgot:\n%s", args, out)
 		}
 	}
-	if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "first") {
-		t.Errorf("the vault left the list:\n%s", listed)
+	if items := s.mustRun("vault", "list"); !strings.Contains(items, "first") {
+		t.Errorf("the vault left the list:\n%s", items)
 	}
 }
 

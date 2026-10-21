@@ -88,8 +88,8 @@ func (c *fakeBookClient) ReadEntry(_ context.Context, baseline domain.Fingerprin
 	if c.failure != nil {
 		return nil, c.failure
 	}
-	body, held := c.entries[entry]
-	if !held {
+	body, target := c.entries[entry]
+	if !target {
 		return nil, document.ErrNoEntry
 	}
 	return body, nil
@@ -200,13 +200,13 @@ func TestOneDocumentOfABookIsAskedOfThePlugin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := client.markup
-	if out.Msg.GetMarkup() != "<p>Alpha omega.</p>" || asked.path != reflowed || asked.section != "OEBPS/first.xhtml" {
-		t.Errorf("the markup is %q, asked for %+v", out.Msg.GetMarkup(), asked)
+	request := client.markup
+	if out.Msg.GetMarkup() != "<p>Alpha omega.</p>" || request.path != reflowed || request.section != "OEBPS/first.xhtml" {
+		t.Errorf("the markup is %q, asked for %+v", out.Msg.GetMarkup(), request)
 	}
-	if want := (domain.Fingerprint{Path: reflowed, Size: 5, ModTime: time.Unix(0, 7)}); asked.baseline == nil || !asked.baseline.ModTime.Equal(want.ModTime) ||
-		asked.baseline.Path != want.Path || asked.baseline.Size != want.Size {
-		t.Errorf("the baseline is %+v, want %+v", asked.baseline, want)
+	if want := (domain.Fingerprint{Path: reflowed, Size: 5, ModTime: time.Unix(0, 7)}); request.baseline == nil || !request.baseline.ModTime.Equal(want.ModTime) ||
+		request.baseline.Path != want.Path || request.baseline.Size != want.Size {
+		t.Errorf("the baseline is %+v, want %+v", request.baseline, want)
 	}
 }
 
@@ -324,18 +324,18 @@ func TestAPictureTheBookCarries(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for a picture and got %d: %s", out.Code, out.Body)
 	}
-	if said := out.Header().Get("Content-Type"); said != "image/png" {
-		t.Errorf("the picture came back as %q", said)
+	if response := out.Header().Get("Content-Type"); response != "image/png" {
+		t.Errorf("the picture came back as %q", response)
 	}
-	if said := out.Header().Get("X-Content-Type-Options"); said != "nosniff" {
-		t.Errorf("the picture is sniffed: %q", said)
+	if responseVal := out.Header().Get("X-Content-Type-Options"); responseVal != "nosniff" {
+		t.Errorf("the picture is sniffed: %q", responseVal)
 	}
 	if out.Body.String() != plate {
 		t.Errorf("the picture is %d bytes", out.Body.Len())
 	}
-	if asked := client.getAsked(); len(asked) != 1 || asked[0].Path != reflowed ||
-		asked[0].Size != mark.Size || stamp(asked[0].ModTime) != mark.Mtime {
-		t.Errorf("the plugin was asked at %v, want the bytes the address names", asked)
+	if request := client.getAsked(); len(request) != 1 || request[0].Path != reflowed ||
+		request[0].Size != mark.Size || stamp(request[0].ModTime) != mark.Mtime {
+		t.Errorf("the plugin was asked at %v, want the bytes the address names", request)
 	}
 }
 

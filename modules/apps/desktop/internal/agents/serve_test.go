@@ -35,11 +35,11 @@ func vault(t *testing.T) mcp.Core {
 func authority(t *testing.T, endpoint string) string {
 	t.Helper()
 
-	said, err := url.Parse(endpoint)
+	response, err := url.Parse(endpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return said.Host
+	return response.Host
 }
 
 // isListening reports whether anything takes a connection at this address.
@@ -92,11 +92,11 @@ func TestATokenCreatedForAWindowIsKeptNowhere(t *testing.T) {
 		t.Errorf("the token was created as %q and again as %q", token, again)
 	}
 
-	left, err := os.ReadDir(filepath.Dir(cfg.RegistryPath))
+	remaining, err := os.ReadDir(filepath.Dir(cfg.RegistryPath))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, entry := range left {
+	for _, entry := range remaining {
 		t.Errorf("%s was written where the application keeps its own state", entry.Name())
 	}
 }
@@ -141,11 +141,11 @@ func TestWindowWithoutDiscoveryWritesNoFile(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = served.Close() })
 
-	left, err := os.ReadDir(state)
+	remaining, err := os.ReadDir(state)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, entry := range left {
+	for _, entry := range remaining {
 		t.Errorf("%s was written where the application keeps its own state", entry.Name())
 	}
 }
@@ -169,11 +169,11 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 
 	// A request left half-written holds the endpoint open, so the close is
 	// still in front of it while the agent is asked for work.
-	held, err := net.Dial("tcp", authority(t, served.URL))
+	target, err := net.Dial("tcp", authority(t, served.URL))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := held.Write([]byte("GET /mcp HTTP/1.1\r\nHost: numen\r\n")); err != nil {
+	if _, err := target.Write([]byte("GET /mcp HTTP/1.1\r\nHost: numen\r\n")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -193,7 +193,7 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 		t.Error("the agent took work while the endpoint was closing")
 	}
 
-	held.Close()
+	target.Close()
 	if err := <-closeErr; err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +225,7 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	}
 	for range work.GetSteps() {
 	}
-	given := provider.getTasks()[0]
+	provided := provider.getTasks()[0]
 
 	words, err := mcp.Vocabulary(t.Context(), core)
 	if err != nil {
@@ -239,14 +239,14 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 		surfaced = append(surfaced, name)
 	}
 	slices.Sort(surfaced)
-	if !slices.Equal(given.Tools, surfaced) {
-		t.Errorf("the allowance is %q, and the surface serves %q", given.Tools, surfaced)
+	if !slices.Equal(provided.Tools, surfaced) {
+		t.Errorf("the allowance is %q, and the surface serves %q", provided.Tools, surfaced)
 	}
-	if len(given.ToolDeclarations) != len(words) {
-		t.Errorf("%d tools are declared, and the surface serves %d", len(given.ToolDeclarations), len(words))
+	if len(provided.ToolDeclarations) != len(words) {
+		t.Errorf("%d tools are declared, and the surface serves %d", len(provided.ToolDeclarations), len(words))
 	}
-	if given.Endpoint.URL != served.URL || given.Endpoint.Token != "secret" || given.Root != dir {
-		t.Errorf("the child is given %q at %+v", given.Root, given.Endpoint)
+	if provided.Endpoint.URL != served.URL || provided.Endpoint.Token != "secret" || provided.Root != dir {
+		t.Errorf("the child is given %q at %+v", provided.Root, provided.Endpoint)
 	}
 }
 
