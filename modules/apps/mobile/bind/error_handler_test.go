@@ -9,7 +9,7 @@ import (
 // TestTheCoreSaysWhatItCarriedOnPast. The core reports what went wrong in work
 // it does not stop for, and a configuration naming nowhere to say it is a
 // failure nobody is ever told about.
-func TestTheCoreSaysWhatItCarriedOnPast(t *testing.T) {
+func TestCoreErrorHandler_ReportError(t *testing.T) {
 	var response strings.Builder
 	cfg := makeConfig(t.TempDir(), &response)
 	if cfg.ErrorHandler == nil {

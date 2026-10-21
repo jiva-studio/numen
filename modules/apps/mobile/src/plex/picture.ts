@@ -27,7 +27,7 @@ export function convertNeighbourhood(neighbourhood: GetNeighbourhoodResponse): P
   const focus = getFocusNode(neighbourhood.focus)
 
   const nodes: PlexNode[] = [focus]
-  const displayed = new Set<string>([focus.id])
+  const visibleIds = new Set<string>([focus.id])
   const edges: PlexEdge[] = []
   // Stryker disable next-line ArrayDeclaration: the mutated value is a string element; destructuring it gives an undefined through, which is in no shown set, so the loop adds nothing
   const hanging: { id: string; label: string; through: string }[] = []
@@ -36,7 +36,7 @@ export function convertNeighbourhood(neighbourhood: GetNeighbourhoodResponse): P
     const relation = RELATION_BY_WIRE[related.relation]
     if (!relation || !related.note) continue
     const id = related.note.path
-    displayed.add(id)
+    visibleIds.add(id)
     nodes.push({ id, title: related.note.title, relation })
 
     if (relation === 'sibling') {
@@ -47,7 +47,7 @@ export function convertNeighbourhood(neighbourhood: GetNeighbourhoodResponse): P
   }
 
   for (const { id, label, through } of hanging) {
-    if (!displayed.has(through)) continue
+    if (!visibleIds.has(through)) continue
     edges.push({ from: through, to: id, ...(label ? { label } : {}) })
   }
 

@@ -76,7 +76,7 @@ func setUmask(t *testing.T, mask int) {
 	t.Cleanup(func() { syscall.Umask(previous) })
 }
 
-func TestStartWhileStandingAnswersThePortItHas(t *testing.T) {
+func TestStart_WhenAlreadyRunning_ReturnsAssignedPort(t *testing.T) {
 	first := startIn(t, t.TempDir())
 	second, err := Start(t.TempDir())
 	if err != nil {
@@ -198,7 +198,7 @@ func TestStartAnswersTheErrorOfAnIndexItCannotOpen(t *testing.T) {
 	}
 }
 
-func TestStartSaysWhenTheThemesFolderCannotBeMadeAndStillStarts(t *testing.T) {
+func TestStart_ThemesFolderCreationFailure_LogsAndStarts(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "themes"), nil, 0o600); err != nil {
 		t.Fatal(err)
@@ -210,7 +210,7 @@ func TestStartSaysWhenTheThemesFolderCannotBeMadeAndStillStarts(t *testing.T) {
 	}
 }
 
-func TestStartSaysNothingOfThemesWhenTheirFolderIsThere(t *testing.T) {
+func TestStart_ThemesFolderExists_NoThemesErrorLogged(t *testing.T) {
 	read := captureStderr(t)
 	startIn(t, t.TempDir())
 	if response := read(); strings.Contains(response, "themes:") {
@@ -218,7 +218,7 @@ func TestStartSaysNothingOfThemesWhenTheirFolderIsThere(t *testing.T) {
 	}
 }
 
-func TestStartGivesTheWindowTheInstallationsThemes(t *testing.T) {
+func TestStart_InstallsThemesForWindow(t *testing.T) {
 	startIn(t, t.TempDir())
 	mu.Lock()
 	defer mu.Unlock()
@@ -274,7 +274,7 @@ func TestPortIsZeroOnceTheServerEndedOnItsOwn(t *testing.T) {
 	}
 }
 
-func TestSeedLeavesAVaultThatHoldsANoteAsItIs(t *testing.T) {
+func TestSeed_PreservesExistingVaultNotes(t *testing.T) {
 	root := t.TempDir()
 	for _, name := range []string{"a.txt", "b.md"} {
 		if err := os.WriteFile(filepath.Join(root, name), nil, 0o600); err != nil {
@@ -303,7 +303,7 @@ func TestSeedAnswersTheErrorOfAFolderItCannotList(t *testing.T) {
 	}
 }
 
-func TestRegisterVaultFilesAVaultUnderThePathItResolvesTo(t *testing.T) {
+func TestRegisterVault_RegistersVaultAtResolvedPath(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "target")
 	if err := os.Mkdir(target, 0o755); err != nil {
@@ -384,12 +384,12 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotWrite(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser writes into any folder")
 	}
-	retained := t.TempDir()
-	if err := os.Chmod(retained, 0o500); err != nil {
+	tempDir := t.TempDir()
+	if err := os.Chmod(tempDir, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(retained, 0o700) })
-	filed, err := registerVault(makeConfig(retained, io.Discard), t.TempDir())
+	t.Cleanup(func() { _ = os.Chmod(tempDir, 0o700) })
+	filed, err := registerVault(makeConfig(tempDir, io.Discard), t.TempDir())
 	if !errors.Is(err, fs.ErrPermission) || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a list it cannot write, want no path and the permission error", filed, err)
 	}
@@ -410,7 +410,7 @@ func TestAllowOriginAnswersAPreflightWithTheRulesAndNoBody(t *testing.T) {
 	checkCORSHeaders(t, res.Header())
 }
 
-func TestAllowOriginHandsEveryOtherAskOnWithTheRules(t *testing.T) {
+func TestAllowOrigin_ForwardsRequestsWithHeaders(t *testing.T) {
 	reached := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		reached = true
@@ -482,7 +482,7 @@ func checkNoIndexOpened(t *testing.T, dir string) {
 	}
 }
 
-func TestStartAnswersTheErrorOfANoteItCannotSeedAndLeavesNothingStanding(t *testing.T) {
+func TestStart_SeedError_FailsAndCleansUp(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser writes into any folder")
 	}
@@ -577,19 +577,17 @@ func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *t
 	}
 }
 
-// countOpenFiles is how many file descriptors the process holds. A limit of
-// that many leaves room for the new ones only in the gaps below its highest.
+// countOpenFiles is the lowest unused file descriptor in the process.
 func countOpenFiles() int {
-	target := 0
 	for fd := 0; fd < 4096; fd++ {
-		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno == 0 {
-			target++
+		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno != 0 {
+			return fd
 		}
 	}
-	return target
+	return 4096
 }
 
-func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding(t *testing.T) {
+func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 	keepEnvironment(t)
 	var before syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &before); err != nil {
@@ -625,7 +623,7 @@ func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding
 	t.Fatal("no limit on open files left Start failed at the socket alone")
 }
 
-func TestStopCancelsWhatTheCoreRunsUnder(t *testing.T) {
+func TestStop_CancelsCoreContext(t *testing.T) {
 	startIn(t, t.TempDir())
 	mu.Lock()
 	cancel := running.stop

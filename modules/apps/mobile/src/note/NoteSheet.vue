@@ -21,7 +21,7 @@ const emit = defineEmits<{
 
 const prose = ref('')
 const loadedNote = ref<{ prose: string; at: NonNullable<ReadNoteResponse['at']> } | null>(null)
-const reading = ref(true)
+const isReading = ref(true)
 const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 
 onMounted(async () => {
@@ -35,7 +35,7 @@ onMounted(async () => {
     prose.value = answer.body
     loadedNote.value = answer.at ? { prose: answer.body, at: answer.at } : null
   } finally {
-    reading.value = false
+    isReading.value = false
   }
   editor.value?.focus()
 })
@@ -56,7 +56,7 @@ async function keep() {
 
 <template>
   <div class="note">
-    <NoteBar :path="path" :reading="reading" @close="emit('close')" @keep="keep" />
+    <NoteBar :path="path" :reading="isReading" @close="emit('close')" @keep="keep" />
     <div class="note__prose">
       <Editor ref="editor" v-model="prose" data-testid="editor" />
     </div>

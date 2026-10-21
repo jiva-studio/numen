@@ -17,7 +17,7 @@ async function toastAfter(why: unknown) {
   const page = mount(PlexPage)
   await flushPromises()
   const toast = page.getComponent(IonToast)
-  return { page, open: toast.props('isOpen'), message: toast.props(message) }
+  return { page, open: toast.props('isOpen'), message: toast.props('message') }
 }
 
 describe('a core that cannot be reached', () => {

@@ -121,7 +121,7 @@ func Start(dir string) (int, error) {
 		opened: opened,
 		server: server,
 	}
-	standing := running
+	current := running
 	// Start has already answered with the port, so a serve that ends on its own
 	// leaves the caller holding a number nothing listens on. It is said where
 	// the platform collects it, and the port stops being answered.
@@ -130,7 +130,7 @@ func Start(dir string) (int, error) {
 		if errors.Is(err, http.ErrServerClosed) {
 			return
 		}
-		standing.gone.Store(true)
+		current.gone.Store(true)
 		cfg.ErrorHandler(err)
 	}()
 	return running.port, nil
@@ -175,11 +175,11 @@ func Stop() error {
 	if running == nil {
 		return nil
 	}
-	standing := running
+	current := running
 	running = nil
-	err := standing.server.Close()
-	standing.stop()
-	if closed := standing.opened.Close(); err == nil {
+	err := current.server.Close()
+	current.stop()
+	if closed := current.opened.Close(); err == nil {
 		err = closed
 	}
 	return err
