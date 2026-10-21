@@ -20,7 +20,7 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
   const markup = ref('')
   const drawnDocument = shallowRef<SpineDocument | undefined>(undefined)
 
-  const reading = computed<Span>(() => drawnDocument.value?.span ?? { from: 0, to: 0 })
+  const documentSpan = computed<Span>(() => drawnDocument.value?.span ?? { from: 0, to: 0 })
   const picture = computed(() => drawnDocument.value?.path ?? '')
 
   /** Which ask for markup is the current one. An older answer is dropped. */
@@ -47,5 +47,5 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
     markup.value = ''
   }
 
-  return { markup, drawn: picture, reading, draw, close }
+  return { markup, drawn: picture, documentSpan, draw, close }
 }

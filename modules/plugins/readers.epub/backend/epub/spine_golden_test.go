@@ -35,7 +35,7 @@ const textGolden = "testdata/seam.text"
 
 // A change meaning to move the text moves this file with it, under -update, and
 // the diff is what it moved.
-func TestABookIsReadAsTheGoldenSaysItIs(t *testing.T) {
+func TestABookIsReadAsTheGoldenReturnsItIs(t *testing.T) {
 	got := formatGolden(read(t, seamBook(t)))
 	if *update {
 		if err := os.WriteFile(textGolden, []byte(got), 0o644); err != nil {
@@ -76,7 +76,7 @@ func formatGolden(book *epub.Book) string {
 
 // A change meaning to move the markup moves this file with it, under -update,
 // and the diff is what it moved.
-func TestASpineDocumentCrossesAsTheCorpusSaysItDoes(t *testing.T) {
+func TestASpineDocumentCrossesAsTheCorpusReturnsItDoes(t *testing.T) {
 	got := seamMarkup(t).HTML() + "\n"
 	if *update {
 		if err := os.WriteFile(spineCorpus, []byte(got), 0o644); err != nil {
@@ -97,13 +97,13 @@ func TestASpineDocumentCrossesAsTheCorpusSaysItDoes(t *testing.T) {
 // so the window reading them off it is reading the book's own numbers.
 func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 	book := read(t, seamBook(t))
-	rendered := seamMarkup(t)
+	markup := seamMarkup(t)
 
-	runs := offsets(t, parseHTML(t, rendered.HTML()))
+	runs := offsets(t, parseHTML(t, markup.HTML()))
 	if len(runs) == 0 {
 		t.Fatal("the corpus says no offsets")
 	}
-	if rendered.Offset == 0 {
+	if markup.Offset == 0 {
 		t.Error("the corpus is taken from the first document, and its offsets say nothing")
 	}
 	var out strings.Builder
@@ -114,18 +114,18 @@ func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 		}
 		out.WriteString(run.said)
 	}
-	if want := book.Text[rendered.Offset : rendered.Offset+rendered.Length]; out.String() != want {
+	if want := book.Text[markup.Offset : markup.Offset+markup.Length]; out.String() != want {
 		t.Errorf("the runs say\n%q\nand the document is\n%q", out.String(), want)
 	}
 }
 
 // A picture is drawn from an entry of the archive, so the address the markup
 // names it by is the name that entry is answered under.
-func TestAPictureIsNamedByTheEntryItIsDrawnFrom(t *testing.T) {
+func TestAPictureIsNamedByTheEntryItIsGeneratedFrom(t *testing.T) {
 	book := read(t, seamBook(t))
-	rendered := seamMarkup(t)
+	markup := seamMarkup(t)
 
-	named := pictures(parseHTML(t, rendered.HTML()))
+	named := pictures(parseHTML(t, markup.HTML()))
 	if len(named) == 0 {
 		t.Fatal("the document draws no picture")
 	}

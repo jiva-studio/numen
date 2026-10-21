@@ -61,7 +61,7 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 
 // The markup a window is handed says every offset it needs, so the window reads
 // them off it and counts none itself.
-func TestEveryRunOfTextSaysWhereItStands(t *testing.T) {
+func TestEveryRunOfTextReturnsWhereItExists(t *testing.T) {
 	book := read(t, tinyBook(t, map[string]string{secondDoc: "variant/drawn.xhtml"}))
 	rendered, err := book.Markup(secondDoc)
 	if err != nil {

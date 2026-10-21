@@ -30,7 +30,7 @@ const create = (open = { value: true }) => {
     writeMessage,
     isOpen: () => open.value,
   })
-  return { held: target, pending, urls, written: content }
+  return { held: target, pending, urls, messages: content }
 }
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
@@ -39,7 +39,7 @@ describe('a book with nothing drawn', () => {
   it('reads nowhere and names no document', () => {
     const { held } = create()
 
-    expect(held.reading.value).toStrictEqual({ from: 0, to: 0 })
+    expect(held.documentSpan.value).toStrictEqual({ from: 0, to: 0 })
     expect(held.drawn.value).toBe('')
     expect(held.markup.value).toBe('')
   })
@@ -49,12 +49,12 @@ describe('a document drawn', () => {
   it('remains as the one being read, its pictures pointed where the book serves them', async () => {
     const { held, pending, urls } = create()
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     pending.get(FIRST.path)?.resolve('<img src="pics/a.png">')
-    await drawing
+    await drawTask
 
     expect(held.drawn.value).toBe(FIRST.path)
-    expect(held.reading.value).toStrictEqual(FIRST.span)
+    expect(held.documentSpan.value).toStrictEqual(FIRST.span)
     expect(held.markup.value).toContain('src="/served/pics/a.png"')
     expect(urls).toStrictEqual(['library/b.epub|pics/a.png|print-1'])
   })
@@ -77,10 +77,10 @@ describe('a document drawn', () => {
     const open = { value: true }
     const { held, pending } = create(open)
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     open.value = false
     pending.get(FIRST.path)?.resolve('<p>first</p>')
-    await drawing
+    await drawTask
 
     expect(held.drawn.value).toBe('')
     expect(held.markup.value).toBe('')
@@ -91,9 +91,9 @@ describe('a document that will not be read', () => {
   it('is returned as an error', async () => {
     const { held, pending, messages } = create()
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     pending.get(FIRST.path)?.reject(new Error('gone'))
-    await drawing
+    await drawTask
 
     expect(messages).toHaveLength(1)
     expect(messages[0]?.[1]).toBe('error')
@@ -115,10 +115,10 @@ describe('a document that will not be read', () => {
     const open = { value: true }
     const { held, pending, messages } = create(open)
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     open.value = false
     pending.get(FIRST.path)?.reject(new Error('gone'))
-    await drawing
+    await drawTask
 
     expect(messages).toStrictEqual([])
   })

@@ -124,7 +124,7 @@ func TestMarkup(t *testing.T) {
 // is nothing in it to reflow. What a reader draws is the picture it wraps: an
 // SVG served from the window's own origin is a document there, and its own
 // addresses reach no entry of the archive.
-func TestASpineDocumentThatIsACoverDrawnAroundAPicture(t *testing.T) {
+func TestASpineDocumentThatIsACoverGeneratedAroundAPicture(t *testing.T) {
 	book := read(t, coverBook(t, `<svg xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 800">
 		<image width="600" height="800" xlink:href="pictures/plate.png"/></svg>`))
@@ -309,8 +309,8 @@ func TestWhereALinkLeads(t *testing.T) {
 		{"", ""},
 	} {
 		t.Run(c.href, func(t *testing.T) {
-			_, rendered := readOne(t, `<p><a href="`+c.href+`">x</a></p>`)
-			if got := attribute(element(t, rendered.Nodes, "a"), "href"); got != c.want {
+			_, markup := readOne(t, `<p><a href="`+c.href+`">x</a></p>`)
+			if got := attribute(element(t, markup.Nodes, "a"), "href"); got != c.want {
 				t.Errorf("the link points at %q, want %q", got, c.want)
 			}
 		})
@@ -318,15 +318,15 @@ func TestWhereALinkLeads(t *testing.T) {
 }
 
 // A picture is a file the book carries or one written into the markup as base64.
-func TestWhatAPictureIsDrawnFrom(t *testing.T) {
+func TestWhatAPictureIsGeneratedFrom(t *testing.T) {
 	for _, c := range []struct{ src, want string }{
 		{"data:image/png;base64,iVBORw0KGgo=", "data:image/png;base64,iVBORw0KGgo="},
 		{"data:text/plain;base64,QQ==", ""},
 		{"data:image/svg+xml,%3Csvg%2F%3E", ""},
 	} {
 		t.Run(c.src, func(t *testing.T) {
-			_, rendered := readOne(t, `<p><img src="`+c.src+`" alt="A"/></p>`)
-			if got := attribute(element(t, rendered.Nodes, "img"), "src"); got != c.want {
+			_, markup := readOne(t, `<p><img src="`+c.src+`" alt="A"/></p>`)
+			if got := attribute(element(t, markup.Nodes, "img"), "src"); got != c.want {
 				t.Errorf("the picture is drawn from %q, want %q", got, c.want)
 			}
 		})
@@ -334,14 +334,14 @@ func TestWhatAPictureIsDrawnFrom(t *testing.T) {
 }
 
 // An address that leads nowhere goes, and the attributes after it stay.
-func TestAnAddressThatLeadsNowhereTakesNothingElse(t *testing.T) {
-	_, rendered := readOne(t, `<p><a href="javascript:void(0)" id="k">x</a>`+
+func TestAnAddressThatLeadsNowhereConsumesNothingElse(t *testing.T) {
+	_, markup := readOne(t, `<p><a href="javascript:void(0)" id="k">x</a>`+
 		`<img src="https://example.org/p.png" alt="A plate"/></p>`)
-	link := element(t, rendered.Nodes, "a")
+	link := element(t, markup.Nodes, "a")
 	if want := []epub.Attribute{{Name: "id", Value: "k"}}; !slices.Equal(link.Attributes, want) {
 		t.Errorf("the link carries %v, want %v", link.Attributes, want)
 	}
-	picture := element(t, rendered.Nodes, "img")
+	picture := element(t, markup.Nodes, "img")
 	if want := []epub.Attribute{{Name: "alt", Value: "A plate"}}; !slices.Equal(picture.Attributes, want) {
 		t.Errorf("the picture carries %v, want %v", picture.Attributes, want)
 	}
@@ -349,15 +349,15 @@ func TestAnAddressThatLeadsNowhereTakesNothingElse(t *testing.T) {
 
 // An element standing on the space a line's end takes back stands where the
 // line ends.
-func TestAnElementOnASpaceTakenBackStandsAtTheLineEnd(t *testing.T) {
-	book, rendered := readOne(t, `<p>A <b></b></p>`)
+func TestAnElementOnASpaceTakenBackExistsAtTheLineEnd(t *testing.T) {
+	book, markup := readOne(t, `<p>A <b></b></p>`)
 	if book.Text != "A\n" {
 		t.Fatalf("the text is %q", book.Text)
 	}
-	if got := element(t, rendered.Nodes, "b").Offset; got != 1 {
+	if got := element(t, markup.Nodes, "b").Offset; got != 1 {
 		t.Errorf("the element stands at %d, want 1", got)
 	}
-	if got := getNodeText(rendered.Nodes); got != book.Text {
+	if got := getNodeText(markup.Nodes); got != book.Text {
 		t.Errorf("the markup says %q, want %q", got, book.Text)
 	}
 }
@@ -385,11 +385,11 @@ func TestRunsInATable(t *testing.T) {
 			`<table><template><b>X</b></template></table>`, "table", "X\n"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			book, rendered := readOne(t, c.markup)
-			if got := getNodeText(rendered.Nodes); got != book.Text {
+			book, markup := readOne(t, c.markup)
+			if got := getNodeText(markup.Nodes); got != book.Text {
 				t.Fatalf("the markup says %q and the text is %q", got, book.Text)
 			}
-			holder := element(t, rendered.Nodes, c.in)
+			holder := element(t, markup.Nodes, c.in)
 			if got := getNodeText(holder.Children); got != c.want {
 				t.Errorf("the %s says %q, want %q", c.in, got, c.want)
 			}
@@ -398,7 +398,7 @@ func TestRunsInATable(t *testing.T) {
 					c.in, holder.Offset, holder.Children[0].Offset)
 			}
 			if c.in == "td" {
-				for _, target := range element(t, rendered.Nodes, "table").Children {
+				for _, target := range element(t, markup.Nodes, "table").Children {
 					if target.Name == "" {
 						t.Errorf("the table holds %q outside its cell", target.Text)
 					}
@@ -409,7 +409,7 @@ func TestRunsInATable(t *testing.T) {
 }
 
 // What the book holds beside its spine is not a document of it.
-func TestAnEntryBesideTheSpineIsNoDocument(t *testing.T) {
+func TestAnEntryAdjacentTheSpineIsNoDocument(t *testing.T) {
 	book := read(t, coverBook(t, `<svg xmlns="http://www.w3.org/2000/svg"/>`))
 	if _, err := book.Markup("OEBPS/pictures/plate.png"); !errors.Is(err, epub.ErrNoDocument) {
 		t.Errorf("err = %v, want %v", err, epub.ErrNoDocument)

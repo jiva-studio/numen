@@ -13,15 +13,15 @@ const readItem = (path: string, title = '', close = vi.fn()) =>
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
-    const rendered: BookHandle = { measure: vi.fn(), handleKey: vi.fn(() => false) }
+    const handle: BookHandle = { measure: vi.fn(), handleKey: vi.fn(() => false) }
     const tab = useBookTab(readItem('library/Mahabharata.epub'))
 
     tab.measure()
-    expect(rendered.measure).not.toHaveBeenCalled()
+    expect(handle.measure).not.toHaveBeenCalled()
 
-    tab.setBookHandle(rendered)
+    tab.setBookHandle(handle)
     tab.measure()
-    expect(rendered.measure).toHaveBeenCalledTimes(1)
+    expect(handle.measure).toHaveBeenCalledTimes(1)
   })
 
   it('remains at the path the book is filed at', () => {
@@ -32,7 +32,7 @@ describe('what a book tab holds', () => {
     const focus = vi.fn()
     const element = { focus } as unknown as HTMLElement
     const handleKey = vi.fn(() => true)
-    const rendered: BookHandle = { measure: vi.fn(), handleKey }
+    const handle: BookHandle = { measure: vi.fn(), handleKey }
     const tab = useBookTab(readItem('library/Mahabharata.epub'))
 
     tab.setTabElement(element)
@@ -42,7 +42,7 @@ describe('what a book tab holds', () => {
     const event = new KeyboardEvent('keydown', { key: 'ArrowRight' })
     expect(tab.handleKeyPress(event)).toBe(false)
 
-    tab.setBookHandle(rendered)
+    tab.setBookHandle(handle)
     expect(tab.handleKeyPress(event)).toBe(true)
     expect(handleKey).toHaveBeenCalledWith(event)
   })

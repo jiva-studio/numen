@@ -11,13 +11,13 @@ const entry = (name: string) =>
 
 describe('a picture in a book', () => {
   it('is pointed at the address its entry of the archive is served from', () => {
-    const rendered = resolveImageUrls(
+    const resolvedMarkup = resolveImageUrls(
       '<p><img src="OEBPS/pictures/plate.png" alt="A plate"></p>',
       entry,
     )
 
-    expect(rendered).toContain('src="/assets/book.epub/OEBPS/pictures/plate.png?size=1"')
-    expect(rendered).toContain('alt="A plate"')
+    expect(resolvedMarkup).toContain('src="/assets/book.epub/OEBPS/pictures/plate.png?size=1"')
+    expect(resolvedMarkup).toContain('alt="A plate"')
   })
 
   it('is left at its current position when it is written into the markup itself', () => {
@@ -31,26 +31,26 @@ describe('a picture with no name', () => {
   it('is left currently and asks for no address', () => {
     const request: string[] = []
 
-    const rendered = resolveImageUrls('<img src="" alt="Blank">', (name) => {
+    const resolvedMarkup = resolveImageUrls('<img src="" alt="Blank">', (name) => {
       request.push(name)
       return entry(name)
     })
 
     expect(request).toStrictEqual([])
-    expect(rendered).toContain('src=""')
+    expect(resolvedMarkup).toContain('src=""')
   })
 })
 
 describe('the runs of the text', () => {
   it('carry the offsets they arrived with', () => {
-    const rendered = resolveImageUrls(
+    const resolvedMarkup = resolveImageUrls(
       '<span data-offset="1200">सत्यं</span><span data-offset="1215">Слово</span>',
       entry,
     )
 
-    expect(rendered).toContain('data-offset="1200"')
-    expect(rendered).toContain('data-offset="1215"')
-    expect(rendered).toContain('सत्यं')
+    expect(resolvedMarkup).toContain('data-offset="1200"')
+    expect(resolvedMarkup).toContain('data-offset="1215"')
+    expect(resolvedMarkup).toContain('सत्यं')
   })
 })
 
@@ -60,11 +60,11 @@ describe('a document of a book as it arrives', () => {
     const named = [...target.body.querySelectorAll('img[src]')].map((one) => one.getAttribute('src'))
     expect(named).not.toHaveLength(0)
 
-    const rendered = resolveImageUrls(spine, entry)
+    const resolvedMarkup = resolveImageUrls(spine, entry)
 
     for (const name of named) {
       expect(name).toMatch(/^[^:]+\/[^:]+$/)
-      expect(rendered).toContain(`src="${entry(name!)}"`)
+      expect(resolvedMarkup).toContain(`src="${entry(name!)}"`)
     }
   })
 

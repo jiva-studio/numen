@@ -190,7 +190,7 @@ func FuzzRead(f *testing.F) {
 			}
 		}
 
-		if notified := book.Tier != epub.FromNothing; notified != (len(book.Parts) >= 2) {
+		if hasTier := book.Tier != epub.FromNothing; hasTier != (len(book.Parts) >= 2) {
 			t.Fatalf("%d parts came back and the book says they came from %q",
 				len(book.Parts), book.Tier)
 		}

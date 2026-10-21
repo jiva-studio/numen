@@ -66,11 +66,11 @@ func TestMarkupBecomesText(t *testing.T) {
 			`<div><p>One</p></span><p>Two</p></div>`, "One\nTwo\n"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			book, rendered := readOne(t, c.markup)
+			book, markup := readOne(t, c.markup)
 			if book.Text != c.want {
 				t.Errorf("the text is %q, want %q", book.Text, c.want)
 			}
-			if got := getNodeText(rendered.Nodes); got != c.want {
+			if got := getNodeText(markup.Nodes); got != c.want {
 				t.Errorf("the markup says %q, want %q", got, c.want)
 			}
 		})
@@ -260,13 +260,13 @@ func TestPreLeftOpenEndsWithItsDocument(t *testing.T) {
 }
 
 // A line break holds no text, and what follows it stands beside it.
-func TestLineBreakHoldsNoText(t *testing.T) {
-	_, rendered := readOne(t, `<p>a<br/>b</p>`)
-	if len(rendered.Nodes) != 1 || rendered.Nodes[0].Name != "p" {
-		t.Fatalf("nodes = %+v, want one paragraph", rendered.Nodes)
+func TestLineBreakContainsNoText(t *testing.T) {
+	_, markup := readOne(t, `<p>a<br/>b</p>`)
+	if len(markup.Nodes) != 1 || markup.Nodes[0].Name != "p" {
+		t.Fatalf("nodes = %+v, want one paragraph", markup.Nodes)
 	}
 	var names []string
-	for _, child := range rendered.Nodes[0].Children {
+	for _, child := range markup.Nodes[0].Children {
 		names = append(names, child.Name)
 		if child.Name == "br" && len(child.Children) != 0 {
 			t.Errorf("the break holds %+v, want nothing", child.Children)

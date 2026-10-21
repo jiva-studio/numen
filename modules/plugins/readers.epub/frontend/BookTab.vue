@@ -102,7 +102,7 @@ function onFollow(destPath: string) {
         ref="bookContent"
         :markup="tabState.markup.value"
         :path="tabState.drawn.value"
-        :reading="tabState.reading.value"
+        :document-span="tabState.documentSpan.value"
         :book-span="tabState.span.value"
         :offset="tabState.offset.value"
         :highlights="tabState.highlights.value"
