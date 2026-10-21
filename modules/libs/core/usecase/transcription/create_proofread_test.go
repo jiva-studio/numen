@@ -16,7 +16,7 @@ type replying struct{ noScan }
 func (r *replying) GetName() string { return "replying" }
 
 func (r *replying) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	return domain.SpeechProofreading{}, nil
 }
@@ -28,27 +28,19 @@ func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
 	return vaults{}, shelves{newShelf()}
 }
 
-// A transcript is put right in requests that hold lines over from the one
-// before, several of them answered in one call.
-func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
+// A transcript is put right with the proofreader the installation names.
+func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	t.Parallel()
 	by := &replying{}
 	config := run.ProofreadingConfig{
-		IsNamed:  true,
-		By:       func() (port.Proofreader, error) { return by, nil },
-		Batch:    12,
-		Overlap:  3,
-		InFlight: 5,
+		IsNamed: true,
+		By:      func() (port.Proofreader, error) { return by, nil },
 	}
 	readers, derived := somewhereToProofread()
 
 	right, held, err := CreateProofread(config, readers, derived)
 	if err != nil || !held {
 		t.Fatalf("held %v, %v", held, err)
-	}
-	if right.BatchSize != 12 || right.Overlap != 3 || right.InFlight != 5 {
-		t.Errorf("requests of %d holding %d over, %d to a call",
-			right.BatchSize, right.Overlap, right.InFlight)
 	}
 	if right.by != port.Proofreader(by) {
 		t.Error("a transcript is put right by something the installation did not place")

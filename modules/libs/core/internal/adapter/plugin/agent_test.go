@@ -328,9 +328,9 @@ func (s *programsServer) GetAgentPrograms(
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: []*v1.AgentProgram{{
 		Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
 		Models: []*v1.AgentModel{{
-		Name: "m1", Title: "M one", IsDefault: true, DefaultReasoning: "low",
-		ReasoningLevels: []*v1.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}},
-	}, {Name: "m2"}},
+			Name: "m1", Title: "M one", IsDefault: true, DefaultReasoning: "low",
+			ReasoningLevels: []*v1.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}},
+		}, {Name: "m2"}},
 	}}}), nil
 }
 

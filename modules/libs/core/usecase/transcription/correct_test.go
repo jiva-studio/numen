@@ -100,7 +100,7 @@ func newStoppedWorker(
 	t.Helper()
 	held, v := newTranscriptionWorker(t, &deaf{}, recording)
 	held.with.Proofreading = run.ProofreadingConfig{
-		IsNamed: true, IsAutomatic: true, Batch: 1, InFlight: 1,
+		IsNamed: true, IsAutomatic: true,
 		By: func() (port.Proofreader, error) { return by, nil },
 	}
 
@@ -244,12 +244,12 @@ type refuses struct{ why error }
 
 func (r *refuses) GetName() string { return "a proofreader that will not answer" }
 
-func (r *refuses) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+func (r *refuses) ProofreadScan(context.Context, []domain.ProofreadPage) (domain.ScanProofreading, error) {
 	return domain.ScanProofreading{}, r.why
 }
 
 func (r *refuses) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	return domain.SpeechProofreading{}, r.why
 }
@@ -303,12 +303,12 @@ type waits struct {
 
 func (w *waits) GetName() string { return "a proofreader that waits" }
 
-func (w *waits) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+func (w *waits) ProofreadScan(context.Context, []domain.ProofreadPage) (domain.ScanProofreading, error) {
 	return domain.ScanProofreading{}, nil
 }
 
 func (w *waits) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	w.once.Do(func() { close(w.asked) })
 	<-w.on

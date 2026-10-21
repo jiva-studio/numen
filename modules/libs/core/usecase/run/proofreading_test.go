@@ -14,12 +14,12 @@ type answering struct{}
 
 func (answering) GetName() string { return "answering" }
 
-func (answering) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+func (answering) ProofreadScan(context.Context, []domain.ProofreadPage) (domain.ScanProofreading, error) {
 	return domain.ScanProofreading{}, nil
 }
 
 func (answering) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	return domain.SpeechProofreading{}, nil
 }

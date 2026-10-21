@@ -96,7 +96,7 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 	pages := []domain.ProofreadPage{
 		{Number: 1, Lines: []domain.ProofreadLine{{Number: 0, Text: "This is test sentence."}}},
 	}
-	res, err := bridge.ProofreadScan(ctx, pages, 0)
+	res, err := bridge.ProofreadScan(ctx, pages)
 	if !errors.Is(err, port.ErrUnavailable) {
 		t.Fatalf("ProofreadScan with real plugin: got %v, want %v", err, port.ErrUnavailable)
 	}

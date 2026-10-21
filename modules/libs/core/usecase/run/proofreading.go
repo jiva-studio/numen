@@ -19,14 +19,6 @@ type ProofreadingConfig struct {
 	// By opens what answers about a text. It answers nothing where no profile is
 	// named, and the reason where one cannot be opened.
 	By func() (port.Proofreader, error)
-	// Batch is how much of a text one request carries, Overlap how much of it
-	// the request before also carried, and InFlight how many requests one call
-	// answers.
-	Batch, Overlap, InFlight int
-	// MaxEditDistance is how far a reply may stand from the text before it is
-	// refused as an answer about something else. Zero leaves it to the
-	// proofreader.
-	MaxEditDistance float64
 }
 
 // The faults a proofreading is refused with. A profile that has no proofreader

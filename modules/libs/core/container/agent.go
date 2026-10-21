@@ -11,12 +11,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/protocol"
 )
 
 // agentProvider is the capability of a plugin that runs agent programs.
-const agentProvider = protocol.CapabilityAgentProvider
-
+const agentProvider = plugin.CapabilityAgentProvider
 
 // programsLimit is how long the providers have to list the programs they run.
 const programsLimit = 8 * time.Second

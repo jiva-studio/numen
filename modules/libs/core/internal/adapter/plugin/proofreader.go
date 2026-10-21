@@ -48,7 +48,7 @@ func (b *ProofreaderBridge) GetName() string {
 
 // ProofreadScan hands the pages over and answers with what the plugin corrected.
 func (b *ProofreaderBridge) ProofreadScan(
-	ctx context.Context, pages []domain.ProofreadPage, maxEditDistance float64,
+	ctx context.Context, pages []domain.ProofreadPage,
 ) (domain.ScanProofreading, error) {
 	groups := make([]*v1.ProofreadGroup, len(pages))
 	for i, page := range pages {
@@ -58,7 +58,7 @@ func (b *ProofreaderBridge) ProofreadScan(
 		Kind:   v1.ProofreadKind_PROOFREAD_KIND_SCAN,
 		Groups: groups,
 		Options: &v1.ProofreadTextRequest_Scan{
-			Scan: &v1.ProofreadScanOptions{MaxEditDistance: maxEditDistance},
+			Scan: &v1.ProofreadScanOptions{},
 		},
 	})
 	if err != nil {
@@ -71,19 +71,16 @@ func (b *ProofreaderBridge) ProofreadScan(
 }
 
 // ProofreadSpeech hands the lines of the transcript over and answers with what
-// the plugin corrected in the window.
+// the plugin corrected from the line numbered from onwards.
 func (b *ProofreaderBridge) ProofreadSpeech(
-	ctx context.Context, lines []domain.ProofreadLine, window domain.SpeechWindow,
+	ctx context.Context, lines []domain.ProofreadLine, from int,
 ) (domain.SpeechProofreading, error) {
 	res, err := b.proofreadText(ctx, &v1.ProofreadTextRequest{
 		Kind:   v1.ProofreadKind_PROOFREAD_KIND_SPEECH,
 		Groups: []*v1.ProofreadGroup{{Lines: writeWireLines(lines)}},
 		Options: &v1.ProofreadTextRequest_Speech{
 			Speech: &v1.ProofreadSpeechOptions{
-				Size:      int32(window.Size),
-				Overlap:   int32(window.Overlap),
-				FromLine:  int32(window.From),
-				LineLimit: int32(window.Limit),
+				FromLine: int32(from),
 			},
 		},
 	})

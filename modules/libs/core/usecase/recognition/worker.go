@@ -262,8 +262,6 @@ func (r *Worker) proofreadRecognition(
 	r.reportTask(run.Task{ID: id, Title: "Proofreading a recognition", About: path})
 
 	right.Cut = r.Cut
-	right.Pages = proofreading.Batch
-	right.MaxEditDistance = proofreading.MaxEditDistance
 	right.OnProgress = func(res ProofreadResult) {
 		r.reportTask(run.Task{
 			ID:    id,
@@ -332,7 +330,6 @@ func (r *Worker) collect(
 	if err != nil {
 		return
 	}
-	proofreading := r.with.Proofreading
 	for _, one := range recognised {
 		if ctx.Err() != nil {
 			return
@@ -347,8 +344,6 @@ func (r *Worker) collect(
 			continue
 		}
 		right.Hash = one.Hash
-		right.Pages = proofreading.Batch
-		right.MaxEditDistance = proofreading.MaxEditDistance
 		right.Cut = r.Cut
 		right.OnProgress = func(res ProofreadResult) {
 			r.line.Report(run.Task{

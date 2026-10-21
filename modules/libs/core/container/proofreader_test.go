@@ -26,13 +26,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// makeConfig is a container carrying one profile under a name.
-func makeConfig(name string, profile container.Profile) container.Config {
-	return container.Config{Proofreading: container.ProofreadingConfig{
-		Profiles: map[string]container.Profile{name: profile},
-	}}
-}
-
 type mockProofreadService struct {
 	numenv1connect.UnimplementedProofreadingServiceHandler
 }
@@ -66,26 +59,9 @@ func TestAContainerNobodyGaveSettingsProofreadsWithNothing(t *testing.T) {
 	}
 }
 
-// A name no profile carries is said. A person who named one and is silently
-// given nothing has no way to find out that nothing is proofreading.
-func TestAProfileNameNoProfileCarriesIsRefused(t *testing.T) {
-	held := makeConfig("careful", container.Profile{})
-
-	proofreader, why := held.Proofreader("quick")
-	if why == nil {
-		t.Fatal("no reason")
-	}
-	if !strings.Contains(why.Error(), "no proofreading profile named") || !strings.Contains(why.Error(), "quick") {
-		t.Errorf("the reason does not name the profile asked for: %v", why)
-	}
-	if proofreader != nil {
-		t.Errorf("got a proofreader: %v", proofreader.GetName())
-	}
-}
-
 // A profile without a plugin host or when plugin is absent degrades gracefully.
 func TestAProfileDegradesWhenPluginAbsent(t *testing.T) {
-	proofreader, why := makeConfig("careful", container.Profile{}).Proofreader("careful")
+	proofreader, why := container.Config{}.Proofreader("careful")
 	if why == nil {
 		t.Fatal("want error when plugin absent, got nil")
 	}
@@ -142,8 +118,7 @@ func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
-	cfg := makeConfig("careful", container.Profile{})
-	cfg.PluginHost = host
+	cfg := container.Config{PluginHost: host}
 
 	proofreader, err := cfg.Proofreader("careful")
 	if err != nil {
@@ -158,7 +133,7 @@ func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 
 	res, err := proofreader.ProofreadScan(t.Context(), []domain.ProofreadPage{
 		{Number: 1, Lines: []domain.ProofreadLine{{Number: 4, Text: "wrods"}}},
-	}, 0)
+	})
 	if err != nil {
 		t.Fatalf("ProofreadScan failed: %v", err)
 	}
@@ -167,24 +142,16 @@ func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 	}
 }
 
-// The settings of a kind of text reach the run: the sizes of the profile it
-// names, the edit distance that stands over the profiles, and what opens the
-// proofreader.
+// The settings of a kind of text reach the run: whether it was named, whether
+// it is automatic, and what opens the proofreader.
 func TestTheProofreadingOfAKindOfTextCarriesTheSettingsOfItsProfile(t *testing.T) {
 	cfg := container.Config{
-		Proofreading: container.ProofreadingConfig{
-			MaxEditDistance: 0.25,
-			Profiles: map[string]container.Profile{
-				"careful": {BatchSize: 25, Overlap: 3, InFlight: 2},
-			},
-		},
 		ScanProofreading:       container.Proofread{Profile: "careful", IsAutomatic: true},
 		TranscriptProofreading: container.Proofread{},
 	}
 
 	scan := cfg.GetScanProofreading()
-	if !scan.IsNamed || !scan.IsAutomatic || scan.Batch != 25 || scan.Overlap != 3 || scan.InFlight != 2 ||
-		scan.MaxEditDistance != 0.25 {
+	if !scan.IsNamed || !scan.IsAutomatic {
 		t.Errorf("scan proofreading %+v", scan)
 	}
 	if scan.By == nil {
@@ -200,15 +167,5 @@ func TestTheProofreadingOfAKindOfTextCarriesTheSettingsOfItsProfile(t *testing.T
 	}
 	if by, why := speech.By(); by != nil || why != nil {
 		t.Errorf("an unnamed profile opened %v, %v", by, why)
-	}
-}
-
-// A file that leaves the edit distance out leaves the limit to the proofreader.
-func TestAnEditDistanceNobodyNamedIsLeftToTheProofreader(t *testing.T) {
-	cfg := makeConfig("careful", container.Profile{})
-	cfg.ScanProofreading = container.Proofread{Profile: "careful"}
-
-	if got := cfg.GetScanProofreading().MaxEditDistance; got != 0 {
-		t.Errorf("the edit distance is %v, want none", got)
 	}
 }

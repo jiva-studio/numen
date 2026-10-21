@@ -146,13 +146,12 @@ func (s *shelf) names() []domain.ArtifactName {
 // transcript never asks.
 type noScan struct{}
 
-func (noScan) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+func (noScan) ProofreadScan(context.Context, []domain.ProofreadPage) (domain.ScanProofreading, error) {
 	return domain.ScanProofreading{}, errors.New("a transcript has no pages")
 }
 
-// A corrector answers about the lines of a window with the corrections it was
-// told to make, the way a proofreader reaching the end of each window does, and
-// keeps what every call asked.
+// A corrector answers about the lines with the corrections it was told to make
+// and keeps what every call asked.
 type corrector struct {
 	noScan
 
@@ -165,11 +164,14 @@ type corrector struct {
 	// stop is called with the number of calls made so far.
 	stop func(int)
 
-	// windows are the windows of every call, given the lines of every call, and
+	// limit is how many lines to answer at once. Zero answers all lines from from.
+	limit int
+
+	// froms are the starting line numbers of every call, given the lines of every call, and
 	// asked the numbers of the lines each call answered.
-	windows []domain.SpeechWindow
-	given   [][]domain.ProofreadLine
-	asked   [][]int
+	froms []int
+	given [][]domain.ProofreadLine
+	asked [][]int
 }
 
 func (c *corrector) GetName() string {
@@ -180,12 +182,12 @@ func (c *corrector) GetName() string {
 }
 
 func (c *corrector) ProofreadSpeech(
-	ctx context.Context, lines []domain.ProofreadLine, window domain.SpeechWindow,
+	ctx context.Context, lines []domain.ProofreadLine, from int,
 ) (domain.SpeechProofreading, error) {
-	c.windows = append(c.windows, window)
+	c.froms = append(c.froms, from)
 	c.given = append(c.given, lines)
 	if c.stop != nil {
-		c.stop(len(c.windows))
+		c.stop(len(c.froms))
 	}
 	if err := ctx.Err(); err != nil {
 		return domain.SpeechProofreading{}, err
@@ -195,12 +197,12 @@ func (c *corrector) ProofreadSpeech(
 	}
 
 	at := 0
-	for at < len(lines) && lines[at].Number < window.From {
+	for at < len(lines) && lines[at].Number < from {
 		at++
 	}
 	end := len(lines)
-	if window.Limit > 0 {
-		end = min(end, at+window.Limit)
+	if c.limit > 0 {
+		end = min(end, at+c.limit)
 	}
 	out := domain.SpeechProofreading{Uncorrected: c.uncorrected}
 	var answered []int

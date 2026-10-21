@@ -35,19 +35,6 @@ type Proofread struct {
 	// Execute reuses it without reading the source file from disk.
 	Hash string
 
-	// BatchSize is how many lines of the transcript one request to the model
-	// holds. Zero takes the default.
-	BatchSize int
-
-	// Overlap is how many lines a request holds over from the one before it.
-	// Speech runs on past the cut, and a line two requests answer about is
-	// settled between them. Zero takes the default.
-	Overlap int
-
-	// InFlight is how many requests one call to the proofreader answers. Zero
-	// takes the default.
-	InFlight int
-
 	// Cut is optional. It makes a source's chunks, and is called as the words
 	// are written down, so a recording answers about the speech already put
 	// right while the rest is still being asked about. Where nothing cuts, the
@@ -74,9 +61,7 @@ func NewProofread(
 // CreateProofread is what puts a recording's transcript right, against the
 // profile this installation names for speech.
 //
-// held is false with no error where the installation named no profile. A
-// transcript is put right in requests that hold lines over from the one before,
-// because speech runs on past a cut, and several are answered in one call.
+// held is false with no error where the installation named no profile.
 func CreateProofread(
 	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
 ) (right Proofread, held bool, err error) {
@@ -92,9 +77,6 @@ func CreateProofread(
 	if err != nil {
 		return Proofread{}, false, err
 	}
-	right.BatchSize = c.Batch
-	right.Overlap = c.Overlap
-	right.InFlight = c.InFlight
 	return right, true, nil
 }
 
@@ -115,15 +97,6 @@ type ProofreadResult struct {
 	IsBusy             bool   // the recording is held by another run
 	IsAlready          bool   // this proofreader has been over every line, and nothing was asked
 }
-
-// How a transcript is cut up where nothing says otherwise: the lines to a
-// request, the lines a request holds over from the one before it, and the
-// requests one call answers.
-const (
-	DefaultBatchSize = 40
-	DefaultOverlap   = 4
-	DefaultInFlight  = 4
-)
 
 // errNoProgress is a proofreader that asked about lines and said to continue
 // from where it began.
@@ -277,30 +250,24 @@ func (p *transcriptProofreadJob) hasLinesFrom(number int) bool {
 	return len(p.lines) > 0 && p.lines[len(p.lines)-1].Number >= number
 }
 
-// askWindows asks the proofreader about the transcript a window at a time, from
-// the first line no run has asked about to the end.
+// askWindows asks the proofreader about the transcript from the first line no
+// run has asked about to the end.
 func (u Proofread) askWindows(ctx context.Context, p *transcriptProofreadJob, res *ProofreadResult) error {
-	size := run.GetSize(u.BatchSize, DefaultBatchSize)
-	window := domain.SpeechWindow{
-		Size:    size,
-		Overlap: run.GetSize(u.Overlap, DefaultOverlap),
-		From:    p.from,
-		Limit:   run.GetSize(u.InFlight, DefaultInFlight) * size,
-	}
+	from := p.from
 	for {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
 			// line this one stopped on.
 			return err
 		}
-		got, err := u.askWindow(ctx, p, window, res)
+		got, err := u.askWindow(ctx, p, from, res)
 		if err != nil {
 			return err
 		}
 		if got.IsDone {
 			return nil
 		}
-		window.From = got.Next
+		from = got.Next
 	}
 }
 
@@ -309,21 +276,21 @@ func (u Proofread) askWindows(ctx context.Context, p *transcriptProofreadJob, re
 func (u Proofread) askWindow(
 	ctx context.Context,
 	p *transcriptProofreadJob,
-	window domain.SpeechWindow,
+	from int,
 	res *ProofreadResult,
 ) (domain.SpeechProofreading, error) {
-	got, err := u.by.ProofreadSpeech(ctx, p.lines, window)
+	got, err := u.by.ProofreadSpeech(ctx, p.lines, from)
 	if err != nil {
 		return got, fmt.Errorf("proofread %s: %w", p.path, err)
 	}
-	if !got.IsDone && got.Next <= window.From {
+	if !got.IsDone && got.Next <= from {
 		return got, fmt.Errorf("proofread %s: %w", p.path, errNoProgress)
 	}
 	end := len(p.cues)
 	if !got.IsDone {
 		end = got.Next
 	}
-	wrote, err := p.applyCorrections(window, got.Corrections)
+	wrote, err := p.applyCorrections(from, got.Corrections)
 	if err != nil {
 		return got, fmt.Errorf("proofread %s: %w", p.path, err)
 	}
@@ -368,14 +335,20 @@ func (p *transcriptProofreadJob) markAskedLines(end int) {
 // as does not turn on the order they arrive in. A window holding a correction
 // of a line it did not ask about puts nothing in.
 func (p *transcriptProofreadJob) applyCorrections(
-	window domain.SpeechWindow, corrections []domain.ProofreadCorrection,
+	from int, corrections []domain.ProofreadCorrection,
 ) (bool, error) {
 	for _, one := range corrections {
 		if one.Number < 0 || one.Number >= len(p.cues) || one.Last >= len(p.cues) {
 			return false, fmt.Errorf("%w: %d-%d", errCorrectionOutside, one.Number, one.Last)
 		}
 	}
-	if one, ok := domain.FindUnaskedCorrection(window.GetLines(p.lines), corrections); ok {
+	var asked []domain.ProofreadLine
+	for _, line := range p.lines {
+		if line.Number >= from {
+			asked = append(asked, line)
+		}
+	}
+	if one, ok := domain.FindUnaskedCorrection(asked, corrections); ok {
 		return false, fmt.Errorf("%w: %d", errCorrectionUnasked, one.Number)
 	}
 	sorted := slices.Clone(corrections)

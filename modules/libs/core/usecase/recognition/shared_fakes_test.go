@@ -26,7 +26,7 @@ type puts struct {
 func (p *puts) GetName() string { return "a proofreader" }
 
 func (p *puts) ProofreadScan(
-	_ context.Context, pages []domain.ProofreadPage, _ float64,
+	_ context.Context, pages []domain.ProofreadPage,
 ) (domain.ScanProofreading, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -41,7 +41,7 @@ func (p *puts) ProofreadScan(
 }
 
 func (p *puts) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	return domain.SpeechProofreading{}, errSpeechNotProofread
 }
@@ -187,9 +187,7 @@ type corrector struct {
 	// refuses is the pages whose reply is no answer.
 	refuses map[int]bool
 	asked   [][]int
-	// distances is the edit distance each request was given.
-	distances []float64
-	fail      error
+	fail    error
 	// stop is called with the number of requests made so far.
 	stop func(int)
 }
@@ -202,14 +200,13 @@ func (c *corrector) GetName() string {
 }
 
 func (c *corrector) ProofreadScan(
-	ctx context.Context, pages []domain.ProofreadPage, maxEditDistance float64,
+	ctx context.Context, pages []domain.ProofreadPage,
 ) (domain.ScanProofreading, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.Number)
 	}
 	c.asked = append(c.asked, at)
-	c.distances = append(c.distances, maxEditDistance)
 	if c.stop != nil {
 		c.stop(len(c.asked))
 	}
@@ -233,7 +230,7 @@ func (c *corrector) ProofreadScan(
 }
 
 func (c *corrector) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	return domain.SpeechProofreading{}, errSpeechNotProofread
 }

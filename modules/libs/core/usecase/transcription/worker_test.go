@@ -486,7 +486,7 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 
 	corr := &corrector{says: says(fixes(0, "FIRST THING"))}
 	held.with.Proofreading = run.ProofreadingConfig{
-		IsNamed: true, IsAutomatic: true, Batch: 1,
+		IsNamed: true, IsAutomatic: true,
 		By: func() (port.Proofreader, error) { return corr, nil },
 	}
 	held.with.Readers = brokenReaders{}
@@ -495,7 +495,7 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 	held.TakeUp(t.Context(), known, v)
 	held.Wait()
 
-	if len(corr.windows) != 1 {
-		t.Errorf("expected proofreader to be asked, got %v", corr.windows)
+	if len(corr.froms) != 1 {
+		t.Errorf("expected proofreader to be asked, got %v", corr.froms)
 	}
 }

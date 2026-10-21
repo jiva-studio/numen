@@ -32,7 +32,6 @@ func (p proofreadable) put(t *testing.T, by port.Proofreader) Proofread {
 	if err != nil {
 		t.Fatal(err)
 	}
-	made.Pages = 2
 	return made
 }
 
@@ -160,25 +159,22 @@ func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 
 func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 	held := newProofreadable(t)
-	by := &corrector{says: map[int]domain.ProofreadCorrection{
-		0: corrects(0, "the WORDS 1"),
-		2: corrects(2, "the WORDS 3"),
-	}}
-	put, v, shelved := held.put(t, by), held.vault, held.shelved
-	ctx, stop := context.WithCancel(t.Context())
-	defer stop()
-	by.stop = func(requests int) {
-		if requests == 2 {
-			stop()
-		}
+	names := textNames(t, held.shelved)
+	stood, err := json.Marshal(checkpoint{By: "a proofreader", Pages: 2})
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	if _, err := put.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
-		t.Fatalf("stopped with %v", err)
+	if err := held.shelved.WriteArtifact(t.Context(), names.far, stood); err != nil {
+		t.Fatal(err)
+	}
+	if err := held.shelved.WriteArtifact(t.Context(), names.corrections, correction.Pack([]domain.CorrectionLine{
+		{Number: 0, Text: "the WORDS 1"},
+	})); err != nil {
+		t.Fatal(err)
 	}
 
 	again := &corrector{says: map[int]domain.ProofreadCorrection{2: corrects(2, "the WORDS 3")}}
-	res, err := held.put(t, again).Execute(t.Context(), v, documentPath)
+	res, err := held.put(t, again).Execute(t.Context(), held.vault, documentPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,8 +189,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 		}
 	}
 
-	names := textNames(t, shelved)
-	doc, err := text.ReadComposed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
+	doc, err := text.ReadComposed(t.Context(), held.shelved, "ocr", names.hash, readShelf(t, held.shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,8 +273,7 @@ func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	// Four pages, two to a request.
-	if cuts != 2 {
+	if cuts != 1 {
 		t.Errorf("cut %d times", cuts)
 	}
 }
@@ -309,8 +303,7 @@ func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	// Four pages, two to a request, and the first two asked about again.
-	if len(by.asked) != 2 || len(by.asked[0]) == 0 || by.asked[0][0] != 0 {
+	if len(by.asked) != 1 || len(by.asked[0]) != 4 || by.asked[0][0] != 0 {
 		t.Errorf("the run after it asked about %v", by.asked)
 	}
 }
@@ -413,27 +406,6 @@ func TestAProofreaderThatIsUnavailableEndsTheRunAndWritesNothing(t *testing.T) {
 	}
 	if _, err := shelved.ReadArtifact(t.Context(), names.far); err == nil {
 		t.Error("a checkpoint was written for pages nobody answered about")
-	}
-}
-
-// The limit on how far a correction may stand from its line is the proofreader's
-// to apply, and it is given as configured.
-func TestTheEditDistanceIsGivenToTheProofreaderAsConfigured(t *testing.T) {
-	for _, distance := range []float64{0, 0.45} {
-		put, v, _, by := newProofreadRecognition(t, nil)
-		put.MaxEditDistance = distance
-
-		if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
-			t.Fatal(err)
-		}
-		if len(by.distances) == 0 {
-			t.Fatal("the proofreader was asked nothing")
-		}
-		for _, got := range by.distances {
-			if got != distance {
-				t.Errorf("asked with %v, want %v", got, distance)
-			}
-		}
 	}
 }
 

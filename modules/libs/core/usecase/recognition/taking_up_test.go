@@ -55,7 +55,7 @@ func newHaltedWorker(
 	w := newWatched(t, nil)
 	w.Worker.with.Readers = vaults{v.ID: shelved}
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
-		IsNamed: true, IsAutomatic: true, Batch: 1,
+		IsNamed: true, IsAutomatic: true,
 		By: func() (port.Proofreader, error) { return by, nil },
 	}
 

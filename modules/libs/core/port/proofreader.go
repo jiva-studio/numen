@@ -17,13 +17,11 @@ type Proofreader interface {
 	// GetName is what made a correction, recorded beside it.
 	GetName() string
 
-	// ProofreadScan puts right the lines of printed pages. A correction stands
-	// no further than maxEditDistance from its line, as a share of the longer
-	// of the two; zero leaves the limit to the proofreader.
-	ProofreadScan(ctx context.Context, pages []domain.ProofreadPage, maxEditDistance float64) (domain.ScanProofreading, error)
+	// ProofreadScan puts right the lines of printed pages.
+	ProofreadScan(ctx context.Context, pages []domain.ProofreadPage) (domain.ScanProofreading, error)
 
 	// ProofreadSpeech puts right the lines of a transcript that fall in the
-	// window. The lines are the whole transcript, so a proofreader knows what
-	// the recording holds.
-	ProofreadSpeech(ctx context.Context, lines []domain.ProofreadLine, window domain.SpeechWindow) (domain.SpeechProofreading, error)
+	// window from the line numbered from onwards. The lines are the whole
+	// transcript, so a proofreader knows what the recording holds.
+	ProofreadSpeech(ctx context.Context, lines []domain.ProofreadLine, from int) (domain.SpeechProofreading, error)
 }
