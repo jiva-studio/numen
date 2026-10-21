@@ -15,8 +15,8 @@ func newWholeRun(
 	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
 ) (Proofread, domain.Vault, *shelf, string) {
 	t.Helper()
-	u, v, kept, _, hash := newProofreadTranscript(t, told, words...)
-	u.BatchSize = len(words)
+	u, v, kept, by, hash := newProofreadTranscript(t, told, words...)
+	by.limit = len(words)
 	return u, v, kept, hash
 }
 
@@ -72,10 +72,10 @@ func newOverlappingRun(
 	t *testing.T, lines int, told map[int]domain.ProofreadCorrection,
 ) (Proofread, domain.Vault, *shelf, string) {
 	t.Helper()
-	u, v, kept, _, hash := newProofreadTranscript(t,
+	u, v, kept, by, hash := newProofreadTranscript(t,
 		told,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
-	u.BatchSize, u.Overlap, u.InFlight = lines, 0, 1
+	by.limit = lines
 	return u, v, kept, hash
 }
 
@@ -95,7 +95,7 @@ type sequenced struct {
 func (s *sequenced) GetName() string { return "a proofreader" }
 
 func (s *sequenced) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	if s.calls >= len(s.replies) {
 		return domain.SpeechProofreading{}, fmt.Errorf("call %d past the %d replies", s.calls, len(s.replies))
@@ -177,7 +177,7 @@ func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domai
 	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
 	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
-	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
+	by.limit = 2
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -191,7 +191,6 @@ func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domai
 	}
 
 	resumed := newTranscriptProofreading(t, u.readers, u.derived, again)
-	resumed.BatchSize, resumed.Overlap, resumed.InFlight = 2, 0, 1
 	return resumed, v, shelved, hash
 }
 

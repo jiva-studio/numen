@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"strconv"
+	"sync"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/ai"
@@ -15,20 +18,79 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
+// Default proofreading sizes.
+const (
+	DefaultBatchSize = 40
+	DefaultOverlap   = 4
+	DefaultInFlight  = 4
+)
+
 // purpose is what every question to the model is for. It routes nothing.
 const purpose = "proofreading"
 
 // completer asks the host for the answer to a question.
 type completer func(ctx context.Context, question *numenv1.CompletionQuestion) (string, error)
 
+type proofreadingConfig struct {
+	batchSize       int
+	overlap         int
+	inFlight        int
+	maxEditDistance float64
+}
+
+func defaultProofreadingConfig() proofreadingConfig {
+	return proofreadingConfig{
+		batchSize:       DefaultBatchSize,
+		overlap:         DefaultOverlap,
+		inFlight:        DefaultInFlight,
+		maxEditDistance: MaxEditDistance,
+	}
+}
+
 type proofreadingServer struct {
 	ask askModel
+	mu  sync.RWMutex
+	cfg proofreadingConfig
 }
 
 // newProofreadingServer returns a server whose model is the one the host routes
 // the proofreading purpose to.
 func newProofreadingServer(complete completer) *proofreadingServer {
-	return &proofreadingServer{ask: newAskModel(complete)}
+	return &proofreadingServer{
+		ask: newAskModel(complete),
+		cfg: defaultProofreadingConfig(),
+	}
+}
+
+func (s *proofreadingServer) updateConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if v, ok := values["batch_size"]; ok {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			s.cfg.batchSize = n
+		}
+	}
+	if v, ok := values["overlap"]; ok {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			s.cfg.overlap = n
+		}
+	}
+	if v, ok := values["in_flight"]; ok {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			s.cfg.inFlight = n
+		}
+	}
+	if v, ok := values["max_edit_distance"]; ok {
+		if d, err := strconv.ParseFloat(v, 64); err == nil && d >= 0 {
+			s.cfg.maxEditDistance = d
+		}
+	}
+}
+
+func (s *proofreadingServer) getConfig() proofreadingConfig {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.cfg
 }
 
 // newAskModel returns the model as a system instruction and a prompt are put to it.
@@ -83,22 +145,36 @@ func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.Proofre
 		if !ok {
 			return textResult{}, connect.NewError(connect.CodeInvalidArgument, errScanOptions)
 		}
-		result, err = proofreadScan(ctx, s.ask, groups, options.Scan.GetMaxEditDistance())
+		maxDist := options.Scan.GetMaxEditDistance()
+		if maxDist <= 0 {
+			maxDist = s.getConfig().maxEditDistance
+		}
+		result, err = proofreadScan(ctx, s.ask, groups, maxDist)
 	case numenv1.ProofreadKind_PROOFREAD_KIND_SPEECH:
 		options, ok := msg.GetOptions().(*numenv1.ProofreadTextRequest_Speech)
 		if !ok {
 			return textResult{}, connect.NewError(connect.CodeInvalidArgument, errSpeechOptions)
 		}
+		cfg := s.getConfig()
 		speech := options.Speech
-		if speech.GetSize() <= 0 {
-			return textResult{}, connect.NewError(connect.CodeInvalidArgument, errSpeechSize)
+		size := int(speech.GetSize())
+		if size <= 0 {
+			size = cfg.batchSize
+		}
+		overlap := int(speech.GetOverlap())
+		if overlap <= 0 && speech.GetSize() <= 0 {
+			overlap = cfg.overlap
+		}
+		fromLine := int(speech.GetFromLine())
+		lineLimit := int(speech.GetLineLimit())
+		if lineLimit <= 0 {
+			lineLimit = cfg.inFlight * size
 		}
 		var lines []Line
 		for _, group := range groups {
 			lines = append(lines, group.Lines...)
 		}
-		result, err = proofreadSpeech(ctx, s.ask, lines,
-			int(speech.GetSize()), int(speech.GetOverlap()), int(speech.GetFromLine()), int(speech.GetLineLimit()))
+		result, err = proofreadSpeech(ctx, s.ask, lines, size, overlap, fromLine, lineLimit)
 	default:
 		return textResult{}, connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("unknown kind %s", msg.GetKind()))
@@ -112,7 +188,6 @@ func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.Proofre
 var (
 	errScanOptions   = errors.New("a scan request has scan options")
 	errSpeechOptions = errors.New("a speech request has speech options")
-	errSpeechSize    = errors.New("a speech request holds at least one line to a model request")
 )
 
 // readModelError maps a failure to reach the model to the code the caller reads
@@ -148,7 +223,7 @@ func readGroups(groups []*numenv1.ProofreadGroup) []Batch {
 // Mount registers the proofreading service on s, asking the host named by the environment for each
 // completion.
 func Mount(s *server.Server) error {
-	return mount(s, ai.Complete)
+	return mount(s, ai.Complete, nil)
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
@@ -161,11 +236,16 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 				return "", err
 			}
 			return client.Complete(ctx, question)
-		})
+		}, vars)
 	})
 }
 
-func mount(s *server.Server, complete completer) error {
-	s.Register(numenv1connect.NewProofreadingServiceHandler(newProofreadingServer(complete), s.HandlerOptions()...))
+func mount(s *server.Server, complete completer, vars map[string]string) error {
+	srv := newProofreadingServer(complete)
+	if len(vars) > 0 {
+		srv.updateConfig(vars)
+	}
+	s.SetUpdateConfig(srv.updateConfig)
+	s.Register(numenv1connect.NewProofreadingServiceHandler(srv, s.HandlerOptions()...))
 	return nil
 }

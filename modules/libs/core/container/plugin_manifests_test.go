@@ -581,4 +581,3 @@ func TestEveryPluginHasAReadme(t *testing.T) {
 		}
 	}
 }
-

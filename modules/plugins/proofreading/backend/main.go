@@ -9,4 +9,3 @@ import (
 func main() {
 	server.Run(service.Mount)
 }
-

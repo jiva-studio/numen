@@ -115,7 +115,7 @@ var bridgeContracts = []bridgeContract{
 	{"proofreader", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
 		b, err := OpenProofreaderBridge(h)
 		return createContract(b, err, func(b *ProofreaderBridge, ctx context.Context) (bool, error) {
-			return isZeroResult(b.ProofreadScan(ctx, []domain.ProofreadPage{{Number: 1}}, 0))
+			return isZeroResult(b.ProofreadScan(ctx, []domain.ProofreadPage{{Number: 1}}))
 		})
 	}},
 	{"tools", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {

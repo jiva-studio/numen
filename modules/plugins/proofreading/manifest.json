@@ -14,6 +14,35 @@
       "type": "agent",
       "title": "Agent",
       "description": "The agent and the model that proofread a text"
+    },
+    {
+      "key": "batch_size",
+      "type": "number",
+      "title": "Batch size",
+      "description": "How many lines one request to the model carries",
+      "default": 40
+    },
+    {
+      "key": "overlap",
+      "type": "number",
+      "title": "Overlap",
+      "description": "How many lines neighbouring speech batches share",
+      "default": 4
+    },
+    {
+      "key": "in_flight",
+      "type": "number",
+      "title": "In-flight requests",
+      "description": "How many model requests one call answers",
+      "default": 4
+    },
+    {
+      "key": "max_edit_distance",
+      "type": "number",
+      "title": "Max edit distance",
+      "description": "How far a correction may stand from the line as read",
+      "default": 0.30,
+      "replaces": ["indexing.proofreading.max_edit_distance"]
     }
   ],
   "lifecycle": {

@@ -16,12 +16,12 @@ type replying struct{}
 
 func (r *replying) GetName() string { return "replying" }
 
-func (r *replying) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+func (r *replying) ProofreadScan(context.Context, []domain.ProofreadPage) (domain.ScanProofreading, error) {
 	return domain.ScanProofreading{}, nil
 }
 
 func (r *replying) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	return domain.SpeechProofreading{}, errSpeechNotProofread
 }
@@ -33,21 +33,16 @@ func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
 	return vaults{}, shelves{newShelf()}
 }
 
-// newProofreadingConfig is an installation with a proofreader, at the sizes it
-// proofreads at.
+// newProofreadingConfig is an installation with a proofreader.
 func newProofreadingConfig(by *replying) run.ProofreadingConfig {
 	return run.ProofreadingConfig{
-		IsNamed:         true,
-		By:              func() (port.Proofreader, error) { return by, nil },
-		Batch:           12,
-		Overlap:         3,
-		InFlight:        5,
-		MaxEditDistance: 0.25,
+		IsNamed: true,
+		By:      func() (port.Proofreader, error) { return by, nil },
 	}
 }
 
-// A recognition is put right at the sizes the installation proofreads at.
-func TestARecognitionIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
+// A recognition is put right by the proofreader the installation names.
+func TestARecognitionIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	t.Parallel()
 	by := &replying{}
 	readers, derived := somewhereToProofread()
@@ -55,13 +50,6 @@ func TestARecognitionIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) 
 	right, held, err := CreateProofread(newProofreadingConfig(by), readers, derived)
 	if err != nil || !held {
 		t.Fatalf("held %v, %v", held, err)
-	}
-	if right.Pages != 12 {
-		t.Errorf("%d pages a request, and the installation asks about 12", right.Pages)
-	}
-	if right.MaxEditDistance != 0.25 {
-		t.Errorf("a correction may stand %v from the line, and the installation says 0.25",
-			right.MaxEditDistance)
 	}
 	if right.by != port.Proofreader(by) {
 		t.Error("a recognition is put right by something the installation did not place")

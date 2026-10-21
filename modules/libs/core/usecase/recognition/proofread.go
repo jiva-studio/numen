@@ -39,13 +39,6 @@ type Proofread struct {
 	// Execute reuses it without reading the source file from disk.
 	Hash string
 
-	// Pages is how many pages are asked about at once. Zero takes the default.
-	Pages int
-
-	// MaxEditDistance is how far a correction may stand from the line as read
-	// and still be a correction. Zero leaves the limit to the proofreader.
-	MaxEditDistance float64
-
 	// Cut is optional. It makes a source's chunks, and is called as corrections
 	// are written down, so a book answers about the pages already put right
 	// while the rest is still being asked about. Where nothing cuts, the chunks
@@ -69,8 +62,8 @@ func NewProofread(
 	return Proofread{readers: readers, derived: derived, by: by}, nil
 }
 
-// CreateProofread is what puts a document's recognition right, at the sizes
-// this installation proofreads at and with the proofreader it names for a scan.
+// CreateProofread is what puts a document's recognition right, with the proofreader
+// it names for a scan.
 //
 // held is false with no error where the installation named no profile, and the
 // reading is then used exactly as it was read. A profile that is named and
@@ -93,8 +86,6 @@ func CreateProofread(
 	if err != nil {
 		return Proofread{}, false, err
 	}
-	right.Pages = c.Batch
-	right.MaxEditDistance = c.MaxEditDistance
 	return right, true, nil
 }
 
@@ -112,9 +103,6 @@ type ProofreadResult struct {
 	IsNone           bool   // there is no recognition to proofread, and nothing was done
 	IsBusy           bool   // somebody else is proofreading this recognition
 }
-
-// DefaultPages is how many pages one request carries.
-const DefaultPages = 40
 
 // checkpoint is what says who put a recognition right and how far they got.
 type checkpoint struct {
@@ -194,33 +182,25 @@ type proofreadRecognitionJob struct {
 	progressName domain.ArtifactName
 }
 
-// askPages asks the proofreader about the pages from at onwards, a batch at a
-// time.
+// askPages asks the proofreader about the pages from at onwards.
 func (u Proofread) askPages(
 	ctx context.Context,
 	p proofreadRecognitionJob,
 	at int,
 	res *ProofreadResult,
 ) error {
-	batch := run.GetSize(u.Pages, DefaultPages)
-	for ; at < len(p.pages); at += batch {
-		if err := ctx.Err(); err != nil {
-			// What came back is on disk already, and the next run begins at the
-			// page this one stopped on.
-			return err
-		}
-		end := min(at+batch, len(p.pages))
-		asked := p.pages[at:end]
-
-		answer, err := u.by.ProofreadScan(ctx, asked, u.MaxEditDistance)
-		if err != nil {
-			return fmt.Errorf("proofread %s: %w", p.path, err)
-		}
-		if err := u.writeCorrections(ctx, p, asked, answer, end, res); err != nil {
-			return err
-		}
+	if at >= len(p.pages) {
+		return nil
 	}
-	return nil
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	asked := p.pages[at:]
+	answer, err := u.by.ProofreadScan(ctx, asked)
+	if err != nil {
+		return fmt.Errorf("proofread %s: %w", p.path, err)
+	}
+	return u.writeCorrections(ctx, p, asked, answer, len(p.pages), res)
 }
 
 // writeCorrections writes the corrections a batch came back with, cuts the source, and

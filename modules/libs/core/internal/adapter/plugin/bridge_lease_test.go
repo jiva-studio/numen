@@ -116,7 +116,7 @@ func TestEveryProofreadingGivesItsReferenceBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 3 {
-		_, _ = bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}}, 0)
+		_, _ = bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
 	}
 	_ = bridge.Close()
 	if host.acquired.Load() != 3 || host.released.Load() != 3 {

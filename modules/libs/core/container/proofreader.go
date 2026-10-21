@@ -10,24 +10,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
-// getProfile is the place a recognition is put right at, by the name a consumer
-// names it under.
-func (c Config) getProfile(name string) (Profile, error) {
-	profile, held := c.Proofreading.Profiles[name]
-	if !held {
-		return Profile{}, fmt.Errorf("no proofreading profile named %q", name)
-	}
-	return c.resolveInFlight(profile), nil
-}
-
-// resolveInFlight is the profile with the number of requests one call answers
-// settled: its own, then the performance profile's LLM concurrency, then the
-// default.
-func (c Config) resolveInFlight(profile Profile) Profile {
-	profile.InFlight = profile.GetInFlight(c.ResolvedCompute.LlmConcurrency)
-	return profile
-}
-
 // ProofreaderReady says whether a proofreading plugin is available and ready.
 func (c Config) ProofreaderReady() bool {
 	return c.hasPlugin(plugin.CapabilityProofreading)
@@ -41,19 +23,15 @@ func (c Config) Proofreader(name string) (port.Proofreader, error) {
 	if name == "" {
 		return nil, nil
 	}
-	if _, err := c.getProfile(name); err != nil {
-		return nil, err
-	}
 	host, err := c.resolvePlugin(plugin.CapabilityProofreading)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("proofreading %q: %w", name, err)
 	}
 	return plugin.OpenProofreaderBridge(host)
 }
 
 // GetScanProofreading is what a document's reading is put right with: the
-// profile the settings name for a scan, and the sizes a recognition is asked about
-// at.
+// profile the settings name for a scan.
 func (c Config) GetScanProofreading() run.ProofreadingConfig {
 	return c.getProofreading(c.ScanProofreading)
 }
@@ -66,15 +44,10 @@ func (c Config) GetSpeechProofreading() run.ProofreadingConfig {
 // getProofreading is what a recognition of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
 func (c Config) getProofreading(config Proofread) run.ProofreadingConfig {
-	profile := c.resolveInFlight(c.Proofreading.Profiles[config.Profile])
 	return run.ProofreadingConfig{
-		IsNamed:         config.Profile != "",
-		IsAutomatic:     config.IsAutomatic,
-		By:              func() (port.Proofreader, error) { return c.Proofreader(config.Profile) },
-		Batch:           profile.BatchSize,
-		Overlap:         profile.Overlap,
-		InFlight:        profile.InFlight,
-		MaxEditDistance: c.Proofreading.MaxEditDistance,
+		IsNamed:     config.Profile != "",
+		IsAutomatic: config.IsAutomatic,
+		By:          func() (port.Proofreader, error) { return c.Proofreader(config.Profile) },
 	}
 }
 

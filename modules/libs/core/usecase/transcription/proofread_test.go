@@ -24,7 +24,7 @@ type scripted struct {
 func (s scripted) GetName() string { return "a proofreader" }
 
 func (s scripted) ProofreadSpeech(
-	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
 	return s.reply, nil
 }
@@ -48,7 +48,7 @@ func newProofreadTranscript(
 	if err := kept.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
-	by := &corrector{says: told}
+	by := &corrector{says: told, limit: 1}
 	return newTranscriptProofreading(t, vaults{first.ID: shelved}, shelves{kept}, by),
 		first, kept, by, hash
 }
@@ -63,8 +63,6 @@ func newTranscriptProofreading(
 	if err != nil {
 		t.Fatal(err)
 	}
-	made.BatchSize = 1
-	made.InFlight = 1
 	return made
 }
 
@@ -209,7 +207,7 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 	if res.Resumed != 2 {
 		t.Errorf("took up %d lines of the transcript", res.Resumed)
 	}
-	if from := said.windows[0].From; from != 2 {
+	if from := said.froms[0]; from != 2 {
 		t.Errorf("began at line %d", from)
 	}
 	for _, line := range said.lines() {
@@ -235,7 +233,6 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
 	u, v, shelved, _, hash := newProofreadTranscript(t, nil, words...)
-	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
 	if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
@@ -364,11 +361,11 @@ func TestASourceIsCutAgainAsItsLinesArePutRight(t *testing.T) {
 }
 
 // Every call is given the whole transcript's spoken lines, numbered by their
-// cue, and the sizes of the installation.
-func TestEveryCallIsGivenTheWholeTranscriptAndTheSizesToCutItBy(t *testing.T) {
+// cue, and the line to continue from.
+func TestEveryCallIsGivenTheWholeTranscriptAndTheLineToContinueFrom(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
 	u, v, _, by, _ := newProofreadTranscript(t, nil, words...)
-	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
+	by.limit = 2
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -386,28 +383,9 @@ func TestEveryCallIsGivenTheWholeTranscriptAndTheSizesToCutItBy(t *testing.T) {
 			t.Errorf("call %d was given %+v", at, given)
 		}
 	}
-	wantWindows := []domain.SpeechWindow{
-		{Size: 2, Overlap: 1, From: 0, Limit: 2},
-		{Size: 2, Overlap: 1, From: 2, Limit: 2},
-	}
-	if !slices.Equal(by.windows, wantWindows) {
-		t.Errorf("windows %+v, want %+v", by.windows, wantWindows)
-	}
-}
-
-// Where nothing says otherwise a transcript is cut by the defaults.
-func TestATranscriptIsCutByTheDefaultsWhereNothingSaysOtherwise(t *testing.T) {
-	u, v, _, by, _ := newProofreadTranscript(t, nil, "first thing")
-	u.BatchSize, u.Overlap, u.InFlight = 0, 0, 0
-
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	want := domain.SpeechWindow{
-		Size: DefaultBatchSize, Overlap: DefaultOverlap, Limit: DefaultInFlight * DefaultBatchSize,
-	}
-	if len(by.windows) != 1 || by.windows[0] != want {
-		t.Errorf("windows %+v, want %+v", by.windows, want)
+	wantFroms := []int{0, 2}
+	if !slices.Equal(by.froms, wantFroms) {
+		t.Errorf("froms %+v, want %+v", by.froms, wantFroms)
 	}
 }
 
@@ -416,14 +394,14 @@ func TestATranscriptIsCutByTheDefaultsWhereNothingSaysOtherwise(t *testing.T) {
 func TestAWindowShortOfTheEndIsFollowedByTheNext(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
 	u, v, shelved, by, hash := newProofreadTranscript(t, says(fixes(1, "second thing"), fixes(3, "fourth thing")), words...)
-	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
+	by.limit = 2
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(by.windows) != 2 || by.windows[0].From != 0 || by.windows[1].From != 2 {
-		t.Fatalf("windows %+v", by.windows)
+	if len(by.froms) != 2 || by.froms[0] != 0 || by.froms[1] != 2 {
+		t.Fatalf("froms %+v", by.froms)
 	}
 	if !slices.Equal(by.given[0], by.given[1]) {
 		t.Errorf("the calls were given %+v and %+v", by.given[0], by.given[1])
@@ -480,8 +458,8 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 	if res.Read != res.Lines || !res.IsAlready {
 		t.Fatalf("got %+v", res)
 	}
-	if told != 0 || len(said.windows) != 0 {
-		t.Errorf("a transcript with nothing left to put right was told about %d times and asked %d", told, len(said.windows))
+	if told != 0 || len(said.froms) != 0 {
+		t.Errorf("a transcript with nothing left to put right was told about %d times and asked %d", told, len(said.froms))
 	}
 }
 
@@ -533,19 +511,21 @@ func TestACorrectionOfALineTheTranscriptDoesNotHaveEndsTheRun(t *testing.T) {
 	}
 }
 
-// A window asks about one line to a call, and a run reaching from it into the
-// next line is no answer to what was asked.
-func TestARunReachingPastTheWindowEndsTheRun(t *testing.T) {
-	u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
-	u.by = scripted{reply: domain.SpeechProofreading{
-		Corrections: []domain.ProofreadCorrection{joins(0, 1, "first thing, second thing")}, Next: 1,
+// A correction of a line before where this window began is no answer to what was
+// asked.
+func TestACorrectionOfAnUnaskedLineEndsTheRun(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing"}
+	u, v, shelved, _, hash := newProofreadTranscript(t, nil, words...)
+	u.by = &sequenced{replies: []domain.SpeechProofreading{
+		{Next: 1},
+		{Corrections: []domain.ProofreadCorrection{fixes(0, "past speech")}, Next: 3, IsDone: true},
 	}}
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionUnasked) {
 		t.Fatalf("got %v, want %v", err, errCorrectionUnasked)
 	}
 	if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {
-		t.Error("a run past the window was written")
+		t.Error("a correction of an unasked line was written")
 	}
 }
 
@@ -565,8 +545,8 @@ func TestTheEndOfTheContextStopsTheRunBetweenWindows(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
-	if len(by.windows) != 1 {
-		t.Errorf("it was called %d times", len(by.windows))
+	if len(by.froms) != 1 {
+		t.Errorf("it was called %d times", len(by.froms))
 	}
 }
 

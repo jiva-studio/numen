@@ -15,9 +15,6 @@ import (
 // profile named for a scanned reading is another setting and is not read here.
 func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
-	cfg.Proofreading.Profiles = map[string]Profile{
-		"scans": {BatchSize: 1, InFlight: 1},
-	}
 	cfg.TranscriptProofreading = Proofread{Profile: "speech"}
 	cfg.ScanProofreading = Proofread{Profile: "scans", IsAutomatic: true}
 

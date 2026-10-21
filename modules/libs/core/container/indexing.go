@@ -59,34 +59,8 @@ type Transcription struct {
 	Proofread Proofread `json:"proofread"`
 }
 
-// ProofreadingConfig is what puts a recognition right.
-type ProofreadingConfig struct {
-	// MaxEditDistance is how far a correction may stand from the line as read
-	// and still be a correction: the Levenshtein distance between their letters,
-	// as a share of the longer of the two. Zero leaves the limit to the
-	// proofreader.
-	MaxEditDistance float64 `json:"max_edit_distance"`
-
-	// Profiles are the places a text is put right at, by the name a consumer asks for one under.
-	Profiles map[string]Profile `json:"profiles"`
-}
-
-// Default proofreading sizes.
-const (
-	DefaultBatchSize = 40
-	DefaultInFlight  = 4
-)
-
-// Profile is one proofreading profile: how a text is cut into requests. Which
-// model answers them is decided by the agent setting of the proofreading plugin.
-type Profile struct {
-	// BatchSize is how many lines one request carries.
-	BatchSize int `json:"batch_size"`
-	// Overlap is how many lines neighbouring batches share.
-	Overlap int `json:"overlap"`
-	// InFlight is how many requests one call answers.
-	InFlight int `json:"in_flight,omitempty"`
-}
+// ProofreadingConfig is the proofreading section of indexing settings.
+type ProofreadingConfig struct{}
 
 // Proofread names the profile a text is put right at.
 type Proofread struct {
@@ -99,63 +73,7 @@ type Proofread struct {
 
 // HasProfiles says whether this installation has any profile configured.
 func (c ProofreadingConfig) HasProfiles() bool {
-	return len(c.Profiles) > 0
-}
-
-// GetInFlight is how many requests this profile has answered at once.
-func (p Profile) GetInFlight(planned int) int {
-	switch {
-	case p.InFlight > 0:
-		return p.InFlight
-	case planned > 0:
-		return planned
-	}
-	return DefaultInFlight
-}
-
-type proofconfigFile struct {
-	MaxEditDistance *float64           `json:"max_edit_distance"`
-	Profiles        map[string]Profile `json:"profiles"`
-}
-
-// UnmarshalJSON keeps defaults for fields omitted from file.
-func (c *ProofreadingConfig) UnmarshalJSON(raw []byte) error {
-	var f proofconfigFile
-	if err := json.Unmarshal(raw, &f); err != nil {
-		return err
-	}
-	*c = ProofreadingConfig{}
-	assign(&c.MaxEditDistance, f.MaxEditDistance)
-	c.Profiles = f.Profiles
-	return nil
-}
-
-type profileFile struct {
-	BatchSize *int `json:"batch_size"`
-	Overlap   *int `json:"overlap"`
-	InFlight  *int `json:"in_flight,omitempty"`
-}
-
-// UnmarshalJSON starts from the default batch size.
-func (p *Profile) UnmarshalJSON(raw []byte) error {
-	var f profileFile
-	if err := json.Unmarshal(raw, &f); err != nil {
-		return err
-	}
-	*p = Profile{BatchSize: DefaultBatchSize}
-	assign(&p.BatchSize, f.BatchSize)
-	assign(&p.Overlap, f.Overlap)
-	assign(&p.InFlight, f.InFlight)
-	return nil
-}
-
-// MarshalJSON writes the profile fields.
-func (p Profile) MarshalJSON() ([]byte, error) {
-	f := profileFile{BatchSize: &p.BatchSize, Overlap: &p.Overlap}
-	if p.InFlight > 0 {
-		f.InFlight = &p.InFlight
-	}
-	return json.Marshal(f)
+	return false
 }
 
 func assign[T any](dst *T, src *T) {
