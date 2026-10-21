@@ -402,7 +402,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 
 ## Reaching an address
 
-`importing` is how what a url points at is fetched, and where the tools that fetch it are. What is kept, and where, is [Importing an address](importing.md).
+`importing` is how what a url points at is fetched. What is kept, and where, is [Importing an address](importing.md). Tool paths for `yt-dlp` and `ffmpeg` are configured on the Media Downloader plugin.
 
 ```json
 {
@@ -410,9 +410,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
     "captions": ["en"],
     "automatic_captions": true,
     "copy_max_size_mb": 500,
-    "copies_to_vault": false,
-    "yt_dlp": { "command": [], "arguments": [] },
-    "ffmpeg": { "command": [], "arguments": [] }
+    "copies_to_vault": false
   }
 }
 ```
@@ -423,12 +421,6 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 | `automatic_captions` | whether words a machine wrote count where a person published none. On. |
 | `copy_max_size_mb` | how large a copy of a video may be. A copy that runs past it stops there and nothing is kept. |
 | `copies_to_vault` | whether a copy is kept beside the url, under that file's own name, as a file of the person's own. Off, which keeps it in the application's folder, where losing it costs another fetch. |
-| `yt_dlp.command`, `ffmpeg.command` | what starts it: the tool's path, and anything it is started through. Empty asks the `PATH`. |
-| `yt_dlp.arguments`, `ffmpeg.arguments` | what every run is handed before its own arguments. |
-
-**A command is a list, and that is the whole answer to a machine with no fixed paths.** A tool that lives where nothing may write a path down is started through whatever does know — `["nix", "run", "nixpkgs#yt-dlp", "--"]`, a wrapper on the `PATH`, a store path in full. Nothing here has an opinion about how a machine keeps its tools.
-
-`arguments` is what answers a site that refuses an unattended request. Cookies from a browser, an extractor argument carrying a token, a runtime that mints one: each is that machine's own, is passed through as it stands, and what the tool said when it refused is what the person is shown.
 
 None of this is turned in the window. Every key here is a machine's answer rather than a person's taste, and a control for it would be a control for something set once, on the day the machine was set up.
 

@@ -283,18 +283,18 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 }
 
 func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
-	valid := []string{"document", "compute"}
-	if got := listDifferences([]string{"document", "compute"}, valid, "capability"); len(got) != 0 {
+	valid := []string{"document", "book"}
+	if got := listDifferences([]string{"document", "book"}, valid, "capability"); len(got) != 0 {
 		t.Errorf("equal lists differ: %v", got)
 	}
 	if got := listDifferences([]string{"document"}, valid, "capability"); len(got) != 1 {
 		t.Errorf("a capability left out of the guide is found %d times: %v", len(got), got)
 	}
-	if got := listDifferences([]string{"document", "compute", "other"}, valid, "capability"); len(got) != 1 {
+	if got := listDifferences([]string{"document", "book", "other"}, valid, "capability"); len(got) != 1 {
 		t.Errorf("a capability only the guide names is found %d times: %v", len(got), got)
 	}
-	guideLine := "- **`capabilities`**: Core capabilities provided (`document`, `compute`)."
-	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "compute"}) {
+	guideLine := "- **`capabilities`**: Core capabilities provided (`document`, `book`)."
+	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
 	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onFile:<glob>` (e.g. pdf)\n  - `*` (startup)\n- **`next`**:\n"
@@ -572,3 +572,13 @@ func TestWhatTheActivationEventRuleRefuses(t *testing.T) {
 		t.Errorf("the activation event rule refuses %v, want %v", refused, want)
 	}
 }
+
+func TestEveryPluginHasAReadme(t *testing.T) {
+	for _, one := range getPluginManifests(t) {
+		readme := filepath.Join(one.Dir, "README.md")
+		if _, err := os.Stat(readme); err != nil {
+			t.Errorf("%s has no README.md: %v", one.Dir, err)
+		}
+	}
+}
+

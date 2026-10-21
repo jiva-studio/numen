@@ -39,10 +39,13 @@ Every plugin follows a standard layout:
 ```text
 modules/plugins/<name>/
 ├── manifest.json       # Metadata, capabilities, activation events, permissions
+├── manifest.go         # Monolithic build registration
 ├── Makefile            # Build and test recipes
 ├── README.md           # Documentation
 ├── backend/            # Native Connect-RPC server (Go)
-│   └── main.go
+│   ├── main.go         # Process entrypoint
+│   └── service/        # Service implementation and mount registration
+│       └── server.go
 ├── go.mod              # Isolated Go module dependencies
 ├── go.sum
 └── frontend/           # Vue 3 / TypeScript UI (optional)
@@ -105,7 +108,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`name`**: User-facing display title.
 - **`version`**: Semantic versioning string (`X.Y.Z`, optional pre-release and build parts).
 - **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.
-- **`capabilities`**: Core capabilities provided (`document`, `compute`, `agent`, `recognition`, `transcription`, `proofreading`, and the marker `ai.agent.provider`, which names an agent plugin that serves tasks and lists the programs it runs).
+- **`capabilities`**: Core capabilities provided (`document`, `book`, `recognition`, `transcription`, `embedding`, `downloader`, `proofreading`, `tools`, `agent`, and the marker `ai.agent.provider`, which names an agent plugin that serves tasks and lists the programs it runs).
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).
 - **`activationEvents`**: The events the plugin subscribes to. On one of them the host activates the plugin and, when it serves `numen.v1.PluginEventService`, hands it the event through `DeliverEvent`; a plugin built on the Go SDK serves it when it passes `server.WithEventHandler`. A plugin that refuses an event answers with `error` set to `PLUGIN_EVENT_ERROR_CODE_REFUSED` and its `reason`, and the host reports the refusal with the event and the plugin id. A plugin is handed only the events it subscribes to:
   - `onFile:<glob>` (e.g. `onFile:*.pdf`, `onFile:*.epub`)

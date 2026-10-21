@@ -45,11 +45,14 @@ func PluginPermissions() []string {
 func PluginCapabilities() []string {
 	return []string{
 		"document",
-		"compute",
-		"agent",
+		"book",
 		"recognition",
 		"transcription",
+		"embedding",
+		"downloader",
 		"proofreading",
+		"tools",
+		"agent",
 		"ai.agent.provider",
 	}
 }
