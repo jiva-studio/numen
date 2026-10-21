@@ -54,12 +54,7 @@ func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
-	var command []string
-	for _, one := range req.Msg.GetCommands() {
-		if one.GetProgram() == "codex" {
-			command = one.GetCommand()
-		}
-	}
+	command := agentrun.ProgramCommand(req.Msg.GetCommands(), "codex")
 
 	codex := &numenv1.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled() || len(command) > 0}
 	if codex.GetIsInstalled() {

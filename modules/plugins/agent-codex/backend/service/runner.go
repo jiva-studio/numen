@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
@@ -67,7 +66,7 @@ func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest) *exe
 // tools Codex has of its own that can be turned off, nothing the user's configuration adds, a
 // sandbox that writes nothing and an empty folder to run in. The folder goes when the run does.
 func makeAnswerCommand(runCtx context.Context, req *numenv1.AskAgentRequest) (*exec.Cmd, func(), error) {
-	dir, err := os.MkdirTemp("", "numen-codex-*")
+	dir, cleanDir, err := agentrun.CreateTempDir("numen-codex-*")
 	if err != nil {
 		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
 	}
@@ -89,7 +88,7 @@ func makeAnswerCommand(runCtx context.Context, req *numenv1.AskAgentRequest) (*e
 	args = append(args, "--", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()))
 	cmd := exec.CommandContext(runCtx, binName, args...)
 	cmd.Dir = dir
-	return cmd, func() { _ = os.RemoveAll(dir) }, nil
+	return cmd, cleanDir, nil
 }
 
 // appendModelArguments adds the model the request names and the level of reasoning it asks for.

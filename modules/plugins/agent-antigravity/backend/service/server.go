@@ -56,12 +56,7 @@ func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
-	var command []string
-	for _, one := range req.Msg.GetCommands() {
-		if one.GetProgram() == "antigravity" {
-			command = one.GetCommand()
-		}
-	}
+	command := agentrun.ProgramCommand(req.Msg.GetCommands(), "antigravity")
 	antigravity := &numenv1.AgentProgram{
 		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || len(command) > 0,
 	}

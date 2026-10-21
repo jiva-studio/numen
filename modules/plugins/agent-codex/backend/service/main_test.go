@@ -168,9 +168,9 @@ func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := codexSearchPlaces
-	codexSearchPlaces = nil
-	t.Cleanup(func() { codexSearchPlaces = was })
+	was := codexProgram.Places
+	codexProgram.Places = nil
+	t.Cleanup(func() { codexProgram.Places = was })
 }
 
 // The run is started from the request: the command line, the folder, the model and the tools it is

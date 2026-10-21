@@ -46,6 +46,7 @@ type acpSession struct {
 	lines    *bufio.Scanner
 	stderr   *tailBuffer
 	stop     context.CancelFunc
+	cleanDir func()
 	dir      string
 	program  string
 	nextID   int
@@ -72,12 +73,12 @@ func openACPSession(ctx context.Context, agent acpAgent) (*acpSession, error) {
 	if len(agent.Command) == 0 {
 		return nil, fmt.Errorf("no command starts %s", agent.Program)
 	}
-	dir, err := os.MkdirTemp("", "numen-acp-*")
+	dir, cleanDir, err := agentrun.CreateTempDir("numen-acp-*")
 	if err != nil {
 		return nil, fmt.Errorf("create the session folder: %w", err)
 	}
 	running, stop := context.WithCancel(ctx)
-	s := &acpSession{stop: stop, dir: dir, program: agent.Program, stderr: &tailBuffer{}}
+	s := &acpSession{stop: stop, cleanDir: cleanDir, dir: dir, program: agent.Program, stderr: &tailBuffer{}}
 	s.cmd = exec.CommandContext(running, agent.Command[0], agent.Command[1:]...)
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
@@ -275,7 +276,9 @@ func (s *acpSession) close() {
 	if s.cmd.Process != nil {
 		_ = s.cmd.Wait()
 	}
-	_ = os.RemoveAll(s.dir)
+	if s.cleanDir != nil {
+		s.cleanDir()
+	}
 }
 
 // rpcRequest is a JSON-RPC 2.0 request or response the client sends.

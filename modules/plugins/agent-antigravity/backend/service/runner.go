@@ -76,7 +76,7 @@ func makeAnswerCommand(
 	if err != nil {
 		return nil, nil, fmt.Errorf("set up the Antigravity home: %w", err)
 	}
-	dir, err := os.MkdirTemp("", "numen-antigravity-run-*")
+	dir, cleanDir, err := agentrun.CreateTempDir("numen-antigravity-run-*")
 	if err != nil {
 		cleanHome()
 		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
@@ -98,6 +98,6 @@ func makeAnswerCommand(
 	cmd.Env = append(os.Environ(), "HOME="+tempHome)
 	return cmd, func() {
 		cleanHome()
-		_ = os.RemoveAll(dir)
+		cleanDir()
 	}, nil
 }
