@@ -119,17 +119,17 @@ describe('the policy the page carries', () => {
 
 describe('what the page asks for', () => {
   it('reaches the core where the policy allows', async () => {
-    const asked: string[] = []
+    const request: string[] = []
     vi.stubGlobal('fetch', async (input: unknown) => {
-      asked.push(input instanceof Request ? input.url : String(input))
+      request.push(input instanceof Request ? input.url : String(input))
       throw new Error('this test serves nothing')
     })
 
     const core = await startCore()
     await expect(core.notes.getNeighbourhood({ path: 'Physics.md' })).rejects.toThrow()
 
-    expect(asked).not.toStrictEqual([])
-    for (const address of asked) expect(isAllowed('connect-src', address)).toBe(true)
+    expect(request).not.toStrictEqual([])
+    for (const address of request) expect(isAllowed('connect-src', address)).toBe(true)
   })
 
   it('asks for nothing from a stylesheet', () => {
@@ -169,11 +169,11 @@ describe('a picture written into a note', () => {
 
     // The editor draws a picture where one was written, at the address written,
     // and a note came from wherever it was synced from.
-    const drawn = [...document.querySelectorAll('.cm-picture img')].map(
+    const viewElement = [...document.querySelectorAll('.cm-picture img')].map(
       (each) => (each as HTMLImageElement).src,
     )
-    expect(drawn).toStrictEqual(['https://evil.example/pixel.png'])
-    for (const address of drawn) expect(isAllowed('img-src', address)).toBe(false)
+    expect(viewElement).toStrictEqual(['https://evil.example/pixel.png'])
+    for (const address of viewElement) expect(isAllowed('img-src', address)).toBe(false)
 
     sheet.unmount()
   })

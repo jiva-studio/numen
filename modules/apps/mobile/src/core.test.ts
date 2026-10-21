@@ -24,9 +24,9 @@ afterEach(() => {
 
 describe('reaching the core', () => {
   it('starts the core through the NumenCore plugin and asks each service on the loopback at its port', async () => {
-    const asked: string[] = []
+    const request: string[] = []
     vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
-      asked.push(input instanceof Request ? input.url : String(input))
+      request.push(input instanceof Request ? input.url : String(input))
       throw new Error('nothing answers')
     })
 
@@ -36,7 +36,7 @@ describe('reaching the core', () => {
 
     await expect(core.vault.getVaultState({})).rejects.toThrow()
     await expect(core.notes.getOpeningNote({})).rejects.toThrow()
-    expect(asked).toEqual([
+    expect(request).toEqual([
       `http://127.0.0.1:${PORT}/numen.v1.VaultService/GetVaultState`,
       `http://127.0.0.1:${PORT}/numen.v1.NoteService/GetOpeningNote`,
     ])

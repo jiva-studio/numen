@@ -9,20 +9,20 @@ import type { Core } from '../core'
 
 /** What the core was asked to follow with, and how the stream answered. */
 const core = (changes: () => AsyncGenerator<unknown>) => {
-  const asked: { signal?: AbortSignal } = {}
+  const request: { signal?: AbortSignal } = {}
   const reached = {
     vault: {
       watchVaultChanges: (_request: unknown, options: { signal: AbortSignal }) => {
-        asked.signal = options.signal
+        request.signal = options.signal
         return changes()
       },
     },
   } as unknown as Core
-  return { reached, asked }
+  return { reached, asked: request }
 }
 
 /** Everything already queued, run. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('following a vault', () => {
   it('draws again on every change', async () => {

@@ -22,8 +22,8 @@ async function toastAfter(why: unknown) {
 
 describe('a core that cannot be reached', () => {
   it('says what the call returned, where the code carries a sentence', async () => {
-    const thrown = new ConnectError('numen is still starting', Code.Unavailable)
-    const { page, open, said } = await toastAfter(thrown)
+    const caughtError = new ConnectError('numen is still starting', Code.Unavailable)
+    const { page, open, said } = await toastAfter(caughtError)
 
     expect(open).toBe(true)
     expect(said).toBe('numen is still starting')
@@ -32,11 +32,11 @@ describe('a core that cannot be reached', () => {
   })
 
   it('says what went wrong in words, whatever was thrown', async () => {
-    const thrown = new Error('ECONNREFUSED 127.0.0.1:45123')
-    const { page, open, said } = await toastAfter(thrown)
+    const caughtError = new Error('ECONNREFUSED 127.0.0.1:45123')
+    const { page, open, said } = await toastAfter(caughtError)
 
     expect(open).toBe(true)
-    expect(said).toBe(formatErrorMessage(thrown))
+    expect(said).toBe(formatErrorMessage(caughtError))
     expect(said).not.toContain('ECONNREFUSED')
 
     page.unmount()
