@@ -40,8 +40,9 @@ describe('StatusBar', () => {
 
   it('toggles task popover when status bar button is clicked', async () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Indexing Book', group: 'Books', progress: 50, state: 'running' },
-      { id: '2', label: 'Audio Transcribe', group: 'Audio', progress: 70, state: 'running' },
+      { id: '1', label: 'Indexing Book 1', group: 'Books', progress: 50, state: 'running' },
+      { id: '2', label: 'Indexing Book 2', group: 'Books', progress: 60, state: 'running' },
+      { id: '3', label: 'Audio Transcribe', group: 'Audio', progress: 70, state: 'running' },
     ]
 
     const wrapper = mount(StatusBar, {
@@ -56,8 +57,8 @@ describe('StatusBar', () => {
     await wrapper.find('.status-bar__trigger').trigger('click')
     expect(wrapper.find('.status-bar__popover-container').exists()).toBe(true)
     expect(wrapper.text()).toContain('Books')
-    expect(wrapper.text()).toContain('Audio')
-    expect(wrapper.text()).toContain('Indexing Book')
+    expect(wrapper.text()).toContain('Audio Transcribe')
+    expect(wrapper.text()).toContain('Indexing Book 1')
 
     await wrapper.find('.status-bar__trigger').trigger('click')
     expect(wrapper.find('.status-bar__popover-container').exists()).toBe(false)
