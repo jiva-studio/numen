@@ -30,7 +30,7 @@ type eventRecorder struct {
 	numenv1connect.UnimplementedPluginEventServiceHandler
 	mu      sync.Mutex
 	events  []string
-	refusal string
+	reason  string
 	failure error
 }
 
@@ -44,10 +44,10 @@ func (r *eventRecorder) DeliverEvent(
 	if r.failure != nil {
 		return nil, r.failure
 	}
-	if r.refusal != "" {
+	if r.reason != "" {
 		return connect.NewResponse(&v1.DeliverEventResponse{
 			Error:  v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED,
-			Reason: r.refusal,
+			Reason: r.reason,
 		}), nil
 	}
 	return connect.NewResponse(&v1.DeliverEventResponse{}), nil
@@ -168,7 +168,7 @@ func TestAPluginThatTakesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 }
 
 func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testing.T) {
-	refusing := &eventRecorder{refusal: "the index is closed"}
+	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
 		map[string][]string{"a.refusing": {"onOpen"}, "b.working": {"onOpen"}},
@@ -178,7 +178,7 @@ func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testin
 	_, err := host.TriggerEvent(t.Context(), "onOpen")
 
 	if !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "deliver onOpen to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
-		t.Fatalf("TriggerEvent() = %v, want the refusal naming the event and the plugin", err)
+		t.Fatalf("TriggerEvent() = %v, want the rejection naming the event and the plugin", err)
 	}
 	if got := working.getEvents(); !slices.Equal(got, []string{"onOpen"}) {
 		t.Fatalf("the working plugin received %v, want [onOpen]", got)
@@ -195,7 +195,7 @@ func TestAPluginWhoseEventCallFailsIsReportedApartFromARefusal(t *testing.T) {
 	_, err := host.TriggerEvent(t.Context(), "onOpen")
 
 	if err == nil || errors.Is(err, errEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
-		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as a refusal", err, connect.CodeInternal)
+		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as an error", err, connect.CodeInternal)
 	}
 }
 
@@ -208,6 +208,6 @@ func TestReadEventRefusalHandlesEveryCode(t *testing.T) {
 		return errors.Is(err, errEventRefused) && strings.Contains(err.Error(), "the index is closed") && !strings.Contains(err.Error(), "unknown code")
 	})
 	if err := convertEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
-		t.Fatalf("convertEventRefusal(99) = %v, want a refusal naming the unknown code", err)
+		t.Fatalf("convertEventRefusal(99) = %v, want an error naming the unknown code", err)
 	}
 }

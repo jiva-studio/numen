@@ -524,7 +524,7 @@ describe('the transcript of a recording deleted', () => {
     expect(one.notices).toStrictEqual([])
   })
 
-  it('says what the application refused, in the words it sent', async () => {
+  it('says what the application rejected, in the words it sent', async () => {
     const why = 'this recording is being listened to'
     const one = window({ deleteError: why })
 
@@ -553,7 +553,7 @@ describe('a note renamed', () => {
     expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Ontology.md Entropy'])
   })
 
-  it('is refused while the note is waiting on the person', async () => {
+  it('is rejected while the note is waiting on the person', async () => {
     const one = window({ isAsking: true })
 
     await carry(createInvocation('title', front(), 'Entropy'), one.on)
@@ -714,7 +714,7 @@ describe('a note removed', () => {
     expect(one.done.at(-1)).toBe('remove physics/Ontology.md false')
   })
 
-  it('is refused while the note is waiting on the person', async () => {
+  it('is rejected while the note is waiting on the person', async () => {
     const one = window({ isAsking: true })
 
     await carry(createInvocation('remove', front()), one.on)
@@ -757,7 +757,7 @@ describe('several files removed at once', () => {
     expect(one.notices).toStrictEqual([`${words.dangling} Order.md`])
   })
 
-  it('takes the rest out where the vault refuses one, and says what it refused', async () => {
+  it('takes the rest out where the vault refuses one, and says what failed', async () => {
     const one = window()
     const picky: CommandDeps = {
       ...one.on,
@@ -1307,7 +1307,7 @@ describe('what the voice says in which tone', () => {
     expect(one.tones).toStrictEqual(['caution'])
   })
 
-  it('cautions that a rename waits on the person, and errors on a refusal', async () => {
+  it('cautions that a rename waits on the person, and errors on failure', async () => {
     const waiting = window({ isAsking: true })
     const failedWindow = window({ renamed: asFailure('unnameable' as const) })
     const changedWindow = window({ renamed: asFailure('changed' as const) })
@@ -1329,19 +1329,19 @@ describe('what the voice says in which tone', () => {
     expect(one.calls).toStrictEqual([['', undefined]])
   })
 
-  it('cautions that a move waits on the person, and errors on a refusal', async () => {
+  it('cautions that a move waits on the person, and errors on failure', async () => {
     const waiting = window({ isAsking: true })
     const taken = window({ movement: { ok: false, error: 'occupied' } })
-    const refused = window({ movement: { ok: false, error: 'missing' } })
+    const failingWindow = window({ movement: { ok: false, error: 'missing' } })
 
     await carry(createInvocation('move', front(), 'notes/Ontology.md'), waiting.on)
     await carry(createInvocation('move', front(), 'notes/Ontology.md'), taken.on)
-    await carry(createInvocation('move', front(), 'notes/Ontology.md'), refused.on)
+    await carry(createInvocation('move', front(), 'notes/Ontology.md'), failingWindow.on)
 
     expect(waiting.tones).toStrictEqual(['caution'])
     expect(taken.tones).toStrictEqual(['error'])
-    expect(refused.notices).toStrictEqual([words.errors.missing])
-    expect(refused.tones).toStrictEqual(['error'])
+    expect(failingWindow.notices).toStrictEqual([words.errors.missing])
+    expect(failingWindow.tones).toStrictEqual(['error'])
   })
 
   it('says nothing of a move that came off', async () => {
@@ -1352,16 +1352,16 @@ describe('what the voice says in which tone', () => {
     expect(one.calls).toStrictEqual([['', undefined]])
   })
 
-  it('errors on a folder that is taken, and says what else refused it', async () => {
+  it('errors on a folder that is taken, and says what else rejected it', async () => {
     const taken = window({ folderError: 'occupied' })
-    const refused = window({ folderError: 'unnameable' })
+    const failingWindow = window({ folderError: 'unnameable' })
 
     await carry(createInvocation('createFolder', front(), 'physics/heat'), taken.on)
-    await carry(createInvocation('createFolder', front(), 'physics/heat'), refused.on)
+    await carry(createInvocation('createFolder', front(), 'physics/heat'), failingWindow.on)
 
     expect(taken.tones).toStrictEqual(['error'])
-    expect(refused.notices).toStrictEqual([words.errors.unnameable])
-    expect(refused.tones).toStrictEqual(['error'])
+    expect(failingWindow.notices).toStrictEqual([words.errors.unnameable])
+    expect(failingWindow.tones).toStrictEqual(['error'])
   })
 
   it('says nothing of a folder that was made', async () => {
@@ -1372,14 +1372,14 @@ describe('what the voice says in which tone', () => {
     expect(one.calls).toStrictEqual([['', undefined]])
   })
 
-  it('errors on a removal the vault refused, and cautions on one that waits', async () => {
-    const refused = window({ removed: asFailure('missing' as const) })
+  it('errors on a removal the vault rejected, and cautions on one that waits', async () => {
+    const failingWindow = window({ removed: asFailure('missing' as const) })
     const waiting = window({ isAsking: true })
 
-    await carry(createInvocation('remove', front()), refused.on)
+    await carry(createInvocation('remove', front()), failingWindow.on)
     await carry(createInvocation('remove', front()), waiting.on)
 
-    expect(refused.tones).toStrictEqual(['error'])
+    expect(failingWindow.tones).toStrictEqual(['error'])
     expect(waiting.notices).toStrictEqual([words.unanswered])
     expect(waiting.tones).toStrictEqual(['caution'])
   })

@@ -106,7 +106,7 @@ func readRefusal(code numenv1.CompletionErrorCode, detail string) error {
 	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:
 		return addDetail(ErrNoConsent, detail)
 	}
-	return fmt.Errorf("ai: unknown refusal code %d", code)
+	return fmt.Errorf("ai: unknown error code %d", code)
 }
 
 // Complete asks the host named by the environment to answer the question.
@@ -118,10 +118,10 @@ func Complete(ctx context.Context, question *numenv1.CompletionQuestion) (string
 	return c.Complete(ctx, question)
 }
 
-// addDetail is the refusal followed by the detail the host gave, or the refusal alone where it gave none.
-func addDetail(refusal error, detail string) error {
+// addDetail is the rejection followed by the detail the host gave, or the rejection alone where it gave none.
+func addDetail(targetErr error, detail string) error {
 	if detail == "" {
-		return refusal
+		return targetErr
 	}
-	return fmt.Errorf("%w: %s", refusal, detail)
+	return fmt.Errorf("%w: %s", targetErr, detail)
 }

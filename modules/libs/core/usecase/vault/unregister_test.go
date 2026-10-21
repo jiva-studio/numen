@@ -130,7 +130,7 @@ func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
 	index := &indexRows{fails: errors.New("the index is locked")}
 
 	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), gone); err == nil {
-		t.Fatal("an index that refused was reported as success")
+		t.Fatal("an index that failed was reported as success")
 	}
 	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || !found {
 		t.Errorf("the vault left the list with its rows still in the index: %v %v", found, err)
@@ -143,7 +143,7 @@ func TestForgetKeepsTheCauseWhenTheIndexRefuses(t *testing.T) {
 	index := &indexRows{fails: errRefused}
 
 	if err := vaults.NewUnregister(registry, index).Execute(t.Context(), gone); !errors.Is(err, errRefused) {
-		t.Fatalf("want the index's refusal inside the error, got %v", err)
+		t.Fatalf("want the index's error inside the error, got %v", err)
 	}
 }
 
@@ -154,7 +154,7 @@ func TestForgetStopsWhenTheListCannotBeRead(t *testing.T) {
 
 	err := vaults.NewUnregister(refusingRegistry{VaultRegistry: registry, list: errRefused}, index).Execute(t.Context(), gone)
 	if !errors.Is(err, errRefused) {
-		t.Fatalf("want the refusal back, got %v", err)
+		t.Fatalf("want the rejection back, got %v", err)
 	}
 	if len(index.unregistered) != 0 {
 		t.Errorf("the index was told to forget %v", index.unregistered)
@@ -166,7 +166,7 @@ func TestEitherVaultOfTwoMayBeForgotten(t *testing.T) {
 	first, second, registry := twoVaults(t)
 
 	if err := vaults.NewUnregister(registry, &indexRows{}).Execute(t.Context(), first); err != nil {
-		t.Fatalf("the vault listed first was refused: %v", err)
+		t.Fatalf("the vault listed first failed: %v", err)
 	}
 	known, err := registry.List()
 	if err != nil {
@@ -186,7 +186,7 @@ func TestAVaultNotOnTheListIsNotTheLastVault(t *testing.T) {
 	}
 
 	if err := vaults.NewUnregister(registry, &indexRows{}).Execute(t.Context(), first); err != nil {
-		t.Fatalf("a vault that is not on the list was refused: %v", err)
+		t.Fatalf("a vault that is not on the list failed: %v", err)
 	}
 	known, err := registry.List()
 	if err != nil {

@@ -43,7 +43,7 @@ describe('a key of a secret', () => {
     expect(refresh).not.toHaveBeenCalled()
   })
 
-  it('refused is notified, and the settings are read again', async () => {
+  it('failure is notified, and the settings are read again', async () => {
     const { notified, refresh, store } = createStore('no keychain on this machine')
     await store.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
     expect(notified).toHaveBeenLastCalledWith(

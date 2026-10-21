@@ -22,8 +22,8 @@ import (
 // A person who opened numen from a dock has no terminal, and a message written
 // to one is a window that never appeared. Whatever this build could not do, it
 // says here, with what it knows about the state it found.
-func refuse(cfg container.Config, why error) {
-	page, err := refusal{}.page(cfg, why)
+func failWithDialog(cfg container.Config, why error) {
+	page, err := fatalReport{}.page(cfg, why)
 	if err != nil {
 		return
 	}
@@ -36,7 +36,7 @@ func refuse(cfg container.Config, why error) {
 				_, _ = w.Write(page)
 			}),
 		},
-		// The application ends when its last window closes, and a refusal ends it
+		// The application ends when its last window closes, and an error ends it
 		// with the status the failure it draws has.
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -54,7 +54,7 @@ func refuse(cfg container.Config, why error) {
 
 // refusal is what the page says: what could not be opened, the sentence, the
 // facts behind it, and what to do about it.
-type refusal struct {
+type fatalReport struct {
 	Heading  string
 	Sentence string
 	Facts    []detail
@@ -63,7 +63,7 @@ type refusal struct {
 
 type detail struct{ Name, Content string }
 
-// The headings a refusal is drawn under. Each names the thing that could not be
+// The headings an error is drawn under. Each names the thing that could not be
 // opened, which is the index or the person's own settings file.
 const (
 	openingTheIndex    = "numen cannot open its index"
@@ -71,11 +71,11 @@ const (
 	startingAtAll      = "numen cannot start"
 )
 
-// page is the refusal as one document. Everything it needs is inside it: a
+// page is the rejection as one document. Everything it needs is inside it: a
 // build that could not open its own index cannot serve its own interface
 // either.
-func (refusal) page(cfg container.Config, why error) ([]byte, error) {
-	said := getRefusal(cfg, why)
+func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
+	said := getFatalReport(cfg, why)
 
 	if built, ok := debug.ReadBuildInfo(); ok {
 		if version := built.Main.Version; version != "" && version != "(devel)" {
@@ -89,7 +89,7 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 	}
 
 	var out strings.Builder
-	if err := refusalPage.Execute(&out, said); err != nil {
+	if err := fatalPage.Execute(&out, said); err != nil {
 		return nil, err
 	}
 	return []byte(out.String()), nil
@@ -97,23 +97,23 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 
 // getRefusal is the state the application is in, said in its own words: what it
 // could not open, what it found, and what a person can do about it.
-func getRefusal(cfg container.Config, why error) refusal {
+func getFatalReport(cfg container.Config, why error) fatalReport {
 	var outside *settings.OutsideBounds
 	if errors.As(why, &outside) {
-		return getSizeRefusal(cfg, outside)
+		return getSizeFatalReport(cfg, outside)
 	}
 
 	// sqlite says what it could not do as a result code, and the sentence it
 	// carries beside it is the library's own.
 	var coded interface{ Code() int }
 	if errors.As(why, &coded) {
-		return getIndexRefusal(cfg, coded.Code(), why)
+		return getIndexFatalReport(cfg, coded.Code(), why)
 	}
 
 	var syntax *json.SyntaxError
 	var typed *json.UnmarshalTypeError
 	if errors.As(why, &syntax) || errors.As(why, &typed) {
-		return refusal{
+		return fatalReport{
 			Heading:  readingTheSettings,
 			Sentence: "This settings file is not JSON, so numen cannot tell what it was asked for.",
 			Facts:    []detail{{"settings", getSettingsPath(cfg)}, {"what was read", why.Error()}},
@@ -122,7 +122,7 @@ func getRefusal(cfg container.Config, why error) refusal {
 		}
 	}
 
-	return refusal{
+	return fatalReport{
 		Heading:  startingAtAll,
 		Sentence: why.Error(),
 		Facts:    []detail{{"index", getIndexPath(cfg)}, {"settings", getSettingsPath(cfg)}},
@@ -132,12 +132,12 @@ func getRefusal(cfg container.Config, why error) refusal {
 
 // getSizeRefusal is a number a size does not take, from the file or from the
 // command line.
-func getSizeRefusal(cfg container.Config, outside *settings.OutsideBounds) refusal {
+func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) fatalReport {
 	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
 	written := fmt.Sprint(outside.Number)
 
 	if strings.HasPrefix(outside.At, "-") {
-		return refusal{
+		return fatalReport{
 			Heading:  startingAtAll,
 			Sentence: fmt.Sprintf("%s was given a number the size does not take.", outside.At),
 			Facts: []detail{
@@ -148,7 +148,7 @@ func getSizeRefusal(cfg container.Config, outside *settings.OutsideBounds) refus
 			Remedy: fmt.Sprintf("Give %s a number from %s, or leave it out.", outside.At, far),
 		}
 	}
-	return refusal{
+	return fatalReport{
 		Heading:  readingTheSettings,
 		Sentence: fmt.Sprintf("%s is a number the size does not take.", outside.At),
 		Facts: []detail{
@@ -171,9 +171,9 @@ const (
 
 // getIndexRefusal is the index refusing to open, which is one fault for each
 // way a path can fail to be an index.
-func getIndexRefusal(cfg container.Config, code int, why error) refusal {
+func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport {
 	at := getIndexPath(cfg)
-	said := refusal{Heading: openingTheIndex, Facts: []detail{{"index", at}}}
+	said := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", at}}}
 
 	folder := false
 	if info, err := os.Stat(at); err == nil {
@@ -225,7 +225,7 @@ func getSettingsPath(cfg container.Config) string {
 	return path
 }
 
-var refusalPage = template.Must(template.New("refusal").Parse(`<!doctype html>
+var fatalPage = template.Must(template.New("fatal").Parse(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">

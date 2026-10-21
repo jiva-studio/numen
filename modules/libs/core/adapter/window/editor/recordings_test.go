@@ -244,7 +244,7 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 				Path: talk,
 			}))
 			if err != nil {
-				t.Fatalf("asked what the recording is and was refused: %v", err)
+				t.Fatalf("asked what the recording is and failed: %v", err)
 			}
 			told := out.Msg
 			if told.GetDurationMs() != one.length {
@@ -267,7 +267,7 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 			Path: path,
 		}))
 		if connect.CodeOf(err) != want {
-			t.Errorf("%s was refused %v", path, err)
+			t.Errorf("%s failed %v", path, err)
 		}
 	}
 }
@@ -301,7 +301,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 	// "second" begins after "first\n".
 	got, err := selectSpan(&v1.Span{From: 6, To: 12})(cues)
 	if err != nil {
-		t.Fatalf("a run of the words was refused: %v", err)
+		t.Fatalf("a run of the words failed: %v", err)
 	}
 	if len(got) != 1 || got[0].From != 1000 {
 		t.Errorf("the run was placed at %v", got)
@@ -358,7 +358,7 @@ func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 		cueOf("what was said", 1500, 4200),
 		cueOf("what Rupa said next", 4200, 9100),
 	); err != nil {
-		t.Fatalf("put the transcript right and was refused: %v", err)
+		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 
 	put, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]
@@ -379,7 +379,7 @@ func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 	api, _ := openRecordingWindow(t, held)
 
 	if err := writeTranscript(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
-		t.Fatalf("put the transcript right and was refused: %v", err)
+		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 	if !transcript.IsWrittenByHand(held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]) {
 		t.Errorf("the transcript does not say a person wrote it:\n%s", held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)])
@@ -400,7 +400,7 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 	})
 
 	if err := writeTranscript(api, cueOf("what was said", 1500, 4200)); err != nil {
-		t.Fatalf("put the transcript right and was refused: %v", err)
+		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 	if len(asked) != 1 || asked[0] != talk {
 		t.Errorf("the sources cut again are %v", asked)
@@ -419,7 +419,7 @@ func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	})
 
 	if err := writeTranscript(api, cueOf("what was said", 1500, 4200)); err != nil {
-		t.Fatalf("put the transcript right and was refused: %v", err)
+		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 	if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; !kept {
 		t.Error("the correction was not kept")
@@ -436,7 +436,7 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 		cueOf("what was said", 1500, 4200),
 		cueOf("what Rupa said next", 4200, 9100),
 	); err != nil {
-		t.Fatalf("put the transcript right and was refused: %v", err)
+		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 	if told := readTranscript(t, api); told.GetCues()[1].GetText() != "what Rupa said next" {
 		t.Errorf("the window is told %+v", told.GetCues())
@@ -455,7 +455,7 @@ func readTranscript(t *testing.T, api *Services) *v1.ReadTranscriptResponse {
 		Path: talk,
 	}))
 	if err != nil {
-		t.Fatalf("asked what was heard and was refused: %v", err)
+		t.Fatalf("asked what was heard and failed: %v", err)
 	}
 	return out.Msg
 }
@@ -490,10 +490,10 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 				t.Fatalf("the transcript was answered with %v", err)
 			}
 			if err.Error() == "" {
-				t.Error("the transcript was refused without saying why")
+				t.Error("the transcript failed without saying why")
 			}
 			if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
-				t.Error("a transcript that was refused was written")
+				t.Error("a transcript that failed was written")
 			}
 		})
 	}
@@ -509,7 +509,7 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 		cueOf("   ", 4200, 6000),
 		cueOf("what was said last", 6000, 9100),
 	); err != nil {
-		t.Fatalf("put the transcript right and was refused: %v", err)
+		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 	if _, cues := transcript.Parse(held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]); len(cues) != 2 {
 		t.Errorf("the transcript was written down as %v", cues)
@@ -524,7 +524,7 @@ func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) 
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
-		t.Fatalf("edited a recording being listened to and was refused %v", err)
+		t.Fatalf("edited a recording being listened to and failed %v", err)
 	}
 	if _, kept := held.stored[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
 		t.Error("the transcript was written while a run held the recording")
@@ -554,7 +554,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Fatalf("put right a recording nothing heard and was refused %v", err)
+		t.Fatalf("put right a recording nothing heard and failed %v", err)
 	}
 	if len(held) != 0 {
 		t.Errorf("a transcript was written for a recording nothing heard: %v", held)
@@ -635,7 +635,7 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	})
 
 	if err := writeTranscript(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
-		t.Fatalf("put the transcript right and was refused: %v", err)
+		t.Fatalf("put the transcript right and failed: %v", err)
 	}
 	if len(cutIn) != 1 {
 		t.Fatalf("the recording was cut again in %v", cutIn)

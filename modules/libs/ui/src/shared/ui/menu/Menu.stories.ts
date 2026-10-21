@@ -275,8 +275,8 @@ export const NotClipped: Story = {
 
     // Whole at its current position: what is under its far edge is the menu itself,
     // which is exactly what being clipped would take away.
-    const elemAtPoint = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4)
-    await expect(menu.contains(elemAtPoint)).toBe(true)
+    const underElement = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4)
+    await expect(menu.contains(underElement)).toBe(true)
 
     // And inside the area it is placed in, on every side.
     await expect(box.left).toBeGreaterThanOrEqual(0)

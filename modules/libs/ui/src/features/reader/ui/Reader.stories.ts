@@ -169,11 +169,11 @@ export const OnlyWhatIsInTheRoom: Story = {
 
     const room = getRoom(canvasElement).getBoundingClientRect()
     const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
-    const crossCount = Math.ceil(room.width / box.width)
+    const isAcross = Math.ceil(room.width / box.width)
 
     const drawnNow = canvasElement.querySelectorAll('.reader__page').length
     await expect(drawnNow).toBeLessThan(MANY)
-    await expect(drawnNow).toBeGreaterThanOrEqual(crossCount)
+    await expect(drawnNow).toBeGreaterThanOrEqual(isAcross)
 
     // The strip is as long as the whole book, so the scrollbar says how much of
     // it there is even though only a few pages are drawn.

@@ -152,7 +152,7 @@ func TestReadRefusalWalksEveryCode(t *testing.T) {
 		err := readRefusal(code, "")
 		if code == numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
 			if err != nil {
-				t.Errorf("unspecified must be no refusal, got %v", err)
+				t.Errorf("unspecified must be no error, got %v", err)
 			}
 			continue
 		}
@@ -199,7 +199,7 @@ func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
 	}
 }
 
-// The detail the host gives stands after the refusal, and the refusal is still the one the code names.
+// The detail the host gives stands after the rejection, and the error is still the one the code names.
 func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	srv := startHost(t, &fakeHost{
 		code:   numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,

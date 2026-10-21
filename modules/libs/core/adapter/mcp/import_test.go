@@ -78,8 +78,8 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 
 	out := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
 
-	if out.Refused != "" {
-		t.Fatalf("the address was refused: %s", out.Refused)
+	if out.Error != "" {
+		t.Fatalf("the address failed: %s", out.Error)
 	}
 	if out.Producer != domain.Captions {
 		t.Errorf("the words were fetched by %q", out.Producer)
@@ -107,8 +107,8 @@ func TestAnAgentAsksForACopy(t *testing.T) {
 	with := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{
 		"url": "https://youtu.be/oHg5SJYRHA0", "copy": true,
 	})
-	if with.CopyRefused != "" {
-		t.Fatalf("the copy was refused: %s", with.CopyRefused)
+	if with.CopyError != "" {
+		t.Fatalf("the copy failed: %s", with.CopyError)
 	}
 	if with.CopiedBytes != int64(len(from.bytes)) {
 		t.Errorf("the copy is %d bytes", with.CopiedBytes)
@@ -150,8 +150,8 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	_ = v
 
 	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
-	if made.Refused != "" {
-		t.Fatalf("the address was refused: %s", made.Refused)
+	if made.Error != "" {
+		t.Fatalf("the address failed: %s", made.Error)
 	}
 	// The index is what says which producer stands for a path, and a scan is
 	// what writes it. This is that row.
@@ -201,10 +201,10 @@ func TestACopyThatFailsLeavesTheImportStanding(t *testing.T) {
 	session := sessionOf(t, mcp.New(core))
 
 	out := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo, "copy": true})
-	if out.Refused != "" || out.Producer == "" {
+	if out.Error != "" || out.Producer == "" {
 		t.Fatalf("the import did not stand: %+v", out)
 	}
-	if out.CopyRefused == "" || out.CopiedBytes != 0 {
+	if out.CopyError == "" || out.CopiedBytes != 0 {
 		t.Errorf("a copy of nothing came back as %+v", out)
 	}
 }

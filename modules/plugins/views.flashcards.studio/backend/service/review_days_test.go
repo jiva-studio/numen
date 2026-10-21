@@ -144,14 +144,14 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 	}
 }
 
-// A question about a vault the installation does not hold is refused.
+// A question about a vault the installation does not hold fails.
 func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
 
 	_, err := api.ListReviewDays(t.Context(),
 		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 

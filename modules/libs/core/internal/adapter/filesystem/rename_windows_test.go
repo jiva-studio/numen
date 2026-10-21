@@ -42,7 +42,7 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 
 	if err := rename(t.Context(), root, ".Entropy.md.new", "Entropy.md"); err != nil {
 		<-closed
-		t.Fatalf("the save was refused while the file was held: %v", err)
+		t.Fatalf("the save failed while the file was held: %v", err)
 	}
 	<-closed
 
@@ -79,7 +79,7 @@ func openHandle(t *testing.T, path string) windows.Handle {
 	return handle
 }
 
-// A file nothing lets go of is refused, and the save says so.
+// A file nothing lets go of fails, and the save says so.
 func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")

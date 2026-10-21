@@ -180,11 +180,11 @@ func TestARefusalOfTheBookIsCoded(t *testing.T) {
 
 		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
 		if got := connect.CodeOf(err); got != want {
-			t.Errorf("the book was refused %v for %v, want %v", got, why, want)
+			t.Errorf("the book failed %v for %v, want %v", got, why, want)
 		}
 		_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
 		if got := connect.CodeOf(err); got != want {
-			t.Errorf("the markup was refused %v for %v, want %v", got, why, want)
+			t.Errorf("the markup failed %v for %v, want %v", got, why, want)
 		}
 	}
 }
@@ -409,7 +409,7 @@ func TestABookThePluginFindsChangedIsNotFound(t *testing.T) {
 	}
 }
 
-// A path that leaves the vault is refused, and so is one the vault holds
+// A path that leaves the vault fails, and so is one the vault holds
 // nothing at.
 func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 	client := newBookClient()

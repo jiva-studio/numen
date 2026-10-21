@@ -84,7 +84,7 @@ func Run(opts ...*Options) error {
 
 	if err := run(cfg, agentFlags, opt.Vault, scaleFlags, &opt.Debug); err != nil {
 		if !opt.Debug.isServingHTTP() {
-			refuse(cfg, err)
+			failWithDialog(cfg, err)
 		}
 		return err
 	}

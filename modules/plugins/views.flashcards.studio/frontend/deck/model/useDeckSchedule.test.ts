@@ -125,7 +125,7 @@ describe('the preset a deck is scheduled by', () => {
     })
   })
 
-  it('is the defaults where the vault refused the read', async () => {
+  it('is the defaults where the vault rejected the read', async () => {
     const { schedule, state } = open()
     state.read = asFailure('missing')
 

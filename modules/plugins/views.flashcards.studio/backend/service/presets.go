@@ -33,7 +33,7 @@ func (h *presetsHandler) GetDeckPreset(
 	}
 
 	out := &v1.GetDeckPresetResponse{Bounds: presetwire.GetSettingsBounds()}
-	if reason, refused := convertOutcomeToErrorCode(found.Outcome); refused {
+	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
@@ -107,8 +107,8 @@ func (h *presetsHandler) ScheduleDeck(
 		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
 		return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
 	return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
@@ -128,7 +128,7 @@ func (h *presetsHandler) ReadPreset(
 	}
 
 	out := &v1.ReadPresetResponse{Bounds: presetwire.GetSettingsBounds()}
-	if reason, refused := convertOutcomeToErrorCode(found.Outcome); refused {
+	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
@@ -169,8 +169,8 @@ func (h *presetsHandler) WritePreset(
 		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
 		return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
 	return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil

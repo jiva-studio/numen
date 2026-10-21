@@ -647,7 +647,7 @@ describe('a value written into a card', () => {
   })
 })
 
-describe('whether two readings of a file read the same', () => {
+describe('whether two evaluations of a file read the same', () => {
   it('is so for one file read twice, whatever identities each reading minted', () => {
     expect(areDecksEqual(deck(), deck())).toBe(true)
   })

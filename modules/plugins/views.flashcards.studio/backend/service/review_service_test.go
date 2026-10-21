@@ -95,7 +95,7 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	}
 }
 
-// Taking back an answer nobody named is the caller's mistake, and is refused as
+// Taking back an answer nobody named is the caller's mistake, and fails as
 // one.
 func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	api, held := newAPI(t, deck)
@@ -106,7 +106,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 		Vault: string(v.ID), Run: session.GetRun(),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 
@@ -122,12 +122,12 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 		Vault: string(v.ID), Run: "nothing", Answer: given,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 
 // An answer names the vault it belongs to. One the installation does not hold
-// is refused before a line is written into anybody's review.
+// fails before a line is written into anybody's review.
 func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
@@ -136,7 +136,7 @@ func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 		Mark: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 
@@ -164,11 +164,11 @@ func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 		t.Fatalf("a window that cannot read the vaults listed %+v", stream.Msg())
 	}
 	if connect.CodeOf(stream.Err()) != connect.CodeInternal {
-		t.Errorf("refused with %v", connect.CodeOf(stream.Err()))
+		t.Errorf("failed with %v", connect.CodeOf(stream.Err()))
 	}
 }
 
-// A vault the installation does not hold is refused before anything is written.
+// A vault the installation does not hold fails before anything is written.
 func TestTakingBackOnAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
@@ -176,6 +176,6 @@ func TestTakingBackOnAVaultNobodyHoldsIsRefused(t *testing.T) {
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }

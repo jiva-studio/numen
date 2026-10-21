@@ -101,14 +101,14 @@ const LENGTH_SAMPLES = 24
  * so the answer runs a little under.
  */
 function measureAlong(edge: EdgeCurve): number[] {
-  const alongVal = [0]
+  const alongOffset = [0]
   let previous = edge.fromPoint
   for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
     const point = getPoint(edge, step / LENGTH_SAMPLES)
-    alongVal.push(alongVal[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
+    alongOffset.push(alongOffset[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
     previous = point
   }
-  return along
+  return alongOffset
 }
 
 /** How long the curve is, as an estimate. */
@@ -139,8 +139,8 @@ function getParameter(along: readonly number[], fraction: number): number {
  * tried at several places on the same line.
  */
 export function createPointOnCurve(edge: EdgeCurve): (fraction: number) => Position {
-  const alongDist = measureAlong(edge)
-  return (fraction) => getPoint(edge, getParameter(alongDist, fraction))
+  const alongEdge = measureAlong(edge)
+  return (fraction) => getPoint(edge, getParameter(alongEdge, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
@@ -192,12 +192,12 @@ export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
   const at = getPoint(edge, t)
 
-  const alongDist = measureAlong(edge)
-  const total = alongDist[LENGTH_SAMPLES]!
+  const alongEdge = measureAlong(edge)
+  const total = alongEdge[LENGTH_SAMPLES]!
   const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
-  const prevPoint = getPoint(edge, getParameter(alongDist, end === 'to' ? 1 - covered : covered))
+  const behindPoint = getPoint(edge, getParameter(alongEdge, end === 'to' ? 1 - covered : covered))
 
-  const spanned = { x: at.x - prevPoint.x, y: at.y - prevPoint.y }
+  const spanned = { x: at.x - behindPoint.x, y: at.y - behindPoint.y }
   const way = getTangent(edge, t)
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent

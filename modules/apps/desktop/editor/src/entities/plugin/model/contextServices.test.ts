@@ -99,7 +99,7 @@ const FILE_WRITES: Record<string, Call> = {
 
 describe('a note a plugin writes', () => {
   it.each(Object.entries(NOTE_WRITES))(
-    'is refused through %s without vault:write',
+    'fails through %s without vault:write',
     async (_, call) => {
       const { context } = createContext(['vault:read'])
 
@@ -132,7 +132,7 @@ const BUFFER_WRITES: Record<string, Call> = {
 
 describe('the open files a plugin passes the window', () => {
   it.each(Object.entries(BUFFER_WRITES))(
-    'are refused through %s without vault:write',
+    'fail through %s without vault:write',
     async (_, call) => {
       const { context } = createContext(['vault:read'])
 
@@ -180,7 +180,7 @@ describe('the registrations of a plugin in the open files', () => {
 
 describe('a file a plugin writes', () => {
   it.each(Object.entries(FILE_WRITES))(
-    'is refused through %s without vault:write',
+    'fails through %s without vault:write',
     async (_, call) => {
       const { context } = createContext(['vault:read'])
 
@@ -211,7 +211,7 @@ describe('a command a plugin runs over the vault', () => {
   const row = { paths: ['a.md'], name: 'a', source: 'note' as const }
 
   it.each(['remove', 'child', 'title', 'transcribe'])(
-    'is refused for %s without vault:write',
+    'fails for %s without vault:write',
     (id) => {
       const { context, workspace } = createContext(['vault:read'])
 
@@ -274,7 +274,7 @@ const ASKING: Record<string, [string, Call]> = {
 
 describe('the agent a plugin asks', () => {
   it.each(Object.entries(ASKING))(
-    'is refused through %s without its permission',
+    'fails through %s without its permission',
     async (_, [permission, call]) => {
       const { context } = createContext([])
 

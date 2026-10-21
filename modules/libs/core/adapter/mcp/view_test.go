@@ -115,7 +115,7 @@ func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !res.IsError {
-		t.Error("a window that refused was reported as having shown it")
+		t.Error("a window that rejected was reported as having shown it")
 	}
 }
 

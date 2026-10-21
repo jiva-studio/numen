@@ -10,7 +10,7 @@ func TestACJKParagraphWithSentencePunctuationIsClean(t *testing.T) {
 
 	defaults := Legibility{}.resolve()
 	if !isLegible(paragraph, defaults) {
-		t.Errorf("%q was refused by the thresholds", paragraph)
+		t.Errorf("%q failed by the thresholds", paragraph)
 	}
 }
 
@@ -35,7 +35,7 @@ func TestANegativeThresholdAsksForNone(t *testing.T) {
 	kept := Legibility{Alphabetic: -1, Dirty: -1}
 	for _, text := range []string{rubbish, sampleText} {
 		if !isLegible(text, kept) {
-			t.Errorf("with no threshold, %q was refused", text)
+			t.Errorf("with no threshold, %q failed", text)
 		}
 	}
 
@@ -45,6 +45,6 @@ func TestANegativeThresholdAsksForNone(t *testing.T) {
 		t.Errorf("%q passed the thresholds", rubbish)
 	}
 	if !isLegible(sampleText, defaults) {
-		t.Errorf("%q was refused by the thresholds", sampleText)
+		t.Errorf("%q failed by the thresholds", sampleText)
 	}
 }

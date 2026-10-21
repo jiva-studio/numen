@@ -103,8 +103,8 @@ func TestStartPointsEveryFolderLookupAtTheFolderItWasGiven(t *testing.T) {
 func TestStartAnswersTheErrorOfAFolderTheEnvironmentRefuses(t *testing.T) {
 	keepEnvironment(t)
 	port, err := Start("a\x00folder")
-	var refused *os.SyscallError
-	if !errors.As(err, &refused) || refused.Syscall != "setenv" || port != 0 {
+	var sysErr *os.SyscallError
+	if !errors.As(err, &sysErr) || sysErr.Syscall != "setenv" || port != 0 {
 		t.Fatalf("Start answered %d, %v, want 0 and the error of setting the environment", port, err)
 	}
 	if Port() != 0 {
@@ -608,7 +608,7 @@ func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding
 		restore()
 		if err == nil {
 			_ = Stop()
-			t.Fatalf("Start answered %d with %d files to spare, and was never refused a socket", port, extra)
+			t.Fatalf("Start answered %d with %d files to spare, and was never denied a socket", port, extra)
 		}
 		var failed *net.OpError
 		if !errors.As(err, &failed) || failed.Op != "listen" {
@@ -622,7 +622,7 @@ func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding
 		}
 		return
 	}
-	t.Fatal("no limit on open files left Start refused at the socket alone")
+	t.Fatal("no limit on open files left Start failed at the socket alone")
 }
 
 func TestStopCancelsWhatTheCoreRunsUnder(t *testing.T) {
@@ -668,10 +668,10 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	refusal := errors.New("the listener will not close")
+	closeErr := errors.New("the listener will not close")
 	accepted := make(chan struct{})
 	stubborn := &http.Server{}
-	go func() { _ = stubborn.Serve(refusingListener{inner, refusal, accepted, &sync.Once{}}) }()
+	go func() { _ = stubborn.Serve(refusingListener{inner, closeErr, accepted, &sync.Once{}}) }()
 	<-accepted
 
 	mu.Lock()
@@ -680,7 +680,7 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	mu.Unlock()
 	t.Cleanup(func() { _ = live.Close() })
 
-	if err := Stop(); !errors.Is(err, refusal) {
+	if err := Stop(); !errors.Is(err, closeErr) {
 		t.Errorf("Stop() = %v, want the error of closing the server", err)
 	}
 	if Port() != 0 {

@@ -303,8 +303,8 @@ describe('grid', () => {
     })
 
     it('remains no plus before the first section where no card remains there', () => {
-      const sectionCards = SECTIONED.filter((card) => card.section !== null)
-      expect(grid(sectionCards, SECTIONS).runs.map((run) => run.plusAt)).toEqual([null, 3, 4])
+      const underItem = SECTIONED.filter((card) => card.section !== null)
+      expect(grid(underItem, SECTIONS).runs.map((run) => run.plusAt)).toEqual([null, 3, 4])
     })
 
     it('remains one run, holding every card, where the deck has no section', () => {
@@ -336,8 +336,8 @@ describe('NO_DECK_PROBLEMS', () => {
     expect(() => at.set('llama', ['put here by one caller'])).toThrow()
     expect(NO_DECK_PROBLEMS.at.size).toBe(0)
 
-    const problemsUnder = NO_DECK_PROBLEMS.problemsUnder as Map<string, ReadonlyMap<string, readonly string[]>>
-    expect(() => problemsUnder.set('llama', new Map())).toThrow()
-    expect(NO_DECK_PROBLEMS.problemsUnder.size).toBe(0)
+    const underItem = NO_DECK_PROBLEMS.under as Map<string, ReadonlyMap<string, readonly string[]>>
+    expect(() => underItem.set('llama', new Map())).toThrow()
+    expect(NO_DECK_PROBLEMS.under.size).toBe(0)
   })
 })

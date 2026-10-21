@@ -175,7 +175,7 @@ func (a *fakeAgent) answerPrompt(id any) {
 	}
 	stopReason := "end_turn"
 	if a.behaviour == "refuse" {
-		stopReason = "refusal"
+		stopReason = "rejected"
 	}
 	a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": stopReason}})
 }

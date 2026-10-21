@@ -95,12 +95,12 @@ describe('createPluginNotes', () => {
     await write
   })
 
-  it('rejects a write the vault refused', async () => {
+  it('rejects a write the vault rejected', async () => {
     const deps = createDeps()
     deps.write.mockResolvedValueOnce({ ok: false, error: 'changed' } as WriteResult)
     const notes = createPluginNotes(deps)
 
-    await expect(notes.writeNote('a.md', 'refused')).rejects.toThrow('could not be written')
+    await expect(notes.writeNote('a.md', 'failed')).rejects.toThrow('could not be written')
   })
 
   it('answers a read with the writes made before it and none made after it', async () => {
@@ -139,12 +139,12 @@ describe('createPluginNotes', () => {
     expect(deps.write.mock.calls.map((call) => call[1])).toEqual(['A', 'B', 'C'])
   })
 
-  it('does not let a refused write reject or block the writes after it', async () => {
+  it('does not let a failed write reject or block the writes after it', async () => {
     const deps = createDeps()
     const notes = createPluginNotes(deps)
     deps.write.mockResolvedValueOnce({ ok: false, error: 'changed' } as WriteResult)
 
-    await expect(notes.writeNote('a.md', 'refused')).rejects.toThrow('could not be written')
+    await expect(notes.writeNote('a.md', 'failed')).rejects.toThrow('could not be written')
 
     const next = notes.writeNote('a.md', 'kept')
     getPending(deps.pending, 0).finish()

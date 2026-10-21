@@ -109,7 +109,7 @@ func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
 
 	runs, err := readRuns(api, book, where(t, doc, "Delta"))
 	if err != nil {
-		t.Fatalf("asked where a word is and was refused: %v", err)
+		t.Fatalf("asked where a word is and failed: %v", err)
 	}
 	if len(runs) != 1 {
 		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
@@ -145,7 +145,7 @@ func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
 
 	runs, err := readRuns(api, book, where(t, doc, "Delta"))
 	if err != nil {
-		t.Fatalf("asked where a word is and was refused: %v", err)
+		t.Fatalf("asked where a word is and failed: %v", err)
 	}
 	if len(runs) != 1 {
 		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
@@ -155,7 +155,7 @@ func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
 	}
 }
 
-// A path the vault does not hold is refused, and so is a path that leaves it
+// A path the vault does not hold fails, and so is a path that leaves it
 // and a file the vault holds as nothing. The path goes to the vault the way
 // every path from outside does, and it answers for all three.
 func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
@@ -171,13 +171,13 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 			_, err := readRuns(api, path, &v1.Span{From: 0, To: 5})
 			if code := connect.CodeOf(err); code != connect.CodeNotFound &&
 				code != connect.CodeInvalidArgument {
-				t.Errorf("%s was refused %v", path, err)
+				t.Errorf("%s failed %v", path, err)
 			}
 		})
 	}
 }
 
-// A run that is not one is refused, and nothing is read to say so.
+// A run that is not one fails, and nothing is read to say so.
 func TestARunThatIsNotOneIsRefused(t *testing.T) {
 	for _, one := range []struct {
 		what string
@@ -192,7 +192,7 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 			api, _, _ := openHighlightWindow(t)
 
 			if _, err := readRuns(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
-				t.Errorf("asking about %s was refused %v", one.what, err)
+				t.Errorf("asking about %s failed %v", one.what, err)
 			}
 		})
 	}

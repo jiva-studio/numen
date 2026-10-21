@@ -77,7 +77,7 @@ func FuzzExpression(f *testing.F) {
 			// An empty expression is not a query, and no search is made.
 			if expression != "" {
 				if err := row.Scan(&count); err != nil {
-					t.Fatalf("%q was asked as %q, which FTS5 refused: %v", typed, expression, err)
+					t.Fatalf("%q was asked as %q, which FTS5 rejected: %v", typed, expression, err)
 				}
 			}
 		}

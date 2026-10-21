@@ -46,7 +46,7 @@ func TestCheckRootRefusesWhatIsNotAFolderForNotes(t *testing.T) {
 		shortcut:                         "home directory",
 	} {
 		if err := check.Execute(root); err == nil || !strings.Contains(err.Error(), said) {
-			t.Errorf("%s was answered with %v, want a refusal naming %q", root, err, said)
+			t.Errorf("%s was answered with %v, want an error naming %q", root, err, said)
 		}
 	}
 }
@@ -57,7 +57,7 @@ func TestCheckRootLetsAFolderInsideTheHomeDirectoryThrough(t *testing.T) {
 	check := vaults.NewCheckRoot(filesystem.VaultIdentity{}, fakeHome{path: home})
 
 	if err := check.Execute(filepath.Join(home, "notes")); err != nil {
-		t.Errorf("a folder inside the home directory was refused: %v", err)
+		t.Errorf("a folder inside the home directory failed: %v", err)
 	}
 }
 
@@ -66,7 +66,7 @@ func TestCheckRootLetsAFolderThroughWhereNoHomeFolderIsKnown(t *testing.T) {
 	check := vaults.NewCheckRoot(filesystem.VaultIdentity{}, fakeHome{err: errors.New("no home")})
 
 	if err := check.Execute(filepath.Join(string(filepath.Separator), "people", "ann")); err != nil {
-		t.Errorf("a folder was refused where no home folder is known: %v", err)
+		t.Errorf("a folder failed where no home folder is known: %v", err)
 	}
 }
 

@@ -103,12 +103,12 @@ describe('where two problems of one card stand', () => {
 /** The marks of problems read against two cards and a face. */
 const createTestMarks = (...problems: DeckProblem[]) => createMarks(problems, ['c1', 'c2'], ['f1'])
 
-describe('whether two readings are wrong in the same way', () => {
-  it('is so for two readings of nothing', () => {
+describe('whether two evaluations are wrong in the same way', () => {
+  it('is so for two evaluations of nothing', () => {
     expect(areMarksEqual(createTestMarks(), createTestMarks())).toBe(true)
   })
 
-  it('is so for two readings saying the same against the same things', () => {
+  it('is so for two evaluations saying the same against the same things', () => {
     const all = () => [
       problem({ text: 'file' }),
       problem({ card: 0, text: 'card' }),

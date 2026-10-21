@@ -79,8 +79,8 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{
 		"url": aVideo, "copy": true,
 	})
-	if made.Refused != "" || made.CopyRefused != "" {
-		t.Fatalf("the address or its copy was refused: %q %q", made.Refused, made.CopyRefused)
+	if made.Error != "" || made.CopyError != "" {
+		t.Fatalf("the address or its copy was rejected: %q %q", made.Error, made.CopyError)
 	}
 	queries.known[made.Path] = port.SourceText{
 		Fingerprint: domain.Fingerprint{Path: made.Path},

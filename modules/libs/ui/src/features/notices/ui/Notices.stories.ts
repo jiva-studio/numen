@@ -444,11 +444,11 @@ export const Dark: Story = {
     const away = within(cards[2]!).getByRole('button', { name: /^Put away/ })
     await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
-    const bgStyle = getComputedStyle(cards[2]!).backgroundColor
+    const behindColor = getComputedStyle(cards[2]!).backgroundColor
     await hoverOver(away)
     await waitFor(async () => {
-      const lightnessVal = lightness(getComputedStyle(away).backgroundColor, bgStyle)
-      await expect(Math.abs(lightnessVal - lightness(bgStyle))).toBeGreaterThan(2)
+      const underLightness = lightness(getComputedStyle(away).backgroundColor, behindColor)
+      await expect(Math.abs(underLightness - lightness(behindColor))).toBeGreaterThan(2)
     })
   },
 }

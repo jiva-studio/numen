@@ -73,10 +73,10 @@ describe('Card', () => {
   })
 
   it('says which section it is placed under, and nothing where it is placed under none', () => {
-    const underVal: readonly DeckCard[] = [
+    const underCards: readonly DeckCard[] = [
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
-    const tile = createTile('llama', under, [{ id: 'roots', name: 'Roots' }])
+    const tile = createTile('llama', underCards, [{ id: 'roots', name: 'Roots' }])
     expect(mountCard(tile).get('[data-card]').attributes('data-section')).toBe('roots')
     expect(
       mountCard(createTile('llama')).get('[data-card]').attributes('data-section'),

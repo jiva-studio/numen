@@ -82,10 +82,10 @@ const dated: Curve = {
 /** The file every test here opens, which stands where the curve's marks stand. */
 const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
 
-/** What a test says a read answered: parts of the preset, or the refusal instead. */
+/** What a test says a read answered: parts of the preset, or the rejection instead. */
 type ReadOver = Partial<ReadPreset> & { readonly error?: ErrorCode }
 
-/** What a test says a write answered: the file it left, or the refusal instead. */
+/** What a test says a write answered: the file it left, or the rejection instead. */
 type WriteOver = { readonly error?: CardsFailure; readonly at?: string }
 
 /** A read built from what the test said of it. */
@@ -501,9 +501,9 @@ describe('what the tab says it encountered as an error', () => {
     expect(new Set(messages).size).toBe(errors.length)
   })
 
-  // The settings are in the tab and nowhere else once a write is refused, and
+  // The settings are in the tab and nowhere else once a write fails, and
   // a person deciding what to do next has to be told that.
-  it('says the settings are still here where a write was refused', async () => {
+  it('says the settings are still here where a write failed', async () => {
     for (const error of errors) {
       expect(words.notSaved(error)).toContain('still here')
     }
@@ -525,7 +525,7 @@ describe('a curve nobody answers', () => {
     expect(state.errorMessage.value).not.toBe('')
   })
 
-  it('is what a file refused leaves, so no answer is waited on', async () => {
+  it('is what a file rejected leaves, so no answer is waited on', async () => {
     const { state } = await openPresetTab({}, curve, () => ({ error: 'notAPreset' }))
     expect(state.isWaiting.value).toBe(false)
     expect(state.errorMessage.value).not.toBe('')
@@ -552,7 +552,7 @@ describe('what a tab still owes the file', () => {
     expect(closed).toStrictEqual(['Steady.md'])
   })
 
-  it('keeps the tab open where the write was refused, and says why', async () => {
+  it('keeps the tab open where the write failed, and says why', async () => {
     const { state, closed } = await openPresetTab(
       {},
       curve,
@@ -673,7 +673,7 @@ describe('a file read again', () => {
     expect(state.settings.value.interval).toBe(40)
   })
 
-  it('drops the problems of the file it read before, where it is refused', async () => {
+  it('drops the problems of the file it read before, where it fails', async () => {
     const { state, applyPathChanges } = await openPresetTab({}, curve, (time) =>
       time === 0
         ? {

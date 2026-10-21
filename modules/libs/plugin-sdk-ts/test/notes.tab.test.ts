@@ -997,7 +997,7 @@ describe('a tab that has requested for nothing to be written', () => {
   })
 })
 
-describe('a write that was refused', () => {
+describe('a write that failed', () => {
   it('asks for nothing further', () => {
     const next = transitionTab(tab({ shown: 'two', pendingWrite: 'two', since: 10 }), {
       kind: 'written',

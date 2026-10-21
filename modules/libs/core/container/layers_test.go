@@ -421,7 +421,7 @@ func TestNoInnerLayerImportsATransport(t *testing.T) {
 
 // What the transport rule refuses, read against imports written to be refused.
 func TestWhatTheTransportRuleRefuses(t *testing.T) {
-	var refused []string
+	var rejected []string
 	for _, to := range []string{
 		"connectrpc.com/connect",
 		"database/sql",
@@ -435,7 +435,7 @@ func TestWhatTheTransportRuleRefuses(t *testing.T) {
 		module + "port",
 	} {
 		if isTransport(to) {
-			refused = append(refused, to)
+			rejected = append(rejected, to)
 		}
 	}
 	want := []string{
@@ -447,8 +447,8 @@ func TestWhatTheTransportRuleRefuses(t *testing.T) {
 		"github.com/jiva-studio/numen/modules/libs/protocol",
 		"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1",
 	}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if !slices.Equal(rejected, want) {
+		t.Errorf("the rule rejected %v, want %v", rejected, want)
 	}
 }
 
@@ -512,18 +512,18 @@ func TestNothingOfTheCoreLogs(t *testing.T) {
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
-	var refused []string
+	var rejected []string
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template", module + "domain",
 	} {
 		if logs(to) {
-			refused = append(refused, to)
+			rejected = append(rejected, to)
 		}
 	}
 	want := []string{"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog"}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if !slices.Equal(rejected, want) {
+		t.Errorf("the rule rejected %v, want %v", rejected, want)
 	}
 }
 
@@ -719,14 +719,14 @@ type Thing struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range identities(file) {
 		if numbered[one.spelled] {
-			refused = append(refused, one.field)
+			rejected = append(rejected, one.field)
 		}
 	}
-	if !slices.Equal(refused, []string{"ChunkID"}) {
-		t.Errorf("the rule refuses %v, want the one identity spelled as a number", refused)
+	if !slices.Equal(rejected, []string{"ChunkID"}) {
+		t.Errorf("the rule rejected %v, want the one identity spelled as a number", rejected)
 	}
 }
 
@@ -1181,14 +1181,14 @@ import (
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range file.Imports {
 		if one.Name != nil && layers[one.Name.Name] {
-			refused = append(refused, one.Name.Name)
+			rejected = append(rejected, one.Name.Name)
 		}
 	}
-	if want := []string{"usecase", "adapter"}; !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if want := []string{"usecase", "adapter"}; !slices.Equal(rejected, want) {
+		t.Errorf("the rule rejected %v, want %v", rejected, want)
 	}
 }
 
@@ -1431,10 +1431,10 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 	} {
 		why := getRefusal(one.from, one.to)
 		if one.isRefused && why == "" {
-			t.Errorf("%s reaches %s and is not refused", one.from, one.to)
+			t.Errorf("%s reaches %s and is not rejected", one.from, one.to)
 		}
 		if !one.isRefused && why != "" {
-			t.Errorf("%s reaches %s and is refused: %s", one.from, one.to, why)
+			t.Errorf("%s reaches %s and is rejected: %s", one.from, one.to, why)
 		}
 	}
 }
@@ -1537,14 +1537,14 @@ type Reading struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range getInstants(file) {
 		if one.spelled != "time.Time" {
-			refused = append(refused, one.field)
+			rejected = append(rejected, one.field)
 		}
 	}
-	if !slices.Equal(refused, []string{"SeenTime"}) {
-		t.Errorf("the rule refuses %v, want the one instant written as a number", refused)
+	if !slices.Equal(rejected, []string{"SeenTime"}) {
+		t.Errorf("the rule rejected %v, want the one instant written as a number", rejected)
 	}
 }
 
@@ -1647,14 +1647,14 @@ type Store interface {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range getMethodIdentities(file) {
 		if numbered[one.spelled] {
-			refused = append(refused, one.field)
+			rejected = append(rejected, one.field)
 		}
 	}
-	if !slices.Equal(refused, []string{"chunkID", "rowID"}) {
-		t.Errorf("the rule refuses %v, want the two identities spelled as numbers", refused)
+	if !slices.Equal(rejected, []string{"chunkID", "rowID"}) {
+		t.Errorf("the rule rejected %v, want the two identities spelled as numbers", rejected)
 	}
 }
 

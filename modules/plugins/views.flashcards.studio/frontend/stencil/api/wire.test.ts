@@ -67,7 +67,7 @@ describe('reading a stencil', () => {
     expect(wire.getTitle('Word.md')).toBe('Word')
   })
 
-  it('carries no body at all where the read was refused', async () => {
+  it('carries no body at all where the read failed', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('notAStencil'))
     const { wire } = createWire(cards)
@@ -85,7 +85,7 @@ describe('reading a stencil', () => {
     expect(await wire.read('Notes.md')).toEqual(asFailure('notAStencil'))
   })
 
-  it('leaves a refused read with no file to name in a later rename', async () => {
+  it('leaves a failed read with no file to name in a later rename', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('missing'))
     cards.renameField.mockResolvedValue(asValue({ decks: [], cards: 0, notWritten: [], at: '' }))
@@ -148,7 +148,7 @@ describe('writing a stencil', () => {
     )
   })
 
-  it('keeps the file it last knew where the write was refused', async () => {
+  it('keeps the file it last knew where the write failed', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
     cards.writeStencil.mockResolvedValue(asFailure('unreadable'))
@@ -174,7 +174,7 @@ describe('what is shown for a fault', () => {
     expect(wire.getErrorMessage('Word.md', 'unreadable')).toBe(words.unreachable)
   })
 
-  it('says the note is no stencil where the read was refused for that', async () => {
+  it('says the note is no stencil where the read failed for that', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('notAStencil'))
     const { wire } = createWire(cards)
@@ -184,7 +184,7 @@ describe('what is shown for a fault', () => {
     expect(wire.getErrorMessage('Notes.md', 'notAStencil')).toBe(words.notAStencil)
   })
 
-  it('says the file could not be read where the read was refused for anything else', async () => {
+  it('says the file could not be read where the read failed for anything else', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('missing'))
     const { wire } = createWire(cards)
@@ -194,7 +194,7 @@ describe('what is shown for a fault', () => {
     expect(wire.getErrorMessage('Notes.md', 'missing')).toBe(words.notRead)
   })
 
-  it('says the note is no stencil where the write was refused for that', async () => {
+  it('says the note is no stencil where the write failed for that', async () => {
     const cards = vault()
     cards.writeStencil.mockResolvedValue(asFailure('notAStencil'))
     const { wire } = createWire(cards)
@@ -206,7 +206,7 @@ describe('what is shown for a fault', () => {
 })
 
 describe('renaming a field', () => {
-  /** What the vault answered a rename with, or the refusal instead. */
+  /** What the vault answered a rename with, or the rejection instead. */
   const getRenameAnswer = (over: Partial<RenamedField> = {}): FieldRenameResult =>
     asValue({ decks: [], cards: 0, notWritten: [], at: '', ...over })
 
@@ -263,7 +263,7 @@ describe('renaming a field', () => {
     expect(messages).toEqual([])
   })
 
-  it('carries the refusal in the words the window shows', async () => {
+  it('carries the rejection in the words the window shows', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(asFailure('unreadable'))
     const { wire, messages } = createWire(cards)

@@ -172,7 +172,7 @@ func TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds(t *testing.T) {
 		t.Errorf("the next run came back as %+v", on.Cards)
 	}
 
-	if said := getRefusal(t, session, "card_read", map[string]any{
+	if said := getToolError(t, session, "card_read", map[string]any{
 		"path": "Animals.md", "limit": 500,
 	}); !strings.Contains(said, "at most") {
 		t.Errorf("a call over the ceiling was answered %q", said)
@@ -248,7 +248,7 @@ func TestADeckAnswersWithTheFieldsItWasAskedFor(t *testing.T) {
 func TestReadingACardOfAMarkTheDeckHasNotGotIsRefused(t *testing.T) {
 	session, _ := newSession(t, vault())
 
-	if said := getRefusal(t, session, "card_read", map[string]any{
+	if said := getToolError(t, session, "card_read", map[string]any{
 		"path": "Animals.md", "mark": "zzzzzzzzzz",
 	}); !strings.Contains(said, "no card") {
 		t.Errorf("reading a card the deck has not got was answered %q", said)
@@ -329,14 +329,14 @@ func TestACardOfAMarkTwoCardsCarryIsNotWrittenTo(t *testing.T) {
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 46\"\n"
 	session, v := newSession(t, map[string]string{"Animal.md": animalStencil, "Animals.md": copied})
 
-	if said := getRefusal(t, session, "card_edit", map[string]any{
+	if said := getToolError(t, session, "card_edit", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"values":      []map[string]string{{"field": "Height", "text": "about 47\""}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "two cards") {
 		t.Errorf("editing one of two cards of a mark was answered %q", said)
 	}
-	if said := getRefusal(t, session, "card_remove", map[string]any{
+	if said := getToolError(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "two cards") {
@@ -375,7 +375,7 @@ func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
 	if read.Total != 3 || read.Cards[1].Section != 0 {
 		t.Errorf("the deck now holds %+v", read.Cards)
 	}
-	if said := getRefusal(t, session, "card_add", map[string]any{
+	if said := getToolError(t, session, "card_add", map[string]any{
 		"path": "Animals.md", "stencil": "Animal", "section": 7,
 		"values":      []map[string]string{{"field": "Name", "text": "Guanaco"}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
@@ -458,7 +458,7 @@ func TestAFieldIsTakenOffACardAndTheOthersStay(t *testing.T) {
 	if got := readVaultFile(t, v, "Animal.md"); got != animalStencil {
 		t.Errorf("the stencil was rewritten as %q", got)
 	}
-	if said := getRefusal(t, session, "card_value_remove", map[string]any{
+	if said := getToolError(t, session, "card_value_remove", map[string]any{
 		"path": "Animals.md", "mark": llama, "field": "Height",
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "no value") {
@@ -483,7 +483,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 		"## Alpaca ^3n8vr4tqch\n\nsomebody's prose\n\n### Name\n\nAlpaca\n\n### Height\n\nabout 36\"\n") {
 		t.Errorf("the card beside it came back as %q", written)
 	}
-	if said := getRefusal(t, session, "card_remove", map[string]any{
+	if said := getToolError(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "no card") {
@@ -502,7 +502,7 @@ func TestAWriteIsRefusedOverAnEditNobodySaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	said := getRefusal(t, session, "card_add", map[string]any{
+	said := getToolError(t, session, "card_add", map[string]any{
 		"path": "Animals.md", "stencil": "Animal",
 		"values":      []map[string]string{{"field": "Name", "text": "Vicuña"}},
 		"fingerprint": read.Fingerprint,
@@ -607,7 +607,7 @@ func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
 }
 
 // A rename reads and writes every deck the vault holds, so what bounds it is
-// how many there are. A vault past the bound is refused before the stencil is
+// how many there are. A vault past the bound fails before the stencil is
 // touched.
 func TestRenamingAFieldIsRefusedWhereTheVaultHoldsTooManyDecks(t *testing.T) {
 	notes := vault()
@@ -616,12 +616,12 @@ func TestRenamingAFieldIsRefusedWhereTheVaultHoldsTooManyDecks(t *testing.T) {
 	}
 	session, v := newSession(t, notes)
 
-	got := getRefusal(t, session, "card_field_rename", map[string]any{
+	got := getToolError(t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
 	for _, said := range []string{"201", "200"} {
 		if !strings.Contains(got, said) {
-			t.Errorf("the refusal says %q, and nothing of %s", got, said)
+			t.Errorf("the rejection says %q, and nothing of %s", got, said)
 		}
 	}
 
@@ -906,7 +906,7 @@ func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
 	if read.Total != 2 {
 		t.Errorf("removing a section removed cards: the deck holds %d", read.Total)
 	}
-	if said := getRefusal(t, session, "card_section_remove", map[string]any{
+	if said := getToolError(t, session, "card_section_remove", map[string]any{
 		"path": "Animals.md", "section": 0,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "no section") {
@@ -979,22 +979,22 @@ func TestAStencilIsReadAndEditedInPlace(t *testing.T) {
 		t.Fatalf("file content on disk: %s", fileContent)
 	}
 
-	said := getRefusal(t, session, "card_stencil_edit", map[string]any{
+	said := getToolError(t, session, "card_stencil_edit", map[string]any{
 		"path":        "Animal.md",
 		"fields":      []string{"Name"},
 		"faces":       []map[string]string{{"name": "Recognise", "front": "{{Name}}", "back": ""}},
 		"fingerprint": s.Fingerprint,
 	})
 	if said == "" {
-		t.Error("stale fingerprint edit was not refused")
+		t.Error("stale fingerprint edit was not rejected")
 	}
 }
 
-// Reading a non-stencil note as a stencil is refused.
+// Reading a non-stencil note as a stencil fails.
 func TestAStencilReadRefusesNonStencil(t *testing.T) {
 	session, _ := newSession(t, vault())
 
-	said := getRefusal(t, session, "card_stencil_read", map[string]any{
+	said := getToolError(t, session, "card_stencil_read", map[string]any{
 		"path": "Entropy.md",
 	})
 	if !strings.Contains(said, "not a stencil") {

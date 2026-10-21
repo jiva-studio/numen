@@ -366,7 +366,7 @@ const meta: Meta<Knobs> = {
               underCount += 1
               return underCount === nth ? { field, text } : each
             })
-            if (under < nth) filled.push({ field, text })
+            if (underCount < nth) filled.push({ field, text })
             return { ...card, filled }
           })
         },
@@ -429,8 +429,8 @@ const moveCard = (
 
   const before = at === null ? -1 : left.findIndex((card) => card.id === at)
   if (before !== -1) {
-    const underVal = { ...held, section: left[before]?.section ?? null }
-    return [...left.slice(0, before), underVal, ...left.slice(before)]
+    const underItem = { ...held, section: left[before]?.section ?? null }
+    return [...left.slice(0, before), underItem, ...left.slice(before)]
   }
 
   const rank = (section: string | null): number =>

@@ -207,7 +207,7 @@ func TestRemoveValueOfTheLastFieldLeavesNoBlankLine(t *testing.T) {
 	}
 }
 
-// A field the card writes nothing under is refused, and nothing is written.
+// A field the card writes nothing under fails, and nothing is written.
 // The stencil may well declare it: what is not there is what the person wrote.
 func TestRemoveValueOfAFieldTheCardDoesNotWrite(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
@@ -500,7 +500,7 @@ func TestRenamingAFieldNobodyDeclares(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.RenameField("Girth", "Waist"); !errors.Is(err, format.ErrNoSuchField) {
-		t.Fatalf("rename = %v, want it refused", err)
+		t.Fatalf("rename = %v, want it rejected", err)
 	}
 	if got := string(f.Bytes()); got != stencil {
 		t.Errorf("the file was written: %q", got)
@@ -517,7 +517,7 @@ func TestRenamingAFieldOntoAFieldTheStencilDeclares(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.RenameField("Height", "Life span"); !errors.Is(err, format.ErrFieldTaken) {
-		t.Fatalf("rename = %v, want it refused", err)
+		t.Fatalf("rename = %v, want it rejected", err)
 	}
 	if got := string(f.Bytes()); got != stencil {
 		t.Errorf("the file was written: %q", got)
@@ -715,7 +715,7 @@ func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
 	}
 }
 
-// A card standing under a section the deck does not hold is refused. Writing it
+// A card standing under a section the deck does not hold fails. Writing it
 // under whichever section stands last moves somebody's card without saying so.
 func TestDeckBodyRefusesACardUnderASectionTheDeckDoesNotHold(t *testing.T) {
 	_, err := format.DeckBody(format.Deck{
@@ -857,7 +857,7 @@ func TestRemovingTheLastCardLeavesNoBlankLine(t *testing.T) {
 	}
 }
 
-// A card asked into a section the deck does not hold is refused, the way a card
+// A card asked into a section the deck does not hold fails, the way a card
 // written under one is.
 func TestAddCardUnderASectionTheDeckDoesNotHold(t *testing.T) {
 	file := format.OpenDeckBody(rough)
@@ -867,7 +867,7 @@ func TestAddCardUnderASectionTheDeckDoesNotHold(t *testing.T) {
 }
 
 // A deck whose frontmatter is never closed holds no prose to write to: every
-// change is refused with the markdown package's ErrUnterminated, and nothing is
+// change fails with the markdown package's ErrUnterminated, and nothing is
 // written.
 func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 	raw := "---\ntype: deck\n\n# Fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
@@ -915,7 +915,7 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 				t.Errorf("err = %v, want ErrUnterminated", err)
 			}
 			if string(f.Bytes()) != raw {
-				t.Error("a refused change was written anyway")
+				t.Error("a rejected change was written anyway")
 			}
 		})
 	}
@@ -938,7 +938,7 @@ func TestDeckFileWholeWritesTheMarksItGives(t *testing.T) {
 	}
 }
 
-// A card that cannot be found is refused before anything is written, whichever
+// A card that cannot be found fails before anything is written, whichever
 // change was asked for.
 func TestSetStencilAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
 	body := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n"
@@ -1096,7 +1096,7 @@ func TestAddCardUnderASectionWritesAtItsEnd(t *testing.T) {
 	}
 }
 
-// A card standing under a section before the first or past the last is refused.
+// A card standing under a section before the first or past the last fails.
 func TestDeckBodyRefusesACardUnderAPlaceOutsideTheSections(t *testing.T) {
 	for _, at := range []int{-2, 2} {
 		_, err := format.DeckBody(format.Deck{

@@ -178,11 +178,11 @@ func TestDrainDoesNotStopTheRunning(t *testing.T) {
 	}
 }
 
-// A claim is refused while a run holds the line.
+// A claim fails while a run holds the line.
 func TestAClaimIsRefusedWhileARunHoldsTheLine(t *testing.T) {
 	w := NewWorker(t.Context(), nil, func(context.Context, domain.Vault, string) {})
 	if _, free := w.Claim(); !free {
-		t.Fatal("an idle worker refused a claim")
+		t.Fatal("an idle worker rejected a claim")
 	}
 	if _, free := w.Claim(); free {
 		t.Error("a second claim was granted")

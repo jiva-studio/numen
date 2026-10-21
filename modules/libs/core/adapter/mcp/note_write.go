@@ -55,7 +55,7 @@ func createNote(ctx context.Context, core Core, in NewNote) (CreateOutcome, erro
 	outcome := CreateOutcome{CreateResult: created}
 	if err != nil {
 		outcome.CreateResult.Title = in.Title
-		outcome.Refused = sayError(err)
+		outcome.Error = sayError(err)
 	}
 	return outcome, nil
 }

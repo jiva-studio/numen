@@ -71,8 +71,8 @@ func TestWhatTheInstallationOpensAnswers(t *testing.T) {
 // A proofreading stopped for want of consent says where to allow it; any other
 // stop says what stopped it.
 func TestAProofreadErrorSaysWhereToAllowAModel(t *testing.T) {
-	refused := fmt.Errorf("batch 1: unavailable: %w", port.ErrNoConsent)
-	if got := GetProofreadError(refused); got != "AI access not allowed — allow it in Settings → AI" {
+	proofErr := fmt.Errorf("batch 1: unavailable: %w", port.ErrNoConsent)
+	if got := GetProofreadError(proofErr); got != "AI access not allowed — allow it in Settings → AI" {
 		t.Errorf("said %q", got)
 	}
 	if got := GetProofreadError(errors.New("the model broke")); got != "the model broke" {

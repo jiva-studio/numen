@@ -243,7 +243,7 @@ func prose(t *testing.T, raw string) string {
 }
 
 // The size is asked of the file before it is opened, so a deck over the bound
-// is refused with none of its bytes read.
+// fails with none of its bytes read.
 func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	vs := newVaults(t)
 	path := filepath.Join(vs.first.Path, "decks", "Mammals.md")
@@ -257,7 +257,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	if got.Outcome != note.TooLarge {
-		t.Fatalf("outcome = %q, want it refused", got.Outcome)
+		t.Fatalf("outcome = %q, want it rejected", got.Outcome)
 	}
 	if counted.reads != 0 {
 		t.Errorf("the file was opened %d times", counted.reads)
@@ -285,7 +285,7 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	if got.Outcome != note.TooLarge {
-		t.Errorf("outcome = %q, want it refused", got.Outcome)
+		t.Errorf("outcome = %q, want it rejected", got.Outcome)
 	}
 }
 
@@ -311,7 +311,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
 		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Fingerprint)
 	if !errors.Is(err, ports.ErrStale) {
-		t.Fatalf("write = %v, want it refused", err)
+		t.Fatalf("write = %v, want it rejected", err)
 	}
 	if after := read(t, vs.first, "decks/Birds.md"); after != written {
 		t.Errorf("the file was written over\n was %q\n now %q", written, after)
@@ -397,7 +397,7 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 	if _, err := u.Stencil(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,
 	) {
-		t.Fatalf("make a stencil of no fields = %v, want it refused", err)
+		t.Fatalf("make a stencil of no fields = %v, want it rejected", err)
 	}
 	if _, err := os.Stat(filepath.Join(vs.first.Path, "Bird.md")); !errors.Is(err, os.ErrNotExist) {
 		t.Error("the file was written anyway")
@@ -499,7 +499,7 @@ type refusing struct {
 	path string
 }
 
-var errRefused = errors.New("the filesystem refused this file")
+var errRefused = errors.New("the filesystem rejected this file")
 
 func (w refusing) Open(v domain.Vault) (ports.VaultWriter, error) {
 	writer, err := w.VaultWriters.Open(v)

@@ -13,7 +13,7 @@ import (
 
 // What a file carries is asked before anything is offered over it. A window
 // that cannot ask has only one way to find out whether a book has been read: to
-// ask for it to be read again and be refused.
+// ask for it to be read again and be rejected.
 
 // A book nothing has read carries a recognition all the same, and it is nothing.
 // The row is the answer, and its absence would be a build that makes no
@@ -43,7 +43,7 @@ func TestABookAModelHasReadCarriesTheRecognition(t *testing.T) {
 
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: book}))
 	if err != nil {
-		t.Fatalf("asked what the book carries and was refused: %v", err)
+		t.Fatalf("asked what the book carries and failed: %v", err)
 	}
 	held := out.Msg.GetArtifacts()
 	if len(held) != 2 {
@@ -64,7 +64,7 @@ func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
 
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {
-		t.Fatalf("asked what the recording carries and was refused: %v", err)
+		t.Fatalf("asked what the recording carries and failed: %v", err)
 	}
 	want := []v1.ArtifactKind{
 		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
@@ -95,7 +95,7 @@ func TestAFileNothingIsMadeFromCarriesNothing(t *testing.T) {
 }
 
 // A path the vault does not hold carries nothing that can be asked about, and
-// the question is refused.
+// the question fails.
 func TestWhatAPathTheVaultDoesNotHoldCarriesIsNotFound(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
@@ -103,7 +103,7 @@ func TestWhatAPathTheVaultDoesNotHoldCarriesIsNotFound(t *testing.T) {
 		Path: "library/nothing.pdf",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("asked about nothing and was refused %v", err)
+		t.Errorf("asked about nothing and failed %v", err)
 	}
 }
 
@@ -131,7 +131,7 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 				Path: talk,
 			}))
 			if err != nil {
-				t.Fatalf("asked what the recording carries and was refused: %v", err)
+				t.Fatalf("asked what the recording carries and failed: %v", err)
 			}
 			heard := out.Msg.GetArtifacts()[0]
 			if heard.GetState() != one.state {
@@ -150,7 +150,7 @@ func TestAWindowStandingOnNothingCarriesNothing(t *testing.T) {
 
 	_, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
-		t.Errorf("a window with no vault was refused %v", err)
+		t.Errorf("a window with no vault failed %v", err)
 	}
 }
 
@@ -163,7 +163,7 @@ func TestANoteThatPointsNowhereCarriesNothing(t *testing.T) {
 		t.Errorf("an ordinary note carries %v", held)
 	}
 	if code := getRefusedCode(t, api, idea, transcriptOf); code != connect.CodeInvalidArgument {
-		t.Errorf("fetching for an ordinary note was refused with %s", code)
+		t.Errorf("fetching for an ordinary note failed with %s", code)
 	}
 }
 
@@ -205,7 +205,7 @@ func TestABuildThatCannotFetch(t *testing.T) {
 	api.readImports(nil)
 
 	if code := getRefusedCode(t, api, pointed, transcriptOf); code != connect.CodeUnimplemented {
-		t.Errorf("a build with no fetcher refused with %s", code)
+		t.Errorf("a build with no fetcher failed with %s", code)
 	}
 }
 
@@ -278,7 +278,7 @@ func TestALinkNoteIsAskedWhatItIsBeforeItsWords(t *testing.T) {
 	out, err := api.Recording.GetRecording(t.Context(),
 		connect.NewRequest(&v1.GetRecordingRequest{Path: pointed}))
 	if err != nil {
-		t.Fatalf("a link note was refused before its words were read: %v", err)
+		t.Fatalf("a link note failed before its words were read: %v", err)
 	}
 	if out.Msg.GetDurationMs() == 0 {
 		t.Errorf("it runs %d ms, and the words reach further", out.Msg.GetDurationMs())

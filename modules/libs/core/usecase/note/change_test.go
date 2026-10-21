@@ -580,7 +580,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Theirs.") {
-		t.Errorf("the refused write landed anyway:\n%s", body)
+		t.Errorf("the failed write landed anyway:\n%s", body)
 	}
 }
 
@@ -613,7 +613,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if _, err := writing.Execute(
 		t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n", at,
 	); err != nil {
-		t.Fatalf("the write after a write was refused: %v", err)
+		t.Fatalf("the write after a write failed: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
 		t.Errorf("the second write did not land:\n%s", body)

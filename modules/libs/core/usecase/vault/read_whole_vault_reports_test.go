@@ -249,7 +249,7 @@ func TestOneSourceIsCutAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := making.CutOne(t.Context(), v, "library/A Book.epub"); err != nil {
-		t.Errorf("a source that can be cut was refused: %v", err)
+		t.Errorf("a source that can be cut failed: %v", err)
 	}
 
 	stopped := errors.New("the vault cannot be read")

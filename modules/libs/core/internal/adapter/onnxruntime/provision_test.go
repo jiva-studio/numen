@@ -353,7 +353,7 @@ func TestProvisionRefusesAnAddressThatIsNotHTTPS(t *testing.T) {
 		},
 	}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "https") {
-		t.Fatalf("Provision() = %v, want an https refusal", err)
+		t.Fatalf("Provision() = %v, want an https error", err)
 	}
 }
 
@@ -368,7 +368,7 @@ func TestProvisionRefusesASumThatIsNotASha256(t *testing.T) {
 		},
 	}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "sha256") {
-		t.Fatalf("Provision() = %v, want a sha256 refusal", err)
+		t.Fatalf("Provision() = %v, want a sha256 error", err)
 	}
 }
 
@@ -592,7 +592,7 @@ func TestProvisionRefusesAGPUProviderForThePinnedCPUBuild(t *testing.T) {
 		cfg.Dir = t.TempDir()
 		cfg.Provider = name
 		if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "GPU build") || !strings.Contains(err.Error(), name) {
-			t.Errorf("provider %q = %v, want a GPU build refusal", name, err)
+			t.Errorf("provider %q = %v, want a GPU build error", name, err)
 		}
 	}
 }
@@ -624,8 +624,8 @@ func writeLibraryDir(t *testing.T) string {
 // refuse returns a check that refuses the libraries at the given paths.
 func refuse(paths ...string) func(string) error {
 	return func(at string) error {
-		for _, refused := range paths {
-			if at == refused {
+		for _, rejected := range paths {
+			if at == rejected {
 				return errors.New("serves no API 23")
 			}
 		}
@@ -705,7 +705,7 @@ func TestProvisionNamesTheLibrariesThatDoNotOpenWhenAGPUProviderMeetsThePinnedBu
 
 	_, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
 	if err == nil || !strings.Contains(err.Error(), "GPU build") || !strings.Contains(err.Error(), gpu) {
-		t.Fatalf("Provision() = %v, want a GPU build refusal naming %s", err, gpu)
+		t.Fatalf("Provision() = %v, want a GPU build error naming %s", err, gpu)
 	}
 }
 

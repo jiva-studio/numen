@@ -18,7 +18,7 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 	at := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: at}
 
-	page, err := refusal{}.page(cfg, settings.TextScaleBounds.Check("appearance.text_scale", 4))
+	page, err := fatalReport{}.page(cfg, settings.TextScaleBounds.Check("appearance.text_scale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 
 // An error this build has nothing further to say about is still said.
 func TestARefusalSaysAnythingElseTooRatherThanNothing(t *testing.T) {
-	page, err := refusal{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 		errors.New("the settings could not be read"))
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestARefusalSaysAnythingElseTooRatherThanNothing(t *testing.T) {
 
 // A message a person reads is not a place to put markup they did not write.
 func TestARefusalDoesNotCarryMarkupOutOfAnError(t *testing.T) {
-	page, err := refusal{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 		errors.New(`<script>alert("x")</script>`))
 	if err != nil {
 		t.Fatal(err)
@@ -158,7 +158,7 @@ func TestEveryRefusalSaysWhatToDoAboutIt(t *testing.T) {
 	}
 	for _, one := range getStoppings(t) {
 		t.Run(one.name, func(t *testing.T) {
-			said := getRefusal(one.cfg, one.why)
+			said := getFatalReport(one.cfg, one.why)
 			if said.Heading == "" {
 				t.Error("the page is drawn under no heading")
 			}
@@ -196,7 +196,7 @@ func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
 		"a size the command line does not take":  startingAtAll,
 	}
 	for _, one := range getStoppings(t) {
-		said := getRefusal(one.cfg, one.why)
+		said := getFatalReport(one.cfg, one.why)
 		if said.Heading != want[one.name] {
 			t.Errorf("%s is drawn under %q, want %q", one.name, said.Heading, want[one.name])
 		}
@@ -212,9 +212,9 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
-	by := map[string]refusal{}
+	by := map[string]fatalReport{}
 	for _, one := range getStoppings(t) {
-		by[one.name] = getRefusal(one.cfg, one.why)
+		by[one.name] = getFatalReport(one.cfg, one.why)
 	}
 
 	folder, noWriteFolder := by["an index path that is a folder"], by["an index folder nobody may write in"]
@@ -237,12 +237,12 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 // A number a size does not take is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestASizeIsAnsweredWhereItWasWritten(t *testing.T) {
-	file := getRefusal(container.Config{}, settings.TextScaleBounds.Check("appearance.text_scale", 4))
+	file := getFatalReport(container.Config{}, settings.TextScaleBounds.Check("appearance.text_scale", 4))
 	if !strings.Contains(file.Remedy, "appearance.text_scale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 
-	line := getRefusal(container.Config{}, settings.TextScaleBounds.Check("-text-scale", 4))
+	line := getFatalReport(container.Config{}, settings.TextScaleBounds.Check("-text-scale", 4))
 	if !strings.Contains(line.Remedy, "-text-scale") {
 		t.Errorf("a size on the command line is answered with %q", line.Remedy)
 	}

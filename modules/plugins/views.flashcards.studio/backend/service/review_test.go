@@ -155,7 +155,7 @@ func startSession(t *testing.T, api *API, v domain.Vault) *v1.StartSessionRespon
 }
 
 // A run belongs to the vault it was opened on, and an answer naming another
-// vault's run is refused.
+// vault's run fails.
 func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	api, held := newAPI(t, deck, other)
 	one, two := held[0], held[1]
@@ -177,7 +177,7 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 		t.Fatal("an answer named against another vault's run was written")
 	}
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 
 	// And nothing of it reached the other vault's folder.
@@ -224,10 +224,10 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 		Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Fatalf("the session was over and the answer was refused with %v", connect.CodeOf(err))
+		t.Fatalf("the session was over and the answer failed with %v", connect.CodeOf(err))
 	}
 	if !errors.Is(err, ErrNoRun) {
-		t.Errorf("refused with %v", err)
+		t.Errorf("failed with %v", err)
 	}
 }
 
@@ -314,7 +314,7 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	}
 }
 
-// An answer outside the four is the caller's mistake and is refused as one.
+// An answer outside the four is the caller's mistake and fails as one.
 func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	api, held := newAPI(t, deck)
 	v := held[0]
@@ -327,7 +327,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 		Rating: v1.Rating_RATING_UNSPECIFIED,
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 
@@ -370,7 +370,7 @@ func TestAVaultTheIndexCouldNotReadIsUncountedAndSaysWhy(t *testing.T) {
 	}
 }
 
-// A session opened on a vault the index does not carry is refused, and says so.
+// A session opened on a vault the index does not carry fails, and says so.
 func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	api, held, installation := newAPIOn(t, deck)
 	installation.Of(held[0].ID).SetIndexState(host.IndexState{Status: host.Indexing})
@@ -378,23 +378,23 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	_, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: string(held[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
-		t.Fatalf("refused with %v: %v", connect.CodeOf(err), err)
+		t.Fatalf("failed with %v: %v", connect.CodeOf(err), err)
 	}
 	if !errors.Is(err, flashcards.ErrNotCarried) {
 		t.Errorf("says %q, and not that the index does not carry the vault", err)
 	}
 }
 
-// A question about a vault the installation does not hold is refused.
+// A question about a vault the installation does not hold fails.
 func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
 	_, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 	if !errors.Is(err, host.ErrUnknownVault) {
-		t.Errorf("refused with %v", err)
+		t.Errorf("failed with %v", err)
 	}
 }
 

@@ -105,10 +105,10 @@ function createTile(
   const fields = getDeclaredFields(cut?.fields ?? [])
 
   /** How many values the card writes under each field, as they are counted off. */
-  const underMap = new Map<string, number>()
+  const underItem = new Map<string, number>()
   const countOff = (field: string): number => {
-    const nth = (underMap.get(field) ?? 0) + 1
-    underMap.set(field, nth)
+    const nth = (underItem.get(field) ?? 0) + 1
+    underItem.set(field, nth)
     return nth
   }
 
@@ -131,7 +131,7 @@ function createTile(
     stencil: card.stencil,
     filled: counted.map((each) => ({
       ...each,
-      isLast: each.nth === (under.get(each.field) ?? 0),
+      isLast: each.nth === (underItem.get(each.field) ?? 0),
     })),
     at: 0,
     of: 0,

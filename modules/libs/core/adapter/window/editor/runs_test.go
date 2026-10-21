@@ -49,7 +49,7 @@ func (a *asking) Start(v domain.Vault, path string) port.StartOutcome {
 }
 
 // claimed is a store a run holds one name in. A run holds the name it writes
-// under for as long as it takes, and a claim on it is refused.
+// under for as long as it takes, and a claim on it fails.
 type claimed struct {
 	stored
 	name domain.ArtifactName
@@ -123,7 +123,7 @@ func createArtifact(t *testing.T, api *Services, path string, of v1.ArtifactKind
 	t.Helper()
 	out, err := requestCreateArtifact(api, path, of)
 	if err != nil {
-		t.Fatalf("asked for the %s of %s and was refused: %v", of, path, err)
+		t.Fatalf("asked for the %s of %s and failed: %v", of, path, err)
 	}
 	return out.Msg.GetArtifact()
 }
@@ -133,7 +133,7 @@ func getArtifactStates(t *testing.T, api *Services, path string) map[v1.Artifact
 	t.Helper()
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: path}))
 	if err != nil {
-		t.Fatalf("asked what %s carries and was refused: %v", path, err)
+		t.Fatalf("asked what %s carries and failed: %v", path, err)
 	}
 	by := map[v1.ArtifactKind]v1.State{}
 	for _, one := range out.Msg.GetArtifacts() {
@@ -232,7 +232,7 @@ func TestAFileOnlyCarriesTheArtifactsItsKindDoes(t *testing.T) {
 			api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
 			if code := getRefusedCode(t, api, one.path, one.of); code != connect.CodeInvalidArgument {
-				t.Errorf("a file carrying no such artifact was refused %s", code)
+				t.Errorf("a file carrying no such artifact failed %s", code)
 			}
 			if scans.times+hears.times != 0 {
 				t.Error("a run was given a file of the wrong kind")
@@ -241,13 +241,13 @@ func TestAFileOnlyCarriesTheArtifactsItsKindDoes(t *testing.T) {
 	}
 }
 
-// An artifact no file carries is refused before the vault is read at all.
+// An artifact no file carries fails before the vault is read at all.
 func TestAnArtifactNoFileCarriesIsNotMade(t *testing.T) {
 	scans, hears := willRun(), willRun()
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
 	if code := getRefusedCode(t, api, book, v1.ArtifactKind(99)); code != connect.CodeInvalidArgument {
-		t.Errorf("an artifact nothing makes was refused %s", code)
+		t.Errorf("an artifact nothing makes failed %s", code)
 	}
 	if scans.times+hears.times != 0 {
 		t.Error("a run was given a file for an artifact nothing makes")
@@ -405,7 +405,7 @@ func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
 		transcriptOf: "talks/nothing.mp3",
 	} {
 		if code := getRefusedCode(t, api, path, of); code != connect.CodeNotFound {
-			t.Errorf("asked for a run over nothing and was refused %s", code)
+			t.Errorf("asked for a run over nothing and failed %s", code)
 		}
 	}
 }
@@ -417,7 +417,7 @@ func TestARunAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 
 	for of, path := range map[v1.ArtifactKind]string{readingOf: book, transcriptOf: talk} {
 		if code := getRefusedCode(t, api, path, of); code != connect.CodeUnavailable {
-			t.Errorf("asked before the passes were up and was refused %s", code)
+			t.Errorf("asked before the passes were up and failed %s", code)
 		}
 	}
 }

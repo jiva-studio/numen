@@ -249,7 +249,7 @@ func parseIdentity(output string) string {
 func TestACopiedVaultIsRefusedRatherThanIndexed(t *testing.T) {
 	// Copying a vault folder copies its identity, and two folders claiming one
 	// identity cannot be told apart. Indexing either would write one vault's
-	// notes under the other's rows, so adding the second is refused and the
+	// notes under the other's rows, so adding the second fails and the
 	// error says what to do about it.
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "original")
@@ -268,7 +268,7 @@ func TestACopiedVaultIsRefusedRatherThanIndexed(t *testing.T) {
 	// The first vault is untouched, and still the only one.
 	listed := s.mustRun("vault", "list")
 	if strings.Count(listed, s.vault) != 1 || strings.Contains(listed, copied) {
-		t.Errorf("vault list after the refusal:\n%s", listed)
+		t.Errorf("vault list after the rejection:\n%s", listed)
 	}
 }
 
@@ -287,7 +287,7 @@ func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
 
 	out, err := s.run("vault", "add", moved, "--name", "moved")
 	if err != nil {
-		t.Fatalf("a moved vault was refused: %v\n%s", err, out)
+		t.Fatalf("a moved vault failed: %v\n%s", err, out)
 	}
 
 	listed := s.mustRun("vault", "list")

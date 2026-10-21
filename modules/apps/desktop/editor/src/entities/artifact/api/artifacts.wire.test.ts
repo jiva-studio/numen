@@ -118,7 +118,7 @@ describe('beginning a run', () => {
     })
   })
 
-  it('is refused by a build that cannot do it at all', async () => {
+  it('fails by a build that cannot do it at all', async () => {
     stubError('unimplemented')
 
     expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({ able: false })
@@ -180,7 +180,7 @@ describe('taking one away', () => {
     expect(asked[0]).toEqual({ path: 'Talk.url', kind: 'ARTIFACT_KIND_COPY' })
   })
 
-  it('is refused by a build that cannot do it at all', async () => {
+  it('fails by a build that cannot do it at all', async () => {
     stubError('unimplemented')
 
     expect(await running.deleteCopy('Talk.url')).toBe(false)

@@ -46,7 +46,7 @@ func TestADeckThatCannotBeReadLeavesTheOthersStanding(t *testing.T) {
 
 	left, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
-		t.Fatalf("one deck gone refused the whole vault: %v", err)
+		t.Fatalf("one deck gone failed the whole vault: %v", err)
 	}
 	if len(left) == 0 {
 		t.Error("one deck gone left the vault standing for nothing")

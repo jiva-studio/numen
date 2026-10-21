@@ -507,7 +507,7 @@ func TestAKeyIsNotFollowedToPlainHTTP(t *testing.T) {
 		t.Error("a redirect to plain http was followed")
 	}
 	if err := refuseDowngrade(httptest.NewRequest(http.MethodGet, "https://example.com/v1/models", nil), nil); err != nil {
-		t.Errorf("a redirect to https was refused: %v", err)
+		t.Errorf("a redirect to https failed: %v", err)
 	}
 }
 
@@ -794,7 +794,7 @@ func TestTheDepthsAModelTakesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
 		t.Errorf("a model of no reasoning offers %v", unreasoningModel)
 	}
 	if asked := newEffort(luna, "max"); asked.level != "max" {
-		t.Errorf("a depth the model names was refused")
+		t.Errorf("a depth the model names failed")
 	}
 	if asked := newEffort(router, "max"); asked.level != "" {
 		t.Errorf("a depth the model does not name was asked")

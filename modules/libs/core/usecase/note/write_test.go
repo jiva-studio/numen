@@ -17,23 +17,23 @@ func TestASizeIsHeldToItsBound(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		size, bound int
-		refused     bool
+		wantErr bool
 	}{
 		{"no bound holds to nothing", 5, 0, false},
 		{"a negative bound holds to nothing", 5, -1, false},
 		{"a bound of one holds", 5, 1, true},
 		{"exactly the bound is allowed", 5, 5, false},
-		{"one over the bound is refused", 6, 5, true},
+		{"one over the bound fails", 6, 5, true},
 		{"under the bound is allowed", 4, 5, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			err := note.CheckSize("Entropy.md", tc.size, tc.bound)
-			if got := errors.Is(err, note.ErrTooLarge); got != tc.refused {
+			if got := errors.Is(err, note.ErrTooLarge); got != tc.wantErr {
 				t.Errorf("size %d at bound %d answered %v", tc.size, tc.bound, err)
 			}
 			if err != nil && !strings.Contains(err.Error(), "Entropy.md") {
-				t.Errorf("the refusal does not name the note: %v", err)
+				t.Errorf("the rejection does not name the note: %v", err)
 			}
 		})
 	}
@@ -48,7 +48,7 @@ func TestAWriteOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 		t.Fatalf("want ErrBodyUnwritable, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
-		t.Errorf("a refused write changed the note:\n%s", body)
+		t.Errorf("a failed write changed the note:\n%s", body)
 	}
 }
 
@@ -61,7 +61,7 @@ func TestASaveOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 		t.Fatalf("want ErrBodyUnwritable, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
-		t.Errorf("a refused save changed the note:\n%s", body)
+		t.Errorf("a rejected save changed the note:\n%s", body)
 	}
 }
 
@@ -75,7 +75,7 @@ func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if got := c.read(t, "Mammals.md"); got != "# Mammals\n" {
-		t.Error("a refused write changed the note")
+		t.Error("a failed write changed the note")
 	}
 
 	wideWrite := c.newWrite()
@@ -167,7 +167,7 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
 	if len(told) != 0 {
-		t.Errorf("told %+v of a change that was refused", told)
+		t.Errorf("told %+v of a change that failed", told)
 	}
 }
 

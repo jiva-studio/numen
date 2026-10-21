@@ -138,7 +138,7 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 	}
 }
 
-// A plugin without the ai:complete permission is refused, and nothing is asked of a model.
+// A plugin without the ai:complete permission fails, and nothing is asked of a model.
 func TestAPluginWithoutThePermissionIsRefused(t *testing.T) {
 	asked := false
 	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
@@ -344,7 +344,7 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 		t.Errorf("a plugin without the permission was allowed: %v", err)
 	}
 	if err := host.CheckPluginPermission("md.numen.a", PermissionAIComplete); err != nil {
-		t.Errorf("a plugin with the permission was refused: %v", err)
+		t.Errorf("a plugin with the permission failed: %v", err)
 	}
 }
 
@@ -471,7 +471,7 @@ func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
 	}
 }
 
-// A plugin without the permission is refused before its consent is looked at.
+// A plugin without the permission fails before its consent is looked at.
 func TestThePermissionIsCheckedBeforeTheConsent(t *testing.T) {
 	fakeCallers := newCallers(nil)
 	if _, err := newHostClient(t, fakeCallers, "token-b").Complete(t.Context(), newHostQuestion()); err == nil {
@@ -495,7 +495,7 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 	}
 }
 
-// A question nothing can answer is an invalid argument, not a refusal.
+// A question nothing can answer is an invalid argument, not an error.
 func TestAQuestionNothingCanAnswerIsAnInvalidArgument(t *testing.T) {
 	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
 		return "", fmt.Errorf("%w: no message", port.ErrInvalidQuestion)

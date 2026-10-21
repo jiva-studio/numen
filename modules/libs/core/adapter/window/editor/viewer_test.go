@@ -289,12 +289,12 @@ func getDocument(t *testing.T, api *Services) *v1.GetDocumentResponse {
 	t.Helper()
 	out, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if err != nil {
-		t.Fatalf("asked what the document is and was refused: %v", err)
+		t.Fatalf("asked what the document is and failed: %v", err)
 	}
 	return out.Msg
 }
 
-// A path that leaves the vault is refused, and so is one the vault holds
+// A path that leaves the vault fails, and so is one the vault holds
 // nothing at. Neither is answered with anything drawn.
 func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	for _, path := range []string{
@@ -493,7 +493,7 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 			defer asking.Done()
 			_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 			if err != nil {
-				t.Errorf("asked what the document is and was refused: %v", err)
+				t.Errorf("asked what the document is and failed: %v", err)
 			}
 		}()
 	}
@@ -541,7 +541,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	// answer that the document is busy.
 	_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeUnavailable {
-		t.Errorf("what the document is was refused %v, not that it is busy", err)
+		t.Errorf("what the document is failed %v, not that it is busy", err)
 	}
 	out := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if out.Code != http.StatusServiceUnavailable {
@@ -631,13 +631,13 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 	}
 }
 
-// A file that is not a document is refused, and says so.
+// A file that is not a document fails, and says so.
 func TestAFileThatIsNotADocumentIsRefused(t *testing.T) {
 	api, _ := fromTheLibrary(t, "not a PDF at all")
 
 	_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
-		t.Errorf("a file that is not a document was refused %v", err)
+		t.Errorf("a file that is not a document failed %v", err)
 	}
 }
 

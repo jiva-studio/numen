@@ -301,9 +301,9 @@ describe('the arrowhead a line carries', () => {
     }).edges.find((edge) => edge.to === 'wide')!
 
     const covered = ARROW_LENGTH / getLength(aside)
-    const prevPoint = createPointOnCurve(aside)(1 - covered)
+    const behindPoint = createPointOnCurve(aside)(1 - covered)
     const chord =
-      (Math.atan2(aside.toPoint.y - prevPoint.y, aside.toPoint.x - prevPoint.x) * 180) / Math.PI
+      (Math.atan2(aside.toPoint.y - behindPoint.y, aside.toPoint.x - behindPoint.x) * 180) / Math.PI
 
     // The line bends over the head's length, so the two readings differ.
     expect(Math.abs(chord - 90)).toBeGreaterThan(3)
@@ -311,9 +311,9 @@ describe('the arrowhead a line carries', () => {
 
     // The end a line leaves from is read the same way, backwards.
     const leaving = getArrow(aside, 'from')
-    const curvePoint = createPointOnCurve(aside)(ARROW_LENGTH / getLength(aside))
+    const alongEdge = createPointOnCurve(aside)(ARROW_LENGTH / getLength(aside))
     const back =
-      (Math.atan2(aside.fromPoint.y - curvePoint.y, aside.fromPoint.x - curvePoint.x) * 180) / Math.PI
+      (Math.atan2(aside.fromPoint.y - alongEdge.y, aside.fromPoint.x - alongEdge.x) * 180) / Math.PI
     expect(leaving.angle).toBeCloseTo(back, 1)
   })
 
@@ -470,9 +470,9 @@ describe('the run of a line between two boxes', () => {
     expect(down.fromPoint).toStrictEqual({ x: 0, y: 20 })
     expect(down.toPoint).toStrictEqual({ x: 150, y: 180 })
 
-    const routedEdge = route(box('a', 'focus', 0, 0), box('b', 'focus', 300, 60), undeclared)
-    expect(routedEdge.fromPoint).toStrictEqual({ x: 50, y: 0 })
-    expect(across.toPoint).toStrictEqual({ x: 250, y: 60 })
+    const acrossRoute = route(box('a', 'focus', 0, 0), box('b', 'focus', 300, 60), undeclared)
+    expect(acrossRoute.fromPoint).toStrictEqual({ x: 50, y: 0 })
+    expect(acrossRoute.toPoint).toStrictEqual({ x: 250, y: 60 })
 
     // Equally far across and down, the run is down the page.
     const level = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 150), undeclared)

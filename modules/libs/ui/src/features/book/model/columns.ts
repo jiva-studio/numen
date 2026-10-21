@@ -81,7 +81,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const columns = computed(() => countColumns(viewport.value.width, textSize.value))
 
   const flow = computed<Flow>(() => ({
-    along: along.value,
+    along: alongOffset.value,
     width: viewport.value.width,
     gap: GAP,
     columns: columns.value,
@@ -103,7 +103,7 @@ export function useBookColumns(options: BookColumnsOptions) {
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): void => {
     text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
-    along.value = text.scrollWidth
+    alongOffset.value = text.scrollWidth
     gather()
   }
 

@@ -159,7 +159,7 @@ func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                           "the agent was started without this vault",
 		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"connected"}]}`:      "",
 		`{"type":"system","subtype":"init"}`:                                                            "",
-		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"refused"}]}`: "the agent was not given this vault: refused",
+		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"rejected"}]}`: "the agent was not given this vault: rejected",
 	}
 	for line, want := range cases {
 		if _, reason := parseLines(t, nil, line); reason != want {

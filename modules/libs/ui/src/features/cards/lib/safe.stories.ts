@@ -203,22 +203,22 @@ const numbers = (from: number): (() => number) => {
 const createArrangement = (next: () => number, at: number): string => {
   if (at < KNOWN.length) return KNOWN[at]!
 
-  const pickRandom = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
+  const amongItems = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
   const pieces = 1 + Math.floor(next() * 12)
   let out = ''
   for (let i = 0; i < pieces; i++) {
-    out += pickRandom(PIECES)
-      .replace('{url}', () => pickRandom(URLS))
-      .replace('{on}', () => pickRandom(HANDLERS))
-      .replace('{runs}', () => pickRandom(RUNS))
-      .replace('{style}', () => pickRandom(STYLES))
-      .replace('{quote}', () => pickRandom(QUOTES))
+    out += amongItems(PIECES)
+      .replace('{url}', () => amongItems(URLS))
+      .replace('{on}', () => amongItems(HANDLERS))
+      .replace('{runs}', () => amongItems(RUNS))
+      .replace('{style}', () => amongItems(STYLES))
+      .replace('{quote}', () => amongItems(QUOTES))
   }
   // Half of them carry a known arrangement inside, so the generator reaches
   // past what it could have stumbled on.
   if (next() < 0.5) {
     const into = Math.floor(next() * (out.length + 1))
-    out = out.slice(0, into) + among(KNOWN) + out.slice(into)
+    out = out.slice(0, into) + amongItems(KNOWN) + out.slice(into)
   }
   return out
 }

@@ -492,11 +492,11 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 
 type refusingReader struct {
 	port.VaultReader
-	refused string
+	failingPath string
 }
 
 func (r refusingReader) Read(ctx context.Context, path string) ([]byte, error) {
-	if path == r.refused {
+	if path == r.failingPath {
 		return nil, fs.ErrPermission
 	}
 	return r.VaultReader.Read(ctx, path)
@@ -504,7 +504,7 @@ func (r refusingReader) Read(ctx context.Context, path string) ([]byte, error) {
 
 type refusingReaders struct {
 	port.VaultReaders
-	refused string
+	failingPath string
 }
 
 func (r refusingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
@@ -512,7 +512,7 @@ func (r refusingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return refusingReader{VaultReader: reader, refused: r.refused}, nil
+	return refusingReader{VaultReader: reader, failingPath: r.failingPath}, nil
 }
 
 // A permission bit, a broken ACL, a device that went away. A refresh counts
@@ -523,7 +523,7 @@ func TestAFileNobodyCanReadDoesNotStopAScan(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	scan := scanner(refusingReaders{VaultReaders: readers, refused: "notes/Entropy.md"}, db)
+	scan := scanner(refusingReaders{VaultReaders: readers, failingPath: "notes/Entropy.md"}, db)
 	res, err := scan.Execute(ctx, v)
 	if err != nil {
 		t.Fatalf("one unreadable file ended the scan: %v", err)

@@ -130,7 +130,7 @@ describe('a face of a stencil', () => {
   })
 })
 
-describe('whether two readings of a file read the same', () => {
+describe('whether two evaluations of a file read the same', () => {
   it('is so for one file read twice, whatever identities each reading minted', () => {
     expect(areStencilsEqual(stencil(), stencil())).toBe(true)
   })

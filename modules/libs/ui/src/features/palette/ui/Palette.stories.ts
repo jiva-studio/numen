@@ -786,10 +786,10 @@ export const TooLong: Story = {
     await waitFor(() => expect(palette()).not.toBeNull())
 
     const panel = document.body.querySelector<HTMLElement>('[data-palette="panel"]')!
-    const elem = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
-    const clear = Number.parseFloat(getComputedStyle(elem).paddingInlineStart)
+    const overElement = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
+    const clear = Number.parseFloat(getComputedStyle(overElement).paddingInlineStart)
     const drawn = panel.getBoundingClientRect()
-    const room = elem.getBoundingClientRect()
+    const room = overElement.getBoundingClientRect()
 
     await expect(drawn.left).toBeGreaterThanOrEqual(room.left + clear - 1)
     await expect(drawn.right).toBeLessThanOrEqual(room.right - clear + 1)

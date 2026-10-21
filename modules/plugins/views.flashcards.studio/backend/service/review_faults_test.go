@@ -33,7 +33,7 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 	out, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: string(held[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 	if out != nil {
 		t.Errorf("a session without a run came back with %+v", out.Msg)
@@ -50,14 +50,14 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 	out, err := api.ListReviewDays(t.Context(),
 		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(held[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 	if out != nil {
 		t.Errorf("days came back with %+v", out.Msg)
 	}
 }
 
-// An answer for a vault nobody holds is refused as that, and not as a run nobody
+// An answer for a vault nobody holds fails as that, and not as a run nobody
 // opened.
 func TestAnAnswerAndATakingBackNameTheVaultNobodyHolds(t *testing.T) {
 	api, _ := newAPI(t, deck)
@@ -66,14 +66,14 @@ func TestAnAnswerAndATakingBackNameTheVaultNobodyHolds(t *testing.T) {
 		Vault: "nothing", Run: "nothing", Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound || errors.Is(err, ErrNoRun) {
-		t.Errorf("answering was refused with %v, want a vault nobody holds", err)
+		t.Errorf("answering failed with %v, want a vault nobody holds", err)
 	}
 
 	_, err = api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound || errors.Is(err, ErrNoRun) {
-		t.Errorf("taking back was refused with %v, want a vault nobody holds", err)
+		t.Errorf("taking back failed with %v, want a vault nobody holds", err)
 	}
 }
 

@@ -155,14 +155,14 @@ func fingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
 	return read.Notes[0].Fingerprint
 }
 
-func getRefusal(t *testing.T, s *sdk.ClientSession, name string, args any) string {
+func getToolError(t *testing.T, s *sdk.ClientSession, name string, args any) string {
 	t.Helper()
 	res, err := s.CallTool(t.Context(), &sdk.CallToolParams{Name: name, Arguments: args})
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
 	}
 	if !res.IsError {
-		t.Fatalf("%s: expected a refusal, got %v", name, res.StructuredContent)
+		t.Fatalf("%s: expected an error, got %v", name, res.StructuredContent)
 	}
 	return text(res)
 }
@@ -312,7 +312,7 @@ func TestANoteIsMadeAndFoundThroughTheTools(t *testing.T) {
 	made := createNotes(t, session, map[string]any{
 		"title": "Entropy", "body": "A measure of disorder.\n",
 	})
-	if len(made) != 1 || made[0].Refused != "" {
+	if len(made) != 1 || made[0].Error != "" {
 		t.Fatalf("want one note made: %+v", made)
 	}
 	if made[0].Path != "Entropy.md" {
@@ -340,7 +340,7 @@ func TestANoteIsMadeAlreadyJoined(t *testing.T) {
 			{"to": "Momentum", "role": "parent", "label": "part of"},
 		},
 	})
-	if len(made) != 1 || made[0].Refused != "" {
+	if len(made) != 1 || made[0].Error != "" {
 		t.Fatalf("want one note made: %+v", made)
 	}
 
@@ -371,10 +371,10 @@ func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
 	if len(made) != 3 {
 		t.Fatalf("want an outcome for each: %+v", made)
 	}
-	if made[0].Refused != "" || made[2].Refused != "" {
+	if made[0].Error != "" || made[2].Error != "" {
 		t.Errorf("the notes that could be made were not: %+v", made)
 	}
-	if made[1].Refused == "" {
+	if made[1].Error == "" {
 		t.Fatal("a link carrying no known role was written anyway")
 	}
 	if made[1].Path != "" {
@@ -383,9 +383,9 @@ func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
 
 	// The folder is asked, not the index. A file written and then not indexed
 	// is absent from the index either way, so only the disk can say whether
-	// the refusal left a note behind for the person to find.
+	// the rejection left a note behind for the person to find.
 	if _, err := os.Stat(filepath.Join(vault.Path, "Momentum.md")); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("a refused note left a file in the vault: %v", err)
+		t.Errorf("a rejected note left a file in the vault: %v", err)
 	}
 }
 
@@ -455,12 +455,12 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 	}
 
 	// What the read gave is two writes behind, and a write presenting it is
-	// refused.
-	if got := getRefusal(t, session, "note_rewrite", map[string]any{
+	// rejected.
+	if got := getToolError(t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nOnce more.\n",
 		"fingerprint": read.Notes[0].Fingerprint,
 	}); !strings.Contains(got, "changed") {
-		t.Errorf("want a refusal naming the change, got %q", got)
+		t.Errorf("want an error naming the change, got %q", got)
 	}
 }
 
@@ -479,7 +479,7 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 	added := addLinks(t, session, map[string]any{
 		"from": "Heat.md", "to": "Entropy", "role": "parent", "label": "follows from",
 	})
-	if len(added) != 1 || added[0].Refused != "" {
+	if len(added) != 1 || added[0].Error != "" {
 		t.Fatalf("want the link written: %+v", added)
 	}
 
@@ -518,12 +518,12 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 	if len(added) != 4 {
 		t.Fatalf("want an outcome for each: %+v", added)
 	}
-	if added[1].Refused == "" {
+	if added[1].Error == "" {
 		t.Error("a link carrying no known role was written anyway")
 	}
 	for _, i := range []int{0, 2, 3} {
-		if added[i].Refused != "" {
-			t.Errorf("link %d shares a note with the bad one and was refused too: %+v", i, added[i])
+		if added[i].Error != "" {
+			t.Errorf("link %d shares a note with the bad one and failed too: %+v", i, added[i])
 		}
 	}
 
@@ -544,7 +544,7 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 
 // A note that reached the disk says where it is even when the step after the
 // write did not finish. Told only that it failed, a caller writes it again and
-// is refused the name it already holds.
+// fails the name it already holds.
 func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
 	v, core := newCoreWithNotes(t, nil)
 	core.Notes.Create = core.Notes.Create.WithIndex(func(context.Context, domain.Vault, []string) error {
@@ -553,7 +553,7 @@ func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
 	session := newSessionOver(t, core)
 
 	made := createNotes(t, session, map[string]any{"title": "Entropy"})
-	if len(made) != 1 || made[0].Refused == "" {
+	if len(made) != 1 || made[0].Error == "" {
 		t.Fatalf("want the failure reported: %+v", made)
 	}
 	if made[0].Path != "Entropy.md" {
@@ -570,21 +570,21 @@ func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 	session, vault := newSession(t, nil)
 
 	huge := strings.Repeat("x", (1<<20)+1)
-	if got := getRefusal(t, session, "note_create", map[string]any{
+	if got := getToolError(t, session, "note_create", map[string]any{
 		"title": "Entropy",
 		"links": []map[string]any{{"to": "Heat", "role": "ref", "label": huge}},
 	}); !strings.Contains(got, "carries at once") {
-		t.Errorf("want a refusal naming the size, got %q", got)
+		t.Errorf("want an error naming the size, got %q", got)
 	}
 	if _, err := os.Stat(filepath.Join(vault.Path, "Entropy.md")); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("a call refused for its size wrote a note anyway: %v", err)
+		t.Errorf("a call rejected for its size wrote a note anyway: %v", err)
 	}
 }
 
 // Each of the three link writers reads a note's frontmatter, changes one entry
 // and puts the whole block back, so a write that says nothing about which note
 // it read lands on whatever arrived in between — a synchroniser's copy, the
-// person's own save. Each names it, and each is refused where the note moved
+// person's own save. Each names it, and each fails where the note moved
 // under it.
 func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
@@ -606,7 +606,7 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 	out := addLinks(t, session, map[string]any{
 		"from": "Heat.md", "to": "Work", "role": "jump", "fingerprint": staleFp,
 	})
-	if len(out) != 1 || !strings.Contains(out[0].Refused, "no longer the one that was read") {
+	if len(out) != 1 || !strings.Contains(out[0].Error, "no longer the one that was read") {
 		t.Errorf("link_add over an edit nobody saw: %+v", out)
 	}
 
@@ -616,7 +616,7 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 		},
 		"link_remove": {"from": "Heat.md", "to": "Entropy", "fingerprint": staleFp},
 	} {
-		if got := getRefusal(t, session, tool, args); !strings.Contains(got, "changed") {
+		if got := getToolError(t, session, tool, args); !strings.Contains(got, "changed") {
 			t.Errorf("%s over an edit nobody saw: %q", tool, got)
 		}
 	}
@@ -627,7 +627,7 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 	}](t, session, "link_list", map[string]any{"path": "Heat.md"})
 	if len(links.Links) != 1 || links.Links[0].Role != "parent" ||
 		links.Links[0].Label != "follows from" {
-		t.Errorf("a refused write landed all the same: %+v", links.Links)
+		t.Errorf("a failed write landed all the same: %+v", links.Links)
 	}
 }
 
@@ -677,11 +677,11 @@ func TestRemovingAFolderIsRefused(t *testing.T) {
 	removed := call[struct {
 		Removed []mcp.RemoveOutcome `json:"removed"`
 	}](t, session, "note_remove", map[string]any{"paths": []string{"Reading"}})
-	if len(removed.Removed) != 1 || removed.Removed[0].Refused == "" {
-		t.Fatalf("a folder was not refused: %+v", removed.Removed)
+	if len(removed.Removed) != 1 || removed.Removed[0].Error == "" {
+		t.Fatalf("a folder was not rejected: %+v", removed.Removed)
 	}
-	if !strings.Contains(removed.Removed[0].Refused, "folder") {
-		t.Errorf("the refusal reads %q", removed.Removed[0].Refused)
+	if !strings.Contains(removed.Removed[0].Error, "folder") {
+		t.Errorf("the rejection reads %q", removed.Removed[0].Error)
 	}
 	for _, path := range []string{"Reading/Entropy.md", "Reading/Order.md"} {
 		if _, err := os.Stat(filepath.Join(v.Path, path)); err != nil {
@@ -698,8 +698,8 @@ func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 	for i := range paths {
 		paths[i] = "note.md"
 	}
-	if got := getRefusal(t, session, "note_titles", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
-		t.Errorf("want a refusal naming the limit, got %q", got)
+	if got := getToolError(t, session, "note_titles", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
+		t.Errorf("want an error naming the limit, got %q", got)
 	}
 }
 
@@ -708,11 +708,11 @@ func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 func TestAPathOutsideTheVaultIsRefused(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	got := getRefusal(t, session, "note_rewrite", map[string]any{
+	got := getToolError(t, session, "note_rewrite", map[string]any{
 		"path": "../../escaped.md", "body": "no\n", "fingerprint": "0-0",
 	})
 	if !strings.Contains(got, "vault") {
-		t.Errorf("want a refusal about the vault, got %q", got)
+		t.Errorf("want an error about the vault, got %q", got)
 	}
 }
 
@@ -829,13 +829,13 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 
 	// And a caller that returns a whole note is told, and not quietly
 	// given a note with two frontmatter blocks in it.
-	got := getRefusal(t, session, "note_rewrite", map[string]any{
+	got := getToolError(t, session, "note_rewrite", map[string]any{
 		"path":        "Entropy.md",
 		"body":        "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nMore.\n",
 		"fingerprint": fingerprint(t, session, "Entropy.md"),
 	})
 	if !strings.Contains(got, "frontmatter") {
-		t.Errorf("want a refusal naming the frontmatter, got %q", got)
+		t.Errorf("want an error naming the frontmatter, got %q", got)
 	}
 }
 
@@ -857,7 +857,7 @@ func put(t *testing.T, v domain.Vault, path, raw string) {
 }
 
 // The vault holds notes, and a folder holds whatever the person keeps in it. An
-// agent asking for a book gets the refusal and not the book.
+// agent asking for a book gets the rejection and not the book.
 func TestReadingRefusesWhatIsNotANote(t *testing.T) {
 	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	put(t, v, "library.epub", "PK\x03\x04 chapters of somebody else's book")
@@ -874,7 +874,7 @@ func TestReadingRefusesWhatIsNotANote(t *testing.T) {
 		}
 	}
 	if len(got.Errors) != 1 || got.Errors[0].Path != "library.epub" {
-		t.Fatalf("want the book refused by name: %+v", got.Errors)
+		t.Fatalf("want the book rejected by name: %+v", got.Errors)
 	}
 	if !strings.Contains(got.Errors[0].Why, "note") {
 		t.Errorf("the error does not say what is wrong: %q", got.Errors[0].Why)
@@ -894,7 +894,7 @@ func TestReadingRefusesAFileThatIsNotText(t *testing.T) {
 		t.Fatalf("want only the note that is text: %+v", got.Notes)
 	}
 	if len(got.Errors) != 1 || got.Errors[0].Path != "Pasted.md" {
-		t.Fatalf("want the file refused by name: %+v", got.Errors)
+		t.Fatalf("want the file rejected by name: %+v", got.Errors)
 	}
 	if !strings.Contains(got.Errors[0].Why, "text") {
 		t.Errorf("the error does not say what is wrong: %q", got.Errors[0].Why)
@@ -942,10 +942,10 @@ func TestABatchSaysWhatHappenedToEachNote(t *testing.T) {
 	if len(moved.Moved) != 2 {
 		t.Fatalf("want an outcome for each note, got %+v", moved.Moved)
 	}
-	if moved.Moved[0].Refused != "" || moved.Moved[0].To != "archive/A.md" {
+	if moved.Moved[0].Error != "" || moved.Moved[0].To != "archive/A.md" {
 		t.Errorf("the first one moved: %+v", moved.Moved[0])
 	}
-	if moved.Moved[1].Refused == "" {
+	if moved.Moved[1].Error == "" {
 		t.Errorf("the second one collided and should say so: %+v", moved.Moved[1])
 	}
 }

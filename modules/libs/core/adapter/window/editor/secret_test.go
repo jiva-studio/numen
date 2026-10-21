@@ -35,7 +35,7 @@ func TestAKeyIsHandedOnAndARefusalIsSaid(t *testing.T) {
 		PluginId: "md.numen.sample", Name: "apiKey",
 	}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition || !errors.Is(err, errNoKeychain) {
-		t.Errorf("a refusal answered %v", err)
+		t.Errorf("an error answered %v", err)
 	}
 }
 

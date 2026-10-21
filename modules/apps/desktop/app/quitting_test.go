@@ -194,7 +194,7 @@ func TestRequestedQuitProceedsOnceVaultIsFlushed(t *testing.T) {
 		t.Fatal("the quit was never asked for again")
 	}
 	if !requestQuit(g, makeScreen().sight(), func() { t.Error("a settled vault was quit twice") }) {
-		t.Error("a settled vault refused the quit")
+		t.Error("a settled vault rejected the quit")
 	}
 }
 

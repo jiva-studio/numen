@@ -510,7 +510,7 @@ func TestSavingMoreTextThanANoteHolds(t *testing.T) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
-		t.Errorf("a refused save wrote anyway:\n%s", body)
+		t.Errorf("a rejected save wrote anyway:\n%s", body)
 	}
 }
 
@@ -574,7 +574,7 @@ func TestWritingMoreTextThanANoteHolds(t *testing.T) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
-		t.Errorf("a refused write wrote anyway:\n%s", body)
+		t.Errorf("a failed write wrote anyway:\n%s", body)
 	}
 }
 
@@ -590,10 +590,10 @@ func TestCreatingMoreTextThanANoteHolds(t *testing.T) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if made.Path != "" {
-		t.Errorf("a refused creation reported a note at %s", made.Path)
+		t.Errorf("a rejected creation reported a note at %s", made.Path)
 	}
 	if _, err := os.Stat(filepath.Join(c.vault.Path, "Entropy.md")); !errors.Is(err, os.ErrNotExist) {
-		t.Errorf("a refused creation left a file: %v", err)
+		t.Errorf("a rejected creation left a file: %v", err)
 	}
 }
 

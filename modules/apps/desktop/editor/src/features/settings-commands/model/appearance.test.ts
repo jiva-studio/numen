@@ -597,7 +597,7 @@ describe('the size that was chosen', () => {
     )
   })
 
-  it('says what the settings refused, and goes back to the size they hold', async () => {
+  it('says what the settings rejected, and goes back to the size they hold', async () => {
     const one = await startWindow()
     one.fails('appearance.interface_scale is 3, which is outside 0.8 to 2')
 

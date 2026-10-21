@@ -460,7 +460,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(one.renamingPath.value).toBe('New folder')
   })
 
-  it('puts no name in a field where the folder was refused', async () => {
+  it('puts no name in a field where the folder failed', async () => {
     const { one } = await openRowMenu('Entropy.md', true)
 
     one.chooseMenuItem(NEW_FOLDER)
@@ -664,7 +664,7 @@ describe('useFilesTab helper and interaction methods', () => {
   })
 })
 
-describe('a field already holding a name, and a file refused', () => {
+describe('a field already holding a name, and a file rejected', () => {
   const refuse = async (id: string) => {
     const { one, list } = tab(true)
     await list.openFolder(ROOT)
@@ -681,7 +681,7 @@ describe('a field already holding a name, and a file refused', () => {
     ['deck', NEW_DECK],
     ['stencil', NEW_STENCIL],
     ['preset', NEW_PRESET],
-  ])('leaves the field alone where the %s was refused', async (_kind, id) => {
+  ])('leaves the field alone where the %s failed', async (_kind, id) => {
     expect(await refuse(id)).toBe('Cover.png')
   })
 })
@@ -798,11 +798,11 @@ describe('a name given to a row, in more detail', () => {
   })
 })
 
-describe('a file refused in a folder that is shut', () => {
+describe('a file rejected in a folder that is shut', () => {
   it.each([
     ['note', NEW_NOTE],
     ['deck', NEW_DECK],
-  ])('leaves the folder shut where the %s was refused', async (_kind, id) => {
+  ])('leaves the folder shut where the %s failed', async (_kind, id) => {
     const { one, list } = tab(true)
     await list.openFolder(ROOT)
     one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })
@@ -813,7 +813,7 @@ describe('a file refused in a folder that is shut', () => {
     expect(list.isFolderOpen('physics')).toBe(false)
   })
 
-  it('leaves the folder shut where the folder was refused on a row the tree does not hold', async () => {
+  it('leaves the folder shut where the folder failed on a row the tree does not hold', async () => {
     const { one, list } = tab(true)
     one.openMenu({ path: 'ghost/Note.md', at: { x: 0, y: 0 } })
 

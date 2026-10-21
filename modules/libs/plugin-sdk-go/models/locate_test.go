@@ -22,7 +22,7 @@ func sourceIn(dir string) Source {
 	return Source{
 		GetPaths: func(file string) []string { return []string{filepath.Join(dir, file)} },
 		Fetch: func(context.Context, string, string) (string, error) {
-			return "", errors.New("fetch refused")
+			return "", errors.New("fetch failed")
 		},
 	}
 }
@@ -47,7 +47,7 @@ func TestAModelBesideTheApplicationWithAnotherSumIsNotUsed(t *testing.T) {
 	}
 
 	_, err := Locate(context.Background(), sourceIn(dir), pinTestModel("weights"), "", pinnedTestAddress, "layout model")
-	if err == nil || !strings.Contains(err.Error(), "fetch refused") {
+	if err == nil || !strings.Contains(err.Error(), "fetch failed") {
 		t.Fatalf("Locate() error = %v", err)
 	}
 }

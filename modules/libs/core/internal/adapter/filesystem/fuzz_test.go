@@ -86,7 +86,7 @@ func FuzzInside(f *testing.F) {
 		checkRule(t, root, path, "resolveVaultPath", false, asVault, vaultReal, vaultErr)
 		checkRule(t, root, path, "service", true, asOurs, oursReal, oursErr)
 
-		// A path that could not name anything inside a vault is refused before
+		// A path that could not name anything inside a vault fails before
 		// the filesystem is asked anything at all.
 		if strings.ContainsRune(path, 0) || !filepath.IsLocal(path) {
 			if vaultErr == nil || oursErr == nil {
@@ -109,7 +109,7 @@ func FuzzInside(f *testing.F) {
 
 // checkRule fails unless a rule that answered handed back a path under the root,
 // both where it lands and where it lands with every link resolved, and unless a
-// rule that refused handed back nothing at all.
+// rule that rejected handed back nothing at all.
 //
 // Where the path resolves to is what says which of the two rules was entitled
 // to answer. A link is a second spelling for a place, and it is the place the
@@ -120,7 +120,7 @@ func checkRule(t *testing.T, root, path, rule string, application bool, target, 
 	t.Helper()
 	if err != nil {
 		if target != "" || resolved != "" {
-			t.Fatalf("%s refused %q and answered with %q, %q", rule, path, target, resolved)
+			t.Fatalf("%s rejected %q and answered with %q, %q", rule, path, target, resolved)
 		}
 		return
 	}
@@ -162,7 +162,7 @@ var configSeeds = []string{
 // A folder carries an identity or it does not, and ReadConfig says which. An
 // identity it returns is one that could have been made here.
 //
-// Bytes nobody can read out are refused as unreadable, and Initialize leaves
+// Bytes nobody can read out are rejected as unreadable, and Initialize leaves
 // them where they are. The file sits in a folder a person keeps in their own
 // sync, so the bytes are a stranger's.
 func FuzzReadConfig(f *testing.F) {

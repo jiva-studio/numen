@@ -15,8 +15,8 @@ import (
 
 // why is a read's outcome in words an agent can act on.
 func why(c note.Contents) string {
-	reason, refused := wire.ConvertOutcomeToErrorCode(c.Outcome)
-	if !refused {
+	reason, ok := wire.ConvertOutcomeToErrorCode(c.Outcome)
+	if !ok {
 		return string(c.Outcome)
 	}
 	// A note past the bound is answered with the size it came to: that is what
@@ -31,7 +31,7 @@ func why(c note.Contents) string {
 // sayError is a write's error in words an agent can act on. An error the schema
 // carries no code for is handed over currently.
 func sayError(err error) string {
-	if reason, refused := wire.GetErrorCode(err); refused {
+	if reason, ok := wire.GetErrorCode(err); ok {
 		return describeCode(reason)
 	}
 	return err.Error()

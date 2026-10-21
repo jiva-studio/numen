@@ -30,7 +30,7 @@ const mostFuzzed = 1 << 20
 // However small the file, the text it yields is bounded: what an archive says
 // about the size of its entries is believed about nothing.
 //
-// A file that could not be read is refused as one that is no archive, one that
+// A file that could not be read fails as one that is no archive, one that
 // holds no container, one that holds no package document, or one whose spine is
 // ciphertext. A book that is empty is read, and is a different answer.
 func FuzzRead(f *testing.F) {
@@ -127,11 +127,11 @@ func FuzzRead(f *testing.F) {
 				errors.Is(err, epub.ErrNoPackage) ||
 				errors.Is(err, epub.ErrEncrypted)
 			if !named {
-				t.Fatalf("a file of %d bytes was refused as %v, which says nothing about it",
+				t.Fatalf("a file of %d bytes failed as %v, which says nothing about it",
 					len(raw), err)
 			}
 			if book != nil {
-				t.Fatalf("a file was refused as %v and a book came back with it", err)
+				t.Fatalf("a file failed as %v and a book came back with it", err)
 			}
 			return
 		}
@@ -324,7 +324,7 @@ func FuzzMarkup(f *testing.F) {
 
 			drawn, err := book.Markup(doc.Path)
 			if err != nil {
-				t.Fatalf("%s is a document of the book and was refused as %v", doc.Path, err)
+				t.Fatalf("%s is a document of the book and failed as %v", doc.Path, err)
 			}
 			if drawn.Offset != doc.Offset || drawn.Length != doc.Length {
 				t.Fatalf("%s runs from %d for %d as markup and from %d for %d as text",

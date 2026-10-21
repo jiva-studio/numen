@@ -43,14 +43,14 @@ function place(
   const free = Math.max(length - gap * Math.max(node.children.length - 1, 0), 0)
   const sizes = fit(node.sizes, node.children.length)
 
-  let alongPos = isAcross ? box.x : box.y
+  let alongCoord = isAcross ? box.x : box.y
   node.children.forEach((child, index) => {
     const taken = free * (sizes[index] ?? 0)
     const childBox: Rect = isAcross
-      ? { x: alongPos, y: box.y, width: taken, height: box.height }
-      : { x: box.x, y: alongPos, width: box.width, height: taken }
+      ? { x: alongCoord, y: box.y, width: taken, height: box.height }
+      : { x: box.x, y: alongCoord, width: box.width, height: taken }
     // Stryker disable next-line ArithmeticOperator: depth - 1 has the parity of depth + 1, and only parity is read.
     place(child, childBox, workspace, depth + 1, gap, into)
-    alongPos += taken + gap
+    alongCoord += taken + gap
   })
 }

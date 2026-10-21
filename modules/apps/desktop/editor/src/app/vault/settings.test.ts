@@ -259,7 +259,7 @@ describe('the key of a secret', () => {
     })
   })
 
-  it('refused reaches the caller', async () => {
+  it('rejection reaches the caller', async () => {
     asked.writePluginSecret.mockRejectedValue(new Error('no keychain'))
     await expect(core.writePluginSecret('sample.plugin', 'apiKey', 'k')).rejects.toThrow()
   })

@@ -36,14 +36,14 @@ func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length 
 // file of another kind is reached by its path and by nothing else.
 func TestAFileTheVaultDoesNotHoldAsANoteIsRead(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{
-		"lectures/kinetics.txt": "The first law, as spoken.\n",
+		"lectures/kinetics.txt": "The first law, as stated.\n",
 	})
 
 	got := read(t, u, v, "lectures/kinetics.txt", 0, 0)
 	if got.Outcome != file.Ok {
 		t.Fatalf("want ok, got %q", got.Outcome)
 	}
-	if got.Text != "The first law, as spoken.\n" {
+	if got.Text != "The first law, as stated.\n" {
 		t.Errorf("the file came back as %q", got.Text)
 	}
 	if got.Whole != len(got.Text) || got.Start != 0 || got.Length != len(got.Text) {
@@ -179,7 +179,7 @@ func TestAPathWithNoFileIsMissing(t *testing.T) {
 }
 
 // The path is from the vault root, and everything that names another place is
-// refused as a path outside the vault.
+// rejected as a path outside the vault.
 func TestAPathThatDoesNotStayInTheVaultIsRefused(t *testing.T) {
 	outside := t.TempDir()
 	secret := filepath.Join(outside, "secret.txt")
@@ -287,7 +287,7 @@ func TestARangeNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
 		{0, file.MostRead + 1},
 	} {
 		if _, err := u.Execute(t.Context(), v, "lecture.txt", asked.start, asked.length); err == nil {
-			t.Errorf("a range beginning at %d for %d bytes was not refused", asked.start, asked.length)
+			t.Errorf("a range beginning at %d for %d bytes was not rejected", asked.start, asked.length)
 		}
 	}
 }
@@ -385,13 +385,13 @@ func TestOneCallCarriesSixteenThousandBytes(t *testing.T) {
 	}
 }
 
-// A range beginning before the file is refused before anything is looked at,
+// A range beginning before the file fails before anything is looked at,
 // where there is no file as much as where there is one.
 func TestARangeBeginningBeforeTheFileIsRefusedWhereNoFileIs(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
 
 	if _, err := u.Execute(t.Context(), v, "gone.txt", -1, 0); err == nil {
-		t.Error("a range beginning at -1 was not refused")
+		t.Error("a range beginning at -1 was not rejected")
 	}
 }
 

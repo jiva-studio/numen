@@ -142,7 +142,7 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 	if !f.exists("physics/Entropy.md") {
 		t.Error("the note moved")
@@ -223,7 +223,7 @@ func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 	if !f.exists("physics/Entropy.md") {
 		t.Error("the note moved")
@@ -243,7 +243,7 @@ func TestAMoveInAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 }
 
@@ -260,7 +260,7 @@ func TestAMoveOfAPathThatHoldsNothingIsNoNote(t *testing.T) {
 		t.Error("the move says it landed")
 	}
 	if moved.From != "physics/Missing.md" || moved.To != "archive/Missing.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 }
 

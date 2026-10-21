@@ -41,7 +41,7 @@ func TestALinkTheNoteCannotCarryLeavesNoFile(t *testing.T) {
 				t.Error("a link with no role the application acts on was written")
 			}
 			if c.exists("Heat.md") {
-				t.Error("a refused link left a note behind")
+				t.Error("a rejected link left a note behind")
 			}
 		})
 	}

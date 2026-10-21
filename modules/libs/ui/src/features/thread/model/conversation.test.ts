@@ -547,9 +547,9 @@ describe('a conversation', () => {
 
 describe('a conversation that is over', () => {
   it('notifies the agent, under the name it answers by', () => {
-    const overVal: string[] = []
+    const overKeys: string[] = []
     const conversation = useConversation(
-      { ...createPort([createStopped()]), finish: async (named) => void overVal.push(named) },
+      { ...createPort([createStopped()]), finish: async (named) => void overKeys.push(named) },
       words,
       called,
       now,
@@ -557,7 +557,7 @@ describe('a conversation that is over', () => {
 
     conversation.finish()
 
-    expect(over).toStrictEqual([called])
+    expect(overKeys).toStrictEqual([called])
   })
 
   it('lets go of the answer on its way, and keeps what arrived', async () => {

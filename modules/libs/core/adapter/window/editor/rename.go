@@ -35,9 +35,9 @@ func (h *noteHandler) RenameNote(
 	}
 	out.IsUnlevelled = h.state.isUnlevelled(err)
 	if err != nil && !out.GetIsUnlevelled() {
-		reason, refused := wire.GetErrorCode(err)
+		reason, ok := wire.GetErrorCode(err)
 		switch {
-		case refused:
+		case ok:
 			out.Error = &reason
 		case out.GetPath() == "":
 			return nil, connect.NewError(connect.CodeInternal, err)

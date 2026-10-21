@@ -219,7 +219,7 @@ func TestAFullTrashRefusesTheNoteAfterAHundredNames(t *testing.T) {
 		t.Errorf("the trash was offered the note %d times, want 100", len(*tr.moves))
 	}
 	if got.Path != "Entropy.md" || got.Trashed != "" {
-		t.Errorf("the answer to a refused removal is %+v", got)
+		t.Errorf("the answer to a rejected removal is %+v", got)
 	}
 	if len(*tr.levelled) != 0 {
 		t.Errorf("the index was levelled for a note that is still there: %v", *tr.levelled)

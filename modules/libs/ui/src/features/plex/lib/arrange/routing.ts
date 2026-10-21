@@ -67,11 +67,11 @@ export function cutToFit(label: string, room: number, width: (label: string) => 
   const truncateTo = (count: number) => `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
 
   let fits = 0
-  let overVal = letters.length
-  while (fits + 1 < overVal) {
-    const middle = Math.floor((fits + overVal) / 2)
+  let overCount = letters.length
+  while (fits + 1 < overCount) {
+    const middle = Math.floor((fits + overCount) / 2)
     if (width(truncateTo(middle)) <= room) fits = middle
-    else overVal = middle
+    else overCount = middle
   }
   return truncateTo(fits)
 }
@@ -136,7 +136,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
 
-  const alongVal: EdgeCurve = {
+  const alongEdge: EdgeCurve = {
     fromPoint: firstGate,
     control1: getControl(firstGate, isVertical, reach),
     control2: getControl(secondGate, isVertical, -reach),
@@ -145,7 +145,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 
   // The caller's from and to are kept, so the curve may run right to left or
   // bottom to top.
-  return fromFirst ? along : reverse(along)
+  return fromFirst ? alongEdge : reverse(alongEdge)
 }
 
 /**

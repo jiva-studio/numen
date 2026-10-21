@@ -362,7 +362,7 @@ func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	f := openTwoVaults(t)
 
 	if err := f.installation.Show(t.Context(), f.first); err != nil {
-		t.Fatalf("the vault already shown was refused: %v", err)
+		t.Fatalf("the vault already shown failed: %v", err)
 	}
 	if state := f.state(t); !state.GetScan().GetIsReady() {
 		t.Error("the vault already shown is being read again")
@@ -504,7 +504,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 }
 
 // TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther. One settling runs at a
-// time. The second to arrive is refused, and the first runs to its end.
+// time. The second to arrive fails, and the first runs to its end.
 func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	f := openTwoVaults(t)
 

@@ -160,7 +160,7 @@ func TestAnIndexCompactsWhileOpenAndRefusesOnceClosed(t *testing.T) {
 	_, db, _ := openVault(t, note)
 
 	if err := db.Compact(t.Context()); err != nil {
-		t.Fatalf("an open index refused: %v", err)
+		t.Fatalf("an open index rejected: %v", err)
 	}
 	if err := db.Close(); err != nil {
 		t.Fatal(err)

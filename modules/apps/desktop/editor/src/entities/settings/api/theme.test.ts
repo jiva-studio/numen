@@ -117,7 +117,7 @@ describe('the rest of what is requested', () => {
     expect(asked.readTheme.mock.calls[0]?.[0]).toEqual({ name: 'own/Dusk.css' })
   })
 
-  it('says why a choice was refused, and says nothing where it was not', async () => {
+  it('says why a choice failed, and says nothing where it was not', async () => {
     asked.writeAppearance.mockResolvedValue({ error: 'that size is outside its bounds' })
     expect(
       await themes.writeAppearance('preset/Numen.css', 'light', {

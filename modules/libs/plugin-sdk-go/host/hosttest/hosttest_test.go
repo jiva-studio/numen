@@ -174,14 +174,14 @@ func TestAFileTheHostMayNotOpenFailsWithWhatItWasToldToFailWith(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.New("Physics")
 	v.File("a.md", "x")
-	refusal := errors.New("permission denied")
-	v.Refuse("a.md", refusal)
+	testErr := errors.New("permission denied")
+	v.Refuse("a.md", testErr)
 
 	_, _, readErr := v.Read(ctx, "a.md")
 	v.Refuse("a.md", nil)
 	_, _, again := v.Read(ctx, "a.md")
 
-	if !errors.Is(readErr, refusal) || again != nil {
+	if !errors.Is(readErr, testErr) || again != nil {
 		t.Errorf("got %v and then %v", readErr, again)
 	}
 }

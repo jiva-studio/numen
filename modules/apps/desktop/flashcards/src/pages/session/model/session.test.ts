@@ -83,10 +83,10 @@ describe('what a session is opened over', () => {
     expect(asks[0]?.said).toStrictEqual({ vault: '01VAULT', deck: '', preset: '' })
   })
 
-  // A preset with nothing to ask is refused, and a tile standing for one is not
+  // A preset with nothing to ask fails, and a tile standing for one is not
   // pressed. A count read a moment ago can still be overtaken, and what comes
   // back is said and nothing is opened.
-  it('opens nothing where the preset is refused, and says why', async () => {
+  it('opens nothing where the preset fails, and says why', async () => {
     const cards: SessionClient = {
       startSession: () =>
         Promise.reject(new Error('this preset schedules nothing today: it is paused')),
@@ -196,7 +196,7 @@ describe('a session', () => {
     expect(one.at.value).toBe(0)
   })
 
-  it('keeps the answer it wrote when taking it back was refused', async () => {
+  it('keeps the answer it wrote when taking it back failed', async () => {
     let refuses = false
     const cards: SessionClient = {
       async startSession() {
@@ -368,7 +368,7 @@ describe('an answer taken back', () => {
     expect(one.card.value?.mark).toBe('one')
   })
 
-  it('leaves the session free to answer again once it is refused', async () => {
+  it('leaves the session free to answer again once it fails', async () => {
     let refuses = true
     const cards: SessionClient = {
       async startSession() {

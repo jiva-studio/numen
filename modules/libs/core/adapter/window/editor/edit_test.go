@@ -124,9 +124,9 @@ func TestOnlyTheCoreSaysWhichNoteIsMissing(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			reason, refused := wire.GetErrorCode(c.err)
-			if refused != c.is {
-				t.Fatalf("want refused=%v, got %v (%v)", c.is, refused, reason)
+			reason, rejected := wire.GetErrorCode(c.err)
+			if rejected != c.is {
+				t.Fatalf("want rejected=%v, got %v (%v)", c.is, rejected, reason)
 			}
 			if reason != c.want {
 				t.Errorf("want %v, got %v", c.want, reason)

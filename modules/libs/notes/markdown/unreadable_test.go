@@ -6,7 +6,7 @@ import (
 )
 
 // A splice puts bytes into a block laid out by somebody else. Where what comes
-// out is no longer YAML, the write is refused and the note stands as it was.
+// out is no longer YAML, the write fails and the note stands as it was.
 func TestAWriteLeavingUnreadableFrontmatterIsRefused(t *testing.T) {
 	for name, raw := range map[string]string{
 		"a document end below the key": "---\n0: \n... 0\n---\nbody\n",
@@ -21,7 +21,7 @@ func TestAWriteLeavingUnreadableFrontmatterIsRefused(t *testing.T) {
 				t.Errorf("want ErrUnreadable, got %v", err)
 			}
 			if got := string(d.Bytes()); got != raw {
-				t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
+				t.Errorf("a failed write changed the note\n want %q\n  got %q", raw, got)
 			}
 		})
 	}

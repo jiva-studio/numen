@@ -1,5 +1,5 @@
 /**
- * What the window asks of the application, and how it reads a refusal.
+ * What the window asks of the application, and how it reads an error.
  *
  * Each call hands the client the message the schema names for it, and each
  * refusal comes back as a failure in the window's own words.
@@ -52,15 +52,15 @@ vi.mock('@/shared/clients', () => ({
 }))
 
 describe('a note requested for', () => {
-  it('is created at the path of its folder, and refused in the words of the error', async () => {
+  it('is created at the path of its folder, and rejected with error of the error', async () => {
     asked.createNote.mockResolvedValue({ path: 'Notes/Heat.md' })
     const created = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
     expect(created).toEqual({ ok: true, value: { path: 'Notes/Heat.md' } })
     expect(asked.createNote.mock.calls.at(-1)?.[0].path).toBe('Notes')
 
     asked.createNote.mockResolvedValue({ error: ErrorCode.OCCUPIED })
-    const refused = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
-    expect(refused).toEqual({ ok: false, error: 'occupied' })
+    const outcome = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
+    expect(outcome).toEqual({ ok: false, error: 'occupied' })
   })
 
   it('is renamed by the path it has, and a stale answer is a change under the window', async () => {
@@ -102,7 +102,7 @@ describe('a note requested for', () => {
 })
 
 describe('a file requested for', () => {
-  it('is removed to the trash unless it is to be destroyed, and refused in words', async () => {
+  it('is removed to the trash unless it is to be destroyed, and rejected with error', async () => {
     asked.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     await core.remove('a.md')
     expect(asked.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: false })
@@ -121,7 +121,7 @@ describe('a file requested for', () => {
     expect(asked.listFiles.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes' })
   })
 
-  it('is moved from one path to another, and refused in words', async () => {
+  it('is moved from one path to another, and rejected with error', async () => {
     asked.moveFile.mockResolvedValue({})
     await core.move('a.md', 'b.md')
     expect(asked.moveFile.mock.calls.at(-1)?.[0]).toEqual({ from: 'a.md', to: 'b.md' })
@@ -136,7 +136,7 @@ describe('a file requested for', () => {
     expect(asked.createFolder.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes/New' })
   })
 
-  it('has a url created in a folder, and refused in words', async () => {
+  it('has a url created in a folder, and rejected with error', async () => {
     asked.createURL.mockResolvedValue({ path: 'Notes/page.md' })
     await core.createUrl('https://example.com', 'Notes')
     expect(asked.createURL.mock.calls.at(-1)?.[0]).toEqual({
@@ -191,7 +191,7 @@ describe('a vault requested for', () => {
     expect(asked.openVault.mock.calls.at(-1)?.[0]).toEqual({ id: 'v1' })
   })
 
-  it('is refused in the words of the error', async () => {
+  it('fails in the words of the error', async () => {
     asked.addVault.mockResolvedValue({ error: VaultsErrorCode.NAME_TAKEN })
     expect(await vaults.add('/v', 'Name')).toEqual({ ok: false, error: 'nameTaken' })
   })

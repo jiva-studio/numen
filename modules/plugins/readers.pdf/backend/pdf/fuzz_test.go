@@ -18,7 +18,7 @@ import (
 // part that begins at or before it, so a passage found in the text is said to
 // be on a page and under a heading.
 //
-// A file that could not be read is refused as one that is no PDF or as one
+// A file that could not be read fails as one that is no PDF or as one
 // nobody here has the password to. A scan carries no text, and is a document
 // read.
 //
@@ -48,11 +48,11 @@ func FuzzRead(f *testing.F) {
 		book, err := pdf.Read(raw)
 		if err != nil {
 			if !errors.Is(err, pdf.ErrNotPDF) && !errors.Is(err, pdf.ErrEncrypted) {
-				t.Fatalf("a file of %d bytes was refused as %v, which says nothing about it",
+				t.Fatalf("a file of %d bytes failed as %v, which says nothing about it",
 					len(raw), err)
 			}
 			if book != nil {
-				t.Fatalf("a file was refused as %v and a document came back with it", err)
+				t.Fatalf("a file failed as %v and a document came back with it", err)
 			}
 			return
 		}

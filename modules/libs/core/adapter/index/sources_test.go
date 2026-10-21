@@ -176,7 +176,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 	}
 }
 
-// A cursor this index did not hand out is refused, and nothing is visited.
+// A cursor this index did not hand out fails, and nothing is visited.
 func TestACursorThisIndexDidNotHandOutIsRefused(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
@@ -250,7 +250,7 @@ func TestAPathWithNoSourceIsNotHeld(t *testing.T) {
 }
 
 // Vectors saved through the port settle what the chunks owed, and a vector for
-// a chunk this index did not hand out is refused.
+// a chunk this index did not hand out fails.
 func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -339,33 +339,33 @@ func TestRemovingSourcesFromAClosedIndexFails(t *testing.T) {
 	}
 }
 
-// A cursor that is refused gives no position to walk from, and one that is read
+// A cursor that fails gives no position to walk from, and one that is read
 // gives the positions it names, the ones it leaves out standing at the end of
 // the ordering.
 func TestACursorIsReadIntoThePositionItNames(t *testing.T) {
 	for _, c := range []struct {
 		cursor               port.ChunkCursor
 		mtime, source, chunk int64
-		refused              bool
+		wantErr bool
 	}{
 		{cursor: "", mtime: math.MaxInt64, source: math.MaxInt64, chunk: 0},
 		{cursor: "7", mtime: math.MaxInt64, source: math.MaxInt64, chunk: 7},
 		{cursor: "5:7", mtime: 5, source: math.MaxInt64, chunk: 7},
 		{cursor: "5:6:7", mtime: 5, source: 6, chunk: 7},
-		{cursor: "x", refused: true},
-		{cursor: "x:1", refused: true},
-		{cursor: "1:x", refused: true},
-		{cursor: "x:1:2", refused: true},
-		{cursor: "1:x:2", refused: true},
-		{cursor: "1:2:x", refused: true},
-		{cursor: "1:2:3:4", refused: true},
+		{cursor: "x", wantErr: true},
+		{cursor: "x:1", wantErr: true},
+		{cursor: "1:x", wantErr: true},
+		{cursor: "x:1:2", wantErr: true},
+		{cursor: "1:x:2", wantErr: true},
+		{cursor: "1:2:x", wantErr: true},
+		{cursor: "1:2:3:4", wantErr: true},
 	} {
 		got, err := parseCursor(c.cursor)
 		mtime, source, chunk := got.MTime, got.Source, got.Chunk
-		if c.refused != (err != nil) {
-			t.Errorf("cursor %q: error %v, refused want %v", c.cursor, err, c.refused)
+		if c.wantErr != (err != nil) {
+			t.Errorf("cursor %q: error %v, wantErr %v", c.cursor, err, c.wantErr)
 		}
-		if c.refused {
+		if c.wantErr {
 			c.mtime, c.source, c.chunk = 0, 0, 0
 		}
 		if mtime != c.mtime || source != c.source || chunk != c.chunk {

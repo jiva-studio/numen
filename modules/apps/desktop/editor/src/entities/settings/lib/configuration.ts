@@ -61,7 +61,7 @@ export interface PluginSettingInfo {
  * not hold the ai:complete permission, `asked` one that asked since the host
  * started and has had no answer.
  */
-export type Consent = 'none' | 'unanswered' | 'asked' | 'allowed' | 'refused'
+export type Consent = 'none' | 'unanswered' | 'asked' | 'allowed' | 'denied'
 
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
 export interface PluginFailure {

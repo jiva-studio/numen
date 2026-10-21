@@ -146,15 +146,15 @@ func NewOver(passages port.PassageQueries) Search {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var violations []string
 	for _, one := range getExposedDependencies(file) {
-		refused = append(refused, one.in+": "+strings.Join(one.fields, ", "))
+		violations = append(violations, one.in+": "+strings.Join(one.fields, ", "))
 	}
 	// Pages is the caller's own and no collaborator; notes is closed; Write has
 	// no constructor to promise anything. Search is reached through a
 	// constructor not named after it.
-	slices.Sort(refused)
-	if !slices.Equal(refused, []string{"Read: Readers", "Search: Passages"}) {
-		t.Errorf("the rule refuses %v, want the one collaborator left in the open", refused)
+	slices.Sort(violations)
+	if !slices.Equal(violations, []string{"Read: Readers", "Search: Passages"}) {
+		t.Errorf("the rule rejects %v, want the one collaborator left in the open", violations)
 	}
 }

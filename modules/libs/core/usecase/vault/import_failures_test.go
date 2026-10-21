@@ -96,7 +96,7 @@ func TestNothingHandedOverIsNothingDone(t *testing.T) {
 
 	brought, err := bring.Execute(t.Context(), v, "", nil)
 	if err != nil {
-		t.Fatalf("an empty drop was refused: %v", err)
+		t.Fatalf("an empty drop failed: %v", err)
 	}
 	if len(brought.Landed) != 0 || len(brought.Errors) != 0 {
 		t.Errorf("an empty drop came to %+v", brought)
@@ -115,7 +115,7 @@ func TestAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if len(brought.Errors) != 0 {
-		t.Errorf("the refusal was reported as a file: %v", brought.Errors)
+		t.Errorf("the rejection was reported as a file: %v", brought.Errors)
 	}
 }
 

@@ -118,7 +118,7 @@ func (r waits) Read(ctx context.Context, path string) ([]byte, error) {
 }
 
 // unwalkable is a set of readers that cannot list the vault, which is what a
-// folder the walk is refused looks like from here. A note named outright is
+// folder the walk fails looks like from here. A note named outright is
 // still read.
 type unwalkable struct{ port.VaultReaders }
 
@@ -242,7 +242,7 @@ func save(t *testing.T, f *behind, path, body string) {
 		t.Fatal(err)
 	}
 	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the save of %s was refused: %v", path, code)
+		t.Fatalf("the save of %s failed: %v", path, code)
 	}
 }
 

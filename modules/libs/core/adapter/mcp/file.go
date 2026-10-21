@@ -32,14 +32,14 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 		Start   int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
 		Length  int    `json:"length" jsonschema:"how long the range is"`
 		Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
-		Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the range did"`
+		Error string `json:"error,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 	}, error) {
 		type out = struct {
 			Text    string `json:"text,omitempty"`
 			Start   int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
 			Length  int    `json:"length" jsonschema:"how long the range is"`
 			Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
-			Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the range did"`
+			Error string `json:"error,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 		}
 		if core.Read.Readers == nil {
 			return nil, out{}, fmt.Errorf("this vault's files are not open")
@@ -54,7 +54,7 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 			res.Text = contents.Text
 			return nil, res, nil
 		}
-		res.Refused = unread(contents.Outcome)
+		res.Error = unread(contents.Outcome)
 		return nil, res, nil
 	})
 }

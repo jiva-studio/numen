@@ -308,11 +308,11 @@ describe('whether starting a session on a deck is offered', () => {
     expect(canStart(deck(0, 1), createPresets(preset()))).toBe(true)
   })
 
-  it('is refused where the deck owes nothing', () => {
+  it('fails where the deck owes nothing', () => {
     expect(canStart(deck(0), createPresets(preset()))).toBe(false)
   })
 
-  it('is refused where the preset scheduling it schedules nothing', () => {
+  it('fails where the preset scheduling it schedules nothing', () => {
     expect(canStart(deck(3), createPresets(preset({ paused: 'no cards a day' })))).toBe(false)
   })
 

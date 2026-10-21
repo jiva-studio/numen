@@ -1,6 +1,6 @@
 /**
  * What the window sends the cards service for each thing it does with a deck or
- * a stencil, and what it makes of the answer: a refusal keeps its own words, a
+ * a stencil, and what it makes of the answer: an error keeps its own words, a
  * file moved on is `changed`, and a missing stamp is the empty string.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -103,13 +103,13 @@ describe('reading a deck', () => {
     expect(read.ok && read.value.at).toBe('')
   })
 
-  it('is refused in the service words even where a deck came with them', async () => {
+  it('fails in the service words even where a deck came with them', async () => {
     answer('readDeck', { error: ErrorCode.MISSING, deck: deckMessage, bound: 400n })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'missing', bound: 400 }))
   })
 
-  it('is refused in the service words where no deck came', async () => {
+  it('fails in the service words where no deck came', async () => {
     answer('readDeck', { error: ErrorCode.TOO_LARGE, bound: 900n })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'tooLarge', bound: 900 }))
@@ -163,7 +163,7 @@ describe('writing a deck', () => {
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(asValue({ at: '' }))
   })
 
-  it('is refused in the service words, with the bound', async () => {
+  it('fails in the service words, with the bound', async () => {
     answer('writeDeck', { error: ErrorCode.DECK_TOO_LARGE, bound: 700n })
 
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(
@@ -222,7 +222,7 @@ describe('renaming a field', () => {
     expect(renamed.ok && renamed.value.at).toBe('')
   })
 
-  it('is refused in the service words', async () => {
+  it('fails in the service words', async () => {
     answer('renameStencilField', { error: ErrorCode.MISSING })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)).toEqual(
@@ -270,13 +270,13 @@ describe('reading a stencil', () => {
     expect(read.ok && read.value.at).toBe('')
   })
 
-  it('is refused in the service words even where a stencil came with them', async () => {
+  it('fails in the service words even where a stencil came with them', async () => {
     answer('readStencil', { error: ErrorCode.MISSING, stencil: stencilMessage })
 
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('missing'))
   })
 
-  it('is refused in the service words where no stencil came', async () => {
+  it('fails in the service words where no stencil came', async () => {
     answer('readStencil', { error: ErrorCode.UNREADABLE })
 
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('unreadable'))
@@ -336,7 +336,7 @@ describe('writing a stencil', () => {
     )
   })
 
-  it('is refused in the service words', async () => {
+  it('fails in the service words', async () => {
     answer('writeStencil', { error: ErrorCode.OCCUPIED })
 
     expect(await cards.writeStencil('Word.md', { ...stencil, fields: ['Front'] }, null)).toEqual(

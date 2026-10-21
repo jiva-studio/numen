@@ -71,7 +71,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 }
 
 // Two writers over one index file lose nothing. Both write at once and every
-// note either lands or is refused loudly.
+// note either lands or fails loudly.
 func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "index.db")
 	one := openDBAt(t, path)
@@ -107,7 +107,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 	// A writer that could not have its turn says so; it does not come back
 	// having written nothing.
 	for _, err := range failed {
-		t.Errorf("a write was refused: %v", err)
+		t.Errorf("a write failed: %v", err)
 	}
 
 	want := make([]string, 0, 2*each)

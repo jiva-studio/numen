@@ -300,10 +300,10 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 				t.Fatal("the window answered, and it has no vault to answer about")
 			}
 			if got := connect.CodeOf(err); got != connect.CodeFailedPrecondition {
-				t.Errorf("the refusal is %v: %v", got, err)
+				t.Errorf("the error is %v: %v", got, err)
 			}
 			if !strings.Contains(err.Error(), "no vault") {
-				t.Errorf("the refusal does not say why: %v", err)
+				t.Errorf("the rejection does not say why: %v", err)
 			}
 		})
 	}
@@ -355,7 +355,7 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 
 	documents := numenv1connect.NewDocumentServiceClient(f.server.Client(), f.server.URL)
 	recordings := numenv1connect.NewRecordingServiceClient(f.server.Client(), f.server.URL)
-	readings := numenv1connect.NewOcrServiceClient(f.server.Client(), f.server.URL)
+	ocrClient := numenv1connect.NewOcrServiceClient(f.server.Client(), f.server.URL)
 	asked := map[string]func() error{
 		"what a document is": func() error {
 			_, err := documents.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
@@ -370,7 +370,7 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 			return err
 		},
 		"what a run of the text says": func() error {
-			_, err := readings.ReadOcr(t.Context(), connect.NewRequest(&v1.ReadOcrRequest{
+			_, err := ocrClient.ReadOcr(t.Context(), connect.NewRequest(&v1.ReadOcrRequest{
 				Path:  file,
 				Spans: []*v1.Span{{From: 0, To: 1}},
 			}))
@@ -379,7 +379,7 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 	}
 	for what, asking := range asked {
 		if code := connect.CodeOf(asking()); code != connect.CodeFailedPrecondition {
-			t.Errorf("%s was refused %s, and the window has no vault", what, code)
+			t.Errorf("%s failed %s, and the window has no vault", what, code)
 		}
 	}
 }
@@ -405,8 +405,8 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a folder could not be added: %v", err)
 	}
-	if refused := added.Msg.Error; refused != nil {
-		t.Fatalf("the folder was refused: %v", *refused)
+	if rejected := added.Msg.Error; rejected != nil {
+		t.Fatalf("the folder failed: %v", *rejected)
 	}
 
 	if _, err := f.holds.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{

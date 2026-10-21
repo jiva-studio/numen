@@ -131,7 +131,7 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	worn := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	if failed := worn.choose(t, "preset:nord", v1.Mode_MODE_DARK); failed != "" {
-		t.Fatalf("refused: %s", failed)
+		t.Fatalf("failed: %s", failed)
 	}
 	if len(worn.written) != 1 || worn.written[0] != (theme.Appearance{ThemeName: "preset:nord", Mode: appearance.Dark}) {
 		t.Fatalf("written: %+v", worn.written)
@@ -192,7 +192,7 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 		t.Fatal(err)
 	}
 	if reason := answer.Msg.GetError(); reason != "" {
-		t.Fatalf("refused: %s", reason)
+		t.Fatalf("failed: %s", reason)
 	}
 	if len(worn.written) != 1 || worn.written[0].InterfaceScale != 1.75 || worn.written[0].TextScale != 0 {
 		t.Fatalf("written: %+v", worn.written)
@@ -216,7 +216,7 @@ func TestAChoiceThatCannotBeWornIsRefusedAndSaysWhy(t *testing.T) {
 			t.Errorf("%s, %v was written", chosen.name, chosen.mode)
 		}
 		if !strings.Contains(failed, chosen.name) {
-			t.Errorf("%s was refused with %q", chosen.name, failed)
+			t.Errorf("%s failed with %q", chosen.name, failed)
 		}
 	}
 	if len(worn.written) != 0 {
@@ -228,7 +228,7 @@ func TestASettingsFileThatWouldNotTakeTheChoiceSaysSo(t *testing.T) {
 	worn := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	worn.refuses = errNotWritten
 	if failed := worn.choose(t, "preset:nord", v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
-		t.Errorf("refused with %q", failed)
+		t.Errorf("failed with %q", failed)
 	}
 }
 

@@ -109,7 +109,7 @@ func (l listing) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
 }
 
 // A run taken away between the listing and the reading is left out, and the
-// runs that are still there are read. A vault's history is not refused because
+// runs that are still there are read. A vault's history is not rejected because
 // another machine tidied up while this one was reading.
 func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
@@ -122,7 +122,7 @@ func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	gone := phantom{DerivedStores: s.logs, name: domain.NewReviewLogName("01ARZ3NDEKTSV4RRFFQ69G5FAV")}
 	held, err := flashcards.Log{Stores: gone}.Read(t.Context(), s.vault)
 	if err != nil {
-		t.Fatalf("a run taken away refused the whole history: %v", err)
+		t.Fatalf("a run taken away failed the whole history: %v", err)
 	}
 	if len(held.Answers) != 1 {
 		t.Errorf("the vault holds %d answers, want the one written", len(held.Answers))
@@ -235,7 +235,7 @@ func (closed) ReadArtifact(context.Context, domain.ArtifactName) ([]byte, error)
 }
 
 // A vault whose answers cannot be read is not a vault of no answers. The
-// difference is a person's whole history, so it is refused and said rather than
+// difference is a person's whole history, so it fails and said rather than
 // counted as nothing.
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
@@ -382,7 +382,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 
 	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
-		t.Fatalf("one file nobody may open refused the whole history: %v", err)
+		t.Fatalf("one file nobody may open failed the whole history: %v", err)
 	}
 	if len(held.Answers) != 1 {
 		t.Errorf("the vault holds %d answers, want the one that could be read", len(held.Answers))

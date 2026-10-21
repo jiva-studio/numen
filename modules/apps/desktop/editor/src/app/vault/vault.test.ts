@@ -65,7 +65,7 @@ describe('the file a save presents', () => {
     asked.writeNote.mockResolvedValue({})
 
     const read = await core.read(at.path)
-    if (!read.ok) throw new Error('the read was refused')
+    if (!read.ok) throw new Error('the read failed')
     await core.write(at.path, 'prose and more', {
       prose: read.value.body,
       fingerprint: read.value.at ?? '',

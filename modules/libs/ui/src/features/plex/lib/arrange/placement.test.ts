@@ -171,22 +171,22 @@ describe('a column', () => {
 
   it('remains clear of a row it reaches alongside', () => {
     const alone = of(place({ sibling: createNodes('sibling', 5) }), 'sibling')
-    const adjacent = of(
+    const besidePoint = of(
       place({ sibling: createNodes('sibling', 5), child: createNodes('child', 5) }),
       'sibling',
     )
 
-    expect(beside[0]!.x).toBeGreaterThan(alone[0]!.x)
+    expect(besidePoint[0]!.x).toBeGreaterThan(alone[0]!.x)
   })
 
   it('keeps its own distance from a row it never reaches alongside', () => {
     const alone = of(place({ sibling: createNodes('sibling', 2) }), 'sibling')
-    const adjacent = of(
+    const besidePoint = of(
       place({ sibling: createNodes('sibling', 2), child: createNodes('child', 5) }),
       'sibling',
     )
 
-    expect(beside[0]!.x).toBeCloseTo(alone[0]!.x)
+    expect(besidePoint[0]!.x).toBeCloseTo(alone[0]!.x)
   })
 
   it('gives both sides the one clearance, however tall each is', () => {

@@ -101,18 +101,18 @@ func TestNoApplicationLogs(t *testing.T) {
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
-	var refused []string
+	var violations []string
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template",
 		"github.com/jiva-studio/numen/modules/libs/notes/domain",
 	} {
 		if logs(to) {
-			refused = append(refused, to)
+			violations = append(violations, to)
 		}
 	}
 	want := []string{"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog"}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if !slices.Equal(violations, want) {
+		t.Errorf("the rule rejects %v, want %v", violations, want)
 	}
 }

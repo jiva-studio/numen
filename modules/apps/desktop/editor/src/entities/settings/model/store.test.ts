@@ -2,7 +2,7 @@
  * The settings read out of the file whole, asked without a screen.
  *
  * The negatives are the ones worth having: a vault that cannot be asked leaves
- * the window holding nothing, and a write that was refused is said and the
+ * the window holding nothing, and a write that failed is said and the
  * window goes back to what the settings hold.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -187,7 +187,7 @@ describe('a setting written', () => {
     expect(asked).toStrictEqual([])
   })
 
-  it('is returned where it was refused', async () => {
+  it('is returned where it failed', async () => {
     const { kept, said } = createStore('{}', 'the file could not be written')
     await kept.writeSetting(['agent', 'use'], 'claude')
     expect(said).toHaveBeenLastCalledWith(
@@ -264,9 +264,9 @@ describe('a setting written twice in quick succession', () => {
     expect(kept.getSetting(['a'])).toBe(2)
   })
 
-  it('goes back to the file where the write was refused', async () => {
+  it('goes back to the file where the write failed', async () => {
     const vault = createHeldVault()
-    vault.core.updateSettings = () => Promise.reject(new Error('refused'))
+    vault.core.updateSettings = () => Promise.reject(new Error('failed'))
     const kept = createSettingsStore(vault.core, words, vi.fn())
 
     const written = kept.writeSetting(at, false)

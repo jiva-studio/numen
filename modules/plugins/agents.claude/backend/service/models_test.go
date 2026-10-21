@@ -61,9 +61,9 @@ func TestAnswerToAnotherRequestOrWithoutModelsIsAnError(t *testing.T) {
 	if _, err := parseModels(strings.NewReader(readFixture(t)), "other"); err == nil {
 		t.Error("an answer to another request was read")
 	}
-	refused := `{"type":"control_response","response":{"subtype":"error","request_id":"r1","error":"no"}}`
-	if _, err := parseModels(strings.NewReader(refused), "r1"); err == nil {
-		t.Error("a refusal was read as models")
+	errorResp := `{"type":"control_response","response":{"subtype":"error","request_id":"r1","error":"no"}}`
+	if _, err := parseModels(strings.NewReader(errorResp), "r1"); err == nil {
+		t.Error("an error was read as models")
 	}
 	empty := `{"type":"control_response","response":{"subtype":"success","request_id":"r1","response":{"models":[]}}}`
 	if _, err := parseModels(strings.NewReader(empty), "r1"); err == nil {

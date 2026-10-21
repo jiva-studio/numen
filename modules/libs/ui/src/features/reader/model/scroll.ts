@@ -111,8 +111,8 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
 
   const isStill = (): boolean => {
     if (!area.value) return false
-    along.value = area.value.scrollLeft
-    if (Math.abs(along.value - (heading ?? along.value)) > THERE) return false
+    alongOffset.value = area.value.scrollLeft
+    if (Math.abs(alongOffset.value - (heading ?? alongOffset.value)) > THERE) return false
     heading = undefined
     return true
   }
@@ -127,7 +127,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
   }
 
   return {
-    along,
+    along: alongOffset,
     isDragging,
     getScrollOffset,
     send,

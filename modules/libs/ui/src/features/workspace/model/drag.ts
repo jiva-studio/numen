@@ -200,10 +200,10 @@ function resolveDropTarget(
   if (!isInside(at, outer)) return null
 
   const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
-  const elemAtPoint = document.elementFromPoint ? document.elementFromPoint(at.x, at.y) : null
+  const underElement = document.elementFromPoint ? document.elementFromPoint(at.x, at.y) : null
 
-  const strip = getClosest(elemAtPoint, '[data-workspace-strip]')
-  const pane = getClosest(elemAtPoint, '[data-workspace-pane]')
+  const strip = getClosest(underElement, '[data-workspace-strip]')
+  const pane = getClosest(underElement, '[data-workspace-pane]')
   const id = pane?.getAttribute('data-workspace-pane')
 
   if (strip && id) return getStripDropTarget({ x: at.x, strip, pane: id }, local)

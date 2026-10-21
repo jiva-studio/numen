@@ -140,7 +140,7 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("a deck naming no preset was refused %v", code)
+		t.Fatalf("a deck naming no preset failed %v", code)
 	}
 	if path := answer.Msg.GetPreset().GetPath(); path != "" {
 		t.Errorf("a deck naming no preset was answered from %q", path)
@@ -363,7 +363,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := read.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the preset just made was refused with %v", code)
+		t.Fatalf("the preset just made failed with %v", code)
 	}
 	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
 		t.Errorf("the preset just made stands against %v", problems)
@@ -428,7 +428,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	if put.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the write was refused: %+v", put.Msg)
+		t.Fatalf("the write failed: %+v", put.Msg)
 	}
 	if put.Msg.GetAt() == nil {
 		t.Error("the write says nothing about the file it made")

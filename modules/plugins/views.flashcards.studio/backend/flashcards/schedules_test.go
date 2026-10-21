@@ -142,7 +142,7 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 
 	got, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
-		t.Fatalf("a cache nothing can read refused the schedules: %v", err)
+		t.Fatalf("a cache nothing can read rejected the schedules: %v", err)
 	}
 	if !got[on].Due.Equal(want[on].Due) {
 		t.Errorf("worked out %+v, want %+v", got[on], want[on])

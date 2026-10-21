@@ -9,7 +9,7 @@ export interface RetryWords {
   /** The plugin failed to start again, which a reason follows. */
   readonly failedAgain: string
   /** The plugin could not be asked to start. */
-  readonly refused: string
+  readonly error: string
 }
 
 /** What this asks of the vault. */
@@ -37,7 +37,7 @@ export function createPluginRetry(core: RetryDeps, { words, notify, refresh }: R
       const failure = await core.retryPlugin(pluginId)
       if (failure !== '') notify(`${words.failedAgain} ${failure}`, 'caution')
     } catch (thrown) {
-      notify(`${words.refused} ${formatErrorMessage(thrown)}`, 'error')
+      notify(`${words.error} ${formatErrorMessage(thrown)}`, 'error')
     }
     await refresh()
   }

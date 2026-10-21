@@ -53,12 +53,12 @@ const isOverlapping = (one: Box, other: Box): boolean =>
  */
 function getBox(edge: PlacedEdge, width: (label: string) => number): Box {
   const arc = getLength(edge)
-  const curvePoint = createPointOnCurve(edge)
+  const alongEdge = createPointOnCurve(edge)
   const at = edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt
   const half = width(edge.words!) / 2 / arc
   const deep = labelDepth / 2
 
-  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => curvePoint(at - half + 2 * half * step))
+  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => alongEdge(at - half + 2 * half * step))
   const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
 
   for (const [sample, point] of run.entries()) {
@@ -185,10 +185,10 @@ describe('a title finds room on its line', () => {
     const frame = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
     const boxes = frame.nodes.map(boxAround)
 
-    const edges = frame.edges.filter((edge) =>
+    const overEdges = frame.edges.filter((edge) =>
       boxes.some((box) => isOverlapping(box, getBox(edge, measureLabel))),
     )
-    expect(edges).toStrictEqual([])
+    expect(overEdges).toStrictEqual([])
   })
 
   it('reads the words the way the line runs where they end up', () => {
@@ -239,12 +239,12 @@ describe('a title finds room on its line', () => {
     })
     const boxes = frame.nodes.map(boxAround)
 
-    const edges = frame.edges
+    const overEdges = frame.edges
       .filter((edge) => edge.words)
       .filter((edge) => boxes.some((box) => isOverlapping(box, getBox(edge, measureLabel))))
       .map((edge) => edge.words)
 
-    expect(edges).toStrictEqual([])
+    expect(overEdges).toStrictEqual([])
   })
 
   it('cuts a title to the room its line has left, or writes none of it', () => {
@@ -346,13 +346,13 @@ describe('a title set on a straight line', () => {
     createPointOnCurve(edge)(edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt)
 
   const ACROSS = { from: { x: -200, y: 0 }, to: { x: 200, y: 0 } }
-  const crossLine = (words: string) => createLine(ACROSS.from, ACROSS.to, words)
+  const acrossLine = (words: string) => createLine(ACROSS.from, ACROSS.to, words)
 
   it('keeps clear of a box that remains over only the depth of the type', () => {
     // The box starts 6 below the line. The type reaches 9 either side of it, and
     // 3 of that is the room a title keeps from whatever it stands near.
     const lower = createBlocker('lower', -32.5, 13.5, 19)
-    const [settled] = separateTitles([across('abcde')], [lower], routing)
+    const [settled] = separateTitles([acrossLine('abcde')], [lower], routing)
 
     expect(getCentre(settled!).x - 25).toBeGreaterThanOrEqual(13.5)
     expect(getCentre(settled!).x - 25).toBeLessThan(13.5 + A_STEP + 0.01)
@@ -360,7 +360,7 @@ describe('a title set on a straight line', () => {
 
   it('remains at the clear place nearest the middle, to the right of a box', () => {
     const [settled] = separateTitles(
-      [across('abcde')],
+      [acrossLine('abcde')],
       [createBlocker('box', -32.5, 13.5)],
       routing,
     )
@@ -373,7 +373,7 @@ describe('a title set on a straight line', () => {
 
   it('remains at the clear place nearest the middle, to the left of a box', () => {
     const [settled] = separateTitles(
-      [across('abcde')],
+      [acrossLine('abcde')],
       [createBlocker('box', -13.5, 32.5)],
       routing,
     )
@@ -396,7 +396,7 @@ describe('a title set on a straight line', () => {
 
   it('starts a title at the near end of the only clear place that is to the right of the middle', () => {
     // A box over the middle and the whole left side of the line.
-    const [settled] = separateTitles([across('abcde')], [createBlocker('box', -204, 53)], routing)
+    const [settled] = separateTitles([acrossLine('abcde')], [createBlocker('box', -204, 53)], routing)
 
     expect(settled!.words).toBe('abcde')
     expect(getCentre(settled!).x - 25).toBeGreaterThanOrEqual(53)
@@ -406,7 +406,7 @@ describe('a title set on a straight line', () => {
   it('clears the titles already set by what they take up, and no more', () => {
     // Two lines a line of type apart: the first keeps the middle, and the
     // second goes round it by the nearer side.
-    const upper = across('abcde')
+    const upper = acrossLine('abcde')
     const lower = createLine({ x: -192, y: 10 }, { x: 208, y: 10 }, 'abcde')
     const [first, second] = separateTitles([upper, lower], [], routing)
 
@@ -455,7 +455,7 @@ describe('a title set on a straight line', () => {
       createBlocker('two', -17, 0),
       createBlocker('three', 80, 200),
     ]
-    const [settled] = separateTitles([across('abcdefghijkl')], boxes, routing)
+    const [settled] = separateTitles([acrossLine('abcdefghijkl')], boxes, routing)
 
     expect(settled!.words).toBe('abcdefghi…')
     expect(getCentre(settled!).x).toBeGreaterThan(-122)

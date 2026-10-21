@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createPluginRetry, type RetryDeps } from './retry'
 
-const words = { failedAgain: 'It stopped again.', refused: 'It could not be calls.' }
+const words = { failedAgain: 'It stopped again.', failed: 'It could not be calls.' }
 
 const createRetry = (answer: Promise<string>) => {
   const calls: string[] = []

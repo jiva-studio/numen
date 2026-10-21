@@ -173,7 +173,7 @@ func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
 	settings.MinutesADay = 40
 	if _, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, at); err != nil &&
 		!errors.Is(err, note.ErrUnlevelled) {
-		t.Fatalf("the next save was refused: %v", err)
+		t.Fatalf("the next save failed: %v", err)
 	}
 	if raw := read(t, s.vault, "Sanskrit.md"); !strings.Contains(raw, "minutes_a_day: 40") {
 		t.Errorf("the preset on disk is now %q", raw)
@@ -401,7 +401,7 @@ func TestAWriteKeepsTheLineEndingsAndTheMark(t *testing.T) {
 	}
 }
 
-// A setting outside its bounds is refused and the note is left alone.
+// A setting outside its bounds fails and the note is left alone.
 func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, settled)
@@ -418,7 +418,7 @@ func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 	}
 }
 
-// A note that is not a preset is refused.
+// A note that is not a preset fails.
 func TestANoteThatIsNotAPresetIsNotWritten(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, settled)

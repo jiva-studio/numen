@@ -39,7 +39,7 @@ func TestANoteIsMadeCarryingTheLinkThatRelatesIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the note was refused: %v", code)
+		t.Fatalf("the note failed: %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Entropy.md" {
 		t.Fatalf("the note was filed at %q", path)
@@ -190,7 +190,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the link was refused: %v", code)
+		t.Fatalf("the link failed: %v", code)
 	}
 
 	joined := fileAt(t, f.root, "Ontology.md")

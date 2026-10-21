@@ -148,9 +148,9 @@ func TestAKeyTakesTheFilesOwnLineEnding(t *testing.T) {
 func TestAnInlineBlockIsRefused(t *testing.T) {
 	doc := openDocument(t, "---\n{type: stencil, fields: [Height]}\n---\n")
 	if err := doc.SetList("fields", []string{"Height", "Weight"}); err != markdown.ErrInline {
-		t.Errorf("set = %v, want it refused", err)
+		t.Errorf("set = %v, want it rejected", err)
 	}
 	if err := doc.SetScalar("type", "deck"); err != markdown.ErrInline {
-		t.Errorf("set = %v, want it refused", err)
+		t.Errorf("set = %v, want it rejected", err)
 	}
 }

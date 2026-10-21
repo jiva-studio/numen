@@ -88,9 +88,9 @@ describe('letting go of something dragged in', () => {
     await letGo(below, 600, 760)
     expect(below.emitted('bring')).toStrictEqual([[DRAGGED, 'child']])
 
-    const wrapper = mountPlex()
-    await letGo(wrapper, 100, 400)
-    expect(wrapper.emitted('bring')).toStrictEqual([[DRAGGED, 'jump']])
+    const besideWrapper = mountPlex()
+    await letGo(besideWrapper, 100, 400)
+    expect(besideWrapper.emitted('bring')).toStrictEqual([[DRAGGED, 'jump']])
   })
 
   it('reads which way a relation lies off the arrangement', async () => {

@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-var errRefused = errors.New("refused on purpose")
+var errRefused = errors.New("rejected on purpose")
 
 // notebook is the vault every command here is asked about.
 var notebook = domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
@@ -300,7 +300,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}
 	if _, err := runWithDeps(cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
-		t.Errorf("the refusal was lost: %v", err)
+		t.Errorf("the rejection was lost: %v", err)
 	}
 }
 

@@ -56,7 +56,7 @@ describe('the settings of a preset', () => {
 
     const answer = await presets.read('Daily.md')
 
-    if (!answer.ok) throw new Error('the preset was refused')
+    if (!answer.ok) throw new Error('the preset failed')
     expect(answer.value.preset?.settings).toMatchObject({
       goal: 'retention',
       minutesADay: 30,
@@ -76,7 +76,7 @@ describe('the settings of a preset', () => {
     expect(answer.ok ? answer.value.preset?.settings.learned : null).toBe(DEFAULTS.learned)
   })
 
-  it('are no preset at all where the read was refused', async () => {
+  it('are no preset at all where the read failed', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
 
     const answer = await presets.read('Notes.md')
@@ -330,13 +330,13 @@ describe('writing into a preset the window read', () => {
     )
   })
 
-  it('names the refusal in the words the window uses', async () => {
+  it('names the rejection in the words the window uses', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
 
     expect(await presets.write('Notes.md', DEFAULTS, '')).toEqual(asFailure('notAPreset'))
   })
 
-  it('names the refusal of a scheduling in the words the window uses', async () => {
+  it('names the rejection of a scheduling in the words the window uses', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
 
     expect(await presets.scheduleDeck('Deck.md', 'Notes.md', '')).toEqual(asFailure('notAPreset'))

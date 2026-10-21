@@ -28,7 +28,7 @@ const vault = (
     renaming?: FieldRenameResult
     /** The vault is out of reach, and a read of the stencil reaches nothing. */
     isUnreachable?: boolean
-    /** What a write of the stencil is refused for. */
+    /** What a write of the stencil fails for. */
     wrote?: ErrorCode
   } = {},
 ) => {
@@ -291,7 +291,7 @@ describe('a stencil whose file moved past what was read', () => {
   })
 })
 
-describe('a stencil the vault refused', () => {
+describe('a stencil the vault rejected', () => {
   it('says the note is not a stencil where that is what it is', async () => {
     const { tab } = await open({ error: 'notAStencil' })
 
@@ -311,7 +311,7 @@ describe('a stencil the vault refused', () => {
     expect(tab.errorMessage.value).toBe(words.unreachable)
   })
 
-  it('says the file could not be written, where that is what was refused', async () => {
+  it('says the file could not be written, where that is what failed', async () => {
     const { stencils, tab } = await open({ wrote: 'unreadable' })
 
     tab.addField('Weight')
@@ -439,7 +439,7 @@ describe('a stencil whose tab has gone', () => {
   })
 })
 
-/** A stencil whose write was refused because its file moved: the tab is stale. */
+/** A stencil whose write failed because its file moved: the tab is stale. */
 const openStale = async () => {
   const one = await open({ isChanged: true })
   one.tab.addField('Weight')

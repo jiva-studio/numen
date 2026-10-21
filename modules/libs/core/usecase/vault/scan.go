@@ -75,7 +75,7 @@ type ScanResult struct {
 	Unchanged  int // skipped on size and modification time alone
 	Removed    int // in the index, no longer on disk
 	Vanished   int // walked, but gone by the time it was read
-	Unreadable int // walked, still there, and the read refused
+	Unreadable int // walked, still there, and the read failed
 }
 
 // FingerprintQueries is the one question a scan asks of the index, so that a

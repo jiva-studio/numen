@@ -72,7 +72,7 @@ func addNoteRead(server *sdk.Server, core Core) {
 			"is exactly what `note_rewrite` takes back. What a note is called is not in " +
 			"here; `note_titles` answers that, and for less. What a note is joined to is " +
 			"not in here either; `link_list` answers that. The fingerprint that comes back is " +
-			"what `note_rewrite` wants: hand it back and the write is refused if the " +
+			"what `note_rewrite` wants: hand it back and the write fails if the " +
 			"person changed the note in the meantime. A path that names nothing comes " +
 			"back under `missing` and one that could not be read under `errors` saying " +
 			"why, and the rest of the batch still comes back.",
@@ -108,7 +108,7 @@ func addNoteContents(res *noteReadOutput, path string, contents note.Contents) {
 			Path: path,
 			Body: contents.Body,
 			// The fingerprint is taken before the bytes are read; a write in between
-			// makes it stale and the next write is refused.
+			// makes it stale and the next write fails.
 			Fingerprint: fingerprintOf(contents.Fingerprint),
 		})
 	case note.Missing:

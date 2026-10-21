@@ -40,6 +40,6 @@ func TestARefusalIsAnsweredWithItsCode(t *testing.T) {
 		}
 	}
 	if _, isRefusal := writeRefusal(errors.New("other")); isRefusal {
-		t.Error("an error of no refusal was answered with a code")
+		t.Error("an error with no error code was answered with a code")
 	}
 }

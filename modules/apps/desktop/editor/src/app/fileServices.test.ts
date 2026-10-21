@@ -136,7 +136,7 @@ describe('the files of the vault a plugin is handed', () => {
     expect(writeMessage.mock.calls).toEqual([[words.notOffered, 'error']])
   })
 
-  it('say why the vault refused a stencil, in the words of the window', async () => {
+  it('say why the vault rejected a stencil, in the words of the window', async () => {
     const { files, createFileOfKind, writeMessage } = setup()
     createFileOfKind.mockResolvedValue({ ok: false, error: 'occupied' })
 
@@ -188,7 +188,7 @@ describe('an address imported', () => {
     expect(applyPathChanges).not.toHaveBeenCalled()
   })
 
-  it('fetches nothing where the vault refused the address', async () => {
+  it('fetches nothing where the vault rejected the address', async () => {
     const { files, createUrl, applyPathChanges, writeMessage } = setup()
     createUrl.mockResolvedValue({ ok: false, error: 'occupied' })
 

@@ -128,7 +128,7 @@ describe('adding a vault', () => {
     expect(one.calls.open).toHaveBeenCalledWith('heat')
   })
 
-  it('says why the list refused, as an error', async () => {
+  it('says why the list rejected, as an error', async () => {
     const one = createWindow({ added: asFailure('overlaps' as const) })
 
     await addVault(one.on, words)
@@ -174,7 +174,7 @@ describe('renaming a vault', () => {
     expect(one.messages).toStrictEqual([])
   })
 
-  it('says why the list refused, as an error', async () => {
+  it('says why the list rejected, as an error', async () => {
     const one = createWindow({ renamed: asFailure('nameTaken' as const) })
 
     await renameVault(createRenameInvocation('Heat'), one.on, words)
@@ -213,7 +213,7 @@ describe('taking a vault off the list', () => {
     expect(one.messages).toStrictEqual([])
   })
 
-  it('says why the list refused, as an error', async () => {
+  it('says why the list rejected, as an error', async () => {
     const one = createWindow({ removed: 'lastVault' })
 
     await removeVault(createRenameInvocation(), one.on, { shouldErase: false, words })

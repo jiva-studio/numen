@@ -213,7 +213,7 @@ func TestABadRequestIsReportedWhenTheUnstreamedOneFailsToo(t *testing.T) {
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if reason := steps[len(steps)-1].GetStopped(); !strings.Contains(reason, "400") || strings.Contains(reason, errStreamRefused.Error()) {
+	if reason := steps[len(steps)-1].GetStopped(); !strings.Contains(reason, "400") || strings.Contains(reason, errStreamRejected.Error()) {
 		t.Errorf("stopped %q", reason)
 	}
 }

@@ -101,5 +101,5 @@ export const consented: Record<Consents, Consent> = {
   [Consents.UNANSWERED]: 'unanswered',
   [Consents.ASKED]: 'asked',
   [Consents.ALLOWED]: 'allowed',
-  [Consents.REFUSED]: 'refused',
+  [Consents.REFUSED]: 'denied',
 }

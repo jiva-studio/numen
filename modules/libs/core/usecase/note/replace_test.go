@@ -91,7 +91,7 @@ func TestASpanStandingTwiceIsRefused(t *testing.T) {
 		t.Errorf("counted %d places", ambiguous.Places)
 	}
 	if body := c.read(t, "Aggressor.md"); body != was {
-		t.Errorf("the refused replacement landed anyway:\n%s", body)
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
 	}
 }
 
@@ -200,7 +200,7 @@ func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
 	}
 	if _, err := replacing.Execute(
 		t.Context(), c.vault, "Aggressor.md", "three", "THREE", first.Fingerprint); err != nil {
-		t.Fatalf("the second replacement was refused: %v", err)
+		t.Fatalf("the second replacement failed: %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.Contains(body, "ONE two THREE") {
 		t.Errorf("the note reads:\n%s", body)

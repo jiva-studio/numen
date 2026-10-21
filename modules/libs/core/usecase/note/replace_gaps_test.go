@@ -81,7 +81,7 @@ func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); body != before {
-		t.Errorf("the refused replacement landed anyway:\n%s", body)
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
 	}
 }
 
@@ -109,7 +109,7 @@ func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if body := c.read(t, "Big.md"); body != was {
-		t.Error("the refused replacement landed anyway")
+		t.Error("the rejected replacement landed anyway")
 	}
 }
 
@@ -124,7 +124,7 @@ func TestAReplacementInANoteWhoseFrontmatterIsNeverClosedIsRefused(t *testing.T)
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); body != was {
-		t.Errorf("the refused replacement landed anyway:\n%s", body)
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
 	}
 }
 
@@ -213,11 +213,11 @@ func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.Fingerprint{})
 	var nowhere note.MissingSpan
 	if err == nil || errors.As(err, &nowhere) || !strings.Contains(err.Error(), "name the text to replace") {
-		t.Errorf("want the refusal to name the text, got %v", err)
+		t.Errorf("want the rejection to name the text, got %v", err)
 	}
 }
 
-// A refused replacement draws nothing and names the note it was refused in.
+// A rejected replacement draws nothing and names the note it failed in.
 func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
@@ -230,7 +230,7 @@ func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 		t.Errorf("want the error to name the note, got %v", err)
 	}
 	if len(told) != 0 {
-		t.Errorf("a refused change was drawn: %+v", told)
+		t.Errorf("a rejected change was drawn: %+v", told)
 	}
 }
 

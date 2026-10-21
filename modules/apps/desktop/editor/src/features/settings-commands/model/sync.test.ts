@@ -145,7 +145,7 @@ describe('a switch turned twice in quick succession', () => {
     }
   }
 
-  it('relies on the last choice while the first write is refused', async () => {
+  it('relies on the last choice while the first write fails', async () => {
     const core = slowVault()
     const held = syncSetting(core, words, writer().write)
     await held.start()

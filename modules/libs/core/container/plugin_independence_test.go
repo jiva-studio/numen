@@ -73,7 +73,7 @@ func TestWhatThePluginDependencyRuleRefuses(t *testing.T) {
 		{"github.com/jiva-studio/other", false},
 	} {
 		if got := getPluginDependencyRefusal(self, one.dep) != ""; got != one.isRefused {
-			t.Errorf("%s names %s: refused is %v, want %v", self, one.dep, got, one.isRefused)
+			t.Errorf("%s names %s: failure is %v, want %v", self, one.dep, got, one.isRefused)
 		}
 	}
 }
@@ -325,7 +325,7 @@ func TestWhatThePluginIDRuleRefuses(t *testing.T) {
 		{`package p; // md.numen.sample`, false},
 	} {
 		if got := len(getPluginIDLiterals(parseSource(t, one.src))) > 0; got != one.isRefused {
-			t.Errorf("%s: refused is %v, want %v", one.src, got, one.isRefused)
+			t.Errorf("%s: wantErr is %v, want %v", one.src, got, one.isRefused)
 		}
 	}
 }
@@ -428,7 +428,7 @@ func TestWhatTheAnonymousAssertionRuleRefuses(t *testing.T) {
 		{`package p; func f(x any) { switch x.(type) { case interface{ Stop() }: } }`, true},
 	} {
 		if got := len(getAnonymousAssertions(parseSource(t, one.src))) > 0; got != one.isRefused {
-			t.Errorf("%s: refused is %v, want %v", one.src, got, one.isRefused)
+			t.Errorf("%s: wantErr is %v, want %v", one.src, got, one.isRefused)
 		}
 	}
 }
@@ -472,7 +472,7 @@ func TestWhatTheManifestValidatorRefuses(t *testing.T) {
 		"a document that is not JSON": `{`,
 	} {
 		if len(getManifestIssues([]byte(data))) == 0 {
-			t.Errorf("%s is not refused", name)
+			t.Errorf("%s is not rejected", name)
 		}
 	}
 }

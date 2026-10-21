@@ -75,7 +75,7 @@ const vault = (
     sections?: readonly { name: string; preamble: string }[]
     /** The vault is out of reach, and a read of the deck reaches nothing. */
     isUnreachable?: boolean
-    /** What a write of the deck is refused for. */
+    /** What a write of the deck fails for. */
     wrote?: ErrorCode
     /** How many listings of the stencils go unanswered before one answers. */
     unlisted?: number
@@ -85,7 +85,7 @@ const vault = (
     by?: string
     /** What is said against what the deck names. */
     saying?: string
-    /** What putting the deck on a preset is refused for. */
+    /** What putting the deck on a preset fails for. */
     notScheduled?: ErrorCode
     /** Putting the deck on a preset answers that the file moved past it. */
     hasSchedulingChanged?: boolean
@@ -378,7 +378,7 @@ describe('a deck whose file moved past what was read', () => {
   })
 })
 
-describe('a deck the vault refused', () => {
+describe('a deck the vault rejected', () => {
   it('says which bound it is over, and draws no card', async () => {
     const { tab } = await open({ error: 'deckTooLarge', bound: 8388608 })
 
@@ -836,7 +836,7 @@ describe('a deck the vault could not be reached for', () => {
     expect(tab.errorMessage.value).toBe(words.unreachable)
   })
 
-  it('says the file could not be written, where that is what was refused', async () => {
+  it('says the file could not be written, where that is what failed', async () => {
     const { decks, tab } = await open({ wrote: 'unreadable' })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
@@ -947,7 +947,7 @@ describe('the preset a deck is scheduled by', () => {
   })
 })
 
-describe('a deck the vault refused', () => {
+describe('a deck the vault rejected', () => {
   it('draws no mark, since nothing was read to mark', async () => {
     const { tab } = await open({ error: 'notADeck' })
 
@@ -955,13 +955,13 @@ describe('a deck the vault refused', () => {
     expect(tab.marks.value.whole).toStrictEqual([])
   })
 
-  it('is refused under the code the vault gave', async () => {
+  it('fails under the code the vault gave', async () => {
     const { tab } = await open({ error: 'deckTooLarge', bound: 10 })
 
     expect(tab.note.value.error).toBe('tooLarge')
   })
 
-  it('is refused as not a deck where the code names no refusal', async () => {
+  it('fails as not a deck where the code names no error', async () => {
     const { tab } = await open({ error: 'changed' })
 
     expect(tab.note.value.error).toBe('notANote')

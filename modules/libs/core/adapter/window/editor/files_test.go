@@ -144,7 +144,7 @@ func TestEverythingTheVaultHoldsMoves(t *testing.T) {
 			t.Fatal(err)
 		}
 		if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-			t.Fatalf("moving %s was refused: %v", one.from, code)
+			t.Fatalf("moving %s failed: %v", one.from, code)
 		}
 		moved := answer.Msg.GetMoved()
 		if moved.GetFrom() != one.from || moved.GetTo() != one.to {
@@ -179,7 +179,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", code)
+		t.Fatalf("the folder failed: %v", code)
 	}
 	if repaired := answer.Msg.GetMoved().GetRepaired(); len(repaired) != 0 {
 		t.Errorf("a link written by name was repaired: %v", repaired)
@@ -226,7 +226,7 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if moved := answer.Msg.GetMoved(); moved != nil {
-		t.Errorf("a refused move said the file did %+v", moved)
+		t.Errorf("a rejected move said the file did %+v", moved)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
 		t.Errorf("the note that was to move holds:\n%s", now)
@@ -275,7 +275,7 @@ func TestARemovedFolderGoesToTheTrashWithEverythingUnderIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", code)
+		t.Fatalf("the folder failed: %v", code)
 	}
 	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/physics" {
 		t.Errorf("the folder sits at %q", trashed)
@@ -307,7 +307,7 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", code)
+		t.Fatalf("the folder failed: %v", code)
 	}
 	if !folder(t, f.root, "science/physics") {
 		t.Fatal("the folder is not on the disk")
@@ -396,7 +396,7 @@ func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
 
 	_, err := f.client.ListFileKinds(t.Context(), connect.NewRequest(&v1.ListFileKindsRequest{Paths: paths}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("err = %v, want the paths named to be refused", err)
+		t.Fatalf("err = %v, want the paths named to be rejected", err)
 	}
 }
 

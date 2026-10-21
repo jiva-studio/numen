@@ -93,5 +93,5 @@ the format is `markdown`.
 A rule is two things, and a rule missing either is not landed:
 
 1. the walk over the tree, with a guard that fails when it reads nothing;
-2. a negative control — a fixture written to be refused, asserting exactly what
+2. a negative control — a fixture written to be rejected, asserting exactly what
    the rule catches and what it lets through.

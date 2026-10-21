@@ -416,7 +416,7 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 
 	read := deck(t, f, "decks/Camelids.md")
 	if code := read.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the deck just made was refused with %v", code)
+		t.Fatalf("the deck just made failed with %v", code)
 	}
 	if cards := read.GetDeck().GetCards(); len(cards) != 0 {
 		t.Errorf("a deck of no cards came back with %+v", cards)
@@ -448,7 +448,7 @@ func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := read.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the stencil just made was refused with %v", code)
+		t.Fatalf("the stencil just made failed with %v", code)
 	}
 	if fields := read.Msg.GetStencil().GetFields(); len(fields) != 2 || fields[0] != "Species" {
 		t.Errorf("the stencil asks for %v", fields)
@@ -571,7 +571,7 @@ func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T
 	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {
 		t.Errorf("the stencil on disk is now %q", held)
 	}
-	// The stencil leads, so a rename it refused reaches no deck.
+	// The stencil leads, so a rename it rejected reaches no deck.
 	if held := onDisk(t, f.root, "Animals.md"); held != deckBefore {
 		t.Errorf("a deck was written\n was %q\n now %q", deckBefore, held)
 	}
@@ -587,7 +587,7 @@ func TestADeckIsRefusedWhereTheNoteIsAStencil(t *testing.T) {
 		t.Errorf("a stencil asked for as a deck answered %v", code)
 	}
 	if read.GetDeck() != nil {
-		t.Error("a refused deck came back with cards on it")
+		t.Error("a rejected deck came back with cards on it")
 	}
 }
 

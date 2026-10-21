@@ -106,7 +106,7 @@ func TestASearchByWordsAloneSaysWhy(t *testing.T) {
 	if out != "nothing found\n" {
 		t.Errorf("search said %q", out)
 	}
-	if beside != "searching by words alone: refused on purpose\n" {
+	if beside != "searching by words alone: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", beside)
 	}
 
@@ -174,7 +174,7 @@ func TestAHalfThatCannotRunIsHeardAboutBesideTheAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if beside != "answering by words alone: refused on purpose\n" {
+	if beside != "answering by words alone: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", beside)
 	}
 }

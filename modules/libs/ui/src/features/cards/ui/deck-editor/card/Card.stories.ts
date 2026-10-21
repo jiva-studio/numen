@@ -221,7 +221,7 @@ const meta: Meta<Knobs> = {
           underCount += 1
           return underCount === nth ? { field, text } : each
         })
-        if (under < nth) filled.push({ field, text })
+        if (underCount < nth) filled.push({ field, text })
         const written = { ...held.value, card: { ...card, filled } }
         held.value = written
         tile.value = createTile(written)
@@ -289,9 +289,9 @@ export const ACard: Story = {
     const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
     expect(boxes).toHaveLength(4)
     for (const box of boxes) {
-      const underElems = box.closest('.card__value')?.querySelector('.divider')
-      if (!underElems) throw new Error('a box under no rule')
-      expect(box.getBoundingClientRect().top).toBeCloseTo(underElems.getBoundingClientRect().bottom, 0)
+      const underElement = box.closest('.card__value')?.querySelector('.divider')
+      if (!underElement) throw new Error('a box under no rule')
+      expect(box.getBoundingClientRect().top).toBeCloseTo(underElement.getBoundingClientRect().bottom, 0)
       expect(box.closest('.card__value')?.querySelector('fieldset')).toBeNull()
     }
 
@@ -471,10 +471,10 @@ export const WhatIsWrongWithIt: Story = {
     )
 
     // It is said once, under the second of the two boxes standing for Name.
-    const underElems = [...canvasElement.querySelectorAll('[data-wrong-value="Name"]')]
-    expect(underElems).toHaveLength(1)
-    expect(underElems[0]?.textContent).toContain('this card writes Name twice')
-    expect(underElems[0]?.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    const underCards = [...canvasElement.querySelectorAll('[data-wrong-value="Name"]')]
+    expect(underCards).toHaveLength(1)
+    expect(underCards[0]?.textContent).toContain('this card writes Name twice')
+    expect(underCards[0]?.getBoundingClientRect().top).toBeGreaterThanOrEqual(
       boxes[1]?.getBoundingClientRect().bottom ?? 0,
     )
 
@@ -487,7 +487,7 @@ export const WhatIsWrongWithIt: Story = {
       return box.left + Number.parseFloat(drawn.paddingInlineStart)
     }
     const label = found(canvasElement, '.card__value label')
-    expect(Math.round(edge(under[0]))).toBe(Math.round(edge(boxes[1])))
+    expect(Math.round(edge(underCards[0]))).toBe(Math.round(edge(boxes[1])))
     expect(Math.round(edge(label))).toBe(Math.round(edge(boxes[1])))
     expect(Math.round(edge(said))).toBe(Math.round(edge(boxes[0])))
   },

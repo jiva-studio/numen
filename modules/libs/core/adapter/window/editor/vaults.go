@@ -79,8 +79,8 @@ func (s *vaultsHandler) AddVault(
 	}
 	added, err := s.add.Execute(r.Msg.GetPath(), r.Msg.GetName())
 	if err != nil {
-		reason, refused := vaultsErrorCodeBy(err)
-		if !refused {
+		reason, ok := vaultsErrorCodeBy(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
@@ -102,8 +102,8 @@ func (s *vaultsHandler) RenameVault(
 		v, err = s.rename.Execute(ctx, v, r.Msg.GetName())
 	}
 	if err != nil {
-		reason, refused := vaultsErrorCodeBy(err)
-		if !refused {
+		reason, ok := vaultsErrorCodeBy(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
@@ -122,8 +122,8 @@ func (s *vaultsHandler) RemoveVault(
 	}
 	err := s.remove.Execute(ctx, r.Msg.GetId(), s.state.GetCurrentVault().ID, r.Msg.GetTrash())
 	if err != nil {
-		reason, refused := vaultsErrorCodeBy(err)
-		if !refused {
+		reason, ok := vaultsErrorCodeBy(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &reason}), nil
@@ -151,8 +151,8 @@ func (s *vaultsHandler) OpenVault(
 	if errors.Is(err, errWindowClosing) || errors.Is(err, errShutdownInProgress) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
-	reason, refused := vaultsErrorCodeBy(err)
-	if !refused {
+	reason, ok := vaultsErrorCodeBy(err)
+	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil

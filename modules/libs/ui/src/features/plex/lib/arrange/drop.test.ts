@@ -235,9 +235,9 @@ describe('the relation something dragged in evaluates to', () => {
   })
 
   it('is nothing towards a relation the caller did not allow', () => {
-    const adjacent = { x: focus.x + 500, y: focus.y }
-    expect(getRelationAt(adjacent)).toBeNull()
-    expect(getRelationAt(beside, { relations: [...ALLOWED, 'sibling'] })).toBe('sibling')
+    const besidePoint = { x: focus.x + 500, y: focus.y }
+    expect(getRelationAt(besidePoint)).toBeNull()
+    expect(getRelationAt(besidePoint, { relations: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {

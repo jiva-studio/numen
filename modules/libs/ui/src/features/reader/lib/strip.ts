@@ -104,7 +104,7 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
     widths.push(width)
     alongOffset += width + GAP
   }
-  return { height, starts, widths, length: along }
+  return { height, starts, widths, length: alongOffset }
 }
 
 /** The size of one page, and the nearest thing to it that is known. */

@@ -358,9 +358,9 @@ export const AStraySlot: Story = {
     expect(getComputedStyle(layer).pointerEvents).toBe('none')
 
     const said = found(canvasElement, '[data-pane="front-written"] .face__objections')
-    const rect = said.getBoundingClientRect()
-    expect(rect.bottom).toBeLessThanOrEqual(pane.bottom + 1)
-    expect(rect.right).toBeLessThanOrEqual(pane.right + 1)
+    const overRect = said.getBoundingClientRect()
+    expect(overRect.bottom).toBeLessThanOrEqual(pane.bottom + 1)
+    expect(overRect.right).toBeLessThanOrEqual(pane.right + 1)
     expect(getComputedStyle(said).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
   },
 }
@@ -466,15 +466,15 @@ export const WhatIsWrongWithIt: Story = {
     const header = found(canvasElement, '.card-header').getBoundingClientRect()
     const head = found(canvasElement, '.face__head').getBoundingClientRect()
     const body = found(canvasElement, '.face__body').getBoundingClientRect()
-    const rect = said.getBoundingClientRect()
+    const overRect = said.getBoundingClientRect()
     expect(header.height).toBeLessThan(40)
     expect(body.top).toBeCloseTo(header.bottom, 0)
-    expect(rect.top).toBeGreaterThanOrEqual(head.bottom - 1)
-    expect(rect.bottom).toBeGreaterThan(body.top)
+    expect(overRect.top).toBeGreaterThanOrEqual(head.bottom - 1)
+    expect(overRect.bottom).toBeGreaterThan(body.top)
 
     // It stays inside the face, and a press meant for the window reaches it.
     const face = found(canvasElement, '[data-face]').getBoundingClientRect()
-    expect(rect.right).toBeLessThanOrEqual(face.right + 1)
+    expect(overRect.right).toBeLessThanOrEqual(face.right + 1)
     expect(getComputedStyle(found(canvasElement, 'header .face__amiss')).pointerEvents).toBe('none')
     expect(getComputedStyle(said).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 

@@ -182,7 +182,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		t.Fatal("closing never finished")
 	}
 	if err := <-wrote; err != nil {
-		t.Fatalf("the agent's write was refused: %v", err)
+		t.Fatalf("the agent's write failed: %v", err)
 	}
 
 	if got := recorded.getAll(); len(got) != 2 || got[0] != "levelled" || got[1] != "closed" {

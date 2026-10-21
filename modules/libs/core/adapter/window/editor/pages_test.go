@@ -73,7 +73,7 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, as
 		t.Fatal(err)
 	}
 	if reason := out.Msg.GetError(); reason != "" {
-		t.Fatalf("refused: %s", reason)
+		t.Fatalf("failed: %s", reason)
 	}
 }
 
@@ -168,7 +168,7 @@ func TestPluginServiceIsMounted(t *testing.T) {
 }
 
 // A search, a note and a link are read straight from the index, and the index
-// closes behind the door. Every question is refused at it, whatever it would
+// closes behind the door. Every question fails at it, whatever it would
 // have reached into.
 func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	services := newBareServices()
@@ -178,7 +178,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 
 	for _, path := range asked {
 		if code := getResponse(handler, path).Code; code == http.StatusServiceUnavailable {
-			t.Errorf("%q was refused at %d with the window still open", path, code)
+			t.Errorf("%q failed at %d with the window still open", path, code)
 		}
 	}
 

@@ -112,11 +112,11 @@ export const Dark: Story = {
     // A cap keeps a ground of its own, told from the surface the row of them
     // relies on, and is read in ink standing above that ground — which is the
     // way round the dark set is written.
-    const bgStyle = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
-    const surface = lightness(bgStyle)
+    const behindColor = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
+    const surface = lightness(behindColor)
     for (const cap of caps) {
       const drawn = getComputedStyle(cap)
-      const ground = lightness(drawn.backgroundColor, bgStyle)
+      const ground = lightness(drawn.backgroundColor, behindColor)
       await expect(Math.abs(ground - surface)).toBeGreaterThan(4)
       await expect(lightness(drawn.color, drawn.backgroundColor)).toBeGreaterThan(ground + 24)
     }

@@ -176,7 +176,7 @@ func TestARenamedFileLeavesANoteCarryingNoTitleAlone(t *testing.T) {
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md")
 	if err != nil {
-		t.Fatalf("the rename was refused: %v", err)
+		t.Fatalf("the rename failed: %v", err)
 	}
 	if !moved.IsLanded {
 		t.Error("the file is at Note #.md and the answer says it did not move")
@@ -209,7 +209,7 @@ func TestARenamedFileLeavesANoteWhoseFrontmatterCannotBeReadAlone(t *testing.T) 
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md")
 	if err != nil {
-		t.Fatalf("the rename was refused: %v", err)
+		t.Fatalf("the rename failed: %v", err)
 	}
 	if !moved.IsLanded {
 		t.Fatal("the file did not move")

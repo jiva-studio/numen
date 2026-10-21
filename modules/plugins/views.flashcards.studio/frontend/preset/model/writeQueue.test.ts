@@ -88,7 +88,7 @@ describe('one write', () => {
     expect(queue.dirtyFields.size).toBe(0)
   })
 
-  it('says a refusal as an error', async () => {
+  it('says an error as an error', async () => {
     const queue = createWriteQueue()
     const { core } = createCore({ ok: false, error: 'missing' } as PresetWriteResult)
     const { said, writeMessage } = createMessages()
@@ -104,7 +104,7 @@ describe('a write the vault could not be requested for', () => {
     const queue = createWriteQueue()
     const core = {
       write: async () => {
-        throw new Error('connection refused')
+        throw new Error('connection failed')
       },
     } as unknown as Presets
 

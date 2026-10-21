@@ -606,10 +606,10 @@ func TestAHeaderNamesTheVaultACallWorks(t *testing.T) {
 	}
 	unknown := connect.NewRequest(&v1.GetHostVaultRequest{})
 	unknown.Header().Set("Numen-Vault", "v9")
-	_, refused := client.GetHostVault(t.Context(), unknown)
+	_, rejected := client.GetHostVault(t.Context(), unknown)
 
-	if res.Msg.GetName() != "Chemistry" || connect.CodeOf(refused) != connect.CodeNotFound {
-		t.Errorf("the vault was %v, and an unknown one was answered %v", res.Msg, refused)
+	if res.Msg.GetName() != "Chemistry" || connect.CodeOf(rejected) != connect.CodeNotFound {
+		t.Errorf("the vault was %v, and an unknown one was answered %v", res.Msg, rejected)
 	}
 }
 

@@ -25,7 +25,7 @@ type Vault struct {
 	shown   bool
 	files   store
 	indexed map[string]domain.Note
-	refused map[string]error
+	rejected map[string]error
 	// unwritable are the files that may be read and not written, and unreadData the data files that may
 	// not be read.
 	unwritable map[string]error
@@ -76,7 +76,7 @@ func newVault(v domain.Vault, files store) *Vault {
 		shown:   true,
 		files:   files,
 		indexed: map[string]domain.Note{},
-		refused: map[string]error{},
+		rejected: map[string]error{},
 
 		unwritable: map[string]error{},
 		unreadData: map[string]error{},
@@ -142,10 +142,10 @@ func (v *Vault) Refuse(filePath string, err error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err == nil {
-		delete(v.refused, filePath)
+		delete(v.rejected, filePath)
 		return
 	}
-	v.refused[filePath] = err
+	v.rejected[filePath] = err
 }
 
 // Beside makes the vault known to this one, and this one to it, so that each lists the other and
@@ -264,7 +264,7 @@ func (v *Vault) check(ctx context.Context, filePath string) error {
 	if filePath == "" || strings.HasPrefix(filePath, "/") || path.Clean(filePath) != filePath || strings.HasPrefix(filePath, "..") {
 		return host.ErrOutside
 	}
-	return v.refused[filePath]
+	return v.rejected[filePath]
 }
 
 func (v *Vault) GetVault(ctx context.Context) (domain.Vault, error) {
@@ -312,8 +312,8 @@ func (v *Vault) Write(ctx context.Context, filePath string, content []byte, base
 	if err := v.check(ctx, filePath); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	if refusal := v.unwritable[filePath]; refusal != nil {
-		return domain.Fingerprint{}, refusal
+	if failErr := v.unwritable[filePath]; failErr != nil {
+		return domain.Fingerprint{}, failErr
 	}
 	now, err := v.files.stat(filePath)
 	if err != nil {
@@ -331,8 +331,8 @@ func (v *Vault) Create(ctx context.Context, filePath string, content []byte) err
 	if err := v.check(ctx, filePath); err != nil {
 		return err
 	}
-	if refusal := v.unwritable[filePath]; refusal != nil {
-		return refusal
+	if failErr := v.unwritable[filePath]; failErr != nil {
+		return failErr
 	}
 	_, err := v.files.create(filePath, content)
 	return err
@@ -516,8 +516,8 @@ func (v *Vault) ReadData(ctx context.Context, name string) ([]byte, error) {
 	if err := v.reach(); err != nil {
 		return nil, err
 	}
-	if refusal := v.unreadData[name]; refusal != nil {
-		return nil, refusal
+	if failErr := v.unreadData[name]; failErr != nil {
+		return nil, failErr
 	}
 	return v.data.read(name)
 }

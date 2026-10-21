@@ -92,7 +92,7 @@ describe('a deck, a stencil or a preset made', () => {
     ])
   })
 
-  it('says what the vault refused, and nothing opens', async () => {
+  it('says what the vault rejected, and nothing opens', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const told = writer()
     const made = createCreators(maker('occupied'), tabOpeners, told.write)
@@ -110,7 +110,7 @@ describe('a deck, a stencil or a preset made', () => {
     expect(told.said.join(' ')).toContain('numen did not answer')
   })
 
-  it('says what the vault refused as an error', async () => {
+  it('says what the vault rejected as an error', async () => {
     const told = writer()
     const made = createCreators(maker('occupied'), undefined, told.write)
 
@@ -171,7 +171,7 @@ describe('a note pointing at an address made', () => {
     expect(opened).toStrictEqual(['links/example.org.md'])
   })
 
-  it('answers nothing, and opens nothing, where the vault refused', async () => {
+  it('answers nothing, and opens nothing, where the vault rejected', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const opened: string[] = []
     tabOpeners.registerEditor('url', (path) => opened.push(path))

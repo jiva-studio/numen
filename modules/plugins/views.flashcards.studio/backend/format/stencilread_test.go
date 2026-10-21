@@ -15,7 +15,7 @@ func TestAStencilWhoseFrontmatterCannotBeReadIsNotOpened(t *testing.T) {
 	f, err := format.OpenStencil([]byte("---\nfields: [Name\n---\n\n## Recognise\n"))
 
 	if !errors.Is(err, markdown.ErrUnreadable) {
-		t.Fatalf("open = %v, want the frontmatter refused", err)
+		t.Fatalf("open = %v, want the frontmatter rejected", err)
 	}
 	if f != nil {
 		t.Errorf("a stencil was opened over frontmatter nobody can read")
@@ -30,7 +30,7 @@ func TestRenamingAFieldOfAStencilWrittenOnOneLineIsRefused(t *testing.T) {
 	}
 
 	if err := f.RenameField("Height", "Shoulder height"); !errors.Is(err, markdown.ErrInline) {
-		t.Fatalf("rename = %v, want it refused", err)
+		t.Fatalf("rename = %v, want it rejected", err)
 	}
 	if got := string(f.Bytes()); got != raw {
 		t.Errorf("the file was written: %q", got)

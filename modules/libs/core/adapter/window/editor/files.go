@@ -125,8 +125,8 @@ func (h *fileHandler) CreateFolder(
 
 	out := &v1.CreateFolderResponse{}
 	if err := h.createFolder.Execute(ctx, showing, r.Msg.GetPath()); err != nil {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		out.Error = &reason
@@ -154,9 +154,9 @@ func (h *fileHandler) MoveFile(
 	}
 	out.IsUnlevelled = h.state.isUnlevelled(err)
 	if err != nil && !out.GetIsUnlevelled() {
-		reason, refused := wire.GetErrorCode(err)
+		reason, ok := wire.GetErrorCode(err)
 		switch {
-		case refused:
+		case ok:
 			out.Error = &reason
 		case !moved.IsLanded:
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -196,8 +196,8 @@ func (h *fileHandler) CreateURL(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateURLResponse{}), nil
 	}
-	reason, refused := wire.GetErrorCode(err)
-	if !refused {
+	reason, ok := wire.GetErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.CreateURLResponse{Error: &reason}), nil
@@ -275,8 +275,8 @@ func (h *fileHandler) RemoveFile(
 	removed, err := h.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
 	unlevelled := h.state.isUnlevelled(err)
 	if err != nil && !unlevelled {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil

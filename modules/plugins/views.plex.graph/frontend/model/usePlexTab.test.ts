@@ -353,7 +353,7 @@ describe('notes dragged in and let go over the picture', () => {
     ])
   })
 
-  it('writes the rest where one of them was refused, and says which stayed', async () => {
+  it('writes the rest where one of them failed, and says which stayed', async () => {
     const one = tab('Root.md')
     one.notJoinedPaths.add('Kelvin.md')
 

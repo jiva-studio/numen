@@ -396,7 +396,7 @@ describe('the four commands over how the window is drawn', () => {
       )
     })
 
-    it('says what the settings refused, where the window says what it could not do', async () => {
+    it('says what the settings rejected, where the window says what it could not do', async () => {
       said.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
       const window = await runCommand('interface')
       await press('End')

@@ -116,8 +116,8 @@ describe('which pages are drawn', () => {
     expect(shown[0]).toBe(0)
     expect(shown.length).toBeLessThan(500)
     // Wide enough for the viewport, and for the reach beyond it on the far side.
-    const crossCount = Math.ceil(VIEWPORT.width / laid.widths[0]!)
-    expect(shown.length).toBeGreaterThan(crossCount)
+    const isAcross = Math.ceil(VIEWPORT.width / laid.widths[0]!)
+    expect(shown.length).toBeGreaterThan(isAcross)
   })
 
   it('draws around wherever the row has been scrolled to', () => {

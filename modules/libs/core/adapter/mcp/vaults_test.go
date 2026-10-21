@@ -306,12 +306,12 @@ func TestAFilesystemRootAndAHomeDirectoryAreRefused(t *testing.T) {
 		top:  "root of this filesystem",
 		home: "home directory",
 	} {
-		why := getRefusal(t, session, "vault_add", map[string]any{"path": root})
+		why := getToolError(t, session, "vault_add", map[string]any{"path": root})
 		if !strings.Contains(why, said) {
-			t.Errorf("%s was refused with %q", root, why)
+			t.Errorf("%s failed with %q", root, why)
 		}
 		if _, err := os.Stat(filepath.Join(root, filesystem.DefaultServiceDir)); err == nil {
-			t.Errorf("%s was made into a vault before it was refused", root)
+			t.Errorf("%s was made into a vault before it failed", root)
 		}
 	}
 	held, err := f.registry.List()
@@ -329,9 +329,9 @@ func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 	}
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_add", map[string]any{"path": inner})
+	why := getToolError(t, session, "vault_add", map[string]any{"path": inner})
 	if !strings.Contains(why, "does not lie inside") {
-		t.Errorf("a folder inside a vault was refused with %q", why)
+		t.Errorf("a folder inside a vault failed with %q", why)
 	}
 }
 
@@ -339,11 +339,11 @@ func TestRenamingToANameAnotherVaultHasSaysSo(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_rename", map[string]any{
+	why := getToolError(t, session, "vault_rename", map[string]any{
 		"vault": f.second.ID, "name": f.first.Name,
 	})
 	if !strings.Contains(why, "already called") {
-		t.Errorf("a taken name was refused with %q", why)
+		t.Errorf("a taken name failed with %q", why)
 	}
 
 	out := call[struct {
@@ -362,9 +362,9 @@ func TestTheVaultTheWindowIsShowingIsNotForgotten(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
+	why := getToolError(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
 	if !strings.Contains(why, "showing") {
-		t.Errorf("the vault in front was refused with %q", why)
+		t.Errorf("the vault in front failed with %q", why)
 	}
 	if len(f.rows.getForgotten()) != 0 {
 		t.Errorf("the index was told to forget %v", f.rows.getForgotten())
@@ -398,7 +398,7 @@ func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
 // An installation keeps a vault.
 func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	f := onTheList(t)
-	// The window is showing neither, so what is left is refused for being the
+	// The window is showing neither, so what is left fails for being the
 	// last one and not for being in front of anybody.
 	f.core.Showing = mcp.ShowOneVault(domain.Vault{ID: "elsewhere"}, "")
 	session := newSessionOver(t, f.core)
@@ -407,9 +407,9 @@ func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 		IsForgotten bool `json:"forgotten"`
 	}](t, session, "vault_remove", map[string]any{"vault": f.second.ID})
 
-	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
+	why := getToolError(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
 	if !strings.Contains(why, "only vault") {
-		t.Errorf("the last vault was refused with %q", why)
+		t.Errorf("the last vault failed with %q", why)
 	}
 	held, err := f.registry.List()
 	if err != nil || len(held) != 1 {
@@ -421,9 +421,9 @@ func TestForgettingAVaultTheListDoesNotHoldSaysSo(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": "nowhere"})
+	why := getToolError(t, session, "vault_remove", map[string]any{"vault": "nowhere"})
 	if !strings.Contains(why, "no such vault") {
-		t.Errorf("a vault nothing answers to was refused with %q", why)
+		t.Errorf("a vault nothing answers to failed with %q", why)
 	}
 }
 
@@ -465,9 +465,9 @@ func TestOpeningTheVaultInFrontIsRefused(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_open", map[string]any{"vault": string(f.first.ID)})
+	why := getToolError(t, session, "vault_open", map[string]any{"vault": string(f.first.ID)})
 	if !strings.Contains(why, "already showing") {
-		t.Errorf("the vault in front was refused with %q", why)
+		t.Errorf("the vault in front failed with %q", why)
 	}
 	select {
 	case shown := <-f.swapped:
@@ -477,7 +477,7 @@ func TestOpeningTheVaultInFrontIsRefused(t *testing.T) {
 }
 
 // A tool is served where what it works through is there, and a build without it
-// serves nothing an agent could call and be refused by.
+// serves nothing an agent could call and be rejected by.
 func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 	for _, one := range []struct {
 		tool    string
@@ -518,8 +518,8 @@ func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
 	if !hasTool(t, session, "vault_add") {
 		t.Fatal("vault_add is missing, and a folder can be named")
 	}
-	why := getRefusal(t, session, "vault_add", struct{}{})
+	why := getToolError(t, session, "vault_add", struct{}{})
 	if !strings.Contains(why, "pick a folder") {
-		t.Errorf("a build with no dialog refused with %q", why)
+		t.Errorf("a build with no dialog failed with %q", why)
 	}
 }

@@ -88,7 +88,7 @@ func (b *Backend) addCardFieldRename(registry *tools.Registry) error {
 			"the first included, so renaming any of them reaches the decks. A " +
 			"deck it could not be written to comes back under `notWritten` and keeps the " +
 			"old heading. Every deck of the vault is read for this, so a vault holding " +
-			"more than " + fmt.Sprint(cards.MaxDecksPerRename) + " of them is refused whole and the " +
+			"more than " + fmt.Sprint(cards.MaxDecksPerRename) + " of them fails whole and the " +
 			"person renames the field in the window.",
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full}, Step: tools.Move,
 	}, b.renameCardField)

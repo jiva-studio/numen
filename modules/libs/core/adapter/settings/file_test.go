@@ -70,7 +70,7 @@ func TestWriteRefusesWhatIsNotJSONAndLeavesTheFileAsItWas(t *testing.T) {
 	err := settings.Write(
 		path, []byte("{ \"agent\": { \"use\": \"claude\" } // a comment\n}"), nil, newDocument())
 	if !errors.Is(err, port.ErrNotASetting) {
-		t.Fatalf("refused with %v, wanted a refusal", err)
+		t.Fatalf("failed with %v, wanted an error", err)
 	}
 	if !strings.Contains(err.Error(), "byte") {
 		t.Errorf("said %q, wanted it to name where the trouble is", err)
@@ -88,7 +88,7 @@ func TestWriteRefusesAValueOfTheWrongKind(t *testing.T) {
 	err := settings.Write(
 		path, []byte(`{"appearance": {"interface_scale": "large"}}`), nil, newDocument())
 	if !errors.Is(err, port.ErrNotASetting) {
-		t.Fatalf("refused with %v, wanted a refusal", err)
+		t.Fatalf("failed with %v, wanted an error", err)
 	}
 	if !strings.Contains(err.Error(), "byte") {
 		t.Errorf("said %q, wanted it to name where the trouble is", err)
@@ -104,7 +104,7 @@ func TestWriteRefusesWhatIsNotAnObject(t *testing.T) {
 
 		err := settings.Write(path, []byte(written), nil, newDocument())
 		if !errors.Is(err, port.ErrNotASetting) {
-			t.Errorf("%s: refused with %v, wanted a refusal", written, err)
+			t.Errorf("%s: failed with %v, wanted an error", written, err)
 		}
 
 		raw, _ := os.ReadFile(path)
@@ -128,7 +128,7 @@ func TestWriteRefusesANameASectionHoldsTwice(t *testing.T) {
 
 		err := settings.Write(path, []byte(written), nil, newDocument())
 		if !errors.Is(err, port.ErrNotASetting) {
-			t.Errorf("%s: refused with %v, wanted a refusal", what, err)
+			t.Errorf("%s: failed with %v, wanted an error", what, err)
 		} else if !strings.Contains(err.Error(), "one of a name") {
 			t.Errorf("%s: said %q, wanted it to name the trouble", what, err)
 		}
@@ -148,7 +148,7 @@ func TestWhatIsSaidDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 	err := settings.Write(
 		path, []byte(`{"appearance": {"interface_scale": "`+secret+`"}}`), nil, newDocument())
 	if err == nil {
-		t.Fatal("wanted a refusal")
+		t.Fatal("wanted an error")
 	}
 	if strings.Contains(err.Error(), secret) {
 		t.Errorf("said %q, which repeats what stands in the file", err)
@@ -177,7 +177,7 @@ func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 	err := settings.Write(
 		path, []byte(`{"agent": {"use": "gemini"}}`), newString(read), newDocument())
 	if !errors.Is(err, port.ErrStale) {
-		t.Fatalf("refused with %v, wanted the file to have moved past what was read", err)
+		t.Fatalf("failed with %v, wanted the file to have moved past what was read", err)
 	}
 
 	raw, _ := os.ReadFile(path)

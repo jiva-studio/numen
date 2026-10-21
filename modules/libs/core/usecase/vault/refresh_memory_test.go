@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	errMemory = errors.New("the memory vault refused")
+	errMemory = errors.New("the memory vault failed")
 	memBase   = time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
 	memVault  = domain.Vault{ID: "memory", Name: "memory", Path: "/memory"}
 )

@@ -156,7 +156,7 @@ func TestTheDefaultProgramAnswersWhereTheSettingsLeaveTheChoice(t *testing.T) {
 	}
 }
 
-// A task is refused where no program can answer it.
+// A task fails where no program can answer it.
 func TestATaskNoProgramCanAnswerIsRefused(t *testing.T) {
 	for name, router := range map[string]*Router{
 		"the settings name none": mustRouter(t, &fakeProvider{}, settings.Agent{Use: settings.UseProgram("")}),
@@ -440,14 +440,14 @@ func TestStoppingTheRunStopsThePluginsRun(t *testing.T) {
 	}
 }
 
-// Where no program can be chosen because a plugin could not be asked, the refusal says why.
+// Where no program can be chosen because a plugin could not be asked, the rejection says why.
 func TestARefusalSaysWhyThePluginsCouldNotBeAsked(t *testing.T) {
 	provider := &fakeProvider{listErr: errors.New("plugin md.test.one cannot be started")}
 	router, _ := makeRouter(t, provider, settings.Agent{}, EditPreview{})
 
 	_, err := router.StartRun(t.Context(), port.Task{Question: "q"})
 	if err == nil || !strings.Contains(err.Error(), "cannot be started") {
-		t.Errorf("the refusal is %v", err)
+		t.Errorf("the error is %v", err)
 	}
 }
 

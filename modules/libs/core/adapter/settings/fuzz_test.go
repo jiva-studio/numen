@@ -63,10 +63,10 @@ func FuzzAt(f *testing.F) {
 		if err != nil {
 			// The file is well formed and every value in it is of the kind its
 			// setting takes, so the one thing left to refuse it for is a number
-			// the setting does not go to — and the refusal names which.
+			// the setting does not go to — and the rejection names which.
 			var outside *settings.OutsideBounds
 			if !errors.As(err, &outside) {
-				t.Fatalf("%s was refused as %v, which names no setting", raw, err)
+				t.Fatalf("%s failed as %v, which names no setting", raw, err)
 			}
 			return
 		}
@@ -162,10 +162,10 @@ func FuzzWrite(f *testing.F) {
 			}
 		default:
 			if !errors.Is(err, port.ErrNotASetting) {
-				t.Fatalf("%q was refused as %v, which does not say what is wrong with it", raw, err)
+				t.Fatalf("%q failed as %v, which does not say what is wrong with it", raw, err)
 			}
 			if got := reading(t, path); got != stood {
-				t.Fatalf("%q was refused and left %q in the file", raw, got)
+				t.Fatalf("%q failed and left %q in the file", raw, got)
 			}
 		}
 	})

@@ -55,7 +55,7 @@ func newProofreadable(t *testing.T) proofreadable {
 	return proofreadable{readers: read.readers, derived: shelves{shelved}, vault: v, shelved: shelved}
 }
 
-// A proofreading with nothing to proofread with is refused where it would be
+// A proofreading with nothing to proofread with fails where it would be
 // made, so no such thing exists to be called. An installation that named no
 // profile has no proofreader at all, so this is a value the settings produce
 // and not a caller's slip.
@@ -81,7 +81,7 @@ func TestNoProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
 
 	// The control: all three, and it is made.
 	if _, err := NewProofread(held.readers, held.derived, &corrector{}); err != nil {
-		t.Fatalf("a proofreading with everything it needs was refused: %v", err)
+		t.Fatalf("a proofreading with everything it needs failed: %v", err)
 	}
 }
 

@@ -21,8 +21,8 @@ func TestTheLinkedHandlerAnswersTheDownloadService(t *testing.T) {
 	defer web.Close()
 	client := numenv1connect.NewDownloadServiceClient(web.Client(), web.URL)
 
-	refused := connect.NewRequest(&numenv1.CanHandleRequest{Url: "https://example.org/page"})
-	if _, err := client.CanHandle(t.Context(), refused); connect.CodeOf(err) != connect.CodeUnauthenticated {
+	unauthReq := connect.NewRequest(&numenv1.CanHandleRequest{Url: "https://example.org/page"})
+	if _, err := client.CanHandle(t.Context(), unauthReq); connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("CanHandle without the token = %v, want unauthenticated", err)
 	}
 	req := connect.NewRequest(&numenv1.CanHandleRequest{Url: "https://example.org/page"})

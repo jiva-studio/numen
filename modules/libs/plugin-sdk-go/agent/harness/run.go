@@ -125,21 +125,21 @@ func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 // to stream and answers the same request unstreamed is logged as such, and the run asks it
 // unstreamed from then on, with the whole text going to emit at once.
 func (r *run) ask(ctx context.Context, messages []message, emit func(string) error) (message, string, error) {
-	var refusal error
+	var reqErr error
 	if !r.isPlain {
 		reply, finished, err := r.chat.stream(ctx, r.model, r.effort, messages, r.tools.offered, emit)
-		if !errors.Is(err, errStreamRefused) {
+		if !errors.Is(err, errStreamRejected) {
 			return reply, finished, err
 		}
-		refusal = err
+		reqErr = err
 	}
 	reply, finished, err := r.chat.send(ctx, r.model, r.effort, messages, r.tools.offered)
 	if err != nil {
 		return message{}, "", err
 	}
-	if refusal != nil {
+	if reqErr != nil {
 		r.isPlain = true
-		log.Printf("harness: %v; it answered unstreamed, and this run goes on unstreamed", refusal)
+		log.Printf("harness: %v; it answered unstreamed, and this run goes on unstreamed", reqErr)
 	}
 	if text := reply.Content; text != nil && *text != "" {
 		if err := emit(*text); err != nil {

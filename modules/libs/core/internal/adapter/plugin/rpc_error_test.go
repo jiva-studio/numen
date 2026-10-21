@@ -31,11 +31,11 @@ func TestReadRPCErrorKeepsADifferentCodeOfTheMessage(t *testing.T) {
 }
 
 func TestReadRPCErrorWrapsAnErrorThatIsNoConnectError(t *testing.T) {
-	cause := errors.New("connection refused")
+	cause := errors.New("connection failed")
 
 	err := readRPCError("embed batch rpc", cause)
 
-	if want := "embed batch rpc: connection refused"; err.Error() != want || !errors.Is(err, cause) {
+	if want := "embed batch rpc: connection failed"; err.Error() != want || !errors.Is(err, cause) {
 		t.Fatalf("got %q", err.Error())
 	}
 }

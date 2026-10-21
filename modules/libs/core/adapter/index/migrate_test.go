@@ -231,7 +231,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 		db.Close()
 		t.Fatal("an index whose schema does not match its number was opened")
 	}
-	t.Logf("refused with: %v", err)
+	t.Logf("failed with: %v", err)
 
 	// What it held, it still holds.
 	back, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))

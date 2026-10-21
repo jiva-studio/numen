@@ -211,10 +211,10 @@ export const Steady: Story = {
       // The task's box stands inside the line it marks.
       const box = canvasElement.querySelector('.cm-box') as HTMLElement
       const held = box.getBoundingClientRect()
-      const bounds = (box.closest('.cm-line') as HTMLElement).getBoundingClientRect()
+      const aroundRect = (box.closest('.cm-line') as HTMLElement).getBoundingClientRect()
       await expect({
         face,
-        inside: held.top >= bounds.top && held.bottom <= bounds.bottom,
+        inside: held.top >= aroundRect.top && held.bottom <= aroundRect.bottom,
       }).toEqual({ face, inside: true })
     }
   },

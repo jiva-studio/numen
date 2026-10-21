@@ -126,7 +126,7 @@ func TestACallIsHandedToThePluginThatListedTheToolWithItsArgumentsKeyedAsListed(
 	}
 
 	if res.IsError || text(res) != "done" {
-		t.Errorf("the answer was %q (refused: %v)", text(res), res.IsError)
+		t.Errorf("the answer was %q (rejected: %v)", text(res), res.IsError)
 	}
 	structured, err := json.Marshal(res.StructuredContent)
 	if err != nil || string(structured) != `{"ok":true}` {
@@ -139,15 +139,15 @@ func TestACallIsHandedToThePluginThatListedTheToolWithItsArgumentsKeyedAsListed(
 }
 
 func TestAToolThatRefusedOrFailedAnswersAsARefusal(t *testing.T) {
-	refused := &offeredTools{tools: sampleTools(), reply: plugintool.Result{Text: "no such deck", IsRefusal: true}}
+	rejected := &offeredTools{tools: sampleTools(), reply: plugintool.Result{Text: "no such deck", IsRefusal: true}}
 	failed := &offeredTools{tools: sampleTools(), err: port.ErrUnavailable}
 
-	for name, plugins := range map[string]*offeredTools{"refused": refused, "failed": failed} {
+	for name, plugins := range map[string]*offeredTools{"rejected": rejected, "failed": failed} {
 		_, core := newCore(t)
 		core.Plugins = plugintool.NewTools(plugins)
 		session := sessionOf(t, mcp.New(core))
 
-		if said := getRefusal(t, session, "sample_read", map[string]any{"deckPath": "x.md"}); said == "" {
+		if said := getToolError(t, session, "sample_read", map[string]any{"deckPath": "x.md"}); said == "" {
 			t.Errorf("a tool that %s said nothing", name)
 		}
 	}

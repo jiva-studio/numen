@@ -118,7 +118,7 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 		readers port.VaultReaders
 		writers port.VaultWriters
 	}{
-		{"the write lock is refused", filesystem.VaultReaders{}, brokenWriters{VaultWriters: filesystem.VaultWriters{}, hold: errDiskGone}},
+		{"the write lock fails", filesystem.VaultReaders{}, brokenWriters{VaultWriters: filesystem.VaultWriters{}, hold: errDiskGone}},
 		{"the vault will not open for reading", brokenReaders{open: errDiskGone}, filesystem.VaultWriters{}},
 		{"the vault will not open for writing", filesystem.VaultReaders{}, brokenWriters{VaultWriters: filesystem.VaultWriters{}, open: errDiskGone}},
 		{"the note will not read", brokenReaders{read: errDiskGone}, filesystem.VaultWriters{}},

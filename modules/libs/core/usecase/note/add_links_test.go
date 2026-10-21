@@ -32,12 +32,12 @@ func TestABadLinkCostsOnlyItselfAndTheRestAreWrittenPerNote(t *testing.T) {
 	if len(added) != 4 {
 		t.Fatalf("want an outcome for each, got %d", len(added))
 	}
-	if added[1].Refused == nil {
+	if added[1].Error == nil {
 		t.Error("a link carrying no known role was written anyway")
 	}
 	for _, i := range []int{0, 2, 3} {
-		if added[i].Refused != nil {
-			t.Errorf("link %d was refused: %v", i, added[i].Refused)
+		if added[i].Error != nil {
+			t.Errorf("link %d failed: %v", i, added[i].Error)
 		}
 	}
 	if body := c.read(t, "Heat.md"); !strings.Contains(body, "Entropy") || !strings.Contains(body, "Work") {
@@ -57,8 +57,8 @@ func TestLinksOfOneNoteNamingTwoFingerprintsAreRefusedTogetherWithTheLater(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added[1].Refused == nil || !strings.Contains(added[1].Refused.Error(), "two different fingerprints") {
-		t.Errorf("the second fingerprint was not refused for naming another: %v", added[1].Refused)
+	if added[1].Error == nil || !strings.Contains(added[1].Error.Error(), "two different fingerprints") {
+		t.Errorf("the second fingerprint was not rejected for naming another: %v", added[1].Error)
 	}
 }
 
@@ -74,11 +74,11 @@ func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnRefusal(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added[0].Refused == nil || errors.Is(added[0].Refused, unreadable) {
-		t.Errorf("the link's own refusal did not come first: %v", added[0].Refused)
+	if added[0].Error == nil || errors.Is(added[0].Error, unreadable) {
+		t.Errorf("the link's own error did not come first: %v", added[0].Error)
 	}
-	if !errors.Is(added[1].Refused, unreadable) {
-		t.Errorf("the unreadable fingerprint was not reported: %v", added[1].Refused)
+	if !errors.Is(added[1].Error, unreadable) {
+		t.Errorf("the unreadable fingerprint was not reported: %v", added[1].Error)
 	}
 	if body := c.read(t, "Heat.md"); body != "# Heat\n" {
 		t.Errorf("the note was written anyway:\n%s", body)
@@ -96,8 +96,8 @@ func TestAWriteTheNoteChangedUnderIsRefusedForEveryLinkOfIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added[0].Refused == nil || added[1].Refused == nil || added[0].Refused != added[1].Refused {
-		t.Errorf("the links of one note did not fail together: %v, %v", added[0].Refused, added[1].Refused)
+	if added[0].Error == nil || added[1].Error == nil || added[0].Error != added[1].Error {
+		t.Errorf("the links of one note did not fail together: %v, %v", added[0].Error, added[1].Error)
 	}
 }
 

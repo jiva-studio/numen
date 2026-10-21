@@ -182,7 +182,7 @@ func TestProofreadTextRefusesARequestItCannotAnswer(t *testing.T) {
 		}
 	}
 	if len(h.asked) != 0 {
-		t.Errorf("a refused request asked the model %d times", len(h.asked))
+		t.Errorf("a rejected request asked the model %d times", len(h.asked))
 	}
 }
 

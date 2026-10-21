@@ -100,10 +100,10 @@ func TestReplacingLinksWritesNothingWhenOneLinkIsRefused(t *testing.T) {
 				t.Context(), c.vault, "Heat.md", "Entropy.md", []note.PairLink{good, bad})
 
 			if err == nil {
-				t.Fatal("a set of links with a refused one was written")
+				t.Fatal("a set of links with a rejected one was written")
 			}
 			if heat := c.read(t, "Heat.md"); heat != plainHeat {
-				t.Errorf("Heat was written before the refusal:\n%s", heat)
+				t.Errorf("Heat was written before the rejection:\n%s", heat)
 			}
 		})
 	}

@@ -126,10 +126,10 @@ func FuzzWriteAnswer(f *testing.F) {
 		answers, skipped := review.Read(raw)
 		// A line the reader refuses is one it could not have written: it carries
 		// no identifier, or it answers with a rating that is not one of the four.
-		refused := want.ID == "" ||
+		shouldFail := want.ID == "" ||
 			(!want.IsUndo() && (want.CardFace.Card == "" ||
 				want.CardFace.Face == "" || !want.Rating.Valid()))
-		if refused {
+		if shouldFail {
 			if len(answers) != 0 || skipped != 1 {
 				t.Fatalf("%+v was read back as %d answers and %d skipped",
 					want, len(answers), skipped)

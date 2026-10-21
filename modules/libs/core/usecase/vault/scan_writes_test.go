@@ -127,18 +127,18 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 func TestAFailedWriteCountsNothing(t *testing.T) {
 	t.Parallel()
 	v := testsupport.GenerateVault(t, 10)
-	refused := errors.New("disk full")
+	writeErr := errors.New("disk full")
 	db := openIndex(t)
 
 	scan := vaults.NewScan(
 		filesystem.VaultReaders{},
 		db.Vaults(),
-		&groupedWrites{fail: refused},
+		&groupedWrites{fail: writeErr},
 		db.Queries(),
 		&countedMeasurements{},
 	)
 	res, err := scan.Execute(t.Context(), v)
-	if !errors.Is(err, refused) {
+	if !errors.Is(err, writeErr) {
 		t.Fatalf("error = %v, want the one the index gave", err)
 	}
 	if res.Indexed != 0 {

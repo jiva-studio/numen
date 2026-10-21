@@ -83,7 +83,7 @@ func TestOnlyTheBooksOwnMetaSetsTheLayout(t *testing.T) {
 			}))
 
 			if book.Layout != epub.Reflowable {
-				t.Errorf("layout = %q, want the book to reflow", book.Layout)
+				t.Errorf("layout = %q, want reflowable book layout", book.Layout)
 			}
 		})
 	}

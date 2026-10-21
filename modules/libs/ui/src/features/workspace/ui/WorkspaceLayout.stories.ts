@@ -171,15 +171,15 @@ const mapToFrame = (at: Position): { window: Position; story: Position } => {
   }
 
   const box = frame.getBoundingClientRect()
-  const crossRatio = box.width / window.innerWidth
+  const isAcross = box.width / window.innerWidth
   const down = box.height / window.innerHeight
   const driven = {
-    x: Math.round(box.x + at.x * crossRatio),
+    x: Math.round(box.x + at.x * isAcross),
     y: Math.round(box.y + at.y * down),
   }
   return {
     window: driven,
-    story: { x: (driven.x - box.x) / across, y: (driven.y - box.y) / down },
+    story: { x: (driven.x - box.x) / isAcross, y: (driven.y - box.y) / down },
   }
 }
 

@@ -150,10 +150,10 @@ export const LongConversation: Story = {
     await expect(thread.scrollTop).toBeGreaterThan(0)
 
     // The field grown taller expands the composer height.
-    const rect = composer.getBoundingClientRect()
+    const overRect = composer.getBoundingClientRect()
     const field = canvasElement.querySelector('textarea') as HTMLTextAreaElement
     await userEvent.click(field)
     await userEvent.keyboard('one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three')
-    await expect(composer.getBoundingClientRect().height).toBeGreaterThan(over.height)
+    await expect(composer.getBoundingClientRect().height).toBeGreaterThan(overRect.height)
   },
 }

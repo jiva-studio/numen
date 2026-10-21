@@ -134,18 +134,18 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]Block, 
 	}
 
 	var out []Block
-	var refused bool
+	var hadError bool
 	var failed error
 	for i, res := range results {
 		if res.err != nil {
-			refused, failed = true, res.err
+			hadError, failed = true, res.err
 			continue
 		}
 		if block, ok := r.makeBlock(targets[i], res.found); ok {
 			out = append(out, block)
 		}
 	}
-	if len(out) == 0 && refused {
+	if len(out) == 0 && hadError {
 		return nil, fmt.Errorf("every part of the page: %w", failed)
 	}
 	return out, nil

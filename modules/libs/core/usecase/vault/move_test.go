@@ -250,7 +250,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 	}
 }
 
-// A destination that is taken is refused, and nothing has moved when the caller
+// A destination that is taken fails, and nothing has moved when the caller
 // is told.
 func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	t.Parallel()
@@ -267,7 +267,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 		t.Error("the move says it landed")
 	}
 	if moved.From != "physics" || moved.To != "archive/physics" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 	if _, err := os.Stat(filepath.Join(f.vault.Path, "physics", "Entropy.md")); err != nil {
 		t.Errorf("the note did not stay where it was: %v", err)

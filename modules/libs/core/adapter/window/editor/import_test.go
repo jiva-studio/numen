@@ -114,9 +114,9 @@ func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
 		}
 	}
 	if said == "" {
-		t.Fatal("the refusal was never said")
+		t.Fatal("the rejection was never said")
 	}
 	if !strings.Contains(said, "Entropy.md") {
-		t.Errorf("the refusal says %q", said)
+		t.Errorf("the rejection says %q", said)
 	}
 }

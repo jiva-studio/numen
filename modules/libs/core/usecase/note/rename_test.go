@@ -161,7 +161,7 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
-				t.Fatalf("the rename was refused: %v", err)
+				t.Fatalf("the rename failed: %v", err)
 			}
 			if renamed.Title != c.title {
 				t.Errorf("the answer says the note is called %q", renamed.Title)
@@ -187,7 +187,7 @@ func TestATitleOnlyTheKeyCanCarryIsWrittenThere(t *testing.T) {
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", "C#")
 			if err != nil {
-				t.Fatalf("the rename was refused: %v", err)
+				t.Fatalf("the rename failed: %v", err)
 			}
 			if renamed.By != note.ByFrontmatter {
 				t.Errorf("want named by the frontmatter, got %s", renamed.By)
@@ -216,7 +216,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "Entropy.md", title)
 			if err != nil {
-				t.Fatalf("the rename was refused: %v", err)
+				t.Fatalf("the rename failed: %v", err)
 			}
 			if !domain.IsNameable(domain.Basename(renamed.Path)) {
 				t.Fatalf("no link can be written by the name of %q", renamed.Path)
@@ -369,10 +369,10 @@ func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
 				t.Fatalf("want ErrUnnameable, got %v", err)
 			}
 			if renamed.Path != "" {
-				t.Errorf("a refused rename answered with %q", renamed.Path)
+				t.Errorf("a rejected rename answered with %q", renamed.Path)
 			}
 			if body := c.read(t, "Old.md"); body != "# Old\n" {
-				t.Errorf("the refused rename wrote to the note:\n%s", body)
+				t.Errorf("the rejected rename wrote to the note:\n%s", body)
 			}
 		})
 	}

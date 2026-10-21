@@ -741,7 +741,7 @@ describe('a vault that cannot be reached at all', () => {
     const window = useWindowDisplay(
       fake({
         state: async () => {
-          throw new Error('connection refused')
+          throw new Error('connection failed')
         },
       }),
     )

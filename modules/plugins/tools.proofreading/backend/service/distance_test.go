@@ -21,7 +21,7 @@ func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
 
 	put, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asSaid, 0)
 	if !ok {
-		t.Fatal("the batch was refused")
+		t.Fatal("the batch failed")
 	}
 	if len(put) != 1 || put[0].Text != asSaid {
 		t.Errorf("the line was put right to %v", put)
@@ -32,7 +32,7 @@ func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
 func TestACorrectionBeyondTheLimitGivenIsDropped(t *testing.T) {
 	put, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asSaid, MaxEditDistance)
 	if !ok {
-		t.Fatal("the batch was refused")
+		t.Fatal("the batch failed")
 	}
 	if len(put) != 0 {
 		t.Errorf("the line was put right to %v", put)

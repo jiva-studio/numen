@@ -97,7 +97,7 @@ func TestReadingAFileThatIsNoDeckIsRefusedByPath(t *testing.T) {
 	} {
 		_, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{Path: path, Limit: 50})
 		if err == nil || err.Error() != path+": "+why {
-			t.Errorf("%s was refused as %v, want %q", path, err, why)
+			t.Errorf("%s failed as %v, want %q", path, err, why)
 		}
 	}
 }

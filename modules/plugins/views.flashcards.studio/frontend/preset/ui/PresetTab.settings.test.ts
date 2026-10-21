@@ -154,7 +154,7 @@ describe('what the tab says went wrong', () => {
     expect(done).toStrictEqual(['reload'])
   })
 
-  it('offers it for a refused write as well as a refused read', async () => {
+  it('offers it for a failed write as well as a failed read', async () => {
     const { tab, done } = mountWithError(words.notSaved('unreadable'))
     await tab.get('[role="alert"] button').trigger('click')
     expect(done).toStrictEqual(['reload'])

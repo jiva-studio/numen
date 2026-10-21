@@ -808,9 +808,9 @@ export const TitledLines: Story = {
 
     // The hand on that line lifts it, and the lifted title is painted the same
     // way on a heavier halo.
-    const alongVal = halo!.querySelector('textPath')!.getAttribute('href')!
+    const alongHref = halo!.querySelector('textPath')!.getAttribute('href')!
     const drawn = canvasElement
-      .querySelector(`defs path[id="${along.slice(1)}"]`)!
+      .querySelector(`defs path[id="${alongHref.slice(1)}"]`)!
       .getAttribute('d')
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === drawn,
@@ -1131,12 +1131,12 @@ export const RestingOnATitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
-    const siblingElem = canvas.getByLabelText('日本語のノート, child')
+    const besideNode = canvas.getByLabelText('日本語のノート, child')
 
     const getWidth = (box: Element) =>
       box.querySelector('.plex__box')!.getBoundingClientRect().width
     const placed = getWidth(node)
-    const nextDoor = siblingElem.getBoundingClientRect().x
+    const nextDoor = besideNode.getBoundingClientRect().x
 
     // Cut short in the box the arrangement drew, and the whole of it under a
     // hand that stays.
@@ -1152,7 +1152,7 @@ export const RestingOnATitle: Story = {
     )
 
     // Nothing else moved for it, and it stands over what it now covers.
-    await expect(beside.getBoundingClientRect().x).toBe(nextDoor)
+    await expect(besideNode.getBoundingClientRect().x).toBe(nextDoor)
     const boxes = canvasElement.querySelectorAll('.plex__node')
     await expect(boxes[boxes.length - 1]).toBe(node)
 

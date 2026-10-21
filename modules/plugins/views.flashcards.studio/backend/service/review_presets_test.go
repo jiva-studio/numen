@@ -39,7 +39,7 @@ func getDeckPreset(t *testing.T, api *API, v domain.Vault, path string) *v1.Pres
 		t.Fatal(err)
 	}
 	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("%s was refused: %v", path, out.Msg.GetError())
+		t.Fatalf("%s failed: %v", path, out.Msg.GetError())
 	}
 	return out.Msg.GetPreset()
 }
@@ -118,7 +118,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 }
 
 // A question about the presets of a vault this installation does not hold is
-// refused, and nothing is read for it.
+// rejected, and nothing is read for it.
 func TestAQuestionAboutThePresetsOfAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, pointed)
 
@@ -149,7 +149,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 	}
 }
 
-// A preset the deck names that cannot be read comes back refused as the editor
+// A preset the deck names that cannot be read comes back rejected as the editor
 // refuses a note, and carries no preset.
 func TestAPresetThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	api, held := newAPI(t, pointed)
@@ -164,9 +164,9 @@ func TestAPresetThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := out.Msg.GetError(); got != v1.ErrorCode_ERROR_CODE_MISSING {
-		t.Errorf("a preset that is not there is refused as %v", got)
+		t.Errorf("a preset that is not there fails as %v", got)
 	}
 	if out.Msg.GetPreset() != nil {
-		t.Errorf("a refused preset came with %+v", out.Msg.GetPreset())
+		t.Errorf("a rejected preset came with %+v", out.Msg.GetPreset())
 	}
 }

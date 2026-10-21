@@ -74,7 +74,7 @@ func TestFetchRefusesAFileWithAnotherSum(t *testing.T) {
 	}
 	entries, _ := os.ReadDir(r.Dir)
 	if len(entries) != 0 {
-		t.Fatalf("the folder holds %d files after a refused download", len(entries))
+		t.Fatalf("the folder holds %d files after a failed download", len(entries))
 	}
 }
 
@@ -166,7 +166,7 @@ func TestFetchStopsAStreamPastTheQuota(t *testing.T) {
 		t.Fatalf("Fetch() error = %v", err)
 	}
 	if entries, _ := os.ReadDir(r.Dir); len(entries) != 0 {
-		t.Fatalf("the folder holds %d files after a refused download", len(entries))
+		t.Fatalf("the folder holds %d files after a failed download", len(entries))
 	}
 }
 

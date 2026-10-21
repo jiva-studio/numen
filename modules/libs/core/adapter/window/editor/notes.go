@@ -28,7 +28,7 @@ func (h *noteHandler) ReadNote(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
-	if reason, refused := wire.ConvertOutcomeToErrorCode(found.Outcome); refused {
+	if reason, ok := wire.ConvertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 	} else {
 		// What the file was when this prose came out of it, for the client to
@@ -70,8 +70,8 @@ func (h *noteHandler) WriteNote(
 			At: convertFingerprintToWire(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
-	reason, refused := wire.GetErrorCode(err)
-	if !refused {
+	reason, ok := wire.GetErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.WriteNoteResponse{Error: &reason}), nil
@@ -115,8 +115,8 @@ func (h *noteHandler) CreateNote(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateNoteResponse{}), nil
 	}
-	reason, refused := wire.GetErrorCode(err)
-	if !refused {
+	reason, ok := wire.GetErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.CreateNoteResponse{Error: &reason}), nil
@@ -145,8 +145,8 @@ func (h *noteHandler) WriteLink(
 	if _, err := h.editLinks.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
 	); err != nil {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.WriteLinkResponse{Error: &reason}), nil
@@ -175,8 +175,8 @@ func (h *noteHandler) RemoveLink(
 	if _, err := h.editLinks.Remove(
 		ctx, showing, r.Msg.GetPath(), to, role, domain.Fingerprint{},
 	); err != nil {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.RemoveLinkResponse{Error: &reason}), nil
@@ -212,8 +212,8 @@ func (h *noteHandler) ReplaceLinks(
 		if errors.Is(err, note.ErrNotAPair) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.ReplaceLinksResponse{Error: &reason}), nil

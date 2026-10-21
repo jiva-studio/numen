@@ -260,7 +260,7 @@ func TestTheSameBytesGiveTheSameText(t *testing.T) {
 	first, second := read(t, raw), read(t, raw)
 
 	if first.Text != second.Text {
-		t.Error("the text differs between two readings")
+		t.Error("the text differs between two reads")
 	}
 	if !slices.Equal(first.Documents, second.Documents) {
 		t.Errorf("documents differ: %v and %v", first.Documents, second.Documents)

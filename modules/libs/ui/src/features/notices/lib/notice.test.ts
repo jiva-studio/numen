@@ -120,10 +120,10 @@ describe('a notice somebody requested for', () => {
     // The wait is for work nobody asked for. Somebody who asked is waiting to
     // be told it began, and ten seconds of nothing is an application that did
     // not hear them.
-    const arrived = getArrivalTimes(new Map(), [asked, behind], 0)
+    const arrived = getArrivalTimes(new Map(), [asked, behindNotice], 0)
 
     expect(
-      getShownNotices([asked, behind], 0, { firstSeen: arrived }).map(
+      getShownNotices([asked, behindNotice], 0, { firstSeen: arrived }).map(
         (createNotice) => createNotice.id,
       ),
     ).toEqual(['reading'])

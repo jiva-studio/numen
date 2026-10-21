@@ -16,7 +16,7 @@ func makeBrokenBatch() Batch {
 func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
 	put, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Radha, Krishna is connected with Radhika.", 0)
 	if !ok {
-		t.Fatal("the batch was refused")
+		t.Fatal("the batch failed")
 	}
 	if len(put) != 1 {
 		t.Fatalf("%v put right, want one line", put)
@@ -31,7 +31,7 @@ func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
 func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 	put, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Raj. Krishna is connected with Raj Dila.", 0)
 	if !ok {
-		t.Fatal("the batch was refused")
+		t.Fatal("the batch failed")
 	}
 	if len(put) != 1 || !put[0].IsJoined() {
 		t.Errorf("%v put right", put)
@@ -44,7 +44,7 @@ func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
 	put, past, ok := GetFixedLines(makeBrokenBatch(), "5-9 | whatever it says\n6 | Sure of it.", 0)
 	if !ok {
-		t.Fatal("the batch was refused")
+		t.Fatal("the batch failed")
 	}
 	if len(put) != 1 || put[0].Number != 6 || put[0].Text != "Sure of it." {
 		t.Errorf("%v put right", put)
@@ -106,7 +106,7 @@ func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
 
 	put, _, ok := GetFixedLines(batch, "4-5 | "+said, 0)
 	if !ok {
-		t.Fatal("the batch was refused")
+		t.Fatal("the batch failed")
 	}
 	if len(put) != 1 || put[0].Number != 4 || put[0].Last != 5 || put[0].Text != said {
 		t.Errorf("%v put right", put)
@@ -114,7 +114,7 @@ func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
 }
 
 // Two runs sharing a line leave the words of that line in one answer or the
-// other, and the batch is refused.
+// other, and the batch fails.
 func TestTwoRunsSharingALineRefuseTheBatch(t *testing.T) {
 	for _, reply := range []string{
 		"4-5 | Krishna is Radha.\n5-6 | Connected with Radhika, sure.",

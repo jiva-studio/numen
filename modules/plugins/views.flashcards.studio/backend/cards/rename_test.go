@@ -203,7 +203,7 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 		t.Errorf("the deck was written\n was %q\n now %q", before, after)
 	}
 	if !strings.Contains(read(t, vs.first, "decks/Mammals.md"), "### Shoulder height\n") {
-		t.Error("the deck after the refused one was not written")
+		t.Error("the deck after the rejected one was not written")
 	}
 }
 
@@ -245,7 +245,7 @@ func TestARenameTheStencilRefusedReachesNoDeck(t *testing.T) {
 		Stencil: "Animal.md", From: "Girth", To: "Waist",
 	})
 	if !errors.Is(err, format.ErrNoSuchField) {
-		t.Fatalf("rename = %v, want it refused", err)
+		t.Fatalf("rename = %v, want it rejected", err)
 	}
 	if after := read(t, vs.first, "decks/Mammals.md"); after != before {
 		t.Errorf("a deck was written\n was %q\n now %q", before, after)
@@ -516,7 +516,7 @@ func TestARenameOfAStencilOutOfReachWritesNothing(t *testing.T) {
 	}
 }
 
-// A stencil whose frontmatter is not YAML is refused, and no deck is written.
+// A stencil whose frontmatter is not YAML fails, and no deck is written.
 func TestARenameOfAStencilThatWillNotOpenWritesNothing(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Animal.md", "---\nfields: [Name\n---\n\n## Recognise\n")
@@ -526,7 +526,7 @@ func TestARenameOfAStencilThatWillNotOpenWritesNothing(t *testing.T) {
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if !errors.Is(err, markdown.ErrUnreadable) {
-		t.Fatalf("rename = %v, want the stencil refused", err)
+		t.Fatalf("rename = %v, want the stencil rejected", err)
 	}
 	if read(t, vs.first, "decks/Birds.md") != birds {
 		t.Error("a deck was written")
@@ -547,7 +547,7 @@ func TestARenameDoesNotWriteOverAStencilSavedWhileItRan(t *testing.T) {
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if !errors.Is(err, ports.ErrStale) {
-		t.Fatalf("rename = %v, want it refused as stale", err)
+		t.Fatalf("rename = %v, want it rejected as stale", err)
 	}
 	if after := read(t, vs.first, "Animal.md"); after != saved {
 		t.Errorf("what the person saved was written over: %q", after)

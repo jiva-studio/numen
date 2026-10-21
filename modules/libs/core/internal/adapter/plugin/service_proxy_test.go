@@ -151,7 +151,7 @@ func TestOnlyAServiceAPluginServesIsForwarded(t *testing.T) {
 	proxy := OpenServiceProxy(host)
 
 	if !proxy.Serves("/numen.v1.CardsService/ReadDeck") || proxy.Serves("/numen.v1.NoteService/Read") || proxy.Serves("/") {
-		t.Error("the proxy claimed a service it does not forward, or refused one it does")
+		t.Error("the proxy claimed a service it does not forward, or rejected one it does")
 	}
 	recorded := httptest.NewRecorder()
 	proxy.ServeHTTP(recorded, httptest.NewRequest(http.MethodPost, "/numen.v1.NoteService/Read", nil))

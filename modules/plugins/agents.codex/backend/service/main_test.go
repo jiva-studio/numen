@@ -250,9 +250,9 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 			t.Errorf("%q absent from %v", want, lines)
 		}
 	}
-	for _, refused := range []string{"--dangerously-bypass-approvals-and-sandbox", "mcp_servers", "secret", "127.0.0.1"} {
-		if strings.Contains(joined, refused) {
-			t.Errorf("%q is among %v", refused, lines)
+	for _, forbidden := range []string{"--dangerously-bypass-approvals-and-sandbox", "mcp_servers", "secret", "127.0.0.1"} {
+		if strings.Contains(joined, forbidden) {
+			t.Errorf("%q is among %v", forbidden, lines)
 		}
 	}
 	if agenttest.IsDir(dir, root) {

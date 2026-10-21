@@ -98,7 +98,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 		t.Errorf("a folder inside a vault was answered %v", err)
 	}
 	if _, carriesOne, err := (filesystem.VaultIdentity{}).GetVaultID(inner); err != nil || carriesOne {
-		t.Errorf("the refused folder was given an identity: %v %v", carriesOne, err)
+		t.Errorf("the rejected folder was given an identity: %v %v", carriesOne, err)
 	}
 }
 
@@ -212,7 +212,7 @@ func TestAVaultTheMachineCannotBeAskedAboutIsNotAdded(t *testing.T) {
 
 			_, err := add.Execute(root, "")
 			if !errors.Is(err, errRefused) {
-				t.Fatalf("want the refusal back, got %v", err)
+				t.Fatalf("want the rejection back, got %v", err)
 			}
 			if known, _ := inner.List(); len(known) != 0 {
 				t.Errorf("the list holds %v", known)
@@ -275,7 +275,7 @@ func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 
 	_, err = vaults.NewAdd(identity, registry, time.Now).Execute(folder(t, "moved"), "")
 	if !errors.Is(err, errRefused) {
-		t.Fatalf("want the refusal back, got %v", err)
+		t.Fatalf("want the rejection back, got %v", err)
 	}
 }
 

@@ -27,7 +27,7 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 
 	w := agentrun.NewWork(conversation, 1, cancel)
 	if !registry.Add(w) {
-		t.Fatal("the registry refused work while open")
+		t.Fatal("the registry rejected work while open")
 	}
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
@@ -130,7 +130,7 @@ func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
 	var registry agentrun.Registry
 	w := agentrun.NewWork("", 1, func() {})
 	if !registry.Add(w) {
-		t.Fatal("the registry refused work while open")
+		t.Fatal("the registry rejected work while open")
 	}
 
 	closed := make(chan struct{})

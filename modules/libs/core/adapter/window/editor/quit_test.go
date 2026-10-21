@@ -281,7 +281,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		t.Fatal("the quit never finished")
 	}
 	if err := <-writing; err != nil {
-		t.Fatalf("the write was refused: %v", err)
+		t.Fatalf("the write failed: %v", err)
 	}
 
 	if got := f.order.getAll(); len(got) != 2 || got[0] != "wrote Note.md" || got[1] != "closed" {

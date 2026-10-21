@@ -74,7 +74,7 @@ func TestALinkToANoteTheIndexDoesNotHoldYetIsWrittenByName(t *testing.T) {
 func TestALinkToNowhereIsRefused(t *testing.T) {
 	t.Parallel()
 	if _, err := note.GetAddress(t.Context(), named{}, "v", ""); err == nil {
-		t.Error("Addressed() = nil error, want a refusal: a link needs a note to go to")
+		t.Error("Addressed() = nil error, want an error: a link needs a note to go to")
 	}
 }
 

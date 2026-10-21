@@ -200,7 +200,7 @@ func TestWritingOneLinkLeavesTheOthersAsBytes(t *testing.T) {
 }
 
 // A key the application does not own is the person's, and an entry carrying one
-// is refused and not rewritten without it.
+// fails and not rewritten without it.
 func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	d, err := Open([]byte("---\nlinks:\n  - to: Entropy\n    role: parent\n    mine: keep me\n---\nbody\n"))
 	if err != nil {
@@ -214,11 +214,11 @@ func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 		t.Fatalf("want ErrNotOwned, got %v", err)
 	}
 	if !strings.Contains(string(d.Bytes()), "mine: keep me") {
-		t.Error("the refused change was made anyway")
+		t.Error("the rejected change was made anyway")
 	}
 }
 
-// A refusal is the whole change refused. Two entries go to the same place, the
+// A refusal is the whole change rejected. Two entries go to the same place, the
 // application owns the second and not the first, and the note comes out of the
 // call as every byte it went in.
 func TestARefusedUpdateWritesNoEntryAtAll(t *testing.T) {
@@ -241,7 +241,7 @@ func TestARefusedUpdateWritesNoEntryAtAll(t *testing.T) {
 		t.Errorf("changed = %d", changed)
 	}
 	if got := string(d.Bytes()); got != raw {
-		t.Errorf("a refused change was written\n want %q\n  got %q", raw, got)
+		t.Errorf("a rejected change was written\n want %q\n  got %q", raw, got)
 	}
 }
 
@@ -359,7 +359,7 @@ func TestOnlyTheAddressKeyIsRewritten(t *testing.T) {
 func TestFrontmatterOnOneLineIsRefusedRatherThanMangled(t *testing.T) {
 	raw := "---\n{title: T, id: b}\n---\nbody\n"
 
-	// Reading it is fine; only changing it is refused.
+	// Reading it is fine; only changing it fails.
 	d, err := Open([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -373,7 +373,7 @@ func TestFrontmatterOnOneLineIsRefusedRatherThanMangled(t *testing.T) {
 		t.Errorf("want ErrInline from AddLink, got %v", err)
 	}
 	if got := string(d.Bytes()); got != raw {
-		t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
+		t.Errorf("a failed write changed the note\n want %q\n  got %q", raw, got)
 	}
 }
 
@@ -891,7 +891,7 @@ func TestAnEntryOfTheTypeCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 		t.Fatalf("want ErrNotOwned, got %v", err)
 	}
 	if got := string(d.Bytes()); got != raw {
-		t.Errorf("the refused change was made anyway\n%s", got)
+		t.Errorf("the rejected change was made anyway\n%s", got)
 	}
 }
 

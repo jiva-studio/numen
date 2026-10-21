@@ -312,10 +312,10 @@ export const AStencil: Story = {
     const divider = found(canvasElement, '.stencil__part .divider')
     const list = found(canvasElement, '.stencil__fields')
     const adding = found(canvasElement, '.stencil__part .divider button')
-    const rect = divider.getBoundingClientRect()
-    expect(Math.round(rect.width)).toBe(Math.round(list.getBoundingClientRect().width))
+    const alongRect = divider.getBoundingClientRect()
+    expect(Math.round(alongRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
     const at = adding.getBoundingClientRect()
-    expect(at.left + at.width / 2).toBeCloseTo(rect.left + rect.width / 2, 0)
+    expect(at.left + at.width / 2).toBeCloseTo(alongRect.left + alongRect.width / 2, 0)
     for (const side of ['::before', '::after']) {
       expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
     }

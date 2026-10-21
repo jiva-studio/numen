@@ -72,7 +72,7 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	api, index, _ := dropper(t, held, newTranscriptIndex())
 
 	if err := deleteTranscript(api); err != nil {
-		t.Fatalf("dropped the transcript and was refused: %v", err)
+		t.Fatalf("dropped the transcript and failed: %v", err)
 	}
 	if len(held) != 0 {
 		t.Errorf("the store still holds %v", held)
@@ -103,7 +103,7 @@ func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T)
 	api, index, _ := dropper(t, held, newTranscriptIndex())
 
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
-		t.Fatalf("dropped a transcript being written and was refused %v", err)
+		t.Fatalf("dropped a transcript being written and failed %v", err)
 	}
 	if _, kept := held.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !kept {
 		t.Error("the transcript went out from under the run")
@@ -118,7 +118,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	api, index, _ := dropper(t, stored{}, indexed{})
 
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeNotFound {
-		t.Fatalf("dropped the transcript of a recording nothing heard and was refused %v", err)
+		t.Fatalf("dropped the transcript of a recording nothing heard and failed %v", err)
 	}
 	if len(index.written) != 0 {
 		t.Error("the index was written for a drop that did nothing")

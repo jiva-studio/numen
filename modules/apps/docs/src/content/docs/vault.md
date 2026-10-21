@@ -63,7 +63,7 @@ A few rules the list keeps:
 | | |
 | --- | --- |
 | Names are unique | a folder added under a name another vault has gets a number appended, and you rename it afterwards. |
-| Vaults do not overlap | a folder inside a vault you already have, or one that holds a vault, is refused. One file belongs to one vault. |
+| Vaults do not overlap | a folder inside a vault you already have, or one that holds a vault, fails. One file belongs to one vault. |
 | A whole disk is not a vault | neither is your home folder itself. |
 
 ## Moving the folder
@@ -71,7 +71,7 @@ A few rules the list keeps:
 Move it, rename it, put it on another disk. The vault carries its identity inside its own
 folder, so numen recognises it and the list catches up with where it went.
 
-Copying a vault is the one case that is refused: two folders carrying the same identity are not
+Copying a vault is the one case that fails: two folders carrying the same identity are not
 two vaults. Delete `.numen/` from the copy and add it again — it becomes a vault of its own,
 with its own identity, and its notes are its own from then on.
 

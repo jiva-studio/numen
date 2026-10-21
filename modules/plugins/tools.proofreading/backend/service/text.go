@@ -56,18 +56,18 @@ func proofreadScan(ctx context.Context, ask askModel, pages []Batch, maxDistance
 func proofreadSpeech(
 	ctx context.Context, ask askModel, lines []Line, size, overlap, from, limit int,
 ) (textResult, error) {
-	spoken := getSpokenLines(lines)
-	at := sort.Search(len(spoken), func(i int) bool { return spoken[i].Number >= from })
-	if at >= len(spoken) {
+	cues := getSpokenLines(lines)
+	at := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
+	if at >= len(cues) {
 		return textResult{next: from, isDone: true}, nil
 	}
-	end := len(spoken)
+	end := len(cues)
 	if limit > 0 {
 		end = min(end, at+limit)
 	}
-	window := spoken[at:end:end]
+	window := cues[at:end:end]
 
-	about := describeSpeech(spoken)
+	about := describeSpeech(cues)
 
 	main := setContext(speechBatches(window, size, overlap), about)
 	answers, err := askBatches(ctx, ask, speechInstruction, main, 0)
@@ -90,8 +90,8 @@ func proofreadSpeech(
 		}
 	}
 
-	if end == len(spoken) {
-		out.next, out.isDone = spoken[end-1].Number+1, true
+	if end == len(cues) {
+		out.next, out.isDone = cues[end-1].Number+1, true
 		return out, nil
 	}
 	resume := max(end-max(overlap, 0), at+1)
@@ -100,10 +100,10 @@ func proofreadSpeech(
 			continue
 		}
 		for _, start := range one.reaching {
-			resume = min(resume, max(getLineIndex(spoken, start), at+1))
+			resume = min(resume, max(getLineIndex(cues, start), at+1))
 		}
 	}
-	out.next = spoken[resume].Number
+	out.next = cues[resume].Number
 	return out, nil
 }
 

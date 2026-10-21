@@ -31,7 +31,7 @@ var joined = map[string]string{
 }
 
 // Reading around a deck reaches only the vaults this installation holds, and a
-// question about another is refused.
+// question about another fails.
 func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T) {
 	api, _ := newAPI(t, joined)
 
@@ -43,15 +43,15 @@ func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T
 		t.Fatal("a vault this installation does not hold was read around")
 	}
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 	if !errors.Is(err, host.ErrUnknownVault) {
-		t.Errorf("refused because %v", err)
+		t.Errorf("failed because %v", err)
 	}
 }
 
 // A note the deck points at that cannot be read comes back named the way the
-// editor names it, so a person meets one vocabulary for a refused note and not
+// editor names it, so a person meets one vocabulary for a rejected note and not
 // one for each window.
 func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	api, held := newAPI(t, joined)
@@ -83,7 +83,7 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 		t.Fatal("a note that is not there came back without an error")
 	}
 	if got := found.GetError(); got != v1.ErrorCode_ERROR_CODE_MISSING {
-		t.Errorf("a note that is not there is refused as %v", got)
+		t.Errorf("a note that is not there fails as %v", got)
 	}
 	if found.GetBody() != "" {
 		t.Errorf("a note that could not be read came with prose: %q", found.GetBody())

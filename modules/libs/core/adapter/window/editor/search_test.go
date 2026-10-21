@@ -388,7 +388,7 @@ func TestMorePathsThanAreAnsweredAtOnceAreRefused(t *testing.T) {
 	_, err := client.ListHeadings(t.Context(),
 		connect.NewRequest(&v1.ListHeadingsRequest{Paths: paths}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("err = %v, want a refusal of the paths named", err)
+		t.Fatalf("err = %v, want an error of the paths named", err)
 	}
 }
 

@@ -188,7 +188,7 @@ describe('what the drawing does with an opacity', () => {
 describe('the line under the hand', () => {
   const titledFrame = arrangePlex(titled)
   const down = titledFrame.edges.findIndex((edge) => edge.to === 'below')
-  const crossIndex = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
+  const acrossIndex = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
 
   const mountTitled = () =>
     mount(PlexView, {
@@ -211,16 +211,16 @@ describe('the line under the hand', () => {
     const view = mountTitled()
     expect(view.find('.plex__lift').exists()).toBe(false)
 
-    await reach(view, across).trigger('pointerenter')
+    await reach(view, acrossIndex).trigger('pointerenter')
     expect(view.find('.plex__lift').exists()).toBe(true)
 
-    await reach(view, across).trigger('pointerleave')
+    await reach(view, acrossIndex).trigger('pointerleave')
     expect(view.find('.plex__lift').exists()).toBe(false)
   })
 
   it('puts the lifted line down again as soon as the picture moves', async () => {
     const view = mountTitled()
-    await reach(view, across).trigger('pointerenter')
+    await reach(view, acrossIndex).trigger('pointerenter')
     expect(view.find('.plex__lift').exists()).toBe(true)
 
     // A move hands the view a frame a frame at a time, and the hand is left
@@ -232,7 +232,7 @@ describe('the line under the hand', () => {
 
   it('draws the lifted line after every box, so it remains over them', async () => {
     const view = mountTitled()
-    await reach(view, across).trigger('pointerenter')
+    await reach(view, acrossIndex).trigger('pointerenter')
     const lift = view.get('.plex__lift').element
 
     for (const node of view.findAll('.plex__node')) {
@@ -249,11 +249,11 @@ describe('the line under the hand', () => {
     expect(view.findAll('.plex__edge')).toHaveLength(lines)
     expect(view.findAll('.plex__edge-label')).toHaveLength(2 * lines)
 
-    await reach(view, across).trigger('pointerenter')
+    await reach(view, acrossIndex).trigger('pointerenter')
 
     expect(view.findAll('.plex__edge')).toHaveLength(lines)
     expect(view.get('.plex__lift .plex__edge').attributes('d')).toBe(
-      reach(view, across).attributes('d'),
+      reach(view, acrossIndex).attributes('d'),
     )
 
     // Its title leaves the resting layer for the lift.
@@ -263,7 +263,7 @@ describe('the line under the hand', () => {
 
   it('paints a resting title as a halo under its letters, as the lift does', () => {
     const view = mountTitled()
-    const [halo, letters] = title(view, across)
+    const [halo, letters] = title(view, acrossIndex)
 
     expect(halo!.classes()).toContain('plex__edge-label--halo')
     expect(letters!.classes()).toContain('plex__edge-label--letters')
@@ -278,7 +278,7 @@ describe('the line under the hand', () => {
 
   it('paints the lifted title as a halo under its letters, on one line', async () => {
     const view = mountTitled()
-    await reach(view, across).trigger('pointerenter')
+    await reach(view, acrossIndex).trigger('pointerenter')
     const [halo, letters] = view.get('.plex__lift').findAll('.plex__edge-label')
 
     // A glyph set along a path is painted as a run of its own, so a halo drawn
@@ -302,7 +302,7 @@ describe('the line under the hand', () => {
     const view = mountTitled()
 
     // One line down the page and one across it, and both carry their words.
-    for (const at of [down, across]) {
+    for (const at of [down, acrossIndex]) {
       expect(title(view, at)[0]!.find('textPath').exists()).toBe(true)
       expect(title(view, at)[0]!.attributes('x')).toBeUndefined()
     }
@@ -313,19 +313,19 @@ describe('the line under the hand', () => {
     const view = mount(PlexView, {
       props: { frame: cut, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
-    const edge = cut.edges[across]!
+    const edge = cut.edges[acrossIndex]!
 
     expect(edge.label).toBe('the scene in the assembly')
     expect(edge.words!.endsWith('…')).toBe(true)
-    expect(title(view, across)[0]!.text()).toBe(edge.words)
+    expect(title(view, acrossIndex)[0]!.text()).toBe(edge.words)
   })
 
   it('sets a title on a line running the way the words are read', () => {
     const view = mountTitled()
-    const edge = titledFrame.edges[across]!
+    const edge = titledFrame.edges[acrossIndex]!
     expect(edge.heading).toBe('against')
 
-    const href = title(view, across)[0]!.get('textPath').attributes('href')!
+    const href = title(view, acrossIndex)[0]!.get('textPath').attributes('href')!
     const line = view.get(`defs path[id="${href.slice(1)}"]`)
     const numbers = line
       .attributes('d')!

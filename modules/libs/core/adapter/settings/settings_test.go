@@ -103,10 +103,10 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	_, err := openAt(write(t, `{"appearance":{"text_scale":3}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
-		t.Fatalf("refused with %v", err)
+		t.Fatalf("failed with %v", err)
 	}
 	if outside.At != "appearance.text_scale" || outside.Number != 3 {
-		t.Errorf("refused %+v", outside)
+		t.Errorf("failed %+v", outside)
 	}
 	if outside.Least != settings.TextScaleBounds.Least || outside.Most != settings.TextScaleBounds.Most {
 		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
@@ -329,7 +329,7 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 
 // A number the setting does not take is not carried onto it, and a window whose
 // file was written by an older build opens. The field keeps the name it has, so
-// the launch after this one is not refused over a number a person never wrote
+// the launch after this one is not rejected over a number a person never wrote
 // under that name.
 func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	const held = `{"appearance":{"zoom":3}}`
@@ -864,10 +864,10 @@ func TestACountOfHeadingsOutsideWhatItGoesToIsRefused(t *testing.T) {
 	_, err := openAt(write(t, `{"appearance":{"nested_heading_limit":20}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
-		t.Fatalf("refused with %v", err)
+		t.Fatalf("failed with %v", err)
 	}
 	if outside.At != "appearance.nested_heading_limit" || outside.Number != 20 {
-		t.Errorf("refused %+v", outside)
+		t.Errorf("failed %+v", outside)
 	}
 	if outside.Least != settings.NestedHeadingLimitBounds.Least ||
 		outside.Most != settings.NestedHeadingLimitBounds.Most {

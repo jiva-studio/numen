@@ -51,7 +51,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the rename was refused: %v", code)
+		t.Fatalf("the rename failed: %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Entropy.md" {
 		t.Fatalf("the note is filed at %q", path)
@@ -222,7 +222,7 @@ func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the rename was refused: %v", code)
+		t.Fatalf("the rename failed: %v", code)
 	}
 	if repaired := answer.Msg.GetMoved().GetRepaired(); len(repaired) != 0 {
 		t.Errorf("a link that resolves is not repaired: %v", repaired)
@@ -276,7 +276,7 @@ func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 		t.Errorf("a title with no filename in it was answered with %v", code)
 	}
 	if now := fileAt(t, f.root, "Old.md"); now != held {
-		t.Errorf("the refused rename wrote to the note:\n%s", now)
+		t.Errorf("the rejected rename wrote to the note:\n%s", now)
 	}
 }
 
@@ -316,7 +316,7 @@ func TestRenamingSaysWhatItCouldNotName(t *testing.T) {
 				t.Errorf("want %v, got %v", c.want, code)
 			}
 			if !isGone(t, f.root, "Entropy.md") {
-				t.Error("a refused rename left a file under the name it was given")
+				t.Error("a rejected rename left a file under the name it was given")
 			}
 		})
 	}
@@ -339,7 +339,7 @@ func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the note was refused: %v", code)
+		t.Fatalf("the note failed: %v", code)
 	}
 	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/Entropy.md" {
 		t.Errorf("the note sits at %q", trashed)
@@ -371,7 +371,7 @@ func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the note was refused: %v", code)
+		t.Fatalf("the note failed: %v", code)
 	}
 	if trashed := answer.Msg.GetTrashed(); trashed != "" {
 		t.Errorf("a destroyed note was said to sit at %q", trashed)
@@ -393,7 +393,7 @@ func TestRemovingARemadeNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer1.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("first removal refused: %v", code)
+		t.Fatalf("first removal failed: %v", code)
 	}
 
 	created, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
@@ -403,7 +403,7 @@ func TestRemovingARemadeNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := created.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("create note refused: %v", code)
+		t.Fatalf("create note failed: %v", code)
 	}
 
 	answer2, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
@@ -413,7 +413,7 @@ func TestRemovingARemadeNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer2.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("second removal refused: %v", code)
+		t.Fatalf("second removal failed: %v", code)
 	}
 	if trashed := answer2.Msg.GetTrashed(); trashed != ".trash/Entropy-2.md" {
 		t.Errorf("second removal trashed: %q, want .trash/Entropy-2.md", trashed)
@@ -459,7 +459,7 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the file was refused: %v", code)
+		t.Fatalf("the file failed: %v", code)
 	}
 	if !isGone(t, root, "assets/diagram.png") {
 		t.Fatal("the file is still where it was")
@@ -503,7 +503,7 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 }
 
 // TestRenamingSaysWhatANoteCannotBeCalled. A title the vault cannot show the
-// note under is refused, and a title the `title` key can carry is written there
+// note under fails, and a title the `title` key can carry is written there
 // whatever the note held before.
 func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 	for name, c := range map[string]struct {
@@ -559,7 +559,7 @@ func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 			}
 			if c.want != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 				if now := fileAt(t, f.root, "Old.md"); now != c.held {
-					t.Errorf("the refused rename wrote to the note:\n%s", now)
+					t.Errorf("the rejected rename wrote to the note:\n%s", now)
 				}
 				return
 			}
@@ -588,7 +588,7 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the rename was refused: %v", code)
+		t.Fatalf("the rename failed: %v", code)
 	}
 	repaired := answer.Msg.GetMoved().GetRepaired()
 	if len(repaired) != 1 || repaired[0] != "Heat.md" {

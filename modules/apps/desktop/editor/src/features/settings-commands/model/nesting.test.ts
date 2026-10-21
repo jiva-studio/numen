@@ -304,7 +304,7 @@ describe('a switch turned twice in quick succession', () => {
     await first
   })
 
-  it('keeps the last choice where an earlier write was refused', async () => {
+  it('keeps the last choice where an earlier write failed', async () => {
     const core = slowVault()
     const held = useNestingSetting(core, words, writer().write)
     await held.start()

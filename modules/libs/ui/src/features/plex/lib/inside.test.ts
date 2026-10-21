@@ -288,10 +288,10 @@ describe('how wide the headings are drawn', () => {
   })
 
   it('slides back inside the window where the middle leaves no room', () => {
-    const nearNode = { ...NODE, x: 460 }
+    const nearDistances = { ...NODE, x: 460 }
     const held = [{ id: '0', text: 'A heading of some length', level: 1 }]
-    const settled = getNodeHeadings(near, held, SIZES, DEPS)!
-    expect(near.x + settled.offset + settled.width / 2).toBeLessThanOrEqual(
+    const settled = getNodeHeadings(nearDistances, held, SIZES, DEPS)!
+    expect(nearDistances.x + settled.offset + settled.width / 2).toBeLessThanOrEqual(
       DEPS.viewport.width / 2 - DEPS.margin,
     )
   })
@@ -302,15 +302,15 @@ describe('where the headings slide to at the edges of the window', () => {
   const edge = DEPS.viewport.width / 2 - DEPS.margin
 
   it('ends flush with the margin on the right', () => {
-    const nearNode = { ...NODE, x: 460 }
-    const settled = getNodeHeadings(nearNode, held, SIZES, DEPS)!
-    expect(near.x + settled.offset + settled.width / 2).toBe(edge)
+    const nearDistances = { ...NODE, x: 460 }
+    const settled = getNodeHeadings(nearDistances, held, SIZES, DEPS)!
+    expect(nearDistances.x + settled.offset + settled.width / 2).toBe(edge)
   })
 
   it('begins flush with the margin on the left', () => {
-    const nearNode = { ...NODE, x: -460 }
-    const settled = getNodeHeadings(nearNode, held, SIZES, DEPS)!
-    expect(near.x + settled.offset - settled.width / 2).toBe(-edge)
+    const nearDistances = { ...NODE, x: -460 }
+    const settled = getNodeHeadings(nearDistances, held, SIZES, DEPS)!
+    expect(nearDistances.x + settled.offset - settled.width / 2).toBe(-edge)
   })
 })
 
@@ -517,9 +517,9 @@ describe('the arrows at the edges of the ground', () => {
   })
 
   it('is drawn about the middle of what is hung, not of the node', () => {
-    const nearNode = { ...NODE, x: 460 }
+    const nearDistances = { ...NODE, x: 460 }
     const heading = { id: 'h', text: 'A heading of some length', level: 1 }
-    const settled = getNodeHeadings(near, [heading, ...headings(MOST + 3)], SIZES, DEPS)!
+    const settled = getNodeHeadings(nearDistances, [heading, ...headings(MOST + 3)], SIZES, DEPS)!
     const [arrow] = getOpenHeadings(settled, 1, 0)!.arrows
     expect(arrow!.points.map((point) => point.x)).toStrictEqual([
       settled.offset - WIDE,

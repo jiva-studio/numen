@@ -483,8 +483,8 @@ describe('a core that cannot be reached', () => {
   })
 })
 
-describe('a save that was refused', () => {
-  it('says why in the tab it was refused on, for as long as that tab is open', async () => {
+describe('a save that failed', () => {
+  it('says why in the tab it failed on, for as long as that tab is open', async () => {
     const { core, files } = fake({
       write: async () => asFailure('bodyUnwritable' as const),
     })

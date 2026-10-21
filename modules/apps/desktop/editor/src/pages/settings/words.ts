@@ -106,7 +106,7 @@ export const WORDS = {
   agentByDefault: (name: string) => `Default (${name})`,
   agentFirst: (name: string) => `Agent of the panel (${name})`,
   agentNone: 'No agent answers',
-  agentMissing: 'not installed: questions are refused, and no other agent answers',
+  agentMissing: 'not installed: questions are rejected, and no other agent answers',
   modelByAgent: 'Agent default',
   /** What the search line of a long list of models is announced as. */
   searchModels: 'Search models',
@@ -114,10 +114,10 @@ export const WORDS = {
   consentAllowed: 'May ask a model',
   consentDetail: {
     none: '',
-    unanswered: 'Not asked yet. Its first question is refused until you choose.',
-    asked: 'Asked to use a model and was refused until you choose.',
+    unanswered: 'Not asked yet. Its first question fails until you choose.',
+    asked: 'Asked to use a model and failed until you choose.',
     allowed: 'Allowed: its questions go to the agent its setting names.',
-    refused: 'Refused: its questions are answered with an error it shows.',
+    denied: 'Denied: its questions are answered with an error it shows.',
   },
   asking: (name: string) => `${name} asks to use a model.`,
   allow: 'Allow',

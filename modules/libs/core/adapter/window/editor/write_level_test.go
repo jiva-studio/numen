@@ -65,8 +65,8 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refused := written.Msg.GetError(); refused != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the save was refused: %v", refused)
+	if rejected := written.Msg.GetError(); rejected != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the save failed: %v", rejected)
 	}
 
 	found, err := installation.Passages().FindLexical(

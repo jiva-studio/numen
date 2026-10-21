@@ -246,10 +246,10 @@ func TestAnIdentifierThatIsNotDecimalNamesNoChunk(t *testing.T) {
 			continue
 		}
 		if row != 0 {
-			t.Errorf("%q is refused with row %d", id, row)
+			t.Errorf("%q fails with row %d", id, row)
 		}
 		if !strings.Contains(err.Error(), strconv.Quote(string(id))) {
-			t.Errorf("the refusal does not say which identifier: %v", err)
+			t.Errorf("the rejection does not say which identifier: %v", err)
 		}
 	}
 }

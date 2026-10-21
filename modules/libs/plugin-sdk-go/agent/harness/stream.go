@@ -16,9 +16,9 @@ import (
 const maxStreamedCalls = 128
 
 var (
-	// errStreamRefused is a streaming request the chat API answered 400 Bad Request or 422
+	// errStreamRejected is a streaming request the chat API answered 400 Bad Request or 422
 	// Unprocessable Entity.
-	errStreamRefused = errors.New("the chat API refused a streaming request")
+	errStreamRejected = errors.New("the chat API rejected a streaming request")
 	errStreamEnded   = errors.New("the chat API's stream ended before the reply did")
 )
 
@@ -52,7 +52,7 @@ type streamedReply struct {
 // stream asks the model for the next message as send does, with the reply streamed as server-sent
 // events. Each piece of its text goes to emit as it arrives, and an error from emit ends the stream
 // and is returned as it is. A chat API that answers the stream with one whole JSON reply has its
-// text go to emit at once. A 400 or 422 answer is errStreamRefused.
+// text go to emit at once. A 400 or 422 answer is errStreamRejected.
 func (c chat) stream(
 	ctx context.Context, model string, effort effort, messages []message, tools []functionTool, emit func(string) error,
 ) (message, string, error) {
@@ -74,11 +74,11 @@ func (c chat) stream(
 		if err != nil {
 			return message{}, "", fmt.Errorf("read chat response: %w", err)
 		}
-		refusal := newStatusError(resp, answer)
+		reqErr := newStatusError(resp, answer)
 		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnprocessableEntity {
-			return message{}, "", fmt.Errorf("%w: %w", errStreamRefused, refusal)
+			return message{}, "", fmt.Errorf("%w: %w", errStreamRejected, reqErr)
 		}
-		return message{}, "", refusal
+		return message{}, "", reqErr
 	}
 
 	reader := bufio.NewReader(resp.Body)

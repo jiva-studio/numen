@@ -122,12 +122,12 @@ import "`+module+`port"
 
 func (c Config) Trash() port.Trash { return nil }
 `)) != 0 {
-		t.Fatal("a port handed out under its own name is refused: the rule is not the rule")
+		t.Fatal("a port handed out under its own name fails: the rule is not the rule")
 	}
 }
 
 // What the rule refuses, asked directly. Each case is a shape the walk meets in
-// this package, so a refusal here is the whole of the rule and not a sample.
+// this package, so an error here is the whole of the rule and not a sample.
 func TestWhatThePortRuleRefusesTheRoot(t *testing.T) {
 	for _, one := range []struct {
 		what      string
@@ -196,10 +196,10 @@ func (c Config) Options(held filesystem.Options) error { return nil }`,
 	} {
 		findings := getHeldAdapters("probe.go", one.src)
 		if one.isRefused && len(findings) == 0 {
-			t.Errorf("%s is not refused", one.what)
+			t.Errorf("%s is not rejected", one.what)
 		}
 		if !one.isRefused && len(findings) != 0 {
-			t.Errorf("%s is refused: %s", one.what, strings.Join(findings, "; "))
+			t.Errorf("%s fails: %s", one.what, strings.Join(findings, "; "))
 		}
 	}
 }

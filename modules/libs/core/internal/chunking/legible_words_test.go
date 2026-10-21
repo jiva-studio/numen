@@ -64,13 +64,13 @@ func TestACJKPunctuationBlocksAreTheTwoUnicodeBlocksOfThatName(t *testing.T) {
 
 func TestAnInnerRuneIsAllowedWhenItIsPartOfAWord(t *testing.T) {
 	allowed := []rune{'a', 'é', '日', 0x0301, '5', '٣', '\'', '’', '-', '‑', '.', '。', '\uff0c', 0x3000}
-	refused := []rune{'#', '_', ',', '¤', '§', 0x2061, 0xFFFD, '"', '“', '…'}
+	invalid := []rune{'#', '_', ',', '¤', '§', 0x2061, 0xFFFD, '"', '“', '…'}
 	for _, r := range allowed {
 		if !isAllowedInside(r) {
 			t.Errorf("isAllowedInside(%U) = false", r)
 		}
 	}
-	for _, r := range refused {
+	for _, r := range invalid {
 		if isAllowedInside(r) {
 			t.Errorf("isAllowedInside(%U) = true", r)
 		}

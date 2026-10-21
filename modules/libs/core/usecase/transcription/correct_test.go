@@ -117,8 +117,8 @@ func newStoppedWorker(
 	if err != nil {
 		t.Fatal(err)
 	}
-	spoken := cues(words)
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(spoken)); err != nil {
+	cuesList := cues(words)
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(cuesList)); err != nil {
 		t.Fatal(err)
 	}
 	if through == 0 {
@@ -128,12 +128,12 @@ func newStoppedWorker(
 	// The shelf as a run that ended among the batches left it: the lines it put
 	// right, and the count standing after them.
 	for at := range through {
-		spoken[at].Text = strings.ToUpper(spoken[at].Text)
+		cuesList[at].Text = strings.ToUpper(cuesList[at].Text)
 	}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), transcript.Marshal(spoken)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), transcript.Marshal(cuesList)); err != nil {
 		t.Fatal(err)
 	}
-	stood, err := json.Marshal(putting{By: by.GetName(), At: spoken[through-1].To})
+	stood, err := json.Marshal(putting{By: by.GetName(), At: cuesList[through-1].To})
 	if err != nil {
 		t.Fatal(err)
 	}

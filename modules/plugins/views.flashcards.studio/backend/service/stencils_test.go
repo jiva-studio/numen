@@ -148,7 +148,7 @@ func TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused(t *testing.T) {
 		t.Errorf("writing a stencil where the vault holds no note answered %v", code)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, "cards", "Nowhere.md")); err == nil {
-		t.Error("a file was made where the write was refused")
+		t.Error("a file was made where the write failed")
 	}
 }
 

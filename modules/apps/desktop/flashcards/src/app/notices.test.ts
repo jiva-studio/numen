@@ -37,9 +37,9 @@ describe('what the window has to say', () => {
     expect(said.stay).toBe('kept')
   })
 
-  // Pressing a tile whose count is a moment stale is refused, and what the
+  // Pressing a tile whose count is a moment stale fails, and what the
   // application said is what a person needs. How it travelled is not.
-  it('says a refusal without the wire it came over', () => {
+  it('says an error without the wire it came over', () => {
     const one = useNotices()
     one.reportError(
       new ConnectError(

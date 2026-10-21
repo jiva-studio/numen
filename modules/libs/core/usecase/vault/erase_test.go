@@ -172,7 +172,7 @@ func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
 
 	_, err := erase.Execute(t.Context(), gone)
 	if !errors.Is(err, errRefused) || errors.Is(err, vaults.ErrUnreadable) {
-		t.Fatalf("want the refusal itself back, got %v", err)
+		t.Fatalf("want the rejection itself back, got %v", err)
 	}
 	if len(trash.moved) != 0 || len(index.unregistered) != 0 {
 		t.Errorf("trashed %v, unregistered %v", trash.moved, index.unregistered)
@@ -222,7 +222,7 @@ func TestAFolderThatCannotBeTrashedStaysOnTheList(t *testing.T) {
 
 	res, err := erase.Execute(t.Context(), gone)
 	if !errors.Is(err, errRefused) {
-		t.Fatalf("want the refusal back, got %v", err)
+		t.Fatalf("want the rejection back, got %v", err)
 	}
 	if res.IsTrashed || len(index.unregistered) != 0 {
 		t.Errorf("result %+v, unregistered %v", res, index.unregistered)

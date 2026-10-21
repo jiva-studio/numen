@@ -45,8 +45,8 @@ func getRefusedImports(path string) (refuses []string, named bool) {
 // which is what inward does with what getRefusedImports says.
 func isEdgeRefused(pkg, dep string) bool {
 	isRefused, _ := getRefusedImports(module + pkg)
-	for _, refused := range isRefused {
-		if strings.HasPrefix(dep, refused) {
+	for _, blocked := range isRefused {
+		if strings.HasPrefix(dep, blocked) {
 			return true
 		}
 	}
@@ -87,9 +87,9 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	} {
 		if got := isEdgeRefused(one.pkg, one.dep); got != one.isRefused {
 			if one.isRefused {
-				t.Errorf("%s reaches %s and is not refused", one.pkg, one.dep)
+				t.Errorf("%s reaches %s and is not rejected", one.pkg, one.dep)
 			} else {
-				t.Errorf("%s reaches %s and is refused", one.pkg, one.dep)
+				t.Errorf("%s reaches %s and fails", one.pkg, one.dep)
 			}
 		}
 	}
@@ -180,8 +180,8 @@ func inward(t *testing.T, goos, goarch string, tags ...string) {
 		}
 		held := strings.TrimPrefix(pkg.ImportPath, module)
 		for _, dep := range reaching {
-			for _, refused := range refuses {
-				if strings.HasPrefix(dep, refused) {
+			for _, blocked := range refuses {
+				if strings.HasPrefix(dep, blocked) {
 					t.Errorf("%s reaches %s", held, strings.TrimPrefix(dep, module))
 				}
 			}

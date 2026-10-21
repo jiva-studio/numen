@@ -317,7 +317,7 @@ func TestAFolderJoinsTheListUnderANameAnotherVaultHas(t *testing.T) {
 		t.Fatal(err)
 	}
 	if out.Msg.Error != nil {
-		t.Fatalf("the folder was refused: %v", out.Msg.GetError())
+		t.Fatalf("the folder failed: %v", out.Msg.GetError())
 	}
 	if got := out.Msg.GetVault().GetName(); got != "one 2" {
 		t.Errorf("the vault that joined the list is called %q", got)

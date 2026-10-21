@@ -165,7 +165,7 @@ func TestAFolderMovesWithWhatIsUnderIt(t *testing.T) {
 	}
 }
 
-// A destination that is taken is refused, and what was going there stays where
+// A destination that is taken fails, and what was going there stays where
 // it is.
 func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
 	w, root := openWriter(t)
@@ -334,9 +334,9 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	for _, at := range []struct {
 		name  string
 		makes string
-		// sentinel is what the refusal carries, where the refusal is the
+		// sentinel is what the rejection carries, where the error is the
 		// vault's answer about what it holds. A link into the application's
-		// own folder is refused before that question is reached.
+		// own folder fails before that question is reached.
 		sentinel error
 	}{
 		{"the service folder", ".numen/vault.yml", nil},
@@ -379,7 +379,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 }
 
 // A folder does not go inside itself. The window's tree refuses the gesture, and
-// a caller that asks for it anyway is refused here.
+// a caller that asks for it anyway fails here.
 func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -408,7 +408,7 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 	ctx := t.Context()
 
 	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("PNG")); err != nil {
-		t.Fatalf("the file was refused: %v", err)
+		t.Fatalf("the file failed: %v", err)
 	}
 	held, err := os.ReadFile(filepath.Join(root, "scans", "Cover.png"))
 	if err != nil {
@@ -448,7 +448,7 @@ func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := w.Move(ctx, "physics", "physics-old"); err != nil {
-		t.Fatalf("the move was refused: %v", err)
+		t.Fatalf("the move failed: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "physics-old", "Entropy.md")); err != nil {
 		t.Errorf("the folder did not arrive: %v", err)
@@ -478,7 +478,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	refused := map[string]error{
+	rejected := map[string]error{
 		"write":  errorOf(w.Write(ctx, "link/ocr/note.md", []byte("# Mine\n"), domain.Fingerprint{})),
 		"create": w.Create(ctx, "link/ocr/note.md", []byte("# Mine\n")),
 		"bring":  w.Import(ctx, "link/ocr/brought.txt", strings.NewReader("brought\n")),
@@ -486,7 +486,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		"remove": w.Remove(ctx, "link/ocr/abc.txt"),
 		"move":   w.Move(ctx, "link/ocr/abc.txt", "Stolen.md"),
 	}
-	for what, err := range refused {
+	for what, err := range rejected {
 		if err == nil {
 			t.Errorf("%s through the link was allowed", what)
 		}

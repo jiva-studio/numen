@@ -114,7 +114,7 @@ describe('reading a deck', () => {
 
     const answer = await cards.readDeck('Deck.md')
 
-    if (!answer.ok) throw new Error('the deck was refused')
+    if (!answer.ok) throw new Error('the deck failed')
     expect(answer.value.deck.cards.map((one) => one.sectionIndex)).toEqual([0, null])
     expect(answer.value.deck.cards[0]?.values).toEqual([{ field: 'Front', text: '<p>Entropy</p>' }])
     expect(answer.value.at).toBe(read)

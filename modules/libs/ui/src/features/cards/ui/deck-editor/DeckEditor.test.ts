@@ -64,7 +64,7 @@ const getBoxes = (wrapper: Grid, id: string, field: string): readonly HTMLTextAr
  */
 const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<void> => {
   await getTile(wrapper, id).get('[data-grip]').trigger('dragstart')
-  const overVal =
+  const overTarget =
     onto === null
       ? wrapper.findAll('[data-plus]').at(-1)!
       : onto === HEAD
@@ -72,8 +72,8 @@ const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<v
         : wrapper.find(`[data-card="${onto}"]`).exists()
           ? getTile(wrapper, onto)
           : wrapper.get(`[data-section-head="${onto}"]`)
-  await over.trigger('dragover')
-  await over.trigger('drop')
+  await overTarget.trigger('dragover')
+  await overTarget.trigger('drop')
 }
 
 /** A box typed into, as a person types into it. */

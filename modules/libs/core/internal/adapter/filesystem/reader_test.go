@@ -298,7 +298,7 @@ func TestAListingLeavesTheServiceFolderOut(t *testing.T) {
 	}
 }
 
-// A path that leaves the vault is refused, and a folder that is not there is
+// A path that leaves the vault fails, and a folder that is not there is
 // answered as what it is.
 func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
@@ -576,7 +576,7 @@ func walkWithOptions(t *testing.T, root string, opts filesystem.Options) []strin
 	return got
 }
 
-// A path that leaves the vault is refused, dot-dots and all.
+// A path that leaves the vault fails, dot-dots and all.
 func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
 	outside := t.TempDir()
 	if err := os.WriteFile(filepath.Join(outside, "secret.md"), []byte("not yours"), 0o600); err != nil {
@@ -600,7 +600,7 @@ func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
 		if _, err := reader.GetFingerprint(t.Context(), path); err == nil {
-			t.Errorf("stat %q: want a refusal", path)
+			t.Errorf("stat %q: want an error", path)
 		}
 	}
 }

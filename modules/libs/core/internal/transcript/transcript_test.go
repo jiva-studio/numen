@@ -129,15 +129,15 @@ func TestStampIsWhatTheFormatWrites(t *testing.T) {
 // The mark a person's own words carry is a note of its own. The same words
 // spoken in a cue are speech, and a proofreader is not stopped by them.
 func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
-	spoken := transcript.Marshal([]domain.TranscriptCue{
+	cuesData := transcript.Marshal([]domain.TranscriptCue{
 		{Text: transcript.HandWrittenNote, From: 0, To: 2000},
 		{Text: "and then he said it again", From: 2000, To: 4000},
 	})
-	if transcript.IsWrittenByHand(spoken) {
-		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.HandWrittenNote, spoken)
+	if transcript.IsWrittenByHand(cuesData) {
+		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.HandWrittenNote, cuesData)
 	}
 
-	own := slices.Concat(spoken, transcript.GetHandWrittenMark())
+	own := slices.Concat(cuesData, transcript.GetHandWrittenMark())
 	if !transcript.IsWrittenByHand(own) {
 		t.Errorf("the mark was not read:\n%s", own)
 	}
@@ -156,8 +156,8 @@ func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
 	claimed = append(claimed, transcript.GetReachMarker(2000)...)
 
 	// A batch that did not land whole, speaking the words a note is written in.
-	spoken := transcript.Marshal([]domain.TranscriptCue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
-	whole := slices.Concat(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n")))
+	cuesData := transcript.Marshal([]domain.TranscriptCue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
+	whole := slices.Concat(claimed, bytes.TrimPrefix(cuesData, []byte(transcript.Head+"\n")))
 
 	ms, end := transcript.ReadReached(whole)
 	if ms != 2000 {
@@ -227,7 +227,7 @@ func makeBenchmarkCues(n int) []domain.TranscriptCue {
 	cues := make([]domain.TranscriptCue, n)
 	for i := range n {
 		cues[i] = domain.TranscriptCue{
-			Text: "This is a sample cue text spoken during the recording session.",
+			Text: "This is a sample cue text recorded during the recording session.",
 			From: i * 3000,
 			To:   (i + 1) * 3000,
 		}

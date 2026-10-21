@@ -1,5 +1,5 @@
 /**
- * What a note the core refused says on the phone.
+ * What a note the core rejected says on the phone.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -10,7 +10,7 @@ import type { Core } from '../core'
 
 const createCore = (notes: Record<string, unknown>) => ({ notes }) as unknown as Core
 
-describe('a note the core refused', () => {
+describe('a note the core rejected', () => {
   it('says why it could not be read, in words, and closes', async () => {
     const core = createCore({
       readNote: vi.fn().mockResolvedValue({ body: '', at: undefined, error: ErrorCode.MISSING }),

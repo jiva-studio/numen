@@ -62,7 +62,7 @@ func TestAPathWithNoFileIsMissing(t *testing.T) {
 }
 
 // The vault holds notes. Anything else in the folder — an export, an
-// attachment, a book — is refused by name and not handed over as prose.
+// attachment, a book — fails by name and not handed over as prose.
 func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 	t.Parallel()
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -81,7 +81,7 @@ func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 }
 
 // The body goes out in a string field, and one byte that is not UTF-8 turns
-// into U+FFFD wherever it is shown. The note is refused, and its bytes stay as
+// into U+FFFD wherever it is shown. The note fails, and its bytes stay as
 // the person left them.
 func TestAFileThatIsNotTextIsRefused(t *testing.T) {
 	t.Parallel()
@@ -110,7 +110,7 @@ func TestANoteOverTheCeilingIsRefused(t *testing.T) {
 		t.Errorf("a note over the ceiling came back anyway: %d bytes", len(got.Body))
 	}
 	if got.Fingerprint.Size <= note.MaxBytes {
-		t.Errorf("the size that was refused is not reported: %+v", got.Fingerprint)
+		t.Errorf("the size that failed is not reported: %+v", got.Fingerprint)
 	}
 }
 

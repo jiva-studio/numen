@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/ports"
 )
 
-// A title no file can be named after is refused, and nothing is written.
+// A title no file can be named after fails, and nothing is written.
 func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
@@ -27,7 +27,7 @@ func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := u.Deck(t.Context(), v, cards.New{Title: title}); !errors.Is(err, domain.ErrUnnameable) {
-				t.Errorf("make a deck titled %q = %v, want it refused", title, err)
+				t.Errorf("make a deck titled %q = %v, want it rejected", title, err)
 			}
 		})
 	}
@@ -36,7 +36,7 @@ func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(entries) != 0 {
-		t.Errorf("a refused title left %v behind", entries)
+		t.Errorf("a rejected title left %v behind", entries)
 	}
 }
 
@@ -100,7 +100,7 @@ func TestANoteIsMadeWithNoIndexToBringLevel(t *testing.T) {
 	}
 }
 
-// A path something already occupies is refused, and what is there is left.
+// A path something already occupies fails, and what is there is left.
 func TestANoteIsNotMadeOverOneThatIsThere(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
