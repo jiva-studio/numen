@@ -41,8 +41,7 @@ type Settings struct {
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent settings.Agent `json:"agent"`
 
-	// Importing is how an address a link note points at is reached, and where
-	// the tools that reach it are.
+	// Importing is how an address a link note points at is reached.
 	Importing download.Config `json:"importing"`
 
 	// Titles is how a note's title and the name of its file are held together.

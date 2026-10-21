@@ -64,9 +64,7 @@ type Config struct {
 	// container without it knows nothing of the machine.
 	Hardware settings.HardwareSpecs
 
-	// Importing is how an address a link note points at is reached, and where
-	// the tools that reach it are. A machine holding neither tool builds no
-	// downloader, and what asks for one is told this build cannot do it.
+	// Importing is how an address a link note points at is reached.
 	Importing download.Config
 
 	// ShouldTranscribe is whether a recording the vault holds no transcript for is

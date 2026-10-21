@@ -35,3 +35,29 @@ func TestTheLinkedHandlerAnswersTheDownloadService(t *testing.T) {
 		t.Error("a web page is not handled")
 	}
 }
+
+// Config updates set custom tool paths and restore defaults when cleared.
+func TestUpdateConfigSetsTools(t *testing.T) {
+	srv := &downloadServer{}
+	srv.updateConfig(map[string]string{
+		"yt_dlp": "/custom/yt-dlp",
+		"ffmpeg": "/custom/ffmpeg",
+	})
+	if len(srv.cfg.Video.Command) != 1 || srv.cfg.Video.Command[0] != "/custom/yt-dlp" {
+		t.Errorf("yt_dlp command = %v, want [/custom/yt-dlp]", srv.cfg.Video.Command)
+	}
+	if len(srv.cfg.Sound.Command) != 1 || srv.cfg.Sound.Command[0] != "/custom/ffmpeg" {
+		t.Errorf("ffmpeg command = %v, want [/custom/ffmpeg]", srv.cfg.Sound.Command)
+	}
+
+	srv.updateConfig(map[string]string{
+		"yt_dlp": "",
+		"ffmpeg": "",
+	})
+	if len(srv.cfg.Video.Command) != 0 {
+		t.Errorf("yt_dlp command = %v, want empty", srv.cfg.Video.Command)
+	}
+	if len(srv.cfg.Sound.Command) != 0 {
+		t.Errorf("ffmpeg command = %v, want empty", srv.cfg.Sound.Command)
+	}
+}

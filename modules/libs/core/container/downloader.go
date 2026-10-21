@@ -28,8 +28,7 @@ func (c Config) Downloader(_ context.Context) port.Downloader {
 }
 
 // ImportURL is one link note's address, downloaded into the vault, with the
-// note cut again as soon as what came back is written. A machine holding
-// neither tool has none.
+// note cut again as soon as what came back is written.
 func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) source.ImportURL {
 	level := c.Level(db)
 	notes := c.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), level)

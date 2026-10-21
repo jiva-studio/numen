@@ -54,6 +54,12 @@ func (h *servingHost) Release(string) {
 	h.released++
 }
 
+func (h *servingHost) getReleased() int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.released
+}
+
 func endpointOf(t *testing.T, server *httptest.Server, token string) port.Endpoint {
 	t.Helper()
 	host, rawPort, err := net.SplitHostPort(server.Listener.Addr().String())
@@ -104,8 +110,8 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 		t.Errorf("the window was answered %q as %q", answer, res.Header.Get("Content-Type"))
 	}
 	window.Close()
-	if host.released != 1 {
-		t.Errorf("the plugin was released %d times", host.released)
+	if host.getReleased() != 1 {
+		t.Errorf("the plugin was released %d times", host.getReleased())
 	}
 }
 
@@ -167,8 +173,8 @@ func TestAPluginThatCannotBeStartedIsAnUnavailableService(t *testing.T) {
 	if recorded.Code != http.StatusServiceUnavailable || said["code"] != "unavailable" {
 		t.Errorf("the answer was %d %v", recorded.Code, said)
 	}
-	if host.released != 0 {
-		t.Errorf("a plugin that never started was released %d times", host.released)
+	if host.getReleased() != 0 {
+		t.Errorf("a plugin that never started was released %d times", host.getReleased())
 	}
 }
 

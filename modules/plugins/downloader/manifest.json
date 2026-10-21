@@ -21,5 +21,23 @@
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"
-  }
+  },
+  "settings": [
+    {
+      "key": "yt_dlp",
+      "type": "string",
+      "title": "yt-dlp",
+      "description": "The path to the yt-dlp program",
+      "default": "",
+      "replaces": ["importing.yt_dlp"]
+    },
+    {
+      "key": "ffmpeg",
+      "type": "string",
+      "title": "ffmpeg",
+      "description": "The path to the ffmpeg program",
+      "default": "",
+      "replaces": ["importing.ffmpeg"]
+    }
+  ]
 }

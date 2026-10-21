@@ -2,17 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
-
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
-
-// errNoTools is a machine holding neither of the programs an address is
-// downloaded with. The settings name where each of them is.
-var errNoTools = errors.New("neither yt-dlp nor ffmpeg is on this machine")
 
 func configureLocations(cfg container.Config, where cli.Locations) container.Config {
 	cfg.IndexPath = where.Index
@@ -228,15 +222,11 @@ func createCut[C any](
 
 // createImportURL is the download of an address into the vault.
 func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, error) {
-	by := cfg.Downloader(ctx)
-	if by == nil {
-		return cli.ImportURL{}, errNoTools
-	}
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return cli.ImportURL{}, err
 	}
-	return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, by), Close: db.Close}, nil
+	return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, cfg.Downloader(ctx)), Close: db.Close}, nil
 }
 
 // createProofreadRecognition is the proofreading of recognized scans, when it is
