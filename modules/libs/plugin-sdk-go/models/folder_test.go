@@ -90,3 +90,33 @@ func TestSourceOfAFolderFindsAndFetchesThroughIt(t *testing.T) {
 		t.Errorf("Fetch() error = %v", err)
 	}
 }
+
+func TestNewFolderSetsFields(t *testing.T) {
+	var called bool
+	progress := func(what string, done, total int64) { called = true }
+	f := NewFolder("indexing.test", "/dir", true, progress)
+	if f.Section != "indexing.test" || f.Dir != "/dir" || !f.ShouldDownload {
+		t.Errorf("NewFolder() = %+v", f)
+	}
+	f.Progress("test", 1, 2)
+	if !called {
+		t.Error("progress callback not set")
+	}
+}
+
+func TestFolderLocateFillsDestinations(t *testing.T) {
+	dir := t.TempDir()
+	at := filepath.Join(dir, "m.onnx")
+	if err := os.WriteFile(at, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	f := NewFolder("indexing.test", dir, false, nil)
+	var got string
+	err := f.Locate(context.Background(), nil, []Wanted{
+		{Dst: &got, Path: at, Kind: "test model"},
+	})
+	if err != nil || got != at {
+		t.Fatalf("Folder.Locate() = %v, got %q", err, got)
+	}
+}
+

@@ -13,12 +13,12 @@ import (
 // transcription is fetching what it needs.
 func Ready(cfg Config) bool {
 	cfg.ShouldDownload = false
-	if !onnx.IsAvailable(cfg.getRuntimeLibrary()) {
+	if !onnx.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
 		return false
 	}
 	var resolved paths
 	for _, one := range getWantedFiles(cfg, &resolved) {
-		if _, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.path, one.name, one.kind); err != nil {
+		if _, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.Path, one.Name, one.Kind); err != nil {
 			return false
 		}
 	}
@@ -32,7 +32,7 @@ func GetModelBytes(cfg Config) int64 {
 	var resolved paths
 	var total int64
 	for _, one := range getWantedFiles(cfg, &resolved) {
-		at, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.path, one.name, one.kind)
+		at, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.Path, one.Name, one.Kind)
 		if err != nil {
 			return 0
 		}

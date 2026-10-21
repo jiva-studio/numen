@@ -79,7 +79,7 @@ type Transcriber struct {
 // Open loads the models and compiles them, reading the weights. The result is
 // used for any number of recordings until it is closed.
 func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
-	opened, found, err := locateModels(ctx, cfg)
+	engine, found, err := locateModels(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		{&out.joiner, found.joiner, "joiner", threads.joiner},
 		{&out.segmenter, found.segmenter, "segmenter model", threads.segmenter},
 	} {
-		session, err := openSession(opened.engine, one.at, one.threads)
+		session, err := openSession(engine, one.at, one.threads)
 		if err != nil {
 			out.Close()
 			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)
@@ -130,7 +130,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 // openSession compiles the model at path with the given intra-op thread count.
 func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, error) {
 	options, _, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: getSessionProvider(),
+		Provider: onnx.GetSessionProvider(),
 		Threads:  threads,
 	})
 	if err != nil {

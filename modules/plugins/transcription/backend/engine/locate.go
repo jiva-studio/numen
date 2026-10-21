@@ -12,14 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
-// onnxRuntime is the ONNX Runtime this run listens onnxRuntime, and where it came
-// from. It is the process's, opened once and held for as long as the process
-// lives, so nothing here closes it.
-type onnxRuntime struct {
-	engine *ort.Engine
-	at     string
-}
-
 // paths are the files this run listens through, and where they were found.
 // Nothing here is open: they are names until something reads them.
 type paths struct {
@@ -36,48 +28,33 @@ type paths struct {
 // Three places are tried in order and each is a setting: a path written down,
 // the folder the application was installed into, and what was downloaded. A
 // path that is written down is used as given, and its absence is an error.
-func locateModels(ctx context.Context, cfg Config) (onnxRuntime, paths, error) {
-	var opened onnxRuntime
-	var err error
-	if opened.engine, opened.at, err = onnx.Open(ctx, cfg.getRuntimeLibrary()); err != nil {
-		return onnxRuntime{}, paths{}, err
-	}
-
+func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
 	found := paths{from: "settings"}
-	for _, one := range getWantedFiles(cfg, &found) {
-		if *one.dst, err = models.Locate(ctx, cfg.source(), pinnedSums, one.path, one.name, one.kind); err != nil {
-			return onnxRuntime{}, paths{}, err
-		}
+	engine, _, err := onnx.OpenAndLocate(ctx, cfg.Runtime, cfg.folder(), pinnedSums, getWantedFiles(cfg, &found))
+	if err != nil {
+		return nil, paths{}, err
 	}
 	if cfg.Dir != "" {
 		found.from = cfg.Dir
 	}
-	return opened, found, nil
-}
-
-// A wantedFile is one of the things a transcription reads: where it is put once
-// it is found, where the settings say it is, where it is fetched from, and what
-// it is called when it is missing.
-type wantedFile struct {
-	dst              *string
-	path, name, kind string
+	return engine, found, nil
 }
 
 // getWantedFiles is every file a transcription reads. The transducer is four of them,
 // published as four names in one folder.
-func getWantedFiles(cfg Config, into *paths) []wantedFile {
+func getWantedFiles(cfg Config, into *paths) []models.Wanted {
 	under := func(name string) string {
 		if cfg.Model.Repo == "" {
 			return ""
 		}
 		return strings.TrimSuffix(cfg.Model.Repo, "/") + "/" + name
 	}
-	return []wantedFile{
-		{&into.encoder, cfg.Model.Encoder, under(encoderFile), "encoder"},
-		{&into.decoder, cfg.Model.Decoder, under(decoderFile), "decoder"},
-		{&into.joiner, cfg.Model.Joiner, under(joinerFile), "joiner"},
-		{&into.tokens, cfg.Model.Tokens, under(tokensFile), "tokens"},
-		{&into.segmenter, cfg.Segmenter.Path, cfg.Segmenter.Repo, "segmenter model"},
+	return []models.Wanted{
+		{Dst: &into.encoder, Path: cfg.Model.Encoder, Name: under(encoderFile), Kind: "encoder"},
+		{Dst: &into.decoder, Path: cfg.Model.Decoder, Name: under(decoderFile), Kind: "decoder"},
+		{Dst: &into.joiner, Path: cfg.Model.Joiner, Name: under(joinerFile), Kind: "joiner"},
+		{Dst: &into.tokens, Path: cfg.Model.Tokens, Name: under(tokensFile), Kind: "tokens"},
+		{Dst: &into.segmenter, Path: cfg.Segmenter.Path, Name: cfg.Segmenter.Repo, Kind: "segmenter model"},
 	}
 }
 

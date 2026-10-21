@@ -52,3 +52,10 @@ func GetProviderOr(fallback Provider) Provider {
 	}
 	return fallback
 }
+
+// GetSessionProvider returns the execution provider sessions open on: the one
+// the host names, and the CPU when it names auto.
+func GetSessionProvider() Provider {
+	return GetProviderOr(ProviderCPU)
+}
+

@@ -15,10 +15,10 @@ func TestARuntimeBesideTheModelsIsTakenAheadOfTheHostsAndBehindTheSetting(t *tes
 	if err := os.WriteFile(library, nil, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if got := (Config{Dir: models}).getRuntimeLibrary(); got != library {
+	if got := onnx.ResolveLibrary((Config{Dir: models}).Runtime, (Config{Dir: models}).Dir); got != library {
 		t.Errorf("with a library in dir, runtime = %q", got)
 	}
-	if got := (Config{Dir: models, Runtime: "set.so"}).getRuntimeLibrary(); got != "set.so" {
+	if got := onnx.ResolveLibrary((Config{Dir: models, Runtime: "set.so"}).Runtime, (Config{Dir: models, Runtime: "set.so"}).Dir); got != "set.so" {
 		t.Errorf("with a runtime setting, runtime = %q", got)
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 )
 
 // runtimeState is the runtime this process runs, opened once for its life.
@@ -15,6 +17,18 @@ var runtimeState Runtime[*ort.Engine]
 // engine in the same step.
 func Open(ctx context.Context, at string) (*ort.Engine, string, error) {
 	return runtimeState.Open(ctx, at, openEngine)
+}
+
+// OpenAndLocate opens the ONNX runtime engine and locates each wanted model file.
+func OpenAndLocate(ctx context.Context, cfgRuntime string, folder models.Folder, pins models.Pins, wanted []models.Wanted) (*ort.Engine, string, error) {
+	engine, at, err := Open(ctx, ResolveLibrary(cfgRuntime, folder.Dir))
+	if err != nil {
+		return nil, "", err
+	}
+	if err := folder.Locate(ctx, pins, wanted); err != nil {
+		return nil, "", err
+	}
+	return engine, at, nil
 }
 
 // openEngine loads the library at.
