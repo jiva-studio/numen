@@ -7,13 +7,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/engine"
@@ -110,33 +109,8 @@ func (s *transcriptionServer) GetTranscriptionModel(
 	}), nil
 }
 
-func validateVaultPath(vaultRoot, path string) (string, error) {
-	if path == "" {
-		return "", errors.New("empty audio path")
-	}
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
-		return "", errors.New("path traversal outside allowed scope")
-	}
-
-	if vaultRoot != "" {
-		cleanVault := filepath.Clean(vaultRoot)
-		if !filepath.IsAbs(cleanPath) {
-			cleanPath = filepath.Join(cleanVault, cleanPath)
-		}
-		prefix := cleanVault
-		if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-			prefix += string(filepath.Separator)
-		}
-		if cleanPath != cleanVault && !strings.HasPrefix(cleanPath, prefix) {
-			return "", errors.New("path outside allowed vault root")
-		}
-	}
-	return cleanPath, nil
-}
-
 func (s *transcriptionServer) readAudioFile(path string) ([]byte, error) {
-	cleanPath, err := validateVaultPath(s.vaultRoot, path)
+	cleanPath, err := vault.ValidatePathIn(s.vaultRoot, path)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +126,7 @@ func (s *transcriptionServer) OpenRecording(
 		var err error
 		data, err = s.readAudioFile(path)
 		if err != nil {
-			if strings.Contains(err.Error(), "vault") || strings.Contains(err.Error(), "traversal") {
+			if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
 				return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read audio %s: %w", path, err))
 			}
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("read audio %s: %w", path, err))
