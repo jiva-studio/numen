@@ -69,7 +69,7 @@ func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 }
 
 // What Codex listed is cached for as long as the command line stays the same.
-func TestWhatCodexListedIsKeptWhileTheCommandStaysTheSame(t *testing.T) {
+func TestCodexModelCache_Retention(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	counter := filepath.Join(t.TempDir(), "starts")
 	command := agenttest.WriteScript(t, "codex",
@@ -114,7 +114,7 @@ func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 
 // A command line the installation set counts as the program being installed, and its models are
 // asked of that command.
-func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
+func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	appServer := agenttest.WriteScript(t, "codex",
 		`echo '{"id":1,"result":{}}'`+"\n"+
@@ -212,14 +212,14 @@ func TestAskAgentReportsAFailedRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var stopped string
+	var stopReason string
 	for stream.Receive() {
 		if reason := stream.Msg().GetStopped(); reason != "" {
-			stopped = reason
+			stopReason = reason
 		}
 	}
-	if stopped != "not signed in" {
-		t.Errorf("the run stopped with %q", stopped)
+	if stopReason != "not signed in" {
+		t.Errorf("the run stopped with %q", stopReason)
 	}
 }
 
