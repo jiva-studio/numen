@@ -28,6 +28,8 @@ var (
 	flagMu           sync.Mutex
 	defaultPortFlag  int
 	defaultTokenFlag string
+	exitProcess      = os.Exit
+	exitOutput       io.Writer = os.Stderr
 )
 
 func parseDefaultFlags() (int, string) {
@@ -183,6 +185,22 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 		return nil, err
 	}
 	return s.mux, nil
+}
+
+// Run starts a server, mounts services, and serves until shutdown.
+// When mounting or serving fails, Run writes the error to standard error and exits with code 1.
+func Run(mount func(*Server) error, opts ...Option) {
+	s := New(opts...)
+	if err := mount(s); err != nil {
+		fmt.Fprintf(exitOutput, "server error: %v\n", err)
+		exitProcess(1)
+		return
+	}
+	if err := s.Serve(); err != nil {
+		fmt.Fprintf(exitOutput, "server error: %v\n", err)
+		exitProcess(1)
+		return
+	}
 }
 
 func newServer(port int, token string, opts []Option, linked bool) *Server {

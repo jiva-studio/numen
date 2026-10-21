@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -464,3 +465,71 @@ func TestServerRunsItsClosersWhenServeReturns(t *testing.T) {
 		t.Fatalf("closers ran %d times, want once", closed)
 	}
 }
+
+// Run reports an error and terminates with exit code 1 when the mount function fails.
+func TestRunExitsOnMountError(t *testing.T) {
+	var errBuf bytes.Buffer
+	var exitCode int
+	origExit := exitProcess
+	origOutput := exitOutput
+	t.Cleanup(func() {
+		exitProcess = origExit
+		exitOutput = origOutput
+	})
+	exitProcess = func(code int) {
+		exitCode = code
+	}
+	exitOutput = &errBuf
+
+	Run(func(*Server) error {
+		return errors.New("mount failed")
+	})
+
+	if exitCode != 1 {
+		t.Fatalf("exit code = %d, want 1", exitCode)
+	}
+	if !strings.Contains(errBuf.String(), "server error: mount failed\n") {
+		t.Fatalf("stderr = %q, want 'server error: mount failed\\n'", errBuf.String())
+	}
+}
+
+// Run reports an error and terminates with exit code 1 when serving fails.
+func TestRunExitsOnServeError(t *testing.T) {
+	var errBuf bytes.Buffer
+	var exitCode int
+	origExit := exitProcess
+	origOutput := exitOutput
+	t.Cleanup(func() {
+		exitProcess = origExit
+		exitOutput = origOutput
+	})
+	exitProcess = func(code int) {
+		exitCode = code
+	}
+	exitOutput = &errBuf
+
+	Run(func(*Server) error {
+		return nil
+	}, WithPort(-1), WithStdout(io.Discard), WithStdin(nil))
+
+	if exitCode != 1 {
+		t.Fatalf("exit code = %d, want 1", exitCode)
+	}
+	if !strings.Contains(errBuf.String(), "server error:") {
+		t.Fatalf("stderr = %q, want 'server error:'", errBuf.String())
+	}
+}
+
+// Run executes cleanly when the server terminates without an error.
+func TestRunServesAndTerminatesCleanly(t *testing.T) {
+	origExit := exitProcess
+	t.Cleanup(func() { exitProcess = origExit })
+	exitProcess = func(code int) {
+		t.Fatalf("unexpected exit with code %d", code)
+	}
+
+	Run(func(*Server) error {
+		return nil
+	}, WithPort(0), WithStdout(io.Discard), WithStdin(strings.NewReader("")), WithSignals())
+}
+
