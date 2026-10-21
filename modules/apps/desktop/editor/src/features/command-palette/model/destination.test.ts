@@ -12,15 +12,15 @@ import type { SearchDestination } from './search'
 /** A window that writes down where it was taken. */
 const window = () => {
   const travelled: string[] = []
-  const opened: string[] = []
-  const displayed: string[] = []
+  const openedTab: string[] = []
+  const displayedItems: string[] = []
   const places: DestinationDeps = {
     travel: async (path) => void travelled.push(path),
-    openFileAt: async (path, run) => void opened.push(`${path} ${run.from} ${run.to}`),
+    openFileAt: async (path, run) => void openedTab.push(`${path} ${run.from} ${run.to}`),
     openFile: (path, title, line) =>
-      void displayed.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`),
+      void displayedItems.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`),
   }
-  return { places, travelled, opened, shown: displayed }
+  return { places, travelled, opened: openedTab, shown: displayedItems }
 }
 
 const landing = (over: Partial<SearchDestination>): SearchDestination => ({

@@ -143,7 +143,7 @@ func TestPluginPackage_Success(t *testing.T) {
 }
 
 // An archive holds manifest.json, bin and dist, a plugin with a frontend alone included, and no source file or older archive.
-func TestPluginPackage_HoldsOnlyWhatThePluginShips(t *testing.T) {
+func TestPluginPackage_ContainsOnlyShippedFiles(t *testing.T) {
 	pluginDir := filepath.Join(t.TempDir(), "view-sample")
 	files := map[string]string{
 		"manifest.json":             `{"id": "md.numen.view-sample", "name": "View", "version": "1.0.0"}`,

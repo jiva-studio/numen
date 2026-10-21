@@ -62,17 +62,17 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const about = computed(() => card.value?.card ?? null)
 
   /** How many conversations this window has opened, which names the next. */
-  let opened = 0
+  let openedTab = 0
 
   const turns = computed<Turn[]>(() => card.value?.conversation.turns.value ?? [])
   const isWorking = computed(() => card.value?.conversation.isWorking.value ?? false)
 
   /** The conversation about one card, made once and release with the card. */
-  const startTalk = (card: CardFace) => {
-    if (card.value?.card.mark === card.mark && card.value.card.face === card.face) return
+  const startTalk = (targetCard: CardFace) => {
+    if (card.value?.card.mark === targetCard.mark && card.value.card.face === targetCard.face) return
     endConversation()
-    const conversation = createCardConversation(deps.agent(card), `card-${opened++}`, deps.paint)
-    card.value = { card, conversation }
+    const conversation = createCardConversation(deps.agent(targetCard), `card-${openedTab++}`, deps.paint)
+    card.value = { card: targetCard, conversation }
   }
 
   /**

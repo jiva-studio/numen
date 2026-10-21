@@ -30,7 +30,7 @@ defineEmits<{ (event: 'choose', vault: string): void }>()
 /** Each vault as a row of the list, and how many cards it has waiting. */
 const vaultRows = computed(() => getVaultRows(props.vaults, VAULTS_WORDS))
 
-const waiting = computed(() => getDueByVault(props.vaults))
+const dueByVault = computed(() => getDueByVault(props.vaults))
 </script>
 
 <template>
@@ -43,7 +43,7 @@ const waiting = computed(() => getDueByVault(props.vaults))
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">
-      <DueCount v-if="waiting.has(vault.id)" :due="waiting.get(vault.id) ?? null" is-bare />
+      <DueCount v-if="dueByVault.has(vault.id)" :due="dueByVault.get(vault.id) ?? null" is-bare />
     </template>
 
     <!-- Nothing is known about the installation yet, not even which vaults it

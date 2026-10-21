@@ -123,8 +123,8 @@ describe('the days requested about', () => {
   it('is the stretch the widest grid could draw, and not every day there is', async () => {
     let request: { vault: string; from: string; to: string } | null = null
     const cards: ReviewDaysClient = {
-      listReviewDays(request) {
-        request = request
+      listReviewDays(query) {
+        request = query
         return Promise.resolve({ days: [], due: [], streak: 0, answered: 0 })
       },
     }

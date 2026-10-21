@@ -155,10 +155,10 @@ func createRecognition(
 		_ = closeModels()
 		return cli.Recognise{}, err
 	}
-	db, trimmed := indexed.db, indexed.cut
+	db, cutFn := indexed.db, indexed.cut
 	return cli.Recognise{
 		Recognise: cfg.Recognise(db.Sources(), models),
-		Cut:       trimmed,
+		Cut:       cutFn,
 		Close: func() error {
 			_ = closeModels()
 			return db.Close()
@@ -185,10 +185,10 @@ func createTranscription(
 		_ = closeModels()
 		return cli.Transcribe{}, err
 	}
-	db, trimmed := indexed.db, indexed.cut
+	db, cutFn := indexed.db, indexed.cut
 	return cli.Transcribe{
 		Transcribe: cfg.Transcribe(db.Sources(), models),
-		Cut:        trimmed,
+		Cut:        cutFn,
 		Close: func() error {
 			_ = closeModels()
 			return db.Close()
@@ -212,12 +212,12 @@ func createCut[C any](
 	if err != nil {
 		return indexedCut[C]{}, err
 	}
-	trimmed, err := extract(db.Sources(), db.SourcesKnown(), v)
+	cut, err := extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		_ = db.Close()
 		return indexedCut[C]{}, err
 	}
-	return indexedCut[C]{db: db, cut: trimmed}, nil
+	return indexedCut[C]{db: db, cut: cut}, nil
 }
 
 // createImportURL is the download of an address into the vault.

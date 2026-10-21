@@ -73,7 +73,7 @@ func TestAToolkitCarryingNoSettingsAnswersWithNone(t *testing.T) {
 	}
 }
 
-func TestTheSettingsTheEnvironmentNamesAreKept(t *testing.T) {
+func TestEnvironmentSettings_Retained(t *testing.T) {
 	// A machine that named a folder of its own is added to, and what it named
 	// stays reachable.
 	theirs := schemasIn(t, filepath.Join(t.TempDir(), "theirs"))

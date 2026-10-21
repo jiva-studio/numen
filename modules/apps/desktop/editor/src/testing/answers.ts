@@ -73,6 +73,8 @@ export const mockVaultList = {
   showing: 'physics',
 }
 
+export { mockVaultState as said, mockVaultList as listed }
+
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
   '': [
@@ -225,6 +227,6 @@ export const forgetAnswers = () => {
   mockVaultState.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
   maker.forget()
   outside.forget()
-  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }]
-  listed.showing = 'physics'
+  mockVaultList.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }]
+  mockVaultList.showing = 'physics'
 }

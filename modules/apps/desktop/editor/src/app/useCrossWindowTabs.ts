@@ -80,8 +80,8 @@ export function useCrossWindowTabs(
 
   const handleTabDock = async (msg: CrossWindowMessage): Promise<void> => {
     if (msg.targetWindowId !== windowId || !msg.kind) return
-    const opened = await deps.windowTabs.openTabOfKind(msg.kind)
-    if (!opened) return
+    const openedTab = await deps.windowTabs.openTabOfKind(msg.kind)
+    if (!openedTab) return
     channel?.postMessage({
       type: 'tab-docked',
       tabId: msg.tabId,

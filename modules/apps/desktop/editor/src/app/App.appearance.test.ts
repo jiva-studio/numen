@@ -244,7 +244,7 @@ describe('the four commands over how the window is drawn', () => {
     }
 
     it('relies on the theme the settings name, and goes on wearing it', async () => {
-      said.applied = 'mine:sea'
+      mockVaultState.applied = 'mine:sea'
       const was = applyServedStyles()
 
       await runCommand('theme')
@@ -255,7 +255,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('relies on the half the tokens are read as, and goes on reading them so', async () => {
-      said.mode = 'dark'
+      mockVaultState.mode = 'dark'
       const was = applyServedStyles(':root { color-scheme: dark; }')
 
       await runCommand('light')
@@ -265,7 +265,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('relies on the size the interface is drawn at, and leaves it there', async () => {
-      said.sizes = { interfaceScale: 1.5, textScale: 1 }
+      mockVaultState.sizes = { interfaceScale: 1.5, textScale: 1 }
       const was = applyServedStyles(
         PAIR,
         ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }',
@@ -279,7 +279,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('relies on a size between two steps, which is the row put in for it', async () => {
-      said.sizes = { interfaceScale: 1, textScale: 1.17 }
+      mockVaultState.sizes = { interfaceScale: 1, textScale: 1.17 }
       const was = applyServedStyles(
         PAIR,
         ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }',
@@ -293,7 +293,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
-      said.sizes = { interfaceScale: 1.5, textScale: 1 }
+      mockVaultState.sizes = { interfaceScale: 1.5, textScale: 1 }
       applyServedStyles(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
       await runCommand('interface')
 
@@ -397,7 +397,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('says what the settings rejected, where the window says what it could not do', async () => {
-      said.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
+      mockVaultState.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
       const window = await runCommand('interface')
       await press('End')
 

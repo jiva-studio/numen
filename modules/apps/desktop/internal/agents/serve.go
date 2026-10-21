@@ -125,13 +125,13 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
 	served.close = func() error {
 		forget()
-		stopped := router.Close()
+		closeErr := router.Close()
 		shutdown, cancel := context.WithTimeout(context.Background(), bound)
 		defer cancel()
 		if err := endpoint.Close(shutdown); err != nil {
 			return err
 		}
-		return stopped
+		return closeErr
 	}
 	return served, nil
 }

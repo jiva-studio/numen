@@ -115,7 +115,7 @@ function createFlushReporter(
   }
 
   async function answer(token: string) {
-    under = token
+    underVal = token
     lastResult = null
     registry.clearPut()
     const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
@@ -129,7 +129,7 @@ function createFlushReporter(
   }
 
   const reset = () => {
-    under = null
+    underVal = null
     lastResult = null
     writing = null
   }
@@ -140,7 +140,7 @@ function createFlushReporter(
 export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
   const handlers = new Set<FlushHandler>()
   let open = true
-  const listening = new AbortController()
+  const isListening = new AbortController()
 
   const reporterHolder: { current?: ReturnType<typeof createFlushReporter> } = {}
   // Stryker disable next-line OptionalChaining: Assigned synchronously before conflict callbacks run.
@@ -163,7 +163,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   /** Listen for the quit, for as long as the window is drawn. */
   const start = () =>
     follows(
-      () => core.watchQuit(listening.signal),
+      () => core.watchQuit(isListening.signal),
       async (message) => {
         if (message.flush) await reporter.answer(message.token)
       },
@@ -176,7 +176,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     start,
     close: () => {
       open = false
-      listening.abort()
+      isListening.abort()
     },
   }
 }

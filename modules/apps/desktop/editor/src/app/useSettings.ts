@@ -285,7 +285,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   watch(dressed.sized, () => onSizeChanged())
 
-  const retained = createSettingsPaletteLists({ dressed, sync, nesting, rest, words })
+  const retainedItem = createSettingsPaletteLists({ dressed, sync, nesting, rest, words })
 
   const kinds = [configured.kind]
 
@@ -308,7 +308,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     rest,
     file,
     configured,
-    kept: retained,
+    kept: retainedItem,
     kinds,
     start,
     close,

@@ -123,11 +123,11 @@ describe('the default agent', () => {
 describe('the consent', () => {
   it('asks the person about a plugin that requested, and writes the answer', async () => {
     const { wrapper, recordedWrites } = createSection()
-    const asking = wrapper.find('[role="alert"]')
-    expect(asking.text()).toContain('Asking Plugin asks to use a model.')
+    const activePrompt = wrapper.find('[role="alert"]')
+    expect(activePrompt.text()).toContain('Asking Plugin asks to use a model.')
 
-    await pick(asking.findAll('button'), 0).trigger('click')
-    await pick(asking.findAll('button'), 1).trigger('click')
+    await pick(activePrompt.findAll('button'), 0).trigger('click')
+    await pick(activePrompt.findAll('button'), 1).trigger('click')
     expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'test.asking', 'aiConsent'], value: 'true' },
       { at: ['plugins', 'test.asking', 'aiConsent'], value: 'false' },

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createPluginRetry, type RetryDeps } from './retry'
 
-const words = { failedAgain: 'It stopped again.', failed: 'It could not be calls.' }
+const words = { failedAgain: 'It stopped again.', error: 'It could not be started.' }
 
 const createRetry = (answer: Promise<string>) => {
   const calls: string[] = []
@@ -11,13 +11,13 @@ const createRetry = (answer: Promise<string>) => {
       return answer
     },
   }
-  const notified = vi.fn()
+  const notifiedCalls = vi.fn()
   const refresh = vi.fn(() => Promise.resolve())
   return {
     calls,
-    notified,
+    notified: notifiedCalls,
     refresh,
-    retry: createPluginRetry(core, { words, notify: notified, refresh }),
+    retry: createPluginRetry(core, { words, notify: notifiedCalls, refresh }),
   }
 }
 
@@ -47,7 +47,7 @@ describe('a plugin retried', () => {
     const { notified, refresh, retry } = createRetry(Promise.reject(new Error('core unreachable')))
     await retry.retryPlugin('md.numen.sample')
     expect(notified).toHaveBeenLastCalledWith(
-      expect.stringContaining('It could not be calls.'),
+      expect.stringContaining('It could not be started.'),
       'error',
     )
     expect(refresh).toHaveBeenCalledOnce()

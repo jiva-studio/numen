@@ -152,6 +152,8 @@ export {
   passageAnswer,
   reader,
   mockVaultState,
+  mockVaultState as said,
+  mockVaultList as listed,
   settle,
   sourceAnswer,
   getTabs,

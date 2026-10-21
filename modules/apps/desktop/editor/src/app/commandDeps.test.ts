@@ -185,32 +185,32 @@ describe('the commands reach the window', () => {
 
   it('notifies the recording and the address tabs a transcript went, and reads the file again', async () => {
     vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
-    const notified: string[] = []
+    const notifiedCalls: string[] = []
     const loaded: string[] = []
     const { deps } = createOptions({
       loadArtifactStates: async (path) => void loaded.push(path),
       recorded: {
-        onDelete: (path) => void notified.push(`recorded deleted ${path}`),
-        reloadTranscript: (path) => void notified.push(`recorded reloaded ${path}`),
+        onDelete: (path) => void notifiedCalls.push(`recorded deleted ${path}`),
+        reloadTranscript: (path) => void notifiedCalls.push(`recorded reloaded ${path}`),
       },
-      pointed: { reloadTranscript: (path) => void notified.push(`pointed reloaded ${path}`) },
+      pointed: { reloadTranscript: (path) => void notifiedCalls.push(`pointed reloaded ${path}`) },
     })
 
     expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
-    expect(notified).toStrictEqual(['recorded deleted talk.mp3', 'pointed reloaded talk.mp3'])
+    expect(notifiedCalls).toStrictEqual(['recorded deleted talk.mp3', 'pointed reloaded talk.mp3'])
     expect(loaded).toStrictEqual(['talk.mp3'])
   })
 
   it('notifies no tab of a transcript that did not go', async () => {
     vi.spyOn(running, 'deleteTranscript').mockResolvedValue(false)
-    const notified: string[] = []
+    const notifiedCalls: string[] = []
     const { deps } = createOptions({
-      recorded: { onDelete: (path) => void notified.push(path) },
-      pointed: { onDelete: (path) => void notified.push(path) },
+      recorded: { onDelete: (path) => void notifiedCalls.push(path) },
+      pointed: { onDelete: (path) => void notifiedCalls.push(path) },
     })
 
     expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(false)
-    expect(notified).toStrictEqual([])
+    expect(notifiedCalls).toStrictEqual([])
   })
 
   it('deletes a transcript where no tab is listening', async () => {

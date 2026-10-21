@@ -141,8 +141,8 @@ describe('PluginContext', () => {
     ctx.emitFileSelect({ path: '/file.md' })
     expect(host.emitFileSelect).toHaveBeenCalledWith('test.plugin', { path: '/file.md' })
 
-    const opened = await ctx.openTab?.('url', 'https://example.com')
-    expect(opened).toBe('opened-tab-id')
+    const openedTab = await ctx.openTab?.('url', 'https://example.com')
+    expect(openedTab).toBe('opened-tab-id')
     expect(host.openTab).toHaveBeenCalledWith('url', 'https://example.com')
 
     sub1.dispose()

@@ -27,10 +27,10 @@ func newEndpoint() *Endpoint {
 	}
 }
 
-// TestRunWhileStoppedKeepsAgentsStoppedUntilDone. The tools are served for the vault in
+// TestRunWhileStopped_AgentsRemainStopped. The tools are served for the vault in
 // the window, so a second swap arriving while one runs does not put them back
 // in front of the agents on the vault that is going.
-func TestRunWhileStoppedKeepsAgentsStoppedUntilDone(t *testing.T) {
+func TestRunWhileStopped_AgentsRemainStopped(t *testing.T) {
 	s := newEndpoint()
 	s.Start()
 	if !s.isServing() {

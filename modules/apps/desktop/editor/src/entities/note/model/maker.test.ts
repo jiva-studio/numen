@@ -227,7 +227,7 @@ describe('joining two notes that are both there', () => {
   })
 
   it('says why nothing was written', async () => {
-    const { core, write, told } = fake([], ['unreadable'])
+    const { core, write, messages } = fake([], ['unreadable'])
     const making = createNoteWriter(core, write)
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'jump')).toBe(false)
@@ -250,7 +250,7 @@ describe('removing a relationship from a note', () => {
   }
 
   it('asks for the role of the relation it was given, and says nothing when it is done', async () => {
-    const { core, asked, write, told } = removing(async () => null)
+    const { core, requests, write, messages } = removing(async () => null)
 
     expect(
       await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child'),
@@ -260,7 +260,7 @@ describe('removing a relationship from a note', () => {
   })
 
   it('asks for no role where no relation was given', async () => {
-    const { core, asked, write } = removing(async () => null)
+    const { core, requests, write } = removing(async () => null)
 
     await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')
 
@@ -268,7 +268,7 @@ describe('removing a relationship from a note', () => {
   })
 
   it('says why nothing was removed', async () => {
-    const { core, write, told } = removing(async () => 'unreadable')
+    const { core, write, messages } = removing(async () => 'unreadable')
 
     expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')).toBe(false)
     expect(messages.at(-1)?.text).not.toBe('')
@@ -276,7 +276,7 @@ describe('removing a relationship from a note', () => {
   })
 
   it('says a core that could not be reached', async () => {
-    const { core, write, told } = removing(async () => {
+    const { core, write, messages } = removing(async () => {
       throw new Error('the vault is out of reach')
     })
 
@@ -293,7 +293,7 @@ describe('joining through a core that could not be reached', () => {
         throw new Error('the vault is out of reach')
       },
     } as unknown as NoteMaker
-    const { write, told } = writer()
+    const { write, messages } = writer()
 
     expect(await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'child')).toBe(
       false,
@@ -322,7 +322,7 @@ describe('replacing the links between two notes', () => {
   }
 
   it('asks once for every link, under the role of its relation, and says nothing when done', async () => {
-    const { core, asked, write, told } = replacing(async () => null)
+    const { core, requests, write, messages } = replacing(async () => null)
 
     expect(
       await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
@@ -334,7 +334,7 @@ describe('replacing the links between two notes', () => {
   })
 
   it('asks for nothing where a relation is not one a link can carry', async () => {
-    const { core, asked, write } = replacing(async () => null)
+    const { core, requests, write } = replacing(async () => null)
     const sibling = [{ ...links[0]!, relation: 'sibling' as const }]
 
     expect(
@@ -344,7 +344,7 @@ describe('replacing the links between two notes', () => {
   })
 
   it('says why the core replaced nothing', async () => {
-    const { core, write, told } = replacing(async () => 'unreadable')
+    const { core, write, messages } = replacing(async () => 'unreadable')
 
     expect(
       await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
@@ -354,7 +354,7 @@ describe('replacing the links between two notes', () => {
   })
 
   it('says a core that could not be reached', async () => {
-    const { core, write, told } = replacing(async () => {
+    const { core, write, messages } = replacing(async () => {
       throw new Error('the vault is out of reach')
     })
 

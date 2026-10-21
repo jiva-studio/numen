@@ -9,7 +9,7 @@ import type { CardFace } from '@/entities/card'
 
 const { askAgent, finishConversation } = vi.hoisted(() => ({
   askAgent: vi.fn(async function* (_request: unknown, _options: unknown) {
-    yield { step: { case: 'said', value: 'Because of the leaves.' } }
+    yield { step: { case: 'text', value: 'Because of the leaves.' } }
   }),
   finishConversation: vi.fn(async (_request: unknown) => ({})),
 }))

@@ -84,12 +84,12 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 
 	recognized, listErr := lent.GetVaults()
 	linked, withErr := lent.With(target[1].ID)
-	_, displayed := lent.GetVault()
+	_, hasVault := lent.GetVault()
 	inUse := linked.SetInUse(t.Context())
 	state, stateErr := linked.EnsureIndexed(t.Context())
 
-	if listErr != nil || len(recognized) != 2 || withErr != nil || displayed {
-		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, displayed)
+	if listErr != nil || len(recognized) != 2 || withErr != nil || hasVault {
+		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, hasVault)
 	}
 	if inUse != nil || len(notified) != 1 || notified[0] != target[1].ID {
 		t.Errorf("the window was told %v (%v)", notified, inUse)

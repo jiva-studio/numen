@@ -75,9 +75,9 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('is put in front of the person as what it was made as', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const opened: string[] = []
+    const openedTabs: string[] = []
     for (const what of ['deck', 'stencil', 'preset'] as const) {
-      tabOpeners.registerEditor(what, (path) => opened.push(`${what} ${path}`))
+      tabOpeners.registerEditor(what, (path) => openedTabs.push(`${what} ${path}`))
     }
     const createdItem = createCreators(maker(), tabOpeners)
 
@@ -85,7 +85,7 @@ describe('a deck, a stencil or a preset made', () => {
     await createdItem.createStencil('zoology', 'Words')
     await createdItem.createPreset('', 'Slow')
 
-    expect(opened).toStrictEqual([
+    expect(openedTabs).toStrictEqual([
       'deck zoology/Animals.md',
       'stencil zoology/Words.md',
       'preset /Slow.md',
@@ -94,52 +94,52 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('says what the vault rejected, and nothing opens', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const notified = writer()
-    const createdItem = createCreators(maker('occupied'), tabOpeners, notified.write)
+    const mockWriter = writer()
+    const createdItem = createCreators(maker('occupied'), tabOpeners, mockWriter.write)
 
     expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
-    expect(notified.messagesText).toStrictEqual([ERRORS.occupied])
+    expect(mockWriter.messagesText).toStrictEqual([ERRORS.occupied])
   })
 
   it('says a vault that could not be requested at all', async () => {
-    const notified = writer()
-    const createdItem = createCreators(maker(null, true), undefined, notified.write)
+    const mockWriter = writer()
+    const createdItem = createCreators(maker(null, true), undefined, mockWriter.write)
 
     expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
-    expect(notified.messagesText.join(' ')).not.toContain('the vault is not there')
-    expect(notified.messagesText.join(' ')).toContain('numen did not answer')
+    expect(mockWriter.messagesText.join(' ')).not.toContain('the vault is not there')
+    expect(mockWriter.messagesText.join(' ')).toContain('numen did not answer')
   })
 
   it('says what the vault rejected as an error', async () => {
-    const notified = writer()
-    const createdItem = createCreators(maker('occupied'), undefined, notified.write)
+    const mockWriter = writer()
+    const createdItem = createCreators(maker('occupied'), undefined, mockWriter.write)
 
     await createdItem.createFile('deck', 'zoology', 'Animals')
 
-    expect(notified.messages).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
+    expect(mockWriter.messages).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
   })
 
   it('says a vault that could not be requested as an error', async () => {
-    const notified = writer()
-    const createdItem = createCreators(maker(null, true), undefined, notified.write)
+    const mockWriter = writer()
+    const createdItem = createCreators(maker(null, true), undefined, mockWriter.write)
 
     await createdItem.createFile('deck', 'zoology', 'Animals')
 
-    expect(notified.messages.map((one) => one.kind)).toStrictEqual(['error'])
+    expect(mockWriter.messages.map((one) => one.kind)).toStrictEqual(['error'])
   })
 })
 
 describe('a file nothing offers to make', () => {
   it('answers nothing, opens nothing and writes nothing of its own, the creator having returned why', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const opened: string[] = []
-    tabOpeners.registerEditor('deck', (path) => opened.push(path))
-    const notified = writer()
-    const createdItem = createCreators({ createDeck: async () => null }, tabOpeners, notified.write)
+    const openedTabs: string[] = []
+    tabOpeners.registerEditor('deck', (path) => openedTabs.push(path))
+    const mockWriter = writer()
+    const createdItem = createCreators({ createDeck: async () => null }, tabOpeners, mockWriter.write)
 
     expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
-    expect(opened).toStrictEqual([])
-    expect(notified.messagesText).toStrictEqual([])
+    expect(openedTabs).toStrictEqual([])
+    expect(mockWriter.messagesText).toStrictEqual([])
   })
 })
 
@@ -160,25 +160,25 @@ describe('a note pointing at an address made', () => {
   it('is requested of the vault under the address and folder, and put in front of the person', async () => {
     const vault = maker()
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const opened: string[] = []
-    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const openedTabs: string[] = []
+    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
     const createdItem = createCreators(vault, tabOpeners)
 
     const path = await createdItem.createUrl('links', 'example.org')
 
     expect(vault.asked).toStrictEqual(['link links example.org'])
     expect(path).toBe('links/example.org.md')
-    expect(opened).toStrictEqual(['links/example.org.md'])
+    expect(openedTabs).toStrictEqual(['links/example.org.md'])
   })
 
   it('answers nothing, and opens nothing, where the vault rejected', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const opened: string[] = []
-    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const openedTabs: string[] = []
+    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
     const createdItem = createCreators(maker('occupied'), tabOpeners)
 
     expect(await createdItem.createUrl('links', 'example.org')).toBe('')
-    expect(opened).toStrictEqual([])
+    expect(openedTabs).toStrictEqual([])
   })
 })
 
@@ -186,29 +186,29 @@ describe('several notes pointing at addresses made', () => {
   it('opens the single file when given one address', async () => {
     const vault = maker()
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const opened: string[] = []
-    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const openedTabs: string[] = []
+    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
     const createdItem = createCreators(vault, tabOpeners)
 
     const paths = await createdItem.createUrls('links', ['example.org'])
 
     expect(vault.asked).toStrictEqual(['link links example.org'])
     expect(paths).toStrictEqual(['links/example.org.md'])
-    expect(opened).toStrictEqual(['links/example.org.md'])
+    expect(openedTabs).toStrictEqual(['links/example.org.md'])
   })
 
   it('creates every note and opens none when given several addresses', async () => {
     const vault = maker()
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const opened: string[] = []
-    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const openedTabs: string[] = []
+    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
     const createdItem = createCreators(vault, tabOpeners)
 
     const paths = await createdItem.createUrls('links', ['first.org', 'second.org'])
 
     expect(vault.asked).toStrictEqual(['link links first.org', 'link links second.org'])
     expect(paths).toStrictEqual(['links/first.org.md', 'links/second.org.md'])
-    expect(opened).toStrictEqual([])
+    expect(openedTabs).toStrictEqual([])
   })
 
   it('answers nothing when given an empty list', async () => {

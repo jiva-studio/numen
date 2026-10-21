@@ -194,12 +194,12 @@ describe('choosing on a step', () => {
   })
 
   it('takes a name typed back only as the answer that retypes it', () => {
-    const typed = choose(pending('exactly'), '', 'maybe')
-    typed.text.value = 'Llama'
+    const inputValue = choose(pending('exactly'), '', 'maybe')
+    inputValue.text.value = 'Llama'
     const exact = choose(pending('exactly'), '', EXACT)
     exact.text.value = 'Llama'
 
-    expect(typed.chosen()).toBeNull()
+    expect(inputValue.chosen()).toBeNull()
     exact.chosen()
     expect(exact.invoked).toHaveLength(1)
   })

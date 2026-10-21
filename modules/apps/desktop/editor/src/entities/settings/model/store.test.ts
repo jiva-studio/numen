@@ -56,7 +56,7 @@ describe('what remains at a setting', () => {
 
   it('is nothing where the vault cannot be requested', async () => {
     const response = vi.fn()
-    const retained = createSettingsStore(
+    const retainedState = createSettingsStore(
       {
         getSettings: () => Promise.reject(new Error('gone')),
         updateSettings: () => Promise.resolve(),
@@ -65,10 +65,10 @@ describe('what remains at a setting', () => {
       response,
     )
 
-    await retained.start()
+    await retainedState.start()
 
-    expect(retained.getSetting(['agent'])).toBeUndefined()
-    expect(retained.path.value).toBe('')
+    expect(retainedState.getSetting(['agent'])).toBeUndefined()
+    expect(retainedState.path.value).toBe('')
   })
 
   it('is nothing where the vault answers with what is not JSON, and is returned', async () => {
@@ -169,7 +169,7 @@ describe('the models a setting offers', () => {
 
 describe('a setting written', () => {
   it('is requested of the vault as it was given', async () => {
-    const { kept, asked } = createStore('{}')
+    const { kept, requests } = createStore('{}')
     await kept.writeSetting(['agent', 'use'], 'claude')
     expect(requests).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
@@ -182,7 +182,7 @@ describe('a setting written', () => {
   })
 
   it('asks nothing of the vault where there is nothing to write', async () => {
-    const { kept, asked } = createStore('{}')
+    const { kept, requests } = createStore('{}')
     await kept.writeSettings([])
     expect(requests).toStrictEqual([])
   })
@@ -232,49 +232,49 @@ describe('a setting written twice in quick succession', () => {
 
   it('remains at the last value through the answer of the first write and a read between', async () => {
     const vault = createHeldVault()
-    const retained = createSettingsStore(vault.core, words, vi.fn())
+    const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const first = retained.writeSetting(at, false)
-    const second = retained.writeSetting(at, true)
-    expect(retained.getSetting(at)).toBe(true)
+    const first = retainedState.writeSetting(at, false)
+    const second = retainedState.writeSetting(at, true)
+    expect(retainedState.getSetting(at)).toBe(true)
 
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve('{"appearance":{"nest_headings_under_notes":false}}')
     await first
-    expect(retained.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(at)).toBe(true)
 
     vault.writes[1]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve(vault.getFile())
     await second
-    expect(retained.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(at)).toBe(true)
   })
 
   it('does not take a read that answers after a newer one', async () => {
     const vault = createHeldVault()
-    const retained = createSettingsStore(vault.core, words, vi.fn())
+    const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const older = retained.start()
-    const newer = retained.start()
+    const older = retainedState.start()
+    const newer = retainedState.start()
     vault.reads[1]?.resolve('{"a":2}')
     await newer
     vault.reads[0]?.resolve('{"a":1}')
     await older
-    expect(retained.getSetting(['a'])).toBe(2)
+    expect(retainedState.getSetting(['a'])).toBe(2)
   })
 
   it('goes back to the file where the write failed', async () => {
     const vault = createHeldVault()
     vault.core.updateSettings = () => Promise.reject(new Error('failed'))
-    const retained = createSettingsStore(vault.core, words, vi.fn())
+    const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const content = retained.writeSetting(at, false)
-    expect(retained.getSetting(at)).toBe(false)
+    const content = retainedState.writeSetting(at, false)
+    expect(retainedState.getSetting(at)).toBe(false)
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve(vault.getFile())
     await content
-    expect(retained.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(at)).toBe(true)
   })
 })
 

@@ -146,14 +146,14 @@ export const APluginAskingIsPutToThePerson: Story = {
   render: sections('20rem'),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const asking = canvas.getByRole('alert')
-    await expect(asking).toHaveTextContent('Sample Asking Plugin asks to use a model.')
+    const activePrompt = canvas.getByRole('alert')
+    await expect(activePrompt).toHaveTextContent('Sample Asking Plugin asks to use a model.')
 
     const frame = canvasElement.querySelector('.numen')
     if (!frame) throw new Error('the page is not drawn')
     const page = frame.getBoundingClientRect()
-    const allow = within(asking).getByRole('button', { name: 'Allow' }).getBoundingClientRect()
-    const refuse = within(asking).getByRole('button', { name: 'Refuse' }).getBoundingClientRect()
+    const allow = within(activePrompt).getByRole('button', { name: 'Allow' }).getBoundingClientRect()
+    const refuse = within(activePrompt).getByRole('button', { name: 'Refuse' }).getBoundingClientRect()
     await expect(allow.right).toBeLessThanOrEqual(page.right)
     await expect(refuse.right).toBeLessThanOrEqual(page.right)
   },

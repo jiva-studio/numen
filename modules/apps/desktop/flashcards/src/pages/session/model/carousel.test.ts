@@ -65,14 +65,14 @@ const createStrip = (
 
   const windowRef = shallowRef<HTMLElement | null>(window_)
   const middleRef = shallowRef<HTMLElement | null>(more.hasCard === false ? null : card)
-  const displayed = more.owner ?? ref<PanelPlace>(at)
+  const displayedItems = more.owner ?? ref<PanelPlace>(at)
   const errors: unknown[] = []
 
   let target: ReturnType<typeof useCarouselStrip> | null = null
   const one = mount(
     defineComponent({
       setup() {
-        target = useCarouselStrip({ window: windowRef, middle: middleRef, shown: displayed })
+        target = useCarouselStrip({ window: windowRef, middle: middleRef, shown: displayedItems })
         return () => null
       },
     }),
@@ -90,7 +90,7 @@ const createStrip = (
 
   /** The owner moving the strip, as a key does. */
   const moveTo = async (where: PanelPlace) => {
-    displayed.value = where
+    displayedItems.value = where
     await nextTick()
   }
 
@@ -100,7 +100,7 @@ const createStrip = (
     one.unmount()
   }
 
-  return { ...strip, takeOff, window_, windowRef, shown: displayed, moves, capture, errors, scrollTo, moveTo }
+  return { ...strip, takeOff, window_, windowRef, shown: displayedItems, moves, capture, errors, scrollTo, moveTo }
 }
 
 describe('where the strip remains', () => {

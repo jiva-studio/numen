@@ -11,14 +11,14 @@ import type { WindowHandle } from '@/entities/tab'
 
 /** A window, writing down what it was asked to open. */
 const window_ = () => {
-  const opened: string[] = []
+  const openedTab: string[] = []
   const handle = {
     openTab: async (kind: string) => {
-      opened.push(kind)
+      openedTab.push(kind)
       return kind
     },
   } as unknown as WindowHandle
-  return { handle, opened }
+  return { handle, opened: openedTab }
 }
 
 const installation = (): Installation =>

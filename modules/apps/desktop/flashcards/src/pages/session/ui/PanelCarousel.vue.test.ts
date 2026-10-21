@@ -66,10 +66,10 @@ describe('a card with a panel on either side of it', () => {
   // Whichever is out of the window is reached by nothing: not the keyboard, and
   // not what reads the screen aloud.
   it('puts whichever is out of the window beyond reach', () => {
-    const reading = strip('before').one
-    expect(reading.find('.carousel__before').attributes('inert')).toBeUndefined()
-    expect(reading.find('.carousel__here').attributes('inert')).toBeDefined()
-    expect(reading.find('.carousel__after').attributes('inert')).toBeDefined()
+    const readText = strip('before').one
+    expect(readText.find('.carousel__before').attributes('inert')).toBeUndefined()
+    expect(readText.find('.carousel__here').attributes('inert')).toBeDefined()
+    expect(readText.find('.carousel__after').attributes('inert')).toBeDefined()
 
     const card = strip('here').one
     expect(card.find('.carousel__before').attributes('inert')).toBeDefined()
@@ -117,9 +117,9 @@ describe('a hand on the strip', () => {
     await scrollStrip(chat.window_, 400)
     expect(chat.one.emitted('update:at')).toEqual([['after']])
 
-    const reading = strip()
-    await scrollStrip(reading.window_, 20)
-    expect(reading.one.emitted('update:at')).toEqual([['before']])
+    const readText = strip()
+    await scrollStrip(readText.window_, 20)
+    expect(readText.one.emitted('update:at')).toEqual([['before']])
 
     const card = strip('before')
     await scrollStrip(card.window_, 190)

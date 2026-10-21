@@ -49,7 +49,7 @@ const isDone = computed(() => !!props.by && !isSpent(props.by) && props.by.answe
  * it: the preset's day is spent, nothing here can be begun at all, or the day
  * held nothing of this deck.
  */
-const stopped = computed(() => {
+const stoppedLabel = computed(() => {
   if (props.by && isSpent(props.by)) return STOPPED.full
   return hasNothingToBegin(props.deck, props.by) ? STOPPED.noneToBegin : STOPPED.nothing
 })
@@ -90,7 +90,7 @@ const share = computed(() => {
     <DueCount v-else-if="deck.due + deck.new > 0" :due="deck.due + deck.new" />
     <template v-else-if="deck.faces > 0">
       <span v-if="isDone" class="decks__met">Done today</span>
-      <span v-else class="decks__stopped">{{ stopped }}</span>
+      <span v-else class="decks__stopped">{{ stoppedLabel }}</span>
     </template>
   </Button>
 </template>

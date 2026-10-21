@@ -237,18 +237,18 @@ describe('the stream of changes', () => {
 describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
   const createWindow = (core: Core) => {
-    const rendered: string[] = []
+    const renderedElement: string[] = []
     const window = useWindowDisplay(core, {
       wait: vi.fn(() => Promise.resolve()),
       onVaultChanged: (paths) => {
-        rendered.push(`changed ${paths.join(' ')}`)
+        renderedElement.push(`changed ${paths.join(' ')}`)
         return Promise.resolve()
       },
       reload: () => {
-        rendered.push('reloaded')
+        renderedElement.push('reloaded')
       },
     })
-    return { window, drawn: rendered }
+    return { window, drawn: renderedElement }
   }
 
   /**
@@ -364,11 +364,11 @@ describe('a note requested for from outside the window', () => {
 describe('a place inside a source requested for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
   const createRecordingWindow = (core: Core) => {
-    const opened: string[] = []
+    const openedWindows: string[] = []
     const one = createDisplay(core, (path, spans) =>
-      opened.push(`${path} ${spans.map((one) => `${one.from} ${one.to}`).join(' ')}`),
+      openedWindows.push(`${path} ${spans.map((one) => `${one.from} ${one.to}`).join(' ')}`),
     )
-    return { window: one.window, opened, travelled: one.travelled }
+    return { window: one.window, opened: openedWindows, travelled: one.travelled }
   }
 
   it('opens the document it remains in, and asks for no note at all', async () => {
@@ -490,7 +490,7 @@ describe('chunks with nothing to embed them', () => {
 })
 
 describe('what the application is doing', () => {
-  const reading = (count: number): Task => ({
+  const readText = (count: number): Task => ({
     id: 'reading:library/scan.pdf',
     label: 'Recognising a scan',
     about: 'library/scan.pdf',
@@ -513,8 +513,8 @@ describe('what the application is doing', () => {
         await waitForever()
       },
       watchTasks: async function* () {
-        yield [reading(16)]
-        yield [reading(32)]
+        yield [readText(16)]
+        yield [readText(32)]
         await waitForever()
       },
     })
@@ -529,7 +529,7 @@ describe('what the application is doing', () => {
   })
 
   it('takes the stream up again, and says nothing about having lost it', async () => {
-    let opened = 0
+    let openedWindows = 0
     const core = fake({
       watchVaultChanges: async function* () {
         await waitForever()
@@ -541,9 +541,9 @@ describe('what the application is doing', () => {
         await waitForever()
       },
       watchTasks: async function* () {
-        opened++
-        if (opened === 1) throw new Error('the stream dropped')
-        yield [reading(48)]
+        openedWindows++
+        if (openedWindows === 1) throw new Error('the stream dropped')
+        yield [readText(48)]
         await waitForever()
       },
     })
@@ -555,7 +555,7 @@ describe('what the application is doing', () => {
     await nap()
     await nap()
 
-    expect(opened).toBeGreaterThan(1)
+    expect(openedWindows).toBeGreaterThan(1)
     expect(window.tasks.value.map((one) => one.done)).toEqual([48])
     // A stream taken up again is not a stream that was lost.
     expect(window.lost.value).toBe('')
@@ -585,7 +585,7 @@ describe('what the application is doing', () => {
         }
       },
       watchTasks: async function* () {
-        yield [reading(16)]
+        yield [readText(16)]
         yield []
         await waitForever()
       },

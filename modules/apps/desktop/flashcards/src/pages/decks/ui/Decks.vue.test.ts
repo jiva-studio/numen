@@ -244,7 +244,7 @@ describe('the tile and the decks under it', () => {
           took: 0,
         }),
       ],
-      over,
+      overVal,
     )
 
     expect(one.find('.presets__done').text()).toBe('0%')

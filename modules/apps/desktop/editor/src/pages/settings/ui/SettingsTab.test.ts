@@ -131,15 +131,15 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     props: { state: { installation } },
     attachTo: document.body,
   })
-  rendered.push(tab)
-  return { recorded: isDone, recordedWrites: content, tab }
+  renderedElement.push(tab)
+  return { recorded: isDone, written: content, recordedWrites: content, tab }
 }
 
 /** Every tab this file drew, put away between one test and the next. */
-const rendered: { unmount: () => void }[] = []
+const renderedElement: { unmount: () => void }[] = []
 
 afterEach(() => {
-  while (rendered.length) rendered.pop()?.unmount()
+  while (renderedElement.length) renderedElement.pop()?.unmount()
 })
 
 type Tab = ReturnType<typeof createTab>['tab']
@@ -251,8 +251,8 @@ describe('the settings tab', () => {
 
     expect(ocr.text()).toContain(words.ocrProofread)
     expect(ocr.find(control('settings-ocr-proofread')).exists()).toBe(true)
-    expect(heard.text()).toContain(words.transcriptProofread)
-    expect(heard.find(control('settings-transcript-proofread')).exists()).toBe(true)
+    expect(transcriptionSection.text()).toContain(words.transcriptProofread)
+    expect(transcriptionSection.find(control('settings-transcript-proofread')).exists()).toBe(true)
   })
 
   it('reads each of the two proofreadings out of its own path', () => {
@@ -267,7 +267,7 @@ describe('the settings tab', () => {
   })
 
   it('writes each of the two proofreadings into its own path', async () => {
-    const { tab, written } = createTab(false, {
+    const { tab, recordedWrites } = createTab(false, {
       indexing: { proofreading: { profiles: { careful: {} } } },
     })
     await openMenu(tab, 'settings-transcript-proofread')
@@ -332,7 +332,7 @@ describe('the settings tab', () => {
 
   it('leaves a value the presets do not name alone while nothing is chosen', async () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab, written } = createTab(false, {
+    const { tab, recordedWrites } = createTab(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
     await openMenu(tab, 'settings-ocr')
@@ -351,7 +351,7 @@ describe('the settings tab', () => {
   })
 
   it('writes a setting it read out of the file back at its current position', async () => {
-    const { tab, written } = createTab(false, { agent: { serve_tools: false } })
+    const { tab, recordedWrites } = createTab(false, { agent: { serve_tools: false } })
     await tab.get(control('settings-agent-tools')).trigger('click')
     expect(recordedWrites).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
   })

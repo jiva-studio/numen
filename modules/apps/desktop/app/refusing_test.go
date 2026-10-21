@@ -14,7 +14,7 @@ import (
 
 // What stopped the application is said where a person is: in a window, with
 // what this build knows about the state it found.
-func TestARefusalSaysWhatItFound(t *testing.T) {
+func TestError_MessageContainsFound(t *testing.T) {
 	at := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: at}
 
@@ -38,7 +38,7 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 }
 
 // An error this build has nothing further to say about is still said.
-func TestARefusalSaysAnythingElseTooRatherThanNothing(t *testing.T) {
+func TestError_AdditionalDetails(t *testing.T) {
 	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 		errors.New("the settings could not be read"))
 	if err != nil {
@@ -50,7 +50,7 @@ func TestARefusalSaysAnythingElseTooRatherThanNothing(t *testing.T) {
 }
 
 // A message a person reads is not a place to put markup they did not write.
-func TestARefusalDoesNotCarryMarkupOutOfAnError(t *testing.T) {
+func TestError_StripsMarkup(t *testing.T) {
 	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 		errors.New(`<script>alert("x")</script>`))
 	if err != nil {
@@ -152,7 +152,7 @@ func read(t *testing.T, path string) error {
 
 // Every state this window draws says all three things: what could not be
 // opened, what was found, and what a person can do about it.
-func TestEveryRefusalSaysWhatToDoAboutIt(t *testing.T) {
+func TestError_RemediationGuidance(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
@@ -183,7 +183,7 @@ func TestEveryRefusalSaysWhatToDoAboutIt(t *testing.T) {
 // The heading names what could not be opened. The index and a person's own
 // settings file are two different things to have to put right, and neither of
 // them is a vault.
-func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
+func TestError_NamesUnopenedTarget(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
@@ -236,7 +236,7 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 
 // A number a size does not take is answered where it was written: the field in
 // the file, or the flag on the command line.
-func TestASizeIsAnsweredWhereItWasWritten(t *testing.T) {
+func TestSizeResponse_MatchingOffset(t *testing.T) {
 	file := getFatalReport(container.Config{}, settings.TextScaleBounds.Check("appearance.text_scale", 4))
 	if !strings.Contains(file.Remedy, "appearance.text_scale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)

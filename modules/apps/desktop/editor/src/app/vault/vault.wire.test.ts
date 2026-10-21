@@ -130,8 +130,8 @@ describe('a neighbourhood the vault answers with', () => {
 
     const neighbourhood = await core.neighbourhood('Rota.md')
     expect(neighbourhood.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
-    expect(around.focusType).toBe('deck')
-    expect(around.related).toEqual([
+    expect(neighbourhood.focusType).toBe('deck')
+    expect(neighbourhood.related).toEqual([
       {
         path: 'Allotments.md',
         title: 'Allotments',

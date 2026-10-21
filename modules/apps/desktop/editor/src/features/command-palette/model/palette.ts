@@ -178,7 +178,7 @@ function parsePaletteDeps(
 
 function createPaletteState(wait?: Wait) {
   const open = ref(false)
-  const typed = ref('')
+  const inputValue = ref('')
   const found = shallowRef<readonly NameMatch[]>(BLANK.found)
   const recognized = shallowRef<readonly Vault[]>(BLANK.known)
   const showing = ref(BLANK.showing)
@@ -196,7 +196,7 @@ function createPaletteState(wait?: Wait) {
     failureMessage.value = BLANK.failureMessage
   }
 
-  return { open, typed, found, known: recognized, showing, isWorking, failureMessage, asked: request, debounced, drop }
+  return { open, typed: inputValue, found, known: recognized, showing, isWorking, failureMessage, asked: request, debounced, drop }
 }
 
 function createPaletteStepsAndSearch(

@@ -86,17 +86,17 @@ describe('what the goals come to today', () => {
       preset({ path: 'B.md', name: 'Pali' }),
       preset({ path: 'C.md', name: 'Greek' }),
     ])
-    const rendered = one.findAll('.presets__preset')
+    const renderedElement = one.findAll('.presets__preset')
 
-    expect(rendered).toHaveLength(3)
-    expect(rendered.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
+    expect(renderedElement).toHaveLength(3)
+    expect(renderedElement.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
       'Sanskrit',
       'Pali',
       'Greek',
     ])
     // The heading, the goal under it, and the number a person looks for.
-    expect(rendered[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
-    expect(rendered[1]?.find('.presets__done').text()).toBe('20%')
+    expect(renderedElement[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
+    expect(renderedElement[1]?.find('.presets__done').text()).toBe('20%')
   })
 
   // A person is as far through their day as the budget closing it says.
@@ -269,11 +269,11 @@ describe('what the goals come to today', () => {
       preset({ path: 'B.md', name: 'Stopped', paused: 'no cards a day' }),
       preset({ path: 'C.md', named: 0, faces: 0, settings: null }),
     ])
-    const rendered = one.findAll('.presets__preset')
+    const renderedElement = one.findAll('.presets__preset')
 
-    expect(rendered).toHaveLength(2)
-    expect(rendered[1]?.text()).toBe('Stoppedno cards a day')
-    expect(rendered[1]?.find('.presets__done').exists()).toBe(false)
+    expect(renderedElement).toHaveLength(2)
+    expect(renderedElement[1]?.text()).toBe('Stoppedno cards a day')
+    expect(renderedElement[1]?.find('.presets__done').exists()).toBe(false)
   })
 
   // The decks naming no preset are a tile like any other, and it carries no act.

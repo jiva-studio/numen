@@ -111,8 +111,8 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 	}
 
 	var syntax *json.SyntaxError
-	var typed *json.UnmarshalTypeError
-	if errors.As(why, &syntax) || errors.As(why, &typed) {
+	var typeErr *json.UnmarshalTypeError
+	if errors.As(why, &syntax) || errors.As(why, &typeErr) {
 		return fatalReport{
 			Heading:  readingTheSettings,
 			Sentence: "This settings file is not JSON, so numen cannot tell what it was asked for.",

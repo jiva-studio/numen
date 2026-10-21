@@ -31,7 +31,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const typed = ref('')
+const inputValue = ref('')
 const fieldId = useId()
 const detail = computed(
   () =>
@@ -40,9 +40,9 @@ const detail = computed(
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSave() {
-  const key = typed.value.trim()
+  const key = inputValue.value.trim()
   if (key === '') return
-  typed.value = ''
+  inputValue.value = ''
   emit('save', key)
 }
 
@@ -57,7 +57,7 @@ function onDelete() {
       <label :for="fieldId" class="sr-only">{{ name }}</label>
       <input
         :id="fieldId"
-        v-model="typed"
+        v-model="inputValue"
         type="password"
         autocomplete="off"
         spellcheck="false"
@@ -66,7 +66,7 @@ function onDelete() {
         class="settings__secret-input"
         @keydown.enter="onSave"
       />
-      <Button variant="outline" size="small" :disabled="typed.trim() === ''" @click="onSave">
+      <Button variant="outline" size="small" :disabled="inputValue.trim() === ''" @click="onSave">
         {{ isStored ? words.keyReplace : words.keySave }}
       </Button>
       <Button v-if="isStored" variant="ghost" size="small" @click="onDelete">

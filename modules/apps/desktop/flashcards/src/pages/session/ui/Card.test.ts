@@ -77,7 +77,7 @@ describe('a card', () => {
 
     const wrapper = mountCard('<p>Leaf mould</p>', { isShown: true })
     await wrapper.find('.card').trigger('click')
-    expect(over.emitted('show')).toBeUndefined()
+    expect(wrapper.emitted('show')).toBeUndefined()
   })
 
   // A hand that took the card across was moving the panel into view, and the

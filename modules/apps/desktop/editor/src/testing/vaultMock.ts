@@ -79,14 +79,14 @@ vi.mock('@/app/vault', () => ({
       requests.urls.push(`${url} ${folder}`)
       return asValue({ path: folder ? `${folder}/made.url` : 'made.url' })
     },
-    watchVaultChanges: held,
-    watchEdits: held,
-    watchTasks: held,
+    watchVaultChanges: pendingStream,
+    watchEdits: pendingStream,
+    watchTasks: pendingStream,
     watchFocus: outside.stream,
     writeOpenTabs: async (open: { tabs: readonly Tab[]; front: string }) => {
       requests.openTabs.push(open)
     },
-    watchQuit: held,
+    watchQuit: pendingStream,
     reportFlush: async () => {},
     detachTab: async () => {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)

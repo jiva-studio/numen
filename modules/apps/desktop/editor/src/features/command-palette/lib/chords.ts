@@ -62,6 +62,6 @@ export const findChordKeys = (command: string, agent: string): PaletteKeys | und
 
 /** That keystroke as a row of the palette takes it. */
 export const createRowKeys = (command: string, agent: string): { keys?: PaletteKeys } => {
-  const rendered = findChordKeys(command, agent)
-  return rendered ? { keys: rendered } : {}
+  const renderedElement = findChordKeys(command, agent)
+  return renderedElement ? { keys: renderedElement } : {}
 }

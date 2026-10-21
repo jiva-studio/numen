@@ -196,16 +196,16 @@ describe('the services a plugin context is given', () => {
     const onError = vi.fn()
     const host = createPluginHost(createDeps({ onError }))
     const received: unknown[] = []
-    const reading = {
+    const readText = {
       id: 'md.numen.one',
       name: 'One',
       version: '1.0.0',
       permissions: ['vault:read'],
     }
-    host.createContext('md.numen.one', reading).onVaultChange((event) => {
+    host.createContext('md.numen.one', readText).onVaultChange((event) => {
       received.push(event)
     })
-    host.createContext('md.numen.two', reading).onVaultChange(() => {
+    host.createContext('md.numen.two', readText).onVaultChange(() => {
       throw new Error('no')
     })
 

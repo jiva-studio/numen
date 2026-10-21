@@ -63,9 +63,9 @@ export function useWindowTabs() {
   const openPlacedTabs = async (onError: PlacementError) => {
     const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
     layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
-    const placed = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
+    const placedItems = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
     for (const id of earlier) {
-      if (open.value.has(id) && !placed.has(id)) layout.value = openTab(layout.value, id)
+      if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
     }
   }
   const onKeyPress = (event: KeyboardEvent): boolean =>
@@ -265,7 +265,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
   }
 
   const finishClose = (id: string) => {
-    ctx.open.value = without(ctx.open.value, id)
+    ctx.open.value = omitEntry(ctx.open.value, id)
     ctx.drop(id)
     ctx.layout.value = closeTab(ctx.layout.value, id)
   }
@@ -273,7 +273,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
   const onTabShown = (id: string) => {
     const one = ctx.open.value.get(id)
     if (!one) return
-    ctx.open.value = new Map([...without(ctx.open.value, id), [id, one]])
+    ctx.open.value = new Map([...omitEntry(ctx.open.value, id), [id, one]])
     one.kind.onShow?.(one.state, id)
   }
 
@@ -286,7 +286,7 @@ function createTabClosers(ctx: TabStoreContext) {
     const one = ctx.open.value.get(id)
     if (!one) return true
     if (one.kind.onClose && !one.kind.onClose(one.state, id)) return false
-    ctx.open.value = without(ctx.open.value, id)
+    ctx.open.value = omitEntry(ctx.open.value, id)
     ctx.drop(id)
     return true
   }
@@ -334,11 +334,11 @@ function createTabNavigation(
 
   /** Every tab standing on a path, of a kind that navigates, moved to another. */
   const navigateTabsAt = async (from: string, to: string): Promise<void> => {
-    const standing = [...open.value.values()].filter(
+    const activeItem = [...open.value.values()].filter(
       (one) => one.kind.navigate && getTabPath(one) === from,
     )
     await Promise.all(
-      standing.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
+      activeItem.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
     )
   }
 
@@ -387,11 +387,11 @@ function dispatchTabKeyPress(
   open: ReadonlyMap<string, WindowTab>,
   event: KeyboardEvent,
 ): boolean {
-  const rendered = getPanes(layout.root).map((one) => one.active)
+  const renderedElement = getPanes(layout.root).map((one) => one.active)
   const front = paneById(layout.root, layout.focus)?.active
   const proposed = new Set<string>()
   for (const id of [front, ...[...open.keys()].reverse()]) {
-    if (!id || proposed.has(id) || !rendered.includes(id)) continue
+    if (!id || proposed.has(id) || !renderedElement.includes(id)) continue
     proposed.add(id)
     const one = open.get(id)
     if (one?.kind.onKeyPress?.(one.state, event)) return true

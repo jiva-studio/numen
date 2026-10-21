@@ -156,8 +156,8 @@ func openPluginVault(
 			IndexState: api.EnsureIndexed,
 			Moved:      api.WatchMoves,
 			InUse: func(ctx context.Context, v domain.Vault) {
-				if opened := api.Opened; opened != nil {
-					opened(ctx, v)
+				if openedVault := api.Opened; openedVault != nil {
+					openedVault(ctx, v)
 				}
 			},
 		})

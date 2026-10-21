@@ -67,7 +67,7 @@ export interface SessionDeps {
 function useSessionCards() {
   const request = shallowRef<readonly CardFace[]>([])
   const at = ref(0)
-  const displayed = ref(false)
+  const displayedItems = ref(false)
   const answers = ref<string[]>([])
 
   const card = computed<CardFace | null>(() => request.value[at.value] ?? null)
@@ -78,11 +78,11 @@ function useSessionCards() {
   const reset = () => {
     request.value = []
     at.value = 0
-    displayed.value = false
+    displayedItems.value = false
     answers.value = []
   }
 
-  return { asked: request, at, shown: displayed, answers, card, left: remaining, over, done: isDone, reset }
+  return { asked: request, at, shown: displayedItems, answers, card, left: remaining, over: isOver, done: isDone, reset }
 }
 
 async function openSession(deps: {
@@ -93,15 +93,15 @@ async function openSession(deps: {
   preset?: string
 }): Promise<{ run: string; cards: readonly CardFace[]; report: Report } | null> {
   try {
-    const opened = await deps.cards.startSession(
+    const openedTab = await deps.cards.startSession(
       deps.preset === undefined
         ? { vault: deps.id, deck: deps.deck }
         : { vault: deps.id, deck: deps.deck, preset: deps.preset },
     )
     return {
-      run: opened.run,
-      cards: opened.cards.map(createCardFace),
-      report: { unwritten: opened.unwritten, skipped: opened.skipped },
+      run: openedTab.run,
+      cards: openedTab.cards.map(createCardFace),
+      report: { unwritten: openedTab.unwritten, skipped: openedTab.skipped },
     }
   } catch (why) {
     deps.reportError(why)
@@ -225,22 +225,22 @@ function useSessionOpener(deps: {
     deck: string,
     preset?: string | undefined,
   ): Promise<Report | null> => {
-    const opened = await openSession({
+    const openedTab = await openSession({
       cards: deps.cardsClient,
       reportError: deps.reportError,
       id,
       deck,
       ...(preset !== undefined ? { preset } : {}),
     })
-    if (!opened) return null
+    if (!openedTab) return null
     deps.vault.value = id
-    deps.run.value = opened.run
-    deps.cards.asked.value = opened.cards
+    deps.run.value = openedTab.run
+    deps.cards.asked.value = openedTab.cards
     deps.cards.at.value = 0
     deps.cards.shown.value = false
     deps.cards.answers.value = []
     deps.setPut(deps.now())
-    return opened.report
+    return openedTab.report
   }
 
   const forget = () => {

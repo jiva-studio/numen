@@ -191,7 +191,7 @@ async function executeSearchQuery(
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const coverage = how.coverage
   const open = ref(false)
-  const typed = ref('')
+  const inputValue = ref('')
 
   const names = shallowRef<readonly NameMatch[]>([])
   const texts = shallowRef<readonly Passage[]>([])
@@ -215,7 +215,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     executeSearchQuery({ core, query, mine, notAskedWord: words.notAsked }, state)
 
   const setTyped = async (text: string) => {
-    typed.value = text
+    inputValue.value = text
     await debounced.ask(text, { blank: drop, run: ask })
   }
 
@@ -223,7 +223,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     open.value = now
     if (now) return
     debounced.drop()
-    typed.value = ''
+    inputValue.value = ''
     drop()
   }
 
@@ -231,7 +231,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], words, coverage })
 
   const searchGroups = computed(() => {
-    if (!typed.value.trim())
+    if (!inputValue.value.trim())
       return { groups: [] as readonly PaletteGroup[], hitsById: new Map<string, SearchHit>() }
     return buildSearchGroups({
       names: names.value,
@@ -255,7 +255,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     return resolveDestination(searchGroups.value.hitsById.get(item), action)
   }
 
-  return { open, typed, groups, setTyped, setOpen, chooseItem, findNoteType, findHitSource }
+  return { open, typed: inputValue, groups, setTyped, setOpen, chooseItem, findNoteType, findHitSource }
 }
 
 export type SearchState = ReturnType<typeof useSearch>

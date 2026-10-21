@@ -34,13 +34,13 @@ const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStr
     @pointerup="letGo"
     @pointercancel="letGo"
   >
-    <div class="carousel__before" :inert="shown !== 'before' || undefined">
+    <div class="carousel__before" :inert="currentPlace !== 'before' || undefined">
       <slot name="before" />
     </div>
-    <div ref="middle" class="carousel__here" :inert="shown !== 'here' || undefined">
+    <div ref="middle" class="carousel__here" :inert="currentPlace !== 'here' || undefined">
       <slot />
     </div>
-    <div class="carousel__after" :inert="shown !== 'after' || undefined">
+    <div class="carousel__after" :inert="currentPlace !== 'after' || undefined">
       <slot name="after" />
     </div>
   </div>

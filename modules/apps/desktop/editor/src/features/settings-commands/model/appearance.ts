@@ -88,7 +88,7 @@ interface LoaderDeps {
 }
 
 function createAppearanceLoader(deps: LoaderDeps) {
-  let arrived = true
+  let arrivalTimes = true
   return async () => {
     let answer: Appearance
     try {
@@ -102,10 +102,10 @@ function createAppearanceLoader(deps: LoaderDeps) {
     deps.mode.value = answer.mode
     deps.settings.value = answer.sizes
     deps.bounds.value = answer.bounds
-    if (arrived) {
+    if (arrivalTimes) {
       deps.files.set(answer.applied, deps.served)
     }
-    arrived = false
+    arrivalTimes = false
   }
 }
 
@@ -119,7 +119,7 @@ function createThemeWatcher(deps: {
   wait: (ms: number) => Promise<unknown>
 }) {
   let open = true
-  const listening = new AbortController()
+  const isListening = new AbortController()
   const follows = createFollower({
     isOpen: () => open,
     setLost: (removed) => {
@@ -130,7 +130,7 @@ function createThemeWatcher(deps: {
 
   const follow = () =>
     follows(
-      () => deps.core.watchThemes(listening.signal),
+      () => deps.core.watchThemes(isListening.signal),
       async (names) => {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
@@ -141,7 +141,7 @@ function createThemeWatcher(deps: {
 
   const stop = () => {
     open = false
-    listening.abort()
+    isListening.abort()
   }
 
   return { follow, stop }
@@ -195,7 +195,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
 
   const applyAppearance = () => wear(choice.worn.value, choice.half.value)
   const writeSizes = createSizesWriter(dressed, sheet)
-  const drawing = watch(choice.sized, writeSizes)
+  const targetDrawing = watch(choice.sized, writeSizes)
 
   const loadAppearance = createAppearanceLoader({
     core,
@@ -235,7 +235,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     close: () => {
       watcher.stop()
       choice.close()
-      drawing()
+      targetDrawing()
     },
   }
 }

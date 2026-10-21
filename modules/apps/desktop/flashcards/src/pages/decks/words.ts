@@ -69,7 +69,7 @@ export const getGoalWords = (settings: Settings, today: string): string => {
     case 'date': {
       if (!settings.byDate) return formatStopReasonMessage(StopReason.NO_DAY)
       const daysLeft = daysBetween(today, settings.byDate)
-      if (left <= 0) return `by ${getDayWords(settings.byDate)}`
+      if (daysLeft <= 0) return `by ${getDayWords(settings.byDate)}`
       return `${many(daysLeft, 'day')} to ${getDayWords(settings.byDate)}`
     }
     case 'minutes':

@@ -733,10 +733,10 @@ describe('which preset schedules each deck', () => {
       },
     })
 
-    const reading = one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+    const readText = one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
     one.forget()
     answer()
-    await reading
+    await readText
 
     expect(one.presets.value).toHaveLength(0)
   })
@@ -993,11 +993,11 @@ describe('what is known of the presets of a vault', () => {
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
     target.hold()
-    const reading = one.read(vault([{ deck: 'decks/Words.md', due: 2, new: 1 }]), '2026-09-05')
+    const readText = one.read(vault([{ deck: 'decks/Words.md', due: 2, new: 1 }]), '2026-09-05')
 
     expect(one.known.value).toBe(true)
     target.release()
-    await reading
+    await readText
     expect(one.known.value).toBe(true)
   })
 
@@ -1007,12 +1007,12 @@ describe('what is known of the presets of a vault', () => {
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
     target.hold()
-    const reading = one.read(other(), '2026-09-05')
+    const readText = one.read(other(), '2026-09-05')
 
     expect(one.known.value).toBe(false)
     expect(one.of.value).toBe('01B')
     target.release()
-    await reading
+    await readText
     expect(one.known.value).toBe(true)
   })
 

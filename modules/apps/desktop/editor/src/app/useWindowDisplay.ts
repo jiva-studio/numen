@@ -149,7 +149,7 @@ export function useWindowDisplay(
   const reload = how.reload ?? (() => {})
   const display = createDisplayState()
   let open = true
-  const listening = new AbortController()
+  const isListening = new AbortController()
 
   const ask = () => askDisplayState(core, display)
   const readInitialNote = () => readInitialNotePath(core, display)
@@ -157,7 +157,7 @@ export function useWindowDisplay(
 
   const streams = useWindowStreams({
     core,
-    listening,
+    listening: isListening,
     isOpen: () => open,
     setLost: (response) => {
       display.lost.value = response
@@ -192,7 +192,7 @@ export function useWindowDisplay(
     watch: streams.watch,
     close: () => {
       open = false
-      listening.abort()
+      isListening.abort()
     },
   }
 }

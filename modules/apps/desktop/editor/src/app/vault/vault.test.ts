@@ -210,8 +210,8 @@ describe('notes domain', () => {
       nameSource: 1,
       moved: { path: 'b.md' },
     })
-    const renamed = await core.rename('a.md', 'B')
-    expect(renamed.ok && renamed.value.path).toBe('b.md')
+    const renamedItems = await core.rename('a.md', 'B')
+    expect(renamedItems.ok && renamedItems.value.path).toBe('b.md')
 
     request.listHeadings.mockResolvedValue({
       headings: [{ path: 'a.md', headings: [{ text: 'H1', level: 1, line: 1 }] }],
@@ -272,8 +272,8 @@ describe('vaults domain', () => {
     expect(added.ok ? added.value?.id : null).toBe('v2')
 
     request.renameVault.mockResolvedValue({ vault: { id: 'v2', name: 'V2 renamed' } })
-    const renamed = await vaults.rename('v2', 'V2 renamed')
-    expect(renamed.ok ? renamed.value?.name : null).toBe('V2 renamed')
+    const renamedItems = await vaults.rename('v2', 'V2 renamed')
+    expect(renamedItems.ok ? renamedItems.value?.name : null).toBe('V2 renamed')
 
     request.removeVault.mockResolvedValue({})
     expect(await vaults.remove('v2', false)).toBeNull()

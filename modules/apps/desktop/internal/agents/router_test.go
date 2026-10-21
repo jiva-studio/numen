@@ -237,7 +237,7 @@ func TestAProgramTheSettingsSayNothingAboutGetsTheDefaultStepLimit(t *testing.T)
 }
 
 // A plugin that cannot start the task is told to the person.
-func TestWhatThePluginsRefuseIsToldWithTheTask(t *testing.T) {
+func TestPluginError_ReportedWithTask(t *testing.T) {
 	router, _ := makeRouter(t, &fakeProvider{startErr: errors.New("no such program")}, settings.Agent{}, EditPreview{})
 	if _, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"}); err == nil ||
 		!strings.Contains(err.Error(), "no such program") {
@@ -246,7 +246,7 @@ func TestWhatThePluginsRefuseIsToldWithTheTask(t *testing.T) {
 }
 
 // Closing the router refuses the work that comes after it.
-func TestNoProgramTakesWorkAfterTheRouterIsClosed(t *testing.T) {
+func TestRouterClosed_RejectsWork(t *testing.T) {
 	router, _ := makeRouter(t, &fakeProvider{}, settings.Agent{}, EditPreview{})
 	if err := router.Close(); err != nil {
 		t.Fatal(err)
@@ -302,7 +302,7 @@ func draftOf(call, path, match, text string) port.Step {
 
 // A change being written is drawn where the note holds the stretch it replaces, as each draft
 // arrives, and is no step the person is shown.
-func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
+func TestDraftRendered_NotStep(t *testing.T) {
 	call := port.Step{Kind: domain.StepEdit, Call: "c-1", Tool: "Edit a note"}
 	provider := &fakeProvider{steps: []port.Step{
 		call,
@@ -336,7 +336,7 @@ func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
 }
 
 // A stretch that stands nowhere or twice is not drawn, and is not looked for again.
-func TestAStretchThatIsNotUniqueIsNotDrawn(t *testing.T) {
+func TestNonUniqueSpan_NotRendered(t *testing.T) {
 	provider := &fakeProvider{steps: []port.Step{
 		draftOf("c-1", "a.md", "old", "x"),
 		draftOf("c-1", "a.md", "old", "xy"),
@@ -387,7 +387,7 @@ func TestAnotherChangeIsLookedForAgain(t *testing.T) {
 }
 
 // A draft naming no note or no stretch is not drawn, and neither is one where nothing can be drawn.
-func TestADraftThatSaysNothingIsNotDrawn(t *testing.T) {
+func TestEmptyDraft_NotRendered(t *testing.T) {
 	steps := []port.Step{
 		draftOf("c-1", "", "old", "x"),
 		draftOf("c-1", "a.md", "", "x"),
@@ -400,8 +400,8 @@ func TestADraftThatSaysNothingIsNotDrawn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if displayed := drain(run); len(displayed) != 0 || len(observed.edits) != 0 || len(observed.located) != 0 {
-		t.Errorf("shown %+v, drawn %+v, looked for %q", displayed, observed.edits, observed.located)
+	if items := drain(run); len(items) != 0 || len(observed.edits) != 0 || len(observed.located) != 0 {
+		t.Errorf("shown %+v, drawn %+v, looked for %q", items, observed.edits, observed.located)
 	}
 
 	router, _ = makeRouter(t, &fakeProvider{steps: steps[2:]}, settings.Agent{}, EditPreview{})
@@ -441,7 +441,7 @@ func TestStoppingTheRunStopsThePluginsRun(t *testing.T) {
 }
 
 // Where no program can be chosen because a plugin could not be asked, the rejection says why.
-func TestARefusalSaysWhyThePluginsCouldNotBeAsked(t *testing.T) {
+func TestError_PluginUnavailableReason(t *testing.T) {
 	provider := &fakeProvider{listErr: errors.New("plugin md.test.one cannot be started")}
 	router, _ := makeRouter(t, provider, settings.Agent{}, EditPreview{})
 

@@ -134,18 +134,18 @@ const window = (over: Partial<Appearance> = {}, css = SERVED) => {
     watchThemes: response.watchThemes,
   }
   /** What the window was told, in the order it was told. */
-  const notified: { text: string; kind: string }[] = []
+  const notifiedCalls: { text: string; kind: string }[] = []
   return {
     worn: createWindowAppearance({
       core,
       words,
-      write: (text, kind = 'report') => void notified.push({ text, kind }),
+      write: (text, kind = 'report') => void notifiedCalls.push({ text, kind }),
       sheet,
     }),
     sheet,
     requests: request,
     chosen: selected,
-    messages: notified,
+    messages: notifiedCalls,
     changeThemes: response.changeThemes,
     listed: () => items,
     writeTheme: (name: string, css: string) => (texts[name] = css),
@@ -811,11 +811,11 @@ const createManual = (waits = Infinity) => {
       }
     },
   }
-  const notified: string[] = []
+  const notifiedCalls: string[] = []
   const aged = createWindowAppearance({
     core,
     words,
-    write: (text) => void notified.push(text),
+    write: (text) => void notifiedCalls.push(text),
     sheet,
     wait: () =>
       waited++ < waits ? new Promise((isDone) => setTimeout(isDone, 0)) : new Promise(() => {}),
@@ -825,7 +825,8 @@ const createManual = (waits = Infinity) => {
     sheet,
     reads,
     signals,
-    told: notified,
+    messages: notifiedCalls,
+    told: notifiedCalls,
     fails: () => (fault = true),
     changeThemes: async (...names: readonly string[]) => {
       wake?.(names)
@@ -968,7 +969,7 @@ describe('a window that is closed', () => {
 describe('the application that cannot list the themes', () => {
   it('is returned, as an error, and the window keeps what it wears', async () => {
     const sheet = page()
-    const notified: { text: string; kind: string }[] = []
+    const notifiedCalls: { text: string; kind: string }[] = []
     const aged = createWindowAppearance({
       core: {
         getAppearance: async () => {
@@ -982,13 +983,13 @@ describe('the application that cannot list the themes', () => {
         },
       },
       words,
-      write: (text, kind = 'report') => void notified.push({ text, kind }),
+      write: (text, kind = 'report') => void notifiedCalls.push({ text, kind }),
       sheet,
     })
 
     await aged.start()
 
-    expect(notified).toStrictEqual([{ text: words.unlisted, kind: 'error' }])
+    expect(notifiedCalls).toStrictEqual([{ text: words.unlisted, kind: 'error' }])
     expect(aged.list.value).toStrictEqual([])
     expect(getHeadStyles(sheet)).toStrictEqual([PAIR, SERVED, SIZED])
     aged.close()

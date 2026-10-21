@@ -30,7 +30,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
    * The vault in front, which is the one the list says it is showing. It is read
    * off the list so that the two cannot disagree about which vault is open.
    */
-  const displayed = computed<VaultRef>(() => {
+  const displayedItems = computed<VaultRef>(() => {
     const one = items.value.vaults.find((v) => v.id === items.value.showing)
     return one ? { id: one.id, name: one.name } : { id: '', name: '' }
   })
@@ -77,7 +77,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
 
   return {
     reload,
-    shown: displayed,
+    shown: displayedItems,
     setVaultName,
     listed: items,
     loadVaults,

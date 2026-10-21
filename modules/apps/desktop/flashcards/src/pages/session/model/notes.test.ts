@@ -37,7 +37,7 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
     },
     showNotice: (one) => notices.push(one),
   })
-  return { held: target, requests: request, notices, open, deck }
+  return { held: target, requests: request, asked: request, notices, open, deck }
 }
 
 describe('the panel the deck is read in', () => {
@@ -80,7 +80,7 @@ describe('what is read belongs to the deck', () => {
   // The links are the file's, and the file is the deck, so the cards of one
   // deck are all read against the same notes.
   it('asks once for a deck, however many of its cards go by', async () => {
-    const { held, asked } = panel()
+    const { held, requests } = panel()
     await held.openPanel()
     held.closePanel()
     await held.openPanel()
@@ -99,7 +99,7 @@ describe('what is read belongs to the deck', () => {
   // A card answered while the asking is in flight moves the session to another
   // deck, and what comes back is then about the deck behind it.
   it('does not take an answer about the deck the session has left', async () => {
-    const waiting: (() => void)[] = []
+    const pendingItem: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
     const target = useNotesPanel({
@@ -111,7 +111,7 @@ describe('what is read belongs to the deck', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
-          waiting.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingItem.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
     })
@@ -121,9 +121,9 @@ describe('what is read belongs to the deck', () => {
     const second = target.openPanel()
 
     // The second deck is answered, and the first only afterwards.
-    waiting[1]?.()
+    pendingItem[1]?.()
     await second
-    waiting[0]?.()
+    pendingItem[0]?.()
     await first
 
     expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
@@ -131,7 +131,7 @@ describe('what is read belongs to the deck', () => {
 
   // A person must never read one deck's notes under another deck's card.
   it('holds nothing of the deck behind it while the next is being requested for', async () => {
-    const waiting: (() => void)[] = []
+    const pendingItem: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
     const target = useNotesPanel({
@@ -143,20 +143,20 @@ describe('what is read belongs to the deck', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
-          waiting.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingItem.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
     })
 
     const first = target.openPanel()
-    waiting[0]?.()
+    pendingItem[0]?.()
     await first
 
     deck.value = 'decks/Trees.md'
     const second = target.openPanel()
     expect(target.notes.value).toEqual([])
 
-    waiting[1]?.()
+    pendingItem[1]?.()
     await second
     expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
   })
@@ -171,7 +171,7 @@ describe('what is read belongs to the deck', () => {
   })
 
   it('asks again for a deck the session has been away from', async () => {
-    const { held, asked } = panel()
+    const { held, requests } = panel()
     await held.openPanel()
     held.endSession()
     await held.openPanel()
@@ -207,7 +207,7 @@ describe('a link pressed in the card', () => {
 describe('the asking', () => {
   /** The panel over a window that answers each deck when the test says. */
   const slowPanel = () => {
-    const waiting: { deck: string; answer: () => void; refuse: () => void }[] = []
+    const pendingItem: { deck: string; answer: () => void; refuse: () => void }[] = []
     const deck = ref('decks/Words.md')
     const notices: string[] = []
     const target = useNotesPanel({
@@ -217,7 +217,7 @@ describe('the asking', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: (_vault, of) =>
         new Promise((then, fail) =>
-          waiting.push({
+          pendingItem.push({
             deck: of,
             answer: () => then({ notes: [createNeighbour({ path: of })], unread: 1 }),
             refuse: () => fail(new Error('out of reach')),
@@ -225,18 +225,18 @@ describe('the asking', () => {
         ),
       showNotice: (one) => notices.push(one),
     })
-    return { held: target, waiting, deck, notices }
+    return { held: target, waiting: pendingItem, deck, notices }
   }
 
   it('is working while the deck is being requested for, and not once it has answered', async () => {
     const { held, waiting } = slowPanel()
     expect(held.isWorking.value).toBe(false)
 
-    const asking = held.openPanel()
+    const activePrompt = held.openPanel()
     expect(held.isWorking.value).toBe(true)
 
     waiting[0]?.answer()
-    await asking
+    await activePrompt
     expect(held.isWorking.value).toBe(false)
   })
 

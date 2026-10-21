@@ -15,10 +15,10 @@ const createStore = (refuses: string | null = null) => {
       return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
     },
   }
-  const notified = vi.fn()
+  const notifiedCalls = vi.fn()
   const refresh = vi.fn(() => Promise.resolve())
-  const store = createSecretStore(core, { words, notify: notified, refresh })
-  return { calls, notified, refresh, store }
+  const store = createSecretStore(core, { words, notify: notifiedCalls, refresh })
+  return { calls, notified: notifiedCalls, refresh, store }
 }
 
 describe('a key of a secret', () => {

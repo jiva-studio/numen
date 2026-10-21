@@ -128,7 +128,7 @@ vi.mock('@plugins/views.flashcards.studio/frontend/cards', async (original) => (
   ...cardsSaid,
 }))
 
-vi.mock('@/app/agentPort', () => ({ agentPort: { ask: held, finish: () => Promise.resolve() } }))
+vi.mock('@/app/agentPort', () => ({ agentPort: { ask: pendingStream, finish: () => Promise.resolve() } }))
 
 const themesSaid = {
   themes: {
@@ -151,7 +151,7 @@ const themesSaid = {
       requests.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return mockVaultState.writeError
     },
-    watchThemes: held,
+    watchThemes: pendingStream,
   },
 }
 

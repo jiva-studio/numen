@@ -172,16 +172,16 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	if err != nil {
 		return err
 	}
-	pages, opened := displayed.pages, displayed.opened
-	opened.Services.Themes = themes.Load(cfg.Themes, opened.SayTheme, os.Stdout)
+	pages, installation := displayed.pages, displayed.opened
+	installation.Services.Themes = themes.Load(cfg.Themes, installation.SayTheme, os.Stdout)
 
-	opened.Report(selected.Notices)
+	installation.Report(selected.Notices)
 
-	reachable := makeEndpoint(ctx, cfg, opened, mcp)
-	going := &vaultFlush{flush: opened.FlushPending}
+	reachable := makeEndpoint(ctx, cfg, installation, mcp)
+	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(
 		reachable.Stop,
-		shutdown.Report("numen", os.Stderr, "", opened.Close),
+		shutdown.Report("numen", os.Stderr, "", installation.Close),
 		shutdown.Report("numen", os.Stderr, "plugins", func() error {
 			return cfg.StopPlugins(context.Background())
 		}),
@@ -194,7 +194,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	}()
 
 	if debugOpts.isServingHTTP() {
-		return debugOpts.serveHTTP(ctx, cfg, opened, pages, reachable)
+		return debugOpts.serveHTTP(ctx, cfg, installation, pages, reachable)
 	}
 
 	tracker := newWindowTracker()
@@ -204,13 +204,13 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		show: func() { window.Show() },
 	}
 
-	app := makeApplication(opened, pages, shutdownSeq, going, observed)
-	window = makeWindow(app, opened)
+	app := makeApplication(installation, pages, shutdownSeq, going, observed)
+	window = makeWindow(app, installation)
 	tracker.addWindow()
-	connectWindow(ctx, app, cfg, window, opened, reachable, tracker, going)
+	connectWindow(ctx, app, cfg, window, installation, reachable, tracker, going)
 
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !handleWindowClosing(ctx, tracker, going, observed, opened.WaitForFlush, window.Close) {
+		if !handleWindowClosing(ctx, tracker, going, observed, installation.WaitForFlush, window.Close) {
 			event.Cancel()
 		}
 	})

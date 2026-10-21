@@ -39,10 +39,10 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
   const tails = new Map<string, Promise<void>>()
 
   const writeNote = (path: string, body: string): Promise<void> => {
-    const waiting = queued.get(path)
-    if (waiting) {
-      waiting.body = body
-      return waiting.done
+    const pendingItem = queued.get(path)
+    if (pendingItem) {
+      pendingItem.body = body
+      return pendingItem.done
     }
     const job: QueuedWrite = { body, done: Promise.resolve() }
     const run = async (): Promise<void> => {

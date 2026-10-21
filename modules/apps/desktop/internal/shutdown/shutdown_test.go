@@ -75,15 +75,15 @@ func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 		times++
 	})
 
-	var asking sync.WaitGroup
+	var wg sync.WaitGroup
 	for range 8 {
-		asking.Add(1)
+		wg.Add(1)
 		go func() {
-			defer asking.Done()
+			defer wg.Done()
 			steps.Run()
 		}()
 	}
-	asking.Wait()
+	wg.Wait()
 
 	mu.Lock()
 	defer mu.Unlock()

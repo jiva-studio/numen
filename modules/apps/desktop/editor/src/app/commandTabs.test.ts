@@ -8,7 +8,7 @@ import { openCommandTab } from './commandTabs'
 import type { VaultCore } from './vault'
 
 const createDeps = (resolved: TabResolution | null, type?: string) => {
-  const notified: [string, string | undefined][] = []
+  const notifiedCalls: [string, string | undefined][] = []
   const windowTabs = {
     resolveCommand: vi.fn(() => Promise.resolve(resolved)),
     openTabOfKind: vi.fn(() => Promise.resolve('tab')),
@@ -17,8 +17,8 @@ const createDeps = (resolved: TabResolution | null, type?: string) => {
     fileKinds: (paths: readonly string[]) =>
       Promise.resolve(new Map(type === undefined ? [] : paths.map((one) => [one, { type }]))),
   } as unknown as VaultCore
-  const writeMessage = (text: string, kind?: string) => notified.push([text, kind])
-  return { windowTabs, messages: notified, deps: { vaultCore, windowTabs, writeMessage } }
+  const writeMessage = (text: string, kind?: string) => notifiedCalls.push([text, kind])
+  return { windowTabs, messages: notifiedCalls, deps: { vaultCore, windowTabs, writeMessage } }
 }
 
 describe('the tab a command over a file leads to', () => {

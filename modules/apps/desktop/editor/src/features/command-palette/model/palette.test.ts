@@ -89,12 +89,12 @@ const createLookup = () => {
 /** The lists the window holds, and every row a step said it was standing on. */
 const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   const lists = ref(offers)
-  const displayed: string[] = []
+  const displayedItems: string[] = []
   const paletteLists: PaletteLists = {
     getStepGroups: (command) => lists.value[command] ?? [],
-    previewItem: (command, item) => void displayed.push(`${command} ${item}`),
+    previewItem: (command, item) => void displayedItems.push(`${command} ${item}`),
   }
-  return { paletteLists, lists, displayedLists: displayed }
+  return { paletteLists, lists, displayedLists: displayedItems }
 }
 
 /** The commands over what a test says is in front, asked without a hold. */
@@ -115,18 +115,18 @@ const createPalette = (
     vaults: async () => items,
   }
   const window = createLookup()
-  const retained = createLists(offers)
+  const retainedItem = createLists(offers)
   const commands = useCommandPalette(
     core,
     words,
     () => at.value,
     window.knows,
-    retained.paletteLists,
+    retainedItem.paletteLists,
     runs,
     async () => {},
   )
   commands.setOpen(true)
-  return { commands, at, requests: request, ...window, ...retained }
+  return { commands, at, requests: request, ...window, ...retainedItem }
 }
 
 /** A moment for the list of vaults to come back. */
@@ -415,12 +415,12 @@ describe('a command that asks for an address', () => {
     const { commands } = createPalette()
     commands.startCommand('importUrl', front())
 
-    for (const typed of ['Entropy', 'file:///etc/passwd', 'example.com/a', 'https://']) {
-      void commands.setTyped(typed)
+    for (const inputValue of ['Entropy', 'file:///etc/passwd', 'example.com/a', 'https://']) {
+      void commands.setTyped(inputValue)
 
-      expect(commands.groups.value[0]?.items, typed).toStrictEqual([])
-      expect(commands.groups.value[0]?.silence, typed).toBe(words.notAnAddress)
-      expect(commands.chooseItem('name', 'name'), typed).toBeNull()
+      expect(commands.groups.value[0]?.items, inputValue).toStrictEqual([])
+      expect(commands.groups.value[0]?.silence, inputValue).toBe(words.notAnAddress)
+      expect(commands.chooseItem('name', 'name'), inputValue).toBeNull()
     }
   })
 

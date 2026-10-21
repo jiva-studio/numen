@@ -22,14 +22,14 @@ export const running: ArtifactRunner = {
     const answer = await artifacts.listArtifacts({ path })
     const target: Record<string, ArtifactState> = {}
     for (const one of answer.artifacts) {
-      const of = rendered[one.kind]
+      const of = renderedElement[one.kind]
       if (of) target[of] = parseState(one.state)
     }
     return target
   },
   createArtifact: async (path, of) => {
     try {
-      const answer = await artifacts.createArtifact({ path, kind: asking[of] })
+      const answer = await artifacts.createArtifact({ path, kind: activePrompt[of] })
       return {
         able: true,
         of,
@@ -77,7 +77,7 @@ const deleteArtifact = async (path: string, kind: Kinds): Promise<boolean> => {
  * schema, so an artifact added to it has to be given a word here before this
  * compiles.
  */
-const rendered: Readonly<Record<Kinds, Artifact | null>> = {
+const renderedElement: Readonly<Record<Kinds, Artifact | null>> = {
   [Kinds.UNSPECIFIED]: null,
   [Kinds.OCR]: 'ocr',
   [Kinds.OCR_CORRECTED]: 'ocr.corrected',
@@ -88,7 +88,7 @@ const rendered: Readonly<Record<Kinds, Artifact | null>> = {
 }
 
 /** And back, for asking for one. */
-const asking = getNames<Artifact, Kinds>(rendered)
+const activePrompt = getNames<Artifact, Kinds>(renderedElement)
 
 /** What has become of an artifact, in the words the window uses. */
 const become: Record<States, ArtifactState> = {

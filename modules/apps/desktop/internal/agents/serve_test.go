@@ -52,10 +52,10 @@ func isListening(addr string) bool {
 	return true
 }
 
-// TestTheTokenIsCreatedOnceAndKept. The line an agent is configured with is
+// TestTokenCreation_Cached. The line an agent is configured with is
 // written down, so it still names this installation the next time it is asked
 // for.
-func TestTheTokenIsCreatedOnceAndKept(t *testing.T) {
+func TestTokenCreation_Cached(t *testing.T) {
 	cfg := makeInstallation(t)
 
 	token, err := GetToken(cfg)
@@ -74,10 +74,10 @@ func TestTheTokenIsCreatedOnceAndKept(t *testing.T) {
 	}
 }
 
-// TestATokenCreatedForAWindowIsKeptNowhere. A window nobody configures an agent
+// TestWindowToken_NotRetained. A window nobody configures an agent
 // against is reached for as long as it is open, and writes down nothing another
 // window would read.
-func TestATokenCreatedForAWindowIsKeptNowhere(t *testing.T) {
+func TestWindowToken_NotRetained(t *testing.T) {
 	cfg := makeInstallation(t)
 
 	token, err := CreateToken()
@@ -182,9 +182,9 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 
 	// The endpoint stops taking connections as it begins closing, which is
 	// where the agents are already gone.
-	waiting := time.Now()
+	startTime := time.Now()
 	for isListening(authority(t, served.URL)) {
-		if time.Since(waiting) > 5*time.Second {
+		if time.Since(startTime) > 5*time.Second {
 			t.Fatal("the endpoint never began closing")
 		}
 		time.Sleep(time.Millisecond)

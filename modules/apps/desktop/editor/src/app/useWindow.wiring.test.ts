@@ -261,13 +261,13 @@ describe('the parts of the window', () => {
   it('are told the paths that changed, in every editor and in the commands', async () => {
     useWindow()
     const paths = ['a.md']
-    const renamed = new Map([['a.md', 'b.md']])
+    const renamedItems = new Map([['a.md', 'b.md']])
 
-    await h.args.display.onVaultChanged(paths, renamed)
+    await h.args.display.onVaultChanged(paths, renamedItems)
 
-    expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamed)
-    expect(h.f.commands.commands.applyRenames).toHaveBeenCalledWith(renamed)
-    expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed })
+    expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamedItems)
+    expect(h.f.commands.commands.applyRenames).toHaveBeenCalledWith(renamedItems)
+    expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed: renamedItems })
   })
 
   it('are requested to travel to a path through the kinds', () => {

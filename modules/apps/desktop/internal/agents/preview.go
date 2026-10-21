@@ -53,15 +53,15 @@ func (d *draftingRun) Stop() error {
 func (d *draftingRun) forward(ctx context.Context, preview EditPreview) {
 	defer close(d.steps)
 
-	drawing := drawing{drawn: make(map[string]struct{})}
-	defer drawing.finish(ctx, preview, "")
+	previewState := drawing{drawn: make(map[string]struct{})}
+	defer previewState.finish(ctx, preview, "")
 	for step := range d.run.GetSteps() {
 		if step.Kind == domain.StepDraft {
-			drawing.draw(ctx, preview, step)
+			previewState.draw(ctx, preview, step)
 			continue
 		}
 		if step.Kind == domain.StepToolDone {
-			drawing.finish(ctx, preview, "")
+			previewState.finish(ctx, preview, "")
 		}
 		select {
 		case d.steps <- step:
@@ -86,7 +86,7 @@ type drawing struct {
 // finish ends the drawing of a call, or of every call where none is named.
 func (r *drawing) finish(ctx context.Context, preview EditPreview, call string) {
 	if call != "" {
-		if _, rendered := r.drawn[call]; rendered {
+		if _, isDrawn := r.drawn[call]; isDrawn {
 			preview.Emit(ctx, domain.Edit{Change: call, IsDone: true})
 			delete(r.drawn, call)
 		}
