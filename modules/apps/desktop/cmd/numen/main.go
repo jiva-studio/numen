@@ -4,9 +4,7 @@
 // against the system's own browser, and a binary carrying one can no longer be
 // built for another machine from this one. Both are entry points onto the same
 // core.
-//
-// It also carries the tools an agent works the vault through, unless it is
-// built with the `nomcp` tag.
+// It also carries the tools an agent works the vault through.
 package main
 
 import (
