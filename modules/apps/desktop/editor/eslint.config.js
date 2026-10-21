@@ -24,10 +24,15 @@ const lifetimes = [
 const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
+// A plugin is an element of its own. A plugin reaches the host and another
+// plugin through no policy, so both directions are refused wherever a plugin
+// file is linted; the host reaches a plugin through the policy below.
+const pluginElement = { type: 'plugin', pattern: '../../../plugins/*', capture: ['name'] }
+
 const layerElements = createLayerElements({
   order: layerOrder,
   sliceLayers,
-  extra: [{ type: 'testing', pattern: 'src/testing' }],
+  extra: [{ type: 'testing', pattern: 'src/testing' }, pluginElement],
 })
 
 const layerPolicies = createLayerPolicies({
@@ -36,6 +41,15 @@ const layerPolicies = createLayerPolicies({
   extra: [
     { allow: { to: { element: { type: 'testing' } } } },
     { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
+    {
+      from: { file: { categories: 'composition' } },
+      allow: { to: { element: { type: 'plugin' } } },
+    },
+    {
+      from: { file: { categories: ['test', 'story'] } },
+      allow: { to: { element: { type: 'plugin' } } },
+    },
+    { from: { element: { type: 'testing' } }, allow: { to: { element: { type: 'plugin' } } } },
   ],
 })
 
@@ -187,7 +201,13 @@ export default tseslint.config(
   // window are the files that name one.
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/testing/**'],
+    ignores: [
+      'src/**/*.test.ts',
+      'src/**/*.spec.ts',
+      'src/**/*.stories.ts',
+      'src/testing/**',
+      'src/app/pluginCatalog.ts',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -229,6 +249,9 @@ export default tseslint.config(
       'boundaries/files': [
         { category: 'crossImport', pattern: 'src/*/*/@x/*' },
         { category: 'entry', pattern: 'src/main.ts' },
+        { category: 'composition', pattern: 'src/app/pluginCatalog.ts' },
+        { category: 'test', pattern: 'src/**/*.test.ts' },
+        { category: 'story', pattern: 'src/**/*.stories.ts' },
       ],
     },
     rules: {
@@ -252,6 +275,7 @@ export default tseslint.config(
       'src/testing/**',
       // The ports' own defaults, which is where the browser is allowed in.
       'src/entities/note/model/notes.ts',
+      'src/app/useWindowKinds.ts',
     ],
     rules: {
       'no-restricted-globals': [
