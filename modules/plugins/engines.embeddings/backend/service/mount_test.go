@@ -75,7 +75,7 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 }
 
 // A dimension or a token limit the model answer cannot hold is not taken from the environment.
-func TestAnOverrideAboveWhatTheAnswerHoldsIsIgnored(t *testing.T) {
+func TestAnOverrideAboveWhatTheAnswerContainsIsIgnored(t *testing.T) {
 	want := newEmbeddingServer().modelInfo
 	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "4294967296")
 	t.Setenv("NUMEN_EMBEDDING_MAX_TOKENS", "4294967296")

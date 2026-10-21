@@ -14,7 +14,7 @@ import (
 
 // The key in the environment of the plugin is not a key: the remote service is
 // asked only with the one Configure hands over.
-func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigureHandsOver(t *testing.T) {
+func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigurePassesOver(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "env-key")
 	t.Setenv("NUMEN_EMBEDDING_KEY", "env-key")
 	var auth []string

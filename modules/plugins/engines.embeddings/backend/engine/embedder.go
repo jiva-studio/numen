@@ -258,9 +258,9 @@ func (e *Embedder) encode(text string) []int {
 	if len(ids) <= e.window {
 		return ids
 	}
-	trimmed := slices.Clone(ids[:e.window])
-	trimmed[len(trimmed)-1] = ids[len(ids)-1]
-	return trimmed
+	windowTokens := slices.Clone(ids[:e.window])
+	windowTokens[len(windowTokens)-1] = ids[len(ids)-1]
+	return windowTokens
 }
 
 func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, error) {
