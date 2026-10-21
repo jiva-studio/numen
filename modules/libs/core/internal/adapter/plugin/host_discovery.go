@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"reflect"
 )
@@ -94,13 +93,14 @@ func (h *Host) registerSupervisorLocked(p DiscoveredPlugin) {
 		h.supervisors[id] = sup
 	}
 	sup.SetPermissions(p.Manifest.Permissions)
+	sup.SetActivationPolicy(h.activation)
 	memLimit := h.processLimits.MemoryLimitBytes
 	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
 		memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
 	}
 	sup.SetMemoryLimit(memLimit)
 	sup.SetOnMemoryExceeded(func() {
-		h.reportError(fmt.Errorf("plugin %s was stopped: it used more than %d bytes of memory", id, memLimit))
+		h.reportMemoryExceeded(id, sup)
 	})
 }
 

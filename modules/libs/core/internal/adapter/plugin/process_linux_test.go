@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"testing"
 
@@ -115,5 +116,39 @@ func TestLinuxADefaultProcessHasNoCPULimit(t *testing.T) {
 				t.Errorf("RLIMIT_CPU is %d, want %d", rlim.Cur, tc.want)
 			}
 		})
+	}
+}
+
+func TestLinuxReadCgroupAnon(t *testing.T) {
+	dir := t.TempDir()
+	statFile := filepath.Join(dir, "memory.stat")
+	content := "file 1000\nanon 4096000\nkernel_stack 8192\n"
+	if err := os.WriteFile(statFile, []byte(content), 0o600); err != nil {
+		t.Fatalf("write memory.stat: %v", err)
+	}
+
+	bytes, err := readCgroupAnon(dir)
+	if err != nil {
+		t.Fatalf("readCgroupAnon failed: %v", err)
+	}
+	if bytes != 4096000 {
+		t.Fatalf("expected 4096000 bytes, got %d", bytes)
+	}
+
+	if err := os.WriteFile(statFile, []byte("file 1000\n"), 0o600); err != nil {
+		t.Fatalf("write memory.stat: %v", err)
+	}
+	if _, err := readCgroupAnon(dir); err == nil {
+		t.Fatal("expected error when anon is missing")
+	}
+}
+
+func TestLinuxReadProcStatusAnon(t *testing.T) {
+	bytes, err := readProcStatusAnon(os.Getpid())
+	if err != nil {
+		t.Fatalf("readProcStatusAnon for self failed: %v", err)
+	}
+	if bytes == 0 {
+		t.Fatal("expected non-zero RssAnon for self")
 	}
 }

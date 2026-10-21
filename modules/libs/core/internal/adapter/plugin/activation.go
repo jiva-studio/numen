@@ -52,6 +52,9 @@ func (p ActivationPolicy) getBackoff(failures int) time.Duration {
 func (s *Supervisor) RecordActivationFailure(now time.Time, policy ActivationPolicy, cause error) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if policy.BackoffBase == 0 && policy.BackoffMax == 0 && policy.MaxFailures == 0 {
+		policy = s.activationPolicy
+	}
 	s.failures++
 	s.failure = cause
 	s.retryAt = now.Add(policy.getBackoff(s.failures))
@@ -114,6 +117,8 @@ func describeFailure(cause error) string {
 		return "The plugin speaks a plugin protocol version this Numen does not support. Update the plugin or Numen."
 	case errors.Is(cause, errHandshakeTimeout):
 		return "The plugin did not finish starting in time."
+	case errors.Is(cause, ErrMemoryExceeded):
+		return "The plugin was stopped because it exceeded its memory limit."
 	default:
 		return "The plugin could not be started: " + cause.Error()
 	}

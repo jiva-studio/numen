@@ -108,11 +108,32 @@ func readCgroupMemory(pid int) (uint64, error) {
 	if filepath.Base(baseDir) != expectedName {
 		return 0, errors.New("cgroup v2 directory not matched")
 	}
+	if bytes, err := readCgroupAnon(baseDir); err == nil {
+		return bytes, nil
+	}
 	data, err := os.ReadFile(filepath.Join(baseDir, "memory.current"))
 	if err != nil {
 		return 0, err
 	}
 	return strconv.ParseUint(strings.TrimSpace(string(data)), 10, 64)
+}
+
+func readCgroupAnon(cgroupDir string) (uint64, error) {
+	data, err := os.ReadFile(filepath.Join(cgroupDir, "memory.stat"))
+	if err != nil {
+		return 0, err
+	}
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "anon ") {
+			fields := strings.Fields(line)
+			if len(fields) >= 2 {
+				return strconv.ParseUint(fields[1], 10, 64)
+			}
+		}
+	}
+	return 0, errors.New("anon memory stat not found")
 }
 
 func terminateCgroupProcs(pluginDir string) {
@@ -159,11 +180,20 @@ func readProcessRSS(pid int) (uint64, error) {
 }
 
 func readStatmRSS(pid int) (uint64, error) {
+	if bytes, err := readProcStatusAnon(pid); err == nil {
+		return bytes, nil
+	}
 	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/statm", pid))
 	if err != nil {
 		return 0, err
 	}
 	fields := strings.Fields(string(data))
+	if len(fields) >= 6 {
+		pages, err := strconv.ParseUint(fields[5], 10, 64)
+		if err == nil {
+			return pages * uint64(os.Getpagesize()), nil
+		}
+	}
 	if len(fields) < 2 {
 		return 0, errors.New("invalid statm format")
 	}
@@ -172,4 +202,26 @@ func readStatmRSS(pid int) (uint64, error) {
 		return 0, fmt.Errorf("parse statm resident pages: %w", err)
 	}
 	return pages * uint64(os.Getpagesize()), nil
+}
+
+func readProcStatusAnon(pid int) (uint64, error) {
+	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/status", pid))
+	if err != nil {
+		return 0, err
+	}
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "RssAnon:") {
+			fields := strings.Fields(line)
+			if len(fields) >= 2 {
+				kb, err := strconv.ParseUint(fields[1], 10, 64)
+				if err != nil {
+					return 0, fmt.Errorf("parse RssAnon: %w", err)
+				}
+				return kb * 1024, nil
+			}
+		}
+	}
+	return 0, errors.New("RssAnon not found")
 }

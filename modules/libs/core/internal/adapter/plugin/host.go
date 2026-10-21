@@ -158,6 +158,9 @@ func (h *Host) SetActivationPolicy(policy ActivationPolicy) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.activation = policy
+	for _, sup := range h.supervisors {
+		sup.SetActivationPolicy(policy)
+	}
 }
 
 // SetErrorHandler registers a callback for problems the host meets outside a call, such as a failed shutdown.
@@ -520,19 +523,8 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 		}
 	}
 
-	sup, hasSup := h.supervisors[pluginID]
-	if !hasSup {
-		sup = NewSupervisor()
-		sup.SetPermissions(p.Manifest.Permissions)
-		id := pluginID
-		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
-		h.supervisors[pluginID] = sup
-	}
-	memLimit := h.processLimits.MemoryLimitBytes
-	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-		memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
-	}
-	sup.SetMemoryLimit(memLimit)
+	h.registerSupervisorLocked(p)
+	sup := h.supervisors[pluginID]
 
 	if !h.isPluginEnabledLocked(pluginID) {
 		return DiscoveredPlugin{}, nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginDisabled}
@@ -979,7 +971,26 @@ func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duratio
 	}
 	h.mu.Unlock()
 
-	return h.evictTargets(ctx, targets, gracePeriod)
+	evicted := h.evictTargets(ctx, targets, gracePeriod)
+	for _, target := range targets {
+		if slices.Contains(evicted, target.id) {
+			target.sup.RecordActivationFailure(time.Now(), h.activation, fmt.Errorf("%w: %d bytes", ErrMemoryExceeded, target.sup.GetMemoryLimit()))
+			h.reportMemoryExceeded(target.id, target.sup)
+		}
+	}
+	return evicted
+}
+
+func (h *Host) reportMemoryExceeded(pluginID string, sup *Supervisor) {
+	memLimit := sup.GetMemoryLimit()
+	err := fmt.Errorf("plugin %s was stopped: it used more than %d bytes of memory", pluginID, memLimit)
+	h.reportError(err)
+	h.mu.Lock()
+	if failed, cause := sup.GetActivationFailure(); failed {
+		h.failedPlugins = append(h.failedPlugins, h.newPluginFailureLocked(pluginID, sup, cause))
+	}
+	h.mu.Unlock()
+	h.deliverPluginFailures()
 }
 
 // evictTargets stops the targets and returns the ids that stopped; a failed stop is reported to the error handler.

@@ -333,6 +333,71 @@ func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
 	}
 }
 
+func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
+	cmd := exec.Command("sleep", "5")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start process: %v", err)
+	}
+	defer func() {
+		killProcess(t, cmd.Process)
+	}()
+
+	sup := NewSupervisor()
+	sup.SetActivationPolicy(ActivationPolicy{
+		BackoffBase: 500 * time.Millisecond,
+		BackoffMax:  time.Second,
+		MaxFailures: 2,
+	})
+	onExceededCalled := false
+	sup.SetOnMemoryExceeded(func() {
+		onExceededCalled = true
+	})
+	sup.SetRPCShutdown(func(_ context.Context) error {
+		_ = cmd.Process.Kill()
+		return nil
+	})
+	sup.SetMemoryGracePeriod(50 * time.Millisecond)
+	sup.SetMemoryMonitorInterval(10 * time.Millisecond)
+	sup.SetRSSReader(func(_ int) (uint64, error) {
+		return 200, nil
+	})
+	sup.SetMemoryLimit(100)
+
+	now := time.Now()
+	if err := sup.Attach(cmd.Process, now); err != nil {
+		t.Fatalf("failed to attach: %v", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for sup.GetState() != StateDormant && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if sup.GetState() != StateDormant {
+		t.Fatalf("expected StateDormant after eviction, got %v", sup.GetState())
+	}
+	if !onExceededCalled {
+		t.Fatal("expected onMemoryExceeded to be called")
+	}
+	if err := sup.CheckActivationAllowed(time.Now()); err == nil {
+		t.Fatal("expected activation to be blocked by backoff")
+	}
+
+	failed, _ := sup.GetActivationFailure()
+	if failed {
+		t.Fatal("expected plugin not yet marked permanently failed after 1 failure")
+	}
+
+	// Second eviction reaches MaxFailures
+	sup.evictForMemory(nil, 10*time.Millisecond, nil)
+	failed, cause := sup.GetActivationFailure()
+	if !failed {
+		t.Fatal("expected plugin to be marked permanently failed after MaxFailures")
+	}
+	if !errors.Is(cause, ErrMemoryExceeded) {
+		t.Fatalf("expected ErrMemoryExceeded, got %v", cause)
+	}
+}
+
 func TestAcquireRefusesAPluginThatIsDeactivating(t *testing.T) {
 	cmd := exec.Command("sleep", "5")
 	if err := cmd.Start(); err != nil {
