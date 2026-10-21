@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -16,14 +17,44 @@ import (
 )
 
 type downloadServer struct {
+	mu         sync.RWMutex
 	downloader *download.Downloader
+	cfg        download.Config
+}
+
+func (s *downloadServer) getDownloader() *download.Downloader {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.downloader
+}
+
+func (s *downloadServer) updateConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if v, ok := values["yt_dlp"]; ok {
+		if v != "" {
+			s.cfg.Video = download.Tool{Command: []string{v}}
+		} else {
+			s.cfg.Video = download.Tool{}
+		}
+	}
+	if v, ok := values["ffmpeg"]; ok {
+		if v != "" {
+			s.cfg.Sound = download.Tool{Command: []string{v}}
+		} else {
+			s.cfg.Sound = download.Tool{}
+		}
+	}
+	if dl, err := download.New(context.Background(), s.cfg); err == nil {
+		s.downloader = dl
+	}
 }
 
 func (s *downloadServer) CanHandle(
 	_ context.Context,
 	req *connect.Request[numenv1.CanHandleRequest],
 ) (*connect.Response[numenv1.CanHandleResponse], error) {
-	can := s.downloader.CanHandle(req.Msg.GetUrl())
+	can := s.getDownloader().CanHandle(req.Msg.GetUrl())
 	return connect.NewResponse(&numenv1.CanHandleResponse{
 		CanHandle: can,
 	}), nil
@@ -33,7 +64,7 @@ func (s *downloadServer) GetDownloadModel(
 	_ context.Context,
 	req *connect.Request[numenv1.GetDownloadModelRequest],
 ) (*connect.Response[numenv1.GetDownloadModelResponse], error) {
-	model := s.downloader.GetDownloadModel(req.Msg.GetUrl())
+	model := s.getDownloader().GetDownloadModel(req.Msg.GetUrl())
 	return connect.NewResponse(&numenv1.GetDownloadModelResponse{
 		Tool:     model.Tool,
 		Version:  model.Version,
@@ -45,7 +76,7 @@ func (s *downloadServer) GetMetadata(
 	ctx context.Context,
 	req *connect.Request[numenv1.GetMetadataRequest],
 ) (*connect.Response[numenv1.GetMetadataResponse], error) {
-	meta, err := s.downloader.GetMetadata(ctx, req.Msg.GetUrl())
+	meta, err := s.getDownloader().GetMetadata(ctx, req.Msg.GetUrl())
 	if err != nil {
 		if errors.Is(err, download.ErrNothingDownloaded) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
@@ -71,7 +102,7 @@ func (s *downloadServer) GetText(
 		pref.Languages = pc.GetLanguages()
 		pref.IsAutomatic = pc.GetIsAutomatic()
 	}
-	text, err := s.downloader.GetText(ctx, req.Msg.GetUrl(), pref)
+	text, err := s.getDownloader().GetText(ctx, req.Msg.GetUrl(), pref)
 	if err != nil {
 		if errors.Is(err, download.ErrNothingDownloaded) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
@@ -118,7 +149,7 @@ func (s *downloadServer) DownloadMedia(
 	stream *connect.ServerStream[numenv1.DownloadMediaResponse],
 ) error {
 	writer := &streamChunkWriter{stream: stream}
-	copyInfo, err := s.downloader.Download(ctx, req.Msg.GetUrl(), writer)
+	copyInfo, err := s.getDownloader().Download(ctx, req.Msg.GetUrl(), writer)
 	if err != nil {
 		if errors.Is(err, download.ErrNothingDownloaded) {
 			return connect.NewError(connect.CodeNotFound, err)
@@ -134,11 +165,14 @@ func (s *downloadServer) DownloadMedia(
 
 // Mount registers the download service on s.
 func Mount(s *server.Server) error {
-	downloader, err := download.New(context.Background(), download.Defaults())
+	cfg := download.Defaults()
+	downloader, err := download.New(context.Background(), cfg)
 	if err != nil {
 		return fmt.Errorf("initialize downloader: %w", err)
 	}
-	s.Register(numenv1connect.NewDownloadServiceHandler(&downloadServer{downloader: downloader}, s.HandlerOptions()...))
+	srv := &downloadServer{downloader: downloader, cfg: cfg}
+	s.SetUpdateConfig(srv.updateConfig)
+	s.Register(numenv1connect.NewDownloadServiceHandler(srv, s.HandlerOptions()...))
 	return nil
 }
 
