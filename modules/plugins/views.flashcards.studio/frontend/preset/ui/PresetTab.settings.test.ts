@@ -96,19 +96,19 @@ describe('the settings under the control', () => {
     expect(document.body.querySelectorAll('[role="menuitemradio"]')).toHaveLength(0)
 
     await line.trigger('click')
-    const offered = [...document.body.querySelectorAll('[role="menuitemradio"]')].map(
+    const proposed = [...document.body.querySelectorAll('[role="menuitemradio"]')].map(
       (one) => one.textContent?.trim() ?? '',
     )
-    expect(offered).toStrictEqual([words.ruleName('interval'), words.ruleName('retention')])
+    expect(proposed).toStrictEqual([words.ruleName('interval'), words.ruleName('retention')])
   })
 
   it('passes on the rule that was chosen, and is done with it at once', async () => {
     const { tab, done } = mountPresetTab({}, { learned: 'interval' })
     await tab.get('[data-preset="choice"]').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].find(
       (one) => one.textContent?.trim() === words.ruleName('retention'),
     )
-    chosen?.click()
+    selected?.click()
     await tab.vm.$nextTick()
     expect(done).toStrictEqual(['type learned retention', 'flushPending'])
   })
@@ -174,9 +174,9 @@ describe('a file that changed under the tab', () => {
     const one = createTab()
     const state: PresetTabState = { ...one.state, hasExternalChange: ref(true) }
     const tab = mount(PresetTab, { props: { state } })
-    const said = tab.get('[role="status"].preset__answering')
-    expect(said.text()).toContain(words.changed)
-    await said.get('button').trigger('click')
+    const response = tab.get('[role="status"].preset__answering')
+    expect(response.text()).toContain(words.changed)
+    await response.get('button').trigger('click')
     expect(one.done).toStrictEqual(['reload'])
   })
 

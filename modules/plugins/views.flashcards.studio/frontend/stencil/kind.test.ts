@@ -12,7 +12,7 @@ import { STENCIL, useStencilTabs, type StencilTabState } from './kind'
 import { WORDS as words } from '../cards'
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const FACES: readonly VaultFace[] = [
   { name: 'Recognise', preamble: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
@@ -32,7 +32,7 @@ const vault = (
     wrote?: ErrorCode
   } = {},
 ) => {
-  const written: string[] = []
+  const content: string[] = []
   /** Each field rename the tab asked the vault for. */
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
@@ -44,9 +44,9 @@ const vault = (
     createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     // The vault writes the name wherever it stands: in the fields, and in the
     // braces of every face.
-    renameField: async (path, field, seen) => {
+    renameField: async (path, field, observed) => {
       const { from, to } = field
-      renamed.push(`${path} ${from} ${to} ${seen ?? '—'}`)
+      renamed.push(`${path} ${from} ${to} ${observed ?? '—'}`)
       if (answers.renaming) return answers.renaming
       fields = fields.map((one) => (one === from ? to : one))
       const rewriteBraces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
@@ -76,7 +76,7 @@ const vault = (
       })
     },
     writeStencil: async (path, stencil, _seen) => {
-      written.push(
+      content.push(
         `${path} ${stencil.fields.join(', ') || '—'} | ${stencil.faces.map((one) => one.back).join(' ')}`,
       )
       if (answers.wrote) return asFailure(answers.wrote)
@@ -89,7 +89,7 @@ const vault = (
 
   return {
     core,
-    written,
+    written: content,
     renamed,
     /** The file written from somewhere else, which the next read answers with. */
     setFaces: (next: readonly VaultFace[]) => {
@@ -514,11 +514,11 @@ describe('what the window asks of a stencil tab', () => {
 
   it('is to make a stencil of the name and the folder, carrying the first field', async () => {
     const one = await open()
-    const made = vi.spyOn(one.core, 'createStencil')
+    const createdItem = vi.spyOn(one.core, 'createStencil')
 
     await one.stencils.kind.createFile?.('plants', 'Plant')
 
-    expect(made).toHaveBeenCalledWith('Plant', 'plants', [words.newField])
+    expect(createdItem).toHaveBeenCalledWith('Plant', 'plants', [words.newField])
   })
 })
 

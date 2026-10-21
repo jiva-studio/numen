@@ -122,8 +122,8 @@ function createThemeWatcher(deps: {
   const listening = new AbortController()
   const follows = createFollower({
     isOpen: () => open,
-    setLost: (gone) => {
-      deps.lost.value = gone
+    setLost: (removed) => {
+      deps.lost.value = removed
     },
     wait: deps.wait,
   })
@@ -153,8 +153,8 @@ function initAppearanceState() {
   const mode = ref<Mode>('system')
   const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
   const bounds = ref<Ranges>({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
-  const lost = ref('')
-  return { list, applied, mode, settings, bounds, lost }
+  const missing = ref('')
+  return { list, applied, mode, settings, bounds, lost: missing }
 }
 
 function createAppearanceGroups(

@@ -75,19 +75,19 @@ const MODELS: readonly Model[] = [
 
 /** An installation configured that way, and everything it was asked to change. */
 const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
-  const done: string[] = []
-  const written: SettingEdit[] = []
+  const isDone: string[] = []
+  const content: SettingEdit[] = []
   const isSyncing = ref(true)
   const isNesting = ref(true)
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
-    write: (said) => {
-      written.push(...said)
+    write: (response) => {
+      content.push(...response)
     },
     file: ref('/numen.json'),
     openFile: () => {
-      done.push('opens the file')
+      isDone.push('opens the file')
     },
     themes: ref([
       { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
@@ -102,26 +102,26 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
       textScale: { least: 0.8, most: 1.75 },
     }),
     choose: (item) => {
-      done.push(`choose ${item}`)
+      isDone.push(`choose ${item}`)
     },
     isSyncing: computed({
       get: () => isSyncing.value,
       set: (on) => {
         isSyncing.value = on
-        done.push(`syncing ${on}`)
+        isDone.push(`syncing ${on}`)
       },
     }),
     isNesting: computed({
       get: () => isNesting.value,
       set: (on) => {
         isNesting.value = on
-        done.push(`nesting ${on}`)
+        isDone.push(`nesting ${on}`)
       },
     }),
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
     chooseHeadings: (count) => {
-      done.push(`headings ${count}`)
+      isDone.push(`headings ${count}`)
     },
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
@@ -131,15 +131,15 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     props: { state: { installation } },
     attachTo: document.body,
   })
-  drawn.push(tab)
-  return { done, written, tab }
+  rendered.push(tab)
+  return { done: isDone, written: content, tab }
 }
 
 /** Every tab this file drew, put away between one test and the next. */
-const drawn: { unmount: () => void }[] = []
+const rendered: { unmount: () => void }[] = []
 
 afterEach(() => {
-  while (drawn.length) drawn.pop()?.unmount()
+  while (rendered.length) rendered.pop()?.unmount()
 })
 
 type Tab = ReturnType<typeof createTab>['tab']

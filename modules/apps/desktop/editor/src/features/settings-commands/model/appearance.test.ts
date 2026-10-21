@@ -66,10 +66,10 @@ const APPEARANCE: Appearance = {
 }
 
 /** A moment for whatever was asked of the application to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** The keyboard stood on a row for longer than the window holds a size. */
-const wait = () => new Promise((done) => setTimeout(done, 200))
+const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
 /** A range narrower than the one the application answers with. */
 const NARROW = { least: 1, most: 1.5 }
@@ -109,45 +109,45 @@ const folder = () => {
 /** The window wearing a theme, over a page a test can read the head of. */
 const window = (over: Partial<Appearance> = {}, css = SERVED) => {
   const sheet = page(css)
-  const said = folder()
-  const asked: string[] = []
-  const chosen: string[] = []
+  const response = folder()
+  const request: string[] = []
+  const selected: string[] = []
   let appearance: Appearance = { ...APPEARANCE, ...over }
-  let listed = 0
+  let items = 0
   let failed = ''
   let textError = ''
   const texts: Record<string, string> = {}
   const core: Themes = {
     getAppearance: async () => {
-      listed += 1
+      items += 1
       return appearance
     },
     readTheme: async (name) => {
-      asked.push(name)
+      request.push(name)
       if (textError) throw new Error(textError)
       return texts[name] ?? `:root { --numen-surface: ${name} }`
     },
     writeAppearance: async (name, mode, sizes) => {
-      chosen.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
+      selected.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return failed
     },
-    watchThemes: said.watchThemes,
+    watchThemes: response.watchThemes,
   }
   /** What the window was told, in the order it was told. */
-  const told: { text: string; kind: string }[] = []
+  const notified: { text: string; kind: string }[] = []
   return {
     worn: createWindowAppearance({
       core,
       words,
-      write: (text, kind = 'report') => void told.push({ text, kind }),
+      write: (text, kind = 'report') => void notified.push({ text, kind }),
       sheet,
     }),
     sheet,
-    asked,
-    chosen,
-    told,
-    changeThemes: said.changeThemes,
-    listed: () => listed,
+    asked: request,
+    chosen: selected,
+    told: notified,
+    changeThemes: response.changeThemes,
+    listed: () => items,
     writeTheme: (name: string, css: string) => (texts[name] = css),
     fails: (error: string) => (failed = error),
     failsText: (error: string) => (textError = error),
@@ -811,21 +811,21 @@ const createManual = (waits = Infinity) => {
       }
     },
   }
-  const told: string[] = []
-  const worn = createWindowAppearance({
+  const notified: string[] = []
+  const aged = createWindowAppearance({
     core,
     words,
-    write: (text) => void told.push(text),
+    write: (text) => void notified.push(text),
     sheet,
     wait: () =>
-      waited++ < waits ? new Promise((done) => setTimeout(done, 0)) : new Promise(() => {}),
+      waited++ < waits ? new Promise((isDone) => setTimeout(isDone, 0)) : new Promise(() => {}),
   })
   return {
-    worn,
+    worn: aged,
     sheet,
     reads,
     signals,
-    told,
+    told: notified,
     fails: () => (fault = true),
     changeThemes: async (...names: readonly string[]) => {
       wake?.(names)
@@ -968,8 +968,8 @@ describe('a window that is closed', () => {
 describe('the application that cannot list the themes', () => {
   it('is returned, as an error, and the window keeps what it wears', async () => {
     const sheet = page()
-    const told: { text: string; kind: string }[] = []
-    const worn = createWindowAppearance({
+    const notified: { text: string; kind: string }[] = []
+    const aged = createWindowAppearance({
       core: {
         getAppearance: async () => {
           throw new Error('down')
@@ -977,21 +977,21 @@ describe('the application that cannot list the themes', () => {
         readTheme: async () => '',
         writeAppearance: async () => '',
         watchThemes: async function* (signal) {
-          await new Promise<void>((done) => signal.addEventListener('abort', () => done()))
+          await new Promise<void>((isDone) => signal.addEventListener('abort', () => isDone()))
           yield* []
         },
       },
       words,
-      write: (text, kind = 'report') => void told.push({ text, kind }),
+      write: (text, kind = 'report') => void notified.push({ text, kind }),
       sheet,
     })
 
-    await worn.start()
+    await aged.start()
 
-    expect(told).toStrictEqual([{ text: words.unlisted, kind: 'error' }])
-    expect(worn.list.value).toStrictEqual([])
+    expect(notified).toStrictEqual([{ text: words.unlisted, kind: 'error' }])
+    expect(aged.list.value).toStrictEqual([])
     expect(getHeadStyles(sheet)).toStrictEqual([PAIR, SERVED, SIZED])
-    worn.close()
+    aged.close()
   })
 })
 
@@ -1001,7 +1001,7 @@ describe('a folder stream that ended', () => {
   it('is followed again after the wait the window keeps by default', async () => {
     vi.useFakeTimers()
     let watches = 0
-    const worn = createWindowAppearance({
+    const aged = createWindowAppearance({
       core: {
         getAppearance: async () => APPEARANCE,
         readTheme: async () => '',
@@ -1015,13 +1015,13 @@ describe('a folder stream that ended', () => {
       write: () => {},
       sheet: page(),
     })
-    await worn.start()
+    await aged.start()
     await vi.advanceTimersByTimeAsync(0)
     expect(watches).toBe(1)
 
     await vi.advanceTimersByTimeAsync(1000)
 
     expect(watches).toBe(2)
-    worn.close()
+    aged.close()
   })
 })

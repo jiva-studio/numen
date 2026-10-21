@@ -103,10 +103,10 @@ function createVaultsLoader(deps: PaletteVaultsDeps) {
     deps.isWorking.value = true
     deps.failureMessage.value = ''
     try {
-      const listed = await deps.core.vaults()
+      const items = await deps.core.vaults()
       if (!mine.isCurrent) return
-      deps.known.value = listed.vaults
-      deps.showing.value = listed.showing
+      deps.known.value = items.vaults
+      deps.showing.value = items.showing
     } catch {
       if (!mine.isCurrent) return
       deps.known.value = []
@@ -180,23 +180,23 @@ function createPaletteState(wait?: Wait) {
   const open = ref(false)
   const typed = ref('')
   const found = shallowRef<readonly NameMatch[]>(BLANK.found)
-  const known = shallowRef<readonly Vault[]>(BLANK.known)
+  const recognized = shallowRef<readonly Vault[]>(BLANK.known)
   const showing = ref(BLANK.showing)
   const isWorking = ref(BLANK.isWorking)
   const failureMessage = ref(BLANK.failureMessage)
-  const asked = latest()
-  const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
+  const request = latest()
+  const debounced = useDebouncedAsk({ guard: request, ...(wait ? { wait } : {}) })
 
   const drop = () => {
-    asked.drop()
+    request.drop()
     found.value = BLANK.found
-    known.value = BLANK.known
+    recognized.value = BLANK.known
     showing.value = BLANK.showing
     isWorking.value = BLANK.isWorking
     failureMessage.value = BLANK.failureMessage
   }
 
-  return { open, typed, found, known, showing, isWorking, failureMessage, asked, debounced, drop }
+  return { open, typed, found, known: recognized, showing, isWorking, failureMessage, asked: request, debounced, drop }
 }
 
 function createPaletteStepsAndSearch(

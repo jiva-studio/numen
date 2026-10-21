@@ -14,7 +14,7 @@ type Pending = { resolve: (markup: string) => void; reject: (reason: Error) => v
 const create = (open = { value: true }) => {
   const pending = new Map<string, Pending>()
   const urls: string[] = []
-  const written: Array<[string, string | undefined]> = []
+  const content: Array<[string, string | undefined]> = []
   const books: Books = {
     getBook: vi.fn(),
     readMarkup: (_path, document) =>
@@ -24,16 +24,16 @@ const create = (open = { value: true }) => {
       return `/served/${name}`
     },
   }
-  const writeMessage: MessageWriter = (text, kind) => written.push([text, kind])
-  const held = useBookDocument(books, 'library/b.epub', {
+  const writeMessage: MessageWriter = (text, kind) => content.push([text, kind])
+  const target = useBookDocument(books, 'library/b.epub', {
     fingerprint: ref('print-1'),
     writeMessage,
     isOpen: () => open.value,
   })
-  return { held, pending, urls, written }
+  return { held: target, pending, urls, written: content }
 }
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('a book with nothing drawn', () => {
   it('reads nowhere and names no document', () => {

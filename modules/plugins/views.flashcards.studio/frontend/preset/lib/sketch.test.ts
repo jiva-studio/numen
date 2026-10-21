@@ -55,8 +55,8 @@ describe('the line the window draws in the answer’s place', () => {
 
 describe('the span the sketch of a target is drawn across', () => {
   it('is the one the application answered with, and not one kept here', () => {
-    const said = { ...BOUNDS, retention: { least: 0.75, most: 0.95 } }
-    const guess = estimateCurve(settings({ goal: 'retention' }), today, said)
+    const response = { ...BOUNDS, retention: { least: 0.75, most: 0.95 } }
+    const guess = estimateCurve(settings({ goal: 'retention' }), today, response)
     expect(guess.grid[0]).toBe(0.75)
     expect(guess.grid.at(-1)).toBe(0.95)
   })

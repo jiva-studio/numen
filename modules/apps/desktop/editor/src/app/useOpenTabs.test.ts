@@ -36,14 +36,14 @@ const create = (entries: Entry[], front: { id: string; kind: string } | null = n
 
 describe('the open tabs', () => {
   it('lists each tab with its kind, title, path and what it points at', () => {
-    const held = create([
+    const target = create([
       { id: 'a', title: 'A', kind: 'note', openTab: { path: 'a.md' } },
       { id: 'b', title: 'B', kind: 'document', openTab: { path: 'b.pdf', document: 'doc-1' } },
       { id: 'c', title: 'C', kind: 'recording', openTab: { path: 'c.mp3', recording: 'rec-1' } },
       { id: 'd', title: 'D', kind: 'book', openTab: { path: 'd.epub', book: 'book-1' } },
     ])
 
-    expect(held.open.value.tabs).toStrictEqual([
+    expect(target.open.value.tabs).toStrictEqual([
       { id: 'a', kind: 'note', title: 'A', path: 'a.md' },
       { id: 'b', kind: 'document', title: 'B', path: 'b.pdf', document: 'doc-1' },
       { id: 'c', kind: 'recording', title: 'C', path: 'c.mp3', recording: 'rec-1' },
@@ -52,27 +52,27 @@ describe('the open tabs', () => {
   })
 
   it('lists a tab the window cannot resolve with an empty kind and path', () => {
-    const held = create([{ id: 'a', title: 'A', unresolved: true }])
+    const target = create([{ id: 'a', title: 'A', unresolved: true }])
 
-    expect(held.open.value.tabs).toStrictEqual([{ id: 'a', kind: '', title: 'A', path: '' }])
+    expect(target.open.value.tabs).toStrictEqual([{ id: 'a', kind: '', title: 'A', path: '' }])
   })
 
   it('lists a tab whose kind has no open-tab form with an empty path', () => {
-    const held = create([{ id: 'a', title: 'A', kind: 'files' }])
+    const target = create([{ id: 'a', title: 'A', kind: 'files' }])
 
-    expect(held.open.value.tabs).toStrictEqual([{ id: 'a', kind: 'files', title: 'A', path: '' }])
+    expect(target.open.value.tabs).toStrictEqual([{ id: 'a', kind: 'files', title: 'A', path: '' }])
   })
 
   it('notifies the core the list when it is made, and again when it changes', async () => {
-    const held = create([{ id: 'a', title: 'A', openTab: { path: 'a.md' } }])
+    const tab = create([{ id: 'a', title: 'A', openTab: { path: 'a.md' } }])
 
-    expect(held.writeOpenTabs).toHaveBeenCalledTimes(1)
-    expect(held.writeOpenTabs).toHaveBeenLastCalledWith(held.open.value)
+    expect(tab.writeOpenTabs).toHaveBeenCalledTimes(1)
+    expect(tab.writeOpenTabs).toHaveBeenLastCalledWith(tab.open.value)
 
-    held.tabs.value = [...held.tabs.value, { id: 'b', title: 'B' }]
+    tab.tabs.value = [...tab.tabs.value, { id: 'b', title: 'B' }]
     await new Promise((r) => setTimeout(r))
 
-    expect(held.writeOpenTabs).toHaveBeenCalledTimes(2)
+    expect(tab.writeOpenTabs).toHaveBeenCalledTimes(2)
   })
 
   it('carries on when the core cannot take the list', () => {
@@ -87,7 +87,7 @@ describe('the open tabs', () => {
 
 describe('the active tab', () => {
   it('is the tab in front', () => {
-    const held = create(
+    const target = create(
       [
         { id: 'a', title: 'A' },
         { id: 'b', title: 'B' },
@@ -95,12 +95,12 @@ describe('the active tab', () => {
       { id: 'a', kind: 'note' },
     )
 
-    expect(held.getActiveTabId()).toBe('a')
-    expect(held.open.value.front).toBe('a')
+    expect(target.getActiveTabId()).toBe('a')
+    expect(target.open.value.front).toBe('a')
   })
 
   it('is the last tab that is not the agent when the agent is in front', () => {
-    const held = create(
+    const target = create(
       [
         { id: 'a', title: 'A', kind: 'note' },
         { id: 'b', title: 'B', kind: 'plex' },
@@ -109,11 +109,11 @@ describe('the active tab', () => {
       { id: 'ag', kind: 'agent' },
     )
 
-    expect(held.getActiveTabId()).toBe('b')
+    expect(target.getActiveTabId()).toBe('b')
   })
 
   it('counts a tab the window cannot resolve as not the agent', () => {
-    const held = create(
+    const target = create(
       [
         { id: 'a', title: 'A', kind: 'note' },
         { id: 'gone', title: 'Gone', unresolved: true },
@@ -121,13 +121,13 @@ describe('the active tab', () => {
       { id: 'ag', kind: 'agent' },
     )
 
-    expect(held.getActiveTabId()).toBe('gone')
+    expect(target.getActiveTabId()).toBe('gone')
   })
 
   it('is the agent when it is the only tab', () => {
-    const held = create([{ id: 'ag', title: 'Agent', kind: 'agent' }], { id: 'ag', kind: 'agent' })
+    const target = create([{ id: 'ag', title: 'Agent', kind: 'agent' }], { id: 'ag', kind: 'agent' })
 
-    expect(held.getActiveTabId()).toBe('ag')
+    expect(target.getActiveTabId()).toBe('ag')
   })
 
   it('is empty when nothing is open', () => {
@@ -137,24 +137,24 @@ describe('the active tab', () => {
 
 describe('the tab icon', () => {
   it('is the icon of the kind of the tab', () => {
-    const held = create([{ id: 'a', title: 'A', kind: 'note' }])
+    const target = create([{ id: 'a', title: 'A', kind: 'note' }])
 
-    expect(held.getTabIcon('a')).toBe(findTabKindIcon('note'))
-    expect(held.getTabIcon('a')).not.toBe(findTabKindIcon(''))
+    expect(target.getTabIcon('a')).toBe(findTabKindIcon('note'))
+    expect(target.getTabIcon('a')).not.toBe(findTabKindIcon(''))
   })
 
   it('is the icon of no kind for a tab the window cannot resolve', () => {
-    const held = create([])
+    const target = create([])
 
-    expect(held.getTabIcon('missing')).toBe(findTabKindIcon(''))
+    expect(target.getTabIcon('missing')).toBe(findTabKindIcon(''))
   })
 })
 
 describe('the tab icon a kind declares', () => {
   it('is drawn in place of the one the window keeps for that kind', () => {
     const icon = { name: 'DeclaredIcon' }
-    const held = create([{ id: 'p', title: 'P', kind: 'agent', icon }])
+    const target = create([{ id: 'p', title: 'P', kind: 'agent', icon }])
 
-    expect(held.getTabIcon('p')).toBe(icon)
+    expect(target.getTabIcon('p')).toBe(icon)
   })
 })

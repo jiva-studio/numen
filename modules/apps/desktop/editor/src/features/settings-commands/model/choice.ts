@@ -55,26 +55,26 @@ async function writeSizeChoice(choice: ScaleChoice, deps: WriteSizeDeps, onReset
 
 export function useAppearanceChoice(on: ChoiceDeps) {
   const { core, write, list, applied, mode, settings, bounds, wear } = on
-  const stood = ref('')
+  const status = ref('')
   const holding = ref<ScaleChoice | null>(null)
   let hold: ReturnType<typeof setTimeout> | undefined
 
   const isTheme = (item: string): boolean => item !== '' && !parseMode(item) && !parseSize(item)
-  const worn = computed(() => (isTheme(stood.value) ? stood.value : applied.value))
-  const half = computed<Mode>(() => parseMode(stood.value) ?? mode.value)
+  const aged = computed(() => (isTheme(status.value) ? status.value : applied.value))
+  const half = computed<Mode>(() => parseMode(status.value) ?? mode.value)
   const sized = computed<Sizes>(() => {
     const scaleChoice = holding.value
     return scaleChoice ? onto(settings.value, scaleChoice.which, scaleChoice.size) : settings.value
   })
   const isPinned = computed(() => {
-    const theme = list.value.find((one) => one.name === worn.value)
+    const theme = list.value.find((one) => one.name === aged.value)
     return theme?.isPinned ?? false
   })
 
-  const applyAppearance = () => wear(worn.value, half.value)
+  const applyAppearance = () => wear(aged.value, half.value)
 
   const previewItem = (item: string) => {
-    stood.value = item
+    status.value = item
     clearTimeout(hold)
     const size = parseSize(item)
     if (size && isInBounds(its(bounds.value, size.which), size.size)) {
@@ -89,7 +89,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     writeSizeChoice(choice, { core, write, applied, mode, settings, bounds }, () => {
       clearTimeout(hold)
       holding.value = null
-      stood.value = ''
+      status.value = ''
     })
 
   const chooseItem = async (item: string) => {
@@ -102,7 +102,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     write('')
     applied.value = targetMode ? was.applied : item
     mode.value = targetMode ?? was.mode
-    stood.value = ''
+    status.value = ''
     await applyAppearance()
 
     const failed = await core.writeAppearance(applied.value, mode.value, settings.value)
@@ -115,5 +115,5 @@ export function useAppearanceChoice(on: ChoiceDeps) {
 
   const close = () => clearTimeout(hold)
 
-  return { worn, half, sized, isPinned, previewItem, chooseItem, close }
+  return { worn: aged, half, sized, isPinned, previewItem, chooseItem, close }
 }

@@ -82,10 +82,10 @@ describe('the choices a setting offers', () => {
 
   it('put a value the presets do not name first, as the person’s own', () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const offered = createChoices([PRESET], own, WORDS)
+    const proposed = createChoices([PRESET], own, WORDS)
 
-    expect(offered.map((one) => one.id)).toStrictEqual([own, PRESET.name])
-    expect(offered[0]).toStrictEqual({
+    expect(proposed.map((one) => one.id)).toStrictEqual([own, PRESET.name])
+    expect(proposed[0]).toStrictEqual({
       id: own,
       text: 'Other_rec.onnx',
       detail: own,
@@ -94,10 +94,10 @@ describe('the choices a setting offers', () => {
   })
 
   it('say nothing about a value being missing, wrong or not found', () => {
-    const said = createChoices([PRESET], 'somewhere/mine', WORDS)
+    const saidText = createChoices([PRESET], 'somewhere/mine', WORDS)
       .map((one) => `${one.text} ${one.detail ?? ''}`)
       .join(' ')
-    expect(said).not.toMatch(/not found|missing|unknown/i)
+    expect(saidText).not.toMatch(/not found|missing|unknown/i)
   })
 
   it('offer the presets alone where the file names one of them', () => {
@@ -113,8 +113,8 @@ describe('the choices a setting offers', () => {
     const coming = model({ name: 'somewhere/large', title: 'Large', presence: 'not fetched' })
     const reached = model({ name: 'opus', title: 'Opus', presence: 'nothing to fetch' })
 
-    const offered = createChoices([here, coming, reached], 'opus', WORDS)
-    expect(offered.map((one) => one.detail)).toStrictEqual([
+    const proposed = createChoices([here, coming, reached], 'opus', WORDS)
+    expect(proposed.map((one) => one.detail)).toStrictEqual([
       'on this machine · somewhere/tiny',
       'not fetched yet · somewhere/large',
       undefined,
@@ -131,7 +131,7 @@ describe('the choices a setting offers', () => {
   })
 
   it('stand each preset on the group it names', () => {
-    const offered = createChoices(
+    const proposed = createChoices(
       [
         model({ name: 'opus', title: 'Opus', group: 'By how large it is' }),
         model({ name: 'held/claude-opus-5', title: 'claude-opus-5', group: 'In full' }),
@@ -139,7 +139,7 @@ describe('the choices a setting offers', () => {
       'opus',
       WORDS,
     )
-    expect(offered.map((one) => one.group)).toStrictEqual(['By how large it is', 'In full'])
+    expect(proposed.map((one) => one.group)).toStrictEqual(['By how large it is', 'In full'])
   })
 })
 
@@ -149,7 +149,7 @@ describe('the choices of a field', () => {
       getModels: () => [model({ name: 'opus', title: 'Opus' })],
       getString: () => 'mine',
     }
-    const offered = createModelChoices(fields, ['agent', 'model'], WORDS)
-    expect(offered.map((one) => one.id)).toStrictEqual(['mine', 'opus'])
+    const proposed = createModelChoices(fields, ['agent', 'model'], WORDS)
+    expect(proposed.map((one) => one.id)).toStrictEqual(['mine', 'opus'])
   })
 })

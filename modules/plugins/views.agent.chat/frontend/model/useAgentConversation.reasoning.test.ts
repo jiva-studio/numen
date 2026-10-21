@@ -43,13 +43,13 @@ const LISTED = [
 
 /** An agent tab over the models listed, the settings kept, and the questions it asks. */
 function open(settings: Record<string, string> = {}) {
-  const asked: AskOptions[] = []
-  const written: [string, unknown][] = []
+  const request: AskOptions[] = []
+  const content: [string, unknown][] = []
   const conversation: Conversation = {
     turns: ref([]),
     isWorking: ref(false),
     ask: async (_question, _focus, options) => {
-      asked.push(options ?? {})
+      request.push(options ?? {})
     },
     getSourceLocation: () => null,
     stop: () => {},
@@ -62,11 +62,11 @@ function open(settings: Record<string, string> = {}) {
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],
     writeSetting: async (path, value) => {
-      written.push([path.join('/'), value])
+      content.push([path.join('/'), value])
     },
     getModelsAt: (at) => LISTED.filter((one) => one.namedAt.join('/') === at.join('/')),
   })
-  return { state, asked, written }
+  return { state, asked: request, written: content }
 }
 
 describe('the levels offered', () => {

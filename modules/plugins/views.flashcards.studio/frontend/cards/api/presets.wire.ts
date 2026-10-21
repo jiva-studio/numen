@@ -47,21 +47,21 @@ export const presets: Presets = {
     const error = findErrorCode(answer)
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
-  scheduleDeck: async (deck, preset, seen) => {
+  scheduleDeck: async (deck, preset, observed) => {
     const answer = await presetsService.scheduleDeck({
       deck,
       preset,
-      ...(seen === '' ? {} : { baseline: parseFingerprint(seen) }),
+      ...(observed === '' ? {} : { baseline: parseFingerprint(observed) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)
     return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
-  write: async (path, settings, seen) => {
+  write: async (path, settings, observed) => {
     const answer = await presetsService.writePreset({
       path,
       settings: formatSettings(settings),
-      ...(seen === '' ? {} : { baseline: parseFingerprint(seen) }),
+      ...(observed === '' ? {} : { baseline: parseFingerprint(observed) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)

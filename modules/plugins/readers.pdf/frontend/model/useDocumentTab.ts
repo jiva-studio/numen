@@ -10,7 +10,7 @@ export type { PageHandle }
 /** What one document tab holds. */
 export type DocumentTabState = ReturnType<typeof useDocumentTab>
 
-export function useDocumentTab(read: DocumentReaderState) {
+export function useDocumentTab(readItem: DocumentReaderState) {
   /** The page of this document, for as long as its tab is drawn. */
   const page = shallowRef<PageHandle | null>(null)
 
@@ -23,7 +23,7 @@ export function useDocumentTab(read: DocumentReaderState) {
   const focusTab = () => page.value?.focusPages()
 
   return {
-    ...read,
+    ...readItem,
     setPageHandle,
     measure,
     handleKeyPress,

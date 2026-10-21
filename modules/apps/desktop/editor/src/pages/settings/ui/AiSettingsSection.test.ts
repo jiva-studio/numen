@@ -39,13 +39,13 @@ const createSection = (
   file: Record<string, unknown> = {},
   plugins: readonly PluginInfo[] = [AGENT_B, AGENT_A, ASKING, ALLOWED],
 ) => {
-  const written: SettingEdit[] = []
+  const content: SettingEdit[] = []
   const secrets: string[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: createProgramModels(PROGRAMS),
-    write: (said) => {
-      written.push(...said)
+    write: (response) => {
+      content.push(...response)
     },
     writeSecret: (pluginId, name, key) => {
       secrets.push(`write ${pluginId} ${name} ${key}`)
@@ -75,7 +75,7 @@ const createSection = (
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(AiSettingsSection, { props: { state } })
-  return { written, secrets, wrapper }
+  return { written: content, secrets, wrapper }
 }
 
 const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: number) =>

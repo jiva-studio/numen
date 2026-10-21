@@ -34,7 +34,7 @@ const { pluginCatalog } = await import('@/app/pluginCatalog')
 const pluginsImported = Promise.all(Object.values(pluginCatalog.loaders).map((load) => load()))
 
 /** A moment for whatever the window asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** Longer than the palette debounces a keystroke before it asks the vault. */
 const DEBOUNCE = 200
@@ -78,7 +78,7 @@ async function mountWindow() {
   windows.push(window)
   await settle()
   await settle()
-  await new Promise((done) => setTimeout(done, 50))
+  await new Promise((isDone) => setTimeout(isDone, 50))
   return window
 }
 

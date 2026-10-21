@@ -42,8 +42,8 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     oneName: { choose: vi.fn() },
     nesting: { choose: vi.fn(), chooseCount: vi.fn() },
     rest: {
-      writeSettings: (written) => {
-        record('writeSettings')(written)
+      writeSettings: (content) => {
+        record('writeSettings')(content)
       },
     },
     recorded: {},
@@ -76,61 +76,61 @@ describe('createCommandDeps', () => {
   }
 
   it('chooses an indexing model when found in models', async () => {
-    const written: unknown[] = []
+    const content: unknown[] = []
     const { deps } = createOptions({
       rest: {
         writeSettings: (w: unknown[]) => {
-          written.push(...w)
+          content.push(...w)
         },
         getModelsAt: () => [model],
       } as unknown as CommandDepsOptions['rest'],
     })
 
     await deps.settings.chooseIndexingModel('e5-small-int8')
-    expect(written).toStrictEqual(model.writes)
+    expect(content).toStrictEqual(model.writes)
   })
 
   it('writes a plugin setting when chosen', async () => {
-    const written: unknown[] = []
+    const content: unknown[] = []
     const { deps } = createOptions({
       rest: {
         writeSettings: (w: unknown[]) => {
-          written.push(...w)
+          content.push(...w)
         },
       } as unknown as CommandDepsOptions['rest'],
     })
 
     await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
-    expect(written).toStrictEqual([{ at: ['plugins', 'transcription', 'autoRun'], value: 'true' }])
+    expect(content).toStrictEqual([{ at: ['plugins', 'transcription', 'autoRun'], value: 'true' }])
   })
 
   it('chooses an indexing model when not found in models', async () => {
-    const written: unknown[] = []
+    const content: unknown[] = []
     const { deps } = createOptions({
       rest: {
         writeSettings: (w: unknown[]) => {
-          written.push(...w)
+          content.push(...w)
         },
         getModelsAt: () => [],
       } as unknown as CommandDepsOptions['rest'],
     })
 
     await deps.settings.chooseIndexingModel('custom-model')
-    expect(written).toStrictEqual([{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }])
+    expect(content).toStrictEqual([{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }])
   })
 
   it('handles choosing performance profile', async () => {
-    const written: unknown[] = []
+    const content: unknown[] = []
     const { deps } = createOptions({
       rest: {
         writeSettings: (w: unknown[]) => {
-          written.push(...w)
+          content.push(...w)
         },
       } as unknown as CommandDepsOptions['rest'],
     })
 
     await deps.settings.choosePerformance('maximum')
-    expect(written).toStrictEqual([{ at: ['performance', 'profile'], value: '"maximum"' }])
+    expect(content).toStrictEqual([{ at: ['performance', 'profile'], value: '"maximum"' }])
   })
 })
 
@@ -159,24 +159,24 @@ describe('the commands reach the window', () => {
 
   it('asks the runner what a file carries', async () => {
     const states = { transcript: 'done' }
-    const asked = vi.spyOn(running, 'getArtifactStates').mockResolvedValue(states as never)
+    const request = vi.spyOn(running, 'getArtifactStates').mockResolvedValue(states as never)
     const { deps } = createOptions()
 
     expect(await deps.runs.getArtifactStates('talk.mp3')).toBe(states)
-    expect(asked).toHaveBeenCalledWith('talk.mp3')
+    expect(request).toHaveBeenCalledWith('talk.mp3')
   })
 
   it.each(['createArtifact', 'fetchArtifact', 'correctArtifact'] as const)(
     'answers %s with what the runner answered, and reads what the file carries again',
     async (run) => {
       const outcome = { able: true }
-      const asked = vi.spyOn(running, run).mockResolvedValue(outcome as never)
+      const request = vi.spyOn(running, run).mockResolvedValue(outcome as never)
       const loaded: string[] = []
       const { deps } = createOptions({ loadArtifactStates: async (path) => void loaded.push(path) })
 
       const ask = deps.runs[run] as (...args: unknown[]) => Promise<unknown>
       expect(await ask('talk.mp3', 'transcript')).toBe(outcome)
-      expect(asked).toHaveBeenCalledWith(
+      expect(request).toHaveBeenCalledWith(
         ...(run === 'createArtifact' ? ['talk.mp3', 'transcript'] : ['talk.mp3']),
       )
       expect(loaded).toStrictEqual(['talk.mp3'])
@@ -185,32 +185,32 @@ describe('the commands reach the window', () => {
 
   it('notifies the recording and the address tabs a transcript went, and reads the file again', async () => {
     vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
-    const told: string[] = []
+    const notified: string[] = []
     const loaded: string[] = []
     const { deps } = createOptions({
       loadArtifactStates: async (path) => void loaded.push(path),
       recorded: {
-        onDelete: (path) => void told.push(`recorded deleted ${path}`),
-        reloadTranscript: (path) => void told.push(`recorded reloaded ${path}`),
+        onDelete: (path) => void notified.push(`recorded deleted ${path}`),
+        reloadTranscript: (path) => void notified.push(`recorded reloaded ${path}`),
       },
-      pointed: { reloadTranscript: (path) => void told.push(`pointed reloaded ${path}`) },
+      pointed: { reloadTranscript: (path) => void notified.push(`pointed reloaded ${path}`) },
     })
 
     expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
-    expect(told).toStrictEqual(['recorded deleted talk.mp3', 'pointed reloaded talk.mp3'])
+    expect(notified).toStrictEqual(['recorded deleted talk.mp3', 'pointed reloaded talk.mp3'])
     expect(loaded).toStrictEqual(['talk.mp3'])
   })
 
   it('notifies no tab of a transcript that did not go', async () => {
     vi.spyOn(running, 'deleteTranscript').mockResolvedValue(false)
-    const told: string[] = []
+    const notified: string[] = []
     const { deps } = createOptions({
-      recorded: { onDelete: (path) => void told.push(path) },
-      pointed: { onDelete: (path) => void told.push(path) },
+      recorded: { onDelete: (path) => void notified.push(path) },
+      pointed: { onDelete: (path) => void notified.push(path) },
     })
 
     expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(false)
-    expect(told).toStrictEqual([])
+    expect(notified).toStrictEqual([])
   })
 
   it('deletes a transcript where no tab is listening', async () => {
@@ -286,19 +286,19 @@ describe('the commands reach the window', () => {
   })
 
   it('passes each choice of a setting to the setting it is for', async () => {
-    const chosen: string[] = []
+    const selected: string[] = []
     const { deps } = createOptions({
-      oneName: { choose: async (item) => void chosen.push(`sync ${item}`) },
+      oneName: { choose: async (item) => void selected.push(`sync ${item}`) },
       nesting: {
-        choose: async (item) => void chosen.push(`nesting ${item}`),
-        chooseCount: async (item) => void chosen.push(`headings ${item}`),
+        choose: async (item) => void selected.push(`nesting ${item}`),
+        chooseCount: async (item) => void selected.push(`headings ${item}`),
       },
     })
 
     await deps.settings.chooseSync('on')
     await deps.settings.chooseNesting('off')
     await deps.settings.chooseHeadings('6')
-    expect(chosen).toStrictEqual(['sync on', 'nesting off', 'headings 6'])
+    expect(selected).toStrictEqual(['sync on', 'nesting off', 'headings 6'])
   })
 
   it('copies nothing where there is no clipboard', () => {
@@ -324,34 +324,34 @@ describe('the commands reach the window', () => {
   })
 
   it('asks for the indexing models at the setting that names one', async () => {
-    const asked: (readonly string[])[] = []
+    const request: (readonly string[])[] = []
     const { deps } = createOptions({
       rest: {
         writeSettings: async () => {},
         getModelsAt: (at) => {
-          asked.push(at)
+          request.push(at)
           return []
         },
       },
     })
 
     await deps.settings.chooseIndexingModel('e5-small-int8')
-    expect(asked).toStrictEqual([['indexing', 'model', 'name']])
+    expect(request).toStrictEqual([['indexing', 'model', 'name']])
   })
 
   it('writes the model of the name chosen, among several', async () => {
-    const written: unknown[] = []
+    const content: unknown[] = []
     const other = { name: 'bge-small', writes: [{ at: ['bge'], value: '1' }] }
-    const chosen = { name: 'e5-small-int8', writes: [{ at: ['e5'], value: '1' }] }
+    const selected = { name: 'e5-small-int8', writes: [{ at: ['e5'], value: '1' }] }
     const { deps } = createOptions({
       rest: {
-        writeSettings: async (w) => void written.push(...w),
-        getModelsAt: () => [other, chosen] as never,
+        writeSettings: async (w) => void content.push(...w),
+        getModelsAt: () => [other, selected] as never,
       },
     })
 
     await deps.settings.chooseIndexingModel('e5-small-int8')
-    expect(written).toStrictEqual(chosen.writes)
+    expect(content).toStrictEqual(selected.writes)
   })
 
   it('writes the name chosen where the settings list no models', async () => {

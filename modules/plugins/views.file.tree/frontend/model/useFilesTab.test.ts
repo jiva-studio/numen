@@ -20,7 +20,7 @@ const file = (path: string, over: Partial<Entry> = {}): Entry => ({
 const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
 
 /** A vault of three folders, a note, a book and a picture. */
-const held: Record<string, readonly Entry[]> = {
+const target: Record<string, readonly Entry[]> = {
   [ROOT]: [
     folder('physics'),
     folder('notes'),
@@ -47,74 +47,74 @@ const windowCommands = {
 }
 
 /** A moment for whatever a gesture asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** A tab of that vault, writing down everything it asked of the window. */
 const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
-  const done: string[] = []
-  const asked: string[] = []
+  const isDone: string[] = []
+  const request: string[] = []
   const sources: string[] = []
-  const vault: Record<string, readonly Entry[]> = { ...held, ...extra }
+  const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
   const list = useFileTree({
     list: async (at: string) => {
-      asked.push(at)
+      request.push(at)
       return vault[at] ?? []
     },
   })
   const gestures = useFilesTab(list, {
     ...windowCommands,
-    openEntry: (entry) => void done.push(`lands file ${entry.path}`),
+    openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
     runCommand: (id, paths, target) => {
-      done.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
+      isDone.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
       sources.push(target.source)
     },
-    movePath: async (from, to) => void done.push(`moves ${from} ${to}`),
-    setDraggedPaths: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
+    movePath: async (from, to) => void isDone.push(`moves ${from} ${to}`),
+    setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
     createFolder: async (path) => {
-      done.push(`makes ${path}`)
+      isDone.push(`makes ${path}`)
       if (fails) return
       const into = getFolderPath(path)
       vault[into] = [...(vault[into] ?? []), folder(path)]
       vault[path] = []
     },
     createNote: async (folderPath) => {
-      const made = folderPath === ROOT ? 'Untitled note.md' : `${folderPath}/Untitled note.md`
-      done.push(`writes ${made}`)
+      const createdItem = folderPath === ROOT ? 'Untitled note.md' : `${folderPath}/Untitled note.md`
+      isDone.push(`writes ${createdItem}`)
       if (fails) return ''
-      return made
+      return createdItem
     },
     createDeck: async (folderPath, name) => {
-      done.push(`decks ${folderPath === ROOT ? '/' : folderPath} ${name}`)
+      isDone.push(`decks ${folderPath === ROOT ? '/' : folderPath} ${name}`)
       if (fails) return ''
-      const made = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
-      vault[folderPath] = [...(vault[folderPath] ?? []), file(made, { type: 'deck' })]
-      return made
+      const createdItem = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
+      vault[folderPath] = [...(vault[folderPath] ?? []), file(createdItem, { type: 'deck' })]
+      return createdItem
     },
     createStencil: async (folderPath, name) => {
-      done.push(`stencils ${folderPath === ROOT ? '/' : folderPath} ${name}`)
+      isDone.push(`stencils ${folderPath === ROOT ? '/' : folderPath} ${name}`)
       if (fails) return ''
-      const made = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
-      vault[folderPath] = [...(vault[folderPath] ?? []), file(made, { type: 'stencil' })]
-      return made
+      const createdItem = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
+      vault[folderPath] = [...(vault[folderPath] ?? []), file(createdItem, { type: 'stencil' })]
+      return createdItem
     },
     createPreset: async (folderPath, name) => {
-      done.push(`presets ${folderPath === ROOT ? '/' : folderPath} ${name}`)
+      isDone.push(`presets ${folderPath === ROOT ? '/' : folderPath} ${name}`)
       if (fails) return ''
-      const made = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
-      vault[folderPath] = [...(vault[folderPath] ?? []), file(made, { type: 'preset' })]
-      return made
+      const createdItem = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
+      vault[folderPath] = [...(vault[folderPath] ?? []), file(createdItem, { type: 'preset' })]
+      return createdItem
     },
     importUrl: async (folderPath, url) => {
-      done.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${url}`)
+      isDone.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${url}`)
       return fails ? '' : 'made.url'
     },
     importUrls: async (folderPath, urls) => {
-      done.push(`imports-multi ${folderPath === ROOT ? '/' : folderPath} ${urls.join(' ')}`)
+      isDone.push(`imports-multi ${folderPath === ROOT ? '/' : folderPath} ${urls.join(' ')}`)
       return fails ? [] : urls.map(() => 'made.url')
     },
-    showError: (text) => void done.push(`says ${text}`),
+    showError: (text) => void isDone.push(`says ${text}`),
   })
-  return { done, list, one: gestures, asked, sources }
+  return { done: isDone, list, one: gestures, asked: request, sources }
 }
 
 describe('a row activated', () => {
@@ -299,11 +299,11 @@ describe('rows release', () => {
   })
 
   it('read the folders again once, when all of them are done', async () => {
-    const asked: string[] = []
+    const request: string[] = []
     const list = useFileTree({
       list: async (at: string) => {
-        asked.push(at)
-        return held[at] ?? []
+        request.push(at)
+        return target[at] ?? []
       },
     })
     const one = useFilesTab(list, {
@@ -322,11 +322,11 @@ describe('rows release', () => {
       showError: () => {},
     })
     await list.openFolder(ROOT)
-    asked.length = 0
+    request.length = 0
 
     await one.move(['Entropy.md', 'Heat.pdf'], { into: 'notes' })
 
-    expect(asked.filter((at) => at === ROOT)).toStrictEqual([ROOT])
+    expect(request.filter((at) => at === ROOT)).toStrictEqual([ROOT])
   })
 
   it('leave behind the one whose name that folder holds, and say which', async () => {
@@ -781,7 +781,7 @@ describe('a folder closed in the tab', () => {
 
 describe('a name given to a row, in more detail', () => {
   it('is taken whole for a folder whose name carries a dot', async () => {
-    const { done, list, one } = tab(false, { [ROOT]: [...held[ROOT]!, folder('v1.0')] })
+    const { done, list, one } = tab(false, { [ROOT]: [...target[ROOT]!, folder('v1.0')] })
     await list.openFolder(ROOT)
 
     await one.rename('v1.0', 'v2')

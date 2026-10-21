@@ -65,7 +65,7 @@ const USE_MODELS = (defaultName: string): readonly Model[] =>
   }))
 
 const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude') => {
-  const written: SettingEdit[] = []
+  const content: SettingEdit[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => {
@@ -75,7 +75,7 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
       return []
     },
     write: (edits) => {
-      written.push(...edits)
+      content.push(...edits)
     },
     themes: ref([]),
     applied: ref('default'),
@@ -100,7 +100,7 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(AgentSettingsSection, { props: { state } })
-  return { wrapper, written }
+  return { wrapper, written: content }
 }
 
 describe('AgentSettingsSection', () => {

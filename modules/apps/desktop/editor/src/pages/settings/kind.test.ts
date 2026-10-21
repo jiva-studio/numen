@@ -50,9 +50,9 @@ const installation = (): Installation =>
 
 describe('the settings tab', () => {
   it('holds the installation the window already keeps', () => {
-    const held = installation()
-    const settings = useSettingsTab(window_().handle, held)
-    expect(settings.state.installation).toBe(held)
+    const target = installation()
+    const settings = useSettingsTab(window_().handle, target)
+    expect(settings.state.installation).toBe(target)
     expect(settings.kind.open('', 'tab')).toBe(settings.state)
   })
 

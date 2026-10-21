@@ -30,7 +30,7 @@ export const counted: Record<Units, TallyUnit> = {
 /**
  * How a search is asked, in the words the window uses.
  */
-const asked: Record<Modes, SearchMode | null> = {
+const query: Record<Modes, SearchMode | null> = {
   [Modes.UNSPECIFIED]: null,
   [Modes.HYBRID]: 'hybrid',
   [Modes.WORDS]: 'words',
@@ -39,7 +39,7 @@ const asked: Record<Modes, SearchMode | null> = {
 }
 
 /** How a search is asked, as the schema names it. */
-export const modes = getNames<SearchMode, Modes>(asked)
+export const modes = getNames<SearchMode, Modes>(query)
 
 /** What a model's files are on this machine, in the words the window uses. */
 export const fetched: Record<Presences, Presence> = {

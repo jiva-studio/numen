@@ -15,27 +15,27 @@ const getCommand = (id: string): Command => {
   return found
 }
 
-const at = (source: Source, made: ArtifactStates, isReady = true): CommandTarget => ({
+const at = (source: Source, createdItem: ArtifactStates, isReady = true): CommandTarget => ({
   tab: 'tab-1',
   kind: 'file',
   path: 'talk.md',
   title: 'Talk',
   file: 'talk.md',
   source,
-  made,
+  made: createdItem,
   vault: { id: 'v1', name: 'Zoo' },
   isReady,
 })
 
 /** A build that can do only the one run named. */
 const only = (run: string): RunSupport => ({
-  canRun: (asked) => asked === run,
+  canRun: (request) => request === run,
   cannotRun: () => {},
 })
 
 /** A build that can do every run but the one named. */
 const allBut = (run: string): RunSupport => ({
-  canRun: (asked) => asked !== run,
+  canRun: (request) => request !== run,
   cannotRun: () => {},
 })
 

@@ -34,24 +34,24 @@ const writeSettings = async (
     await settingsService.writeSettings({
       settings: edits.map((one) => ({ at: [...one.at], value: write(one.value) })),
     })
-  } catch (thrown) {
-    return formatErrorMessage(thrown)
+  } catch (caughtError) {
+    return formatErrorMessage(caughtError)
   }
   return null
 }
 
 export const settingsCore: SettingsPort = {
   getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
-  setSyncEnabled: (kept) => writeSettings([{ at: SYNCS, value: kept }]),
+  setSyncEnabled: (retained) => writeSettings([{ at: SYNCS, value: retained }]),
   getNestingSettings: async () => {
     const answer = await settingsService.getSettings({})
-    const written = JSON.parse(answer.written)
-    const held = answer.nestedHeadingLimitBounds
+    const content = JSON.parse(answer.written)
+    const target = answer.nestedHeadingLimitBounds
     return {
-      isNesting: getSettingAt(written, NESTING) !== false,
-      headings: getNestedHeadingLimit(getSettingAt(written, HEADINGS)),
-      least: held?.least ?? DEFAULT_HEADINGS,
-      most: held?.most ?? DEFAULT_HEADINGS,
+      isNesting: getSettingAt(content, NESTING) !== false,
+      headings: getNestedHeadingLimit(getSettingAt(content, HEADINGS)),
+      least: target?.least ?? DEFAULT_HEADINGS,
+      most: target?.most ?? DEFAULT_HEADINGS,
     } satisfies NestingSettings
   },
   setNestingSettings: (isNesting, headings) =>
@@ -123,10 +123,10 @@ export const settingsCore: SettingsPort = {
     const answer = await settingsService.readSettingsFile({})
     return { written: answer.written, path: answer.path }
   },
-  saveSettingsFile: async (text, seen) => {
+  saveSettingsFile: async (text, observed) => {
     const answer = await settingsService.writeSettingsFile({
       written: text,
-      ...(seen === null ? {} : { baseline: seen }),
+      ...(observed === null ? {} : { baseline: observed }),
     })
     return { isChanged: isStaleAnswer(answer) }
   },

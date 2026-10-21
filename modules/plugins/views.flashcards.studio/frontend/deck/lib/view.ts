@@ -59,8 +59,8 @@ export const areDecksEqual = (one: BufferDeck, other: BufferDeck): boolean =>
 /**
  * The deck on screen under the headings the file now carries.
  */
-export const applyReadHeadings = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
-  const getHeading = (at: number): string => read.cards[at]?.heading ?? ''
+export const applyReadHeadings = (screen: BufferDeck, readItem: BufferDeck): BufferDeck => {
+  const getHeading = (at: number): string => readItem.cards[at]?.heading ?? ''
   if (screen.cards.every((card, at) => card.heading === getHeading(at))) return screen
   return {
     ...screen,
@@ -71,40 +71,40 @@ export const applyReadHeadings = (screen: BufferDeck, read: BufferDeck): BufferD
 /**
  * A reading of a deck under the identities the window already drew it by.
  */
-export const applyScreenIds = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
+export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): BufferDeck => {
   // Stryker disable next-line ConditionalExpression: findIndex for null id yields -1 either way.
   const seat = (deck: BufferDeck, section: string | null): number =>
     section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
 
   const sections =
-    screen.sections.length === read.sections.length
-      ? read.sections.map((section, at) => {
+    screen.sections.length === readItem.sections.length
+      ? readItem.sections.map((section, at) => {
           const was = screen.sections[at]
           return was && was.name === section.name && was.preamble === section.preamble
             ? { ...section, id: was.id }
             : section
         })
-      : read.sections
+      : readItem.sections
 
   // Stryker disable next-line ConditionalExpression: index -1 from seat yields null fallback either way.
   const getSectionId = (section: string | null): string | null =>
-    section === null ? null : (sections[seat(read, section)]?.id ?? null)
+    section === null ? null : (sections[seat(readItem, section)]?.id ?? null)
 
-  const alongside = screen.cards.length === read.cards.length
+  const alongside = screen.cards.length === readItem.cards.length
 
-  const cards = read.cards.map((card, at) => {
+  const cards = readItem.cards.map((card, at) => {
     const withSection = { ...card, section: getSectionId(card.section) }
     const was = screen.cards[at]
     if (!alongside || !was || was.mark !== '' || card.mark === '') return withSection
     const same =
       was.stencilLink === card.stencilLink &&
       was.preamble === card.preamble &&
-      seat(screen, was.section) === seat(read, card.section) &&
+      seat(screen, was.section) === seat(readItem, card.section) &&
       JSON.stringify(was.values) === JSON.stringify(card.values)
     return same ? { ...withSection, id: was.id } : withSection
   })
 
-  return { ...read, sections, cards }
+  return { ...readItem, sections, cards }
 }
 
 /**

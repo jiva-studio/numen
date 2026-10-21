@@ -36,8 +36,8 @@ export function createPluginRetry(core: RetryDeps, { words, notify, refresh }: R
     try {
       const failure = await core.retryPlugin(pluginId)
       if (failure !== '') notify(`${words.failedAgain} ${failure}`, 'caution')
-    } catch (thrown) {
-      notify(`${words.error} ${formatErrorMessage(thrown)}`, 'error')
+    } catch (caughtError) {
+      notify(`${words.error} ${formatErrorMessage(caughtError)}`, 'error')
     }
     await refresh()
   }

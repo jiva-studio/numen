@@ -46,7 +46,7 @@ const open = (models: readonly Model[] = [], settings: Record<string, string> = 
   })
 
 /** The agents the tab offers, each once, in the order offered. */
-const offered = (state: ReturnType<typeof open>) => [
+const proposed = (state: ReturnType<typeof open>) => [
   ...new Set(state.modelOptions.value.map((one) => one.agentId)),
 ]
 
@@ -122,13 +122,13 @@ describe('the agents an agent tab offers', () => {
       model(['agent', 'omega', 'model'], 'omega-one'),
     ])
 
-    expect(offered(state)).toEqual(['zeta'])
+    expect(proposed(state)).toEqual(['zeta'])
   })
 
   it('are none where nothing is listed under agent/use', () => {
     const state = open([model(['agent', 'zeta', 'model'], 'zeta-small')])
 
-    expect(offered(state)).toEqual([])
+    expect(proposed(state)).toEqual([])
   })
 
   it('leave out a setting listed under another name', () => {

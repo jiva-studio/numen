@@ -62,11 +62,11 @@ describe('a writer under a name', () => {
     // A stream that is down says so every second, and a card that arrived
     // again is a card read out again.
     const log = createMessageLog()
-    const worn = log.getWriter('worn')
+    const aged = log.getWriter('worn')
 
-    worn('the themes stopped arriving', 'state')
+    aged('the themes stopped arriving', 'state')
     const first = log.messages.value[0]?.id
-    worn('the themes stopped arriving', 'state')
+    aged('the themes stopped arriving', 'state')
 
     expect(log.messages.value[0]?.id).toBe(first)
   })

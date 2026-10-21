@@ -12,16 +12,16 @@ import { createHost } from '../fixtures'
 import { useAgentConversation } from '../model/useAgentConversation'
 
 /** An agent tab opened by the kind over a talk that answers with the transcript so far. */
-const createTab = (said: readonly Turn[]) =>
+const createTab = (turn: readonly Turn[]) =>
   defineComponent({
     name: 'AgentKindTab',
     setup() {
-      const asked: string[] = []
+      const request: string[] = []
       const { kind } = createAgentKind(createHost().host, (deps) => {
         const conversation: Conversation = {
-          turns: ref([...said]),
+          turns: ref([...turn]),
           isWorking: ref(false),
-          ask: async (text) => void asked.push(text),
+          ask: async (text) => void request.push(text),
           getSourceLocation: () => null,
           stop: () => {},
           finish: () => {},

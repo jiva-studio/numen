@@ -107,10 +107,10 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
       if (type !== 'deck') return { ok: true, kind: PRESET, at }
       const answer = await core.getDeckPreset(at)
       if (!answer.ok) return { ok: false, text: ERRORS[answer.error], severity: 'error' }
-      const read = answer.value.preset
-      if (!read?.path) return { ok: false, text: words.noPreset, severity: 'caution' }
-      if (read.title) titles.set(read.path, read.title)
-      return { ok: true, kind: PRESET, at: read.path }
+      const readItem = answer.value.preset
+      if (!readItem?.path) return { ok: false, text: words.noPreset, severity: 'caution' }
+      if (readItem.title) titles.set(readItem.path, readItem.title)
+      return { ok: true, kind: PRESET, at: readItem.path }
     },
   }
 }

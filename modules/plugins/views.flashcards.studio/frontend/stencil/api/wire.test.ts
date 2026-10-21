@@ -117,8 +117,8 @@ describe('writing a stencil', () => {
     cards.writeStencil.mockResolvedValue(asValue({ at: '56 78 Word.md' }))
     const { wire } = createWire(cards)
 
-    const read = await wire.read('Word.md')
-    const body = read.ok ? read.value.body : ''
+    const readItem = await wire.read('Word.md')
+    const body = readItem.ok ? readItem.value.body : ''
     const answer = await wire.write('Word.md', body, { prose: body, fingerprint: '12 34 Word.md' })
 
     expect(cards.writeStencil).toHaveBeenCalledWith(

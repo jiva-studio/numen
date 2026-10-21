@@ -21,7 +21,7 @@ const answer = (path: string): Neighbourhood => ({
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
 const waitForever = () => new Promise<never>(vi.fn())
 
-const settled = {
+const resolved = {
   id: '01JQVAULTPHYSICS0000000000',
   name: 'Vault',
   path: '/vaults/Physics',
@@ -32,18 +32,18 @@ const settled = {
 
 /** A core that answers whatever it is told to, and records what it was asked. */
 function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
-  const asked: string[] = []
+  const request: string[] = []
   return {
-    asked,
+    asked: request,
     neighbourhood: async (path) => {
-      asked.push(path)
+      request.push(path)
       return answer(path)
     },
     headings: async () => new Map(),
     fileKinds: async () => new Map(),
     resolve: async () => new Map(),
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
-    state: async () => settled,
+    state: async () => resolved,
     agentUnreachable: async () => '',
     watchVaultChanges: async function* () {},
     watchFocus: async function* () {},
@@ -209,10 +209,10 @@ describe('the stream of changes', () => {
   })
 
   it('leaves where the vault opens alone when another note moved', async () => {
-    let asked = 0
+    let request = 0
     const core = fake({
       getInitialOpenPath: async () => {
-        asked++
+        request++
         return { path: 'Opening.md' }
       },
       watchVaultChanges: async function* () {
@@ -225,7 +225,7 @@ describe('the stream of changes', () => {
     await one.window.follow()
 
     expect(one.window.opening.value).toBe('Opening.md')
-    expect(asked).toBe(1)
+    expect(request).toBe(1)
   })
 })
 
@@ -237,18 +237,18 @@ describe('the stream of changes', () => {
 describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
   const createWindow = (core: Core) => {
-    const drawn: string[] = []
+    const rendered: string[] = []
     const window = useWindowDisplay(core, {
       wait: vi.fn(() => Promise.resolve()),
       onVaultChanged: (paths) => {
-        drawn.push(`changed ${paths.join(' ')}`)
+        rendered.push(`changed ${paths.join(' ')}`)
         return Promise.resolve()
       },
       reload: () => {
-        drawn.push('reloaded')
+        rendered.push('reloaded')
       },
     })
-    return { window, drawn }
+    return { window, drawn: rendered }
   }
 
   /**
@@ -275,7 +275,7 @@ describe('another vault under this window', () => {
     /** The folder the vault stands at, which the swap moves between reads. */
     const folders = ['/vaults/Physics', '/vaults/Heat']
     const one = createWindow(
-      createReloadingCore(async () => ({ ...settled, path: folders.shift() ?? '' })),
+      createReloadingCore(async () => ({ ...resolved, path: folders.shift() ?? '' })),
     )
 
     await one.window.start()
@@ -297,7 +297,7 @@ describe('another vault under this window', () => {
     const folders = ['/vaults/Physics']
     const one = createWindow(
       createReloadingCore(
-        async () => ({ ...settled, path: folders.shift() ?? '/vaults/Heat' }),
+        async () => ({ ...resolved, path: folders.shift() ?? '/vaults/Heat' }),
         ['Heat.md'],
       ),
     )
@@ -319,7 +319,7 @@ describe('another vault under this window', () => {
       createReloadingCore(async () => {
         reads += 1
         if (reads > 1) throw new Error('connection lost')
-        return settled
+        return resolved
       }),
     )
 
@@ -333,7 +333,7 @@ describe('another vault under this window', () => {
   })
 
   it('reads the vault again where the reload remains where it stood', async () => {
-    const one = createWindow(createReloadingCore(async () => settled))
+    const one = createWindow(createReloadingCore(async () => resolved))
 
     await one.window.start()
     await nap()
@@ -426,7 +426,7 @@ describe('a vault that could not be read', () => {
     const core = fake({
       getInitialOpenPath: async () => null,
       state: async () => ({
-        ...settled,
+        ...resolved,
         scan: { isReady: false, error: 'permission denied', unwatchedPath: '' },
       }),
     })
@@ -457,8 +457,8 @@ describe('a vault that is not being followed', () => {
   it('says so and not looking up to date', async () => {
     const core = fake({
       state: async () => ({
-        ...settled,
-        scan: { ...settled.scan, unwatchedPath: 'too many watches' },
+        ...resolved,
+        scan: { ...resolved.scan, unwatchedPath: 'too many watches' },
       }),
     })
     const window = useWindowDisplay(core, { wait: async () => window.close() })
@@ -474,7 +474,7 @@ describe('chunks with nothing to embed them', () => {
   it('says so, since the vault is searched by its words from now on', async () => {
     const core = fake({
       state: async () => ({
-        ...settled,
+        ...resolved,
         coverage: { chunkCount: 4823n, embeddedCount: 0n, isEmbedding: false },
       }),
     })
@@ -580,8 +580,8 @@ describe('what the application is doing', () => {
       state: async () => {
         asks++
         return {
-          ...settled,
-          coverage: { ...settled.coverage, chunkCount: BigInt(asks * 1000) },
+          ...resolved,
+          coverage: { ...resolved.coverage, chunkCount: BigInt(asks * 1000) },
         }
       },
       watchTasks: async function* () {
@@ -649,7 +649,7 @@ describe('the first note shown', () => {
       text: 'Leaf',
       isComplete: false,
     }
-    const said: unknown[] = []
+    const response: unknown[] = []
     const core = fake({
       watchEdits: async function* () {
         yield edit
@@ -658,7 +658,7 @@ describe('the first note shown', () => {
     const window = useWindowDisplay(core, {
       wait: waitForever,
       reportChange: (one) => {
-        said.push(one)
+        response.push(one)
       },
     })
 
@@ -666,7 +666,7 @@ describe('the first note shown', () => {
     await nap()
     window.close()
 
-    expect(said).toStrictEqual([edit])
+    expect(response).toStrictEqual([edit])
   })
 
   it('is not shown by a window closed while the vault was being requested', async () => {
@@ -694,7 +694,7 @@ describe('the first note shown', () => {
     const changed: unknown[] = []
     const core = fake({
       getInitialOpenPath: async () => null,
-      state: async () => ({ ...settled, scan: { ...settled.scan, isReady: false } }),
+      state: async () => ({ ...resolved, scan: { ...resolved.scan, isReady: false } }),
     })
     const waits: number[] = []
     const window = useWindowDisplay(core, {
@@ -762,7 +762,7 @@ describe('a vault still being read', () => {
         getInitialOpenPath: async () => null,
         state: async () => {
           reads += 1
-          return { ...settled, scan: { ...settled.scan, isReady: false } }
+          return { ...resolved, scan: { ...resolved.scan, isReady: false } }
         },
       }),
     )

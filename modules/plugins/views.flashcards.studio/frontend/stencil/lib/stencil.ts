@@ -37,19 +37,19 @@ export const NO_STENCIL: BufferStencil = { fields: [], preamble: '', faces: [], 
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
 export const createBufferStencil = (
-  read: VaultStencil,
+  readItem: VaultStencil,
   generateFaceId: IdMaker = generateId,
 ): BufferStencil => ({
-  fields: read.fields,
-  preamble: read.preamble,
-  faces: read.faces.map((face) => ({
+  fields: readItem.fields,
+  preamble: readItem.preamble,
+  faces: readItem.faces.map((face) => ({
     id: generateFaceId(),
     name: face.name,
     preamble: face.preamble,
     front: face.front,
     back: face.back,
   })),
-  tail: read.tail,
+  tail: readItem.tail,
 })
 
 /**

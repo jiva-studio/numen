@@ -105,7 +105,7 @@ const window = (
     isUndeletable?: boolean
   } = {},
 ) => {
-  const done: string[] = []
+  const isDone: string[] = []
   const notices: string[] = []
   /** The voice each sentence was said in, one to a sentence. */
   const tones: string[] = []
@@ -118,69 +118,69 @@ const window = (
   const on: CommandDeps = {
     files: {
       createNote: async (title, from, relation) => {
-        done.push(`createNote ${title} ${from || '—'} ${relation ?? '—'}`)
+        isDone.push(`createNote ${title} ${from || '—'} ${relation ?? '—'}`)
         return answers.wasMade === false ? null : { path: `${title}.md`, title }
       },
       rename: async (path, title) => {
-        done.push(`rename ${path} ${title}`)
+        isDone.push(`rename ${path} ${title}`)
         return answers.renamed ?? createRenameResult()
       },
       remove: async (path, isPermanent) => {
-        done.push(`remove ${path} ${isPermanent}`)
+        isDone.push(`remove ${path} ${isPermanent}`)
         return answers.removed ?? createRemoveResult()
       },
       move: async (from, to) => {
-        done.push(`move ${from} ${to}`)
+        isDone.push(`move ${from} ${to}`)
         return answers.movement ?? { ok: true, value: null }
       },
       createFolder: async (path) => {
-        done.push(`createFolder ${path}`)
+        isDone.push(`createFolder ${path}`)
         return answers.folderError ?? null
       },
     },
     runs: {
       getArtifactStates: async (path) => {
-        done.push(`carries ${path}`)
+        isDone.push(`carries ${path}`)
         return answers.carries ?? {}
       },
       correctArtifact: async (path) => {
-        done.push(`corrects ${path}`)
+        isDone.push(`corrects ${path}`)
         return answers.outcome ?? outcome('transcript.corrected', 'running')
       },
       fetchArtifact: async (path) => {
-        done.push(`fetches ${path}`)
+        isDone.push(`fetches ${path}`)
         return answers.outcome ?? outcome('transcript', 'running')
       },
       createArtifact: async (path, of) => {
-        done.push(`makes ${of} ${path}`)
+        isDone.push(`makes ${of} ${path}`)
         return answers.outcome ?? outcome(of, 'running')
       },
       deleteTranscript: async (path: string) => {
-        done.push(`deletes the text of ${path}`)
+        isDone.push(`deletes the text of ${path}`)
         if (answers.deleteError)
           throw new ConnectError(answers.deleteError, Code.FailedPrecondition)
         return answers.isUndeletable !== true
       },
       deleteCopy: async (path: string) => {
-        done.push(`deletes the copy of ${path}`)
+        isDone.push(`deletes the copy of ${path}`)
         return answers.isUndeletable !== true
       },
     },
     makers: {
       createDeck: async (folder, name) => {
-        done.push(`decks ${folder || '—'} ${name}`)
+        isDone.push(`decks ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
       },
       createStencil: async (folder, name) => {
-        done.push(`stencils ${folder || '—'} ${name}`)
+        isDone.push(`stencils ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
       },
       createPreset: async (folder, name) => {
-        done.push(`presets ${folder || '—'} ${name}`)
+        isDone.push(`presets ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
       },
       createUrl: async (folder, address) => {
-        done.push(`imports ${folder || '—'} ${address}`)
+        isDone.push(`imports ${folder || '—'} ${address}`)
         return folder ? `${folder}/note.md` : 'note.md'
       },
     },
@@ -188,63 +188,63 @@ const window = (
       getTabAt: (path) => (path === at ? 'held' : null),
       getPath: (id) => (id === 'held' ? at : id),
       asking: () => answers.isAsking === true,
-      flushPending: async (id) => void done.push(`flushPending ${id}`),
-      close: (id) => void done.push(`close ${id}`),
-      openFile: (path, title, showing) => void done.push(`openFile ${path} ${title} ${showing}`),
+      flushPending: async (id) => void isDone.push(`flushPending ${id}`),
+      close: (id) => void isDone.push(`close ${id}`),
+      openFile: (path, title, showing) => void isDone.push(`openFile ${path} ${title} ${showing}`),
       openNewFile: (path, title, options) => {
         const type = typeof options === 'string' ? options : options.type
         const showing = typeof options === 'object' ? options.where : undefined
-        done.push(`openNewFile ${type} ${path} ${title} ${showing}`)
+        isDone.push(`openNewFile ${type} ${path} ${title} ${showing}`)
       },
     },
     vaults: {
       list: async () => ({ vaults: [createVault('physics', 'Physics')], showing: 'physics' }),
       choose: async (title) => {
-        done.push(`choose ${title}`)
+        isDone.push(`choose ${title}`)
         return answers.chose ?? '/vaults/Heat'
       },
       add: async (path, name) => {
-        done.push(`add ${path} ${name || '—'}`)
+        isDone.push(`add ${path} ${name || '—'}`)
         return answers.added ?? asValue(createVault('heat', 'Heat'))
       },
       rename: async (id, name) => {
-        done.push(`renames vault ${id} ${name}`)
+        isDone.push(`renames vault ${id} ${name}`)
         return answers.added ?? asValue(createVault(id, name))
       },
       remove: async (id, trash) => {
-        done.push(trash ? `erases ${id}` : `removes ${id}`)
+        isDone.push(trash ? `erases ${id}` : `removes ${id}`)
         return turnedDown
       },
       open: async (id) => {
-        done.push(`opens vault ${id}`)
+        isDone.push(`opens vault ${id}`)
         return turnedDown
       },
-      setVaultName: (vault: VaultRef) => void done.push(`calls ${vault.id} ${vault.name}`),
-      reload: () => void done.push('reloads'),
+      setVaultName: (vault: VaultRef) => void isDone.push(`calls ${vault.id} ${vault.name}`),
+      reload: () => void isDone.push('reloads'),
     },
     goes: {
-      revealPath: (path) => void done.push(`revealPath ${path}`),
-      travel: async (path) => void done.push(`travel ${path}`),
-      leave: async (from, to) => void done.push(`leave ${from} ${to}`),
+      revealPath: (path) => void isDone.push(`revealPath ${path}`),
+      travel: async (path) => void isDone.push(`travel ${path}`),
+      leave: async (from, to) => void isDone.push(`leave ${from} ${to}`),
       getOpeningNote: () => 'Root.md',
-      openTab: (kind) => void done.push(`openTab ${kind}`),
-      openPreset: async (path) => void done.push(`preset ${path}`),
-      closeTab: (tab) => void done.push(`closeTab ${tab}`),
-      ask: (text) => void done.push(`ask ${text}`),
-      search: () => void done.push('search'),
+      openTab: (kind) => void isDone.push(`openTab ${kind}`),
+      openPreset: async (path) => void isDone.push(`preset ${path}`),
+      closeTab: (tab) => void isDone.push(`closeTab ${tab}`),
+      ask: (text) => void isDone.push(`ask ${text}`),
+      search: () => void isDone.push('search'),
     },
     settings: {
-      chooseAppearance: async (chosen) => void done.push(`appearance ${chosen}`),
-      chooseSync: async (chosen) => void done.push(`syncing ${chosen}`),
-      chooseNesting: async (chosen) => void done.push(`nesting ${chosen}`),
-      chooseHeadings: async (chosen) => void done.push(`headings ${chosen}`),
-      choosePerformance: async (chosen) => void done.push(`performance ${chosen}`),
-      chooseIndexingModel: async (chosen) => void done.push(`indexingModel ${chosen}`),
-      choosePluginSetting: async (pluginId, key, chosen) =>
-        void done.push(`plugin ${pluginId} ${key} ${chosen}`),
+      chooseAppearance: async (selected) => void isDone.push(`appearance ${selected}`),
+      chooseSync: async (selected) => void isDone.push(`syncing ${selected}`),
+      chooseNesting: async (selected) => void isDone.push(`nesting ${selected}`),
+      chooseHeadings: async (selected) => void isDone.push(`headings ${selected}`),
+      choosePerformance: async (selected) => void isDone.push(`performance ${selected}`),
+      chooseIndexingModel: async (selected) => void isDone.push(`indexingModel ${selected}`),
+      choosePluginSetting: async (pluginId, key, selected) =>
+        void isDone.push(`plugin ${pluginId} ${key} ${selected}`),
     },
     runSupport: runs,
-    copyPath: (path) => void done.push(`copies ${path}`),
+    copyPath: (path) => void isDone.push(`copies ${path}`),
     writeMessage: (text, kind) => {
       calls.push([text, kind])
       if (!text) return
@@ -252,7 +252,7 @@ const window = (
       tones.push(kind ?? '')
     },
   }
-  return { on, done, notices, tones, calls, runs }
+  return { on, done: isDone, notices, tones, calls, runs }
 }
 
 /** One command carried out over the note in front. */
@@ -434,24 +434,24 @@ describe('an artifact requested for over a file', () => {
   // Every state carries a sentence, so the person is told one whatever
   // happened.
   it('says what it now remains at, in the window’s own words', async () => {
-    for (const made of REACHED) {
-      const { one, invocation } = createArtifactRun(made)
+    for (const createdItem of REACHED) {
+      const { one, invocation } = createArtifactRun(createdItem)
 
       await carry(invocation, one.on)
 
-      expect(one.notices, made).toStrictEqual([words.made.transcript[made]])
+      expect(one.notices, createdItem).toStrictEqual([words.made.transcript[createdItem]])
     }
   })
 
   // Only a run under way is a report. Everything else is an error: the person
   // asked for work, and none is being done.
   it('says a run under way as a report and the rest as errors', async () => {
-    for (const made of REACHED) {
-      const { one, invocation } = createArtifactRun(made)
+    for (const createdItem of REACHED) {
+      const { one, invocation } = createArtifactRun(createdItem)
 
       await carry(invocation, one.on)
 
-      expect(one.tones, made).toStrictEqual([REPORTED.includes(made) ? 'report' : 'error'])
+      expect(one.tones, createdItem).toStrictEqual([REPORTED.includes(createdItem) ? 'report' : 'error'])
     }
   })
 
@@ -1135,9 +1135,9 @@ describe('the open files a command reaches', () => {
   })
 
   const createStores = () => {
-    const done: string[] = []
-    const stores = [store('note', 'Ontology.md', done), store('Animals.md', 'Animals.md', done)]
-    return { done, notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }) }
+    const isDone: string[] = []
+    const stores = [store('note', 'Ontology.md', isDone), store('Animals.md', 'Animals.md', isDone)]
+    return { done: isDone, notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }) }
   }
 
   it('is the tab of whichever store remains at the file', () => {
@@ -1171,10 +1171,10 @@ describe('the open files a command reaches', () => {
 
 describe('indexingModel command', () => {
   it('changes the indexing model', async () => {
-    const done: string[] = []
+    const isDone: string[] = []
     const deps = {
       goes: { getOpeningNote: () => '' },
-      settings: { chooseIndexingModel: async (c: string) => void done.push(`indexingModel ${c}`) },
+      settings: { chooseIndexingModel: async (c: string) => void isDone.push(`indexingModel ${c}`) },
       writeMessage: () => {},
     } as unknown as Parameters<typeof runInvocation>[1]
     await runInvocation(
@@ -1193,7 +1193,7 @@ describe('indexingModel command', () => {
       deps,
       words,
     )
-    expect(done).toStrictEqual(['indexingModel e5-small-int8'])
+    expect(isDone).toStrictEqual(['indexingModel e5-small-int8'])
   })
 })
 
@@ -1331,15 +1331,15 @@ describe('what the voice says in which tone', () => {
 
   it('cautions that a move waits on the person, and errors on failure', async () => {
     const waiting = window({ isAsking: true })
-    const taken = window({ movement: { ok: false, error: 'occupied' } })
+    const acquired = window({ movement: { ok: false, error: 'occupied' } })
     const failingWindow = window({ movement: { ok: false, error: 'missing' } })
 
     await carry(createInvocation('move', front(), 'notes/Ontology.md'), waiting.on)
-    await carry(createInvocation('move', front(), 'notes/Ontology.md'), taken.on)
+    await carry(createInvocation('move', front(), 'notes/Ontology.md'), acquired.on)
     await carry(createInvocation('move', front(), 'notes/Ontology.md'), failingWindow.on)
 
     expect(waiting.tones).toStrictEqual(['caution'])
-    expect(taken.tones).toStrictEqual(['error'])
+    expect(acquired.tones).toStrictEqual(['error'])
     expect(failingWindow.notices).toStrictEqual([words.errors.missing])
     expect(failingWindow.tones).toStrictEqual(['error'])
   })
@@ -1353,13 +1353,13 @@ describe('what the voice says in which tone', () => {
   })
 
   it('errors on a folder that is taken, and says what else rejected it', async () => {
-    const taken = window({ folderError: 'occupied' })
+    const acquired = window({ folderError: 'occupied' })
     const failingWindow = window({ folderError: 'unnameable' })
 
-    await carry(createInvocation('createFolder', front(), 'physics/heat'), taken.on)
+    await carry(createInvocation('createFolder', front(), 'physics/heat'), acquired.on)
     await carry(createInvocation('createFolder', front(), 'physics/heat'), failingWindow.on)
 
-    expect(taken.tones).toStrictEqual(['error'])
+    expect(acquired.tones).toStrictEqual(['error'])
     expect(failingWindow.notices).toStrictEqual([words.errors.unnameable])
     expect(failingWindow.tones).toStrictEqual(['error'])
   })

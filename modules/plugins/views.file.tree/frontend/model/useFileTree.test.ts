@@ -38,12 +38,12 @@ const vault = (
     notes: [file('notes/Today.md')],
   },
 ) => {
-  const asked: string[] = []
+  const request: string[] = []
   return {
-    asked,
+    asked: request,
     core: {
       list: async (at: string) => {
-        asked.push(at)
+        request.push(at)
         return folders[at] ?? []
       },
     },
@@ -456,13 +456,13 @@ describe('the refresh of every open folder', () => {
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     await list.openFolder('notes')
-    const kept = list.getEntriesInFolder('physics')
+    const retained = list.getEntriesInFolder('physics')
     one.puts('notes', file('notes/Later.md'))
     isFailing = true
 
     await list.refresh()
 
-    expect(list.getEntriesInFolder('physics')).toBe(kept)
+    expect(list.getEntriesInFolder('physics')).toBe(retained)
     expect(list.getEntriesInFolder('notes')).toHaveLength(2)
     expect(list.errorMessage.value).not.toBe('')
   })
@@ -629,11 +629,11 @@ describe('the folder a change is drawn in', () => {
     const list = useFileTree(core)
     await list.openFolder(ROOT)
     list.selectPaths(['Cover.png'])
-    const chosen = list.selectedPaths.value
+    const selected = list.selectedPaths.value
 
     await list.refreshChanged(['Cover.png'])
 
-    expect(list.selectedPaths.value).toBe(chosen)
+    expect(list.selectedPaths.value).toBe(selected)
   })
 })
 

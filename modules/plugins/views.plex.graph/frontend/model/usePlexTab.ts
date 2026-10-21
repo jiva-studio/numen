@@ -53,9 +53,9 @@ function usePlexPicture(
   let lastDrawnIds: readonly string[] = []
   watch(
     picture,
-    (drawn) => {
+    (rendered) => {
       // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
-      const drawnIds = drawn?.nodes.map((node) => node.id) ?? []
+      const drawnIds = rendered?.nodes.map((node) => node.id) ?? []
       map.retainNodeIds([...drawnIds, ...lastDrawnIds])
       lastDrawnIds = drawnIds
     },
@@ -83,7 +83,7 @@ function usePlexPicture(
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
 
-  const drawn = computed<readonly string[]>(() => {
+  const rendered = computed<readonly string[]>(() => {
     const neighbourhood = view.neighbourhood.value
     if (!neighbourhood) return []
     const paths = [neighbourhood.focus.path]
@@ -91,7 +91,7 @@ function usePlexPicture(
     return paths.filter(Boolean)
   })
 
-  return { picture, empty, dragged, types, getType, drawn }
+  return { picture, empty, dragged, types, getType, drawn: rendered }
 }
 
 function usePlexNodeActions(options: {

@@ -169,8 +169,8 @@ export interface Presets {
   read(path: string): Promise<PresetReadResult>
   list(): Promise<readonly PresetChoice[]>
   createPreset(title: string, folder: string): Promise<MakeResult>
-  scheduleDeck(deck: string, preset: string, seen: string): Promise<PresetWriteResult>
+  scheduleDeck(deck: string, preset: string, observed: string): Promise<PresetWriteResult>
   getDeckPreset(deck: string): Promise<PresetReadResult>
-  write(path: string, settings: Settings, seen: string): Promise<PresetWriteResult>
+  write(path: string, settings: Settings, observed: string): Promise<PresetWriteResult>
   curve(path: string, settings: Settings): Promise<Curve>
 }

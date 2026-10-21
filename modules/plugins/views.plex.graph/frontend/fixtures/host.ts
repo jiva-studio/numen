@@ -17,7 +17,7 @@ export interface HostOptions {
 export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions = {}) {
   const openingPath = ref(opening)
   const isNesting = ref(true)
-  const asked = { opening: [] as string[], headings: [] as (readonly string[])[] }
+  const request = { opening: [] as string[], headings: [] as (readonly string[])[] }
   const recorded = {
     synced: [] as [string, string, string | undefined][],
     opened: [] as [string, OpenFileOptions | undefined][],
@@ -32,7 +32,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     isReady: ref(true),
     openingPath,
     readOpeningPath: async () => {
-      asked.opening.push(openingPath.value)
+      request.opening.push(openingPath.value)
       return openingPath.value
     },
     headingDisplay: { isNesting, count: ref(6) },
@@ -63,7 +63,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       related: [],
     }),
     getHeadings: async (paths) => {
-      asked.headings.push(paths)
+      request.headings.push(paths)
       return new Map()
     },
     findNotes: async () => [],
@@ -85,5 +85,5 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   }
 
   const host: PlexHost = { workspace, notes }
-  return { host, openingPath, isNesting, asked, recorded }
+  return { host, openingPath, isNesting, asked: request, recorded }
 }

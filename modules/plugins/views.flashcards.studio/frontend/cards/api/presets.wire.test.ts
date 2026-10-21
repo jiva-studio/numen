@@ -11,15 +11,15 @@ import { asFailure } from '@numen/wire'
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
 /** What the window asked for, as the transport wrote it out. */
-let asked: Record<string, unknown>[] = []
+let request: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
 const replyWith = (answer: unknown) => {
-  asked = []
+  request = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_url: string, init: { body: Uint8Array }) => {
-      asked.push(JSON.parse(new TextDecoder().decode(init.body)))
+      request.push(JSON.parse(new TextDecoder().decode(init.body)))
       return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
@@ -132,7 +132,7 @@ describe('putting a deck on a preset', () => {
 
     const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
-    expect(asked[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
+    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
     expect(answer.ok && answer.value.at).toBe('12 34 Deck.md')
   })
 
@@ -141,7 +141,7 @@ describe('putting a deck on a preset', () => {
 
     await presets.scheduleDeck('Deck.md', '', '')
 
-    expect(asked[0]?.baseline).toBeUndefined()
+    expect(request[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {
@@ -159,7 +159,7 @@ describe('the preset a deck is scheduled by', () => {
 
     const answer = await presets.getDeckPreset('Deck.md')
     expect(answer.ok ? answer.value.preset?.path : null).toBe('')
-    expect(asked[0]).toEqual({ deck: 'Deck.md' })
+    expect(request[0]).toEqual({ deck: 'Deck.md' })
   })
 })
 
@@ -173,7 +173,7 @@ describe('writing settings into a preset', () => {
       '',
     )
 
-    expect(asked[0]?.settings).toMatchObject({
+    expect(request[0]?.settings).toMatchObject({
       goal: 'GOAL_MINUTES_A_DAY',
       counts: 'BUDGET_UNIT_SHOWS',
       learned: 'RULE_RETENTION',
@@ -240,7 +240,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.read('Daily.md')
 
-    expect(asked[0]).toEqual({ path: 'Daily.md' })
+    expect(request[0]).toEqual({ path: 'Daily.md' })
   })
 
   it('files a new preset by its title in the folder', async () => {
@@ -248,7 +248,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.createPreset('Daily', 'Presets')
 
-    expect(asked[0]).toEqual({ title: 'Daily', path: 'Presets' })
+    expect(request[0]).toEqual({ title: 'Daily', path: 'Presets' })
   })
 
   it('names the deck, the preset and the file the window read when scheduling', async () => {
@@ -256,7 +256,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
-    expect(asked[0]).toMatchObject({ deck: 'Deck.md', preset: 'Daily.md' })
+    expect(request[0]).toMatchObject({ deck: 'Deck.md', preset: 'Daily.md' })
   })
 
   it('sends the path and the settings of a curve it asks for', async () => {
@@ -264,7 +264,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.curve('Daily.md', { ...DEFAULTS, minutesADay: 45 })
 
-    expect(asked[0]).toMatchObject({ path: 'Daily.md', settings: { minutesADay: 45 } })
+    expect(request[0]).toMatchObject({ path: 'Daily.md', settings: { minutesADay: 45 } })
   })
 })
 
@@ -308,7 +308,7 @@ describe('writing into a preset the window read', () => {
 
     await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')
 
-    expect(asked[0]).toMatchObject({
+    expect(request[0]).toMatchObject({
       path: 'Daily.md',
       baseline: { path: 'Daily.md', size: '12', mtime: '34' },
     })
@@ -319,7 +319,7 @@ describe('writing into a preset the window read', () => {
 
     await presets.write('Daily.md', DEFAULTS, '')
 
-    expect(asked[0]?.baseline).toBeUndefined()
+    expect(request[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {

@@ -5,7 +5,7 @@ import { createHost } from './fixtures/host'
 import type { Entry, FilesTabState } from './types'
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const note = (path: string): Entry => ({
   path,

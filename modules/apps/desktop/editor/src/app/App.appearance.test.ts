@@ -56,8 +56,8 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   /** The keyboard still walking, and the keyboard stood still on a row. */
-  const waitUnderHold = () => new Promise((done) => setTimeout(done, 60))
-  const wait = () => new Promise((done) => setTimeout(done, 200))
+  const waitUnderHold = () => new Promise((isDone) => setTimeout(isDone, 60))
+  const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
   /** Every tenth the interface goes between, as a person reads them. */
   const TENTHS = [

@@ -7,20 +7,20 @@
 import type { MessageKind, MessageWriter } from '@/shared/notices/messages'
 
 export function writer() {
-  const told: { text: string; kind: MessageKind }[] = []
-  const write: MessageWriter = (text, kind = 'report') => void told.push({ text, kind })
+  const notified: { text: string; kind: MessageKind }[] = []
+  const write: MessageWriter = (text, kind = 'report') => void notified.push({ text, kind })
   return {
     write,
     /** Everything written through it, each with the kind it was written as. */
-    told,
+    told: notified,
     /** The same, as the words alone, in the order they were written. */
     get said(): readonly string[] {
-      return told.map((one) => one.text)
+      return notified.map((one) => one.text)
     },
     /**
      * The last message given to it. A writer nothing has been written through
      * has none, which is not the same as having written nothing.
      */
-    last: () => told.at(-1)?.text,
+    last: () => notified.at(-1)?.text,
   }
 }

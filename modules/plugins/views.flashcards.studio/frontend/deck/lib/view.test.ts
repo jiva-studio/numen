@@ -36,7 +36,7 @@ const deck = (over: Partial<BufferDeck> = {}): BufferDeck => ({
 })
 
 /** The card just written by the window, and the same card read back with its new mark. */
-const written = (over: Partial<BufferCard> = {}) => ({
+const data = (over: Partial<BufferCard> = {}) => ({
   screen: deck({ cards: [card()] }),
   read: deck({ cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', ...over })] }),
 })
@@ -59,9 +59,9 @@ describe('the deck on screen under the headings the file carries', () => {
 
   it('takes each heading from the card read at the same place', () => {
     const screen = deck({ cards: [card(), card({ id: 'second', heading: 'Alpaca' })] })
-    const read = deck({ cards: [card({ heading: 'about 45"' }), card({ heading: 'Alpaca' })] })
+    const readItem = deck({ cards: [card({ heading: 'about 45"' }), card({ heading: 'Alpaca' })] })
 
-    expect(applyReadHeadings(screen, read).cards.map((one) => one.heading)).toStrictEqual([
+    expect(applyReadHeadings(screen, readItem).cards.map((one) => one.heading)).toStrictEqual([
       'about 45"',
       'Alpaca',
     ])
@@ -69,9 +69,9 @@ describe('the deck on screen under the headings the file carries', () => {
 
   it('gives a card the file does not carry yet an empty heading', () => {
     const screen = deck({ cards: [card(), card({ id: 'second' })] })
-    const read = deck({ cards: [card()] })
+    const readItem = deck({ cards: [card()] })
 
-    expect(applyReadHeadings(screen, read).cards.map((one) => one.heading)).toStrictEqual([
+    expect(applyReadHeadings(screen, readItem).cards.map((one) => one.heading)).toStrictEqual([
       'Llama',
       '',
     ])
@@ -81,38 +81,38 @@ describe('the deck on screen under the headings the file carries', () => {
 describe('a reading under the identities the window drew it by', () => {
   it('keeps the identity of a section read back under the same name and prose', () => {
     const screen = deck({ sections: [section()] })
-    const read = deck({ sections: [section({ id: 'read-section' })] })
+    const readItem = deck({ sections: [section({ id: 'read-section' })] })
 
-    expect(applyScreenIds(screen, read).sections.map((one) => one.id)).toStrictEqual([
+    expect(applyScreenIds(screen, readItem).sections.map((one) => one.id)).toStrictEqual([
       'screen-section',
     ])
   })
 
   it('takes the identity read for a section renamed', () => {
     const screen = deck({ sections: [section()] })
-    const read = deck({ sections: [section({ id: 'read-section', name: 'Birds' })] })
+    const readItem = deck({ sections: [section({ id: 'read-section', name: 'Birds' })] })
 
-    expect(applyScreenIds(screen, read).sections.map((one) => one.id)).toStrictEqual([
+    expect(applyScreenIds(screen, readItem).sections.map((one) => one.id)).toStrictEqual([
       'read-section',
     ])
   })
 
   it('takes the identity read for a section whose prose changed', () => {
     const screen = deck({ sections: [section()] })
-    const read = deck({ sections: [section({ id: 'read-section', preamble: 'warm blood\n' })] })
+    const readItem = deck({ sections: [section({ id: 'read-section', preamble: 'warm blood\n' })] })
 
-    expect(applyScreenIds(screen, read).sections.map((one) => one.id)).toStrictEqual([
+    expect(applyScreenIds(screen, readItem).sections.map((one) => one.id)).toStrictEqual([
       'read-section',
     ])
   })
 
   it('takes every identity read where a section was added', () => {
     const screen = deck({ sections: [section()] })
-    const read = deck({
+    const readItem = deck({
       sections: [section({ id: 'read-1' }), section({ id: 'read-2', name: 'Birds' })],
     })
 
-    expect(applyScreenIds(screen, read).sections.map((one) => one.id)).toStrictEqual([
+    expect(applyScreenIds(screen, readItem).sections.map((one) => one.id)).toStrictEqual([
       'read-1',
       'read-2',
     ])
@@ -120,34 +120,34 @@ describe('a reading under the identities the window drew it by', () => {
 
   it('files each card under the section it was read under, by the identity kept for it', () => {
     const screen = deck({ sections: [section({ id: 's1' }), section({ id: 's2', name: 'Birds' })] })
-    const read = deck({
+    const readItem = deck({
       sections: [section({ id: 'r1' }), section({ id: 'r2', name: 'Birds' })],
       cards: [card({ section: 'r2' }), card({ id: 'loose', section: null })],
     })
 
-    expect(applyScreenIds(screen, read).cards.map((one) => one.section)).toStrictEqual(['s2', null])
+    expect(applyScreenIds(screen, readItem).cards.map((one) => one.section)).toStrictEqual(['s2', null])
   })
 
   it('files a card under no section where the section it names was not read', () => {
-    const read = deck({ sections: [section({ id: 'r1' })], cards: [card({ section: 'ghost' })] })
+    const readItem = deck({ sections: [section({ id: 'r1' })], cards: [card({ section: 'ghost' })] })
 
-    expect(applyScreenIds(deck(), read).cards[0]?.section).toBeNull()
+    expect(applyScreenIds(deck(), readItem).cards[0]?.section).toBeNull()
   })
 
   it('keeps the identity of a card the window wrote, read back under its new mark', () => {
-    const { screen, read } = written()
+    const { screen, read } = data()
 
     expect(applyScreenIds(screen, read).cards[0]?.id).toBe('screen-card')
   })
 
   it('keeps the identity of a card the window wrote into a section', () => {
     const screen = deck({ sections: [section()], cards: [card({ section: 'screen-section' })] })
-    const read = deck({
+    const readItem = deck({
       sections: [section({ id: 'r1' })],
       cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', section: 'r1' })],
     })
 
-    expect(applyScreenIds(screen, read).cards[0]).toMatchObject({
+    expect(applyScreenIds(screen, readItem).cards[0]).toMatchObject({
       id: 'screen-card',
       section: 'screen-section',
     })
@@ -158,25 +158,25 @@ describe('a reading under the identities the window drew it by', () => {
     ['its prose', { preamble: 'a note\n' }],
     ['its values', { values: [{ field: 'Name', text: 'Alpaca' }] }],
   ])('takes the identity read for a card whose %s changed', (_what, over) => {
-    const { screen, read } = written(over)
+    const { screen, read } = data(over)
 
     expect(applyScreenIds(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
   })
 
   it('takes the identity read for a card that moved into a section', () => {
     const screen = deck({ sections: [section(), section({ id: 's2', name: 'Birds' })] })
-    const read = deck({
+    const readItem = deck({
       sections: [section({ id: 'r1' }), section({ id: 'r2', name: 'Birds' })],
       cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', section: 'r2' })],
     })
 
-    expect(applyScreenIds({ ...screen, cards: [card({ section: null })] }, read).cards[0]?.id).toBe(
+    expect(applyScreenIds({ ...screen, cards: [card({ section: null })] }, readItem).cards[0]?.id).toBe(
       'k7m2xq9fzp',
     )
   })
 
   it('takes the identity read for a card where the file holds another count of cards', () => {
-    const { screen, read } = written()
+    const { screen, read } = data()
     const more = { ...read, cards: [...read.cards, card({ id: 'second', mark: 'second' })] }
 
     expect(applyScreenIds(screen, more).cards[0]?.id).toBe('k7m2xq9fzp')
@@ -184,16 +184,16 @@ describe('a reading under the identities the window drew it by', () => {
 
   it('takes the identity read for a card the screen already knew by a mark', () => {
     const screen = deck({ cards: [card({ id: 'old-mark', mark: 'old-mark' })] })
-    const { read } = written()
+    const { read } = data()
 
     expect(applyScreenIds(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
   })
 
   it('takes the identity read for a card the file still carries no mark for', () => {
-    const { screen } = written()
-    const read = deck({ cards: [card({ id: 'minted' })] })
+    const { screen } = data()
+    const readItem = deck({ cards: [card({ id: 'minted' })] })
 
-    expect(applyScreenIds(screen, read).cards[0]?.id).toBe('minted')
+    expect(applyScreenIds(screen, readItem).cards[0]?.id).toBe('minted')
   })
 })
 

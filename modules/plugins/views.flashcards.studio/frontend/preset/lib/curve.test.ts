@@ -121,11 +121,11 @@ describe('what one place of the curve produces', () => {
   // did not name can close their day.
   it('takes the goal’s own value off the grid, and writes nothing else', () => {
     const was = settings({ newADay: 12, reviewsADay: 0, retention: 0.95 })
-    const made = produceSchedule(was, 3, { curve, today, within: BOUNDS })
-    expect(made.minutesADay).toBe(30)
-    expect(made.newADay).toBe(12)
-    expect(made.reviewsADay).toBe(0)
-    expect(made.retention).toBe(0.95)
+    const createdItem = produceSchedule(was, 3, { curve, today, within: BOUNDS })
+    expect(createdItem.minutesADay).toBe(30)
+    expect(createdItem.newADay).toBe(12)
+    expect(createdItem.reviewsADay).toBe(0)
+    expect(createdItem.retention).toBe(0.95)
   })
 
   it('leaves the settings as they are where the grid has no such place', () => {
@@ -142,27 +142,27 @@ describe('what one place of the curve produces', () => {
       at: curve.at.map((one) => ({ ...one, minutes: 45 })),
     }
     const was = settings({ goal: 'date', minutesADay: 20, reviewsADay: 0 })
-    const made = produceSchedule(was, 3, { curve: dated, today, within: BOUNDS })
-    expect(made.byDate).toBe('2026-09-29')
-    expect(made.minutesADay).toBe(20)
-    expect(made.reviewsADay).toBe(0)
+    const createdItem = produceSchedule(was, 3, { curve: dated, today, within: BOUNDS })
+    expect(createdItem.byDate).toBe('2026-09-29')
+    expect(createdItem.minutesADay).toBe(20)
+    expect(createdItem.reviewsADay).toBe(0)
   })
 
   it('moves the target alone under a goal of retention', () => {
     const was = settings({ goal: 'retention', newADay: 12, reviewsADay: 30 })
-    const made = produceSchedule(was, 3, {
+    const createdItem = produceSchedule(was, 3, {
       curve: { ...curve, goal: 'retention' },
       today,
       within: BOUNDS,
     })
-    expect(made.retention).toBe(0.99)
-    expect(made.newADay).toBe(12)
-    expect(made.reviewsADay).toBe(30)
+    expect(createdItem.retention).toBe(0.99)
+    expect(createdItem.newADay).toBe(12)
+    expect(createdItem.reviewsADay).toBe(30)
   })
 
   it('leaves the knob, the field and what is written at one value', () => {
-    const made = produceSchedule(settings(), 2, { curve, today, within: BOUNDS })
-    expect(made.minutesADay).toBe(curve.grid[2])
+    const createdItem = produceSchedule(settings(), 2, { curve, today, within: BOUNDS })
+    expect(createdItem.minutesADay).toBe(curve.grid[2])
   })
 })
 

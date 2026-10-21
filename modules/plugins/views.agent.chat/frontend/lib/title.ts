@@ -8,7 +8,7 @@ export const createTabTitle = (question: string, most = 24): string => {
       .find((one) => one.trim() !== '')
       ?.trim() ?? ''
   if (line.length <= most) return line
-  const cut = line.slice(0, most)
-  const space = cut.lastIndexOf(' ')
-  return `${(space > most / 3 ? cut.slice(0, space) : cut).trimEnd()}…`
+  const trimmed = line.slice(0, most)
+  const space = trimmed.lastIndexOf(' ')
+  return `${(space > most / 3 ? trimmed.slice(0, space) : trimmed).trimEnd()}…`
 }

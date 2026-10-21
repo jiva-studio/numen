@@ -27,7 +27,7 @@ export interface NotePort {
    * name resolves by a path relative to the note it is written in, which is
    * `from`; an address that reaches nothing is absent.
    */
-  resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
+  resolve(from: string, content: readonly string[]): Promise<ReadonlyMap<string, string>>
   /** A change being made to a note's prose, reported while it is being made. */
   watchEdits(signal: AbortSignal): AsyncIterable<NoteEdit>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
@@ -42,7 +42,7 @@ export interface NotePort {
   write(
     path: string,
     body: string,
-    seen: { prose: string; fingerprint: string } | null,
+    observed: { prose: string; fingerprint: string } | null,
   ): Promise<WriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>

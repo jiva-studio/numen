@@ -25,7 +25,7 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
 >
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // Each tab is drawn into the page, so the one before it goes before the next
 // stands: a mark is teleported to the tile a selector finds in the whole page.
@@ -366,10 +366,10 @@ describe('the preset a deck is scheduled by', () => {
 
     await line.trigger('click')
 
-    const offered = [...document.body.querySelectorAll('.menu__item')].map(
+    const proposed = [...document.body.querySelectorAll('.menu__item')].map(
       (one) => one.textContent?.trim() ?? '',
     )
-    expect(offered).toStrictEqual([words.defaults, 'Sanskrit', 'Slow.md'])
+    expect(proposed).toStrictEqual([words.defaults, 'Sanskrit', 'Slow.md'])
   })
 
   it('marks the preset in force among the ones offered', async () => {
@@ -385,11 +385,11 @@ describe('the preset a deck is scheduled by', () => {
   it('puts the deck on the preset that was chosen, and says it afterwards', async () => {
     const { window, put } = await mountDeck()
     await window.get('.deck-tab__choice').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === 'Sanskrit',
     )
 
-    chosen?.click()
+    selected?.click()
     await settle()
     await window.vm.$nextTick()
 
@@ -400,11 +400,11 @@ describe('the preset a deck is scheduled by', () => {
   it('takes the deck back to the defaults', async () => {
     const { window, put } = await mountDeck([], { by: 'Sanskrit.md' })
     await window.get('.deck-tab__choice').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === words.defaults,
     )
 
-    chosen?.click()
+    selected?.click()
     await settle()
     await window.vm.$nextTick()
 
@@ -424,11 +424,11 @@ describe('the preset a deck is scheduled by', () => {
   it('says on the line that a choice was not written', async () => {
     const { window } = await mountDeck([], { notScheduled: 'notAPreset' })
     await window.get('.deck-tab__choice').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === 'Sanskrit',
     )
 
-    chosen?.click()
+    selected?.click()
     await settle()
     await window.vm.$nextTick()
 

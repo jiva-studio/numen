@@ -98,21 +98,21 @@ describe('every keystroke the table holds', () => {
 
   it('names a command the window has', () => {
     const commands = createAppleCommands()
-    const known = new Set(commands.map((one) => one.id))
-    for (const held of CHORDS) expect(known.has(held.command)).toBe(true)
+    const recognized = new Set(commands.map((one) => one.id))
+    for (const target of CHORDS) expect(recognized.has(target.command)).toBe(true)
   })
 
   it('is drawn on the row of the command it names', () => {
     const commands = createAppleCommands()
-    for (const held of CHORDS) {
-      const command = commands.find((one) => one.id === held.command)
-      expect(command?.keys).toEqual(findChordKeys(held.command, APPLE))
+    for (const target of CHORDS) {
+      const command = commands.find((one) => one.id === target.command)
+      expect(command?.keys).toEqual(findChordKeys(target.command, APPLE))
     }
   })
 
   it('is the only chord holding that letter with that half of the pair', () => {
-    const held = CHORDS.map((one) => `${one.letter}${one.hasShift ? '+shift' : ''}`)
-    expect(new Set(held).size).toBe(held.length)
+    const target = CHORDS.map((one) => `${one.letter}${one.hasShift ? '+shift' : ''}`)
+    expect(new Set(target).size).toBe(target.length)
   })
 
   it('leaves alone the two letters that put the palette up', () => {
@@ -123,7 +123,7 @@ describe('every keystroke the table holds', () => {
 
   it('reaches nothing that removes a note, a file or a vault', () => {
     const destroys = ['remove', 'destroy', 'removeVault', 'eraseVault']
-    for (const held of CHORDS) expect(destroys).not.toContain(held.command)
+    for (const target of CHORDS) expect(destroys).not.toContain(target.command)
   })
 
   /**
@@ -136,9 +136,9 @@ describe('every keystroke the table holds', () => {
     const editor = ['k', '\\', 'u', 'z']
     // Redo and force reload, the whole of what the default menu holds with Shift.
     const menu = ['z', 'r']
-    for (const held of CHORDS.filter((one) => one.hasShift)) {
-      expect(editor).not.toContain(held.letter)
-      expect(menu).not.toContain(held.letter)
+    for (const target of CHORDS.filter((one) => one.hasShift)) {
+      expect(editor).not.toContain(target.letter)
+      expect(menu).not.toContain(target.letter)
     }
   })
 })

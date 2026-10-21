@@ -78,8 +78,8 @@ const fakeStore = () => {
 
 const open = () => {
   const fake = fakePresets()
-  const held = fakeStore()
-  return { ...fake, ...held, schedule: useDeckSchedule(fake.presets, held.store) }
+  const target = fakeStore()
+  return { ...fake, ...target, schedule: useDeckSchedule(fake.presets, target.store) }
 }
 
 describe('the presets listed again', () => {

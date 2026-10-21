@@ -52,12 +52,12 @@ export function createFileMakers({
     title: string,
     folder: string,
   ): Promise<CreateResult | null> => {
-    const made = await windowTabs.createFileOfKind(kind, folder, title)
-    if (made === undefined) {
+    const createdItem = await windowTabs.createFileOfKind(kind, folder, title)
+    if (createdItem === undefined) {
       writeMessage(words.notOffered, 'error')
       return null
     }
-    return made.ok ? made : asFailure(getKnownErrorCode(made.error))
+    return createdItem.ok ? createdItem : asFailure(getKnownErrorCode(createdItem.error))
   }
 
   return createFileCreators(
@@ -66,9 +66,9 @@ export function createFileMakers({
       createStencil: (title, folder) => createOfKind('stencil', title, folder),
       createPreset: (title, folder) => createOfKind('preset', title, folder),
       createUrl: async (address, folder) => {
-        const made = await core.createUrl(address, folder)
-        if (made.ok) fetchArtifact(made.value.path)
-        return made
+        const createdItem = await core.createUrl(address, folder)
+        if (createdItem.ok) fetchArtifact(createdItem.value.path)
+        return createdItem
       },
     },
     tabOpeners,

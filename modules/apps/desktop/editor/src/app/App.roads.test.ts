@@ -108,7 +108,7 @@ describe('every road to a file', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', words)
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
   }
 
   /** The root of the vault holds one file of each of four. */

@@ -74,8 +74,8 @@ export const getThemeGroups = (
     items: getThemesOfOrigin(themes, false, { themeName, words }),
     silence: words.noneOwned,
   }
-  const worn = themes.find((one) => one.name === themeName)
-  return worn && !worn.isBuiltIn ? [own, shipping] : [shipping, own]
+  const aged = themes.find((one) => one.name === themeName)
+  return aged && !aged.isBuiltIn ? [own, shipping] : [shipping, own]
 }
 
 /** What is said about a mode: why it cannot be chosen, or that it is the one. */

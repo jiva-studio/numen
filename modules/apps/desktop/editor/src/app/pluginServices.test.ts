@@ -126,7 +126,7 @@ describe('the window a plugin opens files and reads the note in focus through', 
     })
 
     workspace.openFileAt('Gone.pdf', [])
-    await new Promise((done) => setTimeout(done, 0))
+    await new Promise((isDone) => setTimeout(isDone, 0))
 
     expect(deps.writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
   })

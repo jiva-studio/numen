@@ -11,60 +11,60 @@ const entry = (name: string) =>
 
 describe('a picture in a book', () => {
   it('is pointed at the address its entry of the archive is served from', () => {
-    const drawn = resolveImageUrls(
+    const rendered = resolveImageUrls(
       '<p><img src="OEBPS/pictures/plate.png" alt="A plate"></p>',
       entry,
     )
 
-    expect(drawn).toContain('src="/assets/book.epub/OEBPS/pictures/plate.png?size=1"')
-    expect(drawn).toContain('alt="A plate"')
+    expect(rendered).toContain('src="/assets/book.epub/OEBPS/pictures/plate.png?size=1"')
+    expect(rendered).toContain('alt="A plate"')
   })
 
   it('is left at its current position when it is written into the markup itself', () => {
-    const written = '<img src="data:image/png;base64,iVBORw0KGgo=">'
+    const content = '<img src="data:image/png;base64,iVBORw0KGgo=">'
 
-    expect(resolveImageUrls(written, entry)).toContain('src="data:image/png;base64,iVBORw0KGgo="')
+    expect(resolveImageUrls(content, entry)).toContain('src="data:image/png;base64,iVBORw0KGgo="')
   })
 })
 
 describe('a picture with no name', () => {
   it('is left currently and asks for no address', () => {
-    const asked: string[] = []
+    const request: string[] = []
 
-    const drawn = resolveImageUrls('<img src="" alt="Blank">', (name) => {
-      asked.push(name)
+    const rendered = resolveImageUrls('<img src="" alt="Blank">', (name) => {
+      request.push(name)
       return entry(name)
     })
 
-    expect(asked).toStrictEqual([])
-    expect(drawn).toContain('src=""')
+    expect(request).toStrictEqual([])
+    expect(rendered).toContain('src=""')
   })
 })
 
 describe('the runs of the text', () => {
   it('carry the offsets they arrived with', () => {
-    const drawn = resolveImageUrls(
+    const rendered = resolveImageUrls(
       '<span data-offset="1200">सत्यं</span><span data-offset="1215">Слово</span>',
       entry,
     )
 
-    expect(drawn).toContain('data-offset="1200"')
-    expect(drawn).toContain('data-offset="1215"')
-    expect(drawn).toContain('सत्यं')
+    expect(rendered).toContain('data-offset="1200"')
+    expect(rendered).toContain('data-offset="1215"')
+    expect(rendered).toContain('सत्यं')
   })
 })
 
 describe('a document of a book as it arrives', () => {
   it('draws its picture from the entry of the archive the markup names', () => {
-    const held = new DOMParser().parseFromString(spine, 'text/html')
-    const named = [...held.body.querySelectorAll('img[src]')].map((one) => one.getAttribute('src'))
+    const target = new DOMParser().parseFromString(spine, 'text/html')
+    const named = [...target.body.querySelectorAll('img[src]')].map((one) => one.getAttribute('src'))
     expect(named).not.toHaveLength(0)
 
-    const drawn = resolveImageUrls(spine, entry)
+    const rendered = resolveImageUrls(spine, entry)
 
     for (const name of named) {
       expect(name).toMatch(/^[^:]+\/[^:]+$/)
-      expect(drawn).toContain(`src="${entry(name!)}"`)
+      expect(rendered).toContain(`src="${entry(name!)}"`)
     }
   })
 

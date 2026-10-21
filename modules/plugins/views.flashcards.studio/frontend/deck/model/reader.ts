@@ -32,19 +32,19 @@ export function createDeckReader(
   /** The deck one tab is showing, read out of the string the store holds. */
   const getDeck = (id: string): BufferDeck => {
     const body = store.getOpenNote(id).body
-    const held = parsed.get(id)
-    if (held && held.body === body) return held.deck
+    const target = parsed.get(id)
+    if (target && target.body === body) return target.deck
     // A file read again carries fresh identities for the same cards, so the
     // string it comes back as differs from the string that went out. A deck
     // reading as the one on screen leaves that one standing, and a deck the
     // file has named a card of since keeps that card's identity, so the card a
     // person is typing into is not drawn again.
-    const read = deserializeBufferDeckFromString(body)
-    let deck = read
-    if (held) {
-      deck = areDecksEqual(held.deck, read)
-        ? applyReadHeadings(held.deck, read)
-        : applyScreenIds(held.deck, read)
+    const readItem = deserializeBufferDeckFromString(body)
+    let deck = readItem
+    if (target) {
+      deck = areDecksEqual(target.deck, readItem)
+        ? applyReadHeadings(target.deck, readItem)
+        : applyScreenIds(target.deck, readItem)
     }
     parsed.set(id, { body, deck })
     return deck
@@ -62,16 +62,16 @@ export function createDeckReader(
    */
   const getMarks = (id: string): Marks => {
     const problems = getProblems(store.getPath(id))
-    const held = marked.get(id)
-    if (held && held.problems === problems) return held.marks
-    const read = createMarks(
+    const target = marked.get(id)
+    if (target && target.problems === problems) return target.marks
+    const readItem = createMarks(
       problems,
       getDeck(id).cards.map((card) => card.id),
       [],
     )
     // Marks saying what the last ones said leave what is drawn against the
     // file standing.
-    const marks = held && areMarksEqual(held.marks, read) ? held.marks : read
+    const marks = target && areMarksEqual(target.marks, readItem) ? target.marks : readItem
     marked.set(id, { problems, marks })
     return marks
   }

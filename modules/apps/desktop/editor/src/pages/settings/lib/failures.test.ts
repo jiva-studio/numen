@@ -5,12 +5,12 @@ import { formatFailedAt, getFailedPlugins } from './failures'
 describe('the plugins suspended', () => {
   it('are those with a failure, in the order listed', () => {
     const failure = { reason: 'The plugin did not finish starting in time.', failedAt: 0 }
-    const listed = [
+    const items = [
       createPluginInfo('sample.b', 'B', { failure }),
       createPluginInfo('sample.ok', 'Ok'),
       createPluginInfo('sample.a', 'A', { failure }),
     ]
-    expect(getFailedPlugins(listed).map((one) => one.id)).toStrictEqual(['sample.b', 'sample.a'])
+    expect(getFailedPlugins(items).map((one) => one.id)).toStrictEqual(['sample.b', 'sample.a'])
   })
 
   it('are none where every plugin starts', () => {

@@ -178,15 +178,15 @@ describe('the picture the pointer is read against', () => {
 
 /** A picture the pointer is read against, scaled and shifted as the test says. */
 const createPicture = (a: number, e: number, isCaptured = false) => {
-  const done: string[] = []
+  const isDone: string[] = []
   const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
     getScreenCTM: () => ({ a, e }),
-    focus: () => void done.push('focus'),
-    setPointerCapture: (id: number) => void done.push(`capture ${id}`),
+    focus: () => void isDone.push('focus'),
+    setPointerCapture: (id: number) => void isDone.push(`capture ${id}`),
     hasPointerCapture: () => isCaptured,
-    releasePointerCapture: (id: number) => void done.push(`release ${id}`),
+    releasePointerCapture: (id: number) => void isDone.push(`release ${id}`),
   })
-  return { element, done }
+  return { element, done: isDone }
 }
 
 const pointer = (clientX: number, button = 0) =>

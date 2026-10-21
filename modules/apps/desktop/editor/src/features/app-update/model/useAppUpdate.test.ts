@@ -80,7 +80,7 @@ describe('useAppUpdate', () => {
     })
 
     mount(TestComponent)
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
 
     expect(updateState.hasUpdate.value).toBe(true)
     expect(updateState.isDismissed.value).toBe(false)
@@ -127,7 +127,7 @@ describe('useAppUpdate', () => {
     })
 
     mount(TestComponent)
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
 
     expect(updateState.hasUpdate.value).toBe(true)
     expect(updateState.updateInfo.value?.downloadUrl).toBe(
@@ -152,7 +152,7 @@ describe('useAppUpdate', () => {
     })
 
     mount(TestComponent)
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
 
     expect(updateState.hasUpdate.value).toBe(false)
     expect(updateState.updateInfo.value).toBeNull()
@@ -175,7 +175,7 @@ describe('useAppUpdate', () => {
     })
 
     mount(TestComponent)
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
 
     expect(updateState.hasUpdate.value).toBe(false)
     expect(updateState.isChecking.value).toBe(false)
@@ -199,7 +199,7 @@ describe('useAppUpdate', () => {
     })
 
     mount(TestComponent)
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
 
     expect(updateState.hasUpdate.value).toBe(true)
     expect(updateState.updateInfo.value?.latestVersion).toBe('2026.10.1')
@@ -222,7 +222,7 @@ describe('useAppUpdate', () => {
     })
 
     mount(TestComponent)
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
 
     expect(updateState.hasUpdate.value).toBe(false)
   })

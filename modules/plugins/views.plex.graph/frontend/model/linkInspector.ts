@@ -125,8 +125,8 @@ export function addReverseLink(
     return [createLinkItem(firstPath, secondPath, role, '', firstPath)]
   }
   const back = createLinkItem(first.to, first.from, getInverseRelation(first.role), '', firstPath)
-  const kept = createLinkItem(first.from, first.to, first.role, first.label, firstPath)
-  return first.from === firstPath ? [kept, back] : [back, kept]
+  const retained = createLinkItem(first.from, first.to, first.role, first.label, firstPath)
+  return first.from === firstPath ? [retained, back] : [back, retained]
 }
 
 /** The links to save: of two links, one with nothing written is left out. */

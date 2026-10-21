@@ -26,7 +26,7 @@ export const WORDS = {
   notADeck: 'That note is not a deck.',
   notAStencil: 'That note is not a stencil.',
   /** A deck past the size one is read at, with the bound it is past. */
-  tooLarge: (bound: number) => `This deck is over ${bound} bytes, so none of it was read.`,
+  tooLarge: (linked: number) => `This deck is over ${linked} bytes, so none of it was read.`,
   /** The line at the top of a deck, which says which preset schedules it. */
   scheduledBy: 'Scheduled by',
   /** The choice a deck naming no preset stands at. */

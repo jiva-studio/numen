@@ -58,10 +58,10 @@ export function convertNeighbourhood(
   }[] = []
   // Stryker restore ArrayDeclaration
   /** The path of every note this picture draws, the note in focus included. */
-  const shown = new Set<string>([neighbourhood.focus.path])
+  const displayed = new Set<string>([neighbourhood.focus.path])
   for (const related of neighbourhood.related) {
     const id = ticket(related.path)
-    shown.add(related.path)
+    displayed.add(related.path)
     nodes.push({ id, title: related.title, relation: related.relation })
     placed.push({
       id,
@@ -86,7 +86,7 @@ export function convertNeighbourhood(
     if (relation === 'child') {
       return [{ from: focus.id, to: id, ...line, ...head }]
     }
-    return shown.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
+    return displayed.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
   })
 
   return { nodes, edges }

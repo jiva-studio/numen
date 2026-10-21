@@ -212,9 +212,9 @@ describe('linkInspector helper module', () => {
     })
 
     it('lists the link written in the first note first when the one kept runs from the second', () => {
-      const kept = row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', direction: 'reverse' })
+      const retained = row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', direction: 'reverse' })
 
-      const added = addReverseLink([kept], [], 'A.md', 'B.md')
+      const added = addReverseLink([retained], [], 'A.md', 'B.md')
 
       expect(added.map((one) => one.from)).toEqual(['A.md', 'B.md'])
       expect(added.map((one) => one.direction)).toEqual(['forward', 'reverse'])

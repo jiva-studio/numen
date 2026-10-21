@@ -19,8 +19,8 @@ const turn = (id: string, text: string): Turn =>
   ({ id, text, voice: 'answered', state: 'settled' })
 
 /** An agent tab over turns already said, and a vault that answers for the notes given. */
-const open = (said: Turn[] = [], notes: Record<string, string> = {}) => {
-  const turns = ref<Turn[]>(said)
+const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
+  const turns = ref<Turn[]>(turn)
   const conversation: Conversation = {
     turns,
     isWorking: ref(false),
@@ -35,9 +35,9 @@ const open = (said: Turn[] = [], notes: Record<string, string> = {}) => {
   const state = useAgentConversation(conversation, {
     openFileAt: (path, ...spans) => opened.push([path, spans]),
     openFileBeside: (path) => besideItems.push(path),
-    resolve: async (written) => {
-      resolved.push(written)
-      return new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
+    resolve: async (content) => {
+      resolved.push(content)
+      return new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
     },
     unreachable: () => '',
   })

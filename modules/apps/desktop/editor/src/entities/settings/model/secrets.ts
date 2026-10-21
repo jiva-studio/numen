@@ -33,8 +33,8 @@ export function createSecretStore(core: SecretDeps, { words, notify, refresh }: 
     notify('')
     try {
       await operation()
-    } catch (thrown) {
-      notify(`${words.secretFailed} ${formatErrorMessage(thrown)}`, 'error')
+    } catch (caughtError) {
+      notify(`${words.secretFailed} ${formatErrorMessage(caughtError)}`, 'error')
     }
     await refresh()
   }

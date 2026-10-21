@@ -10,9 +10,9 @@ export const ROOT = ''
 
 /** The folder a path sits in, and the root for a path at the top of the vault. */
 export const getFolderPath = (path: string): string => {
-  const cut = path.lastIndexOf('/')
+  const trimmed = path.lastIndexOf('/')
   // Stryker disable next-line EqualityOperator: a path starting with slash produces ROOT empty string either way.
-  return cut < 0 ? ROOT : path.slice(0, cut)
+  return trimmed < 0 ? ROOT : path.slice(0, trimmed)
 }
 
 /**

@@ -45,9 +45,9 @@ export function createMessageLog(): MessageLog {
     (text, kind = 'report') => {
       // The same text written again is nothing new, and what stands keeps its
       // identity and its place.
-      const stood = messages.value.find((one) => one.name === name)
-      if (stood === undefined && text === '') return
-      if (stood?.text === text && stood.kind === kind) return
+      const status = messages.value.find((one) => one.name === name)
+      if (status === undefined && text === '') return
+      if (status?.text === text && status.kind === kind) return
 
       const rest = messages.value.filter((one) => one.name !== name)
       if (text === '') {

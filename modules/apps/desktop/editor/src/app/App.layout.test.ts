@@ -225,14 +225,14 @@ describe('a tab requested to close', () => {
     const deckId = getTabs(window).find((tab) => tab.id.startsWith('deck:'))?.id
     expect(deckId).toBeTruthy()
 
-    let held = false
+    let target = false
     window.findComponent(WorkspaceLayout).vm.$emit('close', deckId, () => {
-      held = true
+      target = true
     })
 
     // A deck tab finishes its own close asynchronously, so the layout is
     // told to hold it open and not drop it from the tree on the spot.
-    expect(held).toBe(true)
+    expect(target).toBe(true)
   })
 })
 

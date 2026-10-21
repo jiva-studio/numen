@@ -9,7 +9,7 @@ import { write } from './write'
 export interface SettingSource {
   getSetting(at: readonly string[]): unknown
   getModels(at: readonly string[]): readonly Model[]
-  write(written: readonly SettingEdit[]): void
+  write(content: readonly SettingEdit[]): void
 }
 
 export interface SettingFields {

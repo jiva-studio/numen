@@ -58,7 +58,7 @@ export function useWindowTabs() {
   const closers = createTabClosers({ open, layout, drop })
   const handle = createWindowHandle({ ...openers, ...queries })
   const navigation = createTabNavigation(open, openers)
-  const asked = createKindQuestions(byKind)
+  const request = createKindQuestions(byKind)
   /** A kind whose tab fails to open is told to `onError` and left out of the layout. */
   const openPlacedTabs = async (onError: PlacementError) => {
     const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
@@ -79,8 +79,8 @@ export function useWindowTabs() {
     registerKind,
     hasKind,
     openPlacedTabs,
-    resolveCommand: asked.resolveCommand,
-    createFileOfKind: asked.createFileOfKind,
+    resolveCommand: request.resolveCommand,
+    createFileOfKind: request.createFileOfKind,
     navigateTab: navigation.navigateTab,
     navigateTabsAt: navigation.navigateTabsAt,
     sendText: navigation.sendText,
@@ -387,12 +387,12 @@ function dispatchTabKeyPress(
   open: ReadonlyMap<string, WindowTab>,
   event: KeyboardEvent,
 ): boolean {
-  const drawn = getPanes(layout.root).map((one) => one.active)
+  const rendered = getPanes(layout.root).map((one) => one.active)
   const front = paneById(layout.root, layout.focus)?.active
-  const offered = new Set<string>()
+  const proposed = new Set<string>()
   for (const id of [front, ...[...open.keys()].reverse()]) {
-    if (!id || offered.has(id) || !drawn.includes(id)) continue
-    offered.add(id)
+    if (!id || proposed.has(id) || !rendered.includes(id)) continue
+    proposed.add(id)
     const one = open.get(id)
     if (one?.kind.onKeyPress?.(one.state, event)) return true
   }
@@ -400,8 +400,8 @@ function dispatchTabKeyPress(
 }
 
 /** One tab release, and the rest kept. */
-const omitEntry = <T>(held: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
-  const rest = new Map(held)
+const omitEntry = <T>(target: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
+  const rest = new Map(target)
   rest.delete(id)
   return rest
 }

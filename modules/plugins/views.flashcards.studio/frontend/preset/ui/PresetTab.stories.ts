@@ -86,11 +86,11 @@ const BOUNDS: SettingsBounds = {
 /** A tab standing at those settings, holding the place the knob was moved to. */
 const createPresetTab = (args: Knobs): PresetTabState => {
   const place = ref(args.place)
-  const drawn = curve({ goal: args.goal, isHonest: args.isHonest })
+  const picture = curve({ goal: args.goal, isHonest: args.isHonest })
   return {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, goal: args.goal }),
-    curve: shallowRef(drawn),
+    curve: shallowRef(picture),
     material: shallowRef(args.isHonest ? MATERIAL : null),
     place,
     isWaiting: ref(args.isWaiting),
@@ -341,12 +341,12 @@ export const TheBacklogKeepsItsRoom: Story = {
     expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
     // The room is the same either way, and in the backlog's own proportion.
-    const drawn = backlogRoom(answered!)
+    const rendered = backlogRoom(answered!)
     const empty = backlogRoom(waiting!)
-    expect(drawn.width).toBeGreaterThan(0)
-    expect(empty.width).toBeCloseTo(drawn.width, 0)
-    expect(empty.height).toBeCloseTo(drawn.height, 0)
-    expect(drawn.width / drawn.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
+    expect(rendered.width).toBeGreaterThan(0)
+    expect(empty.width).toBeCloseTo(rendered.width, 0)
+    expect(empty.height).toBeCloseTo(rendered.height, 0)
+    expect(rendered.width / rendered.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
   },
 }
 
@@ -397,9 +397,9 @@ export const TheRingStandsOnTheKnob: Story = {
     await waitFor(() => expect(picture).toHaveFocus())
 
     // The knob wears the ring: it is stroked in another colour and heavier.
-    const held = getComputedStyle(knob)
-    expect(held.stroke).not.toBe(before.stroke)
-    expect(Number.parseFloat(held.strokeWidth)).toBeGreaterThan(Number.parseFloat(before.width))
+    const target = getComputedStyle(knob)
+    expect(target.stroke).not.toBe(before.stroke)
+    expect(Number.parseFloat(target.strokeWidth)).toBeGreaterThan(Number.parseFloat(before.width))
 
     // The picture itself wears none.
     expect(getComputedStyle(picture).outlineStyle).toBe('none')

@@ -21,11 +21,11 @@ const getNotePath = (note: NewNote): string =>
  * to, falling back on making the note.
  */
 function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
-  const asked: NewNote[] = []
+  const request: NewNote[] = []
   const joined: { path: string; link: Link }[] = []
   const core: NoteMaker = {
     create: async (note: NewNote): Promise<CreateResult> => {
-      asked.push(note)
+      request.push(note)
       return answers.shift() ?? { ok: true, value: { path: getNotePath(note) } }
     },
     join: async (path: string, link: Link): Promise<ErrorCode | null> => {
@@ -35,15 +35,15 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
     removeLink: async () => null,
     replaceLinks: async () => null,
   }
-  return { core, asked, joined, ...writer() }
+  return { core, asked: request, joined, ...writer() }
 }
 
 describe('making a note in a relation of another', () => {
   it('writes the note it was made from into it, in the relation facing the one requested for', async () => {
     const { core, asked, write } = fake()
-    const made = await createNoteWriter(core, write).createInRelation('Ontology.md', 'child')
+    const createdItem = await createNoteWriter(core, write).createInRelation('Ontology.md', 'child')
 
-    expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
+    expect(createdItem).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
       { title: UNTITLED, folder: '', links: [{ to: 'Ontology.md', role: 'parent' }] },
     ])
@@ -58,13 +58,13 @@ describe('making a note in a relation of another', () => {
 
   it('files it in the folder the note it was made from is in', async () => {
     const { core, asked, write } = fake()
-    const made = await createNoteWriter(core, write).createInRelation(
+    const createdItem = await createNoteWriter(core, write).createInRelation(
       'physics/Ontology.md',
       'child',
     )
 
     expect(asked[0]?.folder).toBe('physics')
-    expect(made?.path).toBe(`physics/${UNTITLED}.md`)
+    expect(createdItem?.path).toBe(`physics/${UNTITLED}.md`)
   })
 
   it('can make a note in every relation it offers', async () => {
@@ -92,24 +92,24 @@ describe('making a note in a relation of another', () => {
       { ok: false, error: 'occupied' },
     ])
     const making = createNoteWriter(core, write)
-    const made = await making.createInRelation('Ontology.md', 'child')
+    const createdItem = await making.createInRelation('Ontology.md', 'child')
 
     expect(asked.map((note) => note.title)).toStrictEqual([
       UNTITLED,
       `${UNTITLED} 2`,
       `${UNTITLED} 3`,
     ])
-    expect(made).toStrictEqual({ path: `${UNTITLED} 3.md`, title: `${UNTITLED} 3` })
+    expect(createdItem).toStrictEqual({ path: `${UNTITLED} 3.md`, title: `${UNTITLED} 3` })
     expect(last()).toBe('')
   })
 
   it('creates an untitled note in a folder with links', async () => {
     const { core, asked, write } = fake()
-    const made = await createNoteWriter(core, write).createUntitled('physics', [
+    const createdItem = await createNoteWriter(core, write).createUntitled('physics', [
       { to: 'Ontology.md', role: 'parent' },
     ])
 
-    expect(made).toStrictEqual({ path: `physics/${UNTITLED}.md`, title: UNTITLED })
+    expect(createdItem).toStrictEqual({ path: `physics/${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
       { title: UNTITLED, folder: 'physics', links: [{ to: 'Ontology.md', role: 'parent' }] },
     ])
@@ -170,13 +170,13 @@ describe('making a note under a name a person gave it', () => {
 
   it('files it alongside the note it was made from, in that note’s relation', async () => {
     const { core, asked, write } = fake()
-    const made = await createNoteWriter(core, write).createWithTitle(
+    const createdItem = await createNoteWriter(core, write).createWithTitle(
       'Entropy',
       'physics/Ontology.md',
       'child',
     )
 
-    expect(made).toStrictEqual({ path: 'physics/Entropy.md', title: 'Entropy' })
+    expect(createdItem).toStrictEqual({ path: 'physics/Entropy.md', title: 'Entropy' })
     expect(asked).toStrictEqual([
       {
         title: 'Entropy',
@@ -188,9 +188,9 @@ describe('making a note under a name a person gave it', () => {
 
   it('files it at the top of the vault, joined to nothing, when it relies on no note', async () => {
     const { core, asked, write } = fake()
-    const made = await createNoteWriter(core, write).createWithTitle('Entropy', '', null)
+    const createdItem = await createNoteWriter(core, write).createWithTitle('Entropy', '', null)
 
-    expect(made).toStrictEqual({ path: 'Entropy.md', title: 'Entropy' })
+    expect(createdItem).toStrictEqual({ path: 'Entropy.md', title: 'Entropy' })
     expect(asked).toStrictEqual([{ title: 'Entropy', folder: '', links: [] }])
   })
 })
@@ -239,14 +239,14 @@ describe('joining two notes that are both there', () => {
 describe('removing a relationship from a note', () => {
   /** A core whose removal answers as told and keeps what it was asked. */
   const removing = (answer: () => Promise<ErrorCode | null>) => {
-    const asked: { path: string; to: string; role: Role | undefined }[] = []
+    const request: { path: string; to: string; role: Role | undefined }[] = []
     const core = {
       removeLink: async (path: string, to: string, role?: Role) => {
-        asked.push({ path, to, role })
+        request.push({ path, to, role })
         return answer()
       },
     } as unknown as NoteMaker
-    return { core, asked, ...writer() }
+    return { core, asked: request, ...writer() }
   }
 
   it('asks for the role of the relation it was given, and says nothing when it is done', async () => {
@@ -311,14 +311,14 @@ describe('replacing the links between two notes', () => {
 
   /** A core whose replacement answers as told and keeps what it was asked. */
   const replacing = (answer: () => Promise<ErrorCode | null>) => {
-    const asked: { first: string; second: string; roles: Role[] }[] = []
+    const request: { first: string; second: string; roles: Role[] }[] = []
     const core = {
       replaceLinks: async (first: string, second: string, pairs: readonly { role: Role }[]) => {
-        asked.push({ first, second, roles: pairs.map((pair) => pair.role) })
+        request.push({ first, second, roles: pairs.map((pair) => pair.role) })
         return answer()
       },
     } as unknown as NoteMaker
-    return { core, asked, ...writer() }
+    return { core, asked: request, ...writer() }
   }
 
   it('asks once for every link, under the role of its relation, and says nothing when done', async () => {

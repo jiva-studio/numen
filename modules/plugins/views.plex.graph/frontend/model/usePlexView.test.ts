@@ -177,10 +177,10 @@ describe('a plex whose tab has closed', () => {
   })
 
   it('travels nowhere else', async () => {
-    const asked: string[] = []
+    const request: string[] = []
     const plex = usePlexView(
       fake(async (path) => {
-        asked.push(path)
+        request.push(path)
         return answer(path)
       }),
     )
@@ -188,7 +188,7 @@ describe('a plex whose tab has closed', () => {
     plex.close()
     await plex.go('Note.md')
 
-    expect(asked).toStrictEqual([])
+    expect(request).toStrictEqual([])
     expect(plex.here.value).toBe('')
   })
 })
@@ -213,11 +213,11 @@ describe('a vault that changed somewhere else', () => {
   it('leaves the picture on screen standing, answer for answer', async () => {
     const plex = usePlexView(fake(async (path) => answer(path)))
     await plex.go('Entropy.md')
-    const drawn = plex.neighbourhood.value
+    const rendered = plex.neighbourhood.value
 
     await plex.go('Entropy.md')
 
-    expect(plex.neighbourhood.value).toBe(drawn)
+    expect(plex.neighbourhood.value).toBe(rendered)
   })
 
   it('draws again where what is around the note is different', async () => {
@@ -238,12 +238,12 @@ describe('a vault that changed somewhere else', () => {
       })),
     )
     await plex.go('Entropy.md')
-    const drawn = plex.neighbourhood.value
+    const rendered = plex.neighbourhood.value
 
     related = ['Heat.md']
     await plex.go('Entropy.md')
 
-    expect(plex.neighbourhood.value).not.toBe(drawn)
+    expect(plex.neighbourhood.value).not.toBe(rendered)
     expect(plex.neighbourhood.value?.related).toHaveLength(1)
   })
 })

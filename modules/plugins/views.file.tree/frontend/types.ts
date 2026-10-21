@@ -106,7 +106,7 @@ export interface FilesTabState {
   createOne(path: string | null, createEntry: FileMaker, name: string): Promise<void>
   importUrl(url: string): Promise<string>
   importUrls(urls: readonly string[]): Promise<readonly string[]>
-  openMenu(asked: MenuRequest): void
+  openMenu(request: MenuRequest): void
   dismissMenu(): void
   chooseMenuItem(id: string): void
   getNameOf(path: string): string

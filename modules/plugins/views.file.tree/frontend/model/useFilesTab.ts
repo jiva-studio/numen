@@ -36,18 +36,18 @@ function useFileCreation(
   renamingPath: ReturnType<typeof ref<string | null>>,
 ) {
   const createFolder = async (path: string | null) => {
-    const made = await create.createFolder(list, deps, path)
-    if (made) renamingPath.value = made
+    const createdItem = await create.createFolder(list, deps, path)
+    if (createdItem) renamingPath.value = createdItem
   }
 
   const createNote = async (path: string | null) => {
-    const made = await create.createNote(list, deps, path)
-    if (made) renamingPath.value = made
+    const createdItem = await create.createNote(list, deps, path)
+    if (createdItem) renamingPath.value = createdItem
   }
 
   const createOne = async (path: string | null, createEntry: FileMaker, name: string) => {
-    const made = await create.createOne(list, path, { createEntry, name })
-    if (made) renamingPath.value = made
+    const createdItem = await create.createOne(list, path, { createEntry, name })
+    if (createdItem) renamingPath.value = createdItem
   }
 
   return { createFolder, createNote, createOne }

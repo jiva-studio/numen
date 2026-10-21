@@ -57,12 +57,12 @@ export const createNoteCommand = async (
 ): Promise<void> => {
   if (!invocation.name) return
   const { relation, words } = options
-  const made = await on.files.createNote(invocation.name, relation ? invocation.path : '', relation)
-  if (!made) return
+  const createdItem = await on.files.createNote(invocation.name, relation ? invocation.path : '', relation)
+  if (!createdItem) return
   if (invocation.kind === NOTE) {
-    return on.notes.openNewFile(made.path, made.title, { type: 'note', where: 'beside' })
+    return on.notes.openNewFile(createdItem.path, createdItem.title, { type: 'note', where: 'beside' })
   }
-  await navigateToPath(made.path, on, words)
+  await navigateToPath(createdItem.path, on, words)
 }
 
 /**

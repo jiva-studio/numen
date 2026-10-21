@@ -29,7 +29,7 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
 >
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // The two cards name one stencil two ways: by a path from the root, and by a
 // name carrying an alias. Both reach the file the vault says they reach.
@@ -91,19 +91,19 @@ const vault = (
     hasSchedulingChanged?: boolean
   } = {},
 ) => {
-  const written: string[] = []
+  const content: string[] = []
   /** Each deck as the vault was handed it, for what a card carries to be asked. */
   const wrote: Parameters<Cards['writeDeck']>[1][] = []
-  const seen: (string | null)[] = []
+  const observed: (string | null)[] = []
   let reads = 0
   let cards: readonly VaultCard[] = answers.cards ?? CARDS
 
-  let listed = 0
+  let items = 0
 
   const core: Cards = {
     stencils: async () => {
-      listed += 1
-      if (listed <= (answers.unlisted ?? 0)) throw new Error('out of reach')
+      items += 1
+      if (items <= (answers.unlisted ?? 0)) throw new Error('out of reach')
       return {
         stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
         held: 1,
@@ -132,9 +132,9 @@ const vault = (
       })
     },
     writeDeck: async (path, deck, presented) => {
-      written.push(`${path} ${deck.cards.map(getCardName).join(', ') || '—'}`)
+      content.push(`${path} ${deck.cards.map(getCardName).join(', ') || '—'}`)
       wrote.push(deck)
-      seen.push(presented)
+      observed.push(presented)
       if (answers.wrote) return asFailure({ code: answers.wrote, bound: 0 })
       if (answers.isChanged) return asFailure({ code: 'changed' as const, bound: 0 })
       cards = deck.cards
@@ -174,8 +174,8 @@ const vault = (
         at: '',
         bounds: NO_BOUNDS,
       }),
-    scheduleDeck: async (deck, preset, seen) => {
-      put.push({ deck, preset, seen })
+    scheduleDeck: async (deck, preset, observed) => {
+      put.push({ deck, preset, seen: observed })
       if (answers.notScheduled) return asFailure(answers.notScheduled)
       if (answers.hasSchedulingChanged) return asFailure('changed' as const)
       by = preset
@@ -201,11 +201,11 @@ const vault = (
     core,
     presets,
     put,
-    written,
+    written: content,
     wrote: () => wrote,
-    seen,
+    seen: observed,
     getReadCount: () => reads,
-    listed: () => listed,
+    listed: () => items,
     /** The file written from somewhere else, which the next read answers with. */
     setCards: (next: readonly VaultCard[]) => {
       cards = next
@@ -625,7 +625,7 @@ describe('a deck read again under the window', () => {
   it('keeps the identity of a card the file has named since it was drawn', async () => {
     const one = await open()
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
+    const createdItem = one.tab.deck.value.cards.at(-1)?.id ?? ''
     await one.decks.store.flushPending(one.tab.id)
 
     // The deck was made whole where it was written: the card carries the mark
@@ -645,9 +645,9 @@ describe('a deck read again under the window', () => {
     one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
-    expect(one.tab.deck.value.cards.at(-1)?.id).toBe(made)
+    expect(one.tab.deck.value.cards.at(-1)?.id).toBe(createdItem)
     expect(one.tab.deck.value.cards.at(-1)?.mark).toBe('w9s5jd2b1k')
-    expect(one.tab.drawn.value.at(-1)?.id).toBe(made)
+    expect(one.tab.drawn.value.at(-1)?.id).toBe(createdItem)
   })
 
   /* A section carries no mark, so every reading mints one. The grid draws a run
@@ -655,7 +655,7 @@ describe('a deck read again under the window', () => {
      ones takes down every run and every card standing in it. */
   it('keeps the identity of a section the file still holds', async () => {
     const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
-    const stood = one.tab.deck.value.sections[0]?.id ?? ''
+    const status = one.tab.deck.value.sections[0]?.id ?? ''
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await one.decks.store.flushPending(one.tab.id)
 
@@ -674,7 +674,7 @@ describe('a deck read again under the window', () => {
     one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
-    expect(one.tab.deck.value.sections[0]?.id).toBe(stood)
+    expect(one.tab.deck.value.sections[0]?.id).toBe(status)
   })
 
   /* A heading is read back off a card's first field wherever the deck is
@@ -684,14 +684,14 @@ describe('a deck read again under the window', () => {
      the hand and the next write does not put the old one back. */
   it('takes a heading the file carries while the deck on screen remains', async () => {
     const one = await open()
-    const stood = one.tab.deck.value.cards[0]?.id ?? ''
+    const status = one.tab.deck.value.cards[0]?.id ?? ''
 
     one.setCards(CARDS.map((card, at) => (at === 0 ? { ...card, heading: 'Llama and yak' } : card)))
     one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.deck.value.cards[0]?.heading).toBe('Llama and yak')
-    expect(one.tab.deck.value.cards[0]?.id).toBe(stood)
+    expect(one.tab.deck.value.cards[0]?.id).toBe(status)
   })
 
   /* A section stands whatever the cards do. A card written into the file from
@@ -699,7 +699,7 @@ describe('a deck read again under the window', () => {
      are the sections that were already drawn. */
   it('keeps it where the file gained a card the window did not write', async () => {
     const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
-    const stood = one.tab.deck.value.sections[0]?.id ?? ''
+    const status = one.tab.deck.value.sections[0]?.id ?? ''
 
     one.setCards([
       ...CARDS,
@@ -717,7 +717,7 @@ describe('a deck read again under the window', () => {
     await settle()
 
     expect(one.tab.deck.value.cards).toHaveLength(CARDS.length + 1)
-    expect(one.tab.deck.value.sections[0]?.id).toBe(stood)
+    expect(one.tab.deck.value.sections[0]?.id).toBe(status)
   })
 
   /* A write takes a moment, and a person typing does not stop for it. The card
@@ -726,10 +726,10 @@ describe('a deck read again under the window', () => {
   it('keeps it where the typing went on while the write was away', async () => {
     const one = await open()
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vic' }], null)
-    const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
+    const createdItem = one.tab.deck.value.cards.at(-1)?.id ?? ''
     await one.decks.store.flushPending(one.tab.id)
 
-    one.tab.writeCardField(made, 'Name', 1, 'Vicuña')
+    one.tab.writeCardField(createdItem, 'Name', 1, 'Vicuña')
 
     one.setCards([
       ...CARDS,
@@ -746,7 +746,7 @@ describe('a deck read again under the window', () => {
     one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
-    expect(one.tab.deck.value.cards.at(-1)?.id).toBe(made)
+    expect(one.tab.deck.value.cards.at(-1)?.id).toBe(createdItem)
   })
 
   it('draws the file again where it was written from somewhere else', async () => {

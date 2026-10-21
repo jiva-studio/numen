@@ -34,41 +34,41 @@ const open = () =>
 
 describe('the vault in front', () => {
   it('is the one the list says it is showing', async () => {
-    const held = open()
-    await held.loadVaults()
+    const target = open()
+    await target.loadVaults()
 
-    expect(held.shown.value).toEqual({ id: 'roots', name: 'Roots' })
-    expect(held.listed.value.showing).toBe('roots')
+    expect(target.shown.value).toEqual({ id: 'roots', name: 'Roots' })
+    expect(target.listed.value.showing).toBe('roots')
   })
 
   it('carries a rename without the list falling out of step', async () => {
-    const held = open()
-    await held.loadVaults()
+    const target = open()
+    await target.loadVaults()
 
-    held.setVaultName({ id: 'roots', name: 'Rooted' })
+    target.setVaultName({ id: 'roots', name: 'Rooted' })
 
-    expect(held.shown.value).toEqual({ id: 'roots', name: 'Rooted' })
+    expect(target.shown.value).toEqual({ id: 'roots', name: 'Rooted' })
     // The list carries the new name, and still shows the same vault.
-    expect(held.listed.value.vaults.map((one) => one.name)).toEqual(['Rooted', 'Leaves'])
-    expect(held.listed.value.showing).toBe('roots')
+    expect(target.listed.value.vaults.map((one) => one.name)).toEqual(['Rooted', 'Leaves'])
+    expect(target.listed.value.showing).toBe('roots')
   })
 
   it('is empty while the list shows a vault it does not hold', async () => {
-    const held = open()
-    await held.loadVaults()
+    const target = open()
+    await target.loadVaults()
 
-    held.listed.value = { ...held.listed.value, showing: 'gone' }
+    target.listed.value = { ...target.listed.value, showing: 'gone' }
 
-    expect(held.shown.value).toEqual({ id: '', name: '' })
+    expect(target.shown.value).toEqual({ id: '', name: '' })
   })
 })
 
 describe('the vault list before and after it is requested for', () => {
   it('is empty and shows nothing before the first answer', () => {
-    const held = open()
+    const target = open()
 
-    expect(held.listed.value).toEqual({ vaults: [], showing: '' })
-    expect(held.shown.value).toEqual({ id: '', name: '' })
+    expect(target.listed.value).toEqual({ vaults: [], showing: '' })
+    expect(target.shown.value).toEqual({ id: '', name: '' })
   })
 
   it('reloads the page through the location', () => {
@@ -87,7 +87,7 @@ describe('the vault list before and after it is requested for', () => {
     const getWriter = vi.fn()
     const write = vi.fn()
     getWriter.mockReturnValue(write)
-    const held = useVaults({
+    const target = useVaults({
       core: {
         vaults: async () => {
           throw new Error('down')
@@ -100,11 +100,11 @@ describe('the vault list before and after it is requested for', () => {
       isEmbedding: ref(false),
     })
 
-    await held.loadVaults()
+    await target.loadVaults()
 
     expect(getWriter).toHaveBeenCalledWith('listed')
     expect(write).toHaveBeenCalledWith(WORDS.unlistedVaults, 'error')
-    expect(held.listed.value).toEqual({ vaults: [], showing: '' })
+    expect(target.listed.value).toEqual({ vaults: [], showing: '' })
   })
 })
 
@@ -112,30 +112,30 @@ describe('the artifact states of a file', () => {
   it('are kept under the path once they are read', async () => {
     const states = { summary: { state: 'ready' } } as never
     vi.mocked(running.getArtifactStates).mockResolvedValueOnce(states)
-    const held = open()
+    const target = open()
 
-    await held.loadArtifactStates('a.md')
+    await target.loadArtifactStates('a.md')
 
     expect(running.getArtifactStates).toHaveBeenCalledWith('a.md')
-    expect(held.makes.value.get('a.md')).toBe(states)
+    expect(target.makes.value.get('a.md')).toBe(states)
   })
 
   it('are empty under the path when they cannot be read', async () => {
     vi.mocked(running.getArtifactStates).mockRejectedValueOnce(new Error('down'))
-    const held = open()
+    const target = open()
 
-    await held.loadArtifactStates('a.md')
+    await target.loadArtifactStates('a.md')
 
-    expect(held.makes.value.get('a.md')).toEqual({})
+    expect(target.makes.value.get('a.md')).toEqual({})
   })
 
   it('are not read for an empty path', async () => {
     vi.mocked(running.getArtifactStates).mockClear()
-    const held = open()
+    const target = open()
 
-    await held.loadArtifactStates('')
+    await target.loadArtifactStates('')
 
     expect(running.getArtifactStates).not.toHaveBeenCalled()
-    expect(held.makes.value.size).toBe(0)
+    expect(target.makes.value.size).toBe(0)
   })
 })

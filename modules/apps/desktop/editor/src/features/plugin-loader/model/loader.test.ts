@@ -18,15 +18,15 @@ describe('createPluginLoader', () => {
     const onSettingChange = vi.fn(
       (pluginId: string, key: string, handler: (val: unknown) => void) => {
         const compositeKey = `${pluginId}.${key}`
-        let set = settingListeners.get(compositeKey)
-        if (!set) {
-          set = new Set()
-          settingListeners.set(compositeKey, set)
+        let activeSet = settingListeners.get(compositeKey)
+        if (!activeSet) {
+          activeSet = new Set()
+          settingListeners.set(compositeKey, activeSet)
         }
-        set.add(handler)
+        activeSet.add(handler)
         return {
           dispose: () => {
-            set?.delete(handler)
+            activeSet?.delete(handler)
           },
         }
       },

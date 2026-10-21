@@ -11,17 +11,17 @@ const STOPPED = createPluginInfo('sample.stopped', 'Sample Stopped', {
 })
 
 const createSection = (plugins: readonly PluginInfo[]) => {
-  const written: SettingEdit[] = []
+  const content: SettingEdit[] = []
   const retryPlugin = vi.fn()
   const installation = createInstallation({
     write: (edits) => {
-      written.push(...edits)
+      content.push(...edits)
     },
     plugins: ref(plugins),
     retryPlugin,
   })
   const wrapper = mount(PluginFailureSection, { props: { state: { installation } } })
-  return { wrapper, written, retryPlugin }
+  return { wrapper, written: content, retryPlugin }
 }
 
 describe('PluginFailureSection', () => {

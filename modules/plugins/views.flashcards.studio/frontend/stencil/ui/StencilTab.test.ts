@@ -16,7 +16,7 @@ import { STENCIL, useStencilTabs, type StencilTabState } from '../kind'
 import { WORDS as words } from '../../cards'
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // Each tab is drawn into the page, so the one before it goes before the next
 // stands: a mark is teleported to the row a selector finds in the whole page.

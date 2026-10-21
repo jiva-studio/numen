@@ -42,7 +42,7 @@ export type TabActionHandler = (at: string, ...args: unknown[]) => unknown
 
 export interface PluginHostDeps {
   readonly registerKind: (kind: AnyTabKind) => () => void
-  readonly registerExtensionReader: (extension: string, read: SourceReader) => () => void
+  readonly registerExtensionReader: (extension: string, readItem: SourceReader) => () => void
   readonly registerEditor?: (
     type: string,
     open: (path: string, title?: string, options?: unknown) => void,

@@ -17,14 +17,14 @@ const createModel = (name: string, writes: readonly SettingEdit[]): Model => ({
   presence: 'nothing to fetch',
 })
 
-const setup = (held: Record<string, unknown> = {}, models: readonly Model[] = []) => {
-  const written: SettingEdit[][] = []
+const setup = (target: Record<string, unknown> = {}, models: readonly Model[] = []) => {
+  const content: SettingEdit[][] = []
   const fields = createSettingFields(() => ({
-    getSetting: (at) => held[at.join('.')],
+    getSetting: (at) => target[at.join('.')],
     getModels: () => models,
-    write: (edits) => written.push([...edits]),
+    write: (edits) => content.push([...edits]),
   }))
-  return { fields, written }
+  return { fields, written: content }
 }
 
 describe('what a setting is read as', () => {

@@ -11,10 +11,10 @@ import { fileOpeners, type FileOpenerDeps } from './openers'
 
 /** A vault that answers what it was told, and counts the questions. */
 const vault = (stands: Record<string, FileKind> = {}) => {
-  const asked: (readonly string[])[] = []
+  const request: (readonly string[])[] = []
   const core: FileOpenerDeps = {
     fileKinds: async (paths) => {
-      asked.push(paths)
+      request.push(paths)
       const found = new Map<string, FileKind>()
       for (const path of paths) {
         const one = stands[path]
@@ -23,7 +23,7 @@ const vault = (stands: Record<string, FileKind> = {}) => {
       return found
     },
   }
-  return { core, asked }
+  return { core, asked: request }
 }
 
 /** A note of one of three, as the vault answers what stands at its path. */
@@ -448,9 +448,9 @@ describe('the same extension reader registered twice', () => {
     const one = vault({ 'a.xyz': OTHER })
     const tabOpeners = fileOpeners(one.core)
     const opened: string[] = []
-    const read = () => opened.push('read')
-    const disposeFirst = tabOpeners.registerExtensionReader('xyz', read)
-    tabOpeners.registerExtensionReader('xyz', read)
+    const readItem = () => opened.push('read')
+    const disposeFirst = tabOpeners.registerExtensionReader('xyz', readItem)
+    tabOpeners.registerExtensionReader('xyz', readItem)
 
     disposeFirst()
     await tabOpeners.openFile('a.xyz')

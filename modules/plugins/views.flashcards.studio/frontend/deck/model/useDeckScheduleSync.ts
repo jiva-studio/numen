@@ -19,9 +19,9 @@ export function useDeckScheduleSync(
 
   const listStencils = async (): Promise<void> => {
     try {
-      const listed = (await cards.stencils()).stencils
+      const items = (await cards.stencils()).stencils
       listedOk = true
-      if (!areOffersEqual(offers.value, listed)) offers.value = listed
+      if (!areOffersEqual(offers.value, items)) offers.value = items
     } catch {
       // Listing stencils failed.
       listedOk = false

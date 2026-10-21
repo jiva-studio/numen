@@ -212,8 +212,8 @@ describe('answers arriving', () => {
 
   it('says the vault holds no vectors, where meaning came back with nothing', async () => {
     const vault = createVault()
-    const read = { chunks: 4, embedded: 0, isEmbedding: true }
-    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => read })
+    const readItem = { chunks: 4, embedded: 0, isEmbedding: true }
+    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -229,8 +229,8 @@ describe('answers arriving', () => {
 
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
     const vault = createVault()
-    const read = { chunks: 4, embedded: 0, isEmbedding: false }
-    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => read })
+    const readItem = { chunks: 4, embedded: 0, isEmbedding: false }
+    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
 
     void palette.setTyped('ent')
     await flushPromises()

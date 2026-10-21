@@ -42,20 +42,20 @@ export function createHost({
     resolved: [] as (readonly string[])[],
   }
 
-  const asked: Pick<WorkspaceHost, 'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady'> = {
+  const request: Pick<WorkspaceHost, 'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady'> = {
     openFile: (path, options) => void recorded.opened.push([path, options]),
     openFileAt: (path, spans) => void recorded.openedAt.push([path, spans]),
     getNoteInFocus: () => focus,
     isReady: ref(true),
   }
-  const workspace = asked as WorkspaceHost
+  const workspace = request as WorkspaceHost
 
   const agent: AgentHost = {
     ask: async function* () {},
     finish: async (conversation) => void recorded.finished.push(conversation),
-    resolve: async (written) => {
-      recorded.resolved.push(written)
-      return new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
+    resolve: async (content) => {
+      recorded.resolved.push(content)
+      return new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
     },
     getUnreachable: () => unreachable,
     getSetting: (path) => settings[path.join('.')],

@@ -18,12 +18,12 @@ function book(
   layout: DocumentLayout | Error = LAYOUT,
   where: readonly (readonly PageHighlight[])[] = [],
 ) {
-  const asked: string[] = []
+  const request: string[] = []
   const spans: string[] = []
 
   const documents: Documents = {
     getDocumentLayout: async (path) => {
-      asked.push(path)
+      request.push(path)
       if (layout instanceof Error) throw layout
       return layout
     },
@@ -34,141 +34,141 @@ function book(
     },
   }
 
-  return { documents, asked, spans }
+  return { documents, asked: request, spans }
 }
 
 describe('a document still being read', () => {
   it('says so until the layout lands, and no longer', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
+    const readItem = useDocumentReader(documents, 'Book.pdf')
 
-    expect(read.isLoading.value).toBe(true)
+    expect(readItem.isLoading.value).toBe(true)
 
-    await read.goToPage(0)
+    await readItem.goToPage(0)
 
-    expect(read.isLoading.value).toBe(false)
+    expect(readItem.isLoading.value).toBe(false)
   })
 
   it('stops saying so even where the document could not be read', async () => {
     const { documents } = book(new Error('no such document'))
-    const read = useDocumentReader(documents, 'Book.pdf')
+    const readItem = useDocumentReader(documents, 'Book.pdf')
 
-    await read.goToPage(0)
+    await readItem.goToPage(0)
 
-    expect(read.isLoading.value).toBe(false)
-    expect(read.error.value).not.toBe('')
+    expect(readItem.isLoading.value).toBe(false)
+    expect(readItem.error.value).not.toBe('')
   })
 })
 
 describe('a document opened', () => {
   it('asks what it is once, however much is read of it', async () => {
     const { documents, asked } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
+    const readItem = useDocumentReader(documents, 'Book.pdf')
 
-    read.widen(800)
-    await read.goToNextPage()
-    await read.goToPreviousPage()
+    readItem.widen(800)
+    await readItem.goToNextPage()
+    await readItem.goToPreviousPage()
 
     expect(asked).toStrictEqual(['Book.pdf'])
   })
 
   it('relies on the first page, under the name the document gives it', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
+    const readItem = useDocumentReader(documents, 'Book.pdf')
 
-    await read.goToPage(0)
+    await readItem.goToPage(0)
 
-    expect(read.pages.value.length).toBe(3)
-    expect(read.pageNumber.value).toBe(0)
+    expect(readItem.pages.value.length).toBe(3)
+    expect(readItem.pageNumber.value).toBe(0)
   })
 
   it('draws nothing until it is told how wide the page is', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
+    const readItem = useDocumentReader(documents, 'Book.pdf')
 
-    await read.goToPage(1)
+    await readItem.goToPage(1)
 
-    expect(read.picture.value).toBe('')
+    expect(readItem.picture.value).toBe('')
   })
 })
 
 describe('a page turned', () => {
   it('is drawn at the page it moved to', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
-    await read.goToPage(0)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
+    await readItem.goToPage(0)
 
-    await read.goToNextPage()
+    await readItem.goToNextPage()
 
-    expect(read.pageNumber.value).toBe(1)
-    expect(read.picture.value).toBe('Book.pdf 1 800')
+    expect(readItem.pageNumber.value).toBe(1)
+    expect(readItem.picture.value).toBe('Book.pdf 1 800')
   })
 
   it('is the picture it already was when it is turned back to', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
-    await read.goToPage(0)
-    const first = read.picture.value
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
+    await readItem.goToPage(0)
+    const first = readItem.picture.value
 
-    await read.goToPage(1)
-    await read.goToPage(0)
+    await readItem.goToPage(1)
+    await readItem.goToPage(0)
 
-    expect(read.picture.value).toBe(first)
+    expect(readItem.picture.value).toBe(first)
   })
 
   it('remains at the end when it is turned past it', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
 
-    await read.goToPage(9)
-    expect(read.pageNumber.value).toBe(2)
+    await readItem.goToPage(9)
+    expect(readItem.pageNumber.value).toBe(2)
 
-    await read.goToPage(-4)
-    expect(read.pageNumber.value).toBe(0)
+    await readItem.goToPage(-4)
+    expect(readItem.pageNumber.value).toBe(0)
   })
 })
 
 describe('the width a page is drawn at', () => {
   it('is the width the page is requested for', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    await read.goToPage(0)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    await readItem.goToPage(0)
 
-    read.widen(800)
-    expect(read.picture.value).toBe('Book.pdf 0 800')
+    readItem.widen(800)
+    expect(readItem.picture.value).toBe('Book.pdf 0 800')
 
-    read.widen(1600)
-    expect(read.picture.value).toBe('Book.pdf 0 1600')
+    readItem.widen(1600)
+    expect(readItem.picture.value).toBe('Book.pdf 0 1600')
   })
 
   it('is never wider than a page is drawn', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    await read.goToPage(0)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    await readItem.goToPage(0)
 
-    read.widen(9000)
+    readItem.widen(9000)
 
-    expect(read.picture.value).toBe('Book.pdf 0 4096')
+    expect(readItem.picture.value).toBe('Book.pdf 0 4096')
   })
 })
 
 describe('what is highlighted', () => {
   it('is the rectangles of the page in front, and the tab turns to the first', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.9, maxY: 0.3 }
 
-    await read.applyHighlights([[{ page: 2, rects: [rect] }]])
+    await readItem.applyHighlights([[{ page: 2, rects: [rect] }]])
 
-    expect(read.pageNumber.value).toBe(2)
-    expect(read.highlighted.value).toStrictEqual([rect])
+    expect(readItem.pageNumber.value).toBe(2)
+    expect(readItem.highlighted.value).toStrictEqual([rect])
 
-    await read.goToPage(0)
-    expect(read.highlighted.value).toStrictEqual([])
+    await readItem.goToPage(0)
+    expect(readItem.highlighted.value).toStrictEqual([])
   })
 })
 
@@ -176,14 +176,14 @@ describe('a document opened at a place in its text', () => {
   it('highlights what remains there, on the first page it falls on', async () => {
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const { documents, spans } = book(LAYOUT, [[{ page: 1, rects: [rect] }]])
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
 
-    await read.focusSpans({ from: 40_512, to: 40_543 })
+    await readItem.focusSpans({ from: 40_512, to: 40_543 })
 
     expect(spans).toStrictEqual(['Book.pdf 40512 40543'])
-    expect(read.pageNumber.value).toBe(1)
-    expect(read.highlighted.value).toStrictEqual([rect])
+    expect(readItem.pageNumber.value).toBe(1)
+    expect(readItem.highlighted.value).toStrictEqual([rect])
   })
 
   it('highlights the other places requested for where they fall, apart from the first', async () => {
@@ -195,10 +195,10 @@ describe('a document opened at a place in its text', () => {
       [{ page: 1, rects: [there] }],
       [{ page: 2, rects: [onTheNextPage] }],
     ])
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
 
-    await read.focusSpans(
+    await readItem.focusSpans(
       { from: 40_512, to: 40_543 },
       { from: 41_000, to: 41_020 },
       { from: 90_000, to: 90_012 },
@@ -209,23 +209,23 @@ describe('a document opened at a place in its text', () => {
       'Book.pdf 41000 41020',
       'Book.pdf 90000 90012',
     ])
-    expect(read.pageNumber.value).toBe(1)
-    expect(read.highlighted.value).toStrictEqual([here])
-    expect(read.otherHighlighted.value).toStrictEqual([there])
-    expect(read.getOtherHighlightsOn(2)).toStrictEqual([onTheNextPage])
-    expect(read.getHighlightsOn(2)).toStrictEqual([])
+    expect(readItem.pageNumber.value).toBe(1)
+    expect(readItem.highlighted.value).toStrictEqual([here])
+    expect(readItem.otherHighlighted.value).toStrictEqual([there])
+    expect(readItem.getOtherHighlightsOn(2)).toStrictEqual([onTheNextPage])
+    expect(readItem.getHighlightsOn(2)).toStrictEqual([])
   })
 
   it('relies on the first page with nothing highlighted where nothing remains there', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
 
-    await read.focusSpans({ from: 40_512, to: 40_543 })
+    await readItem.focusSpans({ from: 40_512, to: 40_543 })
 
-    expect(read.pageNumber.value).toBe(0)
-    expect(read.highlighted.value).toStrictEqual([])
-    expect(read.error.value).toBe('')
+    expect(readItem.pageNumber.value).toBe(0)
+    expect(readItem.highlighted.value).toStrictEqual([])
+    expect(readItem.error.value).toBe('')
   })
 
   it('says what it could not ask, and reads on', async () => {
@@ -233,56 +233,56 @@ describe('a document opened at a place in its text', () => {
     documents.getHighlights = async () => {
       throw new Error('the layer is being written')
     }
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
 
-    await read.focusSpans({ from: 40_512, to: 40_543 })
+    await readItem.focusSpans({ from: 40_512, to: 40_543 })
 
-    expect(read.error.value).toContain('numen did not answer')
-    expect(read.error.value).not.toContain('the layer is being written')
-    expect(read.picture.value).toBe('Book.pdf 0 800')
+    expect(readItem.error.value).toContain('numen did not answer')
+    expect(readItem.error.value).not.toContain('the layer is being written')
+    expect(readItem.picture.value).toBe('Book.pdf 0 800')
   })
 })
 
 describe('a document tab that closes', () => {
   it('draws nothing more, and turns to no other page', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    read.widen(800)
-    await read.goToPage(1)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    readItem.widen(800)
+    await readItem.goToPage(1)
 
-    read.close()
-    await read.goToPage(2)
+    readItem.close()
+    await readItem.goToPage(2)
 
-    expect(read.picture.value).toBe('')
-    expect(read.pageNumber.value).toBe(1)
+    expect(readItem.picture.value).toBe('')
+    expect(readItem.pageNumber.value).toBe(1)
   })
 })
 
 describe('a document that will not open', () => {
   it('says why, and remains with nothing in it', async () => {
     const { documents } = book(new Error('no such document'))
-    const read = useDocumentReader(documents, 'Gone.pdf')
+    const readItem = useDocumentReader(documents, 'Gone.pdf')
 
-    read.widen(800)
-    await read.goToPage(1)
+    readItem.widen(800)
+    await readItem.goToPage(1)
 
-    expect(read.error.value).toContain('numen did not answer')
-    expect(read.error.value).not.toContain('no such document')
-    expect(read.pages.value.length).toBe(0)
-    expect(read.picture.value).toBe('')
+    expect(readItem.error.value).toContain('numen did not answer')
+    expect(readItem.error.value).not.toContain('no such document')
+    expect(readItem.pages.value.length).toBe(0)
+    expect(readItem.picture.value).toBe('')
   })
 })
 
 describe('a page turned back', () => {
   it('is the page before the one in front', async () => {
     const { documents } = book()
-    const read = useDocumentReader(documents, 'Book.pdf')
-    await read.goToPage(2)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    await readItem.goToPage(2)
 
-    await read.goToPreviousPage()
+    await readItem.goToPreviousPage()
 
-    expect(read.pageNumber.value).toBe(1)
+    expect(readItem.pageNumber.value).toBe(1)
   })
 })
 
@@ -299,36 +299,36 @@ describe('a document tab closed before the layout lands', () => {
 
   it('holds no pages when the layout lands', async () => {
     const { documents, settleLayout } = deferLayout()
-    const read = useDocumentReader(documents, 'Book.pdf')
+    const readItem = useDocumentReader(documents, 'Book.pdf')
 
-    read.close()
+    readItem.close()
     settleLayout(LAYOUT)
-    await read.goToPage(0)
+    await readItem.goToPage(0)
 
-    expect(read.pages.value.length).toBe(0)
-    expect(read.isLoading.value).toBe(false)
+    expect(readItem.pages.value.length).toBe(0)
+    expect(readItem.isLoading.value).toBe(false)
   })
 
   it('says nothing of a layout that could not be read', async () => {
     const { documents, settleLayout } = deferLayout()
-    const read = useDocumentReader(documents, 'Book.pdf')
+    const readItem = useDocumentReader(documents, 'Book.pdf')
 
-    read.close()
+    readItem.close()
     settleLayout(new Error('no such document'))
-    await read.goToPage(0)
+    await readItem.goToPage(0)
 
-    expect(read.error.value).toBe('')
+    expect(readItem.error.value).toBe('')
   })
 })
 
 describe('a document tab closed after the layout landed', () => {
   it('asks the document for no highlights', async () => {
     const { documents, spans } = book(LAYOUT, [[{ page: 1, rects: [] }]])
-    const read = useDocumentReader(documents, 'Book.pdf')
-    await read.goToPage(0)
+    const readItem = useDocumentReader(documents, 'Book.pdf')
+    await readItem.goToPage(0)
 
-    read.close()
-    await read.focusSpans({ from: 40_512, to: 40_543 })
+    readItem.close()
+    await readItem.focusSpans({ from: 40_512, to: 40_543 })
 
     expect(spans).toStrictEqual([])
   })

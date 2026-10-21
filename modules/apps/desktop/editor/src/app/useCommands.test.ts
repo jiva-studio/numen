@@ -38,7 +38,7 @@ vi.mock('./commandDeps', () => ({
 const target = { path: 'a.md' } as unknown as CommandTarget
 
 const setup = (preventHeld = false) => {
-  const written: [string, string][] = []
+  const content: [string, string][] = []
   const press = vi.fn(() => preventHeld)
   const options = {
     core: {},
@@ -49,9 +49,9 @@ const setup = (preventHeld = false) => {
     kept: {},
     runs: {},
     coverage: () => ({}),
-    writeMessage: (text: string, tone: string) => written.push([text, tone]),
+    writeMessage: (text: string, tone: string) => content.push([text, tone]),
   } as unknown as CommandsDepsOptions
-  return { written, press, ...useCommands(options) }
+  return { written: content, press, ...useCommands(options) }
 }
 
 const keyEvent = (key: string, over: Partial<KeyboardEvent> = {}) => {

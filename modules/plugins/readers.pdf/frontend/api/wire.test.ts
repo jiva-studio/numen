@@ -8,17 +8,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import { client, documents } from './wire'
 
-const asked = {
+const request = {
   getDocument: vi.fn(),
   readOcr: vi.fn(),
 }
 
-client.documents = asked as unknown as typeof client.documents
-client.ocr = asked as unknown as typeof client.ocr
+client.documents = request as unknown as typeof client.documents
+client.ocr = request as unknown as typeof client.ocr
 
 describe('the layout of a document', () => {
   it('arrives back as the size of every page and the file it was read from', async () => {
-    asked.getDocument.mockResolvedValue({
+    request.getDocument.mockResolvedValue({
       pages: [
         { width: 612, height: 792 },
         { width: 595, height: 842 },
@@ -33,11 +33,11 @@ describe('the layout of a document', () => {
       ],
       fingerprint: '12 34 Book.pdf',
     })
-    expect(asked.getDocument).toHaveBeenCalledWith({ path: 'Book.pdf' })
+    expect(request.getDocument).toHaveBeenCalledWith({ path: 'Book.pdf' })
   })
 
   it('names no file where the answer carries none', async () => {
-    asked.getDocument.mockResolvedValue({ pages: [] })
+    request.getDocument.mockResolvedValue({ pages: [] })
 
     expect(await documents.getDocumentLayout('Book.pdf')).toEqual({ pages: [], fingerprint: '' })
   })
@@ -59,7 +59,7 @@ describe('the address a page is drawn from', () => {
 
 describe('where a run of text remains', () => {
   it('gathers the boxes of one page into a single entry', async () => {
-    asked.readOcr.mockResolvedValue({
+    request.readOcr.mockResolvedValue({
       runs: [
         {
           boxes: [
@@ -81,11 +81,11 @@ describe('where a run of text remains', () => {
         },
       ],
     ])
-    expect(asked.readOcr).toHaveBeenCalledWith({ path: 'Book.pdf', spans: [{ from: 0, to: 9 }] })
+    expect(request.readOcr).toHaveBeenCalledWith({ path: 'Book.pdf', spans: [{ from: 0, to: 9 }] })
   })
 
   it('opens a new entry where a box falls on another page', async () => {
-    asked.readOcr.mockResolvedValue({
+    request.readOcr.mockResolvedValue({
       runs: [
         {
           boxes: [
@@ -104,13 +104,13 @@ describe('where a run of text remains', () => {
   })
 
   it('remains nowhere where the run carries no boxes', async () => {
-    asked.readOcr.mockResolvedValue({ runs: [{ boxes: [] }] })
+    request.readOcr.mockResolvedValue({ runs: [{ boxes: [] }] })
 
     expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([[]])
   })
 
   it('remains at the corner where a box carries no rectangle', async () => {
-    asked.readOcr.mockResolvedValue({ runs: [{ boxes: [{ page: 1 }] }] })
+    request.readOcr.mockResolvedValue({ runs: [{ boxes: [{ page: 1 }] }] })
 
     expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([
       [{ page: 1, rects: [{ minX: 0, minY: 0, maxX: 0, maxY: 0 }] }],
@@ -118,7 +118,7 @@ describe('where a run of text remains', () => {
   })
 
   it('answers one span at a time, and nothing for a span the answer skipped', async () => {
-    asked.readOcr.mockResolvedValue({
+    request.readOcr.mockResolvedValue({
       runs: [{ boxes: [{ page: 1, rect: { minX: 0.1, minY: 0.1, maxX: 0.2, maxY: 0.2 } }] }],
     })
 

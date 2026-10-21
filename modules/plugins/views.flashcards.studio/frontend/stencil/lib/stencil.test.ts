@@ -23,7 +23,7 @@ const createIds = () => {
   return () => `c${(at += 1)}`
 }
 
-const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
+const trimmed = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
@@ -38,7 +38,7 @@ const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
 })
 
 const stencil = (over: Partial<VaultStencil> = {}): BufferStencil =>
-  createBufferStencil(cut(over), createIds())
+  createBufferStencil(trimmed(over), createIds())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {
@@ -46,8 +46,8 @@ describe('a stencil as the window holds it', () => {
   })
 
   it('is the same string read out and written back', () => {
-    const held = stencil()
-    expect(parseStencil(serializeStencil(held))).toStrictEqual(held)
+    const target = stencil()
+    expect(parseStencil(serializeStencil(target))).toStrictEqual(target)
   })
 
   it('is a stencil of no fields where nothing has been read', () => {
@@ -70,15 +70,15 @@ describe('a field of a stencil', () => {
   })
 
   it('leaves the braces standing when the stencil no longer names it', () => {
-    const held = removeField(stencil(), 'Height')
-    expect(held.fields).toStrictEqual(['Life span'])
-    expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')
+    const target = removeField(stencil(), 'Height')
+    expect(target.fields).toStrictEqual(['Life span'])
+    expect(target.faces[0]?.back).toBe('**Height:** {{Height}}')
   })
 
   it('writes into that face alone', () => {
-    const held = writeFace(stencil(), 'c1', 'back', 'changed')
-    expect(held.faces[0]?.back).toBe('changed')
-    expect(held.faces[1]?.back).toBe('{{Height}}')
+    const target = writeFace(stencil(), 'c1', 'back', 'changed')
+    expect(target.faces[0]?.back).toBe('changed')
+    expect(target.faces[1]?.back).toBe('{{Height}}')
   })
 
   it('lands before the field it was let go on', () => {
@@ -88,16 +88,16 @@ describe('a field of a stencil', () => {
   })
 
   it('leaves the first field first, wherever the move came from', () => {
-    const held = stencil({ fields: ['Name', 'Height', 'Life span'] })
-    expect(moveField(held, 'Height', 'Name').fields).toStrictEqual(held.fields)
-    expect(moveField(held, 'Name', null).fields).toStrictEqual(held.fields)
+    const target = stencil({ fields: ['Name', 'Height', 'Life span'] })
+    expect(moveField(target, 'Height', 'Name').fields).toStrictEqual(target.fields)
+    expect(moveField(target, 'Name', null).fields).toStrictEqual(target.fields)
   })
 })
 
 describe('a face of a stencil', () => {
   it('is added at the end, with both its halves empty', () => {
-    const held = addFace(stencil(), 'Spell it', () => 'c9')
-    expect(held.faces[2]).toStrictEqual({
+    const target = addFace(stencil(), 'Spell it', () => 'c9')
+    expect(target.faces[2]).toStrictEqual({
       id: 'c9',
       name: 'Spell it',
       preamble: '',
@@ -124,9 +124,9 @@ describe('a face of a stencil', () => {
   })
 
   it('takes what was written into one half, and the other remains', () => {
-    const held = writeFace(stencil(), 'c1', 'front', '{{Height}}')
-    expect(held.faces[0]?.front).toBe('{{Height}}')
-    expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')
+    const target = writeFace(stencil(), 'c1', 'front', '{{Height}}')
+    expect(target.faces[0]?.front).toBe('{{Height}}')
+    expect(target.faces[0]?.back).toBe('**Height:** {{Height}}')
   })
 })
 
@@ -137,7 +137,7 @@ describe('whether two evaluations of a file read the same', () => {
 
   it('is not so for a field or a face written elsewhere', () => {
     expect(areStencilsEqual(stencil(), stencil({ fields: ['Height'] }))).toBe(false)
-    expect(areStencilsEqual(stencil(), stencil({ faces: cut().faces.slice(0, 1) }))).toBe(false)
+    expect(areStencilsEqual(stencil(), stencil({ faces: trimmed().faces.slice(0, 1) }))).toBe(false)
   })
 
   it('is not so for a preamble written elsewhere, however the tail reads', () => {

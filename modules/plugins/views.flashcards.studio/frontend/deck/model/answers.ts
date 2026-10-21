@@ -27,8 +27,8 @@ export interface VaultAnswer {
 
 const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
 
-const findFailureReason = (errorCode: ErrorCode | null, bound: number): string | null => {
-  if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
+const findFailureReason = (errorCode: ErrorCode | null, linked: number): string | null => {
+  if (errorCode === 'deckTooLarge') return words.tooLarge(linked)
   if (errorCode === 'notADeck') return words.notADeck
   return null
 }

@@ -11,12 +11,12 @@ import paths from '../paths.json'
 import { pick } from '@/testing/pick'
 
 const createSection = (file: Record<string, unknown> = {}) => {
-  const written: SettingEdit[] = []
+  const content: SettingEdit[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: () => [],
-    write: (said) => {
-      written.push(...said)
+    write: (response) => {
+      content.push(...response)
     },
     file: ref('/numen.json'),
     openFile: vi.fn(),
@@ -43,7 +43,7 @@ const createSection = (file: Record<string, unknown> = {}) => {
   const wrapper = mount(PerformanceSettingsSection, {
     props: { state },
   })
-  return { written, wrapper }
+  return { written: content, wrapper }
 }
 
 describe('PerformanceSettingsSection', () => {

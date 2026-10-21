@@ -150,8 +150,8 @@ describe('the vaults the screen lists', () => {
   })
 
   it('marks one whose folder is not there', () => {
-    const held = createVaultRows(createVaultList([vault('b', 'Heat', true)], 'a'), words)
-    expect(held[0]).toStrictEqual({
+    const target = createVaultRows(createVaultList([vault('b', 'Heat', true)], 'a'), words)
+    expect(target[0]).toStrictEqual({
       id: 'b',
       name: 'Heat',
       path: '/vaults/Heat',
@@ -160,8 +160,8 @@ describe('the vaults the screen lists', () => {
   })
 
   it('says the folder is gone of the vault it is showing, which is the worse news', () => {
-    const held = createVaultRows(createVaultList([vault('a', 'Physics', true)], 'a'), words)
-    expect(held[0]).toStrictEqual({
+    const target = createVaultRows(createVaultList([vault('a', 'Physics', true)], 'a'), words)
+    expect(target[0]).toStrictEqual({
       id: 'a',
       name: 'Physics',
       path: '/vaults/Physics',

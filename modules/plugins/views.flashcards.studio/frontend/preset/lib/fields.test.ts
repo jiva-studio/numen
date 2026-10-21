@@ -188,18 +188,18 @@ describe('the limits of a control', () => {
 
 describe('the number a control shows', () => {
   it('is the setting, and a percentage for retention', () => {
-    const held = settings({
+    const target = settings({
       newADay: 7,
       retention: 0.9,
       interval: 30,
       reviewsADay: 50,
       minutesADay: 25,
     })
-    expect(getFieldCount('newADay', held)).toBe(7)
-    expect(getFieldCount('interval', held)).toBe(30)
-    expect(getFieldCount('retention', held)).toBe(90)
-    expect(getFieldCount('reviewsADay', held)).toBe(50)
-    expect(getFieldCount('minutesADay', held)).toBe(25)
+    expect(getFieldCount('newADay', target)).toBe(7)
+    expect(getFieldCount('interval', target)).toBe(30)
+    expect(getFieldCount('retention', target)).toBe(90)
+    expect(getFieldCount('reviewsADay', target)).toBe(50)
+    expect(getFieldCount('minutesADay', target)).toBe(25)
   })
 
   it('is nothing for a field that is no number', () => {

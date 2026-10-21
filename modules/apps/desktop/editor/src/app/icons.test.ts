@@ -50,8 +50,8 @@ describe('the icon a command is drawn with', () => {
   it('is the same one wherever a command is offered', () => {
     const onANode = new Map(ITEMS.map((item) => [item.id, findIcon(item.id)]))
     for (const item of inTheTree) {
-      const drawn = onANode.get(item.id)
-      if (drawn) expect(findIcon(item.id), item.id).toBe(drawn)
+      const rendered = onANode.get(item.id)
+      if (rendered) expect(findIcon(item.id), item.id).toBe(rendered)
     }
   })
 

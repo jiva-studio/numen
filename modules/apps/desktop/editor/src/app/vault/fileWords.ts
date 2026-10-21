@@ -18,13 +18,13 @@ const holding: Record<SourceKind, Source> = {
 export const mapSourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
 
 /** How a book at a path is drawn, in the words the window uses. */
-const drawn: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
+const rendered: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
   [BookFormats.UNSPECIFIED]: undefined,
   [BookFormats.PDF]: 'pdf',
   [BookFormats.EPUB]: 'epub',
 }
 
-export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => drawn[of]
+export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => rendered[of]
 
 /** One row of a listing, kept as the plain value the window carries it as. */
 export const mapEntry = (one: EntryMessage): Entry => ({

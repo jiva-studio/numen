@@ -99,12 +99,12 @@ describe('the one slider', () => {
   // A card nobody has answered is new, which is what the rest of the product
   // calls it. Overdue keeps its own word, which is a distinction of its own.
   it('calls a card nobody has answered new', () => {
-    const said = words
+    const saidText = words
       .material({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
       .map((one) => one.name)
-    expect(said).toContain('new')
-    expect(said).not.toContain('unbegun')
-    expect(said).toContain('overdue')
+    expect(saidText).toContain('new')
+    expect(saidText).not.toContain('unbegun')
+    expect(saidText).toContain('overdue')
   })
 
   it('leaves out whichever figure remains at nothing', () => {
@@ -139,11 +139,11 @@ describe('the one slider', () => {
     const { tab } = mountPresetTab({
       at: [point(), point(), point({ reviews: 80, backlog: [9, 4, 0, 0] }), point()],
     })
-    const said = tab
+    const response = tab
       .get('[data-control="callout"]')
       .findAll('[data-control="bought"]')
       .map((one) => one.text())
-    expect(said).toStrictEqual(['20 minutes a day', '80 cards a session', 'overdue gone in 3 days'])
+    expect(response).toStrictEqual(['20 minutes a day', '80 cards a session', 'overdue gone in 3 days'])
     // Its own value on the width stays on its own line under the picture.
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
       words.formatGoalValue('minutes', 20),
@@ -154,7 +154,7 @@ describe('the one slider', () => {
   })
 
   it('says what a target costs, and a date the days and the day’s length', () => {
-    const kept = mountPresetTab(
+    const retained = mountPresetTab(
       {
         goal: 'retention',
         grid: [0.7, 0.8, 0.9, 0.95],
@@ -163,7 +163,7 @@ describe('the one slider', () => {
       },
       { goal: 'retention' },
     )
-    expect(kept.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
+    expect(retained.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
       '90% remembered',
       '14 minutes a day',
       'overdue gone in 2 days',
@@ -342,10 +342,10 @@ describe('what a day cannot reach', () => {
   it('says nothing of it where the day leaves every card time enough', async () => {
     const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
-    const said = getBoughtTexts(tab)
-    expect(said).toStrictEqual(['180 days off', '15 minutes a day'])
-    expect(said.join(' ')).not.toContain('cannot get there')
-    expect(said.join(' ')).not.toContain('0 of')
+    const saidText = getBoughtTexts(tab)
+    expect(saidText).toStrictEqual(['180 days off', '15 minutes a day'])
+    expect(saidText.join(' ')).not.toContain('cannot get there')
+    expect(saidText.join(' ')).not.toContain('0 of')
   })
 
   it('follows the day, since each day leaves its own cards short', async () => {
@@ -394,9 +394,9 @@ describe('what the control remains at', () => {
   // A point read as zero draws a screen of zeroes, which reads as a broken one.
   it('reads the cards off the place the knob remains at', () => {
     const { tab } = mountPresetTab()
-    const said = tab.findAll('[data-control="bought"]').map((one) => one.text())
-    expect(said).toContain('80 cards a session')
-    expect(said).not.toContain('0 cards a session')
+    const saidText = tab.findAll('[data-control="bought"]').map((one) => one.text())
+    expect(saidText).toContain('80 cards a session')
+    expect(saidText).not.toContain('0 cards a session')
   })
 
   // The figure is what a person would recall when a card comes round, said as
@@ -405,7 +405,7 @@ describe('what the control remains at', () => {
     expect(words.value('retention', 0.9, '')).toBe('90% remembered')
     expect(words.formatGoalValue('retention', 0.9)).toBe('90%')
     expect(words.fieldDetail('retention')).toContain('remember')
-    for (const said of [
+    for (const response of [
       words.value('retention', 0.9, ''),
       words
         .buys('retention', {
@@ -420,7 +420,7 @@ describe('what the control remains at', () => {
         .join(' '),
       words.fieldDetail('retention'),
     ]) {
-      expect(said).not.toContain('0.9')
+      expect(response).not.toContain('0.9')
     }
   })
 

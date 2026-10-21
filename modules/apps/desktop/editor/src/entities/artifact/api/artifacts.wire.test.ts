@@ -10,15 +10,15 @@ import { describe, expect, it, vi } from 'vitest'
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
 /** What the window asked for, as the transport wrote it out. */
-let asked: unknown[] = []
+let request: unknown[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
 const answerWith = (answer: unknown) => {
-  asked = []
+  request = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_url: string, init: { body: Uint8Array }) => {
-      asked.push(JSON.parse(new TextDecoder().decode(init.body)))
+      request.push(JSON.parse(new TextDecoder().decode(init.body)))
       return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
@@ -61,7 +61,7 @@ describe('what a file carries', () => {
 
     await running.getArtifactStates('Talk.url')
 
-    expect(asked[0]).toEqual({ path: 'Talk.url' })
+    expect(request[0]).toEqual({ path: 'Talk.url' })
   })
 
   it('leaves out an artifact this window has no word for', async () => {
@@ -93,7 +93,7 @@ describe('beginning a run', () => {
       made: 'queued',
       error: '',
     })
-    expect(asked[0]).toEqual({ path: 'Scan.pdf', kind: 'ARTIFACT_KIND_OCR' })
+    expect(request[0]).toEqual({ path: 'Scan.pdf', kind: 'ARTIFACT_KIND_OCR' })
   })
 
   it('is nothing made, and no error, where the answer names no artifact', async () => {
@@ -170,14 +170,14 @@ describe('taking one away', () => {
     answerWith({})
 
     expect(await running.deleteTranscript('Talk.url')).toBe(true)
-    expect(asked[0]).toEqual({ path: 'Talk.url', kind: 'ARTIFACT_KIND_TRANSCRIPT' })
+    expect(request[0]).toEqual({ path: 'Talk.url', kind: 'ARTIFACT_KIND_TRANSCRIPT' })
   })
 
   it('names the copy by the number the schema gave it', async () => {
     answerWith({})
 
     expect(await running.deleteCopy('Talk.url')).toBe(true)
-    expect(asked[0]).toEqual({ path: 'Talk.url', kind: 'ARTIFACT_KIND_COPY' })
+    expect(request[0]).toEqual({ path: 'Talk.url', kind: 'ARTIFACT_KIND_COPY' })
   })
 
   it('fails by a build that cannot do it at all', async () => {

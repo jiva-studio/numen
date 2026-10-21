@@ -303,20 +303,20 @@ describe('the agent a plugin asks', () => {
 
   it('reads, writes and lists the settings under agent, and no others', async () => {
     const { context, agent } = createContext([])
-    const asked = getAgent(context)
+    const request = getAgent(context)
 
-    await asked.writeSetting(['agent', 'use'], 'zeta')
-    asked.getSetting(['agent', 'use'])
-    asked.getModelsAt(['agent', 'zeta', 'model'])
+    await request.writeSetting(['agent', 'use'], 'zeta')
+    request.getSetting(['agent', 'use'])
+    request.getModelsAt(['agent', 'zeta', 'model'])
 
     expect(agent.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'zeta')
     expect(agent.getSetting).toHaveBeenCalledWith(['agent', 'use'])
     expect(agent.getModelsAt).toHaveBeenCalledWith(['agent', 'zeta', 'model'])
 
     const elsewhere = ['plugins', 'md.numen.other', 'enabled']
-    expect(asked.getSetting(elsewhere)).toBeUndefined()
-    expect(asked.getModelsAt(elsewhere)).toStrictEqual([])
-    await expect(asked.writeSetting(elsewhere, false)).rejects.toThrowError(/agent settings/)
+    expect(request.getSetting(elsewhere)).toBeUndefined()
+    expect(request.getModelsAt(elsewhere)).toStrictEqual([])
+    await expect(request.writeSetting(elsewhere, false)).rejects.toThrowError(/agent settings/)
     expect(agent.getSetting).toHaveBeenCalledTimes(1)
     expect(agent.writeSetting).toHaveBeenCalledTimes(1)
   })

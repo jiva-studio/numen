@@ -98,9 +98,9 @@ describe('reading a deck', () => {
   it('carries the empty string where the service stamped nothing', async () => {
     answer('readDeck', { deck: deckMessage })
 
-    const read = await cards.readDeck('Deck.md')
+    const readItem = await cards.readDeck('Deck.md')
 
-    expect(read.ok && read.value.at).toBe('')
+    expect(readItem.ok && readItem.value.at).toBe('')
   })
 
   it('fails in the service words even where a deck came with them', async () => {
@@ -209,9 +209,9 @@ describe('renaming a field', () => {
 
     await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
 
-    const sent = vi.mocked(cardsService.renameStencilField).mock.calls[0]?.[0]
-    expect(sent).toEqual({ path: 'Word.md', from: 'Front', to: 'Face' })
-    expect(sent).not.toHaveProperty('seen')
+    const dispatched = vi.mocked(cardsService.renameStencilField).mock.calls[0]?.[0]
+    expect(dispatched).toEqual({ path: 'Word.md', from: 'Front', to: 'Face' })
+    expect(dispatched).not.toHaveProperty('seen')
   })
 
   it('answers with the empty string where the service stamped nothing', async () => {
@@ -265,9 +265,9 @@ describe('reading a stencil', () => {
   it('carries the empty string where the service stamped nothing', async () => {
     answer('readStencil', { stencil: stencilMessage })
 
-    const read = await cards.readStencil('Word.md')
+    const readItem = await cards.readStencil('Word.md')
 
-    expect(read.ok && read.value.at).toBe('')
+    expect(readItem.ok && readItem.value.at).toBe('')
   })
 
   it('fails in the service words even where a stencil came with them', async () => {

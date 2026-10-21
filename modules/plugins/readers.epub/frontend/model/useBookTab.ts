@@ -10,7 +10,7 @@ export type { BookHandle }
 /** What one book tab holds. */
 export type BookTabState = ReturnType<typeof useBookTab>
 
-export function useBookTab(read: BookReaderState) {
+export function useBookTab(readItem: BookReaderState) {
   const reader = shallowRef<BookHandle | null>(null)
   const tab = shallowRef<HTMLElement | null>(null)
 
@@ -27,7 +27,7 @@ export function useBookTab(read: BookReaderState) {
   const handleKeyPress = (event: KeyboardEvent) => reader.value?.handleKey(event) ?? false
 
   return {
-    ...read,
+    ...readItem,
     setBookHandle,
     setTabElement,
     measure,

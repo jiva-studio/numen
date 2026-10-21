@@ -40,7 +40,7 @@ const setup = () => {
   const applyPathChanges = vi.fn()
   const createUntitled = vi.fn()
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
-  const made = createFileMakers({
+  const createdItem = createFileMakers({
     core: { createUrl },
     tabOpeners: { openNewFile } as never,
     windowTabs: { createFileOfKind },
@@ -49,7 +49,7 @@ const setup = () => {
   })
   const files = createVaultFiles({
     core: { list: (folder) => Promise.resolve([{ path: `${folder}/a.md` }] as never) },
-    made,
+    made: createdItem,
     making: { createUntitled } as never,
     getTarget: () => target as never,
     commandDeps: commandDeps as never,

@@ -37,9 +37,9 @@ export function parseLinkTarget(href: string): LinkTarget | null {
   // Stryker disable next-line ConditionalExpression,EqualityOperator: Non-empty written cannot decode to empty path.
   if (path === '') return null
 
-  const asked = new URLSearchParams(query)
-  const start = Number(asked.get('start'))
-  const length = Number(asked.get('length'))
+  const query = new URLSearchParams(query)
+  const start = Number(query.get('start'))
+  const length = Number(query.get('length'))
   if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length)) return null
   if (start < 0 || length <= 0) return null
   return { path, start, length }

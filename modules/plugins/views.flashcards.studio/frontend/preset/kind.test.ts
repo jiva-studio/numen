@@ -98,12 +98,12 @@ const writeAs = (over: WriteOver): PresetWriteResult =>
 
 const openPresetTab = async (
   settings: Partial<Settings> = {},
-  answers: Curve | ((asked: Settings) => Curve | Promise<Curve>) = curve,
+  answers: Curve | ((request: Settings) => Curve | Promise<Curve>) = curve,
   reading: (time: number) => ReadOver = () => ({}),
   writing: (time: number) => WriteOver | Promise<WriteOver> = () => ({}),
 ) => {
-  const written: Settings[] = []
-  const asked: Goal[] = []
+  const content: Settings[] = []
+  const request: Goal[] = []
   const closed: string[] = []
   let times = 0
   let writes = 0
@@ -129,11 +129,11 @@ const openPresetTab = async (
     createPreset: async () => asValue({ path: '' }),
     scheduleDeck: async () => asValue({ at: '' }),
     write: async (_path, put) => {
-      written.push(put)
+      content.push(put)
       return writeAs(await writing(writes++))
     },
     curve: async (_path, put) => {
-      asked.push(put.goal)
+      request.push(put.goal)
       return typeof answers === 'function' ? answers(put) : answers
     },
   }
@@ -153,8 +153,8 @@ const openPresetTab = async (
   await Promise.resolve()
   return {
     state,
-    written,
-    asked,
+    written: content,
+    asked: request,
     closed,
     buffers,
     core,
@@ -176,13 +176,13 @@ const flushPromises = async () => {
  */
 const opening = async (file: Partial<Settings>) => {
   let resolveRead = () => {}
-  const held = new Promise<void>((settle) => {
+  const target = new Promise<void>((settle) => {
     resolveRead = settle
   })
-  const written: Settings[] = []
+  const content: Settings[] = []
   const core: Presets = {
     read: async (path) => {
-      await held
+      await target
       return asValue({
         preset: {
           path,
@@ -201,7 +201,7 @@ const opening = async (file: Partial<Settings>) => {
     createPreset: async () => asValue({ path: '' }),
     scheduleDeck: async () => asValue({ at: '' }),
     write: async (_path, put) => {
-      written.push(put)
+      content.push(put)
       return asValue({ at: 'two' })
     },
     curve: async () => curve,
@@ -215,7 +215,7 @@ const opening = async (file: Partial<Settings>) => {
   })
   return {
     tab: kind.kind.open?.('Steady.md', 'preset:Steady.md') as PresetTabState,
-    written,
+    written: content,
     resolveRead,
   }
 }
@@ -610,8 +610,8 @@ describe('what a tab still owes the file', () => {
       () => ({}),
       (time) =>
         time === 0
-          ? new Promise<WriteOver>((done) => {
-              resolveWrite = () => done({})
+          ? new Promise<WriteOver>((isDone) => {
+              resolveWrite = () => isDone({})
             })
           : {},
     )
@@ -1265,7 +1265,7 @@ describe('a vault that does not answer', () => {
   it('says so where the curve of a goal chosen is not answered', async () => {
     const { state } = await openPresetTab(
       {},
-      (asked) => (asked.goal === 'retention' ? Promise.reject(new Error('gone')) : curve),
+      (request) => (request.goal === 'retention' ? Promise.reject(new Error('gone')) : curve),
       () => ({}),
       neverWritten,
     )
@@ -1275,8 +1275,8 @@ describe('a vault that does not answer', () => {
   })
 
   it('says so where the curve of a setting typed is not answered', async () => {
-    const { state } = await openPresetTab({}, (asked) =>
-      asked.newADay === 4 ? Promise.reject(new Error('gone')) : curve,
+    const { state } = await openPresetTab({}, (request) =>
+      request.newADay === 4 ? Promise.reject(new Error('gone')) : curve,
     )
     state.updateSetting('newADay', 4)
     await flushPromises()

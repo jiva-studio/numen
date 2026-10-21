@@ -13,9 +13,9 @@ describe('a note being drawn', () => {
 
   it('holds an ID no other note in the picture holds', () => {
     const map = createNodeIdMap()
-    const drawn = ['Root.md', 'physics/Entropy.md', 'Heat.md'].map(map.getNodeId)
+    const rendered = ['Root.md', 'physics/Entropy.md', 'Heat.md'].map(map.getNodeId)
 
-    expect(new Set(drawn).size).toBe(3)
+    expect(new Set(rendered).size).toBe(3)
   })
 
   it('holds IDs counting up from 1', () => {
@@ -110,13 +110,13 @@ describe('a node ID handed back', () => {
 describe('the notes one picture drew', () => {
   it('are kept, and every other note is release', () => {
     const map = createNodeIdMap()
-    const kept = map.getNodeId('Root.md')
-    const gone = map.getNodeId('Heat.md')
+    const retained = map.getNodeId('Root.md')
+    const removed = map.getNodeId('Heat.md')
 
-    map.retainNodeIds([kept])
+    map.retainNodeIds([retained])
 
-    expect(map.getNodePath(kept)).toBe('Root.md')
-    expect(map.getNodePath(gone)).toBe('')
+    expect(map.getNodePath(retained)).toBe('Root.md')
+    expect(map.getNodePath(removed)).toBe('')
   })
 
   it('leave a note that arrives back holding an ID of its own', () => {

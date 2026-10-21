@@ -150,10 +150,10 @@ describe('the steps when files move', () => {
 
 describe('choosing on a step', () => {
   const choose = (step: PendingStep, item: string, action: string, found: NameMatch[] = []) => {
-    const made = createSteps()
+    const createdItem = createSteps()
     return {
-      ...made,
-      chosen: () => made.steps.chooseInStep(step, item, action, found, [], () => false),
+      ...createdItem,
+      chosen: () => createdItem.steps.chooseInStep(step, item, action, found, [], () => false),
     }
   }
 
@@ -176,12 +176,12 @@ describe('choosing on a step', () => {
   })
 
   it('names with what was typed, the spaces around it taken off', () => {
-    const made = choose(pending('naming'), '', '')
-    made.text.value = '  Alpaca  '
+    const createdItem = choose(pending('naming'), '', '')
+    createdItem.text.value = '  Alpaca  '
 
-    made.chosen()
+    createdItem.chosen()
 
-    expect(made.invoked[0]?.[2]).toBe('Alpaca')
+    expect(createdItem.invoked[0]?.[2]).toBe('Alpaca')
   })
 
   it('is carried out on yes, and on no other answer but no', () => {

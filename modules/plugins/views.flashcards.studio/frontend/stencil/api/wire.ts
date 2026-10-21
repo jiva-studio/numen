@@ -136,7 +136,7 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
   const state = createStencilState()
   const { fileAnswers, titles } = state
 
-  const read = createStencilReader(cards, fileAnswers, titles)
+  const readItem = createStencilReader(cards, fileAnswers, titles)
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
     const stencil = parseStencil(body)
@@ -174,7 +174,7 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
 
   return {
     ...state,
-    read,
+    read: readItem,
     write,
     renameField,
   }

@@ -13,10 +13,10 @@ const PATH = 'presets/Daily.md'
 /** A write the test answers when it chooses. */
 const createGate = () => {
   let open: (answer: PresetWriteResult) => void = () => {}
-  const answered = new Promise<PresetWriteResult>((resolve) => {
+  const reply = new Promise<PresetWriteResult>((resolve) => {
     open = resolve
   })
-  return { answered, open }
+  return { answered: reply, open }
 }
 
 /** A vault whose writes answer in turn, recording the version each was based on. */
@@ -33,8 +33,8 @@ const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)
 
 /** What the window was told, in order. */
 const createMessages = () => {
-  const said: [string, string | undefined][] = []
-  return { said, writeMessage: (text: string, kind?: string) => void said.push([text, kind]) }
+  const response: [string, string | undefined][] = []
+  return { said: response, writeMessage: (text: string, kind?: string) => void response.push([text, kind]) }
 }
 
 const nap = () => new Promise((wake) => setTimeout(wake, 0))

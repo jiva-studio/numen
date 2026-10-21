@@ -8,8 +8,8 @@ import { getFileName } from '@numen/plugin-sdk'
  * Where a name's ending begins, and nowhere for a name carrying none.
  */
 const findExtensionStart = (name: string): number => {
-  const cut = name.lastIndexOf('.')
-  return !/\s/u.test(name.slice(cut)) ? cut : -1
+  const trimmed = name.lastIndexOf('.')
+  return !/\s/u.test(name.slice(trimmed)) ? trimmed : -1
 }
 
 /**

@@ -10,7 +10,7 @@ import { core, vaults } from './index'
 import { WINDOW } from './clients'
 
 const { asked } = vi.hoisted(() => {
-  const asked = {
+  const request = {
     createNote: vi.fn(),
     getNeighbourhood: vi.fn(),
     getOpeningNote: vi.fn(),
@@ -36,7 +36,7 @@ const { asked } = vi.hoisted(() => {
     openVault: vi.fn(),
   }
   vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
-  return { asked }
+  return { asked: request }
 })
 
 vi.mock('@/shared/clients', () => ({
@@ -244,11 +244,11 @@ describe('a note followed', () => {
     })
     const signal = new AbortController().signal
 
-    const seen = []
-    for await (const edit of core.watchEdits(signal)) seen.push(edit)
+    const observed = []
+    for await (const edit of core.watchEdits(signal)) observed.push(edit)
 
     expect(asked.watchEdits.mock.calls.at(-1)).toEqual([{}, { signal }])
-    expect(seen).toEqual([
+    expect(observed).toEqual([
       { change: 1, path: 'a.md', span: { from: 2, to: 5 }, text: 'abc', isComplete: false },
       { change: 2, path: 'a.md', span: { from: 0, to: 0 }, text: 'x', isComplete: true },
     ])

@@ -55,12 +55,12 @@ export const createMarks = (
         addProblemMark(at, card, problem.text)
         continue
       }
-      let held = under.get(card)
-      if (!held) {
-        held = new Map<string, string[]>()
-        under.set(card, held)
+      let card = under.get(card)
+      if (!card) {
+        card = new Map<string, string[]>()
+        under.set(card, card)
       }
-      addProblemMark(held, problem.field, problem.text)
+      addProblemMark(card, problem.field, problem.text)
       continue
     }
     const face = faces[problem.face ?? -1]

@@ -55,7 +55,7 @@ export interface CommandsDepsOptions {
     chooseCount: (item: string) => Promise<void> | void
   }
   rest: {
-    writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void
+    writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
   }

@@ -210,7 +210,7 @@ describe('the services a plugin context is given', () => {
     })
 
     host.notifyVaultChange({ paths: ['A.md'] })
-    await new Promise((done) => setTimeout(done, 0))
+    await new Promise((isDone) => setTimeout(isDone, 0))
 
     expect(heard).toStrictEqual([{ paths: ['A.md'] }])
     expect(onError).toHaveBeenCalledWith('md.numen.two', expect.any(Error))

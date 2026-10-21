@@ -29,7 +29,7 @@ export interface DisplayOptions {
    */
   onVaultChanged?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */
-  reportChange?(said: NoteEdit): void
+  reportChange?(response: NoteEdit): void
   /** What puts a note in front of the person, asked for from outside the window. */
   travelTo?(path: string): void | Promise<void>
   /**
@@ -159,8 +159,8 @@ export function useWindowDisplay(
     core,
     listening,
     isOpen: () => open,
-    setLost: (said) => {
-      display.lost.value = said
+    setLost: (response) => {
+      display.lost.value = response
     },
     wait,
     opening: display.opening,

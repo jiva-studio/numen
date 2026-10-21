@@ -89,12 +89,12 @@ const createLookup = () => {
 /** The lists the window holds, and every row a step said it was standing on. */
 const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   const lists = ref(offers)
-  const shown: string[] = []
+  const displayed: string[] = []
   const paletteLists: PaletteLists = {
     getStepGroups: (command) => lists.value[command] ?? [],
-    previewItem: (command, item) => void shown.push(`${command} ${item}`),
+    previewItem: (command, item) => void displayed.push(`${command} ${item}`),
   }
-  return { paletteLists, lists, shown }
+  return { paletteLists, lists, shown: displayed }
 }
 
 /** The commands over what a test says is in front, asked without a hold. */
@@ -102,35 +102,35 @@ const createPalette = (
   over: Partial<CommandTarget> = {},
   found: readonly NameMatch[] = [],
   offers: Record<string, readonly StepGroup[]> = {},
-  listed: VaultList = installation(vault('physics', 'Physics')),
+  items: VaultList = installation(vault('physics', 'Physics')),
   runs: RunSupport = runSupport(),
 ) => {
   const at = ref(front(over))
-  const asked: string[] = []
+  const request: string[] = []
   const core = {
     names: async (query: string) => {
-      asked.push(query)
+      request.push(query)
       return found
     },
-    vaults: async () => listed,
+    vaults: async () => items,
   }
   const window = createLookup()
-  const kept = createLists(offers)
+  const retained = createLists(offers)
   const commands = useCommandPalette(
     core,
     words,
     () => at.value,
     window.knows,
-    kept.paletteLists,
+    retained.paletteLists,
     runs,
     async () => {},
   )
   commands.setOpen(true)
-  return { commands, at, asked, ...window, ...kept }
+  return { commands, at, asked: request, ...window, ...retained }
 }
 
 /** A moment for the list of vaults to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** Every item drawn, group by group, under the group it stands in. */
 const getItemIds = (groups: ReturnType<typeof createPalette>['commands']['groups']) =>
@@ -858,10 +858,10 @@ describe('a command that offers a list the window holds', () => {
     },
   ]
 
-  const held = { appearance: THEMES, mode: HALVES }
+  const target = { appearance: THEMES, mode: HALVES }
 
   it('offers the groups the window holds, each under its own name', () => {
-    const { commands } = createPalette({}, [], held)
+    const { commands } = createPalette({}, [], target)
     commands.startCommand('appearance', front())
 
     expect(commands.crumb.value).toBe(words.appearance)
@@ -878,7 +878,7 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('offers each command the list it holds for that command', () => {
-    const { commands } = createPalette({}, [], held)
+    const { commands } = createPalette({}, [], target)
     commands.startCommand('mode', front())
 
     expect(commands.crumb.value).toBe(words.mode)
@@ -888,7 +888,7 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('keeps to the rows the words typed name, and marks where they stand', async () => {
-    const { commands } = createPalette({}, [], held)
+    const { commands } = createPalette({}, [], target)
     commands.startCommand('appearance', front())
 
     await commands.setTyped('rac')
@@ -898,7 +898,7 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('draws a row the window says cannot be chosen, and chooses nothing by it', () => {
-    const { commands } = createPalette({}, [], held)
+    const { commands } = createPalette({}, [], target)
     commands.startCommand('mode', front())
 
     expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
@@ -907,7 +907,7 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('returns the row that was chosen, from whichever group it stood in', () => {
-    const { commands } = createPalette({}, [], held)
+    const { commands } = createPalette({}, [], target)
     commands.startCommand('appearance', front())
 
     expect(commands.chooseItem('preset:dracula', 'chosen')).toStrictEqual({
@@ -925,7 +925,7 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('says which command the keyboard is standing in, and that it remains nowhere after', () => {
-    const { commands, shown } = createPalette({}, [], held)
+    const { commands, shown } = createPalette({}, [], target)
     commands.startCommand('mode', front())
 
     commands.previewItem('mode:light')
@@ -943,7 +943,7 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('says nothing about where the keyboard is at a step that shows nothing', () => {
-    const { commands, shown } = createPalette({}, [], held)
+    const { commands, shown } = createPalette({}, [], target)
     commands.startCommand('child', front())
 
     commands.previewItem('anything')
@@ -1266,10 +1266,10 @@ const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) =>
   const names: Deferred<readonly NameMatch[]>[] = []
   const lists: Deferred<VaultList>[] = []
   const holds: Deferred<void>[] = []
-  const asked: string[] = []
+  const request: string[] = []
   const core = {
     names: (query: string) => {
-      asked.push(query)
+      request.push(query)
       const one = createDeferred<readonly NameMatch[]>()
       names.push(one)
       return one.promise
@@ -1296,7 +1296,7 @@ const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) =>
     runSupport(),
     wait,
   )
-  return { commands, names, lists, holds, hold, asked }
+  return { commands, names, lists, holds, hold, asked: request }
 }
 
 /** How the one group a step draws stands. */

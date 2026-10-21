@@ -636,11 +636,11 @@ const files = (open: readonly string[]) => {
     importUrls: () => Promise.resolve([]),
     showError: fn(),
   })
-  const read = (async () => {
+  const readItem = (async () => {
     await list.openFolder(ROOT)
     for (const at of open) await list.openFolder(at)
   })()
-  return { state, read }
+  return { state, read: readItem }
 }
 
 /** A frame drawn, and the layout it has settled into. */
@@ -703,7 +703,7 @@ const escapeXml = (line: string) =>
 
 const createPage = (page: number): string => {
   const lines = LINES[page - OPENS_AT] ?? []
-  const set = lines
+  const activeSet = lines
     .map((line, at) => {
       const y = FIRST + at * LEADING
       const weight = at === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
@@ -711,7 +711,7 @@ const createPage = (page: number): string => {
     })
     .join('')
   const number = `<text x="${PAGE.width / 2}" y="${PAGE.height - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#5a5a5a">${page + 1}</text>`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE.width}" height="${PAGE.height}"><rect width="100%" height="100%" fill="#fbfaf7"/>${set}${number}</svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE.width}" height="${PAGE.height}"><rect width="100%" height="100%" fill="#fbfaf7"/>${activeSet}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 

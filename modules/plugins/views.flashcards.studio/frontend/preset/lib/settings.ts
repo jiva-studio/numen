@@ -36,12 +36,12 @@ type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
 
 /** Reconciles newly read settings with unwritten local edits. */
 export const reconcileSettings = (
-  read: Settings,
+  readItem: Settings,
   was: Settings,
   dirtyFields: ReadonlySet<keyof Settings>,
 ): Settings => {
-  if (dirtyFields.size === 0) return read
-  const out: MutableSettings = { ...read }
+  if (dirtyFields.size === 0) return readItem
+  const out: MutableSettings = { ...readItem }
   for (const field of dirtyFields) {
     ;(out as Record<keyof Settings, unknown>)[field] = was[field]
   }
@@ -108,8 +108,8 @@ export const applyTypedSetting = (
   bounds: SettingsBounds,
 ): Settings => {
   const { field, value } = change
-  const chosen = applyChoiceSetting(settings, field, value)
-  if (chosen !== undefined) return chosen
+  const selected = applyChoiceSetting(settings, field, value)
+  if (selected !== undefined) return selected
   if (field === 'load' && isLoad(value)) {
     return { ...settings, load: clampShares(value, bounds.load) }
   }

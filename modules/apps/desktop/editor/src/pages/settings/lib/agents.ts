@@ -92,13 +92,13 @@ export const readChoice = (value: unknown): CompletionChoice => {
 /** The agents as rows, with an agent the settings name and no plugin lists. */
 const getAgentRows = (
   agents: readonly Agent[],
-  chosen: string,
+  selected: string,
   words: AgentWords,
 ): readonly SelectChoice[] => {
   const rows = agents.map((one) => ({ id: one.id, text: one.name }))
   if (rows.length === 0) return []
-  if (chosen === '' || rows.some((one) => one.id === chosen)) return rows
-  return [...rows, { id: chosen, text: chosen, detail: words.agentMissing }]
+  if (selected === '' || rows.some((one) => one.id === selected)) return rows
+  return [...rows, { id: selected, text: selected, detail: words.agentMissing }]
 }
 
 /**
@@ -121,12 +121,12 @@ export const createPluginAgentChoices = (
  */
 export const createDefaultAgentChoices = (
   agents: readonly Agent[],
-  chosen: string,
+  selected: string,
   words: AgentWords,
 ): readonly SelectChoice[] => {
   const first = findAgent(agents, '')
   const text = first ? words.agentFirst(first.name) : words.agentNone
-  return [{ id: '', text }, ...getAgentRows(agents, chosen, words)]
+  return [{ id: '', text }, ...getAgentRows(agents, selected, words)]
 }
 
 /**
@@ -135,15 +135,15 @@ export const createDefaultAgentChoices = (
  */
 export const createAgentModelChoices = (
   agent: Agent | undefined,
-  chosen: string,
+  selected: string,
   words: AgentWords,
 ): readonly SelectChoice[] => {
   const rows = (agent?.models ?? []).map((one) => ({ id: one.name, text: one.title }))
-  const listed =
-    chosen === '' || rows.some((one) => one.id === chosen)
+  const items =
+    selected === '' || rows.some((one) => one.id === selected)
       ? rows
-      : [...rows, { id: chosen, text: chosen }]
-  return [{ id: '', text: words.modelByAgent }, ...listed]
+      : [...rows, { id: selected, text: selected }]
+  return [{ id: '', text: words.modelByAgent }, ...items]
 }
 
 /** The plugins that declare secrets, in the order they are listed. */
@@ -160,7 +160,7 @@ export const getAskingPlugins = (plugins: readonly PluginInfo[]): readonly Plugi
  */
 export const createProgramModelChoices = (
   models: readonly Model[],
-  chosen: string,
+  selected: string,
 ): readonly SelectChoice[] => {
   const rows = models
     .filter((one) => one.name !== '')
@@ -169,6 +169,6 @@ export const createProgramModelChoices = (
       text: one.title || one.name,
       ...(one.title && one.title !== one.name ? { detail: one.name } : {}),
     }))
-  if (rows.length === 0 || chosen === '' || rows.some((one) => one.id === chosen)) return rows
-  return [{ id: chosen, text: chosen }, ...rows]
+  if (rows.length === 0 || selected === '' || rows.some((one) => one.id === selected)) return rows
+  return [{ id: selected, text: selected }, ...rows]
 }

@@ -33,8 +33,8 @@ function createMockStream() {
           isOver = false
           return
         }
-        await new Promise<void>((woken) => {
-          wake = woken
+        await new Promise<void>((awakened) => {
+          wake = awakened
         })
       }
     },
@@ -432,7 +432,7 @@ describe('writes owed at an earlier ask', () => {
     const fakeCore = createFakeCore(mockStream.read)
     const going = useFileFlush(fakeCore.core, async () => {})
     const gates: (() => void)[] = []
-    going.addHandler(() => new Promise<void>((done) => gates.push(done)))
+    going.addHandler(() => new Promise<void>((isDone) => gates.push(isDone)))
     void going.start()
     mockStream.send({ token: '1', flush: true })
     await settle()

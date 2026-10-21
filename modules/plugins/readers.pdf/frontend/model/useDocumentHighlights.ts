@@ -45,9 +45,9 @@ export function useDocumentHighlights(
       const where = await documents.getHighlights(path, spans)
       if (!isOpen()) return
       await applyHighlights(where)
-    } catch (thrown) {
+    } catch (caughtError) {
       if (!isOpen()) return
-      error.value = formatErrorMessage(thrown)
+      error.value = formatErrorMessage(caughtError)
     }
   }
 

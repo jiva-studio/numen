@@ -69,7 +69,7 @@ describe('the palette', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     window.findComponent(Palette).vm.$emit('choose', path, 'note')
     await settle()
     await settle()
@@ -80,7 +80,7 @@ describe('the palette', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     await settle()
   }
 
@@ -234,7 +234,7 @@ describe('the palette', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'en')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     window.findComponent(Palette).vm.$emit('choose', 'physics/Entropy.md', 'plex')
     await settle()
 
@@ -430,7 +430,7 @@ describe('a command reached by its own keystroke', () => {
     pressKey('g')
     await settle()
     await type('en')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     await press('Enter')
     await settle()
 
@@ -768,7 +768,7 @@ describe('a deck or a stencil the file tree requested the vault for', () => {
   const askForFile = async (stencil: boolean) => {
     const window = await mountWindow()
     const tree = window.findComponent(FilesTab).props('state') as {
-      openMenu(asked: { path: string | null; at: { x: number; y: number } }): void
+      openMenu(request: { path: string | null; at: { x: number; y: number } }): void
       chooseMenuItem(id: string): void
     }
     maker.fail()

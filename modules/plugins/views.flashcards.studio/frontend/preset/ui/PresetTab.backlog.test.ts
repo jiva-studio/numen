@@ -100,10 +100,10 @@ describe('the plot of what remains overdue', () => {
   // Nothing overdue is the foot, so the height is read against a floor that
   // means something.
   it('reads from nothing overdue to the most this pace ever remains at', () => {
-    const said = createClimbingTab()
+    const response = createClimbingTab()
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(said).toContain(words.formatBacklogCards(78))
+    expect(response).toContain(words.formatBacklogCards(78))
     // A number the line relies on gives way to it, so the foot is read off a
     // run that leaves the left edge of the backlog clear.
     const falling = createClimbingTab([78, 60, 40, 20, 5, 0])
@@ -178,10 +178,10 @@ describe('the plot of what remains overdue', () => {
   })
 
   it('says nothing overdue once, on the floor, where the run holds nothing', () => {
-    const said = createClimbingTab([0, 0, 0, 0, 0, 0])
+    const response = createClimbingTab([0, 0, 0, 0, 0, 0])
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(said).toContain(words.formatBacklogCards(0))
+    expect(response).toContain(words.formatBacklogCards(0))
   })
 
   // The backlog is read off the place the knob stands at, so walking the grid

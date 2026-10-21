@@ -73,7 +73,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     openFile: (path, title, line) => void tabOpeners.openFile(path, title, { where: 'here', line }),
   }
 
-  const made = createFileMakers({
+  const createdItem = createFileMakers({
     core,
     tabOpeners,
     windowTabs,
@@ -95,7 +95,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       today: () => formatLocalDate(new Date()),
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
-    files: createVaultFiles({ ...deps, made, making: editing.making }),
+    files: createVaultFiles({ ...deps, made: createdItem, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),
   }
@@ -107,7 +107,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
         if (windowTabs.hasKind(FILES)) await windowTabs.navigateTab(FILES, path)
       },
     },
-    made,
+    made: createdItem,
     destinations,
     dragged,
     travel,

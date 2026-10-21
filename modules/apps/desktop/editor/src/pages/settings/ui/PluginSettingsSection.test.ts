@@ -61,12 +61,12 @@ const createSection = (
   plugins: readonly PluginInfo[] = [SAMPLE_PLUGIN],
   programs: readonly ProgramFixture[] = [],
 ) => {
-  const written: SettingEdit[] = []
+  const content: SettingEdit[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: createProgramModels(programs),
-    write: (said) => {
-      written.push(...said)
+    write: (response) => {
+      content.push(...response)
     },
     plugins: ref(plugins),
     file: ref('/numen.json'),
@@ -94,7 +94,7 @@ const createSection = (
   const wrapper = mount(PluginSettingsSection, {
     props: { state },
   })
-  return { written, wrapper }
+  return { written: content, wrapper }
 }
 
 describe('PluginSettingsSection', () => {

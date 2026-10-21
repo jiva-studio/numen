@@ -118,7 +118,7 @@ function useReasoningSelection(
     readonly modelOptions: ComputedRef<readonly AgentModelOption[]>
   },
 ) {
-  const chosen = ref({ agentId: '', id: '' })
+  const selected = ref({ agentId: '', id: '' })
 
   const selectedOption = computed(() =>
     selection.modelOptions.value.find(
@@ -133,18 +133,18 @@ function useReasoningSelection(
   /** The level chosen or kept, else the default of the model; empty where the model offers none. */
   const selectedReasoningId = computed(() => {
     const agentId = selection.selectedAgentId.value
-    const kept =
-      (chosen.value.agentId === agentId ? chosen.value.id : '') ||
+    const retained =
+      (selected.value.agentId === agentId ? selected.value.id : '') ||
       getKept(deps, getReasoningAt(agentId))
     const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
-    if (offers(kept)) return kept
+    if (offers(retained)) return retained
     const byDefault = selectedOption.value?.defaultReasoning ?? ''
     return offers(byDefault) ? byDefault : ''
   })
 
   const selectReasoning = (id: string) => {
     const agentId = selection.selectedAgentId.value
-    chosen.value = { agentId, id }
+    selected.value = { agentId, id }
     if (deps.writeSetting) void deps.writeSetting(getReasoningAt(agentId), id)
   }
 
@@ -217,8 +217,8 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
       (address) => resolvedAddresses.value.get(address) === '',
     )
     if (!unresolved.length) return turn
-    const known = enrichedByTurn.get(turn)
-    if (known && isSameList(known.unresolved, unresolved)) return known.enriched
+    const recognized = enrichedByTurn.get(turn)
+    if (recognized && isSameList(recognized.unresolved, unresolved)) return recognized.enriched
     const enriched = { ...turn, unresolved }
     enrichedByTurn.set(turn, { unresolved, enriched })
     return enriched

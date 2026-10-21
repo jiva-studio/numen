@@ -32,8 +32,8 @@ const createDeps = () => {
         })
       }),
   )
-  const read = vi.fn((path: string) => Promise.resolve(readOk(stored.get(path) ?? '')))
-  return { stored, pending, write, read }
+  const readItem = vi.fn((path: string) => Promise.resolve(readOk(stored.get(path) ?? '')))
+  return { stored, pending, write, read: readItem }
 }
 
 const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
@@ -63,12 +63,12 @@ describe('createPluginNotes', () => {
     const notes = createPluginNotes(deps)
     const write = notes.writeNote('a.md', 'edited')
 
-    const read = notes.readNote('a.md')
+    const readItem = notes.readNote('a.md')
     await tick()
     expect(deps.read).not.toHaveBeenCalled()
 
     getPending(deps.pending, 0).finish()
-    expect(await read).toEqual({ body: 'edited' })
+    expect(await readItem).toEqual({ body: 'edited' })
     await write
   })
 
@@ -86,11 +86,11 @@ describe('createPluginNotes', () => {
     const deps = createDeps()
     const notes = createPluginNotes(deps)
 
-    const read = notes.readNote('a.md')
+    const readItem = notes.readNote('a.md')
     const write = notes.writeNote('a.md', 'later')
     expect(deps.read).toHaveBeenCalledTimes(1)
 
-    expect(await read).toEqual({ body: 'original' })
+    expect(await readItem).toEqual({ body: 'original' })
     getPending(deps.pending, 0).finish()
     await write
   })
@@ -108,11 +108,11 @@ describe('createPluginNotes', () => {
     const notes = createPluginNotes(deps)
 
     const first = notes.writeNote('a.md', 'A')
-    const read = notes.readNote('a.md')
+    const readItem = notes.readNote('a.md')
     const second = notes.writeNote('a.md', 'B')
 
     getPending(deps.pending, 0).finish()
-    expect(await read).toEqual({ body: 'A' })
+    expect(await readItem).toEqual({ body: 'A' })
     expect(deps.write).toHaveBeenCalledTimes(2)
 
     getPending(deps.pending, 1).finish()
@@ -126,13 +126,13 @@ describe('createPluginNotes', () => {
 
     const running = notes.writeNote('a.md', 'A')
     const before = notes.writeNote('a.md', 'B')
-    const read = notes.readNote('a.md')
+    const readItem = notes.readNote('a.md')
     const after = notes.writeNote('a.md', 'C')
 
     getPending(deps.pending, 0).finish()
     await tick()
     getPending(deps.pending, 1).finish()
-    expect(await read).toEqual({ body: 'B' })
+    expect(await readItem).toEqual({ body: 'B' })
 
     getPending(deps.pending, 2).finish()
     await Promise.all([running, before, after])
@@ -196,8 +196,8 @@ describe('createPluginNotes', () => {
     deps.read.mockResolvedValueOnce({ ok: false, error: 'unreadable' } as NoteResult)
     const notes = createPluginNotes(deps)
 
-    const answered = await notes.readNote('a.md')
-    expect(answered.body).toBe('')
-    expect(answered.error).toBeTruthy()
+    const reply = await notes.readNote('a.md')
+    expect(reply.body).toBe('')
+    expect(reply.error).toBeTruthy()
   })
 })

@@ -21,42 +21,42 @@ const file = (path: string, over: Partial<Entry> = {}): Entry => ({
 
 const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
 
-const held: Record<string, readonly Entry[]> = {
+const target: Record<string, readonly Entry[]> = {
   [ROOT]: [folder('physics'), file('Entropy.md'), file('Cover.png', { kind: 'other' })],
   physics: [file('physics/Kelvin.md')],
 }
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** A tab of that vault, drawn, and what it asked of the window written down. */
 const mountFiles = async (open: readonly string[] = []) => {
-  const done: string[] = []
-  const list = useFileTree({ list: async (at: string) => held[at] ?? [] })
+  const isDone: string[] = []
+  const list = useFileTree({ list: async (at: string) => target[at] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
     ...drawing,
-    openEntry: (entry) => void done.push(`lands file ${entry.path}`),
+    openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
     runCommand: (id, paths, details) =>
-      void done.push(`runs ${id} ${paths.join(' ')} ${details.name}`),
-    movePath: async (from, to) => void done.push(`moves ${from} ${to}`),
-    setDraggedPaths: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
-    createFolder: async (path) => void done.push(`makes ${path}`),
+      void isDone.push(`runs ${id} ${paths.join(' ')} ${details.name}`),
+    movePath: async (from, to) => void isDone.push(`moves ${from} ${to}`),
+    setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
+    createFolder: async (path) => void isDone.push(`makes ${path}`),
     createNote: async (folderPath) => `${folderPath}Untitled note.md`,
     createDeck: async (folderPath, name) => `${folderPath}${name}`,
     createStencil: async (folderPath, name) => `${folderPath}${name}`,
     createPreset: async (folderPath, name) => `${folderPath}${name}`,
-    importUrl: async (folderPath, url) => void done.push(`imports ${folderPath} ${url}`) as never,
+    importUrl: async (folderPath, url) => void isDone.push(`imports ${folderPath} ${url}`) as never,
     importUrls: async (folderPath, urls) => {
-      done.push(`imports-multi ${folderPath || '/'} ${urls.join(' ')}`)
+      isDone.push(`imports-multi ${folderPath || '/'} ${urls.join(' ')}`)
       return []
     },
-    showError: (text) => void done.push(`says ${text}`),
+    showError: (text) => void isDone.push(`says ${text}`),
   })
   await list.openFolder(ROOT)
   for (const at of open) await list.openFolder(at)
   const window = mount(FilesTab, { props: { state: tab } })
   await settle()
-  return { done, list, tab, window }
+  return { done: isDone, list, tab, window }
 }
 
 /** What the tree was handed, as a path and the paths under it. */

@@ -22,8 +22,8 @@ export interface EmptyGroupReasonOptions {
 export function getEmptyGroupReason(id: SearchGroup, options: EmptyGroupReasonOptions): string {
   const { failureMessage, words, coverage } = options
   if (failureMessage) return failureMessage
-  const read = id === 'meaning' ? coverage?.() : undefined
-  if (!read) return ''
-  if (isTextSearchOnly(read)) return words.wordsOnly
-  return read.embedded === 0 ? words.notEmbedded : ''
+  const readItem = id === 'meaning' ? coverage?.() : undefined
+  if (!readItem) return ''
+  if (isTextSearchOnly(readItem)) return words.wordsOnly
+  return readItem.embedded === 0 ? words.notEmbedded : ''
 }

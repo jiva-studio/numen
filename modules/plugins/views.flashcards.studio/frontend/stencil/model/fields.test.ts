@@ -8,7 +8,7 @@ import type { DeckProblem, VaultStencil } from '../../cards'
 import { serializeStencil, createBufferStencil } from '../lib/stencil'
 import { createStencilFields } from './fields'
 
-const cut: VaultStencil = {
+const trimmed: VaultStencil = {
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
@@ -33,7 +33,7 @@ const lacking = (face: number, text: string): DeckProblem => ({
 const create = () => {
   let at = 0
   const state = {
-    body: serializeStencil(createBufferStencil(cut, () => `f${(at += 1)}`)),
+    body: serializeStencil(createBufferStencil(trimmed, () => `f${(at += 1)}`)),
     problems: [] as readonly DeckProblem[],
   }
   const typed = vi.fn((_id: string, body: string) => {

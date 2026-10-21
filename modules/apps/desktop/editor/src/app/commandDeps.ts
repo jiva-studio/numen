@@ -24,7 +24,7 @@ export interface CommandDepsOptions {
     chooseCount: (item: string) => Promise<void> | void
   }
   rest: {
-    writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void
+    writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
@@ -109,32 +109,32 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goe
 function createSettingsCommands(options: CommandDepsOptions): CommandDeps['settings'] {
   const { dressed, oneName, nesting, rest } = options
   return {
-    chooseAppearance: async (chosen) => {
-      await dressed.chooseItem(chosen)
+    chooseAppearance: async (selected) => {
+      await dressed.chooseItem(selected)
     },
-    chooseSync: async (chosen) => {
-      await oneName.choose(chosen)
+    chooseSync: async (selected) => {
+      await oneName.choose(selected)
     },
-    chooseNesting: async (chosen) => {
-      await nesting.choose(chosen)
+    chooseNesting: async (selected) => {
+      await nesting.choose(selected)
     },
-    chooseHeadings: async (chosen) => {
-      await nesting.chooseCount(chosen)
+    chooseHeadings: async (selected) => {
+      await nesting.chooseCount(selected)
     },
-    choosePerformance: async (chosen) => {
-      await rest.writeSettings([{ at: ['performance', 'profile'], value: write(chosen) }])
+    choosePerformance: async (selected) => {
+      await rest.writeSettings([{ at: ['performance', 'profile'], value: write(selected) }])
     },
-    chooseIndexingModel: async (chosen) => {
+    chooseIndexingModel: async (selected) => {
       const models = rest.getModelsAt?.(['indexing', 'model', 'name']) ?? []
-      const model = models.find((one) => one.name === chosen)
+      const model = models.find((one) => one.name === selected)
       if (model) {
         await rest.writeSettings(model.writes)
       } else {
-        await rest.writeSettings([{ at: ['indexing', 'model', 'name'], value: write(chosen) }])
+        await rest.writeSettings([{ at: ['indexing', 'model', 'name'], value: write(selected) }])
       }
     },
-    choosePluginSetting: async (pluginId: string, key: string, chosen: unknown) => {
-      await rest.writeSettings([{ at: ['plugins', pluginId, key], value: write(chosen) }])
+    choosePluginSetting: async (pluginId: string, key: string, selected: unknown) => {
+      await rest.writeSettings([{ at: ['plugins', pluginId, key], value: write(selected) }])
     },
   }
 }
