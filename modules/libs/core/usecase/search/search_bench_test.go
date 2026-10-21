@@ -94,7 +94,12 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	v := testsupport.GenerateVault(b, notes)
 	embedCfg := container.DefaultEmbedding()
-	model := embedCfg.GetStoredModel()
+	model := port.EmbeddingModel{
+		Name:       embedCfg.Model.Name,
+		Dimensions: embedCfg.Model.Dimensions,
+		MaxTokens:  embedCfg.Model.MaxTokens,
+		Pooling:    embedCfg.Model.Pooling,
+	}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
 	cfg := container.Config{

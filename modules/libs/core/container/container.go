@@ -51,9 +51,6 @@ type Config struct {
 	// default, which is every format a reader takes text out of.
 	BookExtensions []string
 
-	// Transcription is how a recording is listened to.
-	Transcription TranscriptionConfig
-
 	// Performance is the active workload and compute calibration profile.
 	Performance settings.Performance
 
