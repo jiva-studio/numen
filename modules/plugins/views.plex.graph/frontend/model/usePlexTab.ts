@@ -202,11 +202,11 @@ function getPlexNodeName(around: PlexView['neighbourhood']['value'], path: strin
 
 export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
-  const { picture, empty, dragged, types, getType, drawn } = usePlexPicture(view, deps, map)
+  const { picture, empty, dragged, types, getType, drawn: drawnNodes } = usePlexPicture(view, deps, map)
 
   const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
   const quickLinkModel = useQuickLink(view, deps, map)
-  const { readHeadings, getHeadings } = usePlexHeadings(drawn, types, deps, map)
+  const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
   const linkInspectorModel = useLinkInspector(view, deps.editor, map, getName)
 
   const nodeActions = usePlexNodeActions({

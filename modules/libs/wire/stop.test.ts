@@ -11,12 +11,12 @@ describe('a stop reason', () => {
   })
 
   it('has a clause of its own for every reason that stops', () => {
-    const said = StopReasonSchema.values
+    const values = StopReasonSchema.values
       .map((value) => value.number as StopReason)
       .filter((reason) => !SILENT.includes(reason))
       .map((reason) => formatStopReasonMessage(reason))
-    expect(said.every((one) => one !== '')).toBe(true)
-    expect(new Set(said).size).toBe(said.length)
+    expect(values.every((one) => one !== '')).toBe(true)
+    expect(new Set(values).size).toBe(values.length)
   })
 
   it('names the day a preset aimed at', () => {

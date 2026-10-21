@@ -106,7 +106,7 @@ describe('the level selected', () => {
     const { state, written } = open()
     state.selectReasoning('high')
     expect(state.selectedReasoningId.value).toBe('high')
-    expect(written).toEqual([['agent/alpha/reasoning', 'high']])
+    expect(writtenSettings).toEqual([['agent/alpha/reasoning', 'high']])
   })
 
   it('does not follow an agent other than the one it was chosen for', () => {
@@ -127,7 +127,7 @@ describe('the question', () => {
   it('names the level selected', () => {
     const { state, asked } = open({ 'agent/alpha/reasoning': 'high' })
     state.send('hello')
-    expect(asked).toEqual([{ agentId: 'alpha', modelId: 'deep', reasoning: 'high' }])
+    expect(requests).toEqual([{ agentId: 'alpha', modelId: 'deep', reasoning: 'high' }])
   })
 
   it('names no level for a model that offers none', () => {

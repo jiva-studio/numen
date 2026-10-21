@@ -913,7 +913,7 @@ describe('a gesture the plex reports', () => {
 describe('a plex that travelled', () => {
   it('calls the notes it arrives at nothing it called the ones it left', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    const left = one.picture()?.nodes.map((node) => node.id) ?? []
+    const remainingNodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
 
     await one.goToNote('Cold.md', ['Ice.md', 'child'])
 

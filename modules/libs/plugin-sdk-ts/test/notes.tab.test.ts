@@ -351,17 +351,17 @@ describe('the interval fires', () => {
   it('is armed no later than the bound after the first unwritten change', () => {
     // Typing without a pause: every keystroke puts the write off, and the bound
     // is what makes one happen.
-    let held = tab()
+    let currentTab = tab()
     let after = DEFAULT_WRITE_LIMITS.quiet
     for (let at = 0; at <= DEFAULT_WRITE_LIMITS.bound; at += 100) {
-      const next = transitionTab(held, { kind: 'edited', body: `${at}`, at })
+      const next = transitionTab(currentTab, { kind: 'edited', body: `${at}`, at })
       held = next.tab
       after = next.effects[0]?.kind === 'startTimer' ? next.effects[0].after : after
       expect(at + after).toBeLessThanOrEqual(DEFAULT_WRITE_LIMITS.bound)
     }
 
     expect(after).toBe(0)
-    expect(getState(transitionTab(held, { kind: 'timerFired' }).tab)).toBe('saving')
+    expect(getState(transitionTab(currentTab, { kind: 'timerFired' }).tab)).toBe('saving')
   })
 })
 
@@ -418,7 +418,7 @@ describe('the fingerprint the file was read at', () => {
       { kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', fingerprint: 'a1' } },
     ])
 
-    const written = transitionTab(first.tab, { kind: 'written', answer: { kind: 'ok', at: 'a2' } })
+    const writtenTab = transitionTab(first.tab, { kind: 'written', answer: { kind: 'ok', at: 'a2' } })
     const again = transitionTab(written.tab, { kind: 'edited', body: 'three', at: 100 })
     const second = transitionTab(again.tab, { kind: 'timerFired' })
 
@@ -760,8 +760,8 @@ describe('the vault changes', () => {
   })
 
   it('reads again when a gone tab is changed on disk', () => {
-    const gone = tab({ isDeleted: true, reading: 1 })
-    const next = transitionTab(gone, {
+    const deletedTab = tab({ isDeleted: true, reading: 1 })
+    const next = transitionTab(deletedTab, {
       kind: 'changed',
       paths: ['Note.md'],
       renamed: [],
@@ -785,7 +785,7 @@ describe('the vault changes', () => {
   })
 
   it('does nothing while loading, saving or stuck', () => {
-    const held: Tab[] = [
+    const tabs: Tab[] = [
       tab({ written: null, shown: '' }),
       tab({ shown: 'two', pendingWrite: 'two', since: 10 }),
       tab({ error: 'unreadable' }),

@@ -26,7 +26,7 @@ export function usePlexHeadings(
     try {
       const found = await deps.readHeadings(notes)
       if (!mine.isCurrent) return
-      headings.value = new Map([...found].map(([path, held]) => [path, convertHeadings(held)]))
+      headings.value = new Map([...found].map(([path, rawHeadings]) => [path, convertHeadings(rawHeadings)]))
     } catch {
       // Reading headings failed.
       if (mine.isCurrent) headings.value = new Map()

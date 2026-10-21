@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const prose = ref('')
-const seen = ref<{ prose: string; at: NonNullable<ReadNoteResponse['at']> } | null>(null)
+const loadedNote = ref<{ prose: string; at: NonNullable<ReadNoteResponse['at']> } | null>(null)
 const reading = ref(true)
 const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 
@@ -33,7 +33,7 @@ onMounted(async () => {
       return
     }
     prose.value = answer.body
-    seen.value = answer.at ? { prose: answer.body, at: answer.at } : null
+    loadedNote.value = answer.at ? { prose: answer.body, at: answer.at } : null
   } finally {
     reading.value = false
   }
@@ -44,7 +44,7 @@ async function keep() {
   const answer = await props.core.notes.writeNote({
     path: props.path,
     body: prose.value,
-    baseline: seen.value ?? undefined,
+    baseline: loadedNote.value ?? undefined,
   })
   if (answer.error) {
     emit('error', formatErrorCodeMessage(answer.error))

@@ -14,8 +14,8 @@ import type { MessageWriter } from './useBookDocument'
 
 const WORDS = { page: 'Page' }
 
-let heard: string[] = []
-const writeMessage = (text: string) => heard.push(text)
+let recordedEvents: string[] = []
+const writeMessage = (text: string) => recordedEvents.push(text)
 
 const useBookReader = (
   books: Books,
@@ -163,7 +163,7 @@ describe('a book opened', () => {
     await readItem.goToOffset(3_000)
     await readItem.goToOffset(0)
 
-    expect(asked).toStrictEqual(['library/Mahabharata.epub'])
+    expect(requests).toStrictEqual(['library/Mahabharata.epub'])
   })
 
   it('remains at the first byte of its text, in the document that holds it', async () => {
@@ -176,7 +176,7 @@ describe('a book opened', () => {
     expect(readItem.pages.value).toBe(3)
     expect(readItem.page.value).toBe(1)
     expect(readItem.reading.value).toStrictEqual({ from: 0, to: 3_000 })
-    expect(drawn).toStrictEqual([
+    expect(rendered).toStrictEqual([
       'library/Mahabharata.epub text/part0001.xhtml 20480 1700000000000000000 mahabharata.epub',
     ])
   })
@@ -200,7 +200,7 @@ describe('where the person is standing', () => {
     await readItem.goToOffset(6_600)
 
     expect(readItem.reading.value).toStrictEqual({ from: 6_000, to: 9_000 })
-    expect(drawn).toHaveLength(2)
+    expect(rendered).toHaveLength(2)
     expect(drawn[1]).toContain('text/part0003.xhtml')
   })
 
@@ -231,7 +231,7 @@ describe('where the person is standing', () => {
     await readItem.goToOffset(100)
     await readItem.goToOffset(2_900)
 
-    expect(drawn).toHaveLength(1)
+    expect(rendered).toHaveLength(1)
   })
 })
 
@@ -299,7 +299,7 @@ describe('a book tab closed', () => {
     readItem.close()
     await readItem.goToOffset(6_500)
 
-    expect(drawn).toHaveLength(1)
+    expect(rendered).toHaveLength(1)
     expect(readItem.markup.value).toBe('')
   })
 })
@@ -372,7 +372,7 @@ describe('a book that holds no document', () => {
     await readItem.goToOffset(500)
 
     expect(readItem.offset.value).toBe(0)
-    expect(drawn).toStrictEqual([])
+    expect(rendered).toStrictEqual([])
   })
 })
 
@@ -387,7 +387,7 @@ describe('a book tab closed before the book lands', () => {
     expect(readItem.title.value).toBe('')
     expect(readItem.pages.value).toBe(0)
     expect(readItem.contents.value).toStrictEqual([])
-    expect(drawn).toStrictEqual([])
+    expect(rendered).toStrictEqual([])
     expect(readItem.isLoading.value).toBe(false)
   })
 
@@ -398,7 +398,7 @@ describe('a book tab closed before the book lands', () => {
     readItem.close()
     await settle()
 
-    expect(heard).toStrictEqual([])
+    expect(recordedEvents).toStrictEqual([])
   })
 })
 

@@ -89,18 +89,18 @@ describe('a document drawn', () => {
 
 describe('a document that will not be read', () => {
   it('is returned as an error', async () => {
-    const { held, pending, written } = create()
+    const { held, pending, messages } = create()
 
     const drawing = held.draw(FIRST)
     pending.get(FIRST.path)?.reject(new Error('gone'))
     await drawing
 
-    expect(written).toHaveLength(1)
-    expect(written[0]?.[1]).toBe('error')
+    expect(messages).toHaveLength(1)
+    expect(messages[0]?.[1]).toBe('error')
   })
 
   it('is not returned when a newer document was requested for meanwhile', async () => {
-    const { held, pending, written } = create()
+    const { held, pending, messages } = create()
 
     const older = held.draw(FIRST)
     void held.draw(SECOND)
@@ -108,18 +108,18 @@ describe('a document that will not be read', () => {
     await older
     await settle()
 
-    expect(written).toStrictEqual([])
+    expect(messages).toStrictEqual([])
   })
 
   it('is not returned once the tab is closed', async () => {
     const open = { value: true }
-    const { held, pending, written } = create(open)
+    const { held, pending, messages } = create(open)
 
     const drawing = held.draw(FIRST)
     open.value = false
     pending.get(FIRST.path)?.reject(new Error('gone'))
     await drawing
 
-    expect(written).toStrictEqual([])
+    expect(messages).toStrictEqual([])
   })
 })

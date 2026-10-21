@@ -18,14 +18,14 @@ function fake(over: Partial<Notes> = {}) {
         : asFailure('missing'),
     write: async (path, body, seen) => {
       wrote.push({ path, body })
-      const held = files.get(path)
+      const existing = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
       if (
         seen &&
         held !== undefined &&
         held !== seen.prose &&
-        getFingerprint(held) !== seen.fingerprint
+        getFingerprint(existing) !== seen.fingerprint
       ) {
         return asFailure('changed' as const)
       }
@@ -128,11 +128,11 @@ describe('typing', () => {
 
 describe('a change in the vault', () => {
   it('is read again, and the document is left alone where the text is the same', async () => {
-    const asked: string[] = []
+    const requests: string[] = []
     const { core, files } = fake()
     files.set('Heat.md', 'unchanged')
     const notes = openNotes(
-      { ...core, read: async (path) => (asked.push(path), core.read(path)) },
+      { ...core, read: async (path) => (requests.push(path), core.read(path)) },
       { limits: quick },
     )
     notes.open('Heat.md')
@@ -141,7 +141,7 @@ describe('a change in the vault', () => {
     notes.applyPathChanges(['Heat.md'])
     await settle()
 
-    expect(asked).toEqual(['Heat.md', 'Heat.md'])
+    expect(requests).toEqual(['Heat.md', 'Heat.md'])
     expect(notes.getOpenNote('Heat.md').body).toBe('unchanged')
   })
 
@@ -175,11 +175,11 @@ describe('a change in the vault', () => {
   })
 
   it('naming other paths only reaches nobody', async () => {
-    const asked: string[] = []
+    const requests: string[] = []
     const { core, files } = fake()
     files.set('Heat.md', 'x')
     const notes = openNotes(
-      { ...core, read: async (path) => (asked.push(path), core.read(path)) },
+      { ...core, read: async (path) => (requests.push(path), core.read(path)) },
       { limits: quick },
     )
     notes.open('Heat.md')
@@ -188,7 +188,7 @@ describe('a change in the vault', () => {
     notes.applyPathChanges(['Other.md'])
     await settle()
 
-    expect(asked).toHaveLength(1)
+    expect(requests).toHaveLength(1)
   })
 })
 
@@ -688,10 +688,10 @@ describe('the ids of the open notes', () => {
     files.set('A.md', 'a')
     files.set('B.md', 'b')
     const notes = openNotes(core, { limits: quick })
-    const seen: string[][] = []
+    const observed: string[][] = []
     const stop = watch(
       () => [...notes.getOpenIds()],
-      (ids) => seen.push(ids),
+      (ids) => observed.push(ids),
       { flush: 'sync' },
     )
 
@@ -705,7 +705,7 @@ describe('the ids of the open notes', () => {
     const afterOpen = seen.length
 
     notes.setBody('A.md', 'a3')
-    expect(seen).toHaveLength(afterOpen)
+    expect(observed).toHaveLength(afterOpen)
 
     await notes.close('A.md')
     expect(seen.at(-1)).toEqual(['B.md'])
@@ -930,7 +930,7 @@ describe('closing a note', () => {
     await settle()
     notes.setBody('Heat.md', 'one two')
     const answers: boolean[] = []
-    void notes.close('Heat.md').then((gone) => answers.push(gone))
+    void notes.close('Heat.md').then((closedResult) => answers.push(closedResult))
 
     notes.setBody('Heat.md', 'one two three')
     await settle()

@@ -114,7 +114,7 @@ describe('waiting for an answer', () => {
     const ask = vi.fn<() => Promise<string>>(() => Promise.reject(error))
 
     const answer = retryWhileBusy(ask)
-    const settled = expect(answer).rejects.toBe(error)
+    const rejection = expect(answer).rejects.toBe(error)
     await vi.advanceTimersByTimeAsync(10_000)
 
     await settled

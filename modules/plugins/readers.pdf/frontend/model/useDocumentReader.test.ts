@@ -69,7 +69,7 @@ describe('a document opened', () => {
     await readItem.goToNextPage()
     await readItem.goToPreviousPage()
 
-    expect(asked).toStrictEqual(['Book.pdf'])
+    expect(requests).toStrictEqual(['Book.pdf'])
   })
 
   it('relies on the first page, under the name the document gives it', async () => {

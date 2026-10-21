@@ -29,7 +29,7 @@ export function parseLinkTarget(href: string): LinkTarget | null {
 
   let path: string
   try {
-    path = decodeURIComponent(written)
+    path = decodeURIComponent(escapedPath)
   } catch {
     // An escape a model wrote wrongly names no file, and a link to no file opens nothing.
     return null
