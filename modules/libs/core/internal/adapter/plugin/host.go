@@ -936,8 +936,13 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 
 	for id, sup := range h.supervisors {
 		threshold := defaultThreshold
-		if p, ok := h.plugins[id]; ok && p.Manifest.Lifecycle.IdleTimeoutSeconds > 0 {
-			threshold = time.Duration(p.Manifest.Lifecycle.IdleTimeoutSeconds) * time.Second
+		if p, ok := h.plugins[id]; ok {
+			if p.Manifest.Lifecycle.IdleTimeoutSeconds == 0 {
+				continue
+			}
+			if p.Manifest.Lifecycle.IdleTimeoutSeconds > 0 {
+				threshold = time.Duration(p.Manifest.Lifecycle.IdleTimeoutSeconds) * time.Second
+			}
 		}
 
 		pid := sup.GetProcessID()

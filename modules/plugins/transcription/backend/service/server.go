@@ -61,7 +61,7 @@ func (s *transcriptionServer) getEngine(ctx context.Context) (engine.Transcriber
 	if s.engine != nil {
 		return s.engine, nil
 	}
-	e, err := s.factory(ctx, s.cfg)
+	e, err := s.factory(context.WithoutCancel(ctx), s.cfg)
 	if err != nil {
 		return nil, err
 	}
