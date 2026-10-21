@@ -143,12 +143,12 @@ describe('a change to the vault', () => {
     const { kind, refresh } = createFilesKind(fixture.host, () => trees.shift()!)
     kind.open!('', 'files:one')
     kind.open!('', 'files:other')
-    const renamed = [{ from: 'a.md', to: 'b.md' }]
+    const renames = [{ from: 'a.md', to: 'b.md' }]
 
-    await refresh({ paths: ['a.md'], renamed })
+    await refresh({ paths: ['a.md'], renamed: renames })
 
-    expect(one.refreshChanged).toHaveBeenCalledWith(['a.md'], renamed)
-    expect(other.refreshChanged).toHaveBeenCalledWith(['a.md'], renamed)
+    expect(one.refreshChanged).toHaveBeenCalledWith(['a.md'], renames)
+    expect(other.refreshChanged).toHaveBeenCalledWith(['a.md'], renames)
   })
 
   it('reaches a tab with nothing where it is empty, and no tab once it has closed', async () => {

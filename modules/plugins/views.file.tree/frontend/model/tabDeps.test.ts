@@ -16,7 +16,7 @@ const entry = (over: Partial<Entry> = {}): Entry => ({
   ...over,
 })
 
-const holding = (one: Entry | null) =>
+const createTabState = (one: Entry | null) =>
   ({ list: { getEntryAt: () => one } }) as unknown as FilesTabState
 
 describe('a file a files tab opens', () => {
@@ -54,9 +54,9 @@ describe('a path a files tab selects', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.onSelectPath?.('a.md', holding(entry()))
-    deps.onSelectPath?.('b.md', holding(entry({ path: 'b.md', name: 'b', kind: 'other' })))
-    deps.onSelectPath?.('c.txt', holding(entry({ path: 'c.txt', name: 'c', kind: 'note' })))
+    deps.onSelectPath?.('a.md', createTabState(entry()))
+    deps.onSelectPath?.('b.md', createTabState(entry({ path: 'b.md', name: 'b', kind: 'other' })))
+    deps.onSelectPath?.('c.txt', createTabState(entry({ path: 'c.txt', name: 'c', kind: 'note' })))
 
     expect(recorded.synced).toStrictEqual([
       ['files', 'a.md', 'a.md'],
@@ -69,9 +69,9 @@ describe('a path a files tab selects', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.onSelectPath?.('notes', holding(entry({ path: 'notes', isFolder: true })))
-    deps.onSelectPath?.('Cover.png', holding(entry({ path: 'Cover.png', kind: 'other' })))
-    deps.onSelectPath?.('gone.md', holding(null))
+    deps.onSelectPath?.('notes', createTabState(entry({ path: 'notes', isFolder: true })))
+    deps.onSelectPath?.('Cover.png', createTabState(entry({ path: 'Cover.png', kind: 'other' })))
+    deps.onSelectPath?.('gone.md', createTabState(null))
 
     expect(recorded.synced).toStrictEqual([])
   })

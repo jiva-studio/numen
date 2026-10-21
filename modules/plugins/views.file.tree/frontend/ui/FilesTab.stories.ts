@@ -11,7 +11,7 @@ import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { useFileTree, ROOT } from '../model/useFileTree'
 import type { Entry } from '../types'
-import { drawing } from '../fixtures/host'
+import { renderDeps } from '../fixtures/host'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
@@ -39,7 +39,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
-    ...drawing,
+    ...renderDeps,
     openEntry: () => {},
     runCommand: () => {},
     movePath: async () => {},

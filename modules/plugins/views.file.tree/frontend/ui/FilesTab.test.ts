@@ -8,7 +8,7 @@ import type { Entry } from '../types'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { useFileTree, ROOT } from '../model/useFileTree'
-import { drawing } from '../fixtures/host'
+import { renderDeps } from '../fixtures/host'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
@@ -34,7 +34,7 @@ const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
   const list = useFileTree({ list: async (at: string) => target[at] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
-    ...drawing,
+    ...renderDeps,
     openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
     runCommand: (id, paths, details) =>
       void isDone.push(`runs ${id} ${paths.join(' ')} ${details.name}`),
@@ -287,7 +287,7 @@ describe('a folder that could not be read', () => {
       },
     })
     const tab: FilesTabState = useFilesTab(list, {
-      ...drawing,
+      ...renderDeps,
       openEntry: () => {},
       runCommand: () => {},
       movePath: async () => {},

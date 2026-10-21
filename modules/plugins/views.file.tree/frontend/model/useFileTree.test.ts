@@ -375,10 +375,10 @@ describe('a tab that has closed', () => {
   it('keeps nothing a question answers with after it closed', async () => {
     const { core } = vault()
     const list = useFileTree(core)
-    const asking = list.openFolder(ROOT)
+    const pendingOpen = list.openFolder(ROOT)
     list.close()
 
-    await asking
+    await pendingOpen
 
     expect(list.rows.value).toStrictEqual([])
   })
@@ -456,13 +456,13 @@ describe('the refresh of every open folder', () => {
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     await list.openFolder('notes')
-    const retained = list.getEntriesInFolder('physics')
+    const cachedEntries = list.getEntriesInFolder('physics')
     one.puts('notes', file('notes/Later.md'))
     isFailing = true
 
     await list.refresh()
 
-    expect(list.getEntriesInFolder('physics')).toBe(retained)
+    expect(list.getEntriesInFolder('physics')).toBe(cachedEntries)
     expect(list.getEntriesInFolder('notes')).toHaveLength(2)
     expect(list.errorMessage.value).not.toBe('')
   })

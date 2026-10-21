@@ -495,7 +495,7 @@ describe('an item chosen in the menu on a row', () => {
     one.chooseMenuItem(NEW_DECK)
     await settle()
 
-    expect(done[0]).not.toContain('.md')
+    expect(recorded[0]).not.toContain('.md')
   })
 
   it('makes a stencil the same way, under a name of its own', async () => {
@@ -605,7 +605,7 @@ describe('an item chosen in the menu on a row', () => {
 
     heldState.one.chooseMenuItem('remove')
 
-    expect(heldState.done).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
+    expect(heldState.recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('passes the one row to the window, on a row standing outside the selection', async () => {
@@ -614,7 +614,7 @@ describe('an item chosen in the menu on a row', () => {
 
     heldState.one.chooseMenuItem('remove')
 
-    expect(heldState.done).toStrictEqual(['runs remove Entropy.md Entropy.md'])
+    expect(heldState.recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
   })
 
   it('does nothing at all for a choice the menu does not offer', async () => {
@@ -636,7 +636,7 @@ describe('an item chosen in the menu on a row', () => {
 
 describe('useFilesTab helper and interaction methods', () => {
   it('covers folder operations, selections, renaming and dismiss', async () => {
-    const { list, one, done } = tab()
+    const { list, one, recorded } = tab()
     await list.openFolder(ROOT)
 
     one.open('physics')
@@ -824,7 +824,7 @@ describe('a file rejected in a folder that is shut', () => {
   })
 
   it('makes a note alongside a row the tree does not hold', async () => {
-    const { one, done } = tab()
+    const { one, recorded } = tab()
     one.openMenu({ path: 'ghost/Note.md', at: { x: 0, y: 0 } })
 
     one.chooseMenuItem(NEW_NOTE)
