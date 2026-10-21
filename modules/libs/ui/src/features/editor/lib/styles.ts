@@ -35,14 +35,14 @@ const named = new Map<string, Decoration>()
 
 /** The decoration that puts a class on a whole line. */
 export const line = (name: string) => {
-  const drawn = lines.get(name) ?? Decoration.line({ class: name })
-  lines.set(name, drawn)
-  return drawn
+  const rendered = lines.get(name) ?? Decoration.line({ class: name })
+  lines.set(name, rendered)
+  return rendered
 }
 
 /** The decoration that puts a class on a stretch of text. */
 export const mark = (name: string) => {
-  const drawn = named.get(name) ?? Decoration.mark({ class: name })
-  named.set(name, drawn)
-  return drawn
+  const rendered = named.get(name) ?? Decoration.mark({ class: name })
+  named.set(name, rendered)
+  return rendered
 }

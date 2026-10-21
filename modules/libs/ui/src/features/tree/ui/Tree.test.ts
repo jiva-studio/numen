@@ -539,40 +539,40 @@ describe('what follows the pointer', () => {
   })
 
   it('says it in the words the caller gave for how many', async () => {
-    const held = mountTree({
+    const wrapper = mountTree({
       selected: ['notes', 'loose'],
       counted: (rows: number) => `${rows} files`,
     })
-    pointer('pointerdown', 108, getRow(held, 'loose').element)
+    pointer('pointerdown', 108, getRow(wrapper, 'loose').element)
     pointer('pointermove', 60)
-    await held.vm.$nextTick()
+    await wrapper.vm.$nextTick()
 
-    expect(findDragged(held).text()).toBe('2 files')
+    expect(findDragged(wrapper).text()).toBe('2 files')
   })
 
   it('remains where the pointer is', async () => {
-    const held = mountTree()
-    pointer('pointerdown', 108, getRow(held, 'loose').element)
+    const wrapper = mountTree()
+    pointer('pointerdown', 108, getRow(wrapper, 'loose').element)
     pointer('pointermove', 60)
-    await held.vm.$nextTick()
+    await wrapper.vm.$nextTick()
 
-    expect(findDragged(held).attributes('style')).toContain('top: 60px')
+    expect(findDragged(wrapper).attributes('style')).toContain('top: 60px')
   })
 
   it('is drawn nowhere before the pointer has travelled far enough', async () => {
-    const held = mountTree()
-    pointer('pointerdown', 108, getRow(held, 'loose').element)
+    const wrapper = mountTree()
+    pointer('pointerdown', 108, getRow(wrapper, 'loose').element)
     pointer('pointermove', 110)
-    await held.vm.$nextTick()
+    await wrapper.vm.$nextTick()
 
-    expect(findDragged(held).exists()).toBe(false)
+    expect(findDragged(wrapper).exists()).toBe(false)
   })
 
   it('is drawn nowhere once the rows have been release', async () => {
-    const held = mountTree()
-    await dragTo(held, 'loose', 12)
+    const wrapper = mountTree()
+    await dragTo(wrapper, 'loose', 12)
 
-    expect(findDragged(held).exists()).toBe(false)
+    expect(findDragged(wrapper).exists()).toBe(false)
   })
 
   it('is drawn nowhere at all while nothing is being dragged', () => {
@@ -584,11 +584,11 @@ describe('a name being typed', () => {
   const getField = (wrapper: Tree) => wrapper.get('.tree__field')
 
   it('remains over the row it belongs to and over no other', () => {
-    const held = mountTree({ renamingPath: 'notes' })
+    const wrapper = mountTree({ renamingPath: 'notes' })
 
-    expect(getRow(held, 'notes').find('.tree__field').exists()).toBe(true)
-    expect(held.findAll('.tree__field')).toHaveLength(1)
-    expect(getRow(held, 'notes').find('.tree__name').exists()).toBe(false)
+    expect(getRow(wrapper, 'notes').find('.tree__field').exists()).toBe(true)
+    expect(wrapper.findAll('.tree__field')).toHaveLength(1)
+    expect(getRow(wrapper, 'notes').find('.tree__name').exists()).toBe(false)
   })
 
   it('starts as the name the row already carries', () => {
@@ -598,28 +598,28 @@ describe('a name being typed', () => {
   })
 
   it('is committed on Enter', async () => {
-    const held = mountTree({ renamingPath: 'notes' })
-    await getField(held).setValue('Friday notes')
-    await getField(held).trigger('keydown', { key: 'Enter' })
+    const wrapper = mountTree({ renamingPath: 'notes' })
+    await getField(wrapper).setValue('Friday notes')
+    await getField(wrapper).trigger('keydown', { key: 'Enter' })
 
-    expect(held.emitted('rename')).toStrictEqual([['notes', 'Friday notes']])
-    expect(held.emitted('update:renamingPath')).toStrictEqual([[null]])
+    expect(wrapper.emitted('rename')).toStrictEqual([['notes', 'Friday notes']])
+    expect(wrapper.emitted('update:renamingPath')).toStrictEqual([[null]])
   })
 
   it('is abandoned on Escape, and does not rename', async () => {
-    const held = mountTree({ renamingPath: 'notes' })
-    await getField(held).setValue('Friday notes')
-    await getField(held).trigger('keydown', { key: 'Escape' })
+    const wrapper = mountTree({ renamingPath: 'notes' })
+    await getField(wrapper).setValue('Friday notes')
+    await getField(wrapper).trigger('keydown', { key: 'Escape' })
 
-    expect(held.emitted('rename')).toBeUndefined()
-    expect(held.emitted('update:renamingPath')).toStrictEqual([[null]])
+    expect(wrapper.emitted('rename')).toBeUndefined()
+    expect(wrapper.emitted('update:renamingPath')).toStrictEqual([[null]])
   })
 
   it('keeps the arrows to itself while it is being typed in', async () => {
-    const held = mountTree({ renamingPath: 'notes', selected: ['notes'] })
-    await getField(held).trigger('keydown', { key: 'ArrowDown' })
+    const wrapper = mountTree({ renamingPath: 'notes', selected: ['notes'] })
+    await getField(wrapper).trigger('keydown', { key: 'ArrowDown' })
 
-    expect(held.emitted('select')).toBeUndefined()
+    expect(wrapper.emitted('select')).toBeUndefined()
   })
 })
 
@@ -636,25 +636,25 @@ describe('the attribute rows are marked with', () => {
   }
 
   it('is written on each row, and on the tree for the top level', () => {
-    const held = mountTree({ marking: { attribute: ATTRIBUTE, getAttributeValue } })
+    const wrapper = mountTree({ marking: { attribute: ATTRIBUTE, getAttributeValue } })
 
-    expect(getMark(held, 'plans')).toBe('plans')
-    expect(getMark(held, 'notes')).toBe('work')
-    expect(held.get('.tree').attributes(ATTRIBUTE)).toBe('')
+    expect(getMark(wrapper, 'plans')).toBe('plans')
+    expect(getMark(wrapper, 'notes')).toBe('work')
+    expect(wrapper.get('.tree').attributes(ATTRIBUTE)).toBe('')
   })
 
   it('is written nowhere while the tree is given no marking', () => {
-    const held = mountTree()
+    const wrapper = mountTree()
 
-    expect(getMark(held, 'plans')).toBeUndefined()
-    expect(held.get('.tree').attributes(ATTRIBUTE)).toBeUndefined()
+    expect(getMark(wrapper, 'plans')).toBeUndefined()
+    expect(wrapper.get('.tree').attributes(ATTRIBUTE)).toBeUndefined()
   })
 
   it('is written under the name it was given', () => {
-    const held = mountTree({ marking: { attribute: 'data-elsewhere', getAttributeValue } })
+    const wrapper = mountTree({ marking: { attribute: 'data-elsewhere', getAttributeValue } })
 
-    expect(getRow(held, 'plans').attributes('data-elsewhere')).toBe('plans')
-    expect(getMark(held, 'plans')).toBeUndefined()
+    expect(getRow(wrapper, 'plans').attributes('data-elsewhere')).toBe('plans')
+    expect(getMark(wrapper, 'plans')).toBeUndefined()
   })
 
   it('is written on the rows answered for and on no other', () => {
@@ -662,10 +662,10 @@ describe('the attribute rows are marked with', () => {
       attribute: ATTRIBUTE,
       getAttributeValue: (row: string | null) => (row === 'empty' ? 'empty' : null),
     }
-    const held = mountTree({ marking })
+    const wrapper = mountTree({ marking })
 
-    expect(getMark(held, 'empty')).toBe('empty')
-    expect(getMark(held, 'plans')).toBeUndefined()
+    expect(getMark(wrapper, 'empty')).toBe('empty')
+    expect(getMark(wrapper, 'plans')).toBeUndefined()
   })
 })
 
@@ -681,105 +681,105 @@ describe('the keys the tree takes', () => {
     sendKey(getRow(wrapper, row).element, key, over)
 
   it('takes Ctrl and A, in either case, to select every row', () => {
-    const held = mountTree()
-    const lower = sendKeyOn(held, 'notes', 'a', { ctrlKey: true })
-    const upper = sendKeyOn(held, 'notes', 'A', { ctrlKey: true })
+    const wrapper = mountTree()
+    const lower = sendKeyOn(wrapper, 'notes', 'a', { ctrlKey: true })
+    const upper = sendKeyOn(wrapper, 'notes', 'A', { ctrlKey: true })
 
     expect(lower.defaultPrevented).toBe(true)
     expect(upper.defaultPrevented).toBe(true)
-    expect(held.emitted('select')?.[0]).toStrictEqual([
+    expect(wrapper.emitted('select')?.[0]).toStrictEqual([
       ['work', 'plans', 'notes', 'empty', 'loose'],
     ])
   })
 
   it('takes Meta and A to select every row', () => {
-    const held = mountTree()
-    const taken = sendKeyOn(held, 'notes', 'a', { metaKey: true })
+    const wrapper = mountTree()
+    const acquired = sendKeyOn(wrapper, 'notes', 'a', { metaKey: true })
 
-    expect(taken.defaultPrevented).toBe(true)
-    expect(held.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
+    expect(acquired.defaultPrevented).toBe(true)
+    expect(wrapper.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
   })
 
   it('leaves A alone while nothing is retained down', () => {
-    const held = mountTree()
-    const left = sendKeyOn(held, 'notes', 'a')
+    const wrapper = mountTree()
+    const left = sendKeyOn(wrapper, 'notes', 'a')
 
     expect(left.defaultPrevented).toBe(false)
-    expect(held.emitted('select')).toBeUndefined()
+    expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('leaves another key alone with Ctrl retained down', () => {
-    const held = mountTree()
-    const left = sendKeyOn(held, 'notes', 'b', { ctrlKey: true })
+    const wrapper = mountTree()
+    const left = sendKeyOn(wrapper, 'notes', 'b', { ctrlKey: true })
 
     expect(left.defaultPrevented).toBe(false)
-    expect(held.emitted('select')).toBeUndefined()
+    expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('takes Delete and Backspace', () => {
-    const held = mountTree({ selected: ['notes'] })
+    const wrapper = mountTree({ selected: ['notes'] })
 
-    expect(sendKeyOn(held, 'notes', 'Delete').defaultPrevented).toBe(true)
-    expect(sendKeyOn(held, 'notes', 'Backspace').defaultPrevented).toBe(true)
+    expect(sendKeyOn(wrapper, 'notes', 'Delete').defaultPrevented).toBe(true)
+    expect(sendKeyOn(wrapper, 'notes', 'Backspace').defaultPrevented).toBe(true)
   })
 
   it('takes Delete where nothing is selected', () => {
-    const held = mountTree()
-    expect(sendKeyOn(held, 'notes', 'Delete').defaultPrevented).toBe(true)
+    const wrapper = mountTree()
+    expect(sendKeyOn(wrapper, 'notes', 'Delete').defaultPrevented).toBe(true)
   })
 
   it('takes Enter', () => {
-    const held = mountTree({ selected: ['notes'] })
-    expect(sendKeyOn(held, 'notes', 'Enter').defaultPrevented).toBe(true)
+    const wrapper = mountTree({ selected: ['notes'] })
+    expect(sendKeyOn(wrapper, 'notes', 'Enter').defaultPrevented).toBe(true)
   })
 
   it('takes the menu key, and reaches the menu the pointer reaches', () => {
-    const held = mountTree({ selected: ['notes'] })
-    const taken = sendKeyOn(held, 'notes', 'ContextMenu')
+    const wrapper = mountTree({ selected: ['notes'] })
+    const acquired = sendKeyOn(wrapper, 'notes', 'ContextMenu')
 
-    expect(taken.defaultPrevented).toBe(true)
-    expect(held.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
+    expect(acquired.defaultPrevented).toBe(true)
+    expect(wrapper.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
   })
 
   it('takes F10 only with Shift', () => {
-    const held = mountTree({ selected: ['notes'] })
-    const left = sendKeyOn(held, 'notes', 'F10')
+    const wrapper = mountTree({ selected: ['notes'] })
+    const left = sendKeyOn(wrapper, 'notes', 'F10')
 
     expect(left.defaultPrevented).toBe(false)
-    expect(held.emitted('menu')).toBeUndefined()
+    expect(wrapper.emitted('menu')).toBeUndefined()
   })
 
   it('takes the arrows, the Home key and the End key', () => {
-    const held = mountTree({ selected: ['notes'] })
+    const wrapper = mountTree({ selected: ['notes'] })
     const keys = ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End']
 
-    expect(keys.map((key) => sendKeyOn(held, 'notes', key).defaultPrevented)).toStrictEqual(
+    expect(keys.map((key) => sendKeyOn(wrapper, 'notes', key).defaultPrevented)).toStrictEqual(
       keys.map(() => true),
     )
   })
 
   it('leaves any other key alone', () => {
-    const held = mountTree({ selected: ['notes'] })
-    const left = sendKeyOn(held, 'notes', 'x')
+    const wrapper = mountTree({ selected: ['notes'] })
+    const left = sendKeyOn(wrapper, 'notes', 'x')
 
     expect(left.defaultPrevented).toBe(false)
-    expect(held.emitted('select')).toBeUndefined()
+    expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('leaves the arrows alone while there is nothing to draw', () => {
-    const held = mountTree({ rows: [] })
-    const left = sendKey(held.get('[role="tree"]').element, 'ArrowDown')
+    const wrapper = mountTree({ rows: [] })
+    const left = sendKey(wrapper.get('[role="tree"]').element, 'ArrowDown')
 
     expect(left.defaultPrevented).toBe(false)
-    expect(held.emitted('select')).toBeUndefined()
+    expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('leaves Enter alone while there is nothing to draw', () => {
-    const held = mountTree({ rows: [] })
-    const left = sendKey(held.get('[role="tree"]').element, 'Enter')
+    const wrapper = mountTree({ rows: [] })
+    const left = sendKey(wrapper.get('[role="tree"]').element, 'Enter')
 
     expect(left.defaultPrevented).toBe(false)
-    expect(held.emitted('activate')).toBeUndefined()
+    expect(wrapper.emitted('activate')).toBeUndefined()
   })
 })
 
@@ -798,21 +798,21 @@ describe('a press on a row', () => {
   }
 
   it('is taken with the primary button, and puts the keyboard on the row', () => {
-    const held = mountTree()
-    const taken = sendPress(held, 'notes', 0)
+    const wrapper = mountTree()
+    const acquired = sendPress(wrapper, 'notes', 0)
 
-    expect(taken.defaultPrevented).toBe(true)
-    expect(document.activeElement).toBe(getRow(held, 'notes').element)
-    expect(held.emitted('select')).toStrictEqual([[['notes']]])
+    expect(acquired.defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(getRow(wrapper, 'notes').element)
+    expect(wrapper.emitted('select')).toStrictEqual([[['notes']]])
   })
 
   it('is left alone with any other button', () => {
-    const held = mountTree()
-    const left = sendPress(held, 'notes', 2)
+    const wrapper = mountTree()
+    const left = sendPress(wrapper, 'notes', 2)
 
     expect(left.defaultPrevented).toBe(false)
-    expect(document.activeElement).not.toBe(getRow(held, 'notes').element)
-    expect(held.emitted('select')).toBeUndefined()
+    expect(document.activeElement).not.toBe(getRow(wrapper, 'notes').element)
+    expect(wrapper.emitted('select')).toBeUndefined()
   })
 })
 
@@ -826,56 +826,56 @@ describe('where a drop would land, shown on the tree', () => {
     wrapper.findAll(`[data-tree-row][${attribute}]`).map((row) => row.attributes('data-tree-row'))
 
   it('marks the row a drop would land inside, and no row above', async () => {
-    const held = mountTree()
-    lift(held, 'loose', 12)
-    await held.vm.$nextTick()
+    const wrapper = mountTree()
+    lift(wrapper, 'loose', 12)
+    await wrapper.vm.$nextTick()
 
-    expect(marked(held, 'data-into')).toStrictEqual(['work'])
-    expect(marked(held, 'data-before')).toStrictEqual([])
-    expect(held.get('.tree').attributes('data-into')).toBeUndefined()
+    expect(marked(wrapper, 'data-into')).toStrictEqual(['work'])
+    expect(marked(wrapper, 'data-before')).toStrictEqual([])
+    expect(wrapper.get('.tree').attributes('data-into')).toBeUndefined()
   })
 
   it('marks the row a drop would land above, and no row inside', async () => {
-    const held = mountTree()
-    lift(held, 'loose', 2)
-    await held.vm.$nextTick()
+    const wrapper = mountTree()
+    lift(wrapper, 'loose', 2)
+    await wrapper.vm.$nextTick()
 
-    expect(marked(held, 'data-before')).toStrictEqual(['work'])
-    expect(marked(held, 'data-into')).toStrictEqual([])
+    expect(marked(wrapper, 'data-before')).toStrictEqual(['work'])
+    expect(marked(wrapper, 'data-into')).toStrictEqual([])
   })
 
   it('marks the whole tree where a drop would land at the top level', async () => {
-    const held = mountTree()
-    lift(held, 'work', 5 * HEIGHT - 2)
-    await held.vm.$nextTick()
+    const wrapper = mountTree()
+    lift(wrapper, 'work', 5 * HEIGHT - 2)
+    await wrapper.vm.$nextTick()
 
-    expect(held.get('.tree').attributes('data-into')).toBe('')
-    expect(marked(held, 'data-into')).toStrictEqual([])
-    expect(marked(held, 'data-before')).toStrictEqual([])
+    expect(wrapper.get('.tree').attributes('data-into')).toBe('')
+    expect(marked(wrapper, 'data-into')).toStrictEqual([])
+    expect(marked(wrapper, 'data-before')).toStrictEqual([])
   })
 
   it('marks no row where a drop would land nowhere', async () => {
-    const held = mountTree()
-    lift(held, 'loose', 9 * HEIGHT)
-    await held.vm.$nextTick()
+    const wrapper = mountTree()
+    lift(wrapper, 'loose', 9 * HEIGHT)
+    await wrapper.vm.$nextTick()
 
-    expect(marked(held, 'data-into')).toStrictEqual([])
-    expect(marked(held, 'data-before')).toStrictEqual([])
+    expect(marked(wrapper, 'data-into')).toStrictEqual([])
+    expect(marked(wrapper, 'data-before')).toStrictEqual([])
   })
 
   it('marks the rows being dragged while they are, and no other', async () => {
-    const held = mountTree({ selected: ['notes', 'loose'] })
-    lift(held, 'loose', 12)
-    await held.vm.$nextTick()
+    const wrapper = mountTree({ selected: ['notes', 'loose'] })
+    lift(wrapper, 'loose', 12)
+    await wrapper.vm.$nextTick()
 
-    expect(marked(held, 'data-dragged')).toStrictEqual(['notes', 'loose'])
+    expect(marked(wrapper, 'data-dragged')).toStrictEqual(['notes', 'loose'])
   })
 
   it('marks no row once the rows have been release', async () => {
-    const held = mountTree({ selected: ['notes', 'loose'] })
-    await dragTo(held, 'loose', 12)
+    const wrapper = mountTree({ selected: ['notes', 'loose'] })
+    await dragTo(wrapper, 'loose', 12)
 
-    expect(marked(held, 'data-dragged')).toStrictEqual([])
-    expect(marked(held, 'data-into')).toStrictEqual([])
+    expect(marked(wrapper, 'data-dragged')).toStrictEqual([])
+    expect(marked(wrapper, 'data-into')).toStrictEqual([])
   })
 })

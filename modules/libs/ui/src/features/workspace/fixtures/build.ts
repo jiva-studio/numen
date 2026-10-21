@@ -33,8 +33,8 @@ export const createWorkspace = (
 
 /** Identities that count up, so a test can name what a gesture made. */
 export function createIdFactory(prefix = 'made'): NodeIdFactory {
-  let made = 0
-  return () => `${prefix}-${++made}`
+  let createdItem = 0
+  return () => `${prefix}-${++createdItem}`
 }
 
 /** What the desktop opens with: the plex, and the agent beside it. */

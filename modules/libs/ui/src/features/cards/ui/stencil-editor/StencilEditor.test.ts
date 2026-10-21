@@ -475,22 +475,22 @@ describe('Stencil, the faces', () => {
     })
 
     it('emits a face dragged one place down the order', () => {
-      const held = mountStencil({ faces: THREE })
-      const press = pressKey(getStrip(held, 'one').element, 'ArrowDown')
+      const target = mountStencil({ faces: THREE })
+      const press = pressKey(getStrip(target, 'one').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
-      expect(held.emitted('move-face')).toEqual([['one', 'three']])
+      expect(target.emitted('move-face')).toEqual([['one', 'three']])
     })
 
     it('emits a face dragged one place up the order: nothing among them is fixed', () => {
-      const held = mountStencil({ faces: THREE })
-      pressKey(getStrip(held, 'two').element, 'ArrowUp')
-      expect(held.emitted('move-face')).toEqual([['two', 'one']])
+      const target = mountStencil({ faces: THREE })
+      pressKey(getStrip(target, 'two').element, 'ArrowUp')
+      expect(target.emitted('move-face')).toEqual([['two', 'one']])
     })
 
     it('does not move where there is no place that way', () => {
-      const held = mountStencil({ faces: THREE })
-      pressKey(getStrip(held, 'one').element, 'ArrowUp')
-      expect(held.emitted('move-face')).toBeUndefined()
+      const target = mountStencil({ faces: THREE })
+      pressKey(getStrip(target, 'one').element, 'ArrowUp')
+      expect(target.emitted('move-face')).toBeUndefined()
     })
   })
 

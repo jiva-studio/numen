@@ -56,7 +56,7 @@ const setup = (measure: () => TreeMetrics | null = () => METRICS) => {
       tell,
     }),
   ) as RowDragState
-  return { drag, told: notified }
+  return { drag, notified: notified }
 }
 
 const pointer = (kind: string, x: number, y: number): void => {
@@ -124,13 +124,13 @@ describe('a press that has become a drag', () => {
   })
 
   it('lands nowhere where the tree is not drawn', () => {
-    const { drag, told } = setup(() => null)
+    const { drag, notified } = setup(() => null)
     lift(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
     expect(drag.at.value).toBeNull()
-    expect(told).toStrictEqual([['drag', ['loose']], ['drop']])
+    expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
   })
 
   it('lands nowhere that would put a row inside itself', () => {
@@ -195,12 +195,12 @@ describe('a tree whose rows begin below its top edge', () => {
 
 describe('letting go', () => {
   it('notifies where the rows landed, then that they were let go', () => {
-    const { drag, told } = setup()
+    const { drag, notified } = setup()
     lift(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
-    expect(told).toStrictEqual([
+    expect(notified).toStrictEqual([
       ['drag', ['loose']],
       ['move', ['loose'], { into: 'work' }],
       ['drop'],
@@ -208,11 +208,11 @@ describe('letting go', () => {
   })
 
   it('notifies only that they were let go where they landed nowhere', () => {
-    const { drag, told } = setup()
+    const { drag, notified } = setup()
     lift(drag, ['loose'])
     pointer('pointermove', 10, 400)
     pointer('pointerup', 10, 400)
 
-    expect(told).toStrictEqual([['drag', ['loose']], ['drop']])
+    expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
   })
 })

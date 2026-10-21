@@ -32,7 +32,7 @@ function stubCanvas() {
     context as unknown as CanvasRenderingContext2D,
   )
 
-  return { asked: request, context }
+  return { request: request, context }
 }
 
 /** The tokens as a theme writes them, which is in whatever unit it likes. */
@@ -163,7 +163,7 @@ describe('what a title needs', () => {
   })
 
   it('measures a string once, however many nodes carry it', () => {
-    const { asked } = stubCanvas()
+    const { request } = stubCanvas()
     stubStyles()
     setTheme()
     const measures = widths()!
@@ -174,7 +174,7 @@ describe('what a title needs', () => {
 
     // The sample word comes first: how deep a line stands is taken off the
     // type when the measurer is made.
-    expect(asked).toStrictEqual(['Hxg', 'Adapter', 'Port'])
+    expect(request).toStrictEqual(['Hxg', 'Adapter', 'Port'])
   })
 })
 

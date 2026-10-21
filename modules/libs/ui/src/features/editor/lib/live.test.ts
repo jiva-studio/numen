@@ -134,9 +134,9 @@ describe('a list', () => {
   })
 
   it('draws a box for something to do, ticked or not', () => {
-    const [waiting, done] = widgets('- [ ] a\n- [x] b\n').filter((it) => it instanceof Box)
+    const [waiting, isDone] = widgets('- [ ] a\n- [x] b\n').filter((it) => it instanceof Box)
     expect((waiting as Box).isTicked).toBe(false)
-    expect((done as Box).isTicked).toBe(true)
+    expect((isDone as Box).isTicked).toBe(true)
   })
 })
 

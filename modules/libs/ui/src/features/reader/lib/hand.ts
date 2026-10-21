@@ -42,12 +42,12 @@ export function getWheelOffset(wheel: Wheel, hasBelow: boolean): Offset {
  * pixel takes the click off whatever was under it.
  */
 export class Hand {
-  private grip: { readonly from: Offset; readonly stood: Offset } | undefined
+  private grip: { readonly from: Offset; readonly status: Offset } | undefined
   private hasMoved = false
 
   /** The hand took hold, at a point, with the row standing here. */
   take(at: Offset, status: Offset) {
-    this.grip = { from: at, stood: status }
+    this.grip = { from: at, status: status }
     this.hasMoved = false
   }
 
@@ -70,11 +70,11 @@ export class Hand {
    */
   to(at: Offset): Offset | undefined {
     if (!this.grip) return undefined
-    const { from, stood } = this.grip
+    const { from, status } = this.grip
     const by = { x: at.x - from.x, y: at.y - from.y }
     if (!this.hasMoved && Math.hypot(by.x, by.y) < DRAG_THRESHOLD) return undefined
     this.hasMoved = true
-    return { x: stood.x - by.x, y: stood.y - by.y }
+    return { x: status.x - by.x, y: status.y - by.y }
   }
 
   /** The hand let go. */

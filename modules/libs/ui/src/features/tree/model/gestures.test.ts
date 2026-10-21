@@ -49,18 +49,18 @@ const create = (
     getMenuAt,
     tell,
   })
-  return { gestures, told: notified }
+  return { gestures, notified: notified }
 }
 
 describe('the menu key on a row with no place on screen', () => {
   it('is taken, and asks for no menu', () => {
-    const { gestures, told } = create()
+    const { gestures, notified } = create()
     const event = new KeyboardEvent('keydown', { key: 'ContextMenu', cancelable: true })
 
     gestures.onKeyDown(event)
 
     expect(event.defaultPrevented).toBe(true)
-    expect(told).toStrictEqual([])
+    expect(notified).toStrictEqual([])
   })
 })
 
@@ -68,30 +68,30 @@ describe('the menu keys on a row with a place on screen', () => {
   const at: Position = { x: 12, y: 34 }
 
   it('opens the menu on shift and F10', () => {
-    const { gestures, told } = create(ref<string | null>(null), () => at)
+    const { gestures, notified } = create(ref<string | null>(null), () => at)
 
     gestures.onKeyDown(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true }))
 
-    expect(told).toStrictEqual([['menu', 'notes', at]])
+    expect(notified).toStrictEqual([['menu', 'notes', at]])
   })
 
   it('leaves F10 alone without shift', () => {
-    const { gestures, told } = create(ref<string | null>(null), () => at)
+    const { gestures, notified } = create(ref<string | null>(null), () => at)
     const event = new KeyboardEvent('keydown', { key: 'F10', cancelable: true })
 
     gestures.onKeyDown(event)
 
-    expect(told).toStrictEqual([])
+    expect(notified).toStrictEqual([])
     expect(event.defaultPrevented).toBe(false)
   })
 
   it('leaves another key alone when shift is retained', () => {
-    const { gestures, told } = create(ref<string | null>(null), () => at)
+    const { gestures, notified } = create(ref<string | null>(null), () => at)
     const event = new KeyboardEvent('keydown', { key: 'x', shiftKey: true, cancelable: true })
 
     gestures.onKeyDown(event)
 
-    expect(told).toStrictEqual([])
+    expect(notified).toStrictEqual([])
     expect(event.defaultPrevented).toBe(false)
   })
 })

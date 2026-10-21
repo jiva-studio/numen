@@ -604,9 +604,9 @@ describe('DeckEditor', () => {
     })
 
     it('emits a card let go at the head of a section holding none', async () => {
-      const held = mountSectioned()
-      await dragTo(held, 'llama', 'leaves')
-      expect(held.emitted('move')).toEqual([['llama', 'leaves']])
+      const target = mountSectioned()
+      await dragTo(target, 'llama', 'leaves')
+      expect(target.emitted('move')).toEqual([['llama', 'leaves']])
     })
 
     describe('the cards before the first section', () => {
@@ -630,37 +630,37 @@ describe('DeckEditor', () => {
       })
 
       it('emit a card let go before the first section', async () => {
-        const held = mountSectioned({ cards: INSIDE })
-        await dragTo(held, 'yak', HEAD)
-        expect(held.emitted('move')).toEqual([['yak', HEAD]])
+        const card = mountSectioned({ cards: INSIDE })
+        await dragTo(card, 'yak', HEAD)
+        expect(card.emitted('move')).toEqual([['yak', HEAD]])
       })
 
       it('emit the first card of the deck dragged out of its section', () => {
-        const held = mountSectioned({ cards: INSIDE })
-        const press = pressKey(getTile(held, 'llama').get('.card-header__grip').element, 'ArrowUp')
+        const card = mountSectioned({ cards: INSIDE })
+        const press = pressKey(getTile(card, 'llama').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(true)
-        expect(held.emitted('move')).toEqual([['llama', HEAD]])
+        expect(card.emitted('move')).toEqual([['llama', HEAD]])
       })
 
       it('move nothing where the card dragged up already remains there', () => {
-        const held = mountSectioned()
-        const press = pressKey(getTile(held, 'loose').get('.card-header__grip').element, 'ArrowUp')
+        const target = mountSectioned()
+        const press = pressKey(getTile(target, 'loose').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(false)
-        expect(held.emitted('move')).toBeUndefined()
+        expect(target.emitted('move')).toBeUndefined()
       })
 
       it('hold a card standing under a section the deck was not handed', () => {
-        const lost: readonly DeckCard[] = [
+        const missing: readonly DeckCard[] = [
           { id: 'lost', section: 'gone', stencil: 'Animal', filled: [] },
           { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
         ]
-        const held = mountSectioned({ cards: lost })
+        const card = mountSectioned({ cards: missing })
 
-        expect(getDrawnCards(held)).toEqual(['lost', 'llama'])
-        expect(getTile(held, 'lost').attributes('data-section')).toBeUndefined()
+        expect(getDrawnCards(card)).toEqual(['lost', 'llama'])
+        expect(getTile(card, 'lost').attributes('data-section')).toBeUndefined()
         // Every card is drawn, so what each tile is announced by counts them
         // all and the plus each run carries.
-        expect(getTile(held, 'lost').attributes('aria-setsize')).toBe('5')
+        expect(getTile(card, 'lost').attributes('aria-setsize')).toBe('5')
       })
     })
   })

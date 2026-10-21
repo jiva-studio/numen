@@ -45,14 +45,14 @@ export const placeActions = (
 ): readonly PlacedAction[] => {
   const word = text.trim().toLowerCase()
   const out: PlacedAction[] = []
-  for (const [offered, action] of actions.entries()) {
+  for (const [proposed, action] of actions.entries()) {
     const found = action.text.toLowerCase().indexOf(word)
     if (found < 0) continue
     out.push({
       action,
       at: out.length,
       name: getParts(action.text, [{ from: found, to: found + word.length }]),
-      key: PALETTE_KEYS[offered] ?? null,
+      key: PALETTE_KEYS[proposed] ?? null,
     })
   }
   return out

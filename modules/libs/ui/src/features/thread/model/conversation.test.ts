@@ -767,7 +767,7 @@ const createHold = () => {
   const target = new Promise<void>((go) => {
     release = go
   })
-  return { held: target, release }
+  return { target: target, release }
 }
 
 /** What the panel draws, with how far along each turn is. */
@@ -895,13 +895,13 @@ describe('a question that cannot be requested', () => {
   })
 
   it('is not requested while an answer is on its way', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     let request = 0
     const conversation = useConversation(
       {
         async *ask() {
           request++
-          await held
+          await target
         },
         finish: async () => {},
       },
@@ -1034,9 +1034,9 @@ describe('while an answer is on its way', () => {
 
 describe('the line about work and the answer beginning', () => {
   it('arrives down as the first words arrive', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createToolStep('Read a note'), createSaidStep('Hi')], held),
+      createPort([createToolStep('Read a note'), createSaidStep('Hi')], target),
       words,
       called,
       now,
@@ -1054,9 +1054,9 @@ describe('the line about work and the answer beginning', () => {
   })
 
   it('is not put back by the next tool being requested about while the answer grows', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createSaidStep('One. '), createToolStep('Read a note')], held),
+      createPort([createSaidStep('One. '), createToolStep('Read a note')], target),
       words,
       called,
       now,
@@ -1075,9 +1075,9 @@ describe('the line about work and the answer beginning', () => {
   })
 
   it('leaves the answer so far settled when the model is requested again', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createSaidStep('One moment. '), createThinking()], held),
+      createPort([createSaidStep('One moment. '), createThinking()], target),
       words,
       called,
       now,
@@ -1106,8 +1106,8 @@ describe('which tool answered', () => {
     ['the model has completed', createSaidStep('So. ')],
     ['the model is asked again', createThinking()],
   ])('is known again once %s, and the one in hand stops running', async (_when, between) => {
-    const { held, release } = createHold()
-    const conversation = useConversation(createPort(steps(between), held), words, called, now)
+    const { target, release } = createHold()
+    const conversation = useConversation(createPort(steps(between), target), words, called, now)
     const asking = conversation.ask('q', '')
     await nap()
 
@@ -1123,12 +1123,12 @@ describe('which tool answered', () => {
 
 describe('giving up on an answer in the middle', () => {
   it('leaves the transcript settled, whatever the agent goes on to say', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     const conversation = useConversation(
       {
         async *ask() {
           yield createSaidStep('Two ')
-          await held
+          await target
           yield createSaidStep('more')
         },
         finish: async () => {},
@@ -1150,8 +1150,8 @@ describe('giving up on an answer in the middle', () => {
   })
 
   it('does not say the agent returned nothing', async () => {
-    const { held, release } = createHold()
-    const conversation = useConversation(createPort([], held), words, called, now)
+    const { target, release } = createHold()
+    const conversation = useConversation(createPort([], target), words, called, now)
     const asking = conversation.ask('q', '')
     await nap()
     conversation.stop()
@@ -1162,11 +1162,11 @@ describe('giving up on an answer in the middle', () => {
   })
 
   it('does not say the agent could not be reached when it fails afterwards', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     const conversation = useConversation(
       {
         async *ask() {
-          await held
+          await target
           throw new Error('cut off')
         },
         finish: async () => {},
@@ -1239,14 +1239,14 @@ describe('an agent that cannot be reached', () => {
 
 describe('a conversation that is over, while an answer is on its way', () => {
   it('stops the answer at once', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     let signal: AbortSignal | undefined
     const conversation = useConversation(
       {
         async *ask(query) {
           signal = query.signal
           yield createToolStep('Search notes')
-          await held
+          await target
         },
         finish: async () => {},
       },

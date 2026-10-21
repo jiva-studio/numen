@@ -149,30 +149,30 @@ interface NoticeLifecycleOptions {
   readonly getNotices: () => readonly Notice[]
   readonly arrived: ShallowRef<ReadonlyMap<string, number>>
   readonly away: ShallowRef<ReadonlySet<string>>
-  readonly forgotten: Set<string>
-  readonly read: ShallowRef<number>
+  readonly cleared: Set<string>
+  readonly readItem: ShallowRef<number>
   readonly sample: () => void
   readonly dismiss: (id: string) => void
 }
 
 function useNoticeLifecycle(options: NoticeLifecycleOptions): void {
-  const { getNotices, arrived, away, forgotten, read, sample, dismiss } = options
+  const { getNotices, arrived, away, cleared, readItem, sample, dismiss } = options
   watch(
     getNotices,
     (all) => {
       sample()
-      arrived.value = getArrivalTimes(arrived.value, all, read.value)
+      arrived.value = getArrivalTimes(arrived.value, all, readItem.value)
       away.value = getStillAway(away.value, all)
       const here = new Set(getReadable(all).map((one) => one.id))
-      for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
+      for (const id of [...cleared]) if (!here.has(id)) cleared.delete(id)
     },
     { immediate: true },
   )
 
   watchEffect(() => {
-    for (const id of getFinishedNotices(getNotices(), arrived.value, read.value)) {
-      if (forgotten.has(id)) continue
-      forgotten.add(id)
+    for (const id of getFinishedNotices(getNotices(), arrived.value, readItem.value)) {
+      if (cleared.has(id)) continue
+      cleared.add(id)
       dismiss(id)
     }
   })
@@ -195,8 +195,8 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     getNotices: options.getNotices,
     arrived,
     away,
-    forgotten: cleared,
-    read,
+    cleared: cleared,
+    readItem: read,
     sample,
     dismiss: options.dismiss,
   })

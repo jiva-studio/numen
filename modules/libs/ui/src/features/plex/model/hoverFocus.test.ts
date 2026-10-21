@@ -13,7 +13,7 @@ function createFocusTarget(matches: (selector: string) => boolean) {
   })
   element.addEventListener('focusin', hoverFocus.onFocusIn)
   const focus = () => element.dispatchEvent(new FocusEvent('focusin'))
-  return { hoverFocus, element, focus, asked: request }
+  return { hoverFocus, element, focus, request: request }
 }
 
 describe('hover', () => {
@@ -31,12 +31,12 @@ describe('hover', () => {
 
 describe('keyboard focus', () => {
   it('is on where the focused element matches :focus-visible', () => {
-    const { hoverFocus, focus, asked } = createFocusTarget(
+    const { hoverFocus, focus, request } = createFocusTarget(
       (selector) => selector === ':focus-visible',
     )
     focus()
 
-    expect(asked).toStrictEqual([':focus-visible'])
+    expect(request).toStrictEqual([':focus-visible'])
     expect(hoverFocus.isOn.value).toBe(true)
   })
 
