@@ -416,8 +416,8 @@ tool_stories_check: ## verify story references
 	cd $(STORIES) && npm run check
 
 .PHONY: check_layers
-check_layers: ## validate architectural layers across backend, plugins and frontend
-	node $(LAYERS)/check.mjs $(FLAGS)
+check_layers: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])
+	node $(LAYERS)/check.mjs $(target)
 
 # ---------------------------------- Plugins -----------------------------------
 .PHONY: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES)))
