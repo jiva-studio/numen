@@ -2,6 +2,7 @@ package container
 
 import (
 	"encoding/json"
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -184,6 +186,123 @@ func TestWhatThePermissionRuleRefuses(t *testing.T) {
 	}
 }
 
+// readDocumentedCapabilities is the capabilities the plugin guide lists: the
+// values in backticks on the capabilities line.
+func readDocumentedCapabilities(guide string) []string {
+	for line := range strings.SplitSeq(guide, "\n") {
+		if !strings.HasPrefix(line, "- **`capabilities`**") {
+			continue
+		}
+		rest := strings.TrimPrefix(line, "- **`capabilities`**")
+		var names []string
+		for _, match := range backtick.FindAllStringSubmatch(rest, -1) {
+			names = append(names, match[1])
+		}
+		return names
+	}
+	return nil
+}
+
+// readDocumentedActivationEvents is the activation event patterns the plugin guide lists:
+// the values in backticks on the bullet lines of the activationEvents section.
+func readDocumentedActivationEvents(guide string) []string {
+	var inSection bool
+	var events []string
+	for line := range strings.SplitSeq(guide, "\n") {
+		if strings.HasPrefix(line, "- **`activationEvents`**") {
+			inSection = true
+			continue
+		}
+		if inSection {
+			if strings.HasPrefix(line, "  - `") {
+				if match := backtick.FindStringSubmatch(line); len(match) > 1 {
+					events = append(events, match[1])
+				}
+			} else if strings.HasPrefix(line, "- **`") || strings.HasPrefix(line, "---") || strings.HasPrefix(line, "## ") {
+				break
+			}
+		}
+	}
+	return events
+}
+
+// listDifferences lists the items one side names and the other does not.
+func listDifferences(documented, valid []string, itemKind string) []string {
+	var differences []string
+	for _, name := range documented {
+		if !slices.Contains(valid, name) {
+			differences = append(differences, fmt.Sprintf("%s documented but not valid: %s", itemKind, name))
+		}
+	}
+	for _, name := range valid {
+		if !slices.Contains(documented, name) {
+			differences = append(differences, fmt.Sprintf("%s valid but not documented: %s", itemKind, name))
+		}
+	}
+	return differences
+}
+
+func TestTheCapabilitiesTheGuideListsAreTheValidators(t *testing.T) {
+	guide, err := os.ReadFile(filepath.Join(docsRoot, "plugins", "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	documented := readDocumentedCapabilities(string(guide))
+	if len(documented) == 0 {
+		t.Fatal("the guide lists no capabilities: a rule checked against nothing")
+	}
+	valid := port.PluginCapabilities()
+	for _, difference := range listDifferences(documented, valid, "capability") {
+		t.Error(difference)
+	}
+	for _, name := range valid {
+		if err := (port.PluginManifest{Capabilities: []string{name}}).ValidateCapabilities(); err != nil {
+			t.Errorf("the validator refuses %s: %v", name, err)
+		}
+	}
+}
+
+func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
+	guide, err := os.ReadFile(filepath.Join(docsRoot, "plugins", "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	documented := readDocumentedActivationEvents(string(guide))
+	if len(documented) == 0 {
+		t.Fatal("the guide lists no activation events: a rule checked against nothing")
+	}
+	valid := port.PluginActivationEvents()
+	for _, difference := range listDifferences(documented, valid, "activation event") {
+		t.Error(difference)
+	}
+	for _, name := range valid {
+		if err := (port.PluginManifest{ActivationEvents: []string{name}}).ValidateActivationEvents(); err != nil {
+			t.Errorf("the validator refuses %s: %v", name, err)
+		}
+	}
+}
+
+func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
+	valid := []string{"document", "compute"}
+	if got := listDifferences([]string{"document", "compute"}, valid, "capability"); len(got) != 0 {
+		t.Errorf("equal lists differ: %v", got)
+	}
+	if got := listDifferences([]string{"document"}, valid, "capability"); len(got) != 1 {
+		t.Errorf("a capability left out of the guide is found %d times: %v", len(got), got)
+	}
+	if got := listDifferences([]string{"document", "compute", "other"}, valid, "capability"); len(got) != 1 {
+		t.Errorf("a capability only the guide names is found %d times: %v", len(got), got)
+	}
+	guideLine := "- **`capabilities`**: Core capabilities provided (`document`, `compute`)."
+	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "compute"}) {
+		t.Errorf("the capabilities line is read as %v", got)
+	}
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onFile:<glob>` (e.g. pdf)\n  - `*` (startup)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onFile:<glob>", "*"}) {
+		t.Errorf("the activation events section is read as %v", got)
+	}
+}
+
 // listBackendSources is the Go sources a plugin's backend is compiled from: its own,
 // to any depth, and those of every directory of this repository that they import.
 func listBackendSources(t *testing.T, backend string) []string {
@@ -335,3 +454,137 @@ func TestWhatTheSettingRuleRefuses(t *testing.T) {
 		t.Errorf("a key inside another word is found as read: %v", got)
 	}
 }
+
+// coreCapabilities are the capabilities resolved by the core's adapters and composition root.
+var coreCapabilities = map[string]bool{
+	plugin.CapabilityDocument:      true,
+	plugin.CapabilityBook:          true,
+	plugin.CapabilityRecognition:   true,
+	plugin.CapabilityTranscription: true,
+	plugin.CapabilityEmbedding:     true,
+	plugin.CapabilityDownloader:    true,
+	plugin.CapabilityProofreading:  true,
+	plugin.CapabilityTools:         true,
+	"ai.agent.provider":            true,
+}
+
+// sdkCapabilities are the capabilities resolved by the frontend SDK and tab kinds.
+var sdkCapabilities = map[string]bool{
+	"audio":     true,
+	"recording": true,
+	"media":     true,
+	"note":      true,
+}
+
+// capabilityMarkers are explicit capability markers declared by plugins.
+var capabilityMarkers = map[string]bool{
+	"agent":           true,
+	"cards.deck":      true,
+	"cards.preset":    true,
+	"cards.stencil":   true,
+	"editor.markdown": true,
+	"media.download":  true,
+	"reader.markdown": true,
+	"ui.view":         true,
+	"view.agent-chat": true,
+	"view.file-tree":  true,
+	"view.plex-graph": true,
+}
+
+func isResolvedCapability(capability string) bool {
+	return coreCapabilities[capability] || sdkCapabilities[capability] || capabilityMarkers[capability]
+}
+
+func TestEveryCapabilityInAManifestIsResolvedOrMarked(t *testing.T) {
+	manifests := getPluginManifests(t)
+	declared := 0
+	for _, one := range manifests {
+		for _, capability := range one.Capabilities {
+			declared++
+			if !isResolvedCapability(capability) {
+				t.Errorf("%s declares capability %q which is neither resolved nor an explicit marker", one.Dir, capability)
+			}
+		}
+	}
+	if declared == 0 {
+		t.Fatal("no plugin declares a capability: a rule checked against nothing")
+	}
+}
+
+func TestWhatTheCapabilityRuleRefuses(t *testing.T) {
+	var refused []string
+	for _, capability := range []string{
+		"document",
+		"audio",
+		"view.agent-chat",
+		"unknown.capability",
+		"unresolved",
+	} {
+		if !isResolvedCapability(capability) {
+			refused = append(refused, capability)
+		}
+	}
+	want := []string{"unknown.capability", "unresolved"}
+	if !slices.Equal(refused, want) {
+		t.Errorf("the capability rule refuses %v, want %v", refused, want)
+	}
+}
+
+// isEmittedActivationEvent answers whether an activation event is one the host emits
+// or an explicit lifecycle or view marker.
+func isEmittedActivationEvent(event string) bool {
+	switch {
+	case event == "*":
+		return true
+	case strings.HasPrefix(event, "onFile:"):
+		return len(strings.TrimPrefix(event, "onFile:")) > 0
+	case strings.HasPrefix(event, "onCommand:"):
+		return len(strings.TrimPrefix(event, "onCommand:")) > 0
+	case event == "onStartupFinished":
+		return true
+	case strings.HasPrefix(event, "onView:"):
+		return len(strings.TrimPrefix(event, "onView:")) > 0
+	default:
+		return false
+	}
+}
+
+func TestEveryActivationEventIsOneTheHostEmits(t *testing.T) {
+	manifests := getPluginManifests(t)
+	declared := 0
+	for _, one := range manifests {
+		for _, event := range one.ActivationEvents {
+			declared++
+			if !isEmittedActivationEvent(event) {
+				t.Errorf("%s declares activation event %q which is not emitted by the host", one.Dir, event)
+			}
+		}
+	}
+	if declared == 0 {
+		t.Fatal("no plugin declares an activation event: a rule checked against nothing")
+	}
+}
+
+func TestWhatTheActivationEventRuleRefuses(t *testing.T) {
+	var refused []string
+	for _, event := range []string{
+		"*",
+		"onFile:*.pdf",
+		"onCommand:ocr.recognize",
+		"onStartupFinished",
+		"onView:agent",
+		"unsupportedEvent",
+		"onFile:",
+		"onCommand:",
+		"onView:",
+	} {
+		if !isEmittedActivationEvent(event) {
+			refused = append(refused, event)
+		}
+	}
+	want := []string{"unsupportedEvent", "onFile:", "onCommand:", "onView:"}
+	if !slices.Equal(refused, want) {
+		t.Errorf("the activation event rule refuses %v, want %v", refused, want)
+	}
+}
+

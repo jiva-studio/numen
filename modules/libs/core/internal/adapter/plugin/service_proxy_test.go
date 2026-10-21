@@ -103,6 +103,7 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 	if string(answer) != `{"ok":true}` || res.Header.Get("Content-Type") != "application/json" {
 		t.Errorf("the window was answered %q as %q", answer, res.Header.Get("Content-Type"))
 	}
+	window.Close()
 	if host.released != 1 {
 		t.Errorf("the plugin was released %d times", host.released)
 	}

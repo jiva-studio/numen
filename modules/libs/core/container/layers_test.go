@@ -358,6 +358,100 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 	}
 }
 
+// transports are the wire protocols, database drivers, schema generators and network
+// handlers. An inner layer defines the ports for them and imports none of them.
+var transports = []string{
+	"connectrpc.com",
+	"database/sql",
+	"net/http",
+	"github.com/jiva-studio/numen/modules/libs/protocol",
+}
+
+// isTransport answers whether an import is a transport, a database driver or a wire schema.
+func isTransport(to string) bool {
+	for _, one := range transports {
+		if to == one || strings.HasPrefix(to, one+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// An inner layer defines the ports for what is outside and imports no transport,
+// database driver or schema generator.
+func TestNoInnerLayerImportsATransport(t *testing.T) {
+	var wrong []string
+	var read int
+	for _, root := range []string{"..", "../../notes/domain"} {
+		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			pkg := getPackage("..", path)
+			if isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
+				return nil
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+			if err != nil {
+				return err
+			}
+			read++
+			for _, one := range file.Imports {
+				to, err := strconv.Unquote(one.Path.Value)
+				if err != nil {
+					return err
+				}
+				if isTransport(to) {
+					wrong = append(wrong, path+" imports "+to)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, one := range wrong {
+		t.Error(one + ": the inner layers define ports and import no transport")
+	}
+	if read < 100 {
+		t.Fatalf("%d files of the inner layers read: the walk is not reading them", read)
+	}
+}
+
+// What the transport rule refuses, read against imports written to be refused.
+func TestWhatTheTransportRuleRefuses(t *testing.T) {
+	var refused []string
+	for _, to := range []string{
+		"connectrpc.com/connect",
+		"database/sql",
+		"database/sql/driver",
+		"net/http",
+		"net/http/httptest",
+		"github.com/jiva-studio/numen/modules/libs/protocol",
+		"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1",
+		"fmt",
+		"context",
+		module + "port",
+	} {
+		if isTransport(to) {
+			refused = append(refused, to)
+		}
+	}
+	want := []string{
+		"connectrpc.com/connect",
+		"database/sql",
+		"database/sql/driver",
+		"net/http",
+		"net/http/httptest",
+		"github.com/jiva-studio/numen/modules/libs/protocol",
+		"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1",
+	}
+	if !slices.Equal(refused, want) {
+		t.Errorf("the rule refuses %v, want %v", refused, want)
+	}
+}
+
 // logging are the words a package that keeps a record is named by, read off the
 // last element of an import path. The standard library holds two of them, and
 // the rest are the libraries reached for when one of those will not do.
