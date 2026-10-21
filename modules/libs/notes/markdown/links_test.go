@@ -101,7 +101,7 @@ Mentioned again as [[Entropy]] in the text.
 	}
 }
 
-func TestALinkWithoutARoleIsReportedRatherThanGuessed(t *testing.T) {
+func TestALinkWithoutARoleIsReportedInsteadOfGuessed(t *testing.T) {
 	n := parse(t, `---
 links:
   - to: "[[Entropy]]"

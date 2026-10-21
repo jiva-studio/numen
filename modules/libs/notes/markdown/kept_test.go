@@ -89,7 +89,7 @@ func contains(all []string, one string) bool {
 //
 // The frontmatter is shared with the person, and the application does not own
 // the whole of it.
-func TestANoteNobodyWroteToComesOutAsItWentIn(t *testing.T) {
+func TestANoteNobodySavedToReachesOutAsItWentIn(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		raw, _ := drawNote(t)
@@ -107,7 +107,7 @@ func TestANoteNobodyWroteToComesOutAsItWentIn(t *testing.T) {
 // however many owned keys are written over it and in whatever order.
 //
 // Keys the application does not own are preserved verbatim, order included.
-func TestWhatTheApplicationDoesNotOwnIsKeptVerbatim(t *testing.T) {
+func TestWhatTheApplicationDoesNotOwnIsCachedVerbatim(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		raw, foreign := drawNote(t)
@@ -180,7 +180,7 @@ func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote strin
 // afterwards, and an identifier is the one the note carries.
 //
 // The frontmatter is where the application's fields live.
-func TestAnOwnedKeyReadsBackAsItWasWritten(t *testing.T) {
+func TestAnOwnedKeyReadsBackAsItWasSaved(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		raw, _ := drawNote(t)

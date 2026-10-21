@@ -10,7 +10,7 @@ import (
 // A key written twice names two values, and reading the note gives one of them.
 // Opening such a note for changing is refused, which is the answer reading it
 // already gives.
-func TestFrontmatterWithAKeyWrittenTwiceIsUnreadable(t *testing.T) {
+func TestFrontmatterWithAKeySavedTwiceIsUnreadable(t *testing.T) {
 	raw := "---\ntitle: One\nid: 01J8\ntitle: Two\n---\nbody\n"
 
 	if _, err := Open([]byte(raw)); !errors.Is(err, ErrUnreadable) {

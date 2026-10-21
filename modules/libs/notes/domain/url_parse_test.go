@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestAPageKeepsWhatSaysWhichPageItIs(t *testing.T) {
+func TestAPagePreservesWhatReturnsWhichPageItIs(t *testing.T) {
 	for _, one := range []struct {
 		written string
 		want    string

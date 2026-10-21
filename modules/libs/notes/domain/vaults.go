@@ -50,7 +50,7 @@ func (vs Vaults) FindByName(name string, self VaultID) (Vault, bool) {
 
 // FreeName is the name, or the lowest free number appended to it.
 func (vs Vaults) FreeName(name string, self VaultID) string {
-	if _, acquired := vs.FindByName(name, self); !acquired {
+	if _, found := vs.FindByName(name, self); !found {
 		return name
 	}
 	for n := 2; ; n++ {

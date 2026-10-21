@@ -38,7 +38,7 @@ func TestALeadingDotIsPartOfTheName(t *testing.T) {
 
 // Only a note's extension comes off a written name, and every other dot in it
 // is part of the name. It is what the scan stores beside each link.
-func TestALinkIsWrittenByItsLastSegment(t *testing.T) {
+func TestALinkIsSavedByItsLastSegment(t *testing.T) {
 	for content, want := range map[string]string{
 		"Entropy":                    "Entropy",
 		"notes/Entropy":              "Entropy",
@@ -57,7 +57,7 @@ func TestALinkIsWrittenByItsLastSegment(t *testing.T) {
 
 // A name is compared without regard to case, and the extension is part of what
 // is compared.
-func TestTheExtensionComesOffALinkHoweverItIsSpelled(t *testing.T) {
+func TestTheExtensionReachesOffALinkHoweverItIsSpelled(t *testing.T) {
 	for content, want := range map[string]string{
 		"Entropy.MD":       "Entropy",
 		"Entropy.Md":       "Entropy",

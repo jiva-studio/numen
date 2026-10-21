@@ -91,7 +91,7 @@ func TestANoteIsReadAsItsProse(t *testing.T) {
 	}
 }
 
-func TestAReadSaysWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
+func TestAReadReturnsWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
 	big := newFiles(map[string]string{"Big.md": strings.Repeat("x", edit.MaxBytes+1)})
 	binary := newFiles(map[string]string{"Bin.md": "\xff\xfe"})
 	broken := newFiles(map[string]string{"Broken.md": "---\n: [\n---\nbody"})
@@ -120,7 +120,7 @@ func TestAReadSaysWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
 	}
 }
 
-func TestAnEditStampsTheIdentifierAndHoldsTheWriteToWhatWasRead(t *testing.T) {
+func TestAnEditStampsTheIdentifierAndContainsTheWriteToWhatWasRead(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	read, _ := f.GetFingerprint(t.Context(), "A.md")
 
@@ -151,7 +151,7 @@ func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 	}
 }
 
-func TestABaselineOfTheSameProseLandsWhateverTheFileSays(t *testing.T) {
+func TestABaselineOfTheSameProseLandsWhateverTheFileReturns(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	read, _ := f.GetFingerprint(t.Context(), "A.md")
 	f.put("A.md", "# A\n")
@@ -206,7 +206,7 @@ func TestAnEditIsHeldToItsBound(t *testing.T) {
 	}
 }
 
-func TestAWriteThatLandedIsToldAlongsideALevellingThatFailed(t *testing.T) {
+func TestAWriteThatLandedIsReportedAlongsideALevellingThatFailed(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	e := editing(f)
 	e.Index = func(context.Context, domain.Vault, []string) error { return errors.New("index is busy") }
@@ -218,7 +218,7 @@ func TestAWriteThatLandedIsToldAlongsideALevellingThatFailed(t *testing.T) {
 	}
 }
 
-func TestANoteIsPointedAtAnotherUnderAType(t *testing.T) {
+func TestANoteIsPointedAtAnotherBelowAType(t *testing.T) {
 	f := newFiles(map[string]string{"Deck.md": "---\ntype: deck\n---\n\n# Deck\n"})
 	e := editing(f)
 

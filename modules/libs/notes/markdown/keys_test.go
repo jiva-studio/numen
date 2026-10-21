@@ -34,7 +34,7 @@ func openDocument(t *testing.T, raw string) *markdown.Document {
 
 // A key is written by replacing the lines it occupies, so every other line of
 // the block comes out of a write as the bytes it went in as.
-func TestWritingOneKeyLeavesTheRestOfTheBlockAsItWas(t *testing.T) {
+func TestWritingOneKeyPreservesTheRestOfTheBlockAsItWas(t *testing.T) {
 	doc := openDocument(t, block)
 	if err := doc.SetList("fields", []string{"Height", "Shoulder height", "Weight"}); err != nil {
 		t.Fatalf("set: %v", err)
@@ -75,7 +75,7 @@ func TestAListIsRead(t *testing.T) {
 
 // How somebody spells their own frontmatter is theirs, so a name that survives
 // a write survives it spelled as it was.
-func TestANameKeepsTheWayItWasWritten(t *testing.T) {
+func TestANamePreservesTheWayItWasSaved(t *testing.T) {
 	doc := openDocument(t, "---\nfields:\n  - \"Height\"\n  - 'Weight'\n---\n")
 	if err := doc.SetList("fields", []string{"Height", "Weight", "Life span"}); err != nil {
 		t.Fatalf("set: %v", err)
@@ -89,7 +89,7 @@ func TestANameKeepsTheWayItWasWritten(t *testing.T) {
 
 // A key the block does not carry yet is added to the end of it, and no names
 // takes it away again.
-func TestAKeyArrivesAndLeaves(t *testing.T) {
+func TestAKeyArrivesAndPreserves(t *testing.T) {
 	doc := openDocument(t, "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n\n# Entropy\n")
 	if err := doc.SetList("fields", []string{"Height"}); err != nil {
 		t.Fatalf("set: %v", err)
@@ -109,7 +109,7 @@ func TestAKeyArrivesAndLeaves(t *testing.T) {
 }
 
 // A scalar key is written the same way, and an empty value takes it away.
-func TestAScalarKeyIsWritten(t *testing.T) {
+func TestAScalarKeyIsSaved(t *testing.T) {
 	doc := openDocument(t, "---\nid: 01J8F3K2M9QRSTVWXYZ012\nmine: keep me verbatim\n---\n")
 	if err := doc.SetScalar("type", "deck"); err != nil {
 		t.Fatalf("set: %v", err)
@@ -128,7 +128,7 @@ func TestAScalarKeyIsWritten(t *testing.T) {
 }
 
 // A file written with \r\n keeps it, line for line.
-func TestAKeyTakesTheFilesOwnLineEnding(t *testing.T) {
+func TestAKeyConsumesTheFilesOwnLineEnding(t *testing.T) {
 	doc := openDocument(t, strings.ReplaceAll(block, "\n", "\r\n"))
 	if err := doc.SetList("fields", []string{"Height", "Life span"}); err != nil {
 		t.Fatalf("set: %v", err)

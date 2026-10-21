@@ -36,7 +36,7 @@ func TestLinksThatAreNotABlockSequenceAreRefused(t *testing.T) {
 }
 
 // A `links:` key holding nothing is where a first entry is written.
-func TestAnEmptyLinksKeyTakesTheFirstEntry(t *testing.T) {
+func TestAnEmptyLinksKeyConsumesTheFirstEntry(t *testing.T) {
 	d, err := Open([]byte("---\nid: 01\nlinks:\ntype: deck\n---\nbody\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)

@@ -42,7 +42,7 @@ func parseFile(t *testing.T, rel string) domain.Note {
 	return markdown.Parse(domain.Fingerprint{Path: rel, Size: int64(len(raw))}, raw)
 }
 
-func TestFrontmatterIsKeptAsFound(t *testing.T) {
+func TestFrontmatterIsCachedAsFound(t *testing.T) {
 	n := parseFile(t, "notes/Entropy.md")
 
 	if got := n.Frontmatter["status"]; got != "draft" {
@@ -121,7 +121,7 @@ func TestAHeadingCarriesTheByteItBeginsAt(t *testing.T) {
 	}
 }
 
-func TestAHeadingInAFileWrittenWithCRLFBeginsWhereItSays(t *testing.T) {
+func TestAHeadingInAFileSavedWithCRLFBeginsWhereItReturns(t *testing.T) {
 	// A carriage return is a byte of the line and not of its text, so a heading
 	// begins past every one of them.
 	raw := []byte("# One\r\n\r\nprose\r\n\r\n## Two\r\n\r\nmore\r\n\r\n### Three\r\n")
@@ -202,7 +202,7 @@ func TestHorizontalRuleIsNotFrontmatter(t *testing.T) {
 	}
 }
 
-func TestUnterminatedFrontmatterLeavesTheFileAlone(t *testing.T) {
+func TestUnterminatedFrontmatterPreservesTheFileAlone(t *testing.T) {
 	raw := []byte("---\ntitle: x\n\nbody with no closing delimiter\n")
 	n := markdown.Parse(domain.Fingerprint{Path: "x.md"}, raw)
 	if n.Frontmatter != nil {

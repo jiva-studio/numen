@@ -41,7 +41,7 @@ func TestFenceDetectionIsTheSameForCRLFAndLF(t *testing.T) {
 	}
 }
 
-func TestHeadingsAndLinksSkipWhatAFenceHolds(t *testing.T) {
+func TestHeadingsAndLinksSkipWhatAFenceContains(t *testing.T) {
 	cases := []struct {
 		body     string
 		headings []string

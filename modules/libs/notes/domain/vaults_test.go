@@ -27,7 +27,7 @@ func TestAFolderInsideAVaultHasNoRoom(t *testing.T) {
 	}
 }
 
-func TestAFolderHoldingAVaultHasNoRoom(t *testing.T) {
+func TestAFolderContainingAVaultHasNoRoom(t *testing.T) {
 	err := vaultsAt("/notes/deep").CheckRoom("/notes")
 
 	if !errors.Is(err, domain.ErrOverlaps) {
@@ -38,7 +38,7 @@ func TestAFolderHoldingAVaultHasNoRoom(t *testing.T) {
 	}
 }
 
-func TestAFolderBesideEveryVaultHasRoom(t *testing.T) {
+func TestAFolderAdjacentEveryVaultHasRoom(t *testing.T) {
 	vs := vaultsAt("/notes", "/notes-two", "/other/notes")
 
 	if err := vs.CheckRoom("/books"); err != nil {
@@ -104,7 +104,7 @@ func TestTheVaultBeingNamedIsNotAnAnswer(t *testing.T) {
 	}
 }
 
-func TestAFreeNameIsKeptAndATakenOneIsNumberedFromTwo(t *testing.T) {
+func TestAFreeNameIsCachedAndATakenOneIsNumberedFromTwo(t *testing.T) {
 	vs := domain.Vaults{
 		{ID: "one", Name: "Notes", Path: "/n"},
 		{ID: "two", Name: "Notes 2", Path: "/n2"},
@@ -125,7 +125,7 @@ func TestAFreeNameIsKeptAndATakenOneIsNumberedFromTwo(t *testing.T) {
 	}
 }
 
-func TestTheSameFolderWrittenTwoWaysIsNotInsideItself(t *testing.T) {
+func TestTheSameFolderSavedTwoWaysIsNotInsideItself(t *testing.T) {
 	if err := vaultsAt("/notes/").CheckRoom("/notes"); err != nil {
 		t.Errorf("CheckRoom(/notes) = %v, want room", err)
 	}

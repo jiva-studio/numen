@@ -65,7 +65,7 @@ func TestAScalarSpanIsTheValueAndNothingBeforeIt(t *testing.T) {
 
 // A link is pointed somewhere else in a note written in another script, and
 // every byte the entry does not own stands where it stood.
-func TestALinkMovesInANoteWrittenInAnotherScript(t *testing.T) {
+func TestALinkMovesInANoteSavedInAnotherScript(t *testing.T) {
 	for name, one := range map[string]struct{ raw, from, to, want string }{
 		"cyrillic": {
 			raw:  "---\nзаголовок: Мхи\nlinks:\n  - to: Папоротники\n    role: ref\n---\nтекст\n",

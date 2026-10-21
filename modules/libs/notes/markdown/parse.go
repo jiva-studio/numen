@@ -193,13 +193,13 @@ func parseHeading(text string) (level int, heading string, ok bool) {
 	if len(content) == 0 {
 		return 0, "", false
 	}
-	trimmed := strings.TrimRight(content, " \t")
-	trimmed = strings.TrimRight(trimmed, "#")
-	trimmed = strings.TrimRight(trimmed, " \t")
-	if trimmed == "" {
-		trimmed = content[:1]
+	headingText := strings.TrimRight(content, " \t")
+	headingText = strings.TrimRight(headingText, "#")
+	headingText = strings.TrimRight(headingText, " \t")
+	if headingText == "" {
+		headingText = content[:1]
 	}
-	return n, trimmed, true
+	return n, headingText, true
 }
 
 // title prefers an explicit frontmatter title and falls back to the filename —

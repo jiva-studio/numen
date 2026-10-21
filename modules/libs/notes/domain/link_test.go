@@ -35,7 +35,7 @@ type written struct {
 
 // A title carries a colon of its own, an alias and a fragment are not part of
 // where a link points, and only a written scheme tells any of them apart.
-func TestAnAddressIsReadTheWayTheSchemaSaysItIs(t *testing.T) {
+func TestAnAddressIsReadTheWayTheSchemaReturnsItIs(t *testing.T) {
 	raw, err := os.ReadFile(corpus)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +56,7 @@ func TestAnAddressIsReadTheWayTheSchemaSaysItIs(t *testing.T) {
 	}
 }
 
-func TestAnAddressSaysItselfBackTheWayItIsWritten(t *testing.T) {
+func TestAnAddressReturnsItselfBackTheWayItIsSaved(t *testing.T) {
 	raw := "note://01ABC"
 	if got := domain.ParseAddress(raw).String(); got != raw {
 		t.Errorf("got %q", got)
@@ -92,7 +92,7 @@ func TestANameIsReachableOrItIsNot(t *testing.T) {
 
 // An identifier names one note in the world, so a link may cross a boundary the
 // person put there.
-func TestALinkSaysWhichVaultItLandedIn(t *testing.T) {
+func TestALinkReturnsWhichVaultItLandedIn(t *testing.T) {
 	here := domain.ResolvedLink{ToVault: "one"}
 	if vault, crossed := here.InVault("one"); vault != "one" || crossed {
 		t.Errorf("got %q, crossed %v", vault, crossed)
@@ -109,7 +109,7 @@ func TestALinkSaysWhichVaultItLandedIn(t *testing.T) {
 
 // Only letters, digits, `+`, `-` and `.` make a scheme; anything else in front
 // of `://` is a name that carries a colon of its own.
-func TestOnlyAWrittenSchemeIsReadAsOne(t *testing.T) {
+func TestOnlyASavedSchemeIsReadAsOne(t *testing.T) {
 	for _, scheme := range []string{"a", "z", "A", "Z", "0", "9", "+", "-", ".", "az09AZ", "a+b-c.d", "x9", "9x"} {
 		got := domain.ParseAddress(scheme + "://v")
 		if got != (domain.Address{Scheme: scheme, Value: "v"}) {
@@ -128,7 +128,7 @@ func TestOnlyAWrittenSchemeIsReadAsOne(t *testing.T) {
 	}
 }
 
-func TestANameHoldingALineBreakOrNothingIsNotReachable(t *testing.T) {
+func TestANameContainingALineBreakOrNothingIsNotReachable(t *testing.T) {
 	for _, name := range []string{"a\nb", "a\rb", "\n", "\r", ""} {
 		if domain.IsNameable(name) {
 			t.Errorf("%q is said to be reachable", name)

@@ -9,7 +9,7 @@ import (
 
 // TestANoteWithNoFrontmatterIsWrittenTo. Three dashes below the first line are
 // a rule in the prose. The whole file is body, and a write reaches it.
-func TestANoteWithNoFrontmatterIsWrittenTo(t *testing.T) {
+func TestANoteWithNoFrontmatterIsSavedTo(t *testing.T) {
 	raw := "# Title\n\n---\n\nnot frontmatter\n"
 
 	d, err := markdown.Open([]byte(raw))

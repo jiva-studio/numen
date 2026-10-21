@@ -164,17 +164,17 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 		return 0, err
 	}
 
-	removed, retained := 0, 0
+	removed, keptCount := 0, 0
 	for i := len(b.entries) - 1; i >= 0; i-- {
 		e := b.entries[i]
 		if e.link.Target != to || (role != "" && e.link.Role != role) {
-			retained++
+			keptCount++
 			continue
 		}
 		d.splice(e.start, e.end, nil)
 		removed++
 	}
-	if removed > 0 && retained == 0 {
+	if removed > 0 && keptCount == 0 {
 		if err := d.set("links", nil); err != nil {
 			return removed, err
 		}
@@ -193,10 +193,10 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 // cannot read is left as it was written.
 func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 	var carrying []int
-	retained := 0
+	remainingCount := 0
 	for i, e := range entries {
 		if e.link.Type != kind || !e.isReadable {
-			retained++
+			remainingCount++
 			continue
 		}
 		if !e.isOwned {
@@ -204,7 +204,7 @@ func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 		}
 		carrying = append(carrying, i)
 	}
-	return carrying, retained, nil
+	return carrying, remainingCount, nil
 }
 
 func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to domain.Address) error {

@@ -10,7 +10,7 @@ import (
 
 // One key says what a note is, and any word will do: a plugin gives a note the type it works
 // with.
-func TestOneKeySaysWhatANoteIs(t *testing.T) {
+func TestOneKeyReturnsWhatANoteIs(t *testing.T) {
 	for content, want := range map[string]domain.NoteType{
 		"---\ntype: note\n---\n":     domain.TypeNote,
 		"---\ntype: deck\n---\n":     "deck",

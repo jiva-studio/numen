@@ -62,11 +62,11 @@ var benchCases = []struct {
 
 func BenchmarkBoxes(b *testing.B) {
 	for _, c := range benchCases {
-		_, _, boxes, _, placed := benchRecognition(c.n, c.step)
+		_, _, boxes, _, corrections := benchRecognition(c.n, c.step)
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				domain.GetCorrectedBoxes(boxes, placed)
+				domain.GetCorrectedBoxes(boxes, corrections)
 			}
 		})
 	}
@@ -74,11 +74,11 @@ func BenchmarkBoxes(b *testing.B) {
 
 func BenchmarkProse(b *testing.B) {
 	for _, c := range benchCases {
-		prose, marks, boxes, parts, placed := benchRecognition(c.n, c.step)
+		prose, marks, boxes, parts, corrections := benchRecognition(c.n, c.step)
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				domain.GetCorrectedProse(prose, marks, boxes, parts, placed)
+				domain.GetCorrectedProse(prose, marks, boxes, parts, corrections)
 			}
 		})
 	}

@@ -7,7 +7,7 @@ import (
 
 // The offsets are into the text as it was given, so what a caller replaces is
 // the bytes the person wrote.
-func TestASpanIsFoundWhereItStands(t *testing.T) {
+func TestASpanIsFoundWhereItExists(t *testing.T) {
 	text := "the aggressor is named"
 	at, plainly := FindSpans(text, "aggressor")
 	if plainly {
@@ -22,7 +22,7 @@ func TestASpanIsFoundWhereItStands(t *testing.T) {
 }
 
 // Two of the same span are two answers, and a caller may refuse them.
-func TestASpanWrittenTwiceIsFoundTwice(t *testing.T) {
+func TestASpanSavedTwiceIsFoundTwice(t *testing.T) {
 	at, _ := FindSpans("a foe, and another foe", "foe")
 	if len(at) != 2 {
 		t.Fatalf("found %d places, wanted two", len(at))
@@ -45,7 +45,7 @@ func TestPlacesFoundDoNotOverlap(t *testing.T) {
 
 // Punctuation a person's editor writes and a program rarely reproduces is read
 // as the mark it stands for, and the reading is reported.
-func TestPunctuationIsReadAsTheMarkItStandsFor(t *testing.T) {
+func TestPunctuationIsReadAsTheMarkItExistsFor(t *testing.T) {
 	for name, c := range map[string]struct{ text, wanted string }{
 		"angled double quotes": {"он сказал «да» сразу", "он сказал \"да\" сразу"},
 		"turned double quotes": {"he said “yes” at once", "he said \"yes\" at once"},
@@ -74,7 +74,7 @@ func TestPunctuationIsReadAsTheMarkItStandsFor(t *testing.T) {
 
 // The offsets are into the text currently, whichever reading found them, so
 // a replacement leaves the bytes around it as the person wrote them.
-func TestOffsetsAreIntoTheTextAsItStands(t *testing.T) {
+func TestOffsetsAreIntoTheTextAsItExists(t *testing.T) {
 	text := "before «дa» after"
 	at, _ := FindSpans(text, "\"дa\"")
 	if len(at) != 1 {
@@ -109,7 +109,7 @@ func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
 }
 
 // A span that stands exactly is never reported where it only nearly stands.
-func TestWhatStandsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
+func TestWhatExistsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
 	text := "he said \"yes\" and he said “yes”"
 	at, plainly := FindSpans(text, "\"yes\"")
 	if plainly {

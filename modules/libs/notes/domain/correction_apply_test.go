@@ -107,7 +107,7 @@ func TestACorrectedRecognitionIsTheRecognitionItShouldHaveBeen(t *testing.T) {
 	}
 }
 
-func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
+func TestAHeadingInsertRightPreservesItsOwnLength(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
 
 	// Only the second heading, which the recognition had a letter short.
@@ -172,7 +172,7 @@ func TestNoCorrectionsChangesNothing(t *testing.T) {
 	}
 }
 
-func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
+func TestCorrectionsSavedForOtherBytesSliceNothing(t *testing.T) {
 	// A .corrected file kept beside a recognition it was not made from: the boxes reach
 	// past the prose, and one of them reaches backwards.
 	prose, marks, boxes, parts := createRecognition(read)
