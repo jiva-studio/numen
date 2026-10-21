@@ -61,7 +61,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const { viewport, measure } = useViewport(options.area)
 
   /** How far the columns run, taken once they have been laid out. */
-  const along = ref(0)
+  const alongOffset = ref(0)
 
   const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(
     options.paper,

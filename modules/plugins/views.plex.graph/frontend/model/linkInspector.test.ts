@@ -25,7 +25,7 @@ const row = (more: Partial<DirectionalLinkItem> = {}): DirectionalLinkItem => ({
 })
 
 /** A neighbourhood around Focus.md holding the neighbours given. */
-const around = (...related: Partial<Neighbourhood['related'][number]>[]): Neighbourhood => ({
+const neighbourhood = (...related: Partial<Neighbourhood['related'][number]>[]): Neighbourhood => ({
   focus: { path: 'Focus.md', title: 'Focus' },
   focusType: 'note',
   related: related.map((one) => ({

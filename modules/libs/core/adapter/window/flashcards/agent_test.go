@@ -217,8 +217,8 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "3f4g5h6j7k"})); err != nil {
 		t.Fatal(err)
 	}
-	if over := <-agent.over; over != "3f4g5h6j7k" {
-		t.Errorf("finished %q", over)
+	if overVal := <-agent.over; overVal != "3f4g5h6j7k" {
+		t.Errorf("finished %q", overVal)
 	}
 }
 

@@ -70,8 +70,8 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
   const before = otherCards.findIndex((card) => card.id === at)
   if (before !== -1) {
     // Stryker disable next-line OptionalChaining: the index was found in this array, so the card exists
-    const under = { ...targetCard, section: otherCards[before]?.section ?? null }
-    return { ...deck, cards: [...otherCards.slice(0, before), under, ...otherCards.slice(before)] }
+    const underVal = { ...targetCard, section: otherCards[before]?.section ?? null }
+    return { ...deck, cards: [...otherCards.slice(0, before), underVal, ...otherCards.slice(before)] }
   }
 
   if (at === null) {
@@ -147,12 +147,12 @@ export const replaceCardValue = (
     cards: deck.cards.map((card) => {
       if (card.id !== id) return card
 
-      let under = 0
+      let underCount = 0
       let found = false
       const values = card.values.map((value) => {
         if (value.field !== field) return value
-        under += 1
-        if (under !== nth) return value
+        underCount += 1
+        if (underCount !== nth) return value
         found = true
         return { field, text }
       })

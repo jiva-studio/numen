@@ -266,7 +266,7 @@ describe('a sibling nested under the note in focus', () => {
 
 describe('what each note of a neighbourhood is', () => {
   it('is what the vault says of the focus and of every note around it', () => {
-    const around: Neighbourhood = {
+    const neighbourhood: Neighbourhood = {
       focus: { path: 'Words.md', title: 'Words' },
       focusType: 'deck',
       related: [
@@ -289,7 +289,7 @@ describe('what each note of a neighbourhood is', () => {
   })
 
   it('is empty for a focus with no path', () => {
-    const around: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
+    const neighbourhood: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
 
     expect(getNoteTypes(around).size).toBe(0)
   })

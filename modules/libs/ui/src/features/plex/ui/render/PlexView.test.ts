@@ -188,7 +188,7 @@ describe('what the drawing does with an opacity', () => {
 describe('the line under the hand', () => {
   const titledFrame = arrangePlex(titled)
   const down = titledFrame.edges.findIndex((edge) => edge.to === 'below')
-  const across = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
+  const crossIndex = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
 
   const mountTitled = () =>
     mount(PlexView, {

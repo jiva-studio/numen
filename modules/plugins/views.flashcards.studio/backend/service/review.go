@@ -261,12 +261,12 @@ func (a *reviewHandler) StartSession(
 	if err != nil {
 		return nil, err
 	}
-	over := flashcards.Scope{
+	cardScope := flashcards.Scope{
 		Deck:    r.Msg.GetDeck(),
 		Preset:  r.Msg.GetPreset(),
 		IsNamed: r.Msg.Preset != nil,
 	}
-	session, err := a.scenarios().flash.Session.Execute(ctx, v, over)
+	session, err := a.scenarios().flash.Session.Execute(ctx, v, cardScope)
 	if err != nil {
 		switch {
 		case errors.Is(err, flashcards.ErrBothNamed):

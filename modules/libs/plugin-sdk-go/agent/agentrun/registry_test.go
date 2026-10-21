@@ -32,16 +32,16 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
-	over := make(chan struct{})
+	doneCh := make(chan struct{})
 	go func() {
 		defer w.End()
 		defer registry.Remove(w)
 		defer close(w.Output)
 		_ = cmd.Wait()
-		close(over)
+		close(doneCh)
 	}()
 	t.Cleanup(func() { _ = w.Stop() })
-	return w, over
+	return w, doneCh
 }
 
 // isOver is whether the child has been waited for.
@@ -111,12 +111,12 @@ func TestNoConversationKeepsNoSession(t *testing.T) {
 // Stop on one work ends its child and is safe to repeat.
 func TestStopEndsTheChildOnce(t *testing.T) {
 	var registry agentrun.Registry
-	w, over := start(t, &registry, "")
+	w, doneCh := start(t, &registry, "")
 
 	if err := w.Stop(); err != nil {
 		t.Fatal(err)
 	}
-	if !isOver(over) {
+	if !isOver(doneCh) {
 		t.Error("the child is still running after Stop")
 	}
 	if err := w.Stop(); err != nil {

@@ -273,8 +273,8 @@ func (h *fileHandler) RemoveFile(
 	defer h.state.Writing.finish()
 
 	removed, err := h.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
-	behind := h.state.isUnlevelled(err)
-	if err != nil && !behind {
+	unlevelled := h.state.isUnlevelled(err)
+	if err != nil && !unlevelled {
 		reason, refused := wire.GetErrorCode(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -287,7 +287,7 @@ func (h *fileHandler) RemoveFile(
 	return connect.NewResponse(&v1.RemoveFileResponse{
 		Trashed:      removed.Trashed,
 		Dangling:     removed.Dangling,
-		IsUnlevelled: behind,
+		IsUnlevelled: unlevelled,
 	}), nil
 }
 

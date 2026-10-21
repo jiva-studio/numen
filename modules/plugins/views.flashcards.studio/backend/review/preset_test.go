@@ -120,13 +120,13 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	last := now.AddDate(0, 0, -1)
 	// A card face first seen yesterday and put off by sixteen days, and one put
 	// off by twenty-one.
-	near := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
+	targetSchedule := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
 	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
 
 	// Every field left empty, which is a preset built from settings that name
 	// no rule at all.
 	var said review.Preset
-	if said.IsLearned(near, now) {
+	if said.IsLearned(targetSchedule, now) {
 		t.Error("a card face sixteen days off is learned under a preset naming no rule")
 	}
 	if !said.IsLearned(far, now) {
@@ -135,7 +135,7 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 
 	// A rule named with no value under it reads the default value too.
 	named := review.Preset{Rule: review.RuleInterval}
-	if named.IsLearned(near, now) {
+	if named.IsLearned(targetSchedule, now) {
 		t.Error("a card face sixteen days off is learned under an interval nobody wrote")
 	}
 
@@ -148,7 +148,7 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	if chance.IsLearned(faded, now) {
 		t.Error("a card face two hundred days past its answer is recalled nine times in ten")
 	}
-	if !chance.IsLearned(near, now) {
+	if !chance.IsLearned(targetSchedule, now) {
 		t.Error("a card face answered yesterday is not recalled nine times in ten")
 	}
 }
@@ -200,7 +200,7 @@ func TestWhatAPresetSchedules(t *testing.T) {
 	// A Thursday, and the two days a preset may aim at from it.
 	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 	ahead := time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC)
-	behind := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+	pastDate := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
 
 	for _, one := range []struct {
 		what string
@@ -229,7 +229,7 @@ func TestWhatAPresetSchedules(t *testing.T) {
 		{
 			what: "minutes, past a day it does not aim at",
 			p: review.Preset{
-				Goal: review.GoalMinutes, MinutesADay: 20, By: behind,
+				Goal: review.GoalMinutes, MinutesADay: 20, By: pastDate,
 			},
 			want: review.StoppedNothing,
 		},
@@ -283,7 +283,7 @@ func TestWhatAPresetSchedules(t *testing.T) {
 		{
 			what: "a day behind us",
 			p: review.Preset{
-				Goal: review.GoalDate, By: behind,
+				Goal: review.GoalDate, By: pastDate,
 				MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			},
 			want: review.StoppedPastDay,

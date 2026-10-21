@@ -635,7 +635,7 @@ const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/
  * arriving tells it.
  */
 const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
-  let around = beside.map(([path, relation, through]) => ({
+  let aroundVal = beside.map(([path, relation, through]) => ({
     path,
     relation,
     through: through ?? '',

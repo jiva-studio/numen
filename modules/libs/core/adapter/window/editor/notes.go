@@ -59,15 +59,15 @@ func (h *noteHandler) WriteNote(
 	// handed the fingerprint it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
 	// and search does not hold it.
-	behind := h.state.isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := h.state.isUnlevelled(err)
+	if err == nil || unlevelled {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
 		if h.state.NotifyNoteWritten != nil {
 			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFingerprintToWire(at), IsUnlevelled: behind,
+			At: convertFingerprintToWire(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	reason, refused := wire.GetErrorCode(err)
@@ -103,13 +103,13 @@ func (h *noteHandler) CreateNote(
 		Path:  r.Msg.GetPath(),
 		Links: links,
 	})
-	behind := h.state.isUnlevelled(err)
+	unlevelled := h.state.isUnlevelled(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so that is the answer. What comes
 		// after the write is the index catching up, and the watcher does it
 		// again.
 		return connect.NewResponse(&v1.CreateNoteResponse{
-			Path: made.Path, IsUnlevelled: behind,
+			Path: made.Path, IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if err == nil {

@@ -101,11 +101,11 @@ const LENGTH_SAMPLES = 24
  * so the answer runs a little under.
  */
 function measureAlong(edge: EdgeCurve): number[] {
-  const along = [0]
+  const alongVal = [0]
   let previous = edge.fromPoint
   for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
     const point = getPoint(edge, step / LENGTH_SAMPLES)
-    along.push(along[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
+    alongVal.push(alongVal[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
     previous = point
   }
   return along
@@ -139,8 +139,8 @@ function getParameter(along: readonly number[], fraction: number): number {
  * tried at several places on the same line.
  */
 export function createPointOnCurve(edge: EdgeCurve): (fraction: number) => Position {
-  const along = measureAlong(edge)
-  return (fraction) => getPoint(edge, getParameter(along, fraction))
+  const alongDist = measureAlong(edge)
+  return (fraction) => getPoint(edge, getParameter(alongDist, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
@@ -192,12 +192,12 @@ export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
   const at = getPoint(edge, t)
 
-  const along = measureAlong(edge)
-  const total = along[LENGTH_SAMPLES]!
+  const alongDist = measureAlong(edge)
+  const total = alongDist[LENGTH_SAMPLES]!
   const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
-  const behind = getPoint(edge, getParameter(along, end === 'to' ? 1 - covered : covered))
+  const prevPoint = getPoint(edge, getParameter(alongDist, end === 'to' ? 1 - covered : covered))
 
-  const spanned = { x: at.x - behind.x, y: at.y - behind.y }
+  const spanned = { x: at.x - prevPoint.x, y: at.y - prevPoint.y }
   const way = getTangent(edge, t)
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent

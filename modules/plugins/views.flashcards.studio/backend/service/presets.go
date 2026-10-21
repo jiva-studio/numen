@@ -97,10 +97,10 @@ func (h *presetsHandler) ScheduleDeck(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.ScheduleDeckResponse{
-			At: writeFingerprint(at), IsUnlevelled: behind,
+			At: writeFingerprint(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
@@ -155,10 +155,10 @@ func (h *presetsHandler) WritePreset(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WritePresetResponse{
-			At: writeFingerprint(at), IsUnlevelled: behind,
+			At: writeFingerprint(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.

@@ -92,12 +92,12 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	var out time.Duration
 	for d := range 3 {
-		over := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
+		cardScope := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
 		for range 200 {
 			sat, err := flashcards.NewSession(
 				s.marking, s.standings, s.kept,
 				s.presets, today, func() time.Time { return now },
-			).Execute(t.Context(), s.vault, over)
+			).Execute(t.Context(), s.vault, cardScope)
 			if err != nil || len(sat.Queue) == 0 {
 				break
 			}

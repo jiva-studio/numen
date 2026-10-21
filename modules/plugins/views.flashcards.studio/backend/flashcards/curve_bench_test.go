@@ -25,7 +25,7 @@ func curveLoad(cards int) map[string]string {
 		}
 		path := fmt.Sprintf("decks/Deck%02d.md", at)
 		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
-			"---\ntype: deck\n"+names(to), 1)
+			"---\ntype: deck\n"+createPresetLink(to), 1)
 	}
 	return out
 }
@@ -39,7 +39,7 @@ func curveWhole(cards int) map[string]string {
 	for at := range 20 {
 		path := fmt.Sprintf("decks/Deck%02d.md", at)
 		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
-			"---\ntype: deck\n"+names("Whole"), 1)
+			"---\ntype: deck\n"+createPresetLink("Whole"), 1)
 	}
 	return out
 }

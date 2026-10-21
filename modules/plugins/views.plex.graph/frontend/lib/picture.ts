@@ -125,15 +125,15 @@ export function areNeighbourhoodsEqual(
   if (one.related.length !== other.related.length) return false
 
   return one.related.every((related, at) => {
-    const against = other.related[at]!
+    const comparison = other.related[at]!
     return (
-      related.path === against.path &&
-      related.title === against.title &&
-      related.type === against.type &&
-      related.relation === against.relation &&
-      related.label === against.label &&
-      related.through === against.through &&
-      related.isMutual === against.isMutual
+      related.path === comparison.path &&
+      related.title === comparison.title &&
+      related.type === comparison.type &&
+      related.relation === comparison.relation &&
+      related.label === comparison.label &&
+      related.through === comparison.through &&
+      related.isMutual === comparison.isMutual
     )
   })
 }

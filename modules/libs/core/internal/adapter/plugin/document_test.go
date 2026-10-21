@@ -195,15 +195,15 @@ func TestDocumentBridgeNoPlugin(t *testing.T) {
 func TestRemoteDocumentRenderPageRejectsOutOfRangeInputs(t *testing.T) {
 	// The zero service panics on any call, so a rejected input never reaches it.
 	doc := &remoteDocument{}
-	beyond := int64(math.MaxInt32) + 1
+	overflowVal := int64(math.MaxInt32) + 1
 	cases := []struct {
 		name       string
 		index, dpi int
 	}{
 		{"negative page", -1, 150},
 		{"negative dpi", 0, -1},
-		{"page above MaxInt32", int(beyond), 150},
-		{"dpi above MaxInt32", 0, int(beyond)},
+		{"page above MaxInt32", int(overflowVal), 150},
+		{"dpi above MaxInt32", 0, int(overflowVal)},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -141,9 +141,9 @@ export const Dark: Story = {
     // The shape is drawn from the ink of whatever it relies on. On the dark set
     // that is a light shape on the surface and a dark one on the accent.
     const measureContrast = (ground: HTMLElement) => {
-      const behind = getComputedStyle(ground).backgroundColor
+      const bgStyle = getComputedStyle(ground).backgroundColor
       const shape = ground.querySelector<HTMLElement>('.skeleton')!
-      return lightness(getComputedStyle(shape).backgroundColor, behind) - lightness(behind)
+      return lightness(getComputedStyle(shape).backgroundColor, bgStyle) - lightness(bgStyle)
     }
     await expect(measureContrast(grounds[0]!)).toBeGreaterThan(2)
     await expect(measureContrast(grounds[1]!)).toBeLessThan(-2)

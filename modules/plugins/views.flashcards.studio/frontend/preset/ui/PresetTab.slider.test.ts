@@ -127,9 +127,9 @@ describe('the one slider', () => {
     expect(rules).toHaveLength(4)
     // Each picture has one line up its left side and one along its foot.
     const upright = rules.filter((one) => one.attributes('x1') === one.attributes('x2'))
-    const along = rules.filter((one) => one.attributes('y1') === one.attributes('y2'))
+    const horizontalRules = rules.filter((one) => one.attributes('y1') === one.attributes('y2'))
     expect(upright).toHaveLength(2)
-    expect(along).toHaveLength(2)
+    expect(horizontalRules).toHaveLength(2)
   })
 
   // The knob shows its own value on the line under the picture and nothing
@@ -594,10 +594,10 @@ describe('what the control remains at', () => {
   // print over a number read off the picture.
   it('keeps the knob’s value on its own line, clear of the picture’s numbers', async () => {
     const { tab } = mountPresetTab()
-    const over = tab.get('[data-control="over"]')
-    const under = tab.get('[data-control="under"]')
-    expect(under.findAll('[data-control="number"][data-at-knob]')).toHaveLength(1)
-    expect(over.findAll('[data-control="number"][data-at-knob]')).toHaveLength(0)
+    const overControl = tab.get('[data-control="over"]')
+    const underControl = tab.get('[data-control="under"]')
+    expect(underControl.findAll('[data-control="number"][data-at-knob]')).toHaveLength(1)
+    expect(overControl.findAll('[data-control="number"][data-at-knob]')).toHaveLength(0)
 
     // At either end the knob's value is pulled back inside the picture's width.
     const slider = tab.get('[data-control="picture"][role="slider"]')

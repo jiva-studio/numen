@@ -67,8 +67,8 @@ const createRect = (top: number, height: number): DOMRect =>
 beforeEach(() => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
     if (this.hasAttribute('data-tree-row')) {
-      const beside = [...(this.parentElement?.children ?? [])]
-      return createRect(beside.indexOf(this) * HEIGHT, HEIGHT)
+      const adjacent = [...(this.parentElement?.children ?? [])]
+      return createRect(adjacent.indexOf(this) * HEIGHT, HEIGHT)
     }
     // The rows and the box around them stand as tall as the rows drawn.
     const list = this.getAttribute('role') === 'tree' || this.classList.contains('tree')

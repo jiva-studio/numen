@@ -201,8 +201,8 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	// Focus opens on the first place asked for, and a place reaches only a
 	// stream already listening. So it is asked for over and over while the
 	// stream opens, and the asking stops with the place that arrived.
-	asking, over := context.WithCancel(t.Context())
-	defer over()
+	asking, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	go func() {
 		for {
 			select {

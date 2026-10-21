@@ -235,8 +235,8 @@ describe('the relation something dragged in evaluates to', () => {
   })
 
   it('is nothing towards a relation the caller did not allow', () => {
-    const beside = { x: focus.x + 500, y: focus.y }
-    expect(getRelationAt(beside)).toBeNull()
+    const adjacent = { x: focus.x + 500, y: focus.y }
+    expect(getRelationAt(adjacent)).toBeNull()
     expect(getRelationAt(beside, { relations: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 

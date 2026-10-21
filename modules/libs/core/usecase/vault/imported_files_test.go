@@ -38,8 +38,8 @@ func (h handedOver) GetImportedFile(_ context.Context, handle string) (port.Impo
 
 func (h handedOver) List(_ context.Context, handle string) ([]port.ImportedFile, error) {
 	var out []port.ImportedFile
-	for _, under := range h.holding[handle] {
-		out = append(out, port.ImportedFile{Name: h.names[under], Handle: under})
+	for _, underVal := range h.holding[handle] {
+		out = append(out, port.ImportedFile{Name: h.names[underVal], Handle: underVal})
 	}
 	return out, nil
 }

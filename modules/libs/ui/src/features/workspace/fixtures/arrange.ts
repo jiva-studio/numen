@@ -38,19 +38,19 @@ function place(
   into.set(node.id, box)
   if (!isBranch(node)) return
 
-  const across = getOrientation(workspace.axis, depth) === 'horizontal'
-  const length = across ? box.width : box.height
+  const isAcross = getOrientation(workspace.axis, depth) === 'horizontal'
+  const length = isAcross ? box.width : box.height
   const free = Math.max(length - gap * Math.max(node.children.length - 1, 0), 0)
   const sizes = fit(node.sizes, node.children.length)
 
-  let along = across ? box.x : box.y
+  let alongPos = isAcross ? box.x : box.y
   node.children.forEach((child, index) => {
     const taken = free * (sizes[index] ?? 0)
-    const childBox: Rect = across
-      ? { x: along, y: box.y, width: taken, height: box.height }
-      : { x: box.x, y: along, width: box.width, height: taken }
+    const childBox: Rect = isAcross
+      ? { x: alongPos, y: box.y, width: taken, height: box.height }
+      : { x: box.x, y: alongPos, width: box.width, height: taken }
     // Stryker disable next-line ArithmeticOperator: depth - 1 has the parity of depth + 1, and only parity is read.
     place(child, childBox, workspace, depth + 1, gap, into)
-    along += taken + gap
+    alongPos += taken + gap
   })
 }

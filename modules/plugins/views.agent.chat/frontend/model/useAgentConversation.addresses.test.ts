@@ -31,10 +31,10 @@ const open = (said: Turn[] = [], notes: Record<string, string> = {}) => {
   }
   const resolved: (readonly string[])[] = []
   const opened: [string, readonly Span[]][] = []
-  const beside: string[] = []
+  const besideItems: string[] = []
   const state = useAgentConversation(conversation, {
     openFileAt: (path, ...spans) => opened.push([path, spans]),
-    openFileBeside: (path) => beside.push(path),
+    openFileBeside: (path) => besideItems.push(path),
     resolve: async (written) => {
       resolved.push(written)
       return new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!]))

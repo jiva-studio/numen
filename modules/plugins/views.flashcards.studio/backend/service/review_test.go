@@ -894,7 +894,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	said := getVaultCount(t, api, v)
 	// Which decks each preset schedules, so what a session asks can be checked
 	// against the rows it was gathered from.
-	under := make(map[string][]string)
+	underMap := make(map[string][]string)
 	rows := make(map[string]*v1.DeckCardsDue, len(said.GetDecks()))
 	for _, one := range said.GetDecks() {
 		rows[one.GetDeck()] = one
@@ -902,7 +902,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		under[p.Path] = append(under[p.Path], one.GetDeck())
+		underMap[p.Path] = append(underMap[p.Path], one.GetDeck())
 	}
 
 	scopes, clamped := 0, 0
@@ -930,7 +930,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 		// What the count leaves under a preset is what its decks were left,
 		// gathered by the one pass.
 		due, newCards := 0, 0
-		for _, deck := range under[one.GetPreset()] {
+		for _, deck := range underMap[one.GetPreset()] {
 			due += int(rows[deck].GetDue())
 			newCards += int(rows[deck].GetNew())
 		}
@@ -991,7 +991,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 				if said.GetClosesReviews() == "" && due > kept {
 					past++
 				}
-				if said.GetClosesNew() == "" && fresh > keptNew {
+				if said.GetClosesNew() == "" && newCards > keptNew {
 					past++
 				}
 			}

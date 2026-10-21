@@ -189,8 +189,8 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if over := <-taking.over; over != "8f2c1e" {
-		t.Errorf("the conversation said to be over is %q, want %q", over, "8f2c1e")
+	if overVal := <-taking.over; overVal != "8f2c1e" {
+		t.Errorf("the conversation said to be over is %q, want %q", overVal, "8f2c1e")
 	}
 }
 

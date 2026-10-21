@@ -196,7 +196,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 
 	queries := db.ChunkQueries()
 
-	near := func(vault domain.Vault, seed byte) []domain.Passage {
+	nearVal := func(vault domain.Vault, seed byte) []domain.Passage {
 		matches, err := queries.FindNearest(ctx, vault.ID, "model", getVectorForSeed(seed), nil, 10, search.DefaultFloor)
 		if err != nil {
 			t.Fatal(err)
@@ -209,12 +209,12 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 
 	// Asked with the second vault's own vector, the first vault must still
 	// answer with its own passages.
-	for _, m := range near(first, 0xff) {
+	for _, m := range nearVal(first, 0xff) {
 		if !strings.HasPrefix(m.Source, "library/first") {
 			t.Errorf("the first vault answered with %s, which belongs to the second", m.Source)
 		}
 	}
-	for _, m := range near(second, 0xfe) {
+	for _, m := range nearVal(second, 0xfe) {
 		if !strings.HasPrefix(m.Source, "library/second") {
 			t.Errorf("the second vault answered with %s, which belongs to the first", m.Source)
 		}

@@ -161,7 +161,7 @@ func (u Schedules) getAssignmentFrom(
 	}
 
 	by := make(map[string]review.SchedulingPolicy)
-	under := make(map[review.CardFaceID]review.SchedulingPolicy, len(faces))
+	underMap := make(map[review.CardFaceID]review.SchedulingPolicy, len(faces))
 	asked := make(map[string]string, len(faces))
 	for _, one := range faces {
 		path, known := asked[one.Deck]
@@ -176,17 +176,17 @@ func (u Schedules) getAssignmentFrom(
 				by[path] = review.SchedulingPolicy{By: u.getScheduler(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
-		under[one.ID] = by[path]
+		underMap[one.ID] = by[path]
 	}
 
-	marks := make([]string, 0, len(under)+2)
+	marks := make([]string, 0, len(underMap)+2)
 	marks = append(marks, u.by.GetName(), u.getDayStartMark())
-	for face, one := range under {
+	for face, one := range underMap {
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.GetName()+"\t"+one.Preset.GetPlacing())
 	}
 	out.mark = getMark(marks)
 	out.under = func(face review.CardFaceID) review.SchedulingPolicy {
-		if one, held := under[face]; held {
+		if one, held := underMap[face]; held {
 			return one
 		}
 		return review.SchedulingPolicy{By: u.by, Preset: review.Defaults()}

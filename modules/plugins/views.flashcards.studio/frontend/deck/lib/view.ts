@@ -117,14 +117,14 @@ export const areOffersEqual = (
 ): boolean =>
   one.length === other.length &&
   one.every((offer, at) => {
-    const against = other[at]
+    const otherVal = other[at]
     return (
       // Stryker disable next-line ConditionalExpression: array lengths are equal so element at index is never undefined.
-      against !== undefined &&
-      offer.path === against.path &&
-      offer.title === against.title &&
-      offer.fields.length === against.fields.length &&
-      offer.fields.every((field, seat) => field === against.fields[seat])
+      otherVal !== undefined &&
+      offer.path === otherVal.path &&
+      offer.title === otherVal.title &&
+      offer.fields.length === otherVal.fields.length &&
+      offer.fields.every((field, seat) => field === otherVal.fields[seat])
     )
   })
 

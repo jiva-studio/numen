@@ -212,13 +212,13 @@ func (t *Worker) getUntranscribed(ctx context.Context, known port.SourceQueries,
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	under := t.with.Unasked
+	underVal := t.with.Unasked
 	out := make([]string, 0, len(held))
 	for path, ref := range held {
 		if t.answered[run.GetKey(v, path)] {
 			continue
 		}
-		if under > 0 && ref.Size > under {
+		if underVal > 0 && ref.Size > underVal {
 			// A recording this large is somebody's music or somebody's archive.
 			// It is transcribed when it is asked for by name.
 			continue

@@ -328,7 +328,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		// A place of this range is read on the day it names, and that is the day
 		// the run works the returning share out on.
 		asks.Retains = []int{day}
-		ran, err := asks.Run(ctx, now, aiming, at, unseen)
+		ran, err := asks.Run(ctx, now, aiming, at, unreviewedCount)
 		if err != nil {
 			return err
 		}

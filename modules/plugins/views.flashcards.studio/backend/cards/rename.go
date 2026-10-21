@@ -212,13 +212,13 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 func (u RenameField) writeStencilField(
 	ctx context.Context, reader ports.VaultReader, writer ports.VaultWriter, in Rename,
 ) (domain.Fingerprint, error) {
-	against := in.Fingerprint
-	if against.IsZero() {
+	expectedFp := in.Fingerprint
+	if expectedFp.IsZero() {
 		on, err := reader.GetFingerprint(ctx, in.Stencil)
 		if err != nil {
 			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.Stencil, err)
 		}
-		against = on
+		expectedFp = on
 	}
 
 	raw, err := reader.Read(ctx, in.Stencil)
@@ -235,7 +235,7 @@ func (u RenameField) writeStencilField(
 	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
-	return writer.Write(ctx, in.Stencil, f.Bytes(), against)
+	return writer.Write(ctx, in.Stencil, f.Bytes(), expectedFp)
 }
 
 // writeIdentifier writes an identifier into a file that carries none, which is

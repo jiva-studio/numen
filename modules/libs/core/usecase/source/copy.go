@@ -50,7 +50,7 @@ func (u ImportURL) Copy(
 		return res, err
 	}
 	hash := text.Fingerprint([]byte(string(at)))
-	beside := CopyBeside(path)
+	besidePath := CopyBeside(path)
 
 	// One run to a copy, held for as long as the download takes. The claim is on
 	// the store's name whichever disk the copy lands on: it is the address that
@@ -64,10 +64,10 @@ func (u ImportURL) Copy(
 	}
 	defer release()
 
-	if size, held, err := u.getExistingCopy(ctx, v, store, hash, beside); err != nil {
+	if size, held, err := u.getExistingCopy(ctx, v, store, hash, besidePath); err != nil {
 		return res, err
 	} else if held {
-		res.IsExisted, res.Bytes, res.At = true, size, u.landing(beside)
+		res.IsExisted, res.Bytes, res.At = true, size, u.landing(besidePath)
 		return res, nil
 	}
 
@@ -97,7 +97,7 @@ func (u ImportURL) Copy(
 		progress(0, meta.Bytes)
 		arriving = &passing{from: arriving, total: meta.Bytes, report: progress}
 	}
-	size, err := u.writeCopy(ctx, v, store, domain.NewCopyName(hash), beside, arriving)
+	size, err := u.writeCopy(ctx, v, store, domain.NewCopyName(hash), besidePath, arriving)
 	// The read end is closed before the download is waited for: whoever stopped
 	// reading unblocks whoever is writing into it.
 	_ = read.CloseWithError(err)
@@ -114,7 +114,7 @@ func (u ImportURL) Copy(
 	if err != nil {
 		return res, err
 	}
-	res.Bytes, res.At = size, u.landing(beside)
+	res.Bytes, res.At = size, u.landing(besidePath)
 	return res, nil
 }
 

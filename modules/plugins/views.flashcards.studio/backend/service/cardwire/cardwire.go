@@ -102,18 +102,18 @@ func section(at int) *int32 {
 	if at == format.NoSection {
 		return nil
 	}
-	under := int32(at)
-	return &under
+	index := int32(at)
+	return &index
 }
 
 // sectionOf is where a card the client is writing stands, in the words the core
 // holds it in. A card the client left without one stands before the first
 // section.
-func sectionOf(under *int32) int {
-	if under == nil {
+func sectionOf(index *int32) int {
+	if index == nil {
 		return format.NoSection
 	}
-	return int(*under)
+	return int(*index)
 }
 
 // newWireProblems is what was wrong with a file, in the order it was found. A check

@@ -259,14 +259,14 @@ func enclose(large, small []Chunk) []Chunk {
 		if large[at].Start > c.computeMiddle() {
 			continue
 		}
-		under := at
+		underVal := at
 		for i := at; i < len(large) && large[i].Start <= c.computeMiddle(); i++ {
 			if large[i].Start <= c.Start && c.Start+c.Length <= large[i].Start+large[i].Length {
-				under = i
+				underVal = i
 				break
 			}
 		}
-		large[under].Small = append(large[under].Small, c)
+		large[underVal].Small = append(large[underVal].Small, c)
 	}
 	return large
 }

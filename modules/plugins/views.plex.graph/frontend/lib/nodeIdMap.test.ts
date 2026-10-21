@@ -138,8 +138,8 @@ describe('the notes one picture drew', () => {
 
     for (let step = 0; step < 50; step++) {
       const focus = map.getNodeId(`Note${step}.md`)
-      const beside = map.getNodeId(`Beside${step}.md`)
-      map.retainNodeIds([focus, beside])
+      const siblingNodeId = map.getNodeId(`Beside${step}.md`)
+      map.retainNodeIds([focus, siblingNodeId])
       minted.push(focus, beside)
     }
 

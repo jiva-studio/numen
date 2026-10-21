@@ -54,13 +54,13 @@ export function getTitleBoxes(
  * the line, which is where the letters stand.
  */
 export function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: number) => Box {
-  const along = createPointOnCurve(edge)
+  const curvePoint = createPointOnCurve(edge)
   const deep = depth / 2
 
   return (from, to) => {
     const run: Position[] = []
     for (let sample = 0; sample <= RUN_SAMPLES; sample += 1) {
-      run.push(along(from + ((to - from) * sample) / RUN_SAMPLES))
+      run.push(curvePoint(from + ((to - from) * sample) / RUN_SAMPLES))
     }
 
     let minX = Infinity

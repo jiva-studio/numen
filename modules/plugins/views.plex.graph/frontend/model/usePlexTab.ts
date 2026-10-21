@@ -44,9 +44,9 @@ function usePlexPicture(
   map: ReturnType<typeof createNodeIdMap>,
 ) {
   const picture = computed<PlexNeighbourhood | null>(() => {
-    const around = view.neighbourhood.value
-    if (!deps.isReady.value || !around) return null
-    return convertNeighbourhood(around, map.getNodeId)
+    const neighbourhood = view.neighbourhood.value
+    if (!deps.isReady.value || !neighbourhood) return null
+    return convertNeighbourhood(neighbourhood, map.getNodeId)
   })
 
   // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
@@ -77,17 +77,17 @@ function usePlexPicture(
   })
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
-    const around = view.neighbourhood.value
-    return around ? getNoteTypes(around) : new Map()
+    const neighbourhood = view.neighbourhood.value
+    return neighbourhood ? getNoteTypes(neighbourhood) : new Map()
   })
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
 
   const drawn = computed<readonly string[]>(() => {
-    const around = view.neighbourhood.value
-    if (!around) return []
-    const paths = [around.focus.path]
-    for (const related of around.related) paths.push(related.path)
+    const neighbourhood = view.neighbourhood.value
+    if (!neighbourhood) return []
+    const paths = [neighbourhood.focus.path]
+    for (const related of neighbourhood.related) paths.push(related.path)
     return paths.filter(Boolean)
   })
 
@@ -196,8 +196,8 @@ function usePlexMenu(options: {
 
 function getPlexNodeName(around: PlexView['neighbourhood']['value'], path: string): string {
   if (around?.focus.path === path && around.focus.title) return around.focus.title
-  const near = around?.related.find((one) => one.path === path)
-  return near?.title || getFileName(path).replace(/\.md$/, '')
+  const foundNode = around?.related.find((one) => one.path === path)
+  return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }
 
 export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {

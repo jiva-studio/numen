@@ -155,10 +155,10 @@ func (s side) assertAnswers(t *testing.T) {
 		t.Errorf("%s does not read its own note: %+v", s.what, got)
 	}
 
-	near := call[struct {
+	nearVal := call[struct {
 		Related []mcp.Neighbour `json:"related"`
 	}](t, s.session, "note_neighbourhood", map[string]any{"path": s.note})
-	if len(near.Related) == 0 {
+	if len(nearVal.Related) == 0 {
 		t.Errorf("%s sees nothing joined to its own note", s.what)
 	}
 

@@ -400,7 +400,7 @@ function dispatchTabKeyPress(
 }
 
 /** One tab release, and the rest kept. */
-const without = <T>(held: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
+const omitEntry = <T>(held: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
   const rest = new Map(held)
   rest.delete(id)
   return rest

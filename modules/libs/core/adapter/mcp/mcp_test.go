@@ -291,17 +291,17 @@ func getServedTools(t *testing.T, session *sdk.ClientSession) []string {
 // and what stands beside them.
 func checkToolNames(t *testing.T, names, want []string) {
 	t.Helper()
-	beside := make(map[string]bool, len(names))
+	siblingMap := make(map[string]bool, len(names))
 	for _, name := range names {
-		beside[name] = true
+		siblingMap[name] = true
 	}
 	for _, name := range want {
-		if !beside[name] {
+		if !siblingMap[name] {
 			t.Errorf("%s is missing", name)
 		}
-		delete(beside, name)
+		delete(siblingMap, name)
 	}
-	for name := range beside {
+	for name := range siblingMap {
 		t.Errorf("%s is served and is none of the tools this server is for", name)
 	}
 }
@@ -483,12 +483,12 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 		t.Fatalf("want the link written: %+v", added)
 	}
 
-	around := call[struct {
+	aroundResp := call[struct {
 		Focus   mcp.Note        `json:"focus"`
 		Related []mcp.Neighbour `json:"related"`
 	}](t, session, "note_neighbourhood", map[string]any{"path": "Entropy.md"})
-	if len(around.Related) != 1 || around.Related[0].Relation != "child" {
-		t.Errorf("the other end does not see it: %+v", around.Related)
+	if len(aroundResp.Related) != 1 || aroundResp.Related[0].Relation != "child" {
+		t.Errorf("the other end does not see it: %+v", aroundResp.Related)
 	}
 
 	joined := call[struct {

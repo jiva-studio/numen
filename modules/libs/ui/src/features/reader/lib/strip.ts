@@ -96,13 +96,13 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
   if (height <= 0) return { height: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []
   const widths: number[] = []
-  let along = GAP
+  let alongOffset = GAP
   for (let page = 0; page < pages.length; page++) {
     const size = getSize(pages, page)
     const width = Math.max(Math.round((height * size.width) / size.height), 1)
-    starts.push(along)
+    starts.push(alongOffset)
     widths.push(width)
-    along += width + GAP
+    alongOffset += width + GAP
   }
   return { height, starts, widths, length: along }
 }

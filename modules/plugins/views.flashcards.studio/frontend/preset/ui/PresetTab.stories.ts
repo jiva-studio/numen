@@ -324,10 +324,10 @@ export const TheBacklogKeepsItsRoom: Story = {
     // belongs to and not beside it.
     const canvas = within(answered!)
     const backlog = canvas.getByText(words.backlogY)
-    const along = canvas.getByText(words.backlogX)
+    const alongElem = canvas.getByText(words.backlogX)
     const picture = getPicture(answered!).getBoundingClientRect()
     expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
-    expect(along.getBoundingClientRect().top).toBeGreaterThan(backlog.getBoundingClientRect().top)
+    expect(alongElem.getBoundingClientRect().top).toBeGreaterThan(backlog.getBoundingClientRect().top)
 
     // It runs from the first day to the last of the run at this place, and the
     // two ends stand at the two ends of it.

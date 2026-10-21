@@ -319,9 +319,9 @@ func TestALinkThatResolvesElsewhereIsNotABacklink(t *testing.T) {
 		"archive/Entropy.md":  "# The one it does not\n",
 	})
 
-	near := links(t, db, v, "projects/Entropy.md")
-	if len(near.Backlinks) != 1 {
-		t.Errorf("the note the link resolves to has %d backlinks", len(near.Backlinks))
+	foundLinks := links(t, db, v, "projects/Entropy.md")
+	if len(foundLinks.Backlinks) != 1 {
+		t.Errorf("the note the link resolves to has %d backlinks", len(foundLinks.Backlinks))
 	}
 	far := links(t, db, v, "archive/Entropy.md")
 	if len(far.Backlinks) != 0 {

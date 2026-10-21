@@ -506,9 +506,9 @@ describe('Stencil, the faces', () => {
     /** A face picked up by its strip and let go over another, or over the tail. */
     const drag = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
       await getFace(editor, id).get('.card-header').trigger('dragstart')
-      const over = onto === null ? editor.findAll('section')[1] : getFace(editor, onto)
-      await over?.trigger('dragover')
-      await over?.trigger('drop')
+      const overVal = onto === null ? editor.findAll('section')[1] : getFace(editor, onto)
+      await overVal?.trigger('dragover')
+      await overVal?.trigger('drop')
     }
 
     it('emits a face let go before another', async () => {

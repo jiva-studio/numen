@@ -111,11 +111,11 @@ func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 
 		session := startSession(t, api, v)
 		// How far a person got before they stopped, which is not always the end.
-		through := len(session.GetCards())
+		cardCount := len(session.GetCards())
 		if day%3 == 1 {
-			through = through * 2 / 3
+			cardCount = cardCount * 2 / 3
 		}
-		for i, one := range session.GetCards()[:through] {
+		for i, one := range session.GetCards()[:cardCount] {
 			// The times run over a spread a person's would, and every one of
 			// them is counted whole.
 			took := time.Duration(4+(i+day)%9) * time.Second

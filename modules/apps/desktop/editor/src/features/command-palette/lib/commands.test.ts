@@ -23,20 +23,20 @@ describe('the character that means the commands', () => {
 
 describe('the commands over a note', () => {
   it('leave out the ones another command reaches on its own row', () => {
-    const over = getNoteCommands(createCommands(words)).map((one) => one.id)
+    const commands = getNoteCommands(createCommands(words)).map((one) => one.id)
 
-    expect(over).not.toContain('beside')
-    expect(over).not.toContain('destroy')
+    expect(commands).not.toContain('beside')
+    expect(commands).not.toContain('destroy')
   })
 })
 
 describe('the commands over the vaults an installation holds', () => {
   it('are offered in the group of the vault in front', () => {
-    const over = createCommands(words)
+    const commands = createCommands(words)
       .filter((one) => one.group === 'vault')
       .map((one) => one.id)
 
-    expect(over).toStrictEqual([
+    expect(commands).toStrictEqual([
       'first',
       'goto',
       'openVault',

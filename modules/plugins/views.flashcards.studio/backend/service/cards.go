@@ -214,10 +214,10 @@ func (h *cardsHandler) WriteDeck(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WriteDeckResponse{
-			At: writeFingerprint(wrote.Fingerprint), IsUnlevelled: behind,
+			At: writeFingerprint(wrote.Fingerprint), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
@@ -253,10 +253,10 @@ func (h *cardsHandler) WriteStencil(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WriteStencilResponse{
-			At: writeFingerprint(at), IsUnlevelled: behind,
+			At: writeFingerprint(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	reason, refused := getErrorCode(err)

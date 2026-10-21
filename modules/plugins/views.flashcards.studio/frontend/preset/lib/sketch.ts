@@ -118,8 +118,8 @@ const estimatePoint = (settings: Settings, value: number, grid: readonly number[
     const span = Math.max(grid[grid.length - 1] ?? 1, 1)
     const minutes = ((settings.minutesADay || DEFAULTS.minutesADay) * span) / Math.max(value, 1)
     const canLearnEveryCard = minutes <= (settings.minutesADay || DEFAULTS.minutesADay)
-    const through = Math.min(value / span, 1)
-    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, through, canLearnEveryCard }
+    const progressRatio = Math.min(value / span, 1)
+    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, progressRatio, canLearnEveryCard }
   }
   const retained = (CEILING * value) / (value + HALF)
   return { ...flat, minutes: value, reviews: (value * 60) / ANSWER, retained }

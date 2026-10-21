@@ -456,8 +456,8 @@ func (t *tailBuffer) Write(p []byte) (int, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.buf = append(t.buf, p...)
-	if over := len(t.buf) - stderrTailBytes; over > 0 {
-		t.buf = t.buf[over:]
+	if overVal := len(t.buf) - stderrTailBytes; overVal > 0 {
+		t.buf = t.buf[overVal:]
 	}
 	return len(p), nil
 }

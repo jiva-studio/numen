@@ -203,16 +203,16 @@ const numbers = (from: number): (() => number) => {
 const createArrangement = (next: () => number, at: number): string => {
   if (at < KNOWN.length) return KNOWN[at]!
 
-  const among = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
+  const pickRandom = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
   const pieces = 1 + Math.floor(next() * 12)
   let out = ''
   for (let i = 0; i < pieces; i++) {
-    out += among(PIECES)
-      .replace('{url}', () => among(URLS))
-      .replace('{on}', () => among(HANDLERS))
-      .replace('{runs}', () => among(RUNS))
-      .replace('{style}', () => among(STYLES))
-      .replace('{quote}', () => among(QUOTES))
+    out += pickRandom(PIECES)
+      .replace('{url}', () => pickRandom(URLS))
+      .replace('{on}', () => pickRandom(HANDLERS))
+      .replace('{runs}', () => pickRandom(RUNS))
+      .replace('{style}', () => pickRandom(STYLES))
+      .replace('{quote}', () => pickRandom(QUOTES))
   }
   // Half of them carry a known arrangement inside, so the generator reaches
   // past what it could have stumbled on.

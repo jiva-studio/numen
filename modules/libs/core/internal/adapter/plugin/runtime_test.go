@@ -31,10 +31,10 @@ func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
 			t.Errorf("environment %v lacks %s", with, want)
 		}
 	}
-	without := getPluginVars("md.numen.a", launchEnvironment{port: 5, token: "t"})
-	for _, entry := range without {
+	defaultVars := getPluginVars("md.numen.a", launchEnvironment{port: 5, token: "t"})
+	for _, entry := range defaultVars {
 		if strings.HasPrefix(entry, "NUMEN_ONNX_") {
-			t.Errorf("environment %v names a runtime the plugin did not declare", without)
+			t.Errorf("environment %v names a runtime the plugin did not declare", defaultVars)
 		}
 	}
 }

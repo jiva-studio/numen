@@ -61,7 +61,7 @@ const readInk = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; 
     [1, 1, Math.SQRT2],
     [1, -1, Math.SQRT2],
   ]
-  const across: number[] = []
+  const crossItems: number[] = []
   for (const [x, y] of inked) {
     let least = Infinity
     for (const [dx, dy, step] of WAYS) {
@@ -70,7 +70,7 @@ const readInk = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; 
       for (let out = 1; isInked(x - dx * out, y - dy * out); out += 1) run += 1
       least = Math.min(least, run * step)
     }
-    across.push(least)
+    crossItems.push(least)
   }
   across.sort((one, other) => one - other)
   return { top, bottom: bottom + 1, run: across[across.length >> 1] ?? 0 }

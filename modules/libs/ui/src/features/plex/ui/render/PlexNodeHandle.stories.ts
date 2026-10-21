@@ -112,14 +112,14 @@ export const EverySizeIsAsDesigned: Story = {
   args: { zoom: 1 },
   play: async ({ canvasElement }) => {
     const disc = canvasElement.querySelector('.plex__handle')!
-    const across = canvasElement.querySelector('.plex__handle-mark--across')!
+    const crossElem = canvasElement.querySelector('.plex__handle-mark--across')!
     const down = canvasElement.querySelector('.plex__handle-mark--down')!
 
     // Nine pixels of radius, arms four out from the middle either way, on a bar
     // of one and a half.
     await expect(getComputedStyle(disc).r).toBe('9px')
-    await expect(getComputedStyle(across).width).toBe('8px')
-    await expect(getComputedStyle(across).height).toBe('1.5px')
+    await expect(getComputedStyle(crossElem).width).toBe('8px')
+    await expect(getComputedStyle(crossElem).height).toBe('1.5px')
     await expect(getComputedStyle(down).width).toBe('1.5px')
     await expect(getComputedStyle(down).height).toBe('8px')
   },

@@ -288,7 +288,7 @@ describe('how wide the headings are drawn', () => {
   })
 
   it('slides back inside the window where the middle leaves no room', () => {
-    const near = { ...NODE, x: 460 }
+    const nearNode = { ...NODE, x: 460 }
     const held = [{ id: '0', text: 'A heading of some length', level: 1 }]
     const settled = getNodeHeadings(near, held, SIZES, DEPS)!
     expect(near.x + settled.offset + settled.width / 2).toBeLessThanOrEqual(
@@ -302,14 +302,14 @@ describe('where the headings slide to at the edges of the window', () => {
   const edge = DEPS.viewport.width / 2 - DEPS.margin
 
   it('ends flush with the margin on the right', () => {
-    const near = { ...NODE, x: 460 }
-    const settled = getNodeHeadings(near, held, SIZES, DEPS)!
+    const nearNode = { ...NODE, x: 460 }
+    const settled = getNodeHeadings(nearNode, held, SIZES, DEPS)!
     expect(near.x + settled.offset + settled.width / 2).toBe(edge)
   })
 
   it('begins flush with the margin on the left', () => {
-    const near = { ...NODE, x: -460 }
-    const settled = getNodeHeadings(near, held, SIZES, DEPS)!
+    const nearNode = { ...NODE, x: -460 }
+    const settled = getNodeHeadings(nearNode, held, SIZES, DEPS)!
     expect(near.x + settled.offset - settled.width / 2).toBe(-edge)
   })
 })
@@ -517,7 +517,7 @@ describe('the arrows at the edges of the ground', () => {
   })
 
   it('is drawn about the middle of what is hung, not of the node', () => {
-    const near = { ...NODE, x: 460 }
+    const nearNode = { ...NODE, x: 460 }
     const heading = { id: 'h', text: 'A heading of some length', level: 1 }
     const settled = getNodeHeadings(near, [heading, ...headings(MOST + 3)], SIZES, DEPS)!
     const [arrow] = getOpenHeadings(settled, 1, 0)!.arrows

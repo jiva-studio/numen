@@ -19,8 +19,8 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 	if err := os.WriteFile(target, []byte("what stood there\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	beside := filepath.Join(dir, ".Entropy.md.new")
-	if err := os.WriteFile(beside, []byte("what is saved\n"), 0o644); err != nil {
+	siblingPath := filepath.Join(dir, ".Entropy.md.new")
+	if err := os.WriteFile(siblingPath, []byte("what is saved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,8 +86,8 @@ func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 	if err := os.WriteFile(target, []byte("what stood there\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	beside := filepath.Join(dir, ".Entropy.md.new")
-	if err := os.WriteFile(beside, []byte("what is saved\n"), 0o644); err != nil {
+	siblingPath := filepath.Join(dir, ".Entropy.md.new")
+	if err := os.WriteFile(siblingPath, []byte("what is saved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

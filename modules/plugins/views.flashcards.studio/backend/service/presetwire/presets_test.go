@@ -35,8 +35,8 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	last := now.AddDate(0, 0, -1)
 	// A card face first seen yesterday and put off by sixteen days, which is
 	// under the default interval of twenty-one.
-	near := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
-	if p.IsLearned(near, now) {
+	targetSchedule := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
+	if p.IsLearned(targetSchedule, now) {
 		t.Error("a card face sixteen days off is learned under settings naming no rule")
 	}
 	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}

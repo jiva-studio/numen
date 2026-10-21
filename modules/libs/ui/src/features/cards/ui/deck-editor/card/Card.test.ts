@@ -73,7 +73,7 @@ describe('Card', () => {
   })
 
   it('says which section it is placed under, and nothing where it is placed under none', () => {
-    const under: readonly DeckCard[] = [
+    const underVal: readonly DeckCard[] = [
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
     const tile = createTile('llama', under, [{ id: 'roots', name: 'Roots' }])

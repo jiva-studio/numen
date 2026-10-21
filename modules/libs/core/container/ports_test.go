@@ -30,7 +30,7 @@ func getHeldAdapters(name, src string) []string {
 		return []string{name + " does not parse: " + err.Error()}
 	}
 
-	under := map[string]string{}
+	underMap := map[string]string{}
 	for _, one := range f.Imports {
 		path, err := strconv.Unquote(one.Path.Value)
 		if err != nil {
@@ -40,7 +40,7 @@ func getHeldAdapters(name, src string) []string {
 		if one.Name != nil {
 			at = one.Name.Name
 		}
-		under[at] = path
+		underMap[at] = path
 	}
 
 	var findings []string
@@ -59,7 +59,7 @@ func getHeldAdapters(name, src string) []string {
 				if !ok {
 					return true
 				}
-				path := under[at.Name]
+				path := underMap[at.Name]
 				if !strings.HasPrefix(path, compilerHolds) || driving[strings.TrimPrefix(path, module)] {
 					return true
 				}

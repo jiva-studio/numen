@@ -84,8 +84,8 @@ func TestTheDefaultBudgetHoldsExactlyItsCharacters(t *testing.T) {
 	if got := embedding.Batches(fits, 0); !slices.Equal(sizes(got), []int{2}) {
 		t.Errorf("at the budget: got %v", sizes(got))
 	}
-	over := []string{strings.Repeat("a", half), strings.Repeat("b", half+1)}
-	if got := embedding.Batches(over, 0); !slices.Equal(sizes(got), []int{1, 1}) {
+	overVal := []string{strings.Repeat("a", half), strings.Repeat("b", half+1)}
+	if got := embedding.Batches(overVal, 0); !slices.Equal(sizes(got), []int{1, 1}) {
 		t.Errorf("one past the budget: got %v", sizes(got))
 	}
 }

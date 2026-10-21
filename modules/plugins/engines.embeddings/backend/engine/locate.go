@@ -166,9 +166,9 @@ func reportProgress(dir string, files []string, sizes map[string]int64, total in
 		return func() {}
 	}
 	done := make(chan struct{})
-	over := make(chan struct{})
+	doneCh := make(chan struct{})
 	go func() {
-		defer close(over)
+		defer close(doneCh)
 		tick := time.NewTicker(time.Second)
 		defer tick.Stop()
 		for {
@@ -182,7 +182,7 @@ func reportProgress(dir string, files []string, sizes map[string]int64, total in
 	}()
 	return func() {
 		close(done)
-		<-over
+		<-doneCh
 	}
 }
 

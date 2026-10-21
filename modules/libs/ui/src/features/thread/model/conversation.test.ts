@@ -547,9 +547,9 @@ describe('a conversation', () => {
 
 describe('a conversation that is over', () => {
   it('notifies the agent, under the name it answers by', () => {
-    const over: string[] = []
+    const overVal: string[] = []
     const conversation = useConversation(
-      { ...createPort([createStopped()]), finish: async (named) => void over.push(named) },
+      { ...createPort([createStopped()]), finish: async (named) => void overVal.push(named) },
       words,
       called,
       now,

@@ -135,15 +135,15 @@ func (u Presets) save(
 	}
 	// A caller that said what it believed the note was is held to that; one that
 	// said nothing is held to what stands there now.
-	against := fingerprint
-	if against.IsZero() {
-		against = on
+	expectedFp := fingerprint
+	if expectedFp.IsZero() {
+		expectedFp = on
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
 	}
-	n := markdown.Parse(against, raw)
+	n := markdown.Parse(expectedFp, raw)
 	if n.Type != format.TypePreset {
 		return domain.Fingerprint{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, n.Type)
 	}
@@ -163,7 +163,7 @@ func (u Presets) save(
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	return writer.Write(ctx, path, doc.Bytes(), against)
+	return writer.Write(ctx, path, doc.Bytes(), expectedFp)
 }
 
 // writeSettings writes the settings into the frontmatter, one key at a time. A day the

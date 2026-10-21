@@ -171,10 +171,10 @@ const mapToFrame = (at: Position): { window: Position; story: Position } => {
   }
 
   const box = frame.getBoundingClientRect()
-  const across = box.width / window.innerWidth
+  const crossRatio = box.width / window.innerWidth
   const down = box.height / window.innerHeight
   const driven = {
-    x: Math.round(box.x + at.x * across),
+    x: Math.round(box.x + at.x * crossRatio),
     y: Math.round(box.y + at.y * down),
   }
   return {
@@ -355,8 +355,8 @@ export const DividesTheWorkspace: Story = {
     await expect(panes).toHaveLength(3)
 
     // One of them runs the whole width along the foot.
-    const along = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
-    await expect(along).toHaveLength(1)
+    const alongPanes = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
+    await expect(alongPanes).toHaveLength(1)
   },
 }
 

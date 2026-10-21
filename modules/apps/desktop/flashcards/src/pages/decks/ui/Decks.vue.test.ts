@@ -224,7 +224,7 @@ describe('a preset pressed', () => {
 // of the day, so they cannot say different things about it.
 describe('the tile and the decks under it', () => {
   it('agree: at nothing done, no deck of that preset claims to be done', () => {
-    const over: VaultCardsDue = {
+    const overVal: VaultCardsDue = {
       ...vault,
       due: 10,
       new: 0,

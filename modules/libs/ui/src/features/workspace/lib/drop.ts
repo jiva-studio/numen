@@ -93,16 +93,16 @@ export function getSlot(x: number, tabs: readonly Rect[]): number {
  * no tabs takes the whole of itself.
  */
 export function getCaretRect(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
-  const beside = tabs[slot] ?? tabs[tabs.length - 1]
-  if (!beside) return strip
+  const adjacentTab = tabs[slot] ?? tabs[tabs.length - 1]
+  if (!adjacentTab) return strip
 
-  const at = slot < tabs.length ? beside.x : beside.x + beside.width
-  return { x: at, y: beside.y, width: 0, height: beside.height }
+  const at = slot < tabs.length ? adjacentTab.x : adjacentTab.x + adjacentTab.width
+  return { x: at, y: adjacentTab.y, width: 0, height: adjacentTab.height }
 }
 
 /** The outer edge a place is within reach of, and nothing away from every edge. */
 export function findEdgeSide(at: Position, box: Rect, reach: number): Side | null {
-  const near: readonly (readonly [Side, number])[] = [
+  const nearSides: readonly (readonly [Side, number])[] = [
     ['left', at.x - box.x],
     ['right', box.x + box.width - at.x],
     ['top', at.y - box.y],
@@ -111,7 +111,7 @@ export function findEdgeSide(at: Position, box: Rect, reach: number): Side | nul
 
   let side: Side | null = null
   let nearest = reach
-  for (const [each, distance] of near) {
+  for (const [each, distance] of nearSides) {
     if (distance < nearest) {
       side = each
       nearest = distance

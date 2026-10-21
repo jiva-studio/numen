@@ -99,12 +99,12 @@ function createFlushReporter(
   registry: ReturnType<typeof createConflictRegistry>,
   handlers: Set<FlushHandler>,
 ) {
-  let under: string | null = null
+  let underVal: string | null = null
   let lastResult: FlushResult | null = null
   let writing: Promise<unknown> | null = null
 
   async function report() {
-    const token = under
+    const token = underVal
     if (token === null) return
     const all = registry.refresh()
     if (all.length === 0 && writing !== null) return

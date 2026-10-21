@@ -107,8 +107,8 @@ func getStoppings(t *testing.T) []stopping {
 		},
 		{
 			name: "an index folder nobody may write in",
-			cfg:  container.Config{IndexPath: filepath.Join(shut, "index.db")},
-			why:  openIndex(t, filepath.Join(shut, "index.db")),
+			cfg:  container.Config{IndexPath: filepath.Join(noWrite, "index.db")},
+			why:  openIndex(t, filepath.Join(noWrite, "index.db")),
 		},
 		{
 			name: "a settings file that is not JSON",

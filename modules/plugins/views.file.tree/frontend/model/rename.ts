@@ -31,6 +31,6 @@ export const resolveRenamePath = (path: string, name: string, isFolder = false):
   const targetName = isFolder || hasExtension ? typed : `${typed}${getExtension(getFileName(path))}`
   if (targetName === getFileName(path)) return ''
 
-  const under = getFolderPath(path)
-  return under === ROOT ? targetName : `${under}/${targetName}`
+  const folderPath = getFolderPath(path)
+  return folderPath === ROOT ? targetName : `${under}/${targetName}`
 }

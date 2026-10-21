@@ -179,7 +179,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	reachable := makeEndpoint(ctx, cfg, opened, mcp)
 	going := &vaultFlush{flush: opened.FlushPending}
-	behind := shutdown.NewSequence(
+	shutdownSeq := shutdown.NewSequence(
 		reachable.Stop,
 		shutdown.Report("numen", os.Stderr, "", opened.Close),
 		shutdown.Report("numen", os.Stderr, "plugins", func() error {
@@ -190,7 +190,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	defer func() {
 		going.flushVault()
-		behind.Run()
+		shutdownSeq.Run()
 	}()
 
 	if debugOpts.isServingHTTP() {
@@ -204,7 +204,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		show: func() { window.Show() },
 	}
 
-	app := makeApplication(opened, pages, behind, going, seen)
+	app := makeApplication(opened, pages, shutdownSeq, going, seen)
 	window = makeWindow(app, opened)
 	tracker.addWindow()
 	connectWindow(ctx, app, cfg, window, opened, reachable, tracker, going)

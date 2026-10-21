@@ -142,13 +142,13 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 
 	for _, r := range libraryRatings {
 		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
-		for _, over := range []time.Duration{
+		for _, dur := range []time.Duration{
 			time.Second, time.Hour, 24 * time.Hour, 400 * 24 * time.Hour,
 		} {
 			face := ahead
-			face.Last = libraryNow.Add(over)
+			face.Last = libraryNow.Add(dur)
 			got := by.Next(face, libraryNow, review.Rating(r))
-			sameSchedule(t, fmt.Sprintf("%s of a card face answered %s ahead", r, over), got, want)
+			sameSchedule(t, fmt.Sprintf("%s of a card face answered %s ahead", r, dur), got, want)
 		}
 	}
 }

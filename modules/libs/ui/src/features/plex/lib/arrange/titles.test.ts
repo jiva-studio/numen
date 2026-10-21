@@ -53,12 +53,12 @@ const isOverlapping = (one: Box, other: Box): boolean =>
  */
 function getBox(edge: PlacedEdge, width: (label: string) => number): Box {
   const arc = getLength(edge)
-  const along = createPointOnCurve(edge)
+  const curvePoint = createPointOnCurve(edge)
   const at = edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt
   const half = width(edge.words!) / 2 / arc
   const deep = labelDepth / 2
 
-  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => along(at - half + 2 * half * step))
+  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => curvePoint(at - half + 2 * half * step))
   const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
 
   for (const [sample, point] of run.entries()) {
@@ -185,10 +185,10 @@ describe('a title finds room on its line', () => {
     const frame = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
     const boxes = frame.nodes.map(boxAround)
 
-    const over = frame.edges.filter((edge) =>
+    const edges = frame.edges.filter((edge) =>
       boxes.some((box) => isOverlapping(box, getBox(edge, measureLabel))),
     )
-    expect(over).toStrictEqual([])
+    expect(edges).toStrictEqual([])
   })
 
   it('reads the words the way the line runs where they end up', () => {
@@ -239,12 +239,12 @@ describe('a title finds room on its line', () => {
     })
     const boxes = frame.nodes.map(boxAround)
 
-    const over = frame.edges
+    const edges = frame.edges
       .filter((edge) => edge.words)
       .filter((edge) => boxes.some((box) => isOverlapping(box, getBox(edge, measureLabel))))
       .map((edge) => edge.words)
 
-    expect(over).toStrictEqual([])
+    expect(edges).toStrictEqual([])
   })
 
   it('cuts a title to the room its line has left, or writes none of it', () => {
@@ -346,7 +346,7 @@ describe('a title set on a straight line', () => {
     createPointOnCurve(edge)(edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt)
 
   const ACROSS = { from: { x: -200, y: 0 }, to: { x: 200, y: 0 } }
-  const across = (words: string) => createLine(ACROSS.from, ACROSS.to, words)
+  const crossLine = (words: string) => createLine(ACROSS.from, ACROSS.to, words)
 
   it('keeps clear of a box that remains over only the depth of the type', () => {
     // The box starts 6 below the line. The type reaches 9 either side of it, and

@@ -201,8 +201,8 @@ describe('a box is as wide as its title needs', () => {
     const jumps = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'jump')
 
     expect(new Set(jumps.map((node) => node.width)).size).toBeGreaterThan(1)
-    const near = jumps.map((node) => Math.abs(node.x) - node.width / 2)
-    for (const edge of near) expect(edge).toBeCloseTo(near[0]!)
+    const minDists = jumps.map((node) => Math.abs(node.x) - node.width / 2)
+    for (const edge of minDists) expect(edge).toBeCloseTo(minDists[0]!)
   })
 
   it('starts each further column beyond the widest of the one before it', () => {

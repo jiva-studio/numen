@@ -808,7 +808,7 @@ export const TitledLines: Story = {
 
     // The hand on that line lifts it, and the lifted title is painted the same
     // way on a heavier halo.
-    const along = halo!.querySelector('textPath')!.getAttribute('href')!
+    const alongVal = halo!.querySelector('textPath')!.getAttribute('href')!
     const drawn = canvasElement
       .querySelector(`defs path[id="${along.slice(1)}"]`)!
       .getAttribute('d')
@@ -1131,12 +1131,12 @@ export const RestingOnATitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
-    const beside = canvas.getByLabelText('日本語のノート, child')
+    const siblingElem = canvas.getByLabelText('日本語のノート, child')
 
     const getWidth = (box: Element) =>
       box.querySelector('.plex__box')!.getBoundingClientRect().width
     const placed = getWidth(node)
-    const nextDoor = beside.getBoundingClientRect().x
+    const nextDoor = siblingElem.getBoundingClientRect().x
 
     // Cut short in the box the arrangement drew, and the whole of it under a
     // hand that stays.

@@ -52,19 +52,19 @@ describe('useDrag, the pointer', () => {
 
   it('answers a hover over a place that takes it, and says the drop may follow', () => {
     const { drag } = setup()
-    const over = dragEvent()
+    const dragEvt = dragEvent()
     drag.lift('a', dragEvent().press)
-    drag.hover('b', over.press)
+    drag.hover('b', dragEvt.press)
     expect(drag.at.value).toBe('b')
-    expect(over.prevented()).toBe(1)
+    expect(dragEvt.prevented()).toBe(1)
   })
 
   it('answers no hover while nothing is dragged', () => {
     const { drag } = setup()
-    const over = dragEvent()
-    drag.hover('b', over.press)
+    const dragEvt = dragEvent()
+    drag.hover('b', dragEvt.press)
     expect(drag.at.value).toBeUndefined()
-    expect(over.prevented()).toBe(0)
+    expect(dragEvt.prevented()).toBe(0)
   })
 
   it('lets go of everything on release', () => {

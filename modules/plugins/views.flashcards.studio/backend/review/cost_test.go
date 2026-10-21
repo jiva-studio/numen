@@ -165,11 +165,11 @@ func TestAnAnswerCarryingNoTimeSaysNothingAboutItsKind(t *testing.T) {
 // getCost is the cost of the answers taken as one group.
 func getCost(by review.Scheduler, answers []review.Answer) review.AnswerCost {
 	const group = "all"
-	under := make(map[review.CardFaceID]string)
+	underMap := make(map[review.CardFaceID]string)
 	for _, a := range answers {
-		under[a.CardFace] = group
+		underMap[a.CardFace] = group
 	}
-	costs := review.GetCostUnder(by, answers, under)
+	costs := review.GetCostUnder(by, answers, underMap)
 	if cost, ok := costs[group]; ok {
 		return cost
 	}

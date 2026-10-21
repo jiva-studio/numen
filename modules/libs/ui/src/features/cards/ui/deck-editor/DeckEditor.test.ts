@@ -64,7 +64,7 @@ const getBoxes = (wrapper: Grid, id: string, field: string): readonly HTMLTextAr
  */
 const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<void> => {
   await getTile(wrapper, id).get('[data-grip]').trigger('dragstart')
-  const over =
+  const overVal =
     onto === null
       ? wrapper.findAll('[data-plus]').at(-1)!
       : onto === HEAD

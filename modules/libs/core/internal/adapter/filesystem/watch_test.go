@@ -337,11 +337,11 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	}
 	waits("the journal was written and nothing was reported")
 
-	beside := filepath.Join(dir, "index.db.new")
-	if err := os.WriteFile(beside, []byte("second"), 0o644); err != nil {
+	siblingPath := filepath.Join(dir, "index.db.new")
+	if err := os.WriteFile(siblingPath, []byte("second"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(beside, at); err != nil {
+	if err := os.Rename(siblingPath, at); err != nil {
 		t.Fatal(err)
 	}
 	waits("the file was replaced and nothing was reported")

@@ -31,14 +31,14 @@ func setNearestStep(steps []int, at int) []int {
 	if at < 0 || len(steps) < 3 {
 		return steps
 	}
-	near := 1
+	step := 1
 	for i := 2; i < len(steps)-1; i++ {
-		if abs(steps[i]-at) < abs(steps[near]-at) {
-			near = i
+		if abs(steps[i]-at) < abs(steps[step]-at) {
+			step = i
 		}
 	}
 	if at > steps[0] && at < steps[len(steps)-1] {
-		steps[near] = at
+		steps[step] = at
 	}
 	return steps
 }

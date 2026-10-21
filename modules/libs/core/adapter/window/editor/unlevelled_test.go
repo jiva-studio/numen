@@ -120,8 +120,8 @@ func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
 func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	t.Helper()
 
-	listening, over := context.WithCancel(t.Context())
-	defer over()
+	listening, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	tasks, err := f.drawn.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
 		Window: wire.Editor,
 	}))

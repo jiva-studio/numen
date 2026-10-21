@@ -58,10 +58,10 @@ function useDeckNotes(
     isWorking.value = true
     let failed = false
     try {
-      const around = await getDeckNeighbourhood(vault, deck)
+      const neighbourhood = await getDeckNeighbourhood(vault, deck)
       if (pendingDeck !== deck) return
-      notes.value = around.notes
-      unread.value = around.unread
+      notes.value = neighbourhood.notes
+      unread.value = neighbourhood.unread
       activeDeck = deck
     } catch {
       if (pendingDeck !== deck) return

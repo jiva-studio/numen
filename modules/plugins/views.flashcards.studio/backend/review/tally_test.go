@@ -104,7 +104,7 @@ func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 	root := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	mantra := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 	ungrouped := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}
-	under := map[review.CardFaceID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
+	underMap := map[review.CardFaceID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
 
 	said := func(id string, face review.CardFaceID, at string, took time.Duration) review.Answer {
 		return review.Answer{
@@ -123,7 +123,7 @@ func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 		said("01G", root, "2026-08-31T09:00:00", 4*time.Second),
 	}
 
-	got := review.GetSpentUnder(counting, "2026-08-29", answers, under, nil)
+	got := review.GetSpentUnder(counting, "2026-08-29", answers, underMap, nil)
 
 	// Each card face is new the first time it is answered, and counts once for
 	// the day however many answers it took.
@@ -141,7 +141,7 @@ func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 // spent is the same time either way.
 func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	under := map[review.CardFaceID]string{on: "Steady.md"}
+	underMap := map[review.CardFaceID]string{on: "Steady.md"}
 
 	answers := make([]review.Answer, 0, 9)
 	for i := range 9 {
@@ -154,14 +154,14 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 		})
 	}
 
-	cards := review.GetSpentUnder(counting, "2026-08-29", answers, under,
+	cards := review.GetSpentUnder(counting, "2026-08-29", answers, underMap,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitCards})
 	want := review.Spent{Answered: 1, New: 1, Took: 36 * time.Second}
 	if cards["Steady.md"] != want {
 		t.Errorf("counting in cards the day came to %+v, want %+v", cards["Steady.md"], want)
 	}
 
-	shows := review.GetSpentUnder(counting, "2026-08-29", answers, under,
+	shows := review.GetSpentUnder(counting, "2026-08-29", answers, underMap,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitShows})
 	want = review.Spent{Answered: 9, New: 1, Reviews: 8, Took: 36 * time.Second}
 	if shows["Steady.md"] != want {
@@ -175,7 +175,7 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 // another machine sorting last by name can carry the answer that came first.
 func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	under := map[review.CardFaceID]string{on: "Steady.md"}
+	underMap := map[review.CardFaceID]string{on: "Steady.md"}
 
 	answers := []review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-31T09:00:00"),
@@ -184,7 +184,7 @@ func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 			Rating: review.Good, Took: 7 * time.Second},
 	}
 
-	got := review.GetSpentUnder(counting, "2026-08-31", answers, under, nil)
+	got := review.GetSpentUnder(counting, "2026-08-31", answers, underMap, nil)
 
 	want := review.Spent{Answered: 1, Reviews: 1, Took: 5 * time.Second}
 	if got["Steady.md"] != want {
@@ -196,12 +196,12 @@ func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 // screen for.
 func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	under := map[review.CardFaceID]string{on: ""}
+	underMap := map[review.CardFaceID]string{on: ""}
 
 	got := review.GetSpentUnder(counting, "2026-08-29", []review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-29T09:00:00"),
 			Rating: review.Good, Took: time.Hour},
-	}, under, nil)
+	}, underMap, nil)
 
 	want := review.Spent{Answered: 1, New: 1, Took: review.LongestAnswer}
 	if got[""] != want {

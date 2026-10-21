@@ -515,11 +515,11 @@ func TestProvisionPrefersALibraryBesideThePlugin(t *testing.T) {
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
 	plugin := t.TempDir()
-	beside := writeLibrary(t, filepath.Join(plugin, "bin"))
+	siblingPath := writeLibrary(t, filepath.Join(plugin, "bin"))
 
 	got, provider, err := onnxruntime.New(cfg).Provision(t.Context(), plugin)
-	if err != nil || got != beside || provider != "auto" {
-		t.Fatalf("Provision() = %q, %q, %v, want %q and auto", got, provider, err, beside)
+	if err != nil || got != siblingPath || provider != "auto" {
+		t.Fatalf("Provision() = %q, %q, %v, want %q and auto", got, provider, err, siblingPath)
 	}
 	if hits.Load() != 0 {
 		t.Errorf("the server was asked %d times", hits.Load())
@@ -607,8 +607,8 @@ func TestProvisionAsksForTheLibraryOncePerPluginFolder(t *testing.T) {
 	if _, _, err := provisioner.Provision(t.Context(), first); err != nil {
 		t.Fatal(err)
 	}
-	beside := writeLibrary(t, filepath.Join(first, "bin"))
-	if got, _, _ := provisioner.Provision(t.Context(), first); got == beside {
+	siblingPath := writeLibrary(t, filepath.Join(first, "bin"))
+	if got, _, _ := provisioner.Provision(t.Context(), first); got == siblingPath {
 		t.Error("a folder was searched again after it was answered")
 	}
 }
@@ -641,11 +641,11 @@ func TestProvisionTriesTheNextLibraryWhenOneDoesNotOpen(t *testing.T) {
 	old, held := writeLibraryDir(t), writeLibraryDir(t)
 	cfg.Machine = []string{old, held}
 	plugin := t.TempDir()
-	beside := writeLibrary(t, filepath.Join(plugin, "bin"))
-	cfg.Check = refuse(beside, filepath.Join(old, filepath.Base(beside)))
+	siblingPath := writeLibrary(t, filepath.Join(plugin, "bin"))
+	cfg.Check = refuse(siblingPath, filepath.Join(old, filepath.Base(siblingPath)))
 
 	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), plugin)
-	if err != nil || got != filepath.Join(held, filepath.Base(beside)) {
+	if err != nil || got != filepath.Join(held, filepath.Base(siblingPath)) {
 		t.Fatalf("Provision() = %q, %v, want the library in %s", got, err, held)
 	}
 	if hits.Load() != 0 {

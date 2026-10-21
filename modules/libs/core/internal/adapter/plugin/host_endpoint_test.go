@@ -380,10 +380,10 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 	if !slices.Contains(with, "NUMEN_HOST_PORT=7777") || !slices.Contains(with, "NUMEN_PLUGIN_TOKEN=t") {
 		t.Errorf("environment %v lacks the host port or the token", with)
 	}
-	without := getPluginVars("md.numen.a", launchEnvironment{port: 5, token: "t"})
-	for _, entry := range without {
+	defaultVars := getPluginVars("md.numen.a", launchEnvironment{port: 5, token: "t"})
+	for _, entry := range defaultVars {
 		if strings.HasPrefix(entry, "NUMEN_HOST_PORT=") {
-			t.Errorf("environment %v names a host that is not serving", without)
+			t.Errorf("environment %v names a host that is not serving", defaultVars)
 		}
 	}
 }

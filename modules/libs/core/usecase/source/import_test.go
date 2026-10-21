@@ -314,18 +314,18 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	beside := CopyBeside(videoNote)
-	if got.At != beside {
+	besidePath := CopyBeside(videoNote)
+	if got.At != besidePath {
 		t.Errorf("the copy landed at %q, want it beside the note", got.At)
 	}
 	if got.Bytes != int64(len(from.bytes)) {
 		t.Errorf("the copy is %d bytes", got.Bytes)
 	}
-	if held.files[beside] == nil {
+	if held.files[besidePath] == nil {
 		t.Fatal("nothing stands beside the note")
 	}
-	if string(held.files[beside].raw) != string(from.bytes) {
-		t.Errorf("the copy reads %q", held.files[beside].raw)
+	if string(held.files[besidePath].raw) != string(from.bytes) {
+		t.Errorf("the copy reads %q", held.files[besidePath].raw)
 	}
 	if _, _, err := kept.OpenArtifact(t.Context(), domain.NewCopyName(text.Fingerprint([]byte(address)))); err == nil {
 		t.Error("the copy is in the application's folder too, and the vault is where it was asked for")

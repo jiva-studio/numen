@@ -132,11 +132,11 @@ const drag = useRowDrag({
   getShownRows: () => shown.value,
   measure: () => {
     const drawn = list.value
-    const over = box.value?.getBoundingClientRect()
-    if (!drawn || !over) return null
+    const rect = box.value?.getBoundingClientRect()
+    if (!drawn || !rect) return null
     const anyRow = drawn.querySelector('[data-tree-row]')
     const rowHeight = anyRow ? anyRow.getBoundingClientRect().height : 24
-    return { over, top: drawn.getBoundingClientRect().top, height: rowHeight }
+    return { rect, top: drawn.getBoundingClientRect().top, height: rowHeight }
   },
   getThreshold: () => props.threshold,
   getClock: () => props.clock,

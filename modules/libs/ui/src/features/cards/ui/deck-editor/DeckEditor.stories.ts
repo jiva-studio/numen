@@ -360,11 +360,11 @@ const meta: Meta<Knobs> = {
         onWrite: (id: string, field: string, nth: number, text: string) => {
           cards.value = changeCard(id, (card) => {
             // The one written is the one counted off under its own field.
-            let under = 0
+            let underCount = 0
             const filled = card.filled.map((each) => {
               if (each.field !== field) return each
-              under += 1
-              return under === nth ? { field, text } : each
+              underCount += 1
+              return underCount === nth ? { field, text } : each
             })
             if (under < nth) filled.push({ field, text })
             return { ...card, filled }
@@ -429,8 +429,8 @@ const moveCard = (
 
   const before = at === null ? -1 : left.findIndex((card) => card.id === at)
   if (before !== -1) {
-    const under = { ...held, section: left[before]?.section ?? null }
-    return [...left.slice(0, before), under, ...left.slice(before)]
+    const underVal = { ...held, section: left[before]?.section ?? null }
+    return [...left.slice(0, before), underVal, ...left.slice(before)]
   }
 
   const rank = (section: string | null): number =>

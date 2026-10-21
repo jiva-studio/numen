@@ -105,10 +105,10 @@ function createTile(
   const fields = getDeclaredFields(cut?.fields ?? [])
 
   /** How many values the card writes under each field, as they are counted off. */
-  const under = new Map<string, number>()
+  const underMap = new Map<string, number>()
   const countOff = (field: string): number => {
-    const nth = (under.get(field) ?? 0) + 1
-    under.set(field, nth)
+    const nth = (underMap.get(field) ?? 0) + 1
+    underMap.set(field, nth)
     return nth
   }
 

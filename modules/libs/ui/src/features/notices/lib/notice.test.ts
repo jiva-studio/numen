@@ -114,7 +114,7 @@ describe('how long work runs before it is worth a card', () => {
 
 describe('a notice somebody requested for', () => {
   const asked: Notice = { id: 'reading', text: 'Recognising a scan', isUserStarted: true }
-  const behind: Notice = { id: 'indexing', text: 'Indexing' }
+  const behindNotice: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
     // The wait is for work nobody asked for. Somebody who asked is waiting to

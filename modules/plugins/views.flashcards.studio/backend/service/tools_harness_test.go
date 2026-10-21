@@ -39,7 +39,7 @@ func (s *session) invoke(t *testing.T, name string, args any) *v1.CallToolRespon
 		t.Fatal(err)
 	}
 	res, err := s.registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
-		Name: name, Arguments: raw, Asked: s.asked,
+		Name: name, Arguments: raw, Context: s.asked,
 	}))
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)

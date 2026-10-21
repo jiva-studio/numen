@@ -9,9 +9,9 @@ import type { RunSupport } from '../types'
 
 /** The runs one window holds, which is every one of them until it is told otherwise. */
 export const runSupport = (): RunSupport => {
-  const beyond = shallowRef<ReadonlySet<string>>(new Set())
+  const completedRuns = shallowRef<ReadonlySet<string>>(new Set())
   return {
-    canRun: (run) => !beyond.value.has(run),
-    cannotRun: (run) => void (beyond.value = new Set(beyond.value).add(run)),
+    canRun: (run) => !completedRuns.value.has(run),
+    cannotRun: (run) => void (completedRuns.value = new Set(completedRuns.value).add(run)),
   }
 }

@@ -22,14 +22,14 @@ const card = (more: Partial<CardFace> = {}): CardFace => ({
 /** An agent that keeps what it was asked and says what a test told it to. */
 const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leaves.' }]) => {
   const asked: { text: string; focus: string; conversation: string }[] = []
-  const over: string[] = []
+  const overVal: string[] = []
   const agent: AgentPort = {
     async *ask(query) {
       asked.push({ text: query.question, focus: query.focus, conversation: query.conversation })
       for (const step of says) yield step
     },
     async finish(conversation) {
-      over.push(conversation)
+      overVal.push(conversation)
     },
   }
   return { agent, asked, over }

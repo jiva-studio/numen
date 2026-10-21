@@ -89,7 +89,7 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			if got := names(f.Deck(domain.Fingerprint{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
+			if got := cardHeadings(f.Deck(domain.Fingerprint{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
 				t.Errorf("cards = %v, want %v", got, one.cards)
 			}
 			if err := os.WriteFile(path, f.Bytes(), 0o600); err != nil {

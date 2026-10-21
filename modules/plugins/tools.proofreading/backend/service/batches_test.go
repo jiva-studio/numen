@@ -303,17 +303,17 @@ func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
 				batchesAcrossCuts := cutBatches(cues, size, overlap, cuts(len(batches)))
 
 				for at := 0; at < count; at++ {
-					for through := at; through <= min(at+size/2-1, count-1); through++ {
+					for throughIdx := at; throughIdx <= min(at+size/2-1, count-1); throughIdx++ {
 						if slices.ContainsFunc(batches, func(b Batch) bool {
-							return hasLines(b, at, through)
+							return hasLines(b, at, throughIdx)
 						}) {
 							continue
 						}
 						if !slices.ContainsFunc(batchesAcrossCuts, func(b Batch) bool {
-							return hasLines(b, at, through)
+							return hasLines(b, at, throughIdx)
 						}) {
 							t.Errorf("%d lines by %d sharing %d: the run %d-%d is in no batch and no batch over a cut",
-								count, size, overlap, at, through)
+								count, size, overlap, at, throughIdx)
 						}
 					}
 				}

@@ -92,20 +92,20 @@ function usePointerDrag(
 }
 
 export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): HandScroll {
-  const along = ref(0)
+  const alongOffset = ref(0)
   const isDragging = ref(false)
 
   /** Where the row was told to stand, while it is on its way there. */
   let heading: number | undefined
 
-  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? along.value
+  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? alongOffset.value
 
   const send = (to: number, how: ScrollBehavior): void => {
     if (!area.value) return
     if (Math.abs(area.value.scrollLeft - to) <= THERE) return
     heading = to
     // A scroll that does not travel is over as soon as it is asked for.
-    if (how === 'auto') along.value = to
+    if (how === 'auto') alongOffset.value = to
     area.value.scrollTo({ left: to, behavior: how })
   }
 

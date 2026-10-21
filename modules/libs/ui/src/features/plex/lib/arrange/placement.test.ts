@@ -171,7 +171,7 @@ describe('a column', () => {
 
   it('remains clear of a row it reaches alongside', () => {
     const alone = of(place({ sibling: createNodes('sibling', 5) }), 'sibling')
-    const beside = of(
+    const adjacent = of(
       place({ sibling: createNodes('sibling', 5), child: createNodes('child', 5) }),
       'sibling',
     )
@@ -181,7 +181,7 @@ describe('a column', () => {
 
   it('keeps its own distance from a row it never reaches alongside', () => {
     const alone = of(place({ sibling: createNodes('sibling', 2) }), 'sibling')
-    const beside = of(
+    const adjacent = of(
       place({ sibling: createNodes('sibling', 2), child: createNodes('child', 5) }),
       'sibling',
     )

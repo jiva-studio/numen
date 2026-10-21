@@ -75,8 +75,8 @@ func proofreadSpeech(
 		return textResult{}, err
 	}
 	_, past := gatherAnswers(answers)
-	across := setContext(cutBatches(window, size, overlap, past), about)
-	more, err := askBatches(ctx, ask, speechInstruction, across, 0)
+	batchedContext := setContext(cutBatches(window, size, overlap, past), about)
+	more, err := askBatches(ctx, ask, speechInstruction, batchedContext, 0)
 	if err != nil {
 		return textResult{}, err
 	}

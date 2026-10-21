@@ -439,8 +439,8 @@ func (b *budgets) spendPreset(
 	})
 	for _, q := range decks {
 		q.owedIndex, q.freshIndex = 0, 0
-		over := *one
-		b.deal(&over, q, owed, fresh, out)
+		overVal := *one
+		b.deal(&overVal, q, owed, fresh, out)
 	}
 }
 

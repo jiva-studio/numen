@@ -99,9 +99,9 @@ func TestAnAgentAsksForACopy(t *testing.T) {
 	_, core := newCoreWithImport(t, from)
 	session := sessionOf(t, mcp.New(core))
 
-	without := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
-	if without.CopiedBytes != 0 {
-		t.Errorf("a copy of %d bytes was fetched unasked", without.CopiedBytes)
+	withoutOutcome := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
+	if withoutOutcome.CopiedBytes != 0 {
+		t.Errorf("a copy of %d bytes was fetched unasked", withoutOutcome.CopiedBytes)
 	}
 
 	with := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{

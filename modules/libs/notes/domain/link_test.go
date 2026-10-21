@@ -101,8 +101,8 @@ func TestALinkSaysWhichVaultItLandedIn(t *testing.T) {
 	if vault, crossed := unsaid.InVault("one"); vault != "one" || crossed {
 		t.Errorf("got %q, crossed %v", vault, crossed)
 	}
-	over := domain.ResolvedLink{ToVault: "two"}
-	if vault, crossed := over.InVault("one"); vault != "two" || !crossed {
+	resolvedLink := domain.ResolvedLink{ToVault: "two"}
+	if vault, crossed := resolvedLink.InVault("one"); vault != "two" || !crossed {
 		t.Errorf("got %q, crossed %v", vault, crossed)
 	}
 }

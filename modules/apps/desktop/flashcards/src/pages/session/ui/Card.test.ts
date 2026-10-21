@@ -24,8 +24,8 @@ describe('a card', () => {
     expect(face.text()).toContain('Leaf mould')
     expect(face.text()).not.toContain('Compost')
 
-    const over = mountCard('<p>Leaf mould</p>', { back: '<p>Compost</p>', isShown: true })
-    expect(over.text()).toContain('Compost')
+    const wrapper = mountCard('<p>Leaf mould</p>', { back: '<p>Compost</p>', isShown: true })
+    expect(wrapper.text()).toContain('Compost')
   })
 
   // A card is HTML, so the marks of another format are the characters somebody
@@ -75,8 +75,8 @@ describe('a card', () => {
     await face.find('.card').trigger('click')
     expect(face.emitted('show')).toHaveLength(1)
 
-    const over = mountCard('<p>Leaf mould</p>', { isShown: true })
-    await over.find('.card').trigger('click')
+    const wrapper = mountCard('<p>Leaf mould</p>', { isShown: true })
+    await wrapper.find('.card').trigger('click')
     expect(over.emitted('show')).toBeUndefined()
   })
 

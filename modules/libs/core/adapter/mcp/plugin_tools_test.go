@@ -86,13 +86,13 @@ func TestThePluginsToolsAreServedOnTheServersTheyNameAndNoOthers(t *testing.T) {
 
 func TestNoPluginsLeavesTheToolsOfTheCoreAlone(t *testing.T) {
 	_, core := newCore(t)
-	without := getServedTools(t, sessionOf(t, mcp.New(core)))
+	unmountedTools := getServedTools(t, sessionOf(t, mcp.New(core)))
 
 	empty := &offeredTools{}
 	core.Plugins = plugintool.NewTools(empty)
 
-	if with := getServedTools(t, sessionOf(t, mcp.New(core))); !slices.Equal(with, without) {
-		t.Errorf("an empty list of plugin tools changed what is served:\n%v\n%v", with, without)
+	if with := getServedTools(t, sessionOf(t, mcp.New(core))); !slices.Equal(with, unmountedTools) {
+		t.Errorf("an empty list of plugin tools changed what is served:\n%v\n%v", with, unmountedTools)
 	}
 }
 

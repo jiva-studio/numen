@@ -76,11 +76,11 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 		t.Errorf("a file the vault holds no source for is held as %v", kind)
 	}
 
-	under := getEntries(t, f, "physics")
-	if got := getEntryNames(under); !slices.Equal(got, []string{"Entropy.md", "Heat.md"}) {
+	entries := getEntries(t, f, "physics")
+	if got := getEntryNames(entries); !slices.Equal(got, []string{"Entropy.md", "Heat.md"}) {
 		t.Fatalf("the folder is drawn as %v", got)
 	}
-	if path := under[0].GetPath(); path != "physics/Entropy.md" {
+	if path := entries[0].GetPath(); path != "physics/Entropy.md" {
 		t.Errorf("the note under a folder is called %q", path)
 	}
 

@@ -72,7 +72,7 @@ function useSessionCards() {
 
   const card = computed<CardFace | null>(() => asked.value[at.value] ?? null)
   const left = computed(() => asked.value.length - at.value)
-  const over = computed(() => card.value === null)
+  const isOver = computed(() => card.value === null)
   const done = computed(() => answers.value.length)
 
   const reset = () => {

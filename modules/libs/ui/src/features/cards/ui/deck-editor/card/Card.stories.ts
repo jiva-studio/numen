@@ -215,11 +215,11 @@ const meta: Meta<Knobs> = {
         const card = held.value.card
 
         // The one written is the one counted off under its own field.
-        let under = 0
+        let underCount = 0
         const filled = card.filled.map((each) => {
           if (each.field !== field) return each
-          under += 1
-          return under === nth ? { field, text } : each
+          underCount += 1
+          return underCount === nth ? { field, text } : each
         })
         if (under < nth) filled.push({ field, text })
         const written = { ...held.value, card: { ...card, filled } }
@@ -289,9 +289,9 @@ export const ACard: Story = {
     const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
     expect(boxes).toHaveLength(4)
     for (const box of boxes) {
-      const under = box.closest('.card__value')?.querySelector('.divider')
-      if (!under) throw new Error('a box under no rule')
-      expect(box.getBoundingClientRect().top).toBeCloseTo(under.getBoundingClientRect().bottom, 0)
+      const underElems = box.closest('.card__value')?.querySelector('.divider')
+      if (!underElems) throw new Error('a box under no rule')
+      expect(box.getBoundingClientRect().top).toBeCloseTo(underElems.getBoundingClientRect().bottom, 0)
       expect(box.closest('.card__value')?.querySelector('fieldset')).toBeNull()
     }
 
@@ -471,10 +471,10 @@ export const WhatIsWrongWithIt: Story = {
     )
 
     // It is said once, under the second of the two boxes standing for Name.
-    const under = [...canvasElement.querySelectorAll('[data-wrong-value="Name"]')]
-    expect(under).toHaveLength(1)
-    expect(under[0]?.textContent).toContain('this card writes Name twice')
-    expect(under[0]?.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    const underElems = [...canvasElement.querySelectorAll('[data-wrong-value="Name"]')]
+    expect(underElems).toHaveLength(1)
+    expect(underElems[0]?.textContent).toContain('this card writes Name twice')
+    expect(underElems[0]?.getBoundingClientRect().top).toBeGreaterThanOrEqual(
       boxes[1]?.getBoundingClientRect().bottom ?? 0,
     )
 

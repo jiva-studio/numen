@@ -38,7 +38,7 @@ export const createMarks = (
   faces: readonly string[],
 ): Marks => {
   const at = new Map<string, string[]>()
-  const under = new Map<string, Map<string, string[]>>()
+  const underMap = new Map<string, Map<string, string[]>>()
   const fields = new Map<string, string[]>()
   const whole: string[] = []
 
@@ -89,8 +89,8 @@ const areMarkMapsEqual = (
 ): boolean => {
   if (one.size !== other.size) return false
   for (const [key, texts] of one) {
-    const against = other.get(key)
-    if (!against || !areWordsEqual(texts, against)) return false
+    const otherVal = other.get(key)
+    if (!otherVal || !areWordsEqual(texts, otherVal)) return false
   }
   return true
 }
@@ -102,8 +102,8 @@ const areUnderMapsEqual = (
 ): boolean => {
   if (one.size !== other.size) return false
   for (const [key, byField] of one) {
-    const against = other.get(key)
-    if (!against || !areMarkMapsEqual(byField, against)) return false
+    const otherVal = other.get(key)
+    if (!otherVal || !areMarkMapsEqual(byField, otherVal)) return false
   }
   return true
 }

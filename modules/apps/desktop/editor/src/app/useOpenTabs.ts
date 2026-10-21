@@ -26,10 +26,10 @@ export function useOpenTabs({ core, windowTabs }: OpenTabsDeps) {
   const getActiveTabId = (): string => {
     const at = windowTabs.handle.front()
     if (at && at.kind !== AGENT) return at.id
-    const beside = [...windowTabs.tabs.value]
+    const nextTabs = [...windowTabs.tabs.value]
       .reverse()
       .find((one) => windowTabs.getTab(one.id)?.kind.kind !== AGENT)
-    return beside?.id ?? at?.id ?? ''
+    return nextTabs?.id ?? at?.id ?? ''
   }
 
   const getOpenTabs = (): OpenTabs => ({

@@ -141,15 +141,15 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	over := limit(t.Context())
+	limitCtx := limit(t.Context())
 	notes := scanner(readers, db)
-	books := source.NewExtract(timedOut{limit: over}, db.Sources(), db.SourcesKnown())
+	books := source.NewExtract(timedOut{limit: limitCtx}, db.Sources(), db.SourcesKnown())
 	counted := &counting{VaultReaders: readers}
 	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = unwilling{}
 	making := vaults.NewReadWholeVault(notes, books, vectors)
 
-	_, err := making.Execute(over, v)
+	_, err := making.Execute(limitCtx, v)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("got %v", err)
 	}

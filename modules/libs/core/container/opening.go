@@ -161,11 +161,11 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	res, err := walk.Execute(ctx, o.vault)
 
-	under := o.opening.buffered.stopRecording()
+	recSession := o.opening.buffered.stopRecording()
 	if err != nil {
 		return res.Notes, err
 	}
-	if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
+	if _, err := o.opening.refresh.Execute(ctx, o.vault, recSession); err != nil {
 		o.handleError(err)
 	}
 	return res.Notes, nil

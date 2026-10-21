@@ -109,8 +109,8 @@ function line(
   context: LineContext,
 ): PlacedNode[] {
   const sign = direction === 'up' || direction === 'left' ? -1 : 1
-  const near = context.clearance + context.options.focusGap
-  const placement: AxisPlacement = { sign, near }
+  const nearDist = context.clearance + context.options.focusGap
+  const placement: AxisPlacement = { sign, nearDist }
   return isVertical(direction)
     ? inRows(nodes, placement, context)
     : inColumns(nodes, placement, context)

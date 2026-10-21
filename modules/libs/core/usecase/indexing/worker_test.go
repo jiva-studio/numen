@@ -292,15 +292,15 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	// The weights are still coming down, and in this test they never land.
 	arriving := embedding.NewDeferredEmbedder(model.GetModel())
 
-	over := make(chan struct{})
+	doneCh := make(chan struct{})
 	go func() {
-		defer close(over)
+		defer close(doneCh)
 		newPass(made, db, newRecorder(), arriving.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
 			embed(t.Context())
 	}()
 
 	select {
-	case <-over:
+	case <-doneCh:
 	case <-time.After(10 * time.Second):
 		t.Fatal("the pass is waiting for a model to embed nothing with")
 	}
@@ -318,9 +318,9 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	events := newRecorder()
 
 	arriving := embedding.NewDeferredEmbedder(model.GetModel())
-	over := make(chan struct{})
+	doneCh := make(chan struct{})
 	go func() {
-		defer close(over)
+		defer close(doneCh)
 		newPass(made, db, events, arriving.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
 			embed(t.Context())
 	}()
@@ -333,7 +333,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	}
 
 	arriving.SetModel(model, nil)
-	<-over
+	<-doneCh
 
 	if at := findTask(t, events, MakingVectors); at != nil {
 		t.Errorf("the pass that embedded what was owed is still being done: %+v", *at)
@@ -417,13 +417,13 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
-	over := &overheard{asked: model, tasks: events.tasks}
+	overVal := &overheard{asked: model, tasks: events.tasks}
 	held := embedding.NewDeferredEmbedder(model.GetModel())
-	held.SetModel(over, nil)
+	held.SetModel(overVal, nil)
 
 	newPass(made, db, events, held.GetWaitingEmbedder(), model.GetModel().Recipe(), v).embed(t.Context())
 
-	for _, list := range over.lists() {
+	for _, list := range overVal.lists() {
 		for _, at := range list {
 			if at.ID != MakingVectors || at.Error != "" {
 				continue

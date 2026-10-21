@@ -72,9 +72,9 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
       pendingWriteResolve = () => {}
     },
     releaseWrites: () => {
-      const through = pendingWriteResolve
+      const resolveWrite = pendingWriteResolve
       pendingWriteResolve = null
-      through?.()
+      resolveWrite?.()
     },
   }
 }

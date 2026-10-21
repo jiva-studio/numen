@@ -24,14 +24,14 @@ const call = (place?: { path: string; span: { from: number; to: number } }): Ask
 /** The service, saying what a test told it to and keeping what it was asked. */
 const service = (says: AskAgentResponse[]) => {
   const requests: { request: unknown; signal: AbortSignal }[] = []
-  const over: string[] = []
+  const overVal: string[] = []
   const agent: AgentClient = {
     async *askAgent(request, options) {
       requests.push({ request, signal: options.signal })
       for (const step of says) yield step
     },
     async finishConversation(request) {
-      over.push(request.conversation)
+      overVal.push(request.conversation)
       return {}
     },
   }

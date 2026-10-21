@@ -236,7 +236,7 @@ describe('the line through places', () => {
 })
 
 describe('the stretch a budget does not get through, as drawn', () => {
-  const along = (count: number) => Array.from({ length: count }, (_, at) => ({ x: at, y: at }))
+  const alongPoints = (count: number) => Array.from({ length: count }, (_, at) => ({ x: at, y: at }))
 
   it('is one line through the places in a stretch', () => {
     const one = curve([0, 0, 0, 0], [true, false, false, true])

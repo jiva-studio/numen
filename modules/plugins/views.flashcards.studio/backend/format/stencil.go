@@ -29,11 +29,11 @@ type stencilReader struct {
 }
 
 func findFaceSides(rest []section) []section {
-	under := 0
-	for under < len(rest) && rest[under].level == 3 {
-		under++
+	underCount := 0
+	for underCount < len(rest) && rest[underCount].level == 3 {
+		underCount++
 	}
-	return rest[:under]
+	return rest[:underCount]
 }
 
 func findFaceSideOpenings(sides []section) (map[string]bool, []int) {

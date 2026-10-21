@@ -41,10 +41,10 @@ const tab = (
 ) => {
   const fake = createConversation(locations)
   const opened: [string, readonly Span[]][] = []
-  const beside: string[] = []
+  const besideItems: string[] = []
   const state = useAgentConversation(fake.conversation, {
     openFileAt: (path, ...spans) => opened.push([path, spans]),
-    openFileBeside: (path) => beside.push(path),
+    openFileBeside: (path) => besideItems.push(path),
     resolve: async (written) =>
       new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
     unreachable: () => '',

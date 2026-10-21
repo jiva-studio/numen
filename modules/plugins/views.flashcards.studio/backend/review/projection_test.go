@@ -265,10 +265,10 @@ func TestAPresetWithNoMaterialIsThroughIt(t *testing.T) {
 		t.Errorf("a preset of no card faces learns its material in %d days and clears in %d",
 			got.Learns, got.Clears)
 	}
-	for day, through := range got.Through {
-		if through != 1 {
+	for day, dayProj := range got.Through {
+		if dayProj != 1 {
 			t.Errorf("day %d stands %v through a material of nothing, want the whole of it",
-				day, through)
+				day, dayProj)
 		}
 	}
 }
@@ -1004,8 +1004,8 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 		one := p
 		one.Interval = interval
 		learns := -1
-		for day, through := range runProjection(t, run, now, one, nil, 1).Through {
-			if through >= 1 {
+		for day, dayProj := range runProjection(t, run, now, one, nil, 1).Through {
+			if dayProj >= 1 {
 				learns = day
 				break
 			}
