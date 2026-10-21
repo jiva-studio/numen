@@ -23,8 +23,8 @@ function fake(over: Partial<Notes> = {}) {
       // is the note this caller read.
       if (
         seen &&
-        held !== undefined &&
-        held !== seen.prose &&
+        existing !== undefined &&
+        existing !== seen.prose &&
         getFingerprint(existing) !== seen.fingerprint
       ) {
         return asFailure('changed' as const)
@@ -701,14 +701,14 @@ describe('the ids of the open notes', () => {
     notes.open('B.md')
     await settle()
     notes.setBody('B.md', 'b2')
-    expect(seen.at(-1)).toEqual(['A.md', 'B.md'])
-    const afterOpen = seen.length
+    expect(observed.at(-1)).toEqual(['A.md', 'B.md'])
+    const afterOpen = observed.length
 
     notes.setBody('A.md', 'a3')
     expect(observed).toHaveLength(afterOpen)
 
     await notes.close('A.md')
-    expect(seen.at(-1)).toEqual(['B.md'])
+    expect(observed.at(-1)).toEqual(['B.md'])
     stop()
   })
 

@@ -182,10 +182,10 @@ const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[
   const mine = paths.length === 0 || paths.includes(next.path) || went !== undefined
   const state = getState(next)
   if (!mine || (state !== 'clean' && state !== 'gone')) return keepTab(next)
-  const reading = next.reading + 1
+  const nextReading = next.reading + 1
   return {
-    tab: { ...next, reading },
-    effects: [{ kind: 'read', path: next.path, generation: reading }],
+    tab: { ...next, reading: nextReading },
+    effects: [{ kind: 'read', path: next.path, generation: nextReading }],
   }
 }
 
@@ -225,10 +225,10 @@ const applyKeep = (tab: Tab): Transition => {
 const applyTake = (tab: Tab): Transition => {
   const state = getState(tab)
   if (state !== 'stale') return keepTab(tab)
-  const reading = tab.reading + 1
+  const nextReading = tab.reading + 1
   return {
-    tab: { ...tab, reading },
-    effects: [{ kind: 'read', path: tab.path, generation: reading }],
+    tab: { ...tab, reading: nextReading },
+    effects: [{ kind: 'read', path: tab.path, generation: nextReading }],
   }
 }
 
