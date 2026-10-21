@@ -6,12 +6,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// GetHeardTranscript reads the text a model wrote from the file at a path.
-type GetHeardTranscript struct {
+// GetRawTranscript reads the text a model wrote from the file at a path.
+type GetRawTranscript struct {
 	texts sourceTexts
 }
 
-func (u GetHeardTranscript) Execute(ctx context.Context, v domain.Vault, path string) (Transcript, error) {
+func (u GetRawTranscript) Execute(ctx context.Context, v domain.Vault, path string) (Transcript, error) {
 	stored, err := u.texts.getStoredText(ctx, v, path)
 	if err != nil || !stored.isStored {
 		return Transcript{}, err

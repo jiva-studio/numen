@@ -15,8 +15,8 @@ func TestTranscriptIsWhatAPersonInsertRightBeforeWhatWasHeard(t *testing.T) {
 		}
 		return string(got.Words)
 	}
-	readHeard := func() string {
-		got, err := s.texts.GetHeardTranscript.Execute(t.Context(), s.vault, recordingPath)
+	readRaw := func() string {
+		got, err := s.texts.GetRawTranscript.Execute(t.Context(), s.vault, recordingPath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -36,8 +36,8 @@ func TestTranscriptIsWhatAPersonInsertRightBeforeWhatWasHeard(t *testing.T) {
 	if got := read(); got != "right" {
 		t.Errorf("the words as they stand are the corrections, got %q", got)
 	}
-	if got := readHeard(); got != "heard" {
-		t.Errorf("the words as heard leave corrections out, got %q", got)
+	if got := readRaw(); got != "heard" {
+		t.Errorf("the raw words leave corrections out, got %q", got)
 	}
 }
 

@@ -17,7 +17,7 @@ import (
 type recordingHandler struct {
 	files              *artifactFiles
 	playing            *Loopback
-	getHeardTranscript source.GetHeardTranscript
+	getRawTranscript   source.GetRawTranscript
 	getCopyLocation    source.GetCopyLocation
 }
 
@@ -41,7 +41,7 @@ func (h *recordingHandler) GetRecording(
 	if err != nil {
 		return nil, err
 	}
-	received, err := h.getHeardTranscript.Execute(ctx, showing, ref.Path)
+	received, err := h.getRawTranscript.Execute(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}

@@ -139,7 +139,7 @@ func (s *Services) readTexts(texts source.Texts) {
 	s.Transcript.writeTranscript = texts.WriteTranscript
 	s.Article.getTranscript = texts.GetTranscript
 
-	s.Recording.getHeardTranscript = texts.GetHeardTranscript
+	s.Recording.getRawTranscript = texts.GetRawTranscript
 	s.Recording.getCopyLocation = texts.GetCopyLocation
 }
 
