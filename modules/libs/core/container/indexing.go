@@ -43,10 +43,18 @@ type Indexing struct {
 // Recognition is how a scanned document is read, and which profile puts that
 // recognition right afterwards.
 type Recognition struct {
+	// Recognise names the OCR model that reads scanned pages.
+	Recognise RecogniseConfig `json:"recognise"`
+
 	// Proofread names the profile a recognition is put right at. Automatically
 	// there says whether a recognition just made is put right without anybody
 	// asking.
 	Proofread Proofread `json:"proofread"`
+}
+
+// RecogniseConfig is the optical character recognition model setting.
+type RecogniseConfig struct {
+	Name string `json:"name"`
 }
 
 // Transcription is how a recording is listened to, and which profile puts what
@@ -60,7 +68,9 @@ type Transcription struct {
 }
 
 // ProofreadingConfig is the proofreading section of indexing settings.
-type ProofreadingConfig struct{}
+type ProofreadingConfig struct {
+	Profiles map[string]any `json:"profiles"`
+}
 
 // Proofread names the profile a text is put right at.
 type Proofread struct {
@@ -73,7 +83,7 @@ type Proofread struct {
 
 // HasProfiles says whether this installation has any profile configured.
 func (c ProofreadingConfig) HasProfiles() bool {
-	return false
+	return len(c.Profiles) > 0
 }
 
 func assign[T any](dst *T, src *T) {
@@ -89,12 +99,15 @@ func DefaultIndexing() Indexing {
 	return Indexing{
 		Embedding: DefaultEmbedding(),
 		Recognition: Recognition{
+			Recognise: RecogniseConfig{Name: ""},
 			Proofread: Proofread{
 				Profile:     "",
 				IsAutomatic: false,
 			},
 		},
-		Proofreading: ProofreadingConfig{},
+		Proofreading: ProofreadingConfig{
+			Profiles: map[string]any{},
+		},
 		Transcription: Transcription{
 			Proofread: Proofread{
 				Profile:     "",
