@@ -117,7 +117,7 @@ describe('waiting for an answer', () => {
     const rejection = expect(answer).rejects.toBe(error)
     await vi.advanceTimersByTimeAsync(10_000)
 
-    await settled
+    await rejection
     expect(ask).toHaveBeenCalledTimes(MAX_BUSY_RETRIES + 1)
   })
 
