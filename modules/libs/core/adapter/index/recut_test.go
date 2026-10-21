@@ -537,8 +537,8 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	model.run(t, db, first)
 	model.run(t, db, second)
 
-	untouched := smallChunks(t, db, second, theirs.Fingerprint.Path)
-	if len(untouched) == 0 {
+	unchangedChunks := smallChunks(t, db, second, theirs.Fingerprint.Path)
+	if len(unchangedChunks) == 0 {
 		t.Fatal("the second vault holds no chunk that carries a vector")
 	}
 	was := chunksIn(t, db, second)
@@ -546,7 +546,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 
 	save(t, db, first, noteAt(mine.Fingerprint.Path, mine.Title, mine.Body+" wordzz"))
 
-	for _, row := range untouched {
+	for _, row := range unchangedChunks {
 		if !hasVector(t, db, row) {
 			t.Errorf("row %d of the second vault lost its vector when the first vault's note was cut", row)
 		}
@@ -671,8 +671,8 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	model.run(t, db, first)
 	model.run(t, db, second)
 
-	untouched := smallChunks(t, db, second, path)
-	if len(untouched) == 0 {
+	unchangedChunks := smallChunks(t, db, second, path)
+	if len(unchangedChunks) == 0 {
 		t.Fatal("the second vault holds no chunk that carries a vector")
 	}
 	was := chunksIn(t, db, second)
@@ -681,7 +681,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	// A word typed into the first section of the first vault's note.
 	save(t, db, first, parseNote(path, insertWordBefore(body, 0)))
 
-	for _, row := range untouched {
+	for _, row := range unchangedChunks {
 		if !hasVector(t, db, row) {
 			t.Errorf("row %d of the second vault lost its vector when the first vault's note was cut", row)
 		}

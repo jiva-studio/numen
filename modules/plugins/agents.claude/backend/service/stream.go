@@ -196,8 +196,8 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			}
 			p.isStreaming = true
 			_ = p.send(&numenv1.AskAgentResponse{
-				Step: &numenv1.AskAgentResponse_Said{
-					Said: ev.Delta.Text,
+				Step: &numenv1.AskAgentResponse_Text{
+					Text: ev.Delta.Text,
 				},
 			})
 		case "input_json_delta":
@@ -241,8 +241,8 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, said event) {
 		case "text":
 			if block.Text != "" {
 				_ = p.send(&numenv1.AskAgentResponse{
-					Step: &numenv1.AskAgentResponse_Said{
-						Said: block.Text,
+					Step: &numenv1.AskAgentResponse_Text{
+						Text: block.Text,
 					},
 				})
 			}

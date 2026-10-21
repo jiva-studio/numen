@@ -204,7 +204,7 @@ describe('the page as it was served', () => {
 
   it('makes the pair itself, mode first, for a page served in nothing', async () => {
     const sheet = document.implementation.createHTMLDocument('numen')
-    const bare = createWindowAppearance({
+    const bareAppearance = createWindowAppearance({
       core: {
         getAppearance: async () => APPEARANCE,
         readTheme: async (name) => `:root { --numen-surface: ${name} }`,
@@ -217,9 +217,9 @@ describe('the page as it was served', () => {
       write: () => {},
       sheet,
     })
-    await bare.start()
+    await bareAppearance.start()
 
-    bare.previewItem('mine:sea')
+    bareAppearance.previewItem('mine:sea')
     await settle()
 
     expect(getHeadStyles(sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])

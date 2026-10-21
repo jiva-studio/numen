@@ -103,7 +103,7 @@ func makeTallies(days map[string]int) map[string]review.Tally {
 func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 	root := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	mantra := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
-	loose := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}
+	ungrouped := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}
 	under := map[review.CardFaceID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
 
 	said := func(id string, face review.CardFaceID, at string, took time.Duration) review.Answer {
@@ -117,7 +117,7 @@ func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 		// The night belongs to the evening it began in.
 		said("01C", root, "2026-08-30T02:00:00", 5*time.Second),
 		// A card face nothing groups, an answer taken back, and another day.
-		said("01D", loose, "2026-08-29T09:30:00", 8*time.Second),
+		said("01D", ungrouped, "2026-08-29T09:30:00", 8*time.Second),
 		said("01E", root, "2026-08-29T10:00:00", 7*time.Second),
 		{ID: "01F", At: moment(t, "2026-08-29T10:01:00"), Undoes: "01E"},
 		said("01G", root, "2026-08-31T09:00:00", 4*time.Second),

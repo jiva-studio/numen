@@ -168,7 +168,7 @@ func (u Read) readStencils(
 		return nil, nil, nil
 	}
 	read := make(map[string]format.Stencil, len(at))
-	loose := make(map[string]bool, len(at))
+	isLoose := make(map[string]bool, len(at))
 	by = make(map[string]format.Stencil, len(at))
 	ordinary = make(map[string]bool, len(at))
 	for written, path := range at {
@@ -182,10 +182,10 @@ func (u Read) readStencils(
 				held = found.Body
 			}
 			read[path] = held
-			loose[path] = found.Outcome == note.Ok && found.Type != format.TypeStencil
+			isLoose[path] = found.Outcome == note.Ok && found.Type != format.TypeStencil
 		}
 		by[written] = held
-		ordinary[written] = loose[path]
+		ordinary[written] = isLoose[path]
 	}
 	return by, ordinary, nil
 }

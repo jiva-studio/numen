@@ -1,11 +1,10 @@
-# The schema — what holds here
+# Protocol Schemas and Contracts
 
-The conventions every language in this repository shares are in `AGENTS.md` at
-the root. This file is the protocol's own, and it holds over
-`modules/libs/protocol`.
+The conventions shared across all languages in this repository are in `AGENTS.md` at
+the root. This file defines specific rules for `modules/libs/protocol`.
 
-The shape is in the sections below: one service to a subject, and a client
-generated from it, never hand-written.
+Protocol architecture requires one service per subject domain, with clients
+generated automatically from `.proto` definitions.
 
 ## Generated code is never edited
 
@@ -15,17 +14,15 @@ generated code is out of date with the schema it came from.
 
 A window's own type that mirrors a message is written by hand and mapped field
 by field. Where a window hands a structural type straight to the client, the
-two line up by their field names alone and a rename breaks the match with
-nothing said.
+two line up by their field names alone and a rename breaks the match.
 
 ## A service is one subject
 
-A subject is what a client asks about, named in one word. A question about a
-subject is asked of no other service, and a binary mounts a service whole: what
-is on a service decides what a binary must be able to answer.
+A subject is what a client queries, named in one word. A query about a
+subject belongs to that single service, and a binary mounts a service whole.
 
-A file is a place and not a subject. Two things that stand beside one file are
-two subjects.
+A file path is a storage location, not a domain subject. Two separate concepts
+associated with the same file remain two distinct subjects.
 
 ## An error code is a successful answer; a status code is not
 

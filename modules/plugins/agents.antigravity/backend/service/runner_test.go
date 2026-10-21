@@ -49,7 +49,7 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
-	if len(got) != 2 || got[0].GetSaid() != "hello" || got[1].GetToolCall().GetTool() != "read_note" {
+	if len(got) != 2 || got[0].GetText() != "hello" || got[1].GetToolCall().GetTool() != "read_note" {
 		t.Fatalf("the steps are %v", got)
 	}
 	if session := reg.GetSession("c-1"); session != "s-1" {
@@ -153,7 +153,7 @@ func TestTheAnswerOfTheCliIsSaidOnce(t *testing.T) {
 		if resp.GetStopped() != "" {
 			t.Fatalf("stopped: %v", resp)
 		}
-		said.WriteString(resp.GetSaid())
+		said.WriteString(resp.GetText())
 	}
 	if said.String() != "ok\n" {
 		t.Errorf("said %q, want %q", said.String(), "ok\n")
@@ -170,7 +170,7 @@ func TestTheResponseOfTheCliIsSaidWhereNoTextWasStreamed(t *testing.T) {
 
 	got, _ := collect(t, script)
 
-	if len(got) != 1 || got[0].GetSaid() != "fine" {
+	if len(got) != 1 || got[0].GetText() != "fine" {
 		t.Errorf("the steps are %v", got)
 	}
 }

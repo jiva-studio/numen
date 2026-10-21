@@ -138,7 +138,7 @@ describe('the marks a stencil carries', () => {
 })
 
 describe('what a gesture makes of the stencil', () => {
-  const names = (state: { body: string }) =>
+  const getFaceNames = (state: { body: string }) =>
     (JSON.parse(state.body) as { faces: { name: string }[] }).faces.map((face) => face.name)
 
   it('adds a field at the end', () => {
@@ -182,7 +182,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').addFace('Spot it')
 
-    expect(names(state)).toStrictEqual(['Recognise', 'Name it', 'Spot it'])
+    expect(getFaceNames(state)).toStrictEqual(['Recognise', 'Name it', 'Spot it'])
   })
 
   it('renames a face', () => {
@@ -191,7 +191,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').renameFace(face, 'Spot it')
 
-    expect(names(state)).toStrictEqual(['Spot it', 'Name it'])
+    expect(getFaceNames(state)).toStrictEqual(['Spot it', 'Name it'])
   })
 
   it('removes a face', () => {
@@ -200,7 +200,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').removeFace(face)
 
-    expect(names(state)).toStrictEqual(['Name it'])
+    expect(getFaceNames(state)).toStrictEqual(['Name it'])
   })
 
   it('moves a face to the end', () => {
@@ -209,7 +209,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').moveFace(face, null)
 
-    expect(names(state)).toStrictEqual(['Name it', 'Recognise'])
+    expect(getFaceNames(state)).toStrictEqual(['Name it', 'Recognise'])
   })
 
   it('writes one half of a face', () => {

@@ -79,7 +79,7 @@ func convertSteps(step port.Step) []*v1.AskAgentResponse {
 			ToolCall: &v1.ToolCall{
 				Tool:    step.Tool,
 				About:   step.About,
-				Written: int32(step.Count),
+				Length:  int32(step.Count),
 				Path:    step.Place.Path,
 				Span:    convertSpan(step.Place.Spans),
 			},
@@ -91,7 +91,7 @@ func convertSteps(step port.Step) []*v1.AskAgentResponse {
 	case domain.StepStop:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Stopped{Stopped: step.Detail}}}
 	default:
-		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Said{Said: step.Text}}}
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Text{Text: step.Text}}}
 	}
 }
 

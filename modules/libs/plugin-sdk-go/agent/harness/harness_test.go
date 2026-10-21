@@ -237,7 +237,7 @@ func describeSteps(steps []*numenv1.AskAgentResponse) string {
 			words = append(words, "call")
 		case one.GetToolFinished() != nil:
 			words = append(words, "finished")
-		case one.GetSaid() != "":
+		case one.GetText() != "":
 			if len(words) == 0 || words[len(words)-1] != "said" {
 				words = append(words, "said")
 			}
@@ -252,7 +252,7 @@ func describeSteps(steps []*numenv1.AskAgentResponse) string {
 func getSaid(steps []*numenv1.AskAgentResponse) []string {
 	var said []string
 	for _, one := range steps {
-		if text := one.GetSaid(); text != "" {
+		if text := one.GetText(); text != "" {
 			said = append(said, text)
 		}
 	}
@@ -790,8 +790,8 @@ func TestTheDepthsAModelTakesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
 	if len(router.ReasoningLevels) != len(commonLevels) || router.DefaultReasoning != "" {
 		t.Errorf("a model of fields and no depths offers %v", router.ReasoningLevels)
 	}
-	if plain := byName["unbiased/pareto-26.10"]; len(plain.ReasoningLevels) != 0 || plain.ReasoningField != "" {
-		t.Errorf("a model of no reasoning offers %v", plain)
+	if unreasoningModel := byName["unbiased/pareto-26.10"]; len(unreasoningModel.ReasoningLevels) != 0 || unreasoningModel.ReasoningField != "" {
+		t.Errorf("a model of no reasoning offers %v", unreasoningModel)
 	}
 	if asked := newEffort(luna, "max"); asked.level != "max" {
 		t.Errorf("a depth the model names was refused")

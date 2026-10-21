@@ -16,7 +16,7 @@ vi.mock('@numen/ui', async (importOriginal) => {
 
 /** A line of an answer. */
 const turn = (id: string, text: string): Turn =>
-  ({ id, text, voice: 'said', state: 'done' }) as unknown as Turn
+  ({ id, text, voice: 'answered', state: 'settled' })
 
 /** An agent tab over turns already said, and a vault that answers for the notes given. */
 const open = (said: Turn[] = [], notes: Record<string, string> = {}) => {

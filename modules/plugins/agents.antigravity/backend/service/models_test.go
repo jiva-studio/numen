@@ -120,7 +120,7 @@ func askStub(t *testing.T, script, model, level string) (said, stopped string) {
 		t.Fatal(err)
 	}
 	for stream.Receive() {
-		said += stream.Msg().GetSaid()
+		said += stream.Msg().GetText()
 		stopped += stream.Msg().GetStopped()
 	}
 	return said, stopped

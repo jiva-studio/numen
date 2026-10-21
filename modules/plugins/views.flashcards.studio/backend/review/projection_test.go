@@ -868,11 +868,11 @@ func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
 	p := review.Defaults()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 30)
 	p.Rule, p.Interval = review.RuleInterval, 21
-	loose := p
-	loose.Rule = review.RuleRetention
+	retentionPreset := p
+	retentionPreset.Rule = review.RuleRetention
 
 	tight := runProjection(t, run, now, p, nil, 100)
-	soft := runProjection(t, run, now, loose, nil, 100)
+	soft := runProjection(t, run, now, retentionPreset, nil, 100)
 	if tight.Load[0] <= soft.Load[0] {
 		t.Errorf("an interval of 21 days begins %d card faces today and a chance of recall %d",
 			tight.Load[0], soft.Load[0])
@@ -916,9 +916,9 @@ func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
 	}
 
 	// The same vault under a rule ten days can meet.
-	loose := p
-	loose.Rule = review.RuleRetention
-	if short := runProjection(t, run, now, loose, at, 5).Short; short != 0 {
+	retentionPreset := p
+	retentionPreset.Rule = review.RuleRetention
+	if short := runProjection(t, run, now, retentionPreset, at, 5).Short; short != 0 {
 		t.Errorf("a card face is learned the day it is answered, and %d stand short", short)
 	}
 

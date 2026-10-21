@@ -183,7 +183,7 @@ func ask(t *testing.T, client numenv1connect.AgentServiceClient, task *numenv1.A
 	}
 	var said strings.Builder
 	for stream.Receive() {
-		said.WriteString(stream.Msg().GetSaid())
+		said.WriteString(stream.Msg().GetText())
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatalf("AskAgent stream: %v", err)

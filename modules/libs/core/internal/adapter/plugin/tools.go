@@ -97,7 +97,7 @@ func (b *ToolsBridge) CallTool(
 	}
 	defer func() { _ = lease.Close() }()
 
-	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: arguments, Asked: asked}))
+	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: arguments, Context: asked}))
 	if err != nil {
 		return port.PluginToolResult{}, readToolError(ctx, err)
 	}

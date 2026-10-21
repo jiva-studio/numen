@@ -72,8 +72,8 @@ describe('a document put in over another', () => {
 
 describe('the caret', () => {
   it('comes back at its line and column', () => {
-    const fresh = 'one is longer now\ntwo\nthree\nfour'
-    expect(replaceIn(DOC, caret(DOC, 3, 4), fresh).ranges).toEqual([
+    const nextDoc = 'one is longer now\ntwo\nthree\nfour'
+    expect(replaceIn(DOC, caret(DOC, 3, 4), nextDoc).ranges).toEqual([
       [
         [3, 4],
         [3, 4],
@@ -115,9 +115,9 @@ describe('a selection', () => {
     const state = EditorState.create({ doc })
     const anchor = state.doc.line(2).from + 1
     const head = state.doc.line(4).from + 3
-    const fresh = 'one\ntwo is longer now\nthree\nfour'
+    const nextDoc = 'one\ntwo is longer now\nthree\nfour'
 
-    expect(replaceIn(doc, EditorSelection.single(anchor, head), fresh).ranges).toEqual([
+    expect(replaceIn(doc, EditorSelection.single(anchor, head), nextDoc).ranges).toEqual([
       [
         [2, 1],
         [4, 3],

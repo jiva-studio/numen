@@ -95,16 +95,16 @@ describe('Card', () => {
   })
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {
-    const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const bareCards: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
     expect(mountCard(createTile('llama')).get('[data-cut-of]').text()).toBe('Animal')
-    expect(mountCard(createTile('bare', bare), { words: WORDS }).get('[data-cut-of]').text()).toBe(
+    expect(mountCard(createTile('bare', bareCards), { words: WORDS }).get('[data-cut-of]').text()).toBe(
       'Cut by no stencil',
     )
   })
 
   it('holds nothing against a card that names no stencil, having said so on its strip', () => {
-    const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
-    const held = mountCard(createTile('bare', bare), { words: WORDS })
+    const bareCards: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const held = mountCard(createTile('bare', bareCards), { words: WORDS })
     expect(held.findAll('.card__objections')).toHaveLength(0)
   })
 
@@ -115,7 +115,7 @@ describe('Card', () => {
   })
 
   it('reads a value of a card no stencil cuts, and types into none of them', () => {
-    const bare: readonly DeckCard[] = [
+    const bareCards: readonly DeckCard[] = [
       {
         id: 'bare',
         section: null,
@@ -123,7 +123,7 @@ describe('Card', () => {
         filled: [{ field: 'Question', text: 'what did I mean' }],
       },
     ]
-    const held = mountCard(createTile('bare', bare), { words: WORDS })
+    const held = mountCard(createTile('bare', bareCards), { words: WORDS })
     expect(held.findAll('textarea')).toHaveLength(0)
     expect(held.find('.card__silence').exists()).toBe(false)
     const wrote = held.get('[data-wrote="Question"]')

@@ -184,12 +184,12 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
   const enrichedByTurn = new WeakMap<Turn, { unresolved: readonly string[]; enriched: Turn }>()
 
   const resolveAddresses = (addresses: readonly string[]) => {
-    const fresh = addresses.filter((one) => !pendingAddresses.has(one))
-    if (!fresh.length) return
-    for (const one of fresh) pendingAddresses.add(one)
-    void deps.resolve(fresh).then((found) => {
+    const newAddresses = addresses.filter((one) => !pendingAddresses.has(one))
+    if (!newAddresses.length) return
+    for (const one of newAddresses) pendingAddresses.add(one)
+    void deps.resolve(newAddresses).then((found) => {
       const next = new Map(resolvedAddresses.value)
-      for (const one of fresh) next.set(one, found.get(one) ?? '')
+      for (const one of newAddresses) next.set(one, found.get(one) ?? '')
       resolvedAddresses.value = next
     })
   }

@@ -35,13 +35,11 @@ them.
 
 ---
 
-## 1. Comments state the rule, and stop
+## 1. Comments state facts and invariants
 
-A comment says what holds. It never names an alternative that is not in the
-code.
+A comment describes the active behavior, invariant, or constraint. It does not argue, justify rejected alternatives, or narrate history.
 
-Before writing a comment, delete each clause in turn. If what remains still
-describes the code, the deleted clause was argument and does not belong.
+Before writing a comment, verify that it provides concrete value that code cannot express directly.
 
 Rewrite on sight of any of these:
 
@@ -52,9 +50,7 @@ Rewrite on sight of any of these:
 - benchmark numbers, or any comparison with a previous implementation
   (measurements live only in `docs/performance.md`)
 
-Two sentences is usually the ceiling. The same holds anywhere a rule is
-written down: a passage that would read as true with nothing decided is
-narration.
+Comments must be concise, factual, and strictly technical engineering English. Avoid storytelling and literary cadence.
 
 ---
 
@@ -326,9 +322,26 @@ Directories and files follow strict casing rules:
 2. **Vue components**: always `PascalCase` (`App.vue`, `NoteTab.vue`, `Field.vue`).
 3. **TypeScript / JavaScript files**: always `camelCase` (`useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts`, `words.ts`, `answers.ts`).
 
+## 13. Absolute ban on narrative slop, participles, and Anglish metaphors (all languages)
+
+To prevent linguistic contagion and degraded code readability, pseudo-literary prose, Anglish idioms, irregular past participles as identifiers, and bare prepositions are strictly forbidden across TypeScript, Vue, and Go.
+
+### Forbidden variable & identifier patterns:
+1. **Irregular past participles as identifiers**: `held`, `said`, `asked`, `drawn`, `done`, `written`, `kept`, `shown`, `seen`, `told`, `settled`, `cut`, `put`, `taken`, `left`, `answered`.
+   - *Fix*: Use standard engineering nouns: `instance`, `wrapper`, `binding`, `response`, `query`, `request`, `result`, `count`, `target`, `item`.
+2. **Bare prepositions as identifiers**: `beside`, `under`, `over`, `behind`, `along`, `near`, `around`, `across`.
+   - *Fix*: Use concrete nouns: `adjacentPath`, `sidePane`, `parent`, `delta`, `range`.
+3. **Literary metaphors & bare adjectives**: `bare`, `wide`, `stale`, `fresh`, `plain`, `shut`, `loose`, `quiet`, `warm`, `unseen`, `cold`, `minting`.
+   - *Fix*: Use descriptive identifiers: `rawText`, `isExpanded`, `isAvailable`, `isClosed`.
+4. **Third-person singular verbs as function names**: `carries`, `attends`, `reads`, `names`, `answers`, `stands`.
+   - *Fix*: Use imperative verb phrases: `carry`, `attend`, `readText`, `getName`, `respond`.
+5. **Fake turn casts**: Never write `voice: 'said'`, `state: 'done'`, or `as unknown as Turn`. Adhere strictly to the domain types `voice: 'asked' | 'answered'` and `TurnState: 'settled' | 'arriving' | 'failed'`.
+6. **Forbidden error terminology**: Never use `refused` or `refusal`. Always use `error` or `errorCode`.
+7. **Narrative comments & docstrings**: Do not write biblical or Saxon idioms (`hands back`, `comes to`, `stands on`, `where it sits`, `what holds here`). Write plain, technical engineering English.
+
 ---
 
-## 13. Known gotchas
+## 14. Known gotchas
 
 - **Every worktree shares one `git stash` stack.** Two agents stashing at once
   cross: one `pop` takes the other's entry into the wrong tree. For a clean

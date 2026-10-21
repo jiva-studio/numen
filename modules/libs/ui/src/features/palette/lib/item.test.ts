@@ -353,9 +353,9 @@ describe('a list of actions changing under the panel', () => {
   })
 
   it('keeps it across a list offered again in arrays of its own', () => {
-    const fresh = MANY.map((one) => ({ ...one }))
+    const cloned = MANY.map((one) => ({ ...one }))
 
-    expect(findKeptAction(placeActions(fresh), 'rename')).toBe(3)
+    expect(findKeptAction(placeActions(cloned), 'rename')).toBe(3)
   })
 
   it('hands it to the first action when the one it was on is gone', () => {

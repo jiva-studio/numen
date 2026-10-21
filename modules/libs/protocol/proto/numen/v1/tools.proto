@@ -108,7 +108,7 @@ message CallToolRequest {
   // that window names it: focus, mark and face for the window cards are reviewed
   // in. It is data about the call and no part of the arguments, and it is empty
   // for a call made from a window that shows the person nothing in particular.
-  map<string, string> asked = 3;
+  map<string, string> context = 3;
 }
 
 message CallToolResponse {

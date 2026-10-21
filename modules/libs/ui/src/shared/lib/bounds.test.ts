@@ -57,9 +57,9 @@ describe('a step', () => {
 
 describe('a step far from the floor', () => {
   it('leaves a whole-numbered track on whole numbers', () => {
-    const wide = bounds({ max: 1e17, step: 10 })
-    expect(stepBy(1e15, 1, wide)).toBe(1000000000000010)
-    expect(stepBy(1e15, -1, wide)).toBe(999999999999990)
+    const largeBounds = bounds({ max: 1e17, step: 10 })
+    expect(stepBy(1e15, 1, largeBounds)).toBe(1000000000000010)
+    expect(stepBy(1e15, -1, largeBounds)).toBe(999999999999990)
   })
 
   it('leaves a track of hundredths on the hundredths its step is written to', () => {

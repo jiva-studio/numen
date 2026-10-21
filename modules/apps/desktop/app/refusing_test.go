@@ -83,11 +83,11 @@ func getStoppings(t *testing.T) []stopping {
 		t.Fatal(err)
 	}
 
-	shut := filepath.Join(t.TempDir(), "shut")
-	if err := os.Mkdir(shut, 0o500); err != nil {
+	noWrite := filepath.Join(t.TempDir(), "no-write")
+	if err := os.Mkdir(noWrite, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chmod(shut, 0o755) })
+	t.Cleanup(func() { os.Chmod(noWrite, 0o755) })
 
 	unreadable := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(unreadable, []byte("{ this is not JSON"), 0o644); err != nil {
@@ -217,15 +217,15 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 		by[one.name] = getRefusal(one.cfg, one.why)
 	}
 
-	folder, shut := by["an index path that is a folder"], by["an index folder nobody may write in"]
-	if folder.Sentence == shut.Sentence {
+	folder, noWriteFolder := by["an index path that is a folder"], by["an index folder nobody may write in"]
+	if folder.Sentence == noWriteFolder.Sentence {
 		t.Errorf("two faults are said in one sentence: %q", folder.Sentence)
 	}
 	if !strings.Contains(folder.Remedy, "-index") {
 		t.Errorf("a path that is a folder is answered with %q", folder.Remedy)
 	}
-	if !strings.Contains(shut.Remedy, "permission") {
-		t.Errorf("a folder nobody may write in is answered with %q", shut.Remedy)
+	if !strings.Contains(noWriteFolder.Remedy, "permission") {
+		t.Errorf("a folder nobody may write in is answered with %q", noWriteFolder.Remedy)
 	}
 
 	corrupt := by["an index that is not a database"]

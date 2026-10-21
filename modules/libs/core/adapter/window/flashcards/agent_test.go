@@ -160,8 +160,8 @@ func TestEveryStepReachesThePageAsItself(t *testing.T) {
 			steps = append(steps, "doing "+step.ToolCall.GetTool()+" "+step.ToolCall.GetPath())
 		case *v1.AskAgentResponse_ToolFinished:
 			steps = append(steps, "answered")
-		case *v1.AskAgentResponse_Said:
-			steps = append(steps, "said "+step.Said)
+		case *v1.AskAgentResponse_Text:
+			steps = append(steps, "said "+step.Text)
 		case *v1.AskAgentResponse_Stopped:
 			steps = append(steps, "stopped "+step.Stopped)
 		}

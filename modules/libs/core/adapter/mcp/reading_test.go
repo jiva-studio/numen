@@ -107,7 +107,7 @@ func TestTheReadingToolsAnswerAboutOneVaultOnly(t *testing.T) {
 
 	for _, pair := range []struct{ own, other side }{{physics, garden}, {garden, physics}} {
 		t.Run(pair.own.what, func(t *testing.T) {
-			pair.own.answers(t)
+			pair.own.assertAnswers(t)
 			pair.own.checkHoldsNothingOf(t, pair.other)
 		})
 	}
@@ -130,9 +130,9 @@ type side struct {
 	hers []string
 }
 
-// answers is this vault's own content, through every tool the reading server
+// assertAnswers tests this vault's own content, through every tool the reading server
 // serves.
-func (s side) answers(t *testing.T) {
+func (s side) assertAnswers(t *testing.T) {
 	t.Helper()
 
 	found := call[struct {

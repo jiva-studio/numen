@@ -10,8 +10,8 @@
   - Unexported helper in `modules/apps/desktop/internal/adapter/claudecode/read.go` mapping machine error subtypes to domain-phrased messages.
   - Formatted messages conform to project voice (concise, lowercase, e.g., `"the agent reached the limit of steps without finishing"`).
 - **Result Parsing Logic (`result`)**:
-  - If `said.Result` contains meaningful prose (distinct from the subtype string itself), return `said.Result`.
-  - If `said.Subtype` is non-empty, return the output of `formatSubtype(said.Subtype)`.
+  - If `resultPayload.Result` contains meaningful prose (distinct from the subtype string itself), return `resultPayload.Result`.
+  - If `resultPayload.Subtype` is non-empty, return the output of `formatSubtype(resultPayload.Subtype)`.
   - Default fallback: `"the agent stopped without finishing"`.
 
 ## 2. Blast Radius Matrix

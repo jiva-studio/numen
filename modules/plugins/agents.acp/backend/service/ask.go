@@ -66,7 +66,7 @@ func (s *agentServer) AskAgent(
 		}
 		return sendStopped(stream, err.Error())
 	}
-	if err := stream.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}}); err != nil {
+	if err := stream.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}}); err != nil {
 		return err
 	}
 	return sendStopped(stream, reasonDone)

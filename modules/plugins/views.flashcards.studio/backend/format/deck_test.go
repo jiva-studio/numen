@@ -36,7 +36,7 @@ func getProblem(t *testing.T, problems []format.Problem, fault format.Fault) for
 	return found[0]
 }
 
-func names(deck format.Deck) []string {
+func cardHeadings(deck format.Deck) []string {
 	var out []string
 	for _, c := range deck.Cards {
 		out = append(out, c.Heading)
@@ -83,7 +83,7 @@ about 20 years
 	if deck.Preamble != "\nCards I am learning.\n\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "компост"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "компост"}) {
 		t.Fatalf("cards = %v", got)
 	}
 	if len(deck.Problems) != 0 {
@@ -133,7 +133,7 @@ about 45"
 about 46"
 `))
 
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "Llama"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "Llama"}) {
 		t.Fatalf("cards = %v, both are read", got)
 	}
 	if len(deck.Problems) != 0 {
@@ -190,7 +190,7 @@ about 30"
 	if !slices.Equal(against, []int{0, 1}) {
 		t.Errorf("problems = %+v, want one against each of the two", deck.Problems)
 	}
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "Alpaca", "Vicuña"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "Alpaca", "Vicuña"}) {
 		t.Errorf("cards = %v, want all of them read", got)
 	}
 	if got, _ := deck.Cards[1].Value("Height"); got != `about 35"` {
@@ -223,7 +223,7 @@ type: deck
 1972
 `))
 
-	if got := names(deck); !slices.Equal(got, []string{"C#", "C"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"C#", "C"}) {
 		t.Fatalf("cards = %v", got)
 	}
 	if len(deck.Problems) != 0 {
@@ -475,7 +475,7 @@ about 20 years
 func TestAFencedHeadingOpensNothing(t *testing.T) {
 	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n\n### Height\n\n```markdown\n## Alpaca\n\n### Weight\n```\n"))
 
-	if got := names(deck); !slices.Equal(got, []string{"Llama"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama"}) {
 		t.Errorf("cards = %v", got)
 	}
 	if got := fieldsOf(deck.Cards[0]); !slices.Equal(got, []string{"Height"}) {
@@ -491,7 +491,7 @@ func TestATildeFencedExampleHoldsBackticks(t *testing.T) {
 		"~~~markdown\n```\n## Alpaca\n```\n### Weight\n~~~\n\n"+
 		"## Vicuña\n\n[[Animal]]\n\n### Height\n\nabout 36\"\n"))
 
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "Vicuña"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "Vicuña"}) {
 		t.Errorf("cards = %v", got)
 	}
 	if got := fieldsOf(deck.Cards[0]); !slices.Equal(got, []string{"Height"}) {

@@ -183,10 +183,10 @@ func TestFetchReportsAnErrorStatus(t *testing.T) {
 }
 
 func TestClientFollowsRedirectsOnlyToHTTPS(t *testing.T) {
-	plain := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
-	t.Cleanup(plain.Close)
+	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	t.Cleanup(httpServer.Close)
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, plain.URL, http.StatusFound)
+		http.Redirect(w, r, httpServer.URL, http.StatusFound)
 	}))
 	t.Cleanup(srv.Close)
 	previous := client.Transport

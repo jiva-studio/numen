@@ -52,13 +52,13 @@ describe('a registration that says what its tabs hold', () => {
   it('is called what it calls a tab, and its title where it calls it nothing', () => {
     const getTitle = (state: Held) => state.title
     const named = createDeclaredTabKind('p', declare({ getTitle }))
-    const plain = createDeclaredTabKind('p', declare())
+    const plainKind = createDeclaredTabKind('p', declare())
     const { title: _title, ...untitled } = declare()
-    const bare = createDeclaredTabKind('p', untitled)
+    const bareKind = createDeclaredTabKind('p', untitled)
 
     expect(named.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Focus')
-    expect(plain.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
-    expect(bare.getTitle?.({})).toBe('held')
+    expect(plainKind.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
+    expect(bareKind.getTitle?.({})).toBe('held')
   })
 
   it('hands the window every hook it declares, and no other', () => {

@@ -1309,16 +1309,16 @@ describe('what the voice says in which tone', () => {
 
   it('cautions that a rename waits on the person, and errors on a refusal', async () => {
     const waiting = window({ isAsking: true })
-    const refused = window({ renamed: asFailure('unnameable' as const) })
-    const stale = window({ renamed: asFailure('changed' as const) })
+    const failedWindow = window({ renamed: asFailure('unnameable' as const) })
+    const changedWindow = window({ renamed: asFailure('changed' as const) })
 
     await carry(createInvocation('title', front(), 'Entropy'), waiting.on)
-    await carry(createInvocation('title', front(), 'Entropy'), refused.on)
-    await carry(createInvocation('title', front(), 'Entropy'), stale.on)
+    await carry(createInvocation('title', front(), 'Entropy'), failedWindow.on)
+    await carry(createInvocation('title', front(), 'Entropy'), changedWindow.on)
 
     expect(waiting.tones).toStrictEqual(['caution'])
-    expect(refused.tones).toStrictEqual(['error'])
-    expect(stale.tones).toStrictEqual(['caution'])
+    expect(failedWindow.tones).toStrictEqual(['error'])
+    expect(changedWindow.tones).toStrictEqual(['caution'])
   })
 
   it('says nothing of a rename that came off', async () => {

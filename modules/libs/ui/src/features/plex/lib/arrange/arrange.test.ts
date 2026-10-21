@@ -117,12 +117,12 @@ describe('where the relations sit', () => {
 
   it('clears the rows a column runs alongside, and only those', () => {
     // A column at a fixed distance lands on a row once the row outgrows it.
-    const wide = arrangePlex(neighbourhoods.overcrowded)
-    const columns = getNodesByRelation(wide, 'jump')
+    const wideLayout = arrangePlex(neighbourhoods.overcrowded)
+    const columns = getNodesByRelation(wideLayout, 'jump')
     const columnReach = Math.max(...columns.map((n) => Math.abs(n.y) + n.height / 2))
     const alongside = [
-      ...getNodesByRelation(wide, 'parent'),
-      ...getNodesByRelation(wide, 'child'),
+      ...getNodesByRelation(wideLayout, 'parent'),
+      ...getNodesByRelation(wideLayout, 'child'),
     ].filter((n) => Math.abs(n.y) - n.height / 2 < columnReach)
     expect(alongside.length).toBeGreaterThan(0)
     const rowsReach = Math.max(...alongside.map((n) => Math.abs(n.x) + n.width / 2))
@@ -225,10 +225,10 @@ describe('a box is as wide as its title needs', () => {
     // How much is admitted is settled from the widest a box gets, so what a
     // title measures never changes the count or what the overflow reports.
     const measured = arrangePlex(neighbourhoods.overcrowded, { measure: byTitle })
-    const plain = arrangePlex(neighbourhoods.overcrowded)
+    const defaultLayout = arrangePlex(neighbourhoods.overcrowded)
 
-    expect(measured.overflow).toStrictEqual(plain.overflow)
-    expect(measured.nodes.map((node) => node.id)).toStrictEqual(plain.nodes.map((node) => node.id))
+    expect(measured.overflow).toStrictEqual(defaultLayout.overflow)
+    expect(measured.nodes.map((node) => node.id)).toStrictEqual(defaultLayout.nodes.map((node) => node.id))
   })
 })
 

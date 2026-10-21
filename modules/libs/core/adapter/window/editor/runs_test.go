@@ -110,9 +110,8 @@ const (
 	copyOf       = v1.ArtifactKind_ARTIFACT_KIND_COPY
 )
 
-// makes asks for an artifact of a file to be made, and answers with what came
-// back.
-func makes(api *Services, path string, of v1.ArtifactKind) (*connect.Response[v1.CreateArtifactResponse], error) {
+// requestCreateArtifact sends an RPC request to create an artifact.
+func requestCreateArtifact(api *Services, path string, of v1.ArtifactKind) (*connect.Response[v1.CreateArtifactResponse], error) {
 	return api.Artifact.CreateArtifact(context.Background(), connect.NewRequest(&v1.CreateArtifactRequest{
 		Path: path, Kind: of,
 	}))
@@ -122,7 +121,7 @@ func makes(api *Services, path string, of v1.ArtifactKind) (*connect.Response[v1
 // the window would not.
 func createArtifact(t *testing.T, api *Services, path string, of v1.ArtifactKind) *v1.Artifact {
 	t.Helper()
-	out, err := makes(api, path, of)
+	out, err := requestCreateArtifact(api, path, of)
 	if err != nil {
 		t.Fatalf("asked for the %s of %s and was refused: %v", of, path, err)
 	}
@@ -146,7 +145,7 @@ func getArtifactStates(t *testing.T, api *Services, path string) map[v1.Artifact
 // getRefusedCode is the code the window would not make an artifact under.
 func getRefusedCode(t *testing.T, api *Services, path string, of v1.ArtifactKind) connect.Code {
 	t.Helper()
-	out, err := makes(api, path, of)
+	out, err := requestCreateArtifact(api, path, of)
 	if err == nil {
 		t.Fatalf("the %s of %s was made: %+v", of, path, out.Msg.GetArtifact())
 	}

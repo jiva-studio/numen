@@ -169,19 +169,19 @@ func getOwnedLines(note, key string) (start, end int, found bool) {
 	if len(lines) == 0 || lines[0] != "---" {
 		return 0, 0, false
 	}
-	shut := 0
+	closingLine := 0
 	for i := 1; i < len(lines); i++ {
 		if lines[i] == "---" {
-			shut = i
+			closingLine = i
 			break
 		}
 	}
-	if shut == 0 {
+	if closingLine == 0 {
 		return 0, 0, false
 	}
 
 	margin, at, owner := "", false, 0
-	for i := 1; i < shut; i++ {
+	for i := 1; i < closingLine; i++ {
 		text := strings.TrimSpace(lines[i])
 		if text == "" || strings.HasPrefix(text, "#") {
 			continue

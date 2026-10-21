@@ -263,9 +263,9 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	}
 	was := read(t, s.vault, "decks/Terms.md")
 
-	stale := at
-	stale.Size += 3
-	_, err = s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", stale)
+	staleFingerprint := at
+	staleFingerprint.Size += 3
+	_, err = s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", staleFingerprint)
 	if !errors.Is(err, ports.ErrStale) {
 		t.Fatalf("err = %v", err)
 	}

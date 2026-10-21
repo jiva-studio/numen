@@ -51,8 +51,8 @@ func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1co
 	return newThemedServices(themes).NewHandler(files), themes
 }
 
-// puts a theme in the person's folder, which opening the catalogue made.
-func puts(t *testing.T, cfg container.Config, name, body string) {
+// writeTheme writes a theme in the themes directory.
+func writeTheme(t *testing.T, cfg container.Config, name, body string) {
 	t.Helper()
 	folder := filepath.Join(filepath.Dir(cfg.RegistryPath), "themes")
 	if err := os.WriteFile(filepath.Join(folder, name), []byte(body), 0o644); err != nil {
@@ -195,7 +195,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 func TestThePageOpensWearingTheTheme(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
-	puts(t, cfg, "sea.css", mine)
+	writeTheme(t, cfg, "sea.css", mine)
 	choose(t, themes, "mine:sea", v1.Mode_MODE_DARK)
 
 	for _, path := range []string{"", "/", "/index.html"} {
@@ -229,7 +229,7 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
-	puts(t, cfg, "sea.css", mine)
+	writeTheme(t, cfg, "sea.css", mine)
 	writeAppearance(t, themes, &v1.WriteAppearanceRequest{
 		Name:           "mine:sea",
 		Mode:           v1.Mode_MODE_DARK,
@@ -310,7 +310,7 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 func TestTheHeadIsReadForEachRequest(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
-	puts(t, cfg, "sea.css", mine)
+	writeTheme(t, cfg, "sea.css", mine)
 
 	if strings.Contains(getResponse(handler, "/").Body.String(), mine) {
 		t.Fatal("the page is wearing a theme nobody chose")
@@ -321,7 +321,7 @@ func TestTheHeadIsReadForEachRequest(t *testing.T) {
 	}
 
 	// The file behind the name is read again as well.
-	puts(t, cfg, "sea.css", ":root{--numen-surface:#040506}")
+	writeTheme(t, cfg, "sea.css", ":root{--numen-surface:#040506}")
 	if !strings.Contains(getResponse(handler, "/").Body.String(), "#040506") {
 		t.Error("the page is wearing the file as it was")
 	}
@@ -348,7 +348,7 @@ func TestAPageThatCannotSayWhatItWearsIsServedAsItWasBuilt(t *testing.T) {
 func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
-	puts(t, cfg, "loud.css", ":root{--numen-surface:#010203}</STYLE><b>out here</b>")
+	writeTheme(t, cfg, "loud.css", ":root{--numen-surface:#010203}</STYLE><b>out here</b>")
 	choose(t, themes, "mine:loud", v1.Mode_MODE_SYSTEM)
 
 	body := getResponse(handler, "/").Body.String()

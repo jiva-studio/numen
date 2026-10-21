@@ -55,9 +55,9 @@ describe('how many columns a reading area takes', () => {
   it('takes the size the text is set at into account', () => {
     // A column is measured in characters, so text set half again as large needs
     // half again as much room before a second column will hold a line.
-    const wide = 2 * (NARROWEST + GAP)
-    expect(countColumns(wide, 1)).toBe(2)
-    expect(countColumns(wide, 1.5)).toBe(1)
+    const availableWidth = 2 * (NARROWEST + GAP)
+    expect(countColumns(availableWidth, 1)).toBe(2)
+    expect(countColumns(availableWidth, 1.5)).toBe(1)
   })
 
   it('sets each column to its share of the area, less the gap it keeps', () => {

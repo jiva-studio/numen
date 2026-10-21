@@ -18,9 +18,9 @@ const times = (player: ReturnType<typeof mountPlayer>) =>
 
 describe('what a person is told', () => {
   it('offers to start it while nothing is playing, and to stop it while it is', () => {
-    const still = mountPlayer()
-    expect(button(still).attributes('aria-label')).toBe('Play')
-    expect(button(still).attributes('aria-pressed')).toBe('false')
+    const paused = mountPlayer()
+    expect(button(paused).attributes('aria-label')).toBe('Play')
+    expect(button(paused).attributes('aria-pressed')).toBe('false')
 
     const going = mountPlayer({ isPlaying: true })
     expect(button(going).attributes('aria-label')).toBe('Pause')
@@ -47,10 +47,10 @@ describe('what a person is told', () => {
 
 describe('what a person did', () => {
   it('asks for it to start, and to stop once it is playing', async () => {
-    const still = mountPlayer()
-    await button(still).trigger('click')
-    expect(still.emitted('play')).toHaveLength(1)
-    expect(still.emitted('pause')).toBeUndefined()
+    const paused = mountPlayer()
+    await button(paused).trigger('click')
+    expect(paused.emitted('play')).toHaveLength(1)
+    expect(paused.emitted('pause')).toBeUndefined()
 
     const going = mountPlayer({ isPlaying: true })
     await button(going).trigger('click')

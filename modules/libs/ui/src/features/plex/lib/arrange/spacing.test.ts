@@ -173,8 +173,8 @@ describe('findSpacing', () => {
   })
 
   describe('how closely the widest opening is found', () => {
-    const wide = { ...options, spread: 3 }
-    const set = spacingAsSet(wide)
+    const wideOptions = { ...options, spread: 3 }
+    const set = spacingAsSet(wideOptions)
 
     /** An arrangement that fits while no gap is opened past `limit` times its setting. */
     const fitsUpTo =
@@ -185,7 +185,7 @@ describe('findSpacing', () => {
         spacing.focusGap <= set.focusGap * limit
 
     it('lands within a 256th of the range below the limit', () => {
-      const found = findSpacing(wide, fitsUpTo(1.5))
+      const found = findSpacing(wideOptions, fitsUpTo(1.5))
       for (const key of ['gap', 'lineGap', 'focusGap'] as const) {
         expect(found[key]).toBeLessThanOrEqual(set[key] * 1.5)
         expect(found[key]).toBeGreaterThanOrEqual(set[key] * (1.5 - 2 / 256))

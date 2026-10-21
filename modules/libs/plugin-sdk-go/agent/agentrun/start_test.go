@@ -35,7 +35,7 @@ func drain(work *agentrun.Work) []*numenv1.AskAgentResponse {
 }
 
 func newSaidResponse(text string) *numenv1.AskAgentResponse {
-	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}}
+	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}}
 }
 
 func TestStartHandsJSONLinesToTheHandlerAndSaysTheOthers(t *testing.T) {
@@ -54,7 +54,7 @@ func TestStartHandsJSONLinesToTheHandlerAndSaysTheOthers(t *testing.T) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
 	for i, text := range want {
-		if got[i].GetSaid() != text {
+		if got[i].GetText() != text {
 			t.Errorf("response %d is %v, want %q", i, got[i], text)
 		}
 	}
@@ -88,10 +88,10 @@ func TestStartRunsTheChildInTheRootWithTheToken(t *testing.T) {
 	}
 	got := drain(work)
 
-	if len(got) != 1 || got[0].GetSaid() == "" {
+	if len(got) != 1 || got[0].GetText() == "" {
 		t.Fatalf("got %v", got)
 	}
-	if text := got[0].GetSaid(); !strings.HasSuffix(text, " secret-1") || !strings.Contains(text, "/") {
+	if text := got[0].GetText(); !strings.HasSuffix(text, " secret-1") || !strings.Contains(text, "/") {
 		t.Errorf("the child said %q", text)
 	}
 }
@@ -214,7 +214,7 @@ func TestForwardResponsesSendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
 	if err := agentrun.ForwardResponses(t.Context(), work, stream); err != nil {
 		t.Fatal(err)
 	}
-	if len(stream.got) != 2 || stream.got[0].GetSaid() != "one\n" || stream.got[1].GetSaid() != "two\n" {
+	if len(stream.got) != 2 || stream.got[0].GetText() != "one\n" || stream.got[1].GetText() != "two\n" {
 		t.Errorf("got %v", stream.got)
 	}
 }

@@ -45,14 +45,14 @@ describe('the files a plugin has open', () => {
   it('put a file that moved under a tab to the person before the window goes', async () => {
     const { fileFlush, drop } = createFlush()
     const states = ref<Record<string, string>>({})
-    const stale = {
+    const staleBuffers = {
       flush: vi.fn(),
       getOpenIds: () => Object.keys(states.value),
       getOpenNote: (id: string) => ({ state: states.value[id] ?? 'clean' }),
       keep: vi.fn(),
       take: vi.fn(),
     } as unknown as FileBuffers
-    const tracked = createBufferHost({ fileFlush }).track(stale)
+    const tracked = createBufferHost({ fileFlush }).track(staleBuffers)
 
     states.value = { tab: 'stale' }
     await nextTick()

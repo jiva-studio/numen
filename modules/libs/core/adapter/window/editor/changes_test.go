@@ -76,7 +76,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 
 	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.Services)
+	mountQuestionsServices(mux, installation.Services)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -84,7 +84,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	t.Cleanup(server.CloseClientConnections)
 	t.Cleanup(server.Close)
 
-	client := asks(server.Client(), server.URL)
+	client := newQuestionsClient(server.Client(), server.URL)
 	watching := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
 
 	// The window opens on what the first scan stored; the watcher reports only

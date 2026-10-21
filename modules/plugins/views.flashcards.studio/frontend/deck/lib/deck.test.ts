@@ -95,19 +95,19 @@ describe('a deck as the window holds it', () => {
   })
 
   it('mints an identity for a card carrying no mark, which the file cannot name', () => {
-    const bare = read()
+    const parsed = read()
     const held = deck({
       cards: [
-        { ...bare.cards[0]!, mark: '' },
-        { ...bare.cards[1]!, mark: '' },
+        { ...parsed.cards[0]!, mark: '' },
+        { ...parsed.cards[1]!, mark: '' },
       ],
     })
     expect(held.cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
   })
 
   it('mints one for each of two cards carrying one mark, so both are drawn apart', () => {
-    const bare = read()
-    const held = deck({ cards: [bare.cards[0]!, { ...bare.cards[1]!, mark: LLAMA }] })
+    const parsed = read()
+    const held = deck({ cards: [parsed.cards[0]!, { ...parsed.cards[1]!, mark: LLAMA }] })
     expect(held.cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
   })
 
@@ -117,10 +117,10 @@ describe('a deck as the window holds it', () => {
   })
 
   it('stands each card under the section the file put it under', () => {
-    const bare = read()
+    const parsed = read()
     const held = deck({
       sections: [{ name: 'Roots', preamble: '' }],
-      cards: [{ ...bare.cards[0]!, sectionIndex: 0 }, bare.cards[1]!],
+      cards: [{ ...parsed.cards[0]!, sectionIndex: 0 }, parsed.cards[1]!],
     })
     expect(held.cards.map((card) => card.section)).toStrictEqual([held.sections[0]?.id, null])
   })
@@ -128,10 +128,10 @@ describe('a deck as the window holds it', () => {
   /* A section the reading does not hold is no section: the card stands before
      the first, drawn and counted, and is written back standing there. */
   it('stands a card before the first section where the reading holds no section it names', () => {
-    const bare = read()
+    const parsed = read()
     const held = deck({
       sections: [{ name: 'Roots', preamble: '' }],
-      cards: [{ ...bare.cards[0]!, sectionIndex: 7 }, bare.cards[1]!],
+      cards: [{ ...parsed.cards[0]!, sectionIndex: 7 }, parsed.cards[1]!],
     })
     expect(held.cards.map((card) => card.section)).toStrictEqual([null, null])
     expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([
@@ -178,13 +178,13 @@ describe('a deck as the window holds it', () => {
   })
 
   it('hands the vault each card under where its section stands among them', () => {
-    const bare = read()
+    const parsed = read()
     const held = deck({
       sections: [
         { name: 'Roots', preamble: '' },
         { name: 'Leaves', preamble: '' },
       ],
-      cards: [{ ...bare.cards[0]!, sectionIndex: 1 }, bare.cards[1]!],
+      cards: [{ ...parsed.cards[0]!, sectionIndex: 1 }, parsed.cards[1]!],
     })
     expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([
       1,
@@ -389,13 +389,13 @@ describe('a card taken out and dragged', () => {
 describe('a card dragged among the sections', () => {
   /** Two sections, the first card in the first of them and the second in neither. */
   const createSectionedDeck = (): BufferDeck => {
-    const bare = read()
+    const parsed = read()
     return deck({
       sections: [
         { name: 'Roots', preamble: '' },
         { name: 'Leaves', preamble: '' },
       ],
-      cards: [bare.cards[0]!, { ...bare.cards[1]!, sectionIndex: 0 }],
+      cards: [parsed.cards[0]!, { ...parsed.cards[1]!, sectionIndex: 0 }],
     })
   }
 
@@ -526,15 +526,15 @@ describe('a section of a deck', () => {
   /* Taking a section away takes away its heading and nothing else: its cards
      stay where they stand, under whatever heading is above them now. */
   it('leaves its cards under the section above it when it goes', () => {
-    const bare = read()
+    const parsed = read()
     const held = deck({
       sections: [
         { name: 'Roots', preamble: '' },
         { name: 'Leaves', preamble: '' },
       ],
       cards: [
-        { ...bare.cards[0]!, sectionIndex: 0 },
-        { ...bare.cards[1]!, sectionIndex: 1 },
+        { ...parsed.cards[0]!, sectionIndex: 0 },
+        { ...parsed.cards[1]!, sectionIndex: 1 },
       ],
     })
     const gone = removeSection(held, held.sections[1]?.id ?? '')
@@ -578,10 +578,10 @@ describe('a section of a deck', () => {
   })
 
   it('leaves its cards under no section when the first of them goes', () => {
-    const bare = read()
+    const parsed = read()
     const held = deck({
       sections: [{ name: 'Roots', preamble: '' }],
-      cards: [{ ...bare.cards[0]!, sectionIndex: 0 }, bare.cards[1]!],
+      cards: [{ ...parsed.cards[0]!, sectionIndex: 0 }, parsed.cards[1]!],
     })
     const gone = removeSection(held, held.sections[0]?.id ?? '')
     expect(gone.sections).toStrictEqual([])
@@ -689,7 +689,7 @@ describe('whether two readings of a file read the same', () => {
 describe('cards and sections standing among three headings', () => {
   /** Cards a (before the first heading), b (Roots) and c (Leaves), then Shoots holding none. */
   const createThreeHeadingDeck = (): BufferDeck => {
-    const bare = read().cards[0]!
+    const baseCard = read().cards[0]!
     return deck({
       sections: [
         { name: 'Roots', preamble: 'about the roots\n' },
@@ -697,9 +697,9 @@ describe('cards and sections standing among three headings', () => {
         { name: 'Shoots', preamble: 'about the shoots\n' },
       ],
       cards: [
-        { ...bare, mark: 'ma', sectionIndex: null },
-        { ...bare, mark: 'mb', sectionIndex: 0 },
-        { ...bare, mark: 'mc', sectionIndex: 1 },
+        { ...baseCard, mark: 'ma', sectionIndex: null },
+        { ...baseCard, mark: 'mb', sectionIndex: 0 },
+        { ...baseCard, mark: 'mc', sectionIndex: 1 },
       ],
     })
   }

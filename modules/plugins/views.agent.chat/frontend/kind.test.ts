@@ -32,9 +32,9 @@ const window = (options: HostOptions = {}) => {
   return { ...fixture, ...chats, open, conversations }
 }
 
-/** A line of the talk, as the panel hands one back. */
-const turn = (id: string, voice: string, text: string): Turn =>
-  ({ id, voice, text, state: 'done' }) as unknown as Turn
+/** A line of the conversation. */
+const turn = (id: string, voice: 'asked' | 'answered', text: string): Turn =>
+  ({ id, voice, text, state: 'settled' })
 
 describe('the agent tab as the window keeps it', () => {
   it('is a tool the trailing pane opens with, in front of the rest', () => {

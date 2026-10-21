@@ -57,16 +57,16 @@ func getRecurringNames(said []string) []string {
 		here := opens
 		opens = isSentenceEnd(word)
 
-		bare := strings.TrimFunc(word, func(r rune) bool {
+		trimmed := strings.TrimFunc(word, func(r rune) bool {
 			return !unicode.IsLetter(r) && !unicode.IsMark(r)
 		})
-		if bare == "" || here || !isName(bare) {
+		if trimmed == "" || here || !isName(trimmed) {
 			continue
 		}
-		key := strings.ToLower(bare)
+		key := strings.ToLower(trimmed)
 		if times[key] == 0 {
 			order = append(order, key)
-			written[key] = bare
+			written[key] = trimmed
 		}
 		times[key]++
 	}
@@ -87,14 +87,14 @@ func getRecurringNames(said []string) []string {
 // isName says whether a word is written the way a name is: a capital, and
 // either more than one letter before whatever is stuck to it with an apostrophe
 // or more than two after it, so that O'Brien is a name and I'm is not.
-func isName(bare string) bool {
-	if letter, _ := utf8.DecodeRuneInString(bare); !unicode.IsUpper(letter) {
+func isName(word string) bool {
+	if letter, _ := utf8.DecodeRuneInString(word); !unicode.IsUpper(letter) {
 		return false
 	}
-	head, tail := bare, ""
-	if at := strings.IndexAny(bare, "'’"); at >= 0 {
-		_, wide := utf8.DecodeRuneInString(bare[at:])
-		head, tail = bare[:at], bare[at+wide:]
+	head, tail := word, ""
+	if at := strings.IndexAny(word, "'’"); at >= 0 {
+		_, runeLen := utf8.DecodeRuneInString(word[at:])
+		head, tail = word[:at], word[at+runeLen:]
 	}
 	return utf8.RuneCountInString(head) > 1 || utf8.RuneCountInString(tail) > 2
 }

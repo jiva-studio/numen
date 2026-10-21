@@ -77,22 +77,22 @@ const book =
     setup() {
       const at = ref(0)
       /** The width the reader last asked for, in device pixels. */
-      const wide = ref(0)
+      const width = ref(0)
       const picture = (page: number) =>
-        wide.value > 0 ? renderPage(String(page + 1), wide.value) : ''
+        width.value > 0 ? renderPage(String(page + 1), width.value) : ''
       const highlightsOn = (page: number) => (page === 0 ? highlights : [])
 
       const go = (page: number) => {
         at.value = Math.min(Math.max(page, 0), pageCount - 1)
       }
 
-      return { at, wide, picture, highlightsOn, pages: createPages(pageCount), go }
+      return { at, width, picture, highlightsOn, pages: createPages(pageCount), go }
     },
     template: TEMPLATE,
   })
 
 const TEMPLATE = `
-  <div class="h-full" :data-wide="wide">
+  <div class="h-full" :data-wide="width">
     <Reader
       class="h-full"
       :pages="pages"
@@ -100,7 +100,7 @@ const TEMPLATE = `
       :picture="picture"
       :highlights="highlightsOn"
       @go="go"
-      @measure="wide = $event"
+      @measure="width = $event"
     >
       <template #silence>Nothing drawn yet</template>
     </Reader>

@@ -115,7 +115,7 @@ describe('useWindowStatusBar detail and unit', () => {
 })
 
 describe('useWindowStatusBar groups and handlers', () => {
-  const plain: Task = {
+  const defaultTask: Task = {
     id: 't',
     label: 'Sorting',
     about: 'shelf',
@@ -127,22 +127,22 @@ describe('useWindowStatusBar groups and handlers', () => {
   }
 
   it('groups a task that matches no pattern under its label, or under a general name without one', () => {
-    const bar = useWindowStatusBar({ tasks: ref([plain, { ...plain, id: 'u', label: '' }]) })
+    const bar = useWindowStatusBar({ tasks: ref([defaultTask, { ...defaultTask, id: 'u', label: '' }]) })
     expect(bar.tasks.value.map((one) => one.group)).toEqual(['Sorting', 'Background Tasks'])
   })
 
   it('hands cancel and retry to the callbacks given, and does nothing without them', () => {
     const onCancel = vi.fn()
     const onRetry = vi.fn()
-    const bar = useWindowStatusBar({ tasks: ref([plain]), onCancel, onRetry })
+    const bar = useWindowStatusBar({ tasks: ref([defaultTask]), onCancel, onRetry })
     bar.onCancelTask('t')
     bar.onRetryTask('t')
     expect(onCancel).toHaveBeenCalledWith('t')
     expect(onRetry).toHaveBeenCalledWith('t')
 
-    const bare = useWindowStatusBar({ tasks: ref([plain]) })
-    expect(() => bare.onCancelTask('t')).not.toThrow()
-    expect(() => bare.onRetryTask('t')).not.toThrow()
+    const barWithoutCallbacks = useWindowStatusBar({ tasks: ref([defaultTask]) })
+    expect(() => barWithoutCallbacks.onCancelTask('t')).not.toThrow()
+    expect(() => barWithoutCallbacks.onRetryTask('t')).not.toThrow()
   })
 })
 

@@ -86,15 +86,15 @@ const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
  */
 const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition => {
   const loading = getState(tab) === 'loading'
-  const stale = generation !== tab.reading
+  const isStale = generation !== tab.reading
   if (answer.kind === 'error') {
-    return loading && !stale ? { tab: { ...tab, error: answer.error }, effects: [] } : keepTab(tab)
+    return loading && !isStale ? { tab: { ...tab, error: answer.error }, effects: [] } : keepTab(tab)
   }
   if (answer.kind === 'missing') {
-    if (stale) return keepTab(tab)
+    if (isStale) return keepTab(tab)
     return loading ? applyBody(tab, '', null) : keepTab({ ...tab, isDeleted: true })
   }
-  return applyReadBody(tab, answer, stale)
+  return applyReadBody(tab, answer, isStale)
 }
 
 /** The text the file holds, taken where the tab holds nothing unsaved of its own. */

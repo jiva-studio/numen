@@ -151,7 +151,7 @@ func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
 	}
 
 	res, err := registry.CallTool(t.Context(), connect.NewRequest(&numenv1.CallToolRequest{
-		Name: "current", Arguments: []byte(`{}`), Asked: map[string]string{"mark": "k7"},
+		Name: "current", Arguments: []byte(`{}`), Context: map[string]string{"mark": "k7"},
 	}))
 
 	if err != nil || !strings.Contains(string(res.Msg.GetResult().GetStructured()), "k7") {

@@ -74,7 +74,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 	if res.IsNone || res.IsBusy {
 		t.Errorf("a transcript that was there came back as %+v", res)
 	}
-	if left := kept.names(); len(left) != 0 {
+	if left := kept.artifactNames(); len(left) != 0 {
 		t.Errorf("the store still holds %v", left)
 	}
 	if chunks := cutFrom(index, v, recordingPath); len(chunks) != 0 {
@@ -152,7 +152,7 @@ func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
 	if res.IsNone {
 		t.Error("an answer that was there came back as nothing to drop")
 	}
-	if left := kept.names(); len(left) != 0 {
+	if left := kept.artifactNames(); len(left) != 0 {
 		t.Errorf("the store still holds %v", left)
 	}
 	if _, held := index.sources[v.ID][recordingPath]; !held {
@@ -173,7 +173,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	if _, held := index.sources[v.ID][recordingPath]; held {
 		t.Error("dropping nothing recorded a source")
 	}
-	if left := kept.names(); len(left) != 0 {
+	if left := kept.artifactNames(); len(left) != 0 {
 		t.Errorf("the store holds %v", left)
 	}
 }

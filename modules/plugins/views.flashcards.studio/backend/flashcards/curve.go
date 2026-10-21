@@ -101,7 +101,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	decks, at, under, unseen := mine.decks, mine.at, mine.under, mine.unseen
+	decks, at, under, unbegunCount := mine.decks, mine.at, mine.under, mine.unseen
 
 	// How many decks this preset schedules, counted over every deck that could
 	// name it: a deck of no cards points at its preset like any other.
@@ -123,7 +123,7 @@ func (u ProjectCurve) Execute(
 		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), held.Answers, under,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, at, unseen, u.getScheduler, u.computePlaces)
+	out, err := run.Curve(ctx, now, p, at, unbegunCount, u.getScheduler, u.computePlaces)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -131,7 +131,7 @@ func (u ProjectCurve) Execute(
 	out.Decks = pointing
 	out.Cards = len(under)
 	out.Overdue = review.CountOverdue(u.day, at, now)
-	out.Unbegun = unseen
+	out.Unbegun = unbegunCount
 	return out, nil
 }
 

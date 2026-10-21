@@ -153,9 +153,9 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	for deck, one := range in.day.spentUnder {
 		rows.get(deck).Answered = one.Answered
 	}
-	due, fresh := rows.countDueAndNew(in.day, holds, &out)
+	due, newCount := rows.countDueAndNew(in.day, holds, &out)
 	out.Decks = rows.getSorted()
-	out.Presets, err = u.getPresets(ctx, v, in.reads, in.day, due, fresh)
+	out.Presets, err = u.getPresets(ctx, v, in.reads, in.day, due, newCount)
 	if err != nil {
 		return CardsDue{}, err
 	}

@@ -39,16 +39,16 @@ const ROWS: readonly Row[] = [
 
 const getShownRows = (...open: readonly RowId[]) => flatten(ROWS, new Set(open))
 
-const names = (...open: readonly RowId[]) => getShownRows(...open).map((row) => row.id)
+const getRowIds = (...open: readonly RowId[]) => getShownRows(...open).map((row) => row.id)
 
 describe('what is drawn', () => {
   it('is the top level while nothing is open', () => {
-    expect(names()).toStrictEqual(['work', 'empty', 'loose'])
+    expect(getRowIds()).toStrictEqual(['work', 'empty', 'loose'])
   })
 
   it('is what an open row holds, in its place', () => {
-    expect(names('work')).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
-    expect(names('work', 'plans')).toStrictEqual([
+    expect(getRowIds('work')).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
+    expect(getRowIds('work', 'plans')).toStrictEqual([
       'work',
       'plans',
       'friday',
@@ -59,11 +59,11 @@ describe('what is drawn', () => {
   })
 
   it('leaves a row shut whose holder is shut', () => {
-    expect(names('plans')).toStrictEqual(['work', 'empty', 'loose'])
+    expect(getRowIds('plans')).toStrictEqual(['work', 'empty', 'loose'])
   })
 
   it('leaves a row that cannot hold shut, named or not', () => {
-    expect(names('loose')).toStrictEqual(['work', 'empty', 'loose'])
+    expect(getRowIds('loose')).toStrictEqual(['work', 'empty', 'loose'])
     expect(getShownRows('loose')[2]?.open).toBe(false)
   })
 

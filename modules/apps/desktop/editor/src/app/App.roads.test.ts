@@ -253,7 +253,7 @@ describe('a place an answer names', () => {
       .findComponent(Agent)
       .vm.$emit(
         'follow',
-        { id: 'said', voice: 'said', text: '[here](numen:Source.pdf?start=0&length=4)' },
+        { id: 'turn-1', voice: 'answered', text: '[here](numen:Source.pdf?start=0&length=4)' },
         'numen:Source.pdf?start=0&length=4',
         { preventDefault: () => {} },
       )

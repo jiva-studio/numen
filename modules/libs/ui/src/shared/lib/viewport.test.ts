@@ -254,12 +254,12 @@ describe('the room of one element of a component', () => {
 
   it('is not a measurement where the element has no width or no height', () => {
     stubResizeObserver()
-    const wide = mountViewport(drawn(0, 100))
+    const zeroWidth = mountViewport(drawn(0, 100))
     const tall = mountViewport(drawn(200, 0))
 
-    expect(wide.viewport.value).toStrictEqual({ width: 0, height: 0 })
+    expect(zeroWidth.viewport.value).toStrictEqual({ width: 0, height: 0 })
     expect(tall.viewport.value).toStrictEqual({ width: 0, height: 0 })
-    wide.wrapper.unmount()
+    zeroWidth.wrapper.unmount()
     tall.wrapper.unmount()
   })
 

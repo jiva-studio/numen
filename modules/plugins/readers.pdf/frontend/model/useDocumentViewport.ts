@@ -19,22 +19,22 @@ export function useDocumentViewport(
   options: DocumentViewportOptions,
 ) {
   const { pages, pageNumber, fingerprint, isOpen } = options
-  const wide = ref(0)
+  const width = ref(0)
 
   const widen = (pixels: number) => {
     if (!isOpen()) return
-    wide.value = Math.min(Math.max(Math.round(pixels), 0), WIDEST)
+    width.value = Math.min(Math.max(Math.round(pixels), 0), WIDEST)
   }
 
   const getPageImageUrl = (page: number): string =>
-    pages.value.length > 0 && wide.value > 0
-      ? documents.getPageUrl(path, page, wide.value, fingerprint.value!)
+    pages.value.length > 0 && width.value > 0
+      ? documents.getPageUrl(path, page, width.value, fingerprint.value!)
       : ''
 
   const picture = computed(() => getPageImageUrl(pageNumber.value))
 
   return {
-    wide,
+    width,
     widen,
     getPageImageUrl,
     picture,

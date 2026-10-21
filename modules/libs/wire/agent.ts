@@ -46,7 +46,7 @@ export const createAgentPort = (agent: AgentClient): AgentPort => ({
       { signal },
     )) {
       switch (step.step.case) {
-        case 'said':
+        case 'text':
           yield { kind: 'said', text: step.step.value }
           break
         case 'toolCall': {
@@ -55,7 +55,7 @@ export const createAgentPort = (agent: AgentClient): AgentPort => ({
             kind: 'toolCall',
             tool: toolCall.tool,
             subject: toolCall.about,
-            written: toolCall.written,
+            written: toolCall.length,
             ...(toolCall.path
               ? { place: { path: toolCall.path, span: normalizeSpan(toolCall.span) } }
               : {}),

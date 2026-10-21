@@ -169,7 +169,7 @@ func (s *shelf) hold(name domain.ArtifactName) {
 	s.held[name] = true
 }
 
-func (s *shelf) names() []domain.ArtifactName {
+func (s *shelf) artifactNames() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []domain.ArtifactName

@@ -108,13 +108,13 @@ describe('the one slider', () => {
   })
 
   it('leaves out whichever figure stands at nothing', () => {
-    const names = (over: number, fresh: number) =>
+    const formatMaterials = (overdueCount: number, freshCount: number) =>
       words
-        .material({ decks: 1, cards: 160, overdue: over, unbegun: fresh })
+        .material({ decks: 1, cards: 160, overdue: overdueCount, unbegun: freshCount })
         .map((one) => `${one.figure} ${one.name}`)
-    expect(names(0, 30)).toStrictEqual(['1 deck', '160 cards', '30 new'])
-    expect(names(45, 0)).toStrictEqual(['1 deck', '160 cards', '45 overdue'])
-    expect(names(0, 0)).toStrictEqual(['1 deck', '160 cards'])
+    expect(formatMaterials(0, 30)).toStrictEqual(['1 deck', '160 cards', '30 new'])
+    expect(formatMaterials(45, 0)).toStrictEqual(['1 deck', '160 cards', '45 overdue'])
+    expect(formatMaterials(0, 0)).toStrictEqual(['1 deck', '160 cards'])
   })
 
   // A figure beside an area measures nothing. Each picture carries the two

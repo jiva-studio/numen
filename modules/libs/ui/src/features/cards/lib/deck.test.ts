@@ -181,14 +181,14 @@ describe('grid', () => {
   })
 
   it('draws a card cut by nothing as cut by nothing', () => {
-    const bare: readonly DeckCard[] = [{ id: 'x', section: null, stencil: null, filled: [] }]
-    const tile = getTiles(grid(bare))[0]
+    const unstenciledCards: readonly DeckCard[] = [{ id: 'x', section: null, stencil: null, filled: [] }]
+    const tile = getTiles(grid(unstenciledCards))[0]
     expect(tile?.stencil).toBeNull()
     expect(tile?.isKnown).toBe(false)
   })
 
   it('stands every value of a card cut by nothing, marked as named by nothing', () => {
-    const bare: readonly DeckCard[] = [
+    const unstenciledCards: readonly DeckCard[] = [
       {
         id: 'x',
         section: null,
@@ -199,7 +199,7 @@ describe('grid', () => {
         ],
       },
     ]
-    const filled = getTiles(grid(bare))[0]?.filled ?? []
+    const filled = getTiles(grid(unstenciledCards))[0]?.filled ?? []
     expect(filled.map((each) => each.field)).toEqual(['Question', 'Answer'])
     expect(filled.map((each) => each.text)).toEqual(['what', 'this'])
     expect(filled.every((each) => !each.isDeclared)).toBe(true)

@@ -30,9 +30,9 @@ func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bare := s.kept
-	bare.Cache = nil
-	worked, err := bare.Execute(t.Context(), s.vault)
+	uncached := s.kept
+	uncached.Cache = nil
+	worked, err := uncached.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,12 +321,12 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	}
 
 	// The same answers, worked out by the one scheduler and nothing else.
-	plain := flashcards.NewSchedules(
+	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), today,
 		flashcards.NewListCardFaces(s.env.Ports.Readers, nil, nil),
 		flashcards.NewPresets(nil, nil, nil, nil, nil, today, time.Now),
 	)
-	want, err := plain.Execute(t.Context(), s.vault)
+	want, err := direct.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -353,17 +353,17 @@ func (s Simulation) Run(
 		paid, settled, all := admits.IsPaused(), admits.IsPaused(), admits.IsPaused()
 		for {
 			owed := !paid && take < len(due)
-			fresh := !all && left > 0
+			hasNew := !all && left > 0
 			back := !settled && next < len(again)
-			if !owed && !fresh && !back {
+			if !owed && !hasNew && !back {
 				break
 			}
 
 			// A day hands over everything it owes and everything it begins
 			// before it comes back to a card it has already shown, which is the
 			// order the sessions of that day put them in.
-			repeat := !owed && !fresh
-			if repeat || admits.IsNextCardDebt(seen, begun, owed, fresh) {
+			repeat := !owed && !hasNew
+			if repeat || admits.IsNextCardDebt(seen, begun, owed, hasNew) {
 				at := 0
 				if repeat {
 					at = again[next]

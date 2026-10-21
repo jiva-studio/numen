@@ -463,9 +463,9 @@ describe('a window with nothing open', () => {
   })
 
   it('calls a tab nothing where its kind gives no title', async () => {
-    const bare = kind()
-    delete bare.one.getTitle
-    const window = told([bare.declared])
+    const untitledKind = kind()
+    delete untitledKind.one.getTitle
+    const window = told([untitledKind.declared])
 
     const id = await window.openTabOfKind('thing', 'Note.md')
 
@@ -654,9 +654,9 @@ describe('a key struck on the window, offered in turn', () => {
 
 describe('a tab let go of', () => {
   it('goes where its kind has nothing to finish', async () => {
-    const bare = kind()
-    delete bare.one.onClose
-    const window = told([bare.declared])
+    const simpleKind = kind()
+    delete simpleKind.one.onClose
+    const window = told([simpleKind.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
 
     expect(window.releaseTab(id)).toBe(true)
@@ -667,14 +667,14 @@ describe('a tab let go of', () => {
 
 describe('reconciling tabs for a path, by what a tab stands on', () => {
   it('leaves a tab with no path alone when asked for no path', async () => {
-    const bare = kind({ kind: 'bare' })
-    const window = told([bare.declared])
+    const pathlessKind = kind({ kind: 'bare' })
+    const window = told([pathlessKind.declared])
     const id = await window.openTabOfKind('bare', 'x')
 
     window.reconcileTab('', 'deck')
 
     expect(window.getTab(id)).not.toBeNull()
-    expect(bare.closedPaths).toEqual([])
+    expect(pathlessKind.closedPaths).toEqual([])
   })
 
   it('leaves a tab of another kind alone where it stands on another path', async () => {
@@ -732,9 +732,9 @@ describe('a tab opened on nothing', () => {
 
 describe('a window going, with kinds that say nothing about it', () => {
   it('goes without a word to a tab whose kind has neither way of going', async () => {
-    const bare = kind()
-    delete bare.one.onClose
-    const window = told([bare.declared])
+    const closingKind = kind()
+    delete closingKind.one.onClose
+    const window = told([closingKind.declared])
     await window.openTabOfKind('thing', 'x')
 
     expect(() => window.close()).not.toThrow()
@@ -743,8 +743,8 @@ describe('a window going, with kinds that say nothing about it', () => {
 
 describe('reconciling tabs for a path, by what a tab names', () => {
   it('leaves a tab alone whose kind says nothing of where it stands', async () => {
-    const bare = kind({ kind: 'bare' })
-    const window = told([bare.declared])
+    const pathlessKind = kind({ kind: 'bare' })
+    const window = told([pathlessKind.declared])
     const id = await window.openTabOfKind('bare', 'x')
 
     expect(() => window.reconcileTab('x', 'deck')).not.toThrow()
@@ -1016,13 +1016,13 @@ describe('the tabs standing on a path that went', () => {
     ])
     const gone = await window.openTabOfKind('walker', 'Gone.md')
     const survivor = await window.openTabOfKind('walker', 'Elsewhere.md')
-    const still = await window.openTabOfKind('fixed', 'Gone.md')
+    const stationary = await window.openTabOfKind('fixed', 'Gone.md')
 
     await window.navigateTabsAt('Gone.md', 'Root.md')
 
     expect(window.getTab(gone)?.state).toMatchObject({ at: 'Root.md' })
     expect(window.getTab(survivor)?.state).toMatchObject({ at: 'Elsewhere.md' })
-    expect(window.getTab(still)?.state).toMatchObject({ at: 'Gone.md' })
+    expect(window.getTab(stationary)?.state).toMatchObject({ at: 'Gone.md' })
   })
 })
 

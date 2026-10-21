@@ -214,7 +214,7 @@ func TestACallReachesThePluginThatListedTheToolAndReturnsWhatItAnswered(t *testi
 		t.Errorf("the result was %+v", result)
 	}
 	if len(plugin.called) != 1 || plugin.called[0].GetName() != "reads" || string(plugin.called[0].GetArguments()) != `{"x":1}` ||
-		plugin.called[0].GetAsked()["mark"] != "k7" {
+		plugin.called[0].GetContext()["mark"] != "k7" {
 		t.Errorf("the plugin was asked %v", plugin.called)
 	}
 }

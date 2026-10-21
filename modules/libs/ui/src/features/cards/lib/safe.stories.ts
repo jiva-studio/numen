@@ -224,7 +224,7 @@ const createArrangement = (next: () => number, at: number): string => {
 }
 
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const bare = (url: string): string => url.replace(/[\x00-\x20]/g, '')
+const stripControls = (url: string): string => url.replace(/[\x00-\x20]/g, '')
 
 /** How many comments the markup holds, wherever they stand. */
 const comments = (root: Node): number => {
@@ -265,7 +265,7 @@ const wrong = (element: Element): string | null => {
 
   const src = element.getAttribute('src')
   if (src !== null) {
-    const said = bare(src)
+    const said = stripControls(src)
     if (scheme(said) === 'data:') {
       if (!INLINE_IMAGE.test(said)) return `a picture stands in the text as ${said.slice(0, 30)}`
     } else if (scheme(said) !== null || /^[\\/]{2}/.test(said)) {

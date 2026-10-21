@@ -33,12 +33,12 @@ describe('getSide', () => {
   })
 
   it('measures the zone from the box, up to the limit', () => {
-    const wide = { x: 0, y: 0, width: 4000, height: 400 }
-    const share = wide.width * DEFAULT_DROP.share
+    const wideBox = { x: 0, y: 0, width: 4000, height: 400 }
+    const share = wideBox.width * DEFAULT_DROP.share
 
     expect(share).toBeGreaterThan(DEFAULT_DROP.limit)
-    expect(getSide({ x: DEFAULT_DROP.limit + 1, y: 200 }, wide)).toBe('center')
-    expect(getSide({ x: DEFAULT_DROP.limit - 1, y: 200 }, wide)).toBe('left')
+    expect(getSide({ x: DEFAULT_DROP.limit + 1, y: 200 }, wideBox)).toBe('center')
+    expect(getSide({ x: DEFAULT_DROP.limit - 1, y: 200 }, wideBox)).toBe('left')
   })
 
   it('reads a box that is offset from the origin', () => {

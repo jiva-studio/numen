@@ -1189,10 +1189,10 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 	}
 
 	sat := s.sessionAt(t, today, saturday)
-	fresh := unseen(sat)
-	if owed := countQueue(sat) - fresh; owed != 2 || fresh != 20 {
+	newCards := unseen(sat)
+	if owed := countQueue(sat) - newCards; owed != 2 || newCards != 20 {
 		t.Errorf("the day asked %d owed and %d new, want the two owed and its twenty new",
-			owed, fresh)
+			owed, newCards)
 	}
 }
 
@@ -1205,12 +1205,12 @@ func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 			"new_a_day: 1\nreviews_a_day: 1\nminutes_a_day: 0\n")
 
 		sat := s.sessionAt(t, today, saturday)
-		fresh := unseen(sat)
+		newCards := unseen(sat)
 		// Twenty owed, and twenty unbegun over the ten days to the day it aims
 		// at, which is two a day.
-		if owed := countQueue(sat) - fresh; owed != 20 || fresh != 2 {
+		if owed := countQueue(sat) - newCards; owed != 20 || newCards != 2 {
 			t.Errorf("under %q the day asked %d owed and %d new, want 20 and 2",
-				share, owed, fresh)
+				share, owed, newCards)
 		}
 	}
 }
@@ -1221,8 +1221,8 @@ type session struct{ owed, fresh int }
 func s0(t *testing.T, s vaulted) session {
 	t.Helper()
 	sat := s.sessionAt(t, today, saturday)
-	fresh := unseen(sat)
-	return session{owed: countQueue(sat) - fresh, fresh: fresh}
+	newCards := unseen(sat)
+	return session{owed: countQueue(sat) - newCards, fresh: newCards}
 }
 
 // The share of the day that goes to the debt moves the day where the day is one

@@ -31,9 +31,9 @@ export function getFaults(workspace: Workspace): readonly string[] {
   walk(workspace.root)
 
   const panes = getPanes(workspace.root)
-  const bare = panes.filter((each) => each.tabs.length === 0)
-  if (bare.length > 0 && panes.length > 1) {
-    faults.push(`${bare.length} pane(s) hold nothing while others do`)
+  const emptyPanes = panes.filter((each) => each.tabs.length === 0)
+  if (emptyPanes.length > 0 && panes.length > 1) {
+    faults.push(`${emptyPanes.length} pane(s) hold nothing while others do`)
   }
 
   for (const each of panes) {

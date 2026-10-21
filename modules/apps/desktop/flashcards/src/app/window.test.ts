@@ -333,10 +333,10 @@ describe('a vault chosen', () => {
       return { from, to }
     }
 
-    const wide = await askDays(2000, 2000)
-    expect(await askDays(400, 2000)).toEqual(wide)
-    expect(await askDays(2000, 400)).toEqual(wide)
-    expect(await askDays(400, 400)).not.toEqual(wide)
+    const wideDays = await askDays(2000, 2000)
+    expect(await askDays(400, 2000)).toEqual(wideDays)
+    expect(await askDays(2000, 400)).toEqual(wideDays)
+    expect(await askDays(400, 400)).not.toEqual(wideDays)
   })
 })
 

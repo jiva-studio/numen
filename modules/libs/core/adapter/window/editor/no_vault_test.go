@@ -67,7 +67,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 
 	return &nothing{
 		installation: installation,
-		vault:        asks(server.Client(), server.URL),
+		vault:        newQuestionsClient(server.Client(), server.URL),
 		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		holds:        numenv1connect.NewVaultsServiceClient(server.Client(), server.URL),
 		server:       server,

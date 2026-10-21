@@ -139,7 +139,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	turning, settings := numenv1connect.NewSettingsServiceHandler(installation.Services.Settings)
 	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.Services)
+	mountQuestionsServices(mux, installation.Services)
 	mux.Handle(turning, settings)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -149,7 +149,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	t.Cleanup(server.Close)
 
 	return &going{
-		client:       asks(server.Client(), server.URL),
+		client:       newQuestionsClient(server.Client(), server.URL),
 		configuring:  numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
 		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,

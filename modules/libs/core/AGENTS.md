@@ -1,17 +1,16 @@
-# The core — what holds here
+# The core — architecture and invariants
 
 The conventions every language in this repository shares are in `AGENTS.md` at
-the root. This file is the core's own, and it holds over `modules/libs/core`.
+the root. This file defines specific rules for `modules/libs/core`.
 
-The architecture is in [`.agents/rules/architecture.md`](../../../.agents/rules/architecture.md)
-("Ports and adapters"). Read that for the shape. What follows is the rules a
-test refuses, and the test that refuses each — none of them is carried in
-anybody's memory.
+The architecture follows [`.agents/rules/architecture.md`](../../../.agents/rules/architecture.md)
+("Ports and adapters"). The following table summarizes architectural invariants
+and the corresponding tests enforcing them.
 
-## The layers, and what a package may reach
+## Layer boundaries and dependency direction
 
-`container/layers_test.go` and `container/direction_test.go` hold these. Each
-carries a table of what it refuses and a guard against passing vacuously.
+`container/layers_test.go` and `container/direction_test.go` enforce these boundaries.
+Each test verifies adherence to structural rules.
 
 | The rule | The test |
 |---|---|
@@ -74,8 +73,8 @@ them are unexported — so no half-built one exists for a method to check.
 No use case exposes a collaborator.
 
 A dependency that may genuinely be absent is not a nil left in a field: it is a
-case the composition root decides, and it says so in a word — `ProofreadingConfig.Recognition`
-answers `held bool`, so a window that cannot proofread never gets something to
+case the composition root decides explicitly — `ProofreadingConfig.Recognition`
+returns a boolean flag (e.g. `isConfigured`), so a window that cannot proofread never gets something to
 proofread with.
 
 A policy is not a collaborator. How many pages a batch holds, where progress is

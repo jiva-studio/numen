@@ -278,10 +278,10 @@ func (r *pluginRun) readSteps() {
 
 func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
 	switch s := msg.GetStep().(type) {
-	case *v1.AskAgentResponse_Said:
+	case *v1.AskAgentResponse_Text:
 		return port.Step{
 			Kind: domain.StepSay,
-			Text: s.Said,
+			Text: s.Text,
 		}
 	case *v1.AskAgentResponse_ToolCall:
 		tc := s.ToolCall
@@ -297,7 +297,7 @@ func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
 			Call:  tc.GetCall(),
 			Tool:  tc.GetTool(),
 			About: tc.GetAbout(),
-			Count: int(tc.GetWritten()),
+			Count: int(tc.GetLength()),
 			Place: domain.Place{
 				Path:  tc.GetPath(),
 				Spans: spans,

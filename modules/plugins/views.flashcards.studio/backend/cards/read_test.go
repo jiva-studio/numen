@@ -119,8 +119,8 @@ func TestAVaultThatWillNotOpenIsAnError(t *testing.T) {
 // is an error of the deck's read.
 func TestADeckWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
 	vs := newVaults(t)
-	plain := cards.NewRead(vs.ports.Readers, vs.queries)
-	birds, err := plain.Deck(t.Context(), vs.first, "decks/Birds.md")
+	reader := cards.NewRead(vs.ports.Readers, vs.queries)
+	birds, err := reader.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,8 +138,8 @@ func TestADeckWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
 // not answer is an error of the read.
 func TestADeckWhoseLinksCannotBeResolvedIsAnError(t *testing.T) {
 	vs := newVaults(t)
-	plain := cards.NewRead(vs.ports.Readers, vs.queries)
-	birds, err := plain.Deck(t.Context(), vs.first, "decks/Birds.md")
+	reader := cards.NewRead(vs.ports.Readers, vs.queries)
+	birds, err := reader.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}

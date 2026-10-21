@@ -181,7 +181,7 @@ func (r *Registry) CallTool(
 	if arguments := req.Msg.GetArguments(); len(arguments) > 0 && !isObject(arguments) {
 		return connect.NewResponse(&numenv1.CallToolResponse{Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS}), nil
 	}
-	ctx = context.WithValue(ctx, askedKey{}, req.Msg.GetAsked())
+	ctx = context.WithValue(ctx, askedKey{}, req.Msg.GetContext())
 	return connect.NewResponse(&numenv1.CallToolResponse{Result: one.run(ctx, req.Msg.GetArguments())}), nil
 }
 

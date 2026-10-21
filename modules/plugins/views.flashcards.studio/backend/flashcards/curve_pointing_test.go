@@ -29,16 +29,16 @@ func newPointedNotes() map[string]string {
 			"new_a_day: 5\nreviews_a_day: 30\nretention: 0.9\n---\n\n# Grammar\n",
 		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
 			"new_a_day: 4\nreviews_a_day: 20\nretention: 0.85\n---\n\n# Quiet\n",
-		"decks/Roots.md":  newPointingDeck(names("Sanskrit"), 0, 8),
-		"decks/Verbs.md":  newPointingDeck(names("Sanskrit"), 8, 8),
-		"decks/Chants.md": newPointingDeck(names("note://"+sanskrit), 16, 8),
-		"decks/Cases.md":  newPointingDeck(names("Grammar"), 24, 8),
+		"decks/Roots.md":  newPointingDeck(createPresetLink("Sanskrit"), 0, 8),
+		"decks/Verbs.md":  newPointingDeck(createPresetLink("Sanskrit"), 8, 8),
+		"decks/Chants.md": newPointingDeck(createPresetLink("note://"+sanskrit), 16, 8),
+		"decks/Cases.md":  newPointingDeck(createPresetLink("Grammar"), 24, 8),
 		"decks/Other.md":  newPointingDeck("", 32, 8),
 	}
 }
 
-// names is the `links:` block of a deck naming its preset.
-func names(to string) string {
+// createPresetLink is the `links:` block of a deck naming its preset.
+func createPresetLink(to string) string {
 	return "links:\n  - to: " + to + "\n    role: ref\n    type: preset\n"
 }
 
@@ -53,14 +53,14 @@ func newPointingDeck(links string, from, cards int) string {
 	return out
 }
 
-// answers writes the same history into a vault: two cards of every deck
+// recordHistoryAnswers writes the same history into a vault: two cards of every deck
 // answered three times each in the months before the day the curves are drawn
 // on, with the times answers have — a middle of a few seconds and a tail of
 // interruptions.
 //
 // Two vaults given this hold one history, so a curve over either is drawn from
 // the same answers.
-func answers(t *testing.T, s vaulted) {
+func recordHistoryAnswers(t *testing.T, s vaulted) {
 	t.Helper()
 	for _, days := range []int{150, 120, 90} {
 		record := s.run(t, noon.AddDate(0, 0, -days))
@@ -130,7 +130,7 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 	for _, shape := range shapes {
 		t.Run(shape.name, func(t *testing.T) {
 			whole := openVault(t, newPointedNotes())
-			answers(t, whole)
+			recordHistoryAnswers(t, whole)
 			decks, faces := countScheduled(t, whole, shape.path)
 
 			// The same vault with every deck the preset does not schedule taken
@@ -142,7 +142,7 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 				}
 			}
 			alone := openVault(t, notes)
-			answers(t, alone)
+			recordHistoryAnswers(t, alone)
 
 			for _, goal := range goals {
 				t.Run(goal.name, func(t *testing.T) {

@@ -45,10 +45,10 @@ describe('the stretch a grid asks about', () => {
 
   // A wider grid asks about more time, and never about less.
   it('grows with the room there is', () => {
-    const narrow = getStretch({ width: 200, cell: 11, gap: 3 }, now)
-    const wide = getStretch({ width: 1600, cell: 11, gap: 3 }, now)
-    expect(wide.from < narrow.from).toBe(true)
-    expect(wide.to >= narrow.to).toBe(true)
+    const narrowStretch = getStretch({ width: 200, cell: 11, gap: 3 }, now)
+    const wideStretch = getStretch({ width: 1600, cell: 11, gap: 3 }, now)
+    expect(wideStretch.from < narrowStretch.from).toBe(true)
+    expect(wideStretch.to >= narrowStretch.to).toBe(true)
   })
 })
 

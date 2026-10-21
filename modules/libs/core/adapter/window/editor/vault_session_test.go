@@ -72,7 +72,7 @@ func openTwoVaults(t *testing.T) *showing {
 
 	going, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.Services)
+	mountQuestionsServices(mux, installation.Services)
 	mux.Handle(going, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -81,7 +81,7 @@ func openTwoVaults(t *testing.T) *showing {
 	t.Cleanup(server.Close)
 
 	f := &showing{
-		client:       asks(server.Client(), server.URL),
+		client:       newQuestionsClient(server.Client(), server.URL),
 		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
 		cfg:          cfg,
@@ -168,7 +168,7 @@ func (f *showing) getFoundNames(t *testing.T, query string) []string {
 func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if got := f.shows(t, wire.Editor); got != string(f.first.ID) {
+	if got := f.getShownVault(t, wire.Editor); got != string(f.first.ID) {
 		t.Errorf("the window says it is showing %q, want %s", got, string(f.first.ID))
 	}
 
@@ -177,7 +177,7 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 	}
 	f.read(t)
 
-	if got := f.shows(t, wire.Editor); got != string(f.second.ID) {
+	if got := f.getShownVault(t, wire.Editor); got != string(f.second.ID) {
 		t.Errorf("after the swap it says %q, want %s", got, string(f.second.ID))
 	}
 
@@ -190,8 +190,8 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 	}
 }
 
-// shows is the identity of the vault the named window says it is showing.
-func (f *showing) shows(t *testing.T, window string) string {
+// getShownVault returns the identity of the vault the named window says it is showing.
+func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 
 	out, err := f.drawn.GetCurrentVault(t.Context(),

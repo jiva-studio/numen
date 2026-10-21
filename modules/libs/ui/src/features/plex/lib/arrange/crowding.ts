@@ -46,11 +46,11 @@ export function measureCrowding(options: PlexOptions, counts: RelationCounts): P
   if (canRelationAll(options, counts)) return options
 
   let tight = 0
-  let loose = 1
+  let maxSqueeze = 1
   for (let halving = 0; halving < HALVINGS; halving++) {
-    const middle = (tight + loose) / 2
+    const middle = (tight + maxSqueeze) / 2
     if (canRelationAll(packOptions(options, middle), counts)) tight = middle
-    else loose = middle
+    else maxSqueeze = middle
   }
   return packOptions(options, tight)
 }

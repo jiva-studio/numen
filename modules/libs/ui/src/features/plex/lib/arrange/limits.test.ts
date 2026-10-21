@@ -164,9 +164,9 @@ describe('the margin is a setting, not a number in the source', () => {
   it('fits less as the margin grows', () => {
     const viewport = { width: 1000, height: 800 }
     const counts = { parent: 0, child: 12, jump: 4, sibling: 0 }
-    const tight = getLimits({ ...DEFAULT_OPTIONS, viewport, margin: 200 }, counts)
-    const loose = getLimits({ ...DEFAULT_OPTIONS, viewport, margin: 0 }, counts)
-    expect(tight.child.perLine).toBeLessThan(loose.child.perLine)
+    const largeMarginLimits = getLimits({ ...DEFAULT_OPTIONS, viewport, margin: 200 }, counts)
+    const zeroMarginLimits = getLimits({ ...DEFAULT_OPTIONS, viewport, margin: 0 }, counts)
+    expect(largeMarginLimits.child.perLine).toBeLessThan(zeroMarginLimits.child.perLine)
   })
 })
 

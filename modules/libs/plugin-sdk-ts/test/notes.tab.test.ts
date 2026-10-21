@@ -36,7 +36,7 @@ const tab = (over: Partial<Tab> = {}): Tab => ({
 const kinds = (effects: readonly Effect[]) => effects.map((effect) => effect.kind)
 
 /** A tab whose write was told the file carries another fingerprint. */
-const stale = (over: Partial<Tab> = {}): Tab =>
+const createStaleTab = (over: Partial<Tab> = {}): Tab =>
   transitionTab(tab({ shown: 'mine', pendingWrite: 'mine', since: 10, ...over }), {
     kind: 'written',
     answer: { kind: 'changed' },
@@ -463,7 +463,7 @@ describe('a write answers changed', () => {
   })
 
   it('arms nothing while the person types into a stale tab', () => {
-    const next = transitionTab(stale(), { kind: 'edited', body: 'mine and more', at: 2000 })
+    const next = transitionTab(createStaleTab(), { kind: 'edited', body: 'mine and more', at: 2000 })
 
     expect(next.tab.shown).toBe('mine and more')
     expect(getState(next.tab)).toBe('stale')
@@ -471,7 +471,7 @@ describe('a write answers changed', () => {
   })
 
   it('writes nothing when an interval armed before it fires', () => {
-    const stopped = stale()
+    const stopped = createStaleTab()
     const next = transitionTab(stopped, { kind: 'timerFired' })
 
     expect(next.tab).toEqual(stopped)
@@ -479,7 +479,7 @@ describe('a write answers changed', () => {
   })
 
   it('reads nothing when the vault changes under it', () => {
-    const stopped = stale()
+    const stopped = createStaleTab()
 
     expect(transitionTab(stopped, { kind: 'changed', paths: ['Note.md'], renamed: [] })).toEqual({
       tab: stopped,
@@ -492,7 +492,7 @@ describe('a write answers changed', () => {
   })
 
   it('holds a tab that the person types back to what was written', () => {
-    const stopped = stale()
+    const stopped = createStaleTab()
     const back = transitionTab(stopped, { kind: 'edited', body: 'one', at: 2000 }).tab
 
     expect(isDirty(back)).toBe(false)
@@ -503,7 +503,7 @@ describe('a write answers changed', () => {
   })
 
   it('discards an answer to a write it is no longer waiting on', () => {
-    const stopped = stale()
+    const stopped = createStaleTab()
     const next = transitionTab(stopped, {
       kind: 'written',
       answer: { kind: 'error', error: 'tooLarge' },
@@ -516,7 +516,7 @@ describe('a write answers changed', () => {
 
 describe('the person keeps theirs', () => {
   it('writes what is shown, comparing nothing', () => {
-    const next = transitionTab(stale(), { kind: 'keepLocal' })
+    const next = transitionTab(createStaleTab(), { kind: 'keepLocal' })
 
     expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'mine', seen: null }])
     expect(getState(next.tab)).toBe('saving')
@@ -524,7 +524,7 @@ describe('the person keeps theirs', () => {
   })
 
   it('takes what that write answers with, and the tab is clean', () => {
-    const writing = transitionTab(stale(), { kind: 'keepLocal' }).tab
+    const writing = transitionTab(createStaleTab(), { kind: 'keepLocal' }).tab
     const next = transitionTab(writing, { kind: 'written', answer: { kind: 'ok', at: 'a3' } })
 
     expect(next.tab.written).toBe('mine')
@@ -541,7 +541,7 @@ describe('the person keeps theirs', () => {
 
 describe("the person takes the file's", () => {
   it('reads again, and the tab stays stale until that read lands', () => {
-    const next = transitionTab(stale(), { kind: 'takeFile' })
+    const next = transitionTab(createStaleTab(), { kind: 'takeFile' })
 
     expect(next.tab.reading).toBe(2)
     expect(getState(next.tab)).toBe('stale')
@@ -549,7 +549,7 @@ describe("the person takes the file's", () => {
   })
 
   it('replaces the buffer with what the read answers, unsaved as the tab is', () => {
-    const reading = transitionTab(stale(), { kind: 'takeFile' }).tab
+    const reading = transitionTab(createStaleTab(), { kind: 'takeFile' }).tab
     const next = transitionTab(reading, {
       kind: 'read',
       generation: 2,
@@ -564,7 +564,7 @@ describe("the person takes the file's", () => {
   })
 
   it('leaves the bound to start again with the next change', () => {
-    const typing = transitionTab(stale(), { kind: 'edited', body: 'mine and more', at: 1000 }).tab
+    const typing = transitionTab(createStaleTab(), { kind: 'edited', body: 'mine and more', at: 1000 }).tab
     const reading = transitionTab(typing, { kind: 'takeFile' }).tab
     const took = transitionTab(reading, {
       kind: 'read',
@@ -579,7 +579,7 @@ describe("the person takes the file's", () => {
   })
 
   it('stays stale for a read that is out of date', () => {
-    const reading = transitionTab(stale(), { kind: 'takeFile' }).tab
+    const reading = transitionTab(createStaleTab(), { kind: 'takeFile' }).tab
     const next = transitionTab(reading, {
       kind: 'read',
       generation: 1,
@@ -591,7 +591,7 @@ describe("the person takes the file's", () => {
   })
 
   it('says the note is not there where the file is gone, since there is nothing to take', () => {
-    const reading = transitionTab(stale(), { kind: 'takeFile' }).tab
+    const reading = transitionTab(createStaleTab(), { kind: 'takeFile' }).tab
     const next = transitionTab(reading, {
       kind: 'read',
       generation: 2,
@@ -647,7 +647,7 @@ describe('a save is asked for', () => {
   })
 
   it('writes nothing for a stale tab, which the person answers', () => {
-    const stopped = stale()
+    const stopped = createStaleTab()
 
     expect(transitionTab(stopped, { kind: 'save' })).toEqual({ tab: stopped, effects: [] })
   })
@@ -690,7 +690,7 @@ describe('a file about to be renamed or removed', () => {
   })
 
   it('writes nothing for a stale tab, whose question is the person to answer', () => {
-    const stopped = stale()
+    const stopped = createStaleTab()
     const next = transitionTab(stopped, { kind: 'flush' })
 
     expect(next.tab).toEqual(stopped)
@@ -848,7 +848,7 @@ describe('a close is asked for', () => {
   })
 
   it('holds a stale tab, writing nothing and leaving the question standing', () => {
-    const next = transitionTab(stale(), { kind: 'close' })
+    const next = transitionTab(createStaleTab(), { kind: 'close' })
 
     expect(kinds(next.effects)).toEqual(['keepOpen'])
     expect(getState(next.tab)).toBe('stale')

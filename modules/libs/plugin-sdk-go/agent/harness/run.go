@@ -60,7 +60,7 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 		}
 		var unsent error
 		emit := func(text string) error {
-			unsent = r.send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}})
+			unsent = r.send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}})
 			return unsent
 		}
 		reply, finished, err := r.ask(ctx, messages, emit)

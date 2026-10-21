@@ -158,9 +158,9 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	// The drain is shorter than the call, so it runs out of time with the write
 	// still going. What follows must wait for the write and not for the drain.
 	drain := 200 * time.Millisecond
-	shut := make(chan struct{})
+	closedCh := make(chan struct{})
 	go func() {
-		defer close(shut)
+		defer close(closedCh)
 		ctx, cancel := context.WithTimeout(t.Context(), drain)
 		defer cancel()
 		endpoint.Close(ctx)
@@ -169,7 +169,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}()
 
 	select {
-	case <-shut:
+	case <-closedCh:
 		t.Fatal("the database closed with an agent's write still going")
 	case <-time.After(4 * drain):
 	}

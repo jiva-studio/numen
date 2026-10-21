@@ -185,8 +185,8 @@ func wordStep(msg *numenv1.AskAgentResponse) string {
 		return "tool_call:" + s.ToolCall.GetTool()
 	case *numenv1.AskAgentResponse_ToolFinished:
 		return "tool_finished"
-	case *numenv1.AskAgentResponse_Said:
-		return "said:" + s.Said
+	case *numenv1.AskAgentResponse_Text:
+		return "said:" + s.Text
 	case *numenv1.AskAgentResponse_Stopped:
 		return "stopped:" + s.Stopped
 	}

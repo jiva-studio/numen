@@ -39,7 +39,7 @@ func (g graph) GetBacklinks(_ context.Context, _ domain.VaultID, to string) ([]d
 }
 
 // writes is a link of the note at from, to the note at to.
-func writes(to string, role domain.LinkRole, label string) domain.ResolvedLink {
+func createOutgoingLink(to string, role domain.LinkRole, label string) domain.ResolvedLink {
 	return domain.ResolvedLink{
 		Link: domain.Link{Role: role, Label: label},
 		To:   to, ToVault: graphVault,
@@ -87,14 +87,14 @@ func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 	g := graph{
 		out: map[string][]domain.ResolvedLink{
 			"F.md": {
-				writes("C.md", domain.RoleChild, ""),
-				writes("P.md", domain.RoleParent, ""),
+				createOutgoingLink("C.md", domain.RoleChild, ""),
+				createOutgoingLink("P.md", domain.RoleParent, ""),
 			},
-			"C.md": {writes("G.md", domain.RoleChild, "")},
+			"C.md": {createOutgoingLink("G.md", domain.RoleChild, "")},
 			"P.md": {
-				writes("GP.md", domain.RoleParent, ""),
-				writes("J.md", domain.RoleJump, ""),
-				writes("S.md", domain.RoleChild, ""),
+				createOutgoingLink("GP.md", domain.RoleParent, ""),
+				createOutgoingLink("J.md", domain.RoleJump, ""),
+				createOutgoingLink("S.md", domain.RoleChild, ""),
 			},
 		},
 		in: map[string][]domain.ResolvedLink{
@@ -120,7 +120,7 @@ func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 func TestANeighbourhoodThatCannotBeFoundSaysWhy(t *testing.T) {
 	t.Parallel()
 	boom := errors.New("the index would not answer")
-	parentOfF := map[string][]domain.ResolvedLink{"F.md": {writes("P.md", domain.RoleParent, "")}}
+	parentOfF := map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("P.md", domain.RoleParent, "")}}
 	for name, c := range map[string]struct {
 		g    graph
 		refs *asked
@@ -154,7 +154,7 @@ func TestANeighbourhoodThatCannotBeFoundSaysWhy(t *testing.T) {
 // it.
 func TestANoteTheVaultDoesNotKnowHasNoNeighbourhood(t *testing.T) {
 	t.Parallel()
-	g := graph{out: map[string][]domain.ResolvedLink{"F.md": {writes("C.md", domain.RoleChild, "")}}}
+	g := graph{out: map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("C.md", domain.RoleChild, "")}}}
 
 	got, err := showGraph(g, &asked{unknown: "F.md"}, "F.md")
 	if err != nil {
@@ -171,8 +171,8 @@ func TestOnlyPlacesInTheHierarchyAreRelatedFromTheNotesPointingAtANote(t *testin
 	t.Parallel()
 	g := graph{
 		out: map[string][]domain.ResolvedLink{
-			"F.md":  {writes("P1.md", domain.RoleParent, "")},
-			"P1.md": {writes("F.md", domain.RoleChild, "")},
+			"F.md":  {createOutgoingLink("P1.md", domain.RoleParent, "")},
+			"P1.md": {createOutgoingLink("F.md", domain.RoleChild, "")},
 		},
 		in: map[string][]domain.ResolvedLink{
 			"F.md": {
@@ -202,8 +202,8 @@ func TestOnlyPlacesInTheHierarchyAreRelatedFromTheNotesPointingAtANote(t *testin
 func TestTheFirstOfTwoEqualLinksIsTheOneDrawn(t *testing.T) {
 	t.Parallel()
 	g := graph{out: map[string][]domain.ResolvedLink{"F.md": {
-		writes("C.md", domain.RoleChild, "first"),
-		writes("C.md", domain.RoleChild, "second"),
+		createOutgoingLink("C.md", domain.RoleChild, "first"),
+		createOutgoingLink("C.md", domain.RoleChild, "second"),
 	}}}
 
 	got, err := showGraph(g, &asked{}, "F.md")

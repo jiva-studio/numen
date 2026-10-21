@@ -139,7 +139,7 @@ func TestADocumentSayingNothingWritesNothing(t *testing.T) {
 	if !res.IsEmpty {
 		t.Error("a document that says nothing was not reported as saying nothing")
 	}
-	if names := shelf.names(); len(names) != 0 {
+	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
 	if src, held := index.sources[v.ID][documentPath]; held && src.Producer != "" {
@@ -186,7 +186,7 @@ func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 
 	// Nothing final was written: a half-read document is not an artifact, and
 	// a scan meeting one cuts the document itself.
-	for _, name := range shelf.names() {
+	for _, name := range shelf.artifactNames() {
 		if name.File == domain.ArtifactText {
 			t.Errorf("a stopped run left %q behind", name)
 		}
@@ -275,7 +275,7 @@ func documentHash() string { return text.Fingerprint(printPages(outline)) }
 //
 // The offsets rise, because the prose of every page written before this one
 // stands in front of it.
-func reads(t *testing.T, prose string, boxes []domain.HighlightBox, says string) {
+func assertBoxesRead(t *testing.T, prose string, boxes []domain.HighlightBox, says string) {
 	t.Helper()
 	at := -1
 	for i, box := range boxes {
@@ -309,7 +309,7 @@ func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
 	if model.pages != 0 {
 		t.Errorf("the model was shown %d pages", model.pages)
 	}
-	if names := shelf.names(); len(names) != 0 {
+	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
 	if _, held := index.sources[v.ID][documentPath]; held {
@@ -347,7 +347,7 @@ func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
 			t.Errorf("coordinate %d is on page %d", i, box.Page)
 		}
 	}
-	reads(t, prose, boxes, says)
+	assertBoxesRead(t, prose, boxes, says)
 }
 
 func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
@@ -391,7 +391,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
-	reads(t, prose, boxes, says)
+	assertBoxesRead(t, prose, boxes, says)
 }
 
 func TestTheSourceIsCutAsItsPagesAreRead(t *testing.T) {
@@ -462,7 +462,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, highlight.Unpack(packed), says)
+	assertBoxesRead(t, prose, highlight.Unpack(packed), says)
 }
 
 func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
@@ -518,7 +518,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, highlight.Unpack(packed), says)
+	assertBoxesRead(t, prose, highlight.Unpack(packed), says)
 }
 
 func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
@@ -561,7 +561,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
-	reads(t, prose, boxes, says)
+	assertBoxesRead(t, prose, boxes, says)
 }
 
 // artifact is what recognition wrote for the document under test.

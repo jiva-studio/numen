@@ -244,7 +244,7 @@ describe('the title a line carries while the picture moves', () => {
 
   it('holds the words a settled line was cut to', () => {
     // Wide letters and a long label, so the cut is well short of the whole.
-    const wide = (label: string) => 30 * [...label].length
+    const measureLabelWidth = (label: string) => 30 * [...label].length
     const arrangeWithLabels = (neighbourhood: PlexNeighbourhood) =>
       arrangePlex(
         {
@@ -254,7 +254,7 @@ describe('the title a line carries while the picture moves', () => {
             label: 'the scene in the assembly',
           })),
         },
-        { measureLabel: wide },
+        { measureLabel: measureLabelWidth },
       )
 
     const start = arrangeWithLabels(before)
@@ -269,7 +269,7 @@ describe('the title a line carries while the picture moves', () => {
   })
 
   it('holds where along the line the words sit', () => {
-    const wide = (label: string) => 6 * [...label].length
+    const measureLabelWidth = (label: string) => 6 * [...label].length
 
     // A window that wraps the fan, at the settings: what this is about is a
     // title moving off the middle, not how much room the window has to spare.
@@ -279,7 +279,7 @@ describe('the title a line carries while the picture moves', () => {
           ...neighbourhood,
           edges: neighbourhood.edges.map((edge) => ({ ...edge, label: 'contains' })),
         },
-        { measureLabel: wide, options: { viewport: { width: 900, height: 800 }, spread: 1 } },
+        { measureLabel: measureLabelWidth, options: { viewport: { width: 900, height: 800 }, spread: 1 } },
       )
 
     // A fan wide enough that its titles cannot all keep the middle.

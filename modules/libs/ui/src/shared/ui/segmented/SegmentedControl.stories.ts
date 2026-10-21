@@ -212,17 +212,17 @@ export const Dark: Story = {
 
     // A quiet segment keeps no ground of its own, so both are read over the
     // ground the control itself lays down.
-    const behind = getComputedStyle(
+    const slotBg = getComputedStyle(
       canvasElement.querySelector('[data-slot="segmented"]') as HTMLElement,
     ).backgroundColor
     const chosen = getComputedStyle(medium as HTMLElement)
-    const ground = lightness(chosen.backgroundColor, behind)
+    const ground = lightness(chosen.backgroundColor, slotBg)
     const ink = lightness(chosen.color, chosen.backgroundColor)
 
-    for (const beside of [small, large]) {
-      const quiet = getComputedStyle(beside as HTMLElement)
-      expect(ground).toBeGreaterThan(lightness(quiet.backgroundColor, behind) + 24)
-      expect(ink).toBeLessThan(lightness(quiet.color, behind) - 24)
+    for (const other of [small, large]) {
+      const unchosen = getComputedStyle(other as HTMLElement)
+      expect(ground).toBeGreaterThan(lightness(unchosen.backgroundColor, slotBg) + 24)
+      expect(ink).toBeLessThan(lightness(unchosen.color, slotBg) - 24)
     }
   },
 }

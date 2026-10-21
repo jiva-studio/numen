@@ -198,7 +198,7 @@ const announce = `printf '%s\n' '{"type":"stream_event","event":{"type":"content
 func awaitUp(t *testing.T, stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) {
 	t.Helper()
 	for stream.Receive() {
-		if stream.Msg().GetSaid() == "up" {
+		if stream.Msg().GetText() == "up" {
 			return
 		}
 	}

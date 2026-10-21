@@ -35,16 +35,16 @@ describe('useDocumentViewport', () => {
       () => true,
     )
 
-    expect(viewport.wide.value).toBe(0)
+    expect(viewport.width.value).toBe(0)
     expect(viewport.getPageImageUrl(0)).toBe('')
 
     viewport.widen(800)
-    expect(viewport.wide.value).toBe(800)
+    expect(viewport.width.value).toBe(800)
     expect(viewport.getPageImageUrl(0)).toBe('doc.pdf/p0?w=800&s=v1')
     expect(viewport.picture.value).toBe('doc.pdf/p0?w=800&s=v1')
 
     viewport.widen(5000)
-    expect(viewport.wide.value).toBe(4096)
+    expect(viewport.width.value).toBe(4096)
   })
 
   it('keeps its width once the document is closed', () => {
@@ -56,6 +56,6 @@ describe('useDocumentViewport', () => {
     open = false
     viewport.widen(1600)
 
-    expect(viewport.wide.value).toBe(800)
+    expect(viewport.width.value).toBe(800)
   })
 })

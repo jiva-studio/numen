@@ -36,10 +36,10 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
 
   const readOut = async (all: readonly Notice[]): Promise<void> => {
     if (!listening) return
-    const fresh = all.filter((one) => announced.value.get(one.id) !== getWords(one))
+    const unannounced = all.filter((one) => announced.value.get(one.id) !== getWords(one))
     announced.value = new Map(all.map((one) => [one.id, getWords(one)]))
-    if (fresh.length === 0) return
-    waiting = [...waiting, ...fresh]
+    if (unannounced.length === 0) return
+    waiting = [...waiting, ...unannounced]
 
     const mine = ++reading
     told.value = ''
@@ -50,9 +50,9 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     const pending = waiting
     waiting = []
     const loud = pending.filter((one) => one.tone === 'alarm')
-    const quiet = pending.filter((one) => one.tone !== 'alarm')
+    const regular = pending.filter((one) => one.tone !== 'alarm')
     if (loud.length) cried.value = loud.map(getWords).join('. ')
-    if (quiet.length) told.value = quiet.map(getWords).join('. ')
+    if (regular.length) told.value = regular.map(getWords).join('. ')
   }
 
   watch(getNotices, (all) => void readOut(all))

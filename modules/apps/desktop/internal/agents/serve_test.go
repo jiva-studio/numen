@@ -177,8 +177,8 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	shut := make(chan error, 1)
-	go func() { shut <- served.Close() }()
+	closeErr := make(chan error, 1)
+	go func() { closeErr <- served.Close() }()
 
 	// The endpoint stops taking connections as it begins closing, which is
 	// where the agents are already gone.
@@ -194,7 +194,7 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 	}
 
 	held.Close()
-	if err := <-shut; err != nil {
+	if err := <-closeErr; err != nil {
 		t.Fatal(err)
 	}
 }

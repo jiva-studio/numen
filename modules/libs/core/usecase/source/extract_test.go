@@ -662,7 +662,7 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 	if res.Removed != 1 {
 		t.Fatalf("removed = %d, want the one recording the vault no longer holds", res.Removed)
 	}
-	if left := made.names(); len(left) != 0 {
+	if left := made.artifactNames(); len(left) != 0 {
 		t.Errorf("the store still holds %v", left)
 	}
 }

@@ -22,7 +22,7 @@ func askAgent(t *testing.T, svc *agentServer, task *numenv1.AskAgentRequest) (sa
 		t.Fatal(err)
 	}
 	for stream.Receive() {
-		said += stream.Msg().GetSaid()
+		said += stream.Msg().GetText()
 		if reason := stream.Msg().GetStopped(); reason != "" {
 			stopped = reason
 		}
@@ -246,7 +246,7 @@ func TestAskAgentStopsTheAgentWhenCancelled(t *testing.T) {
 		t.Fatal(err)
 	}
 	for stream.Receive() {
-		if stream.Msg().GetStopped() != "" || stream.Msg().GetSaid() != "" {
+		if stream.Msg().GetStopped() != "" || stream.Msg().GetText() != "" {
 			t.Errorf("a cancelled task said %v", stream.Msg())
 		}
 	}

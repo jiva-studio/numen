@@ -57,25 +57,25 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		day := drawAllowance(t)
 		owed := rapid.IntRange(0, 30).Draw(t, "owed")
-		fresh := rapid.IntRange(0, 30).Draw(t, "fresh")
+		unbegun := rapid.IntRange(0, 30).Draw(t, "unbegun")
 		admits := rapid.IntRange(0, 60).Draw(t, "admits")
 
 		var debt, begun int
-		for debt+begun < admits && (debt < owed || begun < fresh) {
-			if day.IsNextCardDebt(debt, begun, debt < owed, begun < fresh) {
+		for debt+begun < admits && (debt < owed || begun < unbegun) {
+			if day.IsNextCardDebt(debt, begun, debt < owed, begun < unbegun) {
 				debt++
 			} else {
 				begun++
 			}
 		}
-		if got, want := debt+begun, min(admits, owed+fresh); got != want {
+		if got, want := debt+begun, min(admits, owed+unbegun); got != want {
 			t.Fatalf("a day of %d admitting %d over %d owed and %d unbegun "+
 				"spent %d of itself, want %d",
-				day.Backlog, admits, owed, fresh, got, want)
+				day.Backlog, admits, owed, unbegun, got, want)
 		}
-		if debt > owed || begun > fresh {
+		if debt > owed || begun > unbegun {
 			t.Fatalf("a day took %d of %d owed and %d of %d unbegun",
-				debt, owed, begun, fresh)
+				debt, owed, begun, unbegun)
 		}
 	})
 }

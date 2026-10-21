@@ -246,7 +246,7 @@ func TestOneRunToARecording(t *testing.T) {
 	if len(model.heard) != 0 {
 		t.Errorf("the model was handed %d stretches", len(model.heard))
 	}
-	if names := shelf.names(); len(names) != 0 {
+	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
 	if _, held := index.sources[v.ID][recordingPath]; held {

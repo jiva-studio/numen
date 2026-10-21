@@ -371,8 +371,8 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	shut := newSitting(yesterdayRun, func() time.Time { return yesterday })
-	if _, err := shut.Answer(t.Context(), on, review.Good, 0); err != nil {
+	yesterdaySession := newSitting(yesterdayRun, func() time.Time { return yesterday })
+	if _, err := yesterdaySession.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {

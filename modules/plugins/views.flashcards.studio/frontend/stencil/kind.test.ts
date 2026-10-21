@@ -470,8 +470,8 @@ describe('a stencil tab as the window lists it', () => {
     const clean = await open()
     expect(clean.stencils.kind.getMark?.(clean.tab)).toBeUndefined()
 
-    const stale = await openStale()
-    expect(stale.stencils.kind.getMark?.(stale.tab)).toBe('stale')
+    const staleSession = await openStale()
+    expect(staleSession.stencils.kind.getMark?.(staleSession.tab)).toBe('stale')
   })
 
   it('is closed by the stencil itself, and the window is told to leave it be', async () => {
@@ -486,8 +486,8 @@ describe('what the window asks of a stencil tab', () => {
     const clean = await open()
     expect(clean.stencils.kind.isAsking?.(clean.tab)).toBe(false)
 
-    const stale = await openStale()
-    expect(stale.stencils.kind.isAsking?.(stale.tab)).toBe(true)
+    const staleSession = await openStale()
+    expect(staleSession.stencils.kind.isAsking?.(staleSession.tab)).toBe(true)
   })
 
   it('is to write what is unwritten out, and answer once it is', async () => {

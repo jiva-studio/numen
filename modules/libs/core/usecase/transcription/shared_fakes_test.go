@@ -132,7 +132,7 @@ func (s *shelf) claims(name domain.ArtifactName) bool {
 	return s.held[name]
 }
 
-func (s *shelf) names() []domain.ArtifactName {
+func (s *shelf) artifactNames() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []domain.ArtifactName

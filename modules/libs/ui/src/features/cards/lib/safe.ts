@@ -11,11 +11,11 @@ import { ANY, DRAWN, OWN, SCHEMES, STRUCK, STYLED } from './tags'
 const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i
 
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const bare = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
+const stripControls = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
 
 /** The scheme a URL names, and nothing where it names none. */
 export const scheme = (url: string): string | null =>
-  /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(bare(url))?.[0].toLowerCase() ?? null
+  /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(stripControls(url))?.[0].toLowerCase() ?? null
 
 const canLinkTo = (url: string): boolean => {
   const named = scheme(url)

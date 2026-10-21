@@ -50,8 +50,8 @@ func (r *eventReader) handle(rawMap map[string]any) {
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
 		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Said{
-				Said: content,
+			Step: &numenv1.AskAgentResponse_Text{
+				Text: content,
 			},
 		})
 	}
@@ -109,8 +109,8 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
 		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Said{
-				Said: text,
+			Step: &numenv1.AskAgentResponse_Text{
+				Text: text,
 			},
 		})
 	}
@@ -150,8 +150,8 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
 		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Said{
-				Said: text,
+			Step: &numenv1.AskAgentResponse_Text{
+				Text: text,
 			},
 		})
 	}
@@ -160,8 +160,8 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 func (r *eventReader) handleResult(rawMap map[string]any) {
 	if text, ok := rawMap["result"].(string); ok && text != "" {
 		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Said{
-				Said: text,
+			Step: &numenv1.AskAgentResponse_Text{
+				Text: text,
 			},
 		})
 	}
@@ -201,7 +201,7 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 		return
 	}
 	r.isTextStreamed = true
-	r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}})
+	r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}})
 }
 
 // handleCliResult says the response of a run that streamed none, and stops a run whose status is
@@ -219,6 +219,6 @@ func (r *eventReader) handleCliResult(result map[string]any) {
 		return
 	}
 	if response, _ := result["response"].(string); response != "" && !r.isTextStreamed {
-		r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: response}})
+		r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: response}})
 	}
 }

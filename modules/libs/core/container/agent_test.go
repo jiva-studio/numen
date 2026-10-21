@@ -50,7 +50,7 @@ func (s *providerServer) AskAgent(
 	s.mu.Lock()
 	s.asked = append(s.asked, req.Msg)
 	s.mu.Unlock()
-	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Said{Said: "answer: " + req.Msg.GetPrompt()}})
+	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Text{Text: "answer: " + req.Msg.GetPrompt()}})
 	return stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Stopped{Stopped: "done"}})
 }
 

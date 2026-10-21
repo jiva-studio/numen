@@ -225,8 +225,8 @@ describe('how many cards stand at once', () => {
   })
 
   it('never folds a notice that holds', () => {
-    const holds = (id: string): Notice => ({ id, text: 'Indexing', stay: 'holds' })
-    const drawn = [holds('a'), holds('b'), holds('c')]
+    const persistentNotice = (id: string): Notice => ({ id, text: 'Indexing', stay: 'holds' })
+    const drawn = [persistentNotice('a'), persistentNotice('b'), persistentNotice('c')]
 
     expect(foldNotices(drawn, 1)).toEqual({ shown: drawn, over: 0 })
   })

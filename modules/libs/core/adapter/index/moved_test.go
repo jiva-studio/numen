@@ -172,7 +172,7 @@ func TestARenamedNoteIsFoundByTheNameItLandsUnder(t *testing.T) {
 	if got := describeMatch(found[0]); got != "[Hibernation]" {
 		t.Errorf("marked %q, want %q", got, "[Hibernation]")
 	}
-	if stale := getNames(t, db, first, "Torpor"); len(stale) != 0 {
-		t.Errorf("the name it left still answers with %+v", stale)
+	if oldMatches := getNames(t, db, first, "Torpor"); len(oldMatches) != 0 {
+		t.Errorf("the name it left still answers with %+v", oldMatches)
 	}
 }

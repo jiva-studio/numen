@@ -813,7 +813,7 @@ type AskAgentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Step:
 	//
-	//	*AskAgentResponse_Said
+	//	*AskAgentResponse_Text
 	//	*AskAgentResponse_ToolCall
 	//	*AskAgentResponse_Stopped
 	//	*AskAgentResponse_ToolFinished
@@ -861,10 +861,10 @@ func (x *AskAgentResponse) GetStep() isAskAgentResponse_Step {
 	return nil
 }
 
-func (x *AskAgentResponse) GetSaid() string {
+func (x *AskAgentResponse) GetText() string {
 	if x != nil {
-		if x, ok := x.Step.(*AskAgentResponse_Said); ok {
-			return x.Said
+		if x, ok := x.Step.(*AskAgentResponse_Text); ok {
+			return x.Text
 		}
 	}
 	return ""
@@ -919,9 +919,9 @@ type isAskAgentResponse_Step interface {
 	isAskAgentResponse_Step()
 }
 
-type AskAgentResponse_Said struct {
+type AskAgentResponse_Text struct {
 	// A piece of what the agent is saying, appended in the order it arrives.
-	Said string `protobuf:"bytes,1,opt,name=said,proto3,oneof"`
+	Text string `protobuf:"bytes,1,opt,name=text,proto3,oneof"`
 }
 
 type AskAgentResponse_ToolCall struct {
@@ -953,7 +953,7 @@ type AskAgentResponse_EditProgress struct {
 	EditProgress *EditProgress `protobuf:"bytes,6,opt,name=edit_progress,json=editProgress,proto3,oneof"`
 }
 
-func (*AskAgentResponse_Said) isAskAgentResponse_Step() {}
+func (*AskAgentResponse_Text) isAskAgentResponse_Step() {}
 
 func (*AskAgentResponse_ToolCall) isAskAgentResponse_Step() {}
 
@@ -1052,7 +1052,7 @@ type ToolCall struct {
 	About string `protobuf:"bytes,2,opt,name=about,proto3" json:"about,omitempty"`
 	// How much of the call has been written, in characters. The only thing that
 	// moves while a long call is being written.
-	Written int32 `protobuf:"varint,3,opt,name=written,proto3" json:"written,omitempty"`
+	Length int32 `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`
 	// Where the call is working: the source it names, by the path the vault
 	// files it under. Empty for a call that is working on no one file.
 	Path string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
@@ -1112,9 +1112,9 @@ func (x *ToolCall) GetAbout() string {
 	return ""
 }
 
-func (x *ToolCall) GetWritten() int32 {
+func (x *ToolCall) GetLength() int32 {
 	if x != nil {
-		return x.Written
+		return x.Length
 	}
 	return 0
 }
@@ -1619,7 +1619,7 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x1c\n" +
 	"\x1aFinishConversationResponse\"\xbc\x02\n" +
 	"\x10AskAgentResponse\x12\x14\n" +
-	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x121\n" +
+	"\x04text\x18\x01 \x01(\tH\x00R\x04text\x121\n" +
 	"\ttool_call\x18\x02 \x01(\v2\x12.numen.v1.ToolCallH\x00R\btoolCall\x12\x1a\n" +
 	"\astopped\x18\x03 \x01(\tH\x00R\astopped\x12=\n" +
 	"\rtool_finished\x18\x04 \x01(\v2\x16.numen.v1.ToolFinishedH\x00R\ftoolFinished\x12=\n" +
@@ -1627,11 +1627,11 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\redit_progress\x18\x06 \x01(\v2\x16.numen.v1.EditProgressH\x00R\feditProgressB\x06\n" +
 	"\x04step\"\x0e\n" +
 	"\fToolFinished\"\x0e\n" +
-	"\fModelStarted\"\xae\x01\n" +
+	"\fModelStarted\"\xac\x01\n" +
 	"\bToolCall\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
-	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
-	"\awritten\x18\x03 \x01(\x05R\awritten\x12\x12\n" +
+	"\x05about\x18\x02 \x01(\tR\x05about\x12\x16\n" +
+	"\x06length\x18\x03 \x01(\x05R\x06length\x12\x12\n" +
 	"\x04path\x18\x04 \x01(\tR\x04path\x12\"\n" +
 	"\x04span\x18\x05 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
 	"\x04call\x18\x06 \x01(\tR\x04call\x12\x12\n" +
@@ -1751,7 +1751,7 @@ func file_numen_v1_agent_proto_init() {
 	}
 	file_numen_v1_shared_proto_init()
 	file_numen_v1_agent_proto_msgTypes[11].OneofWrappers = []any{
-		(*AskAgentResponse_Said)(nil),
+		(*AskAgentResponse_Text)(nil),
 		(*AskAgentResponse_ToolCall)(nil),
 		(*AskAgentResponse_Stopped)(nil),
 		(*AskAgentResponse_ToolFinished)(nil),

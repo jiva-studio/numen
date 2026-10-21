@@ -249,7 +249,7 @@ describe('the opening', () => {
 })
 
 describe('how wide the headings are drawn', () => {
-  const wide = (items: readonly PlexHeading[], deps = DEPS) => hung(items, deps)!
+  const measureHeadings = (items: readonly PlexHeading[], deps = DEPS) => hung(items, deps)!
 
   it('is the room the longest of them asks for, and the ground beside it', () => {
     const longest = 'A good deal longer than that'
@@ -257,12 +257,12 @@ describe('how wide the headings are drawn', () => {
       { id: '0', text: 'Short', level: 1 },
       { id: '1', text: longest, level: 1 },
     ]
-    const settled = wide(held)
+    const settled = measureHeadings(held)
     expect(settled.width).toBe(10 * longest.length + 2 * settled.pad)
   })
 
   it('is never narrower than the node’s own box', () => {
-    expect(wide([{ id: '0', text: 'Wee', level: 1 }]).width).toBe(NODE.width)
+    expect(measureHeadings([{ id: '0', text: 'Wee', level: 1 }]).width).toBe(NODE.width)
   })
 
   it('counts how far a heading is set in as room it needs', () => {
@@ -270,21 +270,21 @@ describe('how wide the headings are drawn', () => {
     const flat = [{ id: '0', text: words, level: 1 }]
     const nested = [...flat, { id: '1', text: words, level: 2 }]
 
-    expect(wide(nested).width - wide(flat).width).toBe(SIZES.headingIndent)
+    expect(measureHeadings(nested).width - measureHeadings(flat).width).toBe(SIZES.headingIndent)
   })
 
   it('is the node’s own box where there is nothing to measure text with', () => {
-    const bare = { viewport: DEPS.viewport, margin: DEPS.margin }
-    expect(wide(headings(3), bare).width).toBe(NODE.width)
+    const bareDeps = { viewport: DEPS.viewport, margin: DEPS.margin }
+    expect(measureHeadings(headings(3), bareDeps).width).toBe(NODE.width)
   })
 
   it('is held inside the window, however long the words run', () => {
     const long = [{ id: '0', text: 'x'.repeat(400), level: 1 }]
-    expect(wide(long).width).toBe(DEPS.viewport.width - 2 * DEPS.margin)
+    expect(measureHeadings(long).width).toBe(DEPS.viewport.width - 2 * DEPS.margin)
   })
 
   it('grows about the node’s own middle where the window has room', () => {
-    expect(wide(headings(2)).offset).toBe(0)
+    expect(measureHeadings(headings(2)).offset).toBe(0)
   })
 
   it('slides back inside the window where the middle leaves no room', () => {

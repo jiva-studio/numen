@@ -62,7 +62,7 @@ const listed = (namedAt: readonly string[], name: string, presence: Model['prese
 })
 /** A line of an answer, as the panel hands one back. */
 const turn = (id: string, text: string): Turn =>
-  ({ id, text, voice: 'said', state: 'done' }) as unknown as Turn
+  ({ id, text, voice: 'answered', state: 'settled' })
 
 describe('a question sent', () => {
   it('names nothing the person has open, which the window reports itself', () => {

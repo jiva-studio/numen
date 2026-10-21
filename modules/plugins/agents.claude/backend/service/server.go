@@ -88,8 +88,8 @@ func (s *agentServer) AskAgent(
 	cmdName, cmdArgs := getCommand(msg.GetCommand())
 	if cmdName == "" {
 		_ = stream.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Said{
-				Said: "Claude Code CLI is not installed or not found on PATH.",
+			Step: &numenv1.AskAgentResponse_Text{
+				Text: "Claude Code CLI is not installed or not found on PATH.",
 			},
 		})
 		return stream.Send(&numenv1.AskAgentResponse{

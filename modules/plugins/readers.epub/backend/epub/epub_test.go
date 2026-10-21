@@ -108,7 +108,7 @@ func TestTheTitleDoesNotDependOnThePrefix(t *testing.T) {
 }
 
 func TestStructureFallsThroughTheTiers(t *testing.T) {
-	plain := map[string]string{
+	plainFiles := map[string]string{
 		firstDoc:  "variant/plain.xhtml",
 		secondDoc: "variant/plain.xhtml",
 	}
@@ -140,7 +140,7 @@ func TestStructureFallsThroughTheTiers(t *testing.T) {
 		parts:   []string{"Of the Beginning", "Of the Middle"},
 	}, {
 		name:    "a book that names nothing is a book",
-		replace: plain,
+		replace: plainFiles,
 		want:    epub.FromNothing,
 		parts:   nil,
 	}} {

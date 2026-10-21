@@ -75,7 +75,7 @@ describe('the row a document makes', () => {
   })
 
   describe('a page whose size is unusable', () => {
-    const wide: Page = { width: 1000, height: 500 }
+    const landscapePage: Page = { width: 1000, height: 500 }
     const height = Math.round(VIEWPORT.height - 2 * GAP)
     const getWidth = (page: Page) => Math.round((height * page.width) / page.height)
     const upright = getWidth({ width: 612, height: 792 })
@@ -85,9 +85,9 @@ describe('the row a document makes', () => {
     ]
 
     it.each(broken)('takes the first page size when it has %s', (_, page) => {
-      const laid = row([wide, page], VIEWPORT, 1)
+      const laid = row([landscapePage, page], VIEWPORT, 1)
 
-      expect(laid.widths).toEqual([getWidth(wide), getWidth(wide)])
+      expect(laid.widths).toEqual([getWidth(landscapePage), getWidth(landscapePage)])
     })
 
     it.each(broken)('takes an upright page when the first page has %s too', (_, page) => {

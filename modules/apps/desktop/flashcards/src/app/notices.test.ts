@@ -93,7 +93,7 @@ describe('what the window has to say', () => {
   // the window on that vault, so the card is drawn the moment it arrives.
   it('draws work being done, and draws it at once', () => {
     const one = useNotices()
-    one.setTasks([reads()])
+    one.setTasks([createTask()])
 
     expect(one.notices.value[0]).toMatchObject({
       id: 'indexing\t01A',
@@ -106,7 +106,7 @@ describe('what the window has to say', () => {
 
   it('says why work stopped, and stands until it is put away', () => {
     const one = useNotices()
-    one.setTasks([reads({ error: 'no such folder' })])
+    one.setTasks([createTask({ error: 'no such folder' })])
 
     expect(one.notices.value[0]).toMatchObject({
       text: 'no such folder',
@@ -120,16 +120,16 @@ describe('what the window has to say', () => {
   // finished is work the next list leaves out.
   it('lets go of work the list no longer names', () => {
     const one = useNotices()
-    one.setTasks([reads()])
+    one.setTasks([createTask()])
     one.showNotice('the first', 'caution')
     one.setTasks([])
 
-    expect(one.notices.value.map((said) => said.text)).toEqual(['the first'])
+    expect(one.notices.value.map((notice) => notice.text)).toEqual(['the first'])
   })
 })
 
-/** One vault being read, as the answer holds it. */
-const reads = (fields: Partial<Task> = {}): Task => ({
+/** Creates a task fixture for testing. */
+const createTask = (fields: Partial<Task> = {}): Task => ({
   id: 'indexing\t01A',
   label: 'Indexing the vault',
   about: 'Sanskrit',

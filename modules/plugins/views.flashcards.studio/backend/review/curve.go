@@ -174,11 +174,11 @@ func (s Simulation) Curve(
 // place where the load is carried stands inside it. Each place is the session a
 // person would sit down to now, which is the day the deck screen offers.
 func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
-	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unseen
 
 	free := p
 	free.MinutesADay = int(MinutesADayBounds.Most)
-	load, err := run.Run(ctx, now, free, at, unseen)
+	load, err := run.Run(ctx, now, free, at, unreviewed)
 	if err != nil {
 		return Curve{}, err
 	}
@@ -197,12 +197,12 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	if err := d.places(len(out.Grid), func(i int) error {
 		one := p
 		one.MinutesADay = int(out.Grid[i])
-		ran, err := run.Run(ctx, now, one, at, unseen)
+		ran, err := run.Run(ctx, now, one, at, unreviewed)
 		if err != nil {
 			return err
 		}
 		place := session(ran)
-		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, at, unseen); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, at, unreviewed); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -235,7 +235,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
-	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalRetention, Now: OutsideGrid, Suggested: OutsideGrid}
 	least, most := RetentionBounds.Least, RetentionBounds.Most
@@ -254,12 +254,12 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 		one, asks := p, run
 		one.Retention = out.Grid[i]
 		asks.By = d.by(out.Grid[i])
-		ran, err := asks.Run(ctx, now, one, at, unseen)
+		ran, err := asks.Run(ctx, now, one, at, unreviewed)
 		if err != nil {
 			return err
 		}
 		place := point(ran)
-		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, at, unseen); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, at, unreviewed); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -283,7 +283,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 // reaches whichever is further off: twice as far as the day named, or the day
 // the material is through at one card a day, the slowest a day of review goes.
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
-	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewedCount := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalDate, Now: OutsideGrid, Suggested: OutsideGrid}
 	open := run.Day.GetStart(now)
@@ -304,7 +304,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	}
 
 	first := 1
-	last := min(MostAhead, max(2*named, unseen, first))
+	last := min(MostAhead, max(2*named, unreviewedCount, first))
 	if named < 0 {
 		last = MostAhead
 	}

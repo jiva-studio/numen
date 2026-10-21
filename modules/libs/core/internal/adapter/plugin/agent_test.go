@@ -49,7 +49,7 @@ func (s *mockAgentServer) AskAgent(
 			ToolCall: &v1.ToolCall{
 				Tool:    "note_search",
 				About:   "query",
-				Written: 10,
+				Length:  10,
 				Path:    "notes/test.md",
 				Span:    &v1.Span{From: 0, To: 100},
 			},
@@ -63,8 +63,8 @@ func (s *mockAgentServer) AskAgent(
 	})
 
 	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_Said{
-			Said: "answer: " + req.Msg.GetPrompt(),
+		Step: &v1.AskAgentResponse_Text{
+			Text: "answer: " + req.Msg.GetPrompt(),
 		},
 	})
 
@@ -226,8 +226,8 @@ func (s *floodAgentServer) AskAgent(
 		default:
 		}
 		_ = stream.Send(&v1.AskAgentResponse{
-			Step: &v1.AskAgentResponse_Said{
-				Said: fmt.Sprintf("msg %d", i),
+			Step: &v1.AskAgentResponse_Text{
+				Text: fmt.Sprintf("msg %d", i),
 			},
 		})
 	}
@@ -456,7 +456,7 @@ func (s *failingAgentServer) AskAgent(
 	_ *connect.Request[v1.AskAgentRequest],
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Said{Said: "partial"}})
+	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Text{Text: "partial"}})
 	return connect.NewError(connect.CodeInternal, fmt.Errorf("the program crashed"))
 }
 

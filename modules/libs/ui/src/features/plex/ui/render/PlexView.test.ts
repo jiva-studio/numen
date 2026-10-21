@@ -442,17 +442,17 @@ describe('the box the attention has settled on', () => {
   })
 
   it('is handed the box the widening worked out for it', () => {
-    const wide = { width: 400, offset: -12 }
+    const wideBox = { width: 400, offset: -12 }
     const view = mount(PlexView, {
       props: {
         frame: arrangePlex(before),
         viewport: VIEWPORT,
         nodeSize: DEFAULT_OPTIONS.nodeSize,
-        widen: (node: PlacedNode) => (node.id === 'going' ? wide : null),
+        widen: (node: PlacedNode) => (node.id === 'going' ? wideBox : null),
       },
     })
 
-    expect(getBox(view, 'going').props('wide')).toStrictEqual(wide)
+    expect(getBox(view, 'going').props('wide')).toStrictEqual(wideBox)
     expect(getBox(view, 'staying').props('wide')).toBeNull()
   })
 })

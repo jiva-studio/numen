@@ -326,8 +326,8 @@ func TestStreamParserToolCallChunkAndReset(t *testing.T) {
 	if len(t2Calls) != 3 {
 		t.Fatalf("expected exactly 3 calls for t2, got %d (%+v)", len(t2Calls), t2Calls)
 	}
-	if t2Calls[1].GetWritten() != 200 {
-		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].GetWritten())
+	if t2Calls[1].GetLength() != 200 {
+		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].GetLength())
 	}
 	var t3Calls []*numenv1.ToolCall
 	for _, c := range calls {
@@ -355,7 +355,7 @@ func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
 
 	saids := 0
 	for _, s := range got {
-		if s.GetSaid() != "" {
+		if s.GetText() != "" {
 			saids++
 		}
 	}

@@ -301,14 +301,14 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	if int(said.GetFaces()) != 630 {
 		t.Errorf("the vault holds %d card faces, want 630", said.GetFaces())
 	}
-	due, fresh := 0, 0
+	due, newCards := 0, 0
 	for _, one := range said.GetDecks() {
 		if got := int(one.GetFaces()); got != facesIn[one.GetDeck()] {
 			t.Errorf("%s holds %d card faces, want %d",
 				one.GetDeck(), got, facesIn[one.GetDeck()])
 		}
 		due += int(one.GetDue())
-		fresh += int(one.GetNew())
+		newCards += int(one.GetNew())
 
 		sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 			Vault: string(v.ID), Deck: one.GetDeck(),
@@ -333,9 +333,9 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 			}
 		}
 	}
-	if due != int(said.GetDue()) || fresh != int(said.GetNew()) {
+	if due != int(said.GetDue()) || newCards != int(said.GetNew()) {
 		t.Errorf("the decks come to %d owed and %d new, the vault to %d and %d",
-			due, fresh, said.GetDue(), said.GetNew())
+			due, newCards, said.GetDue(), said.GetNew())
 	}
 }
 

@@ -320,7 +320,7 @@ type names struct {
 // called.
 func textNames(t *testing.T, shelved *shelf) names {
 	t.Helper()
-	for _, name := range shelved.names() {
+	for _, name := range shelved.artifactNames() {
 		if name.File != domain.ArtifactText || name.Producer != domain.OCR {
 			continue
 		}

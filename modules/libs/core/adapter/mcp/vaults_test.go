@@ -60,8 +60,8 @@ func (f *folders) ChooseFolder(_ context.Context, title, _ string) (string, bool
 	return f.pick, f.isChosen, nil
 }
 
-// answers is what the dialog hands back to the call that put it up.
-func (f *folders) answers(path string, chose bool) {
+// choose sets what the dialog returns to the call that displayed it.
+func (f *folders) choose(path string, chose bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.pick, f.isChosen = path, chose
@@ -235,7 +235,7 @@ func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
 func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 	f := onTheList(t)
 	chosen := folderNamed(t, "three")
-	f.dialog.answers(chosen, true)
+	f.dialog.choose(chosen, true)
 	session := newSessionOver(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
@@ -272,7 +272,7 @@ func TestAddingSaysTheIdentityIsWrittenIntoTheFolder(t *testing.T) {
 // A person who closed the dialog chose nothing, and that is an answer.
 func TestAFolderDialogThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
 	f := onTheList(t)
-	f.dialog.answers("", false)
+	f.dialog.choose("", false)
 	session := newSessionOver(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})

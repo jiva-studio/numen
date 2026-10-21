@@ -174,7 +174,7 @@ message FinishConversationResponse {}
 message AskAgentResponse {
   oneof step {
     // A piece of what the agent is saying, appended in the order it arrives.
-    string said = 1;
+    string text = 1;
     // A tool the agent is using.
     ToolCall tool_call = 2;
     // The agent has finished, and this is why it stopped. Empty, or "done", when
@@ -211,7 +211,7 @@ message ToolCall {
   string about = 2;
   // How much of the call has been written, in characters. The only thing that
   // moves while a long call is being written.
-  int32 written = 3;
+  int32 length = 3;
 
   // Where the call is working: the source it names, by the path the vault
   // files it under. Empty for a call that is working on no one file.

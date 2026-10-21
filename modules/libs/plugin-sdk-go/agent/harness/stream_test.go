@@ -148,7 +148,7 @@ func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 	var steps []*numenv1.AskAgentResponse
 	err := s.Ask(ctx, newTask("", "Plan?"), func(r *numenv1.AskAgentResponse) error {
 		steps = append(steps, r)
-		if r.GetSaid() != "" {
+		if r.GetText() != "" {
 			cancel()
 		}
 		return nil
@@ -170,7 +170,7 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 
 	pieces := 0
 	err := s.Ask(t.Context(), newTask("", "Plan?"), func(r *numenv1.AskAgentResponse) error {
-		if r.GetSaid() == "" {
+		if r.GetText() == "" {
 			return nil
 		}
 		pieces++

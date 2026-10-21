@@ -15,7 +15,7 @@ const call = (place?: { path: string; span: { from: number; to: number } }): Ask
       value: create(ToolCallSchema, {
         tool: 'read',
         about: 'notes/Leaf mould.md',
-        written: 12,
+        length: 12,
         ...place,
       }),
     },
@@ -75,7 +75,7 @@ describe('createAgentPort', () => {
   })
 
   it('reads what was said as text', async () => {
-    const response = create(AskAgentResponseSchema, { step: { case: 'said', value: 'Leaves.' } })
+    const response = create(AskAgentResponseSchema, { step: { case: 'text', value: 'Leaves.' } })
     expect(await steps([response])).toEqual([{ kind: 'said', text: 'Leaves.' }])
   })
 

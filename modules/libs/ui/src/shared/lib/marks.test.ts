@@ -47,8 +47,8 @@ describe('a wikilink in markdown', () => {
   })
 
   it('pushes no token while only being skipped over', () => {
-    const plain = new MarkdownIt()
-    const known = new Set(plain.inline.ruler.getRules(''))
+    const defaultMd = new MarkdownIt()
+    const known = new Set(defaultMd.inline.ruler.getRules(''))
     const rule = md.inline.ruler.getRules('').find((each) => !known.has(each))
     const src = '[[Entropy]]'
     const state = new md.inline.State(src, md, {}, [])

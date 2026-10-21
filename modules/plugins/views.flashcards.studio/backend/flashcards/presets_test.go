@@ -193,12 +193,12 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	}
 	// A fingerprint no file answers to, which is the note having moved on since
 	// the caller read it.
-	stale := held.Fingerprint
-	stale.Size += 100
+	staleFingerprint := held.Fingerprint
+	staleFingerprint.Size += 100
 	settings := held.Settings
 	settings.MinutesADay = 35
 
-	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, stale)
+	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, staleFingerprint)
 	if errors.Is(err, note.ErrUnlevelled) {
 		t.Errorf("a write that did not land came back as a levelling: %v", err)
 	}

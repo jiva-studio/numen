@@ -929,19 +929,19 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 
 		// What the count leaves under a preset is what its decks were left,
 		// gathered by the one pass.
-		due, fresh := 0, 0
+		due, newCards := 0, 0
 		for _, deck := range under[one.GetPreset()] {
 			due += int(rows[deck].GetDue())
-			fresh += int(rows[deck].GetNew())
+			newCards += int(rows[deck].GetNew())
 		}
-		if due != int(one.GetOwedDue()) || fresh != int(one.GetOwedNew()) {
+		if due != int(one.GetOwedDue()) || newCards != int(one.GetOwedNew()) {
 			t.Errorf("the decks under %q come to %d owed and %d new, the preset to %d and %d",
-				one.GetPreset(), due, fresh, one.GetOwedDue(), one.GetOwedNew())
+				one.GetPreset(), due, newCards, one.GetOwedDue(), one.GetOwedNew())
 		}
 
 		// A figure worked out from the budget instead would be held to counts
 		// the goal need not name, and this vault is where that shows.
-		if min(due, int(one.GetReviews()))+min(fresh, int(one.GetNew())) < want {
+		if min(due, int(one.GetReviews()))+min(newCards, int(one.GetNew())) < want {
 			clamped++
 		}
 	}
@@ -975,16 +975,16 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 				if said.GetCards() == 0 {
 					continue
 				}
-				due, fresh := int(said.GetOwedDue()), int(said.GetOwedNew())
+				due, newCards := int(said.GetOwedDue()), int(said.GetOwedNew())
 				kept, keptNew := int(said.GetReviews()), int(said.GetNew())
 
 				if said.GetClosesReviews() != "" && due > kept {
 					t.Errorf("%q allocated %d owed against the %d reviews it keeps",
 						said.GetPreset(), due, kept)
 				}
-				if said.GetClosesNew() != "" && fresh > keptNew {
+				if said.GetClosesNew() != "" && newCards > keptNew {
 					t.Errorf("%q allocated %d new against the %d it keeps",
-						said.GetPreset(), fresh, keptNew)
+						said.GetPreset(), newCards, keptNew)
 				}
 				// A count standing in the file that the goal does not name is
 				// no wall, and this is the vault where that shows.
