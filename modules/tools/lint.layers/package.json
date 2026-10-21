@@ -1,0 +1,10 @@
+{
+  "name": "@numen/lint-layers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Validation and enforcement of architectural layer boundaries across backend, plugins, and frontend.",
+  "scripts": {
+    "check": "node check.mjs"
+  }
+}

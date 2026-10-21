@@ -18,6 +18,7 @@ LANDING  := modules/apps/landing
 
 ICON     := modules/tools/build.icons
 STORIES  := modules/tools/ci.stories
+LAYERS   := modules/tools/lint.layers
 PLUGINS  := modules/plugins
 PLUGIN_NAMES := $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLUGINS)/*/manifest.json))))
 
@@ -75,8 +76,12 @@ plugins_build: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES))) ## build
 .PHONY: plugins_frontend_build
 plugins_frontend_build: $(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES))) ## build the frontend of every plugin
 
+.PHONY: plugins_frontend_lint
+plugins_frontend_lint: ## lint plugin frontend boundaries
+	cd $(PLUGINS) && ../node_modules/.bin/eslint .
+
 .PHONY: plugins_lint
-plugins_lint: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))) ## lint all native plugins
+plugins_lint: plugins_frontend_lint $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))) ## lint all native plugins
 
 .PHONY: plugins_test
 plugins_test: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))) ## run tests across all plugins
@@ -409,6 +414,10 @@ tool_icon_build: ## cut application icons
 .PHONY: tool_stories_check
 tool_stories_check: ## verify story references
 	cd $(STORIES) && npm run check
+
+.PHONY: check_layers
+check_layers: ## validate architectural layers across backend, plugins and frontend
+	node $(LAYERS)/check.mjs $(FLAGS)
 
 # ---------------------------------- Plugins -----------------------------------
 .PHONY: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES)))
