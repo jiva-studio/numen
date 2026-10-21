@@ -14,6 +14,7 @@ describe('reader-pdf plugin frontend', () => {
     expect(reader?.id).toBe('reader-pdf')
     expect(reader?.fileExtensions).toEqual(['.pdf'])
     expect(reader?.component).toBe(DocumentTab)
+    expect(reader?.source).toBe('book')
   })
 
   it('runs deactivation cleanly', async () => {

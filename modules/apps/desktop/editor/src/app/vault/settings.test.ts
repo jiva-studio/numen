@@ -3,7 +3,7 @@
  * hands the vault to write.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { CompletionConsent, ErrorCode, Presence } from '@numen/protocol'
+import { CAPABILITY_AGENT_PROVIDER, CompletionConsent, ErrorCode, Presence } from '@numen/protocol'
 import { settingsCore as core } from './settings'
 
 const asked = vi.hoisted(() => ({
@@ -157,7 +157,7 @@ describe('every setting', () => {
               version: '1.0.0',
               description: 'Sample plugin',
               isActive: true,
-              capabilities: ['ai.agent.provider'],
+              capabilities: [CAPABILITY_AGENT_PROVIDER],
               secrets: ['apiKey'],
               storedSecrets: ['apiKey'],
               completionConsent: CompletionConsent.ASKED,
@@ -187,7 +187,7 @@ describe('every setting', () => {
         version: '1.0.0',
         description: 'Sample plugin',
         isActive: true,
-        capabilities: ['ai.agent.provider'],
+        capabilities: [CAPABILITY_AGENT_PROVIDER],
         secrets: ['apiKey'],
         storedSecrets: ['apiKey'],
         consent: 'asked',

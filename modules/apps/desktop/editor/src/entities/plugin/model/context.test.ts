@@ -78,6 +78,7 @@ describe('PluginContext', () => {
       id: 'pdf',
       fileExtensions: ['.pdf'],
       component: null,
+      source: 'book',
     })
     expect(ctx.subscriptions).toHaveLength(1)
     expect(host.registerReader).toHaveBeenCalledWith(

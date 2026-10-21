@@ -70,6 +70,7 @@ describe('createReaderTabKind', () => {
       fileExtensions: ['.epub'],
       component: null,
       title: 'EPUB Reader',
+      source: 'book',
     })
 
     const openState = readerKind.open('books/alice.epub', 'tab') as {
@@ -302,46 +303,6 @@ describe('createReaderTabKind (source resolution)', () => {
       source: 'recording',
     })
   })
-
-  it('identifies source via capability flags', () => {
-    const kind = createReaderTabKind('media-plugin', {
-      id: 'media-stream',
-      fileExtensions: ['.stream'],
-      component: null,
-      capabilities: ['audio', 'media'],
-    })
-
-    const target = kind.getTarget?.({ path: 'live.stream' })
-    expect(target).toEqual({
-      file: 'live.stream',
-      path: 'live.stream',
-      title: '',
-      source: 'recording',
-    })
-  })
-
-  it('identifies source via metadata', () => {
-    const kind = createReaderTabKind('doc-plugin', {
-      id: 'doc-reader',
-      fileExtensions: ['.doc'],
-      component: null,
-      metadata: { source: 'book' },
-    })
-
-    const target = kind.getTarget?.({ path: 'novel.doc' })
-    expect(target).toEqual({ file: 'novel.doc', path: 'novel.doc', title: '', source: 'book' })
-  })
-
-  it('falls back to file extension when no media flags or metadata are present', () => {
-    const kind = createReaderTabKind('generic-plugin', {
-      id: 'generic-reader',
-      fileExtensions: ['.mp3'],
-      component: null,
-    })
-
-    const target = kind.getTarget?.({ path: 'sound.mp3' })
-    expect(target).toEqual({ file: 'sound.mp3', path: 'sound.mp3', title: '', source: 'recording' })
-  })
 })
 
 describe('createCustomTabKind (actions)', () => {
@@ -377,32 +338,6 @@ describe('createCustomTabKind (actions)', () => {
 
     ;(state.syncDeck as (force: boolean) => void)(true)
     expect(hostAction).toHaveBeenCalledWith('decks/test.md', true)
-  })
-
-  it('supports backwards-compatible fallback for onCustomCardAdded', () => {
-    const legacyAddCard = vi.fn()
-
-    const kind = createCustomTabKind(
-      'cards-plugin',
-      {
-        kind: 'deck',
-        component: null,
-      },
-      {
-        registerKind: vi.fn(() => () => {}),
-        registerExtensionReader: vi.fn(() => () => {}),
-        openTab: vi.fn(async () => 'tab-1'),
-        onCustomCardAdded: legacyAddCard,
-      },
-    )
-
-    const state = kind.open('decks/legacy.md', 'tab') as {
-      addCard: (stencil: string, values: readonly { field: string; text: string }[]) => void
-    }
-    expect(typeof state.addCard).toBe('function')
-
-    state.addCard('stencil-1', [{ field: 'Front', text: 'Q' }])
-    expect(legacyAddCard).toHaveBeenCalledWith('decks/legacy.md', [{ field: 'Front', text: 'Q' }])
   })
 
   it('prevents action names from overwriting tab-state fields', () => {

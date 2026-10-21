@@ -26,13 +26,6 @@ import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredHooks } from './pluginTabKind'
 
-function getReaderTargetSource(path: string | undefined): 'recording' | 'book' | 'other' {
-  if (!path) return 'other'
-  if (/\.(mp3|m4a|wav|ogg|aac|flac)$/i.test(path)) return 'recording'
-  if (/\.(epub)$/i.test(path)) return 'book'
-  return 'other'
-}
-
 export function createPluginPaneWrapper(
   pluginIdOrComponent: string | unknown,
   maybeComponent?: unknown,
@@ -84,36 +77,6 @@ export function createPluginPaneWrapper(
   })
 }
 
-function hasCapability(
-  capabilities: readonly string[] | undefined,
-  targets: readonly string[],
-): boolean {
-  return capabilities ? targets.some((target) => capabilities.includes(target)) : false
-}
-
-function resolveReaderSource(
-  registration: ReaderRegistration,
-  path?: string,
-): 'note' | 'book' | 'recording' | 'url' | 'other' {
-  if (registration.source) {
-    return registration.source as 'note' | 'book' | 'recording' | 'url' | 'other'
-  }
-  if (hasCapability(registration.capabilities, ['recording', 'media', 'audio'])) {
-    return 'recording'
-  }
-  if (hasCapability(registration.capabilities, ['book', 'document'])) {
-    return 'book'
-  }
-  if (hasCapability(registration.capabilities, ['note'])) {
-    return 'note'
-  }
-  const metaSource = registration.metadata?.source
-  if (typeof metaSource === 'string') {
-    return metaSource as 'note' | 'book' | 'recording' | 'url' | 'other'
-  }
-  return getReaderTargetSource(path)
-}
-
 export function createReaderTabKind(
   pluginId: string,
   registration: ReaderRegistration,
@@ -160,7 +123,7 @@ export function createReaderTabKind(
       return {
         ...(path !== undefined ? { file: path, path } : {}),
         title: s?.title ?? '',
-        source: resolveReaderSource(registration, path),
+        source: registration.source,
       }
     },
     getOpenTab: (state: unknown) => ({ path: (state as { path?: string })?.path ?? '' }),
@@ -193,17 +156,6 @@ function bindCustomTabHandlers(
   }
 }
 
-function bindLegacyAddCard(
-  at: string,
-  actions: Record<string, unknown>,
-  handler: ((at: string, values: readonly { field: string; text: string }[]) => void) | undefined,
-): void {
-  if (actions.addCard || !handler) return
-  actions.addCard = (_stencil: string, values: readonly { field: string; text: string }[]) => {
-    handler(at, values)
-  }
-}
-
 function appendHostActions(
   at: string,
   actions: Record<string, unknown>,
@@ -215,7 +167,6 @@ function appendHostActions(
     actions.dispatch = (action: string, ...args: unknown[]) =>
       deps.onTabAction!(action, at, ...args)
   }
-  bindLegacyAddCard(at, actions, deps.onCustomCardAdded)
 }
 
 function createTabActions(

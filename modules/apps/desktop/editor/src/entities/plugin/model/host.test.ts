@@ -47,6 +47,7 @@ describe('createPluginHost', () => {
       fileExtensions: ['.cpdf', 'cpdf2'],
       component: null,
       title: 'Custom PDF',
+      source: 'book',
     })
 
     expect(deps.registerKind).toHaveBeenCalled()
@@ -117,6 +118,7 @@ describe('createPluginHost', () => {
       id: 'reader1',
       fileExtensions: ['.ext1'],
       component: null,
+      source: 'note',
     })
     ctx.registerCommand({
       id: 'cmd1',
