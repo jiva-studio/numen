@@ -1,5 +1,3 @@
-//go:build !nomcp
-
 package app
 
 import (
@@ -15,9 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// This file is the only one that knows an agent can reach the vault. Built with
-// `nomcp`, its counterpart takes its place and nothing of the tools — nor of
-// what serves them — is linked in at all.
+// This file is the only one that knows an agent can reach the vault.
 
 const DefaultAgentAddr = mcp.DefaultAddr
 

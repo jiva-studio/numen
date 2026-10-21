@@ -1,5 +1,3 @@
-//go:build !nomcp
-
 package main
 
 import (
@@ -16,9 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// This file is the only one that knows a card can be asked about. Built with
-// `nomcp`, its counterpart takes its place and nothing of the tools — nor of
-// what serves them — is linked in at all.
+// This file is the only one that knows a card can be asked about.
 
 // errNoAgentNamed is what the panel is told where the settings name no agent.
 const errNoAgentNamed = "no agent is named in the settings"

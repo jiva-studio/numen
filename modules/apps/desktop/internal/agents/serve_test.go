@@ -1,5 +1,3 @@
-//go:build !nomcp
-
 package agents
 
 import (
