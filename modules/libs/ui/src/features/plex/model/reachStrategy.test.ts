@@ -1,7 +1,7 @@
 /** Reaching out by resting a finger: how long the rest lasts. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { byLongPress, type ReachSite } from './reaching'
+import { byLongPress, type ReachSite } from './reachStrategy'
 import { LONG_PRESS_DELAY } from './longPress'
 
 const touch = () => ({ pointerType: 'touch', clientX: 10, clientY: 10 }) as PointerEvent

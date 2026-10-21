@@ -4,8 +4,8 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_BEHAVIOUR } from './behaviour'
 import { EXPANSION_DELAY } from './expansion'
-import { byHandle } from './reaching'
-import { byDoubleClick } from './showing'
+import { byHandle } from './reachStrategy'
+import { byDoubleClick } from './destination'
 
 describe('the behaviour a plex has by default', () => {
   it('waits the usual while, offers the handle and asks for a node by its second click', () => {

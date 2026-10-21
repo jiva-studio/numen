@@ -9,8 +9,8 @@ import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode, Position } from '../lib/node'
 import type { PlexRelation } from '../lib/relation'
 import type { PlexPending } from './render/props'
-import type { ReachStrategy } from '../model/reaching'
-import type { PlexDestination, ShowStrategy } from '../model/showing'
+import type { ReachStrategy } from '../model/reachStrategy'
+import type { PlexDestination, ShowStrategy } from '../model/destination'
 import type { Clock } from '../model/transition'
 
 export interface PlexProps {

@@ -7,7 +7,7 @@
  * are not written under the same rules.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { useNameEntry, type NameEntryState } from './naming'
+import { useNameEntry, type NameEntryState } from './nameEntry'
 import {
   checkFieldName,
   checkHeadingName,

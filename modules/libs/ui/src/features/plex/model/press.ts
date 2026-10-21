@@ -8,7 +8,7 @@ import { isMenuKey, isPress, isShowKey } from '../lib/keys'
 import { isReachable, isStop, type GestureRole, type PlacedNode, type Position } from '../lib/node'
 import type { MenuTrigger } from '@/shared/ui/menu'
 import type { PlexBehaviour } from './behaviour'
-import { getDestination, mergeListeners, type PlexDestination } from './showing'
+import { getDestination, mergeListeners, type PlexDestination } from './destination'
 
 /** What the node says when a press evaluates to something. */
 export interface NodePressSaid {

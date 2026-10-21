@@ -1,7 +1,7 @@
 /** Two taps counted here: when they make a second tap, and what they leave behind. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
-import { APART, byDoubleTap, TAP, type ShowSite } from './showing'
+import { APART, byDoubleTap, TAP, type ShowSite } from './destination'
 
 const tap = (x: number, y: number, pointerType = 'touch') =>
   new PointerEvent('pointerup', { clientX: x, clientY: y, pointerType })

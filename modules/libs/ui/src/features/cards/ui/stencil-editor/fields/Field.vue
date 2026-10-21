@@ -9,7 +9,7 @@ import { Icon } from '../../icon'
 import { NameBox } from '../../name-box'
 import { CardRow } from '../../card-row'
 import { Button } from '@/shared/ui/button'
-import type { NameEntryState } from '../../../model/naming'
+import type { NameEntryState } from '../../../model/nameEntry'
 import {
   parseStepKey,
   STEP_KEYS,

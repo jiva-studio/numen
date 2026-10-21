@@ -4,8 +4,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { useNodePress, type NodePressProps, type NodePressSaid } from './press'
-import { byDoubleClick } from './showing'
-import type { ReachSite, ReachStrategy } from './reaching'
+import { byDoubleClick } from './destination'
+import type { ReachSite, ReachStrategy } from './reachStrategy'
 import type { GestureRole, PlacedNode, Position } from '../lib/node'
 
 const NODE: PlacedNode = {

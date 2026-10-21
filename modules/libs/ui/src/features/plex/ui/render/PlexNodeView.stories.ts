@@ -15,7 +15,7 @@ import { hoverOver, lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
-import type { PlexDestination } from '../../model/showing'
+import type { PlexDestination } from '../../model/destination'
 
 interface Knobs {
   title: string

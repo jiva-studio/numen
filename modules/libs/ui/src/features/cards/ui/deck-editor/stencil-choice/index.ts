@@ -1,1 +1,3 @@
-export { default as CutChoice } from './CutChoice.vue'
+export { default as StencilChoice } from './StencilChoice.vue'
+export { default as CutChoice } from './StencilChoice.vue'
+

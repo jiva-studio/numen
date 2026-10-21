@@ -12,7 +12,7 @@ import { Icon } from '../../icon'
 import { Divider } from '../../divider'
 import Field from './Field.vue'
 import { useDrag } from '../../../model/drag'
-import { useNameEntry } from '../../../model/naming'
+import { useNameEntry } from '../../../model/nameEntry'
 import { Button } from '@/shared/ui/button'
 import {
   canDropField,

@@ -5,7 +5,7 @@
  */
 import { SectionHeading } from './section-heading'
 import { Card } from './card'
-import { CutChoice } from './cut-choice'
+import { CutChoice } from './stencil-choice'
 import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
 import { DECK_WORDS, createRunEnd, type DeckWords, type DeckProblems } from '../../lib/deck'

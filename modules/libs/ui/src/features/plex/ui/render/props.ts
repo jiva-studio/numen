@@ -10,7 +10,7 @@ import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { PlexRelation } from '../../lib/relation'
 import type { WideBox } from '../../model/expansion'
 import type { PlexBehaviour } from '../../model/behaviour'
-import type { PlexDestination } from '../../model/showing'
+import type { PlexDestination } from '../../model/destination'
 
 export interface PlexPending {
   from: string

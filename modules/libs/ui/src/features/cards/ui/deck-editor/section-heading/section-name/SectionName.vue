@@ -5,7 +5,7 @@
  */
 import { NameBox } from '../../../name-box'
 import { RemoveButton } from '../../../remove-button'
-import type { NameEntryState } from '../../../../model/naming'
+import type { NameEntryState } from '../../../../model/nameEntry'
 import type { Objection } from '../../../../lib/order'
 
 defineProps<{

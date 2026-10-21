@@ -8,8 +8,8 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import { byHandle, byLongPress } from '../model/reaching'
-import { APART, byDoubleClick, byDoubleTap, TAP } from '../model/showing'
+import { byHandle, byLongPress } from '../model/reachStrategy'
+import { APART, byDoubleClick, byDoubleTap, TAP } from '../model/destination'
 import { LONG_PRESS_DELAY } from '../model/longPress'
 import { build } from '../fixtures/build'
 

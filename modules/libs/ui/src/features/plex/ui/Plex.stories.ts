@@ -15,7 +15,7 @@ import {
   type Placement,
   type PlexOptionsInput,
 } from '../lib/arrange'
-import { optionsForType, useTypeSize } from '../model/sizing'
+import { optionsForType, useTypeSize } from '../model/plexScale'
 import { EXPANSION_DELAY } from '../model/expansion'
 import { type PlexHeading } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
@@ -27,7 +27,7 @@ import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlexNode, Position } from '../lib/node'
 import type { PlexRelation } from '../lib/relation'
-import type { PlexDestination } from '../model/showing'
+import type { PlexDestination } from '../model/destination'
 import type { Clock } from '../model/transition'
 import type { MenuTrigger } from '@/shared/ui/menu'
 
