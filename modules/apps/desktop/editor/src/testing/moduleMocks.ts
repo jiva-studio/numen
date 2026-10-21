@@ -7,8 +7,8 @@
  */
 import { vi } from 'vitest'
 import { asValue } from '@numen/wire'
-import type { Cards } from '@plugins/flashcards-studio/frontend/cards'
-import type { Documents } from '@plugins/reader-pdf/frontend'
+import type { Cards } from '@plugins/views.flashcards.studio/frontend/cards'
+import type { Documents } from '@plugins/readers.pdf/frontend'
 import { requests } from './requests'
 import { held, maker, said } from './answers'
 
@@ -20,10 +20,10 @@ const documentsSaid: { documents: Documents } = {
   },
 }
 
-vi.mock('@plugins/reader-pdf/frontend/api/wire', () => documentsSaid)
+vi.mock('@plugins/readers.pdf/frontend/api/wire', () => documentsSaid)
 
-vi.mock('@plugins/reader-pdf/frontend', async (original) => ({
-  ...(await original<typeof import('@plugins/reader-pdf/frontend')>()),
+vi.mock('@plugins/readers.pdf/frontend', async (original) => ({
+  ...(await original<typeof import('@plugins/readers.pdf/frontend')>()),
   ...documentsSaid,
 }))
 
@@ -121,10 +121,10 @@ const cardsSaid = {
   } satisfies Partial<Cards>,
 }
 
-vi.mock('@plugins/flashcards-studio/frontend/cards/api/cards', () => cardsSaid)
+vi.mock('@plugins/views.flashcards.studio/frontend/cards/api/cards', () => cardsSaid)
 
-vi.mock('@plugins/flashcards-studio/frontend/cards', async (original) => ({
-  ...(await original<typeof import('@plugins/flashcards-studio/frontend/cards')>()),
+vi.mock('@plugins/views.flashcards.studio/frontend/cards', async (original) => ({
+  ...(await original<typeof import('@plugins/views.flashcards.studio/frontend/cards')>()),
   ...cardsSaid,
 }))
 

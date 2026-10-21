@@ -30,7 +30,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.GetPlugin("md.numen.ocr"); !ok {
+	if _, ok := host.GetPlugin("md.numen.engines.ocr"); !ok {
 		t.Fatal("the valid plugin was not registered")
 	}
 	if len(reported) != 1 {
@@ -55,11 +55,11 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	host.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("md.numen.ocr")
-	exited := getExitSignal(host.supervisors["md.numen.ocr"])
+	host.Release("md.numen.engines.ocr")
+	exited := getExitSignal(host.supervisors["md.numen.engines.ocr"])
 
 	if err := os.RemoveAll(filepath.Join(tmp, "ocr")); err != nil {
 		t.Fatal(err)
@@ -68,11 +68,11 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.GetPlugin("md.numen.ocr"); ok {
+	if _, ok := host.GetPlugin("md.numen.engines.ocr"); ok {
 		t.Fatal("a plugin removed from disk is still registered")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); !errors.Is(err, errPluginNotFound) {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); !errors.Is(err, errPluginNotFound) {
 		t.Fatalf("expected errPluginNotFound, got %v", err)
 	}
 }
@@ -86,11 +86,11 @@ func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing
 	}
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("md.numen.ocr")
-	exited := getExitSignal(host.supervisors["md.numen.ocr"])
+	host.Release("md.numen.engines.ocr")
+	exited := getExitSignal(host.supervisors["md.numen.engines.ocr"])
 
 	manifestPath := filepath.Join(tmp, "ocr", "manifest.json")
 	data, err := os.ReadFile(manifestPath)
@@ -105,15 +105,15 @@ func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	p, ok := host.GetPlugin("md.numen.ocr")
+	p, ok := host.GetPlugin("md.numen.engines.ocr")
 	if !ok || p.Manifest.Description != "changed" {
 		t.Fatalf("expected the changed manifest to be registered, got %+v", p.Manifest)
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive after the manifest change failed: %v", err)
 	}
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
 	if started.Load() != 2 {
 		t.Fatalf("expected the plugin to be launched again, got %d launches", started.Load())
 	}
@@ -138,7 +138,7 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.GetPlugin("md.numen.ocr"); !ok {
+	if _, ok := host.GetPlugin("md.numen.engines.ocr"); !ok {
 		t.Fatal("a plugin with a failed scan was unregistered")
 	}
 	failed := 0
@@ -184,7 +184,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	calling := make(chan struct{})
 	go func() {
 		close(calling)
-		_, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		_, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
 		answered <- err
 	}()
 	<-calling
@@ -218,14 +218,14 @@ func TestAPluginStoppedForMemoryIsReported(t *testing.T) {
 	}
 
 	host.mu.RLock()
-	onExceeded := host.supervisors["md.numen.ocr"].onMemoryExceeded
+	onExceeded := host.supervisors["md.numen.engines.ocr"].onMemoryExceeded
 	host.mu.RUnlock()
 	if onExceeded == nil {
 		t.Fatal("the supervisor of the plugin reports no memory stop")
 	}
 	onExceeded()
 
-	if len(reported) != 1 || !strings.Contains(reported[0].Error(), "md.numen.ocr was stopped") {
+	if len(reported) != 1 || !strings.Contains(reported[0].Error(), "md.numen.engines.ocr was stopped") {
 		t.Fatalf("expected the stop to be reported for the plugin, got %v", reported)
 	}
 }

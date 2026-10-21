@@ -5,8 +5,8 @@ go 1.26.9
 require (
 	github.com/jiva-studio/numen/modules/apps/desktop v0.0.0
 	github.com/jiva-studio/numen/modules/libs/core v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/reader-epub v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/reader-pdf v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/readers.epub v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/readers.pdf v0.0.0
 	github.com/quasilyte/go-ruleguard/dsl v0.3.23
 )
 
@@ -49,16 +49,16 @@ require (
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/agent v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/agent-acp v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/agent-antigravity v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/agent-claude v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/agent-codex v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/downloader v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/embeddings v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/ocr v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/proofreading v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/transcription v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agents.numen v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agents.acp v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agents.antigravity v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agents.claude v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agents.codex v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/tools.downloader v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/engines.embeddings v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/engines.ocr v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/tools.proofreading v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/engines.transcription v0.0.0
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.21.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -95,35 +95,35 @@ replace github.com/jiva-studio/numen/modules/libs/core => ../../libs/core
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
 
-replace github.com/jiva-studio/numen/modules/plugins/reader-epub => ../../plugins/reader-epub
+replace github.com/jiva-studio/numen/modules/plugins/readers.epub => ../../plugins/readers.epub
 
-replace github.com/jiva-studio/numen/modules/plugins/reader-pdf => ../../plugins/reader-pdf
+replace github.com/jiva-studio/numen/modules/plugins/readers.pdf => ../../plugins/readers.pdf
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault => ../../libs/plugin-sdk-go/vault
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
 
-replace github.com/jiva-studio/numen/modules/plugins/agent => ../../plugins/agent
+replace github.com/jiva-studio/numen/modules/plugins/agents.numen => ../../plugins/agents.numen
 
-replace github.com/jiva-studio/numen/modules/plugins/agent-claude => ../../plugins/agent-claude
+replace github.com/jiva-studio/numen/modules/plugins/agents.claude => ../../plugins/agents.claude
 
-replace github.com/jiva-studio/numen/modules/plugins/agent-codex => ../../plugins/agent-codex
+replace github.com/jiva-studio/numen/modules/plugins/agents.codex => ../../plugins/agents.codex
 
-replace github.com/jiva-studio/numen/modules/plugins/agent-antigravity => ../../plugins/agent-antigravity
+replace github.com/jiva-studio/numen/modules/plugins/agents.antigravity => ../../plugins/agents.antigravity
 
-replace github.com/jiva-studio/numen/modules/plugins/agent-acp => ../../plugins/agent-acp
+replace github.com/jiva-studio/numen/modules/plugins/agents.acp => ../../plugins/agents.acp
 
-replace github.com/jiva-studio/numen/modules/plugins/proofreading => ../../plugins/proofreading
+replace github.com/jiva-studio/numen/modules/plugins/tools.proofreading => ../../plugins/tools.proofreading
 
-replace github.com/jiva-studio/numen/modules/plugins/downloader => ../../plugins/downloader
+replace github.com/jiva-studio/numen/modules/plugins/tools.downloader => ../../plugins/tools.downloader
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent => ../../libs/plugin-sdk-go/agent
 
-replace github.com/jiva-studio/numen/modules/plugins/embeddings => ../../plugins/embeddings
+replace github.com/jiva-studio/numen/modules/plugins/engines.embeddings => ../../plugins/engines.embeddings
 
-replace github.com/jiva-studio/numen/modules/plugins/ocr => ../../plugins/ocr
+replace github.com/jiva-studio/numen/modules/plugins/engines.ocr => ../../plugins/engines.ocr
 
-replace github.com/jiva-studio/numen/modules/plugins/transcription => ../../plugins/transcription
+replace github.com/jiva-studio/numen/modules/plugins/engines.transcription => ../../plugins/engines.transcription
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models => ../../libs/plugin-sdk-go/models
 

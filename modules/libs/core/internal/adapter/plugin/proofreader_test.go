@@ -67,7 +67,7 @@ func createTestProofreadingPluginTree(t *testing.T, dir string) {
 	}
 
 	manifest := `{
-		"id": "md.numen.proofreading",
+		"id": "md.numen.tools.proofreading",
 		"name": "Proofreading Plugin",
 		"version": "1.0.0",
 		"description": "Proofreading",
@@ -181,7 +181,7 @@ func TestProofreaderBridgeSendsAScanAndReadsTheCorrections(t *testing.T) {
 	}
 
 	host.mu.RLock()
-	sup, ok := host.supervisors["md.numen.proofreading"]
+	sup, ok := host.supervisors["md.numen.tools.proofreading"]
 	host.mu.RUnlock()
 	if !ok {
 		t.Fatalf("supervisor not found")

@@ -15,8 +15,8 @@ func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 	}{
 		{&UnavailableError{Capability: "book", Reason: PluginNotInstalled}, "the plugin for book is not installed"},
 		{&UnavailableError{Capability: "book", Reason: PluginDisabled}, "the plugin for book is disabled"},
-		{&UnavailableError{PluginID: "md.numen.epub", Reason: PluginDisabled}, "plugin md.numen.epub is disabled"},
-		{&UnavailableError{PluginID: "md.numen.epub", Reason: PluginFailed, Err: cause}, "plugin md.numen.epub failed to start: exit status 1"},
+		{&UnavailableError{PluginID: "md.numen.readers.epub", Reason: PluginDisabled}, "plugin md.numen.readers.epub is disabled"},
+		{&UnavailableError{PluginID: "md.numen.readers.epub", Reason: PluginFailed, Err: cause}, "plugin md.numen.readers.epub failed to start: exit status 1"},
 	} {
 		if got := tc.err.Error(); got != tc.want {
 			t.Errorf("Error() = %q, want %q", got, tc.want)

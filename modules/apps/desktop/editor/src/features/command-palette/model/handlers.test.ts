@@ -1434,21 +1434,21 @@ describe('plugin setting invocation', () => {
     const one = window()
 
     await carry(
-      createInvocation('plugin-setting:md.numen.transcription:autoRun', front(), 'on'),
+      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'on'),
       one.on,
     )
-    expect(one.done).toStrictEqual(['plugin md.numen.transcription autoRun true'])
+    expect(one.done).toStrictEqual(['plugin md.numen.engines.transcription autoRun true'])
 
     await carry(
-      createInvocation('plugin-setting:md.numen.transcription:autoRun', front(), 'off'),
+      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'off'),
       one.on,
     )
-    expect(one.done[1]).toBe('plugin md.numen.transcription autoRun false')
+    expect(one.done[1]).toBe('plugin md.numen.engines.transcription autoRun false')
 
     await carry(
-      createInvocation('plugin-setting:md.numen.transcription:language', front(), 'en'),
+      createInvocation('plugin-setting:md.numen.engines.transcription:language', front(), 'en'),
       one.on,
     )
-    expect(one.done[2]).toBe('plugin md.numen.transcription language en')
+    expect(one.done[2]).toBe('plugin md.numen.engines.transcription language en')
   })
 })

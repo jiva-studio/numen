@@ -1,0 +1,35 @@
+{
+  "id": "md.numen.editors.markdown",
+  "name": "Markdown Editor",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "Modular Markdown and plain text editor with CodeMirror 6 and wikilinks support",
+  "capabilities": [],
+  "targets": [
+    "desktop.editor"
+  ],
+  "fileExtensions": [
+    ".md",
+    ".markdown",
+    ".txt",
+    ".note"
+  ],
+  "activationEvents": [
+    "onFile:.md",
+    "onFile:.markdown",
+    "onFile:.txt",
+    "onFile:.note"
+  ],
+  "permissions": [
+    "vault:read",
+    "vault:write"
+  ],
+  "lifecycle": {
+    "idleTimeoutSeconds": 300,
+    "keepAliveWhileVisible": true
+  },
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  }
+}

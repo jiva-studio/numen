@@ -248,9 +248,9 @@ func TestAnAbsentBookPluginIsAnsweredAsUnimplemented(t *testing.T) {
 	for name, why := range map[string]error{
 		"not installed": &port.UnavailableError{Capability: "book", Reason: port.PluginNotInstalled},
 		"disabled":      &port.UnavailableError{Capability: "book", Reason: port.PluginDisabled},
-		"failed":        &port.UnavailableError{PluginID: "md.numen.epub", Reason: port.PluginFailed, Err: errors.New("exit 1")},
+		"failed":        &port.UnavailableError{PluginID: "md.numen.readers.epub", Reason: port.PluginFailed, Err: errors.New("exit 1")},
 		"no program": &port.UnavailableError{
-			PluginID: "md.numen.epub", Reason: port.PluginFailed, Err: fmt.Errorf("start bin/epub: %w", fs.ErrNotExist),
+			PluginID: "md.numen.readers.epub", Reason: port.PluginFailed, Err: fmt.Errorf("start bin/epub: %w", fs.ErrNotExist),
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

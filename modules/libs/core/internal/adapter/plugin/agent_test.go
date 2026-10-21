@@ -121,7 +121,7 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 	}
 
 	manifest := `{
-		"id": "md.numen.agent",
+		"id": "md.numen.agents.numen",
 		"name": "Agent Plugin",
 		"version": "1.0.0",
 		"description": "Agent and chat provider",
@@ -307,7 +307,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
-	bridge, err := OpenAgentBridgeForPlugin(t.Context(), host, "md.numen.agent")
+	bridge, err := OpenAgentBridgeForPlugin(t.Context(), host, "md.numen.agents.numen")
 	if err != nil {
 		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
 	}
@@ -346,7 +346,7 @@ func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 	}
 
 	want := []port.AgentProgram{{
-		Provider: "md.numen.agent", Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
+		Provider: "md.numen.agents.numen", Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
 		Models: []port.AgentModel{{
 			Name: "m1", Title: "M one", IsDefault: true, DefaultReasoning: "low",
 			ReasoningLevels: []port.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}},

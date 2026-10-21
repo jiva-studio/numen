@@ -70,7 +70,7 @@ func createTestPluginTree(t *testing.T, dir string) {
 	}
 
 	manifest := `{
-		"id": "md.numen.ocr",
+		"id": "md.numen.engines.ocr",
 		"name": "OCR Plugin",
 		"version": "1.0.0",
 		"description": "OCR",
@@ -85,7 +85,7 @@ func createTestPluginTree(t *testing.T, dir string) {
 		},
 		"backend": {
 			"type": "process",
-			"entrypoint": "bin/ocr",
+			"entrypoint": "bin/engines.ocr",
 			"serviceName": "numen.v1.OcrService"
 		},
 		"frontend": {
@@ -113,13 +113,13 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 		t.Fatalf("expected 1 plugin, got %d", len(plugins))
 	}
 
-	p, ok := host.GetPlugin("md.numen.ocr")
-	if !ok || p.Manifest.ID != "md.numen.ocr" {
-		t.Fatal("expected to find md.numen.ocr")
+	p, ok := host.GetPlugin("md.numen.engines.ocr")
+	if !ok || p.Manifest.ID != "md.numen.engines.ocr" {
+		t.Fatal("expected to find md.numen.engines.ocr")
 	}
 
 	capPlugin, ok := host.FindPluginByCapability("recognition")
-	if !ok || capPlugin.Manifest.ID != "md.numen.ocr" {
+	if !ok || capPlugin.Manifest.ID != "md.numen.engines.ocr" {
 		t.Fatal("expected to find plugin by capability recogniser")
 	}
 }
@@ -153,7 +153,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	endpoint, err := host.EnsureActive(ctx, "md.numen.ocr")
+	endpoint, err := host.EnsureActive(ctx, "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -162,7 +162,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Calling EnsureActive again should return the existing active endpoint
-	endpoint2, err := host.EnsureActive(ctx, "md.numen.ocr")
+	endpoint2, err := host.EnsureActive(ctx, "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("second EnsureActive failed: %v", err)
 	}
@@ -171,16 +171,16 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Release twice to enter idle state
-	host.Release("md.numen.ocr")
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
+	host.Release("md.numen.engines.ocr")
 
 	// TriggerEvent for matching event
 	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
-	if len(activated) != 1 || activated[0] != "md.numen.ocr" {
-		t.Fatalf("expected md.numen.ocr to be activated, got %v", activated)
+	if len(activated) != 1 || activated[0] != "md.numen.engines.ocr" {
+		t.Fatalf("expected md.numen.engines.ocr to be activated, got %v", activated)
 	}
 
 	// EvictIdle test
@@ -191,7 +191,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Cleanup
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
 	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
@@ -284,7 +284,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	ctx := t.Context()
 
 	// Initial state is dormant
-	sup := host.supervisors["md.numen.ocr"]
+	sup := host.supervisors["md.numen.engines.ocr"]
 	if sup == nil || sup.GetState() != StateDormant {
 		t.Fatalf("expected initial state dormant, got %v", sup.GetState())
 	}
@@ -298,7 +298,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 		t.Fatalf("expected state active or idle after EmitEvent, got %v", sup.GetState())
 	}
 
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
 	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
@@ -349,7 +349,7 @@ func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
 	}()
 
 	ctx := t.Context()
-	endpoint, err := host.EnsureActive(ctx, "md.numen.ocr")
+	endpoint, err := host.EnsureActive(ctx, "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -366,7 +366,7 @@ func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
 		t.Fatal("timed out waiting for large stdout write to complete")
 	}
 
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
 	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
@@ -781,7 +781,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	endpoint, err := host.EnsureActive(ctx, "md.numen.ocr")
+	endpoint, err := host.EnsureActive(ctx, "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -791,23 +791,23 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.engines.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	host.mu.Lock()
-	p := host.plugins["md.numen.ocr"]
+	p := host.plugins["md.numen.engines.ocr"]
 	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["md.numen.ocr"] = p
+	host.plugins["md.numen.engines.ocr"] = p
 	host.mu.Unlock()
 
-	host.Release("md.numen.ocr")
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
+	host.Release("md.numen.engines.ocr")
 
 	time.Sleep(1050 * time.Millisecond)
 
 	evicted := host.EvictIdle(ctx, 0, 500*time.Millisecond)
-	if len(evicted) != 1 || evicted[0] != "md.numen.ocr" {
-		t.Fatalf("expected md.numen.ocr to be evicted, got %v", evicted)
+	if len(evicted) != 1 || evicted[0] != "md.numen.engines.ocr" {
+		t.Fatalf("expected md.numen.engines.ocr to be evicted, got %v", evicted)
 	}
 
 	if !handler.isShutdownCalled() {
@@ -819,13 +819,13 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 
 	host.stdinsMu.Lock()
-	_, stdinExists := host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}]
+	_, stdinExists := host.stdins[stdinKey{pluginID: "md.numen.engines.ocr", pid: cmd.Process.Pid}]
 	host.stdinsMu.Unlock()
 	if stdinExists {
 		t.Error("expected stdin pipe to be deleted from host.stdins")
 	}
 
-	sup := host.supervisors["md.numen.ocr"]
+	sup := host.supervisors["md.numen.engines.ocr"]
 	if sup.GetState() != StateDormant {
 		t.Errorf("expected StateDormant, got %v", sup.GetState())
 	}
@@ -874,17 +874,17 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	_, err = host.EnsureActive(ctx, "md.numen.ocr")
+	_, err = host.EnsureActive(ctx, "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.engines.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
-	sup := host.supervisors["md.numen.ocr"]
+	sup := host.supervisors["md.numen.engines.ocr"]
 	sup.SetMemoryLimit(100 * 1024 * 1024)
 
 	// Simulate RSS below limit
@@ -901,8 +901,8 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 		return 200 * 1024 * 1024, nil
 	})
 	evicted = host.EvictMemoryExceeded(ctx, 500*time.Millisecond)
-	if len(evicted) != 1 || evicted[0] != "md.numen.ocr" {
-		t.Fatalf("expected md.numen.ocr to be evicted for memory, got %v", evicted)
+	if len(evicted) != 1 || evicted[0] != "md.numen.engines.ocr" {
+		t.Fatalf("expected md.numen.engines.ocr to be evicted for memory, got %v", evicted)
 	}
 
 	if !handler.isShutdownCalled() {
@@ -944,9 +944,9 @@ func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
 	ctx := t.Context()
 
 	host.mu.Lock()
-	sup := host.supervisors["md.numen.ocr"]
+	sup := host.supervisors["md.numen.engines.ocr"]
 	_ = sup.Attach(cmd.Process, now)
-	host.endpoints["md.numen.ocr"] = Endpoint{Host: "127.0.0.1", Port: 8080, Token: "test-token"}
+	host.endpoints["md.numen.engines.ocr"] = Endpoint{Host: "127.0.0.1", Port: 8080, Token: "test-token"}
 	host.mu.Unlock()
 
 	sup.SetMemoryLimit(100 * 1024 * 1024)
@@ -955,19 +955,19 @@ func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
 	})
 
 	evicted := host.EvictMemoryExceeded(ctx, 100*time.Millisecond)
-	if len(evicted) != 1 || evicted[0] != "md.numen.ocr" {
-		t.Fatalf("expected md.numen.ocr evicted, got %v", evicted)
+	if len(evicted) != 1 || evicted[0] != "md.numen.engines.ocr" {
+		t.Fatalf("expected md.numen.engines.ocr evicted, got %v", evicted)
 	}
 
 	if len(reportedErrors) == 0 {
 		t.Fatal("expected error to be reported for memory eviction")
 	}
-	if !strings.Contains(reportedErrors[0].Error(), "md.numen.ocr was stopped") {
+	if !strings.Contains(reportedErrors[0].Error(), "md.numen.engines.ocr was stopped") {
 		t.Fatalf("expected memory limit error message, got %v", reportedErrors[0])
 	}
 
 	// Next EnsureActive should refuse activation with backoff
-	_, err := host.EnsureActive(ctx, "md.numen.ocr")
+	_, err := host.EnsureActive(ctx, "md.numen.engines.ocr")
 	if err == nil {
 		t.Fatal("expected EnsureActive to fail due to backoff after memory eviction")
 	}
@@ -1018,13 +1018,13 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(ctx, "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.engines.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	if err := host.TeardownAll(ctx, 500*time.Millisecond); err != nil {
@@ -1093,18 +1093,18 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(ctx, "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
 	host.mu.Lock()
-	p := host.plugins["md.numen.ocr"]
+	p := host.plugins["md.numen.engines.ocr"]
 	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["md.numen.ocr"] = p
+	host.plugins["md.numen.engines.ocr"] = p
 	host.mu.Unlock()
 
-	host.Release("md.numen.ocr")
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
+	host.Release("md.numen.engines.ocr")
 
 	time.Sleep(1050 * time.Millisecond)
 
@@ -1202,28 +1202,28 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 	var procs []*os.Process
 	host.SetLauncher(startSleepLauncher(t, &started, &procs))
 
-	first, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	first, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
 	host.mu.RLock()
-	sup := host.supervisors["md.numen.ocr"]
+	sup := host.supervisors["md.numen.engines.ocr"]
 	host.mu.RUnlock()
 	killProcess(t, procs[0])
 	waitUntil(t, "the crashed plugin to become dormant", func() bool {
 		host.mu.RLock()
 		defer host.mu.RUnlock()
-		_, hasEndpoint := host.endpoints["md.numen.ocr"]
+		_, hasEndpoint := host.endpoints["md.numen.engines.ocr"]
 		return sup.GetState() == StateDormant && !hasEndpoint
 	})
 
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
 	if sup.GetState() != StateDormant {
 		t.Fatalf("Release moved a crashed plugin to %v", sup.GetState())
 	}
 
-	second, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	second, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive after crash failed: %v", err)
 	}
@@ -1268,16 +1268,16 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	var procs []*os.Process
 	host.SetLauncher(startSleepLauncher(t, &started, &procs))
 
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.mu.Lock()
-	delete(host.endpoints, "md.numen.ocr")
-	sup := host.supervisors["md.numen.ocr"]
+	delete(host.endpoints, "md.numen.engines.ocr")
+	sup := host.supervisors["md.numen.engines.ocr"]
 	host.mu.Unlock()
 	firstExit := getExitSignal(sup)
 
-	endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	endpoint, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -1335,9 +1335,9 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
 	host.mu.Lock()
-	p := host.plugins["md.numen.ocr"]
+	p := host.plugins["md.numen.engines.ocr"]
 	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["md.numen.ocr"] = p
+	host.plugins["md.numen.engines.ocr"] = p
 	host.mu.Unlock()
 
 	var evictions atomic.Int32
@@ -1363,7 +1363,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	t.Cleanup(stopEvictor)
 
 	for i := 0; i < 60 || (evictions.Load() == 0 && i < 5000); i++ {
-		endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		endpoint, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
 		if err != nil {
 			t.Fatalf("round %d: EnsureActive failed: %v", i, err)
 		}
@@ -1371,12 +1371,12 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 			t.Fatalf("round %d: EnsureActive returned an empty endpoint", i)
 		}
 		host.mu.RLock()
-		sup := host.supervisors["md.numen.ocr"]
+		sup := host.supervisors["md.numen.engines.ocr"]
 		host.mu.RUnlock()
 		if state := sup.GetState(); state != StateActive {
 			t.Fatalf("round %d: a held plugin is in state %v", i, state)
 		}
-		host.Release("md.numen.ocr")
+		host.Release("md.numen.engines.ocr")
 		if i == 0 {
 			time.Sleep(1050 * time.Millisecond)
 		}
@@ -1420,14 +1420,14 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	first, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	first, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
 	host.mu.Lock()
-	sup := host.supervisors["md.numen.ocr"]
-	delete(host.endpoints, "md.numen.ocr")
+	sup := host.supervisors["md.numen.engines.ocr"]
+	delete(host.endpoints, "md.numen.engines.ocr")
 	host.mu.Unlock()
 	if !sup.BeginDeactivation(0, time.Now()) {
 		t.Fatal("expected the idle plugin to begin deactivating")
@@ -1439,7 +1439,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 	answered := make(chan result, 1)
 	go func() {
-		endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		endpoint, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
 		answered <- result{endpoint: endpoint, err: err}
 	}()
 
@@ -1540,18 +1540,18 @@ func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
 
 	ctx := t.Context()
-	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(ctx, "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
 	host.mu.Lock()
-	p := host.plugins["md.numen.ocr"]
+	p := host.plugins["md.numen.engines.ocr"]
 	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
-	host.plugins["md.numen.ocr"] = p
+	host.plugins["md.numen.engines.ocr"] = p
 	host.mu.Unlock()
 
-	host.Release("md.numen.ocr")
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
+	host.Release("md.numen.engines.ocr")
 
 	evicted := host.EvictIdle(ctx, 0, 50*time.Millisecond)
 	if len(evicted) != 0 {
@@ -1564,7 +1564,7 @@ func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
 	}
 
 	host.mu.RLock()
-	sup := host.supervisors["md.numen.ocr"]
+	sup := host.supervisors["md.numen.engines.ocr"]
 	host.mu.RUnlock()
 	if state := sup.GetState(); state != StateIdle {
 		t.Errorf("expected supervisor to stay StateIdle, got %v", state)

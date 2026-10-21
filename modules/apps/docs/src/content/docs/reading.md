@@ -32,7 +32,7 @@ The text OCR read off the pages can be corrected afterwards by a model, through 
 ```json
 {
   "ai": {
-    "default": { "agent": "md.numen.agent-claude", "model": "haiku" }
+    "default": { "agent": "md.numen.agents.claude", "model": "haiku" }
   },
   "indexing": {
     "proofreading": {

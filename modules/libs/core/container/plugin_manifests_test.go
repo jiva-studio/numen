@@ -506,7 +506,7 @@ func TestWhatTheCapabilityRuleRefuses(t *testing.T) {
 	for _, capability := range []string{
 		"document",
 		"audio",
-		"view.agent-chat",
+		"views.agent.chat",
 		"unknown.capability",
 		"unresolved",
 	} {
@@ -514,7 +514,7 @@ func TestWhatTheCapabilityRuleRefuses(t *testing.T) {
 			refused = append(refused, capability)
 		}
 	}
-	want := []string{"view.agent-chat", "unknown.capability", "unresolved"}
+	want := []string{"views.agent.chat", "unknown.capability", "unresolved"}
 	if !slices.Equal(refused, want) {
 		t.Errorf("the capability rule refuses %v, want %v", refused, want)
 	}
@@ -578,6 +578,66 @@ func TestEveryPluginHasAReadme(t *testing.T) {
 		readme := filepath.Join(one.Dir, "README.md")
 		if _, err := os.Stat(readme); err != nil {
 			t.Errorf("%s has no README.md: %v", one.Dir, err)
+		}
+	}
+}
+
+// validPluginKinds is every plugin kind known to numen.
+var validPluginKinds = []string{
+	"agents",
+	"readers",
+	"editors",
+	"views",
+	"engines",
+	"tools",
+}
+
+// listPluginNamingIssues lists what a plugin folder and id break: the id starts
+// with md.numen., the folder is the id without md.numen., no hyphen stands in the
+// id, and the kind is one of agents, readers, editors, views, engines or tools.
+func listPluginNamingIssues(folder, id string) []string {
+	var issues []string
+	if !strings.HasPrefix(id, "md.numen.") {
+		issues = append(issues, fmt.Sprintf("id %q does not start with md.numen.", id))
+	}
+	if strings.Contains(id, "-") {
+		issues = append(issues, fmt.Sprintf("id %q contains a hyphen", id))
+	}
+	expectedID := "md.numen." + folder
+	if id != expectedID {
+		issues = append(issues, fmt.Sprintf("folder %q differs from id %q without md.numen.", folder, id))
+	}
+	parts := strings.Split(folder, ".")
+	if len(parts) < 2 || !slices.Contains(validPluginKinds, parts[0]) {
+		issues = append(issues, fmt.Sprintf("kind %q in folder %q is not a known plugin kind", parts[0], folder))
+	}
+	return issues
+}
+
+func TestEveryPluginFollowsTheNamingRule(t *testing.T) {
+	for _, one := range getPluginManifests(t) {
+		folder := filepath.Base(one.Dir)
+		for _, issue := range listPluginNamingIssues(folder, one.ID) {
+			t.Errorf("%s: %s", one.Dir, issue)
+		}
+	}
+}
+
+func TestWhatThePluginNamingRuleRefuses(t *testing.T) {
+	for name, one := range map[string]struct {
+		folder string
+		id     string
+		issues int
+	}{
+		"valid plugin":            {"views.file.tree", "md.numen.views.file.tree", 0},
+		"folder differs from id":  {"views.file.tree", "md.numen.views.other", 1},
+		"id contains hyphen":      {"views.file-tree", "md.numen.views.file-tree", 1},
+		"unknown kind":            {"widgets.tree", "md.numen.widgets.tree", 1},
+		"missing md.numen prefix": {"views.file.tree", "views.file.tree", 2},
+		"no name segment":         {"views", "md.numen.views", 1},
+	} {
+		if got := listPluginNamingIssues(one.folder, one.id); len(got) != one.issues {
+			t.Errorf("%s: %d issues found, want %d: %v", name, len(got), one.issues, got)
 		}
 	}
 }

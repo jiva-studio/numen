@@ -7,7 +7,7 @@
  */
 import { asValue } from '@numen/wire'
 import type { Entry } from '@/entities/file'
-import type { FieldRenameResult } from '@plugins/flashcards-studio/frontend/cards'
+import type { FieldRenameResult } from '@plugins/views.flashcards.studio/frontend/cards'
 
 /** What the mocked vault answers about itself, set before the window draws. */
 export const said = {

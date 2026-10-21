@@ -1,0 +1,24 @@
+{
+  "name": "@numen/views.media.player",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@numen/plugin-sdk": "workspace:*",
+    "@numen/ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.2",
+    "vue": "^3.5.0"
+  }
+}

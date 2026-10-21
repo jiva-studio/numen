@@ -130,7 +130,7 @@ func TestBookBridgeWithFakePlugin(t *testing.T) {
 	host := NewHost("desktop.editor")
 	p := DiscoveredPlugin{
 		Manifest: Manifest{
-			ID:           "md.numen.epub",
+			ID:           "md.numen.readers.epub",
 			Name:         "EPUB Reader",
 			Version:      "1.0.0",
 			Capabilities: []string{"book"},
@@ -190,7 +190,7 @@ func openFakeBookBridge(t *testing.T, permissions ...string) *BookBridge {
 	host := NewHost("desktop.editor")
 	p := DiscoveredPlugin{
 		Manifest: Manifest{
-			ID:           "md.numen.epub",
+			ID:           "md.numen.readers.epub",
 			Name:         "EPUB Reader",
 			Version:      "1.0.0",
 			Capabilities: []string{"book"},

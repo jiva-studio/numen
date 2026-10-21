@@ -14,7 +14,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest := `{
-		"id": "md.numen.ocr",
+		"id": "md.numen.engines.ocr",
 		"name": "OCR",
 		"version": "1.0.0",
 		"capabilities": ["recognition"],
@@ -22,7 +22,7 @@ func TestHostSafeMode(t *testing.T) {
 		"activationEvents": ["onFile:*.pdf"],
 		"permissions": ["vault:read"],
 		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 10, "keepAliveWhileVisible": false},
-		"backend": {"type": "process", "entrypoint": "bin/ocr", "serviceName": "numen.v1.OcrService"}
+		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "numen.v1.OcrService"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -43,7 +43,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatalf("expected 0 plugins in safe mode, got %d", len(plugins))
 	}
 
-	if _, ok := host.GetPlugin("md.numen.ocr"); ok {
+	if _, ok := host.GetPlugin("md.numen.engines.ocr"); ok {
 		t.Fatal("expected GetPlugin to report false in safe mode")
 	}
 
@@ -52,7 +52,7 @@ func TestHostSafeMode(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); !errors.Is(err, errSafeModeActive) {
+	if _, err := host.EnsureActive(ctx, "md.numen.engines.ocr"); !errors.Is(err, errSafeModeActive) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
