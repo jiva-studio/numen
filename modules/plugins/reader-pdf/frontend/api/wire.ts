@@ -1,48 +1,21 @@
 /**
  * Wire adapter for DocumentService and OcrService.
  */
-import { Code, createClient, type ConnectError } from '@connectrpc/connect'
+import { createClient } from '@connectrpc/connect'
 import {
   DocumentService,
   OcrService,
   type Box as BoxMessage,
   type Run as RunMessage,
 } from '@numen/protocol'
-import { transport } from '@numen/wire'
+import {
+  formatFingerprint,
+  getAssetUrl,
+  getBytesQuery,
+  retryWhileBusy,
+  transport,
+} from '@numen/wire'
 import type { Documents, PageHighlight, Rect } from '../types'
-
-const formatFingerprint = (at?: {
-  path: string
-  size: bigint
-  mtime: bigint
-}): string | undefined => at && `${at.size} ${at.mtime} ${at.path}`
-
-const parseFingerprint = (at: string) => {
-  const [size = '0', mtime = '0', ...rest] = at.split(' ')
-  return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
-}
-
-const getAssetUrl = (path: string): string => `/assets/${encodeURIComponent(path)}`
-
-const getBytesQuery = (file: string): string => {
-  const at = parseFingerprint(file)
-  return `size=${at.size}&mtime=${at.mtime}`
-}
-
-const MAX_BUSY_RETRIES = 3
-const BUSY_RETRY_DELAY_MS = 1000
-
-const retryWhileBusy = async <T>(ask: () => Promise<T>): Promise<T> => {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await ask()
-    } catch (error) {
-      if (Code.Unavailable !== (error as ConnectError).code || attempt >= MAX_BUSY_RETRIES)
-        throw error
-      await new Promise((wake) => setTimeout(wake, BUSY_RETRY_DELAY_MS))
-    }
-  }
-}
 
 export const client = {
   documents: createClient(DocumentService, transport),

@@ -23,6 +23,7 @@ export {
   getAssetUrl,
   getBytesQuery,
   isStaleAnswer,
+  MAX_BUSY_RETRIES,
   parseFingerprint,
   retryWhileBusy,
 } from './answers'
