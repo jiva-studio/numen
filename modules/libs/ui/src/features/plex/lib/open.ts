@@ -107,25 +107,25 @@ export function getOpenHeadings(
   open: number,
   scrollOffset = 0,
 ): OpenHeadings | null {
-  const opened = clamp01(open)
-  if (opened <= 0) return null
+  const openProgress = clamp01(open)
+  if (openProgress <= 0) return null
 
   // The window stands whole on the headings, scrolled by one at a time.
   const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthest(suspended))
-  const displayed = suspended.headings.slice(first, first + suspended.shown)
+  const visibleHeadings = suspended.headings.slice(first, first + suspended.shown)
 
   // Each heading sets off a lead behind the one above it, and the leads together
   // take the same share of the opening whatever number of headings stand. What is
   // left for any one of them to run in is the opening less every lead before it.
-  const many = displayed.length
+  const many = visibleHeadings.length
   const lead = Math.min(LEAD, SPREAD / (many - 1))
   const runs = 1 - lead * (many - 1)
 
   /** The deepest a heading may set off from and still stand on the ground. */
   const floor = suspended.height - 2 * suspended.pad - suspended.headingHeight
 
-  const headings = displayed.map((heading, at) => {
-    const own = easeOut(clamp01((opened - at * lead) / runs))
+  const headings = visibleHeadings.map((heading, at) => {
+    const own = easeOut(clamp01((openProgress - at * lead) / runs))
     const rests = at * suspended.headingHeight
     const from = Math.min(rests + RISE * suspended.headingHeight, floor)
     return { ...heading, at: rests, y: lerp(from, rests, own), opacity: own }
@@ -135,7 +135,7 @@ export function getOpenHeadings(
   const isBelow = first < getFurthest(suspended)
   return {
     height: suspended.height,
-    opacity: easeOut(opened),
+    opacity: easeOut(openProgress),
     headings,
     first,
     isAbove,

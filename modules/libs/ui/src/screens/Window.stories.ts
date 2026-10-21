@@ -631,8 +631,8 @@ const screen = ({
     const target = ref<State>(workspace())
     const text = ref(markdown)
     const other = ref(OTHER)
-    const asking = ref('')
-    const typed = ref(panel === 'search' ? 'entrop' : '')
+    const activePrompt = ref('')
+    const searchQuery = ref(panel === 'search' ? 'entrop' : '')
     const at = ref(BOOK_FIRST)
     const currentNeighbourhood = ref(neighbourhood)
 
@@ -663,8 +663,8 @@ const screen = ({
       held: target,
       text,
       other,
-      asking,
-      typed,
+      asking: activePrompt,
+      typed: searchQuery,
       at,
       panel,
       currentNeighbourhood,
@@ -895,13 +895,13 @@ export const Nesting: Story = {
 
     // As many as the panel has room for, taken from the top of the note: what
     // does not fit is wound to, not dropped from the middle.
-    const displayed = suspended()
-    expect(displayed).toEqual(titles.slice(0, displayed.length))
+    const suspendedView = suspended()
+    expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
 
     // They hang under the box, in the order the note sets them out. The box is
     // the node's own rectangle: the group around it has grown to hold them.
     const box = focus.querySelector('rect')!.getBoundingClientRect()
-    const tops = displayed.map((words) => canvas.getByText(words).getBoundingClientRect().top)
+    const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
     expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
     expect([...tops].sort((one, other) => one - other)).toEqual(tops)
   },

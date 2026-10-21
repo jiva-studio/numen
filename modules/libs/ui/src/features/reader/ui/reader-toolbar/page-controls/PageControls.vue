@@ -31,7 +31,7 @@ const at = defineModel<number>('at', { default: 0 })
 const typing = ref<string | number | null>(null)
 
 /** What is in the field: the page in front, or what is being typed over it. */
-const typed = computed({
+const inputValue = computed({
   get: () => typing.value ?? String(at.value + 1),
   set: (text: string | number) => {
     typing.value = text
@@ -96,7 +96,7 @@ const turn = () => {
     </Button>
 
     <input
-      v-model="typed"
+      v-model="inputValue"
       class="reader__at rounded-node border-field-rule bg-field text-small text-ink ring-numen w-10 border px-1 text-center outline-none"
       type="number"
       min="1"

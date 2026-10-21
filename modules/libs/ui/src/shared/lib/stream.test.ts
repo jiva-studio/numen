@@ -11,16 +11,16 @@ import { createFollower, AGAIN, LOST } from './stream'
 const window = (streams = 3) => {
   const waits: number[] = []
   const missing: string[] = []
-  let acquired = 0
+  let acquiredCount = 0
   const follows = createFollower({
-    isOpen: () => acquired <= streams,
+    isOpen: () => acquiredCount <= streams,
     setLost: (response) => missing.push(response),
     wait: async (ms) => {
-      acquired++
+      acquiredCount++
       waits.push(ms)
     },
   })
-  return { follows, waits, lost: missing, took: () => acquired }
+  return { follows, waits, lost: missing, took: () => acquiredCount }
 }
 
 /** A stream that says what it was given and ends. */
@@ -117,12 +117,12 @@ describe('a window that has closed', () => {
 describe('what a follower holds for one reading of a stream', () => {
   it('is release when the stream ends, before it is taken up again', async () => {
     const order: string[] = []
-    let acquired = 0
+    let acquiredCount = 0
     const follows = createFollower({
-      isOpen: () => acquired <= 2,
+      isOpen: () => acquiredCount <= 2,
       setLost: () => {},
       wait: async () => {
-        acquired++
+        acquiredCount++
         order.push('waits')
       },
       reset: () => void order.push('resets'),
@@ -135,12 +135,12 @@ describe('what a follower holds for one reading of a stream', () => {
 
   it('is release when the stream fails, the same way', async () => {
     const order: string[] = []
-    let acquired = 0
+    let acquiredCount = 0
     const follows = createFollower({
-      isOpen: () => acquired < 1,
+      isOpen: () => acquiredCount < 1,
       setLost: () => void order.push('lost'),
       wait: async () => {
-        acquired++
+        acquiredCount++
       },
       reset: () => void order.push('resets'),
     })

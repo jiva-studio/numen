@@ -56,10 +56,10 @@ export interface PalettePlacesOptions {
 export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesState {
   const { groups, typed } = options
   /** What is drawn, and in what order: a group holding nothing stands at the foot. */
-  const displayed = computed(() => orderGroups(groups()))
+  const visibleGroups = computed(() => orderGroups(groups()))
 
-  const places = computed(() => flatten(displayed.value))
-  const placed = computed(() => placePalette(displayed.value))
+  const places = computed(() => flatten(visibleGroups.value))
+  const placedPalette = computed(() => placePalette(visibleGroups.value))
 
   /**
    * What is read out of a search. A group that answered with rows is read out by
@@ -68,7 +68,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
    * working has answered nothing yet and is left alone.
    */
   const response = computed(() =>
-    displayed.value
+    visibleGroups.value
       .filter((group) => !group.isWorking && group.items.length === 0 && group.silence)
       .map((group) => group.silence)
       .join('. '),
@@ -134,5 +134,5 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     options.tellChoice(item.id, action)
   }
 
-  return { placed, places, said: response, here, lit, offered: proposed, goTo, held: target, lightAt, chooseAt }
+  return { placed: placedPalette, places, said: response, here, lit, offered: proposed, goTo, held: target, lightAt, chooseAt }
 }

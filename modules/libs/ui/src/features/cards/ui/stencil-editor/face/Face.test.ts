@@ -29,9 +29,9 @@ const createFace = (
   fields: readonly string[] = FIELDS,
   sample?: readonly FieldValue[],
 ): FaceRow => {
-  const arranged = faceRows([face], fields, sample ?? sampleValues(getDeclaredFields(fields)))[0]
-  if (!arranged) throw new Error('a corpus holding no face')
-  return arranged
+  const arrangedRow = faceRows([face], fields, sample ?? sampleValues(getDeclaredFields(fields)))[0]
+  if (!arrangedRow) throw new Error('a corpus holding no face')
+  return arrangedRow
 }
 
 const mountFace = (face: FaceRow = createFace(FACE), props: Record<string, unknown> = {}) =>

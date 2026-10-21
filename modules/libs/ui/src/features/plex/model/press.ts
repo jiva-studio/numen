@@ -57,7 +57,7 @@ export function useNodePress(
   }
 
   /** What this node listens for beyond the handle. */
-  const listening = mergeListeners(
+  const combinedListeners = mergeListeners(
     props.behaviour.reaching.listeners({
       ready: () => !isGhost.value && props.gestureRole === 'open',
       reach: (event: PointerEvent) => listeners.reach(event),
@@ -73,7 +73,7 @@ export function useNodePress(
     canReach,
     canStop,
     isAnnounced,
-    listening,
+    listening: combinedListeners,
 
     onClick: (): void => {
       activateNode()

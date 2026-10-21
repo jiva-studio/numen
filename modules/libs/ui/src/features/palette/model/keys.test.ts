@@ -35,7 +35,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
   const isOpen = ref(setUpOptions.open ?? false)
   const step = ref('one')
   const opensOn = ref(setUpOptions.opensOn ?? '')
-  const typed = ref(setUpOptions.typed ?? '')
+  const searchQuery = ref(setUpOptions.typed ?? '')
   const isPanelOpen = ref(false)
   const handle = {
     focus: vi.fn<() => void>(),
@@ -59,7 +59,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
       setup() {
         places = usePalettePlaces({
           groups: () => GROUPS,
-          typed,
+          typed: searchQuery,
           tellLit: () => undefined,
           tellChoice: () => undefined,
         })
@@ -69,7 +69,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
           places,
           isPanelOpen,
           getOfferedActions: () => places.offered.value,
-          typed,
+          typed: searchQuery,
           isOpen: () => isOpen.value,
           getStep: () => step.value,
           getOpensOn: () => opensOn.value,
@@ -94,7 +94,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
     isOpen,
     step,
     opensOn,
-    typed,
+    typed: searchQuery,
     isPanelOpen,
     handle,
     field,

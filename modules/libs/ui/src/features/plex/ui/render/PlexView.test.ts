@@ -309,11 +309,11 @@ describe('the line under the hand', () => {
   })
 
   it('draws the words the arrangement cut, and not the label as written', () => {
-    const trimmed = arrangePlex(titled, { measureLabel: (label) => 30 * label.length })
+    const arrangedPlex = arrangePlex(titled, { measureLabel: (label) => 30 * label.length })
     const view = mount(PlexView, {
-      props: { frame: trimmed, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+      props: { frame: arrangedPlex, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
-    const edge = trimmed.edges[acrossIndex]!
+    const edge = arrangedPlex.edges[acrossIndex]!
 
     expect(edge.label).toBe('the scene in the assembly')
     expect(edge.words!.endsWith('…')).toBe(true)
@@ -495,10 +495,10 @@ describe('the arrow on a line', () => {
 
   it('puts each one on its own end of its own line, turned along it', () => {
     const view = mountNamed()
-    const rendered = view.findAll('.plex__edge-arrow')
+    const renderedArrows = view.findAll('.plex__edge-arrow')
 
     for (const [at, edge] of [frame.edges[0]!, frame.edges[1]!].entries()) {
-      const head = parseTransform(rendered[at]!.attributes('transform')!)
+      const head = parseTransform(renderedArrows[at]!.attributes('transform')!)
       expect(head.x).toBeCloseTo(edge.arrowhead!.at.x)
       expect(head.y).toBeCloseTo(edge.arrowhead!.at.y)
       expect(head.angle).toBeCloseTo(edge.arrowhead!.angle)
@@ -506,8 +506,8 @@ describe('the arrow on a line', () => {
 
     // The two ends of one picture: one arrow points down out of the focus and
     // the other back up out of it.
-    expect(parseTransform(rendered[0]!.attributes('transform')!).angle).toBeCloseTo(90)
-    expect(parseTransform(rendered[1]!.attributes('transform')!).angle).toBeCloseTo(-90)
+    expect(parseTransform(renderedArrows[0]!.attributes('transform')!).angle).toBeCloseTo(90)
+    expect(parseTransform(renderedArrows[1]!.attributes('transform')!).angle).toBeCloseTo(-90)
   })
 
   it('fades an arrow with the line it is drawn on', () => {

@@ -25,8 +25,8 @@ describe('how much of a year fits', () => {
 
   it('countSpreads what is left over between the cells, so the grid meets both edges', () => {
     const room = measureGrid({ width: 200, cell: 10, gap: 2 })
-    const rendered = room.columns * 10 + (room.columns - 1) * room.gap
-    expect(rendered).toBeCloseTo(200, 5)
+    const totalWidth = room.columns * 10 + (room.columns - 1) * room.gap
+    expect(totalWidth).toBeCloseTo(200, 5)
     expect(room.gap).toBeGreaterThanOrEqual(2)
   })
 
@@ -58,18 +58,18 @@ describe('the days a grid draws', () => {
   it('keeps room after today for what is still to come', () => {
     // Saturday.
     const now = new Date('2026-08-29T12:00:00')
-    const displayed = getDays(20, now, did)
-    const today = displayed.filter((one) => one.isToday)
+    const days = getDays(20, now, did)
+    const today = days.filter((one) => one.isToday)
 
     expect(today).toHaveLength(1)
-    expect(displayed[0]!.day < today[0]!.day).toBe(true)
+    expect(days[0]!.day < today[0]!.day).toBe(true)
 
-    const after = displayed.slice(displayed.indexOf(today[0]!) + 1)
+    const after = days.slice(days.indexOf(today[0]!) + 1)
     expect(after.length).toBeGreaterThan(ROWS * 3)
     for (const one of after) {
       expect(one.isAhead).toBe(true)
     }
-    for (const one of displayed.slice(0, displayed.indexOf(today[0]!) + 1)) {
+    for (const one of days.slice(0, days.indexOf(today[0]!) + 1)) {
       expect(one.isAhead).toBe(false)
     }
   })
@@ -77,10 +77,10 @@ describe('the days a grid draws', () => {
   // The grid is as wide as the room it was given: a week to every column.
   it('draws a week for every column it was given', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const displayed = getDays(30, now, createTallies([['2026-08-28', 3]]))
+    const days = getDays(30, now, createTallies([['2026-08-28', 3]]))
 
-    expect(displayed).toHaveLength(30 * ROWS)
-    expect(displayed.some((one) => one.isToday)).toBe(true)
+    expect(days).toHaveLength(30 * ROWS)
+    expect(days.some((one) => one.isToday)).toBe(true)
   })
 
   // Nobody wants years of empty squares from before they ever sat down. The
@@ -88,11 +88,11 @@ describe('the days a grid draws', () => {
   // done stretches out to the right.
   it('opens on the week a person began in', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const displayed = getDays(30, now, createTallies([['2026-08-28', 3]]))
+    const days = getDays(30, now, createTallies([['2026-08-28', 3]]))
 
     // The Monday of that week.
-    expect(displayed[0]!.day).toBe('2026-08-24')
-    expect(displayed[displayed.length - 1]!.isAhead).toBe(true)
+    expect(days[0]!.day).toBe('2026-08-24')
+    expect(days[days.length - 1]!.isAhead).toBe(true)
   })
 
   // Once they have been here longer than the width holds, the oldest weeks
@@ -103,25 +103,25 @@ describe('the days a grid draws', () => {
       ['2024-01-01', 5],
       ['2026-08-28', 3],
     ])
-    const displayed = getDays(12, now, long)
+    const days = getDays(12, now, long)
 
-    expect(displayed[0]!.day > '2024-01-01').toBe(true)
-    expect(displayed.some((one) => one.isToday)).toBe(true)
-    expect(displayed[displayed.length - 1]!.isAhead).toBe(true)
+    expect(days[0]!.day > '2024-01-01').toBe(true)
+    expect(days.some((one) => one.isToday)).toBe(true)
+    expect(days[days.length - 1]!.isAhead).toBe(true)
   })
 
   // A vault whose cards are all still ahead has a beginning too.
   it('opens on this week for a vault with nothing behind it', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const displayed = getDays(30, now, { did: new Map(), due: new Map([['2026-09-03', 8]]) })
+    const days = getDays(30, now, { did: new Map(), due: new Map([['2026-09-03', 8]]) })
 
-    expect(displayed[0]!.day).toBe('2026-08-24')
+    expect(days[0]!.day).toBe('2026-08-24')
   })
 
   it('gives the room to what is behind where there is little of it', () => {
-    const displayed = getDays(1, new Date('2026-08-29T12:00:00'), did)
-    expect(displayed).toHaveLength(ROWS)
-    expect(displayed.some((one) => one.isToday)).toBe(true)
+    const days = getDays(1, new Date('2026-08-29T12:00:00'), did)
+    expect(days).toHaveLength(ROWS)
+    expect(days.some((one) => one.isToday)).toBe(true)
   })
 
   // A day still to come holds what falls on it, and a day behind holds what was
@@ -137,10 +137,10 @@ describe('the days a grid draws', () => {
       ['2026-08-29', 99],
       ['2026-09-02', 7],
     ])
-    const displayed = getDays(12, now, { did: isDone, due: coming })
+    const days = getDays(12, now, { did: isDone, due: coming })
 
-    expect(displayed.find((one) => one.isToday)?.did).toBe(4)
-    const later = displayed.find((one) => one.day === '2026-09-02')
+    expect(days.find((one) => one.isToday)?.did).toBe(4)
+    const later = days.find((one) => one.day === '2026-09-02')
     expect(later?.did).toBe(7)
     expect(later?.isAhead).toBe(true)
   })
@@ -151,11 +151,11 @@ describe('the days a grid draws', () => {
       [getDayName(on), 12],
       ['2026-08-28', 60],
     ])
-    const displayed = getDays(4, on, counted)
+    const days = getDays(4, on, counted)
 
-    expect(displayed.find((one) => one.isToday)?.did).toBe(12)
-    expect(displayed.find((one) => one.day === '2026-08-28')?.weight).toBe(4)
-    expect(displayed.find((one) => one.day === '2026-08-27')?.did).toBe(0)
+    expect(days.find((one) => one.isToday)?.did).toBe(12)
+    expect(days.find((one) => one.day === '2026-08-28')?.weight).toBe(4)
+    expect(days.find((one) => one.day === '2026-08-27')?.did).toBe(0)
   })
 
   it('draws no days where there is room for no column', () => {
@@ -210,24 +210,24 @@ describe('the first day a grid draws', () => {
   const none = new Map<string, Tally>()
 
   it('is the Monday of this week for a vault with no history, however wide the grid', () => {
-    const displayed = getDays(10, friday, none)
+    const days = getDays(10, friday, none)
 
-    expect(displayed).toHaveLength(10 * ROWS)
-    expect(displayed[0]!.day).toBe('2026-09-14')
+    expect(days).toHaveLength(10 * ROWS)
+    expect(days[0]!.day).toBe('2026-09-14')
   })
 
   it('reaches back from four weeks ahead once the history is older than the grid', () => {
-    const displayed = getDays(3, friday, createTallies([['2026-01-05', 1]]))
+    const days = getDays(3, friday, createTallies([['2026-01-05', 1]]))
 
-    expect(displayed[0]!.day).toBe('2026-09-14')
-    expect(displayed[displayed.length - 1]!.day).toBe('2026-10-04')
+    expect(days[0]!.day).toBe('2026-09-14')
+    expect(days[days.length - 1]!.day).toBe('2026-10-04')
   })
 
   it('keeps one week ahead for a grid of two columns', () => {
-    const displayed = getDays(2, friday, createTallies([['2026-01-05', 1]]))
+    const days = getDays(2, friday, createTallies([['2026-01-05', 1]]))
 
-    expect(displayed[0]!.day).toBe('2026-09-14')
-    expect(displayed[displayed.length - 1]!.day).toBe('2026-09-27')
+    expect(days[0]!.day).toBe('2026-09-14')
+    expect(days[days.length - 1]!.day).toBe('2026-09-27')
   })
 
   it('opens on the Monday before a Sunday that is now', () => {
@@ -235,15 +235,15 @@ describe('the first day a grid draws', () => {
   })
 
   it('opens on the Monday before a Sunday that began the history', () => {
-    const displayed = getDays(10, sunday, createTallies([['2026-09-13', 1]]))
+    const days = getDays(10, sunday, createTallies([['2026-09-13', 1]]))
 
-    expect(displayed[0]!.day).toBe('2026-09-07')
+    expect(days[0]!.day).toBe('2026-09-07')
   })
 
   it('opens on this week where the only days are still to come', () => {
-    const displayed = getDays(10, friday, { did: none, due: new Map([['2026-10-01', 3]]) })
+    const days = getDays(10, friday, { did: none, due: new Map([['2026-10-01', 3]]) })
 
-    expect(displayed[0]!.day).toBe('2026-09-14')
+    expect(days[0]!.day).toBe('2026-09-14')
   })
 
   it('opens on the week of the earliest day answered on, wherever it is retained', () => {
@@ -252,17 +252,17 @@ describe('the first day a grid draws', () => {
       ['2026-09-01', 1],
       ['2026-09-05', 1],
     ])
-    const displayed = getDays(10, friday, { did, due: new Map([['2026-09-20', 2]]) })
+    const days = getDays(10, friday, { did, due: new Map([['2026-09-20', 2]]) })
 
-    expect(displayed[0]!.day).toBe('2026-08-31')
+    expect(days[0]!.day).toBe('2026-08-31')
   })
 
   it('opens on the week of the earliest day among those still coming', () => {
-    const displayed = getDays(10, friday, {
+    const days = getDays(10, friday, {
       did: createTallies([['2026-09-16', 1]]),
       due: new Map([['2026-09-02', 2]]),
     })
 
-    expect(displayed[0]!.day).toBe('2026-08-31')
+    expect(days[0]!.day).toBe('2026-08-31')
   })
 })

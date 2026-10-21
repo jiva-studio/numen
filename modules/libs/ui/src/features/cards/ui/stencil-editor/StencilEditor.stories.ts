@@ -269,9 +269,9 @@ export const AStencil: Story = {
 
     // The row carries the line and the ground, and what stands inside carries
     // neither.
-    const rendered = getComputedStyle(row)
-    expect(Number.parseFloat(rendered.borderTopWidth)).toBeGreaterThan(0)
-    expect(rendered.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    const renderedStyle = getComputedStyle(row)
+    expect(Number.parseFloat(renderedStyle.borderTopWidth)).toBeGreaterThan(0)
+    expect(renderedStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
     const inside = getComputedStyle(box)
     expect(Number.parseFloat(inside.borderTopWidth)).toBe(0)
     expect(inside.backgroundColor).toBe('rgba(0, 0, 0, 0)')

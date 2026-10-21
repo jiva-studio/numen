@@ -108,17 +108,17 @@ export const Dark: Story = {
     for (const name of ['solid', 'outline'] as const) {
       const button = canvas.getByRole('button', { name })
       const ink = lightness(getComputedStyle(button).color)
-      const resting = lightness(getComputedStyle(button).backgroundColor)
+      const restingLightness = lightness(getComputedStyle(button).backgroundColor)
 
       // The two are told apart, which is what makes the direction below mean
       // anything.
-      expect(Math.abs(ink - resting)).toBeGreaterThan(24)
+      expect(Math.abs(ink - restingLightness)).toBeGreaterThan(24)
 
       await hoverOver(button)
       await waitFor(() => {
-        const moved = lightness(getComputedStyle(button).backgroundColor) - resting
+        const moved = lightness(getComputedStyle(button).backgroundColor) - restingLightness
         expect(Math.abs(moved)).toBeGreaterThan(2)
-        expect(Math.sign(moved)).toBe(Math.sign(ink - resting))
+        expect(Math.sign(moved)).toBe(Math.sign(ink - restingLightness))
       })
     }
 

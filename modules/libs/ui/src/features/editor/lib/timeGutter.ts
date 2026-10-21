@@ -157,11 +157,11 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
   const attachPlugin = ViewPlugin.define((got) => {
     view = got
     if (last) {
-      const displayed = last
+      const lastTime = last
       queueMicrotask(() => {
         // An editor drawn again is shown what the one before it was shown and
         // is left at its current position: nothing was said while it was drawn.
-        if (view === got) applyState(displayed, false)
+        if (view === got) applyState(lastTime, false)
       })
     }
     return {

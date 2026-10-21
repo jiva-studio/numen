@@ -159,12 +159,12 @@ export const Dark: Story = {
     const surface = lightness(ground)
     const getDistanceFrom = (colour: string) => Math.abs(lightness(colour, ground) - surface)
 
-    const resting = getParts(canvasElement, 'resting')
+    const restParts = getParts(canvasElement, 'resting')
     const lifted = getParts(canvasElement, 'lifted')
 
     // A line lying quietly on the surface still stands above it on the dark
     // set, where a line is drawn lighter than what it is drawn on.
-    await expect(lightness(getComputedStyle(resting.curve).stroke, ground)).toBeGreaterThan(
+    await expect(lightness(getComputedStyle(restParts.curve).stroke, ground)).toBeGreaterThan(
       surface + 2,
     )
 
@@ -172,24 +172,24 @@ export const Dark: Story = {
     // from the ground they are read on. The curve is stroked and the head is
     // filled, so each is read off the property it is painted with.
     await expect(getDistanceFrom(getComputedStyle(lifted.curve).stroke)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(resting.curve).stroke) + 2,
+      getDistanceFrom(getComputedStyle(restParts.curve).stroke) + 2,
     )
     await expect(getDistanceFrom(getComputedStyle(lifted.head).fill)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(resting.head).fill) + 2,
+      getDistanceFrom(getComputedStyle(restParts.head).fill) + 2,
     )
 
     // The letters likewise, and the halo under them stays the surface, at a
     // weight that covers the line running through the words.
     await expect(getDistanceFrom(getComputedStyle(lifted.letters).fill)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(resting.letters).fill) + 2,
+      getDistanceFrom(getComputedStyle(restParts.letters).fill) + 2,
     )
-    for (const halo of [resting.halo, lifted.halo]) {
-      const rendered = getComputedStyle(halo)
-      await expect(getDistanceFrom(rendered.stroke)).toBeLessThan(2)
-      await expect(Number.parseFloat(rendered.strokeWidth)).toBeGreaterThan(0)
+    for (const halo of [restParts.halo, lifted.halo]) {
+      const renderedStyle = getComputedStyle(halo)
+      await expect(getDistanceFrom(renderedStyle.stroke)).toBeLessThan(2)
+      await expect(Number.parseFloat(renderedStyle.strokeWidth)).toBeGreaterThan(0)
     }
     await expect(Number.parseFloat(getComputedStyle(lifted.halo).strokeWidth)).toBeGreaterThan(
-      Number.parseFloat(getComputedStyle(resting.halo).strokeWidth),
+      Number.parseFloat(getComputedStyle(restParts.halo).strokeWidth),
     )
   },
 }

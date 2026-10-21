@@ -407,10 +407,10 @@ describe('what does not fit is reported and not dropped silently', () => {
 
   it('drops the edges that lead to a node which did not fit', () => {
     const { nodes, edges } = arrangePlex(neighbourhoods.overcrowded)
-    const placed = new Set(nodes.map((node) => node.id))
+    const placedIds = new Set(nodes.map((node) => node.id))
     for (const edge of edges) {
-      expect(placed.has(edge.from)).toBe(true)
-      expect(placed.has(edge.to)).toBe(true)
+      expect(placedIds.has(edge.from)).toBe(true)
+      expect(placedIds.has(edge.to)).toBe(true)
     }
     expect(edges.length).toBeLessThan(neighbourhoods.overcrowded.edges.length)
   })
@@ -521,7 +521,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
   it('does not let a strategy decide how much is shown', () => {
     // Admission is settled before a strategy runs, so the count is the same
     // whichever arrangement drew it.
-    const counting: Placement = {
+    const countPlacement: Placement = {
       name: 'counting',
       place: (nodesByRelation) =>
         Object.values(nodesByRelation)
@@ -538,7 +538,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     }
 
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS
-    const frame = arrangePlex(neighbourhoods.overcrowded, { placement: counting })
+    const frame = arrangePlex(neighbourhoods.overcrowded, { placement: countPlacement })
     expect(frame.overflow.child).toBe(200 - maxPerLine * maxLines)
   })
 

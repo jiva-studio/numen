@@ -144,8 +144,8 @@ function settle(
   const availableArcLength = getSpanLength(longest) * metrics.arc
   if (availableArcLength < LEAST * metrics.extent) return null
 
-  const trimmed = cutToFit(words, availableArcLength, width)
-  return { words: trimmed, at: (longest.from + longest.to) / 2, extent: width(trimmed) }
+  const truncatedWords = cutToFit(words, availableArcLength, width)
+  return { words: truncatedWords, at: (longest.from + longest.to) / 2, extent: width(truncatedWords) }
 }
 
 interface ClearSpanOptions {

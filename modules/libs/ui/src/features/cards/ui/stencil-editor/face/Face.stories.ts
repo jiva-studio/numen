@@ -141,16 +141,16 @@ const meta: Meta<Knobs> = {
         },
       )
 
-      const rendered = computed<FaceRow>(() => {
+      const renderedRow = computed<FaceRow>(() => {
         const fields = getDeclaredFields(target.value.fields)
-        const arranged = faceRows([content.value], fields, target.value.sample ?? sampleValues(fields))[0]
-        if (!arranged) throw new Error('a corpus holding no face')
-        return { ...arranged, taken: target.value.taken ?? [] }
+        const arrangedRow = faceRows([content.value], fields, target.value.sample ?? sampleValues(fields))[0]
+        if (!arrangedRow) throw new Error('a corpus holding no face')
+        return { ...arrangedRow, taken: target.value.taken ?? [] }
       })
 
       return {
         args,
-        drawn: rendered,
+        drawn: renderedRow,
         wrong: () => target.value.wrong ?? [],
         onRename: (name: string) => {
           content.value = { ...content.value, name }
@@ -298,14 +298,14 @@ export const AFace: Story = {
     ]
     const look = (): readonly string[] =>
       watched.map((each) => {
-        const rendered = getComputedStyle(each)
+        const renderedRow = getComputedStyle(each)
         return [
-          rendered.backgroundColor,
-          rendered.borderColor,
-          rendered.borderWidth,
-          rendered.boxShadow,
-          rendered.outlineStyle,
-          rendered.outlineWidth,
+          renderedRow.backgroundColor,
+          renderedRow.borderColor,
+          renderedRow.borderWidth,
+          renderedRow.boxShadow,
+          renderedRow.outlineStyle,
+          renderedRow.outlineWidth,
         ].join('|')
       })
 
@@ -506,12 +506,12 @@ export const Dark: Story = {
     // The ink the chip is read by stands above the ground it relies on, which
     // is the way round the dark set is written.
     const ink = lightness(getComputedStyle(chip).color)
-    const resting = lightness(getComputedStyle(chip).backgroundColor)
-    expect(ink).toBeGreaterThan(resting)
+    const restingLightness = lightness(getComputedStyle(chip).backgroundColor)
+    expect(ink).toBeGreaterThan(restingLightness)
 
     await hoverOver(chip)
     await waitFor(() =>
-      expect(lightness(getComputedStyle(chip).backgroundColor)).toBeGreaterThan(resting + 2),
+      expect(lightness(getComputedStyle(chip).backgroundColor)).toBeGreaterThan(restingLightness + 2),
     )
 
     // The chip is still a chip under the hand: lighter than it was, and still

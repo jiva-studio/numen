@@ -24,21 +24,21 @@ export const measureMovement = (
   notices: readonly Notice[],
   at: number,
 ): ReadonlyMap<string, Movement> => {
-  const moving = new Map<string, Movement>()
+  const movements = new Map<string, Movement>()
   for (const notice of getReadable(notices)) {
     const tally = findTally(notice)
     if (tally === undefined) continue
     const before = was.get(notice.id)
     if (before === undefined) {
-      moving.set(notice.id, { done: tally.done, rate: 0, at })
+      movements.set(notice.id, { done: tally.done, rate: 0, at })
       continue
     }
     if (tally.done === before.done) {
-      moving.set(notice.id, before)
+      movements.set(notice.id, before)
       continue
     }
     const rate = getRate(before, tally.done, (at - before.at) / 1000)
-    moving.set(notice.id, { done: tally.done, rate, at })
+    movements.set(notice.id, { done: tally.done, rate, at })
   }
-  return moving
+  return movements
 }

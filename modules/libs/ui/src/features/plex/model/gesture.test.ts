@@ -65,7 +65,7 @@ const send = (type: string, x = 0, y = 0, pointerId = 1) =>
 const scopes: EffectScope[] = []
 
 function setUp(relations: readonly PlexRelation[] = RELATIONS_OFFERED) {
-  const drawing = createDrawing()
+  const gestureDrawing = createDrawing()
   const commits: Drop[] = []
   const scope = effectScope()
   scopes.push(scope)
@@ -78,7 +78,7 @@ function setUp(relations: readonly PlexRelation[] = RELATIONS_OFFERED) {
       commit: (drop) => commits.push(drop),
     }),
   )!
-  return { gesture, drawing, commits, scope }
+  return { gesture, drawing: gestureDrawing, commits, scope }
 }
 
 afterEach(() => {
@@ -91,18 +91,18 @@ describe('screen to plex coordinates', () => {
   const inverse: Matrix = { a: 2, b: 3, c: 5, d: 7, e: 11, f: 13 }
 
   it('goes through the whole matrix', () => {
-    const drawing = createDrawing(inverse)
+    const gestureDrawing = createDrawing(inverse)
 
-    expect(getPosition(asSvg(drawing), createPointerEvent('pointermove', 17, 19))).toEqual({
+    expect(getPosition(asSvg(gestureDrawing), createPointerEvent('pointermove', 17, 19))).toEqual({
       x: 2 * 17 + 5 * 19 + 11,
       y: 3 * 17 + 7 * 19 + 13,
     })
   })
 
   it('is nowhere when the drawing has no matrix to give', () => {
-    const drawing = createDrawing(null)
+    const gestureDrawing = createDrawing(null)
 
-    expect(getPosition(asSvg(drawing), createPointerEvent('pointermove', 17, 19))).toBeNull()
+    expect(getPosition(asSvg(gestureDrawing), createPointerEvent('pointermove', 17, 19))).toBeNull()
   })
 
   it('is nowhere when the drawing cannot say where it is', () => {

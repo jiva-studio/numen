@@ -47,9 +47,9 @@ describe('placing the turns', () => {
   })
 
   it('places a turn with no text at all', () => {
-    const placed = placeTurns([createAsked('1', '')])
-    expect(placed).toHaveLength(1)
-    expect(placed[0]?.turn.text).toBe('')
+    const placedTurns = placeTurns([createAsked('1', '')])
+    expect(placedTurns).toHaveLength(1)
+    expect(placedTurns[0]?.turn.text).toBe('')
   })
 })
 

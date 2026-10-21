@@ -83,8 +83,8 @@ export function arrangePlex(
   const nodes = [focus, ...lay(spacing)]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
-  const routing = createRouting(resolved, measureLabel, labelDepth)
-  const edges = separateTitles(routeEdges(neighbourhood.edges, byId, routing), nodes, routing)
+  const edgeRouting = createRouting(resolved, measureLabel, labelDepth)
+  const edges = separateTitles(routeEdges(neighbourhood.edges, byId, edgeRouting), nodes, edgeRouting)
 
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }
@@ -141,9 +141,9 @@ function canPlace(
     if (ofRelation.length === 0) continue
 
     const capacity = limits[relation].perLine * limits[relation].lines
-    const displayed = ofRelation.slice(0, capacity)
-    if (ofRelation.length > displayed.length) overflow[relation] = ofRelation.length - displayed.length
-    nodesByRelation[relation] = displayed
+    const visibleRelations = ofRelation.slice(0, capacity)
+    if (ofRelation.length > visibleRelations.length) overflow[relation] = ofRelation.length - visibleRelations.length
+    nodesByRelation[relation] = visibleRelations
   }
 
   return { nodesByRelation, overflow }

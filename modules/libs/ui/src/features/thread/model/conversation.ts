@@ -137,9 +137,9 @@ interface SettleTurnOptions {
 function settleTurn(options: SettleTurnOptions, put: (turn: Turn) => void, nextId: () => string) {
   const { answer, error, words } = options
   if (error) {
-    const trimmed = error.trim()
+    const cleanError = error.trim()
     const text = answer.getText().trim()
-    if (answer.hasContent() && (text === trimmed || text.endsWith(trimmed))) {
+    if (answer.hasContent() && (text === cleanError || text.endsWith(cleanError))) {
       answer.fail()
       return
     }

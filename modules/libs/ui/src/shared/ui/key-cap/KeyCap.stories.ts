@@ -115,10 +115,10 @@ export const Dark: Story = {
     const behindColor = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
     const surface = lightness(behindColor)
     for (const cap of caps) {
-      const rendered = getComputedStyle(cap)
-      const ground = lightness(rendered.backgroundColor, behindColor)
+      const renderedStyle = getComputedStyle(cap)
+      const ground = lightness(renderedStyle.backgroundColor, behindColor)
       await expect(Math.abs(ground - surface)).toBeGreaterThan(4)
-      await expect(lightness(rendered.color, rendered.backgroundColor)).toBeGreaterThan(ground + 24)
+      await expect(lightness(renderedStyle.color, renderedStyle.backgroundColor)).toBeGreaterThan(ground + 24)
     }
   },
 }

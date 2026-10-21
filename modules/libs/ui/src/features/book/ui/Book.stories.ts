@@ -71,7 +71,7 @@ const TABLE = `<table><tbody>${Array.from(
 const UNBROKEN =
   'Sarvabhutahitaratahsarvabhutasthitasyatathasarvatragamacintyarupamavyaktamniravadyampada'
 
-const reading =
+const activeReading =
   (chapter: Chapter, highlights: readonly Span[] = []): Render =>
   () => ({
     components: { Book },
@@ -204,7 +204,7 @@ const getColumnWidth = (canvasElement: HTMLElement) =>
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
 export const Playground: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([...VERSES, ...PROSE])),
+  render: activeReading(createChapter([...VERSES, ...PROSE])),
 }
 
 /**
@@ -213,7 +213,7 @@ export const Playground: Story = {
  */
 export const OneColumn: Story = {
   decorators: [NARROW],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -229,7 +229,7 @@ export const OneColumn: Story = {
  */
 export const NoLineCutInHalf: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -251,7 +251,7 @@ export const NoLineCutInHalf: Story = {
  */
 export const OneColumnTurns: Story = {
   decorators: [NARROW],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -283,7 +283,7 @@ export const OneColumnTurns: Story = {
  */
 export const TwoColumns: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -314,7 +314,7 @@ export const TwoColumns: Story = {
  */
 export const PictureTallerThanTheColumn: Story = {
   decorators: [WIDE],
-  render: reading(
+  render: activeReading(
     createChapter([
       { tag: 'p', text: 'A plate, taller than the column it is printed in.' },
       { tag: 'figure', inside: `<img src="${TALL}" alt="A plate" />` },
@@ -342,7 +342,7 @@ export const PictureTallerThanTheColumn: Story = {
  */
 export const AWordWithNothingToBreakAt: Story = {
   decorators: [NARROW],
-  render: reading(createChapter([{ tag: 'p', text: UNBROKEN }, ...PROSE.slice(0, 4)])),
+  render: activeReading(createChapter([{ tag: 'p', text: UNBROKEN }, ...PROSE.slice(0, 4)])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -362,7 +362,7 @@ export const AWordWithNothingToBreakAt: Story = {
  */
 export const ATableThatWillNotBreak: Story = {
   decorators: [WIDE],
-  render: reading(
+  render: activeReading(
     createChapter([
       { tag: 'p', text: 'A table of nine columns, in a column of one.' },
       { tag: 'div', inside: TABLE },
@@ -387,7 +387,7 @@ export const ATableThatWillNotBreak: Story = {
  */
 export const VerseSetInAPreElement: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([{ tag: 'pre', text: VERSE }])),
+  render: activeReading(createChapter([{ tag: 'pre', text: VERSE }])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -397,9 +397,9 @@ export const VerseSetInAPreElement: Story = {
 
     // It relies on the paper the rest of the text does. The typography dresses
     // a pre as a block of code, and a title page is not one.
-    const rendered = getComputedStyle(activeSet)
-    await expect(rendered.backgroundColor).toBe('rgba(0, 0, 0, 0)')
-    await expect(rendered.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
+    const renderedStyle = getComputedStyle(activeSet)
+    await expect(renderedStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(renderedStyle.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
 
     // It ran on into columns of its own and not stopping at the first.
     const area = getArea(canvasElement)
@@ -414,7 +414,7 @@ export const VerseSetInAPreElement: Story = {
  */
 export const WordsCanBeTakenUp: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([...PROSE])),
+  render: activeReading(createChapter([...PROSE])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -429,7 +429,7 @@ export const WordsCanBeTakenUp: Story = {
 /** A document of one line evaluates to one spread, and there is nowhere to turn. */
 export const OneLine: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([{ tag: 'p', text: 'One line, and the book is over.' }])),
+  render: activeReading(createChapter([{ tag: 'p', text: 'One line, and the book is over.' }])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -455,7 +455,7 @@ export const OneLine: Story = {
  */
 export const NoTextAtAll: Story = {
   decorators: [WIDE],
-  render: reading({ markup: '', span: { from: 0, to: 0 } }),
+  render: activeReading({ markup: '', span: { from: 0, to: 0 } }),
   play: async ({ canvasElement }) => {
     await expect(getPaper(canvasElement)).toBeInTheDocument()
     await expect(getRunsOf(canvasElement)).toHaveLength(0)
@@ -471,7 +471,7 @@ export const NoTextAtAll: Story = {
  */
 export const SetLarger: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([...VERSES, ...PROSE])),
+  render: activeReading(createChapter([...VERSES, ...PROSE])),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
@@ -494,10 +494,10 @@ export const SetLarger: Story = {
     // another spread. What the person was reading is on it.
     await waitFor(
       async () => {
-        const standing = getRunsOf(canvasElement).find(
+        const activeRun = getRunsOf(canvasElement).find(
           (run) => Number(run.dataset['offset']) === before,
         )!
-        const rect = standing.getClientRects()[0]!
+        const rect = activeRun.getClientRects()[0]!
         const area = getArea(canvasElement).getBoundingClientRect()
         await expect(rect.left).toBeGreaterThanOrEqual(area.left - 1)
         await expect(rect.left).toBeLessThan(area.right)
@@ -516,14 +516,14 @@ export const Marked: Story = {
   render: (() => {
     const chapter = createChapter(VERSES)
     const second = chapter.span.from + countBytes(VERSES[0]!.text!)
-    return reading(chapter, [{ from: second, to: second + 30 }])
+    return activeReading(chapter, [{ from: second, to: second + 30 }])
   })(),
 }
 
 /** The pages turned by the keyboard, and by a press near either edge. */
 export const TurnedByHand: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
     const area = getArea(canvasElement)
@@ -577,7 +577,7 @@ export const DrawnOutOfSight: Story = {
  */
 export const TheTurnIsCarried: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 

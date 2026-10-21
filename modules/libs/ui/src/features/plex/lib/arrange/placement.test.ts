@@ -50,10 +50,10 @@ const of = (nodes: readonly PlacedNode[], relation: PlexRelation) =>
 
 describe('what arrives back', () => {
   it('is every node it was given, and never the focus', () => {
-    const placed = place({ child: createNodes('child', 3), parent: createNodes('parent', 2) })
+    const placedLayout = place({ child: createNodes('child', 3), parent: createNodes('parent', 2) })
 
-    expect(placed).toHaveLength(5)
-    expect(placed.some((node) => node.id === FOCUS.id)).toBe(false)
+    expect(placedLayout).toHaveLength(5)
+    expect(placedLayout.some((node) => node.id === FOCUS.id)).toBe(false)
   })
 
   it('passes each node back with the identity and title it came in with', () => {
@@ -65,10 +65,10 @@ describe('what arrives back', () => {
   })
 
   it('draws every box the width it was told and the height of a node', () => {
-    const placed = place({ child: createNodes('child', 3) })
+    const placedLayout = place({ child: createNodes('child', 3) })
 
-    expect(placed.map((node) => node.width)).toStrictEqual([144, 144, 144])
-    expect(placed.map((node) => node.height)).toStrictEqual([36, 36, 36])
+    expect(placedLayout.map((node) => node.width)).toStrictEqual([144, 144, 144])
+    expect(placedLayout.map((node) => node.height)).toStrictEqual([36, 36, 36])
   })
 
   it('places nothing for no nodes at all', () => {
@@ -78,10 +78,10 @@ describe('what arrives back', () => {
 
 describe('a row', () => {
   it('runs below the focus for children and above it for parents', () => {
-    const placed = place({ child: createNodes('child', 2), parent: createNodes('parent', 2) })
+    const placedLayout = place({ child: createNodes('child', 2), parent: createNodes('parent', 2) })
 
-    expect(of(placed, 'child').every((node) => node.y > 0)).toBe(true)
-    expect(of(placed, 'parent').every((node) => node.y < 0)).toBe(true)
+    expect(of(placedLayout, 'child').every((node) => node.y > 0)).toBe(true)
+    expect(of(placedLayout, 'parent').every((node) => node.y < 0)).toBe(true)
   })
 
   it('is centred on the focus', () => {
@@ -141,10 +141,10 @@ describe('a row too long for one line', () => {
 
 describe('a column', () => {
   it('runs left of the focus for jumps and right of it for siblings', () => {
-    const placed = place({ jump: createNodes('jump', 2), sibling: createNodes('sibling', 2) })
+    const placedLayout = place({ jump: createNodes('jump', 2), sibling: createNodes('sibling', 2) })
 
-    expect(of(placed, 'jump').every((node) => node.x < 0)).toBe(true)
-    expect(of(placed, 'sibling').every((node) => node.x > 0)).toBe(true)
+    expect(of(placedLayout, 'jump').every((node) => node.x < 0)).toBe(true)
+    expect(of(placedLayout, 'sibling').every((node) => node.x > 0)).toBe(true)
   })
 
   it('is centred on the focus, one gap between neighbours', () => {
@@ -190,9 +190,9 @@ describe('a column', () => {
   })
 
   it('gives both sides the one clearance, however tall each is', () => {
-    const placed = place({ jump: createNodes('jump', 1), sibling: createNodes('sibling', 4) })
-    const jump = of(placed, 'jump')[0]!
-    const sibling = of(placed, 'sibling')[0]!
+    const placedLayout = place({ jump: createNodes('jump', 1), sibling: createNodes('sibling', 4) })
+    const jump = of(placedLayout, 'jump')[0]!
+    const sibling = of(placedLayout, 'sibling')[0]!
 
     expect(Math.abs(jump.x) - jump.width / 2).toBeCloseTo(Math.abs(sibling.x) - sibling.width / 2)
   })
@@ -208,27 +208,27 @@ describe('a column', () => {
 
 describe('rows and columns together', () => {
   it('never lays a column over a row', () => {
-    const placed = place({ child: createNodes('child', 5), sibling: createNodes('sibling', 3) })
+    const placedLayout = place({ child: createNodes('child', 5), sibling: createNodes('sibling', 3) })
     const isOverlapping = (one: PlacedNode, two: PlacedNode) =>
       Math.abs(one.x - two.x) < (one.width + two.width) / 2 &&
       Math.abs(one.y - two.y) < (one.height + two.height) / 2
 
-    for (const row of of(placed, 'child')) {
-      for (const column of of(placed, 'sibling')) {
+    for (const row of of(placedLayout, 'child')) {
+      for (const column of of(placedLayout, 'sibling')) {
         expect(isOverlapping(row, column)).toBe(false)
       }
     }
   })
 
   it('leaves every box fully there', () => {
-    const placed = place({
+    const placedLayout = place({
       child: createNodes('child', 4),
       parent: createNodes('parent', 2),
       jump: createNodes('jump', 2),
       sibling: createNodes('sibling', 2),
     })
 
-    expect(placed.every((node) => node.opacity === 1)).toBe(true)
+    expect(placedLayout.every((node) => node.opacity === 1)).toBe(true)
   })
 })
 
@@ -247,7 +247,7 @@ describe('how far a column reaches before it clears the rows', () => {
       lineGap: 4,
       focusGap: focusGapSetting,
     }
-    const placed = rowsAndColumns.place(
+    const placedLayout = rowsAndColumns.place(
       { child: createNodes('child', 6), sibling: createNodes('sibling', 3) },
       focus,
       {
@@ -256,7 +256,7 @@ describe('how far a column reaches before it clears the rows', () => {
         width: widths,
       },
     )
-    return of(placed, 'sibling')[0]!.x
+    return of(placedLayout, 'sibling')[0]!.x
   }
 
   it('clears a row whose near edge lies inside the reach of the column', () => {

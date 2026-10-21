@@ -18,9 +18,9 @@ export interface BookLink {
 
 /** Where an href points inside the book. */
 export function parseBookLink(href: string): BookLink {
-  const trimmed = href.indexOf('#')
-  if (trimmed < 0) return { path: href, fragment: '' }
-  return { path: href.slice(0, trimmed), fragment: href.slice(trimmed + 1) }
+  const hashIndex = href.indexOf('#')
+  if (hashIndex < 0) return { path: href, fragment: '' }
+  return { path: href.slice(0, hashIndex), fragment: href.slice(hashIndex + 1) }
 }
 
 /** Whether an address names somewhere the window is not served from. */

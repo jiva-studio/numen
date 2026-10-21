@@ -694,9 +694,9 @@ describe('the keys the tree takes', () => {
 
   it('takes Meta and A to select every row', () => {
     const wrapper = mountTree()
-    const acquired = sendKeyOn(wrapper, 'notes', 'a', { metaKey: true })
+    const acquiredItem = sendKeyOn(wrapper, 'notes', 'a', { metaKey: true })
 
-    expect(acquired.defaultPrevented).toBe(true)
+    expect(acquiredItem.defaultPrevented).toBe(true)
     expect(wrapper.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
   })
 
@@ -735,9 +735,9 @@ describe('the keys the tree takes', () => {
 
   it('takes the menu key, and reaches the menu the pointer reaches', () => {
     const wrapper = mountTree({ selected: ['notes'] })
-    const acquired = sendKeyOn(wrapper, 'notes', 'ContextMenu')
+    const acquiredItem = sendKeyOn(wrapper, 'notes', 'ContextMenu')
 
-    expect(acquired.defaultPrevented).toBe(true)
+    expect(acquiredItem.defaultPrevented).toBe(true)
     expect(wrapper.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
   })
 
@@ -799,9 +799,9 @@ describe('a press on a row', () => {
 
   it('is taken with the primary button, and puts the keyboard on the row', () => {
     const wrapper = mountTree()
-    const acquired = sendPress(wrapper, 'notes', 0)
+    const acquiredItem = sendPress(wrapper, 'notes', 0)
 
-    expect(acquired.defaultPrevented).toBe(true)
+    expect(acquiredItem.defaultPrevented).toBe(true)
     expect(document.activeElement).toBe(getRow(wrapper, 'notes').element)
     expect(wrapper.emitted('select')).toStrictEqual([[['notes']]])
   })

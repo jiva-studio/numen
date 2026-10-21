@@ -693,8 +693,8 @@ export const LeftByTheKeyboard: Story = {
     const stop = (which: string) => canvasElement.querySelector(`[${which}]`) as HTMLElement
 
     // What a reader is told on arrival is the way back out.
-    const notified = document.getElementById(view.contentDOM.getAttribute('aria-describedby') ?? '')
-    await expect(notified?.textContent).toContain('Escape')
+    const notifiedElement = document.getElementById(view.contentDOM.getAttribute('aria-describedby') ?? '')
+    await expect(notifiedElement?.textContent).toContain('Escape')
 
     stop('data-before').focus()
     await userEvent.tab()

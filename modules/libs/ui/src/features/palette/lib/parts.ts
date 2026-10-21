@@ -35,7 +35,7 @@ export const getParts = (text: string, at: readonly Span[] = []): readonly Palet
  * no two of them touching.
  */
 const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
-  const retained = at
+  const retainedAt = at
     .map((span) => ({
       from: whole(text, clampToText(text, Math.min(span.from, span.to)), -1),
       to: whole(text, clampToText(text, Math.max(span.from, span.to)), 1),
@@ -44,7 +44,7 @@ const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
     .sort((one, other) => one.from - other.from)
 
   const out: Span[] = []
-  for (const span of retained) {
+  for (const span of retainedAt) {
     const last = out[out.length - 1]
     if (last && span.from <= last.to) {
       out[out.length - 1] = { from: last.from, to: Math.max(last.to, span.to) }

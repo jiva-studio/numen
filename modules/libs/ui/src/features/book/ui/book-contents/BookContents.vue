@@ -40,15 +40,15 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 /** What is typed into the field, which the list is narrowed by. */
-const typed = ref('')
+const searchQuery = ref('')
 
 /** The lines as they are drawn, which the list is brought along by. */
 const lines = useTemplateRef<HTMLElement[]>('lines')
 
-const visibleEntries = computed(() => findEntries(props.entries, typed.value))
+const visibleEntries = computed(() => findEntries(props.entries, searchQuery.value))
 
 /** The line the person is reading, and none where they stand before the first. */
-const standing = computed(() => props.entries[findLineAt(props.entries, props.at)])
+const activeEntry = computed(() => props.entries[findLineAt(props.entries, props.at)])
 
 /**
  * How deep a line is set in. Past the fourth level it stops: a name set any
@@ -59,8 +59,8 @@ const DEEPEST = 4
 /* --------------------------------- Hooks ---------------------------------- */
 // The list follows the reading, so a person turning pages finds where they are
 // without looking for it.
-watch(standing, (one) => {
-  if (!one || typed.value !== '') return
+watch(activeEntry, (one) => {
+  if (!one || searchQuery.value !== '') return
   const line = lines.value?.find((lineEl) => lineEl.dataset['at'] === String(one.at))
   line?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 })
@@ -74,7 +74,7 @@ const lineStyle = (level: number) => ({ '--level': depth(level) })
   <nav class="contents" :aria-label="words.contents">
     <div class="contents__head">
       <input
-        v-model="typed"
+        v-model="searchQuery"
         class="contents__field"
         type="text"
         autocomplete="off"
@@ -92,7 +92,7 @@ const lineStyle = (level: number) => ({ '--level': depth(level) })
           class="contents__line"
           :data-at="one.at"
           :style="lineStyle(one.level)"
-          :aria-current="one.at === standing?.at ? 'true' : undefined"
+          :aria-current="one.at === activeEntry?.at ? 'true' : undefined"
           @click="emit('go', one.at)"
         >
           {{ one.title }}

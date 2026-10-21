@@ -114,17 +114,17 @@ describe('scrolling the window over the headings', () => {
   const many = () => suspended(headings(MOST + 3))!
 
   it('opens on the first of them, with more below and none above', () => {
-    const displayed = getOpenHeadings(many(), 1)!
-    expect(displayed.headings[0]!.text).toBe('Heading 0')
-    expect(displayed.isAbove).toBe(false)
-    expect(displayed.isBelow).toBe(true)
+    const visibleHeadings = getOpenHeadings(many(), 1)!
+    expect(visibleHeadings.headings[0]!.text).toBe('Heading 0')
+    expect(visibleHeadings.isAbove).toBe(false)
+    expect(visibleHeadings.isBelow).toBe(true)
   })
 
   it('moves by whole headings, so none is ever half on the ground', () => {
-    const displayed = getOpenHeadings(many(), 1, 2)!
-    expect(displayed.headings[0]!.text).toBe('Heading 2')
-    expect(displayed.headings.map((heading) => heading.at)).toStrictEqual(
-      displayed.headings.map((_, at) => at * SIZES.headingHeight),
+    const visibleHeadings = getOpenHeadings(many(), 1, 2)!
+    expect(visibleHeadings.headings[0]!.text).toBe('Heading 2')
+    expect(visibleHeadings.headings.map((heading) => heading.at)).toStrictEqual(
+      visibleHeadings.headings.map((_, at) => at * SIZES.headingHeight),
     )
   })
 
@@ -134,9 +134,9 @@ describe('scrolling the window over the headings', () => {
 
   it('scrolls no further than the last of them', () => {
     const resolved = many()
-    const displayed = getOpenHeadings(resolved, 1, 99)!
-    expect(displayed.headings.at(-1)!.text).toBe(`Heading ${resolved.headings.length - 1}`)
-    expect(displayed.isBelow).toBe(false)
+    const visibleHeadings = getOpenHeadings(resolved, 1, 99)!
+    expect(visibleHeadings.headings.at(-1)!.text).toBe(`Heading ${resolved.headings.length - 1}`)
+    expect(visibleHeadings.isBelow).toBe(false)
   })
 
   it('scrolls no further back than the first of them', () => {
@@ -198,8 +198,8 @@ describe('the opening', () => {
   })
 
   it('has the first heading further along than the last', () => {
-    const rendered = openTo(0.5)?.headings ?? []
-    expect(rendered[0]!.opacity).toBeGreaterThan(rendered.at(-1)!.opacity)
+    const renderedHeadings = openTo(0.5)?.headings ?? []
+    expect(renderedHeadings[0]!.opacity).toBeGreaterThan(renderedHeadings.at(-1)!.opacity)
   })
 
   it('rises onto its place from below, never from above it', () => {
@@ -227,11 +227,11 @@ describe('the opening', () => {
 
   it('rests every heading where it hangs once it is all the way open', () => {
     const resolved = suspended(headings(3))!
-    const rendered = getOpenHeadings(resolved, 1)?.headings ?? []
-    expect(rendered.map((heading) => heading.y)).toStrictEqual(
+    const renderedHeadings = getOpenHeadings(resolved, 1)?.headings ?? []
+    expect(renderedHeadings.map((heading) => heading.y)).toStrictEqual(
       resolved.headings.map((heading) => heading.at),
     )
-    expect(rendered.every((heading) => heading.opacity === 1)).toBe(true)
+    expect(renderedHeadings.every((heading) => heading.opacity === 1)).toBe(true)
   })
 
   it('brings the ground up before the headings have finished rising', () => {
@@ -417,16 +417,16 @@ describe('however many headings stand at once', () => {
     // on a ground drawn deep enough to hold them.
     for (const ceiling of [1, 2, 6, 9, 12, 20]) {
       const resolved = hangWithCeiling(ceiling)
-      const rendered = getOpenHeadings(resolved, 1)!.headings
-      expect(rendered).toHaveLength(resolved.shown)
-      for (const heading of rendered) expect(heading.opacity).toBe(1)
+      const renderedHeadings = getOpenHeadings(resolved, 1)!.headings
+      expect(renderedHeadings).toHaveLength(resolved.shown)
+      for (const heading of renderedHeadings) expect(heading.opacity).toBe(1)
     }
   })
 
   it('the first of them is still ahead of the last partway through', () => {
     for (const ceiling of [2, 6, 12, 20]) {
-      const rendered = getOpenHeadings(hangWithCeiling(ceiling), 0.5)!.headings
-      expect(rendered[0]!.opacity).toBeGreaterThan(rendered.at(-1)!.opacity)
+      const renderedHeadings = getOpenHeadings(hangWithCeiling(ceiling), 0.5)!.headings
+      expect(renderedHeadings[0]!.opacity).toBeGreaterThan(renderedHeadings.at(-1)!.opacity)
     }
   })
 

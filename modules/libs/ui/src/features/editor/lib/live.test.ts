@@ -199,10 +199,10 @@ describe('the text itself', () => {
 describe('what is shown as written', () => {
   it('is a construct any one of the carets remains in', () => {
     const doc = '**a** and **b**' + ELSEWHERE
-    const rendered = collectDrawn(createCaretState(doc, [3, 20]))
-    expect(isHidden(rendered, 0, 2)).toBe(false)
-    expect(isHidden(rendered, 3, 5)).toBe(false)
-    expect(isHidden(rendered, 10, 12)).toBe(true)
+    const drawnMarks = collectDrawn(createCaretState(doc, [3, 20]))
+    expect(isHidden(drawnMarks, 0, 2)).toBe(false)
+    expect(isHidden(drawnMarks, 3, 5)).toBe(false)
+    expect(isHidden(drawnMarks, 10, 12)).toBe(true)
   })
 
   it('is a mark of quotation only under a caret in the quotation', () => {
@@ -221,9 +221,9 @@ describe('the space after a mark', () => {
   })
 
   it('is not made up when there is none', () => {
-    const rendered = getDrawn('>said')
-    expect(isHidden(rendered, 0, 1)).toBe(true)
-    expect(isHidden(rendered, 0, 2)).toBe(false)
+    const drawnMarks = getDrawn('>said')
+    expect(isHidden(drawnMarks, 0, 1)).toBe(true)
+    expect(isHidden(drawnMarks, 0, 2)).toBe(false)
   })
 })
 

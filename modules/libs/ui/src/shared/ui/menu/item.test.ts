@@ -36,23 +36,23 @@ describe('where a menu goes', () => {
   it('is brought in where folding back would take it off the near edge', () => {
     // Nothing fits either side of the point, so it is shifted rather than
     // folded, and the whole of it is on screen.
-    const placed = placeMenu({
+    const menuPlacement = placeMenu({
       at: { x: 120, y: 120 },
       size: SIZE,
       viewport: { width: 260, height: 340 },
       margin: 8,
     })
-    expect(placed).toStrictEqual({ x: 52, y: 32 })
+    expect(menuPlacement).toStrictEqual({ x: 52, y: 32 })
   })
 
   it('sits at the near edge when it is larger than the area it is placed in', () => {
-    const placed = placeMenu({
+    const menuPlacement = placeMenu({
       at: { x: 40, y: 40 },
       size: SIZE,
       viewport: { width: 160, height: 200 },
       margin: 8,
     })
-    expect(placed).toStrictEqual({ x: 8, y: 8 })
+    expect(menuPlacement).toStrictEqual({ x: 8, y: 8 })
   })
 
   it('keeps whatever clearance it was given', () => {

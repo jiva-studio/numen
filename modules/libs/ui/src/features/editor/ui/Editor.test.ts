@@ -21,11 +21,11 @@ Range.prototype.getClientRects = () =>
   Object.assign([], { item: () => null }) as unknown as DOMRectList
 Range.prototype.getBoundingClientRect = () => new DOMRect()
 
-const rendered: { unmount: () => void }[] = []
+const renderedViews: { unmount: () => void }[] = []
 
 const editor = (props: Partial<Props> = {}) => {
   const wrapper = mount(Editor, { attachTo: document.body, props })
-  rendered.push(wrapper)
+  renderedViews.push(wrapper)
   const view = EditorView.findFromDOM(wrapper.element as HTMLElement)
   if (!view) throw new Error('the editor drew no view')
   return { wrapper, view, exposed: wrapper.vm as unknown as EditorHandle }
@@ -66,7 +66,7 @@ const chord = (on: EventTarget, modifiers: KeyboardEventInit = { ctrlKey: true }
 }
 
 afterEach(() => {
-  while (rendered.length) rendered.pop()?.unmount()
+  while (renderedViews.length) renderedViews.pop()?.unmount()
   vi.restoreAllMocks()
   document.body.innerHTML = ''
 })

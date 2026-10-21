@@ -100,19 +100,19 @@ describe('a corner nothing is holding any more', () => {
 describe('the keyboard on a card that goes', () => {
   it('is left on the card that takes its place', async () => {
     const { clock } = wound()
-    const retained: readonly Notice[] = [
+    const retainedNotices: readonly Notice[] = [
       { id: 'first', text: 'Filed there', stay: 'kept', isUserStarted: true },
       { id: 'second', text: 'Filed here', stay: 'kept', isUserStarted: true },
     ]
     const corner = mount(Notices, {
       attachTo: document.body,
-      props: { notices: retained, wait: 0, clock, hidden: () => false },
+      props: { notices: retainedNotices, wait: 0, clock, hidden: () => false },
     })
 
     const ways = corner.findAll('.notice__away')
     ;(ways[0]!.element as HTMLElement).focus()
     await ways[0]!.trigger('click')
-    await corner.setProps({ notices: retained })
+    await corner.setProps({ notices: retainedNotices })
     await nextTick()
 
     expect(document.activeElement).toBe(ways[1]!.element)

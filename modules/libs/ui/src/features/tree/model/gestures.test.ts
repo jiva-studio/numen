@@ -16,17 +16,17 @@ const create = (
   renamingPath = ref<string | null>(null),
   getMenuAt: (row: string) => Position | null = () => null,
 ) => {
-  const notified: unknown[][] = []
+  const notifiedCalls: unknown[][] = []
   const tell: TreeGesturesTell = (...args: unknown[]) => {
-    notified.push(args)
+    notifiedCalls.push(args)
   }
-  const displayed = flatten(ROWS, new Set())
+  const visibleRows = flatten(ROWS, new Set())
   const rows = useDrawnRows(
-    () => displayed,
+    () => visibleRows,
     () => [],
   )
   const selection = useRowSelection(
-    () => displayed,
+    () => visibleRows,
     () => [],
     () => {},
   )
@@ -40,7 +40,7 @@ const create = (
     lift: () => {},
   }
   const gestures = useTreeGestures({
-    getShownRows: () => displayed,
+    getShownRows: () => visibleRows,
     getSelected: () => [],
     renamingPath,
     rows,
@@ -49,7 +49,7 @@ const create = (
     getMenuAt,
     tell,
   })
-  return { gestures, notified: notified }
+  return { gestures, notified: notifiedCalls }
 }
 
 describe('the menu key on a row with no place on screen', () => {

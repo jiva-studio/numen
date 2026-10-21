@@ -68,25 +68,25 @@ describe('one list drawn in groups', () => {
   })
 
   it('gives the drawing the same numbers the keyboard counts in', () => {
-    const rendered = placePalette(SECTIONS).flatMap((placed) => placed.items)
+    const paletteItems = placePalette(SECTIONS).flatMap((placed) => placed.items)
     const walked = flatten(SECTIONS)
 
-    expect(rendered.map((placed) => placed.at)).toEqual(walked.map((_, at) => at))
-    expect(rendered.map((placed) => placed.item.id)).toEqual(walked.map((p) => p.item.id))
+    expect(paletteItems.map((placed) => placed.at)).toEqual(walked.map((_, at) => at))
+    expect(paletteItems.map((placed) => placed.item.id)).toEqual(walked.map((p) => p.item.id))
   })
 
   it('splits every line it draws, so the view works nothing out', () => {
-    const placed = placePalette([
+    const placedSections = placePalette([
       group('names', [
         item('one', { title: 'Entropy', at: [{ from: 0, to: 3 }], detail: 'in: Ent' }),
       ]),
     ])
 
-    expect(placed[0]?.items[0]?.name).toEqual([
+    expect(placedSections[0]?.items[0]?.name).toEqual([
       { text: 'Ent', isHit: true },
       { text: 'ropy', isHit: false },
     ])
-    expect(placed[0]?.items[0]?.detail).toEqual([{ text: 'in: Ent', isHit: false }])
+    expect(placedSections[0]?.items[0]?.detail).toEqual([{ text: 'in: Ent', isHit: false }])
   })
 
   it('draws no second line for an item that has none', () => {
@@ -485,22 +485,22 @@ describe('which group remains where', () => {
     expect(orderGroups([busy, textGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
-  const holding = group('names', [item('one')])
+  const itemGroup = group('names', [item('one')])
   const empty = group('text', [], { silence: 'nothing to search with' })
   const alsoEmpty = group('meaning', [], { isWorking: true })
 
   it('keeps the groups holding something in the order they were offered', () => {
     const also = group('text', [item('two')])
-    expect(orderGroups([holding, also]).map((one) => one.id)).toEqual(['names', 'text'])
-    expect(orderGroups([also, holding]).map((one) => one.id)).toEqual(['text', 'names'])
+    expect(orderGroups([itemGroup, also]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(orderGroups([also, itemGroup]).map((one) => one.id)).toEqual(['text', 'names'])
   })
 
   it('sends a group holding nothing to the foot', () => {
-    expect(orderGroups([empty, holding]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(orderGroups([empty, itemGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
   it('keeps the groups holding nothing in the order they were offered', () => {
-    expect(orderGroups([empty, holding, alsoEmpty]).map((one) => one.id)).toEqual([
+    expect(orderGroups([empty, itemGroup, alsoEmpty]).map((one) => one.id)).toEqual([
       'names',
       'text',
       'meaning',
@@ -509,7 +509,7 @@ describe('which group remains where', () => {
 
   it('draws a group that answered with nothing nowhere', () => {
     const reply = group('text', [])
-    expect(orderGroups([holding, reply]).map((one) => one.id)).toEqual(['names'])
+    expect(orderGroups([itemGroup, reply]).map((one) => one.id)).toEqual(['names'])
     expect(orderGroups([reply]).map((one) => one.id)).toEqual([])
   })
 
@@ -525,7 +525,7 @@ describe('which group remains where', () => {
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {
-    const groups = [empty, holding, alsoEmpty, group('more', [item('two'), item('three')])]
+    const groups = [empty, itemGroup, alsoEmpty, group('more', [item('two'), item('three')])]
     expect(flatten(orderGroups(groups)).map((place) => place.item.id)).toEqual(
       flatten(groups).map((place) => place.item.id),
     )

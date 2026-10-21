@@ -203,7 +203,7 @@ export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): re
   return HALVES.flatMap((half): readonly Pane[] => {
     const saidText = half === 'front' ? words.front : words.back
     const content = half === 'front' ? face.front : face.back
-    const displayed = half === 'front' ? face.frontPreview : face.backPreview
+    const previewFace = half === 'front' ? face.frontPreview : face.backPreview
     return [
       {
         half,
@@ -219,8 +219,8 @@ export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): re
         mode: 'preview',
         said: words.preview,
         named: `${words.preview}: ${face.name} ${saidText}`,
-        text: displayed,
-        isBlank: displayed.trim() === '',
+        text: previewFace,
+        isBlank: previewFace.trim() === '',
         stray: [],
       },
     ]

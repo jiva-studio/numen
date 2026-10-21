@@ -70,8 +70,8 @@ describe('what the strip is', () => {
   it('passes each tab what that tab is carrying', () => {
     const target = mountPane({ marks: { chat: 'unsaved' } })
     const marks = strip(target).map((tab) => {
-      const rendered = tab.find('.tab__mark')
-      return rendered.exists() ? rendered.attributes('aria-label') : null
+      const renderedMark = tab.find('.tab__mark')
+      return renderedMark.exists() ? renderedMark.attributes('aria-label') : null
     })
 
     expect(marks).toStrictEqual([null, 'unsaved', null])

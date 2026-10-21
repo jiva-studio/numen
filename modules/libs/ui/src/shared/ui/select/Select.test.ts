@@ -232,7 +232,7 @@ describe('the value written on the line', () => {
       choices: [{ id: 'long', text: 'Agent of the panel (OpenAI Codex) with a long tail' }],
       modelValue: 'long',
     })
-    const reading = control.get('.select__reading')
-    expect(reading.attributes('title')).toBe('Agent of the panel (OpenAI Codex) with a long tail')
+    const readingElement = control.get('.select__reading')
+    expect(readingElement.attributes('title')).toBe('Agent of the panel (OpenAI Codex) with a long tail')
   })
 })

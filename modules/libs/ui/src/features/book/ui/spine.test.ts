@@ -39,7 +39,7 @@ const span = () => {
 }
 
 /** A reader drawing the corpus, in a room jsdom has laid nothing out in. */
-const reading = async () => {
+const readSpine = async () => {
   const wrapper = mount(Book, {
     props: { markup: spine, path: MIDDLE, span: span(), book: span(), at: span().from },
     attachTo: document.body,
@@ -50,14 +50,14 @@ const reading = async () => {
 }
 
 /** One link of the document pressed, and the press as the page left it. */
-const press = async (wrapper: Awaited<ReturnType<typeof reading>>, label: string) => {
+const press = async (wrapper: Awaited<ReturnType<typeof readSpine>>, label: string) => {
   const link = wrapper.findAll('a').find((one) => one.text() === label)!
   link.element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
   await wrapper.vm.$nextTick()
 }
 
 /** The offsets the reader has asked to be sent to, in the order it asked. */
-const getMoves = (wrapper: Awaited<ReturnType<typeof reading>>) =>
+const getMoves = (wrapper: Awaited<ReturnType<typeof readSpine>>) =>
   (wrapper.emitted('move') ?? []).map((one) => (one as [number])[0])
 
 describe('the markup a spine document arrives as', () => {
@@ -84,7 +84,7 @@ describe('the markup a spine document arrives as', () => {
 
 describe('a reader handed that markup', () => {
   it('reads the offsets off the runs, and asks for the one a place inside names', async () => {
-    const target = await reading()
+    const target = await readSpine()
     const note = target.find('#note').find('[data-offset]').attributes('data-offset')
 
     await press(target, 'the note')
@@ -94,7 +94,7 @@ describe('a reader handed that markup', () => {
   })
 
   it('asks for the document a link names, as the archive names it', async () => {
-    const target = await reading()
+    const target = await readSpine()
 
     await press(target, 'the opening')
 
@@ -102,7 +102,7 @@ describe('a reader handed that markup', () => {
   })
 
   it('asks for nothing of the book where the link leads out of it', async () => {
-    const target = await reading()
+    const target = await readSpine()
 
     await press(target, 'somewhere else entirely')
 

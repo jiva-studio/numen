@@ -27,11 +27,11 @@ export interface MenuOpenOptions {
  */
 export const useMenuOpen = (options: MenuOpenOptions): void => {
   /** Whether the menu stands: what entering put in place, leaving takes away. */
-  let standing = false
+  let isAnchored = false
 
   const enter = async (): Promise<void> => {
-    if (standing) return
-    standing = true
+    if (isAnchored) return
+    isAnchored = true
     options.listen()
 
     await nextTick()
@@ -40,8 +40,8 @@ export const useMenuOpen = (options: MenuOpenOptions): void => {
   }
 
   const leave = (): void => {
-    if (!standing) return
-    standing = false
+    if (!isAnchored) return
+    isAnchored = false
     options.release()
     options.reset()
     const back = options.getFrom()

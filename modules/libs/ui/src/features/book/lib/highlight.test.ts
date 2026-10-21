@@ -24,12 +24,12 @@ const range = (): Range => document.createRange()
 /** The books a test holds, each known to the registry by being itself. */
 const first = { book: 'first' }
 const second = { book: 'second' }
-const moving = { book: 'moving' }
-const retained = { book: 'kept' }
+const movingRun = { book: 'moving' }
+const retainedRun = { book: 'kept' }
 const going = { book: 'going' }
 const staying = { book: 'staying' }
 const only = { book: 'only' }
-const books = [first, second, moving, retained, going, staying, only]
+const books = [first, second, movingRun, retainedRun, going, staying, only]
 
 beforeEach(() => {
   registry()
@@ -65,21 +65,21 @@ describe('the runs of one book in one entry', () => {
     highlight(HIGHLIGHT, first, [one])
     highlight(HIGHLIGHT, second, [other])
 
-    const rendered = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
-    expect(rendered.ranges).toStrictEqual([one, other])
+    const renderedHighlight = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
+    expect(renderedHighlight.ranges).toStrictEqual([one, other])
   })
 
   it('replace what the same book had there, and leave the rest', () => {
     const target = registry()
-    const standing = range()
+    const currentRange = range()
     const freshRange = range()
-    highlight(HIGHLIGHT, retained, [standing])
-    highlight(HIGHLIGHT, moving, [range()])
+    highlight(HIGHLIGHT, retainedRun, [currentRange])
+    highlight(HIGHLIGHT, movingRun, [range()])
 
-    highlight(HIGHLIGHT, moving, [freshRange])
+    highlight(HIGHLIGHT, movingRun, [freshRange])
 
-    const rendered = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
-    expect(rendered.ranges).toStrictEqual([standing, freshRange])
+    const renderedHighlight = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
+    expect(renderedHighlight.ranges).toStrictEqual([currentRange, freshRange])
   })
 
   it('are taken out of the registry where no book holds any', () => {
@@ -101,8 +101,8 @@ describe('what a book took with it when it went', () => {
 
     unhighlight(going)
 
-    const rendered = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
-    expect(rendered.ranges).toHaveLength(1)
+    const renderedHighlight = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
+    expect(renderedHighlight.ranges).toHaveLength(1)
     expect(target.has(OTHER_HIGHLIGHT)).toBe(false)
   })
 

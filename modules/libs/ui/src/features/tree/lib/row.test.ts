@@ -157,8 +157,8 @@ describe('the keys a tree answers', () => {
 })
 
 describe('where a key takes the keyboard', () => {
-  const displayed = getShownRows('work')
-  const step = (from: RowId | null, key: Parameters<typeof stepTo>[2]) => stepTo(displayed, from, key)
+  const visibleRows = getShownRows('work')
+  const step = (from: RowId | null, key: Parameters<typeof stepTo>[2]) => stepTo(visibleRows, from, key)
 
   it('moves a row down and a row up', () => {
     expect(step('work', 'ArrowDown')).toStrictEqual({ at: 'plans', turn: null })
@@ -228,10 +228,10 @@ describe('where a key takes the keyboard', () => {
 
 describe('where a drag lands', () => {
   // work, plans, notes, empty, loose — one row every 24.
-  const displayed = getShownRows('work')
+  const visibleRows = getShownRows('work')
   const HEIGHT = 24
   const getDropTargetAt = (y: number, ...dragging: readonly RowId[]) =>
-    getRowDropTarget(displayed, dragging.length ? dragging : ['friday'], { y, height: HEIGHT })
+    getRowDropTarget(visibleRows, dragging.length ? dragging : ['friday'], { y, height: HEIGHT })
 
   it('goes into a row that holds, over the middle of it', () => {
     expect(getDropTargetAt(12)).toStrictEqual({ into: 'work' })
@@ -266,7 +266,7 @@ describe('where a drag lands', () => {
   })
 
   it('lands nowhere while the rows have no height', () => {
-    expect(getRowDropTarget(displayed, ['friday'], { y: 12, height: 0 })).toBeNull()
+    expect(getRowDropTarget(visibleRows, ['friday'], { y: 12, height: 0 })).toBeNull()
   })
 
   it('lands nowhere where it would name a row being dragged', () => {
@@ -281,19 +281,19 @@ describe('where a drag lands', () => {
 })
 
 describe('the row a drop target puts what is retained inside', () => {
-  const displayed = getShownRows('work')
+  const visibleRows = getShownRows('work')
 
   it('is the row itself, going into one', () => {
-    expect(findHolder(displayed, { into: 'work' })).toBe('work')
+    expect(findHolder(visibleRows, { into: 'work' })).toBe('work')
   })
 
   it('is what holds the row it arrives before', () => {
-    expect(findHolder(displayed, { before: 'notes' })).toBe('work')
+    expect(findHolder(visibleRows, { before: 'notes' })).toBe('work')
   })
 
   it('is nothing at the top level', () => {
-    expect(findHolder(displayed, { before: 'empty' })).toBeNull()
-    expect(findHolder(displayed, { before: 'gone' })).toBeNull()
+    expect(findHolder(visibleRows, { before: 'empty' })).toBeNull()
+    expect(findHolder(visibleRows, { before: 'gone' })).toBeNull()
   })
 })
 
@@ -330,22 +330,22 @@ describe('what rows being dragged are rejected', () => {
 })
 
 describe('the rows between two rows', () => {
-  const displayed = getShownRows('work')
+  const visibleRows = getShownRows('work')
 
   it('are the ones drawn from the first to the second, both among them', () => {
-    expect(getRowsBetween(displayed, 'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(visibleRows, 'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
   })
 
   it('are the same rows in the same order the other way round', () => {
-    expect(getRowsBetween(displayed, 'notes', 'work')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(visibleRows, 'notes', 'work')).toStrictEqual(['work', 'plans', 'notes'])
   })
 
   it('are the one row where both ends are it', () => {
-    expect(getRowsBetween(displayed, 'plans', 'plans')).toStrictEqual(['plans'])
+    expect(getRowsBetween(visibleRows, 'plans', 'plans')).toStrictEqual(['plans'])
   })
 
   it('span whatever a folder boundary puts between them', () => {
-    expect(getRowsBetween(displayed, 'plans', 'loose')).toStrictEqual([
+    expect(getRowsBetween(visibleRows, 'plans', 'loose')).toStrictEqual([
       'plans',
       'notes',
       'empty',
@@ -354,29 +354,29 @@ describe('the rows between two rows', () => {
   })
 
   it('are the row reached alone, measured from a row that is not drawn', () => {
-    expect(getRowsBetween(displayed, 'friday', 'notes')).toStrictEqual(['notes'])
+    expect(getRowsBetween(visibleRows, 'friday', 'notes')).toStrictEqual(['notes'])
   })
 
   it('are none at all where the row reached is not drawn', () => {
-    expect(getRowsBetween(displayed, 'work', 'friday')).toStrictEqual([])
+    expect(getRowsBetween(visibleRows, 'work', 'friday')).toStrictEqual([])
   })
 })
 
 describe('the rows between two rows, one of them not drawn', () => {
-  const displayed = getShownRows('work')
+  const visibleRows = getShownRows('work')
 
   it('is none where the row reached is not drawn', () => {
-    expect(getRowsBetween(displayed, 'work', 'gone')).toStrictEqual([])
-    expect(getRowsBetween(displayed, 'gone', 'gone')).toStrictEqual([])
+    expect(getRowsBetween(visibleRows, 'work', 'gone')).toStrictEqual([])
+    expect(getRowsBetween(visibleRows, 'gone', 'gone')).toStrictEqual([])
   })
 })
 
 describe('what a press makes the selection', () => {
-  const displayed = getShownRows('work')
+  const visibleRows = getShownRows('work')
   const JOINING: Press = { isJoining: true, isExtending: false }
   const REACHING: Press = { isJoining: false, isExtending: true }
   const select = (rows: readonly RowId[], anchor: RowId | null, row: RowId, press = PLAIN) =>
-    resolveSelection(displayed, { rows, anchor }, { row, press })
+    resolveSelection(visibleRows, { rows, anchor }, { row, press })
 
   it('is the row alone, pressed plainly', () => {
     expect(select(['plans', 'notes'], 'plans', 'loose')).toStrictEqual({
@@ -489,11 +489,11 @@ describe('two selections', () => {
 })
 
 describe('what follows the pointer', () => {
-  const displayed = getShownRows('work')
+  const visibleRows = getShownRows('work')
   const at = { x: 40, y: 60 }
   const formatCount = (rows: number) => `${rows} rows`
   const label = (rows: readonly RowId[]) =>
-    dragLabel(displayed, rows, { at, getCountWords: formatCount })
+    dragLabel(visibleRows, rows, { at, getCountWords: formatCount })
 
   it('is the name of the one row dragged', () => {
     expect(label(['notes'])).toStrictEqual({ label: 'Notes', at })

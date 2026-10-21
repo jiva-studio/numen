@@ -101,8 +101,8 @@ function createTile(
   stencils: readonly Stencil[],
   placement: PlacementContext,
 ): Tile {
-  const trimmed = stencils.find((each) => each.name === card.stencil)
-  const fields = getDeclaredFields(trimmed?.fields ?? [])
+  const matchingStencil = stencils.find((each) => each.name === card.stencil)
+  const fields = getDeclaredFields(matchingStencil?.fields ?? [])
 
   /** How many values the card writes under each field, as they are counted off. */
   const underItem = new Map<string, number>()
@@ -135,7 +135,7 @@ function createTile(
     })),
     at: 0,
     of: 0,
-    isKnown: trimmed !== undefined,
+    isKnown: matchingStencil !== undefined,
     isDragged: card.id === placement.dragCard,
   }
 }
@@ -164,7 +164,7 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
     tiles.filter((tile) => tile.section === section)
 
   const head = tilesUnder(null)
-  const rendered = [
+  const renderedTiles = [
     {
       id: HEAD,
       section: null,
@@ -183,10 +183,10 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
   // tiles of each run and then the plus that ends it, so a reader is told
   // where each of them stands among them all.
   let seat = 0
-  const runs: readonly Run[] = rendered.map((run) => {
-    const arranged = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
-    const plus = run.section !== null || arranged.length > 0 || rendered.length === 1
-    return { ...run, tiles: arranged, plusAt: plus ? ++seat : null }
+  const runs: readonly Run[] = renderedTiles.map((run) => {
+    const arrangedTiles = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
+    const plus = run.section !== null || arrangedTiles.length > 0 || renderedTiles.length === 1
+    return { ...run, tiles: arrangedTiles, plusAt: plus ? ++seat : null }
   })
   const of = seat
 

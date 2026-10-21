@@ -35,24 +35,24 @@ const emit = defineEmits<{
 defineOptions({ inheritAttrs: false })
 
 /** Which day is being given a level, what it stands at, and where its chip is. */
-const asking = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)
+const popoverAnchor = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)
 
 const availableLevels = computed(() =>
-  getOfferedLevels(props.levels, asking.value?.level ?? null).map((level) => ({
+  getOfferedLevels(props.levels, popoverAnchor.value?.level ?? null).map((level) => ({
     id: `${level}`,
     text: getFillPercent(level),
   })),
 )
 
 /** Which of the levels on offer is the one in force, as the menu names it. */
-const current = computed(() => (asking.value === null ? null : `${asking.value.level}`))
+const current = computed(() => (popoverAnchor.value === null ? null : `${popoverAnchor.value.level}`))
 
 const openLevels = (day: Day, event: Event) => {
   if (props.disabled) return
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
   const box = chip.getBoundingClientRect()
-  asking.value = {
+  popoverAnchor.value = {
     day: day.id,
     level: getFill(day.level),
     at: { x: box.left, y: box.bottom },
@@ -61,7 +61,7 @@ const openLevels = (day: Day, event: Event) => {
 }
 
 const onChoose = (id: string) => {
-  const day = asking.value?.day
+  const day = popoverAnchor.value?.day
   const level = Number(id)
   if (day === undefined || Number.isNaN(level)) return
   emit('choose', day, level)
@@ -95,7 +95,7 @@ const getFillStyle = (level: number) => {
         :aria-disabled="disabled || undefined"
         :aria-label="`${day.long}, ${getFillPercent(day.level)}`"
         aria-haspopup="menu"
-        :aria-expanded="asking?.day === day.id"
+        :aria-expanded="popoverAnchor?.day === day.id"
         :style="getFillStyle(day.level)"
         :class="
           cn(
@@ -114,14 +114,14 @@ const getFillStyle = (level: number) => {
   </RovingFocusGroup>
 
   <Menu
-    v-if="asking"
+    v-if="popoverAnchor"
     :items="availableLevels"
-    :at="asking.at"
-    :from="asking.from"
+    :at="popoverAnchor.at"
+    :from="popoverAnchor.from"
     :current="current"
     open
     trigger="keyboard"
     @choose="onChoose"
-    @dismiss="asking = null"
+    @dismiss="popoverAnchor = null"
   />
 </template>

@@ -16,16 +16,16 @@ const ITEMS: MenuItem[] = [
 
 /** A word typed one letter at a time, each letter a moment after the last. */
 const typeWord = (word: string): { typed: Typeahead; at: number | null } => {
-  let typed = NOTHING_TYPED
+  let testTypeahead = NOTHING_TYPED
   let at: number | null = null
   let now = 0
   for (const letter of word) {
-    const jumped = jumpTo(ITEMS, typed, { letter, from: at ?? -1, now })
-    typed = jumped.typed
+    const jumped = jumpTo(ITEMS, testTypeahead, { letter, from: at ?? -1, now })
+    testTypeahead = jumped.typed
     at = jumped.at
     now += 10
   }
-  return { typed, at }
+  return { typed: testTypeahead, at }
 }
 
 describe('what a run of letters lands on', () => {

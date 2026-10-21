@@ -102,17 +102,17 @@ describe('grid', () => {
   const getTiles = (deck: ReturnType<typeof getGrid>) => deck.runs.flatMap((run) => run.tiles)
 
   it('remains the plus last, and counts it among the tiles', () => {
-    const displayed = grid(CARDS)
-    expect(getTiles(displayed).map((tile) => tile.at)).toEqual([1, 2])
-    expect(displayed.runs[0]?.plusAt).toBe(3)
-    expect(displayed.of).toBe(3)
+    const displayedGrid = grid(CARDS)
+    expect(getTiles(displayedGrid).map((tile) => tile.at)).toEqual([1, 2])
+    expect(displayedGrid.runs[0]?.plusAt).toBe(3)
+    expect(displayedGrid.of).toBe(3)
   })
 
   it('is one tile, the plus, where there are no cards', () => {
-    const displayed = grid([])
-    expect(getTiles(displayed)).toEqual([])
-    expect(displayed.runs[0]?.plusAt).toBe(1)
-    expect(displayed.of).toBe(1)
+    const displayedGrid = grid([])
+    expect(getTiles(displayedGrid)).toEqual([])
+    expect(displayedGrid.runs[0]?.plusAt).toBe(1)
+    expect(displayedGrid.of).toBe(1)
   })
 
   it('lays every field the stencil asks for out under its own name, the first included', () => {
@@ -242,9 +242,9 @@ describe('grid', () => {
       ...CARDS,
       { id: 'llano', section: null, stencil: 'Word', filled: [] },
     ]
-    const displayed = grid(mixed)
-    expect(getTiles(displayed).map((tile) => tile.stencil)).toEqual(['Animal', 'Animal', 'Word'])
-    expect(Object.keys(getTiles(displayed)[0] ?? {})).not.toContain('cut')
+    const displayedGrid = grid(mixed)
+    expect(getTiles(displayedGrid).map((tile) => tile.stencil)).toEqual(['Animal', 'Animal', 'Word'])
+    expect(Object.keys(getTiles(displayedGrid)[0] ?? {})).not.toContain('cut')
   })
 
   it('marks the one tile on its way and no other', () => {
@@ -296,10 +296,10 @@ describe('grid', () => {
     // A card is made at the end of a run, so every run cards may be put in
     // carries a plus, and each stands where it is drawn among them all.
     it('counts each plus at its current position, and every tile against them all', () => {
-      const displayed = grid(SECTIONED, SECTIONS)
-      expect(displayed.runs.map((run) => run.plusAt)).toEqual([2, 5, 6])
-      expect(displayed.of).toBe(6)
-      expect(displayed.runs.flatMap((run) => run.tiles).map((tile) => tile.of)).toEqual([6, 6, 6])
+      const displayedGrid = grid(SECTIONED, SECTIONS)
+      expect(displayedGrid.runs.map((run) => run.plusAt)).toEqual([2, 5, 6])
+      expect(displayedGrid.of).toBe(6)
+      expect(displayedGrid.runs.flatMap((run) => run.tiles).map((tile) => tile.of)).toEqual([6, 6, 6])
     })
 
     it('remains no plus before the first section where no card remains there', () => {

@@ -79,7 +79,7 @@ const props = withDefaults(
   },
 )
 
-const typed = defineModel<string>({ default: '' })
+const searchQuery = defineModel<string>({ default: '' })
 
 const emit = defineEmits<{
   /**
@@ -121,7 +121,7 @@ const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
 const places = usePalettePlaces({
   groups: () => props.groups,
-  typed,
+  typed: searchQuery,
   tellLit: (item) => emit('light', item),
   tellChoice: (item, action) => emit('choose', item, action),
 })
@@ -151,7 +151,7 @@ const { onKey } = usePaletteKeys({
   places,
   isPanelOpen,
   getOfferedActions: () => offered.value,
-  typed,
+  typed: searchQuery,
   isOpen: () => props.open,
   getStep: () => props.step,
   getOpensOn: () => props.opensOn,
@@ -178,7 +178,7 @@ const onOver = (at: number, event: PointerEvent) => {
   >
     <PaletteField
       ref="field"
-      v-model="typed"
+      v-model="searchQuery"
       :uid="uid"
       :here="isPanelOpen ? -1 : here"
       :is-expanded="placed.length !== 0"

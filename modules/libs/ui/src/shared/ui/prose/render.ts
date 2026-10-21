@@ -40,7 +40,7 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
   // Stryker disable next-line ArrayDeclaration: a first entry of the stack is never read, as every closing token has its opener.
   const stack: Frame[] = []
   const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
-  let placed = 0
+  let placedCount = 0
 
   for (const token of tokens) {
     // A hidden token is one the marks imply and the reader never sees: the
@@ -57,7 +57,7 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
       continue
     }
 
-    top().push(...block(token, deadAddresses, () => placed++))
+    top().push(...block(token, deadAddresses, () => placedCount++))
   }
   return root
 }

@@ -84,7 +84,7 @@ export const pendingChange = Facet.define<EditorChange | null, EditorChange | nu
 /** How far the showing of the text has got. */
 export const setReveal = StateEffect.define<Reveal>()
 
-const waiting = Decoration.mark({ class: 'cm-changing' })
+const changingDecoration = Decoration.mark({ class: 'cm-changing' })
 const incoming = Decoration.mark({ class: 'cm-arriving' })
 const covered = Decoration.replace({})
 
@@ -117,7 +117,7 @@ const getDecorations = (
   reveal: Reveal | null,
 ): DecorationSet => {
   const { from, to } = span
-  if (!reveal) return to > from ? Decoration.set([waiting.range(from, to)]) : Decoration.none
+  if (!reveal) return to > from ? Decoration.set([changingDecoration.range(from, to)]) : Decoration.none
 
   const found: Range<Decoration>[] = []
   if (reveal.shown > reveal.fading)

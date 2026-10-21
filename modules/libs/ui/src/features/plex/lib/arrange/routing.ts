@@ -176,17 +176,17 @@ export function routeEdge(
   const to = byId.get(edge.to)
   if (!from || !to || from === to) return null
 
-  const routing = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const opacity = 'curvature' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
 
-  const curve = curveBetween(from, to, routing)
+  const curve = curveBetween(from, to, routingOptions)
 
   return {
     ...edge,
     ...curve,
     opacity,
     heading: getHeading(curve, MIDDLE),
-    words: cutLabel(edge, curve, routing),
+    words: cutLabel(edge, curve, routingOptions),
     wordsAt: MIDDLE,
     arrowhead: edge.arrow ? getArrow(curve, edge.arrow) : undefined,
   }
@@ -202,11 +202,11 @@ export function routeEdges(
   byId: ReadonlyMap<string, PlacedNode>,
   routingOrOptions: Routing | RouteEdgesOptions,
 ): PlacedEdge[] {
-  const routing = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const getOpacity =
     'curvature' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
 
   return edges
-    .map((edge) => routeEdge(edge, byId, { routing, opacity: getOpacity(edge) }))
+    .map((edge) => routeEdge(edge, byId, { routing: routingOptions, opacity: getOpacity(edge) }))
     .filter((edge): edge is PlacedEdge => edge !== null)
 }

@@ -54,21 +54,21 @@ describe('a link followed with the pointer', () => {
   const SOURCE = 'go [there](https://example.invalid) now'
 
   const open = (at: number | null, doc = SOURCE) => {
-    const opened = vi.fn<(address: string) => void>()
+    const openState = vi.fn<(address: string) => void>()
     const passed = vi.fn<() => void>()
     const view = new EditorView({
       parent: document.body,
       state: createState(doc).update({
         effects: StateEffect.appendConfig.of([
           follow,
-          addressOpener.of(opened),
+          addressOpener.of(openState),
           EditorView.domEventHandlers({ mousedown: passed }),
         ]),
       }).state,
     })
     const coordinates = vi.spyOn(view, 'posAtCoords').mockReturnValue(at)
     views.push(view)
-    return { view, opened, coordinates, passed }
+    return { view, opened: openState, coordinates, passed }
   }
 
   const press = (view: EditorView, modifiers: MouseEventInit) => {

@@ -199,8 +199,8 @@ describe('the edges follow the boxes', () => {
 
   it('keeps an edge that both pictures have at full strength throughout', () => {
     const frame = interpolatePlex(from, to, 0.5)
-    const retained = frame.edges.find((e) => e.from === 'focus' && e.to === 'a')
-    expect(retained?.opacity).toBe(1)
+    const retainedEdge = frame.edges.find((e) => e.from === 'focus' && e.to === 'a')
+    expect(retainedEdge?.opacity).toBe(1)
   })
 
   it('fades an edge in or out with the node it belongs to', () => {
@@ -259,12 +259,12 @@ describe('the title a line carries while the picture moves', () => {
 
     const start = arrangeWithLabels(before)
     const end = arrangeWithLabels(after)
-    const trimmed = end.edges.find((e) => e.to === 'a')!.words!
-    expect(trimmed.endsWith('…')).toBe(true)
+    const trimmedWords = end.edges.find((e) => e.to === 'a')!.words!
+    expect(trimmedWords.endsWith('…')).toBe(true)
 
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      expect(edge.words, `at ${t.toFixed(2)}`).toBe(trimmed)
+      expect(edge.words, `at ${t.toFixed(2)}`).toBe(trimmedWords)
     }
   })
 
@@ -417,9 +417,9 @@ describe('a line whose ends swap', () => {
       edges: [{ from: 'here', to: 'across' }],
     }
 
-    const moving = interpolatePlex(arrangePlex(here), arrangePlex(acrossRoute), 0.5)
-    expect(moving.edges).toHaveLength(1)
-    expect(moving.edges[0]?.opacity).toBe(1)
+    const interpolated = interpolatePlex(arrangePlex(here), arrangePlex(acrossRoute), 0.5)
+    expect(interpolated.edges).toHaveLength(1)
+    expect(interpolated.edges[0]?.opacity).toBe(1)
   })
 })
 

@@ -39,7 +39,7 @@ export const rowsAndColumns: Placement = {
 
   place(nodesByRelation, focus, context) {
     const { options, limits, width } = context
-    const placed: PlacedNode[] = [focus]
+    const placedNodes: PlacedNode[] = [focus]
 
     // Rows first. A row of children is as wide as the plex gets, so a column
     // at a fixed distance would sit on top of it once the row outgrew that
@@ -50,7 +50,7 @@ export const rowsAndColumns: Placement = {
     const columns = entries.filter(([relation]) => !isVertical(options.direction[relation]))
 
     for (const [relation, nodes] of rows) {
-      placed.push(
+      placedNodes.push(
         ...line(nodes, options.direction[relation], {
           options,
           limits: limits[relation],
@@ -65,7 +65,7 @@ export const rowsAndColumns: Placement = {
     // Against the rows, because a column on one side is not something the
     // column on the other side has to clear. One clearance for both: the two
     // sides are read as a pair.
-    const rowsPlaced = [...placed]
+    const rowsPlaced = [...placedNodes]
     const reach = Math.max(
       0,
       ...columns.map(([relation, nodes]) => getReach(nodes.length, options, limits[relation])),
@@ -73,7 +73,7 @@ export const rowsAndColumns: Placement = {
     const clearance = measureWidestWithin(rowsPlaced, reach)
 
     for (const [relation, nodes] of columns) {
-      placed.push(
+      placedNodes.push(
         ...line(nodes, options.direction[relation], {
           options,
           limits: limits[relation],
@@ -83,7 +83,7 @@ export const rowsAndColumns: Placement = {
       )
     }
 
-    return placed.slice(1)
+    return placedNodes.slice(1)
   },
 }
 
@@ -128,7 +128,7 @@ function inRows(
   const { sign, near } = placement
   const { options, limits, width } = context
   const { height } = options.nodeSize
-  const placed: PlacedNode[] = []
+  const placedNodes: PlacedNode[] = []
 
   for (const { ofLine, depth, first } of lines(nodes, limits.perLine)) {
     const widths = ofLine.map(width)
@@ -138,7 +138,7 @@ function inRows(
     let edge = -length / 2
     ofLine.forEach((node, index) => {
       const box = widths[index]!
-      placed.push({
+      placedNodes.push({
         ...node,
         x: edge + box / 2,
         y: away,
@@ -151,7 +151,7 @@ function inRows(
     })
   }
 
-  return placed
+  return placedNodes
 }
 
 /**
@@ -167,7 +167,7 @@ function inColumns(
   const { options, limits, width } = context
   const { height } = options.nodeSize
   const step = height + options.gap
-  const placed: PlacedNode[] = []
+  const placedNodes: PlacedNode[] = []
   let edge = near
 
   for (const { ofLine, first } of lines(nodes, limits.perLine)) {
@@ -175,7 +175,7 @@ function inColumns(
 
     ofLine.forEach((node, index) => {
       const box = widths[index]!
-      placed.push({
+      placedNodes.push({
         ...node,
         x: sign * (edge + box / 2),
         y: (index - (ofLine.length - 1) / 2) * step,
@@ -189,7 +189,7 @@ function inColumns(
     edge += Math.max(...widths) + options.lineGap
   }
 
-  return placed
+  return placedNodes
 }
 
 /**

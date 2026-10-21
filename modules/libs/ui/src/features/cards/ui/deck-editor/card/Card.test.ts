@@ -33,11 +33,11 @@ const createTile = (
   cards: readonly DeckCard[] = CARDS,
   sections: readonly DeckSection[] = [],
 ): Tile => {
-  const arranged = getGrid({ cards, sections, stencils: CUTS }, null)
+  const cardGrid = getGrid({ cards, sections, stencils: CUTS }, null)
     .runs.flatMap((run) => run.tiles)
     .find((tile) => tile.id === id)
-  if (!arranged) throw new Error(`no tile for ${id}`)
-  return arranged
+  if (!cardGrid) throw new Error(`no tile for ${id}`)
+  return cardGrid
 }
 
 const write = vi.fn<(card: string, target: { field: string; nth: number }, text: string) => void>()

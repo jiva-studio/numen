@@ -85,9 +85,9 @@ describe('the pages drawn', () => {
   it('draws the pages in the room and not the whole document', async () => {
     const target = await reader(1000, 800)
 
-    const rendered = target.findAll('.reader__page')
-    expect(rendered.length).toBeGreaterThan(0)
-    expect(rendered.length).toBeLessThan(PAGES.length)
+    const renderedPages = target.findAll('.reader__page')
+    expect(renderedPages.length).toBeGreaterThan(0)
+    expect(renderedPages.length).toBeLessThan(PAGES.length)
   })
 
   it('draws nothing at all for a document with no pages', async () => {

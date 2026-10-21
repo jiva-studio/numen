@@ -23,7 +23,7 @@ const report = (id: string, text = `Renamed ${id}`): Notice => ({
   stay: 'read',
   isUserStarted: true,
 })
-const counting = (id: string, isDone: number): Notice => ({
+const countMetric = (id: string, isDone: number): Notice => ({
   id,
   text: `Learning ${id}`,
   isWorking: true,
@@ -155,7 +155,7 @@ describe('the clock behind the corner', () => {
   })
 
   it('runs for a count, along with a card that does not count', () => {
-    stand([request('k'), counting('c', 10)])
+    stand([request('k'), countMetric('c', 10)])
 
     expect(vi.getTimerCount()).toBe(1)
   })
@@ -167,7 +167,7 @@ describe('the clock behind the corner', () => {
   })
 
   it('stops when the work that needed it is over', async () => {
-    const { notices } = stand([counting('c', 10)])
+    const { notices } = stand([countMetric('c', 10)])
     expect(vi.getTimerCount()).toBe(1)
 
     notices.value = []
@@ -185,26 +185,26 @@ describe('what is left on a count', () => {
   })
 
   it('is nothing before the count has moved', () => {
-    const { state } = stand([counting('c', 10)])
+    const { state } = stand([countMetric('c', 10)])
 
-    expect(state.leftOn(counting('c', 10))).toBe('')
+    expect(state.leftOn(countMetric('c', 10))).toBe('')
   })
 
   it('is nothing for a count the corner has not yet seen', () => {
     const { state } = stand([])
 
-    expect(state.leftOn(counting('unseen', 10))).toBe('')
+    expect(state.leftOn(countMetric('unseen', 10))).toBe('')
   })
 
   it('is what the rate it moved at leaves', async () => {
-    const { state, notices, wind } = stand([counting('c', 0)])
+    const { state, notices, wind } = stand([countMetric('c', 0)])
 
     await wind(1_000)
-    notices.value = [counting('c', 10)]
+    notices.value = [countMetric('c', 10)]
     await nextTick()
 
-    expect(state.leftOn(counting('c', 10))).toBe(getRemainingWord(90, 10))
-    expect(state.leftOn(counting('c', 10))).not.toBe('')
+    expect(state.leftOn(countMetric('c', 10))).toBe(getRemainingWord(90, 10))
+    expect(state.leftOn(countMetric('c', 10))).not.toBe('')
   })
 })
 

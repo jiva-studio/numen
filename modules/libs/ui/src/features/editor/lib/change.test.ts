@@ -107,10 +107,10 @@ describe('a change on its way', () => {
   })
 
   it('moves with the text when something is typed before it', () => {
-    const typed = createMarkedState(DOC, CHANGE).update({
+    const updatedState = createMarkedState(DOC, CHANGE).update({
       changes: { from: 0, insert: 'so ' },
     }).state
-    expect(getDrawn(typed)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
+    expect(getDrawn(updatedState)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
   })
 
   it('is drawn for nothing where it is addressed past the end of the text', () => {
@@ -123,10 +123,10 @@ describe('a change on its way', () => {
   })
 
   it('stays where it starts when the text is typed at its first character', () => {
-    const typed = createMarkedState(DOC, CHANGE).update({
+    const updatedState = createMarkedState(DOC, CHANGE).update({
       changes: { from: 4, insert: 'x' },
     }).state
-    expect(getDrawn(typed)).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
+    expect(getDrawn(updatedState)).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
   })
 
   it('is the same drawing after an update that says nothing about it', () => {
@@ -174,17 +174,17 @@ describe('a change whose text has arrived', () => {
   })
 
   it('takes over from the mark when the text lands in the document', () => {
-    const waiting = createMarkedState('the cat sat', { id: 'a', from: 4, to: 7, text: 'dog' })
-    expect(getDrawn(waiting)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+    const pendingState = createMarkedState('the cat sat', { id: 'a', from: 4, to: 7, text: 'dog' })
+    expect(getDrawn(pendingState)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
 
-    const landed = waiting.update({ changes: { from: 4, to: 7, insert: 'dog' } }).state
+    const landed = pendingState.update({ changes: { from: 4, to: 7, insert: 'dog' } }).state
     expect(getDrawn(landed)).toEqual([{ from: 4, to: 7, mark: null }])
   })
 
   it('goes back to the mark when the text is typed away from under it', () => {
-    const displayed = getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
-    const typed = displayed.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
-    expect(getDrawn(typed)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
+    const displayedState = getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
+    const updatedState = displayedState.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
+    expect(getDrawn(updatedState)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
   })
 })
 
@@ -277,31 +277,31 @@ describe('the showing, setReveal by the clock', () => {
 
 /** A clock that keeps every frame it was asked for, and what it was told to cancel. */
 const createLedgerClock = () => {
-  const waiting = new Map<number, (now: number) => void>()
+  const pendingState = new Map<number, (now: number) => void>()
   const request: ((now: number) => void)[] = []
   const cancelled: unknown[] = []
   const clock: Clock = {
     now: () => 0,
     schedule: (run) => {
       request.push(run)
-      waiting.set(request.length, run)
+      pendingState.set(request.length, run)
       return request.length
     },
     cancel: (handle) => {
       cancelled.push(handle)
-      waiting.delete(handle)
+      pendingState.delete(handle)
     },
   }
   return {
     clock,
     cancelled,
     /** How many frames are waiting for their timestamp. */
-    getWaiting: () => waiting.size,
+    getWaiting: () => pendingState.size,
     /** Hand the latest frame that is waiting its timestamp. */
     tick: (now: number) => {
-      const [id, run] = [...waiting.entries()].at(-1) ?? []
+      const [id, run] = [...pendingState.entries()].at(-1) ?? []
       if (id === undefined || !run) return
-      waiting.delete(id)
+      pendingState.delete(id)
       run(now)
     },
     /** Hand a frame that was asked for earlier, waiting or not. */

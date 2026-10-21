@@ -792,9 +792,9 @@ export const TitledLines: Story = {
 
     // Words longer than their curve are cut to it and end in an ellipsis.
     await expect(title('the minutes of the meeting')).toHaveLength(0)
-    const trimmed = titles.filter((text) => text.textContent!.endsWith('…'))
-    await expect(trimmed).toHaveLength(2)
-    await expect('the minutes of the meeting'.startsWith(trimmed[0]!.textContent!.slice(0, -1))).toBe(
+    const truncatedTitles = titles.filter((text) => text.textContent!.endsWith('…'))
+    await expect(truncatedTitles).toHaveLength(2)
+    await expect('the minutes of the meeting'.startsWith(truncatedTitles[0]!.textContent!.slice(0, -1))).toBe(
       true,
     )
 
@@ -900,7 +900,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     await expect(Math.abs(drawnFor - svg.getBoundingClientRect().width)).toBeLessThan(1)
   })
 
-  const rendered = titles().map((text) => ({
+  const renderedTitles = titles().map((text) => ({
     words: text.textContent,
     letters: getLetters(text),
   }))
@@ -909,8 +909,8 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
   )
 
   const piled: string[] = []
-  for (const [at, title] of rendered.entries()) {
-    for (const other of rendered.slice(at + 1)) {
+  for (const [at, title] of renderedTitles.entries()) {
+    for (const other of renderedTitles.slice(at + 1)) {
       const touching = title.letters.some((letter) =>
         other.letters.some((mine) => isOverlapping(letter, mine)),
       )
@@ -918,13 +918,13 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     }
   }
 
-  const overBoxes = rendered
+  const overBoxes = renderedTitles
     .filter((title) =>
       title.letters.some((letter) => boxes.some((box) => isOverlapping(letter, box))),
     )
     .map((title) => title.words)
 
-  await expect(rendered.length).toBeGreaterThan(0)
+  await expect(renderedTitles.length).toBeGreaterThan(0)
   await expect(piled).toHaveLength(0)
   await expect(overBoxes).toHaveLength(0)
 }
@@ -1031,7 +1031,7 @@ export const ArrowedLines: Story = {
       heads().some((head) => hasPoint(head.getBoundingClientRect(), end))
 
     /** Where every head and every end of every line stands, as one reading. */
-    const reading = () =>
+    const readView = () =>
       JSON.stringify([
         heads().map((head) => {
           const box = head.getBoundingClientRect()
@@ -1047,9 +1047,9 @@ export const ArrowedLines: Story = {
     // its second, and the picture stands still once it has.
     await waitFor(async () => {
       await expect(heads()).toHaveLength(2)
-      const was = reading()
+      const was = readView()
       await frame()
-      await expect(reading()).toBe(was)
+      await expect(readView()).toBe(was)
     })
 
     // A head is really drawn, and is not an empty path.
@@ -1094,7 +1094,7 @@ export const ArrowedLines: Story = {
     }
 
     // The hand on that line lifts it, and the head is brightened with it.
-    const resting = getComputedStyle(head).fill
+    const restingLightness = getComputedStyle(head).fill
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === jump.line.getAttribute('d'),
     )!
@@ -1102,7 +1102,7 @@ export const ArrowedLines: Story = {
 
     const lifted = canvasElement.querySelector<SVGPathElement>('.plex__lift .plex__edge-arrow')!
     await expect(lifted).not.toBeNull()
-    await expect(getComputedStyle(lifted).fill).not.toBe(resting)
+    await expect(getComputedStyle(lifted).fill).not.toBe(restingLightness)
   },
 }
 
@@ -1135,7 +1135,7 @@ export const RestingOnATitle: Story = {
 
     const getWidth = (box: Element) =>
       box.querySelector('.plex__box')!.getBoundingClientRect().width
-    const placed = getWidth(node)
+    const nodeWidth = getWidth(node)
     const nextDoor = besideNode.getBoundingClientRect().x
 
     // Cut short in the box the arrangement drew, and the whole of it under a
@@ -1144,7 +1144,7 @@ export const RestingOnATitle: Story = {
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
     await userEvent.hover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(placed), {
+    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(nodeWidth), {
       timeout: 3000,
     })
     await waitFor(
@@ -1158,7 +1158,7 @@ export const RestingOnATitle: Story = {
 
     // The hand leaves, and the picture is the one it was.
     await userEvent.unhover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBe(placed))
+    await waitFor(async () => await expect(getWidth(node)).toBe(nodeWidth))
   },
 }
 

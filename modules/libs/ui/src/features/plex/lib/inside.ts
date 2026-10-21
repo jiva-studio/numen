@@ -105,7 +105,7 @@ export function getNodeHeadings(
   const rows = Math.min(maxHeadings + 1, Math.floor((depth - 2 * pad) / headingHeight))
   if (rows < 1) return null
 
-  const displayed = Math.min(maxHeadings, rows, headings.length)
+  const headingCount = Math.min(maxHeadings, rows, headings.length)
   const setIn = getIndents(headings, headingIndent)
 
   const suspended: HungHeading[] = headings.map((heading, at) => ({
@@ -119,10 +119,10 @@ export function getNodeHeadings(
     top,
     headingHeight,
     pad,
-    shown: displayed,
+    shown: headingCount,
     ...getHeadingsWidth(node, suspended, { pad, deps }),
     headings: suspended,
-    height: displayed * headingHeight + 2 * pad,
+    height: headingCount * headingHeight + 2 * pad,
   }
 }
 

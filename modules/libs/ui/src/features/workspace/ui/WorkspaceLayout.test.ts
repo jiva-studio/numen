@@ -32,16 +32,16 @@ const findCloseButton = (wrapper: ReturnType<typeof mountWorkspace>, tab: string
 
 describe('a close', () => {
   it('is told to the caller before anything is applied', async () => {
-    let notified: unknown
+    let notifiedEvent: unknown
     const target = mountWorkspace(oneStack(), {
       onClose: () => {
-        notified = target.emitted('update:modelValue')
+        notifiedEvent = target.emitted('update:modelValue')
       },
     })
 
     await findCloseButton(target, 'chat').trigger('click')
 
-    expect(notified).toBeUndefined()
+    expect(notifiedEvent).toBeUndefined()
     expect(target.emitted('close')?.[0]?.[0]).toBe('chat')
   })
 

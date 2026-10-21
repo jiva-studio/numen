@@ -391,20 +391,20 @@ export const Dark: Story = {
       const node = canvas.getByLabelText(new RegExp(`^${title},`))
       const box = node.querySelector('rect')!
       const ink = lightness(getComputedStyle(canvas.getByText(title)).color)
-      const resting = lightness(getComputedStyle(box).fill)
-      fills.push(resting)
+      const restingLightness = lightness(getComputedStyle(box).fill)
+      fills.push(restingLightness)
 
       // The title is read off the ground the box is painted, which is what the
       // hover then moves a little way towards. On the dark set a plain node is
       // light on dark and the focused one is dark on light.
-      await expect(Math.abs(ink - resting)).toBeGreaterThan(40)
-      await expect(Math.sign(ink - resting)).toBe(title === 'Where you are' ? -1 : 1)
+      await expect(Math.abs(ink - restingLightness)).toBeGreaterThan(40)
+      await expect(Math.sign(ink - restingLightness)).toBe(title === 'Where you are' ? -1 : 1)
 
       await hoverOver(node)
       await waitFor(async () => {
-        const moved = lightness(getComputedStyle(box).fill) - resting
+        const moved = lightness(getComputedStyle(box).fill) - restingLightness
         await expect(Math.abs(moved)).toBeGreaterThan(2)
-        await expect(Math.sign(moved)).toBe(Math.sign(ink - resting))
+        await expect(Math.sign(moved)).toBe(Math.sign(ink - restingLightness))
       })
     }
 

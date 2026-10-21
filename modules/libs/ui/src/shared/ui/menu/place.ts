@@ -32,7 +32,7 @@ export function useMenuPlacement(options: MenuPlacementOptions): MenuPlacementSt
     () => options.viewport() ?? { width: window.innerWidth, height: window.innerHeight },
   )
 
-  const placed = computed(() =>
+  const placement = computed(() =>
     placeMenu({
       at: options.at(),
       size: size.value,
@@ -45,5 +45,5 @@ export function useMenuPlacement(options: MenuPlacementOptions): MenuPlacementSt
     size.value = now
   }
 
-  return { placed, setSize }
+  return { placed: placement, setSize }
 }

@@ -60,7 +60,7 @@ const emit = defineEmits<{
 /**
  * The run whose plus is showing which stencils a new card may be cut by.
  */
-const asking = shallowRef<string | null>(null)
+const activePickerRunId = shallowRef<string | null>(null)
 
 /**
  * The card under the pointer's hand, and where letting go would put it.
@@ -112,11 +112,11 @@ function onStep(id: string, direction: StepDirection, press: KeyboardEvent): voi
 }
 
 function onAsk(runId: string): void {
-  asking.value = runId
+  activePickerRunId.value = runId
 }
 
 function onAddCard(stencil: Stencil, run: Run): void {
-  asking.value = null
+  activePickerRunId.value = null
   emit('add', stencil.name, run.section?.id ?? null)
 }
 
@@ -147,7 +147,7 @@ function onAddSection(): void {
       :of="grid.of"
       :wrong="wrong"
       :at="at"
-      :is-asking="asking === run.id"
+      :is-asking="activePickerRunId === run.id"
       :words="words"
       @drag-over="onDragOver"
       @drop="onDrop"

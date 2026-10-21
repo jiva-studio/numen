@@ -49,7 +49,7 @@ describe('a card face', () => {
     }
 
     const named = new Set<string>()
-    let arranged = 0
+    let arrangedCount = 0
     let changed = 0
     for (const { name, construct, face, fields, values, laid: want } of corpus.faces) {
       if (name === '' || construct === '') {
@@ -58,14 +58,14 @@ describe('a card face', () => {
       if (named.has(name)) throw new Error(`two faces of the table are called "${name}"`)
       named.add(name)
 
-      arranged += 1
+      arrangedCount += 1
       if (want !== face) changed += 1
 
       const response = { name, construct, laid: want }
       expect({ name, construct, laid: renderPreview(face, values, fields) }).toStrictEqual(response)
     }
 
-    expect(arranged).toBe(corpus.count)
+    expect(arrangedCount).toBe(corpus.count)
     expect(changed).toBe(corpus.changed)
   })
 })

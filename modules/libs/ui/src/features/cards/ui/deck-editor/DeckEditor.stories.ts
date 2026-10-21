@@ -347,8 +347,8 @@ const meta: Meta<Knobs> = {
         wrong,
         onAdd: (stencil: string) => {
           const id = `made00000${cards.value.length}`
-          const trimmed = cuts.value.find((each) => each.name === stencil)
-          const filled = getBlanks(getDeclaredFields(trimmed?.fields ?? []))
+          const matchingCut = cuts.value.find((each) => each.name === stencil)
+          const filled = getBlanks(getDeclaredFields(matchingCut?.fields ?? []))
           cards.value = [...cards.value, { id, section: lastSection(), stencil, filled }]
         },
         onRemove: (id: string) => {
@@ -516,7 +516,7 @@ export const InSections: Story = {
     expect(actions.getBoundingClientRect().width).toBe(0)
 
     found(canvasElement, '[data-section-head="roots"] input').focus()
-    const rendered = found(
+    const renderedElement = found(
       canvasElement,
       '[data-section-head="roots"] .remove-button',
     ).getBoundingClientRect()
@@ -525,8 +525,8 @@ export const InSections: Story = {
       '[data-section-head="roots"] .divider__held',
     ).getBoundingClientRect()
     expect(actions.getBoundingClientRect().width).toBeGreaterThan(0)
-    expect(rendered.right).toBeLessThanOrEqual(Math.ceil(rule.right))
-    expect(rendered.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
+    expect(renderedElement.right).toBeLessThanOrEqual(Math.ceil(rule.right))
+    expect(renderedElement.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
 
     // Each card is placed under the section it is in, and the ones before the
     // first stand under none.
@@ -591,9 +591,9 @@ export const NothingAtAll: Story = {
 
     // It is a tile like the cards are: a dashed outline, drawn no smaller than
     // a card, and as wide as the column it stands in.
-    const rendered = getComputedStyle(plus)
-    expect(rendered.borderTopStyle).toBe('dashed')
-    expect(Number.parseFloat(rendered.borderTopWidth)).toBeGreaterThan(0)
+    const renderedElement = getComputedStyle(plus)
+    expect(renderedElement.borderTopStyle).toBe('dashed')
+    expect(Number.parseFloat(renderedElement.borderTopWidth)).toBeGreaterThan(0)
 
     const at = plus.getBoundingClientRect()
     expect(at.height).toBeGreaterThan(64)
@@ -601,8 +601,8 @@ export const NothingAtAll: Story = {
 
     // What it opens stands where it was pressed, inside that same outline.
     await userEvent.click(button)
-    const asking = found(canvasElement, '[data-plus] .deck__asking')
-    expect(middle(asking.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
+    const promptElement = found(canvasElement, '[data-plus] .deck__asking')
+    expect(middle(promptElement.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
     expect(getComputedStyle(found(canvasElement, '[data-plus]')).borderTopStyle).toBe('dashed')
   },
 }

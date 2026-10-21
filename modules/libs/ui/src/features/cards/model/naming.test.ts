@@ -17,30 +17,30 @@ import {
 
 /** A naming of the fields a stencil declares, with what it renamed. */
 const overFields = (fields: readonly string[]) => {
-  const renamed: (readonly [string, string])[] = []
+  const renamedPairs: (readonly [string, string])[] = []
   const naming = useNameEntry<Objection>({
     getName: (field) => field,
     getTakenNames: (field) => fields.filter((each) => each !== field),
     checkName: checkFieldName,
     rename: (field, name) => {
-      renamed.push([field, name])
+      renamedPairs.push([field, name])
     },
   })
-  return { naming, renamed }
+  return { naming, renamed: renamedPairs }
 }
 
 /** A naming of the faces a stencil shows, each under the name it carries. */
 const overFaces = (faces: ReadonlyMap<string, string>) => {
-  const renamed: (readonly [string, string])[] = []
+  const renamedPairs: (readonly [string, string])[] = []
   const naming = useNameEntry<HeadingObjection>({
     getName: (id) => faces.get(id) ?? '',
     getTakenNames: (id) => [...faces].filter(([each]) => each !== id).map(([, name]) => name),
     checkName: checkHeadingName,
     rename: (id, name) => {
-      renamed.push([id, name])
+      renamedPairs.push([id, name])
     },
   })
-  return { naming, renamed }
+  return { naming, renamed: renamedPairs }
 }
 
 /** A key struck in the box a name is typed in, which is what a break blurs. */
@@ -153,9 +153,9 @@ describe('useNameEntry', () => {
   it('consults on a commit the objection that was drawn', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Weight')
-    const rendered = naming.getObjection('Height')
+    const objection = naming.getObjection('Height')
     naming.commit('Height')
-    expect(rendered).toBe('taken')
+    expect(objection).toBe('taken')
     expect(naming.getObjection('Height')).toBeNull()
     expect(renamed).toEqual([])
   })

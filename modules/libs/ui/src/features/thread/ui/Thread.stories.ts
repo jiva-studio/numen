@@ -218,16 +218,16 @@ export const Selecting: Story = {
   ]),
   play: async ({ canvasElement }) => {
     const turns = canvasElement.querySelectorAll('.thread__turn')
-    const acquired = await dragAcross(
+    const acquiredItem = await dragAcross(
       getWordPosition(turns[1]!, 'damped'),
       getWordPosition(turns[3]!, 'vault'),
     )
-    if (acquired === null) return
+    if (acquiredItem === null) return
 
-    await expect(acquired).toContain('the driven one')
-    await expect(acquired).toContain('Then drop the rest')
-    await expect(acquired).toContain('Nine notes are left in the')
-    await expect(acquired).not.toContain('the harmonic one')
-    await expect(acquired).not.toContain('worth keeping')
+    await expect(acquiredItem).toContain('the driven one')
+    await expect(acquiredItem).toContain('Then drop the rest')
+    await expect(acquiredItem).toContain('Nine notes are left in the')
+    await expect(acquiredItem).not.toContain('the harmonic one')
+    await expect(acquiredItem).not.toContain('worth keeping')
   },
 }

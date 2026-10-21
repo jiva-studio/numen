@@ -161,12 +161,12 @@ type Corpora = keyof typeof CORPORA
 
 /** The one card of a corpus, laid out against the stencil that cuts it. */
 const createTile = (corpus: Corpus): Tile => {
-  const arranged = getGrid(
+  const cardGrid = getGrid(
     { cards: [corpus.card], sections: [], stencils: corpus.cut ? [corpus.cut] : [] },
     null,
   ).runs[0]?.tiles[0]
-  if (!arranged) throw new Error('a corpus holding no card')
-  return arranged
+  if (!cardGrid) throw new Error('a corpus holding no card')
+  return cardGrid
 }
 
 interface Knobs {
@@ -314,14 +314,14 @@ export const ACard: Story = {
 
     // It stands in the middle of the strip, and is said more quietly than what
     // the card holds.
-    const trimmed = found(canvasElement, '[data-cut-of]')
+    const cutElement = found(canvasElement, '[data-cut-of]')
     const middle = (each: Element): number => {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + box.width / 2)
     }
-    expect(middle(trimmed)).toBe(middle(header))
+    expect(middle(cutElement)).toBe(middle(header))
 
-    const response = Number.parseFloat(getComputedStyle(trimmed).fontSize)
+    const response = Number.parseFloat(getComputedStyle(cutElement).fontSize)
     const content = Number.parseFloat(
       getComputedStyle(found(canvasElement, '[data-value="Height"]')).fontSize,
     )
@@ -420,16 +420,16 @@ export const CutByNothing: Story = {
     const tile = found(canvasElement, '[data-card="w4h7p2ctm9"]')
 
     // The strip carries it, in the voice it names a stencil in.
-    const trimmed = found(canvasElement, '[data-cut-of]')
-    expect(trimmed.textContent?.trim()).toBe('Cut by no stencil')
+    const cutElement = found(canvasElement, '[data-cut-of]')
+    expect(cutElement.textContent?.trim()).toBe('Cut by no stencil')
     const label = found(canvasElement, '.card__field')
-    expect(getComputedStyle(trimmed).color).toBe(getComputedStyle(label).color)
+    expect(getComputedStyle(cutElement).color).toBe(getComputedStyle(label).color)
 
     // It is said once: the body carries what the vault found and nothing else.
     const response = [...tile.querySelectorAll('.card__objections')]
     expect(response).toHaveLength(1)
     expect(response[0]?.textContent).toContain('not a lone wikilink')
-    expect(getComputedStyle(trimmed).color).not.toBe(getComputedStyle(response[0] as Element).color)
+    expect(getComputedStyle(cutElement).color).not.toBe(getComputedStyle(response[0] as Element).color)
 
     // No heading stands over a body that holds something.
     expect(tile.querySelector('.card__silence')).toBeNull()
@@ -483,8 +483,8 @@ export const WhatIsWrongWithIt: Story = {
     const edge = (each: Element | null | undefined): number => {
       if (!each) throw new Error('nothing to measure')
       const box = each.getBoundingClientRect()
-      const rendered = getComputedStyle(each)
-      return box.left + Number.parseFloat(rendered.paddingInlineStart)
+      const renderedStyle = getComputedStyle(each)
+      return box.left + Number.parseFloat(renderedStyle.paddingInlineStart)
     }
     const label = found(canvasElement, '.card__value label')
     expect(Math.round(edge(underCards[0]))).toBe(Math.round(edge(boxes[1])))

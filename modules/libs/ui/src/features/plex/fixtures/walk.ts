@@ -80,7 +80,7 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
   // A node reachable two ways takes one relation, first match wins. The plex
   // refuses a neighbourhood that holds the same node twice.
   const related: PlexNode[] = []
-  const acquired = new Set<string>([id])
+  const visited = new Set<string>([id])
   for (const group of [
     createRelated(getParents(id), 'parent'),
     createRelated(getChildren(id), 'child'),
@@ -88,8 +88,8 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
     createRelated(getSiblings(id), 'sibling'),
   ]) {
     for (const node of group) {
-      if (acquired.has(node.id)) continue
-      acquired.add(node.id)
+      if (visited.has(node.id)) continue
+      visited.add(node.id)
       related.push(node)
     }
   }

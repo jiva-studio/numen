@@ -31,7 +31,7 @@ defineProps<{
   crumb: string
 }>()
 
-const typed = defineModel<string>({ required: true })
+const searchQuery = defineModel<string>({ required: true })
 
 const field = useTemplateRef<HTMLInputElement>('field')
 
@@ -56,7 +56,7 @@ defineExpose({ focus, select })
     </span>
     <input
       ref="field"
-      v-model="typed"
+      v-model="searchQuery"
       class="palette__field w-full bg-transparent"
       data-palette="field"
       type="text"

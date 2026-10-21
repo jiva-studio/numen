@@ -29,11 +29,11 @@ const group = (
 
 const setUp = (initial: PaletteGroup[]) => {
   const groups = ref<PaletteGroup[]>(initial)
-  const typed = ref('')
+  const searchQuery = ref('')
   const tellLit = vi.fn<(item: string) => void>()
   const tellChoice = vi.fn<(item: string, action: string) => void>()
-  const state = usePalettePlaces({ groups: () => groups.value, typed, tellLit, tellChoice })
-  return { groups, typed, tellLit, tellChoice, state }
+  const state = usePalettePlaces({ groups: () => groups.value, typed: searchQuery, tellLit, tellChoice })
+  return { groups, typed: searchQuery, tellLit, tellChoice, state }
 }
 
 const move = (x: number, y: number): PointerEvent => ({ clientX: x, clientY: y }) as PointerEvent

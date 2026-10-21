@@ -170,9 +170,9 @@ describe('a title cut to the line it is set on', () => {
     edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
   }
 
-  const placed = arrangePlex(sideways)
-  const byId = new Map(placed.nodes.map((node) => [node.id, node]))
-  const curve = placed.edges[0]!
+  const placedPlex = arrangePlex(sideways)
+  const byId = new Map(placedPlex.nodes.map((node) => [node.id, node]))
+  const curve = placedPlex.edges[0]!
   const arc = getLength(curve)
 
   const routeWithLabel = (measureLabel?: (label: string) => number) =>
@@ -411,9 +411,9 @@ describe('the run of a line between two boxes', () => {
     opacity: 1,
   })
 
-  const routing = createRouting(DEFAULT_OPTIONS)
+  const edgeRouting = createRouting(DEFAULT_OPTIONS)
 
-  const route = (from: PlacedNode, to: PlacedNode, using = routing) =>
+  const route = (from: PlacedNode, to: PlacedNode, using = edgeRouting) =>
     routeEdge(
       { from: from.id, to: to.id },
       new Map([from, to].map((node) => [node.id, node])),
@@ -464,7 +464,7 @@ describe('the run of a line between two boxes', () => {
   })
 
   it('takes the axis from the geometry where neither relation has one', () => {
-    const undeclared = { ...routing, getAxis: () => 'auto' as const }
+    const undeclared = { ...edgeRouting, getAxis: () => 'auto' as const }
 
     const down = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 200), undeclared)
     expect(down.fromPoint).toStrictEqual({ x: 0, y: 20 })
@@ -511,7 +511,7 @@ describe('the run of a line between two boxes', () => {
   })
 
   it('holds the leaving direction for a fraction of the gap between the gates', () => {
-    const half = { ...routing, curvature: 0.5, minReach: 0 }
+    const half = { ...edgeRouting, curvature: 0.5, minReach: 0 }
     const edge = route(box('a', 'child', 0, 0), box('b', 'child', 0, 200), half)
 
     // The gates are 160 apart, so each control stands 80 out of its gate.
@@ -524,9 +524,9 @@ describe('the run of a line between two boxes', () => {
     const b = box('b', 'child', 0, 200)
     const byId = new Map([a, b].map((node) => [node.id, node]))
 
-    expect(routeEdges([{ from: 'a', to: 'b' }], byId, routing)[0]!.opacity).toBe(1)
+    expect(routeEdges([{ from: 'a', to: 'b' }], byId, edgeRouting)[0]!.opacity).toBe(1)
     expect(
-      routeEdges([{ from: 'a', to: 'b' }], byId, { routing, opacity: () => 0.25 })[0]!.opacity,
+      routeEdges([{ from: 'a', to: 'b' }], byId, { routing: edgeRouting, opacity: () => 0.25 })[0]!.opacity,
     ).toBe(0.25)
   })
 })

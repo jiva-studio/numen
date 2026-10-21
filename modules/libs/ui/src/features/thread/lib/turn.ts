@@ -64,13 +64,13 @@ const placedByTurn = new WeakMap<Turn, PlacedTurn>()
 const placeTurn = (turn: Turn): PlacedTurn => {
   const recognized = placedByTurn.get(turn)
   if (recognized) return recognized
-  const placed: PlacedTurn = {
+  const placedTurn: PlacedTurn = {
     turn,
     voice: VOICES[turn.voice],
     state: turn.state ?? 'settled',
   }
-  placedByTurn.set(turn, placed)
-  return placed
+  placedByTurn.set(turn, placedTurn)
+  return placedTurn
 }
 
 /** The turns, with what is true of each where it is located. A turn keeps the entry it was first given. */

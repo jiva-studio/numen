@@ -96,7 +96,7 @@ const { drawnWidth } = usePageWidth(
 )
 
 /** Where one page is drawn, once a width has been settled on. */
-const drawing = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
+const getPictureUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
 
 /**
  * The row moved, so the page in front is whichever is under the viewport now. A
@@ -189,7 +189,7 @@ defineExpose({
           v-for="page in visiblePages"
           :key="page"
           :at="page"
-          :picture="drawing(page)"
+          :picture="getPictureUrl(page)"
           :highlights="highlights(page)"
           :other-highlights="otherHighlights(page)"
           :page="words.page"

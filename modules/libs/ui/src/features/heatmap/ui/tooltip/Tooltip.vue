@@ -35,7 +35,7 @@ const size = ref<Size>({ width: 0, height: 0 })
  * Across, it stands beside the thing it is about. Down, it begins where that
  * thing begins, and folds up from there at the foot of the window.
  */
-const placed = computed(() => ({
+const tooltipPosition = computed(() => ({
   x: getPlaceBeside({
     from: props.at.x,
     to: props.at.x + props.at.width,
@@ -55,8 +55,8 @@ const placed = computed(() => ({
 }))
 
 const tooltipStyle = computed(() => ({
-  insetInlineStart: `${placed.value.x}px`,
-  insetBlockStart: `${placed.value.y}px`,
+  insetInlineStart: `${tooltipPosition.value.x}px`,
+  insetBlockStart: `${tooltipPosition.value.y}px`,
 }))
 
 const measure = () => {

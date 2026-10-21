@@ -121,12 +121,12 @@ export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
 export function commit(workspace: Workspace, focus: NodeId): Workspace {
   const normalized = normalize(workspace)
   const panes = getPanes(normalized.root)
-  const retained =
+  const retainedBranch =
     panes.find((each) => each.id === focus) ??
     panes.find((each) => each.id === workspace.focus) ??
     panes[0]
 
-  return retained ? { ...normalized, focus: retained.id } : normalized
+  return retainedBranch ? { ...normalized, focus: retainedBranch.id } : normalized
 }
 
 export function mapPane(

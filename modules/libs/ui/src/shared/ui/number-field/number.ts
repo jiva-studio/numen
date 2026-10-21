@@ -18,8 +18,8 @@ const GROUPED = /^[+-]?[1-9]\d{0,2},\d{3}$/
 
 /** Whether more typing could still make a number of the text. */
 export const isPartialNumber = (text: string): boolean => {
-  const trimmed = text.trim()
-  return ON_ITS_WAY.test(trimmed) && !GROUPED.test(trimmed)
+  const cleanText = text.trim()
+  return ON_ITS_WAY.test(cleanText) && !GROUPED.test(cleanText)
 }
 
 /**
@@ -27,9 +27,9 @@ export const isPartialNumber = (text: string): boolean => {
  * is what a person types: no exponent, no hexadecimal, no word for infinity.
  */
 export const parseNumber = (text: string): number | null => {
-  const trimmed = text.trim()
-  if (trimmed === '' || !isPartialNumber(trimmed)) return null
-  const value = Number(trimmed.replace(',', '.'))
+  const cleanText = text.trim()
+  if (cleanText === '' || !isPartialNumber(cleanText)) return null
+  const value = Number(cleanText.replace(',', '.'))
   return Number.isFinite(value) ? value : null
 }
 
@@ -141,21 +141,21 @@ export const useNumberEntry = (
   getBounds: () => Bounds,
   onCommit: (value: number | null) => void,
 ): NumberEntry => {
-  const typed = ref(formatNumber(model.value))
+  const formattedValue = ref(formatNumber(model.value))
 
   /** The number the field last stood at rest at. Committing is what moves it. */
   let rested = model.value
 
-  const isInvalid = computed(() => checkInvalid(typed.value, getBounds))
-  const speechText = computed(() => (isInvalid.value ? typed.value.trim() : undefined))
+  const isInvalid = computed(() => checkInvalid(formattedValue.value, getBounds))
+  const speechText = computed(() => (isInvalid.value ? formattedValue.value.trim() : undefined))
   const inForce = computed(() => (model.value === null ? null : clamp(model.value, getBounds())))
 
-  watchNumberSync({ model, inForce, typed }, (now) => {
+  watchNumberSync({ model, inForce, typed: formattedValue }, (now) => {
     rested = now
   })
 
   const setText = (text: string): void => {
-    typed.value = text
+    formattedValue.value = text
     if (text.trim() === '') model.value = null
     else if (isAllowed(text, getBounds())) model.value = parseNumber(text)
   }
@@ -166,29 +166,29 @@ export const useNumberEntry = (
    * The field relies on whatever the caller holds once it has answered.
    */
   const commit = async (): Promise<void> => {
-    const value = parseNumber(typed.value)
+    const value = parseNumber(formattedValue.value)
     const now = value === null ? null : snapToBounds(value, getBounds())
     model.value = now
-    typed.value = formatNumber(now)
+    formattedValue.value = formatNumber(now)
     if (now !== rested) {
       rested = now
       onCommit(now)
     }
     await nextTick()
-    if (!isTextForValue(typed.value, model.value)) {
-      typed.value = formatNumber(model.value)
+    if (!isTextForValue(formattedValue.value, model.value)) {
+      formattedValue.value = formatNumber(model.value)
       rested = model.value
     }
   }
 
   const applyKey = (key: string, isDisabled: boolean): boolean => {
-    const stepped = stepForKey(key, parseNumber(typed.value) ?? model.value, getBounds())
+    const stepped = stepForKey(key, parseNumber(formattedValue.value) ?? model.value, getBounds())
     if (stepped === null) return false
     if (isDisabled) return true
     model.value = stepped
-    typed.value = formatNumber(stepped)
+    formattedValue.value = formatNumber(stepped)
     return true
   }
 
-  return { typed, isInvalid, speechText, setText, commit, applyKey }
+  return { typed: formattedValue, isInvalid, speechText, setText, commit, applyKey }
 }
