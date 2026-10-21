@@ -41,7 +41,7 @@ export interface ReaderRegistration {
   fileExtensions: string[]
   component: unknown
   title?: string
-  source?: 'note' | 'book' | 'recording' | 'url' | 'other' | string
+  source: 'note' | 'book' | 'recording' | 'url' | 'other'
   capabilities?: readonly string[]
   metadata?: Record<string, unknown>
 }

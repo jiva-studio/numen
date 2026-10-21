@@ -17,6 +17,7 @@ export function activate(context: PluginContext): void {
     fileExtensions: ['.pdf'],
     component: DocumentTab,
     title: 'PDF Reader',
+    source: 'book',
   })
 }
 

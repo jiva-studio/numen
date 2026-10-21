@@ -62,10 +62,6 @@ export interface PluginHostDeps {
   readonly tabActionHandlers?: Record<string, TabActionHandler>
   readonly onTabAction?: (action: string, at: string, ...args: unknown[]) => unknown
 
-  readonly onCustomCardAdded?: (
-    at: string,
-    values: readonly { field: string; text: string }[],
-  ) => void
   readonly readNote?:
     ((path: string) => Promise<{ body?: string; error?: string } | string | undefined>) | undefined
   readonly writeNote?: ((path: string, body: string) => Promise<void>) | undefined

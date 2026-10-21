@@ -18,6 +18,7 @@ describe('editor-markdown plugin lifecycle', () => {
         id: 'editor-markdown',
         fileExtensions: ['.md', '.markdown', '.txt', '.note'],
         title: 'Markdown Note Editor',
+        source: 'note',
       }),
     )
 

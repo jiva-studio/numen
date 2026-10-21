@@ -36,6 +36,7 @@ describe('plugin lifecycle', () => {
       id: 'custom-pdf',
       fileExtensions: ['.pdf'],
       component: {},
+      source: 'book',
     })
 
     expect(ctx.getRegisteredReaders()).toHaveLength(1)

@@ -10,6 +10,7 @@ export default definePlugin({
       fileExtensions: ['.epub'],
       component: BookTab,
       title: 'EPUB Reader',
+      source: 'book',
     })
   },
   deactivate() {

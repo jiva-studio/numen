@@ -24,6 +24,7 @@ export function activate(context: PluginContext): void {
     fileExtensions: ['.md', '.markdown', '.txt', '.note'],
     component: MarkdownNoteEditor,
     title: 'Markdown Note Editor',
+    source: 'note',
   })
 
   context.registerTabKind({

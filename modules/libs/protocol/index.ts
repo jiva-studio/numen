@@ -30,3 +30,5 @@ export * from './src/numen/v1/transcription_pb.js'
 export * from './src/numen/v1/embedding_pb.js'
 export * from './src/numen/v1/download_pb.js'
 export * from './src/numen/v1/completion_pb.js'
+export * from './capabilities.js'
+
