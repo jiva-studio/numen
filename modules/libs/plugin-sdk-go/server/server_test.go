@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -225,7 +226,6 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 
 	s := New(
 		WithPort(0),
-		WithToken(""),
 		WithStdout(io.Discard),
 		WithStdin(stdinReader),
 	)
@@ -238,6 +238,10 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 	go func() {
 		serveErrCh <- s.Serve()
 	}()
+
+	if _, err := io.WriteString(stdinWriter, "stdin-token\n"); err != nil {
+		t.Fatalf("write token to stdin: %v", err)
+	}
 
 	// Closing writer sends EOF to stdin reader
 	_ = stdinWriter.Close()
@@ -255,6 +259,7 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 func TestServerContextCancellation(t *testing.T) {
 	s := New(
 		WithPort(0),
+		WithToken("cancel-token"),
 		WithStdout(io.Discard),
 		WithStdin(nil),
 	)
@@ -330,7 +335,7 @@ func TestServerShutdownTimeoutError(t *testing.T) {
 
 	s := New(
 		WithPort(0),
-		WithToken(""),
+		WithToken("timeout-token"),
 		WithStdout(io.Discard),
 		WithStdin(nil),
 		WithShutdownTimeout(10*time.Millisecond),
@@ -410,7 +415,8 @@ func (p *protoRecorder) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
-	s := New(WithPort(0), WithToken(""), WithStdout(io.Discard), WithStdin(nil))
+	const testToken = "proto-token"
+	s := New(WithPort(0), WithToken(testToken), WithStdout(io.Discard), WithStdin(nil))
 	port, err := s.Listen()
 	if err != nil {
 		t.Fatalf("Listen failed: %v", err)
@@ -431,6 +437,7 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 		client := numenv1connect.NewPluginLifecycleServiceClient(
 			&http.Client{Transport: recorder},
 			fmt.Sprintf("http://127.0.0.1:%d", port),
+			connect.WithInterceptors(&bearerAuthInterceptor{token: testToken}),
 		)
 		resp, err := client.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
 		if err != nil {
@@ -449,7 +456,7 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 
 // A server that serves on a port runs what OnClose added when Serve returns.
 func TestServerRunsItsClosersWhenServeReturns(t *testing.T) {
-	s := New(WithPort(0), WithStdout(io.Discard), WithStdin(nil))
+	s := New(WithPort(0), WithToken("closer-token"), WithStdout(io.Discard), WithStdin(nil))
 	closed := 0
 	s.OnClose(func() { closed++ })
 	if _, err := s.Listen(); err != nil {
@@ -530,6 +537,72 @@ func TestRunServesAndTerminatesCleanly(t *testing.T) {
 
 	Run(func(*Server) error {
 		return nil
-	}, WithPort(0), WithStdout(io.Discard), WithStdin(strings.NewReader("")), WithSignals())
+	}, WithPort(0), WithStdout(io.Discard), WithStdin(strings.NewReader("clean-token\n")), WithSignals())
 }
 
+// A server reads its auth token from stdin when no token is configured.
+func TestServerReadsTokenFromStdin(t *testing.T) {
+	stdinReader, stdinWriter := io.Pipe()
+	token := "stdin-secret-token"
+	s := New(
+		WithPort(0),
+		WithStdout(io.Discard),
+		WithStdin(stdinReader),
+	)
+
+	port, err := s.Listen()
+	if err != nil {
+		t.Fatalf("Listen: %v", err)
+	}
+
+	serveErrCh := make(chan error, 1)
+	go func() {
+		serveErrCh <- s.Serve()
+	}()
+
+	if _, err := io.WriteString(stdinWriter, token+"\n"); err != nil {
+		t.Fatalf("write token: %v", err)
+	}
+	defer func() {
+		_ = stdinWriter.Close()
+		s.Lifecycle().TriggerShutdown()
+		<-serveErrCh
+	}()
+
+	client := numenv1connect.NewPluginLifecycleServiceClient(
+		http.DefaultClient,
+		fmt.Sprintf("http://127.0.0.1:%d", port),
+		connect.WithInterceptors(&bearerAuthInterceptor{token: token}),
+	)
+	resp, err := client.Ping(t.Context(), connect.NewRequest(&numenv1.PingRequest{}))
+	if err != nil {
+		t.Fatalf("Ping: %v", err)
+	}
+	if resp.Msg.GetStatus() != "ok" {
+		t.Errorf("status = %q, want 'ok'", resp.Msg.GetStatus())
+	}
+	if got := os.Getenv(tokenVar); got != token {
+		t.Errorf("os.Getenv(%s) = %q, want %q", tokenVar, got, token)
+	}
+}
+
+// A server refuses to start when the auth token is empty.
+func TestServerRejectsEmptyToken(t *testing.T) {
+	s := New(
+		WithPort(0),
+		WithStdout(io.Discard),
+		WithStdin(nil),
+	)
+	if err := s.Serve(); err == nil || !strings.Contains(err.Error(), "empty auth token") {
+		t.Fatalf("Serve with nil stdin = %v, want empty auth token", err)
+	}
+
+	s2 := New(
+		WithPort(0),
+		WithStdout(io.Discard),
+		WithStdin(strings.NewReader("   \n")),
+	)
+	if err := s2.Serve(); err == nil || !strings.Contains(err.Error(), "empty auth token") {
+		t.Fatalf("Serve with whitespace stdin = %v, want empty auth token", err)
+	}
+}

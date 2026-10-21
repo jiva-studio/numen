@@ -565,7 +565,7 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *Supervisor) {
 // acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
 func (h *Host) acquireRunningLocked(pluginID string, sup *Supervisor) (Endpoint, bool) {
 	endpoint := h.endpoints[pluginID]
-	if isEmptyEndpoint(endpoint) || !sup.Acquire(time.Now()) {
+	if isEmptyEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(time.Now()) {
 		return emptyEndpoint(), false
 	}
 	return endpoint, true
@@ -742,6 +742,9 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	if err != nil {
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("generate token: %w", err)
 	}
+	if token == "" {
+		return Endpoint{Host: "", Port: 0, Token: ""}, errors.New("empty auth token")
+	}
 
 	h.mu.RLock()
 	launcher := h.launcher
@@ -804,14 +807,9 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	return endpoint, nil
 }
 
-func (h *Host) defaultLauncher(
-	ctx context.Context,
-	p DiscoveredPlugin,
-	port int,
-	token string,
-) (*os.Process, io.ReadCloser, error) {
+func resolvePluginBinary(p DiscoveredPlugin) (string, error) {
 	if p.Manifest.Backend.Entrypoint == "" {
-		return nil, nil, errEmptyEntrypoint
+		return "", errEmptyEntrypoint
 	}
 
 	entrypoint := p.Manifest.Backend.Entrypoint
@@ -821,7 +819,20 @@ func (h *Host) defaultLauncher(
 
 	binPath, err := validateExecutablePath(p.Dir, entrypoint)
 	if err != nil {
-		return nil, nil, fmt.Errorf("validate plugin binary: %w", err)
+		return "", fmt.Errorf("validate plugin binary: %w", err)
+	}
+	return binPath, nil
+}
+
+func (h *Host) defaultLauncher(
+	ctx context.Context,
+	p DiscoveredPlugin,
+	port int,
+	token string,
+) (*os.Process, io.ReadCloser, error) {
+	binPath, err := resolvePluginBinary(p)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	h.mu.RLock()
@@ -838,7 +849,7 @@ func (h *Host) defaultLauncher(
 		return nil, nil, fmt.Errorf("validate plugin working directory: %w", err)
 	}
 
-	cmd := exec.CommandContext(context.WithoutCancel(ctx), binPath, getPluginArgs(port, token)...)
+	cmd := exec.CommandContext(context.WithoutCancel(ctx), binPath, getPluginArgs(port)...)
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
@@ -863,6 +874,14 @@ func (h *Host) defaultLauncher(
 		_ = stdin.Close()
 		_ = stdout.Close()
 		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
+	}
+
+	if _, err := io.WriteString(stdin, token+"\n"); err != nil {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+		_ = stdin.Close()
+		_ = stdout.Close()
+		return nil, nil, fmt.Errorf("write token: %w", err)
 	}
 
 	if err := applyProcessLimits(cmd.Process.Pid, limits); err != nil {
