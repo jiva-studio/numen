@@ -1,0 +1,10 @@
+# PDF Reader Plugin
+
+Standalone PDF document viewer and page renderer powered by PDFium.
+
+## Features
+
+- Renders PDF document pages and extracts textual outlines.
+- Serves `numen.v1.DocumentService`.
+- Provides frontend document reader interface.
+- Activates on `onFile:*.pdf`.
