@@ -5,7 +5,7 @@ NOTES    := modules/libs/notes
 UI       := modules/libs/ui
 WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
-PLUGIN_SDK := modules/libs/plugin-sdk
+PLUGIN_SDK := modules/libs/plugin-sdk-ts
 PLUGIN_SDK_GO := modules/libs/plugin-sdk-go
 # The base module of the Go plugin SDK and each feature module under it.
 PLUGIN_SDK_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard $(PLUGIN_SDK_GO)/go.mod $(PLUGIN_SDK_GO)/*/go.mod))

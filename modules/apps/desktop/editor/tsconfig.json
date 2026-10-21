@@ -15,8 +15,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@plugins/*": ["../../../plugins/*"],
-      "@numen/plugin-sdk": ["../../../libs/plugin-sdk/src/index.ts"],
-      "@numen/plugin-sdk/*": ["../../../libs/plugin-sdk/src/*"],
+      "@numen/plugin-sdk": ["../../../libs/plugin-sdk-ts/src/index.ts"],
+      "@numen/plugin-sdk/*": ["../../../libs/plugin-sdk-ts/src/*"],
       "@numen/protocol": ["../../../libs/protocol/index.ts"],
       "@numen/protocol/*": ["../../../libs/protocol/*"],
       "@numen/wire": ["../../../libs/wire/src/index.ts"],

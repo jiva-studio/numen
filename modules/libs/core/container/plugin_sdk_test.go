@@ -52,7 +52,7 @@ func TestWhatTheSDKModuleRulesRefuse(t *testing.T) {
 			t.Errorf("%s requires %s: refused is %v, want %v", one.mod, one.dep, got, one.isRefused)
 		}
 	}
-	if isSDK(numenModules + "libs/plugin-sdk") {
+	if isSDK(numenModules + "libs/plugin-sdk-ts") {
 		t.Error("the TypeScript SDK is taken for a module of the Go SDK")
 	}
 }

@@ -15,8 +15,8 @@ const modules = resolve(import.meta.dirname, '..')
 const ALIASES = {
   '@': resolve(modules, 'apps/desktop/editor/src'),
   '@plugins': import.meta.dirname,
-  '@numen/plugin-sdk/testing': resolve(modules, 'libs/plugin-sdk/src/testing/index.ts'),
-  '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk/src/index.ts'),
+  '@numen/plugin-sdk/testing': resolve(modules, 'libs/plugin-sdk-ts/src/testing/index.ts'),
+  '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk-ts/src/index.ts'),
   '@numen/protocol': resolve(modules, 'libs/protocol/index.ts'),
   '@numen/ui/styles.css': resolve(modules, 'libs/ui/dist/numen-ui.css'),
   '@numen/ui': resolve(modules, 'libs/ui/dist/index.js'),
