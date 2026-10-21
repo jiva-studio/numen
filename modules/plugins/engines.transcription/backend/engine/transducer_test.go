@@ -17,7 +17,7 @@ func answer(blank, token, step, steps int) []float32 {
 
 // The decoding says the tokens the joiner names and steps on by the number
 // beside them. A blank is a frame carrying nothing and is not said.
-func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
+func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 	const blank, steps = 3, 3
 	named := map[int][]float32{
 		0: answer(blank, 1, 2, steps),
@@ -57,7 +57,7 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 
 // A frame the joiner covers with nothing is still left behind, and a recording
 // of them ends.
-func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
+func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	const blank, steps = 3, 3
 	visited := 0
 	response, err := transducer{

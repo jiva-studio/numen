@@ -46,7 +46,7 @@ func makeFrames(t testing.TB, width int) map[string]*ort.Value {
 	return map[string]*ort.Value{outputFrames: tensor}
 }
 
-func TestDecodingOnTheRawRuntimeSaysTheSameTokensAsDecodingThroughTheLibrary(t *testing.T) {
+func TestDecodingOnTheRawRuntimeReturnsTheSameTokensAsDecodingThroughTheLibrary(t *testing.T) {
 	by := openCachedTranscriber(t)
 
 	for _, width := range []int{1, 2, 40, 120} {

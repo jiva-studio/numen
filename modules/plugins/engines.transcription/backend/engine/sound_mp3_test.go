@@ -156,7 +156,7 @@ func TestMP3IsDecodedToTheSamplesOfTheWholeOutput(t *testing.T) {
 
 // The memory an mp3 holds while it decodes follows the one channel it comes
 // out as.
-func TestMP3DecodeHoldsMemoryInProportionToOneChannel(t *testing.T) {
+func TestMP3DecodeContainsMemoryInProportionToOneChannel(t *testing.T) {
 	raw := encodeMP3(2000, 3)
 	moments := 2000 * 1152
 

@@ -55,7 +55,7 @@ func TestASpanTooShortIsNotOne(t *testing.T) {
 
 // Speech that runs on longer than one span may is cut, and the cut falls
 // where the speaker was quietest.
-func TestSpeechThatRunsOnIsCutWhereItIsQuietest(t *testing.T) {
+func TestSpeechThatRunsOnIsSplitWhereItIsQuietest(t *testing.T) {
 	scores := make([]float32, 16)
 	for i := range scores {
 		scores[i] = 1
@@ -126,7 +126,7 @@ func TestJoinShortSpansNonZeroOffset(t *testing.T) {
 }
 
 // A span exactly equal to the shortest bound is preserved.
-func TestASpanExactlyShortestIsKept(t *testing.T) {
+func TestASpanExactlyShortestIsCached(t *testing.T) {
 	scores := buildScores(10, 2, 3, 4)
 	got := getSpans(scores, 0.5, 2, 0, 100, 3)
 	if len(got) != 1 || got[0].From != 2 || got[0].To != 5 {

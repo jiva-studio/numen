@@ -28,7 +28,7 @@ func TestPiecesJoinIntoWords(t *testing.T) {
 	}
 }
 
-func TestTokensReadsTheFilePublishedBesideAModel(t *testing.T) {
+func TestTokensReadsTheFilePublishedAdjacentAModel(t *testing.T) {
 	at := t.TempDir() + "/tokens.txt"
 	if err := os.WriteFile(at, []byte("<unk> 0\n▁a 1\n▁b 2\n<blk> 3\n"), 0o644); err != nil {
 		t.Fatal(err)
