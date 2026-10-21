@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { openWorkspace, runPaletteCommand } from './support/workspace.js'
+import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
 test.describe('Note Creation and Wikilinks', () => {
   test('creates new note via command palette naming flow', async ({ page }) => {

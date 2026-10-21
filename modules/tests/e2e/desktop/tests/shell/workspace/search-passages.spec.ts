@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { openWorkspace } from './support/workspace.js'
+import { openWorkspace } from '../../support/workspace.js'
 
 test.describe('Full-Text Search and Passage Navigation', () => {
   test('searches vault for note keywords and displays grouped results', async ({ page }) => {

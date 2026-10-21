@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { openWorkspace, runPaletteCommand } from './support/workspace.js'
+import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
 test.describe('Plugin Settings and Configuration', () => {
   test('opens command palette and navigates to Settings tab', async ({ page }) => {
