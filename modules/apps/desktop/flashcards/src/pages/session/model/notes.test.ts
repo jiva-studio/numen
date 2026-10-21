@@ -99,7 +99,7 @@ describe('what is read belongs to the deck', () => {
   // A card answered while the asking is in flight moves the session to another
   // deck, and what comes back is then about the deck behind it.
   it('does not take an answer about the deck the session has left', async () => {
-    const pendingItem: (() => void)[] = []
+    const pendingCallbacks: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
     const target = useNotesPanel({
@@ -111,7 +111,7 @@ describe('what is read belongs to the deck', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
-          pendingItem.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
     })
@@ -123,7 +123,7 @@ describe('what is read belongs to the deck', () => {
     // The second deck is answered, and the first only afterwards.
     pendingItem[1]?.()
     await second
-    pendingItem[0]?.()
+    pendingCallbacks[0]?.()
     await first
 
     expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
@@ -131,7 +131,7 @@ describe('what is read belongs to the deck', () => {
 
   // A person must never read one deck's notes under another deck's card.
   it('holds nothing of the deck behind it while the next is being requested for', async () => {
-    const pendingItem: (() => void)[] = []
+    const pendingCallbacks: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
     const target = useNotesPanel({
@@ -143,13 +143,13 @@ describe('what is read belongs to the deck', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
-          pendingItem.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
     })
 
     const first = target.openPanel()
-    pendingItem[0]?.()
+    pendingCallbacks[0]?.()
     await first
 
     deck.value = 'decks/Trees.md'
@@ -207,7 +207,7 @@ describe('a link pressed in the card', () => {
 describe('the asking', () => {
   /** The panel over a window that answers each deck when the test says. */
   const slowPanel = () => {
-    const pendingItem: { deck: string; answer: () => void; refuse: () => void }[] = []
+    const pendingRequests: { deck: string; answer: () => void; refuse: () => void }[] = []
     const deck = ref('decks/Words.md')
     const notices: string[] = []
     const target = useNotesPanel({
@@ -217,7 +217,7 @@ describe('the asking', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: (_vault, of) =>
         new Promise((then, fail) =>
-          pendingItem.push({
+          pendingCallbacks.push({
             deck: of,
             answer: () => then({ notes: [createNeighbour({ path: of })], unread: 1 }),
             refuse: () => fail(new Error('out of reach')),

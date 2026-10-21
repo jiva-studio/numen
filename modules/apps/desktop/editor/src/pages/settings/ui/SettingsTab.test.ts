@@ -131,15 +131,15 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     props: { state: { installation } },
     attachTo: document.body,
   })
-  renderedElement.push(tab)
+  mountedWrappers.push(tab)
   return { recorded: isDone, written: content, recordedWrites: content, tab }
 }
 
 /** Every tab this file drew, put away between one test and the next. */
-const renderedElement: { unmount: () => void }[] = []
+const mountedWrappers: { unmount: () => void }[] = []
 
 afterEach(() => {
-  while (renderedElement.length) renderedElement.pop()?.unmount()
+  while (mountedWrappers.length) mountedWrappers.pop()?.unmount()
 })
 
 type Tab = ReturnType<typeof createTab>['tab']

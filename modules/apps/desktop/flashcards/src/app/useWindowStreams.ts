@@ -33,7 +33,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   let open = true
 
   /** What ends every call this window has in flight when it closes. */
-  const isListening = new AbortController()
+  const abortController = new AbortController()
 
   const follows = createFollower({
     isOpen: () => open,
@@ -47,7 +47,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // Whether a card can be asked about is the window's to know before a person
     // reaches for it, so it is asked once and the way in is drawn from it.
     void agentService
-      .getAgentState({}, { signal: isListening.signal })
+      .getAgentState({}, { signal: abortController.signal })
       .then((response) => {
         deps.unreachable.value = response.unreachable
       })
@@ -58,7 +58,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // without a person asking. A session is left alone: its cards were laid out
     // when it opened, and what a deck says now is read at the next one.
     void follows(
-      () => cards.watchReloads({}, { signal: isListening.signal }),
+      () => cards.watchReloads({}, { signal: abortController.signal }),
       async (response) => {
         // A message carrying no reload keeps the stream open and moves nothing.
         if (!response.reload) return
@@ -68,7 +68,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // What is being done behind the window, which is a vault read into the index.
     // It is a stream because an indexing begins without the page asking for one.
     void follows(
-      () => windowService.watchTasks({ window: WINDOW }, { signal: isListening.signal }),
+      () => windowService.watchTasks({ window: WINDOW }, { signal: abortController.signal }),
       (response) => {
         deps.setTasks(
           response.tasks.map((at) => ({
@@ -84,7 +84,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   })
   onUnmounted(() => {
     open = false
-    isListening.abort()
+    abortController.abort()
     deps.stop()
     window.removeEventListener('keydown', deps.onKeyDown)
   })

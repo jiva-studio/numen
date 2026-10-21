@@ -67,7 +67,7 @@ export interface SessionDeps {
 function useSessionCards() {
   const request = shallowRef<readonly CardFace[]>([])
   const at = ref(0)
-  const displayedItems = ref(false)
+  const isAnswerShown = ref(false)
   const answers = ref<string[]>([])
 
   const card = computed<CardFace | null>(() => request.value[at.value] ?? null)
@@ -78,7 +78,7 @@ function useSessionCards() {
   const reset = () => {
     request.value = []
     at.value = 0
-    displayedItems.value = false
+    isAnswerShown.value = false
     answers.value = []
   }
 
@@ -93,15 +93,15 @@ async function openSession(deps: {
   preset?: string
 }): Promise<{ run: string; cards: readonly CardFace[]; report: Report } | null> {
   try {
-    const openedTab = await deps.cards.startSession(
+    const startedSession = await deps.cards.startSession(
       deps.preset === undefined
         ? { vault: deps.id, deck: deps.deck }
         : { vault: deps.id, deck: deps.deck, preset: deps.preset },
     )
     return {
-      run: openedTab.run,
-      cards: openedTab.cards.map(createCardFace),
-      report: { unwritten: openedTab.unwritten, skipped: openedTab.skipped },
+      run: startedSession.run,
+      cards: startedSession.cards.map(createCardFace),
+      report: { unwritten: startedSession.unwritten, skipped: startedSession.skipped },
     }
   } catch (why) {
     deps.reportError(why)

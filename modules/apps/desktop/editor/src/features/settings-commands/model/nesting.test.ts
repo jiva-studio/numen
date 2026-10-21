@@ -92,14 +92,14 @@ describe('whether a node nests the headings of its note', () => {
 
   it('goes back to what the settings hold where the setting could not be written', async () => {
     const core = vault(true, 6, 'unreadable')
-    const notifiedCalls = writer()
-    const target = useNestingSetting(core, words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = useNestingSetting(core, words, mockWriter.write)
     await target.start()
 
     await target.choose(OFF)
 
     expect(target.isNesting.value).toBe(true)
-    expect(notifiedCalls.messagesText.at(-1)).toContain(words.unturned)
+    expect(mockWriter.messagesText.at(-1)).toContain(words.unturned)
   })
 })
 
@@ -153,14 +153,14 @@ describe('how many headings stand under a node', () => {
 
   it('goes back to what the settings hold where the count could not be written', async () => {
     const core = vault(true, 6, 'unreadable')
-    const notifiedCalls = writer()
-    const target = useNestingSetting(core, words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = useNestingSetting(core, words, mockWriter.write)
     await target.start()
 
     await target.chooseCount('3')
 
     expect(target.headings.value).toBe(6)
-    expect(notifiedCalls.messagesText.at(-1)).toContain(words.unturned)
+    expect(mockWriter.messagesText.at(-1)).toContain(words.unturned)
   })
 
   it('leaves the count out of a switch being turned', async () => {
@@ -186,23 +186,23 @@ describe('how many headings stand under a node', () => {
   })
 
   it('clears the message line before it writes a switch', async () => {
-    const notifiedCalls = writer()
-    const target = useNestingSetting(vault(true), words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = useNestingSetting(vault(true), words, mockWriter.write)
     await target.start()
 
     await target.choose(OFF)
 
-    expect(notifiedCalls.messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(mockWriter.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('says the failure of a switch as an error', async () => {
-    const notifiedCalls = writer()
-    const target = useNestingSetting(vault(true, 6, 'unreadable'), words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = useNestingSetting(vault(true, 6, 'unreadable'), words, mockWriter.write)
     await target.start()
 
     await target.choose(OFF)
 
-    expect(notifiedCalls.messages.at(-1)).toStrictEqual({
+    expect(mockWriter.messages.at(-1)).toStrictEqual({
       text: `${words.unturned} unreadable`,
       kind: 'error',
     })
@@ -240,23 +240,23 @@ describe('how many headings stand under a node', () => {
   })
 
   it('clears the message line before it writes a count', async () => {
-    const notifiedCalls = writer()
-    const target = useNestingSetting(vault(true), words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = useNestingSetting(vault(true), words, mockWriter.write)
     await target.start()
 
     await target.chooseCount('3')
 
-    expect(notifiedCalls.messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(mockWriter.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('says the failure of a count as an error', async () => {
-    const notifiedCalls = writer()
-    const target = useNestingSetting(vault(true, 6, 'unreadable'), words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = useNestingSetting(vault(true, 6, 'unreadable'), words, mockWriter.write)
     await target.start()
 
     await target.chooseCount('3')
 
-    expect(notifiedCalls.messages.at(-1)).toStrictEqual({
+    expect(mockWriter.messages.at(-1)).toStrictEqual({
       text: `${words.unturned} unreadable`,
       kind: 'error',
     })

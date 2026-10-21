@@ -109,8 +109,8 @@ function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
   }
 
   async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
-    for (let acquiredItem = 1; acquiredItem <= names; acquiredItem++) {
-      const createdItem = await createNote(createNumberedName(acquiredItem), folder, links)
+    for (let counter = 1; counter <= names; counter++) {
+      const createdItem = await createNote(createNumberedName(counter), folder, links)
       if (createdItem === 'occupied') continue
       return reportNoteResult(createdItem)
     }
@@ -209,7 +209,7 @@ const createNumberedName = (count: number): string =>
 
 /** The folder a note is in, so one made from it is filed beside it. */
 const getParentFolder = (path: string): string => {
-  const trimmedText = path.lastIndexOf('/')
+  const slashIndex = path.lastIndexOf('/')
   // Stryker disable next-line EqualityOperator: a path starting with slash produces empty string either way.
-  return trimmedText < 0 ? '' : path.slice(0, trimmedText)
+  return slashIndex < 0 ? '' : path.slice(0, slashIndex)
 }

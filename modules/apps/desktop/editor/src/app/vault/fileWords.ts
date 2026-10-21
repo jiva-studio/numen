@@ -7,7 +7,7 @@ import type { BookFormat, DocumentFormat, Entry, MoveResult, Source } from '@/en
 import { mapNoteType } from './noteWords'
 
 /** A source this window has no word for is a file it holds no source for. */
-const heldItem: Record<SourceKind, Source> = {
+const SOURCE_KINDS: Record<SourceKind, Source> = {
   [SourceKind.UNSPECIFIED]: 'other',
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
@@ -15,16 +15,16 @@ const heldItem: Record<SourceKind, Source> = {
   [SourceKind.URL]: 'url',
 }
 
-export const mapSourceKind = (of: SourceKind): Source => heldItem[of] ?? 'other'
+export const mapSourceKind = (of: SourceKind): Source => SOURCE_KINDS[of] ?? 'other'
 
 /** How a book at a path is drawn, in the words the window uses. */
-const renderedElement: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
+const BOOK_FORMATS: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
   [BookFormats.UNSPECIFIED]: undefined,
   [BookFormats.PDF]: 'pdf',
   [BookFormats.EPUB]: 'epub',
 }
 
-export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => renderedElement[of]
+export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => BOOK_FORMATS[of]
 
 /** One row of a listing, kept as the plain value the window carries it as. */
 export const mapEntry = (one: EntryMessage): Entry => ({

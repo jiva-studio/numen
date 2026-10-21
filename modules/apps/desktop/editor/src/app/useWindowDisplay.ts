@@ -149,7 +149,7 @@ export function useWindowDisplay(
   const reload = how.reload ?? (() => {})
   const display = createDisplayState()
   let open = true
-  const isListening = new AbortController()
+  const abortController = new AbortController()
 
   const ask = () => askDisplayState(core, display)
   const readInitialNote = () => readInitialNotePath(core, display)
@@ -192,7 +192,7 @@ export function useWindowDisplay(
     watch: streams.watch,
     close: () => {
       open = false
-      isListening.abort()
+      abortController.abort()
     },
   }
 }

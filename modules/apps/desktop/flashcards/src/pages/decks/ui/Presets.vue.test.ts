@@ -86,9 +86,9 @@ describe('what the goals come to today', () => {
       preset({ path: 'B.md', name: 'Pali' }),
       preset({ path: 'C.md', name: 'Greek' }),
     ])
-    const renderedElement = one.findAll('.presets__preset')
+    const presetElements = one.findAll('.presets__preset')
 
-    expect(renderedElement).toHaveLength(3)
+    expect(presetElements).toHaveLength(3)
     expect(renderedElement.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
       'Sanskrit',
       'Pali',
@@ -269,7 +269,7 @@ describe('what the goals come to today', () => {
       preset({ path: 'B.md', name: 'Stopped', paused: 'no cards a day' }),
       preset({ path: 'C.md', named: 0, faces: 0, settings: null }),
     ])
-    const renderedElement = one.findAll('.presets__preset')
+    const presetElements = one.findAll('.presets__preset')
 
     expect(renderedElement).toHaveLength(2)
     expect(renderedElement[1]?.text()).toBe('Stoppedno cards a day')

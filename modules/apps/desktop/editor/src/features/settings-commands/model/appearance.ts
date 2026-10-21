@@ -88,7 +88,7 @@ interface LoaderDeps {
 }
 
 function createAppearanceLoader(deps: LoaderDeps) {
-  let arrivalTimes = true
+  let isInitialLoad = true
   return async () => {
     let answer: Appearance
     try {
@@ -102,10 +102,10 @@ function createAppearanceLoader(deps: LoaderDeps) {
     deps.mode.value = answer.mode
     deps.settings.value = answer.sizes
     deps.bounds.value = answer.bounds
-    if (arrivalTimes) {
+    if (isInitialLoad) {
       deps.files.set(answer.applied, deps.served)
     }
-    arrivalTimes = false
+    isInitialLoad = false
   }
 }
 
@@ -119,7 +119,7 @@ function createThemeWatcher(deps: {
   wait: (ms: number) => Promise<unknown>
 }) {
   let open = true
-  const isListening = new AbortController()
+  const abortController = new AbortController()
   const follows = createFollower({
     isOpen: () => open,
     setLost: (removed) => {
@@ -130,7 +130,7 @@ function createThemeWatcher(deps: {
 
   const follow = () =>
     follows(
-      () => deps.core.watchThemes(isListening.signal),
+      () => deps.core.watchThemes(abortController.signal),
       async (names) => {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
@@ -141,7 +141,7 @@ function createThemeWatcher(deps: {
 
   const stop = () => {
     open = false
-    isListening.abort()
+    abortController.abort()
   }
 
   return { follow, stop }

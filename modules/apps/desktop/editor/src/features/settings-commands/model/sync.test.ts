@@ -87,14 +87,14 @@ describe('whether a title and a filename are one name', () => {
 
   it('goes back to what the settings hold where the setting could not be written', async () => {
     const core = vault(true, 'unreadable')
-    const notifiedCalls = writer()
-    const target = syncSetting(core, words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = syncSetting(core, words, mockWriter.write)
     await target.start()
 
     await target.choose(OFF)
 
     expect(target.kept.value).toBe(true)
-    expect(notifiedCalls.messagesText.at(-1)).toContain(words.unturned)
+    expect(mockWriter.messagesText.at(-1)).toContain(words.unturned)
   })
 
   it('writes the row chosen when the settings hold the other', async () => {
@@ -109,23 +109,23 @@ describe('whether a title and a filename are one name', () => {
   })
 
   it('clears the message line before it writes', async () => {
-    const notifiedCalls = writer()
-    const target = syncSetting(vault(true), words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = syncSetting(vault(true), words, mockWriter.write)
     await target.start()
 
     await target.choose(OFF)
 
-    expect(notifiedCalls.messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(mockWriter.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('says the failure as an error', async () => {
-    const notifiedCalls = writer()
-    const target = syncSetting(vault(true, 'unreadable'), words, notifiedCalls.write)
+    const mockWriter = writer()
+    const target = syncSetting(vault(true, 'unreadable'), words, mockWriter.write)
     await target.start()
 
     await target.choose(OFF)
 
-    expect(notifiedCalls.messages.at(-1)).toStrictEqual({
+    expect(mockWriter.messages.at(-1)).toStrictEqual({
       text: `${words.unturned} unreadable`,
       kind: 'error',
     })
