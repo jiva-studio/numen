@@ -63,7 +63,7 @@ Options:
   --check               Exit with code 1 if any findings exist (for CI / pre-commit)
   --category <name>     Filter by category:
                           fake-casts | participles | prepositions | metaphors |
-                          third-person | domain | tests | comments
+                          third-person | domain | tests | comments | gerunds | regular-participles
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
   --help, -h            Show this help message
 `)
@@ -127,6 +127,26 @@ const ANGLISH_IDIOMS = [
   'which is why this exists'
 ]
 
+// 7. Banned gerund variables (Rule 5 & 6 AGENTS.md)
+const BANNED_GERUND_IDENTIFIERS = [
+  'asking', 'reading', 'standing', 'waiting', 'holding', 'drawing',
+  'counting', 'resting', 'routing', 'listening', 'pointing', 'moving'
+]
+
+// 8. Banned regular -ed past participle variables
+const BANNED_REGULAR_PARTICIPLES = [
+  'typed', 'rendered', 'opened', 'displayed', 'placed', 'retained',
+  'notified', 'arranged', 'trimmed', 'stopped', 'acquired', 'arrived', 'renamed'
+]
+
+// 9. Narrative words in Go test function names
+const NARRATIVE_GO_TEST_WORDS = [
+  'Refusal', 'RatherThan', 'Says', 'Stands', 'Standing', 'Leaves', 'Leaving',
+  'Holds', 'Holding', 'Takes', 'Brings', 'Gives', 'Comes', 'Hands', 'Put',
+  'Gone', 'Written', 'Drawn', 'Seen', 'Done', 'Kept', 'Told', 'Cut',
+  'Beside', 'Under', 'Behind'
+]
+
 // Regex builders
 const RE_TS_FAKE_CASTS = [
   { name: 'voice: "said"', re: /\bvoice:\s*['"]said['"]/g },
@@ -142,6 +162,14 @@ const RE_TS_VAR_PARTICIPLE = new RegExp(
 
 const RE_TS_PARAM_PARTICIPLE = new RegExp(
   `\\b(?:function\\s+[a-zA-Z0-9_$]+\\s*\\(|\\(\\s*)(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*(?:[,:)]|=>)`,
+)
+
+const RE_TS_VAR_GERUND = new RegExp(
+  `\\b(?:const|let|var)\\s+(${BANNED_GERUND_IDENTIFIERS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
+)
+
+const RE_TS_VAR_REGULAR_PARTICIPLE = new RegExp(
+  `\\b(?:const|let|var)\\s+(${BANNED_REGULAR_PARTICIPLES.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
 )
 
 const RE_TS_VAR_PREPOSITION = new RegExp(
@@ -161,6 +189,14 @@ const RE_GO_VAR_PARTICIPLE = new RegExp(
   `\\b(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[A-Za-z*]|for\\s+(?:[a-zA-Z0-9_]+,\\s*)?(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=`,
 )
 
+const RE_GO_VAR_GERUND = new RegExp(
+  `\\b(${BANNED_GERUND_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_GERUND_IDENTIFIERS.join('|')})\\s+[A-Za-z*]`,
+)
+
+const RE_GO_VAR_REGULAR_PARTICIPLE = new RegExp(
+  `\\b(${BANNED_REGULAR_PARTICIPLES.join('|')})\\s*:=|var\\s+(${BANNED_REGULAR_PARTICIPLES.join('|')})\\s+[A-Za-z*]`,
+)
+
 const RE_GO_VAR_PREPOSITION = new RegExp(
   `\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[A-Za-z*]`,
 )
@@ -177,9 +213,8 @@ const RE_DOMAIN_TERM = new RegExp(
   `\\b(${FORBIDDEN_DOMAIN_TERMS.join('|')})\\b`,
 )
 
-const RE_TEST_TITLE = new RegExp(
-  `\\b(?:describe|it|test|func\\s+Test[A-Z0-9_]+)\\s*(?:\\(\\s*['"\`]([^'"\`]*)['"\`]|\\b([A-Z][a-zA-Z0-9_]*))`,
-)
+const RE_TS_TEST_TITLE = /\b(?:describe|it|test)\s*\(\s*['"`]([^'"`]*)['"`]/
+const RE_GO_TEST_FUNC = /^func\s+(Test[A-Za-z0-9_]+)\s*\(/
 
 const RE_ANGLISH_COMMENT = new RegExp(`(?:${ANGLISH_IDIOMS.join('|')})`)
 
@@ -192,6 +227,8 @@ const findings = {
   domainViolations: [],
   narrativeTestTitles: [],
   anglishComments: [],
+  gerundIdentifiers: [],
+  regularParticipleIdentifiers: [],
 }
 
 const stats = {
@@ -320,16 +357,39 @@ function scanFile(filePath) {
 
     // 7. Narrative test titles
     if (!filterCategory || filterCategory === 'tests') {
-      const testMatch = RE_TEST_TITLE.exec(line)
-      if (testMatch) {
-        const title = (testMatch[1] || testMatch[2] || '').trim()
-        const isNarrativeTitle =
-          ANGLISH_IDIOMS.some((id) => title.toLowerCase().includes(id)) ||
-          /\b(said|asked|beside|stands|tells|comes|hands|held)\b/i.test(title)
-        if (isNarrativeTitle) {
-          findings.narrativeTestTitles.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', title, text: trimmed })
-          if (isGo) stats.backendTotal++
-          else stats.frontendTotal++
+      if (isGo) {
+        const testMatch = RE_GO_TEST_FUNC.exec(line)
+        if (testMatch) {
+          const funcName = testMatch[1]
+          const matchedWord = NARRATIVE_GO_TEST_WORDS.find((w) => funcName.includes(w))
+          if (matchedWord && (!filterWord || filterWord === matchedWord.toLowerCase())) {
+            findings.narrativeTestTitles.push({
+              file: relPath,
+              line: lineNum,
+              lang: 'go',
+              title: funcName,
+              text: trimmed,
+            })
+            stats.backendTotal++
+          }
+        }
+      } else {
+        const testMatch = RE_TS_TEST_TITLE.exec(line)
+        if (testMatch) {
+          const title = (testMatch[1] || '').trim()
+          const isNarrativeTitle =
+            ANGLISH_IDIOMS.some((id) => title.toLowerCase().includes(id)) ||
+            /\b(said|asked|beside|stands|tells|comes|hands|held)\b/i.test(title)
+          if (isNarrativeTitle && (!filterWord || title.toLowerCase().includes(filterWord))) {
+            findings.narrativeTestTitles.push({
+              file: relPath,
+              line: lineNum,
+              lang: 'ts',
+              title,
+              text: trimmed,
+            })
+            stats.frontendTotal++
+          }
         }
       }
     }
@@ -345,6 +405,44 @@ function scanFile(filePath) {
         })
         if (isGo) stats.backendTotal++
         else stats.frontendTotal++
+      }
+    }
+
+    // 9. Gerund variables (Rule 5 & 6 AGENTS.md)
+    if (!isCommentLine && (!filterCategory || filterCategory === 'gerunds')) {
+      const m = isGo ? RE_GO_VAR_GERUND.exec(line) : RE_TS_VAR_GERUND.exec(line)
+      if (m) {
+        const word = m[1] || m[2]
+        if (!filterWord || filterWord === word) {
+          findings.gerundIdentifiers.push({
+            file: relPath,
+            line: lineNum,
+            lang: isGo ? 'go' : 'ts',
+            word,
+            text: trimmed,
+          })
+          if (isGo) stats.backendTotal++
+          else stats.frontendTotal++
+        }
+      }
+    }
+
+    // 10. Regular -ed participles as variables
+    if (!isCommentLine && (!filterCategory || filterCategory === 'regular-participles')) {
+      const m = isGo ? RE_GO_VAR_REGULAR_PARTICIPLE.exec(line) : RE_TS_VAR_REGULAR_PARTICIPLE.exec(line)
+      if (m) {
+        const word = m[1] || m[2]
+        if (!filterWord || filterWord === word) {
+          findings.regularParticipleIdentifiers.push({
+            file: relPath,
+            line: lineNum,
+            lang: isGo ? 'go' : 'ts',
+            word,
+            text: trimmed,
+          })
+          if (isGo) stats.backendTotal++
+          else stats.frontendTotal++
+        }
       }
     }
   }
@@ -405,7 +503,9 @@ const totalIssues =
   findings.thirdPersonFunctions.length +
   findings.domainViolations.length +
   findings.narrativeTestTitles.length +
-  findings.anglishComments.length
+  findings.anglishComments.length +
+  findings.gerundIdentifiers.length +
+  findings.regularParticipleIdentifiers.length
 
 const fileCounts = {}
 for (const cat of Object.keys(findings)) {
@@ -420,6 +520,18 @@ for (const item of findings.participleIdentifiers) {
   varBreakdown[item.word] = (varBreakdown[item.word] || 0) + 1
 }
 const sortedParticiples = Object.entries(varBreakdown).sort((a, b) => b[1] - a[1])
+
+const gerundBreakdown = {}
+for (const item of findings.gerundIdentifiers) {
+  gerundBreakdown[item.word] = (gerundBreakdown[item.word] || 0) + 1
+}
+const sortedGerunds = Object.entries(gerundBreakdown).sort((a, b) => b[1] - a[1])
+
+const regularParticipleBreakdown = {}
+for (const item of findings.regularParticipleIdentifiers) {
+  regularParticipleBreakdown[item.word] = (regularParticipleBreakdown[item.word] || 0) + 1
+}
+const sortedRegularParticiples = Object.entries(regularParticipleBreakdown).sort((a, b) => b[1] - a[1])
 
 const prepBreakdown = {}
 for (const item of findings.prepositionIdentifiers) {
@@ -457,6 +569,8 @@ console.log(`5. 3rd-person singular functions (carries, reads, names)  : ${findi
 console.log(`6. Forbidden domain terms (refusal, readings, spokenBy)   : ${findings.domainViolations.length}`)
 console.log(`7. Narrative test titles (storytelling in tests)          : ${findings.narrativeTestTitles.length}`)
 console.log(`8. Anglish comments (hands back, comes to, stands on)     : ${findings.anglishComments.length}`)
+console.log(`9. Gerund variables (asking, reading, standing, waiting) : ${findings.gerundIdentifiers.length}`)
+console.log(`10. Regular -ed participles (typed, rendered, opened)    : ${findings.regularParticipleIdentifiers.length}`)
 console.log('----------------------------------------------------------------------')
 console.log(`FRONTEND VIOLATIONS (TypeScript / Vue)                    : ${stats.frontendTotal}`)
 console.log(`BACKEND VIOLATIONS (Go)                                   : ${stats.backendTotal}`)
@@ -466,6 +580,22 @@ console.log('===================================================================
 if (sortedParticiples.length > 0) {
   console.log('Top Participle Identifiers:')
   for (const [word, count] of sortedParticiples.slice(0, 15)) {
+    console.log(`  - ${word.padEnd(16)}: ${count}`)
+  }
+  console.log('')
+}
+
+if (sortedGerunds.length > 0) {
+  console.log('Top Gerund Identifiers (Rule 5 & 6 AGENTS.md):')
+  for (const [word, count] of sortedGerunds.slice(0, 15)) {
+    console.log(`  - ${word.padEnd(16)}: ${count}`)
+  }
+  console.log('')
+}
+
+if (sortedRegularParticiples.length > 0) {
+  console.log('Top Regular Participle Identifiers:')
+  for (const [word, count] of sortedRegularParticiples.slice(0, 15)) {
     console.log(`  - ${word.padEnd(16)}: ${count}`)
   }
   console.log('')
