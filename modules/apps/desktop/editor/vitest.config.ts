@@ -17,7 +17,7 @@ const alias = {
   '@': fileURLToPath(new URL('./src', import.meta.url)),
   '@plugins': fileURLToPath(new URL('../../../plugins', import.meta.url)),
   '@numen/plugin-sdk': fileURLToPath(
-    new URL('../../../libs/plugin-sdk/src/index.ts', import.meta.url),
+    new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
   ),
   '@numen/protocol': fileURLToPath(new URL('../../../libs/protocol/index.ts', import.meta.url)),
   '@numen/wire': fileURLToPath(new URL('../../../libs/wire/index.ts', import.meta.url)),

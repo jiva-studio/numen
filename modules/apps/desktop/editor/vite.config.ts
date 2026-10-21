@@ -10,10 +10,14 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@plugins': fileURLToPath(new URL('../../../plugins', import.meta.url)),
-      '@numen/plugin-sdk': fileURLToPath(new URL('../../../libs/plugin-sdk/src/index.ts', import.meta.url)),
+      '@numen/plugin-sdk': fileURLToPath(
+        new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
+      ),
       '@numen/protocol': fileURLToPath(new URL('../../../libs/protocol/index.ts', import.meta.url)),
       '@numen/wire': fileURLToPath(new URL('../../../libs/wire/index.ts', import.meta.url)),
-      '@numen/ui/styles.css': fileURLToPath(new URL('../../../libs/ui/dist/numen-ui.css', import.meta.url)),
+      '@numen/ui/styles.css': fileURLToPath(
+        new URL('../../../libs/ui/dist/numen-ui.css', import.meta.url),
+      ),
       '@numen/ui': fileURLToPath(new URL('../../../libs/ui/dist/index.js', import.meta.url)),
     },
   },
