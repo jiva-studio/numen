@@ -1,0 +1,72 @@
+name: Architecture
+
+# Verification of architectural invariants and layer boundaries across libraries,
+# native/frontend plugins, and desktop applications.
+#
+# Libraries answer to hexagonal isolation, pure domains, and depguard rules.
+# Plugins answer to platform sandboxing, non-leakage, and contract boundaries.
+# Applications answer to Feature-Sliced Design (FSD) layer hierarchy.
+on:
+  pull_request:
+    paths:
+      - "modules/**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "Makefile"
+      - ".github/workflows/architecture.yml"
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+    paths:
+      - "modules/**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "Makefile"
+      - ".github/workflows/architecture.yml"
+
+concurrency:
+  group: architecture-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  layers:
+    name: Layers (${{ matrix.scope }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        scope: [libs, plugins, apps]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/core/go.mod
+          cache-dependency-path: |
+            modules/libs/core/go.sum
+            modules/libs/notes/go.sum
+            modules/libs/plugin-sdk-go/go.sum
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - name: Install golangci-lint
+        if: matrix.scope == 'libs'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.14.0
+
+      - name: Validate architectural layer boundaries (${{ matrix.scope }})
+        run: make check_layers target=${{ matrix.scope }}

@@ -13,6 +13,8 @@ on:
       - "!modules/libs/notes/**/*.md"
       - "modules/libs/protocol/**"
       - "!modules/libs/protocol/**/*.md"
+      - "modules/libs/plugin-sdk-go/**"
+      - "!modules/libs/plugin-sdk-go/**/*.md"
       - "tests/**"
       - "!tests/**/*.md"
       - "!docs/**"
@@ -176,6 +178,14 @@ jobs:
           fi
         working-directory: modules/libs/protocol
 
+      - name: Verify Go formatting (Plugin SDK Go)
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+        working-directory: modules/libs/plugin-sdk-go
+
       - name: Run go vet (Core)
         run: go vet ./...
         working-directory: modules/libs/core
@@ -187,6 +197,10 @@ jobs:
       - name: Run go vet (Protocol)
         run: go vet ./...
         working-directory: modules/libs/protocol
+
+      - name: Run go vet (Plugin SDK Go)
+        run: go vet ./...
+        working-directory: modules/libs/plugin-sdk-go
 
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
@@ -204,6 +218,12 @@ jobs:
         with:
           version: v2.14.0
           working-directory: modules/libs/protocol
+          args: --timeout 10m
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
+          working-directory: modules/libs/plugin-sdk-go
           args: --timeout 10m
 
       - uses: ./.github/actions/govulncheck
