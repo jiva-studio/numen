@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // Endpoint is where the agent reaches the tools of this vault over MCP.
@@ -15,11 +17,10 @@ type Endpoint struct {
 // setupAntigravityHome creates a temporary HOME folder with symlinked configs. Its MCP servers are the
 // vault's tools and those the user configured, or none at all where there are no tools.
 func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
-	tempHome, err := os.MkdirTemp("", "numen-antigravity-*")
+	tempHome, cleanup, err := agentrun.CreateTempDir("numen-antigravity-*")
 	if err != nil {
 		return "", func() {}, err
 	}
-	cleanup := func() { _ = os.RemoveAll(tempHome) }
 
 	realHome, err := os.UserHomeDir()
 	if err != nil {

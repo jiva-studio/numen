@@ -19,9 +19,9 @@ func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := antigravitySearchPlaces
-	antigravitySearchPlaces = nil
-	t.Cleanup(func() { antigravitySearchPlaces = was })
+	was := antigravityProgram.Places
+	antigravityProgram.Places = nil
+	t.Cleanup(func() { antigravityProgram.Places = was })
 }
 
 // The program list names Antigravity, installed where it is found, with the models the program lists: none here.
