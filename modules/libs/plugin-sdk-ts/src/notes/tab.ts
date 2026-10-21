@@ -164,7 +164,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
       effects: [],
     }
   }
-  const written: Tab = {
+  const content: Tab = {
     ...tab,
     written: tab.pendingWrite,
     filePath: answer.at,
@@ -172,7 +172,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
     since: null,
     isDeleted: false,
   }
-  return tab.hasPendingWrite ? beginWrite(written, getBaseline(written)) : keepTab(written)
+  return tab.hasPendingWrite ? beginWrite(content, getBaseline(content)) : keepTab(content)
 }
 
 const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[]): Transition => {
