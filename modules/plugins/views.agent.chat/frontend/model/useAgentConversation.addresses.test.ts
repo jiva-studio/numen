@@ -30,10 +30,10 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
     finish: () => {},
   }
   const resolved: (readonly string[])[] = []
-  const opened: [string, readonly Span[]][] = []
+  const openedCalls: [string, readonly Span[]][] = []
   const besideItems: string[] = []
   const state = useAgentConversation(conversation, {
-    openFileAt: (path, ...spans) => opened.push([path, spans]),
+    openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
     openFileBeside: (path) => besideItems.push(path),
     resolve: async (content) => {
       resolved.push(content)
@@ -41,7 +41,7 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
     },
     unreachable: () => '',
   })
-  return { state, turns, resolved, opened, beside }
+  return { state, turns, resolved, opened: openedCalls, beside: besideItems }
 }
 
 /** Lets the lookups come back and the turns be drawn. */

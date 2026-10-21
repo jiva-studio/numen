@@ -133,11 +133,11 @@ function useReasoningSelection(
   /** The level chosen or kept, else the default of the model; empty where the model offers none. */
   const selectedReasoningId = computed(() => {
     const agentId = selection.selectedAgentId.value
-    const retained =
+    const configuredReasoning =
       (selected.value.agentId === agentId ? selected.value.id : '') ||
       getKept(deps, getReasoningAt(agentId))
     const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
-    if (offers(retained)) return retained
+    if (offers(configuredReasoning)) return configuredReasoning
     const byDefault = selectedOption.value?.defaultReasoning ?? ''
     return offers(byDefault) ? byDefault : ''
   })

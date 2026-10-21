@@ -16,16 +16,16 @@ const window = (options: HostOptions = {}) => {
   const conversations: { said: ReturnType<typeof ref<Turn[]>>; stopped: string[] }[] = []
   const chats = createAgentKind(fixture.host, (deps) => {
     const turn = ref<Turn[]>([])
-    const stopped: string[] = []
+    const stopCalls: string[] = []
     const conversation: Conversation = {
       turns: turn,
       isWorking: ref(false),
       ask: async () => {},
       getSourceLocation: () => null,
-      stop: () => void stopped.push('stop'),
-      finish: () => void stopped.push('finish'),
+      stop: () => void stopCalls.push('stop'),
+      finish: () => void stopCalls.push('finish'),
     }
-    conversations.push({ said: turn, stopped })
+    conversations.push({ said: turn, stopped: stopCalls })
     return useAgentConversation(conversation, deps)
   })
   const open = (): AgentTabState => chats.kind.open!('', `${AGENT}:1`)

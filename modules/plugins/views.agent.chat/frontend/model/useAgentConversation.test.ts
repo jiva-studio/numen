@@ -16,7 +16,7 @@ type Model = AgentModel & { readonly namedAt: readonly string[] }
 /** A conversation that records what it was asked, and where its lines point. */
 const createConversation = (locations: Record<string, { path: string; span: Span }> = {}) => {
   const request: [string, string][] = []
-  const stopped: string[] = []
+  const stopCalls: string[] = []
   const turn = ref<Turn[]>([])
   const conversation: Conversation = {
     turns: turn,
@@ -25,10 +25,10 @@ const createConversation = (locations: Record<string, { path: string; span: Span
       request.push([text, focus])
     },
     getSourceLocation: (turn) => locations[turn] ?? null,
-    stop: () => stopped.push('stop'),
-    finish: () => stopped.push('finish'),
+    stop: () => stopCalls.push('stop'),
+    finish: () => stopCalls.push('finish'),
   }
-  return { conversation, said: turn, asked: request, stopped }
+  return { conversation, said: turn, asked: request, stopped: stopCalls }
 }
 
 /**
@@ -40,16 +40,16 @@ const tab = (
   notes: Record<string, string> = {},
 ) => {
   const fake = createConversation(locations)
-  const opened: [string, readonly Span[]][] = []
+  const openedCalls: [string, readonly Span[]][] = []
   const besideItems: string[] = []
   const state = useAgentConversation(fake.conversation, {
-    openFileAt: (path, ...spans) => opened.push([path, spans]),
+    openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
     openFileBeside: (path) => besideItems.push(path),
     resolve: async (content) =>
       new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
     unreachable: () => '',
   })
-  return { state, opened, beside, ...fake }
+  return { state, opened: openedCalls, beside: besideItems, ...fake }
 }
 
 /** A setting the window lists, found at the place given. */
@@ -257,8 +257,8 @@ describe('agent model selection and settings', () => {
     ]
     await nextTick()
 
-    const displayed = state.modelOptions.value.map((o) => [o.agentTitle, o.modelId, o.modelTitle])
-    expect(displayed).toEqual([
+    const optionsList = state.modelOptions.value.map((o) => [o.agentTitle, o.modelId, o.modelTitle])
+    expect(optionsList).toEqual([
       ['Zeta Agent', 'zeta-small', 'Zeta Small'],
       ['Zeta Agent', 'zeta-large', 'Zeta Large'],
     ])
