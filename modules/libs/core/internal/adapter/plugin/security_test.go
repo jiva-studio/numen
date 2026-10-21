@@ -153,4 +153,86 @@ func TestValidateExecutablePath(t *testing.T) {
 			t.Fatalf("expected errEmptyEntrypoint, got %v", err)
 		}
 	})
+
+	t.Run("symlink escaping plugin directory rejected", func(t *testing.T) {
+		pluginDir := createPluginTestDir(t, "plugin-test-*")
+		outsideDir := createPluginTestDir(t, "outside-test-*")
+
+		outsideBin := filepath.Join(outsideDir, "target.bin")
+		if err := os.WriteFile(outsideBin, []byte("#!/bin/sh\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+
+		symlink := filepath.Join(pluginDir, "escape.bin")
+		if err := os.Symlink(outsideBin, symlink); err != nil {
+			t.Fatal(err)
+		}
+
+		_, err := validateExecutablePath(pluginDir, "escape.bin")
+		if !errors.Is(err, errEntrypointEscape) {
+			t.Fatalf("expected errEntrypointEscape, got %v", err)
+		}
+	})
+
+	t.Run("symlink pointing into system temp directory rejected", func(t *testing.T) {
+		pluginDir := createPluginTestDir(t, "plugin-test-*")
+
+		tempFile := filepath.Join(t.TempDir(), "evil.bin")
+		if err := os.WriteFile(tempFile, []byte("#!/bin/sh\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+
+		symlink := filepath.Join(pluginDir, "temp-link.bin")
+		if err := os.Symlink(tempFile, symlink); err != nil {
+			t.Fatal(err)
+		}
+
+		_, err := validateExecutablePath(pluginDir, "temp-link.bin")
+		if !errors.Is(err, errProhibitedTempDir) {
+			t.Fatalf("expected errProhibitedTempDir, got %v", err)
+		}
+	})
+
+	t.Run("symlink inside plugin directory accepted", func(t *testing.T) {
+		pluginDir := createPluginTestDir(t, "plugin-test-*")
+
+		realBin := filepath.Join(pluginDir, "actual.bin")
+		if err := os.WriteFile(realBin, []byte("#!/bin/sh\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+
+		symlink := filepath.Join(pluginDir, "link.bin")
+		if err := os.Symlink("actual.bin", symlink); err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := validateExecutablePath(pluginDir, "link.bin")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		realAbs, err := filepath.EvalSymlinks(realBin)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != realAbs {
+			t.Fatalf("got %s, want %s", got, realAbs)
+		}
+	})
+}
+
+func createPluginTestDir(t *testing.T, pattern string) string {
+	t.Helper()
+	//nolint:usetesting // plugin directories inside system temporary directory are rejected by validateExecutablePath
+	dir, err := os.MkdirTemp(".", pattern)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = os.RemoveAll(dir)
+	})
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return abs
 }
