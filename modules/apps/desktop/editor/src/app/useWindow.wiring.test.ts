@@ -27,7 +27,7 @@ vi.mock('@/entities/tab', () => ({
     h.args.openers = args
     return h.f.tabOpeners
   },
-  useWindowTabs: () => h.f.held,
+  useWindowTabs: () => h.f.windowTabs,
 }))
 vi.mock('./useTabSync', () => ({ useTabSync: () => ({ name: 'tabSync' }) }))
 vi.mock('./useNoteEditors', () => ({
@@ -100,7 +100,7 @@ beforeEach(() => {
     log: { getWriter: vi.fn(() => writer) },
     tabLinks: { removeClosedTab: vi.fn() },
     tabOpeners: { openFileAt: vi.fn() },
-    held: {
+    windowTabs: {
       layout: ref(null),
       tabs: ref<{ id: string; title: string }[]>([]),
       handle: { front: () => front.value },
@@ -221,7 +221,7 @@ describe('what the window answers about the tab in front', () => {
 
   it('stands over nothing where the tab in front is not held', () => {
     front.value = { id: 'gone', kind: createKind({ file: 'a.md' }), state: {} }
-    h.f.held.getTab.mockReturnValue(undefined)
+    h.f.windowTabs.getTab.mockReturnValue(undefined)
     const window = useWindow()
 
     expect(window.getTarget()).toMatchObject({ tab: 'gone', path: '', title: '', file: '' })
@@ -340,8 +340,8 @@ describe('what the window knows of a note', () => {
 
   describe('in a tab of a kind that edits files', () => {
     const stand = () => {
-      h.f.held.tabs.value = [{ id: 'deck:a', title: 'Animals' }]
-      h.f.held.getTab.mockReturnValue({
+      h.f.windowTabs.tabs.value = [{ id: 'deck:a', title: 'Animals' }]
+      h.f.windowTabs.getTab.mockReturnValue({
         state: { path: 'a.md' },
         kind: { flushPending: () => Promise.resolve(), getOpenTab: () => ({ path: 'a.md' }) },
       })
@@ -371,11 +371,11 @@ describe('a tab closed', () => {
     window.closeTab('t1')
 
     expect(h.f.tabLinks.removeClosedTab).toHaveBeenCalledWith('t1')
-    expect(h.f.held.releaseTab).toHaveBeenCalledWith('t1')
+    expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith('t1')
   })
 
   it('calls the hold where the tab was not released', () => {
-    h.f.held.releaseTab.mockReturnValue(false)
+    h.f.windowTabs.releaseTab.mockReturnValue(false)
     const window = useWindow()
     const hold = vi.fn()
 
@@ -394,7 +394,7 @@ describe('a tab closed', () => {
   })
 
   it('needs no hold where the tab was not released', () => {
-    h.f.held.releaseTab.mockReturnValue(false)
+    h.f.windowTabs.releaseTab.mockReturnValue(false)
     const window = useWindow()
 
     expect(() => window.closeTab('t1')).not.toThrow()
@@ -419,7 +419,7 @@ describe('the window started and closed', () => {
 
     expect(h.f.display.close).toHaveBeenCalledOnce()
     expect(h.f.editing.close).toHaveBeenCalledOnce()
-    expect(h.f.held.close).toHaveBeenCalledOnce()
+    expect(h.f.windowTabs.close).toHaveBeenCalledOnce()
     expect(h.f.settings.close).toHaveBeenCalledOnce()
   })
 })
@@ -430,30 +430,30 @@ describe('a preset opened', () => {
 
   it('is asked of the kinds of the window with the type the vault names the file', async () => {
     mockFileKind('deck')
-    h.f.held.resolveCommand.mockResolvedValue({ ok: true, kind: 'preset', at: 'Presets/Fast.md' })
+    h.f.windowTabs.resolveCommand.mockResolvedValue({ ok: true, kind: 'preset', at: 'Presets/Fast.md' })
     useWindow()
 
     await h.args.commands.openPreset('a.md')
 
-    expect(h.f.held.resolveCommand).toHaveBeenCalledWith('a.md', 'preset', 'deck')
-    expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('preset', 'Presets/Fast.md')
+    expect(h.f.windowTabs.resolveCommand).toHaveBeenCalledWith('a.md', 'preset', 'deck')
+    expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('preset', 'Presets/Fast.md')
   })
 
   it('says why it leads nowhere', async () => {
     mockFileKind('deck')
-    h.f.held.resolveCommand.mockResolvedValue({ ok: false, text: 'no preset', severity: 'caution' })
+    h.f.windowTabs.resolveCommand.mockResolvedValue({ ok: false, text: 'no preset', severity: 'caution' })
     useWindow()
 
     await h.args.commands.openPreset('a.md')
 
     expect(h.f.writer).toHaveBeenCalledWith('no preset', 'caution')
-    expect(h.f.held.openTabOfKind).not.toHaveBeenCalled()
+    expect(h.f.windowTabs.openTabOfKind).not.toHaveBeenCalled()
   })
 })
 
 describe('the layout started with an initial tab', () => {
   it('opens tab of kind with at payload from URL search params', async () => {
-    h.f.held.openTabOfKind.mockResolvedValue('note:hello.md')
+    h.f.windowTabs.openTabOfKind.mockResolvedValue('note:hello.md')
     const originalLocation = globalThis.location
     try {
       // @ts-expect-error mocking location for test
@@ -465,8 +465,8 @@ describe('the layout started with an initial tab', () => {
 
       await h.args.bootstrap.startLayout()
 
-      expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('note', 'hello.md')
-      expect(h.f.held.layout.value).toEqual({
+      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('note', 'hello.md')
+      expect(h.f.windowTabs.layout.value).toEqual({
         root: { kind: 'pane', id: 'main', tabs: ['note:hello.md'], active: 'note:hello.md' },
         axis: 'horizontal',
         focus: 'main',

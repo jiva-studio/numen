@@ -9,7 +9,7 @@ import { write, type SettingEdit } from '@/entities/settings'
 
 export interface CommandDepsOptions {
   core: VaultCore
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
   making: NoteCreator
   made: ReturnType<typeof createFileCreators>
   setVaultName: (vault: VaultRef) => void
@@ -88,7 +88,7 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
 }
 
 function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goes'] {
-  const { files, travel, leavePath, agents, held, openPreset, getOpeningNote, search } = options
+  const { files, travel, leavePath, agents, windowTabs, openPreset, getOpeningNote, search } = options
   return {
     revealPath: (path) => void files().revealPath(path),
     travel: async (path) => {
@@ -98,9 +98,9 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goe
       await leavePath(from, to)
     },
     getOpeningNote,
-    openTab: (kind) => void held.openTabOfKind(kind),
+    openTab: (kind) => void windowTabs.openTabOfKind(kind),
     openPreset: (path) => openPreset(path),
-    closeTab: (tab) => held.requestClose(tab),
+    closeTab: (tab) => windowTabs.requestClose(tab),
     ask: (text) => void agents().askQuestion(text),
     search: search ?? (() => {}),
   }
@@ -150,10 +150,10 @@ function tabMatchesPath(
   return target?.file === path || target?.path === path
 }
 
-function findHeldTabAt(held: ReturnType<typeof useWindowTabs>, path: string): string | null {
-  if (!path || !held?.tabs?.value || typeof held.getTab !== 'function') return null
-  for (const tab of held.tabs.value) {
-    if (tabMatchesPath(held.getTab(tab.id), path)) return tab.id
+function findHeldTabAt(windowTabs: ReturnType<typeof useWindowTabs>, path: string): string | null {
+  if (!path || !windowTabs?.tabs?.value || typeof windowTabs.getTab !== 'function') return null
+  for (const tab of windowTabs.tabs.value) {
+    if (tabMatchesPath(windowTabs.getTab(tab.id), path)) return tab.id
   }
   return null
 }
@@ -162,11 +162,11 @@ function findHeldTabAt(held: ReturnType<typeof useWindowTabs>, path: string): st
  * The open files a command reaches: those the note editors hold, and those a
  * kind of tab answers for.
  */
-export function createCommandNotes(reached: Notes, held: ReturnType<typeof useWindowTabs>): Notes {
-  const getTab = (id: string) => held?.getTab?.(id) ?? null
+export function createCommandNotes(reached: Notes, windowTabs: ReturnType<typeof useWindowTabs>): Notes {
+  const getTab = (id: string) => windowTabs?.getTab?.(id) ?? null
   return {
     ...reached,
-    getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findHeldTabAt(held, path),
+    getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findHeldTabAt(windowTabs, path),
     getPath: (id: string) => {
       const path = reached.getPath(id)
       if (path !== id) return path
@@ -184,13 +184,13 @@ export function createCommandNotes(reached: Notes, held: ReturnType<typeof useWi
     },
     close: (id: string) => {
       reached?.close?.(id)
-      held?.requestClose?.(id)
+      windowTabs?.requestClose?.(id)
     },
   }
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, making, made, setVaultName, reload, reached, held, runs, writeMessage } = options
+  const { core, making, made, setVaultName, reload, reached, windowTabs, runs, writeMessage } = options
 
   return {
     files: createFileCommands(core, making),
@@ -203,7 +203,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     },
     goes: createNavigationCommands(options),
     settings: createSettingsCommands(options),
-    notes: createCommandNotes(reached, held),
+    notes: createCommandNotes(reached, windowTabs),
     runSupport: runs,
     copyPath: (path) => void navigator.clipboard?.writeText(path),
     writeMessage,

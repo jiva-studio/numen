@@ -21,7 +21,7 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
       move: record('move', 'moved'),
       createFolder: record('createFolder', 'folded'),
     } as never,
-    held: {
+    windowTabs: {
       openTabOfKind: record('openTabOfKind'),
       requestClose: record('requestClose'),
     } as never,

@@ -14,7 +14,7 @@ export interface NoteEditorsDeps {
   core: NotePort & SearchDeps & Pick<VaultPort, 'watchQuit' | 'reportFlush'>
   log: MessageLog
   tabOpeners: FileOpeners
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
 }
 
 function createNullChanges() {
@@ -25,11 +25,11 @@ function createNullChanges() {
   }
 }
 
-function createNoted(held: ReturnType<typeof useWindowTabs>) {
+function createNoted(windowTabs: ReturnType<typeof useWindowTabs>) {
   return {
     measureAll: () => {
-      for (const tab of held.tabs.value) {
-        const windowTab = held.getTab(tab.id)
+      for (const tab of windowTabs.tabs.value) {
+        const windowTab = windowTabs.getTab(tab.id)
         const state = windowTab?.state as
           { measure?: () => void; editor?: { measure?: () => void } } | undefined
         if (state?.measure) {
@@ -54,11 +54,11 @@ function createNotedStore(notes: ReturnType<typeof openNotes>): Store {
   }
 }
 
-export function useNoteEditors({ core, log, tabOpeners, held }: NoteEditorsDeps) {
+export function useNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEditorsDeps) {
   const changes = createNullChanges()
   const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
-  const noted = createNoted(held)
+  const noted = createNoted(windowTabs)
 
   const fileFlush = useFileFlush(core)
   fileFlush.addHandler(notes.flush)

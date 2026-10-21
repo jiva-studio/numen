@@ -43,7 +43,7 @@ const setup = (preventHeld = false) => {
   const options = {
     core: {},
     words: {},
-    held: { onKeyPress: press },
+    windowTabs: { onKeyPress: press },
     getTarget: () => target,
     knows: {},
     kept: {},

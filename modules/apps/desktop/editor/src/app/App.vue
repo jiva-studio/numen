@@ -33,7 +33,7 @@ const {
   commandDeps,
   failure,
   fileFlush,
-  held,
+  windowTabs,
   layout,
   listed,
   log,
@@ -51,9 +51,9 @@ const {
 
 const linkMenu = useTabLinkMenu({
   tabLinks,
-  getTabs: () => held.tabs.value,
-  getKind: (id) => held.getTab(id)?.kind.kind,
-  isLinkable: (id) => held.getTab(id)?.kind.navigate !== undefined,
+  getTabs: () => windowTabs.tabs.value,
+  getKind: (id) => windowTabs.getTab(id)?.kind.kind,
+  isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
 })
 const writeMessage = log.getWriter('window')
 
@@ -72,7 +72,7 @@ async function onTearOffTab(id: string, at: { x: number; y: number }) {
 }
 
 function onShowTab(id: string) {
-  held.onTabShown(id)
+  windowTabs.onTabShown(id)
 }
 
 function dismissNotice(id: string) {
@@ -91,7 +91,7 @@ function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
     <WorkspaceLayout
       v-model="layout"
       class="below"
-      :tabs="held.tabs.value"
+      :tabs="windowTabs.tabs.value"
       @close="onCloseTab"
       @show="onShowTab"
       @tab-context-menu="onTabContextMenu"
@@ -107,9 +107,9 @@ function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
 
       <template #tab="{ id }">
         <component
-          :is="held.getTab(id)!.kind.pane"
-          v-if="held.getTab(id)"
-          :state="held.getTab(id)!.state"
+          :is="windowTabs.getTab(id)!.kind.pane"
+          v-if="windowTabs.getTab(id)"
+          :state="windowTabs.getTab(id)!.state"
         />
 
         <div v-else />
@@ -118,7 +118,7 @@ function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
       <template #silence>
         <WelcomeScreen
           :listed="listed"
-          :tabs="held.tabs.value"
+          :tabs="windowTabs.tabs.value"
           :commands="commands"
           :search="palette"
           :doing="commandDeps"
