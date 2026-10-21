@@ -65,24 +65,24 @@ export interface SessionDeps {
 }
 
 function useSessionCards() {
-  const asked = shallowRef<readonly CardFace[]>([])
+  const request = shallowRef<readonly CardFace[]>([])
   const at = ref(0)
-  const shown = ref(false)
+  const displayed = ref(false)
   const answers = ref<string[]>([])
 
-  const card = computed<CardFace | null>(() => asked.value[at.value] ?? null)
-  const left = computed(() => asked.value.length - at.value)
+  const card = computed<CardFace | null>(() => request.value[at.value] ?? null)
+  const left = computed(() => request.value.length - at.value)
   const isOver = computed(() => card.value === null)
-  const done = computed(() => answers.value.length)
+  const isDone = computed(() => answers.value.length)
 
   const reset = () => {
-    asked.value = []
+    request.value = []
     at.value = 0
-    shown.value = false
+    displayed.value = false
     answers.value = []
   }
 
-  return { asked, at, shown, answers, card, left, over, done, reset }
+  return { asked: request, at, shown: displayed, answers, card, left, over, done: isDone, reset }
 }
 
 async function openSession(deps: {

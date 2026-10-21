@@ -62,17 +62,17 @@ describe('the keys a session is done with', () => {
   // The letters on their own are what a card is answered by, so the panels are
   // held with the overlay key: control here, command on a Mac.
   it('brings the panels in on either side of the card, retained with the overlay key', () => {
-    for (const held of ['ctrlKey', 'metaKey'] as const) {
-      expect(getSessionKeyIntent(createPress('a', { [held]: true }), { isShown: true })).toEqual({
+    for (const target of ['ctrlKey', 'metaKey'] as const) {
+      expect(getSessionKeyIntent(createPress('a', { [target]: true }), { isShown: true })).toEqual({
         does: 'ask',
       })
-      expect(getSessionKeyIntent(createPress('A', { [held]: true }), { isShown: false })).toEqual({
+      expect(getSessionKeyIntent(createPress('A', { [target]: true }), { isShown: false })).toEqual({
         does: 'ask',
       })
-      expect(getSessionKeyIntent(createPress('r', { [held]: true }), { isShown: true })).toEqual({
+      expect(getSessionKeyIntent(createPress('r', { [target]: true }), { isShown: true })).toEqual({
         does: 'read',
       })
-      expect(getSessionKeyIntent(createPress('R', { [held]: true }), { isShown: false })).toEqual({
+      expect(getSessionKeyIntent(createPress('R', { [target]: true }), { isShown: false })).toEqual({
         does: 'read',
       })
     }
@@ -141,9 +141,9 @@ describe('the keys a session is done with', () => {
 
   // A key pressed with a modifier is the machine's own shortcut.
   it('is not answered by a key pressed with a modifier', () => {
-    for (const held of ['altKey', 'ctrlKey', 'metaKey'] as const) {
-      expect(getSessionKeyIntent(createPress('3', { [held]: true }), { isShown: true })).toBeNull()
-      expect(getSessionKeyIntent(createPress('u', { [held]: true }), { isShown: true })).toBeNull()
+    for (const target of ['altKey', 'ctrlKey', 'metaKey'] as const) {
+      expect(getSessionKeyIntent(createPress('3', { [target]: true }), { isShown: true })).toBeNull()
+      expect(getSessionKeyIntent(createPress('u', { [target]: true }), { isShown: true })).toBeNull()
     }
   })
 

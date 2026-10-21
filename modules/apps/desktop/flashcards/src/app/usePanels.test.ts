@@ -37,13 +37,13 @@ const card = (more: Partial<CardFace> = {}): CardFace => ({
 
 const panels = (more: { card?: CardFace | null; unreachable?: string } = {}) => {
   const notices: string[] = []
-  const held = usePanels({
+  const target = usePanels({
     card: () => (more.card === undefined ? card() : more.card),
     unreachable: () => more.unreachable ?? '',
     vault: () => 'garden',
     showNotice: (text) => notices.push(text),
   })
-  return { ...held, notices }
+  return { ...target, notices }
 }
 
 describe('the window', () => {

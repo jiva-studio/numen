@@ -48,8 +48,8 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // reaches for it, so it is asked once and the way in is drawn from it.
     void agentService
       .getAgentState({}, { signal: listening.signal })
-      .then((said) => {
-        deps.unreachable.value = said.unreachable
+      .then((response) => {
+        deps.unreachable.value = response.unreachable
       })
       .catch(() => {
         deps.unreachable.value = WORDS.unreachable
@@ -59,9 +59,9 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // when it opened, and what a deck says now is read at the next one.
     void follows(
       () => cards.watchReloads({}, { signal: listening.signal }),
-      async (said) => {
+      async (response) => {
         // A message carrying no reload keeps the stream open and moves nothing.
-        if (!said.reload) return
+        if (!response.reload) return
         await deps.refresh()
       },
     )
@@ -69,9 +69,9 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // It is a stream because an indexing begins without the page asking for one.
     void follows(
       () => windowService.watchTasks({ window: WINDOW }, { signal: listening.signal }),
-      (said) => {
+      (response) => {
         deps.setTasks(
-          said.tasks.map((at) => ({
+          response.tasks.map((at) => ({
             id: at.id,
             label: at.title,
             about: at.about,

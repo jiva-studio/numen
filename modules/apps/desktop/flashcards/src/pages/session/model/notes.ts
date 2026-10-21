@@ -98,7 +98,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     deps.showPanel(false)
   }
 
-  const read = () => {
+  const readItem = () => {
     at.value = ''
   }
 
@@ -116,7 +116,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     open,
     openPanel,
     closePanel,
-    read,
+    read: readItem,
     endSession,
   }
 }

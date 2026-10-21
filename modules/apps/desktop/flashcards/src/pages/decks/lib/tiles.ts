@@ -34,13 +34,13 @@ export interface Tile {
  */
 export const getTiles = (presets: readonly Preset[], today: string): Tile[] =>
   presets.filter(isScheduling).map((one) => {
-    const done = getSpentShare(one)
-    const isOver = done > 1
+    const isDone = getSpentShare(one)
+    const isOver = isDone > 1
     return {
       one,
       goal: one.paused || (one.settings ? getGoalWords(one.settings, today) : ''),
       wrong: one.wrong,
-      says: isOver ? 'over budget' : percent(done),
+      says: isOver ? 'over budget' : percent(isDone),
       left: one.paused ? '' : getLeftWords(one),
       isOver,
       canOpen: !one.paused && one.cards > 0,

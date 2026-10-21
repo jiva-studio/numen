@@ -26,18 +26,18 @@ const FACES = [
 
 /** The prose of a face as the review window draws it. */
 const inTheReviewWindow = (text: string): string => {
-  const drawn = mount(Card, { props: { front: text, back: '', isShown: false } })
-  const said = drawn.find('.prose').element.innerHTML
-  drawn.unmount()
-  return said
+  const rendered = mount(Card, { props: { front: text, back: '', isShown: false } })
+  const response = rendered.find('.prose').element.innerHTML
+  rendered.unmount()
+  return response
 }
 
 /** The prose of the same face as the editor's pane draws it. */
 const inTheEditor = (text: string): string => {
-  const drawn = mount(CardProse, { props: { text } })
-  const said = drawn.find('.prose').element.innerHTML
-  drawn.unmount()
-  return said
+  const rendered = mount(CardProse, { props: { text } })
+  const response = rendered.find('.prose').element.innerHTML
+  rendered.unmount()
+  return response
 }
 
 describe('one face, two windows', () => {

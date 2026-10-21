@@ -32,8 +32,8 @@ const wire = vi.hoisted(() => {
       async *read(): AsyncGenerator<unknown> {
         for (;;) {
           while (queue.length) yield queue.shift()
-          await new Promise<void>((done) => {
-            wake = done
+          await new Promise<void>((isDone) => {
+            wake = isDone
           })
         }
       },
@@ -88,8 +88,8 @@ vi.mock('@/shared/clients', async (original) => ({
       })
     },
     watchReloads: () => wire.reloads.read(),
-    listReviewDays: async (asked: { vault: string; from: string; to: string }) => {
-      wire.daysAsked.push(asked)
+    listReviewDays: async (request: { vault: string; from: string; to: string }) => {
+      wire.daysAsked.push(request)
       return {
         days: [
           {
@@ -108,12 +108,12 @@ vi.mock('@/shared/clients', async (original) => ({
         answered: 3,
       }
     },
-    getVaultDeckPreset: async (asked: unknown) => {
-      wire.presetsAsked.push(asked)
+    getVaultDeckPreset: async (request: unknown) => {
+      wire.presetsAsked.push(request)
       return { preset: undefined }
     },
-    getDeckNeighbourhood: async (asked: unknown) => {
-      wire.notesAsked.push(asked)
+    getDeckNeighbourhood: async (request: unknown) => {
+      wire.notesAsked.push(request)
       return {
         notes: [
           {
@@ -129,8 +129,8 @@ vi.mock('@/shared/clients', async (original) => ({
         unread: 0,
       }
     },
-    startSession: async (asked: unknown) => {
-      wire.sessionsAsked.push(asked)
+    startSession: async (request: unknown) => {
+      wire.sessionsAsked.push(request)
       if (wire.isStartRefused) {
         throw new ConnectError('the vault is closing', Code.FailedPrecondition)
       }
@@ -152,12 +152,12 @@ vi.mock('@/shared/clients', async (original) => ({
         ...wire.opened,
       }
     },
-    answerCard: async (asked: { mark: string }) => {
-      wire.answered.push(asked)
+    answerCard: async (request: { mark: string }) => {
+      wire.answered.push(request)
       return { answer: 'answer-1' }
     },
-    takeBackAnswer: async (asked: unknown) => {
-      wire.takenBack.push(asked)
+    takeBackAnswer: async (request: unknown) => {
+      wire.takenBack.push(request)
       return {}
     },
   },
@@ -171,7 +171,7 @@ const { useWindow } = await import('./window')
 
 type Window = ReturnType<typeof useWindow>
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /**
  * Everything the window hands out, as plain values: a ref stands for what it
@@ -198,11 +198,11 @@ const Page = defineComponent({
 
 /** The window made, in a page, with the counts on the screen. */
 const openWindow = async ({ isPageDrawn = true } = {}) => {
-  let held: Window | null = null
+  let target: Window | null = null
   const page = mount(
     defineComponent({
       setup() {
-        held = useWindow()
+        target = useWindow()
         return () => (isPageDrawn ? h(Page, { ref: 'page' }) : null)
       },
     }),
@@ -210,7 +210,7 @@ const openWindow = async ({ isPageDrawn = true } = {}) => {
   pages.push(page)
   await settle()
   await settle()
-  return held as unknown as Window
+  return target as unknown as Window
 }
 
 /** The window taken into the session over the vault's one deck. */
@@ -369,11 +369,11 @@ describe('a session sat down to', () => {
     wire.opened = { unwritten: ['decks/Suffixes.md'], skipped: 2 }
     const opened = await openSession()
 
-    const said = opened.notices.value
-    expect(said).toHaveLength(2)
-    expect(said.every((one) => one.tone === 'caution')).toBe(true)
-    expect(said[0]!.text).toContain('Suffixes')
-    expect(said[1]!.text).toContain('2')
+    const response = opened.notices.value
+    expect(response).toHaveLength(2)
+    expect(response.every((one) => one.tone === 'caution')).toBe(true)
+    expect(response[0]!.text).toContain('Suffixes')
+    expect(response[1]!.text).toContain('2')
   })
 
   it('names every deck it could not act on, in one line', async () => {

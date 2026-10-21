@@ -57,8 +57,8 @@ const DAYS = new Map<string, HeatmapTally>(
     .map((back) => {
       // A quiet day and a long one, and the middle far commoner than either.
       const how = scatter(back, 2)
-      const answered = Math.round(14 + how * how * 150)
-      return [dayBefore(TODAY, back), tally(answered, Math.round(answered * 0.86))]
+      const reply = Math.round(14 + how * how * 150)
+      return [dayBefore(TODAY, back), tally(reply, Math.round(reply * 0.86))]
     }),
 )
 

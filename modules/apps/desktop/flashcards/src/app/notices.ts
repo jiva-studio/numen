@@ -16,17 +16,17 @@ export function useNotices() {
   const tasks = shallowRef<readonly Notice[]>([])
 
   /** What it has told the person, newest last. */
-  const told = shallowRef<readonly Notice[]>([])
+  const notified = shallowRef<readonly Notice[]>([])
 
-  const notices = computed<readonly Notice[]>(() => [...tasks.value, ...told.value])
+  const notices = computed<readonly Notice[]>(() => [...tasks.value, ...notified.value])
 
   /** How many have been raised, which is what names the next one. */
   let raised = 0
 
   const showNotice = (text: string, tone: Tone) => {
     raised += 1
-    told.value = [
-      ...told.value,
+    notified.value = [
+      ...notified.value,
       {
         id: String(raised),
         text: text,
@@ -59,7 +59,7 @@ export function useNotices() {
 
   /** One card release. Work put away is the corner's own to keep away. */
   const dismissNotice = (id: string) => {
-    told.value = told.value.filter((one) => one.id !== id)
+    notified.value = notified.value.filter((one) => one.id !== id)
   }
 
   return { notices, showNotice, reportError, setTasks, dismissNotice }

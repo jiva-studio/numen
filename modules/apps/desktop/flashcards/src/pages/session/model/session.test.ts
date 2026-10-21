@@ -31,7 +31,7 @@ const opening = (...cards: string[]): SessionStart => ({
  */
 function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
   const asks: { what: string; said: unknown }[] = []
-  let written = 0
+  let content = 0
   const cards: SessionClient = {
     async startSession(one) {
       asks.push({ what: 'start', said: one })
@@ -41,8 +41,8 @@ function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?
       asks.push({ what: 'answer', said: one })
       if (how?.refuses) throw how.refuses
       if (how?.answering) return how.answering
-      written += 1
-      return { answer: `01${written}` }
+      content += 1
+      return { answer: `01${content}` }
     },
     async takeBackAnswer(one) {
       asks.push({ what: 'takeBack', said: one })
@@ -452,13 +452,13 @@ describe('a session keeping its own time', () => {
   it('measures how long the card stood there by the clock on the wall', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-01T09:00:00Z'))
-    const said: { tookMs: bigint }[] = []
+    const response: { tookMs: bigint }[] = []
     const cards: SessionClient = {
       async startSession() {
         return opening('one')
       },
       async answerCard(one) {
-        said.push(one)
+        response.push(one)
         return { answer: '011' }
       },
       async takeBackAnswer() {
@@ -472,6 +472,6 @@ describe('a session keeping its own time', () => {
     one.show()
     await one.answer('good')
 
-    expect(said.map((one) => one.tookMs)).toEqual([3000n])
+    expect(response.map((one) => one.tookMs)).toEqual([3000n])
   })
 })

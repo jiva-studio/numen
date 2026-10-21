@@ -137,9 +137,9 @@ function useVaultRows() {
   const vaults = shallowRef<readonly VaultCardsDue[]>([])
 
   const setVaults = (all: readonly VaultCounts[]) => {
-    const held = new Map(vaults.value.map((one) => [one.vault, one]))
+    const target = new Map(vaults.value.map((one) => [one.vault, one]))
     vaults.value = all.map((one) => {
-      const was = held.get(one.id)
+      const was = target.get(one.id)
       return was?.isCounted ? { ...was, name: one.name, path: one.path } : createUncountedVault(one)
     })
   }

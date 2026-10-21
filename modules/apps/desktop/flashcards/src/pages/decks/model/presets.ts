@@ -32,7 +32,7 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
    * over is a deck whose preset could not be read, and until it has run nothing
    * is known either way.
    */
-  const known = ref(false)
+  const recognized = ref(false)
 
   /** The preset each deck is scheduled by, by the path the deck is filed under. */
   const byDeck = computed(() => {
@@ -46,22 +46,22 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
   const forget = () => {
     presets.value = []
     of.value = ''
-    known.value = false
+    recognized.value = false
   }
 
   // Today is the review day, which the application measures and this window is
   // told: it begins at the hour the settings name.
-  const read = async (due: VaultCardsDue | null, today: string) => {
+  const readItem = async (due: VaultCardsDue | null, today: string) => {
     if (!due) {
       forget()
       return
     }
     // A vault read again keeps what is known of it while the reading runs, so
     // the screen it is read behind does not empty and fill.
-    if (of.value !== due.vault) known.value = false
+    if (of.value !== due.vault) recognized.value = false
     of.value = due.vault
 
-    const held = await Promise.all(
+    const target = await Promise.all(
       due.decks.map(async (deck) => ({
         deck,
         result: await readDeckPreset(deps.presets, due.vault, deck.deck),
@@ -69,11 +69,11 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
     )
     if (of.value !== due.vault) return
 
-    presets.value = groupDecksIntoPresets(due, held, today)
-    known.value = true
+    presets.value = groupDecksIntoPresets(due, target, today)
+    recognized.value = true
   }
 
-  return { presets, byDeck, of, known, read, forget }
+  return { presets, byDeck, of, known: recognized, read: readItem, forget }
 }
 
 /** One deck of a vault, with the preset it is scheduled by or why that could not be read. */

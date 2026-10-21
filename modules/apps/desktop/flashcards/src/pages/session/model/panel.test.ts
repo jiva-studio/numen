@@ -21,18 +21,18 @@ const card = (more: Partial<CardFace> = {}): CardFace => ({
 
 /** An agent that keeps what it was asked and says what a test told it to. */
 const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leaves.' }]) => {
-  const asked: { text: string; focus: string; conversation: string }[] = []
+  const request: { text: string; focus: string; conversation: string }[] = []
   const overVal: string[] = []
   const agent: AgentPort = {
     async *ask(query) {
-      asked.push({ text: query.question, focus: query.focus, conversation: query.conversation })
+      request.push({ text: query.question, focus: query.focus, conversation: query.conversation })
       for (const step of says) yield step
     },
     async finish(conversation) {
       overVal.push(conversation)
     },
   }
-  return { agent, asked, over }
+  return { agent, asked: request, over }
 }
 
 /**
@@ -53,7 +53,7 @@ const panel = (
   const notices: string[] = []
   /** The cards a port was asked for, one to a conversation. */
   const about: CardFace[] = []
-  const held = useAgentPanel({
+  const target = useAgentPanel({
     agent: (one) => {
       about.push(one)
       return agent
@@ -70,7 +70,7 @@ const panel = (
     // for a frame.
     paint: (draw) => draw(),
   })
-  return { held, asked, over, notices, on, showing, about }
+  return { held: target, asked, over, notices, on, showing, about }
 }
 
 describe('the panel coming in', () => {
@@ -230,11 +230,11 @@ describe('one conversation to a card', () => {
 describe('a conversation in flight', () => {
   /** An agent whose answer does not arrive until the test lets it. */
   const createSlowAgent = () => {
-    const asked: string[] = []
+    const request: string[] = []
     let answer = () => {}
     const agent: AgentPort = {
       async *ask(query) {
-        asked.push(query.question)
+        request.push(query.question)
         await new Promise<void>((then) => {
           answer = then
           query.signal.addEventListener('abort', () => then())
@@ -243,12 +243,12 @@ describe('a conversation in flight', () => {
       },
       async finish() {},
     }
-    return { agent, asked, answer: () => answer() }
+    return { agent, asked: request, answer: () => answer() }
   }
 
   const slowPanel = () => {
     const slow = createSlowAgent()
-    const held = useAgentPanel({
+    const target = useAgentPanel({
       agent: () => slow.agent,
       card: () => card(),
       unreachable: () => '',
@@ -257,7 +257,7 @@ describe('a conversation in flight', () => {
       showNotice: () => {},
       paint: (draw) => draw(),
     })
-    return { held, ...slow }
+    return { held: target, ...slow }
   }
 
   it('is working while an answer is on its way, and not before or after', async () => {
@@ -267,22 +267,22 @@ describe('a conversation in flight', () => {
     held.openPanel()
     expect(held.isWorking.value).toBe(false)
 
-    const sent = held.send('why')
+    const dispatched = held.send('why')
     expect(held.isWorking.value).toBe(true)
 
     answer()
-    await sent
+    await dispatched
     expect(held.isWorking.value).toBe(false)
   })
 
   it('stops working when the answer on its way is stopped', async () => {
     const { held } = slowPanel()
     held.openPanel()
-    const sent = held.send('why')
+    const dispatched = held.send('why')
 
     held.stop()
     expect(held.isWorking.value).toBe(false)
-    await sent
+    await dispatched
   })
 })
 

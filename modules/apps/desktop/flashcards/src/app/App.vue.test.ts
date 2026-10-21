@@ -66,8 +66,8 @@ vi.mock('@/shared/clients', async (original) => ({
     getAgentState: async () => ({ unreachable: '' }),
     listReviewDays: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
     getVaultDeckPreset: async () => ({ preset: undefined }),
-    startSession: async (said: { deck: string }) => {
-      started.push(said)
+    startSession: async (response: { deck: string }) => {
+      started.push(response)
       return { run: 'run', cards: [], unwritten: [], skipped: 0 }
     },
   },
@@ -86,7 +86,7 @@ const mountWindow = async () => {
   return window
 }
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /**
  * Every window a test drew. A window listens for keystrokes for as long as it

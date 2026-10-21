@@ -65,22 +65,22 @@ const createStrip = (
 
   const windowRef = shallowRef<HTMLElement | null>(window_)
   const middleRef = shallowRef<HTMLElement | null>(more.hasCard === false ? null : card)
-  const shown = more.owner ?? ref<PanelPlace>(at)
+  const displayed = more.owner ?? ref<PanelPlace>(at)
   const errors: unknown[] = []
 
-  let held: ReturnType<typeof useCarouselStrip> | null = null
+  let target: ReturnType<typeof useCarouselStrip> | null = null
   const one = mount(
     defineComponent({
       setup() {
-        held = useCarouselStrip({ window: windowRef, middle: middleRef, shown })
+        target = useCarouselStrip({ window: windowRef, middle: middleRef, shown: displayed })
         return () => null
       },
     }),
     { global: { config: { errorHandler: (why) => errors.push(why) } } },
   )
   mounted.push(one)
-  if (!held) throw new Error('the strip was not set up')
-  const strip: ReturnType<typeof useCarouselStrip> = held
+  if (!target) throw new Error('the strip was not set up')
+  const strip: ReturnType<typeof useCarouselStrip> = target
 
   /** The strip left where a wheel put it, and the strip told. */
   const scrollTo = (to: number) => {
@@ -90,7 +90,7 @@ const createStrip = (
 
   /** The owner moving the strip, as a key does. */
   const moveTo = async (where: PanelPlace) => {
-    shown.value = where
+    displayed.value = where
     await nextTick()
   }
 
@@ -100,7 +100,7 @@ const createStrip = (
     one.unmount()
   }
 
-  return { ...strip, takeOff, window_, windowRef, shown, moves, capture, errors, scrollTo, moveTo }
+  return { ...strip, takeOff, window_, windowRef, shown: displayed, moves, capture, errors, scrollTo, moveTo }
 }
 
 describe('where the strip remains', () => {
@@ -357,13 +357,13 @@ describe('a strip taken off the screen', () => {
 
 /** The owner's hold on where the strip is, which hears of every write made to it. */
 const createOwner = (at: PanelPlace) => {
-  const held = ref<PanelPlace>(at)
+  const target = ref<PanelPlace>(at)
   const writes: PanelPlace[] = []
   const owner = computed<PanelPlace>({
-    get: () => held.value,
+    get: () => target.value,
     set: (to) => {
       writes.push(to)
-      held.value = to
+      target.value = to
     },
   })
   return { owner, writes }
@@ -403,16 +403,16 @@ describe('what the owner is told', () => {
 
 describe('a move in flight when the strip is taken off the screen', () => {
   it('has its time cancelled', async () => {
-    const set = vi.spyOn(window, 'setTimeout')
+    const activeSet = vi.spyOn(window, 'setTimeout')
     const { takeOff, moveTo } = createStrip('here')
 
     await moveTo('after')
-    const timer = set.mock.results.at(-1)?.value as number
+    const timer = activeSet.mock.results.at(-1)?.value as number
     const cleared = vi.spyOn(window, 'clearTimeout')
     takeOff()
 
     expect(cleared).toHaveBeenCalledWith(timer)
-    set.mockRestore()
+    activeSet.mockRestore()
     cleared.mockRestore()
   })
 })

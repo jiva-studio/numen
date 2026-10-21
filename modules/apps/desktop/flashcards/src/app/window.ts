@@ -161,7 +161,7 @@ function useWindowState() {
   const notices = useNotices()
   const counter = useReviewCounter({ cards, reportError: notices.reportError })
   const state = useReviewSession({ cards, reportError: notices.reportError })
-  const done = useReviewDays({
+  const isDone = useReviewDays({
     cards,
     reportError: notices.reportError,
     widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
@@ -169,7 +169,7 @@ function useWindowState() {
   const schedules = useVaultPresets({ presets: cards })
   const unreachable = ref('')
 
-  return { vault, notices, counter, state, done, schedules, unreachable }
+  return { vault, notices, counter, state, done: isDone, schedules, unreachable }
 }
 
 function createWindowView(deps: {
@@ -271,13 +271,13 @@ export const useWindow = () => {
     notesPanel: panels.notesPanel,
   })
   const page = useTemplateRef<InstanceType<typeof NotesPanel>>('page')
-  const chosen = computed(
+  const selected = computed(
     () => counter.vaults.value.find((one) => one.vault === vault.value) ?? null,
   )
 
   const actions = useWindowActions({
     vault,
-    chosen,
+    chosen: selected,
     today: counter.day,
     on,
     goTo,
@@ -293,7 +293,7 @@ export const useWindow = () => {
   useWindowListeners({
     on,
     counter,
-    chosen,
+    chosen: selected,
     schedules,
     state,
     panels,
@@ -310,7 +310,7 @@ export const useWindow = () => {
     counter,
     done,
     schedules,
-    chosen,
+    chosen: selected,
     state,
     panels,
   })

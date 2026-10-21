@@ -14,8 +14,8 @@ describe('what the window has to say', () => {
     one.dismissNotice(first.id)
     one.showNotice('the third', 'caution')
 
-    expect(one.notices.value.map((said) => said.text)).toEqual(['the second', 'the third'])
-    const names = one.notices.value.map((said) => said.id)
+    expect(one.notices.value.map((saidText) => saidText.text)).toEqual(['the second', 'the third'])
+    const names = one.notices.value.map((response) => response.id)
     expect(new Set(names).size).toBe(names.length)
   })
 
@@ -24,17 +24,17 @@ describe('what the window has to say', () => {
     one.showNotice('the first', 'caution')
     one.showNotice('the second', 'caution')
 
-    expect(one.notices.value.map((said) => said.id)).toEqual(['1', '2'])
+    expect(one.notices.value.map((response) => response.id)).toEqual(['1', '2'])
   })
 
   it('says trouble in the person’s own words, and remains until they put it away', () => {
     const one = useNotices()
     one.reportError(new ConnectError('the vault could not be read', Code.Unavailable))
 
-    const said = one.notices.value[0]!
-    expect(said.text).toBe('The vault could not be read.')
-    expect(said.tone).toBe('alarm')
-    expect(said.stay).toBe('kept')
+    const response = one.notices.value[0]!
+    expect(response.text).toBe('The vault could not be read.')
+    expect(response.tone).toBe('alarm')
+    expect(response.stay).toBe('kept')
   })
 
   // Pressing a tile whose count is a moment stale fails, and what the

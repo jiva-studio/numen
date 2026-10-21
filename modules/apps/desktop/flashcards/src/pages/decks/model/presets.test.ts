@@ -177,8 +177,8 @@ describe('what a goal evaluates to in words', () => {
   })
 
   it('says the day, and how far off it is', () => {
-    const said = getGoalWords(settings({ goal: 'date', byDate: '2026-09-30' }), '2026-09-12')
-    expect(said).toMatch(/^18 days to /)
+    const saidText = getGoalWords(settings({ goal: 'date', byDate: '2026-09-30' }), '2026-09-12')
+    expect(saidText).toMatch(/^18 days to /)
   })
 
   it('says no day while the goal names none', () => {
@@ -186,10 +186,10 @@ describe('what a goal evaluates to in words', () => {
   })
 
   it('says only the day once it is today or has passed', () => {
-    const said = (byDate: string) => getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
-    expect(said('2026-09-12')).toMatch(/^by \S/)
-    expect(said('2026-09-10')).toMatch(/^by \S/)
-    expect(said('2026-09-13')).toMatch(/^1 day to /)
+    const saidText = (byDate: string) => getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
+    expect(saidText('2026-09-12')).toMatch(/^by \S/)
+    expect(saidText('2026-09-10')).toMatch(/^by \S/)
+    expect(saidText('2026-09-13')).toMatch(/^1 day to /)
   })
 })
 
@@ -327,14 +327,14 @@ describe('why a preset or a deck is asking nothing', () => {
   const on = '2026-09-05'
 
   it('is returned in one register: a clause in lower case, and never a sentence', () => {
-    const said = [
+    const response = [
       STOPPED.nothing,
       STOPPED.full,
       getStoppedWords(StopReason.NO_CARDS, null, on),
       getStoppedWords(StopReason.NO_MINUTES, null, on),
     ]
 
-    for (const one of said) {
+    for (const one of response) {
       expect(one).toBe(one.toLowerCase())
       expect(one).not.toMatch(/[.!?]$/)
     }
@@ -713,13 +713,13 @@ describe('which preset schedules each deck', () => {
   // being asked is handed nothing of that vault.
   it('holds no preset of a vault left while its presets were being requested', async () => {
     let answer = () => {}
-    const asked = new Promise<void>((then) => {
+    const request = new Promise<void>((then) => {
       answer = then
     })
     const one = useVaultPresets({
       presets: {
         async getVaultDeckPreset() {
-          await asked
+          await request
           return {
             preset: {
               path: 'Sanskrit.md',
@@ -849,7 +849,7 @@ describe('what a preset read from its decks carries of the count', () => {
   })
 
   it('says each thing wrong in the file once, the distinct ones apart', async () => {
-    const said: Record<string, string> = {
+    const response: Record<string, string> = {
       'decks/Words.md': '`new_a_day` is not a number',
       'decks/Roots.md': '`load` names no day',
     }
@@ -861,7 +861,7 @@ describe('what a preset read from its decks carries of the count', () => {
               path: 'Sanskrit.md',
               title: 'Sanskrit',
               settings: createSettingsMessage(settings()),
-              problems: [said[deck] ?? ''],
+              problems: [response[deck] ?? ''],
               stopsOn: StopReason.NOTHING,
             },
           }
@@ -988,30 +988,30 @@ describe('what is known of the presets of a vault', () => {
   })
 
   it('stays known while the same vault is read again', async () => {
-    const held = createHeldPresets()
-    const one = useVaultPresets({ presets: held.client })
+    const target = createHeldPresets()
+    const one = useVaultPresets({ presets: target.client })
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
-    held.hold()
+    target.hold()
     const reading = one.read(vault([{ deck: 'decks/Words.md', due: 2, new: 1 }]), '2026-09-05')
 
     expect(one.known.value).toBe(true)
-    held.release()
+    target.release()
     await reading
     expect(one.known.value).toBe(true)
   })
 
   it('is unknown for another vault until its own reading has run', async () => {
-    const held = createHeldPresets()
-    const one = useVaultPresets({ presets: held.client })
+    const target = createHeldPresets()
+    const one = useVaultPresets({ presets: target.client })
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
-    held.hold()
+    target.hold()
     const reading = one.read(other(), '2026-09-05')
 
     expect(one.known.value).toBe(false)
     expect(one.of.value).toBe('01B')
-    held.release()
+    target.release()
     await reading
     expect(one.known.value).toBe(true)
   })

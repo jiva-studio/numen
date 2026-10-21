@@ -70,12 +70,12 @@ describe('what the goals come to today', () => {
   // evaluates to at the far end of the line.
   it('remains the name and goal together, and the figure apart from them', () => {
     const tile = mountPresets([preset()]).find('.presets__preset')
-    const said = tile.find('.presets__said')
+    const response = tile.find('.presets__said')
 
-    expect(said.find('.presets__name').text()).toBe('Sanskrit')
-    expect(said.find('.presets__goal').text()).toBe('20 minutes a day')
+    expect(response.find('.presets__name').text()).toBe('Sanskrit')
+    expect(response.find('.presets__goal').text()).toBe('20 minutes a day')
     // The figure is the tile's own child, beside that pair and not under them.
-    expect(said.find('.presets__done').exists()).toBe(false)
+    expect(response.find('.presets__done').exists()).toBe(false)
     expect(tile.find('.presets__done').text()).toBe('20%')
   })
 
@@ -86,17 +86,17 @@ describe('what the goals come to today', () => {
       preset({ path: 'B.md', name: 'Pali' }),
       preset({ path: 'C.md', name: 'Greek' }),
     ])
-    const drawn = one.findAll('.presets__preset')
+    const rendered = one.findAll('.presets__preset')
 
-    expect(drawn).toHaveLength(3)
-    expect(drawn.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
+    expect(rendered).toHaveLength(3)
+    expect(rendered.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
       'Sanskrit',
       'Pali',
       'Greek',
     ])
     // The heading, the goal under it, and the number a person looks for.
-    expect(drawn[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
-    expect(drawn[1]?.find('.presets__done').text()).toBe('20%')
+    expect(rendered[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
+    expect(rendered[1]?.find('.presets__done').text()).toBe('20%')
   })
 
   // A person is as far through their day as the budget closing it says.
@@ -140,10 +140,10 @@ describe('what the goals come to today', () => {
         answeredReviews: 60,
       }),
     ])
-    const said = one.find('.presets__done')
+    const response = one.find('.presets__done')
 
-    expect(said.text()).toBe('over budget')
-    expect(said.attributes('data-over')).toBe('')
+    expect(response.text()).toBe('over budget')
+    expect(response.attributes('data-over')).toBe('')
   })
 
   it('says the same of a day that has run past its minutes', () => {
@@ -165,10 +165,10 @@ describe('what the goals come to today', () => {
         took: 5,
       }),
     ])
-    const said = one.find('.presets__done')
+    const response = one.find('.presets__done')
 
-    expect(said.text()).toBe('25%')
-    expect(said.attributes('data-over')).toBeUndefined()
+    expect(response.text()).toBe('25%')
+    expect(response.attributes('data-over')).toBeUndefined()
   })
 
   // The same the other way about: a preset steered by what it asks of memory
@@ -190,15 +190,15 @@ describe('what the goals come to today', () => {
   // The block says the goal and how far through it the day is, and nothing
   // else.
   it('says nothing of counts, of what closes the day, or of the week', () => {
-    const said = mountPresets([
+    const response = mountPresets([
       preset({ path: 'A.md', settings: settings({ load: { sat: 50 } }) }),
       preset({ path: 'B.md', name: 'Pali' }),
     ]).text()
 
-    expect(said).not.toContain('of 55')
-    expect(said).not.toContain('close the day')
-    expect(said).not.toContain('Today:')
-    expect(said).not.toContain('light in')
+    expect(response).not.toContain('of 55')
+    expect(response).not.toContain('close the day')
+    expect(response).not.toContain('Today:')
+    expect(response).not.toContain('light in')
   })
 
   // What a person needs from the tile is why it schedules nothing, not what it
@@ -269,11 +269,11 @@ describe('what the goals come to today', () => {
       preset({ path: 'B.md', name: 'Stopped', paused: 'no cards a day' }),
       preset({ path: 'C.md', named: 0, faces: 0, settings: null }),
     ])
-    const drawn = one.findAll('.presets__preset')
+    const rendered = one.findAll('.presets__preset')
 
-    expect(drawn).toHaveLength(2)
-    expect(drawn[1]?.text()).toBe('Stoppedno cards a day')
-    expect(drawn[1]?.find('.presets__done').exists()).toBe(false)
+    expect(rendered).toHaveLength(2)
+    expect(rendered[1]?.text()).toBe('Stoppedno cards a day')
+    expect(rendered[1]?.find('.presets__done').exists()).toBe(false)
   })
 
   // The decks naming no preset are a tile like any other, and it carries no act.

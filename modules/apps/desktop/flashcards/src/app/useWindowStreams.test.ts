@@ -39,9 +39,9 @@ vi.mock('@/shared/clients', () => ({
     },
   },
   windowService: {
-    watchTasks: (asked: unknown, call?: { signal?: AbortSignal }) => {
+    watchTasks: (request: unknown, call?: { signal?: AbortSignal }) => {
       if (call?.signal) wire.taken.push(call.signal)
-      wire.tasksAsked.push(asked)
+      wire.tasksAsked.push(request)
       return wire.tasks()
     },
   },
@@ -95,7 +95,7 @@ const openWindow = () => {
 /** How long a stream that went waits before it is taken up again, in milliseconds. */
 const AGAIN = 1000
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 beforeEach(() => {
   wire.taken.length = 0

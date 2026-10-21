@@ -57,7 +57,7 @@ export function useReviewDays(deps: ReviewDaysDeps) {
   /** How much falls on each day still to come, by the day it falls on. */
   const due = ref<ReadonlyMap<string, number>>(new Map())
   const streak = ref(0)
-  const answered = ref(0)
+  const reply = ref(0)
 
   /** Which vault the days on hand belong to, so another vault's are not drawn. */
   const of = ref('')
@@ -66,11 +66,11 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     days.value = new Map()
     due.value = new Map()
     streak.value = 0
-    answered.value = 0
+    reply.value = 0
     of.value = ''
   }
 
-  const read = async (vault: string) => {
+  const readItem = async (vault: string) => {
     if (!vault) {
       forget()
       return
@@ -85,7 +85,7 @@ export function useReviewDays(deps: ReviewDaysDeps) {
       days.value = new Map(reviewData.days.map((one) => [one.day, createTally(one)]))
       due.value = new Map(reviewData.due.map((one) => [one.day, one.answered]))
       streak.value = reviewData.streak
-      answered.value = reviewData.answered
+      reply.value = reviewData.answered
     } catch (why) {
       if (of.value !== vault) return
       deps.reportError(why)
@@ -93,7 +93,7 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     }
   }
 
-  return { days, due, streak, answered, of, read, forget }
+  return { days, due, streak, answered: reply, of, read: readItem, forget }
 }
 
 /** One day as the grid holds it. */

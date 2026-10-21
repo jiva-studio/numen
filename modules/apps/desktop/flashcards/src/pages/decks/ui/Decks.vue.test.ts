@@ -249,7 +249,7 @@ describe('the tile and the decks under it', () => {
 
     expect(one.find('.presets__done').text()).toBe('0%')
     expect(one.findAll('.decks__met')).toHaveLength(0)
-    expect(one.findAll('.decks__stopped').map((said) => said.text())).toStrictEqual([
+    expect(one.findAll('.decks__stopped').map((saidText) => saidText.text())).toStrictEqual([
       'nothing today',
       'nothing today',
     ])

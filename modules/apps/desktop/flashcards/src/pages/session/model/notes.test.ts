@@ -19,11 +19,11 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
 
 /** The panel, with the session around it standing in for the window. */
 const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
-  const asked: { vault: string; deck: string }[] = []
+  const request: { vault: string; deck: string }[] = []
   const open = ref(false)
   const deck = ref(more.deck === undefined ? 'decks/Words.md' : more.deck)
   const notices: string[] = []
-  const held = useNotesPanel({
+  const target = useNotesPanel({
     open: () => open.value,
     showPanel: (up) => {
       open.value = up
@@ -31,13 +31,13 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
     vault: () => 'one',
     deck: () => deck.value,
     getDeckNeighbourhood: async (vault, of) => {
-      asked.push({ vault, deck: of })
+      request.push({ vault, deck: of })
       if (more.refuses) throw new Error('out of reach')
       return { notes: [createNeighbour({ written: of })], unread: 2 } satisfies DeckNeighbourhood
     },
     showNotice: (one) => notices.push(one),
   })
-  return { held, asked, notices, open, deck }
+  return { held: target, asked: request, notices, open, deck }
 }
 
 describe('the panel the deck is read in', () => {
@@ -102,7 +102,7 @@ describe('what is read belongs to the deck', () => {
     const waiting: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
-    const held = useNotesPanel({
+    const target = useNotesPanel({
       open: () => open.value,
       showPanel: (up) => {
         open.value = up
@@ -116,9 +116,9 @@ describe('what is read belongs to the deck', () => {
       showNotice: () => {},
     })
 
-    const first = held.openPanel()
+    const first = target.openPanel()
     deck.value = 'decks/Trees.md'
-    const second = held.openPanel()
+    const second = target.openPanel()
 
     // The second deck is answered, and the first only afterwards.
     waiting[1]?.()
@@ -126,7 +126,7 @@ describe('what is read belongs to the deck', () => {
     waiting[0]?.()
     await first
 
-    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
+    expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
   // A person must never read one deck's notes under another deck's card.
@@ -134,7 +134,7 @@ describe('what is read belongs to the deck', () => {
     const waiting: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
-    const held = useNotesPanel({
+    const target = useNotesPanel({
       open: () => open.value,
       showPanel: (up) => {
         open.value = up
@@ -148,17 +148,17 @@ describe('what is read belongs to the deck', () => {
       showNotice: () => {},
     })
 
-    const first = held.openPanel()
+    const first = target.openPanel()
     waiting[0]?.()
     await first
 
     deck.value = 'decks/Trees.md'
-    const second = held.openPanel()
-    expect(held.notes.value).toEqual([])
+    const second = target.openPanel()
+    expect(target.notes.value).toEqual([])
 
     waiting[1]?.()
     await second
-    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
+    expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
   it('holds nothing once the session is over', async () => {
@@ -210,7 +210,7 @@ describe('the asking', () => {
     const waiting: { deck: string; answer: () => void; refuse: () => void }[] = []
     const deck = ref('decks/Words.md')
     const notices: string[] = []
-    const held = useNotesPanel({
+    const target = useNotesPanel({
       open: () => true,
       showPanel: () => {},
       vault: () => 'one',
@@ -225,7 +225,7 @@ describe('the asking', () => {
         ),
       showNotice: (one) => notices.push(one),
     })
-    return { held, waiting, deck, notices }
+    return { held: target, waiting, deck, notices }
   }
 
   it('is working while the deck is being requested for, and not once it has answered', async () => {
