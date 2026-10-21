@@ -60,7 +60,7 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	}
 }
 
-func TestTheSettingsConfigureHandsOverReachTheAgent(t *testing.T) {
+func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer host-key" {
 			http.Error(w, "no key", http.StatusUnauthorized)
@@ -86,7 +86,7 @@ func TestTheSettingsConfigureHandsOverReachTheAgent(t *testing.T) {
 }
 
 // The handler a host that links the plugin in serves hands Configure's base URL and key to the agent.
-func TestTheLinkedHandlerHandsTheSettingsToTheAgent(t *testing.T) {
+func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer host-key" {
 			http.Error(w, "no key", http.StatusUnauthorized)
