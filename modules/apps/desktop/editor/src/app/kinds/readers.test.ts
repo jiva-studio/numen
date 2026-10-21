@@ -6,7 +6,7 @@ describe('the reader kinds', () => {
   it('returns empty kinds since readers are provided by plugins', () => {
     const kinds = createReaderKinds({
       tabOpeners: {},
-      held: { handle: {} },
+      windowTabs: { handle: {} },
     } as unknown as ReaderKindsDeps)
 
     expect(kinds).toEqual({})

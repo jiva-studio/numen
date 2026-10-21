@@ -20,7 +20,7 @@ describe('useCrossWindowTabs', () => {
 
     const scope = effectScope()
     scope.run(() => {
-      useCrossWindowTabs({ held: mockHeld, windowId: 'win-target' }, channelName)
+      useCrossWindowTabs({ windowTabs: mockHeld, windowId: 'win-target' }, channelName)
     })
 
     senderChannel.postMessage({
@@ -65,7 +65,7 @@ describe('useCrossWindowTabs', () => {
     let hook!: ReturnType<typeof useCrossWindowTabs>
     scope.run(() => {
       hook = useCrossWindowTabs(
-        { held: mockHeld, windowId: 'win-source', closeWindowIfEmpty: closeWindow },
+        { windowTabs: mockHeld, windowId: 'win-source', closeWindowIfEmpty: closeWindow },
         channelName,
       )
     })
@@ -127,7 +127,7 @@ describe('useCrossWindowTabs', () => {
 
     const scope = effectScope()
     scope.run(() => {
-      useCrossWindowTabs({ held: mockHeld, windowId: 'win-target' }, channelName)
+      useCrossWindowTabs({ windowTabs: mockHeld, windowId: 'win-target' }, channelName)
     })
 
     senderChannel.postMessage({
@@ -158,7 +158,7 @@ describe('useCrossWindowTabs', () => {
 
     const scope = effectScope()
     scope.run(() => {
-      useCrossWindowTabs({ held: mockHeld, windowId: 'win-target' }, channelName)
+      useCrossWindowTabs({ windowTabs: mockHeld, windowId: 'win-target' }, channelName)
     })
 
     senderChannel.postMessage(null)

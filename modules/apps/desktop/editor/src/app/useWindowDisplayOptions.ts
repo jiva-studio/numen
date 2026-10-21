@@ -34,14 +34,14 @@ export function createDisplayOptions(deps: DisplayWiring) {
 }
 
 export function createTargetResolver(
-  held: ReturnType<typeof useWindowTabs>,
+  windowTabs: ReturnType<typeof useWindowTabs>,
   getVaults: () => ReturnType<typeof useVaults>,
   window: ReturnType<typeof useWindowDisplay>,
 ) {
   const getFront = () => {
-    const front = held.handle.front()
+    const front = windowTabs.handle.front()
     const tab = front?.id ?? ''
-    const on = front && held.getTab(tab)?.kind.getTarget?.(front.state)
+    const on = front && windowTabs.getTab(tab)?.kind.getTarget?.(front.state)
     return { tab, kind: front?.kind ?? null, on }
   }
   const getMade = (file: string) => (file && getVaults().makes.value.get(file)) || {}

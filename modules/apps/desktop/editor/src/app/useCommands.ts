@@ -35,7 +35,7 @@ export interface CommandsDepsOptions {
   core: VaultCore
   words: Words
   log: MessageLog
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
   kept: PaletteLists
@@ -73,7 +73,7 @@ export interface CommandsDepsOptions {
 }
 
 export function useCommands(options: CommandsDepsOptions) {
-  const { core, words, held, getTarget, knows, kept, runs, coverage, writeMessage } = options
+  const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
 
   const palette = useSearch(core, words, { coverage })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
@@ -108,7 +108,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
-    if (held.onKeyPress(event)) return event.preventDefault()
+    if (windowTabs.onKeyPress(event)) return event.preventDefault()
     if (options.pluginHost?.handleShortcut(event)) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)

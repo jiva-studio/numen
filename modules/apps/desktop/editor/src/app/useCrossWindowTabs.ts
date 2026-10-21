@@ -4,7 +4,7 @@
 import { onScopeDispose } from 'vue'
 
 export interface CrossWindowTabsDeps {
-  readonly held: {
+  readonly windowTabs: {
     readonly openTabOfKind: (kind: string) => Promise<string | undefined>
     readonly releaseTab: (tabId: string) => boolean
     readonly tabs: { readonly value: readonly unknown[] }
@@ -80,7 +80,7 @@ export function useCrossWindowTabs(
 
   const handleTabDock = async (msg: CrossWindowMessage): Promise<void> => {
     if (msg.targetWindowId !== windowId || !msg.kind) return
-    const opened = await deps.held.openTabOfKind(msg.kind)
+    const opened = await deps.windowTabs.openTabOfKind(msg.kind)
     if (!opened) return
     channel?.postMessage({
       type: 'tab-docked',
@@ -98,8 +98,8 @@ export function useCrossWindowTabs(
   const handleTabDocked = (msg: CrossWindowMessage): void => {
     if (msg.targetWindowId !== windowId || !isMatchingPendingDock(msg)) return
     pendingDocks.delete(msg.tabId)
-    deps.held.releaseTab(msg.tabId)
-    if (deps.held.tabs.value.length === 0) {
+    deps.windowTabs.releaseTab(msg.tabId)
+    if (deps.windowTabs.tabs.value.length === 0) {
       deps.closeWindowIfEmpty?.()
     }
   }

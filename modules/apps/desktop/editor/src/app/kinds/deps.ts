@@ -16,7 +16,7 @@ export interface WindowKindsDeps {
   core: NotePort & FilePort & Pick<SearchDeps, 'names'>
   log: MessageLog
   tabOpeners: FileOpeners
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
   runs: ReturnType<typeof runSupport>
   plays: ReturnType<typeof createMediaTypeProbe>
   editing: ReturnType<typeof useNoteEditors>

@@ -37,7 +37,7 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
   const deps = {
     log: { getWriter: vi.fn(() => writer) },
     tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn(() => Promise.resolve()) },
-    held: {
+    windowTabs: {
       registerKinds: vi.fn(),
       sendText: vi.fn(() => Promise.resolve('agent:1')),
       hasKind: vi.fn(() => hasPlexKind),
@@ -80,7 +80,7 @@ describe('the window kinds', () => {
   it('registers the kinds of the settings', () => {
     const { deps } = create()
 
-    expect(deps.held.registerKinds).toHaveBeenCalledWith(['settings'])
+    expect(deps.windowTabs.registerKinds).toHaveBeenCalledWith(['settings'])
   })
 
   it('makes files through the makers it hands the commands, and reveals a path in the files tab', async () => {
@@ -89,7 +89,7 @@ describe('the window kinds', () => {
     expect(window.made).toBe('made')
     expect(window.services.files).toStrictEqual({ name: 'files' })
     await window.files.revealPath('notes/a.md')
-    expect(deps.held.navigateTab).toHaveBeenCalledWith('files', 'notes/a.md')
+    expect(deps.windowTabs.navigateTab).toHaveBeenCalledWith('files', 'notes/a.md')
   })
 
   it('reveals nothing where the window has no files kind', async () => {
@@ -97,7 +97,7 @@ describe('the window kinds', () => {
 
     await window.files.revealPath('notes/a.md')
 
-    expect(deps.held.navigateTab).not.toHaveBeenCalled()
+    expect(deps.windowTabs.navigateTab).not.toHaveBeenCalled()
   })
 })
 
@@ -126,7 +126,7 @@ describe('a note travelled to', () => {
 
     await window.travel('a.md')
 
-    expect(deps.held.navigateTab).toHaveBeenCalledWith('plex', 'a.md')
+    expect(deps.windowTabs.navigateTab).toHaveBeenCalledWith('plex', 'a.md')
     expect(deps.tabOpeners.openFile).not.toHaveBeenCalled()
   })
 
@@ -135,7 +135,7 @@ describe('a note travelled to', () => {
 
     await window.destinations.travel('a.md')
 
-    expect(deps.held.navigateTab).not.toHaveBeenCalled()
+    expect(deps.windowTabs.navigateTab).not.toHaveBeenCalled()
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'here')
   })
 
@@ -144,7 +144,7 @@ describe('a note travelled to', () => {
 
     await window.leavePath('Gone.md', 'Root.md')
 
-    expect(deps.held.navigateTabsAt).toHaveBeenCalledWith('Gone.md', 'Root.md')
+    expect(deps.windowTabs.navigateTabsAt).toHaveBeenCalledWith('Gone.md', 'Root.md')
   })
 })
 
@@ -183,7 +183,7 @@ describe('the services the window gives a plugin', () => {
     workspace?.showError('the link was not written')
     workspace?.getMessageWriter('stencil')('named a stencil')
 
-    expect(deps.held.sendText).toHaveBeenCalledWith('agent', 'what is this?')
+    expect(deps.windowTabs.sendText).toHaveBeenCalledWith('agent', 'what is this?')
     expect(window.dragged.value).toStrictEqual(['a.md'])
     expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
     expect(deps.log.getWriter).toHaveBeenCalledWith('stencil')
@@ -195,7 +195,7 @@ describe('the services the window gives a plugin', () => {
 
   it('tell the person why a question could not be put to the agent', async () => {
     const { deps, window, writer } = create()
-    vi.mocked(deps.held.sendText).mockRejectedValueOnce(new Error('no agent tab'))
+    vi.mocked(deps.windowTabs.sendText).mockRejectedValueOnce(new Error('no agent tab'))
 
     window.services.workspace?.ask('what is this?')
     await Promise.resolve()
@@ -210,7 +210,7 @@ describe('the services the window gives a plugin', () => {
     window.services.workspace?.ask('what is this?')
     await Promise.resolve()
 
-    expect(deps.held.sendText).not.toHaveBeenCalled()
+    expect(deps.windowTabs.sendText).not.toHaveBeenCalled()
     expect(writer).toHaveBeenCalledWith(expect.stringContaining('not available'), 'error')
   })
 

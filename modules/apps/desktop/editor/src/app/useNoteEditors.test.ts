@@ -89,11 +89,11 @@ const create = () => {
   }
   const core = { name: 'core' }
   const tabOpeners = { name: 'openers' }
-  const held = { tabs: { value: [] }, getTab: vi.fn() }
-  const editors = useNoteEditors({ core, log, tabOpeners, held } as unknown as Parameters<
+  const windowTabs = { tabs: { value: [] }, getTab: vi.fn() }
+  const editors = useNoteEditors({ core, log, tabOpeners, windowTabs } as unknown as Parameters<
     typeof useNoteEditors
   >[0])
-  return { editors, writers, core, tabOpeners, held }
+  return { editors, writers, core, tabOpeners, windowTabs }
 }
 
 describe('the note editors', () => {

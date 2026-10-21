@@ -27,17 +27,17 @@ function formatLocalDate(date: Date): string {
 }
 
 /** Something to ask, put in the agent the person was last in and put in front. */
-function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWriter) {
+function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessage: MessageWriter) {
   return {
     askQuestion: (text: string): void => {
-      if (!held.hasKind(AGENT)) {
+      if (!windowTabs.hasKind(AGENT)) {
         writeMessage(
           'The agent chat is not available: its plugin is off or did not start.',
           'error',
         )
         return
       }
-      held
+      windowTabs
         .sendText(AGENT, text)
         .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
     },
@@ -48,24 +48,24 @@ function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWr
  * Initializes and registers view kinds for the desktop window.
  */
 export function useWindowKinds(deps: WindowKindsDeps) {
-  const { core, log, tabOpeners, held, editing, settings } = deps
+  const { core, log, tabOpeners, windowTabs, editing, settings } = deps
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])
 
   /** A note put in front of the person in the plex they were last in, and in its editor where the window has no plex. */
   const travel = async (path: string): Promise<void> => {
-    if (held.hasKind(PLEX)) await held.navigateTab(PLEX, path)
+    if (windowTabs.hasKind(PLEX)) await windowTabs.navigateTab(PLEX, path)
     else await tabOpeners.openFile(path, '', 'here')
   }
 
   /** The note the plex the person was last in stands on, which a talk is about. */
   const getPlexTarget = () => {
-    const last = held.handle.last(PLEX)
-    const target = last ? held.getTab(last.id)?.kind.getTarget?.(last.state) : undefined
+    const last = windowTabs.handle.last(PLEX)
+    const target = last ? windowTabs.getTab(last.id)?.kind.getTarget?.(last.state) : undefined
     return { path: target?.path ?? '', title: target?.title ?? '' }
   }
 
-  const agents = createAgentAsker(held, writeMessage)
+  const agents = createAgentAsker(windowTabs, writeMessage)
 
   const destinations: DestinationDeps = {
     travel: (path) => travel(path),
@@ -76,12 +76,12 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const made = createFileMakers({
     core,
     tabOpeners,
-    windowTabs: held,
+    windowTabs,
     notes: editing.notes,
     writeMessage,
   })
 
-  held.registerKinds(settings.kinds)
+  windowTabs.registerKinds(settings.kinds)
 
   const services: PluginServices = {
     workspace: createWorkspaceHost({
@@ -104,14 +104,14 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     agents,
     files: {
       revealPath: async (path: string): Promise<void> => {
-        if (held.hasKind(FILES)) await held.navigateTab(FILES, path)
+        if (windowTabs.hasKind(FILES)) await windowTabs.navigateTab(FILES, path)
       },
     },
     made,
     destinations,
     dragged,
     travel,
-    leavePath: (from: string, to: string) => held.navigateTabsAt(from, to),
+    leavePath: (from: string, to: string) => windowTabs.navigateTabsAt(from, to),
     services,
   }
 }

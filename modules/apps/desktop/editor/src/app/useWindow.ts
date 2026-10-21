@@ -35,7 +35,7 @@ import type { PluginServices } from './pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 interface WindowCommandsOptions {
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
   settings: ReturnType<typeof useSettings>
@@ -50,7 +50,7 @@ interface WindowCommandsOptions {
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
-  const { held, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
+  const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   const rec = kinds as unknown as {
     recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
     pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
@@ -59,7 +59,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     core,
     words,
     log: deps.log,
-    held,
+    windowTabs,
     getTarget: deps.getTarget,
     knows: deps.knows,
     kept: settings.kept,
@@ -72,7 +72,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
     openPreset: (path) =>
-      openCommandTab({ vaultCore: core, windowTabs: held, writeMessage }, path, 'preset'),
+      openCommandTab({ vaultCore: core, windowTabs, writeMessage }, path, 'preset'),
     dressed: settings.dressed,
     oneName: settings.oneName,
     nesting: settings.nesting,
@@ -91,7 +91,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
 
 interface AppLifecycleDeps {
   vaultsModule: ReturnType<typeof useVaults>
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof useNoteEditors>
@@ -100,7 +100,7 @@ interface AppLifecycleDeps {
 }
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
-  const { vaultsModule, held, settings, window, editing } = deps
+  const { vaultsModule, windowTabs, settings, window, editing } = deps
   const startLayout = async () => {
     if (!vaultsModule.shown.value.id) return
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
@@ -110,9 +110,9 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
       const colonIdx = initialTab.indexOf(':')
       const kind = colonIdx !== -1 ? initialTab.slice(0, colonIdx) : initialTab
       const at = colonIdx !== -1 ? initialTab.slice(colonIdx + 1) : ''
-      const opened = await held.openTabOfKind(kind, at)
+      const opened = await windowTabs.openTabOfKind(kind, at)
       if (opened) {
-        held.layout.value = {
+        windowTabs.layout.value = {
           root: { kind: 'pane', id: 'main', tabs: [opened], active: opened },
           axis: 'horizontal',
           focus: 'main',
@@ -120,7 +120,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
         return
       }
     }
-    await held.openPlacedTabs((kind, error) =>
+    await windowTabs.openPlacedTabs((kind, error) =>
       deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
     )
   }
@@ -136,7 +136,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     startEditing: () => void editing.fileFlush.start(),
     closeWindow: () => window.close(),
     closeEditing: () => editing.close(),
-    closeTabs: () => held.close(),
+    closeTabs: () => windowTabs.close(),
     closeSettings: () => settings.close(),
     closePlugins: async () => {
       await deps.pluginLoader?.close()
@@ -147,14 +147,14 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
 function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
-  const held = useWindowTabs()
+  const windowTabs = useWindowTabs()
   const tabLinks = useTabLinks()
-  const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
+  const tabOpeners = fileOpeners({ ...core, reconcileTab: windowTabs.reconcileTab })
   const runs = runSupport()
   const plays = createMediaTypeProbe()
   const pluginServices: PluginServices = {}
   const { pluginHost, pluginLoader } = createPluginSupport({
-    held,
+    windowTabs,
     tabLinks,
     tabOpeners,
     settingsHolder,
@@ -169,7 +169,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   return {
     log,
     writeMessage,
-    held,
+    windowTabs,
     tabLinks,
     tabOpeners,
     runs,
@@ -197,11 +197,11 @@ function initWindowServices(
     core,
     log: base.log,
     tabOpeners: base.tabOpeners,
-    held: base.held,
+    windowTabs: base.windowTabs,
   })
 
   const tabSync = useTabSync({
-    held: base.held,
+    windowTabs: base.windowTabs,
     tabLinks: base.tabLinks,
     onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
   })
@@ -222,7 +222,7 @@ function initWindowServices(
     core,
     words,
     log: base.log,
-    windowTabs: base.held,
+    windowTabs: base.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
   })
   settingsHolder.current = settings
@@ -247,7 +247,7 @@ function initWindowKindsAndCommands(
   services: WindowServices,
 ) {
   const { editing, settings, window, tabSync } = services
-  const getTarget = createTargetResolver(base.held, () => ctx.vaults, window)
+  const getTarget = createTargetResolver(base.windowTabs, () => ctx.vaults, window)
 
   watch(
     () => getTarget().file,
@@ -261,7 +261,7 @@ function initWindowKindsAndCommands(
     core,
     log: base.log,
     tabOpeners: base.tabOpeners,
-    held: base.held,
+    windowTabs: base.windowTabs,
     runs: base.runs,
     plays: base.plays,
     editing,
@@ -277,10 +277,10 @@ function initWindowKindsAndCommands(
 
   Object.assign(base.pluginServices, ctx.kinds.services)
 
-  const knows: NoteLookup = createNoteLookup(editing, base.held)
+  const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
   ctx.commands = initWindowCommands({
-    held: base.held,
+    windowTabs: base.windowTabs,
     getTarget,
     knows,
     settings,
@@ -315,21 +315,21 @@ export const useWindow = () => {
 
   const notices = useWindowNotices({ log: base.log, window, settings, vaults: ctx.vaults })
   const statusBar = useWindowStatusBar({ tasks: window.tasks })
-  const openTabs = useOpenTabs({ core, windowTabs: base.held })
+  const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs })
 
   const closeTab = (id: string, hold?: () => void) => {
     base.tabLinks.removeClosedTab(id)
-    if (!base.held.releaseTab(id)) hold?.()
+    if (!base.windowTabs.releaseTab(id)) hold?.()
   }
 
   useAppHotkeys(ctx.commands.onKeyDown)
   const crossWindowTabs = useCrossWindowTabs({
-    held: base.held,
+    windowTabs: base.windowTabs,
     closeWindowIfEmpty: isSecondaryWindow() ? () => window.close() : undefined,
   })
   initAppLifecycle({
     vaultsModule: ctx.vaults,
-    held: base.held,
+    windowTabs: base.windowTabs,
     settings,
     window,
     editing,
@@ -343,8 +343,8 @@ export const useWindow = () => {
     commandDeps: ctx.commands.commandDeps,
     failure: window.failure,
     fileFlush: editing.fileFlush,
-    held: base.held,
-    layout: base.held.layout,
+    windowTabs: base.windowTabs,
+    layout: base.windowTabs.layout,
     listed: ctx.vaults.listed,
     log: base.log,
     notices,

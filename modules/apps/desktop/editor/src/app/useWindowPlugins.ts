@@ -12,7 +12,7 @@ import type { useTabLinks } from '@/features/tab-linking'
 import type { useSettings } from './useSettings'
 
 export interface PluginSupportDeps {
-  readonly held: ReturnType<typeof useWindowTabs>
+  readonly windowTabs: ReturnType<typeof useWindowTabs>
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
@@ -52,29 +52,29 @@ function createPluginSettingsAccessor(settingsHolder: {
 }
 
 export function createPluginSupport(deps: PluginSupportDeps) {
-  const { held, tabLinks, tabOpeners, settingsHolder } = deps
+  const { windowTabs, tabLinks, tabOpeners, settingsHolder } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(settingsHolder)
 
   const closeTabsForPlugin = (pluginId: string) => {
     if (!pluginId) return
-    for (const tab of held.tabs.value) {
-      const windowTab = held.getTab(tab.id)
+    for (const tab of windowTabs.tabs.value) {
+      const windowTab = windowTabs.getTab(tab.id)
       if (windowTab?.kind.pluginId === pluginId) {
         tabLinks.removeClosedTab(tab.id)
-        held.requestClose(tab.id)
+        windowTabs.requestClose(tab.id)
       }
     }
   }
 
   const pluginHost = createPluginHost({
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
-    registerKind: held.registerKind,
+    registerKind: windowTabs.registerKind,
     registerExtensionReader: tabOpeners.registerExtensionReader,
     registerEditor: tabOpeners.registerEditor,
-    openTab: held.openTabOfKind,
-    openTabBeside: held.openTabBesideOfKind,
-    closeTab: held.finishClose,
-    getTabState: (id: string) => held.getTab(id)?.state,
+    openTab: windowTabs.openTabOfKind,
+    openTabBeside: windowTabs.openTabBesideOfKind,
+    closeTab: windowTabs.finishClose,
+    getTabState: (id: string) => windowTabs.getTab(id)?.state,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,
