@@ -30,19 +30,19 @@ describe('the settings under the control', () => {
   // writes the group the way every other row does. It is placed under the goal
   // whose budget is cards.
   it('offers the two things a budget is spent on', async () => {
-    const { tab, done } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
+    const { tab, recorded } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.text()).toContain(words.fieldName('counts'))
 
     const unit = tab.findAll('button').find((one) => one.text() === words.budgetUnitName('shows'))
     await unit?.trigger('click')
-    expect(done).toStrictEqual(['type counts shows', 'flushPending'])
+    expect(recorded).toStrictEqual(['type counts shows', 'flushPending'])
   })
 
   // The share of a day the debt takes is moved along its whole range, so any
   // of the hundred stands and none of them is a named position. The track
   // draws no figure, so the per cent is read out beside it.
   it('moves the share of a day the debt takes along a track, and reads it out', async () => {
-    const { tab, done } = mountPresetTab({}, { backlog: 70 })
+    const { tab, recorded } = mountPresetTab({}, { backlog: 70 })
     expect(tab.text()).toContain(words.fieldName('backlog'))
     const row = tab.get('[data-preset-row="backlog"]')
 
@@ -59,9 +59,9 @@ describe('the settings under the control', () => {
     // The value is handed on as the handle moves, and the row is written once
     // the key is release.
     await track.trigger('keydown', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['type backlog 69'])
+    expect(recorded).toStrictEqual(['type backlog 69'])
     await track.trigger('keyup', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['type backlog 69', 'flushPending'])
+    expect(recorded).toStrictEqual(['type backlog 69', 'flushPending'])
   })
 
   // The rule stands over the one value it reads, and the value the other rule
@@ -103,25 +103,25 @@ describe('the settings under the control', () => {
   })
 
   it('passes on the rule that was chosen, and is done with it at once', async () => {
-    const { tab, done } = mountPresetTab({}, { learned: 'interval' })
+    const { tab, recorded } = mountPresetTab({}, { learned: 'interval' })
     await tab.get('[data-preset="choice"]').trigger('click')
     const selected = [...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].find(
       (one) => one.textContent?.trim() === words.ruleName('retention'),
     )
     selected?.click()
     await tab.vm.$nextTick()
-    expect(done).toStrictEqual(['type learned retention', 'flushPending'])
+    expect(recorded).toStrictEqual(['type learned retention', 'flushPending'])
   })
 
   it('holds the days a card is put off inside what a preset may hold', async () => {
-    const { tab, done } = mountPresetTab({}, { learned: 'interval', interval: 21 })
+    const { tab, recorded } = mountPresetTab({}, { learned: 'interval', interval: 21 })
     const row = tab.get('[data-preset-row="interval"]')
     const field = row.get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
     expect(field.attributes('aria-valuemin')).toBe(`${BOUNDS.interval.least}`)
     expect(field.attributes('aria-valuemax')).toBe(`${BOUNDS.interval.most}`)
     await field.setValue('30')
-    expect(done).toStrictEqual(['type interval 30'])
+    expect(recorded).toStrictEqual(['type interval 30'])
   })
 
   // A tab draws its rows before the first read lands. Until the application
@@ -143,21 +143,21 @@ describe('what the tab says went wrong', () => {
   const mountWithError = (words: string) => {
     const one = createTab()
     const state: PresetTabState = { ...one.state, errorMessage: ref(words) }
-    return { tab: mount(PresetTab, { props: { state } }), done: one.done }
+    return { tab: mount(PresetTab, { props: { state } }), recorded: one.recorded }
   }
 
   it('offers reading the file again along with what it says', async () => {
-    const { tab, done } = mountWithError(words.notRead('missing'))
+    const { tab, recorded } = mountWithError(words.notRead('missing'))
     const alert = tab.get('[role="alert"]')
     expect(alert.text()).toContain(words.notRead('missing'))
     await alert.get('button').trigger('click')
-    expect(done).toStrictEqual(['reload'])
+    expect(recorded).toStrictEqual(['reload'])
   })
 
   it('offers it for a failed write as well as a failed read', async () => {
-    const { tab, done } = mountWithError(words.notSaved('unreadable'))
+    const { tab, recorded } = mountWithError(words.notSaved('unreadable'))
     await tab.get('[role="alert"] button').trigger('click')
-    expect(done).toStrictEqual(['reload'])
+    expect(recorded).toStrictEqual(['reload'])
   })
 
   it('offers nothing where there is nothing to say', () => {
@@ -177,7 +177,7 @@ describe('a file that changed under the tab', () => {
     const response = tab.get('[role="status"].preset__answering')
     expect(response.text()).toContain(words.changed)
     await response.get('button').trigger('click')
-    expect(one.done).toStrictEqual(['reload'])
+    expect(one.recorded).toStrictEqual(['reload'])
   })
 
   it('says nothing where the file is the one the tab read', () => {
@@ -194,15 +194,15 @@ describe('the load of the week', () => {
   /** A tab whose row of days is watched for what it puts into the settings. */
   const mountWithLoad = (load: Record<string, number>) => {
     const one = createTab({}, { load })
-    const put: [Field, SettingValue][] = []
+    const loadWrites: [Field, SettingValue][] = []
     const state: PresetTabState = {
       ...one.state,
       updateSetting: (field, value) => {
-        put.push([field, value])
-        one.done.push('type')
+        loadWrites.push([field, value])
+        one.recorded.push('type')
       },
     }
-    return { tab: mount(PresetTab, { props: { state } }), put, done: one.done }
+    return { tab: mount(PresetTab, { props: { state } }), loadWrites, recorded: one.recorded }
   }
 
   /** The chips of the row that draws the week. */
@@ -240,13 +240,13 @@ describe('the load of the week', () => {
   })
 
   it('writes the day it was handed at the share chosen, leaving the others', async () => {
-    const { tab, put, done } = mountWithLoad({ sat: 50, sun: 0 })
+    const { tab, put, recorded } = mountWithLoad({ sat: 50, sun: 0 })
     await chips(tab)[0]?.trigger('click')
     getMenuItems()[2]?.click()
     await tab.vm.$nextTick()
 
-    expect(put).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
-    expect(done).toStrictEqual(['type', 'flushPending'])
+    expect(loadWrites).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
+    expect(recorded).toStrictEqual(['type', 'flushPending'])
   })
 
   it('stops naming a day put back to the whole of a day', async () => {
@@ -255,7 +255,7 @@ describe('the load of the week', () => {
     getMenuItems()[6]?.click()
     await tab.vm.$nextTick()
 
-    expect(put).toStrictEqual([['load', { sun: 0 }]])
+    expect(loadWrites).toStrictEqual([['load', { sun: 0 }]])
   })
 })
 
@@ -318,7 +318,7 @@ describe('the row a chance of recall is typed into', () => {
   })
 
   it('passes a percentage back as the share the settings hold', async () => {
-    const { tab, done } = mountPresetTab(
+    const { tab, recorded } = mountPresetTab(
       { goal: 'retention' },
       { goal: 'retention', retention: 0.87 },
     )
@@ -327,7 +327,7 @@ describe('the row a chance of recall is typed into', () => {
       .find((one) => one.attributes('aria-valuemax') === '99')
 
     await field?.setValue('90')
-    expect(done).toStrictEqual(['type retention 0.9'])
+    expect(recorded).toStrictEqual(['type retention 0.9'])
   })
 })
 

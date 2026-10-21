@@ -147,7 +147,7 @@ const vault = (
   /** Which preset the deck names, as the vault answers it. */
   let by = answers.by ?? ''
   /** Every deck put on a preset, as the window asked for it. */
-  const put: { deck: string; preset: string; seen: string }[] = []
+  const attached: { deck: string; preset: string; seen: string }[] = []
 
   const presets: Presets = {
     read: async (path) =>
@@ -175,7 +175,7 @@ const vault = (
         bounds: NO_BOUNDS,
       }),
     scheduleDeck: async (deck, preset, observed) => {
-      put.push({ deck, preset, seen: observed })
+      attached.push({ deck, preset, seen: observed })
       if (answers.notScheduled) return asFailure(answers.notScheduled)
       if (answers.hasSchedulingChanged) return asFailure('changed' as const)
       by = preset
@@ -200,7 +200,7 @@ const vault = (
   return {
     core,
     presets,
-    put,
+    attached,
     written: content,
     wrote: () => wrote,
     seen: observed,
@@ -314,13 +314,13 @@ describe('a card written in a deck', () => {
   })
 
   it('reaches the vault as the cards of that file, with the file it was read from', async () => {
-    const { decks, tab, written, seen } = await open()
+    const { decks, tab, savedFiles, observedRanks } = await open()
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.store.flush()
 
-    expect(written).toStrictEqual(['Animals.md Llama, Alpaca, Vicuña'])
-    expect(seen).toStrictEqual(['read 1'])
+    expect(savedFiles).toStrictEqual(['Animals.md Llama, Alpaca, Vicuña'])
+    expect(observedRanks).toStrictEqual(['read 1'])
   })
 
   it('reaches the vault carrying the mark and the heading the file gave it', async () => {
@@ -334,11 +334,11 @@ describe('a card written in a deck', () => {
   })
 
   it('writes nothing where nothing was touched', async () => {
-    const { decks, written } = await open()
+    const { decks, savedFiles } = await open()
 
     await decks.store.flush()
 
-    expect(written).toStrictEqual([])
+    expect(savedFiles).toStrictEqual([])
   })
 })
 
@@ -353,15 +353,15 @@ describe('a deck whose file moved past what was read', () => {
   })
 
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
-    const { decks, tab, written, seen } = await open({ isChanged: true })
+    const { decks, tab, savedFiles, observedRanks } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.store.flush()
     tab.keepMine()
     await settle()
 
-    expect(written).toHaveLength(2)
-    expect(seen[1]).toBeNull()
+    expect(savedFiles).toHaveLength(2)
+    expect(observedRanks[1]).toBeNull()
   })
 
   it('reads the file again when the person takes what it holds', async () => {
@@ -886,26 +886,26 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('carries the file the deck was read at, so a write lands on what was read', async () => {
-    const { tab, put } = await open()
+    const { tab, attached } = await open()
 
     tab.setSchedule('Sanskrit.md')
     await settle()
 
-    expect(put).toStrictEqual([{ deck: 'Animals.md', preset: 'Sanskrit.md', seen: 'read 1' }])
+    expect(attached).toStrictEqual([{ deck: 'Animals.md', preset: 'Sanskrit.md', seen: 'read 1' }])
   })
 
   it('writes what the deck owes before it writes the preset', async () => {
-    const { tab, put, written } = await open()
+    const { tab, attached, savedFiles } = await open()
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
     tab.setSchedule('Sanskrit.md')
     await settle()
 
-    expect(written).toStrictEqual(['Animals.md Vicuña, Alpaca'])
-    expect(put.map((one) => one.preset)).toStrictEqual(['Sanskrit.md'])
+    expect(savedFiles).toStrictEqual(['Animals.md Vicuña, Alpaca'])
+    expect(attached.map((one) => one.preset)).toStrictEqual(['Sanskrit.md'])
     // The deck was written first, so what the preset write presents is the file
     // that write made.
-    expect(put[0]?.seen).toBe('written')
+    expect(attached[0]?.seen).toBe('written')
   })
 
   it('reads the deck again, so the tab writes against the file the choice made', async () => {

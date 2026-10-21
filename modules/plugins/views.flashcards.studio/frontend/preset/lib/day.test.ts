@@ -89,8 +89,8 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
     scheduleDeck: async () => asValue({ at: '' }),
-    write: async (_path, put) => {
-      content.push(put)
+    write: async (_path, payload) => {
+      content.push(payload)
       return asValue({ at: 'two' })
     },
     // A curve nobody answers leaves the sketch standing, which is what the

@@ -89,7 +89,7 @@ const vault = (
 
   return {
     core,
-    written: content,
+    writtenFiles: content,
     renamed,
     /** The file written from somewhere else, which the next read answers with. */
     setFaces: (next: readonly VaultFace[]) => {
@@ -149,13 +149,13 @@ describe('a field renamed in a stencil', () => {
   })
 
   it('writes the stencil from the tab nowhere, so nothing goes over the vault', async () => {
-    const { stencils, tab, written } = await open()
+    const { stencils, tab, writtenFiles } = await open()
 
     tab.renameField('Height', 'Shoulder')
     await settle()
     await stencils.store.flush()
 
-    expect(written).toStrictEqual([])
+    expect(writtenFiles).toStrictEqual([])
   })
 
   it('shows the fields and the braces as the vault left them', async () => {
@@ -234,11 +234,11 @@ describe('a field renamed in a stencil', () => {
   })
 
   it('writes nothing where nothing was touched', async () => {
-    const { stencils, written } = await open()
+    const { stencils, writtenFiles } = await open()
 
     await stencils.store.flush()
 
-    expect(written).toStrictEqual([])
+    expect(writtenFiles).toStrictEqual([])
   })
 })
 
@@ -280,14 +280,14 @@ describe('a stencil whose file moved past what was read', () => {
   })
 
   it('keeps what the person wrote when they say so', async () => {
-    const { stencils, tab, written } = await open({ isChanged: true })
+    const { stencils, tab, writtenFiles } = await open({ isChanged: true })
 
     tab.addField('Weight')
     await stencils.store.flush()
     tab.keepMine()
     await settle()
 
-    expect(written).toHaveLength(2)
+    expect(writtenFiles).toHaveLength(2)
   })
 })
 

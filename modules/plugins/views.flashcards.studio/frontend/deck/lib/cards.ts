@@ -99,7 +99,7 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
     const seat = left.findIndex((each) => rank(each.section) >= rank(section))
     return seat === -1 ? left.length : seat
   }
-  const put = (section: string | null, where: number): BufferDeck => ({
+  const placeCard = (section: string | null, where: number): BufferDeck => ({
     ...deck,
     cards: [...left.slice(0, where), { ...card, section }, ...left.slice(where)],
   })
@@ -120,11 +120,11 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
     const section = run === CARD_HEAD ? null : run
     if (section !== null && !deck.sections.some((each) => each.id === section)) return deck
     const seat = last(section)
-    return put(section, seat === -1 ? head(section) : seat + 1)
+    return placeCard(section, seat === -1 ? head(section) : seat + 1)
   }
 
   if (!deck.sections.some((section) => section.id === at)) return deck
-  return put(at, head(at))
+  return placeCard(at, head(at))
 }
 
 export interface ReplaceValueTarget {

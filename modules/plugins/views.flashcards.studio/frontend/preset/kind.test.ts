@@ -128,13 +128,13 @@ const openPresetTab = async (
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
     scheduleDeck: async () => asValue({ at: '' }),
-    write: async (_path, put) => {
-      content.push(put)
+    write: async (_path, payload) => {
+      content.push(payload)
       return writeAs(await writing(writes++))
     },
-    curve: async (_path, put) => {
-      request.push(put.goal)
-      return typeof answers === 'function' ? answers(put) : answers
+    curve: async (_path, params) => {
+      request.push(params.goal)
+      return typeof answers === 'function' ? answers(params) : answers
     },
   }
   const buffers = createMockBufferHost()
@@ -153,8 +153,8 @@ const openPresetTab = async (
   await Promise.resolve()
   return {
     state,
-    written: content,
-    asked: request,
+    writtenFiles: content,
+    requests: request,
     closed,
     buffers,
     core,
@@ -200,8 +200,8 @@ const opening = async (file: Partial<Settings>) => {
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
     scheduleDeck: async () => asValue({ at: '' }),
-    write: async (_path, put) => {
-      content.push(put)
+    write: async (_path, payload) => {
+      content.push(payload)
       return asValue({ at: 'two' })
     },
     curve: async () => curve,
@@ -222,30 +222,30 @@ const opening = async (file: Partial<Settings>) => {
 
 describe('the value the goal steers', () => {
   it('leaves the knob, the field and what is written at one value after a drag', async () => {
-    const { state, written } = await openPresetTab()
+    const { state, writtenFiles } = await openPresetTab()
     state.moveSlider(3)
     state.flushPending()
     await Promise.resolve()
     expect(state.place.value).toBe(3)
     expect(state.settings.value.minutesADay).toBe(30)
-    expect(written.at(-1)?.minutesADay).toBe(30)
+    expect(writtenFiles.at(-1)?.minutesADay).toBe(30)
   })
 
   // The knob rides 25 places of a grid and a person types whatever they like.
   // What they typed is what the file gets; the knob only shows where that
   // leaves them.
   it('is the number typed, and the knob goes to the place nearest it', async () => {
-    const { state, written } = await openPresetTab()
+    const { state, writtenFiles } = await openPresetTab()
     state.updateSetting('minutesADay', 21)
     state.flushPending()
     await Promise.resolve()
     expect(state.place.value).toBe(2)
     expect(state.settings.value.minutesADay).toBe(21)
-    expect(written.at(-1)?.minutesADay).toBe(21)
+    expect(writtenFiles.at(-1)?.minutesADay).toBe(21)
   })
 
   it('is the target typed, whatever place of the grid remains nearest', async () => {
-    const { state, written } = await openPresetTab(
+    const { state, writtenFiles } = await openPresetTab(
       { goal: 'retention' },
       {
         ...curve,
@@ -259,11 +259,11 @@ describe('the value the goal steers', () => {
     await Promise.resolve()
     expect(state.place.value).toBe(1)
     expect(state.settings.value.retention).toBe(0.873)
-    expect(written.at(-1)?.retention).toBe(0.873)
+    expect(writtenFiles.at(-1)?.retention).toBe(0.873)
   })
 
   it('is the day under a goal of a date, and a day typed moves the knob', async () => {
-    const { state, written } = await openPresetTab(
+    const { state, writtenFiles } = await openPresetTab(
       { goal: 'date', byDate: '2026-09-09' },
       { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
     )
@@ -272,11 +272,11 @@ describe('the value the goal steers', () => {
     await Promise.resolve()
     expect(state.place.value).toBe(2)
     expect(state.settings.value.byDate).toBe('2026-09-29')
-    expect(written.at(-1)?.byDate).toBe('2026-09-29')
+    expect(writtenFiles.at(-1)?.byDate).toBe('2026-09-29')
   })
 
   it('is the day typed, and not the day the nearest place of the grid names', async () => {
-    const { state, written } = await openPresetTab(
+    const { state, writtenFiles } = await openPresetTab(
       { goal: 'date', byDate: '2026-09-09' },
       { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
     )
@@ -285,7 +285,7 @@ describe('the value the goal steers', () => {
     await Promise.resolve()
     expect(state.place.value).toBe(1)
     expect(state.settings.value.byDate).toBe('2026-09-22')
-    expect(written.at(-1)?.byDate).toBe('2026-09-22')
+    expect(writtenFiles.at(-1)?.byDate).toBe('2026-09-22')
   })
 
   it('leaves a field holding no day at its current position, and the knob where it is', async () => {
@@ -301,21 +301,21 @@ describe('the value the goal steers', () => {
 
 describe('the curve behind the knob', () => {
   it('is requested for once for the goal, and a walk of the grid asks nothing', async () => {
-    const { state, asked } = await openPresetTab()
+    const { state, requests } = await openPresetTab()
     state.moveSlider(1)
     state.moveSlider(3)
     state.flushPending()
     await Promise.resolve()
     await Promise.resolve()
     await Promise.resolve()
-    expect(asked).toStrictEqual(['minutes'])
+    expect(requests).toStrictEqual(['minutes'])
   })
 
   it('is requested for again where a field the knob does not ride is typed', async () => {
-    const { state, asked } = await openPresetTab()
+    const { state, requests } = await openPresetTab()
     state.updateSetting('newADay', 4)
     await Promise.resolve()
-    expect(asked).toStrictEqual(['minutes', 'minutes'])
+    expect(requests).toStrictEqual(['minutes', 'minutes'])
   })
 
   // What the material evaluates to is a fact about the vault: no setting moves one
@@ -339,7 +339,7 @@ describe('the curve behind the knob', () => {
   // A goal already worked out is drawn again as it was, so moving between the
   // three is instant and never puts the picture back into its waiting state.
   it('is requested for once for each goal, however often they are moved between', async () => {
-    const { state, asked } = await openPresetTab()
+    const { state, requests } = await openPresetTab()
     const settle = async () => {
       for (let i = 0; i < 4; i += 1) await Promise.resolve()
     }
@@ -348,7 +348,7 @@ describe('the curve behind the knob', () => {
     await settle()
     state.chooseGoal('date')
     await settle()
-    expect(asked).toStrictEqual(['minutes', 'retention', 'date'])
+    expect(requests).toStrictEqual(['minutes', 'retention', 'date'])
 
     state.chooseGoal('minutes')
     await settle()
@@ -356,7 +356,7 @@ describe('the curve behind the knob', () => {
     state.chooseGoal('retention')
     await settle()
     expect(state.curve.value.isHonest).toBe(true)
-    expect(asked).toStrictEqual(['minutes', 'retention', 'date'])
+    expect(requests).toStrictEqual(['minutes', 'retention', 'date'])
   })
 
   it('leaves the knob at its current position where the file says what it already returned', async () => {
@@ -391,12 +391,12 @@ describe('the curve behind the knob', () => {
       at: [point(), point(), point()],
       now: { at: 2, value: settings.minutesADay, day: '' },
     })
-    const { state, asked } = await openPresetTab({}, createReachingCurve)
+    const { state, requests } = await openPresetTab({}, createReachingCurve)
     expect(state.curve.value.grid.at(-1)).toBe(20)
 
     state.updateSetting('minutesADay', 120)
     await flushPromises()
-    expect(asked).toStrictEqual(['minutes', 'minutes'])
+    expect(requests).toStrictEqual(['minutes', 'minutes'])
     expect(state.curve.value.grid.at(-1)).toBe(120)
   })
 
@@ -417,27 +417,27 @@ describe('the curve behind the knob', () => {
 // moment they make it. A window shut before an answer lands loses nothing.
 describe('the goal chosen', () => {
   it('is written without waiting on the curve behind it', async () => {
-    const { state, written } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
+    const { state, writtenFiles } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
     state.chooseGoal('retention')
     await flushPromises()
-    expect(written.at(-1)?.goal).toBe('retention')
+    expect(writtenFiles.at(-1)?.goal).toBe('retention')
   })
 
   it('names a day where the file names none, since a date is aimed at one', async () => {
-    const { state, written } = await openPresetTab({ byDate: '' }, dated)
+    const { state, writtenFiles } = await openPresetTab({ byDate: '' }, dated)
     state.chooseGoal('date')
     await flushPromises()
     expect(state.settings.value.byDate).toBe('2026-09-29')
-    expect(written.at(-1)?.byDate).toBe('2026-09-29')
+    expect(writtenFiles.at(-1)?.byDate).toBe('2026-09-29')
   })
 
   it('keeps the day the file names, whether it is ahead of today or behind', async () => {
     for (const day of ['2026-12-25', '2026-08-30', '2026-01-06']) {
-      const { state, written } = await openPresetTab({ byDate: day }, dated)
+      const { state, writtenFiles } = await openPresetTab({ byDate: day }, dated)
       state.chooseGoal('date')
       await flushPromises()
       expect(state.settings.value.byDate).toBe(day)
-      expect(written.at(-1)?.byDate).toBe(day)
+      expect(writtenFiles.at(-1)?.byDate).toBe(day)
     }
   })
 })
@@ -548,7 +548,7 @@ describe('what a tab still owes the file', () => {
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
     await flushPromises()
-    expect(written.at(-1)?.newADay).toBe(4)
+    expect(writtenFiles.at(-1)?.newADay).toBe(4)
     expect(closed).toStrictEqual(['Steady.md'])
   })
 
@@ -599,7 +599,7 @@ describe('what a tab still owes the file', () => {
     const { state, written, flush } = await openPresetTab()
     state.updateSetting('newADay', 4)
     await flush()
-    expect(written.at(-1)?.newADay).toBe(4)
+    expect(writtenFiles.at(-1)?.newADay).toBe(4)
   })
 
   it('is waited for by the window going, where a write is already out', async () => {
@@ -702,27 +702,27 @@ describe('what the control writes', () => {
   it('is the minutes alone under a goal of minutes, whatever the counts hold', async () => {
     // The case reported: a day of minutes the card limits had been cut to
     // nothing under.
-    const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 0 })
+    const { state, writtenFiles } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 0 })
     state.moveSlider(3)
     state.flushPending()
     await Promise.resolve()
 
     expect(state.settings.value.minutesADay).toBe(30)
-    expect(written.at(-1)?.minutesADay).toBe(30)
-    expect(written.at(-1)?.newADay).toBe(12)
-    expect(written.at(-1)?.reviewsADay).toBe(0)
-    expect(written.at(-1)?.retention).toBe(0.88)
+    expect(writtenFiles.at(-1)?.minutesADay).toBe(30)
+    expect(writtenFiles.at(-1)?.newADay).toBe(12)
+    expect(writtenFiles.at(-1)?.reviewsADay).toBe(0)
+    expect(writtenFiles.at(-1)?.retention).toBe(0.88)
   })
 
   it('leaves the counts and the target alone under a goal of minutes', async () => {
-    const { state, written } = await openPresetTab({ reviewsADay: 12, retention: 0.95 })
+    const { state, writtenFiles } = await openPresetTab({ reviewsADay: 12, retention: 0.95 })
     state.moveSlider(1)
     state.flushPending()
     await Promise.resolve()
     expect(state.settings.value.reviewsADay).toBe(12)
     expect(state.settings.value.retention).toBe(0.95)
-    expect(written.at(-1)?.reviewsADay).toBe(12)
-    expect(written.at(-1)?.retention).toBe(0.95)
+    expect(writtenFiles.at(-1)?.reviewsADay).toBe(12)
+    expect(writtenFiles.at(-1)?.retention).toBe(0.95)
   })
 })
 
@@ -730,7 +730,7 @@ describe('what the control writes', () => {
 // in the file for the goal that names it to come round again.
 describe('a setting the goal on screen does not name', () => {
   it('is not drawn, and keeps its value in the file across a write', async () => {
-    const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
+    const { state, writtenFiles } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
     expect(getGoalFields(state.settings.value.goal, state.settings.value.learned)).not.toContain(
       'reviewsADay',
     )
@@ -738,12 +738,12 @@ describe('a setting the goal on screen does not name', () => {
     state.moveSlider(1)
     state.flushPending()
     await Promise.resolve()
-    expect(written.at(-1)?.reviewsADay).toBe(7)
-    expect(written.at(-1)?.newADay).toBe(12)
+    expect(writtenFiles.at(-1)?.reviewsADay).toBe(7)
+    expect(writtenFiles.at(-1)?.newADay).toBe(12)
   })
 
   it('arrives back the moment its own goal is chosen again', async () => {
-    const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
+    const { state, writtenFiles } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
     state.moveSlider(3)
     state.flushPending()
     await Promise.resolve()
@@ -756,7 +756,7 @@ describe('a setting the goal on screen does not name', () => {
     expect(getGoalFields('retention', DEFAULTS.learned)).toContain('reviewsADay')
     expect(state.settings.value.reviewsADay).toBe(7)
     expect(state.settings.value.newADay).toBe(12)
-    expect(written.at(-1)?.reviewsADay).toBe(7)
+    expect(writtenFiles.at(-1)?.reviewsADay).toBe(7)
   })
 })
 
@@ -787,7 +787,7 @@ describe('a field the goal does not getGoalField, typed', () => {
   // knob goes back to where the preset stands, so the picture and the file say
   // one thing and the next touch of the knob writes what the file already says.
   it('leaves the knob standing where the preset remains, whatever range arrives back', async () => {
-    const { state, written } = await openPresetTab({ minutesADay: 23 }, createRangedCurve)
+    const { state, writtenFiles } = await openPresetTab({ minutesADay: 23 }, createRangedCurve)
     expect(state.place.value).toBe(state.curve.value.now.at)
 
     state.updateSetting('backlog', 5)
@@ -798,7 +798,7 @@ describe('a field the goal does not getGoalField, typed', () => {
 
     expect(state.place.value).toBe(state.curve.value.now.at)
     expect(state.settings.value.minutesADay).toBe(23)
-    expect(written.at(-1)?.minutesADay).toBe(23)
+    expect(writtenFiles.at(-1)?.minutesADay).toBe(23)
   })
 
   const NEW_VALUES: Partial<Record<Field, SettingValue>> = {
@@ -816,7 +816,7 @@ describe('a field the goal does not getGoalField, typed', () => {
         const value = NEW_VALUES[field]
         if (field === getGoalField(goal) || value === undefined) continue
 
-        const { state, written } = await openPresetTab({ goal, minutesADay: 23 }, createRangedCurve)
+        const { state, writtenFiles } = await openPresetTab({ goal, minutesADay: 23 }, createRangedCurve)
         const was = state.settings.value
         state.updateSetting(field, value)
         state.flushPending()
@@ -826,7 +826,7 @@ describe('a field the goal does not getGoalField, typed', () => {
 
         const now = state.settings.value
         expect({ ...now, [field]: was[field] }).toStrictEqual(was)
-        expect(written.at(-1)).toStrictEqual(now)
+        expect(writtenFiles.at(-1)).toStrictEqual(now)
       }
     }
   })
@@ -861,7 +861,7 @@ describe('a field moved before the first read lands', () => {
 
     tab.flushPending()
     await flushPromises()
-    expect(written.at(-1)).toStrictEqual(tab.settings.value)
+    expect(writtenFiles.at(-1)).toStrictEqual(tab.settings.value)
   })
 
   it('keeps the moved field where the person left it, whatever the file says', async () => {
@@ -920,11 +920,11 @@ describe('a control dragged across its range', () => {
     // on top of it.
     for (const share of [0.8, 0.82, 0.84, 0.86]) tab.updateSetting('retention', share)
     await flushPromises()
-    expect(asked).toHaveLength(1)
+    expect(requests).toHaveLength(1)
 
     waiting[0]?.(curve)
     await flushPromises()
-    expect(asked).toHaveLength(2)
+    expect(requests).toHaveLength(2)
   })
 })
 
@@ -1084,10 +1084,10 @@ describe('a choice not yet written, across a read', () => {
 
 describe('the goal chosen again', () => {
   it('writes nothing where it is the goal already standing', async () => {
-    const { state, written } = await openPresetTab()
+    const { state, writtenFiles } = await openPresetTab()
     state.chooseGoal('minutes')
     await flushPromises()
-    expect(written).toStrictEqual([])
+    expect(writtenFiles).toStrictEqual([])
   })
 })
 
@@ -1107,7 +1107,7 @@ describe('the knob, as a field is typed', () => {
   })
 
   it('goes to the place nearest a value typed that the curve already answers', async () => {
-    const { state, asked } = await openPresetTab(
+    const { state, requests } = await openPresetTab(
       {},
       { ...curve, now: { at: 1, value: 20, day: '' } },
     )
@@ -1115,7 +1115,7 @@ describe('the knob, as a field is typed', () => {
     state.updateSetting('minutesADay', 20)
     await flushPromises()
     expect(state.place.value).toBe(2)
-    expect(asked).toStrictEqual(['minutes'])
+    expect(requests).toStrictEqual(['minutes'])
   })
 })
 
@@ -1211,7 +1211,7 @@ describe('the presets written out when the window quits', () => {
 
     await buffers.flush()
 
-    expect(written.at(-1)?.newADay).toBe(4)
+    expect(writtenFiles.at(-1)?.newADay).toBe(4)
   })
 })
 
@@ -1222,7 +1222,7 @@ describe('what the window asks of a preset tab', () => {
 
     await kind.kind.flushPending?.(state)
 
-    expect(written.at(-1)?.newADay).toBe(4)
+    expect(writtenFiles.at(-1)?.newADay).toBe(4)
   })
 
   it('is to write what a preset owes out wherever its file went since the tab opened', async () => {
@@ -1232,7 +1232,7 @@ describe('what the window asks of a preset tab', () => {
 
     await kind.kind.flushPending?.(state)
 
-    expect(written.at(-1)?.newADay).toBe(4)
+    expect(writtenFiles.at(-1)?.newADay).toBe(4)
   })
 
   it('is to write nothing for a tab it does not hold', async () => {
@@ -1240,7 +1240,7 @@ describe('what the window asks of a preset tab', () => {
 
     await kind.kind.flushPending?.({ id: 'Elsewhere.md' } as never)
 
-    expect(written).toStrictEqual([])
+    expect(writtenFiles).toStrictEqual([])
   })
 })
 

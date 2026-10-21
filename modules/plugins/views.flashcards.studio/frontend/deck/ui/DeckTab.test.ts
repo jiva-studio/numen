@@ -107,7 +107,7 @@ const mountDeck = async (
   /** Which preset the deck names, as the vault answers it. */
   let by = schedule.by ?? ''
   /** Every deck put on a preset, as the tab asked for it. */
-  const put: string[] = []
+  const appliedPresets: string[] = []
 
   const presets: Presets = {
     read: async (path) =>
@@ -135,7 +135,7 @@ const mountDeck = async (
         bounds: NO_BOUNDS,
       }),
     scheduleDeck: async (_deck, preset) => {
-      put.push(preset)
+      appliedPresets.push(preset)
       if (schedule.notScheduled) return asFailure(schedule.notScheduled)
       by = preset
       return asValue({ at: 'scheduled' })
@@ -169,7 +169,7 @@ const mountDeck = async (
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { state: tab }, attachTo: document.body })
   await settle()
-  return { window, tab, decks, put }
+  return { window, tab, decks, appliedPresets }
 }
 
 /** The tile one card is drawn as, by the identity the window gave that card. */
@@ -383,7 +383,7 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('puts the deck on the preset that was chosen, and says it afterwards', async () => {
-    const { window, put } = await mountDeck()
+    const { window, appliedPresets } = await mountDeck()
     await window.get('.deck-tab__choice').trigger('click')
     const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === 'Sanskrit',
@@ -393,12 +393,12 @@ describe('the preset a deck is scheduled by', () => {
     await settle()
     await window.vm.$nextTick()
 
-    expect(put).toStrictEqual(['Sanskrit.md'])
+    expect(appliedPresets).toStrictEqual(['Sanskrit.md'])
     expect(window.get('.deck-tab__choice').text()).toContain('Sanskrit')
   })
 
   it('takes the deck back to the defaults', async () => {
-    const { window, put } = await mountDeck([], { by: 'Sanskrit.md' })
+    const { window, appliedPresets } = await mountDeck([], { by: 'Sanskrit.md' })
     await window.get('.deck-tab__choice').trigger('click')
     const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === words.defaults,
@@ -408,7 +408,7 @@ describe('the preset a deck is scheduled by', () => {
     await settle()
     await window.vm.$nextTick()
 
-    expect(put).toStrictEqual([''])
+    expect(appliedPresets).toStrictEqual([''])
     expect(window.get('.deck-tab__choice').text()).toContain(words.defaults)
   })
 

@@ -84,7 +84,7 @@ const createCore = (...answers: Promise<Curve>[]) => {
       return (await answers.shift()) ?? curve()
     },
   } as unknown as Presets
-  return { core, asked: request }
+  return { core, requests: request }
 }
 
 const nap = () => new Promise((wake) => setTimeout(wake, 0))
@@ -218,7 +218,7 @@ describe('asking for a curve', () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const target = curve({ now: { at: 3, value: 30, day: '' } })
     state.answers.set(getShapeKey(DEFAULTS), target)
-    const { core, asked } = createCore()
+    const { core, requests } = createCore()
 
     await updateCurves(
       state,
@@ -230,7 +230,7 @@ describe('asking for a curve', () => {
       () => {},
     )
 
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
     expect(state.curve.value).toBe(target)
     expect(state.isReal).toBe(true)
     expect(state.place.value).toBe(3)
@@ -239,7 +239,7 @@ describe('asking for a curve', () => {
   it('asks once more for settings changed while a question was out', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const gate = createGate()
-    const { core, asked } = createCore(gate.answered)
+    const { core, requests } = createCore(gate.answered)
     let now = DEFAULTS
 
     const picture = updateCurves(
@@ -264,7 +264,7 @@ describe('asking for a curve', () => {
     gate.open(curve())
     await picture
 
-    expect(asked).toStrictEqual([DEFAULTS, now])
+    expect(requests).toStrictEqual([DEFAULTS, now])
     expect(state.shouldDrawAgain).toBe(false)
   })
 })

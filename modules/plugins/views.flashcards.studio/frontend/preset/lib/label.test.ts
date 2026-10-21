@@ -197,13 +197,13 @@ describe('the names of the marks that fit', () => {
   // A name that will not fit is dropped, not moved: nothing here pushes two
   // names apart, so the second of a touching pair is simply not drawn.
   it.each([
-    { gap: LABEL * 2 - 1, kept: ['first'] },
-    { gap: LABEL * 2, kept: ['first', 'second'] },
-    { gap: LABEL * 2 + 1, kept: ['first', 'second'] },
-  ])('keeps $kept.length of two names $gap apart at the same height', ({ gap, kept }) => {
+    { gap: LABEL * 2 - 1, expected: ['first'] },
+    { gap: LABEL * 2, expected: ['first', 'second'] },
+    { gap: LABEL * 2 + 1, expected: ['first', 'second'] },
+  ])('keeps $kept.length of two names $gap apart at the same height', ({ gap, expected }) => {
     const names = createLabels([mark('first', 200, 100), mark('second', 200 + gap, 100)], null)
 
-    expect(names.map((one) => one.key)).toStrictEqual(kept)
+    expect(names.map((one) => one.key)).toStrictEqual(expected)
   })
 
   it('keeps two names at the same place where their heights stand clear', () => {

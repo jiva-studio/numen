@@ -142,7 +142,7 @@ const createTab = (
     updateSetting: (field, value) => void isDone.push(`type ${field} ${value}`),
     close: () => {},
   }
-  return { state, done: isDone }
+  return { state, recorded: isDone }
 }
 
 const mountPresetTab = (

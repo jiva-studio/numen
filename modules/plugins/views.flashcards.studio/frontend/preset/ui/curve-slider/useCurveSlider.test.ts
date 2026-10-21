@@ -186,7 +186,7 @@ const createPicture = (a: number, e: number, isCaptured = false) => {
     hasPointerCapture: () => isCaptured,
     releasePointerCapture: (id: number) => void isDone.push(`release ${id}`),
   })
-  return { element, done: isDone }
+  return { element, recorded: isDone }
 }
 
 const pointer = (clientX: number, button = 0) =>
@@ -197,23 +197,23 @@ const pointer = (clientX: number, button = 0) =>
 describe('the pointer on the picture', () => {
   it('takes the knob to the place under it, and holds the pointer', () => {
     const { state, emitted } = slider()
-    const { element, done } = createPicture(2, 100)
+    const { element, recorded } = createPicture(2, 100)
     state.setPicture(element)
     const down = pointer(481)
     state.onPointerDown(down)
     expect(down.preventDefault).toHaveBeenCalled()
-    expect(done).toStrictEqual(['focus', 'capture 7'])
+    expect(recorded).toStrictEqual(['focus', 'capture 7'])
     expect(emitted).toStrictEqual([['move', 1]])
   })
 
   it('leaves a button other than the first to the window', () => {
     const { state, emitted } = slider()
-    const { element, done } = createPicture(2, 100)
+    const { element, recorded } = createPicture(2, 100)
     state.setPicture(element)
     const down = pointer(481, 2)
     state.onPointerDown(down)
     expect(down.preventDefault).not.toHaveBeenCalled()
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
     expect(emitted).toStrictEqual([])
   })
 
@@ -238,23 +238,23 @@ describe('the pointer on the picture', () => {
 
   it('walks the knob while the pointer is retained, and writes once it is let go', () => {
     const { state, emitted } = slider()
-    const { element, done } = createPicture(2, 100, true)
+    const { element, recorded } = createPicture(2, 100, true)
     state.setPicture(element)
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
     expect(emitted).toStrictEqual([['move', 1], ['commit']])
-    expect(done).toStrictEqual(['release 7'])
+    expect(recorded).toStrictEqual(['release 7'])
   })
 
   it('does nothing as a pointer it does not hold moves or is let go', () => {
     const { state, emitted } = slider()
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
-    const { element, done } = createPicture(2, 100, false)
+    const { element, recorded } = createPicture(2, 100, false)
     state.setPicture(element)
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
     expect(emitted).toStrictEqual([])
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 })

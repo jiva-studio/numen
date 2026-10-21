@@ -26,27 +26,27 @@ describe('the one slider', () => {
   })
 
   it('walks the grid a place at a time, and writes once the key is release', async () => {
-    const { tab, done } = mountPresetTab()
+    const { tab, recorded } = mountPresetTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'ArrowRight' })
     await control.trigger('keyup', { key: 'ArrowRight' })
-    expect(done).toStrictEqual(['move 3', 'flushPending'])
+    expect(recorded).toStrictEqual(['move 3', 'flushPending'])
   })
 
   it('walks to either end, and no further', async () => {
-    const { tab, done } = mountPresetTab()
+    const { tab, recorded } = mountPresetTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'End' })
     await control.trigger('keydown', { key: 'ArrowRight' })
     await control.trigger('keydown', { key: 'Home' })
     await control.trigger('keydown', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['move 3', 'move 3', 'move 0', 'move 0'])
+    expect(recorded).toStrictEqual(['move 3', 'move 3', 'move 0', 'move 0'])
   })
 
   it('leaves a keystroke that is nobody’s to the window', async () => {
-    const { tab, done } = mountPresetTab()
+    const { tab, recorded } = mountPresetTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'k' })
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 
   it('offers the three goals by the value each steers, under a label saying so', () => {
