@@ -8,7 +8,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Plex } from '@numen/ui'
-import { requests, cards, mountWindowWithPalette, nodeInPlex, said, settle } from '@/testing/window'
+import { requests, cards, mountWindowWithPalette, nodeInPlex, mockVaultState, settle } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
 
 describe('the four commands over how the window is drawn', () => {
@@ -87,7 +87,7 @@ describe('the four commands over how the window is drawn', () => {
   }
 
   /** Every row the words typed leave, in the order they are drawn. */
-  const left = () =>
+  const getRemainingRows = () =>
     [...document.body.querySelectorAll('[data-palette="list"] [role="option"]')].map((one) =>
       one.querySelector('[data-palette="name"]')?.textContent?.trim(),
     )
@@ -111,13 +111,13 @@ describe('the four commands over how the window is drawn', () => {
       await settle()
 
       await type('theme')
-      expect(left()).toStrictEqual(['Change the theme'])
+      expect(getRemainingRows()).toStrictEqual(['Change the theme'])
 
       await type('light')
-      expect(left()).toStrictEqual(['Light or dark'])
+      expect(getRemainingRows()).toStrictEqual(['Light or dark'])
 
       await type('dark')
-      expect(left()).toStrictEqual(['Light or dark'])
+      expect(getRemainingRows()).toStrictEqual(['Light or dark'])
     })
 
     it('find the two sizes by “interface”, by “font” and by “reading”', async () => {
@@ -126,13 +126,13 @@ describe('the four commands over how the window is drawn', () => {
       await settle()
 
       await type('interface')
-      expect(left()).toStrictEqual(['Interface size'])
+      expect(getRemainingRows()).toStrictEqual(['Interface size'])
 
       await type('font')
-      expect(left()).toStrictEqual(['Reading font size'])
+      expect(getRemainingRows()).toStrictEqual(['Reading font size'])
 
       await type('reading')
-      expect(left()).toStrictEqual(['Reading font size'])
+      expect(getRemainingRows()).toStrictEqual(['Reading font size'])
     })
 
     it('turn up both of them, and nothing else, for the word they share', async () => {
@@ -142,7 +142,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('size')
 
-      expect(left()).toStrictEqual(['Interface size', 'Reading font size'])
+      expect(getRemainingRows()).toStrictEqual(['Interface size', 'Reading font size'])
     })
   })
 
@@ -190,7 +190,7 @@ describe('the four commands over how the window is drawn', () => {
       await runCommand('light')
 
       expect(groups()).toStrictEqual(['Light and dark'])
-      expect(left()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
+      expect(getRemainingRows()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
@@ -308,7 +308,7 @@ describe('the four commands over how the window is drawn', () => {
       await runCommand('interface')
 
       expect(groups()).toStrictEqual(['How large the interface is drawn'])
-      expect(left()).toStrictEqual(TENTHS)
+      expect(getRemainingRows()).toStrictEqual(TENTHS)
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
@@ -325,7 +325,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('137')
 
-      expect(left()).toStrictEqual(['137%'])
+      expect(getRemainingRows()).toStrictEqual(['137%'])
     })
 
     it('draws and writes a number typed, the way it does a step', async () => {
@@ -345,7 +345,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('250')
 
-      expect(left()).toStrictEqual([])
+      expect(getRemainingRows()).toStrictEqual([])
       expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
         'Nothing',
       )
@@ -356,7 +356,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('15')
 
-      expect(left()).toStrictEqual(['150%'])
+      expect(getRemainingRows()).toStrictEqual(['150%'])
     })
 
     it('holds the size until the keyboard has stood on the row it walked to', async () => {
@@ -462,7 +462,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(groups()).toStrictEqual(['How large the text is set'])
       // The far end of this one falls between two steps, and is offered there.
-      expect(left()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
+      expect(getRemainingRows()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
     })
 
     it('writes the size that was chosen alongside the interface’s, which remains', async () => {

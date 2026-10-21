@@ -68,9 +68,9 @@ export const getGoalWords = (settings: Settings, today: string): string => {
       return `${percent(settings.retention)} remembered`
     case 'date': {
       if (!settings.byDate) return formatStopReasonMessage(StopReason.NO_DAY)
-      const left = daysBetween(today, settings.byDate)
+      const daysLeft = daysBetween(today, settings.byDate)
       if (left <= 0) return `by ${getDayWords(settings.byDate)}`
-      return `${many(left, 'day')} to ${getDayWords(settings.byDate)}`
+      return `${many(daysLeft, 'day')} to ${getDayWords(settings.byDate)}`
     }
     case 'minutes':
       if (settings.minutesADay === 0) return formatStopReasonMessage(StopReason.NO_MINUTES)

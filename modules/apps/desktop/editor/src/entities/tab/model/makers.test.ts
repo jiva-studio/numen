@@ -98,7 +98,7 @@ describe('a deck, a stencil or a preset made', () => {
     const createdItem = createCreators(maker('occupied'), tabOpeners, notified.write)
 
     expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
-    expect(notified.said).toStrictEqual([ERRORS.occupied])
+    expect(notified.messagesText).toStrictEqual([ERRORS.occupied])
   })
 
   it('says a vault that could not be requested at all', async () => {
@@ -106,8 +106,8 @@ describe('a deck, a stencil or a preset made', () => {
     const createdItem = createCreators(maker(null, true), undefined, notified.write)
 
     expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
-    expect(notified.said.join(' ')).not.toContain('the vault is not there')
-    expect(notified.said.join(' ')).toContain('numen did not answer')
+    expect(notified.messagesText.join(' ')).not.toContain('the vault is not there')
+    expect(notified.messagesText.join(' ')).toContain('numen did not answer')
   })
 
   it('says what the vault rejected as an error', async () => {
@@ -116,7 +116,7 @@ describe('a deck, a stencil or a preset made', () => {
 
     await createdItem.createFile('deck', 'zoology', 'Animals')
 
-    expect(notified.told).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
+    expect(notified.messages).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
   })
 
   it('says a vault that could not be requested as an error', async () => {
@@ -125,7 +125,7 @@ describe('a deck, a stencil or a preset made', () => {
 
     await createdItem.createFile('deck', 'zoology', 'Animals')
 
-    expect(notified.told.map((one) => one.kind)).toStrictEqual(['error'])
+    expect(notified.messages.map((one) => one.kind)).toStrictEqual(['error'])
   })
 })
 
@@ -139,7 +139,7 @@ describe('a file nothing offers to make', () => {
 
     expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
     expect(opened).toStrictEqual([])
-    expect(notified.said).toStrictEqual([])
+    expect(notified.messagesText).toStrictEqual([])
   })
 })
 

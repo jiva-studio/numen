@@ -10,7 +10,7 @@ import type { Entry } from '@/entities/file'
 import type { FieldRenameResult } from '@plugins/views.flashcards.studio/frontend/cards'
 
 /** What the mocked vault answers about itself, set before the window draws. */
-export const said = {
+export const mockVaultState = {
   isReady: true,
   error: '',
   detachError: '',
@@ -68,7 +68,7 @@ export const said = {
 }
 
 /** The vaults this installation holds, and the one the window is showing. */
-export const listed = {
+export const mockVaultList = {
   vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }],
   showing: 'physics',
 }
@@ -95,7 +95,7 @@ export const folders: Record<string, readonly Entry[]> = {
 /**
  * What the vault holds at a path. A book and a note are told apart by the name
  * the file carries, the way the vault itself tells them apart, and which of
- * three a note is is what a test said.
+ * three a note is is what a test mockVaultState.
  */
 export const getFileKind = (path: string) => {
   if (/\.epub$/u.test(path)) {
@@ -106,11 +106,11 @@ export const getFileKind = (path: string) => {
   }
   if (/\.(mp3|m4a|wav)$/u.test(path)) return { kind: 'recording' as const, type: 'note' as const }
   if (!/\.(md|note)$/u.test(path)) return { kind: 'other' as const, type: 'note' as const }
-  return { kind: 'note' as const, type: said.types[path] ?? ('note' as const) }
+  return { kind: 'note' as const, type: mockVaultState.types[path] ?? ('note' as const) }
 }
 
 /** A stream that stays open, so nothing the window follows ever ends. */
-export async function* held(): AsyncGenerator<never> {
+export async function* pendingStream(): AsyncGenerator<never> {
   yield await new Promise<never>(() => {})
 }
 
@@ -208,21 +208,21 @@ export const sourceAnswer = (path: string, kind: 'book' | 'recording') => ({
 
 /** Everything answered back where it opens, which is where every test begins. */
 export const forgetAnswers = () => {
-  said.isReady = true
-  said.opening = 'Root.md'
-  said.names = []
-  said.passages = []
-  said.types = {}
-  said.embedded = 0
-  said.listable = true
-  said.writeError = ''
-  said.detachError = ''
-  said.applied = 'preset:numen'
-  said.mode = 'system'
-  said.sizes = { interfaceScale: 1, textScale: 1 }
-  said.carries = {}
-  said.carrying = true
-  said.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
+  mockVaultState.isReady = true
+  mockVaultState.opening = 'Root.md'
+  mockVaultState.names = []
+  mockVaultState.passages = []
+  mockVaultState.types = {}
+  mockVaultState.embedded = 0
+  mockVaultState.listable = true
+  mockVaultState.writeError = ''
+  mockVaultState.detachError = ''
+  mockVaultState.applied = 'preset:numen'
+  mockVaultState.mode = 'system'
+  mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
+  mockVaultState.carries = {}
+  mockVaultState.carrying = true
+  mockVaultState.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
   maker.forget()
   outside.forget()
   listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }]

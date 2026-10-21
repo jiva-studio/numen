@@ -37,15 +37,15 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
     },
     showNotice: (one) => notices.push(one),
   })
-  return { held: target, asked: request, notices, open, deck }
+  return { held: target, requests: request, notices, open, deck }
 }
 
 describe('the panel the deck is read in', () => {
   it('does not come in between cards', async () => {
-    const { held, asked, open } = panel({ deck: '' })
+    const { held, requests, open } = panel({ deck: '' })
     await held.openPanel()
     expect(open.value).toBe(false)
-    expect(asked).toEqual([])
+    expect(requests).toEqual([])
   })
 
   it('arrives in on the deck the card remains in, turned or not', async () => {
@@ -67,12 +67,12 @@ describe('the panel the deck is read in', () => {
   })
 
   it('is put away and keeps what was read', async () => {
-    const { held, asked, open } = panel()
+    const { held, requests, open } = panel()
     await held.openPanel()
     held.closePanel()
     await held.openPanel()
     expect(open.value).toBe(true)
-    expect(asked).toHaveLength(1)
+    expect(requests).toHaveLength(1)
   })
 })
 
@@ -84,7 +84,7 @@ describe('what is read belongs to the deck', () => {
     await held.openPanel()
     held.closePanel()
     await held.openPanel()
-    expect(asked).toEqual([{ vault: 'one', deck: 'decks/Words.md' }])
+    expect(requests).toEqual([{ vault: 'one', deck: 'decks/Words.md' }])
   })
 
   it('asks again when the card arrives from another deck', async () => {
@@ -175,7 +175,7 @@ describe('what is read belongs to the deck', () => {
     await held.openPanel()
     held.endSession()
     await held.openPanel()
-    expect(asked).toHaveLength(2)
+    expect(requests).toHaveLength(2)
   })
 })
 

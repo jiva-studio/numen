@@ -35,66 +35,66 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
     removeLink: async () => null,
     replaceLinks: async () => null,
   }
-  return { core, asked: request, joined, ...writer() }
+  return { core, requests: request, joined, ...writer() }
 }
 
 describe('making a note in a relation of another', () => {
   it('writes the note it was made from into it, in the relation facing the one requested for', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
     const createdItem = await createNoteWriter(core, write).createInRelation('Ontology.md', 'child')
 
     expect(createdItem).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
-    expect(asked).toStrictEqual([
+    expect(requests).toStrictEqual([
       { title: UNTITLED, folder: '', links: [{ to: 'Ontology.md', role: 'parent' }] },
     ])
   })
 
   it('makes a parent the new note is the child of', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
     await createNoteWriter(core, write).createInRelation('Ontology.md', 'parent')
 
-    expect(asked[0]?.links).toStrictEqual([{ to: 'Ontology.md', role: 'child' }])
+    expect(requests[0]?.links).toStrictEqual([{ to: 'Ontology.md', role: 'child' }])
   })
 
   it('files it in the folder the note it was made from is in', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
     const createdItem = await createNoteWriter(core, write).createInRelation(
       'physics/Ontology.md',
       'child',
     )
 
-    expect(asked[0]?.folder).toBe('physics')
+    expect(requests[0]?.folder).toBe('physics')
     expect(createdItem?.path).toBe(`physics/${UNTITLED}.md`)
   })
 
   it('can make a note in every relation it offers', async () => {
     for (const relation of CREATABLE) {
-      const { core, asked, write } = fake()
+      const { core, requests, write } = fake()
       expect(
         await createNoteWriter(core, write).createInRelation('Ontology.md', relation),
       ).not.toBeNull()
-      expect(asked[0]?.links).toHaveLength(1)
+      expect(requests[0]?.links).toHaveLength(1)
     }
   })
 
   it('makes nothing in a relation no link writes', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
 
     expect(
       await createNoteWriter(core, write).createInRelation('Ontology.md', 'sibling'),
     ).toBeNull()
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
   })
 
   it('asks for the next name for as long as the vault says the last one is taken', async () => {
-    const { core, asked, write, last } = fake([
+    const { core, requests, write, last } = fake([
       { ok: false, error: 'occupied' },
       { ok: false, error: 'occupied' },
     ])
     const making = createNoteWriter(core, write)
     const createdItem = await making.createInRelation('Ontology.md', 'child')
 
-    expect(asked.map((note) => note.title)).toStrictEqual([
+    expect(requests.map((note) => note.title)).toStrictEqual([
       UNTITLED,
       `${UNTITLED} 2`,
       `${UNTITLED} 3`,
@@ -104,25 +104,25 @@ describe('making a note in a relation of another', () => {
   })
 
   it('creates an untitled note in a folder with links', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
     const createdItem = await createNoteWriter(core, write).createUntitled('physics', [
       { to: 'Ontology.md', role: 'parent' },
     ])
 
     expect(createdItem).toStrictEqual({ path: `physics/${UNTITLED}.md`, title: UNTITLED })
-    expect(asked).toStrictEqual([
+    expect(requests).toStrictEqual([
       { title: UNTITLED, folder: 'physics', links: [{ to: 'Ontology.md', role: 'parent' }] },
     ])
   })
 
   it('says an error that is not a name already taken, and asks for nothing more', async () => {
-    const { core, asked, write, told } = fake([{ ok: false, error: 'notANote' }])
+    const { core, requests, write, messages } = fake([{ ok: false, error: 'notANote' }])
     const making = createNoteWriter(core, write)
 
     expect(await making.createInRelation('Ontology.md', 'child')).toBeNull()
-    expect(asked).toHaveLength(1)
-    expect(told.at(-1)?.text).not.toBe('')
-    expect(told.at(-1)?.kind).toBe('error')
+    expect(requests).toHaveLength(1)
+    expect(messages.at(-1)?.text).not.toBe('')
+    expect(messages.at(-1)?.kind).toBe('error')
   })
 
   it('says a core that could not be reached', async () => {
@@ -131,27 +131,27 @@ describe('making a note in a relation of another', () => {
         throw new Error('the vault is out of reach')
       },
     } as unknown as NoteMaker
-    const { write, last, told } = writer()
+    const { write, last, messages } = writer()
     const making = createNoteWriter(core, write)
 
     expect(await making.createInRelation('Ontology.md', 'child')).toBeNull()
     expect(last()).toContain('numen did not answer')
     expect(last()).not.toContain('out of reach')
-    expect(told.at(-1)?.kind).toBe('error')
+    expect(messages.at(-1)?.kind).toBe('error')
   })
 })
 
 describe('a vault that has filed every name offered', () => {
   it('is requested for a hundred names, and then the person is told', async () => {
-    const { core, asked, write, told } = fake(
+    const { core, requests, write, messages } = fake(
       Array.from({ length: 101 }, () => ({ ok: false, error: 'occupied' }) as const),
     )
 
     expect(await createNoteWriter(core, write).createUntitled('', [])).toBeNull()
 
-    expect(asked).toHaveLength(100)
-    expect(asked.at(-1)?.title).toBe(`${UNTITLED} 100`)
-    expect(told.at(-1)).toStrictEqual({
+    expect(requests).toHaveLength(100)
+    expect(requests.at(-1)?.title).toBe(`${UNTITLED} 100`)
+    expect(messages.at(-1)).toStrictEqual({
       text: `every name from ${UNTITLED} onwards is taken`,
       kind: 'error',
     })
@@ -160,16 +160,16 @@ describe('a vault that has filed every name offered', () => {
 
 describe('making a note under a name a person gave it', () => {
   it('makes nothing in a relation no link writes', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
 
     expect(
       await createNoteWriter(core, write).createWithTitle('Entropy', 'Ontology.md', 'sibling'),
     ).toBeNull()
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
   })
 
   it('files it alongside the note it was made from, in that note’s relation', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
     const createdItem = await createNoteWriter(core, write).createWithTitle(
       'Entropy',
       'physics/Ontology.md',
@@ -177,7 +177,7 @@ describe('making a note under a name a person gave it', () => {
     )
 
     expect(createdItem).toStrictEqual({ path: 'physics/Entropy.md', title: 'Entropy' })
-    expect(asked).toStrictEqual([
+    expect(requests).toStrictEqual([
       {
         title: 'Entropy',
         folder: 'physics',
@@ -187,11 +187,11 @@ describe('making a note under a name a person gave it', () => {
   })
 
   it('files it at the top of the vault, joined to nothing, when it relies on no note', async () => {
-    const { core, asked, write } = fake()
+    const { core, requests, write } = fake()
     const createdItem = await createNoteWriter(core, write).createWithTitle('Entropy', '', null)
 
     expect(createdItem).toStrictEqual({ path: 'Entropy.md', title: 'Entropy' })
-    expect(asked).toStrictEqual([{ title: 'Entropy', folder: '', links: [] }])
+    expect(requests).toStrictEqual([{ title: 'Entropy', folder: '', links: [] }])
   })
 })
 
@@ -231,8 +231,8 @@ describe('joining two notes that are both there', () => {
     const making = createNoteWriter(core, write)
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'jump')).toBe(false)
-    expect(told.at(-1)?.text).not.toBe('')
-    expect(told.at(-1)?.kind).toBe('error')
+    expect(messages.at(-1)?.text).not.toBe('')
+    expect(messages.at(-1)?.kind).toBe('error')
   })
 })
 
@@ -246,7 +246,7 @@ describe('removing a relationship from a note', () => {
         return answer()
       },
     } as unknown as NoteMaker
-    return { core, asked: request, ...writer() }
+    return { core, requests: request, ...writer() }
   }
 
   it('asks for the role of the relation it was given, and says nothing when it is done', async () => {
@@ -255,8 +255,8 @@ describe('removing a relationship from a note', () => {
     expect(
       await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child'),
     ).toBe(true)
-    expect(asked).toStrictEqual([{ path: 'Ontology.md', to: 'Entropy.md', role: 'child' }])
-    expect(told).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(requests).toStrictEqual([{ path: 'Ontology.md', to: 'Entropy.md', role: 'child' }])
+    expect(messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('asks for no role where no relation was given', async () => {
@@ -264,15 +264,15 @@ describe('removing a relationship from a note', () => {
 
     await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')
 
-    expect(asked[0]?.role).toBeUndefined()
+    expect(requests[0]?.role).toBeUndefined()
   })
 
   it('says why nothing was removed', async () => {
     const { core, write, told } = removing(async () => 'unreadable')
 
     expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')).toBe(false)
-    expect(told.at(-1)?.text).not.toBe('')
-    expect(told.at(-1)?.kind).toBe('error')
+    expect(messages.at(-1)?.text).not.toBe('')
+    expect(messages.at(-1)?.kind).toBe('error')
   })
 
   it('says a core that could not be reached', async () => {
@@ -281,8 +281,8 @@ describe('removing a relationship from a note', () => {
     })
 
     expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')).toBe(false)
-    expect(told.at(-1)?.text).toContain('numen did not answer')
-    expect(told.at(-1)?.kind).toBe('error')
+    expect(messages.at(-1)?.text).toContain('numen did not answer')
+    expect(messages.at(-1)?.kind).toBe('error')
   })
 })
 
@@ -298,8 +298,8 @@ describe('joining through a core that could not be reached', () => {
     expect(await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'child')).toBe(
       false,
     )
-    expect(told.at(-1)?.text).toContain('numen did not answer')
-    expect(told.at(-1)?.kind).toBe('error')
+    expect(messages.at(-1)?.text).toContain('numen did not answer')
+    expect(messages.at(-1)?.kind).toBe('error')
   })
 })
 
@@ -318,7 +318,7 @@ describe('replacing the links between two notes', () => {
         return answer()
       },
     } as unknown as NoteMaker
-    return { core, asked: request, ...writer() }
+    return { core, requests: request, ...writer() }
   }
 
   it('asks once for every link, under the role of its relation, and says nothing when done', async () => {
@@ -327,10 +327,10 @@ describe('replacing the links between two notes', () => {
     expect(
       await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
     ).toBe(true)
-    expect(asked).toStrictEqual([
+    expect(requests).toStrictEqual([
       { first: 'Ontology.md', second: 'Entropy.md', roles: ['child', 'parent'] },
     ])
-    expect(told).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('asks for nothing where a relation is not one a link can carry', async () => {
@@ -340,7 +340,7 @@ describe('replacing the links between two notes', () => {
     expect(
       await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', sibling),
     ).toBe(false)
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
   })
 
   it('says why the core replaced nothing', async () => {
@@ -349,8 +349,8 @@ describe('replacing the links between two notes', () => {
     expect(
       await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
     ).toBe(false)
-    expect(told.at(-1)?.text).not.toBe('')
-    expect(told.at(-1)?.kind).toBe('error')
+    expect(messages.at(-1)?.text).not.toBe('')
+    expect(messages.at(-1)?.kind).toBe('error')
   })
 
   it('says a core that could not be reached', async () => {
@@ -361,6 +361,6 @@ describe('replacing the links between two notes', () => {
     expect(
       await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
     ).toBe(false)
-    expect(told.at(-1)?.text).toContain('numen did not answer')
+    expect(messages.at(-1)?.text).toContain('numen did not answer')
   })
 })

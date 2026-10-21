@@ -141,10 +141,10 @@ describe('the rest of what is requested', () => {
       yield { names: ['own/Dusk.css', 'own/Dawn.css'] }
     })
 
-    const heard: (readonly string[])[] = []
-    for await (const names of themes.watchThemes(new AbortController().signal)) heard.push(names)
+    const receivedThemes: (readonly string[])[] = []
+    for await (const names of themes.watchThemes(new AbortController().signal)) receivedThemes.push(names)
 
-    expect(heard).toEqual([['own/Dusk.css'], ['own/Dusk.css', 'own/Dawn.css']])
+    expect(receivedThemes).toEqual([['own/Dusk.css'], ['own/Dusk.css', 'own/Dawn.css']])
   })
 
   it('is requested for under the signal it was given', async () => {

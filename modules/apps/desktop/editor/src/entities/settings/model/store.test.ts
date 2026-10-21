@@ -37,7 +37,7 @@ const createStore = (text: string, refuses: string | null = null) => {
     },
   }
   const response = vi.fn()
-  return { asked: request, said: response, kept: createSettingsStore(core, words, response) }
+  return { requests: request, notify: response, kept: createSettingsStore(core, words, response) }
 }
 
 describe('what remains at a setting', () => {
@@ -72,10 +72,10 @@ describe('what remains at a setting', () => {
   })
 
   it('is nothing where the vault answers with what is not JSON, and is returned', async () => {
-    const { kept, said } = createStore('not JSON at all')
+    const { kept, notify } = createStore('not JSON at all')
     await kept.start()
     expect(kept.getSetting(['agent'])).toBeUndefined()
-    expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
+    expect(notify).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
   })
 
   it('falls back to declarative plugin default when unset in settings file', async () => {
@@ -171,26 +171,26 @@ describe('a setting written', () => {
   it('is requested of the vault as it was given', async () => {
     const { kept, asked } = createStore('{}')
     await kept.writeSetting(['agent', 'use'], 'claude')
-    expect(asked).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
+    expect(requests).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
 
   it('clears what was last returned before it is written', async () => {
-    const { kept, said } = createStore('{}')
+    const { kept, notify } = createStore('{}')
     await kept.writeSetting(['agent', 'claude', 'model'], 'opus')
-    expect(said).toHaveBeenCalledTimes(1)
-    expect(said).toHaveBeenCalledWith('')
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify).toHaveBeenCalledWith('')
   })
 
   it('asks nothing of the vault where there is nothing to write', async () => {
     const { kept, asked } = createStore('{}')
     await kept.writeSettings([])
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
   })
 
   it('is returned where it failed', async () => {
-    const { kept, said } = createStore('{}', 'the file could not be written')
+    const { kept, notify } = createStore('{}', 'the file could not be written')
     await kept.writeSetting(['agent', 'use'], 'claude')
-    expect(said).toHaveBeenLastCalledWith(
+    expect(notify).toHaveBeenLastCalledWith(
       'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
       'error',
     )

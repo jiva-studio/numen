@@ -70,14 +70,14 @@ export const getVaultError = (from: {
 /**
  * What a client has left, in the words the window uses.
  */
-const left: Record<FlushResult, 'nothing' | 'written' | 'asking' | null> = {
+const flushResultNames: Record<FlushResult, 'nothing' | 'written' | 'asking' | null> = {
   [FlushResult.UNSPECIFIED]: null,
   [FlushResult.NOTHING]: 'nothing',
   [FlushResult.WRITTEN]: 'written',
   [FlushResult.ASKING]: 'asking',
 }
 
-export const flushResults = getNames<NonNullable<(typeof left)[FlushResult]>, FlushResult>(left)
+export const flushResults = getNames<NonNullable<(typeof flushResultNames)[FlushResult]>, FlushResult>(flushResultNames)
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 export const mapVault = (one: VaultMessage): Vault => ({

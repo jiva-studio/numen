@@ -43,7 +43,7 @@ const createSection = (file: Record<string, unknown> = {}) => {
   const wrapper = mount(PerformanceSettingsSection, {
     props: { state },
   })
-  return { written: content, wrapper }
+  return { recordedWrites: content, wrapper }
 }
 
 describe('PerformanceSettingsSection', () => {
@@ -79,14 +79,14 @@ describe('PerformanceSettingsSection', () => {
   })
 
   it('writes profile change', async () => {
-    const { wrapper, written } = createSection()
+    const { wrapper, recordedWrites } = createSection()
     const segmented = wrapper.findComponent({ name: 'SegmentedControl' })
     segmented.vm.$emit('update:modelValue', 'maximum')
-    expect(written).toStrictEqual([{ at: paths.performanceProfile, value: '"maximum"' }])
+    expect(recordedWrites).toStrictEqual([{ at: paths.performanceProfile, value: '"maximum"' }])
   })
 
   it('writes custom numeric settings when changed', async () => {
-    const { wrapper, written } = createSection({ performance: { profile: 'custom' } })
+    const { wrapper, recordedWrites } = createSection({ performance: { profile: 'custom' } })
     const numberFields = wrapper.findAllComponents({ name: 'NumberField' })
     expect(numberFields).toHaveLength(4)
 
@@ -95,7 +95,7 @@ describe('PerformanceSettingsSection', () => {
     pick(numberFields, 2).vm.$emit('commit', 4)
     pick(numberFields, 3).vm.$emit('commit', 8)
 
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: paths.performanceEmbeddingBatchSize, value: '128' },
       { at: paths.performanceOcrThreads, value: '12' },
       { at: paths.performanceOcrSessions, value: '4' },
@@ -104,7 +104,7 @@ describe('PerformanceSettingsSection', () => {
   })
 
   it('ignores null values on custom numeric fields commit', async () => {
-    const { wrapper, written } = createSection({ performance: { profile: 'custom' } })
+    const { wrapper, recordedWrites } = createSection({ performance: { profile: 'custom' } })
     const numberFields = wrapper.findAllComponents({ name: 'NumberField' })
 
     pick(numberFields, 0).vm.$emit('commit', null)
@@ -112,6 +112,6 @@ describe('PerformanceSettingsSection', () => {
     pick(numberFields, 2).vm.$emit('commit', null)
     pick(numberFields, 3).vm.$emit('commit', null)
 
-    expect(written).toHaveLength(0)
+    expect(recordedWrites).toHaveLength(0)
   })
 })

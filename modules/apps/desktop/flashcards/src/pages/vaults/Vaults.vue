@@ -28,7 +28,7 @@ defineEmits<{ (event: 'choose', vault: string): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 /** Each vault as a row of the list, and how many cards it has waiting. */
-const listed = computed(() => getVaultRows(props.vaults, VAULTS_WORDS))
+const vaultRows = computed(() => getVaultRows(props.vaults, VAULTS_WORDS))
 
 const waiting = computed(() => getDueByVault(props.vaults))
 </script>
@@ -36,7 +36,7 @@ const waiting = computed(() => getDueByVault(props.vaults))
 <template>
   <WelcomePage
     name="flashcards"
-    :vaults="listed"
+    :vaults="vaultRows"
     :heading="VAULTS_WORDS.heading"
     :version="version"
     @open="$emit('choose', $event)"

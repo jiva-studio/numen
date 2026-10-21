@@ -12,9 +12,9 @@ export function writer() {
   return {
     write,
     /** Everything written through it, each with the kind it was written as. */
-    told: notified,
+    messages: notified,
     /** The same, as the words alone, in the order they were written. */
-    get said(): readonly string[] {
+    get messagesText(): readonly string[] {
       return notified.map((one) => one.text)
     },
     /**

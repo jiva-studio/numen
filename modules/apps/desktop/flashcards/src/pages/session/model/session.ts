@@ -71,7 +71,7 @@ function useSessionCards() {
   const answers = ref<string[]>([])
 
   const card = computed<CardFace | null>(() => request.value[at.value] ?? null)
-  const left = computed(() => request.value.length - at.value)
+  const remaining = computed(() => request.value.length - at.value)
   const isOver = computed(() => card.value === null)
   const isDone = computed(() => answers.value.length)
 
@@ -82,7 +82,7 @@ function useSessionCards() {
     answers.value = []
   }
 
-  return { asked: request, at, shown: displayed, answers, card, left, over, done: isDone, reset }
+  return { asked: request, at, shown: displayed, answers, card, left: remaining, over, done: isDone, reset }
 }
 
 async function openSession(deps: {
@@ -257,7 +257,7 @@ export function useReviewSession(deps: SessionDeps) {
   const vault = ref('')
   const run = ref('')
   const writing = ref(false)
-  let put = now()
+  let displayedAt = now()
   const cards = useSessionCards()
 
   const { start, forget } = useSessionOpener({
@@ -268,7 +268,7 @@ export function useReviewSession(deps: SessionDeps) {
     vault,
     run,
     setPut: (time) => {
-      put = time
+      displayedAt = time
     },
   })
 
@@ -280,9 +280,9 @@ export function useReviewSession(deps: SessionDeps) {
     run,
     cards,
     writing,
-    getPut: () => put,
+    getPut: () => displayedAt,
     setPut: (time) => {
-      put = time
+      displayedAt = time
     },
   })
 

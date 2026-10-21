@@ -94,7 +94,7 @@ const createLists = (offers: Record<string, readonly StepGroup[]>) => {
     getStepGroups: (command) => lists.value[command] ?? [],
     previewItem: (command, item) => void displayed.push(`${command} ${item}`),
   }
-  return { paletteLists, lists, shown: displayed }
+  return { paletteLists, lists, displayedLists: displayed }
 }
 
 /** The commands over what a test says is in front, asked without a hold. */
@@ -126,7 +126,7 @@ const createPalette = (
     async () => {},
   )
   commands.setOpen(true)
-  return { commands, at, asked: request, ...window, ...retained }
+  return { commands, at, requests: request, ...window, ...retained }
 }
 
 /** A moment for the list of vaults to come back. */
@@ -773,7 +773,7 @@ describe('a command that was not offered over what it was requested over', () =>
 
 describe('a command that asks for a note', () => {
   it('asks the vault for the names that match, and draws each note once', async () => {
-    const { commands, asked } = createPalette({}, [
+    const { commands, requests } = createPalette({}, [
       name('physics/Entropy.md', 'Entropy'),
       name('physics/Entropy.md', 'Entropy', 'What it counts'),
       name('Order.md', 'Order'),
@@ -782,7 +782,7 @@ describe('a command that asks for a note', () => {
 
     await commands.setTyped('en')
 
-    expect(asked).toStrictEqual(['en'])
+    expect(requests).toStrictEqual(['en'])
     expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual([
       'physics/Entropy.md',
       'Order.md',
@@ -925,7 +925,7 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('says which command the keyboard is standing in, and that it remains nowhere after', () => {
-    const { commands, shown } = createPalette({}, [], target)
+    const { commands, displayedLists } = createPalette({}, [], target)
     commands.startCommand('mode', front())
 
     commands.previewItem('mode:light')
@@ -934,7 +934,7 @@ describe('a command that offers a list the window holds', () => {
     commands.previewItem('preset:dracula')
     commands.leaveStep()
 
-    expect(shown).toStrictEqual([
+    expect(displayedLists).toStrictEqual([
       'mode mode:light',
       'mode ',
       'appearance preset:dracula',
@@ -943,13 +943,13 @@ describe('a command that offers a list the window holds', () => {
   })
 
   it('says nothing about where the keyboard is at a step that shows nothing', () => {
-    const { commands, shown } = createPalette({}, [], target)
+    const { commands, displayedLists } = createPalette({}, [], target)
     commands.startCommand('child', front())
 
     commands.previewItem('anything')
     commands.leaveStep()
 
-    expect(shown).toStrictEqual([])
+    expect(displayedLists).toStrictEqual([])
   })
 })
 
@@ -1296,7 +1296,7 @@ const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) =>
     runSupport(),
     wait,
   )
-  return { commands, names, lists, holds, hold, asked: request }
+  return { commands, names, lists, holds, hold, requests: request }
 }
 
 /** How the one group a step draws stands. */
@@ -1373,17 +1373,17 @@ describe('a step that asks for a note, as the vault answers', () => {
   })
 
   it('asks about the words and not the spaces around them', async () => {
-    const { commands, asked } = createSlowPalette()
+    const { commands, requests } = createSlowPalette()
     commands.startCommand('goto', front())
 
     void commands.setTyped('  en  ')
     await settle()
 
-    expect(asked).toStrictEqual(['en'])
+    expect(requests).toStrictEqual(['en'])
   })
 
   it('asks nothing once what was typed is taken back, and draws nothing found', async () => {
-    const { commands, names, asked } = createSlowPalette()
+    const { commands, names, requests } = createSlowPalette()
     commands.startCommand('goto', front())
     void commands.setTyped('en')
     await settle()
@@ -1393,7 +1393,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     void commands.setTyped('')
     await settle()
 
-    expect(asked).toStrictEqual(['en'])
+    expect(requests).toStrictEqual(['en'])
     expect(describeGroup(commands.groups)).toStrictEqual({
       items: [],
       isWorking: false,
@@ -1402,7 +1402,7 @@ describe('a step that asks for a note, as the vault answers', () => {
   })
 
   it('asks nothing about a keystroke another one overtook while it waited', async () => {
-    const { commands, holds, hold, asked } = createSlowPalette()
+    const { commands, holds, hold, requests } = createSlowPalette()
     commands.startCommand('goto', front())
     hold.isOn = true
 
@@ -1411,12 +1411,12 @@ describe('a step that asks for a note, as the vault answers', () => {
     holds[0]?.answer()
     await settle()
 
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
 
     holds[1]?.answer()
     await settle()
 
-    expect(asked).toStrictEqual(['en'])
+    expect(requests).toStrictEqual(['en'])
   })
 
   it('draws the answer to the question requested last, whatever lands after it', async () => {
@@ -1528,13 +1528,13 @@ describe('a step that asks for a note, as the vault answers', () => {
   })
 
   it('asks the vault nothing at a step that does not pick a note', async () => {
-    const { commands, asked } = createSlowPalette()
+    const { commands, requests } = createSlowPalette()
     commands.startCommand('child', front())
 
     void commands.setTyped('Entropy')
     await settle()
 
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
   })
 })
 

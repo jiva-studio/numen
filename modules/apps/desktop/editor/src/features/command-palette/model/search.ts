@@ -230,7 +230,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const getEmptyGroupMessage = (id: SearchGroup): string =>
     getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], words, coverage })
 
-  const built = computed(() => {
+  const searchGroups = computed(() => {
     if (!typed.value.trim())
       return { groups: [] as readonly PaletteGroup[], hitsById: new Map<string, SearchHit>() }
     return buildSearchGroups({
@@ -243,16 +243,16 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     })
   })
 
-  const groups = computed(() => built.value.groups)
+  const groups = computed(() => searchGroups.value.groups)
 
   const findNoteType = (item: string): NoteType | null =>
-    built.value.hitsById.get(item)?.type ?? null
+    searchGroups.value.hitsById.get(item)?.type ?? null
 
   const findHitSource = (item: string): Source | null =>
-    built.value.hitsById.get(item)?.kind ?? null
+    searchGroups.value.hitsById.get(item)?.kind ?? null
 
   const chooseItem = (item: string, action: string): SearchDestination | null => {
-    return resolveDestination(built.value.hitsById.get(item), action)
+    return resolveDestination(searchGroups.value.hitsById.get(item), action)
   }
 
   return { open, typed, groups, setTyped, setOpen, chooseItem, findNoteType, findHitSource }

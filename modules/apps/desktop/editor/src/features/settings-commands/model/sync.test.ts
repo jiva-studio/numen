@@ -94,7 +94,7 @@ describe('whether a title and a filename are one name', () => {
     await target.choose(OFF)
 
     expect(target.kept.value).toBe(true)
-    expect(notified.said.at(-1)).toContain(words.unturned)
+    expect(notified.messagesText.at(-1)).toContain(words.unturned)
   })
 
   it('writes the row chosen when the settings hold the other', async () => {
@@ -115,7 +115,7 @@ describe('whether a title and a filename are one name', () => {
 
     await target.choose(OFF)
 
-    expect(notified.told).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(notified.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('says the failure as an error', async () => {
@@ -125,7 +125,7 @@ describe('whether a title and a filename are one name', () => {
 
     await target.choose(OFF)
 
-    expect(notified.told.at(-1)).toStrictEqual({
+    expect(notified.messages.at(-1)).toStrictEqual({
       text: `${words.unturned} unreadable`,
       kind: 'error',
     })

@@ -162,8 +162,8 @@ describe('a proofreading the person has not allowed', () => {
       },
     ])
 
-    const [shown] = useWindowStatusBar({ tasks }).tasks.value
+    const [taskItem] = useWindowStatusBar({ tasks }).tasks.value
 
-    expect(shown).toMatchObject({ state: 'failed', error: reason, canCancel: false })
+    expect(taskItem).toMatchObject({ state: 'failed', error: reason, canCancel: false })
   })
 })

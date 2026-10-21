@@ -180,10 +180,10 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 const shot = (value: unknown): unknown => {
   if (isRef(value)) return shot(value.value)
   if (typeof value === 'function') return null
-  if (value instanceof Map) return [...value].map(([key, held]) => [key, shot(held)])
+  if (value instanceof Map) return [...value].map(([key, val]) => [key, shot(val)])
   if (Array.isArray(value)) return value.map(shot)
   if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([key, held]) => [key, shot(held)]))
+    return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, shot(val)]))
   }
   return value
 }

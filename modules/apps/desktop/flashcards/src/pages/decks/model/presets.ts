@@ -134,14 +134,14 @@ const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTa
   const at = new Map<string, PresetTally>()
   for (const { deck, result } of reads) {
     if (!result.ok) continue
-    const { held } = result.value
-    let into = at.get(held.path)
+    const { held: preset } = result.value
+    let into = at.get(preset.path)
     if (!into) {
-      into = createTally(held)
-      at.set(held.path, into)
+      into = createTally(preset)
+      at.set(preset.path, into)
     }
     into.decks.push(deck.deck)
-    for (const problem of held.problems) into.problems.add(problem)
+    for (const problem of preset.problems) into.problems.add(problem)
     into.due += deck.due
     into.fresh += deck.new
   }

@@ -131,9 +131,9 @@ export const TheDefaultAgentAndItsModel: Story = {
     const model = canvas.getByRole('button', { name: 'Default model' })
 
     await expect(agent).toHaveTextContent('Agent of the panel (Sample Agent A)')
-    const left = agent.getBoundingClientRect()
-    const right = model.getBoundingClientRect()
-    await expect(Math.round(right.right)).toBe(Math.round(left.right))
+    const agentRect = agent.getBoundingClientRect()
+    const modelRect = model.getBoundingClientRect()
+    await expect(Math.round(modelRect.right)).toBe(Math.round(agentRect.right))
 
     await userEvent.click(model)
     await expect(getMenuWords()).toStrictEqual(['Agent default', 'Sample quick', 'Sample careful'])

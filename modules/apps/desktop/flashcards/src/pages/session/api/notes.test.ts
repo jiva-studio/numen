@@ -6,12 +6,12 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { getDeckNeighbourhood } from './notes'
 
-const { asked } = vi.hoisted(() => ({ asked: [] as unknown[] }))
+const { requests } = vi.hoisted(() => ({ requests: [] as unknown[] }))
 
 vi.mock('@/shared/clients', () => ({
   cards: {
     getDeckNeighbourhood: async (request: unknown) => {
-      asked.push(request)
+      requests.push(request)
       return {
         notes: [
           {
@@ -44,7 +44,7 @@ vi.mock('@/shared/clients', () => ({
 describe("a deck's notes", () => {
   it('asks about the deck of the vault it was given', async () => {
     await getDeckNeighbourhood('garden', 'decks/Words.md')
-    expect(asked).toContainEqual({ vault: 'garden', deck: 'decks/Words.md' })
+    expect(requests).toContainEqual({ vault: 'garden', deck: 'decks/Words.md' })
   })
 
   it('passes every note over in the order it came, and how many were left unread', async () => {

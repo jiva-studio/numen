@@ -18,7 +18,7 @@ const createDeps = (resolved: TabResolution | null, type?: string) => {
       Promise.resolve(new Map(type === undefined ? [] : paths.map((one) => [one, { type }]))),
   } as unknown as VaultCore
   const writeMessage = (text: string, kind?: string) => notified.push([text, kind])
-  return { windowTabs, told: notified, deps: { vaultCore, windowTabs, writeMessage } }
+  return { windowTabs, messages: notified, deps: { vaultCore, windowTabs, writeMessage } }
 }
 
 describe('the tab a command over a file leads to', () => {
@@ -40,23 +40,23 @@ describe('the tab a command over a file leads to', () => {
   })
 
   it('says why it leads nowhere, and opens nothing', async () => {
-    const { deps, windowTabs, told } = createDeps(
+    const { deps, windowTabs, messages } = createDeps(
       { ok: false, text: 'no preset', severity: 'caution' },
       'deck',
     )
 
     await openCommandTab(deps, 'Animals.md', 'preset')
 
-    expect(told).toStrictEqual([['no preset', 'caution']])
+    expect(messages).toStrictEqual([['no preset', 'caution']])
     expect(windowTabs.openTabOfKind).not.toHaveBeenCalled()
   })
 
   it('says that nothing offers it where no kind answers', async () => {
-    const { deps, windowTabs, told } = createDeps(null, 'deck')
+    const { deps, windowTabs, messages } = createDeps(null, 'deck')
 
     await openCommandTab(deps, 'Animals.md', 'preset')
 
-    expect(told).toStrictEqual([[words.notOffered, 'error']])
+    expect(messages).toStrictEqual([[words.notOffered, 'error']])
     expect(windowTabs.openTabOfKind).not.toHaveBeenCalled()
   })
 })

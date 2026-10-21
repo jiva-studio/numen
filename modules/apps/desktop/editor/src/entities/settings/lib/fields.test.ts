@@ -24,7 +24,7 @@ const setup = (target: Record<string, unknown> = {}, models: readonly Model[] = 
     getModels: () => models,
     write: (edits) => content.push([...edits]),
   }))
-  return { fields, written: content }
+  return { fields, recordedEdits: content }
 }
 
 describe('what a setting is read as', () => {
@@ -54,10 +54,10 @@ describe('what a setting is read as', () => {
 
 describe('what is written back', () => {
   it('is the value as JSON, at the setting', () => {
-    const { fields, written } = setup()
+    const { fields, recordedEdits } = setup()
     fields.setValue(['agent', 'steps'], 5)
     fields.setValue(AT, 'opus')
-    expect(written).toStrictEqual([
+    expect(recordedEdits).toStrictEqual([
       [{ at: ['agent', 'steps'], value: '5' }],
       [{ at: AT, value: '"opus"' }],
     ])
@@ -65,14 +65,14 @@ describe('what is written back', () => {
 
   it('is the writes of a preset where the name is one', () => {
     const writes = [{ at: AT, value: '"preset-x-value"' }]
-    const { fields, written } = setup({}, [createModel('x', writes)])
+    const { fields, recordedEdits } = setup({}, [createModel('x', writes)])
     fields.chooseModel(AT, 'x')
-    expect(written).toStrictEqual([writes])
+    expect(recordedEdits).toStrictEqual([writes])
   })
 
   it('is the name itself where it is no preset', () => {
-    const { fields, written } = setup({}, [createModel('x', [])])
+    const { fields, recordedEdits } = setup({}, [createModel('x', [])])
     fields.chooseModel(AT, 'mine')
-    expect(written).toStrictEqual([[{ at: AT, value: '"mine"' }]])
+    expect(recordedEdits).toStrictEqual([[{ at: AT, value: '"mine"' }]])
   })
 })

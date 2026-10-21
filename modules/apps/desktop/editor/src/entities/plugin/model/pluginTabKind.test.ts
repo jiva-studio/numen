@@ -195,7 +195,7 @@ describe('the services a plugin context is given', () => {
   it('tell every plugin listening for a change to the vault, and a failing one is reported', async () => {
     const onError = vi.fn()
     const host = createPluginHost(createDeps({ onError }))
-    const heard: unknown[] = []
+    const received: unknown[] = []
     const reading = {
       id: 'md.numen.one',
       name: 'One',
@@ -203,7 +203,7 @@ describe('the services a plugin context is given', () => {
       permissions: ['vault:read'],
     }
     host.createContext('md.numen.one', reading).onVaultChange((event) => {
-      heard.push(event)
+      received.push(event)
     })
     host.createContext('md.numen.two', reading).onVaultChange(() => {
       throw new Error('no')
@@ -212,7 +212,7 @@ describe('the services a plugin context is given', () => {
     host.notifyVaultChange({ paths: ['A.md'] })
     await new Promise((isDone) => setTimeout(isDone, 0))
 
-    expect(heard).toStrictEqual([{ paths: ['A.md'] }])
+    expect(received).toStrictEqual([{ paths: ['A.md'] }])
     expect(onError).toHaveBeenCalledWith('md.numen.two', expect.any(Error))
   })
 })

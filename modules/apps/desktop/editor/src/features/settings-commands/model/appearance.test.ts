@@ -143,9 +143,9 @@ const window = (over: Partial<Appearance> = {}, css = SERVED) => {
       sheet,
     }),
     sheet,
-    asked: request,
+    requests: request,
     chosen: selected,
-    told: notified,
+    messages: notified,
     changeThemes: response.changeThemes,
     listed: () => items,
     writeTheme: (name: string, css: string) => (texts[name] = css),
@@ -168,7 +168,7 @@ describe('the page as it was served', () => {
     const one = await startWindow()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
-    expect(one.asked).toStrictEqual([])
+    expect(one.requests).toStrictEqual([])
   })
 
   it('writes over the theme’s element, and moves none of them', async () => {
@@ -234,7 +234,7 @@ describe('the theme the keyboard is standing on', () => {
     await settle()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
-    expect(one.asked).toStrictEqual(['mine:sea'])
+    expect(one.requests).toStrictEqual(['mine:sea'])
   })
 
   it('gives way to the one the settings name once the keyboard remains nowhere', async () => {
@@ -247,7 +247,7 @@ describe('the theme the keyboard is standing on', () => {
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
     // The theme the page arrived in is not read for again.
-    expect(one.asked).toStrictEqual(['mine:sea'])
+    expect(one.requests).toStrictEqual(['mine:sea'])
   })
 
   it('is read once, however often the keyboard walks back over it', async () => {
@@ -260,7 +260,7 @@ describe('the theme the keyboard is standing on', () => {
     one.worn.previewItem('mine:sea')
     await settle()
 
-    expect(one.asked).toStrictEqual(['mine:sea', 'preset:dracula'])
+    expect(one.requests).toStrictEqual(['mine:sea', 'preset:dracula'])
   })
 
   it('is returned to be unreadable where its file is, and the window keeps what it wears', async () => {
@@ -271,7 +271,7 @@ describe('the theme the keyboard is standing on', () => {
     one.worn.previewItem('mine:sea')
     await settle()
 
-    expect(one.told.at(-1)).toStrictEqual({ text: words.unworn, kind: 'error' })
+    expect(one.messages.at(-1)).toStrictEqual({ text: words.unworn, kind: 'error' })
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })
 
@@ -604,7 +604,7 @@ describe('the size that was chosen', () => {
     await one.worn.chooseItem('interfaceScale:2')
     await settle()
 
-    expect(one.told.at(-1)).toStrictEqual({
+    expect(one.messages.at(-1)).toStrictEqual({
       text: 'appearance.interface_scale is 3, which is outside 0.8 to 2',
       kind: 'error',
     })
@@ -650,7 +650,7 @@ describe('the row that was chosen', () => {
 
     await one.worn.chooseItem('mine:sea')
 
-    expect(one.told.at(-1)).toStrictEqual({
+    expect(one.messages.at(-1)).toStrictEqual({
       text: 'the settings could not be written',
       kind: 'error',
     })
@@ -677,7 +677,7 @@ describe('the person editing their own theme file', () => {
     one.writeTheme('mine:sea', ':root { --numen-surface: #001 }')
     await one.changeThemes('mine:sea')
 
-    expect(one.asked).toStrictEqual(['mine:sea', 'mine:sea'])
+    expect(one.requests).toStrictEqual(['mine:sea', 'mine:sea'])
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: #001 }')
   })
 
@@ -697,7 +697,7 @@ describe('the person editing their own theme file', () => {
 
     await one.changeThemes('mine:tide')
 
-    expect(one.asked).toStrictEqual(['mine:sea'])
+    expect(one.requests).toStrictEqual(['mine:sea'])
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
   })
 
@@ -749,7 +749,7 @@ describe('the message line when a row is chosen', () => {
 
     await one.worn.chooseItem('interfaceScale:1.5')
 
-    expect(one.told).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(one.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('is cleared before a theme is written', async () => {
@@ -757,7 +757,7 @@ describe('the message line when a row is chosen', () => {
 
     await one.worn.chooseItem('mine:sea')
 
-    expect(one.told).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(one.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 })
 
@@ -872,7 +872,7 @@ describe('files that come back out of order', () => {
   })
 
   it('say nothing of a file the keyboard has already left', async () => {
-    const { worn, told, reads } = createManual()
+    const { worn, messages, reads } = createManual()
     await worn.start()
     worn.previewItem('preset:dracula')
     worn.previewItem('mine:sea')
@@ -882,7 +882,7 @@ describe('files that come back out of order', () => {
     reads[0]?.fail()
     await settle()
 
-    expect(told).toStrictEqual([])
+    expect(messages).toStrictEqual([])
   })
 })
 

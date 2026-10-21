@@ -21,7 +21,7 @@ const createSection = (plugins: readonly PluginInfo[]) => {
     retryPlugin,
   })
   const wrapper = mount(PluginFailureSection, { props: { state: { installation } } })
-  return { wrapper, written: content, retryPlugin }
+  return { wrapper, recordedWrites: content, retryPlugin }
 }
 
 describe('PluginFailureSection', () => {
@@ -51,11 +51,11 @@ describe('PluginFailureSection', () => {
   })
 
   it('writes the plugin disabled', async () => {
-    const { wrapper, written } = createSection([STOPPED])
+    const { wrapper, recordedWrites } = createSection([STOPPED])
 
     await wrapper.get('button[aria-label="Disable Sample Stopped"]').trigger('click')
 
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'sample.stopped', 'enabled'], value: 'false' },
     ])
   })

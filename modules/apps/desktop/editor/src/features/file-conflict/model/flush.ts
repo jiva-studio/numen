@@ -49,7 +49,7 @@ export interface ConflictPrompt {
  */
 function createConflictRegistry(onChanged: () => void) {
   const outstanding = new Set<Conflict>()
-  const put = new Set<string>()
+  const postponed = new Set<string>()
   const conflicts = shallowRef([]) as Ref<readonly ConflictPrompt[]>
 
   const prompt = (one: Conflict): ConflictPrompt => ({
@@ -57,14 +57,14 @@ function createConflictRegistry(onChanged: () => void) {
     keep: one.keep,
     take: one.take,
     later: () => {
-      put.add(one.note)
+      postponed.add(one.note)
       conflicts.value = conflicts.value.filter((each) => each.note !== one.note)
     },
   })
 
   const refresh = () => {
     const all = [...outstanding]
-    conflicts.value = all.filter((one) => !put.has(one.note)).map(prompt)
+    conflicts.value = all.filter((one) => !postponed.has(one.note)).map(prompt)
     return all
   }
 
@@ -73,7 +73,7 @@ function createConflictRegistry(onChanged: () => void) {
     onChanged()
     return () => {
       if (!outstanding.delete(one)) return
-      put.delete(one.note)
+      postponed.delete(one.note)
       onChanged()
     }
   }
@@ -82,7 +82,7 @@ function createConflictRegistry(onChanged: () => void) {
     conflicts,
     raise,
     refresh,
-    clearPut: () => put.clear(),
+    clearPut: () => postponed.clear(),
   }
 }
 

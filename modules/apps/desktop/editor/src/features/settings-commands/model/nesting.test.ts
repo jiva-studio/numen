@@ -99,7 +99,7 @@ describe('whether a node nests the headings of its note', () => {
     await target.choose(OFF)
 
     expect(target.isNesting.value).toBe(true)
-    expect(notified.said.at(-1)).toContain(words.unturned)
+    expect(notified.messagesText.at(-1)).toContain(words.unturned)
   })
 })
 
@@ -160,7 +160,7 @@ describe('how many headings stand under a node', () => {
     await target.chooseCount('3')
 
     expect(target.headings.value).toBe(6)
-    expect(notified.said.at(-1)).toContain(words.unturned)
+    expect(notified.messagesText.at(-1)).toContain(words.unturned)
   })
 
   it('leaves the count out of a switch being turned', async () => {
@@ -192,7 +192,7 @@ describe('how many headings stand under a node', () => {
 
     await target.choose(OFF)
 
-    expect(notified.told).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(notified.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('says the failure of a switch as an error', async () => {
@@ -202,7 +202,7 @@ describe('how many headings stand under a node', () => {
 
     await target.choose(OFF)
 
-    expect(notified.told.at(-1)).toStrictEqual({
+    expect(notified.messages.at(-1)).toStrictEqual({
       text: `${words.unturned} unreadable`,
       kind: 'error',
     })
@@ -246,7 +246,7 @@ describe('how many headings stand under a node', () => {
 
     await target.chooseCount('3')
 
-    expect(notified.told).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(notified.messages).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
   it('says the failure of a count as an error', async () => {
@@ -256,7 +256,7 @@ describe('how many headings stand under a node', () => {
 
     await target.chooseCount('3')
 
-    expect(notified.told.at(-1)).toStrictEqual({
+    expect(notified.messages.at(-1)).toStrictEqual({
       text: `${words.unturned} unreadable`,
       kind: 'error',
     })

@@ -49,11 +49,11 @@ const createStrip = (
   Object.defineProperty(window_, 'scrollWidth', { value: 1040 })
   Object.defineProperty(window_, 'clientWidth', { value: 600 })
   const moves: { to: number; smoothing: string }[] = []
-  let left = 0
+  let scrollLeftValue = 0
   Object.defineProperty(window_, 'scrollLeft', {
-    get: () => left,
+    get: () => scrollLeftValue,
     set: (to: number) => {
-      left = to
+      scrollLeftValue = to
       moves.push({ to, smoothing: window_.style.scrollBehavior })
     },
   })
