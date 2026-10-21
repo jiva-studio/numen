@@ -210,7 +210,7 @@ func TestPagesTheDocumentDoesNotHaveAreLitNowhere(t *testing.T) {
 
 // A page is drawn turned by however much it asks to be, and a box is a fraction
 // of the page as it is drawn. A line of a turned page runs down it.
-func TestATurnedPageIsLitTheWayItIsDrawn(t *testing.T) {
+func TestATurnedPageIsLitTheWayItIsGenerated(t *testing.T) {
 	book, boxes := where(t, "turned.pdf", 0)
 
 	if len(boxes) != 3 {

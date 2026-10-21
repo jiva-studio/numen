@@ -99,7 +99,7 @@ func (d *document) words(index, offset int) []HighlightBox {
 		return nil
 	}
 
-	reading := &wordReading{sheet: sheet, index: index}
+	collector := &wordReading{sheet: sheet, index: index}
 	at := offset
 	for _, char := range read.Chars {
 		text := char.Text
@@ -107,11 +107,11 @@ func (d *document) words(index, offset int) []HighlightBox {
 		if text == "" {
 			continue
 		}
-		reading.add(at, len(text), char.PointPosition, strings.TrimSpace(text) == "")
+		collector.add(at, len(text), char.PointPosition, strings.TrimSpace(text) == "")
 		at += len(text)
 	}
-	reading.finish()
-	return reading.boxes
+	collector.finish()
+	return collector.boxes
 }
 
 // wordReading is the words of a page read character by character: the boxes

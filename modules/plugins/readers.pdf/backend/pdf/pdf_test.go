@@ -66,7 +66,7 @@ func TestPagesAreTheReadingOrder(t *testing.T) {
 	}
 }
 
-func TestAPageIsWhereItStandsInTheFile(t *testing.T) {
+func TestAPageIsWhereItExistsInTheFile(t *testing.T) {
 	// A page carries no name of its own. A document numbering its front matter
 	// apart from its body still has three pages, and they stand in one order.
 	book := read(t, labels)
@@ -81,7 +81,7 @@ func TestAPageIsWhereItStandsInTheFile(t *testing.T) {
 	}
 }
 
-func TestStructureComesFromTheOutlineOrFromNothing(t *testing.T) {
+func TestStructureReachesFromTheOutlineOrFromNothing(t *testing.T) {
 	tests := []struct {
 		name  string
 		file  string
@@ -154,7 +154,7 @@ func TestAPartBeginsWhereItsPageBegins(t *testing.T) {
 	}
 }
 
-func TestAScanIsReadAndSaysNothing(t *testing.T) {
+func TestAScanIsReadAndReturnsNothing(t *testing.T) {
 	// A document with no text layer is not a failure. It is read, its pages are
 	// counted, and what it says is nothing — which is what makes it a scan and
 	// what a reader has to be able to tell.
@@ -303,7 +303,7 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 // A page says how big it is, and what it says is the size it is drawn at one of
 // its own units to the pixel. A page drawn a quarter turn from the way its text
 // is written is as wide as its text is high, and it says so.
-func TestAPageSaysHowBigItIs(t *testing.T) {
+func TestAPageReturnsHowBigItIs(t *testing.T) {
 	for _, name := range []string{tiny, turned, labels} {
 		t.Run(name, func(t *testing.T) {
 			target, err := pdf.OpenReader(readerOf(fixture(t, name)))

@@ -18,23 +18,23 @@ function book(
   layout: DocumentLayout | Error = LAYOUT,
   where: readonly (readonly PageHighlight[])[] = [],
 ) {
-  const request: string[] = []
+  const requests: string[] = []
   const spans: string[] = []
 
   const documents: Documents = {
     getDocumentLayout: async (path) => {
-      request.push(path)
+      requests.push(path)
       if (layout instanceof Error) throw layout
       return layout
     },
     getPageUrl: (path, pageNumber, wide) => `${path} ${pageNumber} ${wide}`,
-    getHighlights: async (path, asking) => {
-      for (const one of asking) spans.push(`${path} ${one.from} ${one.to}`)
-      return asking.map((_, i) => where[i] ?? [])
+    getHighlights: async (path, requestedSpans) => {
+      for (const one of requestedSpans) spans.push(`${path} ${one.from} ${one.to}`)
+      return requestedSpans.map((_, i) => where[i] ?? [])
     },
   }
 
-  return { documents, asked: request, spans }
+  return { documents, requests, spans }
 }
 
 describe('a document still being read', () => {
@@ -62,7 +62,7 @@ describe('a document still being read', () => {
 
 describe('a document opened', () => {
   it('asks what it is once, however much is read of it', async () => {
-    const { documents, asked } = book()
+    const { documents, requests } = book()
     const readItem = useDocumentReader(documents, 'Book.pdf')
 
     readItem.widen(800)
