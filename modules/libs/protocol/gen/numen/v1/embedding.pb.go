@@ -141,94 +141,6 @@ func (x *GetEmbeddingModelResponse) GetConcurrency() int32 {
 	return 0
 }
 
-type EmbedTextRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EmbedTextRequest) Reset() {
-	*x = EmbedTextRequest{}
-	mi := &file_numen_v1_embedding_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmbedTextRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmbedTextRequest) ProtoMessage() {}
-
-func (x *EmbedTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_embedding_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmbedTextRequest.ProtoReflect.Descriptor instead.
-func (*EmbedTextRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *EmbedTextRequest) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
-type EmbedTextResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Vector        []float32              `protobuf:"fixed32,1,rep,packed,name=vector,proto3" json:"vector,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EmbedTextResponse) Reset() {
-	*x = EmbedTextResponse{}
-	mi := &file_numen_v1_embedding_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmbedTextResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmbedTextResponse) ProtoMessage() {}
-
-func (x *EmbedTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_embedding_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmbedTextResponse.ProtoReflect.Descriptor instead.
-func (*EmbedTextResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *EmbedTextResponse) GetVector() []float32 {
-	if x != nil {
-		return x.Vector
-	}
-	return nil
-}
-
 type FloatVector struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Values        []float32              `protobuf:"fixed32,1,rep,packed,name=values,proto3" json:"values,omitempty"`
@@ -238,7 +150,7 @@ type FloatVector struct {
 
 func (x *FloatVector) Reset() {
 	*x = FloatVector{}
-	mi := &file_numen_v1_embedding_proto_msgTypes[4]
+	mi := &file_numen_v1_embedding_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -250,7 +162,7 @@ func (x *FloatVector) String() string {
 func (*FloatVector) ProtoMessage() {}
 
 func (x *FloatVector) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_embedding_proto_msgTypes[4]
+	mi := &file_numen_v1_embedding_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -263,7 +175,7 @@ func (x *FloatVector) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FloatVector.ProtoReflect.Descriptor instead.
 func (*FloatVector) Descriptor() ([]byte, []int) {
-	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *FloatVector) GetValues() []float32 {
@@ -282,7 +194,7 @@ type EmbedBatchRequest struct {
 
 func (x *EmbedBatchRequest) Reset() {
 	*x = EmbedBatchRequest{}
-	mi := &file_numen_v1_embedding_proto_msgTypes[5]
+	mi := &file_numen_v1_embedding_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +206,7 @@ func (x *EmbedBatchRequest) String() string {
 func (*EmbedBatchRequest) ProtoMessage() {}
 
 func (x *EmbedBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_embedding_proto_msgTypes[5]
+	mi := &file_numen_v1_embedding_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +219,7 @@ func (x *EmbedBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedBatchRequest.ProtoReflect.Descriptor instead.
 func (*EmbedBatchRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EmbedBatchRequest) GetTexts() []string {
@@ -326,7 +238,7 @@ type EmbedBatchResponse struct {
 
 func (x *EmbedBatchResponse) Reset() {
 	*x = EmbedBatchResponse{}
-	mi := &file_numen_v1_embedding_proto_msgTypes[6]
+	mi := &file_numen_v1_embedding_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -338,7 +250,7 @@ func (x *EmbedBatchResponse) String() string {
 func (*EmbedBatchResponse) ProtoMessage() {}
 
 func (x *EmbedBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_embedding_proto_msgTypes[6]
+	mi := &file_numen_v1_embedding_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -351,7 +263,7 @@ func (x *EmbedBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedBatchResponse.ProtoReflect.Descriptor instead.
 func (*EmbedBatchResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EmbedBatchResponse) GetVectors() []*FloatVector {
@@ -376,20 +288,15 @@ const file_numen_v1_embedding_proto_rawDesc = "" +
 	"max_tokens\x18\x03 \x01(\x05R\tmaxTokens\x12\x18\n" +
 	"\apooling\x18\x04 \x01(\tR\apooling\x12\x12\n" +
 	"\x04from\x18\x05 \x01(\tR\x04from\x12 \n" +
-	"\vconcurrency\x18\x06 \x01(\x05R\vconcurrency\"&\n" +
-	"\x10EmbedTextRequest\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\"+\n" +
-	"\x11EmbedTextResponse\x12\x16\n" +
-	"\x06vector\x18\x01 \x03(\x02R\x06vector\"%\n" +
+	"\vconcurrency\x18\x06 \x01(\x05R\vconcurrency\"%\n" +
 	"\vFloatVector\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\x02R\x06values\")\n" +
 	"\x11EmbedBatchRequest\x12\x14\n" +
 	"\x05texts\x18\x01 \x03(\tR\x05texts\"E\n" +
 	"\x12EmbedBatchResponse\x12/\n" +
-	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors2\xff\x01\n" +
+	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors2\xb9\x01\n" +
 	"\x10EmbeddingService\x12\\\n" +
-	"\x11GetEmbeddingModel\x12\".numen.v1.GetEmbeddingModelRequest\x1a#.numen.v1.GetEmbeddingModelResponse\x12D\n" +
-	"\tEmbedText\x12\x1a.numen.v1.EmbedTextRequest\x1a\x1b.numen.v1.EmbedTextResponse\x12G\n" +
+	"\x11GetEmbeddingModel\x12\".numen.v1.GetEmbeddingModelRequest\x1a#.numen.v1.GetEmbeddingModelResponse\x12G\n" +
 	"\n" +
 	"EmbedBatch\x12\x1b.numen.v1.EmbedBatchRequest\x1a\x1c.numen.v1.EmbedBatchResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -405,26 +312,22 @@ func file_numen_v1_embedding_proto_rawDescGZIP() []byte {
 	return file_numen_v1_embedding_proto_rawDescData
 }
 
-var file_numen_v1_embedding_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_embedding_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_numen_v1_embedding_proto_goTypes = []any{
 	(*GetEmbeddingModelRequest)(nil),  // 0: numen.v1.GetEmbeddingModelRequest
 	(*GetEmbeddingModelResponse)(nil), // 1: numen.v1.GetEmbeddingModelResponse
-	(*EmbedTextRequest)(nil),          // 2: numen.v1.EmbedTextRequest
-	(*EmbedTextResponse)(nil),         // 3: numen.v1.EmbedTextResponse
-	(*FloatVector)(nil),               // 4: numen.v1.FloatVector
-	(*EmbedBatchRequest)(nil),         // 5: numen.v1.EmbedBatchRequest
-	(*EmbedBatchResponse)(nil),        // 6: numen.v1.EmbedBatchResponse
+	(*FloatVector)(nil),               // 2: numen.v1.FloatVector
+	(*EmbedBatchRequest)(nil),         // 3: numen.v1.EmbedBatchRequest
+	(*EmbedBatchResponse)(nil),        // 4: numen.v1.EmbedBatchResponse
 }
 var file_numen_v1_embedding_proto_depIdxs = []int32{
-	4, // 0: numen.v1.EmbedBatchResponse.vectors:type_name -> numen.v1.FloatVector
+	2, // 0: numen.v1.EmbedBatchResponse.vectors:type_name -> numen.v1.FloatVector
 	0, // 1: numen.v1.EmbeddingService.GetEmbeddingModel:input_type -> numen.v1.GetEmbeddingModelRequest
-	2, // 2: numen.v1.EmbeddingService.EmbedText:input_type -> numen.v1.EmbedTextRequest
-	5, // 3: numen.v1.EmbeddingService.EmbedBatch:input_type -> numen.v1.EmbedBatchRequest
-	1, // 4: numen.v1.EmbeddingService.GetEmbeddingModel:output_type -> numen.v1.GetEmbeddingModelResponse
-	3, // 5: numen.v1.EmbeddingService.EmbedText:output_type -> numen.v1.EmbedTextResponse
-	6, // 6: numen.v1.EmbeddingService.EmbedBatch:output_type -> numen.v1.EmbedBatchResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
+	3, // 2: numen.v1.EmbeddingService.EmbedBatch:input_type -> numen.v1.EmbedBatchRequest
+	1, // 3: numen.v1.EmbeddingService.GetEmbeddingModel:output_type -> numen.v1.GetEmbeddingModelResponse
+	4, // 4: numen.v1.EmbeddingService.EmbedBatch:output_type -> numen.v1.EmbedBatchResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -441,7 +344,7 @@ func file_numen_v1_embedding_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_embedding_proto_rawDesc), len(file_numen_v1_embedding_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

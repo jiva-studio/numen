@@ -145,40 +145,6 @@ func (s *embeddingServer) GetEmbeddingModel(
 	}), nil
 }
 
-func (s *embeddingServer) EmbedText(
-	ctx context.Context,
-	req *connect.Request[numenv1.EmbedTextRequest],
-) (*connect.Response[numenv1.EmbedTextResponse], error) {
-	text := req.Msg.GetText()
-
-	if key, baseURL := s.getService(); key != "" && baseURL != "" {
-		vec, err := computeServiceVector(ctx, key, baseURL, s.getModelName(), text)
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&numenv1.EmbedTextResponse{
-			Vector: vec,
-		}), nil
-	}
-
-	emb, err := s.getEmbedder(ctx)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
-	vectors, err := emb.Embed(ctx, []string{text})
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("embed text: %w", err))
-	}
-	if len(vectors) == 0 {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("no vector returned for text"))
-	}
-
-	return connect.NewResponse(&numenv1.EmbedTextResponse{
-		Vector: vectors[0],
-	}), nil
-}
-
 func (s *embeddingServer) EmbedBatch(
 	ctx context.Context,
 	req *connect.Request[numenv1.EmbedBatchRequest],

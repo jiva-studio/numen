@@ -6,7 +6,7 @@
   "description": "Claude Code CLI agent runner and provider service",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onCommand:askClaude", "onView:agent"],
+  "activationEvents": ["onCommand:askClaude"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,

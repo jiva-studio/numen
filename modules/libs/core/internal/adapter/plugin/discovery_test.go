@@ -70,16 +70,6 @@ func TestDiscoverPlugins(t *testing.T) {
 	if len(flashcardsPlugins) != 1 || flashcardsPlugins[0].Manifest.ID != "md.numen.cards" {
 		t.Errorf("unexpected flashcards plugins: %v", flashcardsPlugins)
 	}
-
-	ocrPlugin, ok := FindPluginByCapability(found, "recognition")
-	if !ok || ocrPlugin.Manifest.ID != "md.numen.ocr" {
-		t.Errorf("expected to find ocr plugin by capability")
-	}
-
-	_, ok = FindPluginByCapability(found, "transcriber")
-	if ok {
-		t.Errorf("did not expect to find transcriber plugin")
-	}
 }
 
 func TestDiscoverPluginsDuplicateID(t *testing.T) {

@@ -4,49 +4,23 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Flashcard deck editor, card stencil designer, SRS preset studio and the review of the cards",
-  "capabilities": [
-    "cards.deck",
-    "cards.stencil",
-    "cards.preset",
-    "ui.view",
-    "tools"
-  ],
-  "targets": [
-    "desktop.editor",
-    "desktop.flashcards"
-  ],
-  "activationEvents": [
-    "onStartupFinished",
-    "onView:deck",
-    "onView:stencil",
-    "onView:preset"
-  ],
-  "permissions": [
-    "vault:read",
-    "vault:write"
-  ],
+  "capabilities": ["tools"],
+  "targets": ["desktop.editor", "desktop.flashcards"],
+  "activationEvents": [],
+  "permissions": ["vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 300,
     "keepAliveWhileVisible": true,
     "memoryLimitBytes": 1073741824
   },
   "data": "flashcards",
-  "services": [
-    "numen.v1.CardsService",
-    "numen.v1.PresetsService",
-    "numen.v1.FlashcardsService"
-  ],
+  "services": ["numen.v1.CardsService", "numen.v1.PresetsService", "numen.v1.FlashcardsService"],
   "noteTypes": [
     {
       "type": "deck",
       "chunks": false,
-      "headings": [
-        1,
-        2
-      ],
-      "markedHeadings": [
-        2
-      ],
+      "headings": [1, 2],
+      "markedHeadings": [2],
       "markPattern": "[0-9a-hjkmnp-tv-z]{10}"
     },
     {
@@ -65,10 +39,7 @@
       "title": "Day starts at",
       "description": "The hour a day of review begins at, as HH:MM from 00:00 to 12:00. An answer given before it is written into the day before. Anything else stands at 04:00.",
       "default": "04:00",
-      "replaces": [
-        "review.day_start_time",
-        "review.day_starts"
-      ]
+      "replaces": ["review.day_start_time", "review.day_starts"]
     }
   ],
   "lifecycle": {

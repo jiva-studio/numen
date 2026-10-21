@@ -56,17 +56,6 @@ func line(number int32, text string) *numenv1.ProofreadLine {
 	return &numenv1.ProofreadLine{Number: number, Text: text}
 }
 
-func TestGetProofreaderInfoNamesTheProofreader(t *testing.T) {
-	proof, _ := newServer(nil)
-	info, err := proof.GetProofreaderInfo(t.Context(), connect.NewRequest(&numenv1.GetProofreaderInfoRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, want := info.Msg.GetName(), "llm-proofreader"; got != want {
-		t.Errorf("name = %q, want %q", got, want)
-	}
-}
-
 func TestTheModelIsAskedByPurposeAloneAlone(t *testing.T) {
 	proof, h := newServer(func(string) string { return "" })
 

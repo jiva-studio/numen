@@ -147,9 +147,11 @@ lib_notes_lint: ## run linters for notes
 	cd $(NOTES) && golangci-lint run ./...
 
 # ------------------------------- Lib: Protocol --------------------------------
-.PHONY: lib_protocol_generate
+.PHONY: lib_protocol_generate protocol_gen
 lib_protocol_generate: ## generate protocol code
 	cd $(PROTOCOL) && buf generate
+
+protocol_gen: lib_protocol_generate ## alias for lib_protocol_generate
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date

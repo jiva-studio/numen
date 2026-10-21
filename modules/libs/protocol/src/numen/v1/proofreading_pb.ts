@@ -10,37 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/proofreading.proto.
  */
 export const file_numen_v1_proofreading: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi92MS9wcm9vZnJlYWRpbmcucHJvdG8SCG51bWVuLnYxIhsKGUdldFByb29mcmVhZGVySW5mb1JlcXVlc3QiKgoaR2V0UHJvb2ZyZWFkZXJJbmZvUmVzcG9uc2USDAoEbmFtZRgBIAEoCSItCg1Qcm9vZnJlYWRMaW5lEg4KBm51bWJlchgBIAEoBRIMCgR0ZXh0GAIgASgJIkgKDlByb29mcmVhZEdyb3VwEg4KBm51bWJlchgBIAEoBRImCgVsaW5lcxgCIAMoCzIXLm51bWVuLnYxLlByb29mcmVhZExpbmUiMQoUUHJvb2ZyZWFkU2Nhbk9wdGlvbnMSGQoRbWF4X2VkaXRfZGlzdGFuY2UYASABKAEiXgoWUHJvb2ZyZWFkU3BlZWNoT3B0aW9ucxIMCgRzaXplGAEgASgFEg8KB292ZXJsYXAYAiABKAUSEQoJZnJvbV9saW5lGAMgASgFEhIKCmxpbmVfbGltaXQYBCABKAUi1gEKFFByb29mcmVhZFRleHRSZXF1ZXN0EiUKBGtpbmQYASABKA4yFy5udW1lbi52MS5Qcm9vZnJlYWRLaW5kEigKBmdyb3VwcxgCIAMoCzIYLm51bWVuLnYxLlByb29mcmVhZEdyb3VwEi4KBHNjYW4YAyABKAsyHi5udW1lbi52MS5Qcm9vZnJlYWRTY2FuT3B0aW9uc0gAEjIKBnNwZWVjaBgEIAEoCzIgLm51bWVuLnYxLlByb29mcmVhZFNwZWVjaE9wdGlvbnNIAEIJCgdvcHRpb25zIkEKE1Byb29mcmVhZENvcnJlY3Rpb24SDgoGbnVtYmVyGAEgASgFEgwKBGxhc3QYAiABKAUSDAoEdGV4dBgDIAEoCSKEAQoVUHJvb2ZyZWFkVGV4dFJlc3BvbnNlEjIKC2NvcnJlY3Rpb25zGAEgAygLMh0ubnVtZW4udjEuUHJvb2ZyZWFkQ29ycmVjdGlvbhITCgt1bmNvcnJlY3RlZBgCIAEoBRIRCgluZXh0X2xpbmUYAyABKAUSDwoHaXNfZG9uZRgEIAEoCCpjCg1Qcm9vZnJlYWRLaW5kEh4KGlBST09GUkVBRF9LSU5EX1VOU1BFQ0lGSUVEEAASFwoTUFJPT0ZSRUFEX0tJTkRfU0NBThABEhkKFVBST09GUkVBRF9LSU5EX1NQRUVDSBACMsgBChNQcm9vZnJlYWRpbmdTZXJ2aWNlEl8KEkdldFByb29mcmVhZGVySW5mbxIjLm51bWVuLnYxLkdldFByb29mcmVhZGVySW5mb1JlcXVlc3QaJC5udW1lbi52MS5HZXRQcm9vZnJlYWRlckluZm9SZXNwb25zZRJQCg1Qcm9vZnJlYWRUZXh0Eh4ubnVtZW4udjEuUHJvb2ZyZWFkVGV4dFJlcXVlc3QaHy5udW1lbi52MS5Qcm9vZnJlYWRUZXh0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
-
-/**
- * @generated from message numen.v1.GetProofreaderInfoRequest
- */
-export type GetProofreaderInfoRequest = Message<"numen.v1.GetProofreaderInfoRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.GetProofreaderInfoRequest.
- * Use `create(GetProofreaderInfoRequestSchema)` to create a new message.
- */
-export const GetProofreaderInfoRequestSchema: GenMessage<GetProofreaderInfoRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 0);
-
-/**
- * @generated from message numen.v1.GetProofreaderInfoResponse
- */
-export type GetProofreaderInfoResponse = Message<"numen.v1.GetProofreaderInfoResponse"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
-};
-
-/**
- * Describes the message numen.v1.GetProofreaderInfoResponse.
- * Use `create(GetProofreaderInfoResponseSchema)` to create a new message.
- */
-export const GetProofreaderInfoResponseSchema: GenMessage<GetProofreaderInfoResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 1);
+  fileDesc("ChtudW1lbi92MS9wcm9vZnJlYWRpbmcucHJvdG8SCG51bWVuLnYxIi0KDVByb29mcmVhZExpbmUSDgoGbnVtYmVyGAEgASgFEgwKBHRleHQYAiABKAkiSAoOUHJvb2ZyZWFkR3JvdXASDgoGbnVtYmVyGAEgASgFEiYKBWxpbmVzGAIgAygLMhcubnVtZW4udjEuUHJvb2ZyZWFkTGluZSIxChRQcm9vZnJlYWRTY2FuT3B0aW9ucxIZChFtYXhfZWRpdF9kaXN0YW5jZRgBIAEoASJeChZQcm9vZnJlYWRTcGVlY2hPcHRpb25zEgwKBHNpemUYASABKAUSDwoHb3ZlcmxhcBgCIAEoBRIRCglmcm9tX2xpbmUYAyABKAUSEgoKbGluZV9saW1pdBgEIAEoBSLWAQoUUHJvb2ZyZWFkVGV4dFJlcXVlc3QSJQoEa2luZBgBIAEoDjIXLm51bWVuLnYxLlByb29mcmVhZEtpbmQSKAoGZ3JvdXBzGAIgAygLMhgubnVtZW4udjEuUHJvb2ZyZWFkR3JvdXASLgoEc2NhbhgDIAEoCzIeLm51bWVuLnYxLlByb29mcmVhZFNjYW5PcHRpb25zSAASMgoGc3BlZWNoGAQgASgLMiAubnVtZW4udjEuUHJvb2ZyZWFkU3BlZWNoT3B0aW9uc0gAQgkKB29wdGlvbnMiQQoTUHJvb2ZyZWFkQ29ycmVjdGlvbhIOCgZudW1iZXIYASABKAUSDAoEbGFzdBgCIAEoBRIMCgR0ZXh0GAMgASgJIoQBChVQcm9vZnJlYWRUZXh0UmVzcG9uc2USMgoLY29ycmVjdGlvbnMYASADKAsyHS5udW1lbi52MS5Qcm9vZnJlYWRDb3JyZWN0aW9uEhMKC3VuY29ycmVjdGVkGAIgASgFEhEKCW5leHRfbGluZRgDIAEoBRIPCgdpc19kb25lGAQgASgIKmMKDVByb29mcmVhZEtpbmQSHgoaUFJPT0ZSRUFEX0tJTkRfVU5TUEVDSUZJRUQQABIXChNQUk9PRlJFQURfS0lORF9TQ0FOEAESGQoVUFJPT0ZSRUFEX0tJTkRfU1BFRUNIEAIyZwoTUHJvb2ZyZWFkaW5nU2VydmljZRJQCg1Qcm9vZnJlYWRUZXh0Eh4ubnVtZW4udjEuUHJvb2ZyZWFkVGV4dFJlcXVlc3QaHy5udW1lbi52MS5Qcm9vZnJlYWRUZXh0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * ProofreadLine is one numbered run of words.
@@ -64,7 +34,7 @@ export type ProofreadLine = Message<"numen.v1.ProofreadLine"> & {
  * Use `create(ProofreadLineSchema)` to create a new message.
  */
 export const ProofreadLineSchema: GenMessage<ProofreadLine> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 2);
+  messageDesc(file_numen_v1_proofreading, 0);
 
 /**
  * ProofreadGroup is lines answered for as a whole. A scan group is one page.
@@ -89,7 +59,7 @@ export type ProofreadGroup = Message<"numen.v1.ProofreadGroup"> & {
  * Use `create(ProofreadGroupSchema)` to create a new message.
  */
 export const ProofreadGroupSchema: GenMessage<ProofreadGroup> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 3);
+  messageDesc(file_numen_v1_proofreading, 1);
 
 /**
  * ProofreadScanOptions are the settings of a scan request.
@@ -111,7 +81,7 @@ export type ProofreadScanOptions = Message<"numen.v1.ProofreadScanOptions"> & {
  * Use `create(ProofreadScanOptionsSchema)` to create a new message.
  */
 export const ProofreadScanOptionsSchema: GenMessage<ProofreadScanOptions> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 4);
+  messageDesc(file_numen_v1_proofreading, 2);
 
 /**
  * ProofreadSpeechOptions are the settings of a speech request. Speech
@@ -154,7 +124,7 @@ export type ProofreadSpeechOptions = Message<"numen.v1.ProofreadSpeechOptions"> 
  * Use `create(ProofreadSpeechOptionsSchema)` to create a new message.
  */
 export const ProofreadSpeechOptionsSchema: GenMessage<ProofreadSpeechOptions> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 5);
+  messageDesc(file_numen_v1_proofreading, 3);
 
 /**
  * @generated from message numen.v1.ProofreadTextRequest
@@ -196,7 +166,7 @@ export type ProofreadTextRequest = Message<"numen.v1.ProofreadTextRequest"> & {
  * Use `create(ProofreadTextRequestSchema)` to create a new message.
  */
 export const ProofreadTextRequestSchema: GenMessage<ProofreadTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 6);
+  messageDesc(file_numen_v1_proofreading, 4);
 
 /**
  * ProofreadCorrection puts line number right. A correction of several lines
@@ -227,7 +197,7 @@ export type ProofreadCorrection = Message<"numen.v1.ProofreadCorrection"> & {
  * Use `create(ProofreadCorrectionSchema)` to create a new message.
  */
 export const ProofreadCorrectionSchema: GenMessage<ProofreadCorrection> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 7);
+  messageDesc(file_numen_v1_proofreading, 5);
 
 /**
  * @generated from message numen.v1.ProofreadTextResponse
@@ -265,7 +235,7 @@ export type ProofreadTextResponse = Message<"numen.v1.ProofreadTextResponse"> & 
  * Use `create(ProofreadTextResponseSchema)` to create a new message.
  */
 export const ProofreadTextResponseSchema: GenMessage<ProofreadTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 8);
+  messageDesc(file_numen_v1_proofreading, 6);
 
 /**
  * ProofreadKind is what is being proofread. The proofreader chooses its own
@@ -310,16 +280,6 @@ export const ProofreadKindSchema: GenEnum<ProofreadKind> = /*@__PURE__*/
  * @generated from service numen.v1.ProofreadingService
  */
 export const ProofreadingService: GenService<{
-  /**
-   * GetProofreaderInfo returns the name the proofreader goes under.
-   *
-   * @generated from rpc numen.v1.ProofreadingService.GetProofreaderInfo
-   */
-  getProofreaderInfo: {
-    methodKind: "unary";
-    input: typeof GetProofreaderInfoRequestSchema;
-    output: typeof GetProofreaderInfoResponseSchema;
-  },
   /**
    * ProofreadText proofreads numbered lines of one kind of text and returns the
    * corrections the proofreader stands behind. It fails with code unavailable

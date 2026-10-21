@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/embedding.proto.
  */
 export const file_numen_v1_embedding: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCKFAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUiIAoQRW1iZWRUZXh0UmVxdWVzdBIMCgR0ZXh0GAEgASgJIiMKEUVtYmVkVGV4dFJlc3BvbnNlEg4KBnZlY3RvchgBIAMoAiIdCgtGbG9hdFZlY3RvchIOCgZ2YWx1ZXMYASADKAIiIgoRRW1iZWRCYXRjaFJlcXVlc3QSDQoFdGV4dHMYASADKAkiPAoSRW1iZWRCYXRjaFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvcjL/AQoQRW1iZWRkaW5nU2VydmljZRJcChFHZXRFbWJlZGRpbmdNb2RlbBIiLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVxdWVzdBojLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVzcG9uc2USRAoJRW1iZWRUZXh0EhoubnVtZW4udjEuRW1iZWRUZXh0UmVxdWVzdBobLm51bWVuLnYxLkVtYmVkVGV4dFJlc3BvbnNlEkcKCkVtYmVkQmF0Y2gSGy5udW1lbi52MS5FbWJlZEJhdGNoUmVxdWVzdBocLm51bWVuLnYxLkVtYmVkQmF0Y2hSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCKFAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUiHQoLRmxvYXRWZWN0b3ISDgoGdmFsdWVzGAEgAygCIiIKEUVtYmVkQmF0Y2hSZXF1ZXN0Eg0KBXRleHRzGAEgAygJIjwKEkVtYmVkQmF0Y2hSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3IyuQEKEEVtYmVkZGluZ1NlcnZpY2USXAoRR2V0RW1iZWRkaW5nTW9kZWwSIi5udW1lbi52MS5HZXRFbWJlZGRpbmdNb2RlbFJlcXVlc3QaIy5udW1lbi52MS5HZXRFbWJlZGRpbmdNb2RlbFJlc3BvbnNlEkcKCkVtYmVkQmF0Y2gSGy5udW1lbi52MS5FbWJlZEJhdGNoUmVxdWVzdBocLm51bWVuLnYxLkVtYmVkQmF0Y2hSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.GetEmbeddingModelRequest
@@ -68,40 +68,6 @@ export const GetEmbeddingModelResponseSchema: GenMessage<GetEmbeddingModelRespon
   messageDesc(file_numen_v1_embedding, 1);
 
 /**
- * @generated from message numen.v1.EmbedTextRequest
- */
-export type EmbedTextRequest = Message<"numen.v1.EmbedTextRequest"> & {
-  /**
-   * @generated from field: string text = 1;
-   */
-  text: string;
-};
-
-/**
- * Describes the message numen.v1.EmbedTextRequest.
- * Use `create(EmbedTextRequestSchema)` to create a new message.
- */
-export const EmbedTextRequestSchema: GenMessage<EmbedTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_embedding, 2);
-
-/**
- * @generated from message numen.v1.EmbedTextResponse
- */
-export type EmbedTextResponse = Message<"numen.v1.EmbedTextResponse"> & {
-  /**
-   * @generated from field: repeated float vector = 1;
-   */
-  vector: number[];
-};
-
-/**
- * Describes the message numen.v1.EmbedTextResponse.
- * Use `create(EmbedTextResponseSchema)` to create a new message.
- */
-export const EmbedTextResponseSchema: GenMessage<EmbedTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_embedding, 3);
-
-/**
  * @generated from message numen.v1.FloatVector
  */
 export type FloatVector = Message<"numen.v1.FloatVector"> & {
@@ -116,7 +82,7 @@ export type FloatVector = Message<"numen.v1.FloatVector"> & {
  * Use `create(FloatVectorSchema)` to create a new message.
  */
 export const FloatVectorSchema: GenMessage<FloatVector> = /*@__PURE__*/
-  messageDesc(file_numen_v1_embedding, 4);
+  messageDesc(file_numen_v1_embedding, 2);
 
 /**
  * @generated from message numen.v1.EmbedBatchRequest
@@ -133,7 +99,7 @@ export type EmbedBatchRequest = Message<"numen.v1.EmbedBatchRequest"> & {
  * Use `create(EmbedBatchRequestSchema)` to create a new message.
  */
 export const EmbedBatchRequestSchema: GenMessage<EmbedBatchRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_embedding, 5);
+  messageDesc(file_numen_v1_embedding, 3);
 
 /**
  * @generated from message numen.v1.EmbedBatchResponse
@@ -150,7 +116,7 @@ export type EmbedBatchResponse = Message<"numen.v1.EmbedBatchResponse"> & {
  * Use `create(EmbedBatchResponseSchema)` to create a new message.
  */
 export const EmbedBatchResponseSchema: GenMessage<EmbedBatchResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_embedding, 6);
+  messageDesc(file_numen_v1_embedding, 4);
 
 /**
  * EmbeddingService calculates dense vector embeddings for text passages.
@@ -167,16 +133,6 @@ export const EmbeddingService: GenService<{
     methodKind: "unary";
     input: typeof GetEmbeddingModelRequestSchema;
     output: typeof GetEmbeddingModelResponseSchema;
-  },
-  /**
-   * EmbedText computes vector embedding for a single text.
-   *
-   * @generated from rpc numen.v1.EmbeddingService.EmbedText
-   */
-  embedText: {
-    methodKind: "unary";
-    input: typeof EmbedTextRequestSchema;
-    output: typeof EmbedTextResponseSchema;
   },
   /**
    * EmbedBatch computes vector embeddings for a list of texts.

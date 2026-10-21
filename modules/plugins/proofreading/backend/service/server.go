@@ -15,9 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// proofreaderName is the name the proofreader goes under.
-const proofreaderName = "llm-proofreader"
-
 // purpose is what every question to the model is for. It routes nothing.
 const purpose = "proofreading"
 
@@ -45,13 +42,6 @@ func newAskModel(complete completer) askModel {
 			},
 		})
 	}
-}
-
-func (s *proofreadingServer) GetProofreaderInfo(
-	_ context.Context,
-	_ *connect.Request[numenv1.GetProofreaderInfoRequest],
-) (*connect.Response[numenv1.GetProofreaderInfoResponse], error) {
-	return connect.NewResponse(&numenv1.GetProofreaderInfoResponse{Name: proofreaderName}), nil
 }
 
 // ProofreadText proofreads the lines of a request according to its kind.

@@ -9,8 +9,6 @@ service EmbeddingService {
   // GetEmbeddingModel returns identity and configuration of the active embedding model.
   rpc GetEmbeddingModel(GetEmbeddingModelRequest) returns (GetEmbeddingModelResponse);
 
-  // EmbedText computes vector embedding for a single text.
-  rpc EmbedText(EmbedTextRequest) returns (EmbedTextResponse);
 
   // EmbedBatch computes vector embeddings for a list of texts.
   rpc EmbedBatch(EmbedBatchRequest) returns (EmbedBatchResponse);
@@ -27,13 +25,6 @@ message GetEmbeddingModelResponse {
   int32 concurrency = 6;
 }
 
-message EmbedTextRequest {
-  string text = 1;
-}
-
-message EmbedTextResponse {
-  repeated float vector = 1;
-}
 
 message FloatVector {
   repeated float values = 1;

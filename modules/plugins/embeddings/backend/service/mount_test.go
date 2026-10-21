@@ -40,17 +40,18 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 	if err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
-	resp, err := numenv1connect.NewEmbeddingServiceClient(web.Client(), web.URL, token).EmbedText(t.Context(),
-		connect.NewRequest(&numenv1.EmbedTextRequest{Text: "words"}))
+	resp, err := numenv1connect.NewEmbeddingServiceClient(web.Client(), web.URL, token).EmbedBatch(t.Context(),
+		connect.NewRequest(&numenv1.EmbedBatchRequest{Texts: []string{"words"}}))
 	if err != nil {
-		t.Fatalf("EmbedText: %v", err)
+		t.Fatalf("EmbedBatch: %v", err)
 	}
 
 	if authorization != "Bearer remote-key" {
 		t.Errorf("the remote service was asked with %q", authorization)
 	}
-	if got := resp.Msg.GetVector(); len(got) != 2 || got[0] != 0.5 {
-		t.Errorf("vector = %v", got)
+	vectors := resp.Msg.GetVectors()
+	if len(vectors) != 1 || len(vectors[0].GetValues()) != 2 || vectors[0].GetValues()[0] != 0.5 {
+		t.Errorf("vectors = %v", vectors)
 	}
 }
 
