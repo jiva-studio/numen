@@ -147,9 +147,9 @@ func (a Allowance) IsPaused() bool { return a.Stops != StoppedNothing }
 func (p Preset) GetAllowance(
 	d Day, now time.Time, spent Spent, unbegunCards, daysToLearn int,
 ) Allowance {
-	opened := d.GetDate(now)
+	date := d.GetDate(now)
 	out := Allowance{
-		Keeps:  p.getBudget(opened.Weekday()),
+		Keeps:  p.getBudget(date.Weekday()),
 		Limits: p.getLimits(),
 		Stops:  p.GetStopReason(d, now),
 	}
@@ -157,7 +157,7 @@ func (p Preset) GetAllowance(
 		// The pace is a whole day's share of the material, and this day carries
 		// as much of it as its day of the week carries of the load.
 		out.Keeps.New = int(math.Round(
-			p.GetShare(opened.Weekday()) * float64(p.getPace(d, now, unbegunCards, daysToLearn))))
+			p.GetShare(date.Weekday()) * float64(p.getPace(d, now, unbegunCards, daysToLearn))))
 	}
 	// A split that takes no part leaves the day spending on the debt first,
 	// which is what a preset naming no share does.

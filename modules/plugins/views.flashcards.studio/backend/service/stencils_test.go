@@ -29,7 +29,7 @@ func stencil(t *testing.T, f *cutting, path string) *v1.ReadStencilResponse {
 // TestAStencilIsWrittenWithItsFacesAndItsFields. The faces are the body and the
 // fields are one key of the frontmatter, and both are the one file, so what
 // comes back is the file holding both.
-func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
+func TestAStencilIsSavedWithItsFacesAndItsFields(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read := stencil(t, f, "cards/Animal.md")
@@ -67,7 +67,7 @@ func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
 
 // TestAStencilIsWrittenWithTheFieldsItNowDeclares. A person adding a field
 // writes the stencil's frontmatter and its faces in the one act.
-func TestAStencilIsWrittenWithTheFieldsItNowDeclares(t *testing.T) {
+func TestAStencilIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read := stencil(t, f, "cards/Animal.md")
@@ -134,7 +134,7 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 
 // TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused. A write puts fields and
 // faces into a stencil that is there, and a stencil is put in the vault by name.
-func TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused(t *testing.T) {
+func TestWritingAStencilWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&v1.WriteStencilRequest{
@@ -193,7 +193,7 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 // TestAPathThatLeavesTheVaultIsTheClientsToCorrect. Nothing escapes the vault
 // either way; what is being said is whose mistake it was, and a path the client
 // built is the client's.
-func TestAPathThatLeavesTheVaultIsTheClientsToCorrect(t *testing.T) {
+func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	_, err := f.client.ReadDeck(t.Context(), connect.NewRequest(&v1.ReadDeckRequest{

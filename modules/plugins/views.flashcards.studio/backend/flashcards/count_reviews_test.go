@@ -141,7 +141,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 // One identifier is one answer, however many files carry it. A synchroniser
 // that met a conflict leaves a second copy of a run beside the first, and the
 // day holds what the person answered.
-func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
+func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -344,7 +344,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 
 // A build that keeps nothing counts the whole log at every launch, and says the
 // same as one that keeps it.
-func TestAVaultIsCountedWithNothingKept(t *testing.T) {
+func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -352,10 +352,10 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	retained := s.counted
-	retained.Cache = nil
+	countReviews := s.counted
+	countReviews.Cache = nil
 
-	got, err := retained.Execute(t.Context(), s.vault)
+	got, err := countReviews.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

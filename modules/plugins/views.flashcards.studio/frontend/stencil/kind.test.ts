@@ -34,7 +34,7 @@ const vault = (
 ) => {
   const content: string[] = []
   /** Each field rename the tab asked the vault for. */
-  const renamed: string[] = []
+  const renameCalls: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let faces: readonly VaultFace[] = FACES
 
@@ -46,7 +46,7 @@ const vault = (
     // braces of every face.
     renameField: async (path, field, observed) => {
       const { from, to } = field
-      renamed.push(`${path} ${from} ${to} ${observed ?? '—'}`)
+      renameCalls.push(`${path} ${from} ${to} ${observed ?? '—'}`)
       if (answers.renaming) return answers.renaming
       fields = fields.map((one) => (one === from ? to : one))
       const rewriteBraces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
@@ -89,8 +89,9 @@ const vault = (
 
   return {
     core,
+    written: content,
     writtenFiles: content,
-    renamed,
+    renamed: renameCalls,
     /** The file written from somewhere else, which the next read answers with. */
     setFaces: (next: readonly VaultFace[]) => {
       faces = next

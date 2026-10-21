@@ -173,13 +173,13 @@ export interface Label {
  * left off.
  */
 export const createLabels = (marks: readonly Mark[], over: Box | null): readonly Label[] => {
-  const placed: Box[] = over ? [over] : []
+  const occupiedBoxes: Box[] = over ? [over] : []
   const out: Label[] = []
   for (const mark of marks) {
     if (!mark.text) continue
     const box = getNameBox(mark.at)
-    if (!placed.every((one) => areBoxesSeparate(box, one))) continue
-    placed.push(box)
+    if (!occupiedBoxes.every((one) => areBoxesSeparate(box, one))) continue
+    occupiedBoxes.push(box)
     out.push({ key: mark.key, text: mark.text, at: getMarkNameStyle(mark.at), box })
   }
   return out

@@ -25,7 +25,7 @@ enableAutoUnmount(afterEach)
 /** A window with one stencil open, drawn. */
 const mountStencil = async (problems: readonly DeckProblem[] = []) => {
   /** Each field rename the editor asked the vault for. */
-  const renamed: string[] = []
+  const renameCalls: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let faces: readonly VaultFace[] = [
     { name: 'Recognise', preamble: '', front: '{{Life span}}', back: '{{Height}}' },
@@ -39,7 +39,7 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
     // The vault writes the name in the fields and in the braces of every face.
     renameField: async (path, field, _seen) => {
       const { from, to } = field
-      renamed.push(`${path} ${from} ${to}`)
+      renameCalls.push(`${path} ${from} ${to}`)
       fields = fields.map((one) => (one === from ? to : one))
       const rewriteBraces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
       faces = faces.map((face) => ({
@@ -72,7 +72,7 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
   // has to stand in the document for those to be found.
   const window = mount(StencilTab, { props: { state: tab }, attachTo: document.body })
   await settle()
-  return { window, tab, renamed }
+  return { window, tab, renamed: renameCalls }
 }
 
 const missing: DeckProblem = {

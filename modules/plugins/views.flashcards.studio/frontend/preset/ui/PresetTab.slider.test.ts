@@ -154,7 +154,7 @@ describe('the one slider', () => {
   })
 
   it('says what a target costs, and a date the days and the day’s length', () => {
-    const retained = mountPresetTab(
+    const tabWrapper = mountPresetTab(
       {
         goal: 'retention',
         grid: [0.7, 0.8, 0.9, 0.95],
@@ -163,7 +163,7 @@ describe('the one slider', () => {
       },
       { goal: 'retention' },
     )
-    expect(retained.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
+    expect(tabWrapper.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
       '90% remembered',
       '14 minutes a day',
       'overdue gone in 2 days',

@@ -102,7 +102,7 @@ func drawAtoms(t *rapid.T) []atom {
 // The cut never falls inside a wikilink, an embed or a run of emphasis: it
 // falls in front of the whole of whichever it lands in. A heading ending inside
 // a link is markup a person is shown as the name of their card.
-func TestTheCutNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
+func TestTheSplitNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 	t.Parallel()
 	var trimmed, straddled int
 	rapid.Check(t, func(t *rapid.T) {

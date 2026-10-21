@@ -49,12 +49,12 @@ func keepFields(card format.Card, fields []string) format.Card {
 	if len(fields) == 0 {
 		return card
 	}
-	retained := card
-	retained.Values = nil
+	filteredCard := card
+	filteredCard.Values = nil
 	for _, v := range card.Values {
 		if slices.Contains(fields, v.Field) {
-			retained.Values = append(retained.Values, v)
+			filteredCard.Values = append(filteredCard.Values, v)
 		}
 	}
-	return retained
+	return filteredCard
 }

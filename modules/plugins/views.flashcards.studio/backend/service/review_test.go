@@ -234,7 +234,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 // A vault is answered on its own. What a person did in one is not what another
 // owes, and the two vaults here share no mark, no face and no word, so nothing
 // could pass between them by looking alike.
-func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
+func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 	api, target := newAPI(t, deck, other)
 	one, two := target[0], target[1]
 
@@ -279,7 +279,7 @@ func findVaultCount(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1
 
 // An answer is written to the run's own file, and the identifier it comes back
 // with is what taking it back names.
-func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
+func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 
@@ -359,7 +359,7 @@ func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 }
 
 // A vault the index could not read is uncounted, and says why nothing could be counted.
-func TestAVaultTheIndexCouldNotReadIsUncountedAndSaysWhy(t *testing.T) {
+func TestAVaultTheIndexCouldNotReadIsUncountedAndReturnsWhy(t *testing.T) {
 	api, target, installation := newAPIOn(t, deck)
 	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.IndexFailed, Reason: "the disk is full"})
 
@@ -386,7 +386,7 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 }
 
 // A question about a vault the installation does not hold fails.
-func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
+func TestAQuestionAboutAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
 	_, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: "nothing"}))
@@ -435,7 +435,7 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 
 // A deck that could not be given marks is named to the person, so they know
 // which of their cards are not in front of them.
-func TestASessionSaysWhichDecksItCouldNotMark(t *testing.T) {
+func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 	api, target, installation := newAPIOn(t, map[string]string{
 		"Term.md": deck["Term.md"],
 		// The card carries no mark, so the deck is written to give it one.
@@ -511,7 +511,7 @@ var pointed = map[string]string{
 
 // The front door says what today came to under each preset the vault's decks
 // name: what was answered under it, how long that took, and what the day holds.
-func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
+func TestTheFrontDoorReturnsWhatTodayCameToBelowEachPreset(t *testing.T) {
 	api, target := newAPI(t, pointed)
 	v := target[0]
 
@@ -543,7 +543,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 
 // A deck naming no preset comes under the defaults, which is what a vault
 // holding no preset at all evaluates to.
-func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
+func TestADeckNamingNoPresetReachesBelowTheDefaults(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
 	presets := front(t, api).GetVaults()[0].GetPresets()
@@ -601,7 +601,7 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 
 // The front door says what each of a vault's presets holds today, and neither
 // of them carries the other's budget.
-func TestTheFrontDoorSaysWhatEachPresetOfAVaultHolds(t *testing.T) {
+func TestTheFrontDoorReturnsWhatEachPresetOfAVaultContains(t *testing.T) {
 	api, _ := newAPI(t, twoPresets)
 
 	got := make(map[string]int32)
@@ -654,7 +654,7 @@ var backlogged = map[string]string{
 // the preset relies on that picture is the day the deck screen offers wherever
 // the control moves today, and the reason a day closed names the budget its own
 // goal steers and no other.
-func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
+func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 	for _, one := range []struct {
 		what   string
 		goal   review.Goal
@@ -711,22 +711,22 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 				t.Fatal("the deck screen offers nothing to compare")
 			}
 
-			rendered := getCurve(t, api, v, "Steady.md", p)
-			at := rendered.GetNow().GetAt()
+			curveResp := getCurve(t, api, v, "Steady.md", p)
+			at := curveResp.GetNow().GetAt()
 			if at < 0 {
-				t.Fatalf("the preset stands nowhere on its own curve: %+v", rendered.GetNow())
+				t.Fatalf("the preset stands nowhere on its own curve: %+v", curveResp.GetNow())
 			}
-			if got := int(rendered.GetAt()[at].GetReviews()); one.isSameDay && got != offers {
+			if got := int(curveResp.GetAt()[at].GetReviews()); one.isSameDay && got != offers {
 				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
 			}
-			if got := rendered.GetAt()[at].GetClosed(); !slices.Contains(got, presetwire.ConvertBudgetToWire(one.closed)) {
+			if got := curveResp.GetAt()[at].GetClosed(); !slices.Contains(got, presetwire.ConvertBudgetToWire(one.closed)) {
 				t.Errorf("the day closed on %v, want %q among them", got, one.closed)
 			}
-			for i, point := range rendered.GetAt() {
+			for i, point := range curveResp.GetAt() {
 				for _, never := range one.never {
 					if slices.Contains(point.GetClosed(), presetwire.ConvertBudgetToWire(never)) {
 						t.Errorf("at %v the day closed on %q, which its goal does not name",
-							rendered.GetGrid()[i], never)
+							curveResp.GetGrid()[i], never)
 					}
 				}
 			}
@@ -740,8 +740,8 @@ func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
 	api, target := newAPI(t, backlogged)
 	v := target[0]
 
-	rendered := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
-	if got := rendered.GetAt()[len(rendered.GetAt())-1].GetClosed(); len(got) != 0 {
+	curveResp := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	if got := curveResp.GetAt()[len(curveResp.GetAt())-1].GetClosed(); len(got) != 0 {
 		t.Errorf("the longest day on the range is closed by %q", got)
 	}
 }
@@ -763,28 +763,28 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	p.Goal = review.GoalMinutes
 	writePreset(t, api, v, "Sanskrit.md", p)
 
-	rendered := getCurve(t, api, v, "Sanskrit.md", p)
-	at := int(rendered.GetSuggested().GetAt())
+	curveResp := getCurve(t, api, v, "Sanskrit.md", p)
+	at := int(curveResp.GetSuggested().GetAt())
 	if at < 0 {
-		t.Fatalf("nothing is suggested: %+v", rendered.GetSuggested())
+		t.Fatalf("nothing is suggested: %+v", curveResp.GetSuggested())
 	}
 	if at == 0 {
 		t.Error("the shortest day on the range is suggested, and this vault is behind")
 	}
 
-	whole := rendered.GetAt()[len(rendered.GetAt())-1].GetReviews()
-	if got := rendered.GetAt()[at].GetReviews(); got != whole {
+	whole := curveResp.GetAt()[len(curveResp.GetAt())-1].GetReviews()
+	if got := curveResp.GetAt()[at].GetReviews(); got != whole {
 		t.Errorf("the suggested day asks %v cards, and a day of any length asks %v", got, whole)
 	}
-	if got := rendered.GetAt()[at].GetClosed(); len(got) != 0 {
+	if got := curveResp.GetAt()[at].GetClosed(); len(got) != 0 {
 		t.Errorf("the suggested day closed on %v, and a day that asks everything closes on nothing",
 			got)
 	}
 	for i := range at {
-		got := rendered.GetAt()[i].GetClosed()
+		got := curveResp.GetAt()[i].GetClosed()
 		if !slices.Contains(got, presetwire.ConvertBudgetToWire(review.ClosedMinutes)) {
 			t.Errorf("%v minutes a day closed on %v, and %v is suggested",
-				rendered.GetGrid()[i], got, rendered.GetGrid()[at])
+				curveResp.GetGrid()[i], got, curveResp.GetGrid()[at])
 		}
 	}
 }
@@ -795,7 +795,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 // The overdue count stands over the whole curve and does not move when the goal
 // does. What the deck screen owes today is that backlog and the cards falling
 // due today besides, so it is never the smaller of the two.
-func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
+func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)
@@ -850,14 +850,14 @@ func TestAVaultNobodyHasAnsweredHasNothingOverdue(t *testing.T) {
 	api, target := newAPI(t, backlogged)
 	v := target[0]
 
-	rendered := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
-	if got := rendered.GetOverdue(); got != 0 {
+	curveResp := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	if got := curveResp.GetOverdue(); got != 0 {
 		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
 	}
-	for i, one := range rendered.GetAt() {
+	for i, one := range curveResp.GetAt() {
 		if one.GetClears() != 0 {
 			t.Errorf("%v minutes a day clears nothing in %d days",
-				rendered.GetGrid()[i], one.GetClears())
+				curveResp.GetGrid()[i], one.GetClears())
 		}
 	}
 }
@@ -976,11 +976,11 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 					continue
 				}
 				due, newCards := int(response.GetOwedDue()), int(response.GetOwedNew())
-				retained, keptNew := int(response.GetReviews()), int(response.GetNew())
+				keptReviews, keptNew := int(response.GetReviews()), int(response.GetNew())
 
-				if response.GetClosesReviews() != "" && due > retained {
+				if response.GetClosesReviews() != "" && due > keptReviews {
 					t.Errorf("%q allocated %d owed against the %d reviews it keeps",
-						response.GetPreset(), due, retained)
+						response.GetPreset(), due, keptReviews)
 				}
 				if response.GetClosesNew() != "" && newCards > keptNew {
 					t.Errorf("%q allocated %d new against the %d it keeps",
@@ -988,7 +988,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 				}
 				// A count standing in the file that the goal does not name is
 				// no wall, and this is the vault where that shows.
-				if response.GetClosesReviews() == "" && due > retained {
+				if response.GetClosesReviews() == "" && due > keptReviews {
 					past++
 				}
 				if response.GetClosesNew() == "" && newCards > keptNew {
@@ -1017,9 +1017,9 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 	p := asWritten(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
 	writePreset(t, api, v, "Sanskrit.md", p)
-	rendered := getCurve(t, api, v, "Sanskrit.md", p)
+	curveResp := getCurve(t, api, v, "Sanskrit.md", p)
 
-	overdue, unbegun, cards := rendered.GetOverdue(), rendered.GetUnbegun(), rendered.GetCards()
+	overdue, unbegun, cards := curveResp.GetOverdue(), curveResp.GetUnbegun(), curveResp.GetCards()
 	if overdue == 0 || unbegun == 0 {
 		t.Fatalf("the vault stands %d overdue and %d unbegun, and neither is under test",
 			overdue, unbegun)
@@ -1028,16 +1028,16 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 		t.Errorf("%d overdue and %d unbegun of %d card faces", overdue, unbegun, cards)
 	}
 
-	for i, one := range rendered.GetAt() {
+	for i, one := range curveResp.GetAt() {
 		band := one.GetBacklog()
 		if len(band) == 0 {
-			t.Fatalf("%v carries no backlog to draw", rendered.GetGrid()[i])
+			t.Fatalf("%v carries no backlog to draw", curveResp.GetGrid()[i])
 		}
 		// A day too short to carry what falls due adds to the pile, so the
 		// band rises as well as falls, and never below nothing.
 		for day, backlog := range band {
 			if backlog < 0 {
-				t.Errorf("%v stands %d behind on day %d", rendered.GetGrid()[i], backlog, day)
+				t.Errorf("%v stands %d behind on day %d", curveResp.GetGrid()[i], backlog, day)
 			}
 		}
 		// The day named as the clearing is the day the band reaches nothing.
@@ -1050,12 +1050,12 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 		}
 		if one.GetClears() != first {
 			t.Errorf("%v clears on day %d and its band reaches nothing on day %d",
-				rendered.GetGrid()[i], one.GetClears(), first)
+				curveResp.GetGrid()[i], one.GetClears(), first)
 		}
 	}
 
 	// A longer day is never further behind than a shorter one on the same day.
-	short, long := rendered.GetAt()[0].GetBacklog(), rendered.GetAt()[len(rendered.GetAt())-1].GetBacklog()
+	short, long := curveResp.GetAt()[0].GetBacklog(), curveResp.GetAt()[len(curveResp.GetAt())-1].GetBacklog()
 	for day := range min(len(short), len(long)) {
 		if long[day] > short[day] {
 			t.Errorf("on day %d the longest day on the range stands %d behind and the "+
@@ -1093,34 +1093,34 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 			p.NewADay, p.ReviewsADay = one.newADay, one.reviews
 			p.Counts = one.counts
 			writePreset(t, api, v, "Sanskrit.md", p)
-			rendered := getCurve(t, api, v, "Sanskrit.md", p)
+			curveResp := getCurve(t, api, v, "Sanskrit.md", p)
 
-			least := rendered.GetAt()[0].GetMinutes()
-			most := rendered.GetAt()[len(rendered.GetAt())-1].GetMinutes()
+			least := curveResp.GetAt()[0].GetMinutes()
+			most := curveResp.GetAt()[len(curveResp.GetAt())-1].GetMinutes()
 			if least <= 0 {
 				t.Fatalf("the easiest target costs %v minutes a day", least)
 			}
 			switch {
 			case one.isClimbing && most <= least*2:
 				t.Errorf("asking for %.2f of it back costs %v minutes a day and asking "+
-					"for %.2f costs %v", rendered.GetGrid()[len(rendered.GetGrid())-1], most,
-					rendered.GetGrid()[0], least)
+					"for %.2f costs %v", curveResp.GetGrid()[len(curveResp.GetGrid())-1], most,
+					curveResp.GetGrid()[0], least)
 			case !one.isClimbing && most != least:
 				t.Errorf("a day the count closes at every place costs %v minutes at one "+
 					"end of the range and %v at the other", least, most)
 			}
 
 			// What the cost buys climbs with it, and is a share of the material.
-			for i, at := range rendered.GetAt() {
+			for i, at := range curveResp.GetAt() {
 				if at.GetRetained() < 0 || at.GetRetained() > 1 {
 					t.Errorf("%.2f leaves %v of the material in the head",
-						rendered.GetGrid()[i], at.GetRetained())
+						curveResp.GetGrid()[i], at.GetRetained())
 				}
 			}
-			retained := rendered.GetAt()[len(rendered.GetAt())-1].GetRetained() -
-				rendered.GetAt()[0].GetRetained()
-			if one.isClimbing && retained <= 0 {
-				t.Errorf("asking for more of it back kept %v more of it", retained)
+			retentionDelta := curveResp.GetAt()[len(curveResp.GetAt())-1].GetRetained() -
+				curveResp.GetAt()[0].GetRetained()
+			if one.isClimbing && retentionDelta <= 0 {
+				t.Errorf("asking for more of it back kept %v more of it", retentionDelta)
 			}
 		})
 	}
@@ -1173,24 +1173,24 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 
 		// The control is left on a place of its own grid, so the picture is
 		// drawn for the day the vault is held to.
-		rendered := getCurve(t, api, v, "Sanskrit.md", p)
-		value := rendered.GetGrid()[2]
+		curveResp := getCurve(t, api, v, "Sanskrit.md", p)
+		value := curveResp.GetGrid()[2]
 		p.MinutesADay = int(value)
 		writePreset(t, api, v, "Sanskrit.md", p)
 
-		rendered = getCurve(t, api, v, "Sanskrit.md", p)
+		curveResp = getCurve(t, api, v, "Sanskrit.md", p)
 		at := 2
-		if rendered.GetGrid()[at] != value {
+		if curveResp.GetGrid()[at] != value {
 			t.Fatalf("the control was left at %v and the grid holds %v there",
-				value, rendered.GetGrid()[at])
+				value, curveResp.GetGrid()[at])
 		}
 
 		one := session(t, api, v, "Sanskrit.md")
-		if got := int(rendered.GetAt()[at].GetReviews()); got != one.asked {
+		if got := int(curveResp.GetAt()[at].GetReviews()); got != one.asked {
 			t.Errorf("giving the debt %d of the day, the session asks %d cards and the "+
 				"picture draws %d", share, one.asked, got)
 		}
-		target[share], bands[share] = one, rendered.GetAt()[at].GetBacklog()
+		target[share], bands[share] = one, curveResp.GetAt()[at].GetBacklog()
 	}
 
 	// Each share put its own side of the day first: paying the debt filled the

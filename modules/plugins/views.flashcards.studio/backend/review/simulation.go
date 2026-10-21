@@ -302,7 +302,7 @@ func (s Simulation) Run(
 	take := 0
 	// How many times the day has asked each card face, and the faces it has
 	// still to ask again before it closes.
-	displayed := make([]int, len(cards))
+	showings := make([]int, len(cards))
 	var again []int
 	for today := range days {
 		if err := ctx.Err(); err != nil {
@@ -329,7 +329,7 @@ func (s Simulation) Run(
 		spare = mergeByDue(spare[:0], due[take:], falls[today], cards)
 		due, spare = spare, due
 		take = 0
-		clear(displayed)
+		clear(showings)
 		again = again[:0]
 		next := 0
 
@@ -370,7 +370,7 @@ func (s Simulation) Run(
 				} else {
 					at = due[take]
 				}
-				counted := p.Counts.IsCharged(displayed[at] > 0)
+				counted := p.Counts.IsCharged(showings[at] > 0)
 				if counted && admits.Limits.Reviews != ClosedNothing && charged >= admits.Reviews {
 					closed = closed.add(admits.Limits.Reviews)
 					if repeat {
@@ -400,13 +400,13 @@ func (s Simulation) Run(
 				if counted {
 					charged++
 				}
-				if displayed[at] == 0 {
+				if showings[at] == 0 {
 					faced++
 				}
-				displayed[at]++
+				showings[at]++
 				cards[at] = s.getScheduleAfterShowing(cards[at], open, ends, p, on)
 				reckoned.countAnswer(at, cards[at], ends)
-				if s.Day.IsOwed(cards[at], open) && displayed[at] < MostShowings {
+				if s.Day.IsOwed(cards[at], open) && showings[at] < MostShowings {
 					again = append(again, at)
 					continue
 				}
@@ -432,10 +432,10 @@ func (s Simulation) Run(
 			out.Seen++
 			one := s.getScheduleAfterShowing(Schedule{}, open, ends, p, on)
 			cards = append(cards, one)
-			displayed = append(displayed, 1)
+			showings = append(showings, 1)
 			reckoned.countBegun(one, ends)
 			at := len(cards) - 1
-			if s.Day.IsOwed(one, open) && displayed[at] < MostShowings {
+			if s.Day.IsOwed(one, open) && showings[at] < MostShowings {
 				again = append(again, at)
 				continue
 			}

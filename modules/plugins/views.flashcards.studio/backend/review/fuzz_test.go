@@ -62,18 +62,18 @@ func FuzzReadLog(f *testing.F) {
 // something, and the run after the last newline, which is a line that did not
 // land whole whatever it holds.
 func lines(raw string) int {
-	trimmed := strings.LastIndex(raw, "\n")
-	if trimmed < 0 {
+	lastNewline := strings.LastIndex(raw, "\n")
+	if lastNewline < 0 {
 		if strings.TrimSpace(raw) == "" {
 			return 0
 		}
 		return 1
 	}
 	target := 0
-	if trimmed+1 < len(raw) {
+	if lastNewline+1 < len(raw) {
 		target++
 	}
-	for _, line := range strings.Split(raw[:trimmed], "\n") {
+	for _, line := range strings.Split(raw[:lastNewline], "\n") {
 		if strings.TrimSpace(line) != "" {
 			target++
 		}

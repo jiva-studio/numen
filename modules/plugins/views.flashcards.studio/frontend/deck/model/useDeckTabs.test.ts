@@ -314,7 +314,7 @@ describe('a card written in a deck', () => {
   })
 
   it('reaches the vault as the cards of that file, with the file it was read from', async () => {
-    const { decks, tab, savedFiles, observedRanks } = await open()
+    const { decks, tab, written: savedFiles, seen: observedRanks } = await open()
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.store.flush()
@@ -334,7 +334,7 @@ describe('a card written in a deck', () => {
   })
 
   it('writes nothing where nothing was touched', async () => {
-    const { decks, savedFiles } = await open()
+    const { decks, written: savedFiles } = await open()
 
     await decks.store.flush()
 
@@ -353,7 +353,7 @@ describe('a deck whose file moved past what was read', () => {
   })
 
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
-    const { decks, tab, savedFiles, observedRanks } = await open({ isChanged: true })
+    const { decks, tab, written: savedFiles, seen: observedRanks } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.store.flush()
@@ -575,7 +575,7 @@ describe('the vault changing under the window', () => {
 
 describe('a deck read again under the window', () => {
   /** Everything the tab hands the grid to draw. */
-  const drawing = (tab: DeckTabState) => ({
+  const getTabSnapshot = (tab: DeckTabState) => ({
     deck: tab.deck.value,
     drawn: tab.drawn.value,
     stencils: tab.stencils.value,
@@ -594,14 +594,14 @@ describe('a deck read again under the window', () => {
 
   it('leaves what the grid is drawing standing, where the file reads the same', async () => {
     const one = await open({ problems: [stencilless] })
-    const was = drawing(one.tab)
+    const was = getTabSnapshot(one.tab)
 
     one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     // Each of them the same thing, and not merely a thing that reads the same:
     // a card under the keyboard is redrawn by anything else.
-    expect(drawing(one.tab)).toStrictEqual(was)
+    expect(getTabSnapshot(one.tab)).toStrictEqual(was)
     expect(one.tab.deck.value).toBe(was.deck)
     expect(one.tab.drawn.value).toBe(was.drawn)
     expect(one.tab.stencils.value).toBe(was.stencils)
@@ -751,7 +751,7 @@ describe('a deck read again under the window', () => {
 
   it('draws the file again where it was written from somewhere else', async () => {
     const one = await open()
-    const was = drawing(one.tab)
+    const was = getTabSnapshot(one.tab)
 
     one.setCards([
       {
@@ -895,7 +895,7 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('writes what the deck owes before it writes the preset', async () => {
-    const { tab, attached, savedFiles } = await open()
+    const { tab, attached, written: savedFiles } = await open()
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
     tab.setSchedule('Sanskrit.md')

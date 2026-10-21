@@ -544,7 +544,7 @@ describe('a curve nobody answers', () => {
 // where it is asked to go, and where the window is.
 describe('what a tab still owes the file', () => {
   it('is written before the tab goes', async () => {
-    const { state, written, closed } = await openPresetTab()
+    const { state, writtenFiles, closed } = await openPresetTab()
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
     await flushPromises()
@@ -596,7 +596,7 @@ describe('what a tab still owes the file', () => {
   })
 
   it('is written when the window goes', async () => {
-    const { state, written, flush } = await openPresetTab()
+    const { state, writtenFiles, flush } = await openPresetTab()
     state.updateSetting('newADay', 4)
     await flush()
     expect(writtenFiles.at(-1)?.newADay).toBe(4)
@@ -841,7 +841,7 @@ describe('a field the goal does not getGoalField, typed', () => {
  */
 describe('a field moved before the first read lands', () => {
   it('leaves every other setting to the read, and writes what the read returned', async () => {
-    const { tab, written, resolveRead } = await opening({
+    const { tab, written: writtenFiles, resolveRead } = await opening({
       retention: 0.93,
       newADay: 3,
       interval: 40,
@@ -910,10 +910,10 @@ describe('how far each setting goes', () => {
 // where it stops, and each of those is a curve nobody asked to see.
 describe('a control dragged across its range', () => {
   it('keeps one curve in the air and asks again for where the hand came to rest', async () => {
-    const waiting: ((one: Curve) => void)[] = []
-    const { state: tab, asked } = await openPresetTab(
+    const waiters: ((one: Curve) => void)[] = []
+    const { state: tab, requests } = await openPresetTab(
       { goal: 'retention' },
-      () => new Promise<Curve>((take) => waiting.push(take)),
+      () => new Promise<Curve>((take) => waiters.push(take)),
     )
 
     // The read's own curve is the one in the air; every step of the drag lands
@@ -922,7 +922,7 @@ describe('a control dragged across its range', () => {
     await flushPromises()
     expect(requests).toHaveLength(1)
 
-    waiting[0]?.(curve)
+    waiters[0]?.(curve)
     await flushPromises()
     expect(requests).toHaveLength(2)
   })
@@ -1206,7 +1206,7 @@ describe('a preset made', () => {
 
 describe('the presets written out when the window quits', () => {
   it('are the ones the tabs owe, written by the buffers of the window', async () => {
-    const { state, written, buffers } = await openPresetTab()
+    const { state, writtenFiles, buffers } = await openPresetTab()
     state.updateSetting('newADay', 4)
 
     await buffers.flush()
@@ -1217,7 +1217,7 @@ describe('the presets written out when the window quits', () => {
 
 describe('what the window asks of a preset tab', () => {
   it('is to write what it owes out, and answer once it is', async () => {
-    const { state, written, kind } = await openPresetTab()
+    const { state, writtenFiles, kind } = await openPresetTab()
     state.updateSetting('newADay', 4)
 
     await kind.kind.flushPending?.(state)
@@ -1226,7 +1226,7 @@ describe('what the window asks of a preset tab', () => {
   })
 
   it('is to write what a preset owes out wherever its file went since the tab opened', async () => {
-    const { state, written, kind } = await openPresetTab()
+    const { state, writtenFiles, kind } = await openPresetTab()
     state.updateSetting('newADay', 4)
     kind.applyPathChanges(['Beside.md'], [{ from: 'Steady.md', to: 'Beside.md' }])
 
@@ -1236,7 +1236,7 @@ describe('what the window asks of a preset tab', () => {
   })
 
   it('is to write nothing for a tab it does not hold', async () => {
-    const { written, kind } = await openPresetTab()
+    const { writtenFiles, kind } = await openPresetTab()
 
     await kind.kind.flushPending?.({ id: 'Elsewhere.md' } as never)
 

@@ -100,7 +100,7 @@ func deck(t *testing.T, f *cutting, path string) *v1.ReadDeckResponse {
 // TestAProblemStandsAgainstTheCardItIsAbout. A card is addressed by where it
 // stands, so a problem's position is an index into the cards the same answer
 // carried.
-func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
+func TestAProblemExistsAgainstTheCardItIsAbout(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
@@ -129,7 +129,7 @@ func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
 
 // TestACardComesBackWithTheMarkItIsAddressedBy. A card has no name, so a client
 // that cannot read a card's mark cannot say which card it means.
-func TestACardComesBackWithTheMarkItIsAddressedBy(t *testing.T) {
+func TestACardReachesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
@@ -151,7 +151,7 @@ func TestACardComesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 // TestACardSaysWhichSectionItStandsUnder. A deck of two hundred cards is a list
 // a person divides, and which run a card falls in is the deck's and not the
 // card's own text.
-func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
+func TestACardReturnsWhichSectionItExistsBelow(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
@@ -208,7 +208,7 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 // TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead. Somebody editing
 // their own deck outranks a client that read it, thought about it and arrived
 // late.
-func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
+func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
@@ -243,7 +243,7 @@ func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 // TestADeckWrittenBackKeepsTheCardsItHeld. Every card and every section the
 // client did not touch arrives on the other side as the bytes it went in as,
 // the prose under a card's wikilink and under a section's heading among them.
-func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
+func TestADeckSavedBackKeepsTheCardsItHeld(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": dividedDeck,
@@ -308,7 +308,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 
 // TestACardUnderASectionTheDeckDoesNotHoldIsRefused. Writing it under whichever
 // section stands last moves somebody's card and says nothing about it.
-func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
+func TestACardBelowASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
 
 	read := deck(t, f, "Animals.md")
@@ -337,7 +337,7 @@ func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 // that card's fields is first, so nothing can write its heading again: it is
 // left exactly currently, and a person who changed nothing sees the file
 // they wrote.
-func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
+func TestACardWithNoStencilKeepsTheHeadingItExistsBelow(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
@@ -368,7 +368,7 @@ func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 
 // TestAListOfStencilsCutShortSaysHowManyTheVaultHolds. A list that stops at a
 // ceiling and says nothing about it reads as all there is.
-func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
+func TestAListOfStencilsSplitShortReturnsHowManyTheVaultContains(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
 		"Term.md":   "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n\n## Recall\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
@@ -458,7 +458,7 @@ func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 // TestRenamingAFieldReachesTheDecksThatStencilCuts. A field's name is written
 // where the stencil declares it and as a heading in every card that stencil
 // cuts, so the rename reaches them all and says which decks it wrote.
-func TestRenamingAFieldReachesTheDecksThatStencilCuts(t *testing.T) {
+func TestRenamingAFieldReachesTheDecksThatStencilSplits(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
@@ -536,7 +536,7 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 // TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead. Somebody
 // editing their own stencil outranks a client that read it, thought about it
 // and arrived late.
-func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T) {
+func TestRenamingAFieldPreservesAloneAStencilThatChangedSinceItWasRead(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +

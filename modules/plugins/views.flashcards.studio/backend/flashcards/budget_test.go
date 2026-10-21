@@ -183,7 +183,7 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 
 // A second session of the same day takes up where the first left off: what was
 // answered since the day opened is off the day's budget.
-func TestASecondSessionTakesUpWhereTheFirstLeftOff(t *testing.T) {
+func TestASecondSessionConsumesUpWhereTheFirstLeftOff(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":       term,
@@ -343,7 +343,7 @@ func TestAPresetOfNoCardsADaySchedulesNothing(t *testing.T) {
 
 // A day the preset gives half the load carries half the cards, and a preset
 // naming that day nothing carries all of them on it.
-func TestALightDayCutsTheDaysCards(t *testing.T) {
+func TestALightDaySplitsTheDaysCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md": term,
@@ -366,7 +366,7 @@ func TestALightDayCutsTheDaysCards(t *testing.T) {
 
 // Under a goal of minutes the minutes close the day: a day of one minute holds
 // three answers at the twenty seconds a new card costs.
-func TestTheMinutesCloseTheDayUnderAGoalOfMinutes(t *testing.T) {
+func TestTheMinutesCloseTheDayBelowAGoalOfMinutes(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":        term,
@@ -658,7 +658,7 @@ func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
 
 // A limit edited in the middle of a day holds from that moment, and what the
 // day has already spent stands against it either way.
-func TestALimitEditedInTheMiddleOfADayHoldsAtOnce(t *testing.T) {
+func TestALimitEditedInTheMiddleOfADayContainsAtOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":     term,
@@ -748,7 +748,7 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 
 // A day moved behind us in the middle of a day stops the preset from that
 // moment.
-func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
+func TestADayMovedPriorUsStopsThePresetAtOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md": term,
@@ -1061,10 +1061,10 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 				t.Fatalf("the value the preset holds stands nowhere on the grid %v", curve.Grid)
 			}
 
-			rendered := curve.Points[curve.Now.Index].Reviews
+			pointReviews := curve.Points[curve.Now.Index].Reviews
 			faces := s.countDayFaces(t, today, getNextAdmittedDay(read.Settings, today, saturday))
-			if rendered != float64(faces) {
-				t.Errorf("the curve draws %v and the day hands over %d", rendered, faces)
+			if pointReviews != float64(faces) {
+				t.Errorf("the curve draws %v and the day hands over %d", pointReviews, faces)
 			}
 		})
 	}
@@ -1130,7 +1130,7 @@ func newBacklogVault(t *testing.T, front string) vaulted {
 // `backlog` says how much of a day goes to the debt before anything unbegun is
 // offered. It is a share of the day and not a budget of its own, so it is read
 // against the one pot a goal of minutes keeps.
-func TestTheBacklogShareSaysWhatTheDayIsSpentOn(t *testing.T) {
+func TestTheBacklogShareReturnsWhatTheDayIsSpentOn(t *testing.T) {
 	t.Parallel()
 	// Four minutes a day over twenty card faces owed and twenty unbegun, which
 	// is more of each than the day can carry.
@@ -1174,7 +1174,7 @@ func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
 
 // A side that runs short leaves the rest of the day to the other, so a day is
 // never left part spent because one half of it had nothing to offer.
-func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
+func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md": term,

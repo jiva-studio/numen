@@ -188,7 +188,7 @@ var today = review.Day{Starts: review.DayStartTime}
 
 // A card appears once for each face of the stencil that cuts it, because each
 // face asks a different thing.
-func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
+func TestACardExistsOnceForEachFaceOfItsStencil(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
@@ -251,7 +251,7 @@ var handwritten = map[string]string{
 
 // A card with no mark has nothing an answer could be recorded against, so
 // nothing stands for it. Reading what a vault holds writes nothing.
-func TestACardWithNoMarkStandsForNothing(t *testing.T) {
+func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 	before := read(t, s.vault, "decks/Own.md")
@@ -297,14 +297,14 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 	if !strings.Contains(after, "## Leaf mould ^k7m2xq9fzp") {
 		t.Error("the mark the card already carried is not the mark it carries now")
 	}
-	for _, retained := range []string{
+	for _, fragment := range []string{
 		"What I keep meaning to learn, and never do.",
 		"# The ones from the garden",
 		"Sand, silt and clay in the right measure",
 		"### Слово",
 	} {
-		if !strings.Contains(after, retained) {
-			t.Errorf("%q is not in the deck any more", retained)
+		if !strings.Contains(after, fragment) {
+			t.Errorf("%q is not in the deck any more", fragment)
 		}
 	}
 
@@ -433,7 +433,7 @@ func TestAFaceMissingASideIsNotAsked(t *testing.T) {
 
 // A card that leaves a field empty is asked like any other: the placeholder lays
 // out as nothing, and the card is still somebody's card.
-func TestACardLeavingAFieldEmptyIsStillAsked(t *testing.T) {
+func TestACardPreservingAFieldEmptyIsStillAsked(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
 		"Term.md": vault["Term.md"],
@@ -475,7 +475,7 @@ func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
 // A card put days away is neither owed nor asked until those days are up. What
 // is owed is the day the schedule falls on, and a card answered easily is not
 // that day's.
-func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
+func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -509,7 +509,7 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 
 // The day the schedule falls on is the day it is owed, whatever hour it falls
 // at: a card put days away comes back when those days are up.
-func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
+func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -549,7 +549,7 @@ func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 
 // An answer is written to the vault's own folder, and it is what the next launch
 // reads: the card is no longer one nobody has reached.
-func TestAnAnswerIsWrittenDownAndReadBack(t *testing.T) {
+func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	when := time.Now()
@@ -577,7 +577,7 @@ func TestAnAnswerIsWrittenDownAndReadBack(t *testing.T) {
 
 // An answer taken back is not counted, and the card is one nobody has reached
 // again.
-func TestAnAnswerTakenBackLeavesTheCardUnanswered(t *testing.T) {
+func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	when := time.Now()
@@ -675,7 +675,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 // A cache read back says what a replay says, to the last number it carries. It
 // stands in for reading the answers, so a cache that answered differently would
 // be a card sent away on a day nobody worked out.
-func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
+func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -749,7 +749,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 
 // What was worked out is kept between launches, and a run the cache has not seen
 // is the whole history read again.
-func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
+func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}

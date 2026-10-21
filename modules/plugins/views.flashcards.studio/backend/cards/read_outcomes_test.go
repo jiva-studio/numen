@@ -11,7 +11,7 @@ import (
 
 // A path the vault says holds a file it leaves alone is an outcome of the file,
 // and no error.
-func TestAPathTheVaultLeavesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
+func TestAPathTheVaultPreservesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 	vs := newVaults(t)
 	remaining := faulty{inner: vs.ports.Readers,
 		stat: map[string]error{"decks/Birds.md": ports.ErrNotANote},
@@ -30,7 +30,7 @@ func TestAPathTheVaultLeavesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 
 // A deck that was there when it was looked at and gone when it was read says
 // what it was when it was looked at.
-func TestADeckGoneBetweenBeingLookedAtAndReadSaysWhatItWas(t *testing.T) {
+func TestADeckMissingBetweenBeingLookedAtAndReadReturnsWhatItWas(t *testing.T) {
 	vs := newVaults(t)
 	removed := faulty{inner: vs.ports.Readers, read: map[string]error{"decks/Birds.md": fs.ErrNotExist}}
 
@@ -48,7 +48,7 @@ func TestADeckGoneBetweenBeingLookedAtAndReadSaysWhatItWas(t *testing.T) {
 
 // A deck whose cards name no stencil has no stencil to hand back, and that is
 // no map at all.
-func TestADeckNamingNoStencilIsCutByNone(t *testing.T) {
+func TestADeckNamingNoStencilIsSplitByNone(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRead(vs.ports.Readers, nil)
 	deck, err := u.Deck(t.Context(), vs.first, "decks/Birds.md")

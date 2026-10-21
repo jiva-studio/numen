@@ -56,7 +56,7 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 
 // An answer leaves a card seen, which is what tells it from one nobody has
 // reached yet.
-func TestAnAnsweredCardIsSeen(t *testing.T) {
+func TestAnAnsweredCardIsObserved(t *testing.T) {
 	by := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 
@@ -162,7 +162,7 @@ func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
 
 // A schedule says which scheduler filled it, because the numbers one carries
 // between answers are its own.
-func TestASchedulerSaysWhichItIs(t *testing.T) {
+func TestASchedulerReturnsWhichItIs(t *testing.T) {
 	got := review.NewFSRS().GetName()
 	if !strings.HasPrefix(got, review.FSRSName+".") {
 		t.Errorf("named itself %q, want the algorithm and what it is running on", got)

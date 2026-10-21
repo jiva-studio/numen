@@ -134,7 +134,7 @@ func TestADeckTellsAnAgentWhereItsSectionsStand(t *testing.T) {
 
 // TestAFaultStandsAgainstTheCardItIsAbout. A card is addressed by where it
 // stands, so a fault says which card it is against.
-func TestAFaultStandsAgainstTheCardItIsAbout(t *testing.T) {
+func TestAFaultExistsAgainstTheCardItIsAbout(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
@@ -153,7 +153,7 @@ func TestAFaultStandsAgainstTheCardItIsAbout(t *testing.T) {
 
 // TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds. A limit that truncates
 // in silence reads as "that is all there is".
-func TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds(t *testing.T) {
+func TestADeckAnswersARunOfItsCardsAndReturnsHowManyItContains(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md", "limit": 1})
@@ -290,7 +290,7 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 // TestACardAddedComesBackUnderTheMarkItIsAddressedBy. The mark is given where
 // the deck is written, so the write is what knows it: without it in the answer,
 // an agent adding a card to a deck of many cannot reach what it just wrote.
-func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
+func TestACardAddedReachesBackBelowTheMarkItIsAddressedBy(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	made := call[struct {
@@ -323,7 +323,7 @@ func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
 // shown, so a person can open the second and ask for it; which of the two they
 // meant is a thing only they know, and a machine choosing would put what they
 // typed in the other one — or delete it, with nothing to bring it back.
-func TestACardOfAMarkTwoCardsCarryIsNotWrittenTo(t *testing.T) {
+func TestACardOfAMarkTwoCardsCarryIsNotSavedTo(t *testing.T) {
 	copied := "---\ntype: deck\n---\n\n" +
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 46\"\n"
@@ -408,7 +408,7 @@ func TestASectionIsMadeThroughTheTools(t *testing.T) {
 
 // TestACardIsEditedAndTheCardsBesideItAreLeftAlone. The prose somebody wrote
 // under another card's wikilink is theirs, and no write of ours moves it.
-func TestACardIsEditedAndTheCardsBesideItAreLeftAlone(t *testing.T) {
+func TestACardIsEditedAndTheCardsAdjacentItAreLeftAlone(t *testing.T) {
 	session, v := newSession(t, vault())
 
 	call[map[string]any](t, session, "card_edit", map[string]any{
@@ -577,17 +577,17 @@ func TestAStencilIsMadeAsAStencilAndNotAsANote(t *testing.T) {
 // TestRenamingAFieldReachesTheCardsCutByThatStencil. A field's name is written
 // twice over, and renaming it in one place alone leaves values under a heading
 // nothing declares.
-func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
+func TestRenamingAFieldReachesTheCardsSplitByThatStencil(t *testing.T) {
 	session, v := newSession(t, vault())
 
-	renamed := call[struct {
+	renameResult := call[struct {
 		Decks []string `json:"decks"`
 		Cards int      `json:"cards"`
 	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
-	if renamed.Cards != 1 || len(renamed.Decks) != 1 {
-		t.Fatalf("the rename reached %+v", renamed)
+	if renameResult.Cards != 1 || len(renameResult.Decks) != 1 {
+		t.Fatalf("the rename reached %+v", renameResult)
 	}
 
 	if content := readVaultFile(t, v, "Animal.md"); !strings.Contains(content, "- Shoulder height") {
@@ -609,7 +609,7 @@ func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
 // A rename reads and writes every deck the vault holds, so what bounds it is
 // how many there are. A vault past the bound fails before the stencil is
 // touched.
-func TestRenamingAFieldIsRefusedWhereTheVaultHoldsTooManyDecks(t *testing.T) {
+func TestRenamingAFieldIsRefusedWhereTheVaultContainsTooManyDecks(t *testing.T) {
 	notes := vault()
 	for i := range 200 {
 		notes[fmt.Sprintf("Deck %d.md", i)] = "---\ntype: deck\n---\n\n# Deck\n"
@@ -699,20 +699,21 @@ func TestAStencilIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 	})
 	// A rename reaches the cards that stencil cuts, and a card whose wikilink
 	// lands nowhere is cut by none.
-	renamed := call[struct {
-		Cards int `json:"cards"`
+	renameResult := call[struct {
+		Decks []string `json:"decks"`
+		Cards int      `json:"cards"`
 	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
-	if renamed.Cards != 1 {
+	if renameResult.Cards != 1 {
 		t.Errorf("the card written under %q is cut by no stencil: the rename reached %d cards",
-			name, renamed.Cards)
+			name, renameResult.Cards)
 	}
 }
 
 // The list of stencils says what it answers with. A ceiling that is not said is
 // a short list read as the whole vault.
-func TestTheListOfStencilsSaysItsCeiling(t *testing.T) {
+func TestTheListOfStencilsReturnsItsCeiling(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	var response string
@@ -791,13 +792,14 @@ func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 	session, v := newSession(t, vault())
 
-	renamed := call[struct {
-		Cards int `json:"cards"`
+	renameResult := call[struct {
+		Decks []string `json:"decks"`
+		Cards int      `json:"cards"`
 	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Name", "to": "Species",
 	})
-	if renamed.Cards != 1 {
-		t.Fatalf("renaming the first field reached %d cards", renamed.Cards)
+	if renameResult.Cards != 1 {
+		t.Fatalf("renaming the first field reached %d cards", renameResult.Cards)
 	}
 	if content := readVaultFile(t, v, "Animals.md"); !strings.Contains(content, "### Species\n\nLlama\n") {
 		t.Errorf("the card cut by that stencil came back as %q", content)
@@ -865,7 +867,7 @@ func mergeArgs(args, every map[string]any) map[string]any {
 
 // A person divides a deck and thinks better of the name, so a section is
 // renamed without the cards under it moving or being rewritten.
-func TestASectionIsRenamedAndTheCardsUnderItStay(t *testing.T) {
+func TestASectionIsRenamedAndTheCardsBelowItStay(t *testing.T) {
 	session, v := newSession(t, vault())
 
 	call[map[string]any](t, session, "card_section_rename", map[string]any{

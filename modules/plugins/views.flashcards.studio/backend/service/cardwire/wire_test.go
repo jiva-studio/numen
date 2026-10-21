@@ -109,7 +109,7 @@ func TestADeckWithNothingInItGoesOutWithEmptyLists(t *testing.T) {
 	}
 }
 
-func TestADeckComesInWithItsSectionsCardsAndValues(t *testing.T) {
+func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
 	got := NewDeck(&v1.WriteDeckRequest{
 		Preamble: "above", Tail: "below",
 		Sections: []*v1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
@@ -133,7 +133,7 @@ func TestADeckComesInWithItsSectionsCardsAndValues(t *testing.T) {
 	}
 }
 
-func TestADeckComesInWithoutCardsOrSections(t *testing.T) {
+func TestADeckReachesInWithoutCardsOrSections(t *testing.T) {
 	got := NewDeck(&v1.WriteDeckRequest{})
 	if got.Cards != nil || got.Sections != nil {
 		t.Errorf("cards %v, sections %v", got.Cards, got.Sections)

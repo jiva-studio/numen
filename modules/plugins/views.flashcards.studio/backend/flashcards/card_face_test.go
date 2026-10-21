@@ -26,7 +26,7 @@ func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 
 // One deck that cannot be read is not a reason to refuse a person the rest of
 // their cards. What was wrong with it is settled in the editor.
-func TestADeckThatCannotBeReadLeavesTheOthersStanding(t *testing.T) {
+func TestADeckThatCannotBeReadPreservesTheOthersActive(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 

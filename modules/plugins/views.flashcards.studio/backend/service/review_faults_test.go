@@ -59,7 +59,7 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 
 // An answer for a vault nobody holds fails as that, and not as a run nobody
 // opened.
-func TestAnAnswerAndATakingBackNameTheVaultNobodyHolds(t *testing.T) {
+func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
@@ -112,7 +112,7 @@ func TestACardWithNoProjectionCarriesNone(t *testing.T) {
 
 // A stretch reaches every day of a long history, answered and still to come:
 // the days outside it do not end the walk through the days inside it.
-func TestAStretchOfALongHistoryHoldsEveryDayInsideIt(t *testing.T) {
+func TestAStretchOfALongHistoryContainsEveryDayInsideIt(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)

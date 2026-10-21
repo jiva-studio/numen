@@ -85,7 +85,7 @@ func awaitReturn(t *testing.T, returned <-chan error) error {
 
 // A stream whose page can no longer be written to ends with the write's error,
 // at whichever message it was found out.
-func TestAReloadStreamThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
+func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	cancelled, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -130,7 +130,7 @@ func TestAReloadStreamThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
 
 // The front door ends with the write's error when the page can no longer be
 // written to, whichever message finds it out.
-func TestTheFrontDoorThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
+func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	for name, fails := range map[string]func(n int, msg any) bool{
 		// The vaults are listed before anything is counted.
 		"listing": func(n int, _ any) bool { return n == 1 },
@@ -160,7 +160,7 @@ func TestTheFrontDoorThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
 
 // A page found gone while a count is still running ends the stream, which is
 // the only report there is.
-func TestTheFrontDoorFoundGoneWhileCountingEnds(t *testing.T) {
+func TestTheFrontDoorFoundMissingWhileCountingEnds(t *testing.T) {
 	api, _ := newAPI(t, deck)
 	front(t, api)
 

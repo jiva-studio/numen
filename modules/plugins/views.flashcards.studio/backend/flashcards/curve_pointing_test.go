@@ -99,7 +99,7 @@ func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces
 // The vault it is asked of holds decks of other presets and decks of none, and
 // the one it is read against holds only the decks the preset schedules. Both
 // hold one history, so what the two answers differ by is the reading.
-func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
+func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 	t.Parallel()
 	shapes := []struct {
 		name string

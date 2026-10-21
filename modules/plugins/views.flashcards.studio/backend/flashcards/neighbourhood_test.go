@@ -72,7 +72,7 @@ func paths(j flashcards.Neighbourhood) []string {
 	return out
 }
 
-func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
+func TestALinkSavedInsideACardArrivesWithItsText(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
@@ -101,7 +101,7 @@ func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
 
 // Every card names the stencil it is cut by, so a deck points at its stencils.
 // A stencil is how a card is laid out and not what it was written from.
-func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
+func TestTheStencilACardIsSplitByIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"stencils/Word.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
@@ -121,7 +121,7 @@ func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
 // preset that schedules it and may name another deck, and neither is a note
 // somebody wrote about the material. It holds on both sides: a deck pointing
 // at this one is a deck all the same.
-func TestOnlyTheNotesADeckWasWrittenFromAreRead(t *testing.T) {
+func TestOnlyTheNotesADeckWasSavedFromAreRead(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
@@ -205,7 +205,7 @@ func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
 	}
 }
 
-func TestADanglingLinkKeepsTheNameItWasWrittenBy(t *testing.T) {
+func TestADanglingLinkKeepsTheNameItWasSavedBy(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nSee [[Nowhere At All]].\n",

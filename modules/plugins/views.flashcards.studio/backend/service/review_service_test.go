@@ -37,7 +37,7 @@ func answerCard(t *testing.T, api *API, vault string, session *v1.StartSessionRe
 // A card that has been answered before comes back carrying at its current position: it
 // has been seen, and it is due at an instant the page can read. A card nobody
 // has answered carries neither.
-func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
+func TestACardAlreadyAnsweredReachesBackWithWhereItExists(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 
@@ -128,7 +128,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 
 // An answer names the vault it belongs to. One the installation does not hold
 // fails before a line is written into anybody's review.
-func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
+func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
@@ -150,7 +150,7 @@ func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 // A window that cannot read the installation's vaults says so. An empty list
 // would read as an installation holding none, which is a person told their
 // vaults are gone.
-func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
+func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	_, _, installation := newAPIOn(t)
 	api := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}})}
 
@@ -169,7 +169,7 @@ func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 }
 
 // A vault the installation does not hold fails before anything is written.
-func TestTakingBackOnAVaultNobodyHoldsIsRefused(t *testing.T) {
+func TestTakingBackOnAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{

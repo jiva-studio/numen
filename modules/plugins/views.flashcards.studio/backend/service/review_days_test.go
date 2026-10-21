@@ -15,7 +15,7 @@ var counting = review.Day{Starts: review.DayStartTime}
 
 // What a vault was answered on comes back a day at a time, oldest first,
 // because what draws it draws it along a line of time.
-func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
+func TestWhatAVaultWasAnsweredOnReachesBackInOrder(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 
@@ -145,7 +145,7 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 }
 
 // A question about a vault the installation does not hold fails.
-func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
+func TestAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
 
 	_, err := api.ListReviewDays(t.Context(),
@@ -157,7 +157,7 @@ func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
 
 // The stretch reaches the answer itself: a day outside
 // what was asked for is in neither list.
-func TestAStretchNothingFallsInComesBackEmpty(t *testing.T) {
+func TestAStretchNothingFallsInReachesBackEmpty(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 

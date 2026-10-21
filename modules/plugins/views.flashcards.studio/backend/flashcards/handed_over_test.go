@@ -122,7 +122,7 @@ func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 // name sorts first.
 //
 // What no deck can use is offered round again, to the deck still holding most.
-func TestWhatNoDeckCouldUseGoesToTheDeckHoldingMost(t *testing.T) {
+func TestWhatNoDeckCouldUseGoesToTheDeckContainingMost(t *testing.T) {
 	t.Parallel()
 	keeps := review.Budget{New: 6, Minutes: 1}
 	one, five := "decks/a.md", "decks/b.md"
@@ -144,7 +144,7 @@ func TestWhatNoDeckCouldUseGoesToTheDeckHoldingMost(t *testing.T) {
 // reached them in decides nothing.
 //
 // A vault divides the same day however its files are walked.
-func TestTheWalkOfAVaultDoesNotChangeWhatADayHandsOver(t *testing.T) {
+func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		load := newDeckLoads(t)

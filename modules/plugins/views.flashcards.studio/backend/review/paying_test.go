@@ -24,24 +24,24 @@ func drawAllowance(t *rapid.T) review.Allowance {
 //
 // Backlog is how much of a day goes to what is overdue before anything new is
 // offered.
-func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
+func TestTheDebtConsumesItsShareOfEveryPointOfTheRun(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		day := drawAllowance(t)
 		cards := rapid.IntRange(0, 60).Draw(t, "cards")
 
 		var debt, begun int
-		for acquired := 1; acquired <= cards; acquired++ {
+		for totalCards := 1; totalCards <= cards; totalCards++ {
 			if day.IsNextCardDebt(debt, begun, true, true) {
 				debt++
 			} else {
 				begun++
 			}
 			// The share of a whole number of cards, rounded up.
-			want := (acquired*day.Backlog + review.AllBacklog - 1) / review.AllBacklog
+			want := (totalCards*day.Backlog + review.AllBacklog - 1) / review.AllBacklog
 			if debt != want {
 				t.Fatalf("a day at a share of %d took %d of its first %d cards "+
-					"from the debt, want %d", day.Backlog, debt, acquired, want)
+					"from the debt, want %d", day.Backlog, debt, totalCards, want)
 			}
 		}
 	})
@@ -52,7 +52,7 @@ func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
 // alone spends the whole of what it admits on that side.
 //
 // A side that runs short leaves the rest of the day to the other.
-func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
+func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		day := drawAllowance(t)

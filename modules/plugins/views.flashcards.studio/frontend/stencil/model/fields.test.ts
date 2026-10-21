@@ -8,7 +8,7 @@ import type { DeckProblem, VaultStencil } from '../../cards'
 import { serializeStencil, createBufferStencil } from '../lib/stencil'
 import { createStencilFields } from './fields'
 
-const trimmed: VaultStencil = {
+const baseStencil: VaultStencil = {
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
@@ -33,20 +33,20 @@ const lacking = (face: number, text: string): DeckProblem => ({
 const create = () => {
   let at = 0
   const state = {
-    body: serializeStencil(createBufferStencil(trimmed, () => `f${(at += 1)}`)),
+    body: serializeStencil(createBufferStencil(baseStencil, () => `f${(at += 1)}`)),
     problems: [] as readonly DeckProblem[],
   }
-  const typed = vi.fn((_id: string, body: string) => {
+  const onType = vi.fn((_id: string, body: string) => {
     state.body = body
   })
-  const renamed = vi.fn()
+  const onRename = vi.fn()
   const fields = createStencilFields(
     () => state.body,
-    typed,
+    onType,
     () => state.problems,
-    renamed,
+    onRename,
   )
-  return { fields, state, typed, renamed }
+  return { fields, state, typed: onType, renamed: onRename }
 }
 
 describe('the stencil a body reads as', () => {

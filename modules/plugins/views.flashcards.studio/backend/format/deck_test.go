@@ -435,7 +435,7 @@ func TestADeckOfSectionsAndNoCards(t *testing.T) {
 
 // The format spends two heading levels and no more, so a heading below them is
 // part of the value it stands in.
-func TestAValueHoldsADeeperHeading(t *testing.T) {
+func TestAValueContainsADeeperHeading(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
@@ -485,7 +485,7 @@ func TestAFencedHeadingOpensNothing(t *testing.T) {
 
 // A block opened with tildes is closed by tildes, so the backticks inside it
 // are part of the example and a heading standing among them opens nothing.
-func TestATildeFencedExampleHoldsBackticks(t *testing.T) {
+func TestATildeFencedExampleContainsBackticks(t *testing.T) {
 	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n"+
 		"## Llama\n\n[[Animal]]\n\n### Height\n\n"+
 		"~~~markdown\n```\n## Alpaca\n```\n### Weight\n~~~\n\n"+
@@ -555,7 +555,7 @@ func TestADeckOfNoCardsIsAllPreamble(t *testing.T) {
 }
 
 // The tail follows the last thing that was read, whatever that was.
-func TestTheTailOfACardThatHasNothingUnderIt(t *testing.T) {
+func TestTheTailOfACardThatHasNothingBelowIt(t *testing.T) {
 	for name, want := range map[string]string{
 		"## Llama\n\n[[Animal]]\n\n":               "\n\n",
 		"## Llama\n\n[[Animal]]\n\nA lead.\n\n":    "\n\n",

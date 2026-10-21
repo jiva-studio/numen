@@ -122,7 +122,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 // A write that reaches one face reaches nothing else: the prose above the first
 // face and the prose under every other face's heading come out as the bytes
 // they went in as.
-func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
+func TestWritingOneFacePreservesTheRestOfTheStencilAlone(t *testing.T) {
 	raw := "---\ntype: stencil\n---\n" +
 		"How I show these.\n\n" +
 		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +

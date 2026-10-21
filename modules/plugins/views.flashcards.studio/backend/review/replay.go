@@ -115,17 +115,17 @@ func (h History) walkAnswers(
 // synchronised, and what a card face has been through is the order of the
 // answers themselves.
 func getActiveAnswers(answers []Answer) []Answer {
-	acquired := make(map[string]bool)
+	undoTargets := make(map[string]bool)
 	for _, a := range answers {
 		if a.IsUndo() {
-			acquired[a.Undoes] = true
+			undoTargets[a.Undoes] = true
 		}
 	}
 
 	observed := make(map[string]bool, len(answers))
 	out := make([]Answer, 0, len(answers))
 	for _, a := range answers {
-		if a.IsUndo() || acquired[a.ID] || observed[a.ID] {
+		if a.IsUndo() || undoTargets[a.ID] || observed[a.ID] {
 			continue
 		}
 		observed[a.ID] = true

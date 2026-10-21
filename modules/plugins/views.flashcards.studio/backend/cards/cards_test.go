@@ -117,7 +117,7 @@ func write(t *testing.T, v domain.Vault, path, raw string) {
 
 // A deck opened and put back with the prose it came out of is the file it was.
 // Anything less is a diff nobody asked for, on every save, forever.
-func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
+func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
@@ -146,7 +146,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 // Every field is placed under a heading of its own, the first included, so a card
 // writing the first field twice is the one fault a card writing any field twice
 // is, and it is reported once.
-func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
+func TestACardWritingItsFirstFieldTwiceIsOneFieldSavedTwice(t *testing.T) {
 	vs := newVaults(t)
 	content := read(t, vs.first, "decks/Mammals.md")
 	replaced := strings.Replace(content,
@@ -291,7 +291,7 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 
 // A deck that changed since it was read is left alone: someone editing their own
 // file outranks a caller that read it, thought about it, and arrived late.
-func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
+func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
@@ -321,7 +321,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 // A deck and a stencil are made with the key that says what they are, so each is
 // what it is to everything that reads the vault before a card is written into
 // it.
-func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
+func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
 

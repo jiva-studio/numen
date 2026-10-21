@@ -48,7 +48,7 @@ func (e editing) version(t *testing.T) cards.DeckVersion {
 	return cards.DeckVersion{Path: mammals, Fingerprint: got.Fingerprint}
 }
 
-func TestReadingCardsGivesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
+func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 	e := newEditing(t)
 
 	whole, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{Path: mammals, Limit: 50})
@@ -170,7 +170,7 @@ func TestEditingACardReplacesAndAddsValues(t *testing.T) {
 	}
 }
 
-func TestRemovingAValueAndACardTakesThemOutOfTheDeck(t *testing.T) {
+func TestRemovingAValueAndACardConsumesThemOutOfTheDeck(t *testing.T) {
 	e := newEditing(t)
 
 	if _, err := e.removeValue.Execute(t.Context(), e.vs.first, e.version(t), "k7m2xq9fzp", "Life span"); err != nil {

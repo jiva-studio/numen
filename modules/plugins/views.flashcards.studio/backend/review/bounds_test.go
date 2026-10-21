@@ -10,7 +10,7 @@ import (
 // from here has landed, so it holds the same two ends this does. Both read the
 // one corpus, and neither owns it.
 
-func TestAWholeDaysLoadIsWhatTheCorpusSays(t *testing.T) {
+func TestAWholeDaysLoadIsWhatTheCorpusReturns(t *testing.T) {
 	want := readPresetCorpus(t).FullLoad
 
 	if review.FullLoad != want {
@@ -21,7 +21,7 @@ func TestAWholeDaysLoadIsWhatTheCorpusSays(t *testing.T) {
 	}
 }
 
-func TestRetentionGoesAsFarAsTheCorpusSays(t *testing.T) {
+func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
 	want := readPresetCorpus(t).RetentionBounds
 
 	if review.RetentionBounds.Least != want.Least || review.RetentionBounds.Most != want.Most {

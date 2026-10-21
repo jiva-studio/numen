@@ -240,7 +240,7 @@ describe('the load of the week', () => {
   })
 
   it('writes the day it was handed at the share chosen, leaving the others', async () => {
-    const { tab, put, recorded } = mountWithLoad({ sat: 50, sun: 0 })
+    const { tab, loadWrites, recorded } = mountWithLoad({ sat: 50, sun: 0 })
     await chips(tab)[0]?.trigger('click')
     getMenuItems()[2]?.click()
     await tab.vm.$nextTick()
@@ -250,7 +250,7 @@ describe('the load of the week', () => {
   })
 
   it('stops naming a day put back to the whole of a day', async () => {
-    const { tab, put } = mountWithLoad({ sat: 50, sun: 0 })
+    const { tab, loadWrites } = mountWithLoad({ sat: 50, sun: 0 })
     await chips(tab)[5]?.trigger('click')
     getMenuItems()[6]?.click()
     await tab.vm.$nextTick()

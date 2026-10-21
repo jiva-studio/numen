@@ -17,7 +17,7 @@ func parseTime(s string) time.Time {
 }
 
 // An answer written down and read back is the answer that was given.
-func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
+func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 	provided := review.Answer{
 		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
 		CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
@@ -44,7 +44,7 @@ func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
 }
 
 // An answer taking another back names it and carries no card of its own.
-func TestAnAnswerTakenBackNamesTheOneItTakesBack(t *testing.T) {
+func TestAnAnswerTakenBackNamesTheOneItConsumesBack(t *testing.T) {
 	raw, err := review.Write(review.Answer{
 		ID:     "01K3ZQ7X8B0CDEFGHJKMNPQRST",
 		At:     parseTime("2026-08-29T09:12:41.006Z"),

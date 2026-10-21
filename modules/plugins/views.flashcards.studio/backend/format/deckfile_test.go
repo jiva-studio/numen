@@ -138,7 +138,7 @@ func TestSetValueChangesOneValueAndNothingElse(t *testing.T) {
 
 // A card carries its fields in the order the person wrote them, and a write
 // does not tidy them into the order the stencil declares.
-func TestSetValueKeepsTheOrderTheFieldsWereWrittenIn(t *testing.T) {
+func TestSetValueKeepsTheOrderTheFieldsWereSavedIn(t *testing.T) {
 	raw := setValue(t, deck, llama, "Life span", "about 25 years")
 
 	f, err := format.OpenDeck([]byte(raw))
@@ -187,7 +187,7 @@ func removeValue(t *testing.T, raw string, card cardid.ID, field string) string 
 
 // Taking a field off a card takes its heading and its value and closes the gap,
 // and every other byte of the file is the byte it was.
-func TestRemoveValueTakesTheFieldAndNothingElse(t *testing.T) {
+func TestRemoveValueConsumesTheFieldAndNothingElse(t *testing.T) {
 	got := removeValue(t, deck, llama, "Life span")
 
 	want := strings.Replace(deck, "### Life span\n\nabout 20 years\n\n", "", 1)
@@ -198,7 +198,7 @@ func TestRemoveValueTakesTheFieldAndNothingElse(t *testing.T) {
 
 // The last field of the last card has nothing under it, so what is above it
 // ends on the one break a file ends with.
-func TestRemoveValueOfTheLastFieldLeavesNoBlankLine(t *testing.T) {
+func TestRemoveValueOfTheLastFieldPreservesNoBlankLine(t *testing.T) {
 	got := removeValue(t, deck, compost, "Значение")
 
 	want := strings.Replace(deck, "\n\n### Значение\n\nперегной\n", "\n", 1)
@@ -226,7 +226,7 @@ func TestRemoveValueOfAFieldTheCardDoesNotWrite(t *testing.T) {
 }
 
 // A file written with carriage returns is written back with them.
-func TestTheFilesOwnLineEndingIsWhatIsWritten(t *testing.T) {
+func TestTheFilesOwnLineEndingIsWhatIsSaved(t *testing.T) {
 	raw := strings.ReplaceAll(deck, "\n", "\r\n")
 	got := setValue(t, raw, llama, "Weight", "about 130 kg")
 
@@ -295,15 +295,15 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 	if err := f.RenameSection(0, "The furred ones"); err != nil {
 		t.Fatalf("rename: %v", err)
 	}
-	renamed := strings.Replace(made, "# The ones with fur\n", "# The furred ones\n", 1)
-	if got := string(f.Bytes()); got != renamed {
-		t.Errorf("section renamed wrong\n want %q\n  got %q", renamed, got)
+	expected := strings.Replace(made, "# The ones with fur\n", "# The furred ones\n", 1)
+	if got := string(f.Bytes()); got != expected {
+		t.Errorf("section renamed wrong\n want %q\n  got %q", expected, got)
 	}
 
 	if err := f.RemoveSection(0); err != nil {
 		t.Fatalf("remove: %v", err)
 	}
-	removed := strings.Replace(renamed, "# The furred ones\n\n", "", 1)
+	removed := strings.Replace(expected, "# The furred ones\n\n", "", 1)
 	if got := string(f.Bytes()); got != removed {
 		t.Errorf("section removed wrong\n want %q\n  got %q", removed, got)
 	}
@@ -455,7 +455,7 @@ const stencil = "---\n" +
 
 // A field is added, renamed and taken away in the frontmatter, and the keys
 // around it come out of every one of those as the bytes they went in as.
-func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
+func TestWritingFieldsPreservesTheRestOfTheFrontmatterAlone(t *testing.T) {
 	f, err := format.OpenStencil([]byte(stencil))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -526,7 +526,7 @@ func TestRenamingAFieldOntoAFieldTheStencilDeclares(t *testing.T) {
 
 // A face is written with the sides it has. A face missing one is a face that
 // lays out nothing, and it is still that face once it has been written.
-func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
+func TestAFaceIsSavedWithTheSidesItHas(t *testing.T) {
 	f, err := format.OpenStencil([]byte(stencil))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -554,7 +554,7 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 
 // The wikilink under a card's heading is an ordinary link, so a card is cut by
 // the note that link lands on, whatever the brackets spell.
-func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
+func TestACardIsSplitByWhatItsLinkPointsAt(t *testing.T) {
 	content := "---\ntype: deck\n---\n\n## Llama\n\n[[Animal|the beast]]\n\n### Height\n\nabout 45\"\n"
 	f, err := format.OpenDeck([]byte(content))
 	if err != nil {
@@ -599,7 +599,7 @@ func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
 // A heading is one line. A heading composed with a break in it carries the
 // lines under it into the file, where the next read takes a second `##` for a
 // second card and gives it a mark.
-func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
+func TestAHeadingAndASectionsNameAreSplitAtTheFirstBreak(t *testing.T) {
 	f, err := format.OpenDeck([]byte("---\ntype: deck\n---\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -628,7 +628,7 @@ func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
 
 // A field's name is a heading too, so a break in one is cut where a break in a
 // card's heading is.
-func TestAFieldsNameIsCutAtTheFirstBreak(t *testing.T) {
+func TestAFieldsNameIsSplitAtTheFirstBreak(t *testing.T) {
 	f, err := format.OpenDeck([]byte("---\ntype: deck\n---\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -655,7 +655,7 @@ func TestAFieldsNameIsCutAtTheFirstBreak(t *testing.T) {
 
 // Nothing follows the last section, so taking its heading away leaves the break
 // the file ends with and no blank line above it.
-func TestRemovingTheLastSectionLeavesNoBlankLine(t *testing.T) {
+func TestRemovingTheLastSectionPreservesNoBlankLine(t *testing.T) {
 	raw := "---\ntype: deck\n---\n\n# The ones with fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n" +
 		"\n# The ones without\n"
 	f, err := format.OpenDeck([]byte(raw))
@@ -673,7 +673,7 @@ func TestRemovingTheLastSectionLeavesNoBlankLine(t *testing.T) {
 
 // The mark is created where the deck is made whole, so that is what knows it
 // and what says which card was given which.
-func TestWholeSaysWhichCardsItGave(t *testing.T) {
+func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n" +
 		"\n## Vicuña\n\n[[Animal]]\n\n### Name\n\nVicuña\n"
@@ -696,7 +696,7 @@ func TestWholeSaysWhichCardsItGave(t *testing.T) {
 // A deck's body is the preamble as it arrived, its sections and its cards in
 // the order they stand, and the tail below the last value. A section no card
 // is placed under is written at its current position.
-func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
+func TestDeckBodyWritesTheSectionsNoCardExistsBelow(t *testing.T) {
 	body, err := format.DeckBody(format.Deck{
 		Preamble: "Cards I am learning.",
 		Sections: []format.Section{{Name: "Empty"}, {Name: "The ones with fur"}, {Name: "Last"}},
@@ -717,7 +717,7 @@ func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
 
 // A card standing under a section the deck does not hold fails. Writing it
 // under whichever section stands last moves somebody's card without saying so.
-func TestDeckBodyRefusesACardUnderASectionTheDeckDoesNotHold(t *testing.T) {
+func TestDeckBodyRefusesACardBelowASectionTheDeckDoesNotHold(t *testing.T) {
 	_, err := format.DeckBody(format.Deck{
 		Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
 		Cards:    []format.Card{{Heading: "Llama", StencilLink: "Animal", Section: 99}},
@@ -751,7 +751,7 @@ const (
 // names one card leaves every other card the bytes it was — the blank lines
 // they doubled, the whitespace at the ends of their lines, and the endings the
 // file carries.
-func TestChangingOneCardLeavesEveryOtherTheBytesItWas(t *testing.T) {
+func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 	for name, change := range map[string]func(*format.DeckFile) error{
 		"a value written": func(f *format.DeckFile) error {
 			return f.SetValue(llama, "Height", "about 46\"")
@@ -844,7 +844,7 @@ func TestSetStencilOnACardThatNamedNone(t *testing.T) {
 
 // Removing the last card of a deck leaves what is above it ending on the one
 // break a file ends with.
-func TestRemovingTheLastCardLeavesNoBlankLine(t *testing.T) {
+func TestRemovingTheLastCardPreservesNoBlankLine(t *testing.T) {
 	file := format.OpenDeckBody(
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
 			"## Alpaca ^3n8vr4tqch\n\n[[Animal]]\n\n### Name\n\nAlpaca\n")
@@ -859,7 +859,7 @@ func TestRemovingTheLastCardLeavesNoBlankLine(t *testing.T) {
 
 // A card asked into a section the deck does not hold fails, the way a card
 // written under one is.
-func TestAddCardUnderASectionTheDeckDoesNotHold(t *testing.T) {
+func TestAddCardBelowASectionTheDeckDoesNotHold(t *testing.T) {
 	file := format.OpenDeckBody(rough)
 	if err := file.AddCardUnder(9, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("add = %v, want ErrNoSuchSection", err)
@@ -923,7 +923,7 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 
 // Making a deck whole through its file writes the marks into the file and says
 // which cards were given one.
-func TestDeckFileWholeWritesTheMarksItGives(t *testing.T) {
+func TestDeckFileWholeWritesTheMarksItProduces(t *testing.T) {
 	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
 	provided, err := f.Whole(map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}},
 		func() cardid.ID { return "m9n8b7v6c5" })
@@ -1075,7 +1075,7 @@ func TestRenamingTheLastSectionWhoseHeadingEndsTheFile(t *testing.T) {
 
 // A card asked into a section is written at the end of it: in front of the
 // section after it, or at the end of the deck where none follows.
-func TestAddCardUnderASectionWritesAtItsEnd(t *testing.T) {
+func TestAddCardBelowASectionWritesAtItsEnd(t *testing.T) {
 	raw := "# One\n\n## Llama ^aaaaaaaaaa\n\n# Two\n"
 	card := format.Card{Heading: "Camel", Mark: markB}
 
@@ -1097,7 +1097,7 @@ func TestAddCardUnderASectionWritesAtItsEnd(t *testing.T) {
 }
 
 // A card standing under a section before the first or past the last fails.
-func TestDeckBodyRefusesACardUnderAPlaceOutsideTheSections(t *testing.T) {
+func TestDeckBodyRefusesACardBelowAPlaceOutsideTheSections(t *testing.T) {
 	for _, at := range []int{-2, 2} {
 		_, err := format.DeckBody(format.Deck{
 			Sections: []format.Section{{Name: "One"}, {Name: "Two"}},

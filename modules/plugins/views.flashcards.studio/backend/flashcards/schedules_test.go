@@ -15,7 +15,7 @@ import (
 // A build that keeps nothing works the schedules out from the answers at every
 // launch, and says what a build that keeps them says. The cache is a saving and
 // never an answer of its own.
-func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
+func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -86,7 +86,7 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 // The cache is written in one order whatever order the schedules were worked
 // out in, so two machines that answered the same cards hold the same file and a
 // synchroniser has nothing to reconcile.
-func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
+func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	// Both faces of one card, so the order turns on the face and not the card.
@@ -280,7 +280,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 	t.Parallel()
 	// The card that moves, written so that it can be cut from one deck and
 	// pasted into the other.
-	moving := "\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n"
+	movedCard := "\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n"
 	files := newTargetedNotes(0.95, 0.75)
 	files["decks/High.md"] += "\n## Stays ^card000001\n\n[[Term]]\n\n### Word\n\nkr\n" +
 		"\n### Meaning\n\nto do\n"
@@ -292,8 +292,8 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	write(t, s, "decks/High.md", strings.Replace(files["decks/High.md"], moving, "", 1))
-	write(t, s, "decks/Low.md", files["decks/Low.md"]+moving)
+	write(t, s, "decks/High.md", strings.Replace(files["decks/High.md"], movedCard, "", 1))
+	write(t, s, "decks/Low.md", files["decks/Low.md"]+movedCard)
 
 	now, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -422,7 +422,7 @@ func dayFrom(from, at time.Time) int {
 // A preset keeping no even load leaves a card where the scheduler puts it, so a
 // card falls on a day carrying none of the load. Nothing is shown there: the
 // card stands overdue, and the next day picks it up.
-func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
+func TestACardFallingOnADayAtNoneOfTheLoadExistsOver(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
 	by := review.NewFSRSAt(0.9)

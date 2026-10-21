@@ -20,7 +20,7 @@ func busy(context.Context, domain.Vault, []string) error {
 // A deck that could not be written is named and left currently. The editor
 // may be holding it, and a person is told which deck their cards are missing
 // from and not left to wonder.
-func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
+func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 
@@ -40,7 +40,7 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 // A deck the index could not be brought level with was written all the same.
 // Its cards carry the marks that were minted, so they stand in this session and
 // nothing has to mint them a second time.
-func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
+func TestADeckSavedWithNoLevellingIsNotNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 	marking := s.marking.WithIndex(busy)
@@ -67,7 +67,7 @@ func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 
 // A vault whose decks are all written has nothing to report, which is what says
 // the naming above is the refusal and not the ordinary case.
-func TestAVaultWhoseDecksAreWrittenNamesNone(t *testing.T) {
+func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 

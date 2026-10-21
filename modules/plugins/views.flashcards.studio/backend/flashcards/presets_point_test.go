@@ -81,7 +81,7 @@ func TestABuildThatCannotReachThePresetsRefusesToListThem(t *testing.T) {
 }
 
 // A deck that named no preset names one, and is scheduled by it afterwards.
-func TestADeckIsPutOnAPreset(t *testing.T) {
+func TestADeckIsInsertOnAPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
@@ -165,7 +165,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 
 // Everything the deck's frontmatter holds beside the one entry comes out of the
 // write as the bytes it went in as.
-func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
+func TestPointingADeckPreservesTheRestOfTheFrontmatter(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Sanskrit.md": choosing["Sanskrit.md"],
@@ -181,13 +181,13 @@ func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
 	}
 
 	got := read(t, s.vault, "decks/Roots.md")
-	for _, retained := range []string{
+	for _, fragment := range []string{
 		"id: 01J8F3K2M9QRSTVWXYZ012\n", "tags: [grammar, roots]\n",
 		"# the ones I keep coming back to\n",
 		"  - to: Grammar\n    role: parent\n    note: where these come from\n",
 	} {
-		if !strings.Contains(got, retained) {
-			t.Errorf("%q was written over in\n%s", retained, got)
+		if !strings.Contains(got, fragment) {
+			t.Errorf("%q was written over in\n%s", fragment, got)
 		}
 	}
 	if !strings.Contains(got, "type: preset\n") {

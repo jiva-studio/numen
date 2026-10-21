@@ -28,7 +28,7 @@ func newRenameField(t *testing.T, vs vaulted) cards.RenameField {
 
 // A field renamed in a stencil is renamed in every card that stencil cuts, and
 // in no card of another one. The value under the heading is left where it was.
-func TestAFieldRenamedInAStencilIsRenamedInEveryCardItCuts(t *testing.T) {
+func TestAFieldRenamedInAStencilIsRenamedInEveryCardItSplits(t *testing.T) {
 	vs := newVaults(t)
 
 	got, err := newRenameField(t, vs).Execute(t.Context(), vs.first, cards.Rename{
@@ -102,7 +102,7 @@ func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
 // The first field is placed under a heading of its own in every card, so renaming
 // it is a write to every deck that stencil cuts, as renaming any other field
 // already was.
-func TestRenamingTheFirstFieldReachesEveryDeckThatStencilCuts(t *testing.T) {
+func TestRenamingTheFirstFieldReachesEveryDeckThatStencilSplits(t *testing.T) {
 	vs := newVaults(t)
 
 	got, err := newRenameField(t, vs).Execute(t.Context(), vs.first, cards.Rename{
@@ -411,7 +411,7 @@ func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 
 // A rename made with nothing to level the index writes all the same, and says
 // what it wrote.
-func TestARenameWithNoIndexToLevelSaysWhatItWrote(t *testing.T) {
+func TestARenameWithNoIndexToLevelReturnsWhatItWrote(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
@@ -434,7 +434,7 @@ func TestARenameWithNoIndexToLevelSaysWhatItWrote(t *testing.T) {
 
 // A rename is the application writing, so a file it writes that carried no
 // identifier carries one afterwards.
-func TestARenameGivesEveryFileItWritesAnIdentifier(t *testing.T) {
+func TestARenameProducesEveryFileItWritesAnIdentifier(t *testing.T) {
 	vs := newVaults(t)
 	for _, path := range []string{"Animal.md", "decks/Birds.md"} {
 		if strings.Contains(read(t, vs.first, path), "\nid: ") {
@@ -688,7 +688,7 @@ func TestADeckAtTheBoundIsRenamed(t *testing.T) {
 
 // A deck holding no card of the stencil is not written, byte for byte, though a
 // write would have given its card a mark and the deck an identifier.
-func TestADeckHoldingNoCardOfTheStencilIsLeftAsItWas(t *testing.T) {
+func TestADeckContainingNoCardOfTheStencilIsLeftAsItWas(t *testing.T) {
 	vs := newVaults(t)
 	words := "---\ntype: deck\n---\n\n## Gloss\n\n[[Term]]\n\n### Word\n\nGloss\n\n### Height\n\nnot a length\n"
 	write(t, vs.first, "decks/Words.md", words)

@@ -68,7 +68,7 @@ func (f *StencilFile) RenameField(from, to string) error {
 	if at < 0 {
 		return fmt.Errorf("%w: %s", ErrNoSuchField, from)
 	}
-	if acquired := slices.Index(names, to); acquired >= 0 && acquired != at {
+	if targetIndex := slices.Index(names, to); targetIndex >= 0 && targetIndex != at {
 		return fmt.Errorf("%w: %s", ErrFieldTaken, to)
 	}
 	names[at] = to

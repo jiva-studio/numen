@@ -247,20 +247,20 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 			for _, at := range one.places {
 				// The control is moved to a place of the grid and release, so
 				// the preset the decks are held to is the one the curve drew.
-				rendered := getCurve(t, api, v, "Sanskrit.md", p)
-				if len(rendered.GetGrid()) <= at {
-					t.Fatalf("the curve has %d places", len(rendered.GetGrid()))
+				curveResp := getCurve(t, api, v, "Sanskrit.md", p)
+				if len(curveResp.GetGrid()) <= at {
+					t.Fatalf("the curve has %d places", len(curveResp.GetGrid()))
 				}
-				value := rendered.GetGrid()[at]
+				value := curveResp.GetGrid()[at]
 				one.steered(&p, value)
 				writePreset(t, api, v, "Sanskrit.md", p)
 
-				rendered = getCurve(t, api, v, "Sanskrit.md", p)
-				if rendered.GetGrid()[at] != value {
+				curveResp = getCurve(t, api, v, "Sanskrit.md", p)
+				if curveResp.GetGrid()[at] != value {
 					t.Fatalf("the control was left at %v and the grid holds %v there",
-						value, rendered.GetGrid()[at])
+						value, curveResp.GetGrid()[at])
 				}
-				draws := int(rendered.GetAt()[at].GetReviews())
+				draws := int(curveResp.GetAt()[at].GetReviews())
 				if got := countOfferedCards(getVaultCount(t, api, v), underSanskrit); got != draws {
 					t.Errorf("at %v the curve draws %d cards for the day and the deck "+
 						"screen offers %d", value, draws, got)
@@ -277,11 +277,11 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	v := target[0]
 	setNow(api, firstMorning)
 
-	rendered := getCurve(t, api, v, "Sanskrit.md", asWritten(t, api, v, "Sanskrit.md"))
+	curveResp := getCurve(t, api, v, "Sanskrit.md", asWritten(t, api, v, "Sanskrit.md"))
 	want := facesIn["decks/Verbs.md"] + facesIn["decks/Nouns.md"]
-	if int(rendered.GetDecks()) != len(underSanskrit) || int(rendered.GetCards()) != want {
+	if int(curveResp.GetDecks()) != len(underSanskrit) || int(curveResp.GetCards()) != want {
 		t.Errorf("the curve stands over %d decks and %d card faces, want %d and %d",
-			rendered.GetDecks(), rendered.GetCards(), len(underSanskrit), want)
+			curveResp.GetDecks(), curveResp.GetCards(), len(underSanskrit), want)
 	}
 }
 
@@ -341,7 +341,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 
 // A deck says how much of it was answered in the day holding now, so a deck
 // nobody has answered in today is told apart from one whose day is done.
-func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
+func TestADeckReturnsHowMuchOfItWasAnsweredToday(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)
@@ -389,7 +389,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 
 // The front door holds each vault once, and each row carries that vault's own
 // count.
-func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
+func TestTheFrontDoorContainsEachVaultOnce(t *testing.T) {
 	api, target := newAPI(t, lived, deck)
 	setNow(api, firstMorning)
 
@@ -431,7 +431,7 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 //
 // Asking for more of the cards back is shorter intervals, so the same history
 // leaves more of them owed today.
-func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) {
+func TestATargetMovedIsNotAnsweredFromTheWorkingOutBelowTheOldOne(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)

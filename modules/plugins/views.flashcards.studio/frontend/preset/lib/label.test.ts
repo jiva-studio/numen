@@ -218,7 +218,7 @@ describe('the names of the marks that fit', () => {
   it('leaves off a name the bubble over the knob relies on', () => {
     const calloutBox = createCallout({ x: 280, y: PLOT_TOP }).box
 
-    expect(createLabels([mark('suggested', 280, 100)], over)).toStrictEqual([])
+    expect(createLabels([mark('suggested', 280, 100)], calloutBox)).toStrictEqual([])
     expect(createLabels([mark('suggested', 280, 100)], null)).toHaveLength(1)
   })
 
@@ -296,7 +296,7 @@ describe('the numbers read off the picture’s edges', () => {
     const calloutBox = box(PLOT_LEFT, 0, CALLOUT_WIDTH, CALLOUT_HEIGHT)
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
-      { places: clear, marks: [], over },
+      { places: clear, marks: [], over: calloutBox },
       formatValue,
     )
 

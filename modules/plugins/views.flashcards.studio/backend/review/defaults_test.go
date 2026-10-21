@@ -57,7 +57,7 @@ func readPresetCorpus(t *testing.T) presetCorpusFile {
 	return out
 }
 
-func TestAPresetNamingNothingIsScheduledByWhatTheCorpusSays(t *testing.T) {
+func TestAPresetNamingNothingIsScheduledByWhatTheCorpusReturns(t *testing.T) {
 	want := readPresetCorpus(t).Defaults
 
 	d := review.Defaults()

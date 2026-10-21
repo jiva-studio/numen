@@ -35,17 +35,17 @@ type Tally struct {
 // later ones have been counted adds to the day it belongs to and disturbs
 // nothing, which is what lets these be worked out one file at a time and kept.
 func GetDayTallies(d Day, answers []Answer) map[string]Tally {
-	acquired := make(map[string]bool)
+	undoTargets := make(map[string]bool)
 	for _, a := range answers {
 		if a.IsUndo() {
-			acquired[a.Undoes] = true
+			undoTargets[a.Undoes] = true
 		}
 	}
 
 	observed := make(map[string]bool, len(answers))
 	out := make(map[string]Tally)
 	for _, a := range answers {
-		if a.IsUndo() || acquired[a.ID] || observed[a.ID] {
+		if a.IsUndo() || undoTargets[a.ID] || observed[a.ID] {
 			continue
 		}
 		observed[a.ID] = true

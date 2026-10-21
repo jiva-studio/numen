@@ -23,7 +23,7 @@ var learnedDecks = map[string]string{
 
 // The count carries how much of each deck stands learned, so the deck screen
 // draws the core's own answer and works out no rule of its own.
-func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
+func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 	api, target := newAPI(t, learnedDecks)
 	v := target[0]
 	setNow(api, firstMorning)

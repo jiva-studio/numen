@@ -60,16 +60,16 @@ func getBudgets(
 	}
 
 	out.decks = survey.asked
-	counting := make(map[string]review.BudgetUnit, len(survey.asked))
+	deckCounts := make(map[string]review.BudgetUnit, len(survey.asked))
 	for deck, path := range survey.asked {
-		counting[deck] = survey.settings[path].Counts
+		deckCounts[deck] = survey.settings[path].Counts
 	}
 	named := day.GetName(now)
 	out.faced = review.GetFaced(day, named, log.Answers)
 
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
-	out.spentUnder = review.GetSpentUnder(day, named, log.Answers, survey.in, counting)
+	out.spentUnder = review.GetSpentUnder(day, named, log.Answers, survey.in, deckCounts)
 	elapsed := sumSpentByPreset(out.spentUnder, survey.asked)
 
 	costed := review.GetCostUnder(by, log.Answers, out.under)

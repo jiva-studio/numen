@@ -42,7 +42,7 @@ func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 
 // The title key is written where the filename cannot carry the whole name, and
 // only there.
-func TestATitleIsWrittenOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
+func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
@@ -124,7 +124,7 @@ var errUnopenable = errors.New("the vault cannot be opened for writing")
 func (unopenable) Open(domain.Vault) (ports.VaultWriter, error) { return nil, errUnopenable }
 
 // A vault that cannot be opened for writing is the answer, and nothing is made.
-func TestANoteIsNotMadeInAVaultThatCannotBeWritten(t *testing.T) {
+func TestANoteIsNotMadeInAVaultThatCannotBeSaved(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
 	u := cards.NewCreate(unopenable{}, nil, time.Now)

@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 )
 
-func TestEveryFaultIsWrittenFromOne(t *testing.T) {
+func TestEveryFaultIsSavedFromOne(t *testing.T) {
 	schematest.CheckProduced(t, map[v1.ProblemKind]format.Fault{
 		v1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE:   format.FaultTwoFields,
 		v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS: format.FaultNoFields,

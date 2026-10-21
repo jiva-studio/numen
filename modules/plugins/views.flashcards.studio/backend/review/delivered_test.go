@@ -27,7 +27,7 @@ func session(t *rapid.T) []review.Answer {
 		func(s string) string { return s },
 	).Draw(t, "faces")
 
-	opened := time.Date(2026, 8, 20, 9, 0, 0, 0, time.UTC)
+	baseTime := time.Date(2026, 8, 20, 9, 0, 0, 0, time.UTC)
 	answer := rapid.Custom(func(t *rapid.T) review.Answer {
 		return review.Answer{
 			CardFace: review.CardFaceID{
@@ -36,7 +36,7 @@ func session(t *rapid.T) []review.Answer {
 			},
 			// Minutes, over a few days, so that two answers of one instant are
 			// drawn about as often as two of different ones.
-			At:     opened.Add(time.Duration(rapid.IntRange(0, 5000).Draw(t, "minutes")) * time.Minute),
+			At:     baseTime.Add(time.Duration(rapid.IntRange(0, 5000).Draw(t, "minutes")) * time.Minute),
 			Rating: review.Rating(rapid.IntRange(int(review.Again), int(review.Easy)).Draw(t, "rating")),
 		}
 	})
@@ -104,18 +104,18 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 // An answer taken back leaves the schedule the answers around it leave on their
 // own: a person who took one back is not counted as having given it, whatever
 // else the file holds and however many lines take it back.
-func TestAnAnswerTakenBackLeavesTheScheduleItWasNeverGivenIn(t *testing.T) {
+func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 	t.Parallel()
 	var took, twice int
 	rapid.Check(t, func(t *rapid.T) {
 		answers := session(t)
 
-		retained := make([]review.Answer, 0, len(answers))
+		expectedAnswers := make([]review.Answer, 0, len(answers))
 		with := make([]review.Answer, 0, 2*len(answers))
 		for _, a := range answers {
 			with = append(with, a)
 			if !rapid.Bool().Draw(t, "taken back") {
-				retained = append(retained, a)
+				expectedAnswers = append(expectedAnswers, a)
 				continue
 			}
 			took++
@@ -135,7 +135,7 @@ func TestAnAnswerTakenBackLeavesTheScheduleItWasNeverGivenIn(t *testing.T) {
 		}
 
 		by := review.NewFSRS()
-		want := review.OrderAnswers(retained).Replay(ahead, review.ScheduleBy(by))
+		want := review.OrderAnswers(expectedAnswers).Replay(ahead, review.ScheduleBy(by))
 		got := review.OrderAnswers(with).Replay(ahead, review.ScheduleBy(by))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d of %d answers taken back gave %+v, want %+v",

@@ -240,28 +240,28 @@ describe('the stretch a budget does not get through, as drawn', () => {
 
   it('is one line through the places in a stretch', () => {
     const one = curve([0, 0, 0, 0], [true, false, false, true])
-    expect(getShortPath(one, along(4))).toBe('M1 1 L2 2')
+    expect(getShortPath(one, alongPoints(4))).toBe('M1 1 L2 2')
   })
 
   it('is one line to a stretch, set apart by a space', () => {
     const one = curve([0, 0, 0, 0, 0], [false, false, true, false, false])
-    expect(getShortPath(one, along(5))).toBe('M0 0 L1 1 M3 3 L4 4')
+    expect(getShortPath(one, alongPoints(5))).toBe('M0 0 L1 1 M3 3 L4 4')
   })
 
   it('draws no line for a single place at the start', () => {
-    expect(getShortPath(curve([0, 0, 0], [false, true, true]), along(3))).toBe('')
+    expect(getShortPath(curve([0, 0, 0], [false, true, true]), alongPoints(3))).toBe('')
   })
 
   it('draws no line for a single place at the end', () => {
-    expect(getShortPath(curve([0, 0], [true, false]), along(2))).toBe('')
+    expect(getShortPath(curve([0, 0], [true, false]), alongPoints(2))).toBe('')
   })
 
   it('draws the line of a stretch that runs to the end', () => {
-    expect(getShortPath(curve([0, 0, 0], [true, false, false]), along(3))).toBe('M1 1 L2 2')
+    expect(getShortPath(curve([0, 0, 0], [true, false, false]), alongPoints(3))).toBe('M1 1 L2 2')
   })
 
   it('leaves out the places of the curve that have no position', () => {
-    expect(getShortPath(curve([0, 0, 0], [false, false, false]), along(1))).toBe('')
+    expect(getShortPath(curve([0, 0, 0], [false, false, false]), alongPoints(1))).toBe('')
   })
 })
 

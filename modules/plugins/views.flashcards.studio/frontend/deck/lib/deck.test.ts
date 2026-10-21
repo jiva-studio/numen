@@ -601,19 +601,19 @@ describe('a value written into a card', () => {
 
   it('is the one of two under a field that was typed in, and the other remains', () => {
     const twice = deck()
-    const card = twice.cards[0]
-    if (!card) throw new Error('the fixture holds no card')
-    const card = replaceCardValue(
+    const targetCard = twice.cards[0]
+    if (!targetCard) throw new Error('the fixture holds no card')
+    const updatedDeck = replaceCardValue(
       {
         ...twice,
-        cards: [{ ...card, values: [...card.values, { field: 'Height', text: 'about 46"' }] }],
+        cards: [{ ...targetCard, values: [...targetCard.values, { field: 'Height', text: 'about 46"' }] }],
       },
       LLAMA,
       'Height',
       2,
       'about 47"',
     )
-    expect(card.cards[0]?.values).toStrictEqual([
+    expect(updatedDeck.cards[0]?.values).toStrictEqual([
       { field: 'Name', text: 'Llama' },
       { field: 'Height', text: 'about 45"' },
       { field: 'Life span', text: 'about 20 years' },

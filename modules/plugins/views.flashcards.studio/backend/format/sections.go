@@ -70,15 +70,15 @@ func heading(line []byte, first, last int) (level int, name string, ok bool) {
 	if len(rest) > 0 && rest[0] != ' ' && rest[0] != '\t' {
 		return 0, "", false
 	}
-	trimmed := bytes.TrimSpace(rest)
+	cleaned := bytes.TrimSpace(rest)
 	// A run of hashes at the end closes the heading where whitespace stands in
 	// front of it, and a name ending in one keeps it.
-	if closed := bytes.TrimRight(trimmed, "#"); len(closed) != len(trimmed) {
+	if closed := bytes.TrimRight(cleaned, "#"); len(closed) != len(cleaned) {
 		if t := bytes.TrimRight(closed, " \t"); len(closed) == 0 || len(t) != len(closed) {
-			trimmed = t
+			cleaned = t
 		}
 	}
-	return hashes, string(trimmed), true
+	return hashes, string(cleaned), true
 }
 
 // readTrimmedRun is one part of the body as a person reads it — one kind of line break,

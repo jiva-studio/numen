@@ -44,7 +44,7 @@ func TestWholeKeepsTheHeadingOfACardWhoseStencilIsUnknown(t *testing.T) {
 
 // A heading already in step is not written again: the spacing around it stays
 // as the person typed it.
-func TestWholeLeavesAHeadingInStepAsItStands(t *testing.T) {
+func TestWholePreservesAHeadingInStepAsItExists(t *testing.T) {
 	body := "\n##   Llama ^k7m2xq9fzp  \n\n[[Animal]]\n\n### Name\n\nLlama\n"
 
 	got, provided := format.Whole(body, wholeAnimals(), createWholeID)

@@ -111,10 +111,10 @@ func (a *reviewHandler) WatchCardsDue(
 		items = append(items, &v1.VaultCardsDue{Id: string(one.ID), Name: one.Name, Path: one.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
-	standing := func() *v1.WatchCardsDueResponse {
+	createResponse := func() *v1.WatchCardsDueResponse {
 		return &v1.WatchCardsDueResponse{Day: a.scenarios().day.GetName(a.now()), Vaults: items}
 	}
-	if err := out.Send(standing()); err != nil {
+	if err := out.Send(createResponse()); err != nil {
 		return err
 	}
 
@@ -145,7 +145,7 @@ func (a *reviewHandler) WatchCardsDue(
 			}
 			repeat.Reset(again)
 		case <-repeat.C:
-			if err := out.Send(standing()); err != nil {
+			if err := out.Send(createResponse()); err != nil {
 				return err
 			}
 		}

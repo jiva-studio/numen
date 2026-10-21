@@ -217,9 +217,9 @@ describe('renaming a field', () => {
   it('answers with the empty string where the service stamped nothing', async () => {
     answer('renameStencilField', { decks: [], cards: 0, notWritten: [] })
 
-    const renamed = await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
+    const renameResult = await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
 
-    expect(renamed.ok && renamed.value.at).toBe('')
+    expect(renameResult.ok && renameResult.value.at).toBe('')
   })
 
   it('fails in the service words', async () => {

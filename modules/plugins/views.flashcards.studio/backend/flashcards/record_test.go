@@ -12,7 +12,7 @@ import (
 // An answer belongs to one card through one face. A line naming neither stands
 // for nothing a schedule could be worked out from, so it is refused before it
 // is written and not left in the log for every later reading to skip.
-func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
+func TestAnAnswerReturnsWhichCardAndThroughWhichFace(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	record := s.run(t, time.Now())
@@ -51,7 +51,7 @@ func TestARecordWithNoClockRefusesAnAnswer(t *testing.T) {
 
 // Taking back an answer names the one it takes back. Nothing here guesses which
 // of a session's answers a person meant.
-func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
+func TestTakingBackNamesTheAnswerItConsumesBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 

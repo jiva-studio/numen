@@ -22,7 +22,7 @@ func TestAStencilWhoseFrontmatterCannotBeReadIsNotOpened(t *testing.T) {
 	}
 }
 
-func TestRenamingAFieldOfAStencilWrittenOnOneLineIsRefused(t *testing.T) {
+func TestRenamingAFieldOfAStencilSavedOnOneLineIsRefused(t *testing.T) {
 	raw := "---\n{type: stencil, fields: [Name, Height]}\n---\n\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 	f, err := format.OpenStencil([]byte(raw))
 	if err != nil {
@@ -60,7 +60,7 @@ func TestADeeperHeadingInASideIsText(t *testing.T) {
 
 // A side is opened by the first heading of its name; a heading of another name
 // and a second heading of the same name stand under the side above them.
-func TestSideHeadingsThatOpenNothingStandUnderTheSideAboveThem(t *testing.T) {
+func TestSideHeadingsThatOpenNothingStandBelowTheSideAboveThem(t *testing.T) {
 	for name, tc := range map[string]struct{ body, front string }{
 		"another name": {
 			"### Front\n\n{{Name}}\n\n### Notes\n\nn\n\n### Back\n\nanswer\n",

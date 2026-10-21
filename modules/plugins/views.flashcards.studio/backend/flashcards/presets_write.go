@@ -234,7 +234,7 @@ func writeByDate(doc *markdown.Document, p, was review.Preset) error {
 // and the rest are taken out.
 func readShares(entries []string, load, read map[time.Weekday]int) []markdown.Entry {
 	out := make([]markdown.Entry, 0, len(entries)+len(load))
-	acquired := getDayEntries(entries, read)
+	dayEntries := getDayEntries(entries, read)
 	content := make(map[time.Weekday]bool, len(load))
 	for _, name := range entries {
 		weekday, isDay := review.Weekday(name)
@@ -244,7 +244,7 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 			continue
 		}
 		share, named := load[weekday]
-		if !named || name != acquired[weekday] {
+		if !named || name != dayEntries[weekday] {
 			continue
 		}
 		content[weekday] = true

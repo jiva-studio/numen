@@ -23,7 +23,7 @@ const createIds = () => {
   return () => `c${(at += 1)}`
 }
 
-const trimmed = (over: Partial<VaultStencil> = {}): VaultStencil => ({
+const createTestStencil = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
@@ -38,7 +38,7 @@ const trimmed = (over: Partial<VaultStencil> = {}): VaultStencil => ({
 })
 
 const stencil = (over: Partial<VaultStencil> = {}): BufferStencil =>
-  createBufferStencil(trimmed(over), createIds())
+  createBufferStencil(createTestStencil(over), createIds())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {
@@ -137,7 +137,7 @@ describe('whether two evaluations of a file read the same', () => {
 
   it('is not so for a field or a face written elsewhere', () => {
     expect(areStencilsEqual(stencil(), stencil({ fields: ['Height'] }))).toBe(false)
-    expect(areStencilsEqual(stencil(), stencil({ faces: trimmed().faces.slice(0, 1) }))).toBe(false)
+    expect(areStencilsEqual(stencil(), stencil({ faces: createTestStencil().faces.slice(0, 1) }))).toBe(false)
   })
 
   it('is not so for a preamble written elsewhere, however the tail reads', () => {

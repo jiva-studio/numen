@@ -341,9 +341,9 @@ export const TheBacklogKeepsItsRoom: Story = {
     expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
     // The room is the same either way, and in the backlog's own proportion.
-    const rendered = backlogRoom(answered!)
+    const backlogBox = backlogRoom(answered!)
     const empty = backlogRoom(waiting!)
-    expect(rendered.width).toBeGreaterThan(0)
+    expect(backlogBox.width).toBeGreaterThan(0)
     expect(empty.width).toBeCloseTo(rendered.width, 0)
     expect(empty.height).toBeCloseTo(rendered.height, 0)
     expect(rendered.width / rendered.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
@@ -386,8 +386,8 @@ export const TheRingStandsOnTheKnob: Story = {
   play: async ({ canvasElement }) => {
     const picture = getPicture(canvasElement)
     const knob = picture.querySelector<SVGCircleElement>('[data-control="knob"]')!
-    const resting = getComputedStyle(knob)
-    const before = { stroke: resting.stroke, width: resting.strokeWidth }
+    const initialStyle = getComputedStyle(knob)
+    const before = { stroke: initialStyle.stroke, width: initialStyle.strokeWidth }
 
     // The keyboard's own way in, so the browser counts the focus as one it
     // draws a ring for.

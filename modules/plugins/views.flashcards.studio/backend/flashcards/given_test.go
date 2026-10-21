@@ -5,7 +5,7 @@ import (
 )
 
 // A loaded log works its order out once, however many callers ask for it.
-func TestALoadedLogIsPutInOrderOnce(t *testing.T) {
+func TestALoadedLogIsInsertInOrderOnce(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 

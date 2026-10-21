@@ -179,10 +179,10 @@ func (p Projection) Session() (int, bool) {
 // this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
 func CountOverdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
-	opened := d.GetStart(now)
+	startTime := d.GetStart(now)
 	out := 0
 	for _, s := range at {
-		if !s.IsNew() && s.Due.Before(opened) {
+		if !s.IsNew() && s.Due.Before(startTime) {
 			out++
 		}
 	}

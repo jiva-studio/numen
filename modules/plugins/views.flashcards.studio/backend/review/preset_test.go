@@ -39,7 +39,7 @@ func TestADateIsABudget(t *testing.T) {
 
 // A budget of zero is a pause where the goal names that budget, and every deck
 // pointing at the preset stops. A budget the goal does not name is not read.
-func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
+func TestZeroIsAPauseBelowTheGoalThatNamesIt(t *testing.T) {
 	for _, one := range []struct {
 		front    string
 		isPaused bool

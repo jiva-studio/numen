@@ -34,7 +34,7 @@ var saturday = time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
 
 // What a day came to is counted under the preset each deck names, over as many
 // sessions as the day held. A deck naming no preset comes under the defaults.
-func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
+func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
 
@@ -81,7 +81,7 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 
 // A vault holding no preset at all is one scope: the defaults, with every deck
 // under them.
-func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
+func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":      term,
@@ -109,7 +109,7 @@ func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 
 // Every preset the vault holds stands in the count. A person who wrote one and
 // pointed nothing at it can still see it, and it says nothing of a day.
-func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
+func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	t.Parallel()
 	files := make(map[string]string, len(scheduled)+1)
 	for path, raw := range scheduled {
@@ -140,7 +140,7 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 
 // What was answered on another day is not what today came to, and neither is an
 // answer taken back.
-func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
+func TestADayContainsWhatWasAnsweredInIt(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
 
@@ -327,7 +327,7 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 //
 // The scenario here holds nothing to read a vault through, so nothing past the
 // first check can run.
-func TestACountIsDroppedOnceTheWindowHasGone(t *testing.T) {
+func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 	t.Parallel()
 	removed, went := context.WithCancel(t.Context())
 	went()

@@ -83,8 +83,8 @@ const ALWAYS: readonly Field[] = ['load', 'hasEvenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
 export const getGoalFields = (goal: Goal, rule: Rule): readonly Field[] => {
-  const rendered = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...LEARNS[rule], ...ALWAYS])
-  return FIELDS.filter((field) => rendered.has(field))
+  const goalFields = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...LEARNS[rule], ...ALWAYS])
+  return FIELDS.filter((field) => goalFields.has(field))
 }
 
 /** The field the goal steers, which is the knob under another name. */

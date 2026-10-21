@@ -19,7 +19,7 @@ import (
 // A run is listed and then taken away by another machine's synchroniser before
 // it can be read. That is a file gone, not a vault whose history cannot be
 // read: everything else the person answered is still theirs.
-func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
+func TestARunTakenAwayBeforeItWasReadIsMissing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	store, err := s.logs.Open(s.vault)
@@ -44,7 +44,7 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 // What a vault holds is every answer of every run, and the runs it was read
 // from at the length they were read at — which is what a cache is measured
 // against.
-func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
+func TestWhatAVaultContainsIsEveryRunItWasReadFrom(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -251,8 +251,8 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 		t.Errorf("a folder that cannot be read came back with %v", err)
 	}
 
-	counting := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.kept, today, time.Now)
-	if _, err := counting.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
+	counter := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.kept, today, time.Now)
+	if _, err := counter.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
 		t.Errorf("the counting came back with %v", err)
 	}
 }
@@ -261,7 +261,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 // into. An unmounted disk and a sync folder that vanished leave a path the
 // application would fill with a stub, and an evening of answers in it is
 // shadowed the moment the real vault comes back.
-func TestASessionIntoAVaultThatIsGoneStops(t *testing.T) {
+func TestASessionIntoAVaultThatIsMissingStops(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -405,7 +405,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 
 // A vault nobody has reviewed holds no folder and no files, which is an answer
 // and not a failure.
-func TestAVaultNobodyReviewedHoldsNoRuns(t *testing.T) {
+func TestAVaultNobodyReviewedContainsNoRuns(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 

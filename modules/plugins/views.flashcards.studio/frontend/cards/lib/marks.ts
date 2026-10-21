@@ -55,12 +55,12 @@ export const createMarks = (
         addProblemMark(at, card, problem.text)
         continue
       }
-      let card = under.get(card)
-      if (!card) {
-        card = new Map<string, string[]>()
-        under.set(card, card)
+      let cardMarks = underMap.get(card)
+      if (!cardMarks) {
+        cardMarks = new Map<string, string[]>()
+        underMap.set(card, cardMarks)
       }
-      addProblemMark(card, problem.field, problem.text)
+      addProblemMark(cardMarks, problem.field, problem.text)
       continue
     }
     const face = faces[problem.face ?? -1]
@@ -75,7 +75,7 @@ export const createMarks = (
     whole.push(problem.text)
   }
 
-  return { at, under, fields, whole }
+  return { at, under: underMap, fields, whole }
 }
 
 /** Whether two lists of words read the same, in the same order. */

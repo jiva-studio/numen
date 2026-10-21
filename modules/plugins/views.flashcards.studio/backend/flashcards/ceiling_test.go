@@ -71,7 +71,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 }
 
 // And the same ceiling holds when a person sits to one deck at a time.
-func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
+func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -125,7 +125,7 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 //
 // A preset is the scope of its own budget, and entering one of its decks does
 // not open a budget of that deck's own.
-func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
+func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 30\n" +

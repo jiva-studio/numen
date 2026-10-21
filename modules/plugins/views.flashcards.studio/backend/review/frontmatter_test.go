@@ -21,7 +21,7 @@ func front(t *testing.T, written string) map[string]any {
 }
 
 // A preset says how the decks pointing at it are scheduled.
-func TestWhatAPresetSays(t *testing.T) {
+func TestWhatAPresetReturns(t *testing.T) {
 	p, problems := review.ReadPreset(front(t, `
 goal: minutes_a_day
 minutes_a_day: 20
@@ -72,7 +72,7 @@ func TestWhatABudgetIsSpentOn(t *testing.T) {
 }
 
 // A key the file does not carry stands at the default.
-func TestWhatAPresetLeavesUnsaid(t *testing.T) {
+func TestWhatAPresetPreservesUnsaid(t *testing.T) {
 	p, problems := review.ReadPreset(front(t, "goal: retention\nretention: 0.95\n"))
 
 	if len(problems) != 0 {

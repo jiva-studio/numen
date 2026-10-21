@@ -17,7 +17,7 @@ import (
 const wrenDeck = "\n## Wren\n\n[[Animal]]\n\n### Name\n\nWren\n"
 
 // A deck over the bound is refused and the file is left as it was.
-func TestADeckOverTheBoundIsNotWritten(t *testing.T) {
+func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
 	before := read(t, vs.first, "decks/Wrens.md")
@@ -33,7 +33,7 @@ func TestADeckOverTheBoundIsNotWritten(t *testing.T) {
 }
 
 // A stencil over the bound of a note is refused and the file is left as it was.
-func TestAStencilOverTheBoundOfANoteIsNotWritten(t *testing.T) {
+func TestAStencilOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
@@ -51,7 +51,7 @@ func TestAStencilOverTheBoundOfANoteIsNotWritten(t *testing.T) {
 
 // A deck whose stencils cannot be found is an error, and the file is left as it
 // was.
-func TestADeckWhoseLinksCannotBeResolvedIsNotWritten(t *testing.T) {
+func TestADeckWhoseLinksCannotBeResolvedIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
 	before := read(t, vs.first, "decks/Wrens.md")
@@ -69,7 +69,7 @@ func TestADeckWhoseLinksCannotBeResolvedIsNotWritten(t *testing.T) {
 
 // A write over a file that changed since it was read returns nothing: no
 // fingerprint, and no mark for a card that was never written.
-func TestAStaleWriteHandsBackNothing(t *testing.T) {
+func TestAStaleWritePassesBackNothing(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
 	observed, err := cards.NewRead(vs.ports.Readers, vs.queries).
@@ -90,7 +90,7 @@ func TestAStaleWriteHandsBackNothing(t *testing.T) {
 
 // A deck written to disk whose index could not be brought level is an error
 // beside the result of the write: what the file stands at and the marks given.
-func TestADeckWrittenAndNotLevelledHandsBackWhatItStandsAt(t *testing.T) {
+func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck).
 		WithIndex(func(_ context.Context, _ domain.Vault, _ []string) error { return errOutOfReach })
@@ -112,7 +112,7 @@ func TestADeckWrittenAndNotLevelledHandsBackWhatItStandsAt(t *testing.T) {
 
 // A body opening with the frontmatter delimiter would be read as the stencil's
 // own frontmatter, so it is refused.
-func TestAStencilBodyOpeningWithFrontmatterIsNotWritten(t *testing.T) {
+func TestAStencilBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
@@ -129,7 +129,7 @@ func TestAStencilBodyOpeningWithFrontmatterIsNotWritten(t *testing.T) {
 
 // A stencil whose frontmatter is never closed has no body to replace, and the
 // file is left as it was.
-func TestAStencilWhoseFrontmatterIsNeverClosedIsNotWritten(t *testing.T) {
+func TestAStencilWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Open.md", "---\ntype: stencil\nfields:\n  - Name\n\n## Recognise\n")
 	before := read(t, vs.first, "Open.md")

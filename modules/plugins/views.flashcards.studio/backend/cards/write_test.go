@@ -80,7 +80,7 @@ func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 
 // A stencil already declaring exactly these fields, in this order, is not
 // written a second time, so what the person wrote around them stands.
-func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing.T) {
+func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatExistsAroundThem(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Kept.md", "---\ntype: stencil\nfields:\n"+
 		"  # the one the card is named by\n  - Name\n  - Height\n---\n"+
@@ -188,7 +188,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 }
 
 // A mark is written into a file of carriage returns without disturbing them.
-func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
+func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n"
 	write(t, vs.first, "decks/Crlf.md",
@@ -215,7 +215,7 @@ func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
 
 // The field is what stands. A person may leave the heading disagreeing with it,
 // and the next write puts the heading back in step.
-func TestWritingADeckPutsAStaleHeadingBackInStep(t *testing.T) {
+func TestWritingADeckInsertsAStaleHeadingBackInStep(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Something else ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Also stale ^zpqrstvwxy\n\n[[Animal]]\n\n### Name\n" +
@@ -245,7 +245,7 @@ func TestWritingADeckPutsAStaleHeadingBackInStep(t *testing.T) {
 // stands. A rename that could not be written to a deck leaves every card in it
 // that way, and the next ordinary save must not read that as a heading of
 // nothing.
-func TestACardWritingNothingUnderTheFirstFieldKeepsItsHeading(t *testing.T) {
+func TestACardWritingNothingBelowTheFirstFieldKeepsItsHeading(t *testing.T) {
 	vs := newVaults(t)
 	// The stencil declares Name first, and this card was written when the field
 	// standing first was called something else.
@@ -264,7 +264,7 @@ func TestACardWritingNothingUnderTheFirstFieldKeepsItsHeading(t *testing.T) {
 
 // The mark is minted where the deck is made whole, so the write is what knows
 // it, and a caller that has just added a card is told what to address it by.
-func TestAWriteSaysWhichMarksItGave(t *testing.T) {
+func TestAWriteReturnsWhichMarksItGave(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"

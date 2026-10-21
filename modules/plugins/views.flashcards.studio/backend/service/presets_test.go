@@ -84,7 +84,7 @@ func settings() *v1.Settings {
 
 // TestASettingOutsideItsBoundsIsNotWritten. A retention target outside what
 // memory does is a number to correct, and the file is not opened to find out.
-func TestASettingOutsideItsBoundsIsNotWritten(t *testing.T) {
+func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	targetSettings := settings()
@@ -100,7 +100,7 @@ func TestASettingOutsideItsBoundsIsNotWritten(t *testing.T) {
 	}
 }
 
-func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
+func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&v1.ReadPresetRequest{
@@ -160,7 +160,7 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 // TestADeckWhosePresetLinkHasNoRoleIsToldSo. An entry of the `links:` block
 // written with no role is not read, so a preset named in one schedules nothing
 // and the window says why the deck is on the defaults.
-func TestADeckWhosePresetLinkHasNoRoleIsToldSo(t *testing.T) {
+func TestADeckWhosePresetLinkHasNoRoleIsReportedSo(t *testing.T) {
 	f := newScheduling(t, map[string]string{
 		"Sanskrit.md": sanskrit,
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    type: preset\n---\n\n" +
@@ -214,7 +214,7 @@ func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 
 // TestChangingWhatABudgetCountsIsWritten. What a budget counts is settled on
 // every save, so a preset moved from one to the other holds what was settled.
-func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
+func TestChangingWhatABudgetCountsIsSaved(t *testing.T) {
 	cards := strings.Replace(counting, "counts: shows", "counts: cards", 1)
 	f := newScheduling(t, map[string]string{"Shows.md": cards})
 
@@ -269,7 +269,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 // TestACurveComesBackWithItsTwoPlaces. The control is drawn from where the
 // preset stands to what is suggested, so a curve that came back without both
 // places is a control with nothing to point at.
-func TestACurveComesBackWithItsTwoPlaces(t *testing.T) {
+func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	answer, err := f.client.ComputeCurve(t.Context(), connect.NewRequest(&v1.ComputeCurveRequest{
@@ -418,7 +418,7 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 
 // TestADeckIsPutOnAPresetAndTakenOffAgain. Choosing a preset writes the deck's
 // one entry, and choosing the defaults takes it out.
-func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
+func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	placed, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
@@ -516,7 +516,7 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 
 // TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead. Somebody editing
 // their own deck outranks a client that read it and arrived late.
-func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
+func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	read, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{

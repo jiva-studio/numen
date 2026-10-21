@@ -112,7 +112,7 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 //
 // A setting dropped on either side is a person moving a control, watching the
 // value never leave the window, and finding the note written without it.
-func TestEverySettingComesBackAsItWentOut(t *testing.T) {
+func TestEverySettingReachesBackAsItWentOut(t *testing.T) {
 	was := review.Preset{
 		Goal:        review.GoalDate,
 		By:          time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),

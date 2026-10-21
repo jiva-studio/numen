@@ -67,7 +67,7 @@ func TestWhatWasAnsweredOnADayIsCounted(t *testing.T) {
 
 // A day says how each of the four was answered on it, because fifty cards a
 // person could not recall is a different day from fifty they could.
-func TestADaySaysHowEachOfTheFourWasAnswered(t *testing.T) {
+func TestADayReturnsHowEachOfTheFourWasAnswered(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	response := func(id string, r review.Rating) review.Answer {
 		return review.Answer{
@@ -100,7 +100,7 @@ func makeTallies(days map[string]int) map[string]review.Tally {
 
 // What a day came to is counted under the preset each card face is grouped
 // under: the answers given, and the time they took.
-func TestWhatADayCameToUnderEachPreset(t *testing.T) {
+func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 	root := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	mantra := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 	ungrouped := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}

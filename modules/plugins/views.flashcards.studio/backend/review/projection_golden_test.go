@@ -22,7 +22,7 @@ var update = flag.Bool("update", false, "write testdata/projection.golden again"
 //
 // A change meaning to move a number moves this file with it, under -update, and
 // the diff is what it moved.
-func TestAProjectionAnswersWhatItIsWrittenDownAs(t *testing.T) {
+func TestAProjectionAnswersWhatItIsSavedDownAs(t *testing.T) {
 	got := projections(t)
 	path := filepath.Join("testdata", "projection.golden")
 	if *update {

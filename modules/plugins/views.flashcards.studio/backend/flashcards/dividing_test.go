@@ -98,7 +98,7 @@ func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
 }
 
 // A deck owing nine times another's takes nine times the share.
-func TestADeckOwingMoreTakesTheLargerShare(t *testing.T) {
+func TestADeckOwingMoreConsumesTheLargerShare(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 90, 10)
 	got := s.rows(t, when)
@@ -114,7 +114,7 @@ func TestADeckOwingMoreTakesTheLargerShare(t *testing.T) {
 // Twenty minutes buys sixty cards nobody has begun. The deck of one card holds
 // too small a share to buy even that card, and what the shares leave over buys
 // the cards the other two could not afford out of their own.
-func TestADeckThatCannotUseItsShareLeavesItToTheOthers(t *testing.T) {
+func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 1)
@@ -134,7 +134,7 @@ func TestADeckThatCannotUseItsShareLeavesItToTheOthers(t *testing.T) {
 }
 
 // A deck holding nothing takes no share of the day.
-func TestADeckHoldingNothingTakesNoShare(t *testing.T) {
+func TestADeckContainingNothingConsumesNoShare(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 0, 40, 40)
 	got := s.rows(t, when)
@@ -149,7 +149,7 @@ func TestADeckHoldingNothingTakesNoShare(t *testing.T) {
 
 // One deck takes the whole day, which is what it did before any of it was
 // divided.
-func TestOneDeckTakesTheWholeDay(t *testing.T) {
+func TestOneDeckConsumesTheWholeDay(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 40)
 	if got := s.rows(t, when)[deckAt(0)]; got != 30 {
@@ -173,7 +173,7 @@ func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
 }
 
 // What the front door says of a deck is what pressing that deck hands over.
-func TestTheDeckRowIsWhatPressingTheDeckHandsOver(t *testing.T) {
+func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
 	t.Parallel()
 	for _, shape := range []struct {
 		front string
@@ -232,7 +232,7 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 // The division turns on what each deck owes and not on where the deck stands,
 // so the same vault divides the same day whatever order its files are walked
 // in.
-func TestTheDivisionDoesNotTurnOnWhereADeckStands(t *testing.T) {
+func TestTheDivisionDoesNotTurnOnWhereADeckExists(t *testing.T) {
 	t.Parallel()
 	first := newDeckVault(t, counts, 90, 10).rows(t, when)
 	second := newDeckVault(t, counts, 10, 90).rows(t, when)

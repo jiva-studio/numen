@@ -50,9 +50,9 @@ func (u GetReviewDays) WithNow(now ports.Clock) GetReviewDays {
 }
 
 func keepDays[T any](days map[string]T, from, to string) map[string]T {
-	retained := maps.Clone(days)
-	maps.DeleteFunc(retained, func(day string, _ T) bool {
+	cloned := maps.Clone(days)
+	maps.DeleteFunc(cloned, func(day string, _ T) bool {
 		return day < from || (to != "" && day > to)
 	})
-	return retained
+	return cloned
 }
