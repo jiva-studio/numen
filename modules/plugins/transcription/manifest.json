@@ -16,7 +16,7 @@
   "permissions": ["vault:read", "network:outbound"],
   "runtimes": ["onnxruntime"],
   "lifecycle": {
-    "idleTimeoutSeconds": 180,
+    "idleTimeoutSeconds": 600,
     "keepAliveWhileVisible": false,
     "memoryLimitBytes": 4294967296
   },

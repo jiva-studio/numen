@@ -796,12 +796,14 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 	host.mu.Lock()
 	p := host.plugins["md.numen.ocr"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
 	host.plugins["md.numen.ocr"] = p
 	host.mu.Unlock()
 
 	host.Release("md.numen.ocr")
 	host.Release("md.numen.ocr")
+
+	time.Sleep(1050 * time.Millisecond)
 
 	evicted := host.EvictIdle(ctx, 0, 500*time.Millisecond)
 	if len(evicted) != 1 || evicted[0] != "md.numen.ocr" {
@@ -1039,12 +1041,14 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 
 	host.mu.Lock()
 	p := host.plugins["md.numen.ocr"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
 	host.plugins["md.numen.ocr"] = p
 	host.mu.Unlock()
 
 	host.Release("md.numen.ocr")
 	host.Release("md.numen.ocr")
+
+	time.Sleep(1050 * time.Millisecond)
 
 	done := make(chan struct{})
 	go func() {
@@ -1274,7 +1278,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
 	host.mu.Lock()
 	p := host.plugins["md.numen.ocr"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
 	host.plugins["md.numen.ocr"] = p
 	host.mu.Unlock()
 
@@ -1315,6 +1319,9 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 			t.Fatalf("round %d: a held plugin is in state %v", i, state)
 		}
 		host.Release("md.numen.ocr")
+		if i == 0 {
+			time.Sleep(1050 * time.Millisecond)
+		}
 	}
 	stopEvictor()
 	if evictions.Load() == 0 {
@@ -1459,5 +1466,53 @@ func TestTheHostListsPluginsInIDOrder(t *testing.T) {
 				t.Fatalf("%s listed %v, want %v", name, got, want)
 			}
 		}
+	}
+}
+
+func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+
+	ctx := t.Context()
+	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+
+	host.mu.Lock()
+	p := host.plugins["md.numen.ocr"]
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	host.plugins["md.numen.ocr"] = p
+	host.mu.Unlock()
+
+	host.Release("md.numen.ocr")
+	host.Release("md.numen.ocr")
+
+	evicted := host.EvictIdle(ctx, 0, 50*time.Millisecond)
+	if len(evicted) != 0 {
+		t.Fatalf("expected 0 evicted for zero timeout plugin, got %v", evicted)
+	}
+
+	evicted = host.EvictIdle(ctx, 3*time.Minute, 50*time.Millisecond)
+	if len(evicted) != 0 {
+		t.Fatalf("expected 0 evicted with defaultThreshold for zero timeout plugin, got %v", evicted)
+	}
+
+	host.mu.RLock()
+	sup := host.supervisors["md.numen.ocr"]
+	host.mu.RUnlock()
+	if state := sup.GetState(); state != StateIdle {
+		t.Errorf("expected supervisor to stay StateIdle, got %v", state)
+	}
+
+	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }

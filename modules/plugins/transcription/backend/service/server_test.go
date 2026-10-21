@@ -32,3 +32,26 @@ func TestLifecycleConfigure(t *testing.T) {
 		t.Errorf("expected model name 'fr', got %q", ts.cfg.Model.Name)
 	}
 }
+
+func TestGetEngineSurvivesCallerCancellation(t *testing.T) {
+	loaded := false
+	factory := func(ctx context.Context, _ engine.Config) (engine.TranscriberPort, error) {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		loaded = true
+		return engine.NewMockTranscriber(), nil
+	}
+	ts := newTranscriptionServer(engine.Config{}, factory)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	e, err := ts.getEngine(ctx)
+	if err != nil {
+		t.Fatalf("getEngine failed: %v", err)
+	}
+	if e == nil || !loaded {
+		t.Fatal("expected engine to be loaded despite caller cancellation")
+	}
+}
