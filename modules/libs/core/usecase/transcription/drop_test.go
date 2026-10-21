@@ -21,12 +21,12 @@ func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *st
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	index := newStore()
-	retained := newShelf()
+	shelf := newShelf()
 	model := &voice{words: words}
 
 	cutting := source.NewExtract(vaults{first.ID: shelved}, index, index)
-	cutting.Derived = retained
-	listen := NewTranscribe(vaults{first.ID: shelved}, index, shelves{retained}, model)
+	cutting.Derived = shelf
+	listen := NewTranscribe(vaults{first.ID: shelved}, index, shelves{shelf}, model)
 	listen.Batch = 1
 	listen.Cut = func(ctx context.Context, v domain.Vault, path string) error {
 		_, err := cutting.ExtractOne(ctx, v, path)
@@ -36,9 +36,9 @@ func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *st
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
 		Queries: index,
-		Derived: shelves{retained},
+		Derived: shelves{shelf},
 	}
-	return listen, drop, first, index, retained, model, text.Fingerprint(raw)
+	return listen, drop, first, index, shelf, model, text.Fingerprint(raw)
 }
 
 // cutFrom is the text of the chunks one source was cut into.
@@ -52,7 +52,7 @@ func cutFrom(index *store, v domain.Vault, path string) []string {
 	return out
 }
 
-func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
+func TestDroppingATranscriptPreservesTheRecordingAsItWas(t *testing.T) {
 	listen, drop, v, index, retained, _, hash := newDrop(t, "first thing", "second thing")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
@@ -192,7 +192,7 @@ func (w watching) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e 
 
 // The recording is held for as long as the drop takes, so nothing listens to it
 // and writes words the drop is about to say it has none of.
-func TestTheRecordingIsHeldUntilTheIndexIsWritten(t *testing.T) {
+func TestTheRecordingIsHeldUntilTheIndexIsSaved(t *testing.T) {
 	listen, drop, v, index, retained, _, hash := newDrop(t, "one", "two")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
@@ -245,7 +245,7 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 
 // A recording that gave no words is out of the queue's reach for the life of a
 // run, and dropping its answer puts it back.
-func TestDroppingAnAnswerPutsTheRecordingBackInReach(t *testing.T) {
+func TestDroppingAnAnswerInsertsTheRecordingBackInReach(t *testing.T) {
 	listen, drop, v, _, _, _, _ := newDrop(t, "", "")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
@@ -261,7 +261,7 @@ func TestDroppingAnAnswerPutsTheRecordingBackInReach(t *testing.T) {
 	}
 }
 
-func TestATranscriptBeingWrittenIsNotDropped(t *testing.T) {
+func TestATranscriptBeingSavedIsNotDropped(t *testing.T) {
 	listen, drop, v, index, retained, _, hash := newDrop(t, "one", "two")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {

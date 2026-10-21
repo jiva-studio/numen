@@ -8,7 +8,7 @@ import (
 
 // A name taken out of the store leaves nothing behind it, the file its claim
 // was held on included.
-func TestANameRemovedLeavesNoClaimBehindIt(t *testing.T) {
+func TestANameRemovedPreservesNoClaimPriorIt(t *testing.T) {
 	derived, root := store(t)
 	const name = "ocr/abc.txt"
 

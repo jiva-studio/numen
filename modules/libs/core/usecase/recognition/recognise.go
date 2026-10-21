@@ -347,16 +347,16 @@ func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.Artifac
 		return err
 	}
 	target := highlight.Unpack(raw)
-	retained := make([]domain.HighlightBox, 0, len(target))
+	keptBoxes := make([]domain.HighlightBox, 0, len(target))
 	for _, box := range target {
 		if box.Page < done {
-			retained = append(retained, box)
+			keptBoxes = append(keptBoxes, box)
 		}
 	}
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
-	return store.WriteArtifact(ctx, name, highlight.Pack(retained))
+	return store.WriteArtifact(ctx, name, highlight.Pack(keptBoxes))
 }
 
 // dropParts drops the parts no count claims: those opening past the prose the
@@ -370,13 +370,13 @@ func dropParts(ctx context.Context, store port.DerivedStore, name domain.Artifac
 		return err
 	}
 	target := ocr.Unpack(raw)
-	retained := make([]domain.OCRPart, 0, len(target))
+	keptParts := make([]domain.OCRPart, 0, len(target))
 	for _, part := range target {
 		if part.Start+part.Length <= prose {
-			retained = append(retained, part)
+			keptParts = append(keptParts, part)
 		}
 	}
-	return store.WriteArtifact(ctx, name, ocr.Pack(retained))
+	return store.WriteArtifact(ctx, name, ocr.Pack(keptParts))
 }
 
 // record keeps what read the document along with what it read. Nothing on any path

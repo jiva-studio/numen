@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestPartsComeBackAsTheyWereWritten(t *testing.T) {
+func TestPartsComeBackAsTheyWereSaved(t *testing.T) {
 	parts := []domain.OCRPart{
 		{Start: 0, Length: 19, Depth: 0},
 		{Start: 421, Length: 33, Depth: 1},
@@ -24,7 +24,7 @@ func TestPartsComeBackAsTheyWereWritten(t *testing.T) {
 	}
 }
 
-func TestATornTailGivesBackTheWholeParts(t *testing.T) {
+func TestATornTailProducesBackTheWholeParts(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written.
 	// What was written whole is still a part.
 	parts := []domain.OCRPart{

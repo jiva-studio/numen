@@ -243,14 +243,14 @@ func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
 		t.Fatalf("StartRun failed: %v", err)
 	}
 
-	stopped := make(chan struct{})
+	stopCh := make(chan struct{})
 	go func() {
 		_ = run.Stop()
-		close(stopped)
+		close(stopCh)
 	}()
 
 	select {
-	case <-stopped:
+	case <-stopCh:
 	case <-time.After(2 * time.Second):
 		t.Fatal("deadlock in run.Stop() with unread steps channel")
 	}
@@ -371,7 +371,7 @@ func TestTheBridgeFailsWhereThePluginListsNoPrograms(t *testing.T) {
 }
 
 // A limit on steps that no request can carry is the largest one it can, and a negative one is none.
-func TestALimitOnStepsIsKeptWithinWhatTheRequestCarries(t *testing.T) {
+func TestALimitOnStepsIsCachedWithinWhatTheRequestCarries(t *testing.T) {
 	for limit, want := range map[int]int32{
 		-5:            0,
 		0:             0,
@@ -387,7 +387,7 @@ func TestALimitOnStepsIsKeptWithinWhatTheRequestCarries(t *testing.T) {
 
 // Everything the task gives the agent reaches the request, and the effect of each tool goes in the
 // word the plugins read it in.
-func TestTheRequestCarriesWhatTheTaskGivesTheAgent(t *testing.T) {
+func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
 	got := newAskRequest(port.Task{
 		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Reasoning: "high", Instructions: "i",
 		Tools: []string{"note_edit"}, MaxSteps: 7, Root: "/vault", Command: []string{"/bin/one"},
@@ -422,7 +422,7 @@ func TestTheRequestCarriesWhatTheTaskGivesTheAgent(t *testing.T) {
 }
 
 // The word a tool's effect is told in is the word it is read back from.
-func TestAnEffectIsToldAndReadInTheSameWord(t *testing.T) {
+func TestAnEffectIsReportedAndReadInTheSameWord(t *testing.T) {
 	for _, effect := range []domain.StepKind{
 		domain.StepRead, domain.StepEdit, domain.StepRemove, domain.StepMove, domain.StepSearch, domain.StepToolCall,
 	} {
@@ -434,7 +434,7 @@ func TestAnEffectIsToldAndReadInTheSameWord(t *testing.T) {
 
 // A change being written reaches the core as a draft of the note, with the text it replaces and
 // the text that takes its place so far.
-func TestAChangeBeingWrittenIsADraft(t *testing.T) {
+func TestAChangeBeingSavedIsADraft(t *testing.T) {
 	got := convertResponseStep(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_EditProgress{
 		EditProgress: &v1.EditProgress{Call: "toolu_01", Path: "a/b.md", Match: "old", Text: "new"},
 	}})

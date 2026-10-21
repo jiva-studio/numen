@@ -35,7 +35,7 @@ func TestTranscriptWriteKeepsWhatWasHeard(t *testing.T) {
 	}
 }
 
-func TestTranscriptWriteSurvivesACutFailure(t *testing.T) {
+func TestTranscriptWriteSurvivesASplitFailure(t *testing.T) {
 	s := newTextScene(t)
 	failure := errors.New("no cutter")
 
@@ -53,7 +53,7 @@ func TestTranscriptWriteSurvivesACutFailure(t *testing.T) {
 	}
 }
 
-func TestTranscriptWriteIsRefusedWhileARunHoldsIt(t *testing.T) {
+func TestTranscriptWriteIsRefusedWhileARunContainsIt(t *testing.T) {
 	s := newTextScene(t)
 	s.claim(t, domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, talkHash))
 

@@ -99,7 +99,7 @@ func TestTurningTheCountOfHeadingsIsAnsweredByTheNextQuestion(t *testing.T) {
 
 // A count the setting does not take is not written, and the settings are left
 // as they are.
-func TestACountOfHeadingsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
+func TestACountOfHeadingsOutsideWhatItGoesToIsNotSaved(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	twenty := 20
@@ -114,7 +114,7 @@ func TestACountOfHeadingsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
 
 // The setting a person turns is written where they will read it, and every
 // other byte of the file is left as they typed it.
-func TestTurningTheNestingLeavesTheRestOfTheFileAlone(t *testing.T) {
+func TestTurningTheNestingPreservesTheRestOfTheFileAlone(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
 	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"text_scale\": 1.5}\n}\n"), 0o644); err != nil {

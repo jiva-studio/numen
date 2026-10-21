@@ -38,7 +38,7 @@ func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 
 // A folder is filed somewhere else with everything under it, whatever kind of
 // file that is, and what was made from each source stays on the source.
-func TestAMovedFolderTakesEverythingUnderIt(t *testing.T) {
+func TestAMovedFolderConsumesEverythingBelowIt(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	saveNamedNote(t, db, first, "physics/heat/Heat.md", "Heat")
@@ -154,7 +154,7 @@ func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
 }
 
 // A note called by its filename is searched by the name it now carries.
-func TestARenamedNoteIsFoundByTheNameItLandsUnder(t *testing.T) {
+func TestARenamedNoteIsFoundByTheNameItLandsBelow(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "Torpor.md", "Torpor")
 

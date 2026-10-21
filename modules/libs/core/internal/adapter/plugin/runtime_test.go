@@ -39,7 +39,7 @@ func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
 	}
 }
 
-func TestALaunchedPluginIsToldTheRuntimeItDeclares(t *testing.T) {
+func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), 0) })
 	provisioner := &recordingProvisioner{library: "/models/libonnxruntime.so", provider: "coreml"}

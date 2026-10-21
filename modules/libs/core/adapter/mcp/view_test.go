@@ -57,15 +57,15 @@ func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSes
 	})
 	core.Notes.Write.Drawing = tells
 	core.Notes.Replace.Drawing = tells
-	moving := note.TellMove(func(ctx context.Context, went domain.Move) {
+	mover := note.TellMove(func(ctx context.Context, went domain.Move) {
 		_ = looking.ShowMove(ctx, went)
 	})
-	core.Notes.Move.Drawing = moving
-	core.Notes.Rename.Drawing = moving
+	core.Notes.Move.Drawing = mover
+	core.Notes.Rename.Drawing = mover
 	return newSessionOver(t, core), looking
 }
 
-func TestFocusPutsANoteInFrontOfThePerson(t *testing.T) {
+func TestFocusInsertsANoteInFrontOfThePerson(t *testing.T) {
 	session, looking := newSessionWithWindow(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 
 	out := call[struct {
@@ -103,7 +103,7 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 	}
 }
 
-func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
+func TestFocusReturnsSoWhenTheWindowWouldNot(t *testing.T) {
 	_, core, queries := newCoreWithQueries(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 	lookAt(&core, queries, &window{fails: errors.New("nobody is looking")})
 	session := newSessionOver(t, core)
@@ -144,7 +144,7 @@ var library = map[string]string{
 
 // A person asked to be shown a passage of a book, and what the agent hands over
 // is the place: the document, and where in its text to open.
-func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
+func TestShowInsertsAPlaceInFrontOfThePerson(t *testing.T) {
 	session, looking := newSessionWithWindow(t, library)
 
 	out := call[struct {
@@ -203,7 +203,7 @@ func (w *window) ShowMove(_ context.Context, went domain.Move) error {
 // A person reading a note that is renamed under them is reading a name with no
 // file behind it, and every change made afterwards is made somewhere they are
 // not looking. So the window is told where the note went.
-func TestRenamingANoteSaysWhereItWent(t *testing.T) {
+func TestRenamingANoteReturnsWhereItWent(t *testing.T) {
 	s, looking := newSessionWithWindow(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	call[struct {

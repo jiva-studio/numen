@@ -76,21 +76,21 @@ func Distinct(regions []Region, most float64) []Region {
 		return 0
 	})
 
-	retained := regions[:0]
+	keptRegions := regions[:0]
 	for _, r := range regions {
 		covered := false
-		for _, k := range retained {
+		for _, k := range keptRegions {
 			if overlap(r.Rect, k.Rect) > most || isInside(r.Rect, k.Rect) {
 				covered = true
 				break
 			}
 		}
 		if !covered {
-			retained = append(retained, r)
+			keptRegions = append(keptRegions, r)
 		}
 	}
-	slices.SortStableFunc(retained, func(a, b Region) int { return cmp.Compare(a.Order, b.Order) })
-	return retained
+	slices.SortStableFunc(keptRegions, func(a, b Region) int { return cmp.Compare(a.Order, b.Order) })
+	return keptRegions
 }
 
 // overlap is the share of the two rectangles together that both cover.
@@ -126,7 +126,7 @@ func Assemble(lines []Line) (string, []domain.OCRBox) {
 		size += len(one.Text)
 	}
 	out := make([]byte, 0, size)
-	retained := make([]domain.OCRBox, 0, len(lines))
+	keptBoxes := make([]domain.OCRBox, 0, len(lines))
 	for line := range group(lines) {
 		text, boxes := writeLine(line)
 		if text == "" {
@@ -136,8 +136,8 @@ func Assemble(lines []Line) (string, []domain.OCRBox) {
 			out = out[:len(out)-n]
 			// The hyphen is gone from the end of the box that carried it, so
 			// that box covers fewer bytes than it wrote.
-			if k := len(retained); k > 0 {
-				retained[k-1].Span.To -= n
+			if k := len(keptBoxes); k > 0 {
+				keptBoxes[k-1].Span.To -= n
 			}
 		} else if len(out) > 0 {
 			out = append(out, ' ')
@@ -146,11 +146,11 @@ func Assemble(lines []Line) (string, []domain.OCRBox) {
 		for _, box := range boxes {
 			box.Span.From += at
 			box.Span.To += at
-			retained = append(retained, box)
+			keptBoxes = append(keptBoxes, box)
 		}
 		out = append(out, text...)
 	}
-	return string(out), retained
+	return string(out), keptBoxes
 }
 
 // getHyphenLength is the byte length of the hyphen that ends text when a letter
@@ -236,7 +236,7 @@ func writeLine(line []Line) (string, []domain.OCRBox) {
 	}
 	var out strings.Builder
 	out.Grow(size)
-	retained := make([]domain.OCRBox, 0, len(line))
+	keptBoxes := make([]domain.OCRBox, 0, len(line))
 	for _, one := range line {
 		// A box the recogniser read as nothing is not a word.
 		text := strings.TrimSpace(one.Text)
@@ -247,8 +247,8 @@ func writeLine(line []Line) (string, []domain.OCRBox) {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		retained = append(retained, domain.OCRBox{Rect: one.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
+		keptBoxes = append(keptBoxes, domain.OCRBox{Rect: one.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
 		out.WriteString(text)
 	}
-	return out.String(), retained
+	return out.String(), keptBoxes
 }

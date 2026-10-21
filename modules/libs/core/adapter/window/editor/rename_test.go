@@ -181,7 +181,7 @@ func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
 
 // The setting a person turns is written where they will read it, and every
 // other byte of the file is left as they typed it.
-func TestTurningTheSettingLeavesTheRestOfTheFileAlone(t *testing.T) {
+func TestTurningTheSettingPreservesTheRestOfTheFileAlone(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
 	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"text_scale\": 1.5}\n}\n"), 0o644); err != nil {
@@ -206,7 +206,7 @@ func TestTurningTheSettingLeavesTheRestOfTheFileAlone(t *testing.T) {
 
 // TestRenamingLeavesALinkThatMeansAnotherNoteNow. Two notes under one name is
 // the person's to settle, and a link that resolves is not repaired.
-func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
+func TestRenamingPreservesALinkThatMeansAnotherNoteNow(t *testing.T) {
 	const heat = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":         "# Entropy\n",
@@ -233,7 +233,7 @@ func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
 }
 
 // TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled, and where it still is.
-func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
+func TestRenamingOntoATakenNameReturnsWhatTheNoteIsCalled(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Old.md":     "# Old\n",
 		"Entropy.md": "# Entropy\n",
@@ -282,7 +282,7 @@ func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 
 // TestRenamingSaysWhatItCouldNotName. Each of these is something the person can
 // see for themselves once they are told which it is.
-func TestRenamingSaysWhatItCouldNotName(t *testing.T) {
+func TestRenamingReturnsWhatItCouldNotName(t *testing.T) {
 	for name, c := range map[string]struct {
 		path string
 		want v1.ErrorCode
@@ -324,7 +324,7 @@ func TestRenamingSaysWhatItCouldNotName(t *testing.T) {
 
 // TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing. A link is not
 // wrong because the note it names is gone, so it is reported and not repaired.
-func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
+func TestARemovedNoteGoesToTheTrashAndReturnsWhatNowReachesNothing(t *testing.T) {
 	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "# Entropy\n",
@@ -361,7 +361,7 @@ func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
 
 // TestADestroyedNoteLeavesNothingBehind. Nothing brings it back, and the answer
 // names no place in the trash to look.
-func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
+func TestADestroyedNotePreservesNothingPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
@@ -505,7 +505,7 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 // TestRenamingSaysWhatANoteCannotBeCalled. A title the vault cannot show the
 // note under fails, and a title the `title` key can carry is written there
 // whatever the note held before.
-func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
+func TestRenamingReturnsWhatANoteCannotBeCalled(t *testing.T) {
 	for name, c := range map[string]struct {
 		held  string
 		title string
@@ -624,7 +624,7 @@ func (staleWriter) Write(
 // TestRenamingANoteWrittenElsewhereIsAQuestion. A note holding prose nobody
 // here has read is something the person settles, the way a save and a join
 // already put it to them.
-func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
+func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})

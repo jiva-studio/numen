@@ -83,7 +83,7 @@ func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
 // Saying nothing about questions is asking the way the vault was indexed: one
 // provider is one model, waited for on the way in and not waited for on the way
 // out.
-func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
+func TestOneProviderIsOneModelObservedTwoWays(t *testing.T) {
 	target := newSaying("one-provider", 1, 0, 0)
 
 	filling, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
@@ -194,7 +194,7 @@ func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
 
 // A provider reached at once is nothing a person waits for, so it stands in no
 // list.
-func TestAProviderReachedAtOnceStandsInNoList(t *testing.T) {
+func TestAProviderReachedAtOnceExistsInNoList(t *testing.T) {
 	target := newSaying("reached-at-once", 1, 0, 0)
 
 	tasks := run.NewTasks()
@@ -211,10 +211,10 @@ func TestAProviderReachedAtOnceStandsInNoList(t *testing.T) {
 // of nothing against a size is a row sitting at nought per cent for the length
 // of a download, which says less than a ring that turns.
 func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
-	notified := make(chan func(done, total int64), 1)
+	progressCh := make(chan func(done, total int64), 1)
 	stop := make(chan struct{})
 	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
-		notified <- tell
+		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
 	}
@@ -233,7 +233,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 		t.Errorf("a line that has counted nothing is drawn against %d", at.Total)
 	}
 
-	tell := <-notified
+	tell := <-progressCh
 
 	// The cache is read before the first bytes land, and the size is known.
 	tell(0, 90_000_000)

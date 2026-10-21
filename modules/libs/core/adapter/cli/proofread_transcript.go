@@ -32,24 +32,24 @@ func proofreadTranscriptCommand(
 		return errors.New("nothing to proofread with: none is configured")
 	}
 
-	proofread, trimmed := open.Proofread, source.NewCutSource(open.Cut)
+	proofread, cutSource := open.Proofread, source.NewCutSource(open.Cut)
 	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.GetProofreaderName())
 	started := time.Now()
 
 	// The line of lines rewrites itself, and is closed once it stops.
-	displayed := false
-	proofread.Cut = trimmed.Execute
+	isDisplayed := false
+	proofread.Cut = cutSource.Execute
 	proofread.OnProgress = func(res transcription.ProofreadResult) {
 		if res.Lines > 0 {
 			fmt.Fprintf(out, "  line %d of %d\r", res.Read, res.Lines)
-			displayed = true
+			isDisplayed = true
 		}
 	}
 	res, err := proofread.Execute(ctx, v, path)
 	if err != nil {
 		return err
 	}
-	if displayed {
+	if isDisplayed {
 		fmt.Fprintln(out)
 	}
 

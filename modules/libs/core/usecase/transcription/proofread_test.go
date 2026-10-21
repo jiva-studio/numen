@@ -42,15 +42,15 @@ func newProofreadTranscript(
 	raw := newRecording(words)
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
-	retained := newShelf()
+	shelf := newShelf()
 
 	hash := text.Fingerprint(raw)
-	if err := retained.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
+	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
 	by := &corrector{says: told, limit: 1}
-	return newTranscriptProofreading(t, vaults{first.ID: shelved}, shelves{retained}, by),
-		first, retained, by, hash
+	return newTranscriptProofreading(t, vaults{first.ID: shelved}, shelves{shelf}, by),
+		first, shelf, by, hash
 }
 
 // newTranscriptProofreading is one built the only way there is, asking about a
@@ -112,7 +112,7 @@ func TestNoTranscriptProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) 
 	}
 }
 
-func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
+func TestATranscriptIsInsertRightAndEveryTimingExists(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
 	u, v, shelved, _, hash := newProofreadTranscript(t, says(fixes(1, "second thing")), words...)
 
@@ -149,7 +149,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	}
 }
 
-func TestWhatTheModelHeardIsNotWrittenOver(t *testing.T) {
+func TestWhatTheModelHeardIsNotSavedOver(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
 	u, v, shelved, _, hash := newProofreadTranscript(t, says(fixes(1, "second thing")), words...)
 	was := string(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash)))
@@ -162,7 +162,7 @@ func TestWhatTheModelHeardIsNotWrittenOver(t *testing.T) {
 	}
 }
 
-func TestACallThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
+func TestACallThatIsNoAnswerPreservesItsLinesAsHeard(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
 	u, v, shelved, by, hash := newProofreadTranscript(t, nil, words...)
 	by.uncorrected = 1
@@ -267,7 +267,7 @@ func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 	}
 }
 
-func TestOneRunToARecordingBeingPutRight(t *testing.T) {
+func TestOneRunToARecordingBeingInsertRight(t *testing.T) {
 	u, v, shelved, by, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
 	shelved.hold(domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash))
 
@@ -328,7 +328,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 	}
 }
 
-func TestATranscriptThatIsNotThereIsNothingToPutRight(t *testing.T) {
+func TestATranscriptThatIsNotThereIsNothingToInsertRight(t *testing.T) {
 	u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing")
 	if err := shelved.RemoveArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash)); err != nil {
 		t.Fatal(err)
@@ -343,7 +343,7 @@ func TestATranscriptThatIsNotThereIsNothingToPutRight(t *testing.T) {
 	}
 }
 
-func TestASourceIsCutAgainAsItsLinesArePutRight(t *testing.T) {
+func TestASourceIsSplitAgainAsItsLinesAreInsertRight(t *testing.T) {
 	u, v, _, _, _ := newProofreadTranscript(t, says(fixes(0, "the first thing")), "first thing", "secnd thing")
 	cuts := 0
 	u.Cut = func(context.Context, domain.Vault, string) error {
@@ -417,7 +417,7 @@ func TestAWindowShortOfTheEndIsFollowedByTheNext(t *testing.T) {
 
 // The checkpoint stands at the end of the last line before the one to continue
 // from, so a run taking up asks about that line first.
-func TestTheCheckpointStandsWhereTheNextWindowBegins(t *testing.T) {
+func TestTheCheckpointExistsWhereTheNextWindowBegins(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
 	u, v, shelved, by, hash := newProofreadTranscript(t, nil, words...)
 	by.stop = func(calls int) {
@@ -447,10 +447,10 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	notified := 0
+	notifyCount := 0
 	response := &corrector{}
 	again := newTranscriptProofreading(t, u.readers, u.derived, response)
-	again.OnProgress = func(ProofreadResult) { notified++ }
+	again.OnProgress = func(ProofreadResult) { notifyCount++ }
 	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -458,8 +458,8 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 	if res.Read != res.Lines || !res.IsAlready {
 		t.Fatalf("got %+v", res)
 	}
-	if notified != 0 || len(response.froms) != 0 {
-		t.Errorf("a transcript with nothing left to put right was told about %d times and asked %d", notified, len(response.froms))
+	if notifyCount != 0 || len(response.froms) != 0 {
+		t.Errorf("a transcript with nothing left to put right was told about %d times and asked %d", notifyCount, len(response.froms))
 	}
 }
 

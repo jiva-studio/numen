@@ -84,7 +84,7 @@ func TestALongFileIsReadARangeAtATime(t *testing.T) {
 
 // A file asked for whole comes back cut to what one call carries, and says how
 // much more there is.
-func TestAFileLongerThanOneCallCarriesComesBackCut(t *testing.T) {
+func TestAFileLongerThanOneCallCarriesReachesBackSplit(t *testing.T) {
 	whole := strings.Repeat("a", file.MostRead+500)
 	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
 
@@ -113,16 +113,16 @@ func TestARangePastTheEndOfTheFileIsEmpty(t *testing.T) {
 
 // A range is asked for in bytes and comes back as text, so a character the cut
 // falls inside belongs to neither range.
-func TestARangeIsCutAtWholeCharacters(t *testing.T) {
+func TestARangeIsSplitAtWholeCharacters(t *testing.T) {
 	// "śāstra" is two two-byte characters and four one-byte ones, and the
 	// emoji that follows is four bytes.
 	whole := "śāstra 🪔 and śloka"
 	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
 
 	// Opening one byte into the first character.
-	opened := read(t, u, v, "lecture.txt", 1, 3)
-	if opened.Text != "ā" || opened.Start != 2 || opened.Length != 2 {
-		t.Errorf("a range opening inside a character came back as %+v", opened)
+	result := read(t, u, v, "lecture.txt", 1, 3)
+	if result.Text != "ā" || result.Start != 2 || result.Length != 2 {
+		t.Errorf("a range opening inside a character came back as %+v", result)
 	}
 
 	// Closing one byte into the second.
@@ -146,7 +146,7 @@ func TestARangeIsCutAtWholeCharacters(t *testing.T) {
 
 // A range reaching the end of the file is not cut, so a file whose last character
 // is cut short is named for what it is.
-func TestARangeReachingTheEndOfTheFileIsNotCut(t *testing.T) {
+func TestARangeReachingTheEndOfTheFileIsNotSplit(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lecture.txt": "said \xc5"})
 
 	got := read(t, u, v, "lecture.txt", 0, 0)
@@ -250,7 +250,7 @@ func TestWhatTheVaultPassesOverIsNotRead(t *testing.T) {
 
 // A folder is not a file, and a path holding one is answered and not being
 // opened and read.
-func TestAPathHoldingAFolderIsSaidToBeOne(t *testing.T) {
+func TestAPathContainingAFolderIsSaidToBeOne(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lectures/kinetics.txt": "said"})
 
 	if got := read(t, u, v, "lectures", 0, 0); got.Outcome != file.AFolder {
@@ -262,11 +262,11 @@ func TestAPathHoldingAFolderIsSaidToBeOne(t *testing.T) {
 // of a file does not reach into it.
 func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
-	retained := filepath.Join(v.Path, filesystem.DefaultServiceDir, "kept.txt")
-	if err := os.MkdirAll(filepath.Dir(retained), 0o755); err != nil {
+	keptFile := filepath.Join(v.Path, filesystem.DefaultServiceDir, "kept.txt")
+	if err := os.MkdirAll(filepath.Dir(keptFile), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(retained, []byte("ours"), 0o600); err != nil {
+	if err := os.WriteFile(keptFile, []byte("ours"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -446,7 +446,7 @@ func TestAFileListedAfterAnotherIsRead(t *testing.T) {
 
 // A file shorter by the time it is read than when it was measured comes back
 // as what it holds, with nothing made up to fill the range.
-func TestAFileThatShrankWhileItWasReadComesBackAsWhatItHolds(t *testing.T) {
+func TestAFileThatShrankWhileItWasReadReachesBackAsWhatItContains(t *testing.T) {
 	_, v := openFileRead(t, map[string]string{"lecture.txt": "said and said"})
 
 	shrunk := faulty{file: &shifting{data: []byte("short"), size: 10}}
@@ -506,7 +506,7 @@ func TestAFileBeginningInsideACharacterIsNotText(t *testing.T) {
 
 // Only the character the range closes inside is left off, and one cut short
 // before it is what the file holds.
-func TestACharacterCutShortInsideTheRangeIsNotText(t *testing.T) {
+func TestACharacterSplitShortInsideTheRangeIsNotText(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"scan.txt": "\xc5\xc5abc"})
 
 	if got := read(t, u, v, "scan.txt", 0, 2); got.Outcome != file.NotText {
@@ -530,7 +530,7 @@ func TestAFileThatGrewWhileItWasReadIsReadOnlyToWhereItWasMeasured(t *testing.T)
 	}
 }
 
-func TestWholeCharactersLeavesOffACutLeadByte(t *testing.T) {
+func TestWholeCharactersPreservesOffASplitLeadByte(t *testing.T) {
 	start, raw := file.WholeCharacters(0, []byte{0xE2, 0x82}, 10)
 	if start != 0 || len(raw) != 0 {
 		t.Errorf("a range closing inside a character kept %x from %d", raw, start)

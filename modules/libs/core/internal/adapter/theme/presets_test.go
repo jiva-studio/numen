@@ -54,7 +54,7 @@ func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 
 // A token takes a colour, a length, or a shadow, which is lengths and a colour
 // in one value. A preset that sets a token writes the shape that token takes.
-func TestAPresetGivesEachTokenTheShapeItTakes(t *testing.T) {
+func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 	sets := getThemeFields(t)
 	for name, css := range readPresets(t) {
 		for _, one := range setBy(css) {

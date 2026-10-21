@@ -332,19 +332,19 @@ func dropCorrections(
 		return err
 	}
 	target := correction.Unpack(raw)
-	retained := make([]domain.CorrectionLine, 0, len(target))
+	keptLines := make([]domain.CorrectionLine, 0, len(target))
 	for _, line := range target {
 		if line.Number < beyond {
-			retained = append(retained, line)
+			keptLines = append(keptLines, line)
 		}
 	}
-	if len(retained) == len(target) {
+	if len(keptLines) == len(target) {
 		return nil
 	}
 	// Written back whatever was dropped. An append that did not land whole leaves
 	// bytes that are not a record, and every record appended after them is read
 	// at a shifted offset.
-	return store.WriteArtifact(ctx, corrections, correction.Pack(retained))
+	return store.WriteArtifact(ctx, corrections, correction.Pack(keptLines))
 }
 
 // opening is the number of the first line no count claims.

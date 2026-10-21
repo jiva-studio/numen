@@ -38,7 +38,7 @@ func readWidth(t *testing.T, db *DB) (int, string) {
 
 // Fitting the vector index is all or nothing: a step that fails is reported, and
 // the index keeps the width and the recipe it held.
-func TestAFitThatFailsLeavesTheVectorIndexAsItWas(t *testing.T) {
+func TestAFitThatFailsPreservesTheVectorIndexAsItWas(t *testing.T) {
 	for _, step := range []struct {
 		name   string
 		breaks func(string) bool
@@ -147,7 +147,7 @@ func TestTheNarrowestWidthIsFitted(t *testing.T) {
 }
 
 // The width of an index holding no vector index is nothing.
-func TestAnIndexWithoutAVectorIndexHoldsNoWidth(t *testing.T) {
+func TestAnIndexWithoutAVectorIndexContainsNoWidth(t *testing.T) {
 	db := openDB(t)
 	if _, err := db.write.ExecContext(t.Context(), `DROP TABLE chunks_vec`); err != nil {
 		t.Fatal(err)
@@ -199,7 +199,7 @@ func TestARecipeThatCannotBeReadIsReported(t *testing.T) {
 }
 
 // Fitting reports the vectors it could not read, and leaves the index as it was.
-func TestAFitThatCannotReadTheVectorsLeavesTheVectorIndexAsItWas(t *testing.T) {
+func TestAFitThatCannotReadTheVectorsPreservesTheVectorIndexAsItWas(t *testing.T) {
 	for _, c := range []struct {
 		name       string
 		unreadable bool

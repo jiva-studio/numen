@@ -152,7 +152,7 @@ func TestResolveCompute_TreatsAnUnreportedMachineAsOneCPU(t *testing.T) {
 	}
 }
 
-func TestResolveCompute_KeepsBothCustomOcrCountsAsWritten(t *testing.T) {
+func TestResolveCompute_KeepsBothCustomOcrCountsAsSaved(t *testing.T) {
 	custom := settings.PerformanceCustom{EmbeddingBatchSize: 96, OcrThreads: 6, OcrSessions: 3, LlmConcurrency: 5}
 
 	res := settings.ResolveCompute(settings.ProfileCustom, machines[2].hw, custom)

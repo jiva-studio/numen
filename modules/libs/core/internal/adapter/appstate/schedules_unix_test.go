@@ -32,9 +32,9 @@ func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 
 // A write that runs out of room fails, leaves no temporary file and keeps no
 // descriptor open.
-func TestAWriteThatRunsOutOfRoomLeavesNothingBehind(t *testing.T) {
+func TestAWriteThatRunsOutOfRoomPreservesNothingPrior(t *testing.T) {
 	dir := t.TempDir()
-	retained := appstate.SchedulesAt(dir)
+	schedules := appstate.SchedulesAt(dir)
 
 	signal.Ignore(syscall.SIGXFSZ)
 	t.Cleanup(func() { signal.Reset(syscall.SIGXFSZ) })
@@ -50,7 +50,7 @@ func TestAWriteThatRunsOutOfRoomLeavesNothingBehind(t *testing.T) {
 		t.Skipf("the file size cannot be limited: %v", err)
 	}
 	before, canCount := countDescriptors()
-	err := retained.Write(t.Context(), "vault-a", make([]byte, 2<<20))
+	err := schedules.Write(t.Context(), "vault-a", make([]byte, 2<<20))
 	after, _ := countDescriptors()
 	if restoreErr := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &old); restoreErr != nil {
 		t.Fatal(restoreErr)

@@ -5,7 +5,7 @@ import "testing"
 // A large chunk holding only part of a small one shows a hit near its end with
 // nothing after it. Where another large chunk holds the whole of it, that is
 // the one a person is shown.
-func TestASmallChunkGoesUnderTheLargeOneHoldingItWhole(t *testing.T) {
+func TestASmallChunkGoesBelowTheLargeOneContainingItWhole(t *testing.T) {
 	large := []Chunk{
 		{Start: 0, Length: 2372},
 		{Start: 1887, Length: 1417},
@@ -23,7 +23,7 @@ func TestASmallChunkGoesUnderTheLargeOneHoldingItWhole(t *testing.T) {
 
 // Where no large chunk holds the whole of it, the middle decides, as it always
 // did.
-func TestASmallChunkNoLargeOneHoldsWhole(t *testing.T) {
+func TestASmallChunkNoLargeOneContainsWhole(t *testing.T) {
 	large := []Chunk{
 		{Start: 0, Length: 100},
 		{Start: 60, Length: 100},

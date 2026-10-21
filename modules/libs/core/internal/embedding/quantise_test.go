@@ -132,7 +132,7 @@ func TestQuantisationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
 	}
 }
 
-func TestNormaliseGivesUnitLength(t *testing.T) {
+func TestNormaliseProducesUnitLength(t *testing.T) {
 	got := embedding.Normalise([]float32{3, 4})
 	if !slices.Equal(got, []float32{0.6, 0.8}) {
 		t.Errorf("got %v", got)

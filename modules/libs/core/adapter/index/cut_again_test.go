@@ -133,7 +133,7 @@ func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 // A row is claimed once, so text occurring twice in one source is two rows and
 // stays two, and the same text cut at two sizes is a row at each. A kept row
 // keeps the vector bought for it.
-func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
+func TestSplittingASourceAgainKeepsTheRowsOfTheTextItStillContains(t *testing.T) {
 	t.Parallel()
 	outer := t
 

@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestTranscriptCorrectionsAreCompleteWhenWrittenAndActiveWhileARunHoldsTheName(t *testing.T) {
+func TestTranscriptCorrectionsAreCompleteWhenSavedAndActiveWhileARunContainsTheName(t *testing.T) {
 	s := newTextScene(t)
 	state := func() RunState {
 		got, err := s.texts.GetTranscriptCorrectionState.Execute(t.Context(), s.vault, recordingPath)

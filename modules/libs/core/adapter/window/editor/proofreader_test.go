@@ -134,7 +134,7 @@ func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 // the window offers the run nowhere after that. Which model does it is the
 // settings', so the call was answered and the answer is that there is nothing
 // to ask.
-func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
+func TestAnInstallationNamingNoProofreaderReturnsSo(t *testing.T) {
 	api, _, _ := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = &proofreads{} })
 
@@ -156,7 +156,7 @@ func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 
 // The corrections a recording carries are what stands beside the transcript,
 // and asking what it carries begins no run.
-func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
+func TestTheCorrectionsARecordingCarriesAreWhatExists(t *testing.T) {
 	const placed = "the name and the named are not two"
 	target := onTheShelf()
 	target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = []byte(placed)

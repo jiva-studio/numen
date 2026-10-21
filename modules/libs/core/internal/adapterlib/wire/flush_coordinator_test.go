@@ -18,7 +18,7 @@ func isClosed(c <-chan struct{}) bool {
 }
 
 // TestAVaultNothingIsDrawnFromOwesNothing.
-func TestAVaultNothingIsDrawnFromOwesNothing(t *testing.T) {
+func TestAVaultNothingIsGeneratedFromOwesNothing(t *testing.T) {
 	var pages flushCoordinator
 
 	request := pages.startRequest()
@@ -31,7 +31,7 @@ func TestAVaultNothingIsDrawnFromOwesNothing(t *testing.T) {
 }
 
 // TestAPageSaysNothingUntilItIsAsked.
-func TestAPageSaysNothingUntilItIsAsked(t *testing.T) {
+func TestAPageReturnsNothingUntilItIsAsked(t *testing.T) {
 	var pages flushCoordinator
 
 	token, notified, isDone := pages.registerClient()
@@ -179,7 +179,7 @@ func TestAPageThatOpensWhileTheWindowIsGoingIsAsked(t *testing.T) {
 }
 
 // TestAPageThatGoesWithNothingStandingStopsBeingOwed.
-func TestAPageThatGoesWithNothingStandingStopsBeingOwed(t *testing.T) {
+func TestAPageThatGoesWithNothingActiveStopsBeingOwed(t *testing.T) {
 	var pages flushCoordinator
 
 	_, _, isDone := pages.registerClient()
@@ -198,7 +198,7 @@ func TestAPageThatGoesWithNothingStandingStopsBeingOwed(t *testing.T) {
 // TestAPageThatGoesWithAQuestionStandingIsStillOwed. The text is in that
 // webview's buffer and nowhere else, and the stream ending says nothing about
 // where it should end up.
-func TestAPageThatGoesWithAQuestionStandingIsStillOwed(t *testing.T) {
+func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	var pages flushCoordinator
 
 	token, notified, isDone := pages.registerClient()
@@ -244,7 +244,7 @@ func TestAPageThatGoesWithAQuestionStandingIsStillOwed(t *testing.T) {
 // TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence. Silence is
 // what a request waits its bound for, so the window is not held for ever by a
 // webview that will not answer again.
-func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testing.T) {
+func TestAPageThatGoesWithAQuestionActiveAndDoesNotComeBackIsSilence(t *testing.T) {
 	var pages flushCoordinator
 
 	token, notified, isDone := pages.registerClient()
@@ -271,7 +271,7 @@ func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testin
 }
 
 // TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo.
-func TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo(t *testing.T) {
+func TestAPageWithNothingLeftAndOneThatHasSavedBothLetTheWindowGo(t *testing.T) {
 	for name, response := range map[string]flushState{
 		"nothing owed":       parseFlushResult(v1.FlushResult_FLUSH_RESULT_NOTHING),
 		"everything written": parseFlushResult(v1.FlushResult_FLUSH_RESULT_WRITTEN),

@@ -102,7 +102,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	}
 }
 
-func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
+func TestAVaultContainingAnotherIsRefused(t *testing.T) {
 	t.Parallel()
 	add, _ := newAdd(t)
 	outer := folder(t, "outer")

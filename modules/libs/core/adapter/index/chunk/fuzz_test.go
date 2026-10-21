@@ -56,9 +56,9 @@ func FuzzExpression(f *testing.F) {
 		f.Fatal(err)
 	}
 
-	for _, typed := range typedSeeds {
-		f.Add(typed, true)
-		f.Add(typed, false)
+	for _, seed := range typedSeeds {
+		f.Add(seed, true)
+		f.Add(seed, false)
 	}
 
 	f.Fuzz(func(t *testing.T, typed string, growing bool) {
@@ -108,8 +108,8 @@ func FuzzExpression(f *testing.F) {
 func words(t *testing.T, expression string, growing bool) []string {
 	t.Helper()
 	if growing {
-		last, trimmed := strings.CutSuffix(expression, "*")
-		if !trimmed {
+		last, hasSuffix := strings.CutSuffix(expression, "*")
+		if !hasSuffix {
 			t.Fatalf("%q asks for a word still being typed and carries no prefix mark", expression)
 		}
 		expression = last

@@ -24,9 +24,9 @@ func (c changing) rename() note.Rename {
 
 // renameApart is the rename an installation that has turned the two apart does.
 func (c changing) renameApart() note.Rename {
-	moving := c.move()
-	moving.Sync = func() note.SyncTitleAndFilename { return false }
-	return note.Rename{Move: moving}
+	mover := c.move()
+	mover.Sync = func() note.SyncTitleAndFilename { return false }
+	return note.Rename{Move: mover}
 }
 
 // title is what the vault shows the note at this path as, asked of the index
@@ -105,9 +105,9 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			}
 
 			body := v.read(t, renamed.Path)
-			for _, retained := range c.holds {
-				if !strings.Contains(body, retained) {
-					t.Errorf("want %q in\n%s", retained, body)
+			for _, holdItem := range c.holds {
+				if !strings.Contains(body, holdItem) {
+					t.Errorf("want %q in\n%s", holdItem, body)
 				}
 			}
 			for _, removed := range c.lacks {
@@ -175,7 +175,7 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 
 // A title no filename can carry is written into the `title` key, whether or not
 // the note already carries one.
-func TestATitleOnlyTheKeyCanCarryIsWrittenThere(t *testing.T) {
+func TestATitleOnlyTheKeyCanCarryIsSavedThere(t *testing.T) {
 	t.Parallel()
 	for name, raw := range map[string]string{
 		"a note carrying the key":      "---\ntitle: Old\n---\nA measure.\n",
@@ -235,7 +235,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 
 // A note whose filename is the whole of its naming is moved and not edited, so
 // it comes out of a rename with the bytes it went in with.
-func TestRenamingByTheFilenameAloneLeavesTheBytesAlone(t *testing.T) {
+func TestRenamingByTheFilenameAlonePreservesTheBytesAlone(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
 
@@ -273,7 +273,7 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 // all, so frontmatter one key cannot be changed in leaves the title unwritten
 // and reports nothing. An anchor is that case as much as one line is: neither
 // is written, and the two come out of the same guard.
-func TestAFileRenamedUnderFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T) {
+func TestAFileRenamedBelowFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T) {
 	t.Parallel()
 	for name, raw := range map[string]string{
 		"a block written on one line": "---\n{title: Old, id: b}\n---\nA measure.\n",
@@ -401,7 +401,7 @@ func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
 
 // A title longer than a filename will take is cut to make the name, and the
 // whole of it goes into the note, where the order of resolution finds it.
-func TestALongTitleIsCutFromTheNameAndKeptWhole(t *testing.T) {
+func TestALongTitleIsSplitFromTheNameAndCachedWhole(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
 	title := strings.TrimSpace(strings.Repeat("disorder ", 20))
@@ -474,7 +474,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 
 // A note taken out of the vault is taken out of it, and one that was never
 // there is said to be missing and not reported as the vault failing.
-func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
+func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.NewRemove(filesystem.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
@@ -520,7 +520,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 
 // Where a title and a filename are told apart, a new title is written into the
 // note and the file stays where it is.
-func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
+func TestRenamingPreservesTheFileWhereItIsWhereTheTwoAreReportedApart(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
 		raw   string

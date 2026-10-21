@@ -112,7 +112,7 @@ func TestARefreshedNoteIsWhatIsOnDisk(t *testing.T) {
 // TestADeletedNoteLeavesTheIndex. The vault is authoritative: what is not on
 // disk is not in the index, and a note that stays behind is still searchable
 // and opens nothing.
-func TestADeletedNoteLeavesTheIndex(t *testing.T) {
+func TestADeletedNotePreservesTheIndex(t *testing.T) {
 	t.Parallel()
 	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -168,7 +168,7 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 // TestABookThatWentLeavesTheIndex. A book is filed by kind and carries chunks
 // of its own, and a row left behind goes on answering searches with a passage
 // that opens nothing.
-func TestABookThatWentLeavesTheIndex(t *testing.T) {
+func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	t.Parallel()
 	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
@@ -210,7 +210,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 
 // TestARefreshedBookThatWentIsStillGone. Nothing about a second kind of source
 // changes what a path that is not there means.
-func TestARefreshedBookThatWentIsStillGone(t *testing.T) {
+func TestARefreshedBookThatWentIsStillMissing(t *testing.T) {
 	t.Parallel()
 	refresh, _, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -479,7 +479,7 @@ func TestANoteEditedOutsideTheAppWithAnotherModificationTimeIsIndexed(t *testing
 	}
 }
 
-func TestForceSavesANoteTheIndexHoldsAsItIs(t *testing.T) {
+func TestForceSavesANoteTheIndexContainsAsItIs(t *testing.T) {
 	t.Parallel()
 	refresh, saves, _, v := newCounted(t, map[string]string{"Note.md": settledNote})
 	refresh.Force = true
@@ -576,7 +576,7 @@ func TestADeletedNoteIsRemovedWithoutBeingSaved(t *testing.T) {
 	}
 }
 
-func TestALongRunOfSavesLeavesTheLedgerHoldingOnlyTheRecentWindow(t *testing.T) {
+func TestALongRunOfSavesPreservesTheLedgerContainingOnlyTheRecentWindow(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)

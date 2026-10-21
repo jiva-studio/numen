@@ -94,7 +94,7 @@ func TestTheDiskKeepsHalfAGibibyteAndSweepsEveryEighthOfIt(t *testing.T) {
 	}
 }
 
-func TestAPageKeptIsReadBack(t *testing.T) {
+func TestAPageCachedIsReadBack(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
 	for _, size := range []int{1, 2, 1000} {
 		page := bytes.Repeat([]byte{byte(size)}, size)
@@ -108,7 +108,7 @@ func TestAPageKeptIsReadBack(t *testing.T) {
 	}
 }
 
-func TestAnEmptyPageIsNotKept(t *testing.T) {
+func TestAnEmptyPageIsNotCached(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
 	cache.Put(newDrawingID(0), nil)
 	cache.Put(newDrawingID(1), []byte{})
@@ -136,7 +136,7 @@ func TestAFolderThatIsNotThereKeepsNothing(t *testing.T) {
 }
 
 // A page that cannot be moved into place leaves no half-written file behind.
-func TestAPageThatCannotBeMovedIntoPlaceLeavesNothingBehind(t *testing.T) {
+func TestAPageThatCannotBeMovedIntoPlacePreservesNothingPrior(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
 	blocked := cache.GetPath(newDrawingID(0))
 	if err := os.Mkdir(blocked, 0o755); err != nil {
@@ -166,7 +166,7 @@ func TestAPageThatCannotBeMovedIntoPlaceLeavesNothingBehind(t *testing.T) {
 
 // A sweep is due once as many bytes as the share between sweeps have been
 // written since the last one, and not a byte sooner.
-func TestASweepIsDueEachTimeItsShareHasBeenWritten(t *testing.T) {
+func TestASweepIsDueEachTimeItsShareHasBeenSaved(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
 	cache.limit = 0
 	cache.every = 1000

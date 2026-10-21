@@ -78,7 +78,7 @@ func TestABudgetOfZeroFallsBackToTheDefault(t *testing.T) {
 	}
 }
 
-func TestTheDefaultBudgetHoldsExactlyItsCharacters(t *testing.T) {
+func TestTheDefaultBudgetContainsExactlyItsCharacters(t *testing.T) {
 	half := embedding.DefaultBatchCharacters / 2
 	fits := []string{strings.Repeat("a", half), strings.Repeat("b", half)}
 	if got := embedding.Batches(fits, 0); !slices.Equal(sizes(got), []int{2}) {
@@ -96,7 +96,7 @@ func TestANegativeBudgetFallsBackToTheDefault(t *testing.T) {
 	}
 }
 
-func TestABudgetOfOneCharacterHoldsOneCharacter(t *testing.T) {
+func TestABudgetOfOneCharacterContainsOneCharacter(t *testing.T) {
 	if got := embedding.Batches([]string{"a", "b", "c"}, 1); !slices.Equal(sizes(got), []int{1, 1, 1}) {
 		t.Errorf("got %v", sizes(got))
 	}

@@ -24,9 +24,9 @@ type workspaceHandler struct{ state *State }
 func (h *workspaceHandler) WriteOpenTabs(
 	_ context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
 ) (*connect.Response[v1.WriteOpenTabsResponse], error) {
-	notified := r.Msg.GetTabs()
-	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(notified)), FrontID: r.Msg.GetFront()}
-	for _, one := range notified {
+	tabs := r.Msg.GetTabs()
+	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(tabs)), FrontID: r.Msg.GetFront()}
+	for _, one := range tabs {
 		tab := domain.Tab{
 			ID:    one.GetId(),
 			Kind:  one.GetKind(),

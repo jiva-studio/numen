@@ -509,7 +509,7 @@ func TestProvisionNamedInTheEnvironmentIsUsedAsGiven(t *testing.T) {
 	}
 }
 
-func TestProvisionPrefersALibraryBesideThePlugin(t *testing.T) {
+func TestProvisionPrefersALibraryAdjacentThePlugin(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -526,7 +526,7 @@ func TestProvisionPrefersALibraryBesideThePlugin(t *testing.T) {
 	}
 }
 
-func TestProvisionUsesALibraryTheMachineHolds(t *testing.T) {
+func TestProvisionUsesALibraryTheMachineContains(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -544,7 +544,7 @@ func TestProvisionUsesALibraryTheMachineHolds(t *testing.T) {
 	}
 }
 
-func TestProvisionPassesAnyProviderOnToALibraryTheMachineHolds(t *testing.T) {
+func TestProvisionPassesAnyProviderOnToALibraryTheMachineContains(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, _ := serve(t, archive)
 	shared := t.TempDir()
@@ -674,7 +674,7 @@ func TestProvisionTriesEveryLibraryInAFolder(t *testing.T) {
 	}
 }
 
-func TestProvisionFetchesThePinnedLibraryWhenNoneTheMachineHoldsOpens(t *testing.T) {
+func TestProvisionFetchesThePinnedLibraryWhenNoneTheMachineContainsOpens(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)

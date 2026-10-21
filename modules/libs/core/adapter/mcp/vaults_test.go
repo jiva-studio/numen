@@ -204,7 +204,7 @@ func hasTool(t *testing.T, s *sdk.ClientSession, name string) bool {
 	return false
 }
 
-func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
+func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsMissing(t *testing.T) {
 	f := onTheList(t)
 	if err := os.RemoveAll(f.second.Path); err != nil {
 		t.Fatal(err)
@@ -251,7 +251,7 @@ func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 }
 
 // The folder gains a file, and the tool says which one before it is called.
-func TestAddingSaysTheIdentityIsWrittenIntoTheFolder(t *testing.T) {
+func TestAddingReturnsTheIdentityIsSavedIntoTheFolder(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
@@ -270,7 +270,7 @@ func TestAddingSaysTheIdentityIsWrittenIntoTheFolder(t *testing.T) {
 }
 
 // A person who closed the dialog chose nothing, and that is an answer.
-func TestAFolderDialogThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
+func TestAFolderDialogThePersonClosedAddsNothingAndReturnsSo(t *testing.T) {
 	f := onTheList(t)
 	f.dialog.choose("", false)
 	session := newSessionOver(t, f.core)
@@ -335,7 +335,7 @@ func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 	}
 }
 
-func TestRenamingToANameAnotherVaultHasSaysSo(t *testing.T) {
+func TestRenamingToANameAnotherVaultHasReturnsSo(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
@@ -373,7 +373,7 @@ func TestTheVaultTheWindowIsShowingIsNotForgotten(t *testing.T) {
 
 // A vault forgotten leaves the list and the index, and its folder stays where
 // it is.
-func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
+func TestForgettingPreservesTheFolderWhereItIs(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
@@ -417,7 +417,7 @@ func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	}
 }
 
-func TestForgettingAVaultTheListDoesNotHoldSaysSo(t *testing.T) {
+func TestForgettingAVaultTheListDoesNotHoldReturnsSo(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
@@ -440,9 +440,9 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 	}
 
 	select {
-	case displayed := <-f.swapped:
-		if displayed.ID != f.second.ID {
-			t.Errorf("the window was asked to show %+v", displayed)
+	case swappedVault := <-f.swapped:
+		if swappedVault.ID != f.second.ID {
+			t.Errorf("the window was asked to show %+v", swappedVault)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("the window was never asked to show another vault")
@@ -451,7 +451,7 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 
 // The session ends with the vault it was serving, and the tool's own
 // description is where an agent is told so.
-func TestOpeningSaysThatTheSessionEnds(t *testing.T) {
+func TestOpeningReturnsThatTheSessionEnds(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
@@ -470,8 +470,8 @@ func TestOpeningTheVaultInFrontIsRefused(t *testing.T) {
 		t.Errorf("the vault in front failed with %q", why)
 	}
 	select {
-	case displayed := <-f.swapped:
-		t.Errorf("the window was asked to show %+v", displayed)
+	case swappedVault := <-f.swapped:
+		t.Errorf("the window was asked to show %+v", swappedVault)
 	default:
 	}
 }
@@ -509,7 +509,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 
 // A vault is added by a person choosing a folder, and a build with nowhere to
 // put a dialog takes the folder named.
-func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
+func TestAddingWithNoPathAndNoFolderDialogReturnsSo(t *testing.T) {
 	f := onTheList(t)
 	core := f.core
 	core.Vaults.PickFolder = nil

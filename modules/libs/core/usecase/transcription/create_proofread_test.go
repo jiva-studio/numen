@@ -49,7 +49,7 @@ func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 
 // An installation that placed no proofreader holds none, and that is no
 // failure: the transcript is used exactly as it was heard.
-func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
+func TestNamingNoProofreaderContainsNoneAndIsNoFailure(t *testing.T) {
 	t.Parallel()
 	readers, derived := somewhereToProofread()
 	for _, response := range []run.ProofreadingConfig{

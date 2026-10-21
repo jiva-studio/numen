@@ -21,7 +21,7 @@ func read(t *testing.T, file string) settings.Agent {
 
 // A settings file that names no agent names no agent. A file that leaves the name out leaves the
 // choice to the default, and an empty name is what a person wrote.
-func TestNamingNoAgentIsKept(t *testing.T) {
+func TestNamingNoAgentIsCached(t *testing.T) {
 	var unmodified settings.Agent
 	if !unmodified.IsNamed() || unmodified.GetUse() != "" {
 		t.Fatalf("the defaults name %q", unmodified.GetUse())
@@ -142,7 +142,7 @@ func TestTheCommandsAreThoseTheSettingsSet(t *testing.T) {
 
 // The section is written with the programs beside the two keys of it, and a choice left to the
 // default is written as null, so that it reads back the same.
-func TestTheSectionIsWrittenAsItIsRead(t *testing.T) {
+func TestTheSectionIsSavedAsItIsRead(t *testing.T) {
 	file := `{"use":"claude","serve_tools":true,"claude":{"command":["/c"],"model":"opus","reasoning":"high","max_steps":7,"reads_hooks_and_skills":true}}`
 	content, err := json.Marshal(read(t, file))
 	if err != nil {

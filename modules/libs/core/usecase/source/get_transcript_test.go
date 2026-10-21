@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestTranscriptIsWhatAPersonPutRightBeforeWhatWasHeard(t *testing.T) {
+func TestTranscriptIsWhatAPersonInsertRightBeforeWhatWasHeard(t *testing.T) {
 	s := newTextScene(t)
 	read := func() string {
 		got, err := s.texts.GetTranscript.Execute(t.Context(), s.vault, recordingPath)

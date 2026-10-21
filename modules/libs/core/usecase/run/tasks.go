@@ -133,21 +133,21 @@ func (t *Tasks) list() []Task {
 // old ones: what the work was doing a second ago is of no interest to anybody.
 func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 2: tell drains before it sends, so the channel never holds more than one list"
-	notified := make(chan []Task, 1)
+	watcher := make(chan []Task, 1)
 
 	t.mu.Lock()
-	t.waiting = append(t.waiting, notified)
-	notified <- t.list()
+	t.waiting = append(t.waiting, watcher)
+	watcher <- t.list()
 	t.mu.Unlock()
 
 	go func() {
 		<-ctx.Done()
 		t.mu.Lock()
 		defer t.mu.Unlock()
-		t.waiting = slices.DeleteFunc(t.waiting, func(at chan []Task) bool { return at == notified })
-		close(notified)
+		t.waiting = slices.DeleteFunc(t.waiting, func(at chan []Task) bool { return at == watcher })
+		close(watcher)
 	}()
-	return notified
+	return watcher
 }
 
 // notifyWatchers hands the list to everybody watching, dropping what a listener has not
@@ -157,13 +157,13 @@ func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 // list a listener is left holding is the newest one.
 func (t *Tasks) notifyWatchers() {
 	list := t.list()
-	for _, notified := range t.waiting {
+	for _, watcher := range t.waiting {
 		select {
-		case <-notified:
+		case <-watcher:
 		default:
 		}
 		select {
-		case notified <- list:
+		case watcher <- list:
 		default:
 		}
 	}

@@ -279,7 +279,7 @@ func TestWhyTheAgentCouldNotBeServedReachesThePage(t *testing.T) {
 // The window serves the agent beside the cards. A path belonging to neither is
 // still the page's own file, so the routes stand in front of the files and not
 // over them.
-func TestTheAgentIsServedBesideTheCards(t *testing.T) {
+func TestTheAgentIsServedAdjacentTheCards(t *testing.T) {
 	handler := (&API{}).NewHandler(http.NotFoundHandler())
 	request := func(route string) int {
 		r := httptest.NewRequest(http.MethodPost, route, strings.NewReader("{}"))
@@ -323,7 +323,7 @@ func TestAConversationTheAgentCannotEndIsAnInternalFailure(t *testing.T) {
 }
 
 // Naming no agent takes the window's agent away.
-func TestNamingNoAgentLeavesTheWindowWithNone(t *testing.T) {
+func TestNamingNoAgentPreservesTheWindowWithNone(t *testing.T) {
 	api := &API{}
 	api.SetAgent(&asking{})
 	if api.GetAgent() == nil {

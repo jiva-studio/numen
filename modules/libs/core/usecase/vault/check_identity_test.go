@@ -36,7 +36,7 @@ func TestAFolderCarryingAnotherIdentityIsNotTheVault(t *testing.T) {
 	}
 }
 
-func TestAFolderThatIsGoneIsNotReadable(t *testing.T) {
+func TestAFolderThatIsMissingIsNotReadable(t *testing.T) {
 	t.Parallel()
 	add, _ := newAdd(t)
 	v, err := add.Execute(folder(t, "notes"), "")

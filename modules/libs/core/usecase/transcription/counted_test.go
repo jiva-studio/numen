@@ -54,7 +54,7 @@ var errHeld = errors.New("the index was not asked")
 // and not in the goroutine it counts: a wait beginning the instant Queue
 // returns covers the rounds behind it, and a caller that asked for them goes on
 // building the window.
-func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
+func TestAQueueRunsPriorTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 

@@ -93,7 +93,7 @@ func (c changing) overwrite(t *testing.T, path, content string) {
 	}
 }
 
-func TestAnEditNeedsNoIndexToLeaveTheNoteWritten(t *testing.T) {
+func TestAnEditNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	edit := note.NewEdit(filesystem.VaultReaders{}, filesystem.VaultWriters{}, nil, time.Now)
@@ -334,7 +334,7 @@ func (staleBytesReader) Read(context.Context, string) ([]byte, error) {
 	return []byte("Left over, not the person's."), fs.ErrNotExist
 }
 
-func TestAnOverwriteOfAMissingNoteHoldsOnlyTheNewText(t *testing.T) {
+func TestAnOverwriteOfAMissingNoteContainsOnlyTheNewText(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
 	edit := c.editWith(bytesWithNoNote{}, filesystem.VaultWriters{})

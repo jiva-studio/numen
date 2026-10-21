@@ -42,7 +42,7 @@ func (s *shut) Close() error {
 // What a model is, is known from the settings before the weights are here: the
 // vector index is fitted to its width and a vector is claimed under its recipe
 // while it comes down.
-func TestAModelSaysWhatItIsBeforeItIsHere(t *testing.T) {
+func TestAModelReturnsWhatItIsBeforeItIsHere(t *testing.T) {
 	incoming := embedding.NewDeferredEmbedder(bge)
 	if got := incoming.GetImpatientEmbedder().GetModel().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
@@ -156,16 +156,16 @@ func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 	for range 2000 {
 		incoming := embedding.NewDeferredEmbedder(bge)
 
-		waiting := make(chan struct{}, 8)
-		waited := make(chan error, cap(waiting))
+		waitCh := make(chan struct{}, 8)
+		waited := make(chan error, cap(waitCh))
 		for range cap(waited) {
 			go func() {
-				waiting <- struct{}{}
+				waitCh <- struct{}{}
 				waited <- incoming.Wait(t.Context())
 			}()
 		}
-		for range cap(waiting) {
-			<-waiting
+		for range cap(waitCh) {
+			<-waitCh
 		}
 
 		if err := incoming.DiscardModel(wrong); err != nil {
@@ -216,7 +216,7 @@ func closesPromptly(t *testing.T, e *embedding.Embedder) {
 	}
 }
 
-func TestTheEmbedderSaysWhatItIs(t *testing.T) {
+func TestTheEmbedderReturnsWhatItIs(t *testing.T) {
 	if got := embedding.NewDeferredEmbedder(bge).GetModel(); got != bge {
 		t.Errorf("got %v", got)
 	}
@@ -239,7 +239,7 @@ func TestAnEmbedderClosedAfterTheModelLandedIsNotReady(t *testing.T) {
 	}
 }
 
-func TestAskingForVectorsLeavesTheEmbedderFreeToClose(t *testing.T) {
+func TestAskingForVectorsPreservesTheEmbedderFreeToClose(t *testing.T) {
 	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
 		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
 		"impatient": (*embedding.Embedder).GetImpatientEmbedder,
@@ -255,7 +255,7 @@ func TestAskingForVectorsLeavesTheEmbedderFreeToClose(t *testing.T) {
 	}
 }
 
-func TestAnUnreadyEmbedderAskedForVectorsLeavesItselfFreeToClose(t *testing.T) {
+func TestAnUnreadyEmbedderAskedForVectorsPreservesItselfFreeToClose(t *testing.T) {
 	e := embedding.NewDeferredEmbedder(bge)
 	e.SetModel(landed{}, nil)
 	_ = e.Close()
@@ -263,7 +263,7 @@ func TestAnUnreadyEmbedderAskedForVectorsLeavesItselfFreeToClose(t *testing.T) {
 	closesPromptly(t, e)
 }
 
-func TestAWaitingEmbedderSaysWhatStoppedTheModel(t *testing.T) {
+func TestAWaitingEmbedderReturnsWhatStoppedTheModel(t *testing.T) {
 	why := errors.New("download failed")
 	e := embedding.NewDeferredEmbedder(bge)
 	e.SetModel(nil, why)
@@ -276,7 +276,7 @@ func TestAWaitingEmbedderSaysWhatStoppedTheModel(t *testing.T) {
 	}
 }
 
-func TestEitherEmbedderSaysWhatClosingTheModelSaid(t *testing.T) {
+func TestEitherEmbedderReturnsWhatClosingTheModelSaid(t *testing.T) {
 	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
 		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
 		"impatient": (*embedding.Embedder).GetImpatientEmbedder,

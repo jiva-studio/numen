@@ -61,7 +61,7 @@ type readSeekNopCloser struct{ *strings.Reader }
 func (readSeekNopCloser) Close() error { return nil }
 
 // A document opened and closed gives back every reference taken for it.
-func TestAnOpenedDocumentGivesBackEveryReference(t *testing.T) {
+func TestAnOpenedDocumentProducesBackEveryReference(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(pageCountingServer{}))
 	server := httptest.NewServer(mux)

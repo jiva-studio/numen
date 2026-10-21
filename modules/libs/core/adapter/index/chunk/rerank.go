@@ -45,7 +45,7 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 	}
 	defer rows.Close()
 
-	retained := make([]candidate, 0, len(candidates))
+	keptCandidates := make([]candidate, 0, len(candidates))
 	var stored []byte
 	for rows.Next() {
 		var chunk int64
@@ -58,10 +58,10 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 		}
 		sim := embedding.SimilarityBytes(query, stored)
 		if sim >= floor {
-			retained = append(retained, candidate{
+			keptCandidates = append(keptCandidates, candidate{
 				chunk:      chunk,
 				similarity: sim,
-				order:      len(retained),
+				order:      len(keptCandidates),
 			})
 		}
 	}
@@ -70,15 +70,15 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 	}
 
 	// Two chunks of equal similarity keep the coarse pass's order between them.
-	slices.SortFunc(retained, func(a, b candidate) int {
+	slices.SortFunc(keptCandidates, func(a, b candidate) int {
 		if c := cmp.Compare(b.similarity, a.similarity); c != 0 {
 			return c
 		}
 		return cmp.Compare(a.order, b.order)
 	})
 
-	out := make([]int64, len(retained))
-	for i, k := range retained {
+	out := make([]int64, len(keptCandidates))
+	for i, k := range keptCandidates {
 		out[i] = k.chunk
 	}
 	return out, nil

@@ -95,7 +95,7 @@ func TestSwitchingBetweenTwoModelsOfOneWidthAndBackRestoresTheFirstModelsBits(t 
 	}
 }
 
-func TestFittingTheRecipeAndWidthAlreadyHeldLeavesTheCoarseIndexAlone(t *testing.T) {
+func TestFittingTheRecipeAndWidthAlreadyHeldPreservesTheCoarseIndexAlone(t *testing.T) {
 	db := openDB(t)
 	book(t, db, first, "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
@@ -149,7 +149,7 @@ func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 	}
 }
 
-func TestAChunkTheNewRecipeHoldsNoVectorForGetsNoCoarseRow(t *testing.T) {
+func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 	db := openDB(t)
 	book(t, db, first, "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
@@ -210,7 +210,7 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 	}
 }
 
-func TestAFreshIndexHoldsTheRecipeTableAndNoRecipe(t *testing.T) {
+func TestAFreshIndexContainsTheRecipeTableAndNoRecipe(t *testing.T) {
 	db := openDB(t)
 	if _, recorded, err := coarseRecipe(t.Context(), db.write); err != nil || recorded {
 		t.Errorf("a fresh index records %v, %v", recorded, err)

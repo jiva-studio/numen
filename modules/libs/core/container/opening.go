@@ -114,9 +114,9 @@ func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string)
 func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	scan := o.GetScan()
 	follow := vault.NewFollow(o.watcher, o.refresh, scan)
-	if notified := o.Told; notified != nil {
+	if callback := o.Told; callback != nil {
 		follow.Changed = func(m vault.VaultChanges) {
-			notified(VaultChanges{Paths: m.Paths, Assets: m.Assets, ShouldReload: m.ShouldReload})
+			callback(VaultChanges{Paths: m.Paths, Assets: m.Assets, ShouldReload: m.ShouldReload})
 		}
 	}
 	follow.ErrorHandler = o.ErrorHandler

@@ -65,7 +65,7 @@ func TestTheAnswerIsWhatTheAgentSaid(t *testing.T) {
 }
 
 // An agent that stops with "done", or closes its steps without a stop, has answered.
-func TestAnAgentThatIsDoneHasAnswered(t *testing.T) {
+func TestAnAgentThatIsCompletedHasAnswered(t *testing.T) {
 	for name, steps := range map[string][]port.Step{
 		"done":    {say("yes"), stop("done")},
 		"no stop": {say("yes")},
@@ -104,7 +104,7 @@ func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
 }
 
 // What the agent says about a tool is not part of the answer.
-func TestOnlyWhatTheAgentSaysIsTheAnswer(t *testing.T) {
+func TestOnlyWhatTheAgentReturnsIsTheAnswer(t *testing.T) {
 	target := &starter{run: newRun(
 		port.Step{Kind: domain.StepToolCall, Tool: "note_read", Text: "no"}, say("yes"), stop(""),
 	)}
@@ -132,7 +132,7 @@ func TestAnAgentThatStopsForAReasonIsUnavailableWithThatReason(t *testing.T) {
 	}
 }
 
-func TestAnAgentThatSaysNothingIsUnavailable(t *testing.T) {
+func TestAnAgentThatReturnsNothingIsUnavailable(t *testing.T) {
 	for name, steps := range map[string][]port.Step{
 		"only a stop": {stop("")},
 		"blank":       {say(" \n"), stop("")},

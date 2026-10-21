@@ -110,7 +110,7 @@ func (f filing) exists(path string) bool {
 }
 
 // A path moved onto itself is not a move.
-func TestAMoveOntoItselfIsNothingDone(t *testing.T) {
+func TestAMoveOntoItselfIsNothingCompleted(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 
@@ -151,7 +151,7 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 
 // What points at a folder's contents is asked of the notes under it, every one,
 // and of nothing else.
-func TestOnlyTheNotesUnderAFolderAreAskedWhatPointsAtThem(t *testing.T) {
+func TestOnlyTheNotesBelowAFolderAreAskedWhatPointsAtThem(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
@@ -177,7 +177,7 @@ func TestOnlyTheNotesUnderAFolderAreAskedWhatPointsAtThem(t *testing.T) {
 
 // Every note of a folder is told where it went, at the path it now has, and a
 // book is not a note.
-func TestEveryNoteOfAFolderIsToldWhereItWent(t *testing.T) {
+func TestEveryNoteOfAFolderIsReportedWhereItWent(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
@@ -231,7 +231,7 @@ func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 }
 
 // A vault that cannot be written moves nothing.
-func TestAMoveInAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
+func TestAMoveInAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the vault cannot be written")
@@ -248,7 +248,7 @@ func TestAMoveInAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
 }
 
 // A path the vault holds nothing at is no note, and nothing landed.
-func TestAMoveOfAPathThatHoldsNothingIsNoNote(t *testing.T) {
+func TestAMoveOfAPathThatContainsNothingIsNoNote(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 
@@ -422,7 +422,7 @@ func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
 
 // A title that could not be written on a rename is reported once the file is
 // where it was sent.
-func TestATitleThatCouldNotBeWrittenOnARenameIsAnError(t *testing.T) {
+func TestATitleThatCouldNotBeSavedOnARenameIsAnError(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",

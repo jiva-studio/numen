@@ -52,8 +52,8 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 	if in.Kind != KindTranscript {
 		return 0, ErrNotCorrectable
 	}
-	_, placed := transcript.Parse([]byte(in.Words))
-	if len(placed) == 0 {
+	_, cues := transcript.Parse([]byte(in.Words))
+	if len(cues) == 0 {
 		return 0, ErrNoCue
 	}
 
@@ -65,7 +65,7 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 		if one.Kind != KindTranscript {
 			continue
 		}
-		return u.write(ctx, set.Store, in, one.Producer, set.Hash, placed)
+		return u.write(ctx, set.Store, in, one.Producer, set.Hash, cues)
 	}
 	return 0, fmt.Errorf("nothing of the kind %q was made from %s", in.Kind, in.Path)
 }

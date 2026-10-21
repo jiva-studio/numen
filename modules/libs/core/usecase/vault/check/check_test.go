@@ -147,7 +147,7 @@ func TestWhatOneFileGotWrongIsReportedAgainstThatFile(t *testing.T) {
 	}
 }
 
-func TestAskingForACheckThatDoesNotExistSaysWhatDoes(t *testing.T) {
+func TestAskingForACheckThatDoesNotExistReturnsWhatDoes(t *testing.T) {
 	l, v := scanVault(t, nil)
 
 	_, err := l.Run(t.Context(), v, "spelling")

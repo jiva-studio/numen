@@ -85,7 +85,7 @@ func TestNoProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
 	}
 }
 
-func TestTheCorrectionsGoBesideTheRecognitionAndTheRecognitionIsNotTouched(t *testing.T) {
+func TestTheCorrectionsGoAdjacentTheRecognitionAndTheRecognitionIsNotTouched(t *testing.T) {
 	placed, v, shelved, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
@@ -116,7 +116,7 @@ func TestTheCorrectionsGoBesideTheRecognitionAndTheRecognitionIsNotTouched(t *te
 	}
 }
 
-func TestACorrectedRecognitionIsTheTextTheSourceIsCutFrom(t *testing.T) {
+func TestACorrectedRecognitionIsTheTextTheSourceIsSplitFrom(t *testing.T) {
 	placed, v, shelved, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")})
 
 	if _, err := placed.Execute(t.Context(), v, documentPath); err != nil {
@@ -262,7 +262,7 @@ func TestARecognitionThatIsNotThereIsNothingToProofread(t *testing.T) {
 	}
 }
 
-func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
+func TestASourceIsSplitAgainAsItsPagesAreInsertRight(t *testing.T) {
 	placed, v, _, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")})
 	cuts := 0
 	placed.Cut = func(context.Context, domain.Vault, string) error {
@@ -278,7 +278,7 @@ func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
 	}
 }
 
-func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
+func TestABatchThatWasNotSplitIsAskedAboutAgain(t *testing.T) {
 	placed, v, shelved, by := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
@@ -357,18 +357,18 @@ func TestARecognitionAtItsLastPageReportsNoProgress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	notified := 0
-	placed := target.put(t, &corrector{})
-	placed.OnProgress = func(ProofreadResult) { notified++ }
-	res, err := placed.Execute(t.Context(), v, documentPath)
+	notifyCount := 0
+	putResult := target.put(t, &corrector{})
+	putResult.OnProgress = func(ProofreadResult) { notifyCount++ }
+	res, err := putResult.Execute(t.Context(), v, documentPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Read != res.Pages {
 		t.Fatalf("got %+v", res)
 	}
-	if notified != 0 {
-		t.Errorf("a recognition with nothing left to put right was told about %d times", notified)
+	if notifyCount != 0 {
+		t.Errorf("a recognition with nothing left to put right was told about %d times", notifyCount)
 	}
 }
 
@@ -409,7 +409,7 @@ func TestAProofreaderThatIsUnavailableEndsTheRunAndWritesNothing(t *testing.T) {
 	}
 }
 
-func TestTheCheckpointNamesTheProofreaderAndThePagesDone(t *testing.T) {
+func TestTheCheckpointNamesTheProofreaderAndThePagesCompleted(t *testing.T) {
 	placed, v, shelved, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")})
 
 	if _, err := placed.Execute(t.Context(), v, documentPath); err != nil {
@@ -421,7 +421,7 @@ func TestTheCheckpointNamesTheProofreaderAndThePagesDone(t *testing.T) {
 	}
 }
 
-func TestOnlyTheCorrectionsOfPagesTheCountClaimsAreKept(t *testing.T) {
+func TestOnlyTheCorrectionsOfPagesTheCountClaimsAreCached(t *testing.T) {
 	target := newProofreadable(t)
 	names := textNames(t, target.shelved)
 	store, err := target.derived.Open(target.vault)
@@ -441,9 +441,9 @@ func TestOnlyTheCorrectionsOfPagesTheCountClaimsAreKept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	retained := correction.Unpack(readShelf(t, target.shelved, names.corrections))
-	if len(retained) != 1 || retained[0].Number != 0 {
-		t.Errorf("kept %+v, want the correction of the first page alone", retained)
+	unpacked := correction.Unpack(readShelf(t, target.shelved, names.corrections))
+	if len(unpacked) != 1 || unpacked[0].Number != 0 {
+		t.Errorf("kept %+v, want the correction of the first page alone", unpacked)
 	}
 }
 

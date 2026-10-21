@@ -44,7 +44,7 @@ func TestEditingANoteChangesOnlyTheSpanNamed(t *testing.T) {
 
 // A span standing twice fails, and the rejection says how many places
 // there are and not picking one.
-func TestEditingRefusesASpanThatStandsTwice(t *testing.T) {
+func TestEditingRefusesASpanThatExistsTwice(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "A foe advances.\n\nAnother foe advances.\n",
 	})
@@ -61,7 +61,7 @@ func TestEditingRefusesASpanThatStandsTwice(t *testing.T) {
 
 // A span that is not there fails with what the note holds in its place,
 // so the next attempt is not the same guess again.
-func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
+func TestEditingReturnsWhatTheNoteContainsInstead(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "the wrath of the advancing foe\n",
 	})
@@ -105,7 +105,7 @@ func TestEditingFindsASpanWhosePunctuationDiffers(t *testing.T) {
 
 // An empty replacement takes the text out, which is one operation and not a
 // second tool.
-func TestEditingWithNothingTakesTheSpanOut(t *testing.T) {
+func TestEditingWithNothingConsumesTheSpanOut(t *testing.T) {
 	v, core := newCoreWithNotes(t, map[string]string{"Aggressor.md": "one two three\n"})
 	s := newSessionOver(t, core)
 

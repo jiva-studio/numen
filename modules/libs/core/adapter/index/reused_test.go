@@ -136,7 +136,7 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 	}
 }
 
-func TestAVectorWrittenBackAsItIsKeptLeavesItsRowUntouched(t *testing.T) {
+func TestAVectorSavedBackAsItIsCachedPreservesItsRowUntouched(t *testing.T) {
 	// A reclaimed vector is written beside its coarse row, and the vector is
 	// the one already kept. The guard writes a different vector, so a trigger
 	// that never fires cannot pass.

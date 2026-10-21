@@ -46,7 +46,7 @@ func TestALineIsKnownByItsPlaceInTheWholeRecognition(t *testing.T) {
 	}
 }
 
-func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
+func TestBoxesSavedForOtherBytesGiveNothing(t *testing.T) {
 	prose := "one two"
 	boxes := []domain.HighlightBox{makeBox(1, 0, 4), makeBox(1, 4, 90)}
 

@@ -18,7 +18,7 @@ var (
 
 // A link written in one case reaches the note filed under another, in every
 // script that has cases.
-func TestANameReachesItsNoteWhateverCaseItIsWrittenIn(t *testing.T) {
+func TestANameReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 	for _, one := range []struct {
 		what    string
 		written string
@@ -80,7 +80,7 @@ func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 }
 
 // The folders on the way to a note answer the way the note's own name does.
-func TestAPathReachesItsNoteWhateverCaseItIsWrittenIn(t *testing.T) {
+func TestAPathReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 	db, v := newIndexedVault(t, map[string]string{
 		"source.md":           "Points at [[ЗАМЕТКИ/ЭНТРОПИЯ]].\n",
 		"Заметки/Энтропия.md": "# The one that was asked for\n",
@@ -100,7 +100,7 @@ func TestAPathReachesItsNoteWhateverCaseItIsWrittenIn(t *testing.T) {
 }
 
 // The note a link reaches lists it back.
-func TestANoteListsABacklinkWrittenInAnotherCase(t *testing.T) {
+func TestANoteListsABacklinkSavedInAnotherCase(t *testing.T) {
 	db, v := newIndexedVault(t, map[string]string{
 		"source.md":   "Points at [[энтропия]].\n",
 		"Энтропия.md": "# Энтропия\n",

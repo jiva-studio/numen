@@ -14,7 +14,7 @@ func toName(value string, role domain.LinkRole) domain.Link {
 	return domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: value}, Role: role}
 }
 
-func TestABadLinkCostsOnlyItselfAndTheRestAreWrittenPerNote(t *testing.T) {
+func TestABadLinkCostsOnlyItselfAndTheRestAreSavedPerNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n", "Heat.md": "# Heat\n", "Work.md": "# Work\n",
@@ -62,7 +62,7 @@ func TestLinksOfOneNoteNamingTwoFingerprintsAreRefusedTogetherWithTheLater(t *te
 	}
 }
 
-func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnRefusal(t *testing.T) {
+func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnError(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	unreadable := errors.New("not a fingerprint")
@@ -85,7 +85,7 @@ func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnRefusal(t *testing.T) 
 	}
 }
 
-func TestAWriteTheNoteChangedUnderIsRefusedForEveryLinkOfIt(t *testing.T) {
+func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 

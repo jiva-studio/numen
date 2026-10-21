@@ -33,13 +33,13 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 
 // Every report carries the whole of what a change is doing, so a listener that
 // has not read one is given the newest and not the backlog.
-func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
-	drawing := newEditBroadcaster()
-	line, isDone := drawing.subscribe()
+func TestTheLastChangeGeneratedIsTheOneWaiting(t *testing.T) {
+	broadcaster := newEditBroadcaster()
+	line, isDone := broadcaster.subscribe()
 	t.Cleanup(isDone)
 
-	drawing.publish(domain.Edit{Change: "one", Text: "first"})
-	drawing.publish(domain.Edit{Change: "one", Text: "second"})
+	broadcaster.publish(domain.Edit{Change: "one", Text: "first"})
+	broadcaster.publish(domain.Edit{Change: "one", Text: "second"})
 
 	if got := <-line; got.Text != "second" {
 		t.Errorf("what waited is %q", got.Text)
@@ -49,12 +49,12 @@ func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
 // The report that ends a change is not one a listener may be spared: a drawing
 // that is never ended stays on the screen.
 func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
-	drawing := newEditBroadcaster()
-	line, isDone := drawing.subscribe()
+	broadcaster := newEditBroadcaster()
+	line, isDone := broadcaster.subscribe()
 	t.Cleanup(isDone)
 
-	drawing.publish(domain.Edit{Change: "one", IsDone: true})
-	drawing.publish(domain.Edit{Change: "one", Text: "more of it"})
+	broadcaster.publish(domain.Edit{Change: "one", IsDone: true})
+	broadcaster.publish(domain.Edit{Change: "one", Text: "more of it"})
 
 	got := <-line
 	if got.Change != "one" || !got.IsDone {
@@ -70,13 +70,13 @@ func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 // report about one note may not take the place of an unread report about
 // another.
 func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
-	drawing := newEditBroadcaster()
-	line, isDone := drawing.subscribe()
+	broadcaster := newEditBroadcaster()
+	line, isDone := broadcaster.subscribe()
 	t.Cleanup(isDone)
 
-	drawing.publish(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
-	drawing.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})
-	drawing.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
+	broadcaster.publish(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
+	broadcaster.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})
+	broadcaster.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
 
 	if got := <-line; got.Change != "one" || got.Text != "An axe" {
 		t.Errorf("the first report waiting is %+v, want change one saying %q", got, "An axe")
@@ -93,7 +93,7 @@ func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
 
 // An error code is about the note the request named. Only what the core named
 // as missing is answered as one.
-func TestOnlyTheCoreSaysWhichNoteIsMissing(t *testing.T) {
+func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error
 		want v1.ErrorCode

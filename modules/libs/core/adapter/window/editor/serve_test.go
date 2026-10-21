@@ -327,7 +327,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 
 // TestANoteChangedUnderTheScanIsReadAgain. The scan writes in groups from what
 // it read, so its copy of a note lands last however early the note was read.
-func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
+func TestANoteChangedBelowTheScanIsReadAgain(t *testing.T) {
 	watcher := byHand()
 	readers := newSlowWait()
 	defer readers.release()
@@ -354,7 +354,7 @@ func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
 
 // TestANoteDeletedUnderTheScanStaysDeleted. The scan holds a copy of a note it
 // read, and the note went while it held it.
-func TestANoteDeletedUnderTheScanStaysDeleted(t *testing.T) {
+func TestANoteDeletedBelowTheScanStaysDeleted(t *testing.T) {
 	watcher := byHand()
 	readers := newSlowWait()
 	defer readers.release()
@@ -430,7 +430,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 // TestAVaultThatCannotBeWatchedSaysSo. The window draws a warning from this,
 // and a vault nobody is following looks exactly like a vault nothing happens
 // to.
-func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
+func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, unwatchable{}, filesystem.VaultReaders{})
@@ -441,7 +441,7 @@ func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 }
 
 // TestAWatchThatStopsSaysSo.
-func TestAWatchThatStopsSaysSo(t *testing.T) {
+func TestAWatchThatStopsReturnsSo(t *testing.T) {
 	watcher := byHand()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",

@@ -357,7 +357,7 @@ func TestAFileIsReadWithWhatItWasWhenAskedAbout(t *testing.T) {
 	}
 }
 
-func TestAFileIsWrittenOnlyOverWhatWasRead(t *testing.T) {
+func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	read, err := client.GetFileFingerprint(t.Context(), connect.NewRequest(&v1.GetFileFingerprintRequest{Path: "decks/A.md"}))
 	if err != nil {
@@ -382,7 +382,7 @@ func TestAFileIsWrittenOnlyOverWhatWasRead(t *testing.T) {
 	}
 }
 
-func TestAFileIsMadeOnlyWhereNoneStands(t *testing.T) {
+func TestAFileIsMadeOnlyWhereNoneExists(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
 	first, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "decks/B.md", Content: []byte("b")}))
@@ -431,7 +431,7 @@ func TestTheIndexIsBroughtLevelWithTheFilesNamed(t *testing.T) {
 	}
 }
 
-func TestWhatTheIndexSaysOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
+func TestWhatTheIndexReturnsOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 
@@ -470,7 +470,7 @@ func TestWhatTheIndexSaysOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
 	}
 }
 
-func TestADataFolderIsKeptOnlyWhereTheManifestNamesOne(t *testing.T) {
+func TestADataFolderIsCachedOnlyWhereTheManifestNamesOne(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	ctx := t.Context()
 
@@ -503,7 +503,7 @@ func TestADataFolderIsKeptOnlyWhereTheManifestNamesOne(t *testing.T) {
 	}
 }
 
-func TestACacheIsKeptPerPluginAndRemembersWhetherAnythingWasKept(t *testing.T) {
+func TestACacheIsCachedPerPluginAndRemembersWhetherAnythingWasCached(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 
@@ -521,7 +521,7 @@ func TestACacheIsKeptPerPluginAndRemembersWhetherAnythingWasKept(t *testing.T) {
 	}
 }
 
-func TestAWatchSaysItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
+func TestAWatchReturnsItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
 	if err != nil {
@@ -542,7 +542,7 @@ func TestAWatchSaysItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	}
 }
 
-func TestAWatchSaysWhenTheWindowShowsAnotherVault(t *testing.T) {
+func TestAWatchReturnsWhenTheWindowShowsAnotherVault(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
 	if err != nil {
@@ -633,7 +633,7 @@ func TestEveryVaultTheInstallationKnowsIsListed(t *testing.T) {
 	}
 }
 
-func TestWhereTheIndexStandsIsSaid(t *testing.T) {
+func TestWhereTheIndexExistsIsSaid(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	cases := map[port.PluginIndexStatus]v1.HostIndexState{
 		port.PluginIndexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
@@ -669,7 +669,7 @@ func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 	}
 }
 
-func TestTheNotesFiledUnderANameAreListed(t *testing.T) {
+func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
 	res, err := client.GetNamedPaths(t.Context(), connect.NewRequest(&v1.GetNamedPathsRequest{Name: "Animal"}))

@@ -38,27 +38,27 @@ func runRecogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []s
 	}
 	defer closeIfOpen(open.Close)
 
-	recognise, trimmed := open.Recognise, source.NewCutSource(open.Cut)
+	recognise, cutSource := open.Recognise, source.NewCutSource(open.Cut)
 	fmt.Fprintf(out, "recognising %s with %s\n", args[1], recognise.By().GetRecognitionModel())
 	started := time.Now()
 
 	// The line of pages is closed once it stops, so what follows it relies on a
 	// line of its own.
-	displayed := false
-	recognise.Cut = trimmed.Execute
+	isDisplayed := false
+	recognise.Cut = cutSource.Execute
 	// A terminal that prints nothing for an hour looks broken, and this takes
 	// about that. The line rewrites itself.
 	recognise.OnProgress = func(res recognition.RecogniseResult) {
 		if res.Pages > 0 {
 			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
-			displayed = true
+			isDisplayed = true
 		}
 	}
 	res, err := recognise.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
-	if displayed {
+	if isDisplayed {
 		fmt.Fprintln(out)
 	}
 

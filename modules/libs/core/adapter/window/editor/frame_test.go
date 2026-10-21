@@ -61,7 +61,7 @@ func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
 // That page frames the host and reaches nowhere else. It is served over a
 // socket every process on this machine can knock at, so what it may do is
 // written on it.
-func TestThePageHoldingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
+func TestThePageContainingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
 	back, handler := openLoopback(t, newBareServices())
 
 	answer := httptest.NewRecorder()

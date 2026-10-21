@@ -58,7 +58,7 @@ func TestThePluginsToolsAreServedOnTheServersTheyNameAndNoOthers(t *testing.T) {
 	plugins := &offeredTools{tools: sampleTools()}
 
 	full := servedWith(t, plugins, mcp.New)
-	reading := servedWith(t, plugins, mcp.NewReading)
+	readingService := servedWith(t, plugins, mcp.NewReading)
 	review := servedWith(t, plugins, mcp.NewReviewServer)
 
 	for _, served := range []struct {
@@ -68,7 +68,7 @@ func TestThePluginsToolsAreServedOnTheServersTheyNameAndNoOthers(t *testing.T) {
 		not  []string
 	}{
 		{"the full server", full, []string{"sample_read", "sample_write", "sample_drop"}, []string{"sample_review"}},
-		{"the reading server", reading, []string{"sample_read"}, []string{"sample_write", "sample_drop", "sample_review"}},
+		{"the reading server", readingService, []string{"sample_read"}, []string{"sample_write", "sample_drop", "sample_review"}},
 		{"the review server", review, []string{"sample_review"}, []string{"sample_read", "sample_write"}},
 	} {
 		for _, name := range served.want {
@@ -84,7 +84,7 @@ func TestThePluginsToolsAreServedOnTheServersTheyNameAndNoOthers(t *testing.T) {
 	}
 }
 
-func TestNoPluginsLeavesTheToolsOfTheCoreAlone(t *testing.T) {
+func TestNoPluginsPreservesTheToolsOfTheCoreAlone(t *testing.T) {
 	_, core := newCore(t)
 	unmountedTools := getServedTools(t, sessionOf(t, mcp.New(core)))
 
@@ -138,7 +138,7 @@ func TestACallIsHandedToThePluginThatListedTheToolWithItsArgumentsKeyedAsListed(
 	}
 }
 
-func TestAToolThatRefusedOrFailedAnswersAsARefusal(t *testing.T) {
+func TestAToolThatRefusedOrFailedAnswersAsAError(t *testing.T) {
 	rejected := &offeredTools{tools: sampleTools(), reply: plugintool.Result{Text: "no such deck", IsRefusal: true}}
 	failed := &offeredTools{tools: sampleTools(), err: port.ErrUnavailable}
 
@@ -153,7 +153,7 @@ func TestAToolThatRefusedOrFailedAnswersAsARefusal(t *testing.T) {
 	}
 }
 
-func TestACallOfAPluginToolIsShownAsWhatTheToolSaysItDoes(t *testing.T) {
+func TestACallOfAPluginToolIsShownAsWhatTheToolReturnsItDoes(t *testing.T) {
 	_, core := newCore(t)
 	plugins := &offeredTools{tools: sampleTools()}
 	core.Plugins = plugintool.NewTools(plugins)

@@ -89,7 +89,7 @@ func aFolderOfTwo() handedOver {
 }
 
 // Nothing handed over is nothing done, whether or not the vault can be written.
-func TestNothingHandedOverIsNothingDone(t *testing.T) {
+func TestNothingHandedOverIsNothingCompleted(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	bring := vaults.NewImport(unwritable{err: errors.New("the vault cannot be written")}, filesystem.ImportedFiles{})
@@ -104,7 +104,7 @@ func TestNothingHandedOverIsNothingDone(t *testing.T) {
 }
 
 // A vault that cannot be written takes nothing, and the caller is told why.
-func TestAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
+func TestAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	cannot := errors.New("the vault cannot be written")
@@ -138,7 +138,7 @@ func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 
 // A drop cancelled while a folder is being read leaves what is under it
 // outside.
-func TestADropCancelledInsideAFolderBringsNothingUnderIt(t *testing.T) {
+func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -286,7 +286,7 @@ func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
 
 // Files under a folder are not brought once the drop is cancelled, whatever the
 // vault would do with them.
-func TestNothingUnderAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
+func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())

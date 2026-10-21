@@ -169,7 +169,7 @@ func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	checkLocation(t, doc, ganges, "page 3 of the file")
 }
 
-func TestAPageIsSaidByWhereItStandsInTheFile(t *testing.T) {
+func TestAPageIsSaidByWhereItExistsInTheFile(t *testing.T) {
 	// One name to a page, and it is the one a viewer opens at. What the paper
 	// printed is a second number for the same page, and a person shown both has
 	// to work out which is being talked about.

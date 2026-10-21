@@ -278,7 +278,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 
 // TestANoteWrittenAfterTheScanFailedIsEmbedded. A vault that could not be read
 // is a vault somebody is still writing in, and what they write is embedded.
-func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
+func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 	watcher := byHand()
 	model := &asked{dims: 64}
 

@@ -77,11 +77,11 @@ func newHaltedWorker(
 
 	// The shelf as a run that ended among the batches left it: the corrections
 	// it wrote, and the count standing after them.
-	placed := make([]domain.CorrectionLine, 0, through)
+	correctionLines := make([]domain.CorrectionLine, 0, through)
 	for at := range through {
-		placed = append(placed, domain.CorrectionLine{Number: at, Text: correctLine(lines[at])})
+		correctionLines = append(correctionLines, domain.CorrectionLine{Number: at, Text: correctLine(lines[at])})
 	}
-	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), correction.Pack(placed)); err != nil {
+	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), correction.Pack(correctionLines)); err != nil {
 		t.Fatal(err)
 	}
 	status, err := json.Marshal(checkpoint{By: by.GetName(), Pages: through})
@@ -160,7 +160,7 @@ func TestARecognitionLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testi
 
 // A recognition put right to its last page is asked about nothing and shown
 // nowhere, however often the application opens.
-func TestARecognitionAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
+func TestARecognitionAlreadyInsertRightIsAskedAboutNothing(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{}
 	w, v, _, _ := newHaltedWorker(t, by, 2, lines...)
@@ -178,7 +178,7 @@ func TestARecognitionAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 
 // One run to a recognition. A run that finds it held leaves the list to the run that
 // holds it.
-func TestARecognitionAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
+func TestARecognitionAnotherRunContainsKeepsItsPlaceInTheList(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{}
 	w, v, store, hash := newHaltedWorker(t, by, 1, lines...)

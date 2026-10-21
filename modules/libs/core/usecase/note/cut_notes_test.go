@@ -14,7 +14,7 @@ import (
 // A note is cut at the sizes given, and the chunk that carries a vector stays
 // under the limit. A chunk over the model's input limit is embedded truncated,
 // and then it indexes text it does not hold.
-func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
+func TestASmallChunkIsSplitBelowTheLimitGiven(t *testing.T) {
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 200))
 	n := domain.Note{
 		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
@@ -23,8 +23,8 @@ func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	}
 
 	for _, limit := range []int{64, 512} {
-		trimmed := note.CutNotes{Sizes: chunking.Sizes{Limit: limit}}.Execute([]domain.Note{n})
-		chunks := trimmed[0].Chunks
+		cutResult := note.CutNotes{Sizes: chunking.Sizes{Limit: limit}}.Execute([]domain.Note{n})
+		chunks := cutResult[0].Chunks
 		if len(chunks) != 1 {
 			t.Fatalf("a note is one large chunk, and it was cut into %d", len(chunks))
 		}
@@ -44,7 +44,7 @@ func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 
 // A type a plugin declares is kept as its profile says: here only the headings of two levels, the
 // second without the mark it ends in, and no chunks; a type with no headings keeps none.
-func TestANoteOfADeclaredTypeIsKeptAsItsProfileSays(t *testing.T) {
+func TestANoteOfADeclaredTypeIsCachedAsItsProfileReturns(t *testing.T) {
 	profiles := map[domain.NoteType]domain.NoteProfile{
 		"sheet": {HasChunks: true, HeadingLevels: []int{1, 2}, MarkedLevels: []int{2}},
 		"bare":  {HeadingLevels: []int{}},
@@ -60,31 +60,31 @@ func TestANoteOfADeclaredTypeIsKeptAsItsProfileSays(t *testing.T) {
 	bareNote := domain.Note{Type: "bare", Title: "B", Headings: []domain.Heading{{Level: 1, Text: "Face"}}}
 	ordinary := domain.Note{Type: domain.TypeNote, Title: "O", Body: "# One\n", Headings: []domain.Heading{{Level: 1, Text: "One ^kept"}}}
 
-	trimmed := cuts.Execute([]domain.Note{sheet, bareNote, ordinary})
+	cutResult := cuts.Execute([]domain.Note{sheet, bareNote, ordinary})
 
-	if len(trimmed[0].Chunks) == 0 {
-		t.Errorf("a profile that says nothing of chunks has the note cut: %+v", trimmed[0])
+	if len(cutResult[0].Chunks) == 0 {
+		t.Errorf("a profile that says nothing of chunks has the note cut: %+v", cutResult[0])
 	}
-	if got := trimmed[0].Headings; len(got) != 2 || got[0].Text != "Part" || got[1].Text != "Q" {
+	if got := cutResult[0].Headings; len(got) != 2 || got[0].Text != "Part" || got[1].Text != "Q" {
 		t.Errorf("the sheet keeps its section and its card without the mark, got %+v", got)
 	}
-	if len(trimmed[1].Headings) != 0 {
-		t.Errorf("a type with no headings keeps %+v", trimmed[1].Headings)
+	if len(cutResult[1].Headings) != 0 {
+		t.Errorf("a type with no headings keeps %+v", cutResult[1].Headings)
 	}
-	if got := trimmed[2].Headings; len(got) != 1 || got[0].Text != "One ^kept" {
+	if got := cutResult[2].Headings; len(got) != 1 || got[0].Text != "One ^kept" {
 		t.Errorf("an ordinary note keeps every heading as it is, got %+v", got)
 	}
 }
 
-func TestANoteOfATypeWithNoChunksIsNotCut(t *testing.T) {
+func TestANoteOfATypeWithNoChunksIsNotSplit(t *testing.T) {
 	cuts := note.CutNotes{Profiles: func(domain.NoteType) (domain.NoteProfile, bool) {
 		return domain.NoteProfile{HasChunks: false}, true
 	}}
 	deck := domain.Note{Type: "deck", Title: "Deck", Body: "# Part\n"}
 
-	trimmed := cuts.Execute([]domain.Note{deck})
+	cutResult := cuts.Execute([]domain.Note{deck})
 
-	if len(trimmed[0].Chunks) != 0 {
-		t.Errorf("a note whose type has no chunks was cut: %+v", trimmed[0].Chunks)
+	if len(cutResult[0].Chunks) != 0 {
+		t.Errorf("a note whose type has no chunks was cut: %+v", cutResult[0].Chunks)
 	}
 }

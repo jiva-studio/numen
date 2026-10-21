@@ -262,8 +262,8 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	first, past := getRangeUnder(from)
 	// What a path keeps is counted off it in characters: that is what the
 	// statement cuts by, and a path is not Latin alone.
-	retained := utf8.RuneCountInString(from) + 1
-	if err := exec(ctx, tx, "move_sources", to, retained, vault, from, first, past); err != nil {
+	fromLen := utf8.RuneCountInString(from) + 1
+	if err := exec(ctx, tx, "move_sources", to, fromLen, vault, from, first, past); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -342,16 +342,16 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 	if err != nil {
 		return fmt.Errorf("what the note %s is called: %w", from, err)
 	}
-	displayed := title
+	displayName := title
 	if !named {
-		displayed = name
+		displayName = name
 	} else if filed, _ := domain.GetReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
 		return nil
 	}
-	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), displayed, vault, from); err != nil {
+	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), displayName, vault, from); err != nil {
 		return err
 	}
-	return exec(ctx, tx, "rename_title", vault, from, displayed)
+	return exec(ctx, tx, "rename_title", vault, from, displayName)
 }
 
 // getRangeUnder is the range every path a folder holds falls in: from the
@@ -427,7 +427,7 @@ func upsertChunk(
 	source, vault int64, c Chunk, parent any, isLeaf bool,
 ) (int64, error) {
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
-	if row, retained := held.takeUnusedRow(key); retained {
+	if row, hasRow := held.takeUnusedRow(key); hasRow {
 		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)

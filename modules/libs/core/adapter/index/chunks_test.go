@@ -256,7 +256,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
+func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	// A small chunk is searched and the large chunk enclosing it is read, so a
 	// result arrives with enough text around it to be understood.
 	ctx := t.Context()
@@ -299,7 +299,7 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 // TestAPassageSaysWhatItWasReadOutOf. A list a person runs their eye down draws
 // a book and a recording as what they are, and every ranking has to say which
 // it answered with.
-func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
+func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	source(t, db, first, "library/talk.epub", domain.KindBook, "opening words")
@@ -359,7 +359,7 @@ func source(t *testing.T, db *DB, vault domain.Vault, path string, kind domain.S
 	}
 }
 
-func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
+func TestSplittingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	// Nothing cascades when a source is written again: the row survives, so its
 	// chunks are cleared by hand, and the rows in both virtual tables with them.
 
@@ -391,7 +391,7 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	}
 }
 
-func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
+func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	// A note is saved with ON CONFLICT DO UPDATE, so its source row survives and
 	// nothing cascades. Its chunks describe text that has changed, and one left
 	// behind sends a reader to an offset the file no longer has.
@@ -463,7 +463,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 // A note is searchable by its meaning, which needs the chunks that carry
 // vectors. One large chunk and nothing inside it is a note the dense half can
 // never return.
-func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
+func TestANoteIsSplitIntoChunksThatCanCarryAVector(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
@@ -492,7 +492,7 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 	}
 }
 
-func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
+func TestRemovingASourcePreservesNothingSearchable(t *testing.T) {
 	// The text is not stored, so a passage that outlives its source sends the
 	// reader to a file that is gone.
 	ctx := t.Context()
@@ -530,7 +530,7 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 	}
 }
 
-func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
+func TestRemovingANoteConsumesItsIndexedRows(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
@@ -847,21 +847,21 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 	}); err != nil {
 		t.Fatal(err)
 	}
-	trimmed := make([]chunk.Chunk, 0, len(texts))
+	cutChunks := make([]chunk.Chunk, 0, len(texts))
 	for i, text := range texts {
-		trimmed = append(trimmed, chunk.Chunk{
+		cutChunks = append(cutChunks, chunk.Chunk{
 			Start: i * 100, Length: 100, Text: path + " " + text,
 			Small: []chunk.Chunk{{Start: i * 100, Length: 50, Text: text}},
 		})
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, trimmed); err != nil {
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, cutChunks); err != nil {
 		t.Fatal(err)
 	}
 }
 
 // TestAChunkThatWentIsWrittenNoVectorAndStopsNothing. A save cuts a note again
 // while a pass is making vectors out of what it was told owed one a moment ago.
-func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
+func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
@@ -993,7 +993,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 // Chunks are renumbered by every cut and by every rebuild of the index. What a
 // model made is kept by the text it read, so a vault whose rows all went and
 // came back again is not bought a second time.
-func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
+func TestAVectorIsCachedByTheTextItWasMadeFrom(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	cutInto(t, db, first, "library/kept.epub", "the passage that was paid for")
@@ -1103,7 +1103,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 // and that is the one moment the answer is known. A source the vault no longer
 // offers is a different thing: a folder that could not be read looks the same
 // as one whose files were deleted, and a vector was bought.
-func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
+func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	cutInto(t, db, first, "library/edited.epub", "a passage that will be rewritten")
@@ -1158,7 +1158,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 //
 // Two sources can hold the same passage, and a vector is made once for the
 // text. A source that stops holding it says nothing about the others.
-func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
+func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	shared := "the same passage, standing in two books"
@@ -1269,7 +1269,7 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	trimmed := []chunk.Chunk{
+	cutChunks := []chunk.Chunk{
 		{
 			Start: 0, Length: 100, Location: "Madhavendra Puri",
 			Opens: []string{"Madhavendra Puri"},
@@ -1296,7 +1296,7 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 			Small: []chunk.Chunk{{Start: 200, Length: 100, Text: "Alice Fenn met him."}},
 		},
 	}
-	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, trimmed); err != nil {
+	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, cutChunks); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1371,7 +1371,7 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
+func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 	// A chunk's number is handed to the next chunk that wants one, so a name
 	// left behind by a source that is gone answers for whatever takes it.
 	ctx := t.Context()
@@ -1419,7 +1419,7 @@ func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
 	}
 }
 
-func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
+func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
 	// A chunk keeps its row through a cut when it says the same thing, so a
 	// name is not dropped with the chunk. A section that is no longer there
 	// answering by name is a passage opening where nothing begins.

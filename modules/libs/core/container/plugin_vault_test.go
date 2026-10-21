@@ -103,10 +103,10 @@ func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
 	}
 }
 
-func TestAWriteByAPluginIsToldToTheWindow(t *testing.T) {
+func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
 	_, current, assembly := openPluginVault(t, note)
-	notified := 0
-	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Written: func() { notified++ }})
+	notifyCount := 0
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Written: func() { notifyCount++ }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestAWriteByAPluginIsToldToTheWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if notified != 1 {
-		t.Errorf("the window was told %d times", notified)
+	if notifyCount != 1 {
+		t.Errorf("the window was told %d times", notifyCount)
 	}
 }

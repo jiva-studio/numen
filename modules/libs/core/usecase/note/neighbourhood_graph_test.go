@@ -117,7 +117,7 @@ func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 }
 
 // Whatever fails in finding the neighbours is the answer.
-func TestANeighbourhoodThatCannotBeFoundSaysWhy(t *testing.T) {
+func TestANeighbourhoodThatCannotBeFoundReturnsWhy(t *testing.T) {
 	t.Parallel()
 	boom := errors.New("the index would not answer")
 	parentOfF := map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("P.md", domain.RoleParent, "")}}
@@ -199,7 +199,7 @@ func TestOnlyPlacesInTheHierarchyAreRelatedFromTheNotesPointingAtANote(t *testin
 
 // A relationship written twice at the same rank is drawn as the first one
 // wrote it.
-func TestTheFirstOfTwoEqualLinksIsTheOneDrawn(t *testing.T) {
+func TestTheFirstOfTwoEqualLinksIsTheOneGenerated(t *testing.T) {
 	t.Parallel()
 	g := graph{out: map[string][]domain.ResolvedLink{"F.md": {
 		createOutgoingLink("C.md", domain.RoleChild, "first"),

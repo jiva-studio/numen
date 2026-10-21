@@ -90,9 +90,9 @@ func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 	defer back.Close()
 
 	select {
-	case notified := <-response:
-		if !errors.Is(notified, why) {
-			t.Errorf("the socket stopping was said as %v", notified)
+	case res := <-response:
+		if !errors.Is(res, why) {
+			t.Errorf("the socket stopping was said as %v", res)
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("the socket stopped answering and nobody was told")
@@ -143,7 +143,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 }
 
 // A vault this installation does not hold is not a vault to read from.
-func TestAFileOfAVaultNobodyHoldsIsRefused(t *testing.T) {
+func TestAFileOfAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 

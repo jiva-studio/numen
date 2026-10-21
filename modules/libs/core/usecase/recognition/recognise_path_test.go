@@ -36,7 +36,7 @@ func newDiskRecognise(onPage func()) (recognition.Recognise, func(domain.VaultID
 	return recognition.NewMemoryRecognise(filesystem.VaultReaders{}, testsupport.Documents{}, onPage)
 }
 
-func TestRecognisingAFileOnDiskHoldsNoCopyOfIt(t *testing.T) {
+func TestRecognisingAFileOnDiskContainsNoCopyOfIt(t *testing.T) {
 	tiny, err := os.ReadFile(pdfTestdata + "tiny.pdf")
 	if err != nil {
 		t.Fatal(err)

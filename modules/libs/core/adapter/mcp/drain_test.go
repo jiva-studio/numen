@@ -87,7 +87,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}
 
 	queries := db.Queries()
-	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
+	mover := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
 		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
@@ -100,8 +100,8 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 			Links:         note.NewShowLinks(db.Links()),
 			Create:        note.NewCreate(writers, queries, index, time.Now),
 			Write:         note.NewWrite(readers, writers, index, time.Now),
-			Move:          moving,
-			Rename:        note.NewRename(moving),
+			Move:          mover,
+			Rename:        note.NewRename(mover),
 			RemoveNote:    note.NewRemoveNote(note.NewRemove(writers, db.Links(), db.SourcesKnown(), index), readers),
 			Read:          note.NewRead(readers),
 			GetTitles:     note.NewGetTitles(queries),

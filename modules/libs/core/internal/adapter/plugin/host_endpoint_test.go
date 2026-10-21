@@ -389,7 +389,7 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 }
 
 // A plugin process launched while the host endpoint serves is told its port.
-func TestALaunchedPluginIsToldTheHostPort(t *testing.T) {
+func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
 	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))

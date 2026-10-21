@@ -263,7 +263,7 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 }
 
 // A window drawn at 1.5 goes on being drawn at 1.5.
-func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
+func TestAFileNamingTheZoomOpensTheWindowGeneratedAtIt(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(`{"appearance":{"zoom":1.5}}`), 0o600); err != nil {
@@ -402,7 +402,7 @@ func (h holdsOpen) GetFingerprint(ctx context.Context, path string) (domain.Fing
 // are answered straight from the index, and one that passed the door a moment
 // before it shut is still on the index when everything an answer reaches into
 // is taken away.
-func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
+func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
 	readers := holdingOpen{
 		VaultReaders: filesystem.VaultReaders{},
 		begun:        make(chan struct{}, 1),

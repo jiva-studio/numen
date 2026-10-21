@@ -62,14 +62,14 @@ func describeEdge(t *testing.T, files map[string]string, from, to string) string
 		if r.Path != to {
 			continue
 		}
-		rendered := []string{string(r.Relation)}
+		relations := []string{string(r.Relation)}
 		if r.Label != "" {
-			rendered = append(rendered, r.Label)
+			relations = append(relations, r.Label)
 		}
 		if r.IsMutual {
-			rendered = append(rendered, "mutual")
+			relations = append(relations, "mutual")
 		}
-		return strings.Join(rendered, " ")
+		return strings.Join(relations, " ")
 	}
 	return "nothing"
 }
@@ -79,7 +79,7 @@ func describeEdge(t *testing.T, files map[string]string, from, to string) string
 // Either end of a relationship can name it, and both ends naming it makes the
 // edge mutual. The word shown is then the one the note in focus wrote, so the
 // two notes read the same edge in their own language.
-func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
+func TestALabelSavedAtEitherEndIsGenerated(t *testing.T) {
 	t.Parallel()
 	content := func(title, links string) string {
 		if links == "" {
@@ -193,7 +193,7 @@ func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
 // TestANoteTakesOneRelation. A pair that are each other's parent is a contradiction
 // the vault is allowed to contain, and a picture that draws one note twice is
 // not a picture.
-func TestANoteTakesOneRelation(t *testing.T) {
+func TestANoteConsumesOneRelation(t *testing.T) {
 	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n---\n\n# Chicken\n",

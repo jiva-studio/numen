@@ -19,16 +19,16 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 	// Both wait for the lock, the unasked one first.
 	took := make(chan bool, 2)
 	queue := func(asked bool) {
-		waiting := make(chan struct{})
+		waitCh := make(chan struct{})
 		go func() {
-			release, err := g.Acquire(t.Context(), asked, func() { close(waiting) })
+			release, err := g.Acquire(t.Context(), asked, func() { close(waitCh) })
 			if err != nil {
 				return
 			}
 			took <- asked
 			release()
 		}()
-		<-waiting
+		<-waitCh
 	}
 	queue(false)
 	queue(true)
@@ -48,7 +48,7 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 
 // A run that gave up while waiting takes no lock, and the one behind it is not
 // left standing.
-func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
+func TestARunThatPreservesPassesTheLockOn(t *testing.T) {
 	var g Lock
 
 	target, err := g.Acquire(t.Context(), true, nil)
@@ -58,12 +58,12 @@ func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
 
 	removed, stop := context.WithCancel(t.Context())
 	remaining := make(chan error, 1)
-	waiting := make(chan struct{})
+	waitCh := make(chan struct{})
 	go func() {
-		_, err := g.Acquire(removed, true, func() { close(waiting) })
+		_, err := g.Acquire(removed, true, func() { close(waitCh) })
 		remaining <- err
 	}()
-	<-waiting
+	<-waitCh
 
 	after := make(chan struct{})
 	queued := make(chan struct{})

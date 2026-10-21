@@ -19,7 +19,7 @@ import (
 
 // The sizes are part of what a chunk is kept under, and the one thing that
 // assembles a cut carries them.
-func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
+func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -39,7 +39,7 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 	}
 }
 
-func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
+func TestAVaultWithNoModelIsSplitAtTheDefaultBound(t *testing.T) {
 	cfg := container.DefaultEmbedding()
 	cfg.Indexing.Use = ""
 	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes; got != (chunking.Sizes{}) {
@@ -47,7 +47,7 @@ func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 	}
 }
 
-func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
+func TestTheModelSaidIsWhatAChunkIsSplitBelow(t *testing.T) {
 	cfg := container.DefaultEmbedding()
 	cfg.Model.MaxTokens = 512
 	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
@@ -58,7 +58,7 @@ func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
 // A note is cut at the sizes the settings say. The chunks a vault owes vectors
 // for are its small ones, and each is under the input limit of the model that
 // will read it.
-func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
+func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -141,7 +141,7 @@ func (wide) Close() error { return nil }
 // package but usecase/note, which owns the cutting, builds a chunking.Sizes or a
 // chunking.Legibility. They decide what a chunk is kept under, and a second
 // assembly is a second answer for one settings file.
-func TestNothingElseAssemblesACut(t *testing.T) {
+func TestNothingElseAssemblesASplit(t *testing.T) {
 	root := ".."
 	isWithin := func(path, dir string) bool {
 		return strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(filepath.Join(root, dir))+"/")

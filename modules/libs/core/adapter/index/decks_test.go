@@ -102,7 +102,7 @@ func TestAStencilContributesNoChunkAndNoVector(t *testing.T) {
 }
 
 // A note beside them is cut as it always was.
-func TestAnOrdinaryNoteIsStillCut(t *testing.T) {
+func TestAnOrdinaryNoteIsStillSplit(t *testing.T) {
 	db := openDB(t)
 	saveTypedNoteWithHeadings(t, db, first, "notes/entropy.md", domain.TypeNote,
 		domain.Heading{Level: 1, Text: "What it is"},

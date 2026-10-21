@@ -376,8 +376,8 @@ func TestAProofreadRecognitionIsLitWhereItsWordsNowStand(t *testing.T) {
 	}
 	// The first line is put right and grows by three bytes, so the third line
 	// begins at 14 and runs to 19.
-	placed := []domain.CorrectionLine{{Number: 0, Text: "eighteen"}}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), correction.Pack(placed)); err != nil {
+	correctionLines := []domain.CorrectionLine{{Number: 0, Text: "eighteen"}}
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), correction.Pack(correctionLines)); err != nil {
 		t.Fatal(err)
 	}
 

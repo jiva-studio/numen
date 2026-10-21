@@ -45,7 +45,7 @@ func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 
 // The offsets answer where the new text now stands, so a window can draw it
 // without being told anything else.
-func TestAReplacementSaysWhereItLanded(t *testing.T) {
+func TestAReplacementReturnsWhereItLanded(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
@@ -76,7 +76,7 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 
 // A span standing twice does not say which was meant, and guessing at one
 // is how the wrong half of a note is rewritten.
-func TestASpanStandingTwiceIsRefused(t *testing.T) {
+func TestASpanActiveTwiceIsRefused(t *testing.T) {
 	t.Parallel()
 	was := "A foe advances.\n\nAnother foe advances.\n"
 	c := openChanging(t, map[string]string{"Aggressor.md": was})
@@ -97,7 +97,7 @@ func TestASpanStandingTwiceIsRefused(t *testing.T) {
 
 // A span that is not there is answered with where a copy of it stopped
 // agreeing, which is what tells a caller its copy is one character out.
-func TestASpanThatIsNotThereSaysWhereItDiverged(t *testing.T) {
+func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
@@ -174,7 +174,7 @@ func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 
 // A replacement is the application changing what is in a note, so the note
 // takes an identifier if it has none.
-func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
+func TestAReplacedNoteConsumesAnIdentifier(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
 

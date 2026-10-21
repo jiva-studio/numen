@@ -350,9 +350,9 @@ func (h *vaultHandler) WatchVaultChanges(
 
 // newChangeResponse is the wire message that reports one change.
 func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
-	renamed := make([]*v1.Move, 0, len(what.renamed))
+	renamedMoves := make([]*v1.Move, 0, len(what.renamed))
 	for _, went := range what.renamed {
-		renamed = append(renamed, &v1.Move{From: went.From, To: went.To})
+		renamedMoves = append(renamedMoves, &v1.Move{From: went.From, To: went.To})
 	}
-	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamed}
+	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves}
 }

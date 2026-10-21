@@ -346,9 +346,13 @@ func parsePageQuery(where string, query url.Values) (at, width int, named docume
 	if err != nil || at < 0 || at > math.MaxInt32 {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", request)
 	}
-	width, err = strconv.Atoi(query.Get("width"))
+	widthStr := query.Get("width")
+	if widthStr == "" {
+		widthStr = query.Get("wide")
+	}
+	width, err = strconv.Atoi(widthStr)
 	if err != nil || width < 1 || width > widestPage {
-		return 0, 0, document.Fingerprint{}, fmt.Errorf("width: %q is not a width", query.Get("width"))
+		return 0, 0, document.Fingerprint{}, fmt.Errorf("width: %q is not a width", widthStr)
 	}
 	named, err = parseFingerprint(query)
 	if err != nil {

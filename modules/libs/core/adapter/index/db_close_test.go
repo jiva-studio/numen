@@ -68,7 +68,7 @@ func TestClosingAnIndexClosesTheReadPoolWhenTheWritePoolRefuses(t *testing.T) {
 	}
 }
 
-func TestAnIndexThatCannotBeMigratedLeavesNoConnectionOpen(t *testing.T) {
+func TestAnIndexThatCannotBeMigratedPreservesNoConnectionOpen(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "index.db")
 
 	// A table the first migration creates is already there.

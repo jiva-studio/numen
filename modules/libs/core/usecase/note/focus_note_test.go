@@ -25,7 +25,7 @@ func (l *looking) FocusPlace(_ context.Context, at domain.Place) error {
 func (l *looking) ShowMove(context.Context, domain.Move) error { return nil }
 func (l *looking) ShowEdit(context.Context, domain.Edit) error { return nil }
 
-func TestFocusingANotePutsItInFrontOfThePerson(t *testing.T) {
+func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}

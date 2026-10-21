@@ -40,7 +40,7 @@ func newRecordingGroup() (*grouping, *[]int) {
 }
 
 // A group is written when it holds five hundred notes.
-func TestAGroupIsWrittenAtFiveHundredNotes(t *testing.T) {
+func TestAGroupIsSavedAtFiveHundredNotes(t *testing.T) {
 	t.Parallel()
 	g, writes := newRecordingGroup()
 
@@ -62,7 +62,7 @@ func TestAGroupIsWrittenAtFiveHundredNotes(t *testing.T) {
 
 // A group is written when the files it holds reach eight mebibytes, and each
 // group after a write starts from nothing.
-func TestAGroupIsWrittenAtEightMebibytes(t *testing.T) {
+func TestAGroupIsSavedAtEightMebibytes(t *testing.T) {
 	t.Parallel()
 	const eightMiB = 8 << 20
 	g, writes := newRecordingGroup()

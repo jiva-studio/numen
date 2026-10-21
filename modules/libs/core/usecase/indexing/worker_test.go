@@ -207,7 +207,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 
 // What ended is not what is being done, and a list a finished pass stays in is a
 // list nobody reads.
-func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
+func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	model := &asked{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
@@ -406,7 +406,7 @@ func (o *overheard) lists() [][]run.Task {
 // enters the list before it has opened a source stands there as the word
 // "Indexing" over an empty line, at a share of nothing, for as long as the first
 // vectors take to come back.
-func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
+func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	events := newRecorder()
 	model := &asked{dims: 64}
 	made, db := reading(t)
@@ -448,13 +448,13 @@ type nudging struct {
 }
 
 func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error) {
-	stopped := false
+	isStopped := false
 	n.once.Do(func() {
 		signal(n.wake)
 		<-ctx.Done()
-		stopped = true
+		isStopped = true
 	})
-	if stopped {
+	if isStopped {
 		return nil, ctx.Err()
 	}
 	return n.asked.Embed(ctx, texts)

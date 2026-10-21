@@ -114,7 +114,7 @@ func (h *hostAgentProvider) setProviders(programs []port.AgentProgram) {
 	defer h.mu.Unlock()
 	h.providers = make(map[string]string, len(programs))
 	for _, one := range programs {
-		if _, acquired := h.providers[one.Name]; !acquired {
+		if _, hasProvider := h.providers[one.Name]; !hasProvider {
 			h.providers[one.Name] = one.Provider
 		}
 	}

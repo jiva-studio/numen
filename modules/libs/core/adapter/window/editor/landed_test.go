@@ -27,7 +27,7 @@ func (stuck) MoveSources(context.Context, domain.VaultID, string, string) error 
 	return errors.New("the index would not file the row under the new path")
 }
 
-func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
+func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
@@ -49,7 +49,7 @@ func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
 	}
 }
 
-func TestARenameThatCameApartAfterTheFileLandedSaysWhatTheNoteIsCalled(t *testing.T) {
+func TestARenameThatCameApartAfterTheFileLandedReturnsWhatTheNoteIsCalled(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})

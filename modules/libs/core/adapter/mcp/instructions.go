@@ -61,8 +61,8 @@ func opening(b *strings.Builder, core Core) {
 	b.WriteString("These tools work on one numen vault: markdown notes in an ordinary folder, ")
 	b.WriteString("joined by typed links into a graph.\n\n")
 
-	displayed := core.getCurrentVault()
-	fmt.Fprintf(b, "The vault %q is at %s on this machine.\n", displayed.Vault.Name, displayed.Root)
+	currentVault := core.getCurrentVault()
+	fmt.Fprintf(b, "The vault %q is at %s on this machine.\n", currentVault.Vault.Name, currentVault.Root)
 	b.WriteString("Every note is addressed by its path relative to that folder, with forward ")
 	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
 	b.WriteString("Read note contents with `note_read`.\n\n")

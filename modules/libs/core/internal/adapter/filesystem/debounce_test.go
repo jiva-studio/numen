@@ -85,14 +85,14 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 
 	// One event past the bound, and everything held goes with it.
 	raw := make(chan notify.EventInfo, 4)
-	waiting := newQueue(4)
-	go forwardEvents(ctx, raw, waiting)
+	queue := newQueue(4)
+	go forwardEvents(ctx, raw, queue)
 	feed(t, raw, root, 0, 5)
-	waitForQueue(t, waiting, func() bool { return waiting.isOver })
+	waitForQueue(t, queue, func() bool { return queue.isOver })
 
 	changes := make(chan []string)
 	missing := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
 	select {
 	case <-missing:
@@ -111,14 +111,14 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 	defer stop()
 
 	raw := make(chan notify.EventInfo, 4)
-	waiting := newQueue(4)
-	go forwardEvents(ctx, raw, waiting)
+	queue := newQueue(4)
+	go forwardEvents(ctx, raw, queue)
 	feed(t, raw, root, 0, 4)
-	waitForQueue(t, waiting, func() bool { return len(waiting.events) == 4 })
+	waitForQueue(t, queue, func() bool { return len(queue.events) == 4 })
 
 	changes := make(chan []string)
 	missing := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
 	select {
 	case <-missing:
@@ -144,12 +144,12 @@ func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 	defer stop()
 
 	raw := make(chan notify.EventInfo, 4)
-	waiting := newQueue(64)
-	go forwardEvents(ctx, raw, waiting)
+	queue := newQueue(64)
+	go forwardEvents(ctx, raw, queue)
 
 	changes := make(chan []string)
 	missing := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
 	// One note, debounced and held, leaves the goroutine with a batch nobody is
 	// taking.

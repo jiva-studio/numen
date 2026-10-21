@@ -123,7 +123,7 @@ func TestAPluginNamingNoAgentIsAnsweredByTheDefault(t *testing.T) {
 
 // An empty default names the program by the empty name, which the programs
 // resolve, and leaves the model to the program.
-func TestAnEmptyDefaultLeavesTheAgentAndTheModelToThePrograms(t *testing.T) {
+func TestAnEmptyDefaultPreservesTheAgentAndTheModelToThePrograms(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t, completion.Config{}, choices{}, fake)
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
@@ -136,7 +136,7 @@ func TestAnEmptyDefaultLeavesTheAgentAndTheModelToThePrograms(t *testing.T) {
 
 // A plugin whose setting names an agent is answered by that agent with the
 // model the setting names, and the default model goes with the default alone.
-func TestAPluginsOwnChoiceStandsOverTheDefault(t *testing.T) {
+func TestAPluginsOwnChoiceExistsOverTheDefault(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t,
 		completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}},
@@ -363,7 +363,7 @@ func TestTwoAgentsDoNotShareTheirPlaces(t *testing.T) {
 
 // A question waiting for a place ends with its context, and the question
 // answering ends with it too.
-func TestACancelledQuestionLeavesTheQueueAndStopsTheAnswer(t *testing.T) {
+func TestACancelledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
 	block := newBlocker()
 	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 1}}, choices{}, &programs{answer: block.answer})
 
@@ -466,7 +466,7 @@ func TestAModelTheProgramDoesNotListIsReplaced(t *testing.T) {
 }
 
 // A model the program lists, and a program that lists none, leave the chosen model as it is.
-func TestAModelTheProgramListsIsKept(t *testing.T) {
+func TestAModelTheProgramListsIsCached(t *testing.T) {
 	for name, models := range map[string][]port.AgentModel{
 		"listed": {{Name: "m-old"}, {Name: "m-2", IsDefault: true}},
 		"none":   nil,

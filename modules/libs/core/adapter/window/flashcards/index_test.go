@@ -23,9 +23,9 @@ var unread = domain.Vault{ID: "unread", Name: "Sanskrit", Path: "/vaults/Sanskri
 // and by how far it has got. A window session on a blank frame reads as broken.
 func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	api := newAPI(t)
-	holding := make(chan struct{})
+	blockCh := make(chan struct{})
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
-		<-holding
+		<-blockCh
 		return nil
 	})
 
@@ -43,7 +43,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	})
 
 	// The indexing ends, and the work goes with it.
-	close(holding)
+	close(blockCh)
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
 }
 
@@ -52,9 +52,9 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 func TestIndexingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	target := domain.Vault{ID: "held", Name: "Held"}
 	api := newAPI(t, target)
-	holding := make(chan struct{})
+	blockCh := make(chan struct{})
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
-		<-holding
+		<-blockCh
 		return nil
 	})
 
@@ -66,12 +66,12 @@ func TestIndexingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	if at := api.Window.Tasking.List()[0]; at.IsUserStarted {
 		t.Errorf("indexing a vault the index carries came back as work asked for: %+v", at)
 	}
-	close(holding)
+	close(blockCh)
 }
 
 // An indexing that failed says why in the vault's own state, and is not begun over and over by the
 // counts that follow.
-func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
+func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 	api := newAPI(t)
 	var tried atomic.Int64
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
@@ -131,7 +131,7 @@ func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 
 // The list of work is answered whether or not the window keeps one, so the page
 // has one thing to listen to.
-func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
+func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	api := newAPI(t)
 	api.Window.Tasking = nil
 
@@ -234,7 +234,7 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 }
 
 // What the person is looking at is told to the plugins as data about the call.
-func TestWhatThePersonIsLookingAtIsToldAsWhatItIs(t *testing.T) {
+func TestWhatThePersonIsLookingAtIsReportedAsWhatItIs(t *testing.T) {
 	api := newAPI(t)
 	api.currentCard.Store(&CurrentCard{Deck: "decks/Words.md", Card: "3f4g5h6j7k", Face: "Say it"})
 

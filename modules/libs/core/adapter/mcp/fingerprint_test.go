@@ -21,7 +21,7 @@ func TestTheFingerprintAnAgentCarriesIsSizeAndNanoseconds(t *testing.T) {
 
 // A stamp a clock handed out carries a monotonic reading, and the string an
 // agent returns carries none. The note is still the note that was read.
-func TestAFingerprintTakenFromAClockComesBackAsTheSameFile(t *testing.T) {
+func TestAFingerprintTakenFromAClockReachesBackAsTheSameFile(t *testing.T) {
 	ref := domain.Fingerprint{Path: "notes/Compost.md", Size: 12, ModTime: time.Now()}
 
 	back, err := parseFingerprint(fingerprintOf(ref))

@@ -256,7 +256,7 @@ func TestAnArtifactNoFileCarriesIsNotMade(t *testing.T) {
 
 // A source already standing on the whole of the text a model produced is not
 // put through the run again, and is told so plainly.
-func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
+func TestASourceAlreadyCompletedIsNotRunAgain(t *testing.T) {
 	for _, one := range []struct {
 		name string
 		of   v1.ArtifactKind
@@ -290,7 +290,7 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 // A source a run holds is said to be under way. A recording is heard without
 // anybody asking, so a person asking for the one being heard is told that it is
 // happening, and not that theirs did not start.
-func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
+func TestASourceARunContainsIsSaidToBeBelowWay(t *testing.T) {
 	for _, one := range []struct {
 		name string
 		of   v1.ArtifactKind
@@ -326,7 +326,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 
 // A source nothing holds is not under way, whatever a run wrote before it
 // stopped. It is named afresh and waits its turn.
-func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
+func TestASourceNothingContainsIsNotBelowWay(t *testing.T) {
 	for _, one := range []struct {
 		name string
 		of   v1.ArtifactKind
@@ -359,7 +359,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 
 // A source a run holds and has finished is one already done. A finished run
 // gives the name it was writing under back.
-func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
+func TestASourceCompletedIsCompletedEvenWhereAPartialExists(t *testing.T) {
 	scans := willRun()
 	api, _ := openRunWindow(t,
 		stored{

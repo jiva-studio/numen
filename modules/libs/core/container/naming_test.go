@@ -26,8 +26,8 @@ func writeSettings(t *testing.T, body string) container.Config {
 // palette is answered by the next rename and not by the next launch.
 func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	cfg := writeSettings(t, `{"naming":{"sync_title_and_filename":true}}`)
-	asking := cfg.SyncSetting()
-	if !asking.GetSetting() {
+	setting := cfg.SyncSetting()
+	if !setting.GetSetting() {
 		t.Fatal("a title and a filename are told apart")
 	}
 
@@ -35,14 +35,14 @@ func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	if err := os.WriteFile(path, []byte(`{"naming":{"sync_title_and_filename":false}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if asking.GetSetting() {
+	if setting.GetSetting() {
 		t.Error("the setting turned under it and the rename read the old one")
 	}
 }
 
 // A file that is empty, and one that cannot be read at all, keep the two
 // one name.
-func TestWhatIsReadWhereTheFileSaysNothing(t *testing.T) {
+func TestWhatIsReadWhereTheFileReturnsNothing(t *testing.T) {
 	for name, body := range map[string]string{
 		"a file nobody wrote":        "",
 		"a file naming no section":   `{"appearance":{"text_scale":1.5}}`,

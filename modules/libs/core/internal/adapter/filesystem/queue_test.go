@@ -8,13 +8,13 @@ import (
 // TestTheQueueDropsAtItsBoundAndSaysSo. A bound with an honest overflow is what
 // keeps a checkout of a large repository from becoming memory the machine does
 // not have.
-func TestTheQueueDropsAtItsBoundAndSaysSo(t *testing.T) {
-	waiting := newQueue(2)
+func TestTheQueueDropsAtItsBoundAndReturnsSo(t *testing.T) {
+	queue := newQueue(2)
 	for i := range 5 {
-		waiting.put(event{path: fmt.Sprintf("Note%d.md", i)})
+		queue.put(event{path: fmt.Sprintf("Note%d.md", i)})
 	}
 
-	events, over, isDone := waiting.take()
+	events, over, isDone := queue.take()
 	if !over {
 		t.Fatal("the queue was filled past its bound and did not say so")
 	}
@@ -25,7 +25,7 @@ func TestTheQueueDropsAtItsBoundAndSaysSo(t *testing.T) {
 		t.Errorf("the queue held %d events, past its bound of 2", len(events))
 	}
 
-	if _, over, _ := waiting.take(); over {
+	if _, over, _ := queue.take(); over {
 		t.Error("one overflow was reported twice")
 	}
 }

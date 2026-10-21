@@ -65,7 +65,7 @@ func deleteTranscript(api *Services) error {
 
 // Everything one run of listening produced goes, and the recording is left
 // owing its text.
-func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
+func TestATranscriptDroppedConsumesEverythingListeningProduced(t *testing.T) {
 	target := whole(newCues())
 	target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = target[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]
 	target[domain.NewArtifactName(domain.ArtifactProducer, asr, hashed)] = []byte(`{"model":"parakeet"}`)
@@ -91,8 +91,8 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))
 	}
 
-	if notified := readTranscript(t, api); len(notified.GetCues()) != 0 {
-		t.Errorf("the recording still says %+v", notified.GetCues())
+	if cuesDoc := readTranscript(t, api); len(cuesDoc.GetCues()) != 0 {
+		t.Errorf("the recording still says %+v", cuesDoc.GetCues())
 	}
 }
 
@@ -105,7 +105,7 @@ func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T)
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("dropped a transcript being written and failed %v", err)
 	}
-	if _, retained := target.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !retained {
+	if _, hasArtifact := target.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !hasArtifact {
 		t.Error("the transcript went out from under the run")
 	}
 	if len(index.written) != 0 {

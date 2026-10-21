@@ -123,7 +123,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	}
 
 	//nolint:contextcheck // a document stays open for the window, not for the request that opened it
-	state, services, displayed := createWindow(made, tasks, embedder)
+	state, services, viewer := createWindow(made, tasks, embedder)
 	indexer := newIndexWorker(made, state, embedder, quietPeriod, out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
@@ -140,7 +140,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	pool := &Installation{
 		State:         state,
 		Services:      services,
-		viewer:        displayed,
+		viewer:        viewer,
 		Embedder:      embedder,
 		Asking:        asking,
 		made:          made,
@@ -168,8 +168,8 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// A recording is played over a socket of its own, opened once everything it
 	// answers through is in place. A machine that refuses one leaves the player
 	// with no address, and the words are still read.
-	stopped := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
-	if playing, why := Listen(services.server, stopped); why != nil {
+	onStop := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
+	if playing, why := Listen(services.server, onStop); why != nil {
 		fmt.Fprintf(out, "recordings will not play: %v\n", why)
 	} else {
 		services.openPlaying(playing)
@@ -329,13 +329,13 @@ func createWindow(
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
-	displayed := newCachingViewer(made.GetPageRenderer())
+	viewer := newCachingViewer(made.GetPageRenderer())
 	services := createServices(state)
 	services.getPluginDir = made.GetPluginDir
 	state.EmitEvent = made.EmitEvent
 	readers := made.GetVaultReaders()
 	services.readFiles(readers)
-	services.readDocuments(readers, made.GetBooks(), displayed)
+	services.readDocuments(readers, made.GetBooks(), viewer)
 	services.readTexts(made.OpenSourceTexts())
 	services.Ocr.highlight = &highlight
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
@@ -360,7 +360,7 @@ func createWindow(
 		state.Indexing.Model.Store(model.String())
 		state.Indexing.Recipe.Store(model.Recipe())
 	}
-	return state, services, displayed
+	return state, services, viewer
 }
 
 // wireUseCases builds the use cases the window and everything else working its

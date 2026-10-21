@@ -496,7 +496,7 @@ func (p *speaking) endStream(t *testing.T) {
 
 // TestAPageWithAQuestionStandingDoesNotLetTheWindowGo. The text is in that
 // buffer and nowhere else, and only the person says where it ends up.
-func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
+func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 
@@ -619,7 +619,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 // TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind. A stream
 // ending is not an answer, so what the page held is waited for; and it is
 // waited for as silence is, which is the bound and no longer.
-func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testing.T) {
+func TestAPageThatGoesWithAQuestionActiveIsWaitedForAndThenLeftPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 
@@ -653,7 +653,7 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 
 // TestAPageThatComesBackRaisesItsQuestionAgain. The client is back after a
 // second under a token of its own, and the text it holds is still its own.
-func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
+func TestAPageThatReachesBackRaisesItsQuestionAgain(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 

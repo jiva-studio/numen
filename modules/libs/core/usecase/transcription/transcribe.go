@@ -248,7 +248,7 @@ func (u Transcribe) transcribeSegments(
 	res.Resumed, res.Heard = from, from
 	run.Report(u.OnProgress, *res)
 
-	opened := size > 0
+	hasContent := size > 0
 	for {
 		if err := ctx.Err(); err != nil {
 			// What has been heard is on disk already, and the next run begins
@@ -266,11 +266,11 @@ func (u Transcribe) transcribeSegments(
 		}
 
 		from = reached
-		body := trimHeader(transcript.Marshal(cues), opened)
+		body := trimHeader(transcript.Marshal(cues), hasContent)
 		if err := store.AppendArtifact(ctx, partial, append(body, transcript.GetReachMarker(from)...)); err != nil {
 			return err
 		}
-		opened = true
+		hasContent = true
 		if err := run.Cut(ctx, u.Cut, v, path); err != nil {
 			return err
 		}

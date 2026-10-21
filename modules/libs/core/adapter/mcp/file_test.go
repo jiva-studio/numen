@@ -57,7 +57,7 @@ func TestFileReadReadsALongFileARunAtATime(t *testing.T) {
 
 // A path with nothing behind it is an answer and not an error: a file may have
 // been removed since an agent last saw it.
-func TestFileReadSaysWhenThereIsNoFileAtThePath(t *testing.T) {
+func TestFileReadReturnsWhenThereIsNoFileAtThePath(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	got := runOf(t, session, "gone.txt", 0, 0)
@@ -82,7 +82,7 @@ func TestFileReadPassesOverWhatTheVaultDoes(t *testing.T) {
 
 // The path is from the vault root, and a call naming another place is a mistake
 // worth hearing about.
-func TestFileReadRefusesAPathThatLeavesTheVault(t *testing.T) {
+func TestFileReadRefusesAPathThatPreservesTheVault(t *testing.T) {
 	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	for _, path := range []string{"../secret.txt", "notes/../../secret.txt", v.Path + "/Entropy.md"} {

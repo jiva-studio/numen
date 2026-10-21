@@ -147,16 +147,16 @@ func moveIntoTrash(dir, path, from string) error {
 // one that creates it has the name.
 func reserveTrashName(files, notes, name string) (string, *os.File, error) {
 	for n := 1; ; n++ {
-		acquired := name
+		targetName := name
 		if n > 1 {
-			acquired = name + "." + strconv.Itoa(n)
+			targetName = name + "." + strconv.Itoa(n)
 		}
-		if _, err := os.Lstat(filepath.Join(files, acquired)); err == nil {
+		if _, err := os.Lstat(filepath.Join(files, targetName)); err == nil {
 			continue
 		}
-		note, err := os.OpenFile(filepath.Join(notes, acquired+suffix), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+		note, err := os.OpenFile(filepath.Join(notes, targetName+suffix), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 		if err == nil {
-			return acquired, note, nil
+			return targetName, note, nil
 		}
 		if !errors.Is(err, fs.ErrExist) {
 			return "", nil, err

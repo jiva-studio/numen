@@ -138,7 +138,7 @@ func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
 	}
 }
 
-func TestReadDropsAPassageOfASourceTheVaultNoLongerHolds(t *testing.T) {
+func TestReadDropsAPassageOfASourceTheVaultNoLongerContains(t *testing.T) {
 	ctx := t.Context()
 	vault := &fakeVault{content: map[string]string{"here.md": "here.md"}, calls: map[string]int{}}
 	u := Search{readers: fakeVaultReaders{reader: vault}}

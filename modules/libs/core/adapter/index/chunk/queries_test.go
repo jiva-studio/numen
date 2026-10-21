@@ -308,7 +308,7 @@ func TestAFingerprintReadFromAClosedOrBrokenIndexFails(t *testing.T) {
 	}
 }
 
-func TestWhatIsUnderAPathIsTheFileOrEverythingTheFolderHolds(t *testing.T) {
+func TestWhatIsBelowAPathIsTheFileOrEverythingTheFolderContains(t *testing.T) {
 	db := openIndex(t)
 	at := time.Date(2022, 5, 6, 7, 8, 9, 10, time.UTC)
 	source{path: "physics/Entropy.md", kind: "note", size: 40, mtime: at.UnixNano()}.save(t, db)
@@ -347,7 +347,7 @@ func TestWhatIsUnderAPathIsTheFileOrEverythingTheFolderHolds(t *testing.T) {
 	}
 }
 
-func TestWhatIsUnderAPathFailsOnAClosedOrBrokenIndex(t *testing.T) {
+func TestWhatIsBelowAPathFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	if _, err := closed(t).GetSourcesUnder(t.Context(), vaultA, "p"); err == nil {
 		t.Error("a closed index answered")
 	}
@@ -384,7 +384,7 @@ func searchFixture(t *testing.T) *index.DB {
 	return db
 }
 
-func TestASearchByWordsAnswersWithWhereEachHitStands(t *testing.T) {
+func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 	db := searchFixture(t)
 
 	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, "stripes", []domain.SourceKind{domain.KindBook}, 10, false)
@@ -476,10 +476,10 @@ func TestASearchByWordsHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
 
-	for _, typed := range []string{"", "   "} {
-		got, err := queries.FindLexical(t.Context(), vaultA, typed, nil, 10, false)
+	for _, input := range []string{"", "   "} {
+		got, err := queries.FindLexical(t.Context(), vaultA, input, nil, 10, false)
 		if err != nil || got != nil {
-			t.Errorf("%q answered %v, %v", typed, got, err)
+			t.Errorf("%q answered %v, %v", input, got, err)
 		}
 	}
 	got, err := queries.FindLexical(t.Context(), nobody, "zebra", nil, 10, false)
@@ -577,10 +577,10 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 
 func TestASearchByNameHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	queries := openIndex(t).ChunkQueries()
-	for _, typed := range []string{"", "  "} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, typed, nil, 10, false)
+	for _, input := range []string{"", "  "} {
+		got, err := queries.GetNamedPassages(t.Context(), vaultA, input, nil, 10, false)
 		if err != nil || got != nil {
-			t.Errorf("%q answered %v, %v", typed, got, err)
+			t.Errorf("%q answered %v, %v", input, got, err)
 		}
 	}
 	got, err := queries.GetNamedPassages(t.Context(), nobody, "word", nil, 10, false)
@@ -639,7 +639,7 @@ func meaningFixture(t *testing.T) *index.DB {
 	return db
 }
 
-func TestASearchByMeaningAnswersNearestFirstWithWhereEachStands(t *testing.T) {
+func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	db := meaningFixture(t)
 
 	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 10, -1)
@@ -831,7 +831,7 @@ func TestAPassageFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestSourcesWithNoSmallChunkOweTheCut(t *testing.T) {
+func TestSourcesWithNoSmallChunkOweTheSplit(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/c-cut.epub", large: "l", smalls: []string{"s"}}.save(t, db)
 	source{path: "lib/b-large-only.epub", large: "l"}.save(t, db)
@@ -1030,7 +1030,7 @@ func TestOwedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestProgressCountsTheSmallChunksAndWhatIsEmbeddedUnderTheRecipe(t *testing.T) {
+func TestProgressCountsTheSmallChunksAndWhatIsEmbeddedBelowTheRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	source{path: "lib/b.epub", large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
@@ -1063,7 +1063,7 @@ func TestProgressFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestKeptVectorsAreFoundByTheHashOfTheirTextUnderTheRecipe(t *testing.T) {
+func TestCachedVectorsAreFoundByTheHashOfTheirTextBelowTheRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2"}}.save(t, db)
 	chunks := getOwed(t, db, vaultA)
@@ -1099,7 +1099,7 @@ func TestKeptVectorsAreFoundByTheHashOfTheirTextUnderTheRecipe(t *testing.T) {
 	}
 }
 
-func TestKeptVectorsOfNoHashAreNone(t *testing.T) {
+func TestCachedVectorsOfNoHashAreNone(t *testing.T) {
 	queries := openIndex(t).ChunkQueries()
 	for _, of := range [][][]byte{nil, {}, {nil}, {{}, nil}} {
 		got, err := queries.GetKeptVectors(t.Context(), recipe, of)
@@ -1113,7 +1113,7 @@ func TestKeptVectorsOfNoHashAreNone(t *testing.T) {
 	}
 }
 
-func TestKeptVectorsFailOnAClosedOrBrokenIndex(t *testing.T) {
+func TestCachedVectorsFailOnAClosedOrBrokenIndex(t *testing.T) {
 	hashes := [][]byte{{1, 2, 3}}
 	if _, err := closed(t).GetKeptVectors(t.Context(), recipe, hashes); err == nil {
 		t.Error("a closed index answered")
@@ -1124,7 +1124,7 @@ func TestKeptVectorsFailOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestASourceTextSaysWhatMadeItAndTheFileItWasMadeFrom(t *testing.T) {
+func TestASourceTextReturnsWhatMadeItAndTheFileItWasMadeFrom(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/scan.pdf", kind: "book", size: 321, mtime: century + 7, producer: "ocr", hash: "h-scan"}.save(t, db)
 	source{path: "lib/plain.epub", size: 12}.save(t, db)

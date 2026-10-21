@@ -88,7 +88,7 @@ func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, do
 	return r, v, index, shelf, model
 }
 
-func TestWhatIsReadIsWrittenDownAndClaimed(t *testing.T) {
+func TestWhatIsReadIsSavedDownAndClaimed(t *testing.T) {
 	u, v, index, shelf, model := recogniser(t, "What the page says.")
 
 	res, err := u.Execute(t.Context(), v, documentPath)
@@ -179,9 +179,9 @@ func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stopped := model.pages
-	if stopped < 2 {
-		t.Fatalf("it stopped after %d pages, which is too early to tell anything", stopped)
+	stoppedPages := model.pages
+	if stoppedPages < 2 {
+		t.Fatalf("it stopped after %d pages, which is too early to tell anything", stoppedPages)
 	}
 
 	// Nothing final was written: a half-read document is not an artifact, and
@@ -200,15 +200,15 @@ func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 	if res.Resumed == 0 {
 		t.Error("the second run began at the beginning")
 	}
-	if model.pages >= stopped+res.Pages {
-		t.Errorf("the second run read %d pages, and the document has %d", model.pages-stopped, res.Pages)
+	if model.pages >= stoppedPages+res.Pages {
+		t.Errorf("the second run read %d pages, and the document has %d", model.pages-stoppedPages, res.Pages)
 	}
 	if res.Read != res.Pages {
 		t.Errorf("read %d of %d pages after taking it up again", res.Read, res.Pages)
 	}
 }
 
-func TestWhatReadItIsKeptBesideWhatItRead(t *testing.T) {
+func TestWhatReadItIsCachedAdjacentWhatItRead(t *testing.T) {
 	u, v, index, shelf, _ := recogniser(t, "Something.")
 
 	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
@@ -293,7 +293,7 @@ func assertBoxesRead(t *testing.T, prose string, boxes []domain.HighlightBox, sa
 	}
 }
 
-func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
+func TestADocumentAnotherRunContainsIsLeftAlone(t *testing.T) {
 	// The name is the hash of the document's bytes, and it is appended to for an
 	// hour. One run holds it for all of that.
 	u, v, index, shelf, model := recogniser(t, "A page.")
@@ -394,7 +394,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	assertBoxesRead(t, prose, boxes, says)
 }
 
-func TestTheSourceIsCutAsItsPagesAreRead(t *testing.T) {
+func TestTheSourceIsSplitAsItsPagesAreRead(t *testing.T) {
 	// A book is an hour. The pages already read answer questions while the rest
 	// of it is still being read.
 	u, v, _, _, _ := recogniser(t, "A page.")

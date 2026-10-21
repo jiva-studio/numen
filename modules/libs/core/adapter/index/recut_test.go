@@ -338,17 +338,17 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 	save(t, db, first, after)
 	now := smallChunks(t, db, first, after.Fingerprint.Path)
 
-	retained := 0
+	count := 0
 	for _, row := range now {
 		if !slices.Contains(was, row) {
 			continue
 		}
-		retained++
+		count++
 		if !hasVector(t, db, row) {
 			t.Errorf("row %d kept its number and lost its vector", row)
 		}
 	}
-	return cost{asked: model.run(t, db, first), kept: retained, was: len(was), now: len(now)}
+	return cost{asked: model.run(t, db, first), kept: count, was: len(was), now: len(now)}
 }
 
 func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
@@ -449,8 +449,8 @@ func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	model.run(t, db, first)
 
 	enclosing := largeChunk(t, db, first, n.Fingerprint.Path)
-	retained := smallChunks(t, db, first, n.Fingerprint.Path)[0]
-	if !hasVector(t, db, retained) {
+	chunkItem := smallChunks(t, db, first, n.Fingerprint.Path)[0]
+	if !hasVector(t, db, chunkItem) {
 		t.Fatal("the chunk this is about carries no vector, so it would pass either way")
 	}
 
@@ -460,13 +460,13 @@ func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	if now == enclosing {
 		t.Fatalf("the large chunk is row %d after the note was edited, so its text did not move", now)
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ?`, retained); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ?`, chunkItem); got != 1 {
 		t.Fatal("the chunk whose text did not change went with the large chunk enclosing it")
 	}
-	if !hasVector(t, db, retained) {
+	if !hasVector(t, db, chunkItem) {
 		t.Error("the chunk whose text did not change lost its vector")
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent_id = ?`, retained, now); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent_id = ?`, chunkItem, now); got != 1 {
 		t.Error("the chunk that was kept does not sit inside the large chunk that is there now")
 	}
 }
@@ -481,13 +481,13 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 	n := noteAt("notes/Entropy.md", "Entropy", body)
 	save(t, db, first, n)
 
-	retained := smallChunks(t, db, first, n.Fingerprint.Path)[0]
+	chunkItem := smallChunks(t, db, first, n.Fingerprint.Path)[0]
 	// A word of the first chunk, which an edit at the other end does not reach.
 	opening := "word" + spellNumber(3)
 
 	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, body+" wordzz"))
 
-	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, retained); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, chunkItem); got != 1 {
 		t.Errorf("%d full-text rows for the chunk that was kept", got)
 	}
 	// One row per small chunk, and none naming a chunk that is gone.
@@ -607,7 +607,7 @@ func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string
 	return out
 }
 
-func TestAChunkIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
+func TestAChunkIsNamedAfterTheSectionItWasSplitInside(t *testing.T) {
 	// A heading names the text under it, and that name is on every chunk cut
 	// there, which is what a result has to show to say where the passage is.
 	db := openDB(t)
@@ -652,7 +652,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	}
 }
 
-func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
+func TestSplittingOneSectionStaysInsideItsVault(t *testing.T) {
 	// One database holds every vault. The two notes here are at one path, are cut
 	// into sections of the same shape, and share no word of prose, so a chunk that
 	// arrived from the wrong vault is recognisable and a cut that reached across

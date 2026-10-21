@@ -14,7 +14,7 @@ import (
 
 // What is written is read back as the same cues, and the words come back
 // without a timing in them.
-func TestWhatIsWrittenIsReadBack(t *testing.T) {
+func TestWhatIsSavedIsReadBack(t *testing.T) {
 	content := transcript.Marshal([]domain.TranscriptCue{
 		{Text: "первая реплика", From: 1500, To: 4200},
 		{Text: "вторая реплика", From: 4200, To: 9100},
@@ -40,7 +40,7 @@ func TestWhatIsWrittenIsReadBack(t *testing.T) {
 }
 
 // A cue carrying no words is not a moment the recording had.
-func TestSilenceIsNotWritten(t *testing.T) {
+func TestSilenceIsNotSaved(t *testing.T) {
 	content := transcript.Marshal([]domain.TranscriptCue{
 		{Text: "  ", From: 0, To: 1000},
 		{Text: "said", From: 1000, To: 2000},

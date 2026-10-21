@@ -23,7 +23,7 @@ var note = map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"}
 // A note written while the vault is being walked is read again after it, so the
 // newest copy of it lands last. A walk writes in groups from what it read, and
 // its copy of a note lands whenever the group does.
-func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
+func TestANoteSavedBelowTheWalkIsReadAgain(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	opening := cfg.VaultOpener(db)
 	open := opening.Begin(t.Context(), v)
@@ -47,7 +47,7 @@ func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
 // A vault walked a second time is walked with the same guard as the first: a
 // vault whose first walk failed is walked again on the opening it already has,
 // and a note written under that walk is read again after it.
-func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
+func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 
 	target := makeGatedReaders()
@@ -90,7 +90,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 }
 
 // A vault that cannot be watched is opened all the same, and says why.
-func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
+func TestAVaultThatCannotBeWatchedIsOpenedAndReturnsSo(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
 
@@ -109,15 +109,15 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 // A vault is walked once at a time, and what the watch collected is acted on
 // once the first walk is over. The note on disk is what the index says
 // afterwards, however old the copy the first walk was holding.
-func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
+func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 
 	watcher := makeWatcher()
 	readers := makeStagedReaders()
 	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
-	notified := make(chan container.VaultChanges, 8)
-	opening.Told = func(m container.VaultChanges) { notified <- m }
+	changesCh := make(chan container.VaultChanges, 8)
+	opening.Told = func(m container.VaultChanges) { changesCh <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())
@@ -138,7 +138,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	// reading the vault again.
 	watcher.lost <- struct{}{}
 	select {
-	case m := <-notified:
+	case m := <-changesCh:
 		t.Fatalf("the vault was read again beside the first walk: %+v", m)
 	case <-time.After(250 * time.Millisecond):
 	}
@@ -147,7 +147,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	if err := receiveFrom(t, walked, "the first walk did not finish"); err != nil {
 		t.Fatal(err)
 	}
-	if m := receiveFrom(t, notified, "the vault was never read again"); !m.ShouldReload {
+	if m := receiveFrom(t, changesCh, "the vault was never read again"); !m.ShouldReload {
 		t.Fatalf("reported %+v", m)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Renamed" {

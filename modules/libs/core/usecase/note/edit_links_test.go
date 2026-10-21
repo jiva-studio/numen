@@ -93,7 +93,7 @@ func TestLinkEditsAreHeldToTheFingerprintTheCallerPresents(t *testing.T) {
 	}
 }
 
-func TestEditingLinksInABlockWrittenOnOneLineChangesNothing(t *testing.T) {
+func TestEditingLinksInABlockSavedOnOneLineChangesNothing(t *testing.T) {
 	t.Parallel()
 	const inline = "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\nlinks: [Entropy, Order]\n---\n# Heat\n"
 	c := openChanging(t, map[string]string{"Heat.md": inline})

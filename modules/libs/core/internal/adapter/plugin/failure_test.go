@@ -27,7 +27,7 @@ func getFailure(t *testing.T, host *Host, id string) *port.PluginFailure {
 	return nil
 }
 
-func TestAPluginTheHostHoldsOffIsListedWithItsReason(t *testing.T) {
+func TestAPluginTheHostContainsOffIsListedWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.SetLauncher(launchAnsweringPing(t, port.PluginProtocolVersion+1, &procs))
@@ -78,7 +78,7 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	}
 }
 
-func TestARetryThatFailsAgainHoldsThePluginOffAtOnce(t *testing.T) {
+func TestARetryThatFailsAgainContainsThePluginOffAtOnce(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.SetLauncher(failLaunching)
 	var notified []port.PluginFailure

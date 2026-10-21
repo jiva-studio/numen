@@ -217,7 +217,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 //
 // An adapter's own test is not this. It builds the thing it is about, and so
 // does the composition root's.
-func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
+func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 	var wrong []string
 	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -1119,7 +1119,7 @@ var layers = map[string]bool{
 // says, and the reader is left with usecase.Add for what is vaults.Add.
 //
 // The tests are read too: most of a package's call sites are in them.
-func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
+func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 	var wrong []string
 	var read, aliased int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {

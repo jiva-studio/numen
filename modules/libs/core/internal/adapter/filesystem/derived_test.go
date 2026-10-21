@@ -82,7 +82,7 @@ func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
 
 // A store opened on a folder carrying no identity has none to lose, so the
 // folder itself is what says it is still there.
-func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsGone(t *testing.T) {
+func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsMissing(t *testing.T) {
 	root := filepath.Join(t.TempDir(), "vault")
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsGone(t *testing.T) {
 
 // The identity is read out of a file, and a store that has read it once goes on
 // answering from that recognition. A file written again is another recognition.
-func TestAStoreNoticesTheIdentityChangingUnderIt(t *testing.T) {
+func TestAStoreNoticesTheIdentityChangingBelowIt(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
 	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
@@ -133,7 +133,7 @@ func TestAStoreNoticesTheIdentityChangingUnderIt(t *testing.T) {
 	}
 }
 
-func TestWhatIsWrittenIsRead(t *testing.T) {
+func TestWhatIsSavedIsRead(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
 
@@ -176,7 +176,7 @@ func TestAppendingToNothingBeginsIt(t *testing.T) {
 	}
 }
 
-func TestANameWithNothingUnderItIsAnAnswer(t *testing.T) {
+func TestANameWithNothingBelowItIsAnAnswer(t *testing.T) {
 	// The folder is on the person's disk and they may empty it. That is a thing
 	// that happened, not a failure of the application.
 	derived, _ := store(t)
@@ -358,7 +358,7 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 	derived, root := store(t)
 
 	child := exec.CommandContext(t.Context(), os.Args[0],
-		"-test.run=^TestHoldingAClaimForAnotherProcess$", "-test.timeout=1m")
+		"-test.run=^TestContainingAClaimForAnotherProcess$", "-test.timeout=1m")
 	child.Env = append(os.Environ(), holdingEnv+"="+root)
 	child.Stderr = os.Stderr
 	stdin, err := child.StdinPipe()
@@ -393,9 +393,9 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 	}
 }
 
-// TestHoldingAClaimForAnotherProcess is the child of the test above. It takes
+// TestContainingAClaimForAnotherProcess is the child of the test above. It takes
 // the claim, says so, and holds it until its parent closes its input.
-func TestHoldingAClaimForAnotherProcess(t *testing.T) {
+func TestContainingAClaimForAnotherProcess(t *testing.T) {
 	root := os.Getenv(holdingEnv)
 	if root == "" {
 		t.Skip("this test is run by TestAClaimHeldByAnotherProcessIsRefused")
@@ -416,7 +416,7 @@ func TestHoldingAClaimForAnotherProcess(t *testing.T) {
 
 // A store says what names it holds, because work whose whole record is a folder
 // of files nobody names in advance has no other way to find them.
-func TestTheStoreSaysWhatNamesItHolds(t *testing.T) {
+func TestTheStoreReturnsWhatNamesItContains(t *testing.T) {
 	derived, _ := store(t)
 	ctx := t.Context()
 
@@ -448,7 +448,7 @@ func TestTheStoreSaysWhatNamesItHolds(t *testing.T) {
 
 // What a listing says about a file is how long it now is, so a reader that has
 // read it once is told when it has grown.
-func TestAListingSaysHowLongEachFileIs(t *testing.T) {
+func TestAListingReturnsHowLongEachFileIs(t *testing.T) {
 	derived, _ := store(t)
 	ctx := t.Context()
 
@@ -506,7 +506,7 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 // once. A folder put there afterwards — a sync client keeping the application's
 // files on another disk, a person moving them — is where the store writes from
 // then on, so the answer is the folder as it is and not as it was.
-func TestAStoreFollowsItsFolderWhereItIsPutAfterwards(t *testing.T) {
+func TestAStoreFollowsItsFolderWhereItIsInsertAfterwards(t *testing.T) {
 	target := t.TempDir()
 	root := filepath.Join(t.TempDir(), "vault")
 	if err := os.MkdirAll(root, 0o755); err != nil {
@@ -546,7 +546,7 @@ func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
 // should be — here to the service folder itself — is not one, and a name under
 // it lands nowhere: the vault's identity is a step down that link, and a store
 // that followed it would write over the one file every index row points at.
-func TestAnAreaThatIsALinkHoldsNothing(t *testing.T) {
+func TestAnAreaThatIsALinkContainsNothing(t *testing.T) {
 	derived, root := store(t)
 	identity := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
 	before, err := os.ReadFile(identity)

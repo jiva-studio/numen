@@ -72,7 +72,7 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 
 // A setting written is answered by the next question, and the model chosen for
 // the agent stands where the models said it would.
-func TestASettingWrittenIsAnsweredByTheNextQuestion(t *testing.T) {
+func TestASettingSavedIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
@@ -136,7 +136,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 
 // Settings are written together or not at all, so one the settings cannot hold
 // leaves the ones beside it where they were.
-func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
+func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
@@ -160,7 +160,7 @@ func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T)
 
 // The window opens the settings file whole, and what it reads is the file as
 // its person wrote it.
-func TestTheSettingsFileIsReadAsItStands(t *testing.T) {
+func TestTheSettingsFileIsReadAsItExists(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	response, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
@@ -178,7 +178,7 @@ func TestTheSettingsFileIsReadAsItStands(t *testing.T) {
 }
 
 // The file is written as it was typed, and read back the same way.
-func TestTheSettingsFileIsWrittenAsItWasTyped(t *testing.T) {
+func TestTheSettingsFileIsSavedAsItWasTyped(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	content := "{\n  \"agent\": {\n    \"claude\": { \"model\": \"opus\" }\n  }\n}\n"
 
@@ -239,7 +239,7 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 }
 
 // The file holds a person's keys, and what an error says does not repeat them.
-func TestWhatAnErrorSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
+func TestWhatAnErrorReturnsDoesNotRepeatWhatExistsInTheFile(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	secret := "sk-not-a-real-key-0000"
 
@@ -305,7 +305,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 }
 
 // A client presenting the file it read writes over it.
-func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
+func TestAFileActiveAtWhatTheClientReadIsSaved(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	was, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {

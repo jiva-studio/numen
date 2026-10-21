@@ -126,7 +126,7 @@ func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
 // Getting the models is a step of its own, and it is named for what it is. A
 // row that calls it by the name of the work that follows leaves a person
 // watching a recording nothing has listened to yet.
-func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
+func TestTheModelsAreGotBelowTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 	by := &deaf{}
 	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	recognized := unheard{recordings: []string{"talks/one.mp3"}}
@@ -171,7 +171,7 @@ func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 
 // The queue is a question asked of the index: what it holds, less what stands
 // on a text a producer made.
-func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
+func TestARecordingActiveOnATextIsNotOwed(t *testing.T) {
 	by := &deaf{}
 	listening, v := newTranscriptionWorker(t, by)
 	owed := listening.getUntranscribed(t.Context(), recognised{"talks/one.mp3"}, v)
@@ -363,7 +363,7 @@ func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 
 // One run holds the models on a machine: a scan being read holds them, and a
 // transcription waits for them and says so.
-func TestARecordingWaitsForTheModelsAScanHolds(t *testing.T) {
+func TestARecordingWaitsForTheModelsAScanContains(t *testing.T) {
 	by := &deaf{}
 	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 

@@ -25,7 +25,7 @@ func TestARenameOfANoteThatIsNotThereAnswersWithNothing(t *testing.T) {
 
 // A file the person renamed is brought into line when the two names are kept as
 // one.
-func TestAFilenameIsWrittenIntoTheTitleWhereTheTwoAreKeptAsOne(t *testing.T) {
+func TestAFilenameIsSavedIntoTheTitleWhereTheTwoAreCachedAsOne(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
 
@@ -38,7 +38,7 @@ func TestAFilenameIsWrittenIntoTheTitleWhereTheTwoAreKeptAsOne(t *testing.T) {
 }
 
 // Where the two names are told apart the note is not opened at all.
-func TestAFilenameIsLeftOutOfTheNoteWhereTheTwoAreToldApart(t *testing.T) {
+func TestAFilenameIsLeftOutOfTheNoteWhereTheTwoAreReportedApart(t *testing.T) {
 	t.Parallel()
 	raw := "---\ntitle: Old\n---\nA measure.\n"
 	c := openChanging(t, map[string]string{"Entropy.md": raw})
@@ -72,7 +72,7 @@ func TestANoteWithNoTitleIsLeftAloneByItsFilename(t *testing.T) {
 	}
 }
 
-func TestAFilenameCannotBeWrittenIntoANoteThatIsNotThere(t *testing.T) {
+func TestAFilenameCannotBeSavedIntoANoteThatIsNotThere(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
@@ -95,7 +95,7 @@ func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 	}
 }
 
-func TestARenameHandsOutTheDependenciesItWasGiven(t *testing.T) {
+func TestARenamePassesOutTheDependenciesItWasGiven(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
 	sources, writers, readers := &sulking{}, &trashWriters{}, &statedReaders{}

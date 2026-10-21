@@ -81,7 +81,7 @@ func TestAPathFromTheRootWinsOverAName(t *testing.T) {
 	}
 }
 
-func TestTheFolderTheLinkWasWrittenInDecidesIt(t *testing.T) {
+func TestTheFolderTheLinkWasSavedInDecidesIt(t *testing.T) {
 	t.Parallel()
 	// Two notes answer to the name, and one of them is in the same folder as the
 	// note that wrote the link. That is a determined answer and not an
@@ -146,7 +146,7 @@ func TestANameCarryingDotsResolvesWholeAndIsABacklink(t *testing.T) {
 	}
 }
 
-func TestALinkToNothingIsDanglingRatherThanAnError(t *testing.T) {
+func TestALinkToNothingIsDanglingInsteadOfAnError(t *testing.T) {
 	t.Parallel()
 	db, v := newIndexedVault(t, map[string]string{
 		"source.md": "Points at [[Nothing At All]].\n",
@@ -216,7 +216,7 @@ func TestAnAttachmentIsALinkAndResolvesToNoNote(t *testing.T) {
 	}
 }
 
-func TestANameNeverLeavesItsVault(t *testing.T) {
+func TestANameNeverPreservesItsVault(t *testing.T) {
 	t.Parallel()
 	// A name means something only inside one vault. Another vault holding a note
 	// by the same name is not an answer, and there is no way to ask it for one.
@@ -291,7 +291,7 @@ func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	return v
 }
 
-func TestALinkWrittenAsAPathIsStillABacklink(t *testing.T) {
+func TestALinkSavedAsAPathIsStillABacklink(t *testing.T) {
 	t.Parallel()
 	// A backlink is a link that resolves here, not one whose text looks like
 	// this note. Written as a path, it never matches by name.
@@ -353,7 +353,7 @@ func TestBacklinksNeverCrossVaults(t *testing.T) {
 	}
 }
 
-func TestOneNoteWrittenTwoWaysIsOneLink(t *testing.T) {
+func TestOneNoteSavedTwoWaysIsOneLink(t *testing.T) {
 	t.Parallel()
 	// The links block names it by path, the prose names it by name. Both mean
 	// the same note, so there is one link, and the described one wins.
@@ -371,7 +371,7 @@ func TestOneNoteWrittenTwoWaysIsOneLink(t *testing.T) {
 	}
 }
 
-func TestTwoUnresolvedLinksAreOnlyTheSameWhenWrittenTheSame(t *testing.T) {
+func TestTwoUnresolvedLinksAreOnlyTheSameWhenSavedTheSame(t *testing.T) {
 	t.Parallel()
 	// A name that answers to nothing is matched as it is written, so two of
 	// them stay two.

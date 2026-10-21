@@ -37,7 +37,7 @@ func notesAt(paths ...string) []domain.NoteChunks {
 
 // Each path written through the index while a walk runs is held once, in the
 // order it was first written, whether it was saved or removed.
-func TestThePathsWrittenUnderAWalkAreHeldOnceInOrder(t *testing.T) {
+func TestThePathsSavedBelowAWalkAreHeldOnceInOrder(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
 	buffered.startRecording()
 

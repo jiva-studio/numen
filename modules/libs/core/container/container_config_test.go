@@ -61,7 +61,7 @@ func TestSettingsThatCannotBeReadAreSaidWithTheFileTheyStandIn(t *testing.T) {
 	}
 }
 
-func TestWithNoFolderForSettingsNothingIsReadOrWritten(t *testing.T) {
+func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
 	if _, response, err := (Config{}).ReadSettings()(); err == nil || response != "" {
@@ -95,7 +95,7 @@ func TestTheSettingsStandInTheUsersConfigFolderUnlessPointedElsewhere(t *testing
 	}
 }
 
-func TestTheSettingsStandBesideTheRegistryWhenItIsPointedElsewhere(t *testing.T) {
+func TestTheSettingsStandAdjacentTheRegistryWhenItIsPointedElsewhere(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
@@ -196,7 +196,7 @@ func TestAnIndexIsNotMadeWhereTheCacheFolderCannotBeMade(t *testing.T) {
 	}
 }
 
-func TestWhatWentWrongIsToldToWhoeverAskedToBeTold(t *testing.T) {
+func TestWhatWentWrongIsReportedToWhoeverAskedToBeReported(t *testing.T) {
 	var notified []error
 	problem := errors.New("a vacuum that could not run")
 
@@ -220,7 +220,7 @@ func TestTheSettingsFileIsReadOutAsItsPersonWroteIt(t *testing.T) {
 	}
 }
 
-func TestASettingsFileThatCannotBeReadIsSaidWithWhereItStands(t *testing.T) {
+func TestASettingsFileThatCannotBeReadIsSaidWithWhereItExists(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.Mkdir(path, 0o700); err != nil {
 		t.Fatal(err)
@@ -278,7 +278,7 @@ func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
 	}
 }
 
-func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsKept(t *testing.T) {
+func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsCached(t *testing.T) {
 	const standing = `{"appearance": {"theme": "mine:sea"}}`
 	cfg, path := writeSettings(t, standing)
 
@@ -290,7 +290,7 @@ func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsKept(t *testing.T
 	}
 }
 
-func TestWithNoFolderForSettingsTheFileIsNotWritten(t *testing.T) {
+func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
 	err := Config{}.WriteConfiguredFile()(`{}`, nil)

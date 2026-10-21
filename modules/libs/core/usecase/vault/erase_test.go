@@ -92,7 +92,7 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 	}
 }
 
-func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
+func TestAFolderThatIsMissingIsForgottenAndNothingIsTrashed(t *testing.T) {
 	t.Parallel()
 	_, removed, registry := twoVaults(t)
 	erase, trash, index, _ := newErase(registry)

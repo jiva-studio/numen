@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
-func TestAMissingSpanSaysWhatItIs(t *testing.T) {
+func TestAMissingSpanReturnsWhatItIs(t *testing.T) {
 	t.Parallel()
 
 	if got, want := (note.MissingSpan{}).Error(), "no part of this span is in the note"; got != want {
@@ -25,7 +25,7 @@ func TestAMissingSpanSaysWhatItIs(t *testing.T) {
 	}
 }
 
-func TestAnAmbiguousSpanSaysHowManyPlaces(t *testing.T) {
+func TestAnAmbiguousSpanReturnsHowManyPlaces(t *testing.T) {
 	t.Parallel()
 
 	got := note.AmbiguousSpan{Places: 3}.Error()
@@ -130,7 +130,7 @@ func TestAReplacementInANoteWhoseFrontmatterIsNeverClosedIsRefused(t *testing.T)
 
 // Whoever is drawing the note is told the stretch in the units a client counts,
 // and told when the change is over.
-func TestWhoeverIsDrawingTheNoteIsToldTheStretchInUTF16(t *testing.T) {
+func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
 	var notified []domain.Edit

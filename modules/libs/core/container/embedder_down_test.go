@@ -44,14 +44,14 @@ func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
-	listening := server.Listener.Addr().(*net.TCPAddr).Port
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
 	server.Close()
-	return &downEmbeddingHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: listening}}
+	return &downEmbeddingHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
 // A plugin that does not answer names no model, and a vault read without a
 // model leaves the vectors of the index where they are.
-func TestAnEmbeddingPluginThatIsDownLeavesTheVectorsOfTheIndex(t *testing.T) {
+func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
 	target := container.Config{

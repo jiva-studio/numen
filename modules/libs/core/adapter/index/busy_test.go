@@ -31,11 +31,11 @@ func openWithShortBusyTimeout(t *testing.T, path string) *sql.DB {
 func TestAWriteWaitsOutAWriterInAnotherProcess(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
-	holding := openDBAt(t, path)
+	heldDB := openDBAt(t, path)
 
 	// The other process, mid-write: an immediate transaction holds the file's
 	// one write lock until it ends.
-	tx, err := holding.write.BeginTx(ctx, nil)
+	tx, err := heldDB.write.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

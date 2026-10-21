@@ -140,7 +140,7 @@ func (d DerivedStores) Open(v domain.Vault) (port.DerivedStore, error) {
 // The store answers for every area named and the first of them is what it is
 // called. Naming none is the default area alone.
 func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore, error) {
-	retained := make([]string, 0, len(areas))
+	validAreas := make([]string, 0, len(areas))
 	for _, area := range areas {
 		if area == "" {
 			continue
@@ -148,10 +148,10 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 		if strings.ContainsAny(area, `/\`) || area == "." || area == ".." {
 			return nil, fmt.Errorf("%q is not one folder", area)
 		}
-		retained = append(retained, area)
+		validAreas = append(validAreas, area)
 	}
-	if len(retained) == 0 {
-		retained = []string{OCRDir}
+	if len(validAreas) == 0 {
+		validAreas = []string{OCRDir}
 	}
 	abs, err := filepath.Abs(vaultRoot)
 	if err != nil {
@@ -169,7 +169,7 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 		service: opts.serviceDir(),
 		id:      id,
 		root:    filepath.Join(abs, opts.serviceDir()),
-		areas:   retained,
+		areas:   validAreas,
 	}
 	d.last.Store(was)
 	if found, err := d.locate(); err == nil {

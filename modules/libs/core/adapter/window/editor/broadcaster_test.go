@@ -8,7 +8,7 @@ import (
 )
 
 // A listener that fell behind is told to read everything again.
-func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
+func TestALaggingListenerIsReportedToReadEverythingAgain(t *testing.T) {
 	following := newChangeBroadcaster()
 	line, isDone := following.subscribe()
 	defer isDone()
@@ -42,8 +42,8 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 	focusing.publish(domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}})
 
 	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}}
-	if waiting := <-line; !reflect.DeepEqual(waiting, want) {
-		t.Errorf("the listener was handed %+v", waiting)
+	if received := <-line; !reflect.DeepEqual(received, want) {
+		t.Errorf("the listener was handed %+v", received)
 	}
 	select {
 	case extra := <-line:
@@ -52,7 +52,7 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 	}
 }
 
-func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
+func TestNobodyIsReportedAfterTheyStopListening(t *testing.T) {
 	focusing := newPlaceBroadcaster()
 	line, isDone := focusing.subscribe()
 	isDone()
@@ -67,8 +67,8 @@ func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
 // A listener reading while tell runs on another goroutine is handed numbers
 // in the order they were told, never out of order and never twice.
 func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
-	counting := broadcaster[int]{capacity: 16}
-	line, isDone := counting.subscribe()
+	bcast := broadcaster[int]{capacity: 16}
+	line, isDone := bcast.subscribe()
 
 	const total = 20000
 
@@ -86,7 +86,7 @@ func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
 	}()
 
 	for n := range total {
-		counting.publish(n)
+		bcast.publish(n)
 	}
 	<-receivedFirst
 	isDone()

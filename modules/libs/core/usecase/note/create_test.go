@@ -24,7 +24,7 @@ func TestATitleNoFileCanBeNamedAfterMakesNothing(t *testing.T) {
 }
 
 // A link the note cannot carry leaves no file, wherever in the list it stands.
-func TestALinkTheNoteCannotCarryLeavesNoFile(t *testing.T) {
+func TestALinkTheNoteCannotCarryPreservesNoFile(t *testing.T) {
 	t.Parallel()
 	good := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, Role: domain.RoleParent}
 	bad := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Order"}, Role: "sibling"}
@@ -96,7 +96,7 @@ func TestATitleTheFilenameCarriesWritesNoTitleKey(t *testing.T) {
 	}
 }
 
-func TestCreatingNeedsNoIndexToLeaveTheNoteWritten(t *testing.T) {
+func TestCreatingNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
 	create := note.NewCreate(filesystem.VaultWriters{}, c.db.Queries(), nil, time.Now)

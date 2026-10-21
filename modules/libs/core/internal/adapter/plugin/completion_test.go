@@ -26,7 +26,7 @@ func TestAQuestionIsReadWithItsMessagesAndPurpose(t *testing.T) {
 
 // A refusal is answered with its code, consent before route before unavailability, and any other
 // error is none.
-func TestARefusalIsAnsweredWithItsCode(t *testing.T) {
+func TestAErrorIsAnsweredWithItsCode(t *testing.T) {
 	for _, tc := range []struct {
 		err  error
 		want v1.CompletionErrorCode

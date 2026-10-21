@@ -69,16 +69,16 @@ func GenerateAuthToken() (string, error) {
 
 // ParseHandshake scans a text line for readiness indicator and allocated port.
 func ParseHandshake(line string) (int, bool) {
-	trimmed := strings.TrimSpace(line)
+	cleanLine := strings.TrimSpace(line)
 	prefix := "NUMEN_READY"
-	if !strings.HasPrefix(trimmed, prefix) {
+	if !strings.HasPrefix(cleanLine, prefix) {
 		prefix = "READY"
-		if !strings.HasPrefix(trimmed, prefix) {
+		if !strings.HasPrefix(cleanLine, prefix) {
 			return 0, false
 		}
 	}
 
-	parts := strings.Fields(trimmed)
+	parts := strings.Fields(cleanLine)
 	for _, part := range parts {
 		if strings.HasPrefix(part, "port=") {
 			portStr := strings.TrimPrefix(part, "port=")

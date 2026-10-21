@@ -54,7 +54,7 @@ func writeFolderOfNotes(t *testing.T, root, name string, notes int) string {
 // TestAFolderNewToTheWatchIsHandedOverRatherThanWalked. The one goroutine that
 // empties the backlog walks nothing: a folder new to the watch is handed back
 // as a name, and it is walked beside the backlog that goes on emptying.
-func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
+func TestAFolderNewToTheWatchIsHandedOverInsteadOfWalked(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
 	at := writeFolderOfNotes(t, root, "library", 3)
 
@@ -102,17 +102,17 @@ func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 	missing := make(chan struct{}, 1)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	waiting := newQueue(64)
-	go forwardEvents(ctx, raw, waiting)
-	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, missing)
+	queue := newQueue(64)
+	go forwardEvents(ctx, raw, queue)
+	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
 	raw <- event{path: at}
 
 	select {
-	case notified := <-changes:
-		slices.Sort(notified)
-		if len(notified) != 2 {
-			t.Fatalf("the folder that arrived was reported as %v", notified)
+	case change := <-changes:
+		slices.Sort(change)
+		if len(change) != 2 {
+			t.Fatalf("the folder that arrived was reported as %v", change)
 		}
 	case <-missing:
 		t.Fatal("a folder of two notes was answered as the whole vault")

@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-func TestGetNamedPathsAnswersEveryNoteFiledUnderAName(t *testing.T) {
+func TestGetNamedPathsAnswersEveryNoteFiledBelowAName(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"a/Heat.md": "# Heat\n", "b/Heat.md": "# Heat\n", "Cold.md": "# Cold\n"})
 	u := note.NewGetNamedPaths(c.db.Queries())

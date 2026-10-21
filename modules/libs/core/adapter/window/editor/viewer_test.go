@@ -92,13 +92,13 @@ func (p *paper) RenderPage(index, dpi int) (image.Image, error) {
 	p.each[index]++
 	p.mu.Unlock()
 
-	rendered := image.NewRGBA(image.Rect(0, 0, p.wide*dpi/pool.PointsDPI, p.high*dpi/pool.PointsDPI))
-	for y := rendered.Bounds().Min.Y; y < rendered.Bounds().Max.Y; y++ {
-		for x := rendered.Bounds().Min.X; x < rendered.Bounds().Max.X; x++ {
-			rendered.Set(x, y, color.RGBA{R: uint8(x), G: uint8(y), B: uint8(index), A: 255})
+	img := image.NewRGBA(image.Rect(0, 0, p.wide*dpi/pool.PointsDPI, p.high*dpi/pool.PointsDPI))
+	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
+		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
+			img.Set(x, y, color.RGBA{R: uint8(x), G: uint8(y), B: uint8(index), A: 255})
 		}
 	}
-	return rendered, nil
+	return img, nil
 }
 
 func (p *paper) Close() {
@@ -238,7 +238,7 @@ func getPageAddress(t *testing.T, api *Services, path string, at, wide int) stri
 // keeping its shape. A resolution is a whole number, so the width lands a pixel
 // or two over; the window lays the page out at the width it asked for, and a
 // page narrower than that would be laid out blurred.
-func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
+func TestAPageReachesBackGeneratedAsWideAsWasAsked(t *testing.T) {
 	for _, width := range []int{200, 612, 1000, 1} {
 		t.Run(fmt.Sprint(width), func(t *testing.T) {
 			api, handler := openViewerWindow(t, sheets(4))
@@ -273,11 +273,11 @@ func TestWhatADocumentIsIsHowManyPagesAndWhatEachMeasures(t *testing.T) {
 	api, _ := openViewerWindow(t, sheets(4))
 	stopReadAhead(api)
 
-	notified := getDocument(t, api)
-	if len(notified.GetPages()) != 4 {
-		t.Fatalf("the document came back as %+v", notified)
+	doc := getDocument(t, api)
+	if len(doc.GetPages()) != 4 {
+		t.Fatalf("the document came back as %+v", doc)
 	}
-	for i, page := range notified.GetPages() {
+	for i, page := range doc.GetPages() {
 		if page.GetWidth() != 612 || page.GetHeight() != 792 {
 			t.Errorf("page %d came back %gx%g", i, page.GetWidth(), page.GetHeight())
 		}
@@ -385,7 +385,7 @@ func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 
 // A page already drawn is not drawn again, and the document it came out of is
 // not opened again for the next page of it.
-func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
+func TestAPageGeneratedIsNotGeneratedAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
@@ -423,7 +423,7 @@ func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 
 // A page dropped from memory to stay inside the bound is drawn again when it is
 // asked for, where nothing keeps it on disk.
-func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
+func TestAPageDroppedForRoomIsGeneratedAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
@@ -452,16 +452,16 @@ func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 	const askers = 16
 	bodies := make([]string, askers)
 	codes := make([]int, askers)
-	var asking sync.WaitGroup
+	var wg sync.WaitGroup
 	for i := range askers {
-		asking.Add(1)
+		wg.Add(1)
 		go func() {
-			defer asking.Done()
+			defer wg.Done()
 			out := ask(handler, getPageAddress(t, api, book, 0, 400))
 			codes[i], bodies[i] = out.Code, out.Body.String()
 		}()
 	}
-	asking.Wait()
+	wg.Wait()
 
 	for i := range askers {
 		if codes[i] != http.StatusOK {
@@ -486,18 +486,18 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 	api, _ := openViewerWindow(t, from)
 	stopReadAhead(api)
 
-	var asking sync.WaitGroup
+	var wg sync.WaitGroup
 	for range 16 {
-		asking.Add(1)
+		wg.Add(1)
 		go func() {
-			defer asking.Done()
+			defer wg.Done()
 			_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 			if err != nil {
 				t.Errorf("asked what the document is and failed: %v", err)
 			}
 		}()
 	}
-	asking.Wait()
+	wg.Wait()
 
 	if opens, _, _ := from.getCounts(); opens != 1 {
 		t.Errorf("the document was opened %d times", opens)
@@ -505,7 +505,7 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 }
 
 // The page after the one asked for is drawn before anybody asks for it.
-func TestTheNextPageIsDrawnBeforeItIsAsked(t *testing.T) {
+func TestTheNextPageIsGeneratedBeforeItIsAsked(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 
@@ -520,8 +520,8 @@ func TestTheNextPageIsDrawnBeforeItIsAsked(t *testing.T) {
 		t.Fatalf("asked for the next page and got %d", out.Code)
 	}
 	// Asking for it draws the page after it, and not it again.
-	if rendered := from.getPageDraws(1); rendered != 1 {
-		t.Errorf("the page drawn ahead was drawn %d times", rendered)
+	if draws := from.getPageDraws(1); draws != 1 {
+		t.Errorf("the page drawn ahead was drawn %d times", draws)
 	}
 }
 
@@ -607,15 +607,15 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 }
 
 // A page of a document the library draws comes back a picture of it.
-func TestAPageOfARealDocumentComesBack(t *testing.T) {
+func TestAPageOfARealDocumentReachesBack(t *testing.T) {
 	raw, err := os.ReadFile("../../../internal/testsupport/testdata/pdf/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
 	api, handler := fromTheLibrary(t, string(raw))
 
-	if notified := getDocument(t, api); len(notified.GetPages()) < 1 {
-		t.Fatalf("the document came back as %+v", notified)
+	if doc := getDocument(t, api); len(doc.GetPages()) < 1 {
+		t.Fatalf("the document came back as %+v", doc)
 	}
 
 	page := ask(handler, getPageAddress(t, api, book, 0, 500))
@@ -643,7 +643,7 @@ func TestAFileThatIsNotADocumentIsRefused(t *testing.T) {
 
 // What the window may load is said on everything it is served, and a page of a
 // document is not among the things it may make up for itself.
-func TestTheWindowIsToldWhatItMayLoad(t *testing.T) {
+func TestTheWindowIsReportedWhatItMayLoad(t *testing.T) {
 	api, handler := openViewerWindow(t, sheets(4))
 	stopReadAhead(api)
 

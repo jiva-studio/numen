@@ -70,37 +70,37 @@ func TestARegionFoundTwiceIsReadOnce(t *testing.T) {
 		{Label: "paragraph_title", Score: 0.7, Rect: image.Rect(10, 10, 90, 20), Order: 3},
 		{Label: "text", Score: 0.95, Rect: image.Rect(0, 200, 100, 300), Order: 4},
 	}
-	retained := ocr.Distinct(regions, 0.6)
+	filtered := ocr.Distinct(regions, 0.6)
 
-	if len(retained) != 2 {
+	if len(filtered) != 2 {
 		var got []string
-		for _, r := range retained {
+		for _, r := range filtered {
 			got = append(got, r.Label)
 		}
-		t.Fatalf("kept %d regions (%s), want the two that do not cover each other", len(retained), strings.Join(got, ", "))
+		t.Fatalf("kept %d regions (%s), want the two that do not cover each other", len(filtered), strings.Join(got, ", "))
 	}
-	if retained[0].Order != 1 || retained[1].Order != 4 {
-		t.Errorf("kept the regions at %d and %d, want 1 and 4", retained[0].Order, retained[1].Order)
+	if filtered[0].Order != 1 || filtered[1].Order != 4 {
+		t.Errorf("kept the regions at %d and %d, want 1 and 4", filtered[0].Order, filtered[1].Order)
 	}
 }
 
 func TestRegionsComeBackInReadingOrder(t *testing.T) {
 	// The model answers in whatever order it found them, and says where each
 	// belongs. Sorting on that is what keeps the second column after the first.
-	retained := ocr.Distinct([]ocr.Region{
+	filtered := ocr.Distinct([]ocr.Region{
 		{Label: "text", Score: 0.9, Rect: image.Rect(200, 0, 300, 100), Order: 3},
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 0, 100, 100), Order: 1},
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 200, 100, 300), Order: 2},
 	}, 0.6)
 
 	for i, want := range []int{1, 2, 3} {
-		if retained[i].Order != want {
-			t.Errorf("region %d is at %d, want %d", i, retained[i].Order, want)
+		if filtered[i].Order != want {
+			t.Errorf("region %d is at %d, want %d", i, filtered[i].Order, want)
 		}
 	}
 }
 
-func TestAnArtifactSaysWhatEachPageSays(t *testing.T) {
+func TestAnArtifactReturnsWhatEachPageReturns(t *testing.T) {
 	pages := []ocr.Page{
 		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Preface."}}},
 		{Blocks: []domain.OCRBlock{
@@ -195,7 +195,7 @@ func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 	}
 }
 
-func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
+func TestALineSavedForTheWriterIsNotProse(t *testing.T) {
 	// A run stopped part way writes down how far it got. That line is not what
 	// the page says, and an offset into the prose must not count it.
 	first, _, _ := ocr.Write([]ocr.Page{
@@ -220,7 +220,7 @@ func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 	}
 }
 
-func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
+func TestEveryBoxReturnsWhereItsWordsAreInTheProse(t *testing.T) {
 	// Two pages, and the first of them two regions. The offsets are in the
 	// prose, so the second page's boxes are past everything the first says.
 	first, firstBoxes := ocr.Assemble([]ocr.Line{
@@ -276,7 +276,7 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 	}
 }
 
-func TestAJoinedWordLeavesTheHyphenBoxOneByteShorter(t *testing.T) {
+func TestAJoinedWordPreservesTheHyphenBoxOneByteShorter(t *testing.T) {
 	// The hyphen is gone from the end of the box that carried it, so that box
 	// covers the first half of the word and no more.
 	text, spans := ocr.Assemble([]ocr.Line{
@@ -316,7 +316,7 @@ func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 	}
 }
 
-func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
+func TestAJoinedWordPreservesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 	// A hyphen is one byte, or two, or three. What the box covers is what it
 	// wrote less the mark that was taken out of it.
 	for _, hyphen := range []string{"-", "‐", "‑", "\u00ad"} {
@@ -344,7 +344,7 @@ func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 // A heading is where a part of the document begins, and a part carries the run
 // of prose the heading is, not the words themselves. A scan that read the
 // heading badly still says where its part starts.
-func TestAHeadingSaysWhereAPartOfTheDocumentBegins(t *testing.T) {
+func TestAHeadingReturnsWhereAPartOfTheDocumentBegins(t *testing.T) {
 	raw, _, parts := ocr.Write([]ocr.Page{
 		{Index: 0, Blocks: []domain.OCRBlock{
 			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", IsHeading: true, Depth: 0},
@@ -562,10 +562,10 @@ func BenchmarkGroup(b *testing.B) {
 func distinctByCopy(regions []ocr.Region, most float64) []ocr.Region {
 	byScore := append([]ocr.Region(nil), regions...)
 	sort.SliceStable(byScore, func(a, b int) bool { return byScore[a].Score > byScore[b].Score })
-	retained := make([]ocr.Region, 0, len(byScore))
+	filtered := make([]ocr.Region, 0, len(byScore))
 	for _, r := range byScore {
 		covered := false
-		for _, k := range retained {
+		for _, k := range filtered {
 			both := r.Rect.Intersect(k.Rect)
 			if both.Empty() {
 				continue
@@ -578,11 +578,11 @@ func distinctByCopy(regions []ocr.Region, most float64) []ocr.Region {
 			}
 		}
 		if !covered {
-			retained = append(retained, r)
+			filtered = append(filtered, r)
 		}
 	}
-	sort.SliceStable(retained, func(a, b int) bool { return retained[a].Order < retained[b].Order })
-	return retained
+	sort.SliceStable(filtered, func(a, b int) bool { return filtered[a].Order < filtered[b].Order })
+	return filtered
 }
 
 func createRandomRegions(random *rand.Rand, n int) []ocr.Region {

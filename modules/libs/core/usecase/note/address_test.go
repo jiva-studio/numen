@@ -24,7 +24,7 @@ func (unreachable) GetNamedPaths(context.Context, domain.VaultID, string) ([]str
 	return nil, errors.New("the index could not be read")
 }
 
-func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
+func TestALinkIsSavedByNameWhereTheNameMeansOneNote(t *testing.T) {
 	t.Parallel()
 	target := named{"Untitled note": {"allotments/Untitled note.md"}}
 
@@ -42,7 +42,7 @@ func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
 // A name is read back as an exact path from the root before it is read as a
 // neighbour, so the note beside the one the link is written in is reached only
 // by writing where it is filed.
-func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
+func TestALinkIsSavedByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 	t.Parallel()
 	target := named{"Untitled note": {"Untitled note.md", "allotments/Untitled note.md"}}
 
@@ -59,7 +59,7 @@ func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 	}
 }
 
-func TestALinkToANoteTheIndexDoesNotHoldYetIsWrittenByName(t *testing.T) {
+func TestALinkToANoteTheIndexDoesNotHoldYetIsSavedByName(t *testing.T) {
 	t.Parallel()
 	to, err := note.GetAddress(t.Context(), named{}, "v", "allotments/Untitled note.md")
 	if err != nil {
@@ -114,7 +114,7 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 // A link is written as a path the way a person writes it by hand: the extension
 // comes off the file, and a leading dot is part of a name, not the start of an
 // extension.
-func TestAPathIsWrittenWithoutItsExtension(t *testing.T) {
+func TestAPathIsSavedWithoutItsExtension(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		path string

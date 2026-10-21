@@ -304,7 +304,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	}
 }
 
-func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
+func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 	tmp := t.TempDir()
 	pingPort := serveHostPing(t)
 	createTestPluginTree(t, tmp)
@@ -1309,10 +1309,10 @@ func TestTheExitOfAnOldProcessKeepsTheEndpointOfItsReplacement(t *testing.T) {
 	sup.ActivateInProcess(time.Now())
 	host.dropEndpointOfStoppedPlugin("p", sup)
 	host.mu.RLock()
-	retained := host.endpoints["p"]
+	endpoint := host.endpoints["p"]
 	host.mu.RUnlock()
-	if retained != replacement {
-		t.Fatalf("the endpoint of a running replacement was dropped: %+v", retained)
+	if endpoint != replacement {
+		t.Fatalf("the endpoint of a running replacement was dropped: %+v", endpoint)
 	}
 
 	sup.SetDormant(nil)
@@ -1390,7 +1390,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	}
 }
 
-func TestClosingTheStdinOfAnEvictedProcessLeavesTheNextProcessStdinOpen(t *testing.T) {
+func TestClosingTheStdinOfAnEvictedProcessPreservesTheNextProcessStdinOpen(t *testing.T) {
 	host := NewHost("desktop.editor")
 	oldPipe, newPipe := &testCloser{}, &testCloser{}
 	host.stdinsMu.Lock()

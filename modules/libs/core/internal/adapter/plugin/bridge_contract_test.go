@@ -207,7 +207,7 @@ func (failingBridge) Close() error { return errors.New("not closed") }
 
 // The check refuses each way a bridge can answer a plugin that cannot answer
 // wrongly, and passes the way it should.
-func TestTheRefusalCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
+func TestTheErrorCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
 	cases := []struct {
 		name string
 		open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error)
@@ -253,7 +253,7 @@ func TestTheRefusalCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
 	}
 }
 
-func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
+func TestADoubleCloseProducesTheReferenceBackOnce(t *testing.T) {
 	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newLeaseHost(t)

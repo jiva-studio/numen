@@ -16,7 +16,7 @@ func TestARetryPluginMadeWithoutARetrierIsRefused(t *testing.T) {
 	}
 }
 
-func TestARetryPluginHandsTheIdToTheRetrier(t *testing.T) {
+func TestARetryPluginPassesTheIdToTheRetrier(t *testing.T) {
 	var got string
 	retry, err := settings.NewRetryPlugin(func(_ context.Context, id string) (*settings.PluginFailure, error) {
 		got = id

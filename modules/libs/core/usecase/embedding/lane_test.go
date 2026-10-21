@@ -89,7 +89,7 @@ func waitEntered(t *testing.T, m *gated, n int) {
 	}
 }
 
-func TestAQuestionIsAnsweredWhileIndexingHoldsEveryIndexSlot(t *testing.T) {
+func TestAQuestionIsAnsweredWhileIndexingContainsEveryIndexSlot(t *testing.T) {
 	for _, passes := range []int{2, 3, 8} {
 		filling, asking, model := openGated(t, passes)
 		ctx, cancel := context.WithCancel(t.Context())
@@ -139,7 +139,7 @@ func TestTheIndexSideNeverHasMoreCallsInFlightThanItsLimit(t *testing.T) {
 	}
 }
 
-func TestAModelOfOnePassLetsAQuestionThroughAndHoldsOneIndexCall(t *testing.T) {
+func TestAModelOfOnePassLetsAQuestionThroughAndContainsOneIndexCall(t *testing.T) {
 	filling, asking, model := openGated(t, 1)
 	if got := filling.(interface{ Concurrency() int }).Concurrency(); got != 1 {
 		t.Fatalf("the index side reports %d, want 1", got)
@@ -211,7 +211,7 @@ func TestTheLaneStartsNoGoroutineThatOutlivesACall(t *testing.T) {
 	}
 }
 
-func TestASeparateQuestionProviderLeavesTheIndexSideUnlimited(t *testing.T) {
+func TestASeparateQuestionProviderPreservesTheIndexSideUnlimited(t *testing.T) {
 	first, second := newGated(4), newGated(4)
 	second.model = first.model
 	filling, _, closer := embedding.Open(t.Context(), run.NewTasks(),
@@ -264,7 +264,7 @@ func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
 	wg.Wait()
 }
 
-func TestTheIndexSideLetsGoOfTheModelAndSaysWhatClosingSaid(t *testing.T) {
+func TestTheIndexSideLetsGoOfTheModelAndReturnsWhatClosingSaid(t *testing.T) {
 	target := newSaying("closing", 1, 0, 0)
 	filling, _, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewReached(target.model, "closing", closing{saying: target, why: errModelGone}), embedding.Provider{})
@@ -278,7 +278,7 @@ func TestTheIndexSideLetsGoOfTheModelAndSaysWhatClosingSaid(t *testing.T) {
 	}
 }
 
-func TestTheIndexSideSaysWhyTheModelNeverArrives(t *testing.T) {
+func TestTheIndexSideReturnsWhyTheModelNeverArrives(t *testing.T) {
 	filling, _, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewFetched(is("never"), "never", failWith(errModelGone)), embedding.Provider{})
 	defer func() { _ = letGo() }()

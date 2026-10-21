@@ -22,7 +22,7 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 }
 
 // A note carrying no type is a note.
-func TestANoteWhoseFileSaysNothingIsANote(t *testing.T) {
+func TestANoteWhoseFileReturnsNothingIsANote(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
 
@@ -92,7 +92,7 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	}
 	// A path of another vault and a path the index holds nothing at are both
 	// absent, and a listing draws such an entry as the file it is.
-	if _, rendered := target["cards/quasars.md"]; rendered {
+	if _, hasCard := target["cards/quasars.md"]; hasCard {
 		t.Error("a folder of one vault was told the type of another vault's note at the same path")
 	}
 	if _, renderedVal := target["cards/llama.jpg"]; renderedVal {

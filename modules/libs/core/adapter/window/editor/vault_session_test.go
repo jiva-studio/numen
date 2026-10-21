@@ -165,7 +165,7 @@ func (f *showing) getFoundNames(t *testing.T, query string) []string {
 // TestTheWindowSaysWhichVaultItIsShowing. Two windows are open on one
 // installation, so the identity of the vault in front of the person is the
 // window's answer and not the list's.
-func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
+func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 	f := openTwoVaults(t)
 
 	if got := f.getShownVault(t, wire.Editor); got != string(f.first.ID) {
@@ -220,11 +220,11 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
 
-	notified := make(chan bool, 1)
+	signalCh := make(chan bool, 1)
 	go func() {
 		for changes.Receive() {
 			if changes.Msg().GetReload() {
-				notified <- true
+				signalCh <- true
 				return
 			}
 		}
@@ -255,7 +255,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	}
 
 	select {
-	case <-notified:
+	case <-signalCh:
 	case <-time.After(5 * time.Second):
 		t.Error("no page was told that what it holds is from another vault")
 	}
@@ -434,7 +434,7 @@ func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.Wat
 
 // TestAPageThatSaysNothingCostsTheSwapItsBound. A page whose script has stopped
 // answers never, and the vault asked for arrives once the bound is spent.
-func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
+func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	f := openTwoVaults(t)
 
 	// A page that listens and answers nothing.
@@ -460,7 +460,7 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 // TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff. What a person is being
 // asked about is theirs to answer, and the vault it was typed in stays in front
 // of them.
-func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
+func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	f := openTwoVaults(t)
 
 	stream, isDone := f.watchQuit(t)
@@ -511,7 +511,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 
-	notified := make(chan struct{})
+	signalCh := make(chan struct{})
 	release := make(chan struct{})
 	wrote := make(chan struct{})
 	go func() {
@@ -520,7 +520,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			close(notified)
+			close(signalCh)
 			<-release
 			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
@@ -541,7 +541,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	}()
 
 	select {
-	case <-notified:
+	case <-signalCh:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the close never asked the page for what it holds")
 	}

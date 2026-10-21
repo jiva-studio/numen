@@ -56,7 +56,7 @@ func TestAnAddressIsAnsweredWithTheNoteItReaches(t *testing.T) {
 
 // A name resolves by a path relative to the note it is written in, so the same
 // name written in two folders reaches two notes.
-func TestANameReachesTheNoteBesideTheOneItIsWrittenIn(t *testing.T) {
+func TestANameReachesTheNoteAdjacentTheOneItIsSavedIn(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"heat/Entropy.md":  "---\ntitle: Entropy\n---\n\nheat\n",
 		"heat/Note.md":     "---\ntitle: Note\n---\n\nprose\n",
@@ -108,7 +108,7 @@ func TestANameSeveralNotesAnswerToIsReported(t *testing.T) {
 
 // An answer is written in no note, so it asks with no note to be relative to,
 // and a name carrying dots is one name.
-func TestANameWrittenInNoNoteReachesTheNoteItNames(t *testing.T) {
+func TestANameSavedInNoNoteReachesTheNoteItNames(t *testing.T) {
 	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
 	client, _ := openVault(t, map[string]string{
 		"notes/" + lecture + ".md": "---\ntitle: " + lecture + "\n---\n\nprose\n",

@@ -59,7 +59,7 @@ func TestABookAModelHasReadCarriesTheRecognition(t *testing.T) {
 
 // A recording carries two: the words a model heard, and those words put right.
 // They stand in the order they are made.
-func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
+func TestARecordingCarriesWhatWasHeardAndWhatWasInsertRight(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
@@ -145,7 +145,7 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 }
 
 // A window standing on nothing holds no file to carry anything.
-func TestAWindowStandingOnNothingCarriesNothing(t *testing.T) {
+func TestAWindowActiveOnNothingCarriesNothing(t *testing.T) {
 	api := newBareServices()
 
 	_, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: book}))

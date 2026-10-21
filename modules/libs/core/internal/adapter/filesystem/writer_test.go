@@ -144,7 +144,7 @@ func TestAnyFileOfTheVaultMoves(t *testing.T) {
 }
 
 // A folder moves whole, and everything under it arrives with it.
-func TestAFolderMovesWithWhatIsUnderIt(t *testing.T) {
+func TestAFolderMovesWithWhatIsBelowIt(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
@@ -229,7 +229,7 @@ func TestAFolderIsMade(t *testing.T) {
 
 // A note kept as a link to another file in the vault is a link after a write,
 // and the file at the other end holds the new bytes.
-func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
+func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"notes/Real.md": "# Entropy\n"})
 	link := filepath.Join(v.Path, "Entropy.md")
 	if err := os.Symlink(filepath.Join("notes", "Real.md"), link); err != nil {
@@ -263,7 +263,7 @@ func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
 // What a vault leaves alone is answered for out of the file's metadata. The
 // file here is sixteen megabytes and cannot be opened at all, and the answer
 // still comes back.
-func TestAskingAboutAFileTheVaultLeavesAloneOpensNothing(t *testing.T) {
+func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
 	root := t.TempDir()
 	export, err := os.OpenFile(filepath.Join(root, "export.iso"), os.O_CREATE|os.O_WRONLY, 0o000)
 	if err != nil {
@@ -440,7 +440,7 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 }
 
 // A folder whose name begins with another folder's is not inside it.
-func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
+func TestAFolderMovesAdjacentOneWhoseNameItBegins(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
@@ -468,8 +468,8 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	if err := os.MkdirAll(target, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	retained := filepath.Join(target, "abc.txt")
-	if err := os.WriteFile(retained, []byte("what was recognised\n"), 0o644); err != nil {
+	filePath := filepath.Join(target, "abc.txt")
+	if err := os.WriteFile(filePath, []byte("what was recognised\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// The link is written the way a sync tool writes one, relative to the
@@ -492,7 +492,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		}
 	}
 
-	body, err := os.ReadFile(retained)
+	body, err := os.ReadFile(filePath)
 	if err != nil {
 		t.Fatalf("the derived file did not survive: %v", err)
 	}
@@ -510,7 +510,7 @@ func errorOf(_ domain.Fingerprint, err error) error { return err }
 // A vault may be reached through a link: a home folder on another disk, a
 // synced folder, a temporary folder on a machine that keeps them elsewhere.
 // Every rule the writer applies is applied to the name on the other side of it.
-func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
+func TestAVaultReachedThroughALinkIsSavedLikeAnyOther(t *testing.T) {
 	physical := filepath.Join(t.TempDir(), "physical")
 	if err := os.Mkdir(physical, 0o755); err != nil {
 		t.Fatal(err)
@@ -642,7 +642,7 @@ func sameFile(t *testing.T, one, other string) bool {
 
 // A name another file stands at is taken, whatever the filesystem does with
 // case.
-func TestANameAnotherFileStandsAtIsRefused(t *testing.T) {
+func TestANameAnotherFileExistsAtIsRefused(t *testing.T) {
 	w, _ := openWriter(t)
 	ctx := t.Context()
 

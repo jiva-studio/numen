@@ -157,8 +157,8 @@ func (w *Window) WatchQuit(
 			if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 				return err
 			}
-		case request, listening := <-notified:
-			if !listening {
+		case request, isOpen := <-notified:
+			if !isOpen {
 				return nil
 			}
 			if err := out.Send(&v1.WatchQuitResponse{Token: request, Flush: true}); err != nil {
@@ -470,7 +470,7 @@ func (l *flushCoordinator) recordFlush(token string, said flushState) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if p, listening := l.clients[token]; listening && !p.isDisconnected {
+	if p, found := l.clients[token]; found && !p.isDisconnected {
 		p.state = said
 	}
 	l.updateProgress()

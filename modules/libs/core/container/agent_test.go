@@ -237,7 +237,7 @@ func TestTheProgramsOfEveryProviderAreListedInOrder(t *testing.T) {
 }
 
 // A provider that cannot be started is told beside the programs of the others.
-func TestAProviderThatFailsIsToldBesideTheOthers(t *testing.T) {
+func TestAProviderThatFailsIsReportedAdjacentTheOthers(t *testing.T) {
 	served := &providerServer{programs: []*v1.AgentProgram{{Name: "alpha", Title: "Alpha"}}}
 	host := hostWith(t,
 		map[string][]string{providerOne: {"ai.agent.provider"}, providerTwo: {"ai.agent.provider"}},
@@ -378,7 +378,7 @@ func TestAConversationAskedOnTwoPluginsEndsOnBoth(t *testing.T) {
 
 // A plugin that cannot be asked for its programs is told to whoever handles what went wrong, and
 // the programs of the others are offered.
-func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
+func TestAPluginThatCannotListItsProgramsIsReportedToTheErrorHandler(t *testing.T) {
 	served := &providerServer{programs: []*v1.AgentProgram{{Name: "alpha", Title: "Alpha", IsInstalled: true}}}
 	host := hostWith(t,
 		map[string][]string{providerOne: {"ai.agent.provider"}, providerTwo: {"ai.agent.provider"}},

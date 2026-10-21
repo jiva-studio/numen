@@ -98,11 +98,11 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	index := newStore()
-	retained := newShelf()
+	shelf := newShelf()
 	model := &voice{words: words}
-	tr := NewTranscribe(vaults{first.ID: shelved}, index, shelves{retained}, model)
+	tr := NewTranscribe(vaults{first.ID: shelved}, index, shelves{shelf}, model)
 	tr.Batch = 1
-	return tr, first, index, retained, model, text.Fingerprint(raw)
+	return tr, first, index, shelf, model, text.Fingerprint(raw)
 }
 
 // getWords is the words of an artifact, in the order they were said.
@@ -116,7 +116,7 @@ func getWords(t *testing.T, raw []byte) []string {
 	return out
 }
 
-func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
+func TestWhatIsHeardIsSavedDownAndClaimed(t *testing.T) {
 	u, v, index, shelf, model, hash := listener(t, "first thing", "second thing", "third thing")
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
@@ -199,7 +199,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	}
 }
 
-func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
+func TestABatchThatDidNotLandWholeIsSplitBack(t *testing.T) {
 	// A note stands after the cues it claims, so cues written after the last
 	// note are a batch nothing claims.
 	u, v, _, shelf, model, hash := listener(t, "one", "two", "three")
@@ -329,7 +329,7 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	}
 }
 
-func TestWhatHasBeenHeardIsCutBeforeTheRestIs(t *testing.T) {
+func TestWhatHasBeenHeardIsSplitBeforeTheRestIs(t *testing.T) {
 	// A recording is searchable as it is listened to, so cutting happens as the
 	// speech is written down.
 	u, v, _, _, model, _ := listener(t, "one", "two", "three")
@@ -356,7 +356,7 @@ func TestWhatHasBeenHeardIsCutBeforeTheRestIs(t *testing.T) {
 	}
 }
 
-func TestWhatListenedIsKeptBesideWhatItHeard(t *testing.T) {
+func TestWhatListenedIsCachedAdjacentWhatItHeard(t *testing.T) {
 	u, v, _, shelf, model, hash := listener(t, "one", "two")
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {

@@ -25,7 +25,7 @@ func TestGenerateAuthToken(t *testing.T) {
 	}
 }
 
-func TestParseHandshake(t *testing.T) {
+func TestParsePasseshake(t *testing.T) {
 	tests := []struct {
 		line     string
 		wantPort int
@@ -47,7 +47,7 @@ func TestParseHandshake(t *testing.T) {
 	}
 }
 
-func TestWaitForHandshakeSuccess(t *testing.T) {
+func TestWaitForPasseshakeSuccess(t *testing.T) {
 	input := "initializing\nNUMEN_READY port=12345\nready to serve\n"
 	ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
 	defer cancel()
@@ -61,7 +61,7 @@ func TestWaitForHandshakeSuccess(t *testing.T) {
 	}
 }
 
-func TestWaitForHandshakeFailure(t *testing.T) {
+func TestWaitForPasseshakeFailure(t *testing.T) {
 	input := "initializing\nfailed to start\n"
 	ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
 	defer cancel()

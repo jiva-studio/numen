@@ -50,9 +50,9 @@ func (h *stubModelHost) ValidatePluginPath(_, target string) (string, error) { r
 func newDownModelHost(t *testing.T) *stubModelHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
-	listening := server.Listener.Addr().(*net.TCPAddr).Port
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
 	server.Close()
-	return &stubModelHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: listening}}
+	return &stubModelHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
 // newSilentModelHost is a host whose plugin accepts a request and never answers it.

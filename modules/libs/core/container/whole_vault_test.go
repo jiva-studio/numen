@@ -50,7 +50,7 @@ func missingVault(t *testing.T) domain.Vault {
 	return domain.Vault{ID: "gone", Path: filepath.Join(t.TempDir(), "absent")}
 }
 
-func TestAScanTakesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
+func TestAScanConsumesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 	db := makeIndex(t)
 
 	scan := container.Config{ShouldRebuildIndex: true}.Scan(db)
@@ -65,7 +65,7 @@ func TestAScanTakesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 	}
 }
 
-func TestTheCutOfASourceIsGivenWhatItReadsWith(t *testing.T) {
+func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
 	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
@@ -108,7 +108,7 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	}
 }
 
-func TestAVaultWhoseFolderIsGoneIsNotMadeSearchable(t *testing.T) {
+func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	db := makeIndex(t)
 	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	v := missingVault(t)

@@ -167,9 +167,9 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	fillVault(t, db, second, "second", 0xf0)
 
 	removed := getVaultContents(t, db, first)
-	retained := getVaultContents(t, db, second)
+	remainingContent := getVaultContents(t, db, second)
 	goneVirtual, goneOrdinary := virtual(t, db, removed), ordinary(t, db, removed)
-	keptVirtual, keptOrdinary := virtual(t, db, retained), ordinary(t, db, retained)
+	keptVirtual, keptOrdinary := virtual(t, db, remainingContent), ordinary(t, db, remainingContent)
 
 	vectors := countRows(t, db, `SELECT COUNT(*) FROM vectors`)
 	bought := numbers(t, db, `SELECT rowid FROM vectors WHERE hash IN
@@ -208,21 +208,21 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 		t.Errorf("the forgotten vault still has %d rows of its own", got)
 	}
 
-	for table, n := range virtual(t, db, retained) {
+	for table, n := range virtual(t, db, remainingContent) {
 		if n != keptVirtual[table] {
 			t.Errorf("%s holds %d rows of the other vault, and held %d", table, n, keptVirtual[table])
 		}
 	}
-	for table, n := range ordinary(t, db, retained) {
+	for table, n := range ordinary(t, db, remainingContent) {
 		if n != keptOrdinary[table] {
 			t.Errorf("%s holds %d rows of the other vault, and held %d", table, n, keptOrdinary[table])
 		}
 	}
-	if now := getVaultContents(t, db, second); !slices.Equal(now.chunks, retained.chunks) ||
-		!slices.Equal(now.sources, retained.sources) ||
-		!slices.Equal(now.notes, retained.notes) ||
-		!slices.Equal(now.headings, retained.headings) {
-		t.Errorf("the second vault holds %+v, and held %+v", now, retained)
+	if now := getVaultContents(t, db, second); !slices.Equal(now.chunks, remainingContent.chunks) ||
+		!slices.Equal(now.sources, remainingContent.sources) ||
+		!slices.Equal(now.notes, remainingContent.notes) ||
+		!slices.Equal(now.headings, remainingContent.headings) {
+		t.Errorf("the second vault holds %+v, and held %+v", now, remainingContent)
 	}
 
 	// A vector is addressed by the text it was made from, so chunks of several
@@ -235,7 +235,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	}
 }
 
-func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
+func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 	// Every search runs over one table holding every vault. What the forgotten
 	// vault was filed under is what the other vault's rows are read back by.
 	ctx := t.Context()

@@ -100,7 +100,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	}
 }
 
-func TestLinksWithoutAVaultAndANoteSaysHowToAsk(t *testing.T) {
+func TestLinksWithoutAVaultAndANoteReturnsHowToAsk(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"links"}, {"links", "notebook"}, {"links", "notebook", "a.md", "b.md"}} {
 		_, err := runWithDeps(createLinkDeps(nil, nil), args...)
@@ -110,9 +110,9 @@ func TestLinksWithoutAVaultAndANoteSaysHowToAsk(t *testing.T) {
 	}
 }
 
-func TestLinksSaysWhichDirectionsAreEmpty(t *testing.T) {
+func TestLinksReturnsWhichDirectionsAreEmpty(t *testing.T) {
 	t.Parallel()
-	pointing := []domain.ResolvedLink{newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")}
+	links := []domain.ResolvedLink{newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")}
 	pointed := []domain.ResolvedLink{newResolvedLink(domain.RoleRef, domain.SchemeName, "Bees", "Bees.md")}
 	pointed[0].From = "Honey.md"
 
@@ -121,9 +121,9 @@ func TestLinksSaysWhichDirectionsAreEmpty(t *testing.T) {
 		want             string
 	}{
 		"neither":   {nil, nil, "no links either way\n"},
-		"out only":  {pointing, nil, "points at:\n  child      Hives.md\n"},
+		"out only":  {links, nil, "points at:\n  child      Hives.md\n"},
 		"in only":   {nil, pointed, "pointed at by:\n  ref        Honey.md\n"},
-		"both ways": {pointing, pointed, "points at:\n  child      Hives.md\npointed at by:\n  ref        Honey.md\n"},
+		"both ways": {links, pointed, "points at:\n  child      Hives.md\npointed at by:\n  ref        Honey.md\n"},
 	} {
 		out, err := runWithDeps(createLinkDeps(c.links, c.backlinks), "links", "notebook", "Bees.md")
 		if err != nil {
@@ -143,8 +143,8 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 	crossed.ToVault = "vlt-02"
 	home := newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
 	home.ToVault = notebook.ID
-	typed := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
-	typed.Type = "kin"
+	refLink := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
+	refLink.Type = "kin"
 	reasoned := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
 	reasoned.Why = "they share a queen"
 	both := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
@@ -172,7 +172,7 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 		"a name several notes answer to":     {ambiguous, "child      Hives.md  (several notes answer to that name)"},
 		"a note in another vault":            {crossed, "child      Hives.md  (in another vault: vlt-02)"},
 		"a note in the vault it was written": {home, "child      Hives.md"},
-		"a type":                             {typed, "ref        Hives.md  [kin]"},
+		"a type":                             {refLink, "ref        Hives.md  [kin]"},
 		"a reason":                           {reasoned, "ref        Hives.md  — they share a queen"},
 		"a type and a reason":                {both, "ref        Hives.md  [kin]  — they share a queen"},
 	} {
@@ -304,7 +304,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}
 }
 
-func TestACommandGivesBackWhatItOpened(t *testing.T) {
+func TestACommandProducesBackWhatItOpened(t *testing.T) {
 	t.Parallel()
 	closed := 0
 	provided := createLinkDeps(nil, nil)
@@ -353,15 +353,15 @@ func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 	os.Stderr = file
 	t.Cleanup(func() { os.Stderr = was; file.Close() })
 
-	opened := false
+	wasOpened := false
 	var out bytes.Buffer
 	runErr := cli.Run(t.Context(), &out, io.Discard, []string{"--no-such-flag", "help"},
-		func(cli.Locations) cli.Deps { opened = true; return cli.Deps{} })
+		func(cli.Locations) cli.Deps { wasOpened = true; return cli.Deps{} })
 
 	if runErr == nil {
 		t.Error("a flag nobody knows was accepted")
 	}
-	if opened {
+	if wasOpened {
 		t.Error("an installation was opened for a command line that did not parse")
 	}
 	if response, _ := os.ReadFile(file.Name()); len(response) != 0 {

@@ -46,7 +46,7 @@ func TestANoteIsFoundByName(t *testing.T) {
 	}
 }
 
-func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
+func TestAHeadingIsFoundWithTheLineItExistsOn(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 	})
@@ -71,7 +71,7 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 
 // TestANameSaysWhichOfFourTheNoteIs. The palette draws a deck and a stencil as
 // what they are, and a heading is drawn as the note it stands in.
-func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
+func TestANameReturnsWhichOfFourTheNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Entropy of a llama\n",
@@ -99,7 +99,7 @@ func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
 
 // TestAPassageSaysWhichOfFourItsNoteIs. A passage is drawn with the mark of the
 // note it was read out of.
-func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
+func TestAPassageReturnsWhichOfFourItsNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Daily.md": "---\ntype: preset\ntitle: Daily\n---\n\n# Daily\n\nNo engine beats a reversible engine.\n",
 	})
@@ -122,7 +122,7 @@ func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
 
 // TestAPassageSaysWhatTheVaultHoldsAtItsPath. A list a person runs their eye
 // down draws a book as a book, and a note as the note it is.
-func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
+func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
 		"library/A Book.epub": string(testsupport.Book(t)),
@@ -188,7 +188,7 @@ func TestEachModeIsAskedByItself(t *testing.T) {
 	}
 }
 
-func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
+func TestAPassageReturnsWhichNoteItCameOutOf(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
@@ -218,7 +218,7 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 
 // A hit is a place in a source, and the client is told which place: it is what
 // opens the source there, and nothing the client holds says it.
-func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
+func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
@@ -244,7 +244,7 @@ func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
 	}
 }
 
-func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
+func TestAnAnswerIsSplitToWhatWasAskedFor(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"a.md": "# Entropy one\n",
 		"b.md": "# Entropy two\n",
@@ -278,7 +278,7 @@ func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
 
 // What a note is divided into, over the wire.
 
-func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
+func TestANoteReturnsWhatItIsDividedInto(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 	})
@@ -312,7 +312,7 @@ func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
 
 // TestANeighbourhoodSaysWhichOfThreeEachNoteIs. A plex draws a deck and a
 // stencil as what they are, and the picture is where it is told which is which.
-func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
+func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
 			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",

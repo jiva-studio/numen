@@ -93,7 +93,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 // TestAListingLeavesOutWhatTheVaultLeavesAlone. A name beginning with a dot
 // belongs to a tool, and the folder this application keeps for itself is its
 // own.
-func TestAListingLeavesOutWhatTheVaultLeavesAlone(t *testing.T) {
+func TestAListingPreservesOutWhatTheVaultPreservesAlone(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":      "# Entropy\n",
 		".secret.md":      "# Secret\n",
@@ -127,7 +127,7 @@ func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 
 // TestEverythingTheVaultHoldsMoves. A file of any kind travels, whether
 // anything reads it or not.
-func TestEverythingTheVaultHoldsMoves(t *testing.T) {
+func TestEverythingTheVaultContainsMoves(t *testing.T) {
 	const picture = "\x89PNG\r\n\x1a\n"
 	f := openWindow(t, nil, map[string]string{"Diagram.png": picture})
 	testsupport.WriteBook(t, f.root, "A Book.epub")
@@ -208,7 +208,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 
 // TestAMoveOntoATakenNameLeavesBothWhereTheyAre. Two files arriving at one path
 // is a question only the person can answer.
-func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
+func TestAMoveOntoATakenNamePreservesBothWhereTheyAre(t *testing.T) {
 	const target = "# Entropy in physics\n"
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":         "# Entropy\n",
@@ -238,7 +238,7 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 
 // TestAMoveOfAPathWithNothingAtItLeavesNothingBehind, and says so as a
 // an error: the core is what names a path as missing.
-func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
+func TestAMoveOfAPathWithNothingAtItPreservesNothingPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
@@ -260,7 +260,7 @@ func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
 
 // TestARemovedFolderGoesToTheTrashWithEverythingUnderIt, and what pointed into
 // it is reported and not repaired.
-func TestARemovedFolderGoesToTheTrashWithEverythingUnderIt(t *testing.T) {
+func TestARemovedFolderGoesToTheTrashWithEverythingBelowIt(t *testing.T) {
 	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
 	f := openWindow(t, nil, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
@@ -353,7 +353,7 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 // TestAListingSaysWhichOfFourEachNoteIs. The folder says which of its entries
 // are notes and the index says what each of those notes is, so a tree draws a
 // deck as a deck without opening it.
-func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
+func TestAListingReturnsWhichOfFourEachNoteIs(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":  "# Entropy\n",
 		"Animal.md":   "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
@@ -385,7 +385,7 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 // TestMorePathsThanStandingAnswersAtOnceAreRefused. A path with nothing at it
 // is absent from the answer, so an answer cut to fit the ceiling would be one a
 // caller cannot tell from a path holding nothing.
-func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
+func TestMorePathsThanActiveAnswersAtOnceAreRefused(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 	f.read(t)
 
@@ -419,7 +419,7 @@ func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.File
 // TestAPathSaysWhatStandsThere. A window holding a path and nothing else opens
 // what stands there in the editor made for it, and this is the one question
 // that says which that is.
-func TestAPathSaysWhatStandsThere(t *testing.T) {
+func TestAPathReturnsWhatExistsThere(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":   "# Entropy\n",
 		"Animal.md":    "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
@@ -472,7 +472,7 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 // TestABookStandsThereBeforeAnythingHasReadIt. The index holds no note for a
 // book and never will, so an answer drawn from it alone leaves every book out
 // and a window reads that absence as an ordinary note.
-func TestABookStandsThereBeforeAnythingHasReadIt(t *testing.T) {
+func TestABookExistsThereBeforeAnythingHasReadIt(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	// Written after the vault was opened and asked about at once, so nothing

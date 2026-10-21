@@ -22,7 +22,7 @@ func TestAWindowIsHeldToOnePolicy(t *testing.T) {
 
 // A window drawing text that carries its own pictures says where a picture may
 // come from, and changes nothing else.
-func TestAWindowDrawingItsOwnPicturesSaysSoAndNoMore(t *testing.T) {
+func TestAWindowDrawingItsOwnPicturesReturnsSoAndNoMore(t *testing.T) {
 	own := csp.Sources{}.Policy()
 	with := csp.Sources{Images: []string{"data:"}}.Policy()
 
@@ -53,7 +53,7 @@ func TestAFormIsSubmittedNowhere(t *testing.T) {
 }
 
 // A window connecting to external services names where it reaches.
-func TestAWindowConnectingOutsideSaysSoAndNoMore(t *testing.T) {
+func TestAWindowConnectingOutsideReturnsSoAndNoMore(t *testing.T) {
 	own := csp.Sources{}.Policy()
 	with := csp.Sources{Connect: []string{"https://dl.numen.md"}}.Policy()
 

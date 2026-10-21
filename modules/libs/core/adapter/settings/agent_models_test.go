@@ -29,7 +29,7 @@ var (
 
 // A model is nothing to the window unless it says where it is read from and
 // what choosing it writes.
-func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
+func TestEveryModelReturnsWhereItIsReadAndWhatItWrites(t *testing.T) {
 	for _, one := range settings.AgentModels("agent", settings.Agent{}, listedPrograms()) {
 		if len(one.Path) == 0 {
 			t.Errorf("%q is read from nowhere", one.Title)
@@ -154,7 +154,7 @@ func TestTheModelAProgramMarksIsTheDefault(t *testing.T) {
 
 // The model the settings name is the one in force when the program lists it, and goes last under
 // its own group where it does not.
-func TestTheModelTheSettingsNameIsKept(t *testing.T) {
+func TestTheModelTheSettingsNameIsCached(t *testing.T) {
 	named := settings.Agent{}
 	named.Programs = map[string]settings.AgentProgram{"alpha": {Model: "small"}}
 	target := modelsAt(t, named, listedPrograms(), agentModelAt)

@@ -82,7 +82,7 @@ func writeCorrections() []byte {
 
 // The words a transcript was put right to are the words it reads as, and the
 // moments they were said at stand where they were.
-func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
+func TestATranscriptInsertRightReadsAsTheWordsItWasInsertRightTo(t *testing.T) {
 	store := shelf{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): writeCorrections(),
@@ -99,7 +99,7 @@ func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 }
 
 // Taking away what a transcript was put right to gives back what was heard.
-func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
+func TestATranscriptNothingInsertRightReadsAsWhatWasHeard(t *testing.T) {
 	store := shelf{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"): writeTranscript()}
 
 	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
@@ -111,7 +111,7 @@ func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
 
 // A sweep works through the names a producer writes, and what a transcript was
 // put right to goes with the recording it belongs to.
-func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
+func TestWhatATranscriptWasInsertRightToIsSweptWithIt(t *testing.T) {
 	store := shelf{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): writeCorrections(),

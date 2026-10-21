@@ -237,7 +237,7 @@ func onList(t *testing.T, list *v1.ListVaultsResponse, id string) *v1.Vault {
 }
 
 // TestTheListMarksAFolderThatIsGone.
-func TestTheListMarksAFolderThatIsGone(t *testing.T) {
+func TestTheListMarksAFolderThatIsMissing(t *testing.T) {
 	f := onAList(t)
 	if err := os.RemoveAll(f.second.Path); err != nil {
 		t.Fatal(err)
@@ -306,7 +306,7 @@ func TestACopyOfAVaultOnTheListIsRefused(t *testing.T) {
 
 // TestAFolderJoinsTheListUnderANameAnotherVaultHas, numbered. Add does not
 // refuse a taken name.
-func TestAFolderJoinsTheListUnderANameAnotherVaultHas(t *testing.T) {
+func TestAFolderJoinsTheListBelowANameAnotherVaultHas(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
@@ -465,8 +465,8 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 			t.Errorf("%s of an identity on no list was answered %v", what, got)
 		}
 	}
-	if displayed := f.getShown(); len(displayed) != 0 {
-		t.Errorf("the window was asked to show %v", displayed)
+	if visibleVaults := f.getShown(); len(visibleVaults) != 0 {
+		t.Errorf("the window was asked to show %v", visibleVaults)
 	}
 }
 
@@ -494,7 +494,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 }
 
 // TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing.
-func TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing(t *testing.T) {
+func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	f := onAList(t)
 	f.bin.refuse(port.ErrNoTrash)
 
@@ -516,7 +516,7 @@ func TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing(t *testing.T) {
 }
 
 // TestAnotherVaultIsPutInTheWindow.
-func TestAnotherVaultIsPutInTheWindow(t *testing.T) {
+func TestAnotherVaultIsInsertInTheWindow(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.client.OpenVault(t.Context(),
@@ -527,13 +527,13 @@ func TestAnotherVaultIsPutInTheWindow(t *testing.T) {
 	if out.Msg.Error != nil {
 		t.Fatalf("the vault was not shown: %v", out.Msg.GetError())
 	}
-	if displayed := f.getShown(); len(displayed) != 1 || displayed[0].ID != f.second.ID {
-		t.Errorf("the window was asked to show %v", displayed)
+	if visibleVaults := f.getShown(); len(visibleVaults) != 1 || visibleVaults[0].ID != f.second.ID {
+		t.Errorf("the window was asked to show %v", visibleVaults)
 	}
 }
 
 // TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn.
-func TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn(t *testing.T) {
+func TestAPageContainingAnUnansweredQuestionKeepsTheVaultItWasTypedIn(t *testing.T) {
 	f := onAList(t)
 	f.opening(errAnswerPending)
 

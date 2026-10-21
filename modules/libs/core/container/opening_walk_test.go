@@ -18,7 +18,7 @@ type unopenable struct{ err error }
 func (u unopenable) Open(domain.Vault) (port.VaultReader, error) { return nil, u.err }
 
 // The walk answers how many notes the vault holds.
-func TestAWalkAnswersHowManyNotesTheVaultHolds(t *testing.T) {
+func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {
 	cfg, db, v := openVault(t, map[string]string{
 		"One.md":     "---\ntitle: One\n---\n\n# One\n",
 		"Two.md":     "---\ntitle: Two\n---\n\n# Two\n",
@@ -36,7 +36,7 @@ func TestAWalkAnswersHowManyNotesTheVaultHolds(t *testing.T) {
 }
 
 // A walk that cannot open the vault says so, and nothing is reported as read.
-func TestAWalkThatCannotOpenTheVaultSaysSo(t *testing.T) {
+func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	broken := errors.New("the disk is gone")
 	open := cfg.VaultOpenerWith(db, unopenable{err: broken}, cfg.VaultWatcher()).Begin(t.Context(), v)
@@ -64,7 +64,7 @@ func TestRunningAVaultThatCannotBeWatchedReturns(t *testing.T) {
 }
 
 // The walk an opener makes rebuilds the index exactly when the opener says so.
-func TestTheWalkRebuildsTheIndexWhenTheOpenerSaysSo(t *testing.T) {
+func TestTheWalkRebuildsTheIndexWhenTheOpenerReturnsSo(t *testing.T) {
 	cfg, db, _ := openVault(t, note)
 	opening := cfg.VaultOpener(db)
 
@@ -89,8 +89,8 @@ func TestTheOpenersHandlerHearsHowFollowingTheVaultWent(t *testing.T) {
 	opening := cfg.VaultOpenerWith(db, cfg.VaultReaders(), watcher)
 	received := make(chan error, 4)
 	opening.ErrorHandler = func(err error) { received <- err }
-	notified := make(chan container.VaultChanges, 4)
-	opening.Told = func(m container.VaultChanges) { notified <- m }
+	changesCh := make(chan container.VaultChanges, 4)
+	opening.Told = func(m container.VaultChanges) { changesCh <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())
@@ -99,7 +99,7 @@ func TestTheOpenersHandlerHearsHowFollowingTheVaultWent(t *testing.T) {
 	if err := receiveFrom(t, received, "the handler heard nothing"); err != nil {
 		t.Errorf("the handler heard %v, where the vault was read again without trouble", err)
 	}
-	receiveFrom(t, notified, "the vault was not read again")
+	receiveFrom(t, changesCh, "the vault was not read again")
 }
 
 // An index path below a plain file has no folder to be kept in.
@@ -144,7 +144,7 @@ func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
 }
 
 // An index answers every port it names, and says where its file is.
-func TestAnIndexSaysWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
+func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
 	cfg, db, _ := openVault(t, note)
 
 	if db.Path() != cfg.IndexPath {
@@ -171,7 +171,7 @@ func TestAnIndexCompactsWhileOpenAndRefusesOnceClosed(t *testing.T) {
 }
 
 // Watching an index that has no folder to stand in says so.
-func TestWatchingAnIndexWithNoFolderSaysSo(t *testing.T) {
+func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 	isolate(t)
 	file := filepath.Join(t.TempDir(), "plain")
 	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
@@ -207,7 +207,7 @@ func TestAnAssetOwesAReadWhenOneChangedOrEverythingDid(t *testing.T) {
 }
 
 // The refresh an opener hands out brings named notes up to date.
-func TestTheRefreshAnOpenerHandsOutIndexesNamedNotes(t *testing.T) {
+func TestTheRefreshAnOpenerPassesOutIndexesNamedNotes(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 
 	res, err := cfg.VaultOpener(db).GetRefresh().Execute(t.Context(), v, []string{"Leaf.md"})
@@ -223,7 +223,7 @@ func TestTheRefreshAnOpenerHandsOutIndexesNamedNotes(t *testing.T) {
 }
 
 // A walk that stops partway still says how many notes it had read.
-func TestAWalkThatStopsSaysHowManyNotesItHadRead(t *testing.T) {
+func TestAWalkThatStopsReturnsHowManyNotesItHadRead(t *testing.T) {
 	notes := map[string]string{}
 	for _, name := range []string{"a", "b", "c", "d"} {
 		notes[name+".md"] = "---\ntitle: " + name + "\n---\n\n# " + name + "\n"

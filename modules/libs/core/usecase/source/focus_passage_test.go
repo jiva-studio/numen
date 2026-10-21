@@ -26,7 +26,7 @@ func newFocus(t *testing.T) (*FocusPassage, *glancing) {
 	return NewFocusPassage(vaults{first.ID: shelved}, view), view
 }
 
-func TestAPassageIsPutInFrontOfThePersonWithTheOthersLit(t *testing.T) {
+func TestAPassageIsInsertInFrontOfThePersonWithTheOthersLit(t *testing.T) {
 	focus, view := newFocus(t)
 
 	summary, err := focus.Execute(t.Context(), first, Passage{

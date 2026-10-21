@@ -50,7 +50,7 @@ func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 }
 
 // What was heard is not written over by putting its lines together.
-func TestJoiningLeavesWhatWasHeardWhereItIs(t *testing.T) {
+func TestJoiningPreservesWhatWasHeardWhereItIs(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila."}
 	u, v, shelved, hash := newWholeRun(t,
 		says(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
@@ -111,7 +111,7 @@ func (s *sequenced) ProofreadSpeech(
 // It holds whether the two corrections arrive in one call or in two. The second
 // call takes up again at the last line of the run, as a sentence reaching past
 // a cut is taken up.
-func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
+func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 	for name, one := range map[string]struct {
 		lines int
 		by    port.Proofreader
@@ -146,7 +146,7 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 
 // Two corrections of runs over the same lines: the run standing first puts them
 // together, and the one reaching into it is dropped.
-func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
+func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
 	u, v, shelved, hash := newOverlappingRun(t, 4, says(
 		joins(0, 1, putTogether),
 		joins(1, 2, "Connected with Radhika. Sure."),
@@ -197,7 +197,7 @@ func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domai
 // A transcript whose lines were put together is taken up again at the moment
 // the count stands at, which putting them together did not move. The numbers
 // the lines are known by are not the same ones the run before it saw.
-func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
+func TestARunConsumesUpATranscriptWhoseLinesWereInsertTogether(t *testing.T) {
 	again, v, shelved, hash := runJoinUntilStopped(t, &corrector{})
 
 	res, err := again.Execute(t.Context(), v, recordingPath)

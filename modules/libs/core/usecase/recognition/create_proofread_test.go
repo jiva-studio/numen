@@ -58,7 +58,7 @@ func TestARecognitionIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 
 // An installation that placed no proofreader holds none, and that is no
 // failure: the recognition is used exactly as it was read.
-func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
+func TestNamingNoProofreaderContainsNoneAndIsNoFailure(t *testing.T) {
 	t.Parallel()
 	readers, derived := somewhereToProofread()
 	for _, response := range []run.ProofreadingConfig{
@@ -74,7 +74,7 @@ func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 
 // A proofreader that cannot be opened says so, and says what could not be done
 // with it.
-func TestAProofreaderThatCannotBeOpenedSaysWhatCouldNotBeDone(t *testing.T) {
+func TestAProofreaderThatCannotBeOpenedReturnsWhatCouldNotBeCompleted(t *testing.T) {
 	t.Parallel()
 	absent := errors.New("no proofreading plugin is installed")
 	response := run.ProofreadingConfig{

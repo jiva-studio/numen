@@ -426,10 +426,10 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain) }()
 	<-store.entered
 
-	notified := make(chan error, 1)
-	go func() { notified <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
+	errCh := make(chan error, 1)
+	go func() { errCh <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
 	select {
-	case err := <-notified:
+	case err := <-errCh:
 		t.Fatalf("a Configure ran during a secret change: %v", err)
 	case <-time.After(100 * time.Millisecond):
 	}
@@ -438,7 +438,7 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 	if err := <-setDone; err != nil {
 		t.Fatal(err)
 	}
-	if err := <-notified; err != nil {
+	if err := <-errCh; err != nil {
 		t.Fatal(err)
 	}
 	if probe.last(t).GetValues()["apiKey"] != fromKeychain {
@@ -474,7 +474,7 @@ func (u untouchable) DeleteKey(context.Context, string) error {
 
 // A secret nobody stored is handed over empty with no access to the key store,
 // at the start of the plugin and on every change of a setting.
-func TestASecretNobodyStoredLeavesTheKeyStoreAlone(t *testing.T) {
+func TestASecretNobodyStoredPreservesTheKeyStoreAlone(t *testing.T) {
 	host, probe := newSecretHost(t, untouchable{t})
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)

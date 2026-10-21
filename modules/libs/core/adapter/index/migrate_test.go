@@ -503,7 +503,7 @@ func (r breakingRows) Next(dest []driver.Value) error {
 // remember's rename runs as one transaction: a statement that fails partway
 // through leaves the schema_migrations table that was there before remember
 // was called.
-func TestRememberLeavesTheOriginalTableWhenRenamingFails(t *testing.T) {
+func TestRememberPreservesTheOriginalTableWhenRenamingFails(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 

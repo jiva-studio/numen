@@ -17,7 +17,7 @@ import (
 // A sync client owns the folder it syncs and may put a link where a folder was
 // at any moment. A rule asked of the name before the write is a rule about a
 // vault that has since changed; the write itself is what has to stay inside.
-func TestAFolderSwappedForALinkTakesNothingOutOfTheVault(t *testing.T) {
+func TestAFolderSwappedForALinkConsumesNothingOutOfTheVault(t *testing.T) {
 	root := t.TempDir()
 	elsewhere := t.TempDir()
 	writer, err := filesystem.OpenForWriting(root, filesystem.Options{})

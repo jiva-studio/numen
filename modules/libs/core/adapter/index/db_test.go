@@ -248,7 +248,7 @@ func TestAnIndexOpenedToSkipTheFlushDoesNotWaitForTheDisk(t *testing.T) {
 }
 
 // The write pool holds one connection: SQLite has one writer.
-func TestTheWritePoolHoldsOneConnection(t *testing.T) {
+func TestTheWritePoolContainsOneConnection(t *testing.T) {
 	db := openDB(t)
 	if target := db.write.Stats().MaxOpenConnections; target != 1 {
 		t.Errorf("the write pool holds up to %d connections, want 1", target)

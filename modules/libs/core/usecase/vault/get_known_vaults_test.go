@@ -94,7 +94,7 @@ func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 }
 
 // The current vault comes first and the rest follow as the list holds them.
-func TestTheCurrentVaultComesFirst(t *testing.T) {
+func TestTheCurrentVaultReachesFirst(t *testing.T) {
 	t.Parallel()
 	all := []domain.Vault{{ID: "one"}, {ID: "two"}, {ID: "three"}}
 
@@ -129,7 +129,7 @@ func TestTheCurrentVaultComesFirst(t *testing.T) {
 
 // A caller sitting in front of a vault says which, and what the list remembers
 // is not asked: the window is showing one vault whatever was opened last.
-func TestTheVaultBeingWorkedStandsOverWhatTheListRemembers(t *testing.T) {
+func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 	list.last, list.isKept = list.rows[1], true
@@ -165,7 +165,7 @@ func TestAListNobodyHasOpenedHasNoCurrentVault(t *testing.T) {
 
 // A folder that is not there to be read is marked, and the vault stays on the
 // list: it is forgotten when somebody says so and not before.
-func TestAVaultWhoseFolderHasGoneIsMarkedAndStays(t *testing.T) {
+func TestAVaultWhoseFolderHasMissingIsMarkedAndStays(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
 

@@ -152,7 +152,7 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 	}
 }
 
-func TestAPluginThatTakesNoEventsIsActivatedWithoutAnError(t *testing.T) {
+func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
 		map[string][]string{"md.test.silent": {"onOpen"}},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
@@ -185,7 +185,7 @@ func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testin
 	}
 }
 
-func TestAPluginWhoseEventCallFailsIsReportedApartFromARefusal(t *testing.T) {
+func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
 		map[string][]string{"md.test.failing": {"onOpen"}},
@@ -199,7 +199,7 @@ func TestAPluginWhoseEventCallFailsIsReportedApartFromARefusal(t *testing.T) {
 	}
 }
 
-func TestReadEventRefusalHandlesEveryCode(t *testing.T) {
+func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 	testsupport.CheckHandled(t, func(code v1.PluginEventErrorCode) bool {
 		err := convertEventRefusal(code, "the index is closed")
 		if code == v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {

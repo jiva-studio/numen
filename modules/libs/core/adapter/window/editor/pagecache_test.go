@@ -33,7 +33,7 @@ func countDrawings(t *testing.T, cache *pagecache.Disk) int {
 // A page of a scan is half a second of decoding whatever size is asked for, and
 // it is the same half second every time it is turned back to. A page drawn once
 // is drawn once.
-func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
+func TestAPageGeneratedBeforeIsNotGeneratedAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
@@ -82,7 +82,7 @@ func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 
 // A document rewritten under the same name is another document. A drawing kept
 // for the bytes that were there is a picture of a page that is gone.
-func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
+func TestADocumentRewrittenIsGeneratedAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)

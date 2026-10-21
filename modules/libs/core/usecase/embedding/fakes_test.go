@@ -282,15 +282,15 @@ func (s *store) GetSourcesUnder(_ context.Context, vaultID domain.VaultID, path 
 }
 
 func (s *store) clear(vaultID domain.VaultID, path string) {
-	retained := s.chunks[:0]
+	keptChunks := s.chunks[:0]
 	for _, c := range s.chunks {
 		if c.vault == vaultID && c.path == path {
 			delete(s.vectors, chunkID(c.id))
 			continue
 		}
-		retained = append(retained, c)
+		keptChunks = append(keptChunks, c)
 	}
-	s.chunks = retained
+	s.chunks = keptChunks
 }
 
 func (s *store) insert(vaultID domain.VaultID, ref domain.Fingerprint, c domain.Chunk, parent int64) int64 {

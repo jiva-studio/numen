@@ -148,7 +148,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 	}
 }
 
-func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
+func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 	long := func(n int) string {
 		out := make([]rune, n)
 		for i := range out {
@@ -161,12 +161,12 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 		text := "no engine beats a reversible engine"
 		at := spans(text, "engine")
 
-		trimmed, retained := getTextAround(text, at, 0)
+		trimmed, retainedSpans := getTextAround(text, at, 0)
 		if trimmed != text {
 			t.Errorf("cut %q, want it whole", trimmed)
 		}
-		if len(retained) != len(at) || retained[0] != at[0] {
-			t.Errorf("kept %+v, want %+v", retained, at)
+		if len(retainedSpans) != len(at) || retainedSpans[0] != at[0] {
+			t.Errorf("kept %+v, want %+v", retainedSpans, at)
 		}
 	})
 
@@ -272,12 +272,12 @@ func TestAPassageOpensOnTheHitWhenNoWordMatched(t *testing.T) {
 
 	// Nothing matched a word — this is what a hit by meaning looks like — and
 	// the chunk that did match begins where the sentence does.
-	trimmed, retained := getTextAround(text, nil, 501)
+	trimmed, retainedSpans := getTextAround(text, nil, 501)
 
 	if !strings.Contains(trimmed, "Alice Fenn") {
 		t.Errorf("cut %q, want it to hold the words the hit stands on", trimmed[:40])
 	}
-	if len(retained) != 0 {
-		t.Errorf("kept %+v, want nothing marked: no word matched", retained)
+	if len(retainedSpans) != 0 {
+		t.Errorf("kept %+v, want nothing marked: no word matched", retainedSpans)
 	}
 }

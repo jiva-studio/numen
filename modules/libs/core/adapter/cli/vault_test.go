@@ -123,7 +123,7 @@ func TestAVaultCommandReturnsWhatWentWrongOpeningTheList(t *testing.T) {
 	}
 }
 
-func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsWritten(t *testing.T) {
+func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsSaved(t *testing.T) {
 	// Not parallel: the standard flag package reports on the process's stderr.
 	isolate(t)
 	file, err := os.Create(filepath.Join(t.TempDir(), "stderr"))
@@ -134,8 +134,8 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsWritten(t *testing.T)
 	os.Stderr = file
 	t.Cleanup(func() { os.Stderr = was; file.Close() })
 
-	opened := false
-	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { opened = true; return cli.Vaults{}, errRefused }}
+	wasOpened := false
+	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { wasOpened = true; return cli.Vaults{}, errRefused }}
 	for _, args := range [][]string{
 		{"vault", "add", "--no-such-flag"},
 		{"vault", "add", "somewhere", "--no-such-flag"},
@@ -147,7 +147,7 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsWritten(t *testing.T)
 			t.Errorf("%v answered %v", args, err)
 		}
 	}
-	if opened {
+	if wasOpened {
 		t.Error("the list was opened for a command line that did not parse")
 	}
 	if response, _ := os.ReadFile(file.Name()); len(response) != 0 {
@@ -257,7 +257,7 @@ type refusingToForget struct{ port.VaultRepository }
 
 func (refusingToForget) Unregister(context.Context, domain.VaultID) error { return errRefused }
 
-func TestErasingSaysWhereTheFolderWent(t *testing.T) {
+func TestErasingReturnsWhereTheFolderWent(t *testing.T) {
 	isolate(t)
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "erased")
@@ -271,7 +271,7 @@ func TestErasingSaysWhereTheFolderWent(t *testing.T) {
 	}
 }
 
-func TestErasingAVaultWhoseFolderIsGoneSaysThereWasNothing(t *testing.T) {
+func TestErasingAVaultWhoseFolderIsMissingReturnsThereWasNothing(t *testing.T) {
 	isolate(t)
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "vanished")
@@ -291,7 +291,7 @@ func TestErasingAVaultWhoseFolderIsGoneSaysThereWasNothing(t *testing.T) {
 	}
 }
 
-func TestAMachineWithNowhereToPutItSaysHowToForgetTheVault(t *testing.T) {
+func TestAMachineWithNowhereToInsertItReturnsHowToForgetTheVault(t *testing.T) {
 	isolate(t)
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "kept")

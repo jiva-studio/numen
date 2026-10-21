@@ -136,7 +136,7 @@ func TestARenameFailsWhenTheListCannotBeRead(t *testing.T) {
 	}
 }
 
-func TestARenameFailsWhenTheListCannotBeWritten(t *testing.T) {
+func TestARenameFailsWhenTheListCannotBeSaved(t *testing.T) {
 	t.Parallel()
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}

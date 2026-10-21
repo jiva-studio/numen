@@ -123,12 +123,12 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		}
 	}()
 
-	var reading sync.WaitGroup
+	var readWg sync.WaitGroup
 	latencies := make([][]time.Duration, readers)
 	for i := range readers {
-		reading.Add(1)
+		readWg.Add(1)
 		go func() {
-			defer reading.Done()
+			defer readWg.Done()
 			queries := db.Passages()
 			deadline := time.Now().Add(duration)
 			for time.Now().Before(deadline) && ctx.Err() == nil {
@@ -140,7 +140,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 			}
 		}()
 	}
-	reading.Wait()
+	readWg.Wait()
 	cancel()
 	writing.Wait()
 

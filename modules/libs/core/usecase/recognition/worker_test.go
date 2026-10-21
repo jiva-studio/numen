@@ -182,7 +182,7 @@ func TestARecognitionThatFailedStaysInTheList(t *testing.T) {
 // Getting the models is a step of its own, and it is named for what it is. A
 // row that calls it by the name of the work that follows leaves a person
 // watching a recognition that has not begun.
-func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
+func TestTheModelsAreGotBelowTheirOwnName(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -331,9 +331,9 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 func TestTheApplicationWaitsForARecognitionItStarted(t *testing.T) {
 	w := newWatched(t, nil)
 
-	holding := make(chan struct{})
+	blockCh := make(chan struct{})
 	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
-		<-holding
+		<-blockCh
 		return nil, nil, errors.New("nothing to read with")
 	}
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -349,7 +349,7 @@ func TestTheApplicationWaitsForARecognitionItStarted(t *testing.T) {
 	case <-time.After(50 * time.Millisecond):
 	}
 
-	close(holding)
+	close(blockCh)
 	select {
 	case <-waited:
 	case <-time.After(2 * time.Second):
@@ -381,7 +381,7 @@ func TestAProofreaderThatFailedToOpenIsSaid(t *testing.T) {
 
 // A proofreading the person has not let ask a model says what allows it, in the
 // list of what is being done.
-func TestAProofreadingWithoutConsentSaysWhereToAllowIt(t *testing.T) {
+func TestAProofreadingWithoutConsentReturnsWhereToAllowIt(t *testing.T) {
 	w := newWatched(t, nil)
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,

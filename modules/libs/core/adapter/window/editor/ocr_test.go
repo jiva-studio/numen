@@ -104,7 +104,7 @@ func readRuns(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
 
 // A run of a source's text comes back as what it says and the boxes covering
 // it, each on the page it was read from.
-func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
+func TestARunOfTheProseReachesBackAsTextAndBoxes(t *testing.T) {
 	api, _, doc := openHighlightWindow(t)
 
 	runs, err := readRuns(api, book, where(t, doc, "Delta"))
@@ -137,7 +137,7 @@ func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
 // A source the index does not hold says nothing and is lit nowhere. It keeps
 // its place in the answer, so a caller still reads one run per run it asked
 // about.
-func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
+func TestASourceNothingIsKnownAboutReachesBackEmpty(t *testing.T) {
 	api, _, doc := openHighlightWindow(t)
 	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, nil)
 	hl.Documents = testsupport.Documents{}

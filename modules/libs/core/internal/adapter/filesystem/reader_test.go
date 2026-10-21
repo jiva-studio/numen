@@ -81,7 +81,7 @@ func walkKinds(t *testing.T, root string, opts filesystem.Options) map[string]do
 
 // TestWalkSaysWhichKindEachSourceIs. A walk reports the kind of each source, so
 // a book is never handed to the markdown parser.
-func TestWalkSaysWhichKindEachSourceIs(t *testing.T) {
+func TestWalkReturnsWhichKindEachSourceIs(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
 
@@ -130,7 +130,7 @@ func TestAFormatNothingReadsIsNotASource(t *testing.T) {
 
 // TestStatDoesNotSayABookIsGone. A refresh reads fs.ErrNotExist as "the file was
 // removed", so a book the vault holds has to stat like the note beside it.
-func TestStatDoesNotSayABookIsGone(t *testing.T) {
+func TestStatDoesNotSayABookIsMissing(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
 
@@ -231,7 +231,7 @@ func listNames(t *testing.T, src *filesystem.VaultReader, folder string) []strin
 // A listing holds every file of the folder and every folder under it, and what
 // the vault says to leave alone is left out. Folders come first, and names are
 // compared without regard to case.
-func TestAListingIsOrderedAndLeavesTheHiddenOut(t *testing.T) {
+func TestAListingIsOrderedAndPreservesTheHiddenOut(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"alpha/Entropy.md":       "# Entropy\n",
 		"Zulu/Heat.md":           "# Heat\n",
@@ -254,7 +254,7 @@ func TestAListingIsOrderedAndLeavesTheHiddenOut(t *testing.T) {
 // A listing says which kind of source each file is, and names a file nothing
 // reads all the same. A folder is of no kind and is what a listing of its own
 // answers to.
-func TestAListingSaysWhatEachEntryIs(t *testing.T) {
+func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"library/Notes.md":      "# Notes\n",
 		"library/deeper/Old.md": "# Old\n",
@@ -284,7 +284,7 @@ func TestAListingSaysWhatEachEntryIs(t *testing.T) {
 
 // The service folder's name is a setting, and a listing leaves it out whether
 // the name begins with a dot or not.
-func TestAListingLeavesTheServiceFolderOut(t *testing.T) {
+func TestAListingPreservesTheServiceFolderOut(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	placeFile(t, v.Path, "store/state.json")
 
@@ -400,7 +400,7 @@ func TestOpenDoesNotWriteIntoTheFolder(t *testing.T) {
 	}
 }
 
-func TestInitializeGivesAnIdentityOnceAndKeepsIt(t *testing.T) {
+func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 	dir := t.TempDir()
 
 	first, err := filesystem.Initialize(dir, "", time.Now())
@@ -577,7 +577,7 @@ func walkWithOptions(t *testing.T, root string, opts filesystem.Options) []strin
 }
 
 // A path that leaves the vault fails, dot-dots and all.
-func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
+func TestAPathThatPreservesTheVaultIsRefused(t *testing.T) {
 	outside := t.TempDir()
 	if err := os.WriteFile(filepath.Join(outside, "secret.md"), []byte("not yours"), 0o600); err != nil {
 		t.Fatal(err)
@@ -607,7 +607,7 @@ func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
 
 // Writing is a thing only a note is open to. The vault holds a book and an
 // attachment, and neither is a file this application puts bytes into.
-func TestOnlyANoteIsWrittenTo(t *testing.T) {
+func TestOnlyANoteIsSavedTo(t *testing.T) {
 	root := t.TempDir()
 	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub", "notes/keep.md"} {
 		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(path)), 0o755); err != nil {

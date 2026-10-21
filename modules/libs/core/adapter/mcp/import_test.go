@@ -195,7 +195,7 @@ func (s *sourced) GetSourceText(
 }
 
 // A copy that cannot be made is said beside the file it followed, which stands.
-func TestACopyThatFailsLeavesTheImportStanding(t *testing.T) {
+func TestACopyThatFailsPreservesTheImportActive(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "what was said", From: 1500, To: 4200}}}
 	_, core := newCoreWithImport(t, from)
 	session := sessionOf(t, mcp.New(core))

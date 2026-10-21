@@ -103,7 +103,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 // TestAScanSeesBooksBesideNotes. A book found in a vault is reported without
 // anybody asking, and it is not counted as a note: what `Seen` means did not
 // change when a second kind of source became visible.
-func TestAScanSeesBooksBesideNotes(t *testing.T) {
+func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	root := testsupport.CopyVault(t)
@@ -138,7 +138,7 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 // TestAFormatNothingExtractsIsNotSeenAtAll. Processing is triggered by type, so
 // a file of a format no reader handles is neither a note nor a source of
 // another kind, however much of a vault it is.
-func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
+func TestAFormatNothingExtractsIsNotObservedAtAll(t *testing.T) {
 	t.Parallel()
 	root := testsupport.CopyVault(t)
 	if err := os.WriteFile(filepath.Join(root, "assets", "scan.png"), []byte("PNG"), 0o644); err != nil {
@@ -565,7 +565,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, retained := recognized[removed]; !retained {
+	if _, isRecognized := recognized[removed]; !isRecognized {
 		t.Error("a note that was briefly absent was dropped from the index")
 	}
 	if matches := searchNotes(t, db, v, "uncertainty"); len(matches) != 1 {

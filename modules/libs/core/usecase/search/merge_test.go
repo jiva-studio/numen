@@ -84,7 +84,7 @@ func TestTheFusedOrderIsTheSumOfReciprocalRanks(t *testing.T) {
 	}
 }
 
-func TestOneDocumentTakesOneResult(t *testing.T) {
+func TestOneDocumentConsumesOneResult(t *testing.T) {
 	// One passage per source, so an answer names each document once.
 	fused := []domain.Passage{
 		{ChunkID: "1", Source: "book.epub"},
@@ -188,7 +188,7 @@ func TestOnePlaceIsOnePassageHoweverManyRowsStandThere(t *testing.T) {
 	}
 }
 
-func TestTheLimitIsWhatComesBack(t *testing.T) {
+func TestTheLimitIsWhatReachesBack(t *testing.T) {
 	fused := []domain.Passage{
 		{ChunkID: "1", Source: "a"},
 		{ChunkID: "2", Source: "b"},

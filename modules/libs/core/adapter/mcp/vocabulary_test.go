@@ -9,7 +9,7 @@ import (
 
 // What the window says about a call is what the tool declared: a call names its
 // subject.
-func TestAToolSaysWhatOneCallIsAbout(t *testing.T) {
+func TestAToolReturnsWhatOneCallIsAbout(t *testing.T) {
 	words, err := mcp.Vocabulary(t.Context(), mcp.Core{})
 	if err != nil {
 		t.Fatal(err)
@@ -31,7 +31,7 @@ func TestAToolSaysWhatOneCallIsAbout(t *testing.T) {
 // A call that takes a collection is about the first thing in it, by the name that
 // thing carries. A field that may be left out is declared as several types at
 // once, and reading the declaration means reading a list of them.
-func TestAToolSaysWhatOneOfItsThingsIsCalled(t *testing.T) {
+func TestAToolReturnsWhatOneOfItsThingsIsCalled(t *testing.T) {
 	words, err := mcp.Vocabulary(t.Context(), mcp.Core{})
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +73,7 @@ func TestAnEditIsAboutTheNoteItChanges(t *testing.T) {
 
 // What a call does to the vault is written out beside the tools rather than
 // read off a schema, so a tool renamed without its entry says nothing.
-func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
+func TestEveryToolServedReturnsWhatItDoes(t *testing.T) {
 	// The tools a window brings are served only where there is one, and the
 	// tools for the list of vaults only where there is a list, so a vault with
 	// somebody looking at it and an installation holding several are asked as

@@ -155,7 +155,7 @@ func TestGetBookPictureRefusesAFileThatIsNotTheBytesNamed(t *testing.T) {
 	}
 }
 
-func TestGetBookPictureAnswersWithErrChangedWhereTheArchiveSaysTheFileChanged(t *testing.T) {
+func TestGetBookPictureAnswersWithErrChangedWhereTheArchiveReturnsTheFileChanged(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
 	target := newBook()
@@ -223,7 +223,7 @@ func TestGetBookAnswersTheShapeTheBooksGive(t *testing.T) {
 	}
 }
 
-func TestReadBookMarkupAsksWithTheBaselineAndPassesTheRefusalOn(t *testing.T) {
+func TestReadBookMarkupAsksWithTheBaselineAndPassesTheErrorOn(t *testing.T) {
 	t.Parallel()
 	target := newBook()
 	target.entries["OEBPS/first.xhtml"] = []byte("<p>Alpha</p>")

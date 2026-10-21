@@ -70,8 +70,8 @@ func (c *instant) nameOnce(name func() port.StartOutcome) {
 func (c *instant) getOutcome(t *testing.T) port.StartOutcome {
 	t.Helper()
 	select {
-	case acquired := <-c.taken:
-		return acquired
+	case task := <-c.taken:
+		return task
 	case <-time.After(10 * time.Second):
 		t.Fatal("the ask made as the line emptied was never answered")
 		return port.Queued
@@ -139,8 +139,8 @@ func TestASourceNamedAsTheLineEmptiesIsRun(t *testing.T) {
 	}
 	close(r.first)
 
-	if acquired := crossed.getOutcome(t); acquired != port.Began {
-		t.Fatalf("the source named as the line emptied was told %v", acquired)
+	if outcome := crossed.getOutcome(t); outcome != port.Began {
+		t.Fatalf("the source named as the line emptied was told %v", outcome)
 	}
 	if n := waitForRun(t, r.reached); n != 2 {
 		t.Fatalf("the source named as the line emptied is the %dth", n)
@@ -179,7 +179,7 @@ func TestDrainDoesNotStopTheRunning(t *testing.T) {
 }
 
 // A claim fails while a run holds the line.
-func TestAClaimIsRefusedWhileARunHoldsTheLine(t *testing.T) {
+func TestAClaimIsRefusedWhileARunContainsTheLine(t *testing.T) {
 	w := NewWorker(t.Context(), nil, func(context.Context, domain.Vault, string) {})
 	if _, free := w.Claim(); !free {
 		t.Fatal("an idle worker rejected a claim")

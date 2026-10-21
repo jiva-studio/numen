@@ -65,7 +65,7 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 
 // The choice lands in the settings file, and the keys a person typed into it
 // are still there afterwards.
-func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
+func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(
@@ -110,16 +110,16 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 }
 
 // The two sizes land in the settings file, and each is written on its own.
-func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
+func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	client := newThemeClient(t, cfg)
 
-	rendered := 1.5
+	zoomLevel := 1.5
 	selected, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
-		InterfaceScale: &rendered,
+		InterfaceScale: &zoomLevel,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -147,7 +147,7 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 
 // A window can be made hard to read only as far as the bounds go, and the file
 // is left currently.
-func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
+func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(`{"appearance":{"theme":"preset:nord"}}`), 0o600); err != nil {
@@ -179,7 +179,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 
 // What the command line said stands over the file, and a person choosing that
 // size for themselves is what it is release for.
-func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
+func TestASizeSaidForOneLaunchExistsUntilAPersonChoosesOne(t *testing.T) {
 	cfg := newConfig(t)
 	cfg.InterfaceScale = 1.25
 	client := newThemeClient(t, cfg)
@@ -192,11 +192,11 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 		t.Errorf("drawn at %v", answer.Msg.GetInterfaceScale())
 	}
 
-	rendered := 1.5
+	zoomLevel := 1.5
 	if _, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
-		InterfaceScale: &rendered,
+		InterfaceScale: &zoomLevel,
 	})); err != nil {
 		t.Fatal(err)
 	}

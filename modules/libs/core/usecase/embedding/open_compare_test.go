@@ -61,7 +61,7 @@ func waitForDisowned(t *testing.T, second *saying) {
 
 // A question asked of a provider that was release is told why, and the reason
 // is the one that stopped the comparison.
-func TestAProviderLetGoOfSaysWhatStoppedTheComparison(t *testing.T) {
+func TestAProviderLetGoOfReturnsWhatStoppedTheComparison(t *testing.T) {
 	for _, c := range []struct {
 		name          string
 		first, second func(second *saying) embedding.Provider
@@ -110,13 +110,13 @@ func TestAProviderLetGoOfSaysWhatStoppedTheComparison(t *testing.T) {
 // second is release at once.
 func TestASecondProviderIsNotWaitedForOnceTheFirstNeverArrives(t *testing.T) {
 	tasks := run.NewTasks()
-	waiting := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
+	waitFn := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
 	_, asking, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewFetched(is("first"), "first", failWith(errModelGone)),
-		embedding.NewFetched(is("second"), "second", waiting))
+		embedding.NewFetched(is("second"), "second", waitFn))
 	defer func() { _ = letGo() }()
 
 	waitFor(t, func() bool {
@@ -195,14 +195,14 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 	second := newSaying("second", 1, 0, 0)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	waiting := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
+	waitFn := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
 
 	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(ctx, tasks,
-		embedding.NewFetched(is("first"), "first", waiting),
+		embedding.NewFetched(is("first"), "first", waitFn),
 		embedding.NewReached(second.model, "second", second))
 	defer func() { _ = letGo() }()
 
@@ -238,11 +238,11 @@ func TestAModelOpenedWithNoListToTellArrives(t *testing.T) {
 
 // The first byte of a model that is here is a share drawn, and a line that has
 // counted nothing draws none.
-func TestTheFirstByteOfTheModelIsDrawnAsAShare(t *testing.T) {
-	notified := make(chan func(done, total int64), 1)
+func TestTheFirstByteOfTheModelIsGeneratedAsAShare(t *testing.T) {
+	progressCh := make(chan func(done, total int64), 1)
 	stop := make(chan struct{})
 	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
-		notified <- tell
+		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
 	}
@@ -257,7 +257,7 @@ func TestTheFirstByteOfTheModelIsDrawnAsAShare(t *testing.T) {
 		t.Errorf("a line that has counted nothing is drawn as %d %v", at.Count, at.Unit)
 	}
 
-	(<-notified)(1, 10)
+	(<-progressCh)(1, 10)
 	at := getOnlyTask(t, tasks)
 	if at.Count != 1 || at.Total != 10 || at.Unit != run.Bytes {
 		t.Errorf("the first byte is drawn as %d of %d %v", at.Count, at.Total, at.Unit)
@@ -266,7 +266,7 @@ func TestTheFirstByteOfTheModelIsDrawnAsAShare(t *testing.T) {
 
 // Letting go of two providers lets go of both, and says what the second said
 // before what the first said.
-func TestLettingGoOfTwoProvidersLetsGoOfBothAndSaysWhyOnce(t *testing.T) {
+func TestLettingGoOfTwoProvidersLetsGoOfBothAndReturnsWhyOnce(t *testing.T) {
 	errFirst, errSecond := errors.New("the first would not close"), errors.New("the second would not close")
 	for _, c := range []struct {
 		name          string

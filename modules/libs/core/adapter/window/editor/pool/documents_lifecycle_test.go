@@ -89,7 +89,7 @@ func getOrder(d *Documents) []document.Fingerprint {
 	return slices.Clone(d.order)
 }
 
-func TestTheBoundsAWindowKeepsDocumentsUnder(t *testing.T) {
+func TestTheBoundsAWindowKeepsDocumentsBelow(t *testing.T) {
 	if DocumentIdleTimeout != 2*time.Minute {
 		t.Errorf("a document nobody looks at is kept %v", DocumentIdleTimeout)
 	}
@@ -122,7 +122,7 @@ func TestAWindowKeepsMostOpenDocumentsAndClosesTheOldest(t *testing.T) {
 	}
 }
 
-func TestDocumentsAtTheBoundAreAllKept(t *testing.T) {
+func TestDocumentsAtTheBoundAreAllCached(t *testing.T) {
 	docs := NewDocuments(2, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b := &shelf{}, &shelf{}
@@ -190,7 +190,7 @@ func TestADocumentInUseIsNotClosedForTheBound(t *testing.T) {
 	giveB()
 }
 
-func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
+func TestADocumentThatCannotBeOpenedIsReportedAndNotCached(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	cause := errors.New("not a document")
@@ -242,7 +242,7 @@ func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
 	}
 }
 
-func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
+func TestACallerThatRanOutOfTimeIsReportedTheDocumentIsBusy(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -476,7 +476,7 @@ func TestShuttingAnOpenDocumentClosesItsScan(t *testing.T) {
 	}
 }
 
-func TestAPageIsDrawnAtTheResolutionItsWidthNeeds(t *testing.T) {
+func TestAPageIsGeneratedAtTheResolutionItsWidthNeeds(t *testing.T) {
 	for _, c := range []struct {
 		name          string
 		across        float64
@@ -521,7 +521,7 @@ func TestAPagesWidthIsMeasuredOnce(t *testing.T) {
 	}
 }
 
-func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
+func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 	cause := errors.New("the library said no")
 
 	measure := &shelf{across: 612, sizeErr: cause}
@@ -548,7 +548,7 @@ func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
 	}
 }
 
-func TestAnEvictedDocumentFromTheMiddleOfTheOrderLeavesTheRestInOrder(t *testing.T) {
+func TestAnEvictedDocumentFromTheMiddleOfTheOrderPreservesTheRestInOrder(t *testing.T) {
 	docs := NewDocuments(1, time.Hour)
 	t.Cleanup(docs.Close)
 	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{}))
@@ -593,7 +593,7 @@ func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
 	}
 }
 
-func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
+func TestRetiringClosesOnlyTheDocumentNobodyContains(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
@@ -619,7 +619,7 @@ func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
 	}
 }
 
-func TestADocumentGivenBackAfterItWasReplacedLeavesTheReplacementHeld(t *testing.T) {
+func TestADocumentGivenBackAfterItWasReplacedPreservesTheReplacementHeld(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	mark := markOf("a")
 	failed := &Document{uses: 1}

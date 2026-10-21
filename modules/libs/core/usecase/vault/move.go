@@ -119,7 +119,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 func (u Move) getBacklinksByPath(
 	ctx context.Context, v domain.Vault, sources []domain.Fingerprint,
 ) (map[string][]domain.ResolvedLink, error) {
-	pointing := make(map[string][]domain.ResolvedLink, len(sources))
+	linksBySource := make(map[string][]domain.ResolvedLink, len(sources))
 	for _, source := range sources {
 		if source.Kind != domain.KindNote {
 			continue
@@ -128,9 +128,9 @@ func (u Move) getBacklinksByPath(
 		if err != nil {
 			return nil, err
 		}
-		pointing[source.Path] = links
+		linksBySource[source.Path] = links
 	}
-	return pointing, nil
+	return linksBySource, nil
 }
 
 // rewriteNoteLinks rewrites the links of each note among the sources at its new path and adds what

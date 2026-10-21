@@ -35,7 +35,7 @@ func openNoProofreader() (port.Proofreader, error) {
 
 // An installation that did not ask for its transcripts to be put right asks
 // nothing and says nothing.
-func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
+func TestATranscriptIsInsertRightOnlyWhereItWasAskedFor(t *testing.T) {
 	target, v := newTranscriptionWorker(t, &deaf{}, "talks/one.mp3")
 	target.with.Proofreading = run.ProofreadingConfig{IsNamed: true, By: openNoProofreader}
 
@@ -63,7 +63,7 @@ func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 }
 
 // Silence carries no words, so nothing is asked about it.
-func TestSilenceIsNotPutRight(t *testing.T) {
+func TestSilenceIsNotInsertRight(t *testing.T) {
 	by := &deaf{}
 	target, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	target.with.Proofreading = run.ProofreadingConfig{IsNamed: true, IsAutomatic: true, By: openNoProofreader}
@@ -183,7 +183,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 
 // A transcript put right to its last line is asked about nothing and shown
 // nowhere, however often the application opens.
-func TestATranscriptAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
+func TestATranscriptAlreadyInsertRightIsAskedAboutNothing(t *testing.T) {
 	by := &corrector{}
 	target, v, _, _ := newStoppedWorker(t, by, 3, "first thing", "second thing", "third thing")
 
@@ -215,7 +215,7 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 
 // One run to a transcript. A run that finds it held leaves the list to the run
 // that holds it.
-func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
+func TestATranscriptAnotherRunContainsKeepsItsPlaceInTheList(t *testing.T) {
 	by := &corrector{}
 	target, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing")
 	release, err := store.ClaimArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash))
@@ -256,7 +256,7 @@ func (r *refuses) ProofreadSpeech(
 
 // A transcript this proofreader has been over every line of is asked about
 // nothing, and whoever asked is told that and not nothing at all.
-func TestATranscriptAlreadyPutRightSaysThatNothingWasLeft(t *testing.T) {
+func TestATranscriptAlreadyInsertRightReturnsThatNothingWasLeft(t *testing.T) {
 	by := &corrector{}
 	target, v, _, _ := newStoppedWorker(t, by, 2, "first thing", "second thing")
 
@@ -318,7 +318,7 @@ func (w *waits) ProofreadSpeech(
 // A run a person asked for stands in the list from the moment they asked, and
 // not from the moment it has something to count. Opening the proofreader is the
 // first thing it does, and the list already says so there.
-func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *testing.T) {
+func TestAProofreadingAskedForExistsInTheListBeforeItOpensTheProofreader(t *testing.T) {
 	by := &corrector{}
 	target, v, _, _ := newStoppedWorker(t, by, 0, "first thing", "second thing")
 	reached, stand := make(chan struct{}), make(chan struct{})
@@ -340,7 +340,7 @@ func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *test
 }
 
 // A run that ends leaves nothing behind in the list.
-func TestAProofreadingThatEndsLeavesTheListEmpty(t *testing.T) {
+func TestAProofreadingThatEndsPreservesTheListEmpty(t *testing.T) {
 	by := &corrector{says: says(fixes(0, "FIRST THING"))}
 	target, v, _, _ := newStoppedWorker(t, by, 0, "first thing")
 

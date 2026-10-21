@@ -78,17 +78,17 @@ func newImportURL(t *testing.T, written string, from *site) (ImportURL, *shelf, 
 	t.Helper()
 	shelved := newLibrary()
 	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
-	retained := newShelf()
-	trimmed := []string{}
+	shelf := newShelf()
+	paths := []string{}
 	return ImportURL{
 		Readers: vaults{first.ID: shelved},
-		Derived: shelves{retained},
+		Derived: shelves{shelf},
 		By:      from,
 		Cut: func(_ context.Context, _ domain.Vault, path string) error {
-			trimmed = append(trimmed, path)
+			paths = append(paths, path)
 			return nil
 		},
-	}, retained, pasted
+	}, shelf, pasted
 }
 
 // A file the palette made is named by the address: an address is no filename,
@@ -212,7 +212,7 @@ func TestANoteThatPointsNowhere(t *testing.T) {
 
 // A note still called by the address it points at was named by the paste and by
 // nobody. What is there has a name, and the note takes it.
-func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
+func TestANoteStillCalledByItsAddressConsumesTheTitle(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "said", To: 1000}}}
 	u, _, _ := newImportURL(t, aPastedAddress, from)
 	named := []string{}
@@ -256,7 +256,7 @@ func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 
 // A copy is kept in the application's own folder, where losing it costs another
 // download and the vault stays the person's own writing.
-func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
+func TestACopyCachedInTheApplicationsFolder(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, retained, address := newImportURL(t, pointsAtAVideo, from)
 
@@ -302,7 +302,7 @@ func TestACopyAlreadyInTheApplicationsFolder(t *testing.T) {
 
 // `importing.copies_to_vault` keeps a copy beside the note, as a file the
 // person sees in their own folder and plays from where it lies.
-func TestACopyKeptBesideTheNote(t *testing.T) {
+func TestACopyCachedAdjacentTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, retained, address := newImportURL(t, pointsAtAVideo, from)
 	target := newLibrary()
@@ -333,7 +333,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 }
 
 // A copy already beside the note is not downloaded a second time.
-func TestACopyAlreadyBesideTheNote(t *testing.T) {
+func TestACopyAlreadyAdjacentTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, _, _ := newImportURL(t, pointsAtAVideo, from)
 	target := newLibrary()
@@ -358,7 +358,7 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 
 // The size gate and the download of one copy run under one operation, so an
 // adapter can extract the address once for both.
-func TestACopyAsksMetadataAndDownloadUnderOneOperation(t *testing.T) {
+func TestACopyAsksMetadataAndDownloadBelowOneOperation(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, _, _ := newImportURL(t, pointsAtAVideo, from)
 

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
+func TestWhatIsBeingCompletedIsWhatIsListed(t *testing.T) {
 	tasks := NewTasks()
 	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", About: "book.pdf"})
 	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
@@ -52,7 +52,7 @@ func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
 	}
 }
 
-func TestClearTakesAllTasksOut(t *testing.T) {
+func TestClearConsumesAllTasksOut(t *testing.T) {
 	tasks := NewTasks()
 	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan"})
 	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
@@ -67,7 +67,7 @@ func TestClearTakesAllTasksOut(t *testing.T) {
 	}
 }
 
-func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
+func TestWatchingReturnsWhatIsBeingCompletedAndThenWhatChanges(t *testing.T) {
 	tasks := NewTasks()
 	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan"})
 
@@ -92,7 +92,7 @@ func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 	}
 }
 
-func TestAListenerBehindIsGivenTheNewestAndNotAQueue(t *testing.T) {
+func TestAListenerPriorIsGivenTheNewestAndNotAQueue(t *testing.T) {
 	// What the work was doing a second ago is of no interest to anybody, and a
 	// listener that fell behind must not be made to walk through it.
 	tasks := NewTasks()
@@ -128,7 +128,7 @@ func TestWatchingEndsWithItsContext(t *testing.T) {
 	t.Fatal("the stream did not end with its context")
 }
 
-func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
+func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 	// Several pieces of work report at once, which is what the list is for. Each
 	// of them only ever gets further on, so a listener told that one has got less
 	// far than it already had has been handed an older list than the one before.
@@ -233,7 +233,7 @@ func TestWorkTakenOutCanBeReportedAgain(t *testing.T) {
 	}
 }
 
-func TestClearingTakesAllTasksOutAndTellsListeners(t *testing.T) {
+func TestClearingConsumesAllTasksOutAndTellsListeners(t *testing.T) {
 	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -264,7 +264,7 @@ func TestClearingWhatIsEmptyTellsNobody(t *testing.T) {
 	quiet(t, watching, "an empty list was cleared")
 }
 
-func TestClearingASingleTaskTakesItOut(t *testing.T) {
+func TestClearingASingleTaskConsumesItOut(t *testing.T) {
 	tasks := NewTasks()
 	tasks.Set(Task{ID: "a"})
 	tasks.Clear()
@@ -273,7 +273,7 @@ func TestClearingASingleTaskTakesItOut(t *testing.T) {
 	}
 }
 
-func TestAListenerThatEndedDoesNotStopTheOthersBeingTold(t *testing.T) {
+func TestAListenerThatEndedDoesNotStopTheOthersBeingReported(t *testing.T) {
 	tasks := NewTasks()
 	endingCtx, end := context.WithCancel(t.Context())
 	ending := tasks.Watch(endingCtx)

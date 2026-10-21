@@ -10,7 +10,7 @@ import (
 )
 
 // A page that cannot be written leaves no file behind and is not kept.
-func TestAPageThatCannotBeWrittenLeavesNothingBehind(t *testing.T) {
+func TestAPageThatCannotBeSavedPreservesNothingPrior(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
 
 	signal.Ignore(syscall.SIGXFSZ)

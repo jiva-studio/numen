@@ -13,7 +13,7 @@ import (
 // move over a file opened without a share on deletion, and the programs that do
 // it — the search indexer, a backup reader, a virus scanner — let go within
 // moments.
-func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
+func TestASaveWaitsOutAHandleAnotherProgramContains(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")
 	if err := os.WriteFile(target, []byte("what stood there\n"), 0o644); err != nil {

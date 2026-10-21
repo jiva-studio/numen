@@ -88,7 +88,7 @@ func isReachable(fn *ast.FuncDecl) bool {
 
 // The composition root hands out ports. An adapter the compiler holds is bound
 // to one here and never comes back out under its own name.
-func TestTheRootHandsOutNoAdapterTheCompilerHolds(t *testing.T) {
+func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
 	target, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)

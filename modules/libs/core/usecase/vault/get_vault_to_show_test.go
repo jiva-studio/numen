@@ -74,7 +74,7 @@ func TestWithNothingShownYetTheFirstVaultIsChosen(t *testing.T) {
 	}
 }
 
-func TestAnInstallationHoldingNoVaultChoosesNone(t *testing.T) {
+func TestAnInstallationContainingNoVaultChoosesNone(t *testing.T) {
 	t.Parallel()
 	got, err := vaults.NewGetVaultToShow(registryAt(t)).Execute("")
 	if err != nil || got != (domain.Vault{}) {

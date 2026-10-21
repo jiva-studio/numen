@@ -230,8 +230,8 @@ func readOptional(ctx context.Context, store port.DerivedStore, name domain.Arti
 func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
-	if placed := correction.Unpack(corrections); len(placed) > 0 {
-		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, placed)
+	if correctionsList := correction.Unpack(corrections); len(correctionsList) > 0 {
+		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, correctionsList)
 	}
 	doc := &Document{Text: prose}
 	for _, p := range getPartStarts(prose, named) {
@@ -314,7 +314,7 @@ func ReadAnswer(raw []byte) (kind, detail string) {
 		if line == one {
 			return one, ""
 		}
-		if rest, trimmed := strings.CutPrefix(line, one+": "); trimmed {
+		if rest, hasPrefix := strings.CutPrefix(line, one+": "); hasPrefix {
 			return one, rest
 		}
 	}

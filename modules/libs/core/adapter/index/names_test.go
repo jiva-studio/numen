@@ -92,7 +92,7 @@ func TestANoteIsFoundByAHeadingInsideIt(t *testing.T) {
 	}
 }
 
-func TestATitleComesBeforeAHeading(t *testing.T) {
+func TestATitleReachesBeforeAHeading(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
 	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
@@ -183,7 +183,7 @@ func TestAHeadingThatWasTakenOutOfANoteStopsAnswering(t *testing.T) {
 	}
 }
 
-func TestATitleThatChangedStopsAnsweringUnderTheOldOne(t *testing.T) {
+func TestATitleThatChangedStopsAnsweringBelowTheOldOne(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
 	saveNamedNote(t, db, first, "notes/entropy.md", "Enthalpy")

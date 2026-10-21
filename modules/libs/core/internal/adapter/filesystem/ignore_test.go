@@ -63,7 +63,7 @@ func TestAToolsOwnFilesAreNotNotes(t *testing.T) {
 
 // TestAVaultSaysWhatToIgnore. What is noise is a property of the vault, so it
 // is written in the vault.
-func TestAVaultSaysWhatToIgnore(t *testing.T) {
+func TestAVaultReturnsWhatToIgnore(t *testing.T) {
 	files := map[string]string{
 		"Note.md":            "# Note\n",
 		"archive/Old.md":     "# Old\n",
@@ -113,7 +113,7 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 
 // A vault's own negation reaches what the same vault asked to leave out, which
 // is what a negation is for.
-func TestAVaultTakesBackItsOwnRule(t *testing.T) {
+func TestAVaultConsumesBackItsOwnRule(t *testing.T) {
 	root := vaultOf(t, map[string]string{
 		"Note.md":      "# Note\n",
 		"Old.tmp.md":   "# Old\n",

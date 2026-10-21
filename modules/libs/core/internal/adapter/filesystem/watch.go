@@ -64,9 +64,9 @@ func (w Watcher) WatchVault(
 	go func() {
 		defer notify.Stop(raw)
 		defer close(debounced)
-		waiting := newQueue(Backlog)
-		go forwardEvents(ctx, raw, waiting)
-		debounce(ctx, shape, opts, waiting, debounced, removed)
+		queue := newQueue(Backlog)
+		go forwardEvents(ctx, raw, queue)
+		debounce(ctx, shape, opts, queue, debounced, removed)
 	}()
 
 	return debounced, removed, nil

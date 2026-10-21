@@ -297,7 +297,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 	}
 }
 
-func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
+func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
@@ -429,7 +429,7 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	}
 }
 
-func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
+func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 	// The window puts the caret where the words were found. A note's
 	// frontmatter stands before its prose and is no line of it.
 	ctx := t.Context()
@@ -515,7 +515,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 	}
 }
 
-func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
+func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	// The recipe is what the vector was written under. A search asking under
 	// anything else joins on nothing, and the failure is silence and not an
 	// error: a search by words answers and the search looks like it worked.
@@ -582,7 +582,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	}
 }
 
-func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
+func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	// One half left unfiltered answers about the wrong kind, and the fused
 	// order carries it: a way that ignores the kind is a half that undoes it.
 	ctx := t.Context()

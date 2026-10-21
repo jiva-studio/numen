@@ -180,7 +180,7 @@ func TestSearchFindsNothingWithoutFailing(t *testing.T) {
 	}
 }
 
-func TestUnknownVaultSaysWhatToDo(t *testing.T) {
+func TestUnknownVaultReturnsWhatToDo(t *testing.T) {
 	s := newSession(t)
 	_, err := s.run("scan", "missing")
 	if err == nil {
@@ -220,7 +220,7 @@ func TestUnknownCommandIsRejected(t *testing.T) {
 	}
 }
 
-func TestAddingAFileRatherThanAFolderFails(t *testing.T) {
+func TestAddingAFileInsteadOfAFolderFails(t *testing.T) {
 	s := newSession(t)
 	_, err := s.run("vault", "add", filepath.Join(s.vault, "Thermodynamics.md"))
 	if err == nil {
@@ -246,7 +246,7 @@ func parseIdentity(output string) string {
 	return ""
 }
 
-func TestACopiedVaultIsRefusedRatherThanIndexed(t *testing.T) {
+func TestACopiedVaultIsRefusedInsteadOfIndexed(t *testing.T) {
 	// Copying a vault folder copies its identity, and two folders claiming one
 	// identity cannot be told apart. Indexing either would write one vault's
 	// notes under the other's rows, so adding the second fails and the
@@ -272,7 +272,7 @@ func TestACopiedVaultIsRefusedRatherThanIndexed(t *testing.T) {
 	}
 }
 
-func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
+func TestAMovedVaultIsRecognisedInsteadOfRefused(t *testing.T) {
 	// Identity does not depend on the path precisely so that a folder can move.
 	// The registry is what has to catch up.
 	s := newSession(t)
@@ -350,7 +350,7 @@ func TestLinksShowsBothDirections(t *testing.T) {
 	}
 }
 
-func TestRenamingLeavesTheFolderWhereItIs(t *testing.T) {
+func TestRenamingPreservesTheFolderWhereItIs(t *testing.T) {
 	// The name is what a person calls the collection; the folder keeps the name
 	// the filesystem gives it.
 	s := newSession(t)
@@ -370,7 +370,7 @@ func TestRenamingLeavesTheFolderWhereItIs(t *testing.T) {
 	}
 }
 
-func TestForgettingKeepsTheFolderAndSaysSo(t *testing.T) {
+func TestForgettingKeepsTheFolderAndReturnsSo(t *testing.T) {
 	s := newSession(t)
 	added := s.mustRun("vault", "add", s.vault, "--name", "leaving")
 	s.addVault("staying")
@@ -443,7 +443,7 @@ func TestErasingWithYesTrashesTheFolderAndForgetsTheVault(t *testing.T) {
 	}
 }
 
-func TestAMachineWithNowhereToPutItDeletesNothing(t *testing.T) {
+func TestAMachineWithNowhereToInsertItDeletesNothing(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "kept")
 	s.addVault("other")

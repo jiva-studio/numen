@@ -46,7 +46,7 @@ func (s *store) noteName(row int64) (title, folded, indexed string) {
 	return title, folded, indexed
 }
 
-func TestAMovedFolderTakesEverythingUnderItAndNothingBesides(t *testing.T) {
+func TestAMovedFolderConsumesEverythingBelowItAndNothingAdjacents(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "physics/Entropy.md", "Entropy", false)
 	s.saveNote(repoVaultA, "physics/heat/Heat.md", "Heat", false)
@@ -108,8 +108,8 @@ func TestAMoveOntoWhereAScanAlreadyFiledTheFileKeepsTheRowThatTravels(t *testing
 	s.cut(repoVaultA, "book", "New.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "fresh words"}})
 	s.cut(repoVaultA, "book", "New.epub.d/inner.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "inner words"}})
 	target := s.rowsOf(repoVaultA, "Old.epub")
-	standing := s.rowsOf(repoVaultA, "New.epub")
-	if err := s.db.Chunks().SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(standing[0], "m", 1)}); err != nil {
+	activeRows := s.rowsOf(repoVaultA, "New.epub")
+	if err := s.db.Chunks().SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(activeRows[0], "m", 1)}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -123,15 +123,15 @@ func TestAMoveOntoWhereAScanAlreadyFiledTheFileKeepsTheRowThatTravels(t *testing
 	if got := s.rowsOf(repoVaultA, "New.epub"); !slices.Equal(got, target) {
 		t.Errorf("the file at the landing holds %v, want the travelling %v", got, target)
 	}
-	if n := s.count(`SELECT count(*) FROM chunks_fts WHERE rowid = ?`, standing[0]); n != 0 {
+	if n := s.count(`SELECT count(*) FROM chunks_fts WHERE rowid = ?`, activeRows[0]); n != 0 {
 		t.Error("the words of the displaced file are still indexed")
 	}
-	if n := s.count(`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`, standing[0]); n != 0 {
+	if n := s.count(`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`, activeRows[0]); n != 0 {
 		t.Error("the coarse row of the displaced file is still indexed")
 	}
 }
 
-func TestAMoveOntoAFolderDisplacesEverythingStandingUnderIt(t *testing.T) {
+func TestAMoveOntoAFolderDisplacesEverythingActiveBelowIt(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "draft/Idea.md", "Idea", false)
 	s.saveNote(repoVaultA, "final/Idea.md", "Idea", false)
@@ -182,7 +182,7 @@ func TestAMoveOntoItsOwnPathChangesNothing(t *testing.T) {
 	}
 }
 
-func TestANoteCalledByItsFilenameIsCalledByTheFilenameItLandsUnder(t *testing.T) {
+func TestANoteCalledByItsFilenameIsCalledByTheFilenameItLandsBelow(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "Torpor.md", "Torpor", false)
 	row := s.sourceRow(repoVaultA, "Torpor.md")
@@ -197,7 +197,7 @@ func TestANoteCalledByItsFilenameIsCalledByTheFilenameItLandsUnder(t *testing.T)
 	}
 }
 
-func TestANoteWithATitleOfItsOwnTakesItsTitleWhenTheFileLandsUnderTheNameOfIt(t *testing.T) {
+func TestANoteWithATitleOfItsOwnConsumesItsTitleWhenTheFileLandsBelowTheNameOfIt(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "Draft.md", "Heat: a study", true)
 	row := s.sourceRow(repoVaultA, "Draft.md")
@@ -215,7 +215,7 @@ func TestANoteWithATitleOfItsOwnTakesItsTitleWhenTheFileLandsUnderTheNameOfIt(t 
 	}
 }
 
-func TestANoteWithATitleOfItsOwnKeepsItsNameWhenTheFileLandsUnderAnotherOne(t *testing.T) {
+func TestANoteWithATitleOfItsOwnKeepsItsNameWhenTheFileLandsBelowAnotherOne(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "Draft.md", "Heat", true)
 	row := s.sourceRow(repoVaultA, "Draft.md")

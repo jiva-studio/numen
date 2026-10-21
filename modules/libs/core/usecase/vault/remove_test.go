@@ -17,7 +17,7 @@ func newRemove(registry *appstate.VaultRegistry) (vaults.Remove, *bin, *indexRow
 	), trash, index
 }
 
-func TestRemoveTakesAVaultOffTheListAndLeavesItsFolder(t *testing.T) {
+func TestRemoveConsumesAVaultOffTheListAndPreservesItsFolder(t *testing.T) {
 	t.Parallel()
 	retained, removed, registry := twoVaults(t)
 	remove, trash, _ := newRemove(registry)

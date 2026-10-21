@@ -65,7 +65,7 @@ func twoVaults(t *testing.T) (domain.Vault, domain.Vault, *appstate.VaultRegistr
 	return first, second, registry
 }
 
-func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
+func TestForgetConsumesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 	t.Parallel()
 	retained, removed, registry := twoVaults(t)
 	index := &indexRows{}
@@ -86,7 +86,7 @@ func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 	}
 }
 
-func TestForgetLeavesTheFolderWhereItIs(t *testing.T) {
+func TestForgetPreservesTheFolderWhereItIs(t *testing.T) {
 	t.Parallel()
 	_, removed, registry := twoVaults(t)
 

@@ -74,7 +74,7 @@ func TestTheKeyStoreIsTheOneNamedElseTheSystemKeychain(t *testing.T) {
 // A secret written through the container lands in the key store the plugin
 // host reads its plugins' secrets from, under the plugin and the name, and the
 // settings file records the name of the secret and never its key.
-func TestASecretWrittenThroughTheContainerReachesTheKeyStore(t *testing.T) {
+func TestASecretSavedThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	jar := keyJar{}
 	settingsPath := filepath.Join(t.TempDir(), "numen.json")
 	cfg := Config{KeyStore: jar, SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}

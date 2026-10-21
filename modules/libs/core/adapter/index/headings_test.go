@@ -43,7 +43,7 @@ func divisions(
 	return found
 }
 
-func TestAHeadingComesBackWithItsLevelAndItsLine(t *testing.T) {
+func TestAHeadingReachesBackWithItsLevelAndItsLine(t *testing.T) {
 	db := openDB(t)
 	saveNoteWithHeadings(t, db, first, "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "What it is", Line: 0},

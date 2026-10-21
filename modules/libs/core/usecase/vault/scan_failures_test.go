@@ -346,14 +346,14 @@ func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
 	t.Cleanup(func() { close(target.let); <-isDone })
 
 	ctx, cancel := context.WithCancel(t.Context())
-	waiting := make(chan error, 1)
+	errCh := make(chan error, 1)
 	second := scanner(readers, db)
-	go func() { _, err := second.Execute(ctx, v); waiting <- err }()
+	go func() { _, err := second.Execute(ctx, v); errCh <- err }()
 	time.Sleep(200 * time.Millisecond)
 	cancel()
 
 	select {
-	case err := <-waiting:
+	case err := <-errCh:
 		if !errors.Is(err, context.Canceled) {
 			t.Errorf("error = %v, want the cancellation", err)
 		}

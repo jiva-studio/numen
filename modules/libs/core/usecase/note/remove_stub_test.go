@@ -96,7 +96,7 @@ func noteAt(path string) domain.Fingerprint {
 	return domain.Fingerprint{Path: path, Kind: domain.KindNote}
 }
 
-func TestRemovingStopsWhenTheIndexCannotSayWhatIsUnderThePath(t *testing.T) {
+func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	broken := errors.New("the index is gone")

@@ -22,7 +22,7 @@ func getSoundFingerprint() string { return derived.Fingerprint([]byte(sound)) }
 
 // A run that got no words out of a source wrote down what came of it, and
 // asking again says that.
-func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
+func TestASourceAlreadyAnsweredReturnsWhatCameOfIt(t *testing.T) {
 	const response = "the mp3 recording: mp3: MPEG version 2.5 is not supported"
 	talks := willRun()
 	api, _ := openRunWindow(t,
@@ -80,7 +80,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 
 // A recording the index holds nothing at all about is answered the same way:
 // the answer is placed under the bytes, and nothing else names them.
-func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
+func TestARecordingAnsweredIsFoundWhereTheIndexContainsNothing(t *testing.T) {
 	talks := willRun()
 	api, _ := openRunWindow(t,
 		stored{domain.NewArtifactName(domain.ArtifactAnswer, domain.ASR, getSoundFingerprint()): []byte(derived.Silent + "\n")},
@@ -97,7 +97,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 }
 
 // What a run finished stands over what it once answered.
-func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
+func TestASourceCompletedIsCompletedEvenWhereAnAnswerExists(t *testing.T) {
 	talks := willRun()
 	api, _ := openRunWindow(t,
 		stored{
@@ -115,7 +115,7 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 
 // A finished transcript stands over an answer where the index names no producer
 // either.
-func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
+func TestARecordingCompletedIsCompletedWhereTheIndexNamesNoProducer(t *testing.T) {
 	const received = "what the model heard"
 	talks := willRun()
 	api, _ := openRunWindow(t,

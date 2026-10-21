@@ -92,7 +92,7 @@ func newCoreWithQueries(t *testing.T, notes map[string]string) (domain.Vault, mc
 		return err
 	}
 	queries := db.Queries()
-	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
+	mover := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 
 	core := mcp.Core{
 		Showing:     mcp.ShowOneVault(v, v.Path),
@@ -107,8 +107,8 @@ func newCoreWithQueries(t *testing.T, notes map[string]string) (domain.Vault, mc
 			Create:        note.NewCreate(writers, queries, index, time.Now),
 			Write:         note.NewWrite(readers, writers, index, time.Now),
 			Replace:       note.NewReplace(readers, writers, index, time.Now),
-			Move:          moving,
-			Rename:        note.NewRename(moving),
+			Move:          mover,
+			Rename:        note.NewRename(mover),
 			RemoveNote:    note.NewRemoveNote(note.NewRemove(writers, db.Links(), db.SourcesKnown(), index), readers),
 			Read:          note.NewRead(readers),
 			GetTitles:     note.NewGetTitles(queries),
@@ -358,7 +358,7 @@ func TestANoteIsMadeAlreadyJoined(t *testing.T) {
 // The filesystem has no transaction over many files, so one note that cannot be
 // made must not take the others down with it — nor be reported as though it
 // had been made.
-func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
+func TestOneNoteRefusedPreservesTheRestMade(t *testing.T) {
 	session, vault := newSession(t, nil)
 
 	made := createNotes(t, session,
@@ -419,7 +419,7 @@ func TestGetSeparatesWhatIsThereFromWhatIsNot(t *testing.T) {
 	}
 }
 
-func TestReadingGivesBackWhatWritingWants(t *testing.T) {
+func TestReadingProducesBackWhatWritingWants(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	read := call[struct {
@@ -545,7 +545,7 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 // A note that reached the disk says where it is even when the step after the
 // write did not finish. Told only that it failed, a caller writes it again and
 // fails the name it already holds.
-func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
+func TestANoteOnDiskReachesBackWithItsPath(t *testing.T) {
 	v, core := newCoreWithNotes(t, nil)
 	core.Notes.Create = core.Notes.Create.WithIndex(func(context.Context, domain.Vault, []string) error {
 		return errors.New("the index is not level")
@@ -566,7 +566,7 @@ func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
 
 // Every field of a link lands in the frontmatter, so the cap has to measure
 // them. A body under the cap with an enormous label is a write over it.
-func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
+func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsSaved(t *testing.T) {
 	session, vault := newSession(t, nil)
 
 	huge := strings.Repeat("x", (1<<20)+1)
@@ -586,7 +586,7 @@ func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 // it read lands on whatever arrived in between — a synchroniser's copy, the
 // person's own save. Each names it, and each fails where the note moved
 // under it.
-func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
+func TestALinkSavedOverAnEditNobodySawIsRefused(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
@@ -691,7 +691,7 @@ func TestRemovingAFolderIsRefused(t *testing.T) {
 }
 
 // A ceiling that truncated in silence would read as "that is all there is".
-func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
+func TestAskingForTooMuchIsRefusedInsteadOfTrimmed(t *testing.T) {
 	session, _ := newSession(t, nil)
 
 	paths := make([]string, 60)
@@ -747,7 +747,7 @@ func TestANoteWhoseNameCarriesDotsIsFoundByIt(t *testing.T) {
 
 // Whether a link is ambiguous is the resolver's answer and nobody else's: it
 // depends on the whole vault, so it is asked at the moment it is wanted.
-func TestALinkToASharedNameSaysItIsAmbiguous(t *testing.T) {
+func TestALinkToASharedNameReturnsItIsAmbiguous(t *testing.T) {
 	// Neither is at the root, so neither is the exact path the name spells, and
 	// neither sits beside the note that wrote the link. Only then is the name
 	// left to answer for two notes at once.
@@ -815,7 +815,7 @@ func TestProblemsSayWhichCheckFoundThem(t *testing.T) {
 
 // What note_read gives back is what note_rewrite takes: an agent that reads,
 // edits and writes must not end up with the frontmatter inside the prose.
-func TestReadingGivesBackOnlyTheProse(t *testing.T) {
+func TestReadingProducesBackOnlyTheProse(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
 		"Entropy.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n",
 	})
@@ -902,7 +902,7 @@ func TestReadingRefusesAFileThatIsNotText(t *testing.T) {
 }
 
 // One note nobody can carry does not cost the others their answer.
-func TestReadingSaysWhichNoteIsTooLargeAndCarriesOn(t *testing.T) {
+func TestReadingReturnsWhichNoteIsTooLargeAndCarriesOn(t *testing.T) {
 	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	put(t, v, "Export.md", "# Export\n"+strings.Repeat("pasted in from somewhere ", note.MaxBytes/20))
 
@@ -927,7 +927,7 @@ func TestReadingSaysWhichNoteIsTooLargeAndCarriesOn(t *testing.T) {
 
 // A batch is many operations, not one. What happened to each has to come back,
 // or a caller recovering from a partial failure starts by undoing what worked.
-func TestABatchSaysWhatHappenedToEachNote(t *testing.T) {
+func TestABatchReturnsWhatHappenedToEachNote(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
 		"A.md":         "# A\n",
 		"B.md":         "# B\n",

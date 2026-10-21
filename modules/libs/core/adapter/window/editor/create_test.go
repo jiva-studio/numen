@@ -109,7 +109,7 @@ func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
 
 // TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack. This is what puts a note
 // in the picture as soon as it exists.
-func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
+func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
@@ -156,7 +156,7 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 
 // TestALinkNamingNoRoleLeavesNoNote. A link the application acts on carries one
 // of the roles the schema names, and the error comes before the file does.
-func TestALinkNamingNoRoleLeavesNoNote(t *testing.T) {
+func TestALinkNamingNoRolePreservesNoNote(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
@@ -175,7 +175,7 @@ func TestALinkNamingNoRoleLeavesNoNote(t *testing.T) {
 
 // TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn. A link is one end's
 // account of a relationship: the other note is not touched.
-func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
+func TestTwoNotesAreJoinedFromTheOneTheLinkIsSavedIn(t *testing.T) {
 	const other = "---\ntitle: Entropy\n---\n\n# Entropy\n"
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\ntags:\n  - draft\n---\n\n# Ontology\n",
@@ -211,7 +211,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 // note made from one of two notes sharing a name carries the path it was made
 // from. Written by name, it would hang off the other one, and the picture the
 // person is looking at would not draw it at all.
-func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
+func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	// Both are made through the window, which is what puts them in the index:
 	// the vault is scanned at startup, and a test is not started.
@@ -255,7 +255,7 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 // TestEveryRoleTheSchemaNamesIsWrittenUnderThatWord. The wire and the core call
 // a link's role by one word, so the role a request names is the role the note
 // comes back carrying.
-func TestEveryRoleTheSchemaNamesIsWrittenUnderThatWord(t *testing.T) {
+func TestEveryRoleTheSchemaNamesIsSavedBelowThatWord(t *testing.T) {
 	for _, one := range []struct {
 		role v1.Role
 		word string

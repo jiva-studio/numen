@@ -101,7 +101,7 @@ func (f filing) read(t *testing.T, path string) string {
 // A folder moves with everything under it, whatever kind of file that is. The
 // notes are filed where they now are, and the links written by their names
 // follow them.
-func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
+func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
@@ -157,7 +157,7 @@ func (f filing) sources(t *testing.T, path string) []string {
 
 // What the vault holds under a path is asked of the index, and it is the same
 // answer walking the folder gives.
-func TestWhatIsUnderAPathIsWhatAWalkFinds(t *testing.T) {
+func TestWhatIsBelowAPathIsWhatAWalkFinds(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":      "# Entropy\n",

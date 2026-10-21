@@ -73,24 +73,24 @@ func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
 	}
 
 	out := make([]domain.Passage, 0, min(limit, len(fused)))
-	acquired := map[string]int{}
-	opened := map[string]bool{}
+	sourceCounts := map[string]int{}
+	seenSources := map[string]bool{}
 	targetVal := map[passageID]bool{}
 
 	keep := func(p domain.Passage) bool {
 		at := passageID{p.Source, p.Start, p.Length}
-		if targetVal[at] || acquired[p.Source] >= each {
+		if targetVal[at] || sourceCounts[p.Source] >= each {
 			return true
 		}
 		targetVal[at] = true
-		acquired[p.Source]++
+		sourceCounts[p.Source]++
 		out = append(out, p)
 		return len(out) < limit
 	}
 
 	for _, p := range fused {
-		if section, has := sections[p.Source]; has && !opened[p.Source] {
-			opened[p.Source] = true
+		if section, has := sections[p.Source]; has && !seenSources[p.Source] {
+			seenSources[p.Source] = true
 			if !keep(section) {
 				break
 			}

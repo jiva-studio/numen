@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {
+func TestCorrectionsComeBackAsTheyWereSaved(t *testing.T) {
 	lines := []domain.CorrectionLine{
 		{Number: 0, Text: "Śrī Jayadeva Gosvāmī"},
 		{Number: 7, Text: ""},
@@ -25,7 +25,7 @@ func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {
 	}
 }
 
-func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
+func TestATornTailProducesBackTheWholeCorrections(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written. What
 	// was written whole is still a correction.
 	lines := []domain.CorrectionLine{

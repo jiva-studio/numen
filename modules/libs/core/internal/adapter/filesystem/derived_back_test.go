@@ -55,7 +55,7 @@ func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 }
 
 // A write that landed nothing has nothing to take back.
-func TestAnAppendThatLandedNothingCutsNothing(t *testing.T) {
+func TestAnAppendThatLandedNothingSplitsNothing(t *testing.T) {
 	dir := t.TempDir()
 	at := filepath.Join(dir, "run.txt")
 	if err := os.WriteFile(at, []byte("one\n"), 0o644); err != nil {

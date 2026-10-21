@@ -23,7 +23,7 @@ func writeSettingsFile(t *testing.T, written string) string {
 	return path
 }
 
-func TestReadHandsBackEveryByteAsItStands(t *testing.T) {
+func TestReadPassesBackEveryByteAsItExists(t *testing.T) {
 	content := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 	raw, err := settings.Read(writeSettingsFile(t, content))
 	if err != nil {
@@ -63,7 +63,7 @@ func TestWriteKeepsTheBytesAsTheyWereTyped(t *testing.T) {
 	}
 }
 
-func TestWriteRefusesWhatIsNotJSONAndLeavesTheFileAsItWas(t *testing.T) {
+func TestWriteRefusesWhatIsNotJSONAndPreservesTheFileAsItWas(t *testing.T) {
 	target := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 	path := writeSettingsFile(t, target)
 
@@ -117,7 +117,7 @@ func TestWriteRefusesWhatIsNotAnObject(t *testing.T) {
 // A save refuses a name a section holds twice, so the editor refuses to write
 // one: the settings are read from the last of the two and a save patches the
 // first.
-func TestWriteRefusesANameASectionHoldsTwice(t *testing.T) {
+func TestWriteRefusesANameASectionContainsTwice(t *testing.T) {
 	for what, content := range map[string]string{
 		"a section":        `{"appearance":{"mode":"dark"},"appearance":{"mode":"light"}}`,
 		"a field":          `{"appearance":{"mode":"dark","mode":"light"}}`,
@@ -140,7 +140,7 @@ func TestWriteRefusesANameASectionHoldsTwice(t *testing.T) {
 	}
 }
 
-func TestWhatIsSaidDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
+func TestWhatIsSaidDoesNotRepeatWhatExistsInTheFile(t *testing.T) {
 	path := writeSettingsFile(t, "{}\n")
 	// A key is the one thing in a settings file worth keeping to itself.
 	secret := "sk-not-a-real-key-0000"

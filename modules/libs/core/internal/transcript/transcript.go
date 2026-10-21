@@ -192,12 +192,12 @@ func appendCueText(outBuf []byte, lines [][]byte, isFirstCue bool) (buf []byte, 
 	textOffset := len(outBuf)
 
 	if len(lines) == 1 {
-		trimmed := bytes.TrimSpace(lines[0])
-		if len(trimmed) == 0 {
+		cleanBytes := bytes.TrimSpace(lines[0])
+		if len(cleanBytes) == 0 {
 			return outBuf[:cueStart], 0, 0, false
 		}
-		outBuf = append(outBuf, trimmed...)
-		return outBuf, textOffset, len(trimmed), true
+		outBuf = append(outBuf, cleanBytes...)
+		return outBuf, textOffset, len(cleanBytes), true
 	}
 
 	for i, line := range lines {
@@ -207,15 +207,15 @@ func appendCueText(outBuf []byte, lines [][]byte, isFirstCue bool) (buf []byte, 
 		outBuf = append(outBuf, line...)
 	}
 	textBytes := outBuf[textOffset:]
-	trimmed := bytes.TrimSpace(textBytes)
-	if len(trimmed) == 0 {
+	cleanBytes := bytes.TrimSpace(textBytes)
+	if len(cleanBytes) == 0 {
 		return outBuf[:cueStart], 0, 0, false
 	}
-	if &trimmed[0] != &textBytes[0] {
-		copy(outBuf[textOffset:], trimmed)
+	if &cleanBytes[0] != &textBytes[0] {
+		copy(outBuf[textOffset:], cleanBytes)
 	}
-	outBuf = outBuf[:textOffset+len(trimmed)]
-	return outBuf, textOffset, len(trimmed), true
+	outBuf = outBuf[:textOffset+len(cleanBytes)]
+	return outBuf, textOffset, len(cleanBytes), true
 }
 
 // indexSpace is the index of the first ASCII whitespace byte in b.

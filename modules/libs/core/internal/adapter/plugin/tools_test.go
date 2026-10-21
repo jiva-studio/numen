@@ -243,7 +243,7 @@ func TestACallForAToolNoPluginListedIsRefusedWithoutReachingAPlugin(t *testing.T
 	}
 }
 
-func TestACallIsRefusedOnceThePluginNoLongerHoldsThePermission(t *testing.T) {
+func TestACallIsRefusedOnceThePluginNoLongerContainsThePermission(t *testing.T) {
 	plugin := &toolPlugin{tools: []*v1.PluginTool{wireTool("writes", v1.ToolEffect_TOOL_EFFECT_WRITES)}}
 	host := &toolsHost{
 		ids:       []string{"md.numen.a"},

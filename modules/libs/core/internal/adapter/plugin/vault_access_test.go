@@ -44,7 +44,7 @@ func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) 
 	}
 }
 
-func TestAFileIsWrittenOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
+func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	access, v := diskVault(t, map[string]string{"decks/A.md": "body"})
 	_, at, err := access.Read(t.Context(), "decks/A.md")
 	if err != nil {
@@ -68,7 +68,7 @@ func TestAFileIsWrittenOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	}
 }
 
-func TestAFileIsMadeOnlyWhereNoneStandsAndTheWritersAreHeldAndLetGo(t *testing.T) {
+func TestAFileIsMadeOnlyWhereNoneExistsAndTheWritersAreHeldAndLetGo(t *testing.T) {
 	access, _ := diskVault(t, map[string]string{"decks/A.md": "body"})
 
 	if err := access.Create(t.Context(), "decks/B.md", []byte("b")); err != nil {
@@ -84,7 +84,7 @@ func TestAFileIsMadeOnlyWhereNoneStandsAndTheWritersAreHeldAndLetGo(t *testing.T
 	release()
 }
 
-func TestTheDataOfAPluginIsKeptInItsFolderAndNoOther(t *testing.T) {
+func TestTheDataOfAPluginIsCachedInItsFolderAndNoOther(t *testing.T) {
 	access, _ := diskVault(t, nil)
 	store, err := access.OpenData("flashcards")
 	if err != nil {
@@ -121,7 +121,7 @@ func TestTheDataOfAPluginIsKeptInItsFolderAndNoOther(t *testing.T) {
 	}
 }
 
-func TestACacheIsKeptPerPluginAndNameAndRefusesNamesThatEscape(t *testing.T) {
+func TestACacheIsCachedPerPluginAndNameAndRefusesNamesThatEscape(t *testing.T) {
 	access, _ := diskVault(t, nil)
 
 	if _, found, err := access.ReadCache(t.Context(), "md.numen.a", "schedules"); err != nil || found {

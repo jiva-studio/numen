@@ -38,14 +38,14 @@ func (d *fakeAppearances) Warn(said string) { d.said = append(d.said, said) }
 
 func createFakeAppearances(t *testing.T, worn theme.Appearance) *fakeAppearances {
 	t.Helper()
-	retained := &fakeAppearances{worn: worn}
-	retained.service = &theme.Service{
+	appearances := &fakeAppearances{worn: worn}
+	appearances.service = &theme.Service{
 		Catalogue:            createThemeFolder(t),
-		Settings:             retained,
+		Settings:             appearances,
 		InterfaceScaleBounds: theme.Bounds{Least: 0.8, Most: 2},
 		TextScaleBounds:      theme.Bounds{Least: 0.8, Most: 1.75},
 	}
-	return retained
+	return appearances
 }
 
 func (d *fakeAppearances) themes(t *testing.T) *v1.ListThemesResponse {
@@ -67,7 +67,7 @@ func (d *fakeAppearances) choose(t *testing.T, name string, mode v1.Mode) string
 	return answer.Msg.GetError()
 }
 
-func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
+func TestTheListReturnsWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "preset:dracula", Mode: appearance.Dark})
 	writeTheme(t, aged.service.Catalogue, "mine.css", ":root { --numen-surface: #000000 }")
 
@@ -142,7 +142,7 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 }
 
 // A client says how far a size goes before a person types a number into it.
-func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
+func TestTheListReturnsTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{
 		ThemeName:      theme.Default,
 		Mode:           appearance.System,
@@ -164,7 +164,7 @@ func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 
 // A window that has been dressed by nothing is drawn at the size it was
 // designed at.
-func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
+func TestASettingsFileNamingNoSizeIsGeneratedAsDesigned(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 
 	answer := aged.themes(t)
@@ -174,7 +174,7 @@ func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
 }
 
 // One size is one command, and choosing it says nothing about the other.
-func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
+func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{
 		ThemeName:      theme.Default,
 		Mode:           appearance.System,
@@ -182,11 +182,11 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 		TextScale:      1.5,
 	})
 
-	rendered := 1.75
+	scale := 1.75
 	answer, err := aged.service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           "preset:nord",
 		Mode:           v1.Mode_MODE_DARK,
-		InterfaceScale: &rendered,
+		InterfaceScale: &scale,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -201,7 +201,7 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 
 // The settings are left as they are, and the person is standing in front of the
 // list that was chosen from.
-func TestAChoiceThatCannotBeWornIsRefusedAndSaysWhy(t *testing.T) {
+func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	for _, selected := range []struct {
 		name string
@@ -224,7 +224,7 @@ func TestAChoiceThatCannotBeWornIsRefusedAndSaysWhy(t *testing.T) {
 	}
 }
 
-func TestASettingsFileThatWouldNotTakeTheChoiceSaysSo(t *testing.T) {
+func TestASettingsFileThatWouldNotTakeTheChoiceReturnsSo(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	aged.refuses = errNotWritten
 	if failed := aged.choose(t, "preset:nord", v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
@@ -234,7 +234,7 @@ func TestASettingsFileThatWouldNotTakeTheChoiceSaysSo(t *testing.T) {
 
 // A theme deleted out of the folder does not leave the window undressed, and the
 // name it was under is what the person is told.
-func TestAThemeTheSettingsNameThatIsGoneIsSaidAndTheDefaultWorn(t *testing.T) {
+func TestAThemeTheSettingsNameThatIsMissingIsSaidAndTheDefaultWorn(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
 	answer := aged.themes(t)
 	if answer.GetApplied() != theme.Default {

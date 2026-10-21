@@ -27,7 +27,7 @@ func writeSettings(t *testing.T, written string) (Config, string) {
 
 // What the window is given is every setting, so a setting the file leaves out
 // is read out as what this installation is doing about it.
-func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
+func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
 
 	content, response, err := cfg.ReadSettings()()
@@ -52,7 +52,7 @@ func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
 
 // A setting written is written at its current position, and every key a person typed
 // stays where it was.
-func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
+func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 	cfg, path := writeSettings(t, `{
   "appearance": {"theme": "mine:sea"},
   "something_this_build_knows_nothing_about": 7
@@ -87,7 +87,7 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 
 // Several settings are written together, which is what choosing one model that
 // decides more than its own name asks for.
-func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
+func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
 	err := cfg.GetSettingsWriter()([]port.Setting{
@@ -139,7 +139,7 @@ func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 }
 
 // Settings that cannot be written as JSON are refused with no text.
-func TestSettingsThatCannotBeWrittenAreRefused(t *testing.T) {
+func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 	target := DefaultSettings()
 	target.Appearance.InterfaceScale = math.NaN()
 
@@ -188,7 +188,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 }
 
 // A line said is kept for whoever read the settings to put in front of a person.
-func TestWhatIsSaidWhileReadingIsKept(t *testing.T) {
+func TestWhatIsSaidWhileReadingIsCached(t *testing.T) {
 	var target Settings
 	target.AddNotice("first")
 	target.AddNotice("second")
@@ -197,7 +197,7 @@ func TestWhatIsSaidWhileReadingIsKept(t *testing.T) {
 	}
 }
 
-func TestNestedHeadingLimitIsWhatTheAppearanceSays(t *testing.T) {
+func TestNestedHeadingLimitIsWhatTheAppearanceReturns(t *testing.T) {
 	target := DefaultSettings()
 	if !target.HasNestedHeadings() {
 		t.Error("untouched settings hang no headings under a node")

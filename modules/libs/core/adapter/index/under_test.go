@@ -24,7 +24,7 @@ func getPathsUnder(t *testing.T, db *DB, vault domain.Vault, path string) []stri
 
 // A folder holds what its own path prefixes, and a sibling whose name begins
 // with the folder's is not under it.
-func TestWhatIsUnderAFolderIsEverythingItHolds(t *testing.T) {
+func TestWhatIsBelowAFolderIsEverythingItContains(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	saveNamedNote(t, db, first, "physics/heat/Heat.md", "Heat")
@@ -39,7 +39,7 @@ func TestWhatIsUnderAFolderIsEverythingItHolds(t *testing.T) {
 }
 
 // A file is what is at its own path, and holds nothing.
-func TestWhatIsUnderAFileIsTheFile(t *testing.T) {
+func TestWhatIsBelowAFileIsTheFile(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	saveNamedNote(t, db, first, "physics/Entropy.md.bak.md", "A copy")
@@ -52,7 +52,7 @@ func TestWhatIsUnderAFileIsTheFile(t *testing.T) {
 
 // What a source is, as well as where it is: a caller acts on the difference
 // between a note and a book.
-func TestWhatIsUnderAPathSaysWhichKindEachSourceIs(t *testing.T) {
+func TestWhatIsBelowAPathReturnsWhichKindEachSourceIs(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	book(t, db, first, "physics/A Book.epub", 1)
@@ -75,7 +75,7 @@ func TestWhatIsUnderAPathSaysWhichKindEachSourceIs(t *testing.T) {
 
 // One database holds every vault, and a path means something inside one of
 // them. Both vaults file something under the same folder name.
-func TestWhatIsUnderAPathIsOneVaultsAlone(t *testing.T) {
+func TestWhatIsBelowAPathIsOneVaultsAlone(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	saveNamedNote(t, db, second, "physics/Quasar.md", "Quasar")

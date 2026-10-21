@@ -36,7 +36,7 @@ func (c changing) openNote(t *testing.T, path string) *note.Baseline {
 // A flow sequence is the commonest frontmatter line there is, and an identifier
 // stamped into a note cannot be spliced past one. The person's own save writes
 // no identifier, so such a note is saveable.
-func TestSavingANoteWhoseFrontmatterIsWrittenOnOneLine(t *testing.T) {
+func TestSavingANoteWhoseFrontmatterIsSavedOnOneLine(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Ideas.md": "---\ntags: [draft, idea]\n---\n# Ideas\n",
@@ -94,7 +94,7 @@ func TestSavingANoteThatIsNotThereMakesIt(t *testing.T) {
 
 // A note that is not there holds no prose anybody could have missed, so the
 // tab that was reading it puts it back where it opened it.
-func TestASaveRemakesANoteDeletedUnderIt(t *testing.T) {
+func TestASaveRemakesANoteDeletedBelowIt(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	baseline := c.openNote(t, "Entropy.md")
@@ -153,7 +153,7 @@ func TestASaveThatComparesNothingLands(t *testing.T) {
 
 // A save puts down the text a person typed and adds nothing to it, so a note
 // given a new level-one heading at the keyboard stays in the file it is in.
-func TestSavingANewHeadingLeavesTheFileWhereItIs(t *testing.T) {
+func TestSavingANewHeadingPreservesTheFileWhereItIs(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	baseline := c.openNote(t, "Entropy.md")
@@ -177,7 +177,7 @@ func TestSavingANewHeadingLeavesTheFileWhereItIs(t *testing.T) {
 // A synchroniser, a checkout and a touch all move a file's time over text that
 // did not change. This is the rule that keeps the question off the screen of a
 // person whose vault is in a synchronised folder.
-func TestTheSameBytesWrittenAgainAreNotAChange(t *testing.T) {
+func TestTheSameBytesSavedAgainAreNotAChange(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	baseline := c.openNote(t, "Entropy.md")
@@ -304,7 +304,7 @@ func TestTwoVaultsHoldTheirOwnSaves(t *testing.T) {
 // The write lock covers the read, so the frontmatter a save splices its body
 // into is the frontmatter on disk when the save lands. The agent's link is
 // written while the save is reading, and it is in the file afterwards.
-func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
+func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
@@ -399,15 +399,15 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 			"# Heat\n\nWhat was there.\n",
 	})
 
-	var reading sync.Once
+	var readOnce sync.Once
 	mendRead := make(chan struct{})
 	mendMayWrite := make(chan struct{})
-	moving := note.NewMove(
+	mover := note.NewMove(
 		watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path != "physics/Heat.md" {
 				return
 			}
-			reading.Do(func() { close(mendRead) })
+			readOnce.Do(func() { close(mendRead) })
 			<-mendMayWrite
 		}},
 		filesystem.VaultWriters{},
@@ -435,7 +435,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	moved := make(chan error, 1)
 	go func() {
-		_, err := moving.Execute(t.Context(), c.vault,
+		_, err := mover.Execute(t.Context(), c.vault,
 			"physics/Entropy.md", "archive/Thermodynamics.md")
 		moved <- err
 	}()
@@ -475,7 +475,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 // A note kept as a link to a file elsewhere in the vault is a link afterwards,
 // and the file at the other end is what changed.
-func TestSavingThroughALinkLeavesTheLink(t *testing.T) {
+func TestSavingThroughALinkPreservesTheLink(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"notes/Real.md": "# Entropy\n"})
 	link := filepath.Join(c.vault.Path, "Entropy.md")
@@ -501,7 +501,7 @@ func TestSavingThroughALinkLeavesTheLink(t *testing.T) {
 
 // The bound is on what is being written, so a note that grew on disk is still
 // saveable from a tab that holds none of that growth.
-func TestSavingMoreTextThanANoteHolds(t *testing.T) {
+func TestSavingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
@@ -516,7 +516,7 @@ func TestSavingMoreTextThanANoteHolds(t *testing.T) {
 
 // The save and the read hold the note to one bound, so a note the save
 // accepted is a note the read opens. The frontmatter is part of the file.
-func TestANoteIsWrittenNoLargerThanItCanBeRead(t *testing.T) {
+func TestANoteIsSavedNoLargerThanItCanBeRead(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Entropy.md": "---\ntags: [physics, thermodynamics]\n---\n# Entropy\n",
@@ -564,7 +564,7 @@ func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 
 // An agent writes through Execute, and is held to the bound the person's own
 // save is held to.
-func TestWritingMoreTextThanANoteHolds(t *testing.T) {
+func TestWritingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
@@ -579,7 +579,7 @@ func TestWritingMoreTextThanANoteHolds(t *testing.T) {
 }
 
 // Create writes a whole note in one go, and is held to the same bound.
-func TestCreatingMoreTextThanANoteHolds(t *testing.T) {
+func TestCreatingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
 
@@ -600,7 +600,7 @@ func TestCreatingMoreTextThanANoteHolds(t *testing.T) {
 // A file the vault leaves alone and a path with nothing at it are two answers,
 // and a refresh acts on them differently. Neither is indexed and both leave the
 // index; only the second is a note somebody may be looking at.
-func TestARefreshTellsAFileTheVaultLeavesAloneFromANoteThatVanished(t *testing.T) {
+func TestARefreshTellsAFileTheVaultPreservesAloneFromANoteThatVanished(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	if err := os.WriteFile(filepath.Join(c.vault.Path, "photo.png"), []byte("not a note"), 0o644); err != nil {

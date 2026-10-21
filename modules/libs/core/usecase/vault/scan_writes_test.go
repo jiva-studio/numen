@@ -43,7 +43,7 @@ func (c *countedMeasurements) ReportChanges(context.Context) error { c.n++; retu
 
 // TestNotesAreWrittenInGroups. Nothing about a scan's result says how many
 // writes it took, so that is what is asserted.
-func TestNotesAreWrittenInGroups(t *testing.T) {
+func TestNotesAreSavedInGroups(t *testing.T) {
 	t.Parallel()
 	const notes = 600
 	v := testsupport.GenerateVault(t, notes)

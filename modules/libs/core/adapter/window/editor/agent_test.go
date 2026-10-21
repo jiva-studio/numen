@@ -124,7 +124,7 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 
 // TestEveryStepTheAgentTakesReachesTheClient, in the words the schema carries
 // and in the order they were taken.
-func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
+func TestEveryStepTheAgentConsumesReachesTheClient(t *testing.T) {
 	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{
 		{Kind: domain.StepModelStart},
 		{Kind: domain.StepToolCall, Tool: "note_rewrite", About: "notes/Fugue.md", Count: 240},
@@ -159,7 +159,7 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 // A call says where in the vault it was working, so that an answer can name the
 // place it relies on. A call the vault serves is drawn as a tool in hand
 // whatever that tool does to the vault.
-func TestACallSaysWhereItIsWorking(t *testing.T) {
+func TestACallReturnsWhereItIsWorking(t *testing.T) {
 	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{
 		{
 			Kind: domain.StepRead, Tool: "Show the person a passage of a document",
@@ -196,7 +196,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 
 // TestAConversationThatCouldNotBeFinishedSaysSo. The client hears it and the
 // agent is the one that could not let go.
-func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
+func TestAConversationThatCouldNotBeFinishedReturnsSo(t *testing.T) {
 	taking := &askedAgent{over: make(chan string, 1), refuses: errors.New("the child would not go")}
 	client := newAgentClient(t, newAgentAPI(taking))
 
@@ -222,7 +222,7 @@ func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 
 // TestAVaultWithNoAgentSaysSo. The rest of the window works as it did, and the
 // panel is told there is nobody to ask.
-func TestAVaultWithNoAgentSaysSo(t *testing.T) {
+func TestAVaultWithNoAgentReturnsSo(t *testing.T) {
 	client := newAgentClient(t, &agentHandler{state: &State{}})
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{Prompt: "anyone?"}))

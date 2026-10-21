@@ -64,7 +64,7 @@ func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 // TestASaveTheIndexCameLevelWithSaysNothingIsBehind is the control. A flag
 // every save carries says nothing, and a client shown a warning after every
 // save learns to ignore it.
-func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
+func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	waitForScan(t, f)
 
@@ -86,7 +86,7 @@ func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
 // TestASaveTheIndexWouldNotComeLevelWithStandsInTheList. A person saving a
 // second note has no reason to look at what the first one answered, and the
 // list of what is being done is where they are.
-func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
+func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
 	save := func() {
