@@ -15,7 +15,7 @@ import (
 )
 
 // askAgent sends the task and returns the text it said and why it stopped.
-func askAgent(t *testing.T, svc *agentServer, task *numenv1.AskAgentRequest) (said, stopped string) {
+func askAgent(t *testing.T, svc *agentServer, task *numenv1.AskAgentRequest) (said, stopReason string) {
 	t.Helper()
 	stream, err := agenttest.Serve(t, svc).AskAgent(t.Context(), connect.NewRequest(task))
 	if err != nil {
@@ -24,24 +24,24 @@ func askAgent(t *testing.T, svc *agentServer, task *numenv1.AskAgentRequest) (sa
 	for stream.Receive() {
 		said += stream.Msg().GetText()
 		if reason := stream.Msg().GetStopped(); reason != "" {
-			stopped = reason
+			stopReason = reason
 		}
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatal(err)
 	}
-	return said, stopped
+	return said, stopReason
 }
 
-func TestAskAgentSaysTheAgentsAnswerAndStopsDone(t *testing.T) {
+func TestAskAgent_ResponseSuccess(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "plain")
 
-	response, stopped := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
+	response, stopReason := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
 		Agent: "acp:fake", Instructions: "be brief", Prompt: "why?",
 	})
 
-	if response != "the answer" || stopped != reasonDone {
-		t.Errorf("said %q, stopped %q", response, stopped)
+	if response != "the answer" || stopReason != reasonDone {
+		t.Errorf("said %q, stopReason %q", response, stopReason)
 	}
 	prompts := readRecord(t, record)["session/prompt"]
 	if len(prompts) != 1 {
@@ -72,11 +72,11 @@ func TestAskAgentOffersTheAgentNoTool(t *testing.T) {
 	}
 
 	other, otherRecord := fakeACPAgent(t, "other", "plain")
-	response, stopped := askAgent(t, serveAgents(other), &numenv1.AskAgentRequest{
+	response, stopReason := askAgent(t, serveAgents(other), &numenv1.AskAgentRequest{
 		Agent: "acp:other", Prompt: "why?", Tools: []string{"note_read"},
 	})
-	if response != "" || stopped != errNoTools.Error() {
-		t.Errorf("said %q, stopped %q", response, stopped)
+	if response != "" || stopReason != errNoTools.Error() {
+		t.Errorf("said %q, stopReason %q", response, stopReason)
 	}
 	if _, err := os.Stat(otherRecord); err == nil {
 		t.Error("the agent was started for a task naming a tool")
@@ -119,9 +119,9 @@ func TestAskAgentStopsWithTheReasonItCannotAnswer(t *testing.T) {
 		{Agent: "acp:absent", Prompt: "why?"},
 		{Agent: "claude", Prompt: "why?"},
 	} {
-		response, stopped := askAgent(t, svc, task)
-		if response != "" || stopped == "" || stopped == reasonDone {
-			t.Errorf("%s: said %q, stopped %q", task.GetAgent(), response, stopped)
+		response, stopReason := askAgent(t, svc, task)
+		if response != "" || stopReason == "" || stopReason == reasonDone {
+			t.Errorf("%s: said %q, stopReason %q", task.GetAgent(), response, stopReason)
 		}
 	}
 }
@@ -212,12 +212,12 @@ func TestAskAgentStopsOnAModelTheAgentDoesNotOffer(t *testing.T) {
 	for program, behaviour := range map[string]string{"fake": "config", "plain": "plain"} {
 		agent, record := fakeACPAgent(t, program, behaviour)
 
-		response, stopped := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
+		response, stopReason := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
 			Agent: "acp:" + program, Model: "m9", Prompt: "why?",
 		})
 
-		if response != "" || stopped == "" || stopped == reasonDone {
-			t.Errorf("%s: said %q, stopped %q", program, response, stopped)
+		if response != "" || stopReason == "" || stopReason == reasonDone {
+			t.Errorf("%s: said %q, stopReason %q", program, response, stopReason)
 		}
 		if prompts := readRecord(t, record)["session/prompt"]; len(prompts) != 0 {
 			t.Errorf("%s: the agent was prompted", program)
@@ -225,13 +225,13 @@ func TestAskAgentStopsOnAModelTheAgentDoesNotOffer(t *testing.T) {
 	}
 }
 
-func TestAskAgentSaysWhyTheAgentFailed(t *testing.T) {
+func TestAskAgent_FailureReason(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "fail")
 
-	_, stopped := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{Agent: "acp:fake", Prompt: "why?"})
+	_, stopReason := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{Agent: "acp:fake", Prompt: "why?"})
 
-	if !strings.Contains(stopped, "not signed in") {
-		t.Errorf("stopped with %q, want the agent's own message", stopped)
+	if !strings.Contains(stopReason, "not signed in") {
+		t.Errorf("stopped with %q, want the agent's own message", stopReason)
 	}
 }
 
@@ -295,7 +295,7 @@ func listPrograms(t *testing.T, svc *agentServer) []*numenv1.AgentProgram {
 	return res.Msg.GetPrograms()
 }
 
-func TestTheModelsOfAProgramAreKept(t *testing.T) {
+func TestGetAgentPrograms_ModelCache(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "config")
 	svc := serveAgents(agent)
 
