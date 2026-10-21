@@ -10,6 +10,7 @@ require (
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models v0.0.0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx v0.0.0
+	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/mewkiz/flac v1.0.14
 )
@@ -27,5 +28,7 @@ replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/pl
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models => ../../libs/plugin-sdk-go/models
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx => ../../libs/plugin-sdk-go/onnx
+
+replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault => ../../libs/plugin-sdk-go/vault
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
