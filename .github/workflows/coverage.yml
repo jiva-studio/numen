@@ -49,4 +49,4 @@ jobs:
         env:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
           GH_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
-        run: node modules/tools/coverage/collect.mjs
+        run: node modules/tools/ci.coverage/collect.mjs

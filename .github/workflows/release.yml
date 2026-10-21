@@ -385,7 +385,7 @@ jobs:
         run: |
           set -euo pipefail
           flake="$RUNNER_TEMP/flake"
-          mkdir -p "$flake/modules/tools/nix" "$flake/modules/apps/desktop/build"
+          mkdir -p "$flake/modules/tools/build.nix" "$flake/modules/apps/desktop/build"
 
           archive="$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz"
           if [ "$SHELF" = latest ]; then
@@ -401,14 +401,14 @@ jobs:
           # A flake handed over as a file cannot write itself a lock, so it
           # carries the one this tree holds.
           cp flake.nix flake.lock "$flake/"
-          cp modules/tools/nix/numen.nix "$flake/modules/tools/nix/"
+          cp modules/tools/build.nix/numen.nix "$flake/modules/tools/build.nix/"
           # The desktop entries and the icons are read from the tree the flake
           # stands in, so they come along at the path it reads them from.
           cp -r modules/apps/desktop/build/linux "$flake/modules/apps/desktop/build/"
 
           printf '{\n  "version": "%s",\n  "url": "%s",\n  "hash": "%s"\n}\n' \
-            "$VERSION" "$url" "$hash" > "$flake/modules/tools/nix/release.json"
-          cat "$flake/modules/tools/nix/release.json"
+            "$VERSION" "$url" "$hash" > "$flake/modules/tools/build.nix/release.json"
+          cat "$flake/modules/tools/build.nix/release.json"
 
           tar czf "$RUNNER_TEMP/numen-nix.tar.gz" -C "$flake" .
 

@@ -9,7 +9,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { root, OUTPUT } from './targets.mjs'
-import { updateBadgeBranch } from '../badge.mjs'
+import { updateBadgeBranch } from '../shared/badge.mjs'
 
 const DETECTED = new Set(['Killed', 'Timeout'])
 const UNDETECTED = new Set(['Survived'])

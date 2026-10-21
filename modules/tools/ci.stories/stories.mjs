@@ -12,7 +12,7 @@
  */
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { modules, root } from '../modules.mjs'
+import { modules, root } from '../shared/modules.mjs'
 
 /**
  * Everywhere a story can be written: the hand-written source of every module

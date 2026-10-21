@@ -16,8 +16,8 @@ MOBILE   := modules/apps/mobile
 DOCS     := modules/apps/docs
 LANDING  := modules/apps/landing
 
-ICON     := modules/tools/icon
-STORIES  := modules/tools/stories
+ICON     := modules/tools/build.icons
+STORIES  := modules/tools/ci.stories
 PLUGINS  := modules/plugins
 PLUGIN_NAMES := $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLUGINS)/*/manifest.json))))
 

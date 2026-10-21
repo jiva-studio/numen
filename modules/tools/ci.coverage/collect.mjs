@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { updateBadgeBranch } from '../badge.mjs'
+import { updateBadgeBranch } from '../shared/badge.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 const tmpDir = join(root, 'modules/.coverage_tmp')

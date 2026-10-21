@@ -12,7 +12,7 @@ import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
 import prettier from 'eslint-config-prettier'
-import { createLayerElements, createLayerPolicies } from '../../../tools/lint/layers.mjs'
+import { createLayerElements, createLayerPolicies } from '../../../tools/lint.layers/layers.mjs'
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
 const lifetimes = [
