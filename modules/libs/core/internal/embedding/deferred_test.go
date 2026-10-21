@@ -314,9 +314,9 @@ func TestConcurrencyIsWhatTheModelRunsAndOneUntilItArrives(t *testing.T) {
 			if got := counted(get(arriving)); got != 3 {
 				t.Errorf("sized model: got %d, want 3", got)
 			}
-			plain := embedding.NewDeferredEmbedder(bge)
-			plain.SetModel(landed{}, nil)
-			if got := counted(get(plain)); got != 1 {
+			direct := embedding.NewDeferredEmbedder(bge)
+			direct.SetModel(landed{}, nil)
+			if got := counted(get(direct)); got != 1 {
 				t.Errorf("model without a count: got %d, want 1", got)
 			}
 			closesPromptly(t, arriving)

@@ -78,9 +78,9 @@ func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
 		t.Error("a refused write changed the note")
 	}
 
-	wide := c.newWrite()
-	wide.Bound = 2 * note.MaxBytes
-	if _, err := wide.Execute(t.Context(), c.vault, "Mammals.md", body, domain.Fingerprint{}); err != nil {
+	wideWrite := c.newWrite()
+	wideWrite.Bound = 2 * note.MaxBytes
+	if _, err := wideWrite.Execute(t.Context(), c.vault, "Mammals.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(c.read(t, "Mammals.md")); got <= note.MaxBytes {

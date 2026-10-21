@@ -56,9 +56,9 @@ func TestRecognisingAFileOnDiskHoldsNoCopyOfIt(t *testing.T) {
 	})
 
 	// The first recognition starts the pdfium worker, so the baseline holds it.
-	warm := newDiskVault(t, tiny)
+	warmVault := newDiskVault(t, tiny)
 	warmUse, _ := newDiskRecognise(nil)
-	if _, err := warmUse.Execute(t.Context(), warm, "scan.pdf"); err != nil {
+	if _, err := warmUse.Execute(t.Context(), warmVault, "scan.pdf"); err != nil {
 		t.Fatal(err)
 	}
 

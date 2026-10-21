@@ -18,14 +18,14 @@ func TestAShapeShortOfAFolderComesBackAsAnError(t *testing.T) {
 		t.Skip("root enters every folder")
 	}
 	root := t.TempDir()
-	shut := filepath.Join(root, "shut")
-	if err := os.MkdirAll(filepath.Join(shut, "deep"), 0o755); err != nil {
+	shutPath := filepath.Join(root, "shut")
+	if err := os.MkdirAll(filepath.Join(shutPath, "deep"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chmod(shut, 0o000); err != nil {
+	if err := os.Chmod(shutPath, 0o000); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(shut, 0o755) })
+	t.Cleanup(func() { _ = os.Chmod(shutPath, 0o755) })
 
 	reader, err := Open(root, Options{})
 	if err != nil {

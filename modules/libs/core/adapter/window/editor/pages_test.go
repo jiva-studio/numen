@@ -426,21 +426,21 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	}()
 	<-readers.begun
 
-	shut := make(chan struct{})
+	shutCh := make(chan struct{})
 	go func() {
-		defer close(shut)
+		defer close(shutCh)
 		api.state.Close()
 	}()
 
 	select {
-	case <-shut:
+	case <-shutCh:
 		t.Fatal("the door shut while a question was still being answered")
 	case <-time.After(100 * time.Millisecond):
 	}
 
 	close(readers.until)
 	select {
-	case <-shut:
+	case <-shutCh:
 	case <-time.After(10 * time.Second):
 		t.Fatal("the door never shut")
 	}

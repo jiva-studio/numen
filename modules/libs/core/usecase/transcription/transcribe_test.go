@@ -206,8 +206,8 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 
 	torn := transcript.Marshal([]domain.TranscriptCue{{Text: "one", From: 0, To: 800}})
 	torn = append(torn, transcript.GetReachMarker(800)...)
-	loose := transcript.Marshal([]domain.TranscriptCue{{Text: "half a thought", From: 1000, To: 1800}})
-	torn = append(torn, bytes.TrimPrefix(loose, []byte(transcript.Head+"\n"))...)
+	looseCues := transcript.Marshal([]domain.TranscriptCue{{Text: "half a thought", From: 1000, To: 1800}})
+	torn = append(torn, bytes.TrimPrefix(looseCues, []byte(transcript.Head+"\n"))...)
 	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, "asr", hash), torn); err != nil {
 		t.Fatal(err)
 	}

@@ -19,8 +19,8 @@ func TestAQuestionIsReadWithItsMessagesAndPurpose(t *testing.T) {
 	if got.Purpose != "proofreading" || len(got.Messages) != 2 || got.Messages[0] != (port.Message{Role: "system", Text: "be brief"}) {
 		t.Errorf("read %+v", got)
 	}
-	if bare := readWireQuestion(nil); len(bare.Messages) != 0 {
-		t.Errorf("read %+v", bare)
+	if bareMsg := readWireQuestion(nil); len(bareMsg.Messages) != 0 {
+		t.Errorf("read %+v", bareMsg)
 	}
 }
 

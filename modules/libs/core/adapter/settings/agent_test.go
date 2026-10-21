@@ -22,9 +22,9 @@ func read(t *testing.T, file string) settings.Agent {
 // A settings file that names no agent names no agent. A file that leaves the name out leaves the
 // choice to the default, and an empty name is what a person wrote.
 func TestNamingNoAgentIsKept(t *testing.T) {
-	var untouched settings.Agent
-	if !untouched.IsNamed() || untouched.GetUse() != "" {
-		t.Fatalf("the defaults name %q", untouched.GetUse())
+	var unmodified settings.Agent
+	if !unmodified.IsNamed() || unmodified.GetUse() != "" {
+		t.Fatalf("the defaults name %q", unmodified.GetUse())
 	}
 
 	held := read(t, `{"use": ""}`)
@@ -46,8 +46,8 @@ func TestNamingNoAgentIsKept(t *testing.T) {
 // What puts the tools on a port: an agent named for the panel, or a person asking for the port
 // itself. An installation asking for neither opens none.
 func TestWhatOpensThePort(t *testing.T) {
-	var untouched settings.Agent
-	if untouched.ShouldServeTools {
+	var defaultAgent settings.Agent
+	if defaultAgent.ShouldServeTools {
 		t.Error("the defaults serve the tools to an agent nobody has configured")
 	}
 

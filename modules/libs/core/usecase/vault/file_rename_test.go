@@ -254,8 +254,8 @@ func TestAFileGivenAnotherExtensionIsNotANoteRenamed(t *testing.T) {
 func TestRenamingAFileTheIndexHoldsNothingAbout(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	loose := filepath.Join(f.vault.Path, "notes.txt")
-	if err := os.WriteFile(loose, []byte("A measure.\n"), 0o644); err != nil {
+	loosePath := filepath.Join(f.vault.Path, "notes.txt")
+	if err := os.WriteFile(loosePath, []byte("A measure.\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

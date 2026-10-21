@@ -70,9 +70,9 @@ func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 	stopReadAhead(api)
 	cache := newDiskCache(t, api)
 
-	for _, wide := range []int{400, 800} {
-		if out := ask(handler, getPageAddress(t, api, book, 0, wide)); out.Code != http.StatusOK {
-			t.Fatalf("asked for a page %d wide and got %d", wide, out.Code)
+	for _, width := range []int{400, 800} {
+		if out := ask(handler, getPageAddress(t, api, book, 0, width)); out.Code != http.StatusOK {
+			t.Fatalf("asked for a page %d wide and got %d", width, out.Code)
 		}
 	}
 	if n := countDrawings(t, cache); n != 2 {

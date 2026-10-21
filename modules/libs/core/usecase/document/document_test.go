@@ -85,9 +85,9 @@ func TestGetPageRefusesAFileThatChangedSinceTheAddressWasGivenOut(t *testing.T) 
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
 	held := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
 	pages := &drawn{}
-	stale := document.PageKey{Document: document.Fingerprint{Path: scanPath, Size: 1, Mtime: 2}, Width: 64}
+	staleKey := document.PageKey{Document: document.Fingerprint{Path: scanPath, Size: 1, Mtime: 2}, Width: 64}
 
-	_, err := document.NewGetPage(readers, held, pages).Execute(t.Context(), v, stale)
+	_, err := document.NewGetPage(readers, held, pages).Execute(t.Context(), v, staleKey)
 
 	if !errors.Is(err, document.ErrChanged) {
 		t.Fatalf("error is %v, want ErrChanged", err)
@@ -146,8 +146,8 @@ func TestGetBookPictureRefusesAFileThatIsNotTheBytesNamed(t *testing.T) {
 	held := newBook()
 	get := document.NewGetBookPicture(readers, held, http.DetectContentType)
 
-	stale := document.Fingerprint{Path: bookPath, Size: 1, Mtime: 2}
-	if _, err := get.Execute(t.Context(), v, bookPath, stale, "OEBPS/pictures/plate.png"); !errors.Is(err, document.ErrChanged) {
+	staleFp := document.Fingerprint{Path: bookPath, Size: 1, Mtime: 2}
+	if _, err := get.Execute(t.Context(), v, bookPath, staleFp, "OEBPS/pictures/plate.png"); !errors.Is(err, document.ErrChanged) {
 		t.Errorf("a stale fingerprint was answered with %v", err)
 	}
 	if len(held.asked) != 0 {

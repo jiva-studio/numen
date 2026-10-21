@@ -237,12 +237,12 @@ func splitBlocks(css string) []string {
 		if open < 0 {
 			return found
 		}
-		shut := strings.Index(css[open:], "}")
-		if shut < 0 {
+		shutIdx := strings.Index(css[open:], "}")
+		if shutIdx < 0 {
 			return found
 		}
-		found = append(found, css[open+1:open+shut])
-		css = css[open+shut+1:]
+		found = append(found, css[open+1:open+shutIdx])
+		css = css[open+shutIdx+1:]
 	}
 }
 

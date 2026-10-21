@@ -239,12 +239,12 @@ func getPageAddress(t *testing.T, api *Services, path string, at, wide int) stri
 // or two over; the window lays the page out at the width it asked for, and a
 // page narrower than that would be laid out blurred.
 func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
-	for _, wide := range []int{200, 612, 1000, 1} {
-		t.Run(fmt.Sprint(wide), func(t *testing.T) {
+	for _, width := range []int{200, 612, 1000, 1} {
+		t.Run(fmt.Sprint(width), func(t *testing.T) {
 			api, handler := openViewerWindow(t, sheets(4))
 			stopReadAhead(api)
 
-			out := ask(handler, getPageAddress(t, api, book, 0, wide))
+			out := ask(handler, getPageAddress(t, api, book, 0, width))
 			if out.Code != http.StatusOK {
 				t.Fatalf("asked for a page and got %d: %s", out.Code, out.Body)
 			}
@@ -256,8 +256,8 @@ func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
 				t.Fatalf("what came back is not a picture: %v", err)
 			}
 			got := drawn.Bounds().Dx()
-			if got < wide {
-				t.Errorf("asked for %d pixels wide and got %d", wide, got)
+			if got < width {
+				t.Errorf("asked for %d pixels wide and got %d", width, got)
 			}
 			// The page keeps its shape: 612 by 792 units of its own.
 			high := drawn.Bounds().Dy()

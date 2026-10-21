@@ -225,14 +225,14 @@ func (h *documentHandler) RenderPage(
 	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
 	defer cancel()
 
-	wide := int(r.Msg.GetWidth())
-	if wide <= 0 {
-		wide = 800
+	width := int(r.Msg.GetWidth())
+	if width <= 0 {
+		width = 800
 	}
 	key := document.PageKey{
 		Document: document.Fingerprint{Path: r.Msg.GetPath()},
 		Page:     int(r.Msg.GetPage()),
-		Width:    wide,
+		Width:    width,
 	}
 	body, err := h.getPage.Execute(ctx, showing, key)
 	if err != nil {
@@ -241,7 +241,7 @@ func (h *documentHandler) RenderPage(
 	return connect.NewResponse(&v1.RenderPageResponse{
 		ImageData:   body,
 		ContentType: "image/jpeg",
-		Width:       float64(wide),
+		Width:       float64(width),
 		Height:      0,
 	}), nil
 }
@@ -268,14 +268,14 @@ func newWireFingerprint(mark document.Fingerprint) *v1.Fingerprint {
 // pagesName is the one place a document has a name for: a page of it.
 const pagesName = "pages"
 
-// Page answers with one page of a document, drawn as wide as was asked for.
+// Page answers with one page of a document, drawn as width as was asked for.
 //
 // The address names the bytes it was drawn from, so it is answered only while
 // the file at that path is still those bytes and the picture it answers with
 // never changes. A file rewritten under the same name is a different address,
 // and this one is gone.
 func (h *documentHandler) Page(w http.ResponseWriter, r *http.Request, path, where string) {
-	at, wide, named, err := parsePageQuery(where, r.URL.Query())
+	at, width, named, err := parsePageQuery(where, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -295,7 +295,7 @@ func (h *documentHandler) Page(w http.ResponseWriter, r *http.Request, path, whe
 	key := document.PageKey{
 		Document: document.Fingerprint{Path: path, Size: named.Size, Mtime: named.Mtime},
 		Page:     at,
-		Width:    wide,
+		Width:    width,
 	}
 	body, err := h.getPage.Execute(ctx, showing, key)
 	if err != nil {
@@ -334,7 +334,7 @@ func (h *documentHandler) prefetchNextPage(v domain.Vault, key document.PageKey)
 	}()
 }
 
-// parsePageQuery is which page the window asks for and how wide, in the pixels of the
+// parsePageQuery is which page the window asks for and how width, in the pixels of the
 // device it draws on. A document is asked for a page of it and no other place
 // in it.
 func parsePageQuery(where string, query url.Values) (at, width int, named document.Fingerprint, err error) {
@@ -346,9 +346,9 @@ func parsePageQuery(where string, query url.Values) (at, width int, named docume
 	if err != nil || at < 0 || at > math.MaxInt32 {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", asked)
 	}
-	width, err = strconv.Atoi(query.Get("wide"))
+	width, err = strconv.Atoi(query.Get("width"))
 	if err != nil || width < 1 || width > widestPage {
-		return 0, 0, document.Fingerprint{}, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
+		return 0, 0, document.Fingerprint{}, fmt.Errorf("width: %q is not a width", query.Get("width"))
 	}
 	named, err = parseFingerprint(query)
 	if err != nil {

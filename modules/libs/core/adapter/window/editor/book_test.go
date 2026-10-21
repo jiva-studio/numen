@@ -385,10 +385,10 @@ func TestAFileThatIsNoBookIsUnsupported(t *testing.T) {
 func TestAnAddressIntoABookThatChanged(t *testing.T) {
 	client := newBookClient()
 	api, handler := readFrom(t, client)
-	stale := printOf(t, api, reflowed)
-	stale.Size++
+	stalePrint := printOf(t, api, reflowed)
+	stalePrint.Size++
 
-	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", stale)); out.Code != http.StatusNotFound {
+	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", stalePrint)); out.Code != http.StatusNotFound {
 		t.Errorf("the picture was answered %d, want not found", out.Code)
 	}
 	if client.countAsked() != 0 {

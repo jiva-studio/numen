@@ -63,22 +63,22 @@ func TestLoad(t *testing.T) {
 		db.Maintenance(),
 	)
 
-	cold := time.Now()
+	coldStart := time.Now()
 	res, err := scan.Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	elapsed := time.Since(cold)
+	elapsed := time.Since(coldStart)
 	t.Logf("cold scan: %d notes in %s (%.2f ms/note, %.0f notes/s)",
 		res.Indexed, elapsed.Round(time.Millisecond),
 		float64(elapsed.Milliseconds())/float64(res.Indexed),
 		float64(res.Indexed)/elapsed.Seconds())
 
-	warm := time.Now()
+	warmStart := time.Now()
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("warm scan: %s — this is what a startup pays", getElapsed(warm))
+	t.Logf("warm scan: %s — this is what a startup pays", getElapsed(warmStart))
 
 	size, err := os.Stat(db.Path())
 	if err == nil {

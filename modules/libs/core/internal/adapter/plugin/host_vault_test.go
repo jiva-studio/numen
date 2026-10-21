@@ -496,8 +496,8 @@ func TestADataFolderIsKeptOnlyWhereTheManifestNamesOne(t *testing.T) {
 
 	hosted := newCallers(nil)
 	hosted.vault = vault
-	bare := newVaultClient(t, hosted, "token-a")
-	none, err := bare.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "run.log"}))
+	bareClient := newVaultClient(t, hosted, "token-a")
+	none, err := bareClient.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "run.log"}))
 	if err != nil || none.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER {
 		t.Errorf("a plugin with no folder was answered %v (%v)", none.Msg, err)
 	}

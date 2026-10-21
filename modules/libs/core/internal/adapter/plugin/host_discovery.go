@@ -25,13 +25,13 @@ func (h *Host) Discover() error {
 		return nil
 	}
 	h.problems = problems
-	stale := h.registerDiscoveredLocked(discovered)
+	stalePlugins := h.registerDiscoveredLocked(discovered)
 	h.mu.Unlock()
 
 	for _, problem := range problems {
 		h.reportError(problem.Err)
 	}
-	for _, id := range stale {
+	for _, id := range stalePlugins {
 		h.retirePlugin(id)
 	}
 	return nil

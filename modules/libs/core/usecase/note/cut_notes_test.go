@@ -57,10 +57,10 @@ func TestANoteOfADeclaredTypeIsKeptAsItsProfileSays(t *testing.T) {
 		Type: "sheet", Title: "Sheet", Body: "# Part\n## Q ^k7m2xq9fzp\n",
 		Headings: []domain.Heading{{Level: 1, Text: "Part"}, {Level: 2, Text: "Q ^k7m2xq9fzp"}, {Level: 2, Text: "^zzzz"}, {Level: 3, Text: "Front"}},
 	}
-	bare := domain.Note{Type: "bare", Title: "B", Headings: []domain.Heading{{Level: 1, Text: "Face"}}}
+	bareNote := domain.Note{Type: "bare", Title: "B", Headings: []domain.Heading{{Level: 1, Text: "Face"}}}
 	ordinary := domain.Note{Type: domain.TypeNote, Title: "O", Body: "# One\n", Headings: []domain.Heading{{Level: 1, Text: "One ^kept"}}}
 
-	cut := cuts.Execute([]domain.Note{sheet, bare, ordinary})
+	cut := cuts.Execute([]domain.Note{sheet, bareNote, ordinary})
 
 	if len(cut[0].Chunks) == 0 {
 		t.Errorf("a profile that says nothing of chunks has the note cut: %+v", cut[0])

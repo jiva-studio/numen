@@ -243,8 +243,8 @@ func TestProvisionOfflineDropsAnArchiveThatIsNotPinned(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	stale := filepath.Join(dir, "onnxruntime.tgz")
-	if err := os.WriteFile(stale, []byte("truncated"), 0o644); err != nil {
+	staleFile := filepath.Join(dir, "onnxruntime.tgz")
+	if err := os.WriteFile(staleFile, []byte("truncated"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cfg.Offline = true
@@ -252,7 +252,7 @@ func TestProvisionOfflineDropsAnArchiveThatIsNotPinned(t *testing.T) {
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil {
 		t.Fatal("Provision() accepted an archive that is not the pinned one")
 	}
-	if _, err := os.Stat(stale); err == nil {
+	if _, err := os.Stat(staleFile); err == nil {
 		t.Error("an archive that is not the pinned one was kept")
 	}
 }

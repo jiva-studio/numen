@@ -177,7 +177,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	release()
 
 	select {
-	case <-shut:
+	case <-closedCh:
 	case <-time.After(5 * time.Second):
 		t.Fatal("closing never finished")
 	}

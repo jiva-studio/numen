@@ -101,8 +101,8 @@ func (h *settingsHandler) WriteSettingsFile(
 	}
 	if err := h.writeFile.Execute(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
 		if errors.Is(err, settings.ErrStale) {
-			stale := v1.ErrorCode_ERROR_CODE_STALE
-			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &stale}), nil
+			staleCode := v1.ErrorCode_ERROR_CODE_STALE
+			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &staleCode}), nil
 		}
 		if errors.Is(err, settings.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)

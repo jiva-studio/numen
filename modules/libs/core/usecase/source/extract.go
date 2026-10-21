@@ -403,11 +403,11 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 			if err != nil {
 				return err
 			}
-			fresh, err := u.chunkNewPaths(ctx, v, reader, paths, tried, sizes, res)
+			freshCount, err := u.chunkNewPaths(ctx, v, reader, paths, tried, sizes, res)
 			if err != nil {
 				return err
 			}
-			if fresh == 0 {
+			if freshCount == 0 {
 				break
 			}
 		}
@@ -426,21 +426,21 @@ func (u Extract) chunkNewPaths(
 	sizes chunking.Sizes,
 	res *ExtractResult,
 ) (int, error) {
-	fresh := 0
+	freshCount := 0
 	for _, path := range paths {
 		if tried[path] {
 			continue
 		}
 		tried[path] = true
-		fresh++
+		freshCount++
 		if err := ctx.Err(); err != nil {
-			return fresh, err
+			return freshCount, err
 		}
 		if err := u.source(ctx, v, reader, path, sizes, res); err != nil {
-			return fresh, err
+			return freshCount, err
 		}
 	}
-	return fresh, nil
+	return freshCount, nil
 }
 
 // ExtractOne brings a single source's chunks up to date with its text.

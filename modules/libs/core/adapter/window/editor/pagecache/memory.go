@@ -79,7 +79,7 @@ func (p *Memory) GetOrRender(ctx context.Context, key document.PageKey, drawn fu
 	defer p.mu.Unlock()
 	// It may have been dropped for room while it was being drawn, and then it
 	// is this caller's answer and nothing else's.
-	if el, still := p.index[key]; !still || el.Value.(*entry).pic != pic {
+	if el, found := p.index[key]; !found || el.Value.(*entry).pic != pic {
 		return pic.body, pic.why
 	}
 	if pic.why != nil {

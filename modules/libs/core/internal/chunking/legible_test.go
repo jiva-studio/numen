@@ -30,10 +30,10 @@ func TestMixedScriptNoiseStaysDirty(t *testing.T) {
 // script these fractions were not measured on is indexed whole.
 func TestANegativeThresholdAsksForNone(t *testing.T) {
 	rubbish := "|| $$ ?? %%% ### @@@ ~~~ ^^^"
-	plain := "the quick brown fox jumps over the lazy dog"
+	sampleText := "the quick brown fox jumps over the lazy dog"
 
 	kept := Legibility{Alphabetic: -1, Dirty: -1}
-	for _, text := range []string{rubbish, plain} {
+	for _, text := range []string{rubbish, sampleText} {
 		if !isLegible(text, kept) {
 			t.Errorf("with no threshold, %q was refused", text)
 		}
@@ -44,7 +44,7 @@ func TestANegativeThresholdAsksForNone(t *testing.T) {
 	if isLegible(rubbish, defaults) {
 		t.Errorf("%q passed the thresholds", rubbish)
 	}
-	if !isLegible(plain, defaults) {
-		t.Errorf("%q was refused by the thresholds", plain)
+	if !isLegible(sampleText, defaults) {
+		t.Errorf("%q was refused by the thresholds", sampleText)
 	}
 }

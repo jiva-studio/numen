@@ -371,9 +371,9 @@ func TestAPluginThatCannotBeConfiguredHasNotBeenHandedItsKey(t *testing.T) {
 		t.Error("a key the plugin never received was reported as delivered")
 	}
 
-	plain := host.plugins[secretPluginID]
-	plain.Manifest.Secrets = nil
-	host.plugins[secretPluginID] = plain
+	plainPlugin := host.plugins[secretPluginID]
+	plainPlugin.Manifest.Secrets = nil
+	host.plugins[secretPluginID] = plainPlugin
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Errorf("a plugin without secrets that does not answer Configure: %v", err)
 	}

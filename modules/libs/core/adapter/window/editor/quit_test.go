@@ -255,9 +255,9 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		t.Fatal("the write never reached the vault")
 	}
 
-	shut := make(chan struct{})
+	shutCh := make(chan struct{})
 	go func() {
-		defer close(shut)
+		defer close(shutCh)
 		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
 		f.installation.FlushPending(ctx)
@@ -268,7 +268,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	}()
 
 	select {
-	case <-shut:
+	case <-shutCh:
 		t.Fatal("the quit closed the database with a write in the air")
 	case <-time.After(300 * time.Millisecond):
 	}
@@ -276,7 +276,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	hold.release()
 
 	select {
-	case <-shut:
+	case <-shutCh:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the quit never finished")
 	}

@@ -23,14 +23,14 @@ func TestAFolderTheWalkCouldNotEnterIsTheWholeVault(t *testing.T) {
 
 	// The folder arrives whole, with one subfolder nothing may enter.
 	at := writeFolderOfNotes(t, root, "library", 1)
-	shut := filepath.Join(at, "shut")
-	if err := os.MkdirAll(filepath.Join(shut, "deep"), 0o755); err != nil {
+	shutPath := filepath.Join(at, "shut")
+	if err := os.MkdirAll(filepath.Join(shutPath, "deep"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chmod(shut, 0o000); err != nil {
+	if err := os.Chmod(shutPath, 0o000); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(shut, 0o755) })
+	t.Cleanup(func() { _ = os.Chmod(shutPath, 0o755) })
 
 	if _, whole := shape.getPathsUnder(t.Context(), at); !whole {
 		t.Fatal("a folder the walk could not enter was not answered as the whole vault")

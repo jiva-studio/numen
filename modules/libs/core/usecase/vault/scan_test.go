@@ -295,8 +295,8 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("new text not searchable: %v", matches)
 	}
 	// The vault is authoritative: what is not on disk is not in the index.
-	if stale := searchNotes(t, db, v, "windows"); len(stale) != 0 {
-		t.Errorf("deleted note still searchable: %v", stale)
+	if staleNotes := searchNotes(t, db, v, "windows"); len(staleNotes) != 0 {
+		t.Errorf("deleted note still searchable: %v", staleNotes)
 	}
 }
 
@@ -672,9 +672,9 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	warm := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
+	warmScanner := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
 
-	res, err := warm.Execute(ctx, v)
+	res, err := warmScanner.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled warm scan returned %v", err)
 	}

@@ -597,14 +597,14 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 	})
 
 	// What the caller read, and then the note changing under it.
-	stale := fingerprint(t, session, "Heat.md")
+	staleFp := fingerprint(t, session, "Heat.md")
 	call[wrote](t, session, "note_rewrite", map[string]any{
 		"path": "Heat.md", "body": "# Heat\n\nWhat somebody else wrote.\n",
-		"fingerprint": stale,
+		"fingerprint": staleFp,
 	})
 
 	out := addLinks(t, session, map[string]any{
-		"from": "Heat.md", "to": "Work", "role": "jump", "fingerprint": stale,
+		"from": "Heat.md", "to": "Work", "role": "jump", "fingerprint": staleFp,
 	})
 	if len(out) != 1 || !strings.Contains(out[0].Refused, "no longer the one that was read") {
 		t.Errorf("link_add over an edit nobody saw: %+v", out)
@@ -612,9 +612,9 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 
 	for tool, args := range map[string]map[string]any{
 		"link_update": {
-			"from": "Heat.md", "to": "Entropy", "role": "jump", "fingerprint": stale,
+			"from": "Heat.md", "to": "Entropy", "role": "jump", "fingerprint": staleFp,
 		},
-		"link_remove": {"from": "Heat.md", "to": "Entropy", "fingerprint": stale},
+		"link_remove": {"from": "Heat.md", "to": "Entropy", "fingerprint": staleFp},
 	} {
 		if got := getRefusal(t, session, tool, args); !strings.Contains(got, "changed") {
 			t.Errorf("%s over an edit nobody saw: %q", tool, got)
@@ -805,11 +805,11 @@ func TestProblemsSayWhichCheckFoundThem(t *testing.T) {
 		t.Errorf("want the one ambiguous link, got %d", ambiguous)
 	}
 
-	quiet := call[struct {
+	quietResp := call[struct {
 		Problems []mcp.Problem `json:"problems"`
 	}](t, session, "vault_problems", map[string]any{"checks": []string{"dangling"}})
-	if len(quiet.Problems) != 1 || quiet.Problems[0].Path != "Cold.md" {
-		t.Errorf("want the dangling link when asked for: %+v", quiet.Problems)
+	if len(quietResp.Problems) != 1 || quietResp.Problems[0].Path != "Cold.md" {
+		t.Errorf("want the dangling link when asked for: %+v", quietResp.Problems)
 	}
 }
 
