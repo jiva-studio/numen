@@ -5,7 +5,7 @@ import type { RowId, ShownRow } from './row'
 
 /**
  * The rows a press on a row drags: the selection, where the row stands in it,
- * and the row alone where it stands outside.
+ * and the row alone at its current position outside.
  */
 export const getDraggedRows = (selection: readonly RowId[], row: RowId): readonly RowId[] =>
   selection.includes(row) ? selection : [row]

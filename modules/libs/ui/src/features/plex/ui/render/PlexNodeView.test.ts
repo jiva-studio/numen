@@ -106,27 +106,27 @@ describe('a node that can be chosen', () => {
   })
 })
 
-describe('a node asked for on its own', () => {
-  it('is asked for by a double click, to be drawn where the reader is', async () => {
+describe('a node requested for on its own', () => {
+  it('is requested for by a double click, to be drawn where the reader is', async () => {
     const node = mountNode()
     await node.trigger('dblclick')
     expect(node.emitted('show')).toStrictEqual([['here']])
   })
 
-  it('is asked for beside where the reader is when the modifier is held', async () => {
+  it('is requested for alongside where the reader is when the modifier is retained', async () => {
     const node = mountNode()
     await node.trigger('dblclick', { altKey: true })
     expect(node.emitted('show')).toStrictEqual([['beside']])
   })
 
-  it('is asked for by a press with Shift, and by Shift and the modifier', async () => {
+  it('is requested for by a press with Shift, and by Shift and the modifier', async () => {
     const node = mountNode()
     await node.trigger('keydown', { key: 'Enter', shiftKey: true })
     await node.trigger('keydown', { key: ' ', shiftKey: true, altKey: true })
     expect(node.emitted('show')).toStrictEqual([['here'], ['beside']])
   })
 
-  it('is not asked for by a press on its own, which travels there instead', async () => {
+  it('is not requested for by a press on its own, which travels there instead', async () => {
     const node = mountNode()
     await node.trigger('keydown', { key: 'Enter' })
     await node.trigger('keydown', { key: ' ' })
@@ -134,21 +134,21 @@ describe('a node asked for on its own', () => {
     expect(node.emitted('activate')).toHaveLength(2)
   })
 
-  it('is asked for on the focus too, which is the node being read', async () => {
+  it('is requested for on the focus too, which is the node being read', async () => {
     const node = mountNode({ relation: 'focus' })
     await node.trigger('dblclick')
     expect(node.emitted('show')).toStrictEqual([['here']])
     expect(node.emitted('activate')).toBeUndefined()
   })
 
-  it('is not asked for by a node on its way in or out', async () => {
+  it('is not requested for by a node on its way in or out', async () => {
     const node = mountNode({ opacity: 0.4 })
     await node.trigger('dblclick')
     await node.trigger('keydown', { key: 'Enter', shiftKey: true })
     expect(node.emitted('show')).toBeUndefined()
   })
 
-  it('is not asked for by a node that is not there yet', async () => {
+  it('is not requested for by a node that is not there yet', async () => {
     const ghost = mount(PlexNodeView, { props: { node: createNode(), gestureRole: 'ghost' } })
     await ghost.trigger('dblclick')
     expect(ghost.emitted('show')).toBeUndefined()
@@ -207,7 +207,7 @@ describe('the handle', () => {
     expect(node.find('.plex__handle').exists()).toBe(true)
   })
 
-  it('starts a gesture rather than choosing the node it sits on', async () => {
+  it('starts a gesture and not choosing the node it sits on', async () => {
     const node = await hover(mountNode())
     await node.get('.plex__handle').trigger('pointerdown')
     expect(node.emitted('reach')).toHaveLength(1)
@@ -227,7 +227,7 @@ describe('the handle', () => {
 })
 
 describe('the icon', () => {
-  it('is whatever the slot was handed, and sits beside the title', () => {
+  it('is whatever the slot was handed, and sits alongside the title', () => {
     const node = mount(PlexNodeView, {
       props: { node: createNode() },
       slots: { icon: '<i class="glyph" />' },
@@ -296,7 +296,7 @@ describe('what a node is drawn as', () => {
     expect(target.classes()).toContain('plex__node--target')
   })
 
-  it('is a box the size the arrangement asked for, in pixels', () => {
+  it('is a box the size the arrangement requested for, in pixels', () => {
     const rect = mountNode({ width: 200, height: 50 }).get('rect')
     expect(Number(rect.attributes('width'))).toBe(200)
     expect(Number(rect.attributes('height'))).toBe(50)
@@ -358,7 +358,7 @@ describe('a box with more of its title to show', () => {
     expect(getBox(mounted.node)).toStrictEqual({ width: 144, x: -72 })
   })
 
-  it('opens across several frames rather than in one', async () => {
+  it('opens across several frames and not in one', async () => {
     const mounted = mountWide()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
@@ -371,7 +371,7 @@ describe('a box with more of its title to show', () => {
     expect(halfway).toBeLessThan(400)
   })
 
-  it('widens where it stands once the hand has rested there', async () => {
+  it('widens at its current position once the hand has rested there', async () => {
     const node = await rest(mountWide())
     expect(getBox(node)).toStrictEqual({ width: 400, x: -200 })
   })
@@ -548,7 +548,7 @@ describe('the headings a node hangs', () => {
     expect(node.emitted('activate')).toBeUndefined()
   })
 
-  it('stands the ceiling of them, and marks that there is more to scroll to', async () => {
+  it('remains the ceiling of them, and marks that there is more to scroll to', async () => {
     const node = await rest(mountInside(headings(MOST + 3)))
     expect(node.findAll('.plex__heading')).toHaveLength(MOST)
     expect(node.findAll('.plex__more')).toHaveLength(1)
@@ -581,7 +581,7 @@ describe('the headings a node hangs', () => {
     expect(node.findAll('.plex__heading').at(-1)!.text()).toBe(`Heading ${MOST}`)
   })
 
-  it('scrolls nothing where every one of them stands at once', async () => {
+  it('scrolls nothing where every one of them remains at once', async () => {
     const node = await rest(mountInside(headings(3)))
     expect(node.findAll('.plex__more')).toHaveLength(0)
 

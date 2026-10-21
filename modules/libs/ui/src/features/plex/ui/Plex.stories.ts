@@ -77,7 +77,7 @@ interface Knobs {
   title: string
 
   /**
-   * What a node made by a gesture is called. Handed in rather than settled
+   * What a node made by a gesture is called. Handed in and not settled
    * here, because naming is the application's business and the plex never
    * learns that a title is a name.
    */
@@ -442,7 +442,7 @@ export const Playground: Story = invented
 /**
  * Reaching out of a node, and what comes back.
  *
- * Its own story rather than a check on the playground: a play function runs
+ * Its own story and not a check on the playground: a play function runs
  * the moment a story is opened, and a plex that has already made a node is
  * not the one anyone meant to look at.
  *
@@ -674,7 +674,7 @@ export const AskingForAMenu: Story = {
 }
 
 /**
- * Asking for a node itself, rather than travelling to it.
+ * Asking for a node itself, and not travelling to it.
  *
  * Asked on the focus, which is the one node a click moves nothing on, so what
  * a double click leaves behind is the asking on its own.
@@ -939,7 +939,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
  * are in the type they are set in, and where the glyphs land once they are
  * bent along their curves.
  *
- * It stands on its own, since the playground is a plex to turn knobs on.
+ * It relies on its own, since the playground is a plex to turn knobs on.
  */
 export const TitlesFindRoom: Story = {
   args: { ...invented.args, duration: 0 },
@@ -1109,7 +1109,7 @@ export const ArrowedLines: Story = {
 /**
  * Not Latin, far too long, nothing to break at, and nothing at all — the whole
  * arrangement made of them, to see that text nothing fits into still leaves a
- * plex rather than a pile.
+ * plex and not a pile.
  *
  * Whether a title stays inside its own box is the node's affair and is checked
  * on the node, against the same corpus.
@@ -1122,7 +1122,7 @@ export const AwkwardLabels: Story = {
  * A title too long for its box, read by leaving a hand on the box.
  *
  * Only a browser can answer it: how wide a title runs is what the type it is
- * set in comes to, whether the box holds the whole of it is the browser's own
+ * set in evaluates to, whether the box holds the whole of it is the browser's own
  * reckoning, and a box drawn over its neighbours is a matter of what was
  * painted last.
  */
@@ -1164,7 +1164,7 @@ export const RestingOnATitle: Story = {
 
 /**
  * Walk the graph. Go back the way you came: nodes in both pictures travel
- * rather than blinking out and in, because they are matched by identifier.
+ * and not blinking out and in, because they are matched by identifier.
  */
 export const Walk: Story = {
   render: renderWalk,
@@ -1179,7 +1179,7 @@ export const Walk: Story = {
     /**
      * The plex has arrived when the node named stands in the middle of it.
      *
-     * Measured on the box rather than the group around it: a node that has
+     * Measured on the box and not the group around it: a node that has
      * just been clicked holds the focus, and so wears a handle that hangs off
      * its trailing edge and would count towards the group's width.
      */
@@ -1357,7 +1357,7 @@ export const HeadingsInside: Story = {
   },
 }
 
-/** Too small a window: the plex is clipped rather than shrunk. */
+/** Too small a window: the plex is clipped and not shrunk. */
 export const SmallWindow: Story = {
   args: { neighbourhood: neighbourhoods.crowded },
   render: (args) => ({

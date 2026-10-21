@@ -2,7 +2,7 @@
  * A press that becomes a drag once the pointer has travelled far enough.
  *
  * Everything that knows about events is here; where a landing is and what
- * letting go comes to are the caller's.
+ * letting go evaluates to are the caller's.
  */
 import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
 import type { Position } from '@/shared/lib/geometry'
@@ -27,7 +27,7 @@ export interface Press<Item, At> {
   readonly getClock: () => Clock
   /** Where letting go here would put what is held. */
   readonly getDropTargetAt: (item: Item, at: Position) => At | null
-  /** What letting go after a drag comes to. The landing is nothing off any target. */
+  /** What letting go after a drag evaluates to. The landing is nothing off any target. */
   readonly commit: (item: Item, at: At | null) => void
   /** Said once, when the press turns into a drag. */
   readonly begin?: (item: Item) => void

@@ -67,7 +67,7 @@ func TestADeckWhoseLinksCannotBeResolvedIsNotWritten(t *testing.T) {
 	}
 }
 
-// A write over a file that changed since it was read hands back nothing: no
+// A write over a file that changed since it was read returns nothing: no
 // fingerprint, and no mark for a card that was never written.
 func TestAStaleWriteHandsBackNothing(t *testing.T) {
 	vs := newVaults(t)

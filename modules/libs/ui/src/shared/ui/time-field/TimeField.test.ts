@@ -19,11 +19,11 @@ const getEmitted = (field: ReturnType<typeof mountField>): readonly unknown[] =>
   (field.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
 describe('the hour in force', () => {
-  it('stands in the field as it was given', () => {
+  it('remains in the field as it was given', () => {
     expect((mountField().get('input').element as HTMLInputElement).value).toBe('04:00')
   })
 
-  it('stands at nothing where what was given is no hour of the day', () => {
+  it('remains at nothing where what was given is no hour of the day', () => {
     expect(
       (mountField({ modelValue: 'noon' }).get('input').element as HTMLInputElement).value,
     ).toBe('')
@@ -31,7 +31,7 @@ describe('the hour in force', () => {
 })
 
 describe('an hour typed', () => {
-  it('is handed on, and said to have committed', async () => {
+  it('is handed on, and returned to have committed', async () => {
     const field = mountField()
     await field.get('input').setValue('06:30')
     expect(getEmitted(field)).toStrictEqual(['06:30'])
@@ -44,7 +44,7 @@ describe('an hour typed', () => {
     expect(getEmitted(field)).toStrictEqual([])
   })
 
-  it('is left where it stands where it is no hour of the day', async () => {
+  it('is left at its current position where it is no hour of the day', async () => {
     const field = mountField()
     await field.get('input').setValue('')
     expect(getEmitted(field)).toStrictEqual([])

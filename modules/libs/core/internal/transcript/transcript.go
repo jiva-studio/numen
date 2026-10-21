@@ -4,10 +4,10 @@
 //	WEBVTT
 //
 //	00:00:01.500 --> 00:00:04.200
-//	what was said
+//	the transcript
 //
 //	00:00:04.200 --> 00:00:09.100
-//	what was said next
+//	the transcript next
 //
 //	NOTE heard 9100
 //
@@ -258,7 +258,7 @@ func appendStamp(dst []byte, ms int) []byte {
 }
 
 // Clock is a moment of a recording as a person reads one: the way a player
-// writes where it stands. An hour that is not there is not written.
+// writes at its current position. An hour that is not there is not written.
 func Clock(ms int) string {
 	whole := max(ms, 0) / 1000
 	m := whole / 60 % 60
@@ -369,7 +369,7 @@ func GetCuesAt(cues []domain.TranscriptCue, start, length int) []domain.Transcri
 	return out
 }
 
-// progressNote is the note a run stopped part way leaves, as it stands in the file.
+// progressNote is the note a run stopped part way leaves, currently in the file.
 // The words after it are how many milliseconds of the recording have been
 // written down.
 const progressNote = "NOTE heard "

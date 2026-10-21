@@ -1,5 +1,5 @@
 /**
- * What one plex is showing, and what travelling comes to.
+ * What one plex is showing, and what travelling evaluates to.
  *
  * Every one of these has a failure that looks like nothing at all: a plex
  * showing something stale, with no error and no way back.
@@ -35,7 +35,7 @@ describe('a plex still being read', () => {
     expect(plex.isLoading.value).toBe(false)
   })
 
-  it('goes on saying so while an older answer is let go of', async () => {
+  it('goes on saying so while an older answer is release', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
     const plex = usePlexView(
       fake(async (path) => {
@@ -77,7 +77,7 @@ describe('a plex whose first answer is stale', () => {
 })
 
 describe('two questions in flight', () => {
-  it('keeps the answer to the last one asked, however they come back', async () => {
+  it('keeps the answer to the last one requested, however they come back', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
     const plex = usePlexView(
       fake(async (path) => {

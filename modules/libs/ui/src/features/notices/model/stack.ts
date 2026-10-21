@@ -3,7 +3,7 @@
  * against.
  *
  * Time spent with the corner under a pointer, with the keyboard in it, or away
- * from the window entirely, is not time spent reading it. What that comes to is
+ * from the window entirely, is not time spent reading it. What that evaluates to is
  * kept here; nothing here draws anything.
  */
 import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'

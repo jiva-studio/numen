@@ -42,7 +42,7 @@ const getRole = (relation: PlexRelation): CreatableRelation | undefined =>
 
 /**
  * What a new note writes about the note it was made from. The new one takes the
- * relation the gesture named, so from where it stands the other one takes the
+ * relation the gesture named, so from at its current position the other one takes the
  * opposite relation.
  */
 const opposites: Partial<Record<PlexRelation, CreatableRelation>> = {

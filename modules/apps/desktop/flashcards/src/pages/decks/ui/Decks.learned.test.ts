@@ -79,7 +79,7 @@ const mountDecks = (over: VaultCardsDue, presets: readonly Preset[], isScheduled
     },
   })
 
-describe('how much of a deck stands learned', () => {
+describe('how much of a deck remains learned', () => {
   it('is drawn as a share of the deck, with the word', () => {
     const one = mountDecks(vault(), [preset()])
 
@@ -88,7 +88,7 @@ describe('how much of a deck stands learned', () => {
 
   // The tile above draws a bare share of the day's work, so this one carries
   // the word wherever it stands: the two are different questions.
-  it('never stands as a figure alone', () => {
+  it('never remains as a figure alone', () => {
     const one = mountDecks(vault(), [preset({ answered: 10, took: 10 })])
 
     for (const at of one.findAll('.decks__learned')) {
@@ -131,7 +131,7 @@ describe('how much of a deck stands learned', () => {
     expect(one.find('.decks__learned').text()).toBe('25% learned')
   })
 
-  it('stands beside what the deck owes and not in its place', () => {
+  it('remains along with what the deck owes and not in its place', () => {
     const one = mountDecks(vault(), [preset()])
 
     expect(one.find('.decks__learned').exists()).toBe(true)
@@ -140,7 +140,7 @@ describe('how much of a deck stands learned', () => {
 })
 
 describe('a deck as a share of itself', () => {
-  it('is what stands learned over what the deck holds', () => {
+  it('is what remains learned over what the deck holds', () => {
     expect(getLearnedShare(deck({ faces: 20, learned: 5 }))).toBe(0.25)
     expect(getLearnedShare(deck({ faces: 4, learned: 4 }))).toBe(1)
     expect(getLearnedShare(deck({ faces: 4, learned: 0 }))).toBe(0)

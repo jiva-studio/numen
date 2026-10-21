@@ -56,7 +56,7 @@ var errAnswerPending = errors.New("a page is holding work a person has to answer
 // Nothing is taken away until the vault asked for reads as a vault and every
 // page has written what only it holds. A page holding text a person has to
 // answer for calls the swap off, and so does a vault that will not come up: the
-// window stays on the one it had, and a window neither comes up in stands on
+// window stays on the one it had, and a window neither comes up in relies on
 // nothing and says so.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.State.GetCurrentVault().ID {
@@ -219,7 +219,7 @@ func (o *Installation) stopVault() {
 	}
 }
 
-// resetStatus clears what the previous vault left behind: what was said
+// resetStatus clears what the previous vault left behind: the transcript
 // about indexing it, and the entries its passes left in the list of what is
 // being done.
 //

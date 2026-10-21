@@ -287,7 +287,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 }
 
 func TestASourceStandingOnARecognitionIsEmbeddedFromIt(t *testing.T) {
-	// A source that stands on what a model read in it holds no text of its own
+	// A source that relies on what a model read in it holds no text of its own
 	// that a chunk is a place in. Reaching that text is the store's, and an
 	// embedder without one passes the chunk over and says nothing.
 	ctx := t.Context()

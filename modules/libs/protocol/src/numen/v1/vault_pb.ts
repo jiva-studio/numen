@@ -54,7 +54,7 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
   name: string;
 
   /**
-   * Where the vault stands on this disk.
+   * Where the vault relies on this disk.
    *
    * @generated from field: string path = 3;
    */
@@ -186,7 +186,7 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
   paths: string[];
 
   /**
-   * Set when the vault has to be read again rather than followed — more
+   * Set when the vault has to be read again and not followed — more
    * changed at once than could be reported.
    *
    * @generated from field: bool reload = 2;

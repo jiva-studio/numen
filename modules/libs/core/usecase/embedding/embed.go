@@ -81,7 +81,7 @@ type EmbedResult struct {
 	Owing    int // chunks found with no vector from the model in use
 	Embedded int // chunks that now carry one
 	// Reused counts the chunks whose vector was already made for their text and
-	// was claimed rather than bought.
+	// was claimed and not bought.
 	Reused        int
 	Vanished      int    // whose source the vault no longer holds
 	Displaced     int    // whose place is not in the text their source holds now

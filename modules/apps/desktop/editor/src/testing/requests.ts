@@ -31,7 +31,7 @@ export const requests = {
   ran: [] as string[],
   /** How often a folder was asked for, which is a vault being added. */
   chose: 0,
-  /** What the window said the person has open, the last of it last. */
+  /** What the window said currently open, the last of it last. */
   openTabs: [] as { tabs: readonly Tab[]; front: string }[],
 }
 

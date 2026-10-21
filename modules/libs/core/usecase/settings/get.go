@@ -3,7 +3,7 @@ package settings
 // Bounds is how far a setting holding a number goes, at each end.
 type Bounds struct{ Least, Most float64 }
 
-// Current is the settings file as JSON and where it stands, with the models and
+// Current is the settings file as JSON and at its current position, with the models and
 // limits that go with the settings.
 type Current struct {
 	Written                  string

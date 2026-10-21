@@ -22,7 +22,7 @@ const vault = (isOn: boolean, headings = 6, error: string | null = null, most = 
 }
 
 describe('whether a node nests the headings of its note', () => {
-  it('opens on what the settings hold, so the list stands on what is in force', async () => {
+  it('opens on what the settings hold, so the list relies on what is in force', async () => {
     const core = vault(false)
     const held = useNestingSetting(core, words, writer().write)
     await held.start()
@@ -34,7 +34,7 @@ describe('whether a node nests the headings of its note', () => {
     expect(items.find((one) => one.isCurrent)?.id).toBe(OFF)
   })
 
-  it('nests the headings where the vault cannot be asked', async () => {
+  it('nests the headings where the vault cannot be requested', async () => {
     const held = useNestingSetting(
       {
         getNestingSettings: async () => Promise.reject(new Error('no')),
@@ -49,7 +49,7 @@ describe('whether a node nests the headings of its note', () => {
     expect(held.headings.value).toBe(6)
   })
 
-  it('says which of the two is the one in force, and nothing beside the other', async () => {
+  it('says which of the two is the one in force, and nothing alongside the other', async () => {
     const held = useNestingSetting(vault(true), words, writer().write)
     await held.start()
 
@@ -58,7 +58,7 @@ describe('whether a node nests the headings of its note', () => {
     expect(items.find((row) => row.id === OFF)?.detail).toBeUndefined()
   })
 
-  it('writes the row chosen and stands on it', async () => {
+  it('writes the row chosen and relies on it', async () => {
     const core = vault(true)
     const held = useNestingSetting(core, words, writer().write)
     await held.start()
@@ -116,7 +116,7 @@ describe('how many headings stand under a node', () => {
     )
   })
 
-  it('marks the count in force, and says nothing beside the rest', async () => {
+  it('marks the count in force, and says nothing alongside the rest', async () => {
     const held = useNestingSetting(vault(true, 4), words, writer().write)
     await held.start()
 
@@ -126,7 +126,7 @@ describe('how many headings stand under a node', () => {
     expect(items.find((one) => one.id === '5')?.detail).toBeUndefined()
   })
 
-  it('writes the count chosen beside the switch the window already knows', async () => {
+  it('writes the count chosen alongside the switch the window already knows', async () => {
     const core = vault(false, 6)
     const held = useNestingSetting(core, words, writer().write)
     await held.start()
@@ -208,7 +208,7 @@ describe('how many headings stand under a node', () => {
     })
   })
 
-  it('offers only the default count before the vault has said how far the counts go', () => {
+  it('offers only the default count before the vault has returned how far the counts go', () => {
     const held = useNestingSetting(vault(true), words, writer().write)
 
     const items = held.getHeadingsGroups().flatMap((group) => group.items)
@@ -277,7 +277,7 @@ describe('a switch turned twice in quick succession', () => {
     }
   }
 
-  it('stands on the last choice while the first write is still answered', async () => {
+  it('relies on the last choice while the first write is still answered', async () => {
     const core = slowVault()
     const held = useNestingSetting(core, words, writer().write)
     await held.start()

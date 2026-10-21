@@ -73,7 +73,7 @@ export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
   focus: string;
 
   /**
-   * Which thread of talk this question belongs to. Questions carrying one name
+   * Which conversation thread this question belongs to. Questions carrying one name
    * are answered in one conversation with the agent, so the name has to be the
    * client's alone: unique among the conversations it has open, and never
    * given to a second one for as long as the application is running. Empty is
@@ -426,7 +426,7 @@ export const ToolDeclarationSchema: GenMessage<ToolDeclaration> = /*@__PURE__*/
  */
 export type FinishConversationRequest = Message<"numen.v1.FinishConversationRequest"> & {
   /**
-   * Which thread of talk is over, by the name its questions carried. Empty is
+   * Which conversation thread is over, by the name its questions carried. Empty is
    * no conversation, and there is nothing to finish.
    *
    * @generated from field: string conversation = 1;
@@ -824,7 +824,7 @@ export const AgentService: GenService<{
   },
   /**
    * FinishConversation says a conversation is over. What the agent kept of it
-   * is let go of, and whatever is still being answered in it stops.
+   * is release, and whatever is still being answered in it stops.
    *
    * @generated from rpc numen.v1.AgentService.FinishConversation
    */

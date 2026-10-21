@@ -486,7 +486,7 @@ func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
 func TestARenamedBookKeepsItsRecognition(t *testing.T) {
 	// A recognition is named by the hash of what was read, so a document renamed is
 	// the same recognition at another path. Renaming is a path gone and a path
-	// found, and an hour of a model's work stands on the one that went.
+	// found, and an hour of a model's work relies on the one that went.
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
 

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// The window says what the person has open, and whoever answers on their behalf
+// The window says what currently open, and whoever answers on their behalf
 // reads the last of it.
 
 func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {

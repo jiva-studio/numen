@@ -46,14 +46,14 @@ describe('the settings a goal schedules by', () => {
     expect(under).not.toContain('reviewsADay')
   })
 
-  it('draws what stands under no goal in particular under all three', () => {
+  it('draws what is placed under no goal in particular under all three', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       expect(getGoalFields(goal, DEFAULTS.learned)).toContain('load')
       expect(getGoalFields(goal, DEFAULTS.learned)).toContain('hasEvenLoad')
     }
   })
 
-  // What a day's budget is spent on is a measure in cards, so it stands under
+  // What a day's budget is spent on is a measure in cards, so it is placed under
   // the goal whose budget is cards and takes no part in the other two.
   it('draws what a budget is spent on under the goal whose budget is cards', () => {
     expect(getGoalFields('retention', DEFAULTS.learned)).toContain('counts')
@@ -99,7 +99,7 @@ describe('the rule for what is learned', () => {
     expect(getGoalFields('minutes', 'interval')).not.toContain('retention')
   })
 
-  it('stands the rule over the value it reads', () => {
+  it('remains the rule over the value it reads', () => {
     for (const learned of ['interval', 'retention'] as const) {
       const under = getGoalFields('minutes', learned)
       const value = learned === 'interval' ? 'interval' : 'retention'
@@ -173,7 +173,7 @@ describe('the limits of a control', () => {
     expect(getFieldLimits('minutesADay', bounds)).toStrictEqual({ min: 5, max: 120 })
   })
 
-  it('are in percent for retention, which is held as a share', () => {
+  it('are in percent for retention, which is retained as a share', () => {
     const { min, max } = getFieldLimits('retention', bounds) as { min: number; max: number }
     expect(min).toBeCloseTo(70)
     expect(max).toBeCloseTo(99)
@@ -208,7 +208,7 @@ describe('the number a control shows', () => {
   })
 })
 
-describe('the value a number typed comes to', () => {
+describe('the value a number typed evaluates to', () => {
   it('is the number itself, and a share of one for retention', () => {
     expect(getFieldValue('newADay', 12)).toBe(12)
     expect(getFieldValue('retention', 90)).toBe(0.9)

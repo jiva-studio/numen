@@ -66,7 +66,7 @@ export interface HeadingsDeps {
 }
 
 /**
- * How far in each level present is set, by where it stands among the others: a
+ * How far in each level present is set, by at its current position among the others: a
  * note whose headings begin at the second level is set in from the edge as one
  * beginning at the first.
  */

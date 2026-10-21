@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
-// running is the one server this process holds. Starting again while it stands
+// running is the one server this process holds. Starting again while active
 // answers with the port it already has.
 var (
 	mu      sync.Mutex

@@ -12,7 +12,7 @@ afterEach(() => {
 })
 
 describe('where a menu is placed', () => {
-  it('stands at the asked point while its size is unknown', () => {
+  it('remains at the requested point while its size is unknown', () => {
     const { placed } = useMenuPlacement({
       at: () => ({ x: 100, y: 120 }),
       viewport: () => ROOM,

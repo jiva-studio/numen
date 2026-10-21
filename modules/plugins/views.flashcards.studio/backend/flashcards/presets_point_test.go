@@ -221,7 +221,7 @@ func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 }
 
 // A note that is not a preset schedules nothing, so a deck is not pointed at
-// one and the file is left as it stands.
+// one and the file is left currently.
 func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)

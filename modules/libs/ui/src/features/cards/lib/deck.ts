@@ -36,7 +36,7 @@ export interface DeckCard {
    * event about it, so no two cards may carry one.
    */
   readonly id: string
-  /** The section it stands under, and nothing for a card before the first. */
+  /** The section it is placed under, and nothing for a card before the first. */
   readonly section: string | null
   /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
   readonly stencil: string | null
@@ -102,8 +102,8 @@ export const DECK_WORDS: DeckWords = {
 }
 
 /**
- * What the caller found wrong with what it handed in. A card's stands under its
- * heading and a value's stands under that value, so nothing is said in a place
+ * What the caller found wrong with what it handed in. A card's is placed under its
+ * heading and a value's is placed under that value, so nothing is said in a place
  * that leaves a person guessing what it is about.
  */
 export interface DeckProblems {
@@ -131,8 +131,8 @@ export interface CardFieldValue extends FieldValue {
 /**
  * A card's values in the order the stencil asks for them, empty where the card
  * leaves a slot out, and a slot the card writes twice standing twice. A slot
- * the stencil names twice is one slot and stands once. The values the stencil
- * names nothing for come after the rest, marked as named by nothing, and what
+ * the stencil names twice is one slot and appears once. The values the stencil
+ * is empty for come after the rest, marked as named by nothing, and what
  * is drawn of them is the caller's.
  */
 export function getCardFieldValues(

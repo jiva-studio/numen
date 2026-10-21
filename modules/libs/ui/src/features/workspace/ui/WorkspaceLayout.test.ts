@@ -87,7 +87,7 @@ describe('the last tab in the workspace', () => {
     expect(held.findComponent(WorkspacePane).exists()).toBe(true)
   })
 
-  // The silence stands on the arrangement the caller wrote back, not on
+  // The silence relies on the arrangement the caller wrote back, not on
   // anything the workspace kept to itself: a caller holding the tab open sees
   // none of this.
   it('leaves the silence in its place', async () => {
@@ -107,7 +107,7 @@ describe('the last tab in the workspace', () => {
   })
 })
 
-describe('a menu asked for on a tab', () => {
+describe('a menu requested for on a tab', () => {
   it('is told to the caller with the tab and the point', async () => {
     const held = mountWorkspace()
 

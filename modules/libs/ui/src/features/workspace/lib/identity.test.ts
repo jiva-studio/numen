@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { browserRandomness, createNodeIdFactory } from './identity'
 
 describe('the identities a workspace gives its nodes', () => {
-  it('are what the randomness hands over', () => {
+  it('are what the randomness passes over', () => {
     const createId = createNodeIdFactory({ uuid: () => 'from-the-machine' })
 
     expect(createId()).toBe('from-the-machine')
@@ -40,7 +40,7 @@ describe('the randomness of the window', () => {
     vi.unstubAllGlobals()
   })
 
-  it('hands over what the window makes', () => {
+  it('passes over what the window makes', () => {
     vi.stubGlobal('crypto', { randomUUID: () => 'from-the-window' })
 
     expect(browserRandomness.uuid()).toBe('from-the-window')

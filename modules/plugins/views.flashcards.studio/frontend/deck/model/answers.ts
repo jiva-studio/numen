@@ -13,7 +13,7 @@ import { getFileName } from '@numen/plugin-sdk'
 export interface VaultAnswer {
   /**
    * What is wrong with the file, in the order the cards were read in. Which
-   * card each stands on is decided against the deck the grid is drawing, so a
+   * card each relies on is decided against the deck the grid is drawing, so a
    * card the window is holding through a re-read keeps its mark.
    */
   readonly problems: readonly DeckProblem[]

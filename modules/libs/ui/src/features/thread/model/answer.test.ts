@@ -57,7 +57,7 @@ describe('an answer as it arrives', () => {
     expect(frames).toHaveLength(1)
   })
 
-  it('draws nothing from a frame that comes after the answer ended', () => {
+  it('draws nothing from a frame that arrives after the answer ended', () => {
     const { answer, put, flush } = create()
     answer.say('a')
     answer.say('b')

@@ -42,7 +42,7 @@ type NoteRef struct {
 	ID string
 }
 
-// Neighbour is a note, where it sits, and what the link that relates it says.
+// Neighbour is a note, where it is located, and what the link that relates it says.
 type Neighbour struct {
 	NoteRef
 	Relation Relation

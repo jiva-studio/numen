@@ -120,7 +120,7 @@ export const UnderTheFloor: Story = {
 
 /**
  * A ceiling the step lays no place on. The handle reaches it, and the step back
- * comes to where the step up set out.
+ * evaluates to where the step up set out.
  */
 export const AStepAtTheCeiling: Story = {
   args: { min: 0, max: 10, step: 3, value: 9 },
@@ -196,7 +196,7 @@ export const TheFigureIsReadOutBesideIt: Story = {
 }
 
 /**
- * A walk with the keys commits once, said when the key is let go of and not
+ * A walk with the keys commits once, said when the key is release and not
  * at each place it passed through.
  */
 export const CommitsWhenTheKeyIsLetGo: Story = {

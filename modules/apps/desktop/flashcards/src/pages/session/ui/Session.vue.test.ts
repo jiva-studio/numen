@@ -50,7 +50,7 @@ describe('the way into the panel', () => {
   })
 
   // The two panels stand in the order they stand in the strip.
-  it('stands beside the way into the reading, which is offered the same way', async () => {
+  it('remains alongside the way into the reading, which is offered the same way', async () => {
     const one = session({ isShown: false })
     expect(getReadingButtons(one)[0]?.attributes('disabled')).toBeUndefined()
 
@@ -60,7 +60,7 @@ describe('the way into the panel', () => {
 
   // The reading is on one side of the card and the conversation on the other,
   // and the strip is scrolled from one to the next in that order.
-  it('stands the reading before the card and the conversation after it', () => {
+  it('remains the reading before the card and the conversation after it', () => {
     const one = session()
     expect(one.find('.carousel__before').text()).toContain('the reading')
     expect(one.find('.carousel__after').text()).toContain('the panel')
@@ -105,7 +105,7 @@ describe('a session with the panel up', () => {
 
   // Which of the two is in the window is the strip's own; the session only says
   // which it wants.
-  it('tells what stands the two beside each other which of them is wanted', () => {
+  it('notifies what remains the two alongside each other which of them is wanted', () => {
     const up = session({ at: 'after' })
     expect(up.find('.carousel__after').attributes('inert')).toBeUndefined()
     expect(up.find('.carousel__here').attributes('inert')).toBeDefined()

@@ -32,7 +32,7 @@ const mostFuzzed = 1 << 20
 //
 // A file that could not be read is refused as one that is no archive, one that
 // holds no container, one that holds no package document, or one whose spine is
-// ciphertext. A book that names nothing is read, and is a different answer.
+// ciphertext. A book that is empty is read, and is a different answer.
 func FuzzRead(f *testing.F) {
 	whole := tinyBook(f, nil)
 	f.Add(whole)
@@ -51,7 +51,7 @@ func FuzzRead(f *testing.F) {
 	f.Add(tinyBook(f, nil, "META-INF/container.xml"))
 	f.Add(tinyBook(f, nil, "OEBPS/content.opf"))
 	f.Add(tinyBook(f, map[string]string{"OEBPS/content.opf": "variant/garbage.opf"}))
-	// A book whose places come from a navigation document rather than a control
+	// A book whose places come from a navigation document and not a control
 	// file, and one whose only document carries no markup of its own.
 	f.Add(tinyBook(f, map[string]string{
 		"OEBPS/content.opf": "variant/nav.opf",

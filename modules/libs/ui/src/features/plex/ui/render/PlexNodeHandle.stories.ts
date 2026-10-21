@@ -12,7 +12,7 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
 
 interface Knobs {
-  /** Where it sits, in the coordinates of whatever draws it. */
+  /** where it is located, in the coordinates of whatever draws it. */
   x: number
   y: number
   /** Whose hue it takes. The focus has none, and it falls back to the border. */
@@ -106,7 +106,7 @@ export const EveryHue: Story = {
  * pixels they come to.
  *
  * Every one of them is a length in rem inside the handle itself, and what a rem
- * comes to is the browser's answer and no test's.
+ * evaluates to is the browser's answer and no test's.
  */
 export const EverySizeIsAsDesigned: Story = {
   args: { zoom: 1 },
@@ -130,7 +130,7 @@ export const EverySizeIsAsDesigned: Story = {
  * has somewhere to be dragged to and the keyboard has not.
  *
  * Only a browser can answer it — what tab stops on inside an SVG, and whether
- * a token that never arrives leaves a disc of no size rather than a default.
+ * a token that never arrives leaves a disc of no size and not a default.
  */
 export const Pressing: Story = {
   play: async ({ args, canvasElement }) => {

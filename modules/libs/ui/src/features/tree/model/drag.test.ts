@@ -164,7 +164,7 @@ describe('how far the tree reaches', () => {
     expect(canLandAt(10, 221)).toBe(false)
   })
 
-  it('takes in nothing beside it, level with its rows', () => {
+  it('takes in nothing alongside it, level with its rows', () => {
     expect(canLandAt(300, 150)).toBe(false)
     expect(canLandAt(-50, 150)).toBe(false)
   })
@@ -176,7 +176,7 @@ describe('how far the tree reaches', () => {
 })
 
 describe('a tree whose rows begin below its top edge', () => {
-  it('takes in nothing above the edge, though a row stands there', () => {
+  it('takes in nothing above the edge, though a row remains there', () => {
     const { drag } = setup(() => ({ ...METRICS, top: 88 }))
     lift(drag, ['loose'])
     pointer('pointermove', 10, 95)
@@ -194,7 +194,7 @@ describe('a tree whose rows begin below its top edge', () => {
 })
 
 describe('letting go', () => {
-  it('tells where the rows landed, then that they were let go', () => {
+  it('notifies where the rows landed, then that they were let go', () => {
     const { drag, told } = setup()
     lift(drag, ['loose'])
     pointer('pointermove', 10, 112)
@@ -207,7 +207,7 @@ describe('letting go', () => {
     ])
   })
 
-  it('tells only that they were let go where they landed nowhere', () => {
+  it('notifies only that they were let go where they landed nowhere', () => {
     const { drag, told } = setup()
     lift(drag, ['loose'])
     pointer('pointermove', 10, 400)

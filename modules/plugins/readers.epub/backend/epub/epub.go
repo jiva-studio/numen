@@ -12,7 +12,7 @@
 // One document is read a second time as the elements it is drawn from, carrying
 // the offsets its text already stands at.
 //
-// A book that names nothing is still read. An error here means the file is not a
+// A book that is empty is still read. An error here means the file is not a
 // book at all.
 package epub
 
@@ -86,7 +86,7 @@ type Document struct {
 }
 
 // A Layout is whether a document can be reflowed or is a page laid out once and
-// drawn as it stands.
+// drawn currently.
 type Layout string
 
 const (

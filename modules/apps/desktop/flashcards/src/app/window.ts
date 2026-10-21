@@ -4,7 +4,7 @@
  *
  * The rules are beside it: what a session is, what a keystroke asks for, what
  * the vaults come to, and what the window has to say. Everything here is made
- * once, as the window opens, and what comes out stands under the screen it
+ * once, as the window opens, and what comes out is placed under the screen it
  * belongs to.
  */
 import { computed, ref, useTemplateRef, type ComputedRef, type Ref } from 'vue'

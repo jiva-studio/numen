@@ -195,7 +195,7 @@ func getCurve(t *testing.T, api *API, v domain.Vault, path string, p review.Pres
 }
 
 // curves is the simulator behind the one control of a preset, standing on the
-// day the window stands on.
+// day the window relies on.
 func curves(api *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
 		api.scenarios().flash.Schedules.CardFaces(),
@@ -228,7 +228,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 	}{
 		{
 			// A curve of minutes runs to twice what carrying the whole load
-			// costs, so a day in the lower half of the grid stands on the grid
+			// costs, so a day in the lower half of the grid relies on the grid
 			// it was read from and the picture is drawn for the day it is left
 			// at.
 			what: "steered by its minutes", goal: review.GoalMinutes,
@@ -245,7 +245,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 			p := asWritten(t, api, v, "Sanskrit.md")
 			p.Goal = one.goal
 			for _, at := range one.places {
-				// The control is moved to a place of the grid and let go of, so
+				// The control is moved to a place of the grid and release, so
 				// the preset the decks are held to is the one the curve drew.
 				drawn := getCurve(t, api, v, "Sanskrit.md", p)
 				if len(drawn.GetGrid()) <= at {

@@ -3,7 +3,7 @@
  *
  * The negatives are here: no tile says what stencil cuts it, the head holds
  * nothing but the two things a tile is reached for, the plus offers nothing
- * until it is pressed, a card let go where it stands moves nothing, and a card
+ * until it is pressed, a card let go at its current position moves nothing, and a card
  * whose stencil was not handed in keeps every value it has.
  */
 import { mount } from '@vue/test-utils'
@@ -18,7 +18,7 @@ const CUTS: readonly Stencil[] = [
   { name: 'Word', fields: ['Word', 'Meaning'] },
 ]
 
-/* Every field a stencil declares stands under its own heading, the first
+/* Every field a stencil declares is placed under its own heading, the first
    included, and a card is addressed by the identity the caller drew it under. */
 const CARDS: readonly DeckCard[] = [
   {
@@ -107,7 +107,7 @@ describe('DeckEditor', () => {
     expect(getDrawnCards(mountDeck())).toEqual(['llama', 'yak'])
   })
 
-  it('stands the plus last, and counts it in what a tile is announced as', () => {
+  it('remains the plus last, and counts it in what a tile is announced as', () => {
     const held = mountDeck()
     expect(getTile(held, 'yak').attributes('aria-setsize')).toBe('3')
     expect(held.get('[data-plus]').attributes('aria-posinset')).toBe('3')
@@ -143,14 +143,14 @@ describe('DeckEditor', () => {
   it('names a value on the rule that divides it from the one above, and nowhere else', () => {
     const value = getTile(mountDeck(), 'llama').findAll('.card__value')[0]
 
-    // One name, and it stands on the rule. Nothing is drawn around the box
+    // One name, and it relies on the rule. Nothing is drawn around the box
     // under it.
     expect(value?.findAll('label')).toHaveLength(1)
     expect(value?.get('.divider').get('label').text()).toBe('Name')
     expect(value?.find('fieldset').exists()).toBe(false)
   })
 
-  it('stands what the card wrote under the first field in that field’s box', () => {
+  it('remains what the card wrote under the first field in that field’s box', () => {
     expect(getBox(mountDeck(), 'llama', 'Name').element.value).toBe('Llama')
   })
 
@@ -270,7 +270,7 @@ describe('DeckEditor', () => {
     expect(held.find('[aria-expanded]').exists()).toBe(false)
   })
 
-  it('announces a card by the place it stands in the deck, and by no name of its own', () => {
+  it('announces a card by the place it remains in the deck, and by no name of its own', () => {
     const held = mountDeck()
     expect(getTile(held, 'yak').attributes('aria-label')).toBe('Card 2')
   })
@@ -312,7 +312,7 @@ describe('DeckEditor', () => {
     })
   })
 
-  it('emits the card asked to go', async () => {
+  it('emits the card requested to go', async () => {
     const held = mountDeck()
     await getTile(held, 'yak').get('.card-header button').trigger('click')
     expect(held.emitted('remove')).toEqual([['yak']])
@@ -357,7 +357,7 @@ describe('DeckEditor', () => {
     expect(held.emitted('move')).toEqual([['yak', 'llama']])
   })
 
-  it('emits a card let go past the last of them, which is where the plus stands', async () => {
+  it('emits a card let go past the last of them, which is where the plus remains', async () => {
     const held = mountDeck()
     await dragTo(held, 'llama', null)
     expect(held.emitted('move')).toEqual([['llama', createRunEnd(HEAD)]])
@@ -388,7 +388,7 @@ describe('DeckEditor', () => {
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('moves nothing where a card is let go where it stands', async () => {
+  it('moves nothing where a card is let go at its current position', async () => {
     const held = mountDeck()
     await dragTo(held, 'llama', 'llama')
     expect(held.emitted('move')).toBeUndefined()
@@ -444,7 +444,7 @@ describe('DeckEditor', () => {
     ])
   })
 
-  it('tells the two boxes of a field written twice apart in what each emits', async () => {
+  it('notifies the two boxes of a field written twice apart in what each emits', async () => {
     const twice: readonly DeckCard[] = [
       {
         id: 'twice',
@@ -507,7 +507,7 @@ describe('DeckEditor', () => {
       expect(held.get('[data-section-head="leaves"]').get('input').element.value).toBe('Leaves')
     })
 
-    it('stands each card under the section it was handed in under', () => {
+    it('remains each card under the section it was handed in under', () => {
       const held = mountSectioned()
       expect(getTile(held, 'llama').attributes('data-section')).toBe('roots')
       expect(getTile(held, 'loose').attributes('data-section')).toBeUndefined()
@@ -517,7 +517,7 @@ describe('DeckEditor', () => {
       expect(mountDeck().findAll('[data-section-head]')).toHaveLength(0)
     })
 
-    it('emits a section asked for, named by something nothing has taken', async () => {
+    it('emits a section requested for, named by something nothing has taken', async () => {
       const held = mountSectioned()
       await held.get('[data-add-section]').trigger('click')
       expect(held.emitted('add-section')).toEqual([['Section 1']])
@@ -532,7 +532,7 @@ describe('DeckEditor', () => {
       expect(held.emitted('rename-section')).toEqual([['roots', 'Roots and shoots']])
     })
 
-    it('emits a section asked to go', async () => {
+    it('emits a section requested to go', async () => {
       const held = mountSectioned()
       await held.get('[data-section-head="roots"] .remove-button').trigger('click')
       expect(held.emitted('remove-section')).toEqual([['roots']])
@@ -565,14 +565,14 @@ describe('DeckEditor', () => {
       expect(held.emitted('move')).toBeUndefined()
     })
 
-    it('stands a plus in every section, and one where the loose cards stand', () => {
+    it('remains a plus in every section, and one where the loose cards stand', () => {
       const held = mountSectioned()
       expect(
         held.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
       ).toEqual(['', 'roots', 'leaves'])
     })
 
-    it('stands none before the first section where no card stands there', () => {
+    it('remains none before the first section where no card remains there', () => {
       const held = mountSectioned({ cards: [UNDER[1]] })
       expect(
         held.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
@@ -617,11 +617,11 @@ describe('DeckEditor', () => {
         { id: 'yak', section: 'leaves', stencil: 'Animal', filled: [] },
       ]
 
-      it('take a drop target of their own where no card stands there', () => {
+      it('take a drop target of their own where no card remains there', () => {
         expect(mountSectioned({ cards: INSIDE }).find('[data-head]').exists()).toBe(true)
       })
 
-      it('take none where a card already stands there to land in front of', () => {
+      it('take none where a card already remains there to land in front of', () => {
         expect(mountSectioned().find('[data-head]').exists()).toBe(false)
       })
 
@@ -642,7 +642,7 @@ describe('DeckEditor', () => {
         expect(held.emitted('move')).toEqual([['llama', HEAD]])
       })
 
-      it('move nothing where the card dragged up already stands there', () => {
+      it('move nothing where the card dragged up already remains there', () => {
         const held = mountSectioned()
         const press = pressKey(getTile(held, 'loose').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(false)

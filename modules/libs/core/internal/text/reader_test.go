@@ -57,7 +57,7 @@ func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
 }
 
 // A transcript is composed from what it was put right to, and what was heard
-// stands under its own name.
+// is placed under its own name.
 func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 	put := transcript.Marshal([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},

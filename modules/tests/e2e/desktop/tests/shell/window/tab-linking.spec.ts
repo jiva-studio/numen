@@ -1,7 +1,7 @@
 import { test, expect } from 'playwright/test'
 
 test.describe('Tab Linking and Split Pane Coordination', () => {
-  test('opens note beside current reader tab via beside command', async ({ page }) => {
+  test('opens note alongside current reader tab via alongside command', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()

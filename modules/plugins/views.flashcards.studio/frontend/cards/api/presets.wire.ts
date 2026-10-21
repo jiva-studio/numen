@@ -122,7 +122,7 @@ const parsePreset = (one: PresetMessage): Preset => ({
   stopsOn: one.stopsOn,
 })
 
-/** One place of the grid, as the window carries what the preset comes to there. */
+/** One place of the grid, as the window carries what the preset evaluates to there. */
 const parsePoint = (one: PointMessage): Point => ({
   reviews: one.reviews,
   minutes: one.minutes,

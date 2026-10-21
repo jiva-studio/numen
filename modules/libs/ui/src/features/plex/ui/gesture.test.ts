@@ -141,7 +141,7 @@ describe('letting go', () => {
 
   it('asks for the first relation there is when a child is not one of them', async () => {
     // A click has no direction to read, so it falls back on what the caller
-    // does allow rather than inventing a relation they ruled out.
+    // does allow and not inventing a relation they ruled out.
     const { plex, svg } = mountPlex({ creatable: ['jump', 'parent'] })
     await takeHold(plex, 'A node')
 

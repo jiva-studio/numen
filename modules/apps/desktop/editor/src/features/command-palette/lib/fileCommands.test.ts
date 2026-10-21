@@ -84,7 +84,7 @@ describe('downloading a copy of a video', () => {
     expect(isOffered('downloadCopy', at('url', { copy: 'none' }))).toBe(true)
   })
 
-  it('is not offered while the vault cannot be asked', () => {
+  it('is not offered while the vault cannot be requested', () => {
     expect(isOffered('downloadCopy', at('url', { copy: 'none' }, false))).toBe(false)
   })
 
@@ -101,7 +101,7 @@ describe('downloading a copy of a video', () => {
 })
 
 describe('deleting a copy', () => {
-  it('is asked about before it happens', () => {
+  it('is requested about before it happens', () => {
     expect(getCommand('deleteCopy').needs).toBe('asking')
     expect(getCommand('deleteCopy').answers).toStrictEqual({
       keeps: words.keepsCopy,
@@ -111,13 +111,13 @@ describe('deleting a copy', () => {
     })
   })
 
-  it('is offered on an address whose copy stands, on a build that can delete one', () => {
+  it('is offered on an address whose copy remains, on a build that can delete one', () => {
     expect(isOffered('deleteCopy', at('url', { copy: 'done' }))).toBe(true)
     expect(isOffered('deleteCopy', at('url', { copy: 'done' }), allBut('deleteCopy'))).toBe(false)
     expect(isOffered('deleteCopy', at('book', { copy: 'done' }))).toBe(false)
   })
 
-  it('is not offered where no copy stands', () => {
+  it('is not offered where no copy remains', () => {
     expect(isOffered('deleteCopy', at('url', { copy: 'none' }))).toBe(false)
   })
 })

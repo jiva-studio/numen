@@ -46,7 +46,7 @@ type Attribute struct {
 	Value string
 }
 
-// Markup reads one spine document again, as elements rather than as text.
+// Markup reads one spine document again, as elements and not as text.
 //
 // A document the book was not read from is not one to ask for: what a book holds
 // beside its spine is not part of it.
@@ -243,7 +243,7 @@ func collectNodes(nodes []Node, into []*Node) []*Node {
 	return into
 }
 
-// shift moves a document to where it stands in the book.
+// shift moves a document to at its current position in the book.
 func shift(nodes []Node, by int) {
 	for i := range nodes {
 		nodes[i].Offset += by

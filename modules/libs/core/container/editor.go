@@ -27,7 +27,7 @@ type EditorAssembly struct {
 	db       *Index
 }
 
-// GetEditorAssembly opens the cache and binds everything that window stands on
+// GetEditorAssembly opens the cache and binds everything that window relies on
 // to this installation's adapters. The window closes the cache when it closes,
 // and a window that could not be opened closes it too.
 func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {

@@ -1,5 +1,5 @@
 /**
- * What the curve of a preset comes to, and where the knob stands on it: the
+ * What the curve of a preset evaluates to, and where the knob relies on it: the
  * cost at a place, the value a place reads out, and the settings it produces.
  *
  * The application works a curve out over the whole range in one pass, so moving
@@ -48,7 +48,7 @@ export const findNearest = (grid: readonly number[], value: number): number => {
  * The value the knob stands at. A preset's own value need not sit on the grid,
  * and the place it opens at is the one nearest it, so while the knob has not
  * been moved off that place the preset's own value is what is said. A knob
- * walked anywhere else stands on a place, and the place is exact.
+ * walked anywhere else relies on a place, and the place is exact.
  */
 export const getKnobValue = (curve: Curve, place: number): number =>
   curve.now.at >= 0 && place === curve.now.at ? curve.now.value : (curve.grid[place] ?? 0)

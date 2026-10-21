@@ -102,7 +102,7 @@ describe('the choice a setting holds', () => {
 })
 
 describe('the agents a plugin can name', () => {
-  it('start with the default, said with the agent that answers it now', () => {
+  it('start with the default, returned with the agent that answers it now', () => {
     expect(createPluginAgentChoices(AGENTS, { defaultAgent: '', chosen: '' }, words)).toStrictEqual(
       [
         { id: '', text: 'Default (Alpha)' },
@@ -115,7 +115,7 @@ describe('the agents a plugin can name', () => {
     ).toBe('Default (Zeta)')
   })
 
-  it('keep an agent the settings name that no plugin lists, said so', () => {
+  it('keep an agent the settings name that no plugin lists, returned so', () => {
     expect(
       createPluginAgentChoices(AGENTS, { defaultAgent: '', chosen: 'gone' }, words).at(-1),
     ).toStrictEqual({

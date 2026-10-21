@@ -28,7 +28,7 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 }
 
 // An installation that names something to put a transcript right with offers
-// the run, and one that names nothing does not.
+// the run, and one that is empty does not.
 func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
 	if cfg.OpenTranscriptionWorker(t.Context(), nil, nil, nil).ProofreaderReady() {

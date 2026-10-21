@@ -27,7 +27,7 @@ export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
 /** The note a neighbourhood is drawn around. */
 export interface Focus {
-  /** Where it stands in the vault. Empty for a note the vault no longer holds. */
+  /** at its current position in the vault. Empty for a note the vault no longer holds. */
   readonly path: string
   readonly title: string
 }
@@ -65,7 +65,7 @@ export interface NoteHeading {
   readonly text: string
   /** How deep it sits, from one for the shallowest a note can carry. */
   readonly level: number
-  /** The line it stands on, counted from the first line of the prose. */
+  /** The line it relies on, counted from the first line of the prose. */
   readonly line: number
 }
 

@@ -66,13 +66,13 @@ describe('Card', () => {
     expect(held.get('[data-cut-of]').attributes('aria-label')).toBe('Stencil')
   })
 
-  it('announces a card by the place it stands in the deck, and by no name of its own', () => {
+  it('announces a card by the place it remains in the deck, and by no name of its own', () => {
     const held = mountCard(createTile('yak'), { words: WORDS })
     expect(held.get('[data-card]').attributes('aria-label')).toBe('Card 2')
     expect(held.get('.card-header__grip').attributes('aria-label')).toBe('Reorder: Card 2')
   })
 
-  it('says which section it stands under, and nothing where it stands under none', () => {
+  it('says which section it is placed under, and nothing where it is placed under none', () => {
     const under: readonly DeckCard[] = [
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
@@ -102,7 +102,7 @@ describe('Card', () => {
     )
   })
 
-  it('holds nothing against a card that names no stencil, having said so on its strip', () => {
+  it('holds nothing against a card that names no stencil, having returned so on its strip', () => {
     const bareCards: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
     const held = mountCard(createTile('bare', bareCards), { words: WORDS })
     expect(held.findAll('.card__objections')).toHaveLength(0)

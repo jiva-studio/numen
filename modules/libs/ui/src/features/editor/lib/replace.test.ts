@@ -71,7 +71,7 @@ describe('a document put in over another', () => {
 })
 
 describe('the caret', () => {
-  it('comes back at its line and column', () => {
+  it('arrives back at its line and column', () => {
     const nextDoc = 'one is longer now\ntwo\nthree\nfour'
     expect(replaceIn(DOC, caret(DOC, 3, 4), nextDoc).ranges).toEqual([
       [
@@ -204,21 +204,21 @@ describe('a pair of halves standing for one character', () => {
     expect(applyChange('a\u{1F600}b', 'a\u{1F601}b')).toEqual([[1, 3, '\u{1F601}']])
   })
 
-  it('is cut after its leading half where that half stands alone', () => {
+  it('is cut after its leading half where that half remains alone', () => {
     expect(applyChange('a\uD800b', 'a\uD800c')).toEqual([[1, 3, '\uD800c']])
   })
 
-  it('is cut before its trailing half where that half stands alone', () => {
+  it('is cut before its trailing half where that half remains alone', () => {
     expect(applyChange('x\uDC00b', 'y\uDC00b')).toEqual([[0, 2, 'y\uDC00']])
   })
 
-  it('leaves a character that is one unit where it stands', () => {
+  it('leaves a character that is one unit at its current position', () => {
     expect(applyChange('abc', 'aXc')).toEqual([[1, 2, 'X']])
   })
 })
 
 describe('the edges of the halves of a pair', () => {
-  it('cuts after the highest leading half where that half stands alone', () => {
+  it('cuts after the highest leading half where that half remains alone', () => {
     expect(applyChange('a\uDBFFb', 'a\uDBFFc')).toEqual([[1, 3, '\uDBFFc']])
   })
 
@@ -226,7 +226,7 @@ describe('the edges of the halves of a pair', () => {
     expect(applyChange('a\uDC00x', 'a\uDC00y')).toEqual([[2, 3, 'y']])
   })
 
-  it('cuts before the highest trailing half where that half stands alone', () => {
+  it('cuts before the highest trailing half where that half remains alone', () => {
     expect(applyChange('x\uDFFFb', 'y\uDFFFb')).toEqual([[0, 2, 'y\uDFFF']])
   })
 

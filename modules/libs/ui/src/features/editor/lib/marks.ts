@@ -15,7 +15,7 @@ import { getGrid } from './grid'
 import { BULLET, HEADING, hidden, INLINE, line, mark, SHY } from './styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
 
-/** The block nodes that hold other blocks; a Table or a HorizontalRule stands only in these. */
+/** The block nodes that hold other blocks; a Table or a HorizontalRule is allowed only in these. */
 const BLOCK_CONTAINERS = new Set([
   'Document',
   'Blockquote',

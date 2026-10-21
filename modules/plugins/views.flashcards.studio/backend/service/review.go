@@ -24,7 +24,7 @@ var ErrNoRun = errors.New("no run of that name is open")
 // reviewHandler answers the window a person runs their cards in.
 //
 // The runs it holds are the sessions open here, one to a vault. A run is a file in a vault that only
-// this backend appends to, and it is let go of when another session opens on that vault: what was
+// this backend appends to, and it is release when another session opens on that vault: what was
 // written stands, and the next session opens a file of its own.
 type reviewHandler struct {
 	*Backend

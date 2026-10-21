@@ -149,7 +149,7 @@ describe('asking for a menu from the keyboard', () => {
 
   // A keypress has nowhere of its own to point, so it points at the middle of
   // the box it was pressed on.
-  it('points at the middle of the box it was asked from', async () => {
+  it('points at the middle of the box it was requested from', async () => {
     const plex = mountPlex()
     const node = plex.get('[aria-label^="A node"]')
     node.element.getBoundingClientRect = () => new DOMRect(120, 40, 200, 80)
@@ -160,7 +160,7 @@ describe('asking for a menu from the keyboard', () => {
     expect(asked?.[1]).toStrictEqual({ x: 220, y: 80 })
   })
 
-  it('puts the keyboard back on the node it was asked from', async () => {
+  it('puts the keyboard back on the node it was requested from', async () => {
     const plex = mountPlex()
     const focus = plex.get('[aria-label^="A node"]')
     await focus.trigger('keydown', press('ContextMenu'))
@@ -205,7 +205,7 @@ describe('asking for a menu from the keyboard', () => {
 })
 
 describe('when the picture moves under a menu', () => {
-  it('says a menu asked for on a node has nothing left to stand on', async () => {
+  it('says a menu requested for on a node has nothing left to stand on', async () => {
     // The neighbourhood is re-fetched on every change and the nodes travel to
     // new relations; a menu is anchored where one of them was.
     const plex = mountPlex()
@@ -213,7 +213,7 @@ describe('when the picture moves under a menu', () => {
     expect(plex.emitted('dismiss')).toHaveLength(1)
   })
 
-  it('says nothing while the neighbourhood stands still', async () => {
+  it('says nothing while the neighbourhood remains still', async () => {
     const plex = mountPlex()
     await plex.setProps({ duration: 200 })
     expect(plex.emitted('dismiss')).toBeUndefined()

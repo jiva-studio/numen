@@ -43,7 +43,7 @@ describe('useDrag, the pointer', () => {
     expect(drag.dragged.value).toBe('a')
   })
 
-  it('hands the browser the name of what was lifted as plain text', () => {
+  it('passes the browser the name of what was lifted as plain text', () => {
     const { drag } = setup()
     const lifted = dragEvent()
     drag.lift('a', lifted.press)
@@ -101,7 +101,7 @@ describe('useDrag, the pointer', () => {
     expect(move).not.toHaveBeenCalled()
   })
 
-  it('moves nothing dropped when nothing is held, whatever stands for nowhere', () => {
+  it('moves nothing dropped when nothing is retained, whatever remains for nowhere', () => {
     const move = vi.fn<(dragged: string, at: InsertionPoint) => void>()
     const drag = useDrag<InsertionPoint>({
       order: () => ['a'],
@@ -115,7 +115,7 @@ describe('useDrag, the pointer', () => {
 })
 
 describe('useDrag, the keyboard', () => {
-  it('moves what is held one place and says the key is taken', () => {
+  it('moves what is retained one place and says the key is taken', () => {
     const { drag, move } = setup()
     const key = keyEvent()
     drag.step('c', 'up', key.press)

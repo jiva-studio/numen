@@ -2,7 +2,7 @@
  * Every situation one card of a deck has to survive. Also the test corpus: each
  * story is run in a browser by `@storybook/addon-vitest`.
  *
- * What the card hands back is applied here, which is the application's part.
+ * What the card returns is applied here, which is the application's part.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
@@ -262,7 +262,7 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
 /**
  * A card cut by a stencil of four fields, holding two of them.
  *
- * A value is the room under the rule that names it: the name stands on the
+ * A value is the room under the rule that names it: the name relies on the
  * line, the box begins where the line ends, and nothing is drawn around it.
  * Every one of them is open to typing, and the strip over them opens nothing.
  */
@@ -274,7 +274,7 @@ export const ACard: Story = {
     const label = value.querySelector('label')
     if (!rule || !label) throw new Error('no rule and no name on it')
 
-    // One name, and it stands on the rule, so the two share a middle.
+    // One name, and it relies on the rule, so the two share a middle.
     expect(value.querySelectorAll('label')).toHaveLength(1)
     expect(label.closest('.divider')).toBe(rule)
     const line = rule.getBoundingClientRect()
@@ -357,7 +357,7 @@ export const AFirstFieldOfManyLines: Story = {
 
 /**
  * A value with no newline in it that wraps to several lines. Its box stands at
- * what the wrapping comes to, which is worked out by the ground behind it.
+ * what the wrapping evaluates to, which is worked out by the ground behind it.
  */
 export const AValueThatWraps: Story = {
   args: { corpus: 'a value that wraps', width: '18rem' },
@@ -410,7 +410,7 @@ export const NoStencil: Story = {
  * A card whose first paragraph is not a lone wikilink.
  *
  * That nothing cut it is a plain fact and stands quietly on the strip, where
- * the name of a stencil stands on every other card. What the vault holds
+ * the name of a stencil relies on every other card. What the vault holds
  * against the card is said once, and what the card holds is read where it
  * would be typed.
  */
@@ -440,7 +440,7 @@ export const CutByNothing: Story = {
     expect(wrote.map((each) => each.getAttribute('data-wrote'))).toEqual(['Question', 'Answer'])
     expect(wrote[1]?.textContent).toContain('\n')
 
-    // A value stands over the edge the name it is written under stands on.
+    // A value stands over the edge the name it is written under relies on.
     const edge = (each: Element): number => {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + Number.parseFloat(getComputedStyle(each).paddingInlineStart))

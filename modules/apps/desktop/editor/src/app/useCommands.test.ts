@@ -124,7 +124,7 @@ describe('running a command', () => {
 })
 
 describe('a key press', () => {
-  it('runs the command of the chord, asked for by the lowercase key', () => {
+  it('runs the command of the chord, requested for by the lowercase key', () => {
     h.startCommand.mockReturnValue({ id: 'inv' })
     const one = setup()
     const event = keyEvent('S', { shiftKey: true })

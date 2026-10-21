@@ -192,7 +192,7 @@ func TestAFaceMissingASideLaysOutNothing(t *testing.T) {
 }
 
 // A file ending on a heading ends where the heading's line ends, and what
-// stands under it is nothing.
+// is placed under it is nothing.
 func TestAStencilEndingOnAHeading(t *testing.T) {
 	for name, written := range map[string]string{
 		"a face":  "## Recognise",

@@ -38,7 +38,7 @@ func makeVaultOfNotes(t *testing.T, notes int) (root string, reader *VaultReader
 	return reader.Root(), reader
 }
 
-// shapeOf is a reader's vault as it stands before the first event.
+// shapeOf is a reader's vault currently before the first event.
 func shapeOf(t *testing.T, reader *VaultReader) *folders {
 	t.Helper()
 	shape, err := readShape(reader)

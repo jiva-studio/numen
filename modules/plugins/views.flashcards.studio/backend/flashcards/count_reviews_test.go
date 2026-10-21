@@ -82,7 +82,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The run is left where it stands and its content is replaced with a line
+	// The run is left at its current position and its content is replaced with a line
 	// nothing can read. A count that read it again would lose the day it holds.
 	held := getRunFiles(t, s)
 	if len(held) != 1 {
@@ -214,7 +214,7 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
-	// Answered easily, so it is days away rather than minutes.
+	// Answered easily, so it is days away and not minutes.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -366,7 +366,7 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 
 // What is still to come is worked out from the schedules. A counting with no
 // scheduler behind it says what was answered and nothing about what is coming,
-// rather than refusing to count at all.
+// and not refusing to count at all.
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)

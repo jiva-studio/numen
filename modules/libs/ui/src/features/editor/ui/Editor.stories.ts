@@ -138,7 +138,7 @@ export const Steady: Story = {
       await nextFrame()
     }
 
-    /** The block the editor drew for a line, measured where it stands. */
+    /** The block the editor drew for a line, measured at its current position. */
     const getHeight = (line: number) => {
       const row = view.state.doc.line(line)
       const drawn = Array.from(view.contentDOM.children).find((block) => {
@@ -283,7 +283,7 @@ export const TableTypedInto: Story = {
     const first = cells(canvasElement)[0] as HTMLElement
     await expect(first.getAttribute('contenteditable')).toBe('plaintext-only')
 
-    // Tab walks from one cell to the next rather than leaving the table.
+    // Tab walks from one cell to the next and not leaving the table.
     first.focus()
     await userEvent.tab()
     await expect(document.activeElement).toBe(cells(canvasElement)[1])
@@ -732,7 +732,7 @@ const findSpan = (text: string, run: string) => {
   return { from, to: from + run.length }
 }
 
-/** The text as it stands once the change has been made. */
+/** The text currently once the change has been made. */
 const applyChange = (text: string, change: EditorChange) =>
   text.slice(0, change.from) + change.text + text.slice(change.to)
 

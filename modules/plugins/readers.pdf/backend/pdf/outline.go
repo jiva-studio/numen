@@ -25,7 +25,7 @@ const (
 // an offset without guessing.
 //
 // starts is where each page's text begins, so an entry pointing past the pages
-// that were read names nothing and is dropped.
+// that were read is empty and is dropped.
 func (d *document) outline(starts []int) []Part {
 	w := &outlineWalk{doc: d, starts: starts, seen: map[references.FPDF_BOOKMARK]bool{}}
 	w.walk(nil, 1)

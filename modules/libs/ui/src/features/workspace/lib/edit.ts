@@ -1,5 +1,5 @@
 /**
- * What a workspace comes to after a gesture.
+ * What a workspace evaluates to after a gesture.
  *
  * Every function takes a workspace and gives back another; nothing is changed
  * in place. A gesture that asks for something the tree does not hold gives the

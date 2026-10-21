@@ -42,7 +42,7 @@ describe('a preset naming nothing', () => {
 })
 
 describe('what one day carries', () => {
-  it('is the whole of a day for a day nothing was said about', () => {
+  it('is the whole of a day for a day nothing was returned about', () => {
     expect(getLoadOn({}, 'mon')).toBe(WHOLE_LOAD)
     expect(getLoadOn({ sat: 50 }, 'mon')).toBe(WHOLE_LOAD)
     expect(getLoadOn({ sat: 50 }, 'sat')).toBe(50)

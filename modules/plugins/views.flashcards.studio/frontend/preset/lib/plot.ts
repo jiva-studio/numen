@@ -175,7 +175,7 @@ export const getKeyPlace = (key: string, place: number, places: number): number 
 }
 
 /**
- * The place a pointer stands over, from where it stands across the picture in
+ * The place a pointer stands over, from at its current position across the picture in
  * the picture's own units. A pointer outside the room the line is drawn in
  * stands at the nearer end.
  */

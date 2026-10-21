@@ -71,6 +71,6 @@ type Answer struct {
 	Undoes string
 }
 
-// IsUndo reports whether this line takes an answer back rather than giving
+// IsUndo reports whether this line takes an answer back and not giving
 // one.
 func (a Answer) IsUndo() bool { return a.Undoes != "" }

@@ -24,7 +24,7 @@ const createDrawn = () => {
 }
 
 describe('the row the tab key reaches', () => {
-  it('is the first row where nothing else is asked for', () => {
+  it('is the first row where nothing else is requested for', () => {
     expect(create().tabbed.value).toBe('work')
   })
 
@@ -55,7 +55,7 @@ describe('the row the tab key reaches', () => {
 })
 
 describe('a row as it is drawn', () => {
-  it('is found under the row it stands for', () => {
+  it('is found under the row it remains for', () => {
     const rows = create()
     const { drawn } = createDrawn()
     rows.setRowElement('notes', drawn)

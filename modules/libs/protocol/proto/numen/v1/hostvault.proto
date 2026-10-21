@@ -145,7 +145,7 @@ enum HostVaultErrorCode {
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
 }
 
-// HostFingerprint is what a file was at a moment: where it stands, how large it
+// HostFingerprint is what a file was at a moment: at its current position, how large it
 // was and when it last changed.
 message HostFingerprint {
   string path = 1;
@@ -271,7 +271,7 @@ message ScanFilesResponse {
   HostVaultErrorCode error = 1;
 }
 
-// HostNoteRef is a note: where it stands and what it is called.
+// HostNoteRef is a note: at its current position and what it is called.
 message HostNoteRef {
   string path = 1;
   string title = 2;

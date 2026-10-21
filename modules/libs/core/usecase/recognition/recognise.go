@@ -173,7 +173,7 @@ func openDocument(ctx context.Context, reader port.VaultReader, path string) (io
 //
 // The coordinates and the parts go first, so a run that dies among the writes
 // leaves them ahead of the count and the next run trims them back to it. Cutting
-// writes which text the source stands on together with its chunks, in one
+// writes which text the source relies on together with its chunks, in one
 // statement, and the two are one fact.
 type pageWriter struct {
 	u       Recognise
@@ -312,7 +312,7 @@ func (u Recognise) saveRecognition(
 	if err := u.record(ctx, store, area, hash); err != nil {
 		return err
 	}
-	// The source stands on the artifact before the partial goes.
+	// The source relies on the artifact before the partial goes.
 	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
@@ -379,7 +379,7 @@ func dropParts(ctx context.Context, store port.DerivedStore, name domain.Artifac
 	return store.WriteArtifact(ctx, name, ocr.Pack(kept))
 }
 
-// record keeps what read the document beside what it read. Nothing on any path
+// record keeps what read the document along with what it read. Nothing on any path
 // that answers a question reads it: it is there so that a person can ask what
 // produced a text, and so that everything a recogniser now known to be bad
 // produced can be found again.

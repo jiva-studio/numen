@@ -255,7 +255,7 @@ func (r *refuses) ProofreadSpeech(
 }
 
 // A transcript this proofreader has been over every line of is asked about
-// nothing, and whoever asked is told that rather than nothing at all.
+// nothing, and whoever asked is told that and not nothing at all.
 func TestATranscriptAlreadyPutRightSaysThatNothingWasLeft(t *testing.T) {
 	by := &corrector{}
 	held, v, _, _ := newStoppedWorker(t, by, 2, "first thing", "second thing")

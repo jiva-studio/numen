@@ -30,7 +30,7 @@ export function orderNames(
 /**
  * A dragged field may land where it was let go. The first field names every
  * card the stencil cuts, so it stays first: it does not move, and nothing lands
- * above it. A field let go where it stands moves nothing either.
+ * above it. A field let go at its current position moves nothing either.
  */
 export function canDropField(
   fields: readonly string[],

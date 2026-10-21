@@ -39,8 +39,8 @@ describe('shares compared', () => {
   })
 })
 
-describe('a layout reported with no handle held', () => {
-  it('tells the workspace the shares, as fractions', () => {
+describe('a layout reported with no handle retained', () => {
+  it('notifies the workspace the shares, as fractions', () => {
     const one = create()
 
     one.onLayout([70, 30])
@@ -48,7 +48,7 @@ describe('a layout reported with no handle held', () => {
     expect(one.resize).toHaveBeenCalledWith('root', [0.7, 0.3])
   })
 
-  it('tells it nothing where the shares are the ones it holds', () => {
+  it('notifies it nothing where the shares are the ones it holds', () => {
     const one = create()
 
     one.onLayout([50, 50])
@@ -57,8 +57,8 @@ describe('a layout reported with no handle held', () => {
   })
 })
 
-describe('a handle held', () => {
-  it('marks the branch while it is held and not after', () => {
+describe('a handle retained', () => {
+  it('marks the branch while it is retained and not after', () => {
     const one = create()
 
     one.onHold(true)
@@ -68,7 +68,7 @@ describe('a handle held', () => {
     expect(one.frame.hasAttribute(RESIZING)).toBe(false)
   })
 
-  it('tells the workspace once, where the handle came to rest', () => {
+  it('notifies the workspace once, where the handle came to rest', () => {
     const one = create()
 
     one.onHold(true)
@@ -82,7 +82,7 @@ describe('a handle held', () => {
     expect(one.resize).toHaveBeenCalledWith('root', [0.7, 0.3])
   })
 
-  it('tells it nothing where the handle came to rest on the shares held', () => {
+  it('notifies it nothing where the handle came to rest on the shares retained', () => {
     const one = create()
 
     one.onHold(true)
@@ -92,7 +92,7 @@ describe('a handle held', () => {
     expect(one.resize).not.toHaveBeenCalled()
   })
 
-  it('tells it nothing of a handle put down that was never taken up', () => {
+  it('notifies it nothing of a handle put down that was never taken up', () => {
     const one = create()
 
     one.onHold(false)
@@ -100,7 +100,7 @@ describe('a handle held', () => {
     expect(one.resize).not.toHaveBeenCalled()
   })
 
-  it('drops where the handle had reached when the branch goes while it is held', () => {
+  it('drops where the handle had reached when the branch goes while it is retained', () => {
     const one = create()
 
     one.onHold(true)

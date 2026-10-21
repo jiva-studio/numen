@@ -17,7 +17,7 @@ import (
 // torn append is made. It stands above anything else the run has open.
 const fileCap = 1 << 20
 
-// capFileSize holds every file this process writes to a length, and hands back what
+// capFileSize holds every file this process writes to a length, and returns what
 // lifts it again. It is what a full disk and a quota both do to one append.
 func capFileSize(t *testing.T, to int64) func() {
 	t.Helper()

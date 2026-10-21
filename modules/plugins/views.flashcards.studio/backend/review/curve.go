@@ -16,7 +16,7 @@ const Points = 25
 // the range.
 const MostAhead = 5 * 365
 
-// Curve is what the one control of a preset comes to over the whole range of
+// Curve is what the one control of a preset evaluates to over the whole range of
 // its goal. The grid, what stands at each place of it, and the two places
 // pointed at are all here.
 type Curve struct {
@@ -26,7 +26,7 @@ type Curve struct {
 	Grid []float64
 	// Days names the day of each place, and is filled for a goal of a date.
 	Days []string
-	// Points are what the preset comes to at each place of the grid.
+	// Points are what the preset evaluates to at each place of the grid.
 	Points []Point
 	// Now is where the preset stands.
 	Now CurvePoint
@@ -48,12 +48,12 @@ type Curve struct {
 	// Overdue is how many of those card faces have had their day and were not
 	// answered on it, and Unbegun how many nobody has answered at all, so they
 	// have had no day. Both are one number over the whole curve: facts about the
-	// vault as it stands, and not about the setting being chosen.
+	// vault currently, and not about the setting being chosen.
 	Overdue int
 	Unbegun int
 }
 
-// Point is what a preset comes to at one place of the grid.
+// Point is what a preset evaluates to at one place of the grid.
 //
 // Reviews is counted in card faces and Minutes in the showings they take, so a
 // face the day comes back to costs its minutes and is the one card.
@@ -129,7 +129,7 @@ type curveBuilder struct {
 	places func(count int, each func(at int) error) error
 }
 
-// Curve is what the one control of a preset comes to over the whole range of
+// Curve is what the one control of a preset evaluates to over the whole range of
 // its goal, worked out by running this projection at every place of the range.
 //
 // The map is where the answers have left every card face the preset schedules,
@@ -278,7 +278,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 // Each day of it carries what a day of review has to run to be through by then,
 // and what the budget the preset keeps gets through by then.
 //
-// The range stands on the vault and not on the day the file names, so a person
+// The range relies on the vault and not on the day the file names, so a person
 // can always give themselves longer than they have. It begins tomorrow and
 // reaches whichever is further off: twice as far as the day named, or the day
 // the material is through at one card a day, the slowest a day of review goes.
@@ -365,7 +365,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	// The day the file names is a place of the grid, so what stands under the
+	// The day the file names is a place of the grid, so what is placed under the
 	// place is worked out for that day.
 	if named >= 0 {
 		out.Now = CurvePoint{

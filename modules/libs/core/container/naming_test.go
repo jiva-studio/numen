@@ -40,7 +40,7 @@ func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	}
 }
 
-// A file that names nothing, and one that cannot be read at all, keep the two
+// A file that is empty, and one that cannot be read at all, keep the two
 // one name.
 func TestWhatIsReadWhereTheFileSaysNothing(t *testing.T) {
 	for name, body := range map[string]string{

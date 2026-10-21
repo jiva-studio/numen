@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The heading one section of a deck stands under: a rule across the grid with
+ * The heading one section of a deck is placed under: a rule across the grid with
  * the section's name typed on it, and the way to be rid of it at its end.
  *
  * A section is a name and nothing else. Two of them may carry one name, so what
@@ -18,7 +18,7 @@ import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{
-    /** The section, and where it stands among them. */
+    /** The section, and at its current position among them. */
     section: PlacedSection
     /** The words it is drawn with. */
     words?: DeckWords
@@ -95,7 +95,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
   min-inline-size: 0;
 }
 
-/* What is wrong stands under the rule it is wrong about. */
+/* What is wrong is placed under the rule it is wrong about. */
 .section-heading__objections {
   margin: 0;
   padding-inline: 0.375rem;

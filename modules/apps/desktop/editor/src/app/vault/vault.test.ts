@@ -59,7 +59,7 @@ const asked = {
 const { core, vaults } = await import('./index')
 
 describe('the file a save presents', () => {
-  it('comes back as the file it was, through a path that holds spaces', async () => {
+  it('arrives back as the file it was, through a path that holds spaces', async () => {
     const at = { path: 'mahabharata/The aggressor.md', size: 4096n, mtime: 1_700_000_000_123n }
     asked.readNote.mockResolvedValue({ body: 'prose', at })
     asked.writeNote.mockResolvedValue({})

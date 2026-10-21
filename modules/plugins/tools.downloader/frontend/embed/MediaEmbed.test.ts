@@ -31,7 +31,7 @@ describe('an address something plays', () => {
   // the page it loads, and that page has a host to answer to: one told nothing
   // about who is framing it plays nothing. What this window frames is its own
   // socket, so there is nothing here to keep from anybody.
-  it('is sandboxed, and tells the page it holds nothing about referrers', () => {
+  it('is sandboxed, and notifies the page it holds nothing about referrers', () => {
     const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words } })
     const frame = drawn.get('iframe')
 
@@ -85,7 +85,7 @@ describe('a moment chosen in the transcript', () => {
     expect(() => drawn.vm.seek(1_000)).not.toThrow()
   })
 
-  it('is where the copy is played from, where a copy stands', () => {
+  it('is where the copy is played from, where a copy remains', () => {
     const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
     const drawn = mount(MediaEmbed, {
       props: { embed: EMBED, copy: COPY, words },

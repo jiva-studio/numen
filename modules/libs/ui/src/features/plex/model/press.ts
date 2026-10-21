@@ -1,5 +1,5 @@
 /**
- * What a press on a node comes to: the node chosen, the node asked for on its
+ * What a press on a node evaluates to: the node chosen, the node asked for on its
  * own, or a menu on it. The hand and the keyboard arrive here as the same three
  * answers, and a node not there yet answers none of them.
  */
@@ -10,7 +10,7 @@ import type { MenuTrigger } from '@/shared/ui/menu'
 import type { PlexBehaviour } from './behaviour'
 import { getDestination, mergeListeners, type PlexDestination } from './showing'
 
-/** What the node says when a press comes to something. */
+/** What the node says when a press evaluates to something. */
 export interface NodePressSaid {
   readonly activate: () => void
   readonly show: (showing: PlexDestination) => void

@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// RecognitionModel names what read a page. It is recorded beside what it produced,
+// RecognitionModel names what read a page. It is recorded along with what it produced,
 // as an EmbeddingModel is recorded with a vector: a text kept beyond the run
 // that made it is claimed again by what made it, and anything left out of that
 // name is something that can change while the name does not.

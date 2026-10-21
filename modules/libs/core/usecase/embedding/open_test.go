@@ -24,7 +24,7 @@ func is(name string) port.EmbeddingModel {
 
 // saying is a provider that answers every text with the one vector it was
 // given. It counts the times it was asked the text two providers are compared
-// over, and the times it was let go of.
+// over, and the times it was release.
 type saying struct {
 	model  port.EmbeddingModel
 	vector []float32
@@ -60,7 +60,7 @@ func refuseFetch(context.Context, func(done, total int64)) (port.Embedder, error
 }
 
 // An installation that places its index nowhere embeds with nothing, and there
-// is nothing to let go of.
+// is nothing to release.
 func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
 	filling, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.Provider{}, embedding.Provider{})
@@ -130,7 +130,7 @@ func TestTwoProvidersAnsweringAlikeAreOneModel(t *testing.T) {
 }
 
 // Two providers that answer one text differently are two models, and the second
-// is let go of: a question embedded in another space finds nothing the first
+// is release: a question embedded in another space finds nothing the first
 // indexed. It is said in the list of what is being done.
 func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 	first := newSaying("indexed-here", 1, 0, 0)
@@ -157,7 +157,7 @@ func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 
 // A comparison nobody got an answer out of is not agreement. The model the
 // index would be filled by never arrives, so the provider that answers
-// questions is let go of, and both halves are in the list under what stopped
+// questions is release, and both halves are in the list under what stopped
 // them.
 func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 	second := newSaying("asked-elsewhere", 1, 0, 0)

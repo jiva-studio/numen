@@ -15,7 +15,7 @@ import (
 // file now carries.
 
 // title is what the vault shows the note at this path as, asked of the index
-// rather than of the file: it is the answer the person sees.
+// and not of the file: it is the answer the person sees.
 func (f filing) title(t *testing.T, path string) string {
 	t.Helper()
 	shown, err := f.db.Queries().GetNotes(t.Context(), f.vault.ID, []string{path})

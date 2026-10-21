@@ -38,7 +38,7 @@ const put = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]):
     return [below]
   })
 
-/** The application's part: what a move comes to, in the rows it holds. */
+/** The application's part: what a move evaluates to, in the rows it holds. */
 const moveRows = (
   rows: readonly Row[],
   dragIds: readonly RowId[],

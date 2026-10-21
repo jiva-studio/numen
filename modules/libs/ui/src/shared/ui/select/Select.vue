@@ -17,7 +17,7 @@ const props = withDefaults(
   defineProps<{
     /** The choices, in the order they are offered. */
     choices: readonly SelectChoice[]
-    /** What stands on the line while nothing is in force. */
+    /** What relies on the line while nothing is in force. */
     placeholder?: string
     /** What the list of choices is announced as. */
     name?: string

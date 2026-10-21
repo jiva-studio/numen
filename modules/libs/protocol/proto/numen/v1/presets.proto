@@ -8,7 +8,7 @@ syntax = "proto3";
 // defaults.
 //
 // One control steers a preset: `goal` says which value it moves, and the curve
-// says what the whole range of that value comes to. A curve is asked for with
+// says what the whole range of that value evaluates to. A curve is asked for with
 // the settings a person is moving and has not written yet, and asking for one
 // writes nothing.
 package numen.v1;
@@ -88,8 +88,8 @@ enum Goal {
   GOAL_BY_DATE = 3;
 }
 
-// Rule is what a preset counts as learned, and stands under `learned`. The
-// value it reads stands under the key it names, and the other rule keeps its
+// Rule is what a preset counts as learned, and is placed under `learned`. The
+// value it reads is placed under the key it names, and the other rule keeps its
 // value and takes no part.
 enum Rule {
   RULE_UNSPECIFIED = 0;
@@ -102,7 +102,7 @@ enum Rule {
   RULE_RETENTION = 2;
 }
 
-// BudgetUnit is what a day's budget is counted in, and stands under `counts`.
+// BudgetUnit is what a day's budget is counted in, and is placed under `counts`.
 enum BudgetUnit {
   BUDGET_UNIT_UNSPECIFIED = 0;
 
@@ -250,7 +250,7 @@ message Preset {
   StopReason stops_on = 6;
 }
 
-// Curve is what the one control comes to over the whole range of its goal.
+// Curve is what the one control evaluates to over the whole range of its goal.
 message Curve {
   Goal goal = 1;
 
@@ -261,7 +261,7 @@ message Curve {
   // The day of each place, filled for a goal of a date.
   repeated string days = 3;
 
-  // What the preset comes to at each place of the grid, one for one with it.
+  // What the preset evaluates to at each place of the grid, one for one with it.
   repeated Point at = 4;
 
   // Where the preset stands, and what is suggested.
@@ -288,7 +288,7 @@ message Curve {
   int32 unbegun = 10;
 }
 
-// Point is what a preset comes to at one place of the grid.
+// Point is what a preset evaluates to at one place of the grid.
 message Point {
   // `reviews` is counted in card faces and `minutes` in the showings they take,
   // so a face the day comes back to costs its minutes and is the one card.

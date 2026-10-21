@@ -47,7 +47,7 @@ describe("a deck's notes", () => {
     expect(asked).toContainEqual({ vault: 'garden', deck: 'decks/Words.md' })
   })
 
-  it('hands every note over in the order it came, and how many were left unread', async () => {
+  it('passes every note over in the order it came, and how many were left unread', async () => {
     expect(await getDeckNeighbourhood('garden', 'decks/Words.md')).toEqual({
       notes: [
         {

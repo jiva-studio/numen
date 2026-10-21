@@ -90,7 +90,7 @@ const getGradeKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
 }
 
 /**
- * Whether the window swallows the key, rather than leaving it to the page. The
+ * Whether the window swallows the key, and not leaving it to the page. The
  * letter that brings the panel in is one of them: the field it opens takes the
  * keyboard, and the letter would be the first thing typed into it. So is space
  * over the reading, which the page would otherwise scroll instead.

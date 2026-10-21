@@ -61,7 +61,7 @@ describe('a registration that says what its tabs hold', () => {
     expect(bareKind.getTitle?.({})).toBe('held')
   })
 
-  it('hands the window every hook it declares, and no other', () => {
+  it('passes the window every hook it declares, and no other', () => {
     const navigate = vi.fn()
     const receiveText = vi.fn()
     const placement = { pane: 'main', order: 0 } as const
@@ -80,7 +80,7 @@ describe('a registration that says what its tabs hold', () => {
   })
 })
 
-describe('the hooks a registration hands over', () => {
+describe('the hooks a registration passes over', () => {
   it('are the ones it declares', () => {
     const onClose = () => true
     const icon = { name: 'Icon' }

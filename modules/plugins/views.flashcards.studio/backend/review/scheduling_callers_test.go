@@ -20,7 +20,7 @@ import (
 // with these two by tests and drifting the day one of them is touched.
 var scheduling = []string{"History.Replay", "Simulation.step"}
 
-// A day is chosen in one function, and a caller wanting one comes to it. The
+// A day is chosen in one function, and a caller wanting one evaluates to it. The
 // walk is over this package's own files, because AssignDueDay is where a day is
 // decided and the deciding is all here.
 func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {

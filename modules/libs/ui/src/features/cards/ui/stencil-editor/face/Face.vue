@@ -4,7 +4,7 @@
  * one row of the fields, and under that one window divided into four parts.
  *
  * Each half is written in a box of its own, and beside it stands what that half
- * comes to. A field pressed in the strip is written into the half last typed
+ * evaluates to. A field pressed in the strip is written into the half last typed
  * in. What the face stands for is the caller's, and so is what is wrong with it.
  */
 import { computed, nextTick, shallowRef, type ComponentPublicInstance } from 'vue'

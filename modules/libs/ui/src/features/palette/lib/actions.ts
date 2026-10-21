@@ -59,7 +59,7 @@ export const placeActions = (
 }
 
 /**
- * Where the panel stands once its list has changed under it: on the action it
+ * Where the panel appears once its list has changed under it: on the action it
  * was on, wherever that action has moved to. An action that is gone hands it to
  * the first there is; a list holding none takes it nowhere.
  */

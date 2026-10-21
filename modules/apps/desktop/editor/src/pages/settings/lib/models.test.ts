@@ -35,7 +35,7 @@ describe('what a model is called', () => {
     expect(getLastPathSegment('somewhere/tiny-e5-small')).toBe('tiny-e5-small')
   })
 
-  it('is the last segment of an address, without what is asked of it', () => {
+  it('is the last segment of an address, without what is requested of it', () => {
     expect(getLastPathSegment('https://models.example/held/v1/rec/Tiny_rec.onnx?download=1')).toBe(
       'Tiny_rec.onnx',
     )
@@ -104,7 +104,7 @@ describe('the choices a setting offers', () => {
     expect(createChoices([PRESET], PRESET.name, WORDS)).toHaveLength(1)
   })
 
-  it('offer the presets alone where the file names nothing', () => {
+  it('offer the presets alone where the file is empty', () => {
     expect(createChoices([PRESET], '', WORDS)).toHaveLength(1)
   })
 

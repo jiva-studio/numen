@@ -152,7 +152,7 @@ describe('the window onto the drawing', () => {
     expect(crowded).toStrictEqual(small)
   })
 
-  it('draws a box at the size the arrangement asked for, in pixels', () => {
+  it('draws a box at the size the arrangement requested for, in pixels', () => {
     const frame = arrangePlex(before)
     const view = mount(PlexView, {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
@@ -207,7 +207,7 @@ describe('the line under the hand', () => {
   const title = (view: ReturnType<typeof mountTitled>, at: number) =>
     view.findAll('.plex__edge-label').slice(2 * at, 2 * at + 2)
 
-  it('lifts the line the hand comes to rest on, and puts it back after', async () => {
+  it('lifts the line the hand evaluates to rest on, and puts it back after', async () => {
     const view = mountTitled()
     expect(view.find('.plex__lift').exists()).toBe(false)
 
@@ -230,7 +230,7 @@ describe('the line under the hand', () => {
     expect(view.find('.plex__lift').exists()).toBe(false)
   })
 
-  it('draws the lifted line after every box, so it stands over them', async () => {
+  it('draws the lifted line after every box, so it remains over them', async () => {
     const view = mountTitled()
     await reach(view, across).trigger('pointerenter')
     const lift = view.get('.plex__lift').element
@@ -354,7 +354,7 @@ describe('two lines between one pair', () => {
     ],
   })
 
-  it('draws both, and leaves neither behind when the hand comes to rest', async () => {
+  it('draws both, and leaves neither behind when the hand evaluates to rest', async () => {
     const view = mount(PlexView, {
       props: { frame: paired, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
@@ -373,7 +373,7 @@ describe('a node keeps its own drawing across a change', () => {
   it('is the same element after the ones around it move', async () => {
     // A node holds state of its own — whether a hand is over it, whether the
     // keyboard is on it — and the browser holds focus on an element. Drawn by
-    // position rather than by name, one node inherits another's element, and
+    // position and not by name, one node inherits another's element, and
     // both follow whatever happens to be in that place.
     const view = mount(PlexView, {
       props: {
@@ -412,7 +412,7 @@ describe('the box the attention has settled on', () => {
       },
     })
 
-  it('is drawn last of all, so its widened box stands over its neighbours', async () => {
+  it('is drawn last of all, so its widened box remains over its neighbours', async () => {
     const view = mountResting()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
 
@@ -489,7 +489,7 @@ describe('the arrow on a line', () => {
     return { x: x!, y: y!, angle: angle! }
   }
 
-  it('draws one arrowhead for each line that asked for one', () => {
+  it('draws one arrowhead for each line that requested for one', () => {
     expect(mountNamed().findAll('.plex__edge-arrow')).toHaveLength(2)
   })
 
@@ -523,7 +523,7 @@ describe('the arrow on a line', () => {
     }
   })
 
-  it('draws an arrow before every title, which stands over it', () => {
+  it('draws an arrow before every title, which remains over it', () => {
     const view = mountNamed()
     const arrow = view.findAll('.plex__edge-arrow')[0]!.element
     for (const title of view.findAll('.plex__edge-label')) {
@@ -532,7 +532,7 @@ describe('the arrow on a line', () => {
     }
   })
 
-  it('lifts the arrow with the line the hand comes to rest on', async () => {
+  it('lifts the arrow with the line the hand evaluates to rest on', async () => {
     const view = mountNamed()
     await view.findAll('.plex__edge-hit')[0]!.trigger('pointerenter')
 

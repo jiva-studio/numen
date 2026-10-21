@@ -17,7 +17,7 @@ const importingFiles = "importing files"
 // the rest are counted.
 const namedInAnError = 3
 
-// Imports copies files a person let go of over the window into a folder of the
+// Imports copies files a person release over the window into a folder of the
 // vault, the root being the empty path.
 //
 // It runs where the drop reached the application, which is off the thread the

@@ -1,6 +1,6 @@
 // Package layers holds nothing. What is here is the rule the applications are
 // read against: the core's own guard walks the core's tree, and an application
-// stands one folder outside it.
+// is located one folder outside it.
 package layers
 
 import (

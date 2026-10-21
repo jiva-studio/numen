@@ -225,7 +225,7 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   /**
-   * The row the keyboard is standing on, read off the document rather than out
+   * The row the keyboard is standing on, read off the document and not out
    * of the list the window handed the palette.
    */
   const getStandingRow = () =>
@@ -243,7 +243,7 @@ describe('the four commands over how the window is drawn', () => {
       return [mode, SERVED, sizes]
     }
 
-    it('stands on the theme the settings name, and goes on wearing it', async () => {
+    it('relies on the theme the settings name, and goes on wearing it', async () => {
       said.applied = 'mine:sea'
       const was = applyServedStyles()
 
@@ -254,7 +254,7 @@ describe('the four commands over how the window is drawn', () => {
       expect(requests.worn).toStrictEqual([])
     })
 
-    it('stands on the half the tokens are read as, and goes on reading them so', async () => {
+    it('relies on the half the tokens are read as, and goes on reading them so', async () => {
       said.mode = 'dark'
       const was = applyServedStyles(':root { color-scheme: dark; }')
 
@@ -264,7 +264,7 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles()).toStrictEqual(was)
     })
 
-    it('stands on the size the interface is drawn at, and leaves it there', async () => {
+    it('relies on the size the interface is drawn at, and leaves it there', async () => {
       said.sizes = { interfaceScale: 1.5, textScale: 1 }
       const was = applyServedStyles(
         PAIR,
@@ -278,7 +278,7 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles()).toStrictEqual(was)
     })
 
-    it('stands on a size between two steps, which is the row put in for it', async () => {
+    it('relies on a size between two steps, which is the row put in for it', async () => {
       said.sizes = { interfaceScale: 1, textScale: 1.17 }
       const was = applyServedStyles(
         PAIR,
@@ -421,7 +421,7 @@ describe('the four commands over how the window is drawn', () => {
       return window
     }
 
-    it('takes its measurements again at the size the keyboard is held on', async () => {
+    it('takes its measurements again at the size the keyboard is retained on', async () => {
       await openNote()
       await type('interface')
       await press('Enter')
@@ -465,7 +465,7 @@ describe('the four commands over how the window is drawn', () => {
       expect(left()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
     })
 
-    it('writes the size that was chosen beside the interface’s, which stands', async () => {
+    it('writes the size that was chosen alongside the interface’s, which remains', async () => {
       await runCommand('reading')
       await press('End')
 

@@ -211,7 +211,7 @@ describe('a deck with nothing waiting', () => {
 // Starting a session on a preset is the deck screen's act, carried up from the tile
 // to whatever opens a session.
 describe('a preset pressed', () => {
-  it('is passed on by the note it stands in', () => {
+  it('is passed on by the note it remains in', () => {
     const one = mountDecks([preset()])
 
     one.findComponent(Presets).vm.$emit('start', 'Sanskrit.md')

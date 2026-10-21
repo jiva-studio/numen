@@ -273,7 +273,7 @@ export const NotClipped: Story = {
     await expect(box.height).toBeGreaterThan(clipping.getBoundingClientRect().height)
     await expect(clipping.contains(menu)).toBe(false)
 
-    // Whole where it stands: what is under its far edge is the menu itself,
+    // Whole at its current position: what is under its far edge is the menu itself,
     // which is exactly what being clipped would take away.
     const under = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4)
     await expect(menu.contains(under)).toBe(true)
@@ -326,7 +326,7 @@ export const Icons: Story = {
   },
 }
 
-/** Far more than fits: the list scrolls and the menu still stands on screen. */
+/** Far more than fits: the list scrolls and the menu still relies on screen. */
 export const FarTooMany: Story = {
   args: {
     items: Array.from({ length: 60 }, (_, at) => ({

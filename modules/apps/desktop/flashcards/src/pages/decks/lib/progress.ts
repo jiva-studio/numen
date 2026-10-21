@@ -39,7 +39,7 @@ export const getSpentShare = (one: Preset): number => {
   return Math.max(0, ...shares)
 }
 
-/** What a count comes to against a budget. A budget of nothing is no share. */
+/** What a count evaluates to against a budget. A budget of nothing is no share. */
 const share = (count: number, budget: number): number => (budget > 0 ? count / budget : 0)
 
 /**

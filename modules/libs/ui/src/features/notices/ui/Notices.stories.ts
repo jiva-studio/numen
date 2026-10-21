@@ -432,14 +432,14 @@ export const Dark: Story = {
       await expect(ink).toBeGreaterThan(ground + 40)
 
       // The frame is that ink, thinned: it lies between the two, and is a step
-      // away from the ground rather than lost in it.
+      // away from the ground and not lost in it.
       const frame = lightness(drawn.borderTopColor, drawn.backgroundColor)
       await expect(frame).toBeGreaterThan(Math.min(ink, ground))
       await expect(frame).toBeLessThan(Math.max(ink, ground))
       await expect(Math.abs(frame - ground)).toBeGreaterThan(2)
     }
 
-    // The way out is only ink until a hand is on it, and then it stands on a
+    // The way out is only ink until a hand is on it, and then it relies on a
     // ground of its own.
     const away = within(cards[2]!).getByRole('button', { name: /^Put away/ })
     await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')

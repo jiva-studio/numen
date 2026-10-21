@@ -116,7 +116,7 @@ func TestAMigrationStepThatFailsLeavesTheIndexAtItsVersion(t *testing.T) {
 	}
 }
 
-// Bookkeeping already in the shape this build writes is used as it stands.
+// Bookkeeping already in the shape this build writes is used currently.
 func TestBookkeepingInShapeIsNotRebuilt(t *testing.T) {
 	db := openAtVersionOne(t)
 	breakOn(t, "schema_migrations_next")

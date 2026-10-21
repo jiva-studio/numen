@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// newIndexedVault writes a vault of the given notes, scans it, and hands back
+// newIndexedVault writes a vault of the given notes, scans it, and returns
 // what is needed to ask questions about links.
 func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
 	t.Helper()
@@ -84,7 +84,7 @@ func TestAPathFromTheRootWinsOverAName(t *testing.T) {
 func TestTheFolderTheLinkWasWrittenInDecidesIt(t *testing.T) {
 	t.Parallel()
 	// Two notes answer to the name, and one of them is in the same folder as the
-	// note that wrote the link. That is a determined answer rather than an
+	// note that wrote the link. That is a determined answer and not an
 	// ambiguity: the rule picked it, not a tie-break.
 	db, v := newIndexedVault(t, map[string]string{
 		"projects/source.md":  "Points at [[Entropy]].\n",

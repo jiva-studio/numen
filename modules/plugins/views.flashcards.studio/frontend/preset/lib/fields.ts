@@ -2,7 +2,7 @@
  * Which settings a goal schedules by, and the one word that says their shape.
  *
  * A goal names one budget, and the settings of the other two take no part in
- * it: they are neither drawn nor written while it stands, and the file keeps
+ * it: they are neither drawn nor written while active, and the file keeps
  * them where the person left them.
  */
 import type { Bounds, Goal, Rule, Settings, SettingsBounds } from '../types'

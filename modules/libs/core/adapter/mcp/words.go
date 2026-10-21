@@ -29,7 +29,7 @@ func why(c note.Contents) string {
 }
 
 // sayError is a write's error in words an agent can act on. An error the schema
-// carries no code for is handed over as it stands.
+// carries no code for is handed over currently.
 func sayError(err error) string {
 	if reason, refused := wire.GetErrorCode(err); refused {
 		return describeCode(reason)

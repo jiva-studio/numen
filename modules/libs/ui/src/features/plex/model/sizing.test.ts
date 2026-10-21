@@ -34,7 +34,7 @@ describe('a label half again as large', () => {
     larger = optionsForType(DESIGNED_TYPE * HALF_AGAIN)
   })
 
-  it('is held by a box half again as large', () => {
+  it('is retained by a box half again as large', () => {
     expect(larger.nodeSize).toStrictEqual({ width: 216, height: 54 })
     expect(larger.focusSize).toStrictEqual({ width: 264, height: 66 })
   })
@@ -47,7 +47,7 @@ describe('a label half again as large', () => {
     expect(larger.routing.minReach).toBe(33)
   })
 
-  it('is held by every length inside a box, and beside the line it hangs on', () => {
+  it('is retained by every length inside a box, and alongside the line it hangs on', () => {
     expect(larger.minWidth).toBe(108)
     expect(larger.iconWidth).toBe(24)
     expect(larger.routing.arrowRoom).toBe(30)

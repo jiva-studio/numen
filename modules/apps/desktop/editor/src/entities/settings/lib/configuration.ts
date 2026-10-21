@@ -1,5 +1,5 @@
 /**
- * What the settings hold: one setting written where it stands, and the models a
+ * What the settings hold: one setting written at its current position, and the models a
  * setting that names one can be set to.
  */
 
@@ -94,7 +94,7 @@ export interface CompletionChoice {
   readonly model: string
 }
 
-/** Every setting as it stands, where they stand, and the models offered. */
+/** Every setting currently, where they stand, and the models offered. */
 export interface Configuration {
   /** Serialized settings JSON content. */
   readonly jsonContent?: string | undefined

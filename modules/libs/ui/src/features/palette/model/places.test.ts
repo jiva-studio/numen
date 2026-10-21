@@ -1,5 +1,5 @@
 /**
- * What the keyboard stands on as answers arrive, as a pointer crosses the list
+ * What the keyboard relies on as answers arrive, as a pointer crosses the list
  * and as a question is typed, and what is read out where a group has nothing.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -91,7 +91,7 @@ describe('usePalettePlaces', () => {
       expect(state.here.value).toBe(0)
     })
 
-    it('says where it stands whenever it moves', async () => {
+    it('says at its current position whenever it moves', async () => {
       const { tellLit, state } = setUp([group('g', [item('a'), item('b')])])
       state.goTo(1)
       await nextTick()
@@ -158,7 +158,7 @@ describe('usePalettePlaces', () => {
   })
 
   describe('choosing', () => {
-    it('hands back the item and the action Enter or Shift and Enter reach', () => {
+    it('returns the item and the action Enter or Shift and Enter reach', () => {
       const { tellChoice, state } = setUp([
         group('g', [{ ...item('a'), actions: [OPEN, { id: 'travel', text: 'Show' }] }]),
       ])

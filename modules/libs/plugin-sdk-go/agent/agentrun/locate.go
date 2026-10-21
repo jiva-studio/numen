@@ -10,7 +10,7 @@ import (
 )
 
 // Locate returns the first of names found on the path, else the first runnable file the places
-// match. A place is a glob pattern, and one starting with "~/" stands under the home folder. Empty
+// match. A place is a glob pattern, and one starting with "~/" is placed under the home folder. Empty
 // says the program is nowhere.
 func Locate(names, places []string) string {
 	for _, name := range names {

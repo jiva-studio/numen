@@ -144,7 +144,7 @@ describe('letting go of something dragged in', () => {
     expect(plex.emitted('bring')).toBeUndefined()
   })
 
-  it('hands every one of them back, in the one relation', async () => {
+  it('passes every one of them back, in the one relation', async () => {
     const plex = mountPlex({ dragged: SEVERAL })
     await letGo(plex, 600, 760)
 
@@ -259,7 +259,7 @@ describe('while something is being dragged over the plex', () => {
     expect(findDragged(plex).exists()).toBe(false)
   })
 
-  it('draws nothing once it has been let go of', async () => {
+  it('draws nothing once it has been release', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
@@ -311,7 +311,7 @@ describe('what a drag leaves on the window', () => {
     expect(left()).toStrictEqual(TYPES)
   })
 
-  it('is nothing once the drag is let go of', async () => {
+  it('is nothing once the drag is release', async () => {
     const left = spyOnWindowListeners()
     const plex = mountPlex()
     await letGo(plex, 600, 40)

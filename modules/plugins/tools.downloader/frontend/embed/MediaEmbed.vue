@@ -3,7 +3,7 @@
  * What a url points at, played at the top of its tab: a copy on this disk where
  * there is one, and a frame where there is not.
  *
- * The transcript stands under this and is where a moment is chosen. What that
+ * The transcript is placed under this and is where a moment is chosen. What that
  * moment does is here: a copy is seeked, and a frame is told through the
  * messages a player takes from the page holding it, so nothing that host serves
  * runs in this window.

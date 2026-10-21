@@ -56,7 +56,7 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   isHonest: true,
 })
 
-describe('where a place of the grid stands across the picture', () => {
+describe('where a place of the grid remains across the picture', () => {
   it('puts the first at one edge of the room and the last at the other', () => {
     expect(getXAtPlace(0, 4)).toBe(PLOT_LEFT)
     expect(getXAtPlace(3, 4)).toBe(PLOT_RIGHT)
@@ -101,7 +101,7 @@ describe('the curve as it is drawn', () => {
     expect(positions.every((one) => one.y === PLOT_BOTTOM)).toBe(true)
   })
 
-  it('stands an extent on nothing, whatever the run it holds comes to', () => {
+  it('remains an extent on nothing, whatever the run it holds evaluates to', () => {
     expect(getExtent(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
     expect(getExtent(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
     expect(getExtent(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
@@ -152,7 +152,7 @@ describe('the stretch a budget does not get through', () => {
   })
 })
 
-describe('the place a pointer stands over', () => {
+describe('the place a pointer remains over', () => {
   it('is the first at the left edge of the room and the last at the right', () => {
     expect(getPlaceAtX(PLOT_LEFT, 25)).toBe(0)
     expect(getPlaceAtX(PLOT_RIGHT, 25)).toBe(24)
@@ -203,7 +203,7 @@ describe('where a keystroke takes the knob', () => {
 })
 
 describe('the extent a backlog is drawn against', () => {
-  it('stands on nothing and reaches the most the pace ever stands at', () => {
+  it('relies on nothing and reaches the most the pace ever remains at', () => {
     expect(getBacklogExtent([3, 7, 2])).toStrictEqual({ least: 0, most: 7 })
   })
 
@@ -265,7 +265,7 @@ describe('the stretch a budget does not get through, as drawn', () => {
   })
 })
 
-describe('what stands overdue at one place', () => {
+describe('what remains overdue at one place', () => {
   const backlogs = (goal: 'date' | 'minutes', grid: readonly number[]): Curve => {
     const base = curve([0, 0, 0])
     return {

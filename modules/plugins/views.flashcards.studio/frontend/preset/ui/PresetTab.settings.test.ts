@@ -18,7 +18,7 @@ import { BOUNDS, mountPresetTab, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('the settings under the control', () => {
-  it('draws a row for each, with what it is beside it', () => {
+  it('draws a row for each, with what it is alongside it', () => {
     const { tab } = mountPresetTab()
     expect(tab.text()).toContain(words.fieldName('minutesADay'))
     expect(tab.text()).toContain(words.fieldDetail('minutesADay'))
@@ -27,7 +27,7 @@ describe('the settings under the control', () => {
   })
 
   // What a budget is spent on is a row like any other, and a person moving it
-  // writes the group the way every other row does. It stands under the goal
+  // writes the group the way every other row does. It is placed under the goal
   // whose budget is cards.
   it('offers the two things a budget is spent on', async () => {
     const { tab, done } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
@@ -57,7 +57,7 @@ describe('the settings under the control', () => {
     expect(row.get('[data-preset="percent"]').text()).toBe(words.percent(70))
 
     // The value is handed on as the handle moves, and the row is written once
-    // the key is let go of.
+    // the key is release.
     await track.trigger('keydown', { key: 'ArrowLeft' })
     expect(done).toStrictEqual(['type backlog 69'])
     await track.trigger('keyup', { key: 'ArrowLeft' })
@@ -102,7 +102,7 @@ describe('the settings under the control', () => {
     expect(offered).toStrictEqual([words.ruleName('interval'), words.ruleName('retention')])
   })
 
-  it('hands on the rule that was chosen, and is done with it at once', async () => {
+  it('passes on the rule that was chosen, and is done with it at once', async () => {
     const { tab, done } = mountPresetTab({}, { learned: 'interval' })
     await tab.get('[data-preset="choice"]').trigger('click')
     const chosen = [...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].find(
@@ -127,7 +127,7 @@ describe('the settings under the control', () => {
   // A tab draws its rows before the first read lands. Until the application
   // has said how far a field goes, the field stands at the ends it draws
   // itself with.
-  it('leaves a field the application has said nothing about at its own ends', () => {
+  it('leaves a field the application has returned nothing about at its own ends', () => {
     const one = createTab({}, { learned: 'interval', interval: 21 })
     const state: PresetTabState = { ...one.state, bounds: shallowRef(NO_BOUNDS) }
     const tab = mount(PresetTab, { props: { state } })
@@ -146,7 +146,7 @@ describe('what the tab says went wrong', () => {
     return { tab: mount(PresetTab, { props: { state } }), done: one.done }
   }
 
-  it('offers reading the file again beside what it says', async () => {
+  it('offers reading the file again along with what it says', async () => {
     const { tab, done } = mountWithError(words.notRead('missing'))
     const alert = tab.get('[role="alert"]')
     expect(alert.text()).toContain(words.notRead('missing'))
@@ -187,7 +187,7 @@ describe('a file that changed under the tab', () => {
   })
 })
 
-// The row of days draws a level and hands back a day and a level. That the
+// The row of days draws a level and returns a day and a level. That the
 // whole of a day is a hundred, and that a day back at it stops being named,
 // are the file's own way of writing the week and belong to this tab.
 describe('the load of the week', () => {
@@ -305,7 +305,7 @@ describe('the line the tab is read against', () => {
 // Every figure a person reads of a chance of recall is a percentage: the mark
 // on the curve, the words beside it, the axis. The row it is typed into is one.
 describe('the row a chance of recall is typed into', () => {
-  it('stands in per cent, and is bounded and stepped in per cent', () => {
+  it('remains in per cent, and is bounded and stepped in per cent', () => {
     const { tab } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
     const field = tab
       .findAll('[role="spinbutton"]')
@@ -317,7 +317,7 @@ describe('the row a chance of recall is typed into', () => {
     expect(field?.attributes('aria-valuenow')).toBe('87')
   })
 
-  it('hands a percentage back as the share the settings hold', async () => {
+  it('passes a percentage back as the share the settings hold', async () => {
     const { tab, done } = mountPresetTab(
       { goal: 'retention' },
       { goal: 'retention', retention: 0.87 },
@@ -334,14 +334,14 @@ describe('the row a chance of recall is typed into', () => {
 // The rules are a choice between two, and the line that asked for them is where
 // the keyboard comes back to.
 describe('the rules under the learned row', () => {
-  it('marks the rule in force and returns the focus to the line that asked', async () => {
+  it('marks the rule in force and returns the focus to the line that requested', async () => {
     // Attached to the page, because taking the focus back is what is measured.
     const one = createTab({}, { learned: 'interval' })
     const tab = mount(PresetTab, { props: { state: one.state }, attachTo: document.body })
     const line = tab.get('[data-preset="choice"]')
     await line.trigger('click')
 
-    // The menu is drawn onto the page rather than inside the tab.
+    // The menu is drawn onto the page and not inside the tab.
     const items = [...document.querySelectorAll('[role="menuitemradio"]')]
     expect(items.map((one) => one.getAttribute('aria-checked'))).toStrictEqual(['true', 'false'])
 

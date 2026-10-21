@@ -151,7 +151,7 @@ describe('a change to the vault', () => {
     expect(other.refreshChanged).toHaveBeenCalledWith(['a.md'], renamed)
   })
 
-  it('reaches a tab with nothing where it names nothing, and no tab once it has closed', async () => {
+  it('reaches a tab with nothing where it is empty, and no tab once it has closed', async () => {
     const { tree, refreshChanged } = createTreeOf()
     const { kind, refresh } = createKindOver(tree)
     const { state } = openTab(kind)

@@ -63,9 +63,9 @@ const BEYOND = 1.5
 
 /**
  * A row of pages: how tall they are drawn, where each one begins, and what the
- * whole row comes to.
+ * whole row evaluates to.
  *
- * Every page is drawn to one height, so the row stands on one line however the
+ * Every page is drawn to one height, so the row relies on one line however the
  * pages are shaped, and a flick sideways is a page.
  */
 export interface Row {
@@ -75,7 +75,7 @@ export interface Row {
   readonly starts: readonly number[]
   /** How wide each page is drawn, in CSS pixels. */
   readonly widths: readonly number[]
-  /** What the whole row comes to, in CSS pixels. */
+  /** What the whole row evaluates to, in CSS pixels. */
   readonly length: number
 }
 

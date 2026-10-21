@@ -20,7 +20,7 @@ describe('a picture in a book', () => {
     expect(drawn).toContain('alt="A plate"')
   })
 
-  it('is left where it stands when it is written into the markup itself', () => {
+  it('is left at its current position when it is written into the markup itself', () => {
     const written = '<img src="data:image/png;base64,iVBORw0KGgo=">'
 
     expect(resolveImageUrls(written, entry)).toContain('src="data:image/png;base64,iVBORw0KGgo="')
@@ -28,7 +28,7 @@ describe('a picture in a book', () => {
 })
 
 describe('a picture with no name', () => {
-  it('is left as it stands and asks for no address', () => {
+  it('is left currently and asks for no address', () => {
     const asked: string[] = []
 
     const drawn = resolveImageUrls('<img src="" alt="Blank">', (name) => {
@@ -68,7 +68,7 @@ describe('a document of a book as it arrives', () => {
     }
   })
 
-  it('leaves every offset the application counted where it stands', () => {
+  it('leaves every offset the application counted at its current position', () => {
     const offsets = (markup: string) =>
       [
         ...new DOMParser()

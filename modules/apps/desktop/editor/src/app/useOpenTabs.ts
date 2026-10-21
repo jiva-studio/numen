@@ -1,5 +1,5 @@
 /**
- * What the person has open, told to the application, and the icon each tab carries.
+ * What currently open, told to the application, and the icon each tab carries.
  */
 import { computed, watch, type Component } from 'vue'
 import { findTabKindIcon } from '@/entities/tab'

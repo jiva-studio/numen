@@ -25,7 +25,7 @@ describe('the title of a deck file', () => {
     expect(answers.getTitle('Animals.md')).toBe('Beasts')
   })
 
-  it('stands through a read that reached no title', () => {
+  it('remains through a read that reached no title', () => {
     const answers = createDeckAnswers()
     answers.recordRead('Animals.md', read('Beasts'))
 
@@ -67,7 +67,7 @@ describe('what is forgotten of a file', () => {
 })
 
 describe('a file that moved', () => {
-  it('carries its problems and its title to where it now stands', () => {
+  it('carries its problems and its title to where it now remains', () => {
     const answers = createDeckAnswers()
     answers.recordRead('Old.md', read('Beasts'))
 
@@ -87,7 +87,7 @@ describe('a file that moved', () => {
     expect(answers.getTitle('Old.md')).toBe('Old.md')
   })
 
-  it('leaves what stands at the name it went to, where the old name held nothing', () => {
+  it('leaves what remains at the name it went to, where the old name retained nothing', () => {
     const answers = createDeckAnswers()
     answers.recordRead('New.md', read('Beasts'))
 

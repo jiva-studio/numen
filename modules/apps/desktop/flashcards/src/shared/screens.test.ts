@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { useScreens } from './screens'
 
-/** Three screens, each holding one thing that says when it was let go of. */
+/** Three screens, each holding one thing that says when it was release. */
 const three = () => {
   const dropped: string[] = []
   const held = useScreens(['list', 'rows', 'one'] as const, {

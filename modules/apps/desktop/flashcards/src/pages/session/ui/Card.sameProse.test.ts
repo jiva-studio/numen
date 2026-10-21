@@ -2,7 +2,7 @@
 /**
  * A card face is written once and drawn in two windows: here, and in the
  * editor's stencil pane. Both draw it through `CardProse`, so the markup a face
- * comes to is the same in both, and this is what holds them to it.
+ * evaluates to is the same in both, and this is what holds them to it.
  */
 import { CardProse } from '@numen/ui'
 import { mount } from '@vue/test-utils'
@@ -41,7 +41,7 @@ const inTheEditor = (text: string): string => {
 }
 
 describe('one face, two windows', () => {
-  it('comes to the same markup in both', () => {
+  it('evaluates to the same markup in both', () => {
     for (const face of FACES) {
       expect(inTheReviewWindow(face)).toBe(inTheEditor(face))
     }

@@ -29,7 +29,7 @@ type Tab struct {
 	ID   string
 	Kind string
 	// Path is the file the tab holds, empty for a tab holding no file. A plex
-	// holds the note it stands on.
+	// holds the note it relies on.
 	Path string
 	// Title is what the tab is called, as the person reads it.
 	Title string

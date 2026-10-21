@@ -6,8 +6,8 @@ import { getDayName } from '@/shared/lib/day'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
-  // A wide window shows more of the year rather than the same weeks drawn
-  // larger, and a narrow one shows fewer rather than a grid marooned in the
+  // A wide window shows more of the year and not the same weeks drawn
+  // larger, and a narrow one shows fewer and not a grid marooned in the
   // middle of empty room.
   it('takes as many columns as the room holds', () => {
     const cell = 10
@@ -17,7 +17,7 @@ describe('how much of a year fits', () => {
     expect(measureGrid({ width: 600, cell, gap }).columns).toBe(50)
   })
 
-  it('draws a cell no larger than it is asked to, whatever the room', () => {
+  it('draws a cell no larger than it is requested to, whatever the room', () => {
     for (const width of [40, 200, 1000, 4000]) {
       expect(measureGrid({ width, cell: 11, gap: 3 }).cell).toBe(11)
     }
@@ -182,7 +182,7 @@ describe('how dark a day is drawn', () => {
 describe('where the days are drawn', () => {
   const grid = { cell: 10, gap: 2 }
 
-  it('stands seven rows tall, with no gap past the last', () => {
+  it('remains seven rows tall, with no gap past the last', () => {
     expect(getGridHeight(grid)).toBe(7 * 12 - 2)
   })
 
@@ -246,7 +246,7 @@ describe('the first day a grid draws', () => {
     expect(shown[0]!.day).toBe('2026-09-14')
   })
 
-  it('opens on the week of the earliest day answered on, wherever it is held', () => {
+  it('opens on the week of the earliest day answered on, wherever it is retained', () => {
     const did = createTallies([
       ['2026-09-10', 1],
       ['2026-09-01', 1],

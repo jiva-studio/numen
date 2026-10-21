@@ -38,7 +38,7 @@ func ReadHeading(heading string) (text string, carried cardid.ID) {
 	return heading[:at], cardid.ID(written)
 }
 
-// WriteHeading is the heading a card of this text and this mark stands under.
+// WriteHeading is the heading a card of this text and this mark is placed under.
 func WriteHeading(text string, carried cardid.ID) string {
 	switch {
 	case carried == "":
@@ -168,7 +168,7 @@ func oneLine(name string) string {
 	return strings.TrimSpace(line)
 }
 
-// headingLine is the line a card, a face, a field or a side stands under. A
+// headingLine is the line a card, a face, a field or a side is placed under. A
 // heading carrying no text is the hashes and nothing after them.
 func headingLine(level int, name string) string {
 	hashes := strings.Repeat("#", level)

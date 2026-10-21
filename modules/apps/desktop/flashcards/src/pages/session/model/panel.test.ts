@@ -80,7 +80,7 @@ describe('the panel coming in', () => {
     expect(held.open.value).toBe(false)
   })
 
-  it('comes in on the card the session is on, turned or not', () => {
+  it('arrives in on the card the session is on, turned or not', () => {
     const { held } = panel()
     held.openPanel()
     expect(held.open.value).toBe(true)
@@ -95,7 +95,7 @@ describe('the panel coming in', () => {
     expect(notices).toEqual(['The agent could not be reached.'])
   })
 
-  it('is put away and keeps what was said', async () => {
+  it('is put away and keeps the transcript', async () => {
     const { held } = panel()
     held.openPanel()
     await held.send('why')
@@ -106,7 +106,7 @@ describe('the panel coming in', () => {
 
   // The window shows one thing at a time, and the strip can only stand on one
   // stop. A panel coming in is the other one going out.
-  it('takes the window off the other panel when it comes in', () => {
+  it('takes the window off the other panel when it arrives in', () => {
     const { held, showing } = panel({ showing: 'reading' })
     held.openPanel()
     expect(showing.value).toBe('asking')
@@ -144,7 +144,7 @@ describe('one conversation to a card', () => {
     }
   })
 
-  it('asks about the deck the card stands in', async () => {
+  it('asks about the deck the card remains in', async () => {
     const { held, asked } = panel()
     held.openPanel()
     await held.send('why')
@@ -160,7 +160,7 @@ describe('one conversation to a card', () => {
   })
 
   // The card in front of a person is never answered out of the one behind it.
-  it('ends the conversation when the card is answered, and tells the agent', async () => {
+  it('ends the conversation when the card is answered, and notifies the agent', async () => {
     const { held, over } = panel()
     held.openPanel()
     await held.send('why')
@@ -213,7 +213,7 @@ describe('one conversation to a card', () => {
     expect(new Set(named).size).toBe(named.length)
   })
 
-  it('sends nothing while no card is being asked about', async () => {
+  it('sends nothing while no card is being requested about', async () => {
     const { held, asked } = panel()
     await held.send('why')
     expect(asked).toEqual([])
@@ -286,7 +286,7 @@ describe('a conversation in flight', () => {
   })
 })
 
-describe('the panel asked for again', () => {
+describe('the panel requested for again', () => {
   it('keeps the conversation of the card it is already on', async () => {
     const { held, over, about } = panel()
     held.openPanel()
@@ -361,7 +361,7 @@ describe('what is written', () => {
 })
 
 describe('stop', () => {
-  it('does nothing while no card is being asked about', () => {
+  it('does nothing while no card is being requested about', () => {
     const { held } = panel()
     expect(() => held.stop()).not.toThrow()
     expect(held.isWorking.value).toBe(false)

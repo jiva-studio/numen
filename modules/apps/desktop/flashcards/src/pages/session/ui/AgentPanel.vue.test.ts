@@ -59,7 +59,7 @@ const createOpenPanel = (unreachable = ''): AgentPanelState => {
 
 const mountPanel = (panel: AgentPanelState) => mount(AgentPanel, { props: { held: panel } })
 
-describe('the panel a card is asked about in', () => {
+describe('the panel a card is requested about in', () => {
   // The card it is about is the card the session is on, and the session says
   // which above both of them.
   it('names no card of its own', () => {
@@ -68,14 +68,14 @@ describe('the panel a card is asked about in', () => {
     expect(one.findAll('button').map((it) => it.text())).not.toContain(words.shut)
   })
 
-  it('stands the reason nothing can be asked where the answers would be', () => {
+  it('remains the reason nothing can be requested where the answers would be', () => {
     const one = mountPanel(createOpenPanel(words.unreachable))
     expect(one.text()).toContain(words.unreachable)
     expect(one.text()).not.toContain(words.nothingSaid)
   })
 
   // A panel opened is a panel opened to write in.
-  it('takes the keyboard into the field when it comes up', async () => {
+  it('takes the keyboard into the field when it arrives up', async () => {
     const panel = createPanel()
     const one = mount(AgentPanel, { props: { held: panel }, attachTo: document.body })
 

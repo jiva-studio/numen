@@ -12,7 +12,7 @@ const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn 
   state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
 
 describe('the voices', () => {
-  it('draws what was said in a bubble and what came back on the surface', () => {
+  it('draws the transcript in a bubble and what came back on the surface', () => {
     expect(VOICES.asked.isBubble).toBe(true)
     expect(VOICES.answered.isBubble).toBe(false)
   })
@@ -41,7 +41,7 @@ describe('placing the turns', () => {
     expect(placeTurns([createAsked('1', 'gone', 'failed')])[0]?.state).toBe('failed')
   })
 
-  it('hands each turn the descriptor for its voice', () => {
+  it('passes each turn the descriptor for its voice', () => {
     expect(placeTurns([createAsked('1')])[0]?.voice).toBe(VOICES.asked)
     expect(placeTurns([createAnswered('1')])[0]?.voice).toBe(VOICES.answered)
   })
@@ -54,7 +54,7 @@ describe('placing the turns', () => {
 })
 
 describe('placing the same turns again', () => {
-  it('hands back the entry a turn was given before', () => {
+  it('returns the entry a turn was given before', () => {
     const turns = [createAsked('1'), createAnswered('2')]
     const first = placeTurns(turns)
     const second = placeTurns([...turns])

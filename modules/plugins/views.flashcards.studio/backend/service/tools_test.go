@@ -786,7 +786,7 @@ func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 	}
 }
 
-// Every field a stencil declares stands under its own heading in every card it
+// Every field a stencil declares is placed under its own heading in every card it
 // cuts, the first included, so renaming any of them reaches every deck.
 func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 	session, v := newSession(t, vault())

@@ -17,7 +17,7 @@ import (
 // and what is put in front of them.
 type workspaceHandler struct{ state *State }
 
-// WriteOpenTabs takes what the person has open, as the window last said it.
+// WriteOpenTabs takes what currently open, as the window last said it.
 //
 // It is the other direction to WatchFocus: a place is put in front of the
 // person there, and here the window says what is in front of them now.
@@ -74,7 +74,7 @@ func (h *workspaceHandler) DetachTab(
 	return connect.NewResponse(&v1.DetachTabResponse{}), nil
 }
 
-// GetOpenTabs is what the person has open, as the window last said. A window
+// GetOpenTabs is what currently open, as the window last said. A window
 // that has said nothing has nothing open as far as anyone here knows.
 func (s *State) GetOpenTabs() domain.OpenTabs {
 	if open := s.openTabs.Load(); open != nil {
@@ -101,7 +101,7 @@ func (h *workspaceHandler) WatchFocus(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			// A place nobody asked for names nothing, and is here to fail when
+			// A place nobody asked for is empty, and is here to fail when
 			// the client has gone.
 			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
 				return err

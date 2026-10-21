@@ -41,7 +41,7 @@ type entry struct {
 	address *yaml.Node
 }
 
-// block is the `links:` key: where it sits, what is in it, and how it is laid
+// block is the `links:` key: where it is located, what is in it, and how it is laid
 // out, so that a new entry looks like the ones already there.
 type block struct {
 	start, end int

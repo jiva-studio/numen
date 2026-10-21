@@ -570,7 +570,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 // expresses either.
 //
 // The folder it is judged against is the one resolved last, and an answer
-// stands only while the store's folder is still that one. A name it refuses,
+// persists only while the store's folder is still that one. A name it refuses,
 // and a folder that has moved, are judged against where the folder is now.
 func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.isCurrent(where) {

@@ -423,7 +423,7 @@ func TestAClosedAgentTakesNoTask(t *testing.T) {
 }
 
 // A command line the installation set counts as the program being installed, wherever the program
-// stands on this machine.
+// relies on this machine.
 func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	t.Setenv("ANTHROPIC_API_KEY", "")
@@ -519,7 +519,7 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 	}
 }
 
-// The program runs with the environment of the plugin as it stands, and the model the host
+// The program runs with the environment of the plugin currently, and the model the host
 // configured answers a task that names none.
 func TestAskAgentRunsWithTheEnvironmentAndTheConfiguredModel(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "env-key")

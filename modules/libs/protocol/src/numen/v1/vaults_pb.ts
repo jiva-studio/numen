@@ -237,7 +237,7 @@ export const RenameVaultRequestSchema: GenMessage<RenameVaultRequest> = /*@__PUR
 export type RenameVaultResponse = Message<"numen.v1.RenameVaultResponse"> & {
   /**
    * The vault under its new name. Absent when it was not renamed. The name a
-   * vault already has is not a change and answers with the vault as it stands.
+   * vault already has is not a change and answers with the vault currently.
    *
    * @generated from field: optional numen.v1.Vault vault = 1;
    */
@@ -498,7 +498,7 @@ export const VaultsService: GenService<{
   },
   /**
    * OpenVault shows another vault in this window. What the window was showing
-   * is let go of, and everything a client asked about it is asked again of the
+   * is release, and everything a client asked about it is asked again of the
    * vault that arrives.
    *
    * @generated from rpc numen.v1.VaultsService.OpenVault

@@ -15,7 +15,7 @@ const props = defineProps<{
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** The panel let go of, back to the tab it is held under. */
+  /** The panel release, back to the tab it is held under. */
   (event: 'leave', tab: TabId): void
 }>()
 

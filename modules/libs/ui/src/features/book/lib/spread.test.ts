@@ -29,7 +29,7 @@ const WIDE = 800
 const NARROW = 420
 
 /**
- * The columns a document of so many of them comes to, in a given reading area.
+ * The columns a document of so many of them evaluates to, in a given reading area.
  * A column takes its share of the area, gap and all, which is how the browser
  * lays them out and how far a spread has to move.
  */
@@ -139,7 +139,7 @@ describe('how many columns the text of a document fills', () => {
   })
 })
 
-describe('how many countSpreads a document comes to', () => {
+describe('how many countSpreads a document evaluates to', () => {
   it('counts the columns off the whole run', () => {
     expect(columnsInAll(createFlow(WIDE, 2, 10))).toBe(10)
     expect(columnsInAll(createFlow(NARROW, 1, 7))).toBe(7)
@@ -165,23 +165,23 @@ describe('how many countSpreads a document comes to', () => {
     expect(countSpreads({ ...flow, along: flow.along - 0.5 })).toBe(5)
   })
 
-  it('comes to nothing for a document with no text at all', () => {
+  it('evaluates to nothing for a document with no text at all', () => {
     expect(countSpreads({ along: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
     expect(columnsInAll({ along: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
   })
 
-  it('comes to one spread for a document of one line', () => {
+  it('evaluates to one spread for a document of one line', () => {
     expect(countSpreads(createFlow(WIDE, 2, 1))).toBe(1)
     expect(countSpreads(createFlow(NARROW, 1, 1))).toBe(1)
   })
 
-  it('comes to nothing in an area nothing has been measured in', () => {
+  it('evaluates to nothing in an area nothing has been measured in', () => {
     expect(countSpreads({ along: 1000, width: 0, gap: GAP, columns: 1 })).toBe(0)
   })
 })
 
 describe('where a spread begins', () => {
-  it('stands a whole number of countSpreads out from the first', () => {
+  it('remains a whole number of countSpreads out from the first', () => {
     const flow = createFlow(WIDE, 2, 200)
 
     // A hundred countSpreads out, the place is still exactly the place the hundredth
@@ -233,7 +233,7 @@ describe('which run of the text is in front', () => {
     expect(inFront(marks, flow, 4)).toBe(800)
   })
 
-  it('is nothing where no run stands in the spread', () => {
+  it('is nothing where no run remains in the spread', () => {
     const flow = createFlow(WIDE, 2, 10)
     // A picture filling the third spread on its own, with no run of text in it.
     const marks: Mark[] = [
@@ -249,7 +249,7 @@ describe('which run of the text is in front', () => {
   })
 })
 
-describe('which spread an offset stands in', () => {
+describe('which spread an offset remains in', () => {
   const flow = createFlow(WIDE, 2, 10)
   const step = columnWidth(flow) + GAP
   const marks: Mark[] = [
@@ -394,7 +394,7 @@ describe('the page a person is looking at', () => {
     expect(pages(book, document, 0).pages).toBe(Math.round((book.to - book.from) / perColumn))
   })
 
-  it('counts the columns the text fills and not the boxes drawn beside them', () => {
+  it('counts the columns the text fills and not the boxes drawn alongside them', () => {
     // A document of one line stands in one column of a spread of two.
     const one = createMarks(1)
     expect(countFilledColumns(one, flow)).toBe(1)
@@ -424,7 +424,7 @@ describe('what is left of the document on the page in front', () => {
   })
 })
 
-describe('the words the page count is said in', () => {
+describe('the words the page count is returned in', () => {
   it('put the page in front against all of them', () => {
     expect(BOOK_WORDS.of(3, 40)).toBe('3 of 40')
   })
@@ -449,7 +449,7 @@ describe('where a turn lands', () => {
     expect(to('last', 1, 3)).toStrictEqual({ spread: 2 })
   })
 
-  it('asks for the document beside this one, past either end of it', () => {
+  it('asks for the document alongside this one, past either end of it', () => {
     expect(to('next', 2, 3)).toStrictEqual({ offset: 900 })
     expect(to('back', 0, 3)).toStrictEqual({ offset: 399 })
     expect(to('back', 1, 3)).toStrictEqual({ spread: 0 })
@@ -467,14 +467,14 @@ describe('a reading area holding no column', () => {
     expect(columnWidth({ along: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
   })
 
-  it('comes to no columns and no spreads, however far the text runs', () => {
+  it('evaluates to no columns and no spreads, however far the text runs', () => {
     expect(columnsInAll({ along: 500, width: 0, gap: GAP, columns: 2 })).toBe(0)
     expect(countSpreads({ along: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
   })
 })
 
 describe('which spread a place falls in, where the gap fills the column', () => {
-  it('is the first, wherever the place stands', () => {
+  it('is the first, wherever the place remains', () => {
     // Each share of the area is 50 wide and the gap takes all of it.
     const flow = { along: 500, width: 100, gap: GAP, columns: 2 }
     expect(columnWidth(flow)).toBe(0)
@@ -506,9 +506,9 @@ describe('the page count of a document read against its bytes', () => {
     ).toBe(1)
   })
 
-  it('reaches at least the last column of the document, wherever it stands in the book', () => {
+  it('reaches at least the last column of the document, wherever it remains in the book', () => {
     // 250 bytes to a column: the document begins two columns in, and the book
-    // comes to two, short of the four the document ends at.
+    // evaluates to two, short of the four the document ends at.
     expect(
       createPages({
         book: { from: 0, to: 550 },
@@ -525,7 +525,7 @@ describe('the page count of a document read against its bytes', () => {
 })
 
 describe('which column a place falls in, in an area nothing has been measured in', () => {
-  it('is the first, wherever the place stands', () => {
+  it('is the first, wherever the place remains', () => {
     const flow = { along: 500, width: 0, gap: GAP, columns: 2 }
     expect(getColumn(flow, 0)).toBe(0)
     expect(getColumn(flow, 300)).toBe(0)

@@ -48,7 +48,7 @@ describe('the panel the deck is read in', () => {
     expect(asked).toEqual([])
   })
 
-  it('comes in on the deck the card stands in, turned or not', async () => {
+  it('arrives in on the deck the card remains in, turned or not', async () => {
     const { held, open } = panel()
     await held.openPanel()
     expect(open.value).toBe(true)
@@ -87,7 +87,7 @@ describe('what is read belongs to the deck', () => {
     expect(asked).toEqual([{ vault: 'one', deck: 'decks/Words.md' }])
   })
 
-  it('asks again when the card comes from another deck', async () => {
+  it('asks again when the card arrives from another deck', async () => {
     const { held, asked, deck } = panel()
     await held.openPanel()
     deck.value = 'decks/Trees.md'
@@ -130,7 +130,7 @@ describe('what is read belongs to the deck', () => {
   })
 
   // A person must never read one deck's notes under another deck's card.
-  it('holds nothing of the deck behind it while the next is being asked for', async () => {
+  it('holds nothing of the deck behind it while the next is being requested for', async () => {
     const waiting: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
@@ -228,7 +228,7 @@ describe('the asking', () => {
     return { held, waiting, deck, notices }
   }
 
-  it('is working while the deck is being asked for, and not once it has answered', async () => {
+  it('is working while the deck is being requested for, and not once it has answered', async () => {
     const { held, waiting } = slowPanel()
     expect(held.isWorking.value).toBe(false)
 

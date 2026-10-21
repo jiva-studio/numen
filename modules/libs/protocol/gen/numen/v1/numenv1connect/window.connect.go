@@ -59,7 +59,7 @@ type WindowServiceClient interface {
 	//
 	// The whole list arrives every time any of it changes, and the first arrives
 	// at once, so a window that opened while work was running is told about it.
-	// It is a stream rather than a question asked over and over, because what is
+	// It is a stream and not a question asked over and over, because what is
 	// being done is known here the moment it changes and work can begin without
 	// the window asking for it — an agent is told to read a document, and this is
 	// where the person watching sees it happen.
@@ -151,7 +151,7 @@ type WindowServiceHandler interface {
 	//
 	// The whole list arrives every time any of it changes, and the first arrives
 	// at once, so a window that opened while work was running is told about it.
-	// It is a stream rather than a question asked over and over, because what is
+	// It is a stream and not a question asked over and over, because what is
 	// being done is known here the moment it changes and work can begin without
 	// the window asking for it — an agent is told to read a document, and this is
 	// where the person watching sees it happen.

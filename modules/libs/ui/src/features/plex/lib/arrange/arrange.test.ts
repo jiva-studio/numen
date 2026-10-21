@@ -316,7 +316,7 @@ describe('the same input gives the same numbers', () => {
       arrangePlex(n)
         .nodes.filter((node) => node.relation === 'child')
         .map((node) => node.id)
-    // Order follows the input rather than a sort; the set of relations is equal.
+    // Order follows the input and not a sort; the set of relations is equal.
     expect(byRelation(shuffled)).toHaveLength(byRelation(neighbourhoods.typical).length)
     expect([...byRelation(shuffled)].sort()).toStrictEqual(
       [...byRelation(neighbourhoods.typical)].sort(),
@@ -389,7 +389,7 @@ describe('order along a line follows the order given', () => {
   })
 })
 
-describe('what does not fit is reported rather than dropped silently', () => {
+describe('what does not fit is reported and not dropped silently', () => {
   it('counts the nodes past the last line, per relation', () => {
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS
     const capacity = maxPerLine * maxLines
@@ -437,7 +437,7 @@ describe('the extent', () => {
     },
   )
 
-  it('is the focus box alone when the note stands alone', () => {
+  it('is the focus box alone when the note remains alone', () => {
     const { extent } = arrangePlex(neighbourhoods.solitary)
     const { width, height } = DEFAULT_OPTIONS.focusSize
     expect(extent).toStrictEqual({
@@ -542,7 +542,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     expect(frame.overflow.child).toBe(200 - maxPerLine * maxLines)
   })
 
-  it('hands a strategy only the relations that have nodes in them', () => {
+  it('passes a strategy only the relations that have nodes in them', () => {
     const handed: string[][] = []
     const recording: Placement = {
       name: 'recording',

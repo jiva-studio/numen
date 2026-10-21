@@ -88,7 +88,7 @@ const waiting = Decoration.mark({ class: 'cm-changing' })
 const arriving = Decoration.mark({ class: 'cm-arriving' })
 const covered = Decoration.replace({})
 
-/** What is drawn for a change, and where it stands. */
+/** What is drawn for a change, and at its current position. */
 interface Mark {
   readonly change: EditorChange | null
   readonly from: number

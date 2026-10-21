@@ -75,7 +75,7 @@ type Section struct {
 	Name string
 	// Preamble is what stands between the section's heading and its first card.
 	// Nothing lays it out and nothing reads it: it is a person writing about
-	// their own deck, and it is kept exactly as it stands.
+	// their own deck, and it is kept exactly currently.
 	Preamble string
 }
 
@@ -99,7 +99,7 @@ type Card struct {
 	StencilLink string
 	// Preamble is what stands between the wikilink and the first field.
 	Preamble string
-	// Section is where the section this card stands under stands in the deck's
+	// Section is where the section this card is placed under stands in the deck's
 	// own, counted from the first. A card standing before the first section
 	// carries NoSection.
 	Section int

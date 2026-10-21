@@ -28,7 +28,7 @@ const kinds: Record<ProblemKinds, ProblemKind> = {
   [ProblemKinds.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
 }
 
-/** One problem, with where it stands kept as a number or as nothing. */
+/** One problem, with at its current position kept as a number or as nothing. */
 export const deserializeDeckProblem = (one: ProblemMessage): DeckProblem => ({
   kind: kinds[one.kind],
   card: one.card ?? null,

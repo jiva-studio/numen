@@ -153,7 +153,7 @@ func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
 
 // A vault is claimed by one indexer at a time: the claim that begins an indexing
 // says it is underway, a claim while it runs says so and begins nothing, an
-// indexing that failed hands back why and begins nothing, and a vault indexed clean
+// indexing that failed returns why and begins nothing, and a vault indexed clean
 // begins nothing and is not underway.
 func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
 	r := &indexRuns{}

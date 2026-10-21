@@ -238,7 +238,7 @@ func (u ImportURL) renameURL(
 	return res, nil
 }
 
-// record keeps what downloaded an address beside what it brought back. Nothing on
+// record keeps what downloaded an address along with what it brought back. Nothing on
 // any path that answers a question reads it: it is there so a person can ask
 // what produced a text they are reading, and so everything one tool produced
 // can be found again.

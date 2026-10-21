@@ -17,7 +17,7 @@ import (
 )
 
 // TestAFileLetGoOfOverTheTreeArrivesAndIsSaid is the path a drop takes: the
-// window hands over what the person let go of, the vault holds it, and everyone
+// window hands over what the person release, the vault holds it, and everyone
 // drawing the vault is told where to look.
 //
 // A picture is what the watcher reports to nobody, so the stream is the only

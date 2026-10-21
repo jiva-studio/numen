@@ -51,7 +51,7 @@ export const writeAddress = (address: Address): string => `${address.scheme}://$
 export const isNoteAddress = (address: string): boolean =>
   address.startsWith(`${NAME}://`) || address.startsWith(`${NOTE}://`)
 
-/** One wikilink as it stands in a text. */
+/** One wikilink currently in a text. */
 export interface Wikilink {
   /** Where the brackets begin, and where they end. */
   readonly at: number

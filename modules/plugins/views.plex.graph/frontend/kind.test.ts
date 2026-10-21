@@ -51,19 +51,19 @@ const window = (options: HostOptions = {}) => {
 }
 
 describe('a plex tab as it opens', () => {
-  it('stands on the note the vault opens with', async () => {
+  it('relies on the note the vault opens with', async () => {
     const { state } = await window({ opening: 'Opening.md' }).openTab()
 
     expect(state.view.here.value).toBe('Opening.md')
   })
 
-  it('stands where it was told to, whatever the vault opens with', async () => {
+  it('remains where it was told to, whatever the vault opens with', async () => {
     const { state } = await window({ opening: 'Opening.md' }).openTab('Told.md')
 
     expect(state.view.here.value).toBe('Told.md')
   })
 
-  it('stands where the plex the person was last in stands, when another one is open', async () => {
+  it('remains where the plex the person was last in remains, when another one is open', async () => {
     const one = window()
     const first = await one.openTab('One.md')
     const second = await one.openTab('Two.md')
@@ -75,7 +75,7 @@ describe('a plex tab as it opens', () => {
     expect(second.state.view.here.value).toBe('Two.md')
   })
 
-  it('stands where the one before stands when the tab the person was in has closed', async () => {
+  it('remains where the one before remains when the tab the person was in has closed', async () => {
     const one = window()
     await one.openTab('One.md')
     const second = await one.openTab('Two.md')
@@ -86,7 +86,7 @@ describe('a plex tab as it opens', () => {
     expect(third.state.view.here.value).toBe('One.md')
   })
 
-  it('stands nowhere, and is sent nowhere, while the vault opens with nothing', async () => {
+  it('remains nowhere, and is sent nowhere, while the vault opens with nothing', async () => {
     const one = window({ opening: '' })
 
     const { state } = await one.openTab()
@@ -109,7 +109,7 @@ describe('a change to the vault', () => {
     expect(second.state.view.here.value).toBe('Two.md')
   })
 
-  it('stands a plex on where the note under it went, under the same node', async () => {
+  it('remains a plex on where the note under it went, under the same node', async () => {
     const one = window()
     const plex = await one.openTab('One.md')
     const before = plex.state.picture.value?.nodes.map((node) => node.id)
@@ -184,7 +184,7 @@ describe('a change to the vault', () => {
 })
 
 describe('a plex tab the person has closed', () => {
-  it('hands its view back', async () => {
+  it('passes its view back', async () => {
     const one = window()
     await one.openTab('One.md')
     const second = await one.openTab('Two.md')
@@ -210,7 +210,7 @@ describe('a plex tab the person has closed', () => {
 })
 
 describe('what the window is told about a plex tab', () => {
-  it('is the note it stands on as what a command is over, under the name the picture gives it', async () => {
+  it('is the note it relies on as what a command is over, under the name the picture gives it', async () => {
     const one = window()
     const { state } = await one.openTab('physics/Ontology.md')
 
@@ -221,14 +221,14 @@ describe('what the window is told about a plex tab', () => {
     expect(one.kind.getOpenTab!(state)).toStrictEqual({ path: 'physics/Ontology.md' })
   })
 
-  it('is no note at all while the plex stands nowhere', async () => {
+  it('is no note at all while the plex remains nowhere', async () => {
     const one = window({ opening: '' })
     const { state } = await one.openTab()
 
     expect(one.kind.getTarget!(state)).toStrictEqual({ path: '', title: '' })
   })
 
-  it('calls it the note it stands on, and a plex while it stands nowhere', async () => {
+  it('calls it the note it relies on, and a plex while active nowhere', async () => {
     const one = window({ opening: '' })
     const somewhere = await one.openTab('Root.md')
     const nowhere = await window({ opening: '' }).openTab()
@@ -256,7 +256,7 @@ describe('what the window is told about a plex tab', () => {
 })
 
 describe('a plex tab as it moves', () => {
-  it('tells the tabs linked to it the note it came to stand on, under its name', async () => {
+  it('notifies the tabs linked to it the note it came to stand on, under its name', async () => {
     const one = window({ opening: '' })
     const { id, state } = await one.openTab()
 
@@ -266,7 +266,7 @@ describe('a plex tab as it moves', () => {
     expect(one.recorded.synced).toStrictEqual([[id, 'physics/Ontology.md', 'physics/Ontology']])
   })
 
-  it('tells them nothing when it comes to stand nowhere', async () => {
+  it('notifies them nothing when it evaluates to stand nowhere', async () => {
     const one = window()
     const { state } = await one.openTab('One.md')
     one.recorded.synced.length = 0
@@ -277,7 +277,7 @@ describe('a plex tab as it moves', () => {
     expect(one.recorded.synced).toStrictEqual([])
   })
 
-  it('tells them the note of a node the person chose', async () => {
+  it('notifies them the note of a node the person chose', async () => {
     const one = window()
     const { id, state } = await one.openTab('One.md')
     one.recorded.synced.length = 0
@@ -298,7 +298,7 @@ describe('a plex tab a linked tab moves', () => {
     expect(state.view.here.value).toBe('Next.md')
   })
 
-  it('stays where it stands when moved to a file that is not a note, or to where it is', async () => {
+  it('stays at its current position when moved to a file that is not a note, or to where it is', async () => {
     const one = window()
     const { state } = await one.openTab('Start.md')
     const went = one.views[0]!.went.length

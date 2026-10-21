@@ -78,7 +78,7 @@ func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
 	}
 }
 
-// TestAWalkStopsWhenTheWatchDoes. A vault being let go of is not a vault to go
+// TestAWalkStopsWhenTheWatchDoes. A vault being release is not a vault to go
 // on reading the disk for.
 func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 	root, shape := makeVaultAndShape(t)

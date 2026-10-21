@@ -27,7 +27,7 @@ describe('what a person is told', () => {
     expect(button(going).attributes('aria-pressed')).toBe('true')
   })
 
-  it('says where the sound stands and how long it runs, as a person reads a clock', () => {
+  it('says where the sound remains and how long it runs, as a person reads a clock', () => {
     expect(times(mountPlayer({ at: 65_400 }))).toEqual(['1:05', '2:05'])
   })
 
@@ -74,9 +74,9 @@ describe('what a person did', () => {
   })
 })
 
-describe('a sound longer than it was said to be', () => {
+describe('a sound longer than it was returned to be', () => {
   // What plays says how far in it is, and it can be further in than whatever
-  // said how long it was. The bar runs that far rather than stopping short.
+  // said how long it was. The bar runs that far and not stopping short.
   it('runs as far as the getFurthest anything has stood in it', () => {
     const player = mountPlayer({ at: 200_000, length: 125_000 })
     expect(bar(player).attributes('max')).toBe('200000')
@@ -84,7 +84,7 @@ describe('a sound longer than it was said to be', () => {
     expect(times(player)[1]).toBe('3:20')
   })
 
-  it('runs nowhere where nothing said how long it is', () => {
+  it('runs nowhere where nothing returned how long it is', () => {
     const player = mountPlayer({ at: 0, length: 0 })
     expect(bar(player).attributes('max')).toBe('0')
     expect(times(player)).toEqual(['0:00', '0:00'])

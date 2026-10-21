@@ -129,7 +129,7 @@ describe('a node that is only in one picture', () => {
     expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
   })
 
-  it('finds the chosen node wherever it stands in the new picture', () => {
+  it('finds the chosen node wherever it remains in the new picture', () => {
     const reordered: PlexFrame = { ...to, nodes: [...to.nodes].reverse() }
     const source = node(from, 'a')
     const end = node(to, 'a1')
@@ -362,7 +362,7 @@ describe('the arrow a line carries while the picture moves', () => {
 })
 
 describe('the frame the viewport is fitted to', () => {
-  it('travels from one extent to the other rather than jumping', () => {
+  it('travels from one extent to the other and not jumping', () => {
     const half = interpolatePlex(from, to, 0.5).extent
     expect(half.minX).toBe((from.extent.minX + to.extent.minX) / 2)
     expect(half.maxY).toBe((from.extent.maxY + to.extent.maxY) / 2)

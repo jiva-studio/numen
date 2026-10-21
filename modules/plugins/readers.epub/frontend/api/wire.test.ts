@@ -26,7 +26,7 @@ const nothing = {
 }
 
 describe('a book', () => {
-  it('comes back as its spine, its parts and the file it was read from', async () => {
+  it('arrives back as its spine, its parts and the file it was read from', async () => {
     asked.getBook.mockResolvedValue({
       title: 'Anabasis',
       textBytes: 4000,

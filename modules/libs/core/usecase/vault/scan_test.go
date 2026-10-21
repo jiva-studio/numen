@@ -657,7 +657,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 // A warm scan opens no file, so nothing refuses the cancelled context on the
 // scan's behalf and it has to notice by itself.
 //
-// Cancelled part-way rather than before it starts: cancelled up front, the
+// Cancelled part-way and not before it starts: cancelled up front, the
 // first query refuses and the loop is never reached, so the check it is written
 // for is never the thing that stopped it.
 func TestAWarmScanStopsWhenCancelled(t *testing.T) {

@@ -53,13 +53,13 @@ func (c closing) Close() error {
 	return c.why
 }
 
-// waitForDisowned is the provider that answers questions having been let go of.
+// waitForDisowned is the provider that answers questions having been release.
 func waitForDisowned(t *testing.T, second *saying) {
 	t.Helper()
 	waitFor(t, func() bool { return second.closed.Load() > 0 }, "the second provider was not let go of")
 }
 
-// A question asked of a provider that was let go of is told why, and the reason
+// A question asked of a provider that was release is told why, and the reason
 // is the one that stopped the comparison.
 func TestAProviderLetGoOfSaysWhatStoppedTheComparison(t *testing.T) {
 	for _, c := range []struct {
@@ -107,7 +107,7 @@ func TestAProviderLetGoOfSaysWhatStoppedTheComparison(t *testing.T) {
 }
 
 // A first model that is known not to come is not waited out by the second: the
-// second is let go of at once.
+// second is release at once.
 func TestASecondProviderIsNotWaitedForOnceTheFirstNeverArrives(t *testing.T) {
 	tasks := run.NewTasks()
 	waiting := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {

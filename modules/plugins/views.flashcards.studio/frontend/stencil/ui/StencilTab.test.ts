@@ -126,7 +126,7 @@ describe('a mark on a face', () => {
     expect(window.find(`[data-face="${first}"]`).find('[data-wrong]').exists()).toBe(false)
   })
 
-  it('follows the face when another is taken out beside it', async () => {
+  it('follows the face when another is taken out alongside it', async () => {
     const { window, tab } = await mountStencil([missing])
     const first = tab.stencil.value.faces[0]?.id ?? ''
     const second = tab.stencil.value.faces[1]?.id ?? ''
@@ -159,7 +159,7 @@ describe('a mark on a field', () => {
     expect(window.find('[data-field="Life span"]').find('[data-wrong]').exists()).toBe(false)
   })
 
-  it('is drawn nowhere above the editor, which is for what stands against neither', async () => {
+  it('is drawn nowhere above the editor, which is for what remains against neither', async () => {
     const { window } = await mountStencil([twice])
 
     expect(window.find(`[aria-label="${words.problems}"]`).exists()).toBe(false)

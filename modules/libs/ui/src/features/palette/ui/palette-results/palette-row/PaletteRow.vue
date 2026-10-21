@@ -14,7 +14,7 @@ defineProps<{
   row: PlacedItem
   /** What this row is addressed by. */
   id: string
-  /** Whether the keyboard stands on it. */
+  /** Whether the keyboard relies on it. */
   isCurrent: boolean
 }>()
 
@@ -109,7 +109,7 @@ defineSlots<{
   white-space: nowrap;
 }
 
-/* Two lines of what stands under a name. A passage is drawn for the words its
+/* Two lines of what is placed under a name. A passage is drawn for the words its
    hit sits among, and one line holds too few of them to read. */
 .palette__detail {
   display: -webkit-box;

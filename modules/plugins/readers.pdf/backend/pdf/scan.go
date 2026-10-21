@@ -89,7 +89,7 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	if err != nil {
 		return nil, err
 	}
-	// The library hands back an image over memory it owns and a way to give that
+	// The library returns an image over memory it owns and a way to give that
 	// memory back. The pixels are copied out, because what is drawn outlives the
 	// call that drew it. A page is drawn in colour unless a format was asked
 	// for, and none is.

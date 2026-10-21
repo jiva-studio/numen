@@ -264,7 +264,7 @@ describe('a deck opened', () => {
     expect(tab.drawn.value.map((card) => card.stencil)).toStrictEqual(['Animal', 'Animal'])
   })
 
-  it('is one tab per file, so the same deck asked for twice is the tab it has', async () => {
+  it('is one tab per file, so the same deck requested for twice is the tab it has', async () => {
     const { windowTabs, id } = await open()
 
     const again = await windowTabs.openTab(DECK, 'Animals.md')
@@ -280,7 +280,7 @@ describe('a deck opened', () => {
 })
 
 describe('a card written in a deck', () => {
-  it('stands in the deck the tab draws', async () => {
+  it('remains in the deck the tab draws', async () => {
     const { tab } = await open()
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
@@ -288,7 +288,7 @@ describe('a card written in a deck', () => {
     expect(tab.deck.value.cards.map(getCardName)).toStrictEqual(['Llama', 'Alpaca', 'Vicuña'])
   })
 
-  it('stands under where the vault files the stencil it was cut by', async () => {
+  it('is placed under where the vault files the stencil it was cut by', async () => {
     const { tab } = await open()
 
     tab.addCard('Animal', [], null)
@@ -343,7 +343,7 @@ describe('a card written in a deck', () => {
 })
 
 describe('a deck whose file moved past what was read', () => {
-  it('is stale once the write comes back saying the file changed', async () => {
+  it('is stale once the write arrives back saying the file changed', async () => {
     const { decks, tab } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
@@ -408,7 +408,7 @@ describe('what is wrong with a deck', () => {
     text: 'a card under no stencil',
   }
 
-  it('stands against the card it was read against', async () => {
+  it('remains against the card it was read against', async () => {
     const { tab } = await open({ problems: [stencilless] })
 
     const marks = tab.marks.value
@@ -416,7 +416,7 @@ describe('what is wrong with a deck', () => {
     expect(marks.at.get(second)).toStrictEqual(['a card under no stencil'])
   })
 
-  it('stands against no other card', async () => {
+  it('remains against no other card', async () => {
     const { tab } = await open({ problems: [stencilless] })
 
     const first = tab.deck.value.cards[0]?.id ?? ''
@@ -465,7 +465,7 @@ describe('a value written over', () => {
     },
   ]
 
-  it('stands under the first field, whatever the card wrote in its brackets', async () => {
+  it('is placed under the first field, whatever the card wrote in its brackets', async () => {
     for (const one of WRITTEN) {
       const { tab } = await open({ cards: createOneCard(one) })
 
@@ -486,7 +486,7 @@ describe('a value written over', () => {
     ])
   })
 
-  it('is the one of two under a field that was typed in, and the other stands', async () => {
+  it('is the one of two under a field that was typed in, and the other remains', async () => {
     const { tab } = await open({ cards: twice })
 
     tab.writeCardField('k7m2xq9fzp', 'Name', 2, 'Vicuña')
@@ -505,7 +505,7 @@ describe('a value written over', () => {
     expect(tab.deck.value.cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Vicuña' }])
   })
 
-  it('leaves the heading the file gave the card exactly as it stands', async () => {
+  it('leaves the heading the file gave the card exactly currently', async () => {
     const { tab } = await open({ cards: createOneCard('Gone', '') })
 
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
@@ -682,7 +682,7 @@ describe('a deck read again under the window', () => {
      the file says the heading is, though, is what the deck carries: nothing
      draws it and nothing is typed into it, so taking it moves nothing under
      the hand and the next write does not put the old one back. */
-  it('takes a heading the file carries while the deck on screen stands', async () => {
+  it('takes a heading the file carries while the deck on screen remains', async () => {
     const one = await open()
     const stood = one.tab.deck.value.cards[0]?.id ?? ''
 
@@ -777,7 +777,7 @@ describe('a deck renamed under the window', () => {
   const renameDeck = (one: Awaited<ReturnType<typeof open>>) =>
     one.decks.applyPathChanges(['Beasts.md'], [{ from: 'Animals.md', to: 'Beasts.md' }])
 
-  it('is the tab it has when it is asked for at the name it now carries', async () => {
+  it('is the tab it has when it is requested for at the name it now carries', async () => {
     const one = await open()
 
     renameDeck(one)
@@ -789,7 +789,7 @@ describe('a deck renamed under the window', () => {
     expect(one.windowTabs.each(DECK)).toHaveLength(1)
   })
 
-  it('keeps what the vault said about it, which stands at the name it went to', async () => {
+  it('keeps what the vault returned about it, which remains at the name it went to', async () => {
     const one = await open({
       problems: [
         {
@@ -847,7 +847,7 @@ describe('a deck the vault could not be reached for', () => {
 })
 
 describe('the stencils a listing did not answer with', () => {
-  it('are asked for again when the deck comes back on screen', async () => {
+  it('are requested for again when the deck arrives back on screen', async () => {
     const one = await open({ unlisted: 1 })
     expect(one.tab.stencils.value).toStrictEqual([])
 
@@ -980,7 +980,7 @@ describe('a card standing in a deck that was turned', () => {
 })
 
 describe('a deck tab closed', () => {
-  it('goes from the window, with what was said about its file', async () => {
+  it('goes from the window, with the transcript about its file', async () => {
     const one = await open()
 
     one.tab.close(one.id)
@@ -990,7 +990,7 @@ describe('a deck tab closed', () => {
     expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
   })
 
-  it('forgets what was said about its file while a tab at another file stays', async () => {
+  it('forgets the transcript about its file while a tab at another file stays', async () => {
     const one = await open()
     await one.windowTabs.openTab(DECK, 'Beasts.md')
     await settle()
@@ -1014,7 +1014,7 @@ describe('a deck tab closed', () => {
     expect(one.decks.getTitle('Animals.md')).toBe('Animals')
   })
 
-  it('keeps what was said about a file another tab still stands at', async () => {
+  it('keeps the transcript about a file another tab still remains at', async () => {
     const one = await open()
     await one.windowTabs.openTab(DECK, 'Beasts.md')
     await settle()
@@ -1090,7 +1090,7 @@ describe('a deck tab closed', () => {
 })
 
 describe('what the window asks of a deck tab', () => {
-  it('is that of the file it stands at', async () => {
+  it('is that of the file it remains at', async () => {
     const one = await open()
 
     expect(one.decks.kind.getOpenTab?.(one.tab)).toStrictEqual({ path: 'Animals.md' })
@@ -1110,7 +1110,7 @@ describe('what the window asks of a deck tab', () => {
     expect(one.decks.kind.isAsking?.(one.tab)).toBe(true)
   })
 
-  it('writes what is unwritten out when asked to, and answers once it is', async () => {
+  it('writes what is unwritten out when requested to, and answers once it is', async () => {
     const one = await open()
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
 

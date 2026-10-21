@@ -155,7 +155,7 @@ describe('what a branch draws', () => {
     expect(floors()).toStrictEqual([50, 50])
   })
 
-  it('hands a slot down however deep the pane stands', () => {
+  it('passes a slot down however deep the pane remains', () => {
     const one = mountBranch(createNested())
 
     expect(one.wrapper.findAll('.tab-slot')).toHaveLength(3)
@@ -174,7 +174,7 @@ describe('what a branch draws', () => {
 describe('a handle taken up and put down', () => {
   const grab = (one: BranchFixture, now: boolean) => getHandles(one)[0]!.vm.$emit('dragging', now)
 
-  it('says nothing while it is still held', async () => {
+  it('says nothing while it is still retained', async () => {
     const one = mountBranch(twoPanes())
 
     grab(one, true)
@@ -214,7 +214,7 @@ describe('a handle taken up and put down', () => {
     expect(one.resize).not.toHaveBeenCalled()
   })
 
-  it('marks the branch for as long as the handle is held', async () => {
+  it('marks the branch for as long as the handle is retained', async () => {
     const one = mountBranch(twoPanes())
     const branch = one.wrapper.find('.branch')
 
@@ -236,7 +236,7 @@ describe('a handle taken up and put down', () => {
     expect(one.resize).toHaveBeenCalledExactlyOnceWith('down', [0.3, 0.7])
   })
 
-  it('says nothing about a handle let go of after the branch has gone', () => {
+  it('says nothing about a handle release after the branch has gone', () => {
     const one = mountBranch(twoPanes())
 
     grab(one, true)

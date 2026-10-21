@@ -129,7 +129,7 @@ describe('a letter pressed on the vaults', () => {
     expect(getOpenVault(window)).toBe('physics')
   })
 
-  it('opens nothing where no vault stands at the letter', async () => {
+  it('opens nothing where no vault remains at the letter', async () => {
     const window = await mountWindow()
 
     await press('c')
@@ -137,7 +137,7 @@ describe('a letter pressed on the vaults', () => {
     expect(getOpenVault(window)).toBe('')
   })
 
-  it('opens nothing where the letter is held with the overlay key', async () => {
+  it('opens nothing where the letter is retained with the overlay key', async () => {
     const window = await mountWindow()
 
     await press('a', { ctrlKey: true })

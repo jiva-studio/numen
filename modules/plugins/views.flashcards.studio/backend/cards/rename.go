@@ -49,7 +49,7 @@ type RenameResult struct {
 // every face that places it, and as a heading in every card of every deck that
 // stencil cuts. So the rename reaches them all. The stencil is written once,
 // both of its names in the one write; then every deck of the vault is read, the
-// heading is rewritten in the cards of that stencil, and what stands under it is
+// heading is rewritten in the cards of that stencil, and what is placed under it is
 // untouched.
 //
 // Every field a stencil declares is written this way, the first included.

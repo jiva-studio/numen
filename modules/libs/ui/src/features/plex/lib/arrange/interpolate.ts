@@ -61,7 +61,7 @@ interface NodeTiming {
   readonly exit: number
 }
 
-/** Every node of both arrangements, as it stands partway through the movement. */
+/** Every node of both arrangements, currently partway through the movement. */
 function tweenNodes(from: PlexFrame, to: PlexFrame, timing: NodeTiming): PlacedNode[] {
   const was = new Map(from.nodes.map((node) => [node.id, node]))
   const will = new Set(to.nodes.map((node) => node.id))

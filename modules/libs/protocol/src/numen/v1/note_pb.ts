@@ -216,7 +216,7 @@ export type ResolveAddressesRequest = Message<"numen.v1.ResolveAddressesRequest"
   /**
    * The addresses to answer about. A scheme written before `://` is read as
    * one — `name://Entropy`, `note://<identifier>` — and everything else is a
-   * name, so what a file carries between its brackets is taken as it stands.
+   * name, so what a file carries between its brackets is taken currently.
    *
    * @generated from field: repeated string written = 2;
    */
@@ -376,7 +376,7 @@ export type Heading = Message<"numen.v1.Heading"> & {
   text: string;
 
   /**
-   * The line it stands on, counted from the first line of the prose.
+   * The line it relies on, counted from the first line of the prose.
    *
    * @generated from field: int32 line = 2;
    */
@@ -385,7 +385,7 @@ export type Heading = Message<"numen.v1.Heading"> & {
   /**
    * How deep it sits, from one for the shallowest a note can carry. Zero where
    * the answer does not say: a name that matched carries the heading's words
-   * and where it stands, and nothing about its depth.
+   * and at its current position, and nothing about its depth.
    *
    * @generated from field: int32 level = 3;
    */

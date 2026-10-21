@@ -156,7 +156,7 @@ describe('the loosest packing that fits everything', () => {
 })
 
 describe('what no packing can fit', () => {
-  it('is still reported rather than drawn past the edge', () => {
+  it('is still reported and not drawn past the edge', () => {
     const viewport = { width: 400, height: 400 }
     const crowd = build('A node', { parent: 9, child: 40, jump: 9, sibling: 9 })
     const frame = arrangePlex(crowd, { options: { viewport } })

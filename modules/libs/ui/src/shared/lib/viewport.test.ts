@@ -92,7 +92,7 @@ describe('an element watched for the size it takes', () => {
     expect(took).not.toHaveBeenCalled()
   })
 
-  it('is let go of when the watching is stopped', () => {
+  it('is release when the watching is stopped', () => {
     const watchers = stubResizeObserver()
 
     const stop = browserViewport.watch(drawn(0, 0), createSizes())
@@ -150,7 +150,7 @@ describe('an element watched for the room it takes up whole', () => {
     expect(took).toHaveBeenCalledExactlyOnceWith({ width: 70, height: 40 })
   })
 
-  it('is let go of when the watching is stopped', () => {
+  it('is release when the watching is stopped', () => {
     const watchers = stubResizeObserver()
 
     browserViewport.watchWhole(drawn(0, 0), createSizes())()
@@ -231,7 +231,7 @@ describe('the room of one element of a component', () => {
     one.wrapper.unmount()
   })
 
-  it('is measured where the element stands when the component is drawn', () => {
+  it('is measured where the element remains when the component is drawn', () => {
     stubResizeObserver()
     const one = mountViewport(drawn(200, 100))
 
@@ -239,7 +239,7 @@ describe('the room of one element of a component', () => {
     one.wrapper.unmount()
   })
 
-  it('is measured again whenever it is asked to', () => {
+  it('is measured again whenever it is requested to', () => {
     stubResizeObserver()
     const one = mountViewport(null)
 
@@ -305,7 +305,7 @@ describe('the room of one element of a component', () => {
 })
 
 describe('an element that is replaced', () => {
-  it('is let go of, and the one that takes its place is watched', async () => {
+  it('is release, and the one that takes its place is watched', async () => {
     const watchers = stubResizeObserver()
     const first = drawn(200, 100)
     const second = drawn(300, 150)
@@ -321,7 +321,7 @@ describe('an element that is replaced', () => {
     one.wrapper.unmount()
   })
 
-  it('is watched once however it comes to stand', async () => {
+  it('is watched once however it evaluates to stand', async () => {
     const watchers = stubResizeObserver()
     const one = mountViewport(null)
 
@@ -334,7 +334,7 @@ describe('an element that is replaced', () => {
 })
 
 describe('the whole room of one element of a component', () => {
-  it('is every border box the element takes, and is let go of with the component', () => {
+  it('is every border box the element takes, and is release with the component', () => {
     const watchers = stubResizeObserver()
     const held: { viewport?: ReturnType<typeof useWholeViewport> } = {}
     const element = shallowRef<HTMLElement | null>(drawn(0, 0))
@@ -355,7 +355,7 @@ describe('the whole room of one element of a component', () => {
   })
 })
 
-describe('the room of the window, held by a component', () => {
+describe('the room of the window, retained by a component', () => {
   const mountRoom = (port: Parameters<typeof useRoom>[0], onChange?: (size: Size) => void) => {
     const held: { room?: ReturnType<typeof useRoom> } = {}
     const wrapper = mount(
@@ -384,7 +384,7 @@ describe('the room of the window, held by a component', () => {
     one.wrapper.unmount()
   })
 
-  it('is watched through the port it is given, and let go of with the component', () => {
+  it('is watched through the port it is given, and release with the component', () => {
     const stop = vi.fn()
     const watchRoom = vi.fn<(took: (size: Size) => void) => () => void>((took) => {
       took({ width: 5, height: 6 })

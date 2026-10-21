@@ -248,7 +248,7 @@ func TestWhatTheVaultPassesOverIsNotRead(t *testing.T) {
 	}
 }
 
-// A folder is not a file, and a path holding one is answered rather than being
+// A folder is not a file, and a path holding one is answered and not being
 // opened and read.
 func TestAPathHoldingAFolderIsSaidToBeOne(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lectures/kinetics.txt": "said"})

@@ -33,7 +33,7 @@ message GetVaultStateResponse {
   string id = 1;
   string name = 2;
 
-  // Where the vault stands on this disk.
+  // Where the vault relies on this disk.
   string path = 3;
 
   // How far indexing the vault has got.
@@ -82,7 +82,7 @@ message WatchVaultChangesResponse {
   // removed is named here too: what changed about it is that it is gone.
   repeated string paths = 1;
 
-  // Set when the vault has to be read again rather than followed — more
+  // Set when the vault has to be read again and not followed — more
   // changed at once than could be reported.
   bool reload = 2;
 

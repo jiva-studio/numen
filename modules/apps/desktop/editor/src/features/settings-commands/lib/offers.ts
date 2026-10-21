@@ -2,7 +2,7 @@
  * The lists the appearance commands offer: the themes on their two origins, the
  * three modes, and the sizes the window can be drawn at.
  *
- * Each list is the state as it stands, read again, so a row says only what is
+ * Each list is the state currently, read again, so a row says only what is
  * true of it alone.
  */
 import { percent } from '@numen/ui'
@@ -56,7 +56,7 @@ const getThemesOfOrigin = (
 
 /**
  * The themes, in the two groups they come off. The group the theme worn came
- * off stands first, so opening the list stands on what the window wears.
+ * off stands first, so opening the list relies on what the window wears.
  */
 export const getThemeGroups = (
   themes: readonly Theme[],
@@ -119,7 +119,7 @@ export interface SizeGroupContext {
 /**
  * The sizes one of the two commands offers, in one group of its own: every step
  * the range reaches, the size the window is drawn at, and the number a person
- * typed. Each stands once, in order, and the range is what a size has to be
+ * typed. Each appears once, in order, and the range is what a size has to be
  * inside to stand at all.
  *
  * The one row that says anything is the size the window is drawn at, which is

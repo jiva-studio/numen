@@ -1,5 +1,5 @@
 /**
- * What the palette draws where it stands: the commands offered over what is in
+ * What the palette draws at its current position: the commands offered over what is in
  * front, and the groups whichever step is open asks in.
  *
  * Every one of these is the state read again, so a vault moving under an open
@@ -69,7 +69,7 @@ export function getPaletteView(state: ViewState) {
     ]
   }
 
-  /** What the palette draws where it stands, over the words typed into it. */
+  /** What the palette draws at its current position, over the words typed into it. */
   const createGroups = (step: PendingStep | null, over: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(over, text)
     if (step.step === 'naming') return [steps.getNamingGroup(text)]

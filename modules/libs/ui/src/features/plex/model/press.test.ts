@@ -1,5 +1,5 @@
 /**
- * What a press on a node comes to: when the node takes a gesture, and what the
+ * What a press on a node evaluates to: when the node takes a gesture, and what the
  * keyboard does with the keys it answers.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -61,7 +61,7 @@ describe('a node that takes a gesture', () => {
     expect(createPress('ghost').site.ready()).toBe(false)
   })
 
-  it('hands the press that began the gesture on', () => {
+  it('passes the press that began the gesture on', () => {
     const { site, said } = createPress()
     const event = new PointerEvent('pointerdown')
     site.reach(event)
@@ -104,7 +104,7 @@ describe('the keys that choose and show', () => {
     expect(event.defaultPrevented).toBe(true)
   })
 
-  it('asks for it beside the reader with Alt held', () => {
+  it('asks for it alongside the reader with Alt retained', () => {
     const { press, said } = createPress()
     press.onKeyDown(key('Enter', { shiftKey: true, altKey: true }))
     expect(said.show).toHaveBeenCalledWith('beside')

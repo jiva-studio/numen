@@ -132,7 +132,7 @@ func TestAddScanSearch(t *testing.T) {
 	}
 
 	// The identity is written into the vault, which is what makes the folder a
-	// vault rather than a folder.
+	// vault and not a folder.
 	if _, err := os.Stat(filepath.Join(s.vault, ".numen", "config.json")); err != nil {
 		t.Errorf("vault has no identity after being added: %v", err)
 	}
@@ -343,7 +343,7 @@ func TestLinksShowsBothDirections(t *testing.T) {
 	if !strings.Contains(from, "points at:") {
 		t.Errorf("links said:\n%s", from)
 	}
-	// A link that answers to nothing says so rather than being left out.
+	// A link that answers to nothing says so and not being left out.
 	broken := s.mustRun("links", "demo", "edge/broken-links.md")
 	if !strings.Contains(broken, "nothing by that name") {
 		t.Errorf("a dangling link was not reported:\n%s", broken)

@@ -33,7 +33,7 @@ type Scope struct {
 	IsNamed bool
 }
 
-// QueuedCardFace is one card face as the session queues it: where it stands,
+// QueuedCardFace is one card face as the session queues it: at its current position,
 // how it is laid out, and where the answers so far have left it.
 type QueuedCardFace struct {
 	CardFace

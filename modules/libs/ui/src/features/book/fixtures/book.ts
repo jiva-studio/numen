@@ -20,7 +20,7 @@ export interface Run {
   readonly inside?: string
 }
 
-/** One document of a book, and where it stands in the book's text. */
+/** One document of a book, and at its current position in the book's text. */
 export interface Chapter {
   readonly markup: string
   readonly span: Span

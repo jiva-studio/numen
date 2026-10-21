@@ -77,7 +77,7 @@ describe('an answer', () => {
     expect(conversation.turns.value.at(-1)?.state).toBeUndefined()
   })
 
-  it('is not left waiting when the agent finishes having said nothing', async () => {
+  it('is not left waiting when the agent finishes having returned nothing', async () => {
     const conversation = useConversation(
       createPort([createToolStep('Search notes'), createStopped()]),
       words,
@@ -126,7 +126,7 @@ describe('an answer', () => {
 })
 
 describe('the line about work', () => {
-  it('is up before anything comes back, and says what is in hand', async () => {
+  it('is up before anything arrives back, and says what is in hand', async () => {
     let seen: string[] = []
     const conversation = useConversation(
       {
@@ -147,7 +147,7 @@ describe('the line about work', () => {
     expect(seen).toEqual(['asked:what is here?', 'doing:Search notes'])
   })
 
-  it('comes down when the answer begins', async () => {
+  it('arrives down when the answer begins', async () => {
     const conversation = useConversation(
       createPort([createToolStep('Search notes'), createSaidStep('Two notes.'), createStopped()]),
       words,
@@ -277,7 +277,7 @@ describe('a wait that explains itself', () => {
     await asking
   })
 
-  it('says the model is working when the model is asked, and not before', async () => {
+  it('says the model is working when the model is requested, and not before', async () => {
     let release = () => {}
     const held = new Promise<void>((go) => {
       release = go
@@ -432,7 +432,7 @@ describe('a call that was working on a place', () => {
   })
 })
 
-describe('where the line about work stands', () => {
+describe('where the line about work remains', () => {
   /** What the panel is drawing, in the order it draws it. */
   const getDrawnTurns = (conversation: {
     turns: { value: readonly { voice: string; text: string }[] }
@@ -461,7 +461,7 @@ describe('where the line about work stands', () => {
     await nap()
 
     // A tool answering says nothing about the answer being written over it, and
-    // a line put back here stands under the answer for the rest of the conversation.
+    // a line put back here is placed under the answer for the rest of the conversation.
     expect(getDrawnTurns(conversation)).toEqual([
       'asked: tell me about him',
       'answered: Bram Doyle was the chair.',
@@ -471,7 +471,7 @@ describe('where the line about work stands', () => {
     await asking
   })
 
-  it('goes back up under the answer when the model is asked again', async () => {
+  it('goes back up under the answer when the model is requested again', async () => {
     let release = () => {}
     const held = new Promise<void>((go) => {
       release = go
@@ -498,7 +498,7 @@ describe('where the line about work stands', () => {
     await asking
   })
 
-  it('leaves no empty answer behind when the model said nothing before it stopped', async () => {
+  it('leaves no empty answer behind when the model returned nothing before it stopped', async () => {
     let release = () => {}
     const held = new Promise<void>((go) => {
       release = go
@@ -525,7 +525,7 @@ describe('where the line about work stands', () => {
 })
 
 describe('a conversation', () => {
-  it('carries its own name, so what is asked in one is remembered in one', async () => {
+  it('carries its own name, so what is requested in one is remembered in one', async () => {
     const carried: string[] = []
     const agent: AgentPort = {
       async *ask(query) {
@@ -546,7 +546,7 @@ describe('a conversation', () => {
 })
 
 describe('a conversation that is over', () => {
-  it('tells the agent, under the name it answers by', () => {
+  it('notifies the agent, under the name it answers by', () => {
     const over: string[] = []
     const conversation = useConversation(
       { ...createPort([createStopped()]), finish: async (named) => void over.push(named) },
@@ -647,7 +647,7 @@ describe('a window nobody is looking at', () => {
 })
 
 describe('giving up on an answer', () => {
-  it('takes down what was said about working on it', async () => {
+  it('takes down the transcript about working on it', async () => {
     let release = () => {}
     const held = new Promise<void>((go) => {
       release = go
@@ -821,7 +821,7 @@ describe('an error the answer already carries', () => {
     ])
   })
 
-  it('is said on a turn of its own when it is nothing but blank and no answer came', async () => {
+  it('is returned on a turn of its own when it is nothing but blank and no answer came', async () => {
     const conversation = useConversation(createPort([createStopped('  ')]), words, called, now)
     await conversation.ask('what is here?', '')
 
@@ -833,7 +833,7 @@ describe('an error the answer already carries', () => {
 })
 
 describe('an exchange that ends without saying why', () => {
-  it('adds nothing beside what was said', async () => {
+  it('adds nothing along with the transcript', async () => {
     const conversation = useConversation(
       createPort([createSaidStep('Two notes.')]),
       words,
@@ -848,7 +848,7 @@ describe('an exchange that ends without saying why', () => {
     ])
   })
 
-  it('says it said nothing, in the voice of the answer', async () => {
+  it('says it returned nothing, in the voice of the answer', async () => {
     const conversation = useConversation(createPort([]), words, called, now)
     await conversation.ask('what is here?', '')
 
@@ -858,7 +858,7 @@ describe('an exchange that ends without saying why', () => {
     ])
   })
 
-  it('keeps every turn of two exchanges that each said nothing', async () => {
+  it('keeps every turn of two exchanges that each returned nothing', async () => {
     const conversation = useConversation(createPort([]), words, called, now)
     await conversation.ask('first?', '')
     await conversation.ask('second?', '')
@@ -872,8 +872,8 @@ describe('an exchange that ends without saying why', () => {
   })
 })
 
-describe('a question that cannot be asked', () => {
-  it('is not asked when it is empty', async () => {
+describe('a question that cannot be requested', () => {
+  it('is not requested when it is empty', async () => {
     let asked = 0
     const conversation = useConversation(
       {
@@ -894,7 +894,7 @@ describe('a question that cannot be asked', () => {
     expect(conversation.isWorking.value).toBe(false)
   })
 
-  it('is not asked while an answer is on its way', async () => {
+  it('is not requested while an answer is on its way', async () => {
     const { held, release } = createHold()
     let asked = 0
     const conversation = useConversation(
@@ -943,7 +943,7 @@ describe('the names of the turns', () => {
     expect(conversation.turns.value.map((turn) => turn.id)).toEqual(['0', '3', '4', '5', '8', '9'])
   })
 
-  it('go on from a turn that said the agent could not be reached', async () => {
+  it('go on from a turn that returned the agent could not be reached', async () => {
     let calls = 0
     const conversation = useConversation(
       {
@@ -987,7 +987,7 @@ describe('the names of the turns', () => {
     ])
   })
 
-  it('replace a turn that is put again, wherever it stands', async () => {
+  it('replace a turn that is put again, wherever it remains', async () => {
     let seen: string[] = []
     const conversation = useConversation(
       {
@@ -1033,7 +1033,7 @@ describe('while an answer is on its way', () => {
 })
 
 describe('the line about work and the answer beginning', () => {
-  it('comes down as the first words arrive', async () => {
+  it('arrives down as the first words arrive', async () => {
     const { held, release } = createHold()
     const conversation = useConversation(
       createPort([createToolStep('Read a note'), createSaidStep('Hi')], held),
@@ -1053,7 +1053,7 @@ describe('the line about work and the answer beginning', () => {
     await asking
   })
 
-  it('is not put back by the next tool being asked about while the answer grows', async () => {
+  it('is not put back by the next tool being requested about while the answer grows', async () => {
     const { held, release } = createHold()
     const conversation = useConversation(
       createPort([createSaidStep('One. '), createToolStep('Read a note')], held),
@@ -1074,7 +1074,7 @@ describe('the line about work and the answer beginning', () => {
     await asking
   })
 
-  it('leaves the answer so far settled when the model is asked again', async () => {
+  it('leaves the answer so far settled when the model is requested again', async () => {
     const { held, release } = createHold()
     const conversation = useConversation(
       createPort([createSaidStep('One moment. '), createThinking()], held),
@@ -1122,7 +1122,7 @@ describe('which tool answered', () => {
 })
 
 describe('giving up on an answer in the middle', () => {
-  it('leaves what was said settled, whatever the agent goes on to say', async () => {
+  it('leaves the transcript settled, whatever the agent goes on to say', async () => {
     const { held, release } = createHold()
     const conversation = useConversation(
       {
@@ -1149,7 +1149,7 @@ describe('giving up on an answer in the middle', () => {
     ])
   })
 
-  it('does not say the agent said nothing', async () => {
+  it('does not say the agent returned nothing', async () => {
     const { held, release } = createHold()
     const conversation = useConversation(createPort([], held), words, called, now)
     const asking = conversation.ask('q', '')
@@ -1214,7 +1214,7 @@ describe('giving up on an answer in the middle', () => {
 })
 
 describe('an agent that cannot be reached', () => {
-  it('leaves what was said settled, and says so in the voice of the answer', async () => {
+  it('leaves the transcript settled, and says so in the voice of the answer', async () => {
     const conversation = useConversation(
       {
         async *ask() {

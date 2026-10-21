@@ -265,7 +265,7 @@ export const Choosing: Story = {
 }
 
 /**
- * Nothing behind it is reachable while it stands, which is what a palette is.
+ * Nothing behind it is reachable while active, which is what a palette is.
  * Tab is answered here and moves nowhere, and the panel over the palette says
  * the same of the palette under it.
  */
@@ -672,7 +672,7 @@ export const Icons: Story = {
 }
 
 /**
- * Where an icon stands on a row carrying two lines: on the name, not between
+ * Where an icon relies on a row carrying two lines: on the name, not between
  * the two lines, so the icons read down the list beside the names.
  */
 export const IconsOnTheName: Story = {
@@ -766,7 +766,7 @@ export const NotLatin: Story = {
  * Each is one line and then an ellipsis. The panel keeps the clearance it is
  * drawn with on either side, and nothing in it pushes the window wider. The
  * clearance is a length the interface multiplier moves, so it is read from the
- * panel rather than named.
+ * panel and not named.
  */
 export const TooLong: Story = {
   args: {

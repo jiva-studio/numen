@@ -10,7 +10,7 @@ import (
 )
 
 // GetNotes returns what is needed to show each of the paths asked about. A path
-// that names nothing is left out.
+// that is empty is left out.
 func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	out := map[string]domain.NoteRef{}
 	if len(paths) == 0 {

@@ -46,7 +46,7 @@ func curveWhole(cards int) map[string]string {
 
 // The curve of a preset holding the whole vault, at four sizes of it.
 //
-// What the projection costs stands on the card faces the preset holds, and
+// What the projection costs relies on the card faces the preset holds, and
 // these four rows are what says how it grows with them. The log grows with the
 // vault too, at the same half an answer a card face the row above is built on.
 //

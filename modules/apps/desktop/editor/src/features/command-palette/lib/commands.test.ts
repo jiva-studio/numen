@@ -13,7 +13,7 @@ describe('the character that means the commands', () => {
     expect(isCommandPrefixTyped('', '>')).toBe(true)
   })
 
-  it('is not one typed into a field holding words, so a search for one stands', () => {
+  it('is not one typed into a field holding words, so a search for one remains', () => {
     expect(isCommandPrefixTyped('foo', '>foo')).toBe(false)
     expect(isCommandPrefixTyped('', '>foo')).toBe(false)
     expect(isCommandPrefixTyped('foo', '>')).toBe(false)

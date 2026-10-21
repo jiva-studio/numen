@@ -48,7 +48,7 @@ export interface ContentsWords {
   readonly contents: string
   /** What the field the names are typed into is called. */
   readonly find: string
-  /** What is said where a book names nothing and holds no pages either. */
+  /** What is said where a book is empty and holds no pages either. */
   readonly nothing: string
 }
 

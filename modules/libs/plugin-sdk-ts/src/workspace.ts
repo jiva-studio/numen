@@ -100,7 +100,7 @@ export interface WorkspaceHost {
   openFile(path: string, options?: OpenFileOptions): void
   // A file opened with the runs of its text marked.
   openFileAt(path: string, spans: readonly Span[]): void
-  // The note the tool tab the person was last in stands on, and empty strings where none stands on one.
+  // The note the tool tab the person was last in relies on, and empty strings where none relies on one.
   getNoteInFocus(): NoteRef
   // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
   syncPath(tabId: string, path: string, title?: string): boolean

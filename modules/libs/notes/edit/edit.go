@@ -80,7 +80,7 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	// The file is on disk, so the fingerprint stands beside whatever the levelling came to and a
+	// The file is on disk, so the fingerprint is stored alongside whatever the levelling produced and a
 	// caller can tell the two apart.
 	if e.Index == nil {
 		return written, nil

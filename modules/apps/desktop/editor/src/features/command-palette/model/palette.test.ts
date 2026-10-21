@@ -1,5 +1,5 @@
 /**
- * What a step asks for and what it draws while it stands open, without a
+ * What a step asks for and what it draws while active open, without a
  * window.
  *
  * Two things are asked here: that a tab holding something that is not a note
@@ -322,7 +322,7 @@ describe('a command that needs nothing', () => {
 })
 
 describe('a command that asks for a name', () => {
-  it('stands on a step of its own, and says which step it is', () => {
+  it('relies on a step of its own, and says which step it is', () => {
     const { commands } = createPalette()
 
     expect(commands.startCommand('child', front())).toBeNull()
@@ -337,7 +337,7 @@ describe('a command that asks for a name', () => {
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
   })
 
-  it('carries the name a preset was asked for under', () => {
+  it('carries the name a preset was requested for under', () => {
     const { commands } = createPalette()
     commands.startCommand('newPreset', front())
     void commands.setTyped('Sanskrit')
@@ -356,7 +356,7 @@ describe('a command that asks for a name', () => {
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Call it “Entropy”')
   })
 
-  it('carries the name to the note it was asked over', () => {
+  it('carries the name to the note it was requested over', () => {
     const { commands } = createPalette()
     commands.startCommand('child', front())
     void commands.setTyped('Entropy')
@@ -392,7 +392,7 @@ describe('a command that asks for a name', () => {
 })
 
 describe('a command that asks for an address', () => {
-  it('stands on a step of its own', () => {
+  it('relies on a step of its own', () => {
     const { commands } = createPalette()
 
     expect(commands.startCommand('importUrl', front())).toBeNull()
@@ -435,7 +435,7 @@ describe('a command that asks for an address', () => {
 
 /** The note goes to the vault's .trash folder, so nothing is asked over it. */
 describe('removing a note', () => {
-  it('is carried out the moment it is asked for, over the note in front', () => {
+  it('is carried out the moment it is requested for, over the note in front', () => {
     const { commands } = createPalette()
 
     const invocation = commands.startCommand('remove', front())
@@ -537,7 +537,7 @@ describe('a note that moves under an open step', () => {
     expect(commands.chooseItem('name', 'name')?.note).toBe('held')
   })
 
-  it('leaves a step over another note where it stands', () => {
+  it('leaves a step over another note at its current position', () => {
     const { commands } = createPalette()
     commands.startCommand('title', front())
 
@@ -604,7 +604,7 @@ describe('the runs over the file in front', () => {
     expect(commands.chooseItem('transcribe', 'transcribe')?.file).toBe('talks/Ants.mp3')
   })
 
-  it('is offered nowhere once this build has said it cannot do it at all', () => {
+  it('is offered nowhere once this build has returned it cannot do it at all', () => {
     const runs = runSupport()
     runs.cannotRun('transcribe')
     runs.cannotRun('proofread')
@@ -639,7 +639,7 @@ describe('the runs over the file in front', () => {
     }
   })
 
-  it('offers a scan reading to be put right once one stands, and not before', () => {
+  it('offers a scan reading to be put right once one remains, and not before', () => {
     expect(
       getItemIds(createPalette({ ...scanned, made: { ocr: 'none' } }).commands.groups).file,
     ).toStrictEqual(['recognise'])
@@ -664,7 +664,7 @@ describe('the runs over the file in front', () => {
 
   // There is nothing to put right until a model has transcribed something, and
   // nothing to take away until it has.
-  it('offers a transcript to be put right once one stands, and not before', () => {
+  it('offers a transcript to be put right once one remains, and not before', () => {
     expect(
       getItemIds(createPalette({ ...recording, made: { transcript: 'none' } }).commands.groups)
         .file,
@@ -748,7 +748,7 @@ describe('dropping the transcript of a recording', () => {
   })
 })
 
-describe('a command that was not offered over what it was asked over', () => {
+describe('a command that was not offered over what it was requested over', () => {
   it('says the vault could not be opened', () => {
     const { commands } = createPalette({ isReady: false })
 
@@ -906,7 +906,7 @@ describe('a command that offers a list the window holds', () => {
     expect(commands.chooseItem('mode:none', 'chosen')).toBeNull()
   })
 
-  it('hands back the row that was chosen, from whichever group it stood in', () => {
+  it('returns the row that was chosen, from whichever group it stood in', () => {
     const { commands } = createPalette({}, [], held)
     commands.startCommand('appearance', front())
 
@@ -924,7 +924,7 @@ describe('a command that offers a list the window holds', () => {
     })
   })
 
-  it('says which command the keyboard is standing in, and that it stands nowhere after', () => {
+  it('says which command the keyboard is standing in, and that it remains nowhere after', () => {
     const { commands, shown } = createPalette({}, [], held)
     commands.startCommand('mode', front())
 
@@ -976,7 +976,7 @@ describe('leaving a step', () => {
     expect(commands.open.value).toBe(false)
   })
 
-  it('hands the field back to the search from the commands themselves', () => {
+  it('passes the field back to the search from the commands themselves', () => {
     const { commands } = createPalette()
 
     expect(commands.goBack()).toBe(true)
@@ -1006,7 +1006,7 @@ describe('leaving a step', () => {
   })
 })
 
-describe('a command asked for from outside the palette', () => {
+describe('a command requested for from outside the palette', () => {
   it('carries out a command that needs nothing with no name', () => {
     const { commands } = createPalette()
 
@@ -1061,7 +1061,7 @@ describe('the commands over the vaults an installation holds', () => {
 describe('a command that asks for a vault', () => {
   const two = () => installation(vault('physics', 'Physics'), vault('heat', 'Heat'))
 
-  it('lists the vaults the installation holds, each at the folder it stands in', async () => {
+  it('lists the vaults the installation holds, each at the folder it remains in', async () => {
     const { commands } = createPalette({}, [], {}, two())
     commands.startCommand('openVault', front())
 
@@ -1086,7 +1086,7 @@ describe('a command that asks for a vault', () => {
   })
 
   /**
-   * The window always stands on something, so the vault in front is not one
+   * The window always relies on something, so the vault in front is not one
    * the list takes. It is drawn with the reason beside it, and choosing it
    * does nothing.
    */
@@ -1129,7 +1129,7 @@ describe('a command that asks for a vault', () => {
     expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['heat'])
   })
 
-  it('says the list could not be asked, in the window’s own words', async () => {
+  it('says the list could not be requested, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const at = ref(front())
     const commands = useCommandPalette(
@@ -1154,7 +1154,7 @@ describe('a command that asks for a vault', () => {
 })
 
 describe('renaming the vault in front', () => {
-  it('stands filled with the name the vault has now', () => {
+  it('remains filled with the name the vault has now', () => {
     const { commands } = createPalette()
 
     commands.startCommand('renameVault', front())
@@ -1177,7 +1177,7 @@ describe('renaming the vault in front', () => {
 })
 
 /**
- * The window always stands on a vault, so neither of these is over the one in
+ * The window always relies on a vault, so neither of these is over the one in
  * front. Both ask for a vault first, and everything they say after is about
  * the vault that was chosen.
  */
@@ -1214,7 +1214,7 @@ describe('a vault taken off the list', () => {
     })
   })
 
-  it('hands back the list, with the vaults on it, where the step is left', async () => {
+  it('returns the list, with the vaults on it, where the step is left', async () => {
     const commands = await chooseVault('removeVault')
 
     commands.leaveStep()
@@ -1419,7 +1419,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     expect(asked).toStrictEqual(['en'])
   })
 
-  it('draws the answer to the question asked last, whatever lands after it', async () => {
+  it('draws the answer to the question requested last, whatever lands after it', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
     void commands.setTyped('e')
@@ -1499,7 +1499,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     expect(silence(commands.groups, 'picking')).toBe(words.noneFound)
   })
 
-  it('draws no answer to a question asked at a step that was left', async () => {
+  it('draws no answer to a question requested at a step that was left', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
     void commands.setTyped('en')
@@ -1554,7 +1554,7 @@ describe('a step that asks for a vault, as the list answers', () => {
     })
   })
 
-  it('draws the list asked for last, and is working until that one is back', async () => {
+  it('draws the list requested for last, and is working until that one is back', async () => {
     const { commands, lists } = createSlowPalette()
     commands.startCommand('openVault', front())
     commands.leaveStep()
@@ -1597,7 +1597,7 @@ describe('a step that asks for a vault, as the list answers', () => {
     })
   })
 
-  it('holds nothing where the list could not be asked', async () => {
+  it('holds nothing where the list could not be requested', async () => {
     const { commands, lists } = createSlowPalette()
     commands.startCommand('openVault', front())
 
@@ -1623,8 +1623,8 @@ describe('a step that asks for a vault, as the list answers', () => {
   })
 })
 
-describe('a command asked for while a step stands open', () => {
-  it('stands over that step, and leaving it goes back to it', () => {
+describe('a command requested for while a step remains open', () => {
+  it('remains over that step, and leaving it goes back to it', () => {
     const { commands } = createPalette()
     commands.startCommand('child', front())
 

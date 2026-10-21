@@ -1,6 +1,6 @@
 /**
  * A book made for a screen, read in one piece: its text in columns, the countSpreads
- * it comes to, and the controls floating over them.
+ * it evaluates to, and the controls floating over them.
  *
  * Where the layout is judged, because nothing without a layout can judge it:
  * whether a narrow area takes one column and a wide one two, whether a spread
@@ -244,8 +244,8 @@ export const NoLineCutInHalf: Story = {
 }
 
 /**
- * A document longer than one column comes to several, in a pane holding one
- * column as in a pane holding two. A document that comes to one spread has
+ * A document longer than one column evaluates to several, in a pane holding one
+ * column as in a pane holding two. A document that evaluates to one spread has
  * nowhere to turn inside it, and the reader hands the turn to the next document
  * of the book: a chapter read a chapter at a time, with most of it never drawn.
  */
@@ -395,13 +395,13 @@ export const VerseSetInAPreElement: Story = {
     await expect(set.scrollHeight).toBeLessThanOrEqual(set.clientHeight + 1)
     await expect(set.scrollWidth).toBeLessThanOrEqual(set.clientWidth + 1)
 
-    // It stands on the paper the rest of the text does. The typography dresses
+    // It relies on the paper the rest of the text does. The typography dresses
     // a pre as a block of code, and a title page is not one.
     const drawn = getComputedStyle(set)
     await expect(drawn.backgroundColor).toBe('rgba(0, 0, 0, 0)')
     await expect(drawn.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
 
-    // It ran on into columns of its own rather than stopping at the first.
+    // It ran on into columns of its own and not stopping at the first.
     const area = getArea(canvasElement)
     await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth)
   },
@@ -426,7 +426,7 @@ export const WordsCanBeTakenUp: Story = {
   },
 }
 
-/** A document of one line comes to one spread, and there is nowhere to turn. */
+/** A document of one line evaluates to one spread, and there is nowhere to turn. */
 export const OneLine: Story = {
   decorators: [WIDE],
   render: reading(createChapter([{ tag: 'p', text: 'One line, and the book is over.' }])),
@@ -450,7 +450,7 @@ export const OneLine: Story = {
  * is a book that will not open.
  *
  * The line under the text stands there, because the way into the contents
- * stands on it; what a document of no pages puts on it is neither a count nor a
+ * relies on it; what a document of no pages puts on it is neither a count nor a
  * chapter to finish.
  */
 export const NoTextAtAll: Story = {
@@ -508,7 +508,7 @@ export const SetLarger: Story = {
 }
 
 /**
- * A run marked where it stands. The range is taken from the offsets the caller
+ * A run marked at its current position. The range is taken from the offsets the caller
  * gave and the offsets the runs carry, and the text is never searched.
  */
 export const Marked: Story = {
@@ -571,7 +571,7 @@ export const DrawnOutOfSight: Story = {
 
 /**
  * The turn is the columns being carried, so the page slides across the pane
- * rather than jumping. A layout is not a turn and is put in place at once, and
+ * and not jumping. A layout is not a turn and is put in place at once, and
  * a layout that left the transition switched off is a book that turns without
  * moving.
  */

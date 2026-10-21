@@ -52,7 +52,7 @@ const createCreators = (
 ) => createFileCreators(vault, tabOpeners, { words: MAKING, write })
 
 describe('a deck, a stencil or a preset made', () => {
-  it('is asked of the vault under the name and the folder it was given', async () => {
+  it('is requested of the vault under the name and the folder it was given', async () => {
     const vault = maker()
     const made = createCreators(vault)
 
@@ -101,7 +101,7 @@ describe('a deck, a stencil or a preset made', () => {
     expect(told.said).toStrictEqual([ERRORS.occupied])
   })
 
-  it('says a vault that could not be asked at all', async () => {
+  it('says a vault that could not be requested at all', async () => {
     const told = writer()
     const made = createCreators(maker(null, true), undefined, told.write)
 
@@ -119,7 +119,7 @@ describe('a deck, a stencil or a preset made', () => {
     expect(told.told).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
   })
 
-  it('says a vault that could not be asked as an error', async () => {
+  it('says a vault that could not be requested as an error', async () => {
     const told = writer()
     const made = createCreators(maker(null, true), undefined, told.write)
 
@@ -130,7 +130,7 @@ describe('a deck, a stencil or a preset made', () => {
 })
 
 describe('a file nothing offers to make', () => {
-  it('answers nothing, opens nothing and writes nothing of its own, the creator having said why', async () => {
+  it('answers nothing, opens nothing and writes nothing of its own, the creator having returned why', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const opened: string[] = []
     tabOpeners.registerEditor('deck', (path) => opened.push(path))
@@ -157,7 +157,7 @@ describe('a file made and put in front of the person', () => {
 })
 
 describe('a note pointing at an address made', () => {
-  it('is asked of the vault under the address and folder, and put in front of the person', async () => {
+  it('is requested of the vault under the address and folder, and put in front of the person', async () => {
     const vault = maker()
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const opened: string[] = []

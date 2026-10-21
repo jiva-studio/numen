@@ -32,7 +32,7 @@ Storybook is the development environment. A component is built and judged there,
 
 Chromium falls back to a browser already on the machine, which `CHROME_PATH` names. WebKit has no such fallback: Playwright drives its own build and nothing else, so `npx playwright install webkit` is what puts it there.
 
-**What the story level still does not prove.** Playwright's builds of the two engines are not the window's webview. The version is Playwright's rather than the machine's, and none of what the window adds around the page is there.
+**What the story level still does not prove.** Playwright's builds of the two engines are not the window's webview. The version is Playwright's and not the machine's, and none of what the window adds around the page is there.
 
 On a distribution whose shared libraries Playwright's WebKit does not find — NixOS among them, where the build asks for `libicudata.so.74` and the rest by Ubuntu's names — the story level cannot run on the machine at all. It runs in the image Playwright publishes for the version in `package.json`:
 
@@ -82,7 +82,7 @@ src/
     Plex.vue         the composition root
 ```
 
-**The core is pure and the view is humble.** Every number in the template came from `arrange/`; if one appears there that did not, the split is broken. That split is what makes "what does the plex look like forty per cent of the way through a move" a value with a test rather than a screenshot to be caught.
+**The core is pure and the view is humble.** Every number in the template came from `arrange/`; if one appears there that did not, the split is broken. That split is what makes "what does the plex look like forty per cent of the way through a move" a value with a test and not a screenshot to be caught.
 
 **Two seams are meant to be used.** `Placement` decides coordinates and nothing else — a radial mind map is another implementation, not a branch inside this one. `Clock` is the clock, so a movement is stepped by hand in a test and by the browser everywhere else.
 

@@ -14,7 +14,7 @@ import type {
 import type { AgentChatHost } from '../model/tabDeps'
 
 export interface HostOptions {
-  /** The note the window stands on. */
+  /** The note the window relies on. */
   readonly focus?: NoteRef
   /** The vault path each written name stands for. */
   readonly notes?: Readonly<Record<string, string>>

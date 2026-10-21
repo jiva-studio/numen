@@ -1,5 +1,5 @@
 /**
- * Where in a book the reader stands, and what turning a page comes to.
+ * Where in a book the reader stands, and what turning a page evaluates to.
  *
  * A spread is put in front by carrying the columns to it, so this reads the
  * columns and the marks the columns were measured into, and moves nothing else.

@@ -110,7 +110,7 @@ describe('a note the file moved past', () => {
     expect(one.paths()).toEqual([])
   })
 
-  it('is raised once while it stands, however often the notes change', async () => {
+  it('is raised once while active, however often the notes change', async () => {
     const one = window()
     one.setState('Note.md', 'stale')
     await nextTick()

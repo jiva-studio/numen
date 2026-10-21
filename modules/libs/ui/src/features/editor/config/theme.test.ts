@@ -50,7 +50,7 @@ describe('the editor’s stylesheet', () => {
 
   // A selector the browser cannot read takes its whole rule with it, and says
   // nothing about it.
-  it('is written in selectors a document can be asked for', () => {
+  it('is written in selectors a document can be requested for', () => {
     const written = selectors(getSheet())
     expect(written.length).toBeGreaterThan(20)
 

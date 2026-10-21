@@ -28,7 +28,7 @@ const (
 // ErrAnotherWindow is a question naming a window other than the one it reached.
 var ErrAnotherWindow = errors.New("that is another window")
 
-// A Reason is why something a window shows is not so, as it stands now, said by
+// A Reason is why something a window shows is not so, currently now, said by
 // whatever found out and read by whoever draws the window.
 //
 // The empty reason is nothing being the matter. It is a reason and not a flag:

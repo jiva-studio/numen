@@ -46,7 +46,7 @@ func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTa
 }
 
 // A window is handed each list by the write that follows it, so a list with
-// nothing after it is a list nobody is holding: work that ended stands on
+// nothing after it is a list nobody is holding: work that ended relies on
 // screen as work still running.
 func TestOneChangeIsSaidTwice(t *testing.T) {
 	tasks := run.NewTasks()

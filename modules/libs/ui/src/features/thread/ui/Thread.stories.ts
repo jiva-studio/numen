@@ -97,7 +97,7 @@ export const AwkwardText: Story = {
 
 /**
  * An agent at work: what it reached for sits between what it said, and the
- * prose is read as it was marked up rather than shown with its marks.
+ * prose is read as it was marked up and not shown with its marks.
  */
 export const Working: Story = {
   render: renderThread([

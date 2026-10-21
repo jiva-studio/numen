@@ -1,5 +1,5 @@
 /**
- * What a colour a browser hands back actually comes to. Storybook's furniture;
+ * What a colour a browser returns actually evaluates to. Storybook's furniture;
  * it ships to nobody.
  *
  * A computed colour may be named in any space, and a translucent one is only a

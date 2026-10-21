@@ -285,7 +285,7 @@ const (
 	// wearingATheme is a theme the settings name that the catalogue has not.
 	wearingATheme = "wearing a theme"
 	// readingTheSettings is a name the settings file holds that this build
-	// reads under another one. Each sentence stands under this and its place.
+	// reads under another one. Each sentence is placed under this and its place.
 	readingTheSettings = "reading the settings"
 	// levellingTheIndex is a file that reached the vault and an index that did
 	// not follow it.

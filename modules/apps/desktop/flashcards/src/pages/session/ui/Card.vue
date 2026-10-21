@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One card, as it stands in front of a person: the front, and the back once
+ * One card, currently in front of a person: the front, and the back once
  * they have said they are ready for it.
  *
  * A face is drawn by the one component every face is drawn by, so a card reads

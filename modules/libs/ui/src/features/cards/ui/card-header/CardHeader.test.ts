@@ -39,7 +39,7 @@ describe('the strip itself', () => {
     expect(header(drawn).element.tagName).toBe('HEADER')
   })
 
-  it('hands on the taking hold of it and the letting go', async () => {
+  it('passes on the taking hold of it and the letting go', async () => {
     drawn = mountHeader()
     await header(drawn).trigger('dragstart')
     await header(drawn).trigger('dragend')
@@ -51,7 +51,7 @@ describe('the strip itself', () => {
 describe('a press on something the strip holds', () => {
   const INSIDE = '<input class="inside" /><span class="plain">said</span>'
 
-  it('lets a box to type in have the press, rather than carrying the strip', async () => {
+  it('lets a box to type in have the press, and not carrying the strip', async () => {
     drawn = mountHeader({ default: INSIDE })
     expect(header(drawn).attributes('draggable')).toBe('true')
 
@@ -67,7 +67,7 @@ describe('a press on something the strip holds', () => {
 
   // A press that began in a box may travel off the strip and be let go
   // anywhere, so the end of it is heard wherever it happens.
-  it('may be dragged again once the press is let go of, wherever that was', async () => {
+  it('may be dragged again once the press is release, wherever that was', async () => {
     drawn = mountHeader({ default: INSIDE })
     await pressOn(drawn, '.inside')
 

@@ -112,7 +112,7 @@ describe('how long work runs before it is worth a card', () => {
   })
 })
 
-describe('a notice somebody asked for', () => {
+describe('a notice somebody requested for', () => {
   const asked: Notice = { id: 'reading', text: 'Recognising a scan', isUserStarted: true }
   const behind: Notice = { id: 'indexing', text: 'Indexing' }
 
@@ -138,7 +138,7 @@ describe('a notice somebody asked for', () => {
   })
 })
 
-describe('how long something said stands to be read', () => {
+describe('how long something returned remains to be read', () => {
   it('gives more time to more words', () => {
     expect(getNoticeDuration('Renamed')).toBe(MIN_DURATION + PER_WORD)
     expect(getNoticeDuration('Renamed', 'One.md')).toBe(MIN_DURATION + 2 * PER_WORD)
@@ -150,7 +150,7 @@ describe('how long something said stands to be read', () => {
     expect(getNoticeDuration('Links repaired in', list)).toBe(Infinity)
   })
 
-  it('stands for as long as twenty words, which is not too much to read in passing', () => {
+  it('remains for as long as twenty words, which is not too much to read in passing', () => {
     const list = Array.from({ length: 20 }, (_, at) => `Note${at}.md`).join(' ')
 
     expect(getNoticeDuration(list)).toBe(MIN_DURATION + 20 * PER_WORD)
@@ -171,7 +171,7 @@ describe('how long something said stands to be read', () => {
     )
   })
 
-  it('stands until it is put away where it was not asked to be read in passing', () => {
+  it('remains until it is put away where it was not requested to be read in passing', () => {
     const kept: Notice = {
       id: 'occupied',
       text: 'A note of that name is filed there',
@@ -231,7 +231,7 @@ describe('how many cards stand at once', () => {
     expect(foldNotices(drawn, 1)).toEqual({ shown: drawn, over: 0 })
   })
 
-  it('folds the oldest of what has been said, and counts them', () => {
+  it('folds the oldest of what has been returned, and counts them', () => {
     const drawn = [word('a'), word('b'), work('c'), word('d')]
 
     expect(foldNotices(drawn, 2)).toEqual({ shown: [work('c'), word('d')], over: 2 })
@@ -249,7 +249,7 @@ describe('how many cards stand at once', () => {
     expect(foldNotices(drawn, 2).shown.map((each) => each.id)).toEqual(['b', 'c'])
   })
 
-  it('folds nothing that stopped badly, wherever it stands', () => {
+  it('folds nothing that stopped badly, wherever it remains', () => {
     // Trouble is what a person has to see, and it arrives before the reports
     // that pile up behind it.
     const failed: Notice = { id: 'failed', text: 'Reading', tone: 'alarm', stay: 'kept' }

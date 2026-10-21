@@ -49,7 +49,7 @@ const settle = async () => {
   for (let step = 0; step < 4; step++) await nextTick()
 }
 
-/** The text of a turn changed where it stands, as it grows while being said. */
+/** The text of a turn changed at its current position, as it grows while active. */
 const rewrite = (one: Turn, text: string) => {
   ;(one as { text: string }).text = text
 }
@@ -61,7 +61,7 @@ const createPress = () => {
 }
 
 describe('the notes an answer names', () => {
-  it('are looked up as soon as the tab is made over turns already said', () => {
+  it('are looked up as soon as the tab is made over turns already returned', () => {
     const one = open([turn('a', 'See [[Entropy]].')])
 
     expect(one.resolved).toEqual([['name://Entropy']])
@@ -75,7 +75,7 @@ describe('the notes an answer names', () => {
     expect(one.resolved).toEqual([['name://Entropy'], ['name://Order']])
   })
 
-  it('are looked up again when the last turn grows while it is being said', async () => {
+  it('are looked up again when the last turn grows while it is being returned', async () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     await settle()
 

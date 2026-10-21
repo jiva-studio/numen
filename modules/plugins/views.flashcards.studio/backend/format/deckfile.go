@@ -205,7 +205,7 @@ func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
 }
 
 // RenameSection gives the section standing at one place in the deck another
-// name. What stands under it is left where it was.
+// name. What is placed under it is left where it was.
 func (f *DeckFile) RenameSection(at int, name string) error {
 	body := []byte(f.doc.Body())
 	heads := sectionHeads(body)
@@ -312,9 +312,9 @@ func cardBlock(card Card) string {
 // one card of a file somebody else writes by hand wants OpenDeckBody, which
 // splices and leaves every card it did not reach alone.
 //
-// A card carries which section it stands under, so a section no card reaches is
-// written where it stands: in front of the cards of the sections after it, or at
-// the end where nothing stands under it. A card standing under a section the
+// A card carries which section it is placed under, so a section no card reaches is
+// written at its current position: in front of the cards of the sections after it, or at
+// the end where nothing is placed under it. A card standing under a section the
 // deck does not hold is ErrNoSuchSection.
 type deckBodyWriter struct {
 	scratch  *DeckFile

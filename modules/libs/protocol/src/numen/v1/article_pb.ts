@@ -50,7 +50,7 @@ export const ReadArticleRequestSchema: GenMessage<ReadArticleRequest> = /*@__PUR
  */
 export type ReadArticleResponse = Message<"numen.v1.ReadArticleResponse"> & {
   /**
-   * The prose, as it reads. A client draws it as it stands, with no gutter and
+   * The prose, as it reads. A client draws it currently, with no gutter and
    * nothing to seek. A file nothing has been fetched for carries none.
    *
    * @generated from field: string text = 1;

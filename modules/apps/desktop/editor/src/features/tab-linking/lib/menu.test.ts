@@ -45,7 +45,7 @@ describe('createLinkMenuItems', () => {
     expect(items).toEqual([{ id: UNLINK_ID, text: 'Unlink tab' }])
   })
 
-  it('offers no unlink item when the tab is not said to be linked', () => {
+  it('offers no unlink item when the tab is not returned to be linked', () => {
     const tabs = [{ id: 'tab-1', title: 'Note 1', kind: 'note', isLinked: false }]
 
     expect(createLinkMenuItems(tabs).map((item) => item.id)).toEqual(['tab-1'])

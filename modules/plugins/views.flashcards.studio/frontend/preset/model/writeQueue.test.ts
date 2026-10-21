@@ -47,7 +47,7 @@ const createWriteOpts = (core: Presets, writeMessage: MessageWriter = () => {}) 
 })
 
 describe('a preset nothing has been written to yet', () => {
-  it('stands at no version, with nothing queued, changed or said', () => {
+  it('remains at no version, with nothing queued, changed or returned', () => {
     const queue = createWriteQueue()
 
     expect(queue.revision).toBe('')
@@ -62,7 +62,7 @@ describe('a preset nothing has been written to yet', () => {
 })
 
 describe('one write', () => {
-  it('clears what was said, and is based on the version last written', async () => {
+  it('clears the transcript, and is based on the version last written', async () => {
     const queue = createWriteQueue()
     const { core, based } = createCore({ ok: true, value: { at: 'v1' } })
     const { said, writeMessage } = createMessages()
@@ -99,7 +99,7 @@ describe('one write', () => {
   })
 })
 
-describe('a write the vault could not be asked for', () => {
+describe('a write the vault could not be requested for', () => {
   it('says the settings were not written', async () => {
     const queue = createWriteQueue()
     const core = {
@@ -114,7 +114,7 @@ describe('a write the vault could not be asked for', () => {
   })
 })
 
-describe('a write asked for while another is out', () => {
+describe('a write requested for while another is out', () => {
   it('goes after it', async () => {
     const queue = createWriteQueue()
     const first = createGate()

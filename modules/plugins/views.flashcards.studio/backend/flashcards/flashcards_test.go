@@ -186,7 +186,7 @@ func (s vaulted) session(day review.Day) flashcards.Session {
 // today is the day a session is counted in, on this machine.
 var today = review.Day{Starts: review.DayStartTime}
 
-// A card stands once for each face of the stencil that cuts it, because each
+// A card appears once for each face of the stencil that cuts it, because each
 // face asks a different thing.
 func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
 	t.Parallel()
@@ -364,7 +364,7 @@ func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(stood) != 1 {
-		t.Fatalf("one card of a one-faced stencil stands once, got %d", len(stood))
+		t.Fatalf("one card of a one-faced stencil appears once, got %d", len(stood))
 	}
 	if stood[0].ID.Card == "" {
 		t.Error("the card came back with no mark to record an answer against")

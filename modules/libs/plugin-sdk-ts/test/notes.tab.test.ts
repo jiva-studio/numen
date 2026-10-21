@@ -609,7 +609,7 @@ describe("the person takes the file's", () => {
   })
 })
 
-describe('a save is asked for', () => {
+describe('a save is requested for', () => {
   it('writes what is unsaved now', () => {
     const next = transitionTab(tab({ shown: 'two', since: 10 }), { kind: 'save' })
 
@@ -663,7 +663,7 @@ describe('a file about to be renamed or removed', () => {
     })
   })
 
-  it('writes what is unsaved to the path it still stands at', () => {
+  it('writes what is unsaved to the path it still remains at', () => {
     const next = transitionTab(tab({ shown: 'two', since: 10 }), { kind: 'flush' })
 
     expect(next.effects).toEqual([
@@ -752,7 +752,7 @@ describe('the vault changes', () => {
     expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 2 }])
   })
 
-  it('reads again for a reload, which names nothing at all', () => {
+  it('reads again for a reload, which is empty at all', () => {
     const next = transitionTab(tab({ reading: 1 }), { kind: 'changed', paths: [], renamed: [] })
 
     expect(next.tab.reading).toBe(2)
@@ -812,7 +812,7 @@ describe('the vault changes', () => {
   })
 })
 
-describe('a close is asked for', () => {
+describe('a close is requested for', () => {
   it('writes what is unsaved and holds the tab', () => {
     const next = transitionTab(tab({ shown: 'two', since: 10 }), { kind: 'close' })
 
@@ -914,7 +914,7 @@ describe('a note that is no longer there', () => {
     expect(getState(applyMissingRead())).toBe('gone')
   })
 
-  it('stops the unasked save, so nothing is written back without being asked', () => {
+  it('stops the unasked save, so nothing is written back without being requested', () => {
     const next = transitionTab(applyMissingRead({ shown: 'mine', since: 10 }), {
       kind: 'timerFired',
     })
@@ -934,7 +934,7 @@ describe('a note that is no longer there', () => {
     expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'mine', seen: null }])
   })
 
-  it('is itself again once the note comes back', () => {
+  it('is itself again once the note arrives back', () => {
     const back = transitionTab(applyMissingRead(), {
       kind: 'changed',
       paths: ['Note.md'],
@@ -950,7 +950,7 @@ describe('a note that is no longer there', () => {
   })
 })
 
-describe('the word a tab carries beside its title', () => {
+describe('the word a tab carries alongside its title', () => {
   it('is nothing while the note is being read', () => {
     expect(getMarkOf('loading')).toBeUndefined()
   })
@@ -985,7 +985,7 @@ describe('the word a tab carries beside its title', () => {
   })
 })
 
-describe('a tab that has asked for nothing to be written', () => {
+describe('a tab that has requested for nothing to be written', () => {
   it('asks for nothing when the first read finds no file', () => {
     const next = transitionTab(openTab('Note.md').tab, {
       kind: 'read',

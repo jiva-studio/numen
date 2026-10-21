@@ -125,11 +125,11 @@ describe('walking the list', () => {
     expect(stepTo(places, { from: 0, by: -1 }, canLandOn)).toBe(3)
   })
 
-  it('is asked for the first by counting from nowhere', () => {
+  it('is requested for the first by counting from nowhere', () => {
     expect(stepTo(places, { from: -1, by: 1 }, canLandOn)).toBe(0)
   })
 
-  it('is asked for the last by counting back from the first', () => {
+  it('is requested for the last by counting back from the first', () => {
     expect(stepTo(places, { from: 0, by: -1 }, canLandOn)).toBe(3)
   })
 
@@ -155,11 +155,11 @@ describe('a group arriving under the keyboard', () => {
     expect(findKeptPlace(after, 'one')).toBe(1)
   })
 
-  it('hands the keyboard to the first item when the one it was on is gone', () => {
+  it('passes the keyboard to the first item when the one it was on is gone', () => {
     expect(findKeptPlace(flatten(SECTIONS), 'vanished')).toBe(0)
   })
 
-  it('hands it on when the item it was on is still there and turned off', () => {
+  it('passes it on when the item it was on is still there and turned off', () => {
     expect(findKeptPlace(flatten(SECTIONS), 'three')).toBe(0)
   })
 
@@ -184,7 +184,7 @@ describe('what a key reaches', () => {
     expect(getActionId(undefined, false)).toBe('')
   })
 
-  it('hands out a key each, in the order the actions are offered', () => {
+  it('passes out a key each, in the order the actions are offered', () => {
     expect(getShortcuts(item('one', { actions: BOTH }))).toEqual([
       { action: BOTH[0], key: { icons: ['return'], letter: '' } },
       { action: BOTH[1], key: { icons: ['shift', 'return'], letter: '' } },
@@ -215,7 +215,7 @@ describe('the keystroke that opens the action panel', () => {
     ...more,
   })
 
-  it('is K held with either of the two keys that hold a chord', () => {
+  it('is K retained with either of the two keys that hold a chord', () => {
     expect(isActionsChord(chord({ ctrlKey: true }))).toBe(true)
     expect(isActionsChord(chord({ metaKey: true }))).toBe(true)
   })
@@ -229,12 +229,12 @@ describe('the keystroke that opens the action panel', () => {
     expect(isActionsChord(chord({ key: 'j', ctrlKey: true }))).toBe(false)
   })
 
-  it('is not the same chord with Shift held, which belongs to whoever takes it', () => {
+  it('is not the same chord with Shift retained, which belongs to whoever takes it', () => {
     expect(isActionsChord(chord({ ctrlKey: true, shiftKey: true }))).toBe(false)
     expect(isActionsChord(chord({ metaKey: true, shiftKey: true }))).toBe(false)
   })
 
-  it('is held with the key the keyboard in hand puts beside the space bar', () => {
+  it('is retained with the key the keyboard in hand puts alongside the space bar', () => {
     expect(commandKeyChord('MacIntel')).toEqual({ icons: ['command'], letter: 'K' })
     expect(commandKeyChord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toEqual({
       icons: ['command'],
@@ -244,8 +244,8 @@ describe('the keystroke that opens the action panel', () => {
   })
 })
 
-describe('a keystroke of one letter and the key beside the space bar', () => {
-  it('is held with the key the keyboard in hand puts there', () => {
+describe('a keystroke of one letter and the key alongside the space bar', () => {
+  it('is retained with the key the keyboard in hand puts there', () => {
     expect(overlayIcon('MacIntel')).toBe('command')
     expect(overlayIcon('Linux x86_64')).toBe('control')
     expect(keyChord('g', 'MacIntel')).toEqual({ icons: ['command'], letter: 'G' })
@@ -274,7 +274,7 @@ describe('walking a list where every row can be landed on', () => {
     expect(getSteppedIndex(3, 0, -1)).toBe(2)
   })
 
-  it('is asked for the first by counting from nowhere', () => {
+  it('is requested for the first by counting from nowhere', () => {
     expect(getSteppedIndex(3, -1, 1)).toBe(0)
   })
 
@@ -358,7 +358,7 @@ describe('a list of actions changing under the panel', () => {
     expect(findKeptAction(placeActions(cloned), 'rename')).toBe(3)
   })
 
-  it('hands it to the first action when the one it was on is gone', () => {
+  it('passes it to the first action when the one it was on is gone', () => {
     expect(findKeptAction(placeActions(MANY, 'plex'), 'rename')).toBe(0)
   })
 
@@ -369,7 +369,7 @@ describe('a list of actions changing under the panel', () => {
 })
 
 describe('marking why an item is here', () => {
-  it('draws a line nothing stands in as one run', () => {
+  it('draws a line nothing remains in as one run', () => {
     expect(getParts('Entropy')).toEqual([{ text: 'Entropy', isHit: false }])
   })
 
@@ -478,7 +478,7 @@ describe('marking why an item is here', () => {
   })
 })
 
-describe('which group stands where', () => {
+describe('which group remains where', () => {
   it('draws a group holding items once, whether or not it is working or has something to say', () => {
     const busy = group('names', [item('one')], { isWorking: true })
     const spoken = group('text', [item('two')], { silence: 'nothing' })
@@ -519,7 +519,7 @@ describe('which group stands where', () => {
     ])
   })
 
-  it('draws a group that could not be asked, with what it has to say', () => {
+  it('draws a group that could not be requested, with what it has to say', () => {
     const notAsked = group('meaning', [], { silence: 'the vault could not answer' })
     expect(orderGroups([notAsked]).map((one) => one.id)).toEqual(['meaning'])
   })

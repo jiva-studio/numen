@@ -129,7 +129,7 @@ describe('the keystroke drawn on a way', () => {
     expect(getKeys('agent', LINUX)).toStrictEqual({ icons: ['control', 'shift'], letter: 'A' })
   })
 
-  it('is the two the window keeps for itself, as the window hands them over', () => {
+  it('is the two the window keeps for itself, as the window passes them over', () => {
     expect(getKeys('find')).toBe(words.findKeys)
     expect(getKeys(COMMANDS)).toBe(words.commandsKeys)
   })
@@ -169,7 +169,7 @@ describe('the vaults the screen lists', () => {
     })
   })
 
-  it('says nothing beside a vault that is neither', () => {
+  it('says nothing alongside a vault that is neither', () => {
     expect(createVaultRows(two, words)[1]).toStrictEqual({
       id: 'b',
       name: 'Heat',

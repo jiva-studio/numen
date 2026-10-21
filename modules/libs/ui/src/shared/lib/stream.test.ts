@@ -115,7 +115,7 @@ describe('a window that has closed', () => {
 })
 
 describe('what a follower holds for one reading of a stream', () => {
-  it('is let go of when the stream ends, before it is taken up again', async () => {
+  it('is release when the stream ends, before it is taken up again', async () => {
     const order: string[] = []
     let taken = 0
     const follows = createFollower({
@@ -133,7 +133,7 @@ describe('what a follower holds for one reading of a stream', () => {
     expect(order).toStrictEqual(['resets', 'waits', 'resets', 'waits', 'resets', 'waits'])
   })
 
-  it('is let go of when the stream fails, the same way', async () => {
+  it('is release when the stream fails, the same way', async () => {
     const order: string[] = []
     let taken = 0
     const follows = createFollower({

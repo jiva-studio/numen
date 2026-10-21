@@ -97,7 +97,7 @@ describe('the headings of a node', () => {
     expect(plex.getHeadings(node)).toStrictEqual([])
   })
 
-  it('are left alone by a read that failed after a newer one was asked', async () => {
+  it('are left alone by a read that failed after a newer one was requested', async () => {
     const map = createNodeIdMap()
     const node = map.getNodeId('A.md')
     let fail = () => {}

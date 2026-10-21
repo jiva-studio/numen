@@ -55,7 +55,7 @@ const steps = async (says: AskAgentResponse[]): Promise<AgentStep[]> => {
 }
 
 describe('createAgentPort', () => {
-  it('hands the question, the focus and the conversation to the service', async () => {
+  it('passes the question, the focus and the conversation to the service', async () => {
     const { agent, requests } = service([])
     const abort = new AbortController()
     for await (const _ of createAgentPort(agent).ask({
@@ -74,7 +74,7 @@ describe('createAgentPort', () => {
     ])
   })
 
-  it('reads what was said as text', async () => {
+  it('reads the transcript as text', async () => {
     const response = create(AskAgentResponseSchema, { step: { case: 'text', value: 'Leaves.' } })
     expect(await steps([response])).toEqual([{ kind: 'said', text: 'Leaves.' }])
   })

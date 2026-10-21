@@ -175,7 +175,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 	}
 
 	// A mark is what the card is for as long as it exists, so the next write
-	// leaves it where it stands.
+	// leaves it at its current position.
 	after := read(t, vs.first, "decks/Hand.md")
 	if _, err := w.Deck(
 		t.Context(), vs.first, "decks/Hand.md", prose(t, after), domain.Fingerprint{},
@@ -230,7 +230,7 @@ func TestWritingADeckPutsAStaleHeadingBackInStep(t *testing.T) {
 	if deck.Cards[0].Heading != "Llama" || deck.Cards[0].Mark != "k7m2xq9fzp" {
 		t.Errorf("card = %+v, want the heading written again from the field", deck.Cards[0])
 	}
-	// An empty first field gives a heading of nothing, and the card stands under
+	// An empty first field gives a heading of nothing, and the card is placed under
 	// its mark alone.
 	if deck.Cards[1].Heading != "" || deck.Cards[1].Mark != "zpqrstvwxy" {
 		t.Errorf("card = %+v, want a heading of nothing", deck.Cards[1])
@@ -283,7 +283,7 @@ func TestAWriteSaysWhichMarksItGave(t *testing.T) {
 }
 
 // Nothing can say which field is first where the stencil cannot be read, so the
-// heading is left exactly as it stands. The card is given its mark all the same.
+// heading is left exactly currently. The card is given its mark all the same.
 func TestACardWhoseStencilCannotBeReadIsNotReprojected(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Whatever a person typed\n\n[[Nowhere]]\n\n### Name\n\nLlama\n"

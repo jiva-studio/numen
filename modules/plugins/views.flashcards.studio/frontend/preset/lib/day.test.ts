@@ -119,7 +119,7 @@ describe('a goal of a date', () => {
     expect(state.curve.value.now.value).toBe(8)
   })
 
-  it('leaves the knob where it stands when the day it already aims at is typed', async () => {
+  it('leaves the knob at its current position when the day it already aims at is typed', async () => {
     const answered = createHonestCurve()
     const { state } = await openPresetTab({ goal: 'date', byDate: BY }, answered)
     expect(state.place.value).toBe(answered.now.at)

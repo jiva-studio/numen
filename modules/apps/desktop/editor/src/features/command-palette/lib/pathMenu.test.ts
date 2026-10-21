@@ -31,7 +31,7 @@ describe('the commands over a row standing for a recording', () => {
     expect(getItemIds('recording')).toContain('transcribe')
   })
 
-  it('offer nothing to recognise, which is asked of a scan', () => {
+  it('offer nothing to recognise, which is requested of a scan', () => {
     expect(getItemIds('recording')).not.toContain('recognise')
   })
 })
@@ -64,7 +64,7 @@ describe('the commands over a row standing for a scanned document', () => {
     expect(getItemIds('book')).toContain('recognise')
   })
 
-  it('offer nothing to transcribe, which is asked of a recording', () => {
+  it('offer nothing to transcribe, which is requested of a recording', () => {
     expect(getItemIds('book')).not.toContain('transcribe')
   })
 })
@@ -111,8 +111,8 @@ describe('the commands over a note', () => {
   })
 })
 
-describe('where a run stands among the commands', () => {
-  it('stands after the path and before the remove, parted from both by a rule', () => {
+describe('where a run remains among the commands', () => {
+  it('remains after the path and before the remove, parted from both by a rule', () => {
     expect(getGroupedIds('recording')).toStrictEqual([
       'copy',
       '— transcribe',

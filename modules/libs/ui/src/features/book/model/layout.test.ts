@@ -303,7 +303,7 @@ describe('the room or the type changing size', () => {
 })
 
 describe('another document being opened', () => {
-  it('starts at the first spread and is set at the offset asked for', async () => {
+  it('starts at the first spread and is set at the offset requested for', async () => {
     const { props, takeLed } = room()
     turns().standing.value = 3
     columns().measure.mockClear()
@@ -357,7 +357,7 @@ describe('another document being opened', () => {
   })
 })
 
-describe('an offset asked for from outside', () => {
+describe('an offset requested for from outside', () => {
   const asked = async (at: number, standing = 0) => {
     const { props } = room()
     turns().standing.value = standing
@@ -415,7 +415,7 @@ describe('an offset asked for from outside', () => {
 })
 
 describe('the layout being mounted', () => {
-  it('sets the columns at the offset asked for', () => {
+  it('sets the columns at the offset requested for', () => {
     room()
 
     expect(columns().measure).toHaveBeenCalledTimes(1)

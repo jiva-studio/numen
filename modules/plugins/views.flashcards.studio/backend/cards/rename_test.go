@@ -99,7 +99,7 @@ func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
 	}
 }
 
-// The first field stands under a heading of its own in every card, so renaming
+// The first field is placed under a heading of its own in every card, so renaming
 // it is a write to every deck that stencil cuts, as renaming any other field
 // already was.
 func TestRenamingTheFirstFieldReachesEveryDeckThatStencilCuts(t *testing.T) {

@@ -27,7 +27,7 @@ describe('how thick an icon is stroked', () => {
   })
 })
 
-describe('what a key held is called', () => {
+describe('what a key retained is called', () => {
   it('is a word each, and no two keys are called the same', () => {
     const labels = EVERY.map(([, icon]) => icon.label)
     expect(labels.every((word) => word !== '')).toBe(true)

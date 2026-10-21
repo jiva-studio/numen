@@ -149,7 +149,7 @@ const says = computed(() => {
   outline: none;
 }
 
-/* What is wrong with the face stands under the strip and over the window,
+/* What is wrong with the face is placed under the strip and over the window,
    taking no room from it. A press meant for what is underneath reaches it. */
 .face__amiss {
   position: absolute;

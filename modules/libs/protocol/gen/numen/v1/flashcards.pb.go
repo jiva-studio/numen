@@ -109,7 +109,7 @@ type VaultCardsDue struct {
 	New   int32 `protobuf:"varint,6,opt,name=new,proto3" json:"new,omitempty"`
 	// Decks is the same three numbers for each deck, by the path of its file.
 	Decks []*DeckCardsDue `protobuf:"bytes,7,rep,name=decks,proto3" json:"decks,omitempty"`
-	// Presets is what the day comes to under each preset the vault's decks are
+	// Presets is what the day evaluates to under each preset the vault's decks are
 	// scheduled by.
 	Presets []*PresetCardsDue `protobuf:"bytes,8,rep,name=presets,proto3" json:"presets,omitempty"`
 	// Set when the vault could not be counted: its files could not be reached, or
@@ -324,7 +324,7 @@ func (x *DeckCardsDue) GetUnbegun() int32 {
 	return 0
 }
 
-// PresetCardsDue is one preset of a vault, and what the day comes to under it.
+// PresetCardsDue is one preset of a vault, and what the day evaluates to under it.
 type PresetCardsDue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the settings were read from, and empty for the decks naming no
@@ -607,7 +607,7 @@ func (x *Intervals) GetEasy() int64 {
 type SessionCard struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deck is the path of the file the card stands in, and section the name of
-	// the section it stands under. A card standing before the first section
+	// the section it is placed under. A card standing before the first section
 	// carries none.
 	Deck    string `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
 	Section string `protobuf:"bytes,2,opt,name=section,proto3" json:"section,omitempty"`
@@ -1588,7 +1588,7 @@ type DeckNeighbour struct {
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Body  string `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
 	// Label is what the link was shown as, where the person gave it words of
-	// their own instead of the note's name.
+	// their own and not the note's name.
 	Label string `protobuf:"bytes,5,opt,name=label,proto3" json:"label,omitempty"`
 	// IsPointedAt says the deck points at this note; otherwise this note points at the
 	// deck. A person reads the two differently: one is what the deck was made

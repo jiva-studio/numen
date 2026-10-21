@@ -9,7 +9,7 @@ import (
 // A Task is one piece of work, as a person is shown it.
 type Task struct {
 	// ID is what this work is called, so that the same work reported again
-	// replaces itself rather than appearing twice.
+	// replaces itself and not appearing twice.
 	ID string
 
 	// Title is the work, in the words to show: "Recognising a scan".

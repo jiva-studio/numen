@@ -200,7 +200,7 @@ export type Deck = Message<"numen.v1.Deck"> & {
 
   /**
    * The sections, in the order they stand in the note. A card says which of
-   * them it stands under.
+   * them it is placed under.
    *
    * @generated from field: repeated numen.v1.Section sections = 5;
    */
@@ -263,7 +263,7 @@ export const SectionSchema: GenMessage<Section> = /*@__PURE__*/
 
 /**
  * Problem is something in a file that could not be acted on and was not guessed
- * at. The file is read either way, and each one carries where it stands so that
+ * at. The file is read either way, and each one carries at its current position so that
  * the interface marks the card or the face it is against.
  *
  * @generated from message numen.v1.Problem
@@ -330,7 +330,7 @@ export type Card = Message<"numen.v1.Card"> & {
   mark: string;
 
   /**
-   * Where the section this card stands under stands in the deck's own, counted
+   * Where the section this card is placed under stands in the deck's own, counted
    * from the first. Absent for a card standing before the first section.
    *
    * A write naming a section the deck does not hold is refused. Nothing is
@@ -347,7 +347,7 @@ export type Card = Message<"numen.v1.Card"> & {
    *
    * It travels for the one card that cannot be read again — a card whose
    * stencil is missing or unreadable, where nothing can say which of its fields
-   * is first. That heading is left exactly as it stands, so a write hands back
+   * is first. That heading is left exactly currently, so a write returns
    * what it was given. A write carrying nothing here leaves such a card headed
    * by its mark alone.
    *
@@ -959,7 +959,7 @@ export type WriteDeckRequest = Message<"numen.v1.WriteDeckRequest"> & {
 
   /**
    * The sections, in the order they are to stand in the note. A card says
-   * which of them it stands under.
+   * which of them it is placed under.
    *
    * @generated from field: repeated numen.v1.Section sections = 4;
    */
@@ -1195,9 +1195,9 @@ export const CardsService: GenService<{
    * RenameStencilField gives one of a stencil's fields a different name,
    * everywhere it is written: where the stencil declares it, in the braces of
    * every face that places it, and as a heading in every card of every deck
-   * that stencil cuts. What stands under each heading is left as it was.
+   * that stencil cuts. What is placed under each heading is left as it was.
    *
-   * Every field a stencil declares stands under its own heading in every card,
+   * Every field a stencil declares is placed under its own heading in every card,
    * the first included, so renaming any of them reaches every deck that
    * stencil cuts. A deck the rename could not be written to keeps the old
    * heading and comes back under `not_written`.
@@ -1226,7 +1226,7 @@ export const CardsService: GenService<{
   },
   /**
    * ReadDeck is the sections and the cards of one deck, in the order they
-   * stand in the file. Each card says which section it stands under.
+   * stand in the file. Each card says which section it is placed under.
    *
    * @generated from rpc numen.v1.CardsService.ReadDeck
    */
@@ -1243,7 +1243,7 @@ export const CardsService: GenService<{
    * refused `stale`.
    *
    * A card carrying no section stands before the first one, and a section no
-   * card stands under is written where the cards around it put it.
+   * card is placed under is written where the cards around it put it.
    *
    * The preamble, the tail and each card's own preamble are written back as they
    * arrive, so the parts of the file a client did not touch come out as the

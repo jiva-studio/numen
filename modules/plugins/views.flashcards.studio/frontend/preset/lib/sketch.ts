@@ -94,7 +94,7 @@ const ladder = (least: number, most: number, rounds: (one: number) => number): r
   Array.from({ length: PLACES }, (_, at) => rounds(least + ((most - least) * at) / (PLACES - 1)))
 
 /**
- * What one place of the range comes to, guessed from the settings. A day of
+ * What one place of the range evaluates to, guessed from the settings. A day of
  * review brings back more of the material the longer it runs, and asking for
  * more of it back costs more of the day.
  */

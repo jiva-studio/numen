@@ -128,7 +128,7 @@ describe('a path opened', () => {
     expect(opened).toStrictEqual([])
   })
 
-  it('opens nothing where the vault says nothing stands there', async () => {
+  it('opens nothing where the vault says nothing remains there', async () => {
     const one = vault()
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
@@ -138,7 +138,7 @@ describe('a path opened', () => {
     expect(opened).toStrictEqual([])
   })
 
-  it('opens as a note where the vault could not be asked at all', async () => {
+  it('opens as a note where the vault could not be requested at all', async () => {
     const tabOpeners = fileOpeners(unreachable)
     const opened = editors(tabOpeners)
 
@@ -147,7 +147,7 @@ describe('a path opened', () => {
     expect(opened).toStrictEqual(['note Entropy.md Entropy here —'])
   })
 
-  it('asks the vault what stands there, the caller having said nothing', async () => {
+  it('asks the vault what remains there, the caller having returned nothing', async () => {
     const one = vault({ 'Animals.md': note('deck') })
     const tabOpeners = fileOpeners(one.core)
     editors(tabOpeners)
@@ -157,7 +157,7 @@ describe('a path opened', () => {
     expect(one.asked).toStrictEqual([['Animals.md']])
   })
 
-  it('hands an editor an empty title where the caller gave none', async () => {
+  it('passes an editor an empty title where the caller gave none', async () => {
     const one = vault({ 'Animals.md': note('deck') })
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
@@ -184,7 +184,7 @@ describe('a path opened', () => {
     ).resolves.toBeUndefined()
   })
 
-  it('opens beside where that is where it was asked for', async () => {
+  it('opens alongside where that is where it was requested for', async () => {
     const one = vault({ 'Animals.md': note('deck') })
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
@@ -194,7 +194,7 @@ describe('a path opened', () => {
     expect(opened).toStrictEqual(['deck Animals.md Animals beside —'])
   })
 
-  it('carries the line it was asked at, which each editor answers for itself', async () => {
+  it('carries the line it was requested at, which each editor answers for itself', async () => {
     const one = vault({ 'Entropy.md': note('note'), 'Animals.md': note('deck') })
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
@@ -210,7 +210,7 @@ describe('a path opened', () => {
 })
 
 describe('a source opened at a span of its own text', () => {
-  it('reads a document at the spans it was asked at', async () => {
+  it('reads a document at the spans it was requested at', async () => {
     const one = vault({ 'Physics.pdf': DOCUMENT })
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
@@ -223,7 +223,7 @@ describe('a source opened at a span of its own text', () => {
     expect(opened).toStrictEqual(['document Physics.pdf [10+14, 30+32]'])
   })
 
-  it('plays a recording at the span of the words it was asked at', async () => {
+  it('plays a recording at the span of the words it was requested at', async () => {
     const one = vault({ 'talks/Ants.mp3': TALK })
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
@@ -244,7 +244,7 @@ describe('a source opened at a span of its own text', () => {
     expect(opened).toStrictEqual(['deck Animals.md — here —', 'note Entropy.md — here —'])
   })
 
-  it('opens nothing where the vault says nothing stands there', async () => {
+  it('opens nothing where the vault says nothing remains there', async () => {
     const one = vault()
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
@@ -296,7 +296,7 @@ describe('a file just made here', () => {
     expect(() => tabOpeners.openNewFile('Animals.md', 'Animals', 'deck')).not.toThrow()
   })
 
-  it('opens as what it was made as, the vault not being asked', async () => {
+  it('opens as what it was made as, the vault not being requested', async () => {
     const one = vault()
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)

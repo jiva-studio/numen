@@ -79,7 +79,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 }
 
 // A recording the index holds nothing at all about is answered the same way:
-// the answer stands under the bytes, and nothing else names them.
+// the answer is placed under the bytes, and nothing else names them.
 func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 	talks := willRun()
 	api, _ := openRunWindow(t,

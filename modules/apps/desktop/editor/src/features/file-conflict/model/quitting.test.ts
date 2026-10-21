@@ -112,7 +112,7 @@ const settle = async () => {
   for (let i = 0; i < 20; i++) await nap()
 }
 
-describe('a page asked to write what it owes', () => {
+describe('a page requested to write what it owes', () => {
   it('writes an unsaved tab and only then says it has', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
@@ -325,7 +325,7 @@ describe('a page holding text the file changed under', () => {
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '3', result: 'written' })
   })
 
-  it('raises what stands again under the token it is asked under next', async () => {
+  it('raises what remains again under the token it is requested under next', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const going = useFileFlush(fakeCore.core, async () => {})

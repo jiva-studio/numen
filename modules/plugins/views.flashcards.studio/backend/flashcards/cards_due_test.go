@@ -238,7 +238,7 @@ func (r replaying) Next(
 	return r.Scheduler.Next(s, at, rating)
 }
 
-// answer writes down one card answered well, and hands back the line it stands
+// answer writes down one card answered well, and returns the line it stands
 // as. Every card of this vault is shown through the one face.
 func answer(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()

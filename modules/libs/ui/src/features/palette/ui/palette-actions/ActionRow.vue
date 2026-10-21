@@ -7,7 +7,7 @@ import type { PlacedAction } from '../../lib/actions'
 defineProps<{
   /** The action as it is drawn: its name in runs, and the key it carries. */
   row: PlacedAction
-  /** Whether the panel stands on this row. */
+  /** Whether the panel relies on this row. */
   isCurrent: boolean
 }>()
 

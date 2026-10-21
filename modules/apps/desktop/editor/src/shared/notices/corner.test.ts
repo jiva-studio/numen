@@ -72,11 +72,11 @@ describe('a document being read', () => {
     expect(drawn[0]).toMatchObject({ done: 42, total: 400 })
   })
 
-  it('is drawn the moment it arrives, since a person asked for it', () => {
+  it('is drawn the moment it arrives, since a person requested for it', () => {
     expect(corner([createTask()])[0]?.isUserStarted).toBe(true)
   })
 
-  it('waits to be drawn when nobody asked, since most such work is soon over', () => {
+  it('waits to be drawn when nobody requested, since most such work is soon over', () => {
     const pass = createTask({
       id: 'extracting the books',
       label: 'Extracting books',
@@ -167,7 +167,7 @@ describe('work that stopped badly', () => {
     expect(drawn).toHaveLength(2)
   })
 
-  it('stands until it is put away, and is drawn at once even where nobody asked', () => {
+  it('remains until it is put away, and is drawn at once even where nobody requested', () => {
     const drawn = corner([createTask({ isUserStarted: false, error: 'nothing to read with' })])
 
     expect(drawn[0]?.stay).toBe('kept')
@@ -363,12 +363,12 @@ describe('each state of the window', () => {
   })
 })
 
-describe('what the window said', () => {
+describe('what the window returned', () => {
   it('is never work in progress', () => {
     expect(corner([], [createMessage()])[0]?.isWorking).toBe(false)
   })
 
-  it('draws a report to be read and then let go of', () => {
+  it('draws a report to be read and then release', () => {
     const drawn = corner([], [createMessage()])
 
     expect(drawn[0]).toMatchObject({
@@ -387,7 +387,7 @@ describe('what the window said', () => {
     expect(drawn[0]).toMatchObject({ tone: 'caution', stay: 'kept' })
   })
 
-  it('draws an error that stands until it is put away', () => {
+  it('draws an error that remains until it is put away', () => {
     const drawn = corner(
       [],
       [createMessage({ kind: 'error', text: 'a note of that name is filed there' })],
@@ -396,7 +396,7 @@ describe('what the window said', () => {
     expect(drawn[0]).toMatchObject({ tone: 'alarm', stay: 'kept' })
   })
 
-  it('draws a state for as long as whoever said it keeps saying it', () => {
+  it('draws a state for as long as whoever returned it keeps saying it', () => {
     const drawn = corner(
       [],
       [createMessage({ kind: 'state', text: 'the themes stopped arriving' })],

@@ -15,7 +15,7 @@ import (
 )
 
 // A vault where one deck names a preset, one names an ordinary note, and one
-// names nothing.
+// is empty.
 var pointing = map[string]string{
 	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 		"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nload: {sat: 50}\n---\n\n# Sanskrit\n",
@@ -494,7 +494,7 @@ func TestASaveLeavesTheLoadItCouldNotRead(t *testing.T) {
 }
 
 // A save into a note whose every `load` entry is one the read could not make
-// out leaves the key where it stands.
+// out leaves the key at its current position.
 func TestASaveLeavesALoadItCouldReadNoneOf(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -515,7 +515,7 @@ func TestASaveLeavesALoadItCouldReadNoneOf(t *testing.T) {
 }
 
 // A `load` written as anything but a week of days is the person's whole, and a
-// save leaves it as it stands.
+// save leaves it currently.
 func TestASaveLeavesALoadThatIsNotAWeek(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -743,7 +743,7 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 	}
 }
 
-// A save that changes nothing leaves the file as it stands, comments and all.
+// A save that changes nothing leaves the file currently, comments and all.
 func TestASaveOfWhatTheNoteAlreadySaysWritesNothing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, settled)

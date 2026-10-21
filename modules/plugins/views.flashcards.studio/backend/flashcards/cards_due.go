@@ -24,7 +24,7 @@ type CardsDue struct {
 	Due   int
 	New   int
 	Decks []DeckCardsDue
-	// Presets is what the day comes to under every preset the vault holds,
+	// Presets is what the day evaluates to under every preset the vault holds,
 	// whether a deck points at it or not.
 	Presets []PresetCardsDue
 }
@@ -333,7 +333,7 @@ func (u CountCardsDue) getPresets(
 	return out, nil
 }
 
-// getCardsDue is what the day comes to under each preset the vault's decks
+// getCardsDue is what the day evaluates to under each preset the vault's decks
 // name: the budget the day of the week leaves it, and what has been answered
 // under it since the day opened.
 func (b *budgets) getCardsDue(due, fresh map[string]int) []PresetCardsDue {

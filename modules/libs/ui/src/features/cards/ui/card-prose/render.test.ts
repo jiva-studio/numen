@@ -1,5 +1,5 @@
 /**
- * What a card comes to on the way to the screen.
+ * What a card evaluates to on the way to the screen.
  *
  * The card keeps the breaks a person typed, so a line they wrote with no tag
  * around it reads as a line. A break between two tags is the whitespace of

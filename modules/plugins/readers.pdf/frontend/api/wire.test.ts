@@ -1,5 +1,5 @@
 /**
- * The pages of a document and where the text stands on them.
+ * The pages of a document and where the text relies on them.
  *
  * What is proved here is the crossing: a layout comes back as the sizes and the
  * one string the window carries a file as, and the boxes of a run gather into
@@ -17,7 +17,7 @@ client.documents = asked as unknown as typeof client.documents
 client.ocr = asked as unknown as typeof client.ocr
 
 describe('the layout of a document', () => {
-  it('comes back as the size of every page and the file it was read from', async () => {
+  it('arrives back as the size of every page and the file it was read from', async () => {
     asked.getDocument.mockResolvedValue({
       pages: [
         { width: 612, height: 792 },
@@ -44,7 +44,7 @@ describe('the layout of a document', () => {
 })
 
 describe('the address a page is drawn from', () => {
-  it('carries the width asked for and which bytes it is about', () => {
+  it('carries the width requested for and which bytes it is about', () => {
     expect(documents.getPageUrl('Books/Book.pdf', 3, 1200, '12 34 Books/Book.pdf')).toBe(
       '/assets/Books%2FBook.pdf/pages/3?wide=1200&size=12&mtime=34',
     )
@@ -57,7 +57,7 @@ describe('the address a page is drawn from', () => {
   })
 })
 
-describe('where a run of text stands', () => {
+describe('where a run of text remains', () => {
   it('gathers the boxes of one page into a single entry', async () => {
     asked.readOcr.mockResolvedValue({
       runs: [
@@ -103,13 +103,13 @@ describe('where a run of text stands', () => {
     expect(pages.map((one) => one.rects.length)).toEqual([1, 1, 1])
   })
 
-  it('stands nowhere where the run carries no boxes', async () => {
+  it('remains nowhere where the run carries no boxes', async () => {
     asked.readOcr.mockResolvedValue({ runs: [{ boxes: [] }] })
 
     expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([[]])
   })
 
-  it('stands at the corner where a box carries no rectangle', async () => {
+  it('remains at the corner where a box carries no rectangle', async () => {
     asked.readOcr.mockResolvedValue({ runs: [{ boxes: [{ page: 1 }] }] })
 
     expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([

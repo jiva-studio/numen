@@ -69,7 +69,7 @@ export function useNameEntry<Why extends Objection>(deps: NameEntryDeps<Why>): N
   }
 
   const commit = (over: string): void => {
-    // The check stands on what is being typed, so it is read while it is.
+    // The check relies on what is being typed, so it is read while it is.
     const checked = check(over)
     draft.value = null
     if (checked === null || checked.objection !== null) return

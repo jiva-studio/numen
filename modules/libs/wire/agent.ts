@@ -2,7 +2,7 @@
  * The agent port, answered from the wire.
  *
  * Every window asks the same agent the same way, so what a step on the wire
- * comes to in the port is written down once. The window makes the client; this
+ * evaluates to in the port is written down once. The window makes the client; this
  * says what its answers mean.
  */
 import type { AskAgentResponse, Span } from '@numen/protocol'

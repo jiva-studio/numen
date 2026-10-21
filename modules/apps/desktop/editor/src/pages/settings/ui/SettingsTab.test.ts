@@ -244,7 +244,7 @@ describe('the settings tab', () => {
     expect(headings.attributes('aria-valuemax')).toBe('9')
   })
 
-  it('draws each of the two proofreadings beside the thing it puts right', () => {
+  it('draws each of the two proofreadings alongside the thing it puts right', () => {
     const { tab } = createTab()
     const ocr = tab.get('section[aria-label="' + words.ocr + '"]')
     const heard = tab.get('section[aria-label="' + words.transcription + '"]')
@@ -350,7 +350,7 @@ describe('the settings tab', () => {
     expect(written).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
   })
 
-  it('writes a setting it read out of the file back where it stands', async () => {
+  it('writes a setting it read out of the file back at its current position', async () => {
     const { tab, written } = createTab(false, { agent: { serve_tools: false } })
     await tab.get(control('settings-agent-tools')).trigger('click')
     expect(written).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])

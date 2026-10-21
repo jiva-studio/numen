@@ -79,7 +79,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	}
 }
 
-// Reading the notes is what the whole pass stands on.
+// Reading the notes is what the whole pass relies on.
 func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))

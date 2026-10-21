@@ -33,7 +33,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   ...fields,
 })
 
-describe('whether a deck holds nothing that can ever be asked for', () => {
+describe('whether a deck holds nothing that can ever be requested for', () => {
   it('holds nothing where every face is unbegun and its preset begins none a day', () => {
     expect(hasNothingToBegin(deck(), preset())).toBe(true)
   })
@@ -53,8 +53,8 @@ describe('whether a deck holds nothing that can ever be asked for', () => {
   })
 })
 
-describe('how far through its day a preset stands against a budget of nothing', () => {
-  it('stands at nothing, however much was answered', () => {
+describe('how far through its day a preset remains against a budget of nothing', () => {
+  it('remains at nothing, however much was answered', () => {
     const one = preset({
       budget: { new: 0, reviews: 0, minutes: 0 },
       closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: 'minutes_a_day' },
@@ -67,7 +67,7 @@ describe('how far through its day a preset stands against a budget of nothing', 
     expect(getSpentShare(one)).toBe(0)
   })
 
-  it('stands at nothing where nothing was answered either', () => {
+  it('remains at nothing where nothing was answered either', () => {
     const one = preset({
       budget: { new: 0, reviews: 0, minutes: 0 },
       closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: 'minutes_a_day' },

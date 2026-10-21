@@ -1,6 +1,6 @@
 package settings
 
-// GetFile reads the file as its person wrote it, and where it stands.
+// GetFile reads the file as its person wrote it, and at its current position.
 type GetFile struct {
 	read func() (written, path string, err error)
 }
@@ -9,7 +9,7 @@ func NewGetFile(read func() (written, path string, err error)) *GetFile {
 	return &GetFile{read: read}
 }
 
-// Execute answers a Current holding the file and where it stands, and nothing
+// Execute answers a Current holding the file and at its current position, and nothing
 // else.
 func (u *GetFile) Execute() (Current, error) {
 	written, path, err := u.read()

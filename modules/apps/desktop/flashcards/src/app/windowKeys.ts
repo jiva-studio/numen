@@ -15,7 +15,7 @@ import type { VaultCardsDue } from '@/entities/vault'
 import type { SessionKeyIntent } from '@/features/keyboard'
 import type { Preset } from '@/pages/decks'
 
-/** The screens the window stands on, in the order a person goes through them. */
+/** The screens the window relies on, in the order a person goes through them. */
 export type WindowScreen = 'vaults' | 'decks' | 'session'
 
 /** What the keys ask of the window: what it is showing, and what it can do. */

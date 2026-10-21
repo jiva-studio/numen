@@ -1,7 +1,7 @@
 /**
  * Plausible titles for an invented neighbourhood.
  *
- * Picked from the identifier rather than at random, so a walk is repeatable
+ * Picked from the identifier and not at random, so a walk is repeatable
  * and a screenshot of it means something. Real-looking names matter here: a
  * plex of "Child 1, Child 2, Child 3" tells a reader nothing about whether the
  * labels wrap, collide or read well at a glance, which is the whole reason to

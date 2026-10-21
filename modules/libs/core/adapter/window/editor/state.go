@@ -74,12 +74,12 @@ type State struct {
 	// place be put in front of the person.
 	Places broadcaster[domain.Place]
 
-	// openTabs is what the person has open, as the window last said. It is
+	// openTabs is what currently open, as the window last said. It is
 	// replaced while requests are being served, so every reader takes it
 	// through GetOpenTabs.
 	openTabs atomic.Pointer[domain.OpenTabs]
 
-	// NotifyOpenTabs hears what the person has open each time the window says it,
+	// NotifyOpenTabs hears what currently open each time the window says it,
 	// once what it said stands. A build without one takes the report and tells
 	// nobody.
 	NotifyOpenTabs func(domain.OpenTabs)
@@ -300,7 +300,7 @@ func (h *vaultHandler) GetVaultState(
 		Coverage: &v1.IndexCoverage{IsEmbedding: text(&h.state.Indexing.Model) != ""},
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
-	// the state is answered as it stands. A window standing on nothing holds no
+	// the state is answered currently. A window standing on nothing holds no
 	// chunks and counts none.
 	if h.state.Indexing.Progress != nil && showing.ID != "" {
 		if held, embedded, err := h.state.Indexing.Progress.GetProgress(ctx, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {

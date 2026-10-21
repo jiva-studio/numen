@@ -106,7 +106,7 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
   overflow-wrap: anywhere;
 }
 
-/* What it is happening to stands under what is happening, and is said more
+/* What it is happening to is placed under what is happening, and is said more
    quietly. */
 .activity__about {
   opacity: 0.75;

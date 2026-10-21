@@ -14,7 +14,7 @@ import { optionId, type PlacedGroup } from '../../../lib/place'
 const props = defineProps<{
   /** The group as it is drawn, its rows numbered over the whole list. */
   placed: PlacedGroup
-  /** The number of the row the keyboard stands on, and -1 for none. */
+  /** The number of the row the keyboard relies on, and -1 for none. */
   here: number
   /** What the list and its rows are addressed by. */
   uid: string

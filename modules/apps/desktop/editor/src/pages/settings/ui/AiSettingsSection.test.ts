@@ -85,7 +85,7 @@ const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: nu
   }[]
 
 describe('the default agent', () => {
-  it('offers the agents the plugins list, said with the one that answers while none is named', () => {
+  it('offers the agents the plugins list, returned with the one that answers while none is named', () => {
     const { wrapper } = createSection()
     expect(getChoices(wrapper, 0).map((one) => one.text)).toStrictEqual([
       'Agent of the panel (Agent A)',
@@ -110,7 +110,7 @@ describe('the default agent', () => {
     ])
   })
 
-  it('writes the model chosen beside the agent', () => {
+  it('writes the model chosen alongside the agent', () => {
     const { wrapper, written } = createSection({ ai: { default: { agent: 'agent-b' } } })
     pick(wrapper.findAllComponents({ name: 'Select' }), 1).vm.$emit('update:modelValue', 'b-fast')
     expect(written).toStrictEqual([
@@ -121,7 +121,7 @@ describe('the default agent', () => {
 })
 
 describe('the consent', () => {
-  it('asks the person about a plugin that asked, and writes the answer', async () => {
+  it('asks the person about a plugin that requested, and writes the answer', async () => {
     const { wrapper, written } = createSection()
     const asking = wrapper.find('[role="alert"]')
     expect(asking.text()).toContain('Asking Plugin asks to use a model.')
@@ -134,7 +134,7 @@ describe('the consent', () => {
     ])
   })
 
-  it('stands on a switch for each plugin that may ask', () => {
+  it('relies on a switch for each plugin that may ask', () => {
     const { wrapper, written } = createSection()
     const switches = wrapper.findAllComponents({ name: 'Switch' })
     expect(switches.map((one) => one.props('modelValue'))).toStrictEqual([false, true])
@@ -145,7 +145,7 @@ describe('the consent', () => {
     ])
   })
 
-  it('asks nothing where no plugin asked', () => {
+  it('asks nothing where no plugin requested', () => {
     const { wrapper } = createSection({}, [AGENT_A, ALLOWED])
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })

@@ -64,7 +64,7 @@ const onClick = (press: MouseEvent) => {
   overflow-x: auto;
 }
 
-/* A slot naming no field is read where it stands. */
+/* A slot naming no field is read at its current position. */
 .prose :deep(mark) {
   border-radius: var(--numen-radius);
   padding-inline: 0.25em;

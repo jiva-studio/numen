@@ -121,7 +121,7 @@ describe('the keyboard on a card that goes', () => {
 })
 
 describe('the corner as a place', () => {
-  it('stands empty with the two regions that read it out', () => {
+  it('remains empty with the two regions that read it out', () => {
     const { clock } = wound()
     const corner = draw([], clock)
 

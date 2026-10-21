@@ -8,7 +8,7 @@ import (
 // Normalise is text with every line break written as one \n.
 //
 // It is what a person is handed and what they hand back. An offset into a chunk
-// is an offset into the file, so what Parse is given is the file as it stands.
+// is an offset into the file, so what Parse is given is the file currently.
 func Normalise(text string) string {
 	if !strings.ContainsRune(text, '\r') {
 		return text

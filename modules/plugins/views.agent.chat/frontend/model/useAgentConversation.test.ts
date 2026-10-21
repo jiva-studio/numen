@@ -1,5 +1,5 @@
 /**
- * What pressing something in an agent tab comes to, asked without a screen.
+ * What pressing something in an agent tab evaluates to, asked without a screen.
  *
  * A question carries nothing about what is open, and a passage named in an
  * answer opens the source it is in.
@@ -65,7 +65,7 @@ const turn = (id: string, text: string): Turn =>
   ({ id, text, voice: 'answered', state: 'settled' })
 
 describe('a question sent', () => {
-  it('names nothing the person has open, which the window reports itself', () => {
+  it('is empty currently open, which the window reports itself', () => {
     const one = tab()
 
     one.state.send('what is this about')
@@ -142,7 +142,7 @@ describe('a link inside an answer', () => {
     expect(one.opened).toEqual([])
   })
 
-  it('opens the note it names beside what the person is looking at', async () => {
+  it('opens the note it names along with what the person is looking at', async () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
     one.said.value = [turn('said', 'It sits under [[Thermodynamics]].')]
     await nextTick()

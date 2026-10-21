@@ -118,7 +118,7 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
 }
 
 describe('a stencil opened', () => {
-  it('draws the fields in the order a person is asked for them', async () => {
+  it('draws the fields in the order a person is requested for them', async () => {
     const { tab } = await open()
 
     expect(tab.stencil.value.fields).toStrictEqual(['Height', 'Life span'])
@@ -270,7 +270,7 @@ describe('a field carried in a stencil', () => {
 })
 
 describe('a stencil whose file moved past what was read', () => {
-  it('is stale once the write comes back saying the file changed', async () => {
+  it('is stale once the write arrives back saying the file changed', async () => {
     const { stencils, tab } = await open({ isChanged: true })
 
     tab.addField('Weight')
@@ -322,7 +322,7 @@ describe('a stencil the vault refused', () => {
 })
 
 describe('what is wrong with a stencil', () => {
-  it('stands against the face it was read against', async () => {
+  it('remains against the face it was read against', async () => {
     const { tab } = await open({
       problems: [{ kind: 'faceMissingASide', card: null, face: 0, field: '', text: 'no back' }],
     })
@@ -331,7 +331,7 @@ describe('what is wrong with a stencil', () => {
     expect(tab.marks.value.at.get(face)).toStrictEqual(['no back'])
   })
 
-  it('stands against the field it names where it stands against no face', async () => {
+  it('remains against the field it names at its current position against no face', async () => {
     const { tab } = await open({
       problems: [
         {
@@ -406,7 +406,7 @@ describe('a stencil read again under the window', () => {
 })
 
 describe('a stencil renamed under the window', () => {
-  it('is the tab it has when it is asked for at the name it now carries', async () => {
+  it('is the tab it has when it is requested for at the name it now carries', async () => {
     const one = await open()
 
     one.stencils.applyPathChanges(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
@@ -454,13 +454,13 @@ describe('a stencil tab as the window lists it', () => {
     expect(stencils.kind.identity?.('anything')).toBe('anything')
   })
 
-  it('names the file it stands at and what it is called', async () => {
+  it('names the file it remains at and what it is called', async () => {
     const { stencils, tab } = await open()
 
     expect(stencils.kind.getTarget?.(tab)).toStrictEqual({ path: 'Animal.md', title: 'Animal' })
   })
 
-  it('names the file it stands at where it is asked what is open', async () => {
+  it('names the file it remains at where it is requested what is open', async () => {
     const { stencils, tab } = await open()
 
     expect(stencils.kind.getOpenTab?.(tab)).toStrictEqual({ path: 'Animal.md' })
@@ -547,7 +547,7 @@ describe('a stencil tab closed', () => {
     expect(tab.stencil.value.faces[0]?.id).not.toBe(was)
   })
 
-  it('lets go of its title while a tab stands on another file', async () => {
+  it('lets go of its title while a tab relies on another file', async () => {
     const one = await open()
     await one.windowTabs.openTab(STENCIL, 'Plant.md')
     await settle()
@@ -585,7 +585,7 @@ describe('a stencil taken from its file', () => {
 })
 
 describe('a stencil opened from a file', () => {
-  it('stands at one tab however many times it is asked for before it is open', async () => {
+  it('remains at one tab however many times it is requested for before it is open', async () => {
     const one = await open()
 
     await one.windowTabs.openTab(STENCIL, 'Plant.md')
@@ -596,7 +596,7 @@ describe('a stencil opened from a file', () => {
     expect(one.windowTabs.each(STENCIL)).toHaveLength(2)
   })
 
-  it('stands at the file again once its tab was closed and it is opened again', async () => {
+  it('remains at the file again once its tab was closed and it is opened again', async () => {
     const one = await open()
     const first = await one.windowTabs.openTab(STENCIL, 'Plant.md')
     await settle()

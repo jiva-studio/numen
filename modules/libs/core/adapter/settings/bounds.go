@@ -10,7 +10,7 @@ func (b Bounds) Contains(value float64) bool {
 	return value >= b.Least && value <= b.Most
 }
 
-// Check hands back what is wrong with a number the setting does not take, and
+// Check returns what is wrong with a number the setting does not take, and
 // nothing for one it does. at is where the number sits in the file.
 func (b Bounds) Check(at string, value float64) error {
 	if b.Contains(value) {

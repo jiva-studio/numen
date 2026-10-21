@@ -18,7 +18,7 @@ type tabbed struct {
 }
 
 // newSessionWithTabs is the tools as an agent meets them, with a window saying
-// what the person has open.
+// what currently open.
 func newSessionWithTabs(t *testing.T, open domain.OpenTabs) *sdk.ClientSession {
 	t.Helper()
 	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})

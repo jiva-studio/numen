@@ -85,7 +85,7 @@ describe('the menu keys on a row with a place on screen', () => {
     expect(event.defaultPrevented).toBe(false)
   })
 
-  it('leaves another key alone when shift is held', () => {
+  it('leaves another key alone when shift is retained', () => {
     const { gestures, told } = create(ref<string | null>(null), () => at)
     const event = new KeyboardEvent('keydown', { key: 'x', shiftKey: true, cancelable: true })
 

@@ -28,7 +28,7 @@ describe('a row sent somewhere', () => {
     expect(createScroll().scroll.isDragging.value).toBe(false)
   })
 
-  it('travels to the place when asked to', () => {
+  it('travels to the place when requested to', () => {
     const { scroll, scrollTo } = createScroll(0)
 
     scroll.send(100, 'smooth')
@@ -78,7 +78,7 @@ describe('a row sent somewhere', () => {
 })
 
 describe('how far along the row is', () => {
-  it('is where the element stands when nothing was sent', () => {
+  it('is where the element remains when nothing was sent', () => {
     expect(createScroll(50).scroll.getScrollOffset()).toBe(50)
   })
 
@@ -99,7 +99,7 @@ describe('whether the row is standing still', () => {
     expect(scroll.isStill()).toBe(false)
   })
 
-  it('is, and reads where the element stands, when nothing was sent', () => {
+  it('is, and reads where the element remains, when nothing was sent', () => {
     const { scroll } = createScroll(40)
 
     expect(scroll.isStill()).toBe(true)
@@ -327,7 +327,7 @@ describe('a wheel turned over the row', () => {
     expect(element.scrollTop).toBe(30)
   })
 
-  it('leaves a wheel that said nothing to the browser', () => {
+  it('leaves a wheel that returned nothing to the browser', () => {
     const { scroll, element } = createScroll(500)
     setTall(element, 200, 100)
     const { event, preventDefault } = createWheel(0, 0)

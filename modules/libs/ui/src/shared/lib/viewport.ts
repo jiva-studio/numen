@@ -99,7 +99,7 @@ const useFollowed = (
 
 /**
  * The room one element of a drawn component has, held for the component's
- * life: measured where it stands and again at every size it takes. A viewport
+ * life: measured at its current position and again at every size it takes. A viewport
  * with no size is not a measurement, and a component drawn out of sight has
  * none until it is drawn where somebody can see it.
  */

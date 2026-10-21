@@ -165,7 +165,7 @@ describe('the queue of an open note', () => {
   })
 
   describe('a read', () => {
-    it('hands the body, the file it came from and the link to the tab', async () => {
+    it('passes the body, the file it came from and the link to the tab', async () => {
       const { queue, turned, addresses } = setup({
         read: async () => asValue({ body: 'text', at: 'v1', link }),
       })
@@ -178,7 +178,7 @@ describe('the queue of an open note', () => {
       ])
     })
 
-    it('hands an empty file mark and no link where the note has neither', async () => {
+    it('passes an empty file mark and no link where the note has neither', async () => {
       const { queue, turned, addresses } = setup({ read: async () => asValue({ body: 'text' }) })
 
       await queue.read('a', 'Note.md', 1)
@@ -225,7 +225,7 @@ describe('the queue of an open note', () => {
   })
 
   describe('a write', () => {
-    it('hands the file it wrote to the tab and lets a closing tab go on', async () => {
+    it('passes the file it wrote to the tab and lets a closing tab go on', async () => {
       const { queue, turned, resumed } = setup({
         write: async () => asValue({ body: '', at: 'v2' }),
       })
@@ -236,7 +236,7 @@ describe('the queue of an open note', () => {
       expect(resumed).toEqual(['a'])
     })
 
-    it('hands an empty file mark where the write names none', async () => {
+    it('passes an empty file mark where the write names none', async () => {
       const { queue, turned } = setup({ write: async () => asValue({ body: '' }) })
 
       await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })

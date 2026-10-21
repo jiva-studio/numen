@@ -40,7 +40,7 @@ type artifactHandler struct {
 // Which model does the work follows from the file, so the caller names the
 // artifact and never the producer.
 
-// The artifacts a file of the vault can carry, by the name each stands under.
+// The artifacts a file of the vault can carry, by the name each is placed under.
 // A name is the last part of an artifact's resource name.
 const (
 	// An artifact is named by what it is. What made it is the store's to say,
@@ -140,7 +140,7 @@ func (f *artifactFiles) getProducer(ctx context.Context, at domain.URL) (string,
 	return by.Producer, nil
 }
 
-// getArtifactID is the name one artifact stands under in the store, and whether the
+// getArtifactID is the name one artifact is placed under in the store, and whether the
 // schema names that artifact at all.
 func getArtifactID(of v1.ArtifactKind) (string, bool) {
 	switch of {
@@ -205,7 +205,7 @@ func (h *artifactHandler) removeCopy(
 	return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
 }
 
-// getVideoCopy is whether a copy of the video at an address stands on this disk, and
+// getVideoCopy is whether a copy of the video at an address relies on this disk, and
 // how large it is.
 func (h *artifactHandler) getVideoCopy(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
@@ -325,7 +325,7 @@ func (h *artifactHandler) CreateArtifact(
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// What a url carries is what fetches it, so a build that reaches no address
-	// says it cannot rather than that the file carries nothing.
+	// says it cannot and not that the file carries nothing.
 	at := h.files.getArtifactAddress(ctx, showing, ref)
 	producer, err := h.files.getProducer(ctx, at)
 	if err != nil {
@@ -428,7 +428,7 @@ func (h *artifactHandler) run(
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	// What stands is what the ask comes to. A source a run already answered
+	// What stands is what the ask evaluates to. A source a run already answered
 	// about is answered the same until that record is taken away.
 	if progress.State == source.RunComplete || progress.State == source.RunActive ||
 		progress.State == source.RunNoSpeech || progress.State == source.RunUnopened {
@@ -473,7 +473,7 @@ var errComingUp = errors.New("the vault is still coming up")
 var errNoDownloader = errors.New("this build cannot download what an address holds")
 
 // fetchArtifact reaches the address a link note points at and answers with what
-// stands once it has.
+// appears once it has.
 //
 // It is waited for: a video's words are one request and a page is one page, and
 // both are over in the time a person waits for a window to answer.

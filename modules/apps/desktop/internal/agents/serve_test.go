@@ -102,7 +102,7 @@ func TestATokenCreatedForAWindowIsKeptNowhere(t *testing.T) {
 }
 
 // TestAnEphemeralPortIsNamedByWhatItBoundTo. A window served on a port the
-// machine picks hands back the port it was given, which is what an agent is
+// machine picks returns the port it was given, which is what an agent is
 // told to reach.
 func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	cfg := makeInstallation(t)

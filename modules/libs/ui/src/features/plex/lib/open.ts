@@ -30,7 +30,7 @@ const ARROW_DIRECTION = { above: -1, below: 1 } as const
 
 /** One heading at a moment of the opening. */
 export interface DrawnHeading extends HungHeading {
-  /** Where it stands now, from the top of what is hung. */
+  /** at its current position now, from the top of what is hung. */
   readonly y: number
   readonly opacity: number
 }
@@ -43,7 +43,7 @@ export interface OpenHeadings {
   readonly opacity: number
   /** The headings standing in the window, in the order they stand. */
   readonly headings: readonly DrawnHeading[]
-  /** Which heading the window stands on, counted from the first. */
+  /** Which heading the window relies on, counted from the first. */
   readonly first: number
   /** Whether the window has headings above it, and headings below it. */
   readonly isAbove: boolean
@@ -77,7 +77,7 @@ export function scrollBy(
   return { by, left: pixels - by * hung.headingHeight }
 }
 
-/** What one of a wheel's own units comes to in pixels: a line, or a window. */
+/** What one of a wheel's own units evaluates to in pixels: a line, or a window. */
 function getStride(hung: NodeHeadings, mode: number): number {
   if (mode === LINES) return hung.headingHeight
   if (mode === WINDOWS) return hung.shown * hung.headingHeight

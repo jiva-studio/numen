@@ -74,7 +74,7 @@ describe('the tree the tab draws', () => {
     ])
   })
 
-  it('is handed what an open folder holds, inside the row that stands for it', async () => {
+  it('is handed what an open folder holds, inside the row that remains for it', async () => {
     const { window } = await mountFiles(['physics'])
 
     expect(getRowIds(window.findComponent(Tree).props('rows'))).toStrictEqual([
@@ -90,7 +90,7 @@ describe('the tree the tab draws', () => {
     expect(window.findComponent(Tree).props('open')).not.toContain('physics')
   })
 
-  it('draws an icon of its own beside every row', async () => {
+  it('draws an icon of its own alongside every row', async () => {
     const { window } = await mountFiles()
 
     expect(window.findAll('.files__icon')).toHaveLength(3)
@@ -112,7 +112,7 @@ describe('the tree the tab draws', () => {
 })
 
 describe('a row the tree reports', () => {
-  it('takes the person to the note it stands for', async () => {
+  it('takes the person to the note it remains for', async () => {
     const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('activate', 'Entropy.md')
@@ -130,7 +130,7 @@ describe('a row the tree reports', () => {
     expect(done).toStrictEqual(['lands file Cover.png'])
   })
 
-  it('is filed where it was let go of', async () => {
+  it('is filed where it was release', async () => {
     const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('move', ['Entropy.md'], { into: 'physics' })
@@ -139,7 +139,7 @@ describe('a row the tree reports', () => {
     expect(done).toStrictEqual(['moves Entropy.md physics/Entropy.md'])
   })
 
-  it('is one of several filed where they were all let go of', async () => {
+  it('is one of several filed where they were all release', async () => {
     const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('move', ['Entropy.md', 'Cover.png'], { into: 'physics' })
@@ -151,7 +151,7 @@ describe('a row the tree reports', () => {
     ])
   })
 
-  it('is one of the rows the tree hands back as chosen', async () => {
+  it('is one of the rows the tree returns as chosen', async () => {
     const { list, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('select', ['Entropy.md', 'Cover.png'])
@@ -161,7 +161,7 @@ describe('a row the tree reports', () => {
     expect(window.findComponent(Tree).props('selected')).toStrictEqual(['Entropy.md', 'Cover.png'])
   })
 
-  it('is one of the rows asked to go, handed to the window as one command', async () => {
+  it('is one of the rows requested to go, handed to the window as one command', async () => {
     const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('remove', ['Entropy.md', 'Cover.png'])
@@ -179,7 +179,7 @@ describe('a row the tree reports', () => {
     expect(done).toStrictEqual(['moves Entropy.md Order.md'])
   })
 
-  it('opens the folder it stands for, and what it holds is drawn', async () => {
+  it('opens the folder it remains for, and what it holds is drawn', async () => {
     const { window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('open', 'physics')
@@ -207,7 +207,7 @@ describe('the menu on a row', () => {
   const getItemIds = async (path: string | null, selection: readonly string[] = []) =>
     (await openMenu(path, selection)).map((one) => one.id)
 
-  it('offers everything that can be done to a note it was asked for on', async () => {
+  it('offers everything that can be done to a note it was requested for on', async () => {
     expect(await getItemIds('Entropy.md')).toStrictEqual([
       'read',
       'travel',
@@ -227,7 +227,7 @@ describe('the menu on a row', () => {
     ])
   })
 
-  it('stands the items of a note in the groups they belong to', async () => {
+  it('remains the items of a note in the groups they belong to', async () => {
     expect((await openMenu('Entropy.md')).map((one) => one.group)).toStrictEqual([
       'open',
       'open',
@@ -264,7 +264,7 @@ describe('the menu on a row', () => {
     expect(await getItemIds('physics')).not.toContain('title')
   })
 
-  it('offers what can be made at the root, asked off every row', async () => {
+  it('offers what can be made at the root, requested off every row', async () => {
     expect(await getItemIds(null)).toStrictEqual([
       'newNote',
       'newDeck',
@@ -280,7 +280,7 @@ describe('the menu on a row', () => {
 })
 
 describe('a folder that could not be read', () => {
-  it('is said in the tab', async () => {
+  it('is returned in the tab', async () => {
     const list = useFileTree({
       list: async () => {
         throw new Error('the vault is not there')
@@ -309,7 +309,7 @@ describe('a folder that could not be read', () => {
     expect(window.find('.caution').text()).toContain('numen did not answer')
   })
 
-  it('is said nowhere while the vault answers', async () => {
+  it('is returned nowhere while the vault answers', async () => {
     const { window } = await mountFiles()
 
     expect(window.find('.caution').exists()).toBe(false)

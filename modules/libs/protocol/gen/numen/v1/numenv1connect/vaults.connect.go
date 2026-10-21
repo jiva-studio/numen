@@ -77,7 +77,7 @@ type VaultsServiceClient interface {
 	// brings back the same vault.
 	RemoveVault(context.Context, *connect.Request[v1.RemoveVaultRequest]) (*connect.Response[v1.RemoveVaultResponse], error)
 	// OpenVault shows another vault in this window. What the window was showing
-	// is let go of, and everything a client asked about it is asked again of the
+	// is release, and everything a client asked about it is asked again of the
 	// vault that arrives.
 	OpenVault(context.Context, *connect.Request[v1.OpenVaultRequest]) (*connect.Response[v1.OpenVaultResponse], error)
 }
@@ -193,7 +193,7 @@ type VaultsServiceHandler interface {
 	// brings back the same vault.
 	RemoveVault(context.Context, *connect.Request[v1.RemoveVaultRequest]) (*connect.Response[v1.RemoveVaultResponse], error)
 	// OpenVault shows another vault in this window. What the window was showing
-	// is let go of, and everything a client asked about it is asked again of the
+	// is release, and everything a client asked about it is asked again of the
 	// vault that arrives.
 	OpenVault(context.Context, *connect.Request[v1.OpenVaultRequest]) (*connect.Response[v1.OpenVaultResponse], error)
 }

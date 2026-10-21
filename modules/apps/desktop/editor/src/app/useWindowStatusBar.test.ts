@@ -131,7 +131,7 @@ describe('useWindowStatusBar groups and handlers', () => {
     expect(bar.tasks.value.map((one) => one.group)).toEqual(['Sorting', 'Background Tasks'])
   })
 
-  it('hands cancel and retry to the callbacks given, and does nothing without them', () => {
+  it('passes cancel and retry to the callbacks given, and does nothing without them', () => {
     const onCancel = vi.fn()
     const onRetry = vi.fn()
     const bar = useWindowStatusBar({ tasks: ref([defaultTask]), onCancel, onRetry })
@@ -147,7 +147,7 @@ describe('useWindowStatusBar groups and handlers', () => {
 })
 
 describe('a proofreading the person has not allowed', () => {
-  it('stands failed in the status bar, saying where to allow it', () => {
+  it('remains failed in the status bar, saying where to allow it', () => {
     const reason = 'AI access not allowed — allow it in Settings → AI'
     const tasks = ref<readonly Task[]>([
       {

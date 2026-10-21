@@ -73,7 +73,7 @@ describe('what a screen reader is told', () => {
 })
 
 describe('moving the handle', () => {
-  it('hands back a number and not a list', async () => {
+  it('returns a number and not a list', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     expect(getEmitted(control)).toEqual([41])
@@ -111,7 +111,7 @@ describe('moving the handle', () => {
     expect(getEmitted(control)).toEqual([10, 9])
   })
 
-  it('moves ten steps under a page key, and under a key held with shift', async () => {
+  it('moves ten steps under a page key, and under a key retained with shift', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'PageUp' })
     await control.setProps({ modelValue: 50 })
@@ -122,7 +122,7 @@ describe('moving the handle', () => {
     expect(getEmitted(control)).toEqual([50, 40, 50])
   })
 
-  it('hands nothing on while nobody may move it', async () => {
+  it('passes nothing on while nobody may move it', async () => {
     const control = mountSlider({ disabled: true })
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     expect(getEmitted(control)).toEqual([])
@@ -130,14 +130,14 @@ describe('moving the handle', () => {
 })
 
 describe('a value the ends do not hold', () => {
-  it('stands at the end it is past, and is announced there', async () => {
+  it('remains at the end it is past, and is announced there', async () => {
     const control = mountSlider({ modelValue: 90, max: 50 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('50')
     expect(getEmitted(control)).toEqual([50])
   })
 
-  it('stands at the floor where it is handed a value under it', async () => {
+  it('remains at the floor where it is handed a value under it', async () => {
     const control = mountSlider({ modelValue: -20 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('0')
@@ -146,7 +146,7 @@ describe('a value the ends do not hold', () => {
 
   // A caller narrowing what a control allows narrows it under a value already
   // standing there, and what is announced is where the handle is drawn.
-  it('comes inside the ends where they move under it', async () => {
+  it('arrives inside the ends where they move under it', async () => {
     const control = mountSlider({ modelValue: 90 })
     await control.setProps({ max: 50 })
     await nextTick()
@@ -166,7 +166,7 @@ describe('coming to rest', () => {
 
   // A caller writes what it was handed when the handle commits, so the value
   // has to be handed on before the commit is.
-  it('hands the value on before it says the handle has committed', async () => {
+  it('passes the value on before it says the handle has committed', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
@@ -185,7 +185,7 @@ describe('coming to rest', () => {
     expect(control.emitted('commit')).toBeUndefined()
   })
 
-  it('says it once, at where the walk left it, when the key is let go of', async () => {
+  it('says it once, at where the walk left it, when the key is release', async () => {
     const control = mountSlider()
     await walkTrack(control, [41, 42, 43])
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
@@ -201,7 +201,7 @@ describe('coming to rest', () => {
     expect(control.emitted('commit')).toBeUndefined()
   })
 
-  // A handle the keyboard leaves in the middle of a walk is a handle let go of.
+  // A handle the keyboard leaves in the middle of a walk is a handle release.
   it('says it where the keyboard leaves the handle with the key still down', async () => {
     const control = mountSlider()
     await walkTrack(control, [41])

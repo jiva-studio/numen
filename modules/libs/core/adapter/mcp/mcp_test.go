@@ -27,7 +27,7 @@ import (
 )
 
 // newSession is the tools as an agent meets them: over a real session, through
-// the protocol, rather than by calling the handlers directly.
+// the protocol, and not by calling the handlers directly.
 func newSession(t *testing.T, notes map[string]string) (*sdk.ClientSession, domain.Vault) {
 	t.Helper()
 	v, core := newCoreWithNotes(t, notes)
@@ -57,7 +57,7 @@ func sessionOf(t *testing.T, server *sdk.Server) *sdk.ClientSession {
 }
 
 // newCore is a vault whose tools are built but not connected, for the questions
-// that are about the transport rather than about the tools.
+// that are about the transport and not about the tools.
 func newCore(t *testing.T) (domain.Vault, mcp.Core) {
 	t.Helper()
 	return newCoreWithNotes(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -400,7 +400,7 @@ func createNotes(t *testing.T, session *sdk.ClientSession, notes ...map[string]a
 	return out
 }
 
-// A path that names nothing is an answer, not a failure: the note may have gone
+// A path that is empty is an answer, not a failure: the note may have gone
 // since the agent last looked.
 func TestGetSeparatesWhatIsThereFromWhatIsNot(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -827,7 +827,7 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 		t.Errorf("the frontmatter came back as prose:\n%s", read.Notes[0].Body)
 	}
 
-	// And a caller that hands back a whole note is told, rather than quietly
+	// And a caller that returns a whole note is told, and not quietly
 	// given a note with two frontmatter blocks in it.
 	got := getRefusal(t, session, "note_rewrite", map[string]any{
 		"path":        "Entropy.md",

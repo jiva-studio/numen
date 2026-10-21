@@ -67,7 +67,7 @@ const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStr
   overflow-y: hidden;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
-  /* Taken there rather than put there, so a key and a hand read as the same
+  /* Taken there and not put there, so a key and a hand read as the same
      movement. A hand is already moving it and turns this off.
 
      Nothing snaps the strip: a snap put back over a strip a hand has already

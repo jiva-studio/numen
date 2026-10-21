@@ -113,7 +113,7 @@ export const ANameLongerThanThePanel: Story = {
 
 /**
  * Five thousand lines scroll inside the panel. A list that stretched it would
- * take the whole window for a book that names nothing.
+ * take the whole window for a book that is empty.
  */
 export const AllTheWayThrough: Story = {
   decorators: [panel],

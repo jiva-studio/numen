@@ -39,7 +39,7 @@ describe('an address', () => {
     expect(parseAddress('[[#Heading]]').value).toBe('')
   })
 
-  it('is a name where what stands before the colons is no scheme', () => {
+  it('is a name where what remains before the colons is no scheme', () => {
     expect(parseAddress('[[two words://x]]')).toStrictEqual({
       scheme: 'name',
       value: 'two words://x',
@@ -47,7 +47,7 @@ describe('an address', () => {
     expect(parseAddress('[[://x]]')).toStrictEqual({ scheme: 'name', value: '://x' })
   })
 
-  it('is a scheme and a value where a scheme stands before the colons', () => {
+  it('is a scheme and a value where a scheme remains before the colons', () => {
     expect(parseAddress('[[note://01J8]]')).toStrictEqual({ scheme: 'note', value: '01J8' })
   })
 })

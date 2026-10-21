@@ -10,7 +10,7 @@ withDefaults(
     subject?: string
     /**
      * What is true of it beside its name: how much has been written, how long
-     * the wait has lasted. It is what moves while nothing else does.
+     * the wait has lasted. It is what moves exclusively.
      */
     aside?: string
     /** Still in hand. */

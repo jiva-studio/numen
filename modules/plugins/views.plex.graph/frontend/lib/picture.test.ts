@@ -288,7 +288,7 @@ describe('what each note of a neighbourhood is', () => {
     ])
   })
 
-  it('names nothing for a focus with no path', () => {
+  it('is empty for a focus with no path', () => {
     const around: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
 
     expect(getNoteTypes(around).size).toBe(0)

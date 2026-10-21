@@ -223,7 +223,7 @@ describe('usePaletteKeys', () => {
       expect(reveal).toHaveBeenCalledOnce()
     })
 
-    it('stands on the item the step opens on', async () => {
+    it('relies on the item the step opens on', async () => {
       const { isOpen, places, opensOn } = setUp()
       opensOn.value = 'b'
       places.held.value = 'c'
@@ -232,7 +232,7 @@ describe('usePaletteKeys', () => {
       expect(places.lit.value?.id).toBe('b')
     })
 
-    it('stands on the item it was on when the step names none', async () => {
+    it('relies on the item it was on when the step names none', async () => {
       const { isOpen, places } = setUp()
       places.held.value = 'c'
       isOpen.value = true
@@ -240,7 +240,7 @@ describe('usePaletteKeys', () => {
       expect(places.lit.value?.id).toBe('c')
     })
 
-    it('stands on the first item when nothing is named or held', async () => {
+    it('relies on the first item when nothing is named or retained', async () => {
       const { isOpen, places } = setUp()
       isOpen.value = true
       await flushPromises()
@@ -271,7 +271,7 @@ describe('usePaletteKeys', () => {
   })
 
   describe('as a step begins', () => {
-    it('selects what stands in the field while the palette is open', async () => {
+    it('selects what remains in the field while the palette is open', async () => {
       const { step, handle } = setUp({ open: true })
       await flushPromises()
       handle.select.mockClear()

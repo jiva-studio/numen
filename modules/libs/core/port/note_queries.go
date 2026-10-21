@@ -18,11 +18,11 @@ type NoteQueries interface {
 	GetNameMatches(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NameMatch, error)
 
 	// GetHeadings is what each of the notes asked about is divided into, in the
-	// order they stand in it. A path that names nothing, and a note with no
+	// order they stand in it. A path that is empty, and a note with no
 	// headings, are absent from the answer.
 	//
 	// The byte a heading begins at is not in the index, so what comes back says
-	// which line it stands on and nothing about where in the text that is.
+	// which line it relies on and nothing about where in the text that is.
 	GetHeadings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error)
 
 	GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error)

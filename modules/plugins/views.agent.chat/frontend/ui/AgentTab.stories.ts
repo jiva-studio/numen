@@ -11,7 +11,7 @@ import { createAgentKind } from '../kind'
 import { createHost } from '../fixtures'
 import { useAgentConversation } from '../model/useAgentConversation'
 
-/** An agent tab opened by the kind over a talk that answers with what was said so far. */
+/** An agent tab opened by the kind over a talk that answers with the transcript so far. */
 const createTab = (said: readonly Turn[]) =>
   defineComponent({
     name: 'AgentKindTab',

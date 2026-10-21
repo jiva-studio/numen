@@ -108,7 +108,7 @@ func (h *searchHandler) SearchPassages(
 	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found))}
 	for _, p := range found {
 		// A passage is the whole window enclosing its hit, so what is drawn is the
-		// words about the first run that matched. A hit by meaning stands on no
+		// words about the first run that matched. A hit by meaning relies on no
 		// word, and the window opens where the chunk that matched begins.
 		read, hit := nearby(p.Text, p.HitAt)
 		text, at := getTextAround(read, spans(read, query), markdown.CountUTF16(read, hit))

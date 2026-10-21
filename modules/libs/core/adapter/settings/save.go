@@ -134,7 +134,7 @@ func renameField(path string, at []string, to string) error {
 	})
 }
 
-// renameMember hands back the object's bytes with one member's name changed,
+// renameMember returns the object's bytes with one member's name changed,
 // and whether it found the member to change.
 func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 	if len(at) == 0 {
@@ -210,7 +210,7 @@ func applySetting(raw []byte, setting Setting) ([]byte, error) {
 	return replaceValueAt(raw, setting.At, value, "")
 }
 
-// replaceValueAt replaces the value at a path through an object, and hands back the
+// replaceValueAt replaces the value at a path through an object, and returns the
 // object's bytes with that one span changed.
 //
 // outer is the indentation of the line the object's own name sits on, which is

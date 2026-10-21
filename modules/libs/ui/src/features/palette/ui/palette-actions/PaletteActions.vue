@@ -41,7 +41,7 @@ const held = ref('')
 
 const actions = computed(() => placeActions(props.offered, hunted.value))
 
-/** Which row that action stands on, counted over the actions the words left. */
+/** Which row that action relies on, counted over the actions the words left. */
 const here = computed(() => actions.value.findIndex((one) => one.action.id === held.value))
 
 const goTo = (to: number) => {

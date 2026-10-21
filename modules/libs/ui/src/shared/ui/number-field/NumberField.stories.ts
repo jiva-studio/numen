@@ -181,7 +181,7 @@ export const TheEndsAreOneKeyAway: Story = {
 }
 
 /**
- * A line that is no number is read out as it stands, so what is refused is said
+ * A line that is no number is read out currently, so what is refused is said
  * and not only marked.
  */
 export const ARefusedLineIsReadOut: Story = {

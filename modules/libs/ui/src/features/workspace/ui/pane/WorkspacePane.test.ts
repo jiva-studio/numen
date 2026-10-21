@@ -67,7 +67,7 @@ describe('what the strip is', () => {
     expect(stops).toStrictEqual(['-1', '0', '-1'])
   })
 
-  it('hands each tab what that tab is carrying', () => {
+  it('passes each tab what that tab is carrying', () => {
     const held = mountPane({ marks: { chat: 'unsaved' } })
     const marks = strip(held).map((tab) => {
       const drawn = tab.find('.tab__mark')
@@ -105,7 +105,7 @@ describe('a pane holding nothing', () => {
     expect(held.text()).not.toContain('Nothing open')
   })
 
-  it('stands over no panel', () => {
+  it('remains over no panel', () => {
     expect(panels(mountEmptyPane())).toHaveLength(0)
   })
 })
@@ -147,7 +147,7 @@ describe('walking the strip', () => {
 describe('the way out of a panel', () => {
   const inside = '<button class="inside">inside</button>'
 
-  it('is Escape, which lands on the tab the panel is held under', async () => {
+  it('is Escape, which lands on the tab the panel is retained under', async () => {
     const held = mountPane({}, { tab: inside })
     const first = held.findAll<HTMLButtonElement>('.inside')[1]
 
@@ -159,7 +159,7 @@ describe('the way out of a panel', () => {
 
   // A tab closed ahead of the one showing hands it a place in the strip it did
   // not have, and the way out lands on the tab and not on the place.
-  it('lands on the tab the panel is held under after a tab before it closed', async () => {
+  it('lands on the tab the panel is retained under after a tab before it closed', async () => {
     const held = mountPane({}, { tab: inside })
     await held.setProps({ pane: pane('main', ['chat', 'notes'], 'chat') })
 
@@ -183,18 +183,18 @@ describe('the way out of a panel', () => {
 })
 
 describe('the tab that is showing', () => {
-  it('is said as the pane is drawn', () => {
+  it('is returned as the pane is drawn', () => {
     expect(mountPane().emitted('show')).toStrictEqual([['chat']])
   })
 
-  it('is said again when another tab takes its place', async () => {
+  it('is returned again when another tab takes its place', async () => {
     const held = mountPane()
     await held.setProps({ pane: pane('main', ['plex', 'chat', 'notes'], 'notes') })
 
     expect(held.emitted('show')).toStrictEqual([['chat'], ['notes']])
   })
 
-  it('is said once the panel it stands over is on screen', async () => {
+  it('is returned once the panel it remains over is on screen', async () => {
     const onScreen: boolean[] = []
     const onShow = (tab: string) => {
       const at = ['plex', 'chat', 'notes'].indexOf(tab)

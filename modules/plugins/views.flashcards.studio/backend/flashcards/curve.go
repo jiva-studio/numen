@@ -245,7 +245,7 @@ func (u ProjectCurve) countPointingDecks(
 //
 // No place reads another's answer: a run is given the schedules the answers
 // have already produced, reads them and nothing else, and writes only what it
-// hands back. Each answer is put down at the place it belongs to.
+// returns. Each answer is put down at the place it belongs to.
 //
 // A place that fails is left to the places beside it, and the error handed back
 // is the earliest place's. A request nobody is waiting for is ended by the run

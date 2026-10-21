@@ -40,7 +40,7 @@ describe('getGrid, the drop target a run draws', () => {
     expect(runs.slice(1).map((run) => run.isDropTarget)).toEqual([false, false])
   })
 
-  it('stands a card naming a section that is not there before the first section', () => {
+  it('remains a card naming a section that is not there before the first section', () => {
     const runs = grid([card('a', 'gone')], SECTIONS).runs
     expect(runs[0]?.tiles.map((tile) => [tile.id, tile.section])).toEqual([['a', null]])
   })

@@ -105,7 +105,7 @@ describe('a search that turned up nothing', () => {
     })
   })
 
-  it('stands the note on its own where a relation has no note to hang it off', () => {
+  it('remains the note on its own where a relation has no note to hang it off', () => {
     expect(createNoteInvocation('child', 'Entropy', front({ path: '', title: '' }))).toMatchObject({
       id: 'note',
       path: '',

@@ -73,7 +73,7 @@ export function createFollower(deps: StreamDeps) {
       if (!(await readStream(stream, each))) return
       deps.reset?.()
       await deps.wait(again)
-      // Taken up again, so what was said about losing it no longer holds.
+      // Taken up again, so the transcript about losing it no longer holds.
       if (deps.isOpen()) deps.setLost('')
     }
   }

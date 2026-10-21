@@ -86,7 +86,7 @@ export interface WindowNavigator {
    * and the preset a deck is scheduled by where it is a deck.
    */
   openPreset(path: string): Promise<void>
-  /** A tab let go of. */
+  /** A tab release. */
   closeTab(tab: string): void
   /** Something to ask, put in the agent the person was last in. */
   ask(text: string): void

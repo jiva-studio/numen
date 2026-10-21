@@ -116,7 +116,7 @@ describe('a session', () => {
     expect(one.over.value).toBe(false)
   })
 
-  it('is let go of whole, so no card of it can be drawn again', async () => {
+  it('is release whole, so no card of it can be drawn again', async () => {
     const { one } = createSession()
     await one.start('01VAULT', '')
     one.show()
@@ -295,7 +295,7 @@ describe('a session', () => {
 })
 
 describe('the next card', () => {
-  it('comes up with its answer hidden', async () => {
+  it('arrives up with its answer hidden', async () => {
     const { one } = createSession()
     await one.start('01VAULT', '')
     one.show()
@@ -307,7 +307,7 @@ describe('the next card', () => {
 })
 
 describe('an answer taken back', () => {
-  it('tells the vault which answer of which run it was', async () => {
+  it('notifies the vault which answer of which run it was', async () => {
     const { one, asks } = createSession()
     await one.start('01VAULT', '')
     one.show()

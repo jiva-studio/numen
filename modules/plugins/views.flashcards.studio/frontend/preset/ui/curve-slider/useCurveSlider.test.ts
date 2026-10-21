@@ -87,7 +87,7 @@ describe('the marks on the picture', () => {
     ])
   })
 
-  it('leave the knob out where it stands on no place of the curve', () => {
+  it('leave the knob out where it relies on no place of the curve', () => {
     const { state } = slider({ place: 7 })
     expect(state.marks.value.map((one) => one.key)).toStrictEqual(['suggested'])
   })
@@ -118,7 +118,7 @@ describe('the marks on the picture', () => {
   })
 })
 
-describe('what the control says beside the picture', () => {
+describe('what the control says alongside the picture', () => {
   it('draws the stretch a day leaves cards short over', () => {
     const { state } = slider({
       curve: curve({
@@ -138,7 +138,7 @@ describe('what the control says beside the picture', () => {
     expect(slider({ curve: curve({ goal: 'date' }) }).state.isDated.value).toBe(true)
   })
 
-  it('says nothing of learning where the knob stands on no place', () => {
+  it('says nothing of learning where the knob relies on no place', () => {
     expect(slider({ place: 7 }).state.learning.value).toStrictEqual([])
   })
 
@@ -158,7 +158,7 @@ describe('the keys that walk the knob', () => {
     expect(emitted).toStrictEqual([['move', 3]])
   })
 
-  it('write once a walking key is let go of, and not for a key that walks nothing', () => {
+  it('write once a walking key is release, and not for a key that walks nothing', () => {
     const { state, emitted } = slider()
     state.onKeyUp(key('a'))
     expect(emitted).toStrictEqual([])
@@ -168,7 +168,7 @@ describe('the keys that walk the knob', () => {
 })
 
 describe('the picture the pointer is read against', () => {
-  it('is the element the view hands over', () => {
+  it('is the element the view passes over', () => {
     const { state } = slider()
     const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     state.setPicture(element)
@@ -217,14 +217,14 @@ describe('the pointer on the picture', () => {
     expect(emitted).toStrictEqual([])
   })
 
-  it('leaves the knob where it stands where the picture has no scale', () => {
+  it('leaves the knob at its current position where the picture has no scale', () => {
     const { state, emitted } = slider()
     state.setPicture(createPicture(0, 100).element)
     state.onPointerDown(pointer(481))
     expect(emitted).toStrictEqual([['move', 2]])
   })
 
-  it('leaves the knob where it stands where there is no picture to read against', () => {
+  it('leaves the knob at its current position where there is no picture to read against', () => {
     const { state, emitted } = slider()
     state.onPointerDown(pointer(481))
     const unscaled = Object.assign(document.createElement('div'), { setPointerCapture: () => {} })
@@ -236,7 +236,7 @@ describe('the pointer on the picture', () => {
     ])
   })
 
-  it('walks the knob while the pointer is held, and writes once it is let go', () => {
+  it('walks the knob while the pointer is retained, and writes once it is let go', () => {
     const { state, emitted } = slider()
     const { element, done } = createPicture(2, 100, true)
     state.setPicture(element)

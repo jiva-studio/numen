@@ -80,7 +80,7 @@ describe('the line that says what the agent has in hand', () => {
     expect(locations.has('work')).toBe(false)
   })
 
-  it('forgets the source when the line comes down', () => {
+  it('forgets the source when the line arrives down', () => {
     const { line, drop, locations } = create()
     line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     line.takeDown()

@@ -80,7 +80,7 @@ func newFlashcardsClient(t *testing.T, api *API) numenv1connect.FlashcardsServic
 	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 }
 
-// front is the whole front door as a person comes to see it: the vaults it
+// front is the whole front door as a person evaluates to see it: the vaults it
 // opens on, each count filled into its row, and the vaults read before they are
 // counted.
 //
@@ -542,7 +542,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 }
 
 // A deck naming no preset comes under the defaults, which is what a vault
-// holding no preset at all comes to.
+// holding no preset at all evaluates to.
 func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
@@ -651,7 +651,7 @@ var backlogged = map[string]string{
 // The window asks CardsDue for what its decks offer today and Curve for the
 // picture over a preset's range, and both are asked here as the window asks
 // them: the settings the curve is drawn for are the ones the vault holds. Where
-// the preset stands on that picture is the day the deck screen offers wherever
+// the preset relies on that picture is the day the deck screen offers wherever
 // the control moves today, and the reason a day closed names the budget its own
 // goal steers and no other.
 func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
@@ -667,7 +667,7 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 		// there.
 		learned review.LearnedRule
 		// isSameDay is whether the control moves today, so that what the tab
-		// draws where it stands is the day the deck screen offers.
+		// draws at its current position is the day the deck screen offers.
 		isSameDay bool
 	}{
 		{
@@ -1003,7 +1003,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 	}
 }
 
-// The curve carries the pile as it stands and the pile day by day, so a band
+// The curve carries the pile currently and the pile day by day, so a band
 // under it can be drawn without asking again as the knob moves.
 //
 // Overdue, unbegun and the cards whose day is still to come are three separate

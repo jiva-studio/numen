@@ -57,7 +57,7 @@ describe('the runs of one book in one entry', () => {
     expect(held.get(HIGHLIGHT)).toBeInstanceOf(Highlight)
   })
 
-  it('are the ranges of each book beside the ranges of the others', () => {
+  it('are the ranges of each book alongside the ranges of the others', () => {
     const held = registry()
     const one = range()
     const other = range()

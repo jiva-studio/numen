@@ -58,7 +58,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     else await tabOpeners.openFile(path, '', 'here')
   }
 
-  /** The note the plex the person was last in stands on, which a talk is about. */
+  /** The note the plex the person was last in relies on, which a talk is about. */
   const getPlexTarget = () => {
     const last = windowTabs.handle.last(PLEX)
     const target = last ? windowTabs.getTab(last.id)?.kind.getTarget?.(last.state) : undefined

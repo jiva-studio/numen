@@ -103,7 +103,7 @@ const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
 describe('the streams a window follows', () => {
   const signal = new AbortController().signal
 
-  it('tells each change of the vault, and where every note named went', async () => {
+  it('notifies each change of the vault, and where every note named went', async () => {
     asked.watchVaultChanges.mockImplementation(async function* () {
       yield { paths: ['Llama.md'], reload: true, renamed: [{ from: 'A.md', to: 'B.md' }] }
     })
@@ -122,7 +122,7 @@ describe('the streams a window follows', () => {
     expect(asked.watchFocus).toHaveBeenCalledWith({}, { signal })
   })
 
-  it('follows a quit asked of this window', () => {
+  it('follows a quit requested of this window', () => {
     const quit = (async function* () {})()
     asked.watchQuit.mockReturnValue(quit)
 
@@ -130,7 +130,7 @@ describe('the streams a window follows', () => {
     expect(asked.watchQuit).toHaveBeenCalledWith({ window: 'editor' }, { signal })
   })
 
-  it('tells the work under way, counted in what each counts', async () => {
+  it('notifies the work under way, counted in what each counts', async () => {
     asked.watchTasks.mockImplementation(async function* () {
       yield {
         tasks: [

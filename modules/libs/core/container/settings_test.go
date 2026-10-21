@@ -50,7 +50,7 @@ func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
 	}
 }
 
-// A setting written is written where it stands, and every key a person typed
+// A setting written is written at its current position, and every key a person typed
 // stays where it was.
 func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 	cfg, path := writeSettings(t, `{

@@ -2,7 +2,7 @@
  * What the tree draws from the rows it was handed, and what it emits.
  *
  * The negatives are here: a shut row's contents are not drawn, a refused drop
- * moves nothing, and a name abandoned renames nothing. A drag is read from
+ * does not move, and a name abandoned does not rename. A drag is read from
  * heights, and the rows are given theirs by hand.
  */
 import { mount } from '@vue/test-utils'
@@ -141,7 +141,7 @@ describe('what is drawn', () => {
     expect(held.text()).not.toContain('Plans')
   })
 
-  it('says how deep each row stands, and whether it is open', () => {
+  it('says how deep each row remains, and whether it is open', () => {
     const held = mountTree()
     expect(getRow(held, 'plans').attributes('aria-level')).toBe('2')
     expect(getRow(held, 'work').attributes('aria-expanded')).toBe('true')
@@ -203,7 +203,7 @@ describe('a press', () => {
     expect(held.emitted('select')).toStrictEqual([[['work', 'notes']]])
   })
 
-  it('takes a row out of the selection it stands in, joined', async () => {
+  it('takes a row out of the selection it remains in, joined', async () => {
     const held = mountTree({ selected: ['work', 'notes'] })
     await press(held, 'notes', { metaKey: true })
     expect(held.emitted('select')).toStrictEqual([[['work']]])
@@ -248,7 +248,7 @@ describe('the keyboard', () => {
     expect(held.emitted('select')).toStrictEqual([[['plans']]])
   })
 
-  it('extends the selection from the anchor with an arrow held down', async () => {
+  it('extends the selection from the anchor with an arrow retained down', async () => {
     const held = mountTree({ selected: ['work'] })
     await press(held, 'work')
     await pressKey(held, 'work', 'ArrowDown', { shiftKey: true })
@@ -299,7 +299,7 @@ describe('the keyboard', () => {
     expect(held.emitted('remove')).toBeUndefined()
   })
 
-  it('puts the row the keyboard stands on into the selection', async () => {
+  it('puts the row the keyboard relies on into the selection', async () => {
     const held = mountTree({ selected: ['work'] })
     await getRow(held, 'notes').trigger('focus')
     await pressKey(held, 'notes', ' ')
@@ -348,8 +348,8 @@ describe('the keyboard', () => {
   })
 })
 
-describe('a menu asked for', () => {
-  it('is asked for on the row, and the selection stands on it', async () => {
+describe('a menu requested for', () => {
+  it('is requested for on the row, and the selection relies on it', async () => {
     const held = mountTree()
     await getRow(held, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
 
@@ -357,14 +357,14 @@ describe('a menu asked for', () => {
     expect(held.emitted('menu')).toStrictEqual([['notes', { x: 40, y: 60 }]])
   })
 
-  it('leaves a selection of several alone where the row stands in it', async () => {
+  it('leaves a selection of several alone where the row remains in it', async () => {
     const held = mountTree({ selected: ['work', 'notes'] })
     await getRow(held, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
 
     expect(held.emitted('select')).toBeUndefined()
   })
 
-  it('names no row at all, asked off every row', async () => {
+  it('names no row at all, requested off every row', async () => {
     const held = mountTree()
     await held.get('.tree').trigger('contextmenu', { clientX: 4, clientY: 8 })
 
@@ -408,13 +408,13 @@ describe('a drag', () => {
     expect(held.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
   })
 
-  it('is refused into what the row holds, and moves nothing', async () => {
+  it('is refused into what the row holds, and does not move', async () => {
     const held = mountTree()
     await dragTo(held, 'work', HEIGHT + 12)
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('is refused into what any of the rows dragged holds, and moves nothing', async () => {
+  it('is refused into what any of the rows dragged holds, and does not move', async () => {
     const held = mountTree({ selected: ['work', 'loose'] })
     await dragTo(held, 'loose', HEIGHT + 12)
     expect(held.emitted('move')).toBeUndefined()
@@ -428,7 +428,7 @@ describe('a drag', () => {
 
   // The pointer is caught on the window, so a row let go over another pane is
   // let go somewhere the tree does not answer for.
-  it('moves nothing let go beside the tree', async () => {
+  it('does not move let go alongside the tree', async () => {
     const held = mountTree()
     const from = getRow(held, 'work').element
 
@@ -440,14 +440,14 @@ describe('a drag', () => {
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('moves nothing let go below the tree', async () => {
+  it('does not move let go below the tree', async () => {
     const held = mountTree()
     await dragTo(held, 'work', 9 * HEIGHT)
 
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('moves nothing where the pointer did not travel far enough', async () => {
+  it('does not move where the pointer did not travel far enough', async () => {
     const held = mountTree()
     pointer('pointerdown', 108, getRow(held, 'loose').element)
     pointer('pointermove', 110)
@@ -550,7 +550,7 @@ describe('what follows the pointer', () => {
     expect(findDragged(held).text()).toBe('2 files')
   })
 
-  it('stands where the pointer is', async () => {
+  it('remains where the pointer is', async () => {
     const held = mountTree()
     pointer('pointerdown', 108, getRow(held, 'loose').element)
     pointer('pointermove', 60)
@@ -568,7 +568,7 @@ describe('what follows the pointer', () => {
     expect(findDragged(held).exists()).toBe(false)
   })
 
-  it('is drawn nowhere once the rows have been let go of', async () => {
+  it('is drawn nowhere once the rows have been release', async () => {
     const held = mountTree()
     await dragTo(held, 'loose', 12)
 
@@ -583,7 +583,7 @@ describe('what follows the pointer', () => {
 describe('a name being typed', () => {
   const getField = (wrapper: Tree) => wrapper.get('.tree__field')
 
-  it('stands over the row it belongs to and over no other', () => {
+  it('remains over the row it belongs to and over no other', () => {
     const held = mountTree({ renamingPath: 'notes' })
 
     expect(getRow(held, 'notes').find('.tree__field').exists()).toBe(true)
@@ -606,7 +606,7 @@ describe('a name being typed', () => {
     expect(held.emitted('update:renamingPath')).toStrictEqual([[null]])
   })
 
-  it('is abandoned on Escape, and renames nothing', async () => {
+  it('is abandoned on Escape, and does not rename', async () => {
     const held = mountTree({ renamingPath: 'notes' })
     await getField(held).setValue('Friday notes')
     await getField(held).trigger('keydown', { key: 'Escape' })
@@ -700,7 +700,7 @@ describe('the keys the tree takes', () => {
     expect(held.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
   })
 
-  it('leaves A alone while nothing is held down', () => {
+  it('leaves A alone while nothing is retained down', () => {
     const held = mountTree()
     const left = sendKeyOn(held, 'notes', 'a')
 
@@ -708,7 +708,7 @@ describe('the keys the tree takes', () => {
     expect(held.emitted('select')).toBeUndefined()
   })
 
-  it('leaves another key alone with Ctrl held down', () => {
+  it('leaves another key alone with Ctrl retained down', () => {
     const held = mountTree()
     const left = sendKeyOn(held, 'notes', 'b', { ctrlKey: true })
 
@@ -871,7 +871,7 @@ describe('where a drop would land, shown on the tree', () => {
     expect(marked(held, 'data-dragged')).toStrictEqual(['notes', 'loose'])
   })
 
-  it('marks no row once the rows have been let go of', async () => {
+  it('marks no row once the rows have been release', async () => {
     const held = mountTree({ selected: ['notes', 'loose'] })
     await dragTo(held, 'loose', 12)
 

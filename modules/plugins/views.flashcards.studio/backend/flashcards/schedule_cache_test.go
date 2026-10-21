@@ -58,7 +58,7 @@ func TestStartingASessionConsultsTheScheduleCache(t *testing.T) {
 	}
 }
 
-// Opening the history consults the cache and leaves it as it stands.
+// Opening the history consults the cache and leaves it currently.
 func TestTheHistoryConsultsTheScheduleCache(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)

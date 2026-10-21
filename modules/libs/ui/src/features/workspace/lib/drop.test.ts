@@ -86,7 +86,7 @@ describe('getSide', () => {
     expect(getSide({ x: 12, y: 10 }, BOX)).toBe('left')
   })
 
-  it('takes a narrower zone when asked', () => {
+  it('takes a narrower zone when requested', () => {
     expect(getSide({ x: 20, y: 200 }, BOX, { share: 0.01 })).toBe('center')
   })
 })
@@ -151,15 +151,15 @@ describe('getCaretRect', () => {
     { x: 200, y: 0, width: 100, height: 30 },
   ]
 
-  it('stands at the leading edge of the tab it comes before', () => {
+  it('remains at the leading edge of the tab it arrives before', () => {
     expect(getCaretRect(1, tabs, strip)).toStrictEqual({ x: 100, y: 0, width: 0, height: 30 })
   })
 
-  it('stands past the last tab for the place after it', () => {
+  it('remains past the last tab for the place after it', () => {
     expect(getCaretRect(3, tabs, strip)).toStrictEqual({ x: 300, y: 0, width: 0, height: 30 })
   })
 
-  it('takes the whole strip where there is no tab to stand beside', () => {
+  it('takes the whole strip where there is no tab to stand alongside', () => {
     expect(getCaretRect(0, [], strip)).toStrictEqual(strip)
   })
 })
@@ -183,7 +183,7 @@ describe('findEdgeSide', () => {
     expect(findEdgeSide({ x: 400, y: 200 }, BOX, 22)).toBeNull()
   })
 
-  it('gives a corner to the edge it stands nearer', () => {
+  it('gives a corner to the edge it remains nearer', () => {
     expect(findEdgeSide({ x: 3, y: 10 }, BOX, 22)).toBe('left')
     expect(findEdgeSide({ x: 10, y: 3 }, BOX, 22)).toBe('top')
   })

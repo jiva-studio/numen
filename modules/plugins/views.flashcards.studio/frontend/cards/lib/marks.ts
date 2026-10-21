@@ -2,7 +2,7 @@
  * Where each problem a reading came back with is drawn: against a card,
  * against a face, against one field of a card, or against the file itself.
  *
- * A problem says where it stands, and the window draws it on the thing
+ * A problem says at its current position, and the window draws it on the thing
  * standing there. Two readings wrong in the same way leave what is drawn where
  * it is, so a mark a person is reading does not blink on every read.
  */
@@ -27,7 +27,7 @@ export interface Marks {
 }
 
 /**
- * Each problem against the thing it stands on. A problem carries where it
+ * Each problem against the thing it relies on. A problem carries where it
  * stands, so a card under no stencil and two cards of one mark each land on the
  * tile they were read from, and a problem naming a field lands on that field of
  * that card. One standing past the end of what was read is against the file.

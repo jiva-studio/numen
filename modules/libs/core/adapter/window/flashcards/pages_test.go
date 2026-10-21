@@ -61,7 +61,7 @@ func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 	}
 }
 
-// A folder of themes that could not be made leaves the window undressed rather than unopened: it
+// A folder of themes that could not be made leaves the window undressed and not unopened: it
 // goes on answering, and asking about themes is what fails.
 func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 	api := newAPI(t)

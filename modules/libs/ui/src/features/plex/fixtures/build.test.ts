@@ -42,7 +42,7 @@ describe('walking', () => {
     expect(next.nodes.some((node) => node.id === 'focus' && node.relation === 'parent')).toBe(true)
   })
 
-  it('gives every node a name from the pool rather than a number', () => {
+  it('gives every node a name from the pool and not a number', () => {
     const built = build('A node', COUNTS)
     for (const node of built.nodes) {
       expect(node.title).not.toMatch(/^(Parent|Child|Jump|Sibling) \d+$/)

@@ -64,7 +64,7 @@ describe('a vault on the list', () => {
 describe('a vault the window has not answered for yet', () => {
   const createWorkingVault = (id: string): VaultRow => ({ ...vault(id), isWorking: true })
 
-  it('stands on the list under its own name', () => {
+  it('relies on the list under its own name', () => {
     const screen = draw([createWorkingVault('physics')])
 
     expect(screen.find('.welcome-page__row--vault').text()).toContain('physics')
@@ -80,7 +80,7 @@ describe('a vault the window has not answered for yet', () => {
 
   // The letter is the whole of how a row is opened from the keyboard, so a row
   // that opens nothing carries none. The rows below it keep theirs.
-  it('carries no letter, and moves no letter off the rows beside it', () => {
+  it('carries no letter, and moves no letter off the rows alongside it', () => {
     expect(caps(draw([createWorkingVault('physics'), vault('heat')]))).toStrictEqual(['B'])
   })
 
@@ -114,7 +114,7 @@ describe('the room the list will fill', () => {
     expect(screen.findAll('.welcome-page__row--vault')).toHaveLength(1)
   })
 
-  it('stands empty where the window says nothing about it', () => {
+  it('remains empty where the window says nothing about it', () => {
     expect(draw([]).find('.welcome-page__waiting').exists()).toBe(false)
   })
 })
@@ -163,7 +163,7 @@ describe('the screen drawn narrow', () => {
     expect(screen.emitted('run')).toStrictEqual([['find']])
   })
 
-  it('marks what is said under a name, and keeps the whole path on the row', () => {
+  it('marks what is returned under a name, and keeps the whole path on the row', () => {
     const screen = drawWith(offer)
     const path = screen.get('.welcome-page__row--vault .welcome-page__aside')
 

@@ -7,7 +7,7 @@ import (
 )
 
 // section is one heading of the levels a file spends, and the bytes under it.
-// Offsets are counted over the body as it stands, so a run of it can be
+// Offsets are counted over the body currently, so a run of it can be
 // replaced without the rest of the file being rewritten.
 type section struct {
 	level int

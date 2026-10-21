@@ -11,7 +11,7 @@ import { useTemplateRef } from 'vue'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The name as it stands, which is what is typed over. */
+    /** The name currently, which is what is typed over. */
     value: string
     /** What the field is announced as. */
     name: string

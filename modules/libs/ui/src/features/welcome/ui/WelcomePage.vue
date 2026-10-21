@@ -13,7 +13,7 @@ import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
 withDefaults(
   defineProps<{
     /**
-     * What stands under the mark. Both windows wear the same glyph, and this is
+     * What is placed under the mark. Both windows wear the same glyph, and this is
      * what tells a person which of them they opened.
      */
     name?: string

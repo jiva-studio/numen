@@ -12,7 +12,7 @@
 // defaults.
 //
 // One control steers a preset: `goal` says which value it moves, and the curve
-// says what the whole range of that value comes to. A curve is asked for with
+// says what the whole range of that value evaluates to. A curve is asked for with
 // the settings a person is moving and has not written yet, and asking for one
 // writes nothing.
 
@@ -94,8 +94,8 @@ func (Goal) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{0}
 }
 
-// Rule is what a preset counts as learned, and stands under `learned`. The
-// value it reads stands under the key it names, and the other rule keeps its
+// Rule is what a preset counts as learned, and is placed under `learned`. The
+// value it reads is placed under the key it names, and the other rule keeps its
 // value and takes no part.
 type Rule int32
 
@@ -149,7 +149,7 @@ func (Rule) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{1}
 }
 
-// BudgetUnit is what a day's budget is counted in, and stands under `counts`.
+// BudgetUnit is what a day's budget is counted in, and is placed under `counts`.
 type BudgetUnit int32
 
 const (
@@ -607,7 +607,7 @@ func (x *Preset) GetStopsOn() StopReason {
 	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
-// Curve is what the one control comes to over the whole range of its goal.
+// Curve is what the one control evaluates to over the whole range of its goal.
 type Curve struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Goal  Goal                   `protobuf:"varint,1,opt,name=goal,proto3,enum=numen.v1.Goal" json:"goal,omitempty"`
@@ -616,7 +616,7 @@ type Curve struct {
 	Grid []float64 `protobuf:"fixed64,2,rep,packed,name=grid,proto3" json:"grid,omitempty"`
 	// The day of each place, filled for a goal of a date.
 	Days []string `protobuf:"bytes,3,rep,name=days,proto3" json:"days,omitempty"`
-	// What the preset comes to at each place of the grid, one for one with it.
+	// What the preset evaluates to at each place of the grid, one for one with it.
 	At []*Point `protobuf:"bytes,4,rep,name=at,proto3" json:"at,omitempty"`
 	// Where the preset stands, and what is suggested.
 	Now       *CurvePoint `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
@@ -740,7 +740,7 @@ func (x *Curve) GetUnbegun() int32 {
 	return 0
 }
 
-// Point is what a preset comes to at one place of the grid.
+// Point is what a preset evaluates to at one place of the grid.
 type Point struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// `reviews` is counted in card faces and `minutes` in the showings they take,

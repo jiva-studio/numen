@@ -23,7 +23,7 @@ export interface DeckCardsDue {
   readonly unbegun: number
 }
 
-/** One preset of a vault, and what the day comes to under it. */
+/** One preset of a vault, and what the day evaluates to under it. */
 export interface PresetCardsDue {
   /** The note it stands in, and empty for the decks naming no preset. */
   readonly preset: string
@@ -35,7 +35,7 @@ export interface PresetCardsDue {
   readonly cards: number
   /**
    * What the day leaves under it, already held to the budgets that close it.
-   * It is what a session over this preset asks, and is printed as it stands.
+   * It is what a session over this preset asks, and is printed currently.
    */
   readonly owed: number
   /**

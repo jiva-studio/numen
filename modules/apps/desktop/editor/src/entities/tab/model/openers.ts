@@ -28,7 +28,7 @@ export interface OpenNewFileOptions {
 
 /**
  * A file put in front of the person in one editor. A line is somewhere inside
- * the file, and what standing there comes to is the editor's own.
+ * the file, and what standing there evaluates to is the editor's own.
  */
 export type FileOpener = (
   path: string,

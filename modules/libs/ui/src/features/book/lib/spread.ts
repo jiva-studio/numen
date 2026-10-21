@@ -2,7 +2,7 @@
  * Where the countSpreads of a book stand when its text is set in columns.
  *
  * Apart from the component the way the reader's own arithmetic is: how many
- * countSpreads a laid-out document comes to, where each one begins, which one a run
+ * countSpreads a laid-out document evaluates to, where each one begins, which one a run
  * of text falls in and how far into a run a byte offset reaches are arithmetic,
  * and a test asks them without a browser.
  */
@@ -12,7 +12,7 @@ import type { Span } from '@/shared/lib/span'
 export interface Mark {
   /** The byte offset the run begins at, read off `data-offset`. */
   readonly at: number
-  /** Where it stands along the columns, in CSS pixels from the first of them. */
+  /** at its current position along the columns, in CSS pixels from the first of them. */
   readonly x: number
 }
 
@@ -77,7 +77,7 @@ export function columnWidth(flow: Flow): number {
 }
 
 /**
- * How many columns the text comes to. The count is taken off the whole run and
+ * How many columns the text evaluates to. The count is taken off the whole run and
  * rounded once: a trailing gap adds no column, and nothing drifts over a long
  * document.
  */
@@ -131,7 +131,7 @@ export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[
  * person is looking at: a spread of two turns two pages.
  *
  * Only the document being read is laid out, so only its columns are counted.
- * What the rest of the book comes to is that document's own bytes to the column
+ * What the rest of the book evaluates to is that document's own bytes to the column
  * carried over it — an estimate, and the only one that costs nothing. It moves
  * when the reading area does, which is what a page measured on the screen does.
  */
@@ -159,7 +159,7 @@ export function createPages(query: PagesQuery): Pages {
   }
 }
 
-/** How many countSpreads the text comes to. */
+/** How many countSpreads the text evaluates to. */
 export function countSpreads(flow: Flow): number {
   const all = columnsInAll(flow)
   return all === 0 ? 0 : Math.ceil(all / flow.columns)

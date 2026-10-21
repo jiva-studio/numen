@@ -32,7 +32,7 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 }
 
 // Every report carries the whole of what a change is doing, so a listener that
-// has not read one is given the newest instead of the backlog.
+// has not read one is given the newest and not the backlog.
 func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
 	drawing := newEditBroadcaster()
 	line, done := drawing.subscribe()

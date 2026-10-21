@@ -12,7 +12,7 @@ converted or rewritten.
 
 ## Opening one
 
-**The first launch stands on nothing.** numen does not make a folder for you before you have
+**The first launch relies on nothing.** numen does not make a folder for you before you have
 said anything: the window comes up showing its name, the vaults it knows — none yet — and the
 one thing there is to do, **New vault**.
 

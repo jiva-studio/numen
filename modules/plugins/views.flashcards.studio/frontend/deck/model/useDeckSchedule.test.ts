@@ -83,7 +83,7 @@ const open = () => {
 }
 
 describe('the presets listed again', () => {
-  it('are not asked for before any listing failed', () => {
+  it('are not requested for before any listing failed', () => {
     const { schedule, state } = open()
 
     schedule.listPresetsAgain()
@@ -91,7 +91,7 @@ describe('the presets listed again', () => {
     expect(state.listings).toBe(0)
   })
 
-  it('are asked for once a listing failed', async () => {
+  it('are requested for once a listing failed', async () => {
     const { schedule, state } = open()
     state.isListingDown = true
     await schedule.listPresets()
@@ -101,7 +101,7 @@ describe('the presets listed again', () => {
     expect(state.listings).toBe(2)
   })
 
-  it('are not asked for once a listing answered after the failure', async () => {
+  it('are not requested for once a listing answered after the failure', async () => {
     const { schedule, state } = open()
     state.isListingDown = true
     await schedule.listPresets()
@@ -143,7 +143,7 @@ describe('the preset a deck is scheduled by', () => {
     expect(schedule.getDeckPreset('a').name).toBe(WORDS.defaults)
   })
 
-  it('stands where the read failed after a preset was read', async () => {
+  it('remains where the read failed after a preset was read', async () => {
     const { schedule, state } = open()
     await schedule.refreshDeckPreset('Animals.md')
     state.isReadDown = true
@@ -254,7 +254,7 @@ describe('a deck put on a preset', () => {
     expect(schedule.getDeckPreset('a').errorMessage).toBe(WORDS.notScheduledChanged)
   })
 
-  it('says the vault could not be reached, and tells no file', async () => {
+  it('says the vault could not be reached, and notifies no file', async () => {
     const { schedule, state, applyPathChanges } = open()
     state.isWriteDown = true
 
@@ -275,7 +275,7 @@ describe('what is known of a file', () => {
     expect(schedule.getDeckPreset('a').path).toBe('')
   })
 
-  it('is carried to where the file now stands, and left at no other name', async () => {
+  it('is carried to where the file now remains, and left at no other name', async () => {
     const { schedule, paths } = open()
     await schedule.refreshDeckPreset('Animals.md')
 
@@ -286,7 +286,7 @@ describe('what is known of a file', () => {
     expect(schedule.getDeckPreset('a').path).toBe('')
   })
 
-  it('stands at the name it went to, where the old name held nothing', async () => {
+  it('remains at the name it went to, where the old name retained nothing', async () => {
     const { schedule } = open()
     await schedule.refreshDeckPreset('Birds.md')
 
@@ -297,7 +297,7 @@ describe('what is known of a file', () => {
 })
 
 describe('what a tab was told about its choice', () => {
-  it('is said over the preset, until the tab is forgotten', () => {
+  it('is returned over the preset, until the tab is forgotten', () => {
     const { schedule } = open()
     schedule.setChoiceMessage('a', 'Told')
     expect(schedule.getDeckPreset('a').errorMessage).toBe('Told')

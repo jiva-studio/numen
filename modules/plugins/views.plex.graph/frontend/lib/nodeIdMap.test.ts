@@ -32,7 +32,7 @@ describe('a note being drawn', () => {
 })
 
 describe('a note whose file moved', () => {
-  it('keeps the node ID it held', () => {
+  it('keeps the node ID it retained', () => {
     const map = createNodeIdMap()
     const id = map.getNodeId('Entropy.md')
 
@@ -97,7 +97,7 @@ describe('a node ID handed back', () => {
     expect(map.getNodePath(map.getNodeId('Entropy.md'))).toBe('Entropy.md')
   })
 
-  it('names nothing where no note holds it', () => {
+  it('is empty where no note holds it', () => {
     const map = createNodeIdMap()
     map.getNodeId('Entropy.md')
 
@@ -108,7 +108,7 @@ describe('a node ID handed back', () => {
 })
 
 describe('the notes one picture drew', () => {
-  it('are kept, and every other note is let go of', () => {
+  it('are kept, and every other note is release', () => {
     const map = createNodeIdMap()
     const kept = map.getNodeId('Root.md')
     const gone = map.getNodeId('Heat.md')
@@ -119,7 +119,7 @@ describe('the notes one picture drew', () => {
     expect(map.getNodePath(gone)).toBe('')
   })
 
-  it('leave a note that comes back holding an ID of its own', () => {
+  it('leave a note that arrives back holding an ID of its own', () => {
     const map = createNodeIdMap()
     const root = map.getNodeId('Root.md')
     const before = map.getNodeId('Heat.md')
@@ -132,7 +132,7 @@ describe('the notes one picture drew', () => {
     expect(map.getNodePath(root)).toBe('Root.md')
   })
 
-  it('are all a person travelling from note to note leaves held', () => {
+  it('are all a person travelling from note to note leaves retained', () => {
     const map = createNodeIdMap()
     const minted: string[] = []
 

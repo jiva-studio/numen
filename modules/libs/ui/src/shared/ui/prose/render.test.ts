@@ -80,7 +80,7 @@ describe('prose', () => {
     )
   })
 
-  it('holds a wikilink to what every other link is held to', () => {
+  it('holds a wikilink to what every other link is retained to', () => {
     for (const address of [
       'javascript://%0Aalert(1)',
       'JavaScript://%0Aalert(1)',

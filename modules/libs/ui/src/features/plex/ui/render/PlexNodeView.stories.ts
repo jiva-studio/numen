@@ -65,7 +65,7 @@ const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
 /**
  * A window in plex units, one to the pixel, with the origin in its middle.
  *
- * Sized rather than stretched: fitting it to the frame would scale every box
+ * Sized and not stretched: fitting it to the frame would scale every box
  * and letter, and the size of a node against the size of its text is most of
  * what there is to judge here.
  */
@@ -105,7 +105,7 @@ const range = (min: number, max: number, step = 1) => ({
 })
 
 /**
- * Annotated rather than `satisfies`, unlike the plex's own stories: the knobs
+ * Annotated and not `satisfies`, unlike the plex's own stories: the knobs
  * are the node's fields, and the node is assembled from them. Tying the args
  * to the component would demand a whole `node` in every story alongside the
  * knobs that make it.
@@ -234,7 +234,7 @@ export const Reaching: Story = {
     await expect(handle()).not.toBeNull()
 
     // Its disc and its cross are sized by CSS geometry properties, so a token
-    // that never arrives is a handle of no size rather than a default one.
+    // that never arrives is a handle of no size and not a default one.
     const drawn = handle()!.getBoundingClientRect()
     await expect(drawn.width).toBeGreaterThan(0)
     await expect(
@@ -276,7 +276,7 @@ export const Reaching: Story = {
 /**
  * Not Latin, far too long, nothing to break at, and nothing at all — the same
  * corpus the plex is shown, laid out in a grid because these are being
- * compared rather than arranged.
+ * compared and not arranged.
  *
  * Only a browser can answer it: jsdom lays out no text, so every title is the
  * same size to it and one that overflows looks identical to one that fits.
@@ -317,7 +317,7 @@ export const AwkwardLabels: Story = {
  * The two corners a node is drawn with: its own, and the wider one the node in
  * front wears.
  *
- * Both are lengths in rem inside the node itself, and what a rem comes to is
+ * Both are lengths in rem inside the node itself, and what a rem evaluates to is
  * the browser's answer and no test's.
  */
 export const TheCornersAreAsDesigned: Story = {

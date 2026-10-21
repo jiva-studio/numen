@@ -66,7 +66,7 @@ describe('how much of a change is shown', () => {
     expect(steps).toEqual([0, 4, 8, 14, 19, 23, 23])
   })
 
-  it('takes in the space after a word, so the boundary stands between words', () => {
+  it('takes in the space after a word, so the boundary remains between words', () => {
     expect(createReveal(FIVE, 0.2).shown).toBe(4)
   })
 
@@ -74,7 +74,7 @@ describe('how much of a change is shown', () => {
     expect(createReveal(FIVE, 1)).toEqual({ shown: 23, fading: 23 })
   })
 
-  it('stays inside the text however far it is asked for', () => {
+  it('stays inside the text however far it is requested for', () => {
     expect(createReveal(FIVE, 4)).toEqual({ shown: 23, fading: 23 })
     expect(createReveal(FIVE, -1)).toEqual({ shown: 0, fading: 0 })
   })

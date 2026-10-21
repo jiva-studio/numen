@@ -16,7 +16,7 @@ import type { Preset } from '../../types'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   deck: DeckCardsDue
-  /** Where it stands in the list, which is the letter it is picked by. */
+  /** at its current position in the list, which is the letter it is picked by. */
   at: number
   /** The preset scheduling it, and nothing where none was read. */
   by: Preset | undefined

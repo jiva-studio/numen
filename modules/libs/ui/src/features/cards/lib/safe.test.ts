@@ -7,19 +7,19 @@
 import { describe, expect, it } from 'vitest'
 import { safe } from './safe'
 
-/** What the text comes to, with the case of the tags settled. */
+/** What the text evaluates to, with the case of the tags settled. */
 const cleanHtml = (html: string): string => safe(html).toLowerCase()
 
-/** Every element the text comes to, read back the way a window reads it. */
+/** Every element the text evaluates to, read back the way a window reads it. */
 const elements = (html: string): readonly Element[] => [
   ...new DOMParser().parseFromString(safe(html), 'text/html').body.querySelectorAll('*'),
 ]
 
-/** The tags the text comes to. */
+/** The tags the text evaluates to. */
 const tags = (html: string): readonly string[] =>
   elements(html).map((each) => each.tagName.toLowerCase())
 
-/** Every attribute the text comes to carries, named. */
+/** Every attribute the text evaluates to carries, named. */
 const attributes = (html: string): readonly string[] =>
   elements(html).flatMap((each) =>
     [...each.attributes].map((attribute) => attribute.name.toLowerCase()),

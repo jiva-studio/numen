@@ -171,7 +171,7 @@ func FuzzWrite(f *testing.F) {
 	})
 }
 
-// writeFile stands these bytes in the settings file, and hands back where it
+// writeFile stands these bytes in the settings file, and returns where it
 // is. One file is written over and over: a folder for each of a million inputs
 // is a folder a run never gets to the end of.
 func writeFile(tb testing.TB, path, raw string) string {

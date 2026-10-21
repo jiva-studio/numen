@@ -9,7 +9,7 @@ const createBuffers = () =>
   })
 
 describe('the mock buffer host', () => {
-  it('holds the buffers handed over until they are let go of', () => {
+  it('holds the buffers handed over until they are release', () => {
     const host = createMockBufferHost()
     const buffers = createBuffers()
 
@@ -34,7 +34,7 @@ describe('the mock buffer host', () => {
     expect(handler).toHaveBeenCalledOnce()
   })
 
-  it('writes out no handler that was let go of', async () => {
+  it('writes out no handler that was release', async () => {
     const host = createMockBufferHost()
     const handler = vi.fn(async () => {})
     host.addFlushHandler(handler).dispose()

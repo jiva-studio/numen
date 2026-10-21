@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/note"
 )
 
-// reading opens one index and hands back the use case that reads it, together
+// reading opens one index and returns the use case that reads it, together
 // with a way to write another vault into it. One index for every vault is what
 // the application runs, so a scoping test has somewhere to leak to.
 func reading(
@@ -315,7 +315,7 @@ func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
 	// An identifier finds its note wherever it is, and where it is may be a
 	// vault this reading has no reader for. Both vaults file a note at the same
 	// path, so a reading that ignores which vault the link landed in shows the
-	// wrong note rather than nothing.
+	// wrong note and not nothing.
 	const id = "01M02DTC80PABQQW3XS3XWDVHW"
 	u, add := reading(t)
 	v := add(map[string]string{
@@ -405,7 +405,7 @@ func TestADeckJoinedToNothingIsAnEmptyAnswer(t *testing.T) {
 func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 	t.Parallel()
 	// Both vaults file their deck at the same path, so a query that forgets its
-	// vault answers with the other one's notes rather than with nothing.
+	// vault answers with the other one's notes and not with nothing.
 	u, add := reading(t)
 	feathers := add(map[string]string{
 		"decks/Deck.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",

@@ -103,7 +103,7 @@ const createStrip = (
   return { ...strip, takeOff, window_, windowRef, shown, moves, capture, errors, scrollTo, moveTo }
 }
 
-describe('where the strip stands', () => {
+describe('where the strip remains', () => {
   // A window opening on a card puts the card there: one seen sliding into place
   // looks like it is leaving.
   it('is put on its stop as it opens, with the smoothing off and back on after', () => {
@@ -114,7 +114,7 @@ describe('where the strip stands', () => {
     expect(window_.style.scrollBehavior).toBe('')
   })
 
-  it('stands every stop at the start while there is no card to read them off', () => {
+  it('remains every stop at the start while there is no card to read them off', () => {
     const { window_, shown, errors, scrollTo } = createStrip('after', { hasCard: false })
     expect(window_.scrollLeft).toBe(0)
 
@@ -124,14 +124,14 @@ describe('where the strip stands', () => {
     expect(errors).toEqual([])
   })
 
-  it('takes the earlier of two stops it stands exactly between', () => {
+  it('takes the earlier of two stops it remains exactly between', () => {
     const { shown, scrollTo } = createStrip('here')
     scrollTo(330)
     expect(shown.value).toBe('here')
   })
 })
 
-describe('a move asked for', () => {
+describe('a move requested for', () => {
   it('drops the settling a wheel left pending', async () => {
     const { window_, scrollTo, moveTo } = createStrip('here')
 
@@ -212,7 +212,7 @@ describe('a move asked for', () => {
 })
 
 describe('a resize', () => {
-  it('stands the strip on its stop, and no settling left pending takes it off', async () => {
+  it('remains the strip on its stop, and no settling left pending takes it off', async () => {
     const { window_, onPointerDown, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
@@ -300,7 +300,7 @@ describe('a hand', () => {
     expect(window_.scrollLeft).toBe(340)
   })
 
-  it('settles nothing when it comes off a strip it never went down on', async () => {
+  it('settles nothing when it arrives off a strip it never went down on', async () => {
     const { window_, scrollTo, letGo } = createStrip('here')
 
     scrollTo(300)
@@ -370,7 +370,7 @@ const createOwner = (at: PanelPlace) => {
 }
 
 describe('what the owner is told', () => {
-  it('hears nothing of a strip that is scrolled and still stands on the one it showed', () => {
+  it('hears nothing of a strip that is scrolled and still relies on the one it showed', () => {
     const { owner, writes } = createOwner('here')
     const { scrollTo } = createStrip('here', { owner })
 

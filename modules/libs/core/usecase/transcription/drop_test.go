@@ -134,7 +134,7 @@ func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 }
 
 func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
-	// A recording that gave no words stands on nothing, so what the run wrote
+	// A recording that gave no words relies on nothing, so what the run wrote
 	// is found by the fingerprint of the bytes.
 	listen, drop, v, index, kept, _, hash := newDrop(t, "", "")
 

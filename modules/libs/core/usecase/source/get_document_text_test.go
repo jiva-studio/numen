@@ -98,7 +98,7 @@ func TestAskingForMoreThanOneQuestionCarriesIsRefused(t *testing.T) {
 // long it is asked for, including where it begins before the text, past it,
 // or asks for nothing at all.
 func TestGetRuneBounds(t *testing.T) {
-	// é is two bytes, so a run touching it from either side stands on it
+	// é is two bytes, so a run touching it from either side relies on it
 	// whole or not at all.
 	const prose = "éllo"
 

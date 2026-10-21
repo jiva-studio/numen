@@ -156,7 +156,7 @@ describe('adding a vault', () => {
 })
 
 describe('renaming a vault', () => {
-  it('names it what was typed and tells the window', async () => {
+  it('names it what was typed and notifies the window', async () => {
     const one = createWindow()
 
     await renameVault(createRenameInvocation('Heat'), one.on, words)
@@ -165,7 +165,7 @@ describe('renaming a vault', () => {
     expect(one.calls.setVaultName).toHaveBeenCalledWith({ id: 'physics', name: 'Heat' })
   })
 
-  it('tells the window nothing where the list is as it was', async () => {
+  it('notifies the window nothing where the list is as it was', async () => {
     const one = createWindow({ renamed: asValue(null) })
 
     await renameVault(createRenameInvocation('Heat'), one.on, words)

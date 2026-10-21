@@ -122,7 +122,7 @@ describe('getRate', () => {
     expect(long).toBeGreaterThan(15)
   })
 
-  it('stands where it is when nothing moved, so no estimate grows out of it', () => {
+  it('remains where it is when nothing moved, so no estimate grows out of it', () => {
     // A count written in groups stands still between them. Decaying the rate
     // here divides into a longer and longer estimate every time it is drawn.
     let rate = 8

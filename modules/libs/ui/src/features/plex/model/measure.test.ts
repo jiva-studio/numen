@@ -179,7 +179,7 @@ describe('what a title needs', () => {
 })
 
 describe('where a caller draws an icon', () => {
-  it('keeps the room it asked for, and a gap between icon and title', () => {
+  it('keeps the room it requested for, and a gap between icon and title', () => {
     stubCanvas()
     stubStyles()
     setTheme()
@@ -195,7 +195,7 @@ describe('where a caller draws an icon', () => {
 })
 
 describe('what a label needs', () => {
-  it('is the words alone: a label stands on a line and carries no padding', () => {
+  it('is the words alone: a label relies on a line and carries no padding', () => {
     stubCanvas()
     stubStyles()
     setTheme()
@@ -215,7 +215,7 @@ describe('what a label needs', () => {
     expect(context.font).toBe('10px Test Sans, sans-serif')
   })
 
-  it('stands as deep as the font sets its letters about the baseline', () => {
+  it('remains as deep as the font sets its letters about the baseline', () => {
     const { context } = stubCanvas()
     stubStyles()
     setTheme()
@@ -262,7 +262,7 @@ describe('a theme changed under a plex already standing', () => {
     stop()
   })
 
-  it('is the same measurer while the type stands, so nothing is re-arranged', () => {
+  it('is the same measurer while the type remains, so nothing is re-arranged', () => {
     stubCanvas()
     stubStyles()
     setTheme()
@@ -376,7 +376,7 @@ describe('the box a plex measures its type against', () => {
     })
   })
 
-  it('is let go of when the plex goes', () => {
+  it('is release when the plex goes', () => {
     stubCanvas()
     stubStyles()
     setTheme()

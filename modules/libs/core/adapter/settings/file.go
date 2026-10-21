@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Read hands back the settings file as its person wrote it: every byte of it,
+// Read returns the settings file as its person wrote it: every byte of it,
 // in the order they arranged it. A file that is not there reads as an empty
 // object, which is what an installation nobody has configured runs on.
 func Read(path string) ([]byte, error) {

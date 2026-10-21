@@ -46,7 +46,7 @@ interface TimeOptions {
   readonly goToLine: (line: number) => void
 }
 
-/** One time in the gutter. It is clicked to go to the line it stands on. */
+/** One time in the gutter. It is clicked to go to the line it relies on. */
 class Time extends GutterMarker {
   override elementClass: string
   readonly text: string
@@ -160,7 +160,7 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
       const shown = last
       queueMicrotask(() => {
         // An editor drawn again is shown what the one before it was shown and
-        // is left where it stands: nothing was said while it was drawn.
+        // is left at its current position: nothing was said while it was drawn.
         if (view === got) put(shown, false)
       })
     }

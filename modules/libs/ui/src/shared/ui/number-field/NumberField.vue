@@ -58,7 +58,7 @@ const onInput = (event: Event) => setText((event.target as HTMLInputElement).val
 
 /**
  * A key the spin button answers: the arrows a step, the page keys ten, and home
- * and end the ends. Enter commits the field where it stands.
+ * and end the ends. Enter commits the field at its current position.
  */
 const onKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {

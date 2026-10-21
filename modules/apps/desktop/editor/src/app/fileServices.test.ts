@@ -101,7 +101,7 @@ describe('the files of the vault a plugin is handed', () => {
     )
   })
 
-  it('make a note in a folder and answer where it stands, or no path where none was made', async () => {
+  it('make a note in a folder and answer at its current position, or no path where none was made', async () => {
     const { files, createUntitled } = setup()
     createUntitled.mockResolvedValueOnce({ path: 'dir/Untitled.md' }).mockResolvedValueOnce(null)
 
@@ -163,7 +163,7 @@ describe('the files of the vault a plugin is handed', () => {
 })
 
 describe('an address imported', () => {
-  it('fetches what the note points at and tells the notes its path changed', async () => {
+  it('fetches what the note points at and notifies the notes its path changed', async () => {
     const { files, createUrl, applyPathChanges } = setup()
     createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/U.md' } })
 

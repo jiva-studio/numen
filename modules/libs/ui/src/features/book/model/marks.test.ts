@@ -78,7 +78,7 @@ describe('the marks of a document', () => {
   })
 })
 
-describe('the place a name stands at', () => {
+describe('the place a name remains at', () => {
   it('is that of the run holding it once the runs are gathered', () => {
     const { marks } = setUp(
       createPaper(

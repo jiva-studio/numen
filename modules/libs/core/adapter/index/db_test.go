@@ -63,7 +63,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 				return
 			}
 			// Hold the connection so the next goroutine is forced to open a new
-			// one instead of reusing this one.
+			// one and not reusing this one.
 			<-release
 		}()
 	}

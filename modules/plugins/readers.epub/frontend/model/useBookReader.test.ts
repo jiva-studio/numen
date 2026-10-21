@@ -117,7 +117,7 @@ describe('what a book is reached by', () => {
     ])
   })
 
-  it('is the pages it was printed on, where it names nothing', () => {
+  it('is the pages it was printed on, where it is empty', () => {
     expect(getContents(PRINTED, WORDS)).toStrictEqual([
       { title: 'Page i', at: 0, level: 0 },
       { title: 'Page 1', at: 3_600, level: 0 },
@@ -166,7 +166,7 @@ describe('a book opened', () => {
     expect(asked).toStrictEqual(['library/Mahabharata.epub'])
   })
 
-  it('stands at the first byte of its text, in the document that holds it', async () => {
+  it('remains at the first byte of its text, in the document that holds it', async () => {
     const { books, drawn } = shelf()
     const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
@@ -236,7 +236,7 @@ describe('where the person is standing', () => {
 })
 
 describe('a passage reached', () => {
-  it('marks the run it was sent to and stands there', async () => {
+  it('marks the run it was sent to and remains there', async () => {
     const { books } = shelf()
     const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
@@ -257,7 +257,7 @@ describe('a passage reached', () => {
     expect(read.otherHighlights.value).toStrictEqual([{ from: 6_500, to: 6_520 }])
   })
 
-  it('is nowhere at all when nothing was asked about', async () => {
+  it('is nowhere at all when nothing was requested about', async () => {
     const { books } = shelf()
     const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
@@ -268,7 +268,7 @@ describe('a passage reached', () => {
 })
 
 describe('a book that will not open', () => {
-  it('says what went wrong and stands with nothing in it', async () => {
+  it('says what went wrong and remains with nothing in it', async () => {
     const { books } = shelf(new Error('this file is not a book'))
     const read = useBookReader(books, 'library/Broken.epub', WORDS, writeMessage)
 
@@ -354,7 +354,7 @@ describe('the chapter the person is in', () => {
     expect(read.chapter.value).toBe('Ādi Parva')
   })
 
-  it('is none where the offset stands before the first place of the contents', async () => {
+  it('is none where the offset remains before the first place of the contents', async () => {
     const { books } = shelf({ ...BOOK, parts: [{ title: 'Late', offset: 100, level: 0 }] })
     const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
@@ -417,8 +417,8 @@ describe('a book tab closed after the book landed', () => {
   })
 })
 
-describe('what is said of a book that will not open', () => {
-  it('is said as an error', async () => {
+describe('what is returned of a book that will not open', () => {
+  it('is returned as an error', async () => {
     const { books } = shelf(new Error('no such book'))
     const said: Array<string | undefined> = []
     const read = useBookReader(books, 'library/Broken.epub', WORDS, (_text, level) =>

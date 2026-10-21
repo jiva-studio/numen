@@ -284,7 +284,7 @@ describe('every command that is offered', () => {
 })
 
 describe('a note put in front of the person', () => {
-  it('opens in a tab of its own, and beside it where the second key reached it', async () => {
+  it('opens in a tab of its own, and alongside it where the second key reached it', async () => {
     const one = window()
 
     await carry(createInvocation('read', front()), one.on)
@@ -296,7 +296,7 @@ describe('a note put in front of the person', () => {
     ])
   })
 
-  it('is travelled to in the plex, where that is what was asked', async () => {
+  it('is travelled to in the plex, where that is what was requested', async () => {
     const one = window()
 
     await carry(createInvocation('travel', front()), one.on)
@@ -315,7 +315,7 @@ describe('a deck, a stencil or a preset made', () => {
     expect(one.done).toStrictEqual(['decks — Animals'])
   })
 
-  it('hands a name that carries an ending over unchanged', async () => {
+  it('passes a name that carries an ending over unchanged', async () => {
     const one = window()
 
     await carry(createInvocation('deck', front(), 'Animals.md'), one.on)
@@ -323,7 +323,7 @@ describe('a deck, a stencil or a preset made', () => {
     expect(one.done).toStrictEqual(['decks — Animals.md'])
   })
 
-  it('is a stencil where that is what was asked for', async () => {
+  it('is a stencil where that is what was requested for', async () => {
     const one = window()
 
     await carry(createInvocation('stencil', front(), 'Animal'), one.on)
@@ -331,7 +331,7 @@ describe('a deck, a stencil or a preset made', () => {
     expect(one.done).toStrictEqual(['stencils — Animal'])
   })
 
-  it('is a preset where that is what was asked for', async () => {
+  it('is a preset where that is what was requested for', async () => {
     const one = window()
 
     await carry(createInvocation('newPreset', front(), 'Sanskrit'), one.on)
@@ -350,7 +350,7 @@ describe('a deck, a stencil or a preset made', () => {
 })
 
 describe('a note made', () => {
-  it('writes the note it was made from into it, in the relation that was asked for', async () => {
+  it('writes the note it was made from into it, in the relation that was requested for', async () => {
     const one = window()
 
     await carry(createInvocation('child', front(), 'Entropy'), one.on)
@@ -358,7 +358,7 @@ describe('a note made', () => {
     expect(one.done[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
 
-  it('stands on its own where no relation was asked for', async () => {
+  it('relies on its own where no relation was requested for', async () => {
     const one = window()
 
     await carry(createInvocation('note', front(), 'Entropy'), one.on)
@@ -374,7 +374,7 @@ describe('a note made', () => {
     expect(one.done.at(-1)).toBe('travel Entropy.md')
   })
 
-  it('opens in a tab beside the note the person is in', async () => {
+  it('opens in a tab alongside the note the person is in', async () => {
     const one = window()
 
     await carry(createInvocation('child', front({ kind: 'note' }), 'Entropy'), one.on)
@@ -422,7 +422,7 @@ const createArtifactRun = (state: ArtifactState, error = '') => {
   return { one, invocation: createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })) }
 }
 
-describe('an artifact asked for over a file', () => {
+describe('an artifact requested for over a file', () => {
   it('asks the application over that file', async () => {
     const { one, invocation } = createArtifactRun('running')
 
@@ -433,7 +433,7 @@ describe('an artifact asked for over a file', () => {
 
   // Every state carries a sentence, so the person is told one whatever
   // happened.
-  it('says what it now stands at, in the window’s own words', async () => {
+  it('says what it now remains at, in the window’s own words', async () => {
     for (const made of REACHED) {
       const { one, invocation } = createArtifactRun(made)
 
@@ -467,7 +467,7 @@ describe('an artifact asked for over a file', () => {
 
   // A run that could not read the file wrote down what it got, and asking again
   // gets the same until that record is taken away.
-  it('says what a run said about a recording it could not open', async () => {
+  it('says what a run returned about a recording it could not open', async () => {
     const reason = 'mp3: MPEG version 2.5 is not supported'
     const { one, invocation } = createArtifactRun('failed', reason)
 
@@ -505,7 +505,7 @@ describe('an artifact asked for over a file', () => {
     expect(one.runs.canRun('recognise')).toBe(true)
   })
 
-  it('is said only in the window it was asked in', async () => {
+  it('is returned only in the window it was requested in', async () => {
     const one = window({ outcome: { able: false } })
 
     await carry(createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
@@ -562,7 +562,7 @@ describe('a note renamed', () => {
     expect(one.notices).toStrictEqual([words.unanswered])
   })
 
-  it('says the note was written elsewhere while this was asked', async () => {
+  it('says the note was written elsewhere while this was requested', async () => {
     const one = window({ renamed: asFailure('changed' as const) })
 
     await carry(createInvocation('title', front(), 'Entropy'), one.on)
@@ -647,7 +647,7 @@ describe('a note removed', () => {
     ])
   })
 
-  it('goes off the disk where destroying was what was asked', async () => {
+  it('goes off the disk where destroying was what was requested', async () => {
     const one = window()
 
     await carry(createInvocation('destroy', front(), 'Ontology'), one.on)
@@ -656,7 +656,7 @@ describe('a note removed', () => {
   })
 
   /** The row has gone from the tree, which is the whole of what a person needs. */
-  it('says nothing about a note that went where it was asked to go', async () => {
+  it('says nothing about a note that went where it was requested to go', async () => {
     const one = window()
 
     await carry(createInvocation('remove', front()), one.on)
@@ -786,7 +786,7 @@ describe('a file filed somewhere else', () => {
   /** The destination is the whole path, so a name changed in one folder is a move. */
   const createMoveInvocation = (to: string) => createInvocation('move', front(), to)
 
-  it('is asked of the vault under the path it is filed at from now on', async () => {
+  it('is requested of the vault under the path it is filed at from now on', async () => {
     const one = window()
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
@@ -842,7 +842,7 @@ describe('a file filed somewhere else', () => {
 })
 
 describe('a folder made', () => {
-  it('is asked of the vault under the path it goes at', async () => {
+  it('is requested of the vault under the path it goes at', async () => {
     const one = window()
 
     await carry(createInvocation('createFolder', front(), 'physics/heat'), one.on)
@@ -872,7 +872,7 @@ describe('a folder made', () => {
  * vault moves in between. The tab holding the note is what says where it is.
  */
 describe('a note that moved between the answer and the invocation', () => {
-  it('is renamed where it stands now, not at the name the invocation was made over', async () => {
+  it('is renamed at its current position now, not at the name the invocation was made over', async () => {
     const one = window({ at: 'physics/Being.md' })
 
     await carry(createInvocation('title', front(), 'Substance', 'held'), one.on)
@@ -880,7 +880,7 @@ describe('a note that moved between the answer and the invocation', () => {
     expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Being.md Substance'])
   })
 
-  it('is removed where it stands now', async () => {
+  it('is removed at its current position now', async () => {
     const one = window({ at: 'physics/Being.md' })
 
     await carry(createInvocation('remove', front(), '', 'held'), one.on)
@@ -901,7 +901,7 @@ describe('a note that moved between the answer and the invocation', () => {
 })
 
 describe('a command over the window', () => {
-  it('opens a tab of the kind asked for, and closes the one in front', async () => {
+  it('opens a tab of the kind requested for, and closes the one in front', async () => {
     const one = window()
 
     await carry(createInvocation('plex', front()), one.on)
@@ -911,7 +911,7 @@ describe('a command over the window', () => {
     expect(one.done).toStrictEqual(['openTab plex', 'openTab agent', 'closeTab tab'])
   })
 
-  it('hands the field back to the search', async () => {
+  it('passes the field back to the search', async () => {
     const one = window()
 
     await carry(createInvocation('find', front()), one.on)
@@ -919,7 +919,7 @@ describe('a command over the window', () => {
     expect(one.done).toStrictEqual(['search'])
   })
 
-  it('hands over the row that was chosen, and nothing about the note in front', async () => {
+  it('passes over the row that was chosen, and nothing about the note in front', async () => {
     const one = window()
 
     await carry(createInvocation('appearance', front(), 'mine:sea'), one.on)
@@ -948,7 +948,7 @@ describe('a command over the vault', () => {
   })
 })
 
-describe('what the window is asked about a note', () => {
+describe('what the window is requested about a note', () => {
   it('is put to the agent, and its path put on the clipboard', async () => {
     const one = window()
 
@@ -970,7 +970,7 @@ describe('another vault under this window', () => {
     expect(one.done).toStrictEqual(['opens vault heat', 'reloads'])
   })
 
-  it('leaves the page where it stands where the vault would not open', async () => {
+  it('leaves the page at its current position where the vault would not open', async () => {
     const one = window({ turnedDown: 'showing' })
 
     await carry(createInvocation('openVault', heat()), one.on)
@@ -1058,7 +1058,7 @@ describe('a vault taken off the list', () => {
     expect(one.notices).toStrictEqual([words.vaultErrors.lastVault])
   })
 
-  it('is erased where erasing was what was asked', async () => {
+  it('is erased where erasing was what was requested', async () => {
     const one = window()
 
     await carry(createInvocation('eraseVault', heat(), 'Heat'), one.on)
@@ -1074,7 +1074,7 @@ describe('a vault taken off the list', () => {
     expect(one.notices).toStrictEqual([words.vaultErrors.noTrash])
   })
 
-  it('says the vault in front of the person, which the window stands on', async () => {
+  it('says the vault in front of the person, which the window relies on', async () => {
     const one = window({ turnedDown: 'showing' })
 
     await carry(createInvocation('removeVault', front()), one.on)
@@ -1107,7 +1107,7 @@ describe('nothing to carry out', () => {
     expect(one.done).toStrictEqual([])
   })
 
-  it('says what the vault could not be asked, and asks no further', async () => {
+  it('says what the vault could not be requested, and asks no further', async () => {
     const one = window()
     const broken: CommandDeps = {
       ...one.on,
@@ -1140,7 +1140,7 @@ describe('the open files a command reaches', () => {
     return { done, notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }) }
   }
 
-  it('is the tab of whichever store stands at the file', () => {
+  it('is the tab of whichever store remains at the file', () => {
     const one = createStores()
 
     expect(one.notes.getTabAt('Ontology.md')).toBe('note')
@@ -1198,7 +1198,7 @@ describe('indexingModel command', () => {
 })
 
 describe('a note made in a relation of another', () => {
-  it('is made as a parent or as a jump where that was asked', async () => {
+  it('is made as a parent or as a jump where that was requested', async () => {
     const one = window()
 
     await carry(createInvocation('parent', front(), 'Entropy'), one.on)
@@ -1238,7 +1238,7 @@ describe('a stencil or an address made', () => {
   })
 })
 
-describe('a copy or a text of a file asked for', () => {
+describe('a copy or a text of a file requested for', () => {
   it('asks the application for a copy over the file', async () => {
     const one = window()
 
@@ -1257,7 +1257,7 @@ describe('a copy or a text of a file asked for', () => {
     expect(one.tones).toStrictEqual(['report'])
   })
 
-  it('says a run that came out wrong as an error, with what the run said', async () => {
+  it('says a run that came out wrong as an error, with what the run returned', async () => {
     const one = window({ outcome: outcome('transcript', 'failed', 'no network') })
 
     await carry(createInvocation('downloadText', front({ file: 'https://example.org' })), one.on)

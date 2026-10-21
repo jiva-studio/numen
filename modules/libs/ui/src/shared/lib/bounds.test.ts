@@ -50,7 +50,7 @@ describe('a step', () => {
     expect(stepBy(0.82, -1, fine)).toBe(0.81)
   })
 
-  it('leaves a track of no step where it stands', () => {
+  it('leaves a track of no step at its current position', () => {
     expect(stepBy(40, 1, bounds({ step: 0 }))).toBe(40)
   })
 })
@@ -66,13 +66,13 @@ describe('a step far from the floor', () => {
     expect(stepBy(1e14, 10, bounds({ max: 1e17, step: 0.01 }))).toBe(100000000000000.1)
   })
 
-  it('stands on the place a rounding error falls short of', () => {
+  it('relies on the place a rounding error falls short of', () => {
     const tenths = bounds({ max: 1, step: 0.1 })
     expect(stepBy(0.3, 1, tenths)).toBe(0.4)
     expect(stepBy(0.3, -1, tenths)).toBe(0.2)
   })
 
-  it('leaves a value where it stands for a walk of no steps', () => {
+  it('leaves a value at its current position for a walk of no steps', () => {
     expect(stepBy(7, 0, bounds({ max: 10, step: 3 }))).toBe(7)
   })
 })

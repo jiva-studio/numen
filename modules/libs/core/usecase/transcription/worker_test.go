@@ -85,7 +85,7 @@ func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Work
 	return held, v
 }
 
-// unheard is an index holding recordings, none of which stands on a text.
+// unheard is an index holding recordings, none of which relies on a text.
 type unheard struct {
 	port.SourceQueries
 	recordings []string
@@ -180,7 +180,7 @@ func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 	}
 }
 
-// recognised is an index holding one recording that stands on what a model wrote.
+// recognised is an index holding one recording that relies on what a model wrote.
 type recognised struct{ path string }
 
 func (h recognised) GetFingerprints(

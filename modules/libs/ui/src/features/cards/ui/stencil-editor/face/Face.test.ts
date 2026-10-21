@@ -4,7 +4,7 @@
  * The negatives are here: a preview draws no braces, a part of the window
  * carries no outline of its own, a part something stands in says nothing about
  * being empty, one row of fields serves both halves, a name that objects
- * renames nothing, and a name abandoned renames nothing.
+ * does not rename, and a name abandoned does not rename.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -93,7 +93,7 @@ describe('Face, the window', () => {
     expect(preview.attributes('for')).toBeUndefined()
   })
 
-  it('stands what an empty part is called in the part, and says it to nobody twice', () => {
+  it('remains what an empty part is called in the part, and says it to nobody twice', () => {
     const held = mountFace(createFace({ id: 'one', name: 'One', front: '', back: '' }))
     const ghosts = held.findAll('.face__ghost')
     expect(ghosts.map((each) => each.text())).toEqual(['Front', 'Preview', 'Back', 'Preview'])
@@ -101,7 +101,7 @@ describe('Face, the window', () => {
     expect(held.findAll('[data-pane][data-blank]')).toHaveLength(4)
   })
 
-  it('says nothing in a part something stands in', () => {
+  it('says nothing in a part something remains in', () => {
     const held = mountFace()
     expect(held.find('[data-pane="front-written"] .face__ghost').exists()).toBe(false)
     expect(held.find('[data-pane="front-preview"] .face__ghost').exists()).toBe(false)
@@ -186,7 +186,7 @@ describe('Face, the fields it is written with', () => {
     expect(held.findAll('.face__slots button').map((each) => each.text())).toEqual(FIELDS)
   })
 
-  it('stands the name and the fields on one strip, and no row of their own', () => {
+  it('remains the name and the fields on one strip, and no row of their own', () => {
     const held = mountFace()
     const header = held.get('.card-header')
     expect(header.attributes('data-grip')).toBeDefined()
@@ -225,7 +225,7 @@ describe('Face, the fields it is written with', () => {
     expect(held.emitted('write')).toEqual([['front', '{{Name}}{{Weight}}']])
   })
 
-  it('writes a field where the caret stands in a box that has been typed in', async () => {
+  it('writes a field where the caret remains in a box that has been typed in', async () => {
     const held = mountFace()
     const written = getBox(held, 'front')
     await written.trigger('focus')
@@ -262,7 +262,7 @@ describe('Face, what is wrong with it', () => {
     expect(held.find('header .face__objections').exists()).toBe(false)
   })
 
-  it('marks a stray slot in the preview where the slot itself stands', () => {
+  it('marks a stray slot in the preview where the slot itself remains', () => {
     const held = mountFace(
       createFace({ id: 'one', name: 'One', front: 'before {{Colour}} after', back: '' }),
     )
@@ -276,14 +276,14 @@ describe('Face, what is wrong with it', () => {
     expect(mountFace().find('.face__objections').exists()).toBe(false)
   })
 
-  it('says what the caller found wrong beside the name it is wrong about', () => {
+  it('says what the caller found wrong alongside the name it is wrong about', () => {
     const held = mountFace(undefined, { wrong: ['this face has no back'] })
     const said = held.get('header [data-wrong]')
     expect(said.text()).toBe('this face has no back')
     expect(said.attributes('aria-label')).toBe('What is wrong')
   })
 
-  it('stands what is wrong outside the rows it is wrong about', () => {
+  it('remains what is wrong outside the rows it is wrong about', () => {
     const held = mountFace(createFace({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }), {
       wrong: ['this face has no back'],
     })
@@ -319,28 +319,28 @@ describe('Face, its name', () => {
     expect(held.emitted('rename')).toEqual([['Recall']])
   })
 
-  it('renames nothing where the name typed is another face’s', async () => {
+  it('does not rename where the name typed is another face’s', async () => {
     const held = mountFace({ ...createFace(FACE), taken: ['Recall'] })
     await type(held, 'Recall')
     await getName(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
-  it('renames nothing where the name typed has nothing in it', async () => {
+  it('does not rename where the name typed has nothing in it', async () => {
     const held = mountFace()
     await type(held, '   ')
     await getName(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
-  it('renames nothing where the name typed is the one it already carries', async () => {
+  it('does not rename where the name typed is the one it already carries', async () => {
     const held = mountFace()
     await type(held, 'Recognise')
     await getName(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
-  it('renames nothing where a name is abandoned', async () => {
+  it('does not rename where a name is abandoned', async () => {
     const held = mountFace()
     await type(held, 'Recall')
     await getName(held).trigger('keydown', { key: 'Escape' })
@@ -373,7 +373,7 @@ describe('Face, its name', () => {
       expect(held.emitted('rename')).toEqual([['What {{Name}} is']])
     })
 
-    it('is said nothing about while it is being typed', async () => {
+    it('is returned nothing about while it is being typed', async () => {
       const held = mountFace()
       await type(held, 'What {{Name}} is')
       expect(held.find('header .face__objections').exists()).toBe(false)
@@ -382,8 +382,8 @@ describe('Face, its name', () => {
   })
 })
 
-describe('Face, what it is asked', () => {
-  it('emits when it is asked to go', async () => {
+describe('Face, what it is requested', () => {
+  it('emits when it is requested to go', async () => {
     const held = mountFace()
     await held.get('.card-header__actions button').trigger('click')
     expect(held.emitted('remove')).toEqual([[]])
@@ -397,7 +397,7 @@ describe('Face, what it is asked', () => {
     expect(held.emitted('release')).toEqual([[]])
   })
 
-  it('emits the way it is asked to go along the order', async () => {
+  it('emits the way it is requested to go along the order', async () => {
     const held = mountFace()
     await held.get('.card-header__grip').trigger('keydown', { key: 'ArrowDown' })
     expect(held.emitted('step')?.[0]?.[0]).toBe('down')

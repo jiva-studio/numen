@@ -11,7 +11,7 @@ import type { Position } from '../../lib/node'
 import { isPress } from '../../lib/keys'
 
 defineProps<{
-  /** Where it sits, in the coordinates of whatever draws it. */
+  /** where it is located, in the coordinates of whatever draws it. */
   at: Position
 }>()
 

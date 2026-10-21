@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Fingerprint is which bytes a document is: where it sits in the vault, and
+// Fingerprint is which bytes a document is: where it is located in the vault, and
 // what the vault says about the file there. The stamp is nanoseconds since the
 // epoch, and zero is a file nothing was said about.
 type Fingerprint struct {

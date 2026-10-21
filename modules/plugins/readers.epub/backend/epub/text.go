@@ -545,7 +545,7 @@ func parseHeadingLevel(a atom.Atom) int {
 	return 0
 }
 
-// blocks are the elements whose text stands on a line of its own.
+// blocks are the elements whose text relies on a line of its own.
 var blocks = map[atom.Atom]bool{
 	atom.Address:    true,
 	atom.Article:    true,

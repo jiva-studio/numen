@@ -41,7 +41,7 @@ type Line struct {
 
 // A Page is one page of a document, read.
 //
-// It carries no name of its own. What a page is called is where it stands in
+// It carries no name of its own. What a page is called is at its current position in
 // the document, and that is what a person is shown and what a viewer opens at.
 type Page struct {
 	// Index is which page of the document this is, counted from zero.

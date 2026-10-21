@@ -52,7 +52,7 @@ type cachedSchedule struct {
 //
 // What is kept between launches is a cache: a file listing the runs it was
 // worked out from. A cache filled from every run the vault now holds, by this
-// scheduler, is used as it stands. Anything else is the whole history read
+// scheduler, is used currently. Anything else is the whole history read
 // again — a run arriving from another machine holds answers older than ones
 // already counted, and a schedule depends on the order of the answers, so
 // nothing can be added to what the later ones produced.
@@ -100,7 +100,7 @@ func (u Schedules) Presets() Presets {
 }
 
 // assignment is which scheduler each card face is worked out by, and what that
-// assignment comes to.
+// assignment evaluates to.
 //
 // The mark is what says a cache is out of date. A target moving, a deck
 // repointed, a card moved between decks and a preset placing its cards

@@ -27,7 +27,7 @@ var reads = []string{
 	"vault_get",
 }
 
-// The reading server stands on what it does not serve, so the list is exact:
+// The reading server relies on what it does not serve, so the list is exact:
 // one writing tool reaching it fails this.
 func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 	cfg, db := openIndex(t)

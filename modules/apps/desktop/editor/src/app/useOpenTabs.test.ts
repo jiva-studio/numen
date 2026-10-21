@@ -1,5 +1,5 @@
 /**
- * What the person has open is told to the core, and each tab draws the icon of its kind.
+ * What currently open is told to the core, and each tab draws the icon of its kind.
  */
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
@@ -63,7 +63,7 @@ describe('the open tabs', () => {
     expect(held.open.value.tabs).toStrictEqual([{ id: 'a', kind: 'files', title: 'A', path: '' }])
   })
 
-  it('tells the core the list when it is made, and again when it changes', async () => {
+  it('notifies the core the list when it is made, and again when it changes', async () => {
     const held = create([{ id: 'a', title: 'A', openTab: { path: 'a.md' } }])
 
     expect(held.writeOpenTabs).toHaveBeenCalledTimes(1)

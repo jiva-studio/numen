@@ -48,7 +48,7 @@ describe('what a screen reader is told', () => {
 })
 
 describe('choosing', () => {
-  it('hands back the identifier it was given', async () => {
+  it('returns the identifier it was given', async () => {
     const control = mountSegmentedControl()
     await control.findAll('[role="radio"]')[1]?.trigger('click')
     expect(getEmitted(control)).toEqual(['medium'])
@@ -79,7 +79,7 @@ describe('choosing', () => {
     expect(getEmitted(control)).toEqual([])
   })
 
-  it('hands nothing on while nobody may turn it', async () => {
+  it('passes nothing on while nobody may turn it', async () => {
     const control = mountSegmentedControl({ disabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('click')
     expect(getEmitted(control)).toEqual([])
@@ -88,7 +88,7 @@ describe('choosing', () => {
 
 // One press is one turn. The row already walks to its ends on these keys, and
 // a choice made twice is written twice by whoever is listening.
-it('hands a choice on once for one press of Home or End', async () => {
+it('passes a choice on once for one press of Home or End', async () => {
   const control = mountSegmentedControl({ modelValue: 'medium' })
   const segments = control.findAll('[role="radio"]')
 

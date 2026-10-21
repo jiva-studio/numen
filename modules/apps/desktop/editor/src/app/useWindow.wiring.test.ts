@@ -191,7 +191,7 @@ describe('what the window answers about the tab in front', () => {
     })
   })
 
-  it('is what the kind of the tab says it stands over', () => {
+  it('is what the kind of the tab says it remains over', () => {
     const kind = createKind({ file: 'a.md', path: 'a', title: 'A', source: 'src' })
     front.value = { id: 't1', kind, state: { held: 1 } }
     h.f.vaults.makes.value = new Map([['a.md', { flashcards: true }]])
@@ -218,7 +218,7 @@ describe('what the window answers about the tab in front', () => {
     expect(window.getTarget().made).toEqual({})
   })
 
-  it('stands over nothing where the tab in front is not held', () => {
+  it('remains over nothing where the tab in front is not retained', () => {
     front.value = { id: 'gone', kind: createKind({ file: 'a.md' }), state: {} }
     h.f.windowTabs.getTab.mockReturnValue(undefined)
     const window = useWindow()
@@ -241,7 +241,7 @@ describe('the states of the file in front', () => {
     expect(h.f.vaults.loadArtifactStates).toHaveBeenCalledWith('')
   })
 
-  it('are loaded again for the file that comes to the front', async () => {
+  it('are loaded again for the file that evaluates to the front', async () => {
     useWindow()
     front.value = { id: 't1', kind: createKind({ file: 'a.md' }), state: {} }
     await nextTick()
@@ -270,7 +270,7 @@ describe('the parts of the window', () => {
     expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed })
   })
 
-  it('are asked to travel to a path through the kinds', () => {
+  it('are requested to travel to a path through the kinds', () => {
     useWindow()
 
     h.args.display.travelTo('a.md')
@@ -278,7 +278,7 @@ describe('the parts of the window', () => {
     expect(h.f.kinds.travel).toHaveBeenCalledWith('a.md')
   })
 
-  it('are asked to open a file at the spans through the openers', () => {
+  it('are requested to open a file at the spans through the openers', () => {
     useWindow()
     const spans = [{ from: 1, to: 2 }]
 
@@ -287,7 +287,7 @@ describe('the parts of the window', () => {
     expect(h.f.tabOpeners.openFileAt).toHaveBeenCalledWith('a.md', spans)
   })
 
-  it('are asked to reload through the vaults', () => {
+  it('are requested to reload through the vaults', () => {
     useWindow()
 
     h.args.display.reload()
@@ -427,7 +427,7 @@ describe('a preset opened', () => {
   const mockFileKind = (type: string) =>
     h.core.fileKinds.mockResolvedValue(new Map([['a.md', { type }]]))
 
-  it('is asked of the kinds of the window with the type the vault names the file', async () => {
+  it('is requested of the kinds of the window with the type the vault names the file', async () => {
     mockFileKind('deck')
     h.f.windowTabs.resolveCommand.mockResolvedValue({ ok: true, kind: 'preset', at: 'Presets/Fast.md' })
     useWindow()

@@ -19,7 +19,7 @@ import (
 // after a tool has half-written them: the library rebuilds what it needs, and a
 // person can read the fixture. `outline.pdf` is the exception. An outline's
 // destinations resolve only in a file whose cross reference table is real, so
-// that one is produced rather than typed, and it is still plain text.
+// that one is produced and not typed, and it is still plain text.
 const (
 	tiny    = "tiny.pdf"    // two pages of text, naming nothing
 	outline = "outline.pdf" // four pages, three of them named, one name inside another
@@ -172,7 +172,7 @@ func TestLocate(t *testing.T) {
 	book := read(t, outline)
 
 	// Keyed by a word in the text, so that the case says where it is asking
-	// about rather than what the offset happens to be.
+	// about and not what the offset happens to be.
 	at := func(word string) int {
 		t.Helper()
 		i := strings.Index(book.Text, word)

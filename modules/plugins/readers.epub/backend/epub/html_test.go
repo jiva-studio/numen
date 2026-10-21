@@ -129,7 +129,7 @@ func offsets(t *testing.T, root *html.Node) []run {
 	walk = func(n *html.Node) {
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			// A book writes spans of its own, and the run is the one that says
-			// where it stands.
+			// at its current position.
 			if said := getAttribute(c, epub.OffsetAttribute); said != "" {
 				at, err := strconv.Atoi(said)
 				if err != nil {

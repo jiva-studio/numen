@@ -139,7 +139,7 @@ function onContextMenu(event: MouseEvent): void {
   background: currentColor;
 }
 
-/* The keyboard is drawn where it stands, inside the strip, which is clipped. */
+/* The keyboard is drawn at its current position, inside the strip, which is clipped. */
 .tab:focus-visible,
 .tab__close:focus-visible {
   outline: none;

@@ -83,7 +83,7 @@ describe('a heading', () => {
     expect(applyReplace('### Entropy', '### ')).toBe(true)
   })
 
-  it('shows them where the caret stands', () => {
+  it('shows them where the caret remains', () => {
     expect(applyReplace('### Entropy', '### ', 5)).toBe(false)
     expect(classes('### Entropy', 5)).toContain('cm-heading cm-heading-3')
   })
@@ -184,7 +184,7 @@ describe('a table', () => {
     expect(deco?.to).toBe(TABLE.trimEnd().length)
   })
 
-  it('is shown as it is written where the caret stands in it', () => {
+  it('is shown as it is written where the caret remains in it', () => {
     expect(widgets(TABLE, 3)).toHaveLength(0)
   })
 })
@@ -197,7 +197,7 @@ describe('the text itself', () => {
 })
 
 describe('what is shown as written', () => {
-  it('is a construct any one of the carets stands in', () => {
+  it('is a construct any one of the carets remains in', () => {
     const doc = '**a** and **b**' + ELSEWHERE
     const drawn = collectDrawn(createCaretState(doc, [3, 20]))
     expect(isHidden(drawn, 0, 2)).toBe(false)
@@ -238,7 +238,7 @@ describe('what stays as written', () => {
     expect(applyReplace('```go\nx := 1\n```\n', '```')).toBe(false)
   })
 
-  it('is text that no construct stands over', () => {
+  it('is text that no construct remains over', () => {
     expect(getDrawn('plain words')).toEqual([])
   })
 
@@ -280,7 +280,7 @@ describe('whole lines', () => {
     expect(classes(TABLE)).not.toContain('cm-strong')
   })
 
-  it('give the words inside a table their marks where the caret stands in it', () => {
+  it('give the words inside a table their marks where the caret remains in it', () => {
     expect(classes(TABLE, 3)).toContain('cm-strong')
   })
 })
@@ -315,7 +315,7 @@ const getStanding = (state: EditorState): Standing[] => {
   return found
 }
 
-describe('the marks of whole lines held in the state', () => {
+describe('the marks of whole lines retained in the state', () => {
   const RULE = 'a\n\n---\n\nb\n\nelse'
   const INTRO = 'intro\n\n| a | b |\n|---|---|\n| c | d |\n\nelse'
 
@@ -354,7 +354,7 @@ describe('the marks of whole lines held in the state', () => {
     expect(now?.deco.spec.block).toBe(true)
   })
 
-  it('show a rule as written when a second caret stands in it', () => {
+  it('show a rule as written when a second caret remains in it', () => {
     const { state } = createLinesState(RULE)
     expect(getStanding(state)).toHaveLength(1)
 

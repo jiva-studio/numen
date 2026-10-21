@@ -19,7 +19,7 @@ type Tab struct {
 	IsFront bool   `json:"front,omitempty" jsonschema:"set on the one tab the person is looking at"`
 }
 
-// addWindowTools tells an agent what the person has open.
+// addWindowTools tells an agent what currently open.
 //
 // They are added only where a window says. A binary nobody is sitting at
 // answers about a vault and about nothing in front of anybody.

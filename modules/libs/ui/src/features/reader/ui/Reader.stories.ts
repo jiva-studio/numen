@@ -43,7 +43,7 @@ interface Rect {
   readonly maxY: number
 }
 
-/** A run of the text, highlighted where it sits on the page it was read from. */
+/** A run of the text, highlighted where it is located on the page it was read from. */
 const HIGHLIGHTS: readonly Rect[] = [
   { minX: 0.12, minY: 0.2, maxX: 0.62, maxY: 0.26 },
   { minX: 0.12, minY: 0.27, maxX: 0.44, maxY: 0.33 },
@@ -107,7 +107,7 @@ const TEMPLATE = `
   </div>
 `
 
-/** One page of the strip, by where it stands in the document. */
+/** One page of the strip, by at its current position in the document. */
 const getSheet = (canvasElement: HTMLElement, page: number) =>
   canvasElement.querySelector(`.reader__page[data-page="${page}"]`) as HTMLElement | null
 
@@ -317,7 +317,7 @@ export const Undrawn: Story = {
 }
 
 /**
- * Nothing is highlighted until the page it stands on is there. A rectangle over
+ * Nothing is highlighted until the page it relies on is there. A rectangle over
  * a page still coming is a mark on nothing, standing where the page is not.
  */
 export const HighlightedOnlyOnceThePageIsThere: Story = {

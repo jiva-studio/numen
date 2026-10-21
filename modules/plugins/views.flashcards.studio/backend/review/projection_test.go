@@ -792,7 +792,7 @@ func TestACardAtTheTargetExactlyIsLearned(t *testing.T) {
 		t.Errorf("a card face recalled with a chance of %v stands short of a target of %v",
 			review.Recall(away, stability), p.Retention)
 	}
-	// And a target above where it stands does not learn it.
+	// And a target above at its current position does not learn it.
 	tighter := p
 	tighter.Retention = 0.99
 	if tighter.IsLearned(c, now) {

@@ -13,7 +13,7 @@ import (
 )
 
 // budgets is what today leaves each preset a vault's decks are scheduled by,
-// and which preset each card face stands under.
+// and which preset each card face is placed under.
 //
 // The presets are separate scopes: one running out closes its own decks and no
 // others. A preset standing in no note schedules the decks naming none.
@@ -109,7 +109,7 @@ type presetSurvey struct {
 }
 
 // readPresetSurvey reads the preset of every deck the faces stand in, and
-// records in out which preset each face stands under and how many faces each
+// records in out which preset each face is placed under and how many faces each
 // preset holds. A deck is asked once however many faces it holds, and a preset
 // note is opened once however many decks name it.
 func readPresetSurvey(
@@ -161,7 +161,7 @@ func sumSpentByPreset(
 	return spent
 }
 
-// charge reports whether the preset a card face stands under has room for it
+// charge reports whether the preset a card face is placed under has room for it
 // today, in the deck the face stands in, and spends the room where it has.
 //
 // The day is closed by the budget the preset's goal names, and every other

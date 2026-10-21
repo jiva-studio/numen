@@ -23,7 +23,7 @@ func NewGetTitles(queries port.NoteQueries) GetTitles {
 	return GetTitles{queries: queries}
 }
 
-// Execute answers for each path, in the order given. A path that names nothing
+// Execute answers for each path, in the order given. A path that is empty
 // is missing and is not an error.
 func (u GetTitles) Execute(ctx context.Context, v domain.Vault, paths []string) (Titles, error) {
 	found, err := u.queries.GetNotes(ctx, v.ID, paths)

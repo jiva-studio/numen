@@ -165,7 +165,7 @@ func TestADocumentAlreadyReadIsNotReadAgain(t *testing.T) {
 
 func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 	// A document is an hour, and a person may stop one. What was read is on
-	// disk, and the next run begins where the last one left off rather than at
+	// disk, and the next run begins where the last one left off and not at
 	// the beginning.
 	u, v, _, shelf, model := recogniser(t, "A page.")
 
@@ -670,7 +670,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 }
 
 func TestTheArtifactMarksOnePageForEachPageOfTheDocument(t *testing.T) {
-	// A page is called where it stands among the marks, so the marks and the
+	// A page is called at its current position among the marks, so the marks and the
 	// pages have to be the same run of things in the same order. A page
 	// nothing was read on is still marked.
 	u, v, index, shelf, model := recogniser(t, "A page.")

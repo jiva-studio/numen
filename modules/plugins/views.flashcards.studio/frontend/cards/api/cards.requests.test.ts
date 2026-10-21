@@ -121,7 +121,7 @@ describe('reading a deck', () => {
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'notADeck', bound: 400 }))
   })
 
-  it('is changed where the file moved past what was asked', async () => {
+  it('is changed where the file moved past what was requested', async () => {
     answer('readDeck', { error: ErrorCode.STALE, bound: 400n })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'changed', bound: 400 }))
@@ -173,7 +173,7 @@ describe('writing a deck', () => {
 })
 
 describe('the stencils of a vault', () => {
-  it('are asked for up to the limit given', async () => {
+  it('are requested for up to the limit given', async () => {
     answer('listStencils', { stencils: [], total: 0 })
 
     await cards.stencils(5)
@@ -181,7 +181,7 @@ describe('the stencils of a vault', () => {
     expect(cardsService.listStencils).toHaveBeenCalledWith({ limit: 5 })
   })
 
-  it('are asked for up to no limit where none is given', async () => {
+  it('are requested for up to no limit where none is given', async () => {
     answer('listStencils', { stencils: [], total: 0 })
 
     await cards.stencils()
@@ -282,7 +282,7 @@ describe('reading a stencil', () => {
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('unreadable'))
   })
 
-  it('is changed where the file moved past what was asked, though a stencil came', async () => {
+  it('is changed where the file moved past what was requested, though a stencil came', async () => {
     answer('readStencil', { error: ErrorCode.STALE, stencil: stencilMessage })
 
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('changed'))

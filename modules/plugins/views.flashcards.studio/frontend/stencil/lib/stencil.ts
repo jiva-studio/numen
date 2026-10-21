@@ -32,7 +32,7 @@ export interface BufferStencil extends Surrounds {
   readonly faces: readonly BufferFace[]
 }
 
-/** A stencil that names nothing and shows nothing. */
+/** A stencil that is empty and shows nothing. */
 export const NO_STENCIL: BufferStencil = { fields: [], preamble: '', faces: [], tail: '' }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */

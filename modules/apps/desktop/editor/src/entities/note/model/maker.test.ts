@@ -39,7 +39,7 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
 }
 
 describe('making a note in a relation of another', () => {
-  it('writes the note it was made from into it, in the relation facing the one asked for', async () => {
+  it('writes the note it was made from into it, in the relation facing the one requested for', async () => {
     const { core, asked, write } = fake()
     const made = await createNoteWriter(core, write).createInRelation('Ontology.md', 'child')
 
@@ -142,7 +142,7 @@ describe('making a note in a relation of another', () => {
 })
 
 describe('a vault that has filed every name offered', () => {
-  it('is asked for a hundred names, and then the person is told', async () => {
+  it('is requested for a hundred names, and then the person is told', async () => {
     const { core, asked, write, told } = fake(
       Array.from({ length: 101 }, () => ({ ok: false, error: 'occupied' }) as const),
     )
@@ -168,7 +168,7 @@ describe('making a note under a name a person gave it', () => {
     expect(asked).toStrictEqual([])
   })
 
-  it('files it beside the note it was made from, in that note’s relation', async () => {
+  it('files it alongside the note it was made from, in that note’s relation', async () => {
     const { core, asked, write } = fake()
     const made = await createNoteWriter(core, write).createWithTitle(
       'Entropy',
@@ -186,7 +186,7 @@ describe('making a note under a name a person gave it', () => {
     ])
   })
 
-  it('files it at the top of the vault, joined to nothing, when it stands on no note', async () => {
+  it('files it at the top of the vault, joined to nothing, when it relies on no note', async () => {
     const { core, asked, write } = fake()
     const made = await createNoteWriter(core, write).createWithTitle('Entropy', '', null)
 

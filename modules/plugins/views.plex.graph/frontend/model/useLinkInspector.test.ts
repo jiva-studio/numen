@@ -149,7 +149,7 @@ describe('saving the link inspector', () => {
     expect(one.replaced).toEqual([])
   })
 
-  it('travels nowhere while the plex stands nowhere', async () => {
+  it('travels nowhere while the plex remains nowhere', async () => {
     const one = inspecting()
     one.open()
     one.view.here.value = ''

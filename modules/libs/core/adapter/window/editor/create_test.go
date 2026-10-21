@@ -132,7 +132,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
 
 // TestANoteMadeWhereOneAlreadyIsIsRefused. Whether the path was free is the
 // filesystem's to answer at the moment the file is made, and what is there is
-// left as it stands.
+// left currently.
 func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 	const held = "---\ntitle: Ontology\n---\n\n# Ontology\n"
 	f := openWindow(t, nil, map[string]string{"Ontology.md": held})

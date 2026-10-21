@@ -10,7 +10,7 @@ import (
 )
 
 // The keys around the one being written are what the person owns, and they are
-// the whole reason this is a splice rather than a re-encode.
+// the whole reason this is a splice and not a re-encode.
 func TestSetLeavesEveryOtherKeyAlone(t *testing.T) {
 	raw := "---\n" +
 		"# a note to myself\n" +
@@ -200,7 +200,7 @@ func TestWritingOneLinkLeavesTheOthersAsBytes(t *testing.T) {
 }
 
 // A key the application does not own is the person's, and an entry carrying one
-// is refused rather than rewritten without it.
+// is refused and not rewritten without it.
 func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	d, err := Open([]byte("---\nlinks:\n  - to: Entropy\n    role: parent\n    mine: keep me\n---\nbody\n"))
 	if err != nil {
@@ -408,7 +408,7 @@ func TestAValueOnOneLineLeavesTheKeysAroundItWritable(t *testing.T) {
 }
 
 // A file may be called almost anything; an address may not. A note whose name
-// no link could spell is left unreached rather than reached by a link that now
+// no link could spell is left unreached and not reached by a link that now
 // says something else.
 func TestANameNoAddressCanSpellIsNotWrittenIn(t *testing.T) {
 	for _, name := range []string{"#tag", "multi\nline", "a|b", "note://x", "ends]]"} {
@@ -698,7 +698,7 @@ func TestAKeyIsWrittenWhereTheBlocksOwnKeysStand(t *testing.T) {
 }
 
 // A frontmatter carrying an anchor is left alone. Replacing the value the anchor
-// stands on leaves the alias pointing at nothing, and the note stops opening at
+// relies on leaves the alias pointing at nothing, and the note stops opening at
 // all — not the one key, the whole of it.
 func TestAnAnchoredFrontmatterIsRefused(t *testing.T) {
 	raw := "---\n" +
@@ -895,8 +895,8 @@ func TestAnEntryOfTheTypeCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	}
 }
 
-// An entry written with no role is not a link, so it names nothing under the
-// type and is left exactly as it stands.
+// An entry written with no role is not a link, so it is empty under the
+// type and is left exactly currently.
 func TestAnEntryWithNoRoleIsLeftWhereItStands(t *testing.T) {
 	d, err := Open([]byte(
 		"---\nlinks:\n  - to: Sanskrit\n    type: preset\n---\nbody\n"))

@@ -34,7 +34,7 @@ func answerCard(t *testing.T, api *API, vault string, session *v1.StartSessionRe
 	return out.Msg.GetAnswer()
 }
 
-// A card that has been answered before comes back carrying where it stands: it
+// A card that has been answered before comes back carrying at its current position: it
 // has been seen, and it is due at an instant the page can read. A card nobody
 // has answered carries neither.
 func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {

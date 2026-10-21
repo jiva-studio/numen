@@ -20,7 +20,7 @@ export interface WindowStreamsDeps {
   readonly onKeyDown: (press: KeyboardEvent) => void
   /** Everything the window shows, counted again. */
   readonly count: () => Promise<void>
-  /** The counting ended where it stands. */
+  /** The counting ended at its current position. */
   readonly stop: () => void
   /** Read again, a deck having been written or a card changed underneath. */
   readonly refresh: () => Promise<void>

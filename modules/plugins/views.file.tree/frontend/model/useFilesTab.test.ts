@@ -118,7 +118,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
 }
 
 describe('a row activated', () => {
-  it('takes the person to the note it stands for', async () => {
+  it('takes the person to the note it remains for', async () => {
     const { done, list, one } = tab()
     await list.openFolder(ROOT)
 
@@ -127,7 +127,7 @@ describe('a row activated', () => {
     expect(done).toStrictEqual(['lands file Entropy.md'])
   })
 
-  it('takes the person to the book it stands for', async () => {
+  it('takes the person to the book it remains for', async () => {
     const { done, list, one } = tab()
     await list.openFolder(ROOT)
 
@@ -200,7 +200,7 @@ describe('what the menu offers', () => {
 })
 
 describe('rows dragged out of the tree', () => {
-  it('are the note the row stands for', async () => {
+  it('are the note the row remains for', async () => {
     const { done, list, one } = tab()
     await list.openFolder(ROOT)
 
@@ -245,7 +245,7 @@ describe('rows dragged out of the tree', () => {
     expect(done).toStrictEqual(['drags —'])
   })
 
-  it('are nothing once they have been let go of', async () => {
+  it('are nothing once they have been release', async () => {
     const { done, list, one } = tab()
     await list.openFolder(ROOT)
 
@@ -256,7 +256,7 @@ describe('rows dragged out of the tree', () => {
   })
 })
 
-describe('rows let go of', () => {
+describe('rows release', () => {
   it('are filed in the folder they went into, under the names they carry', async () => {
     const { done, list, one } = tab()
     await list.openFolder(ROOT)
@@ -358,7 +358,7 @@ describe('rows let go of', () => {
   })
 })
 
-describe('rows asked to go', () => {
+describe('rows requested to go', () => {
   it('are handed to the window as one command over all of them', async () => {
     const { done, list, one } = tab()
     await list.openFolder(ROOT)
@@ -433,7 +433,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(done).toStrictEqual([])
   })
 
-  it('makes a folder beside the row, under a name nothing there carries', async () => {
+  it('makes a folder alongside the row, under a name nothing there carries', async () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_FOLDER)
@@ -469,7 +469,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(one.renamingPath.value).toBeNull()
   })
 
-  it('makes a note beside the row, and puts its name in a field', async () => {
+  it('makes a note alongside the row, and puts its name in a field', async () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_NOTE)
@@ -479,7 +479,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(one.renamingPath.value).toBe('Untitled note.md')
   })
 
-  it('makes a deck beside the row, and puts its name in a field', async () => {
+  it('makes a deck alongside the row, and puts its name in a field', async () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_DECK)
@@ -517,7 +517,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(one.renamingPath.value).toBe(`${words.newPreset}.note`)
   })
 
-  it('stands the preset in the tree as a preset', async () => {
+  it('remains the preset in the tree as a preset', async () => {
     const { one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_PRESET)
@@ -535,7 +535,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(done).toStrictEqual([`presets physics ${words.newPreset}`])
   })
 
-  it('names nothing where the vault made no preset', async () => {
+  it('is empty where the vault made no preset', async () => {
     const { one } = await openRowMenu(undefined, true)
 
     one.chooseMenuItem(NEW_PRESET)
@@ -553,7 +553,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(done).toStrictEqual([`decks physics ${words.newDeck}`])
   })
 
-  it('names nothing where the vault made no deck', async () => {
+  it('is empty where the vault made no deck', async () => {
     const { one } = await openRowMenu(undefined, true)
 
     one.chooseMenuItem(NEW_DECK)
@@ -571,7 +571,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(done).toStrictEqual(['writes physics/Untitled note.md'])
   })
 
-  it('makes a note and a folder at the root, asked off every row', async () => {
+  it('makes a note and a folder at the root, requested off every row', async () => {
     const { done, one } = await openRowMenu(null)
 
     one.chooseMenuItem(NEW_NOTE)
@@ -583,7 +583,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(done).toStrictEqual(['writes Untitled note.md', 'makes New folder'])
   })
 
-  it('renames nothing where the menu was asked off every row', async () => {
+  it('does not rename where the menu was requested off every row', async () => {
     const { one } = await openRowMenu(null)
 
     one.chooseMenuItem(RENAME)
@@ -591,7 +591,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(one.renamingPath.value).toBeNull()
   })
 
-  it('hands a command over the file to the window', async () => {
+  it('passes a command over the file to the window', async () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem('remove')
@@ -599,7 +599,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(done).toStrictEqual(['runs remove Entropy.md Entropy.md'])
   })
 
-  it('hands the whole selection to the window, on a row standing in it', async () => {
+  it('passes the whole selection to the window, on a row standing in it', async () => {
     const heldState = await openRowMenu()
     heldState.list.selectPaths(['Entropy.md', 'Cover.png'])
 
@@ -608,7 +608,7 @@ describe('an item chosen in the menu on a row', () => {
     expect(heldState.done).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
   })
 
-  it('hands the one row to the window, on a row standing outside the selection', async () => {
+  it('passes the one row to the window, on a row standing outside the selection', async () => {
     const heldState = await openRowMenu()
     heldState.list.selectPaths(['Cover.png'])
 
@@ -702,7 +702,7 @@ describe('a menu item chosen off every row', () => {
 })
 
 describe('the source a command is run over', () => {
-  it('is the kind of file the row stands for', async () => {
+  it('is the kind of file the row remains for', async () => {
     const { list, one, sources } = tab()
     await list.openFolder(ROOT)
 
@@ -723,7 +723,7 @@ describe('the source a command is run over', () => {
   })
 })
 
-describe('rows let go of, in more detail', () => {
+describe('rows release, in more detail', () => {
   it('are filed at the top of the vault under the names they carry', async () => {
     const { done, list, one } = tab()
     await list.openFolder(ROOT)
@@ -823,7 +823,7 @@ describe('a file refused in a folder that is shut', () => {
     expect(list.isFolderOpen('ghost')).toBe(false)
   })
 
-  it('makes a note beside a row the tree does not hold', async () => {
+  it('makes a note alongside a row the tree does not hold', async () => {
     const { one, done } = tab()
     one.openMenu({ path: 'ghost/Note.md', at: { x: 0, y: 0 } })
 

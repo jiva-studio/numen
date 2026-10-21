@@ -1,5 +1,5 @@
 /**
- * A hand left on a box opens it where it stands, until the whole of a title too
+ * A hand left on a box opens it at its current position, until the whole of a title too
  * long for it is there. Every other box keeps its place.
  *
  * The opening is drawn frame by frame, off the same clock the plex moves on.

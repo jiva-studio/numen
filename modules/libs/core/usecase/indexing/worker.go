@@ -136,7 +136,7 @@ func (w *Worker) NewSession() *Session {
 }
 
 // RequestCut asks for the source at a path to be cut again from its text. A
-// source stands once however many batches it wrote.
+// source appears once however many batches it wrote.
 func (s *Session) RequestCut(v domain.Vault, path string) {
 	s.mu.Lock()
 	if s.pending == nil {
@@ -309,7 +309,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 // embed gives the chunks of the vault the vectors they owe, and reads no file
 // the index does not already hold a chunk of.
 //
-// A recognition's batch of pages stops the pass where it stands. The vectors it
+// A recognition's batch of pages stops the pass at its current position. The vectors it
 // made are kept, and taken up again it asks the index what still owes one.
 func (p *pass) embed(ctx context.Context) {
 	w := p.worker

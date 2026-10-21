@@ -64,7 +64,7 @@ export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> = /*@__PUR
  * A Task is one piece of work the application is doing behind the window.
  *
  * Every kind of work is one of these. That is the point: the next kind is an
- * entry in a list rather than another field on the state, another thing for the
+ * entry in a list and not another field on the state, another thing for the
  * window to poll, and another branch in what draws it.
  *
  * @generated from message numen.v1.Task
@@ -72,7 +72,7 @@ export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> = /*@__PUR
 export type Task = Message<"numen.v1.Task"> & {
   /**
    * Id is what this work is called, so that the same work reported again
-   * replaces itself rather than appearing twice.
+   * replaces itself and not appearing twice.
    *
    * @generated from field: string id = 1;
    */
@@ -255,7 +255,7 @@ export const GetCurrentVaultRequestSchema: GenMessage<GetCurrentVaultRequest> = 
 export type GetCurrentVaultResponse = Message<"numen.v1.GetCurrentVaultResponse"> & {
   /**
    * The identity the list of vaults holds that vault under. Empty in a window
-   * showing none, and in one that is open on the installation rather than on
+   * showing none, and in one that is open on the installation and not on
    * any one vault.
    *
    * @generated from field: string vault = 1;
@@ -360,7 +360,7 @@ export const WindowService: GenService<{
    *
    * The whole list arrives every time any of it changes, and the first arrives
    * at once, so a window that opened while work was running is told about it.
-   * It is a stream rather than a question asked over and over, because what is
+   * It is a stream and not a question asked over and over, because what is
    * being done is known here the moment it changes and work can begin without
    * the window asking for it — an agent is told to read a document, and this is
    * where the person watching sees it happen.

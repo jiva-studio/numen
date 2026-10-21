@@ -17,7 +17,7 @@ type Span struct {
 // FindSpans returns every place `wanted` stands in `text`.
 //
 // Three readings are tried and the first that finds anything answers: the text
-// as it stands, then punctuation and spacing read as the marks they stand for,
+// currently, then punctuation and spacing read as the marks they stand for,
 // then a run of spacing inside a line read as one space. A span that stands
 // exactly is therefore never reported where it only nearly stands.
 //

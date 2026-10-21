@@ -17,7 +17,7 @@ import type { PlexTabState, PlexView } from './types'
 /** The word plex tabs are filed under. */
 export const PLEX = 'plex'
 
-/** What a plex tab is called: the note it stands on. */
+/** What a plex tab is called: the note it relies on. */
 const getPlexTitle = (note: string): string => note || words.plex
 
 /** Every plex tab, the one the person was last in last. */
@@ -38,7 +38,7 @@ function createPlexTabs() {
   }
 }
 
-/** Every plex follows a change to the vault, and stands on the opening note where it stood on none. */
+/** Every plex follows a change to the vault, and relies on the opening note where it stood on none. */
 async function refreshTabs(
   host: PlexHost,
   tabs: readonly PlexTabState[],

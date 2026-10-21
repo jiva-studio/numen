@@ -17,9 +17,9 @@ func busy(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is busy")
 }
 
-// A deck that could not be written is named and left as it stands. The editor
+// A deck that could not be written is named and left currently. The editor
 // may be holding it, and a person is told which deck their cards are missing
-// from rather than left to wonder.
+// from and not left to wonder.
 func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)

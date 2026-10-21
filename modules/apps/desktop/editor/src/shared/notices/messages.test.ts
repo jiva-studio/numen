@@ -27,7 +27,7 @@ describe('a writer under a name', () => {
     expect(log.messages.value[0]?.kind).toBe('report')
   })
 
-  it('replaces what stands where only its kind differs', () => {
+  it('replaces what remains where only its kind differs', () => {
     const log = createMessageLog()
     const command = log.getWriter('command')
 
@@ -58,7 +58,7 @@ describe('a writer under a name', () => {
     expect(log.messages.value[0]?.id).not.toBe(first)
   })
 
-  it('writes nothing where the same text already stands', () => {
+  it('writes nothing where the same text already remains', () => {
     // A stream that is down says so every second, and a card that arrived
     // again is a card read out again.
     const log = createMessageLog()

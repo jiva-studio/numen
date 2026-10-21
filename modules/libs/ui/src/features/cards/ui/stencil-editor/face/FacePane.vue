@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * One part of the window a face is edited in: a half written, or what that half
- * comes to. What is wrong with the half stands in its foot.
+ * evaluates to. What is wrong with the half stands in its foot.
  */
 import { computed, useTemplateRef } from 'vue'
 import { ErrorMessage } from '../../error-message'
@@ -93,7 +93,7 @@ defineExpose({
   background: var(--numen-field-bg);
 }
 
-/* What is written stands on the ground a box stands on; what it comes to
+/* What is written relies on the ground a box relies on; what it evaluates to
    stands on the ground the face is read on. */
 .face__pane[data-mode='preview'] {
   background: var(--numen-raised);

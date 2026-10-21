@@ -8,7 +8,7 @@ export interface MenuOpenOptions {
   readonly isOpen: () => boolean
   /** The window listened to, as the menu opens. */
   readonly listen: () => void
-  /** The window let go of, as it closes. */
+  /** The window release, as it closes. */
   readonly release: () => void
   /** Its size taken, once it is drawn. */
   readonly measure: () => void

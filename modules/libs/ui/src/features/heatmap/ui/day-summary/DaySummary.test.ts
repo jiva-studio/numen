@@ -72,7 +72,7 @@ describe('a day that has been answered on', () => {
 })
 
 describe('the share that came back', () => {
-  it('is what came back of what was asked, to the nearest whole', () => {
+  it('is what came back of what was requested, to the nearest whole', () => {
     expect(
       account({ did: 26, asked: 24, recalled: 20 }).get('[data-day-summary="came"]').text(),
     ).toBe('83% came back')
@@ -80,13 +80,13 @@ describe('the share that came back', () => {
 
   // Nothing the person is already reviewing was asked, so there is no share to
   // give and none is invented.
-  it('is not given where nothing being reviewed was asked', () => {
+  it('is not given where nothing being reviewed was requested', () => {
     expect(
       account({ did: 12, asked: 0, recalled: 0 }).find('[data-day-summary="came"]').exists(),
     ).toBe(false)
   })
 
-  it('is the whole of it where everything asked came back', () => {
+  it('is the whole of it where everything requested came back', () => {
     expect(account({ did: 9, asked: 9, recalled: 9 }).get('[data-day-summary="came"]').text()).toBe(
       '100% came back',
     )
@@ -103,7 +103,7 @@ describe('a day nobody answered on', () => {
 })
 
 describe('a day still to come', () => {
-  it('says what falls on it rather than what was done on it', () => {
+  it('says what falls on it and not what was done on it', () => {
     expect(account({ isAhead: true, did: 7 }).get('[data-day-summary="count"]').text()).toBe(
       '7 to come',
     )

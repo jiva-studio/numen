@@ -1,5 +1,5 @@
 /**
- * What a card's HTML comes to, measured over thousands of arrangements of it in
+ * What a card's HTML evaluates to, measured over thousands of arrangements of it in
  * Chromium and in WebKit, which are the engines a card is drawn in. The
  * measuring is a `DOMParser` reading and writing markup twice, and each engine
  * makes its own of `<svg/onload=` or of a title attribute holding `</noscript>`.
@@ -339,7 +339,7 @@ type Story = StoryObj
  * engine.
  *
  * A run that measured almost nothing would be a run that proved nothing, so
- * what it drew is counted and drawn: an arrangement that comes to plain text
+ * what it drew is counted and drawn: an arrangement that evaluates to plain text
  * has not been measured against anything.
  */
 export const Arrangements: Story = {
@@ -355,7 +355,7 @@ export const Arrangements: Story = {
 }
 
 /**
- * Nothing runs when what a card comes to is put on a live page. An image whose
+ * Nothing runs when what a card evaluates to is put on a live page. An image whose
  * address is no address fires as soon as it is attached, so the frames it would
  * fire in are waited for.
  */

@@ -65,7 +65,7 @@ message GetBookResponse {
   // A page is a number of letters and a letter is several bytes in most of the
   // scripts a book is written in, so the size is measured in this book's own.
   //
-  // The page an offset falls on is counted from these, and comes to the same
+  // The page an offset falls on is counted from these, and evaluates to the same
   // page wherever it is counted.
   int32 text_bytes = 6;
   int32 page_bytes = 7;

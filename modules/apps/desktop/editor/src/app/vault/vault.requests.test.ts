@@ -51,7 +51,7 @@ vi.mock('@/shared/clients', () => ({
   windowService: asked,
 }))
 
-describe('a note asked for', () => {
+describe('a note requested for', () => {
   it('is created at the path of its folder, and refused in the words of the error', async () => {
     asked.createNote.mockResolvedValue({ path: 'Notes/Heat.md' })
     const created = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
@@ -79,7 +79,7 @@ describe('a note asked for', () => {
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'occupied' })
   })
 
-  it('has its headings asked of every path given', async () => {
+  it('has its headings requested of every path given', async () => {
     asked.listHeadings.mockResolvedValue({ headings: [] })
     await core.headings(['a.md', 'b.md'])
     expect(asked.listHeadings.mock.calls.at(-1)?.[0]).toEqual({ paths: ['a.md', 'b.md'] })
@@ -101,7 +101,7 @@ describe('a note asked for', () => {
   })
 })
 
-describe('a file asked for', () => {
+describe('a file requested for', () => {
   it('is removed to the trash unless it is to be destroyed, and refused in words', async () => {
     asked.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     await core.remove('a.md')
@@ -151,14 +151,14 @@ describe('a file asked for', () => {
     })
   })
 
-  it('has its kinds asked of every path given', async () => {
+  it('has its kinds requested of every path given', async () => {
     asked.listFileKinds.mockResolvedValue({ kinds: [] })
     await core.fileKinds(['a.epub', 'b.pdf'])
     expect(asked.listFileKinds.mock.calls.at(-1)?.[0]).toEqual({ paths: ['a.epub', 'b.pdf'] })
   })
 })
 
-describe('a vault asked for', () => {
+describe('a vault requested for', () => {
   it('is listed with the vault this window shows', async () => {
     asked.listVaults.mockResolvedValue({ vaults: [] })
     asked.getCurrentVault.mockResolvedValue({ vault: 'v1' })
@@ -198,13 +198,13 @@ describe('a vault asked for', () => {
 })
 
 describe('a note followed', () => {
-  it('has its neighbourhood asked of its path', async () => {
+  it('has its neighbourhood requested of its path', async () => {
     asked.getNeighbourhood.mockResolvedValue({ focus: { path: 'a.md', title: 'A' }, related: [] })
     await core.neighbourhood('a.md')
     expect(asked.getNeighbourhood.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md' })
   })
 
-  it('has the opening note asked of nobody in particular', async () => {
+  it('has the opening note requested of nobody in particular', async () => {
     asked.getOpeningNote.mockResolvedValue({})
     expect(await core.getInitialOpenPath()).toBeNull()
     expect(asked.getOpeningNote.mock.calls.at(-1)?.[0]).toEqual({})
@@ -256,7 +256,7 @@ describe('a note followed', () => {
 })
 
 describe('a note read', () => {
-  it('is asked for by its path', async () => {
+  it('is requested for by its path', async () => {
     asked.readNote.mockResolvedValue({ body: 'prose' })
     await core.read('Notes/Heat.md')
     expect(asked.readNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes/Heat.md' })

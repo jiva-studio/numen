@@ -18,7 +18,7 @@ import (
 // face of the stencil that cuts it, and where both of them are written.
 type CardFace struct {
 	// Deck is the path of the file the card stands in, and Section the name of
-	// the section it stands under. A card standing before the first section has
+	// the section it is placed under. A card standing before the first section has
 	// none.
 	Deck    string
 	Section string
@@ -299,7 +299,7 @@ func (u ListCardFaces) getDeckFaces(
 	return out, used, isWhole
 }
 
-// getSectionName returns the name of the section a card stands under, and is empty for a
+// getSectionName returns the name of the section a card is placed under, and is empty for a
 // card standing before the first.
 func getSectionName(d format.Deck, c format.Card) string {
 	if c.Section == format.NoSection || c.Section >= len(d.Sections) {

@@ -13,7 +13,7 @@ export interface BufferHost {
   addFlushHandler(handler: () => Promise<unknown>): Disposable
 }
 
-// FileConflict is the conflict a file a tab holds stands in, and nothing while it stands in neither.
+// FileConflict is the conflict a file a tab holds stands in, and nothing while active in neither.
 export type FileConflict = 'gone' | 'stale' | null
 
 // parseFileConflict says which conflict a state names, and nothing for every other state.

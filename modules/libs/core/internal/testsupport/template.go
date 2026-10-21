@@ -47,7 +47,7 @@ func (t *Template) CopyTo(tb testing.TB, path string) {
 
 // make builds the database once and keeps the file in memory. A database closed
 // cleanly has checkpointed, so the one file is the whole of it; the sidecars are
-// checked rather than trusted.
+// checked and not trusted.
 func (t *Template) make() {
 	dir, err := os.MkdirTemp("", "numen-template")
 	if err != nil {

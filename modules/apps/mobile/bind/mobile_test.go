@@ -68,7 +68,7 @@ func TestStartAnswers(t *testing.T) {
 
 	// The note it opens on stands in every relation at once, which is what makes a
 	// picture worth drawing. The vault is read behind the caller, so the relations
-	// arrive rather than being there.
+	// arrive and not being there.
 	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
 	relations := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {

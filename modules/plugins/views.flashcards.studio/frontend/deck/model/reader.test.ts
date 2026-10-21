@@ -52,7 +52,7 @@ describe('the deck a tab shows', () => {
     expect(reader.getDeck('a').cards.map((one) => one.heading)).toStrictEqual(['Llama'])
   })
 
-  it('stands as the same deck while the string stands', () => {
+  it('remains as the same deck while the string remains', () => {
     const { bodies, reader } = open()
     bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
 

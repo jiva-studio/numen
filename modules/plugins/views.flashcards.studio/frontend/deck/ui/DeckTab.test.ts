@@ -263,7 +263,7 @@ describe('a mark on a tile', () => {
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
   })
 
-  it('stands with the card and not with its place, so removing another leaves it', async () => {
+  it('remains with the card and not with its place, so removing another leaves it', async () => {
     const { window, tab } = await mountDeck([stencilless])
     const first = tab.deck.value.cards[0]?.id ?? ''
     const second = tab.deck.value.cards[1]?.id ?? ''
@@ -285,7 +285,7 @@ describe('what is wrong with the file itself', () => {
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
   })
 
-  it('is drawn nowhere where every problem stands on a card', async () => {
+  it('is drawn nowhere where every problem relies on a card', async () => {
     const { window } = await mountDeck([stencilless])
 
     expect(window.find(`[aria-label="${words.problems}"]`).exists()).toBe(false)
@@ -344,7 +344,7 @@ describe('the question a file that changed on disk puts', () => {
 })
 
 describe('the preset a deck is scheduled by', () => {
-  it('stands on a line at the top of the deck, saying which one is in force', async () => {
+  it('relies on a line at the top of the deck, saying which one is in force', async () => {
     const { window } = await mountDeck([], { by: 'Sanskrit.md' })
 
     const line = window.get('.deck-tab__scheduled')

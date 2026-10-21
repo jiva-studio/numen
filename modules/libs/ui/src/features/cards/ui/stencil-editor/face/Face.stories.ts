@@ -2,7 +2,7 @@
  * Every situation one face of a stencil has to survive. Also the test corpus:
  * each story is run in a browser by `@storybook/addon-vitest`.
  *
- * What the face hands back is applied here, which is the stencil's part.
+ * What the face returns is applied here, which is the stencil's part.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -211,7 +211,7 @@ export const AFace: Story = {
     const getPaneBox = (pane: string): DOMRect =>
       getPane(canvasElement, pane).getBoundingClientRect()
 
-    // The writing stands beside its preview, on one line.
+    // The writing is stored alongside its preview, on one line.
     expect(Math.round(getPaneBox('front-written').top)).toBe(
       Math.round(getPaneBox('front-preview').top),
     )
@@ -460,7 +460,7 @@ export const WhatIsWrongWithIt: Story = {
     expect(said.textContent).toContain('this face has no back')
     expect(said.querySelectorAll('li')).toHaveLength(2)
 
-    // The strip stands one row deep with all of it said, and the window begins
+    // The strip is one row deep with all items rendered, and the window begins
     // where the strip ends: what is wrong hangs over the window and takes no
     // room from it.
     const header = found(canvasElement, '.card-header').getBoundingClientRect()
@@ -503,7 +503,7 @@ export const Dark: Story = {
     await expectDark(canvasElement)
     const chip = within(canvasElement).getByRole('button', { name: 'Insert: Height' })
 
-    // The ink the chip is read by stands above the ground it stands on, which
+    // The ink the chip is read by stands above the ground it relies on, which
     // is the way round the dark set is written.
     const ink = lightness(getComputedStyle(chip).color)
     const resting = lightness(getComputedStyle(chip).backgroundColor)

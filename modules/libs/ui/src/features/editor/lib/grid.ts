@@ -91,7 +91,7 @@ class Grid extends WidgetType {
   }
 }
 
-/** The one thing a widget cannot read back from the DOM: where it stands. */
+/** The one thing a widget cannot read back from the DOM: at its current position. */
 const span = (frame: HTMLElement, table: Table) => {
   frame.dataset['from'] = String(table.from)
   frame.dataset['to'] = String(table.to)

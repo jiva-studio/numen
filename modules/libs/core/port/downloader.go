@@ -13,7 +13,7 @@ import (
 // it. It is an answer and not a failure.
 var ErrNothingDownloaded = errors.New("nothing of the sort is published there")
 
-// DownloadModel names what downloaded, and is kept beside what it brought back.
+// DownloadModel names what downloaded, and is kept along with what it brought back.
 // What a site publishes and what a tool takes out of it both change, and a text
 // kept beyond the run that made it is claimed again by what made it.
 type DownloadModel struct {
@@ -48,7 +48,7 @@ type Metadata struct {
 	// Captions are the languages a person published words in for it, and
 	// Automatic those a machine wrote, both as the site names them. They are
 	// two lists because they are worth different amounts: a person's words are
-	// what was said, and a machine's are what a machine heard.
+	// the transcript, and a machine's are what a machine heard.
 	Captions    []string
 	IsAutomatic []string
 }
@@ -59,7 +59,7 @@ type Metadata struct {
 type Downloader interface {
 	// GetDownloadModel is what this address is downloaded by. A video and a page
 	// are reached by different tools, and what is kept names the one that
-	// brought it. A provider that does not answer is an error and names nothing.
+	// brought it. A provider that does not answer is an error and is empty.
 	GetDownloadModel(ctx context.Context, at domain.URL) (DownloadModel, error)
 
 	// GetMetadata is what the site says about the address, taking none of it.

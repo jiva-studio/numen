@@ -118,7 +118,7 @@ function line(
 
 /**
  * A row is as long as its boxes and the gaps between them, and is centred on
- * the focus. Heights are uniform, so each line stands one box beyond the last.
+ * the focus. Heights are uniform, so each line is placed one box beyond the last.
  */
 function inRows(
   nodes: readonly PlexNode[],

@@ -31,7 +31,7 @@ describe('the tab a command over a file leads to', () => {
     expect(windowTabs.openTabOfKind).toHaveBeenCalledWith('preset', 'Slow.md')
   })
 
-  it('is asked of a file the vault names no type for as a note', async () => {
+  it('is requested of a file the vault names no type for as a note', async () => {
     const { deps, windowTabs } = createDeps({ ok: true, kind: 'preset', at: 'a.md' })
 
     await openCommandTab(deps, 'a.md', 'preset')

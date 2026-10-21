@@ -24,8 +24,8 @@ export interface HeatmapMetrics {
  * How many columns fit the room there is, and how large a cell is drawn in it.
  *
  * The cell has a size of its own and the grid takes as many columns as fit, so
- * a wide window shows more weeks rather than the same weeks drawn larger, and a
- * narrow one shows fewer rather than the grid standing in the middle of empty
+ * a wide window shows more weeks and not the same weeks drawn larger, and a
+ * narrow one shows fewer and not the grid standing in the middle of empty
  * room. What is left over is spread between the cells, which keeps the grid
  * flush to both edges.
  */

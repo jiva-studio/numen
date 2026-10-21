@@ -99,7 +99,7 @@ describe('the headings a node nests', () => {
     })
   })
 
-  it('writes the count beside it where one is given', async () => {
+  it('writes the count alongside it where one is given', async () => {
     await core.setNestingSettings(false, 4)
 
     expect(writtenLast()).toStrictEqual({
@@ -112,7 +112,7 @@ describe('the headings a node nests', () => {
 })
 
 describe('every setting', () => {
-  it('comes with each model the settings offer, and whether its files are here', async () => {
+  it('arrives with each model the settings offer, and whether its files are here', async () => {
     const model = {
       namedAt: ['indexing', 'model', 'name'],
       name: 'e5-small-int8',
@@ -145,7 +145,7 @@ describe('every setting', () => {
     })
   })
 
-  it('comes with active plugins and their declarative settings', async () => {
+  it('arrives with active plugins and their declarative settings', async () => {
     asked.getSettings.mockResolvedValue(
       answer(
         { a: 1 },
@@ -266,7 +266,7 @@ describe('the key of a secret', () => {
 })
 
 describe('a plugin the host suspends', () => {
-  it('comes with the reason and the time it was given up', async () => {
+  it('arrives with the reason and the time it was given up', async () => {
     asked.getSettings.mockResolvedValue(
       answer(
         {},

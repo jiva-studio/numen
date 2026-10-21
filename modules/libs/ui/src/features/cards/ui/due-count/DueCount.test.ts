@@ -25,7 +25,7 @@ describe('a figure still on its way', () => {
     expect(pill.text()).toBe('12 to review')
   })
 
-  it('says the figure alone where it is asked to be bare', () => {
+  it('says the figure alone where it is requested to be bare', () => {
     expect(mountDueCount({ isBare: true }).get('.due-count').text()).toBe('12')
   })
 })

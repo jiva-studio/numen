@@ -51,7 +51,7 @@ func TestSilenceIsNotWritten(t *testing.T) {
 	}
 }
 
-// A note says how far a run got, and is not part of what was said.
+// A note says how far a run got, and is not part of the transcript.
 func TestANoteIsNotSpeech(t *testing.T) {
 	written := transcript.Marshal([]domain.TranscriptCue{{Text: "said", From: 0, To: 2000}})
 	written = append(written, transcript.GetReachMarker(2000)...)

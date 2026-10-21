@@ -21,15 +21,15 @@ const CHOICES = [
 ]
 
 describe('the height a row shares', () => {
-  it('is what a field of digits stands at', () => {
+  it('is what a field of digits remains at', () => {
     expect(mount(NumberField).get('input').classes()).toContain(ROW)
   })
 
-  it('is what a field of the clock stands at', () => {
+  it('is what a field of the clock remains at', () => {
     expect(mount(TimeField).get('input').classes()).toContain(ROW)
   })
 
-  it('is what a line of choices stands at', () => {
+  it('is what a line of choices remains at', () => {
     expect(
       mount(Select, { props: { choices: CHOICES } })
         .get('button')
@@ -37,7 +37,7 @@ describe('the height a row shares', () => {
     ).toContain(ROW)
   })
 
-  it('is what a row of segments stands at', () => {
+  it('is what a row of segments remains at', () => {
     expect(mount(SegmentedControl, { props: { choices: CHOICES } }).classes()).toContain(ROW)
   })
 })

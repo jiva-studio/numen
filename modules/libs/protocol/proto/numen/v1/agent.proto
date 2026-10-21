@@ -18,7 +18,7 @@ service AgentService {
   rpc AskAgent(AskAgentRequest) returns (stream AskAgentResponse);
 
   // FinishConversation says a conversation is over. What the agent kept of it
-  // is let go of, and whatever is still being answered in it stops.
+  // is release, and whatever is still being answered in it stops.
   rpc FinishConversation(FinishConversationRequest) returns (FinishConversationResponse);
 
   // GetAgentState is whether an agent can be reached at all. Which agent
@@ -54,7 +54,7 @@ message AskAgentRequest {
   // The note in focus, for a task that says "this note". Empty when nothing
   // is in focus.
   string focus = 2;
-  // Which thread of talk this question belongs to. Questions carrying one name
+  // Which conversation thread this question belongs to. Questions carrying one name
   // are answered in one conversation with the agent, so the name has to be the
   // client's alone: unique among the conversations it has open, and never
   // given to a second one for as long as the application is running. Empty is
@@ -162,7 +162,7 @@ message ToolDeclaration {
 }
 
 message FinishConversationRequest {
-  // Which thread of talk is over, by the name its questions carried. Empty is
+  // Which conversation thread is over, by the name its questions carried. Empty is
   // no conversation, and there is nothing to finish.
   string conversation = 1;
 }

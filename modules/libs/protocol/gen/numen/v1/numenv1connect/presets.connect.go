@@ -10,7 +10,7 @@
 // defaults.
 //
 // One control steers a preset: `goal` says which value it moves, and the curve
-// says what the whole range of that value comes to. A curve is asked for with
+// says what the whole range of that value evaluates to. A curve is asked for with
 // the settings a person is moving and has not written yet, and asking for one
 // writes nothing.
 package numenv1connect

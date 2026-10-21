@@ -214,7 +214,7 @@ defineExpose({
 </template>
 
 <style scoped>
-/* The row scrolls under the arrows, so the keyboard is drawn where it stands.
+/* The row scrolls under the arrows, so the keyboard is drawn at its current position.
    Inside, because the row fills the reader to its edges. */
 .reader__viewport:focus-visible {
   outline: none;

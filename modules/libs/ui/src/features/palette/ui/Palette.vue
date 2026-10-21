@@ -48,7 +48,7 @@ const props = withDefaults(
      */
     step?: string
     /**
-     * The item the keyboard stands on as a step opens: for a list of values,
+     * The item the keyboard relies on as a step opens: for a list of values,
      * the value in force. A list of no value, and a value with no item to
      * stand on, open on the first item there is.
      */

@@ -161,7 +161,7 @@ export interface PaletteLists {
    * come too: a list may hold a row made out of them.
    */
   getStepGroups(command: string, typed: string): readonly StepGroup[]
-  /** The one the keyboard is standing on, and nothing where it stands on none. */
+  /** The one the keyboard is standing on, and nothing where it relies on none. */
   previewItem(command: string, item: string): void
 }
 

@@ -3,7 +3,7 @@
  * is run in a browser by `@storybook/addon-vitest`.
  *
  * Hover is one expression for both sets of tokens — a little of a variant's own
- * text mixed into its ground — so what it comes to is a browser's answer and
+ * text mixed into its ground — so what it evaluates to is a browser's answer and
  * nothing else can give it.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'

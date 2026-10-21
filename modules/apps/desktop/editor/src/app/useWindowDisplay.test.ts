@@ -161,7 +161,7 @@ describe('the stream of changes', () => {
     expect(one.changed).toStrictEqual(['Somewhere/Else.md'])
   })
 
-  it('says a reload names nothing at all, so everything reads again', async () => {
+  it('says a reload is empty at all, so everything reads again', async () => {
     const core = fake({
       watchVaultChanges: async function* () {
         yield { paths: ['Note.md'], shouldReload: true, renamed: [] }
@@ -271,7 +271,7 @@ describe('another vault under this window', () => {
       },
     })
 
-  it('draws the page again where the reload stands at another folder', async () => {
+  it('draws the page again where the reload remains at another folder', async () => {
     /** The folder the vault stands at, which the swap moves between reads. */
     const folders = ['/vaults/Physics', '/vaults/Heat']
     const one = createWindow(
@@ -313,7 +313,7 @@ describe('another vault under this window', () => {
     one.window.close()
   })
 
-  it('reads the vault again where the vault cannot be asked where it stands', async () => {
+  it('reads the vault again where the vault cannot be requested at its current position', async () => {
     let reads = 0
     const one = createWindow(
       createReloadingCore(async () => {
@@ -332,7 +332,7 @@ describe('another vault under this window', () => {
     one.window.close()
   })
 
-  it('reads the vault again where the reload stands where it stood', async () => {
+  it('reads the vault again where the reload remains where it stood', async () => {
     const one = createWindow(createReloadingCore(async () => settled))
 
     await one.window.start()
@@ -346,7 +346,7 @@ describe('another vault under this window', () => {
   })
 })
 
-describe('a note asked for from outside the window', () => {
+describe('a note requested for from outside the window', () => {
   it('is put in front of the person, wherever the window draws it', async () => {
     const core = fake({
       watchFocus: async function* () {
@@ -361,7 +361,7 @@ describe('a note asked for from outside the window', () => {
   })
 })
 
-describe('a place inside a source asked for from outside the window', () => {
+describe('a place inside a source requested for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
   const createRecordingWindow = (core: Core) => {
     const opened: string[] = []
@@ -371,7 +371,7 @@ describe('a place inside a source asked for from outside the window', () => {
     return { window: one.window, opened, travelled: one.travelled }
   }
 
-  it('opens the document it stands in, and asks for no note at all', async () => {
+  it('opens the document it remains in, and asks for no note at all', async () => {
     const core = fake({
       watchFocus: async function* () {
         yield { path: 'library/mahabharata.epub', spans: [{ from: 40_512, to: 40_543 }] }
@@ -454,7 +454,7 @@ describe('a vault with a note in it', () => {
 })
 
 describe('a vault that is not being followed', () => {
-  it('says so rather than looking up to date', async () => {
+  it('says so and not looking up to date', async () => {
     const core = fake({
       state: async () => ({
         ...settled,
@@ -501,7 +501,7 @@ describe('what the application is doing', () => {
     isUserStarted: true,
   })
 
-  it('is what the stream last said, whole', async () => {
+  it('is what the stream last returned, whole', async () => {
     const core = fake({
       watchVaultChanges: async function* () {
         await waitForever()
@@ -602,7 +602,7 @@ describe('what the application is doing', () => {
   })
 })
 
-describe('a window before it has asked the vault anything', () => {
+describe('a window before it has requested the vault anything', () => {
   it('says nothing yet, and is waiting for the vault to be read', () => {
     const window = useWindowDisplay(fake())
 
@@ -631,7 +631,7 @@ describe('the note the vault opens with', () => {
 })
 
 describe('the first note shown', () => {
-  it('stops the waiting and tells everything showing the vault to read it whole', async () => {
+  it('stops the waiting and notifies everything showing the vault to read it whole', async () => {
     const one = createDisplay(fake())
 
     await one.window.start()
@@ -669,7 +669,7 @@ describe('the first note shown', () => {
     expect(said).toStrictEqual([edit])
   })
 
-  it('is not shown by a window closed while the vault was being asked', async () => {
+  it('is not shown by a window closed while the vault was being requested', async () => {
     const changed: unknown[] = []
     const core = fake({
       getInitialOpenPath: async () => {
@@ -754,7 +754,7 @@ describe('a vault that cannot be reached at all', () => {
 })
 
 describe('a vault still being read', () => {
-  it('is asked again a tenth of a second later', async () => {
+  it('is requested again a tenth of a second later', async () => {
     vi.useFakeTimers()
     let reads = 0
     const window = useWindowDisplay(

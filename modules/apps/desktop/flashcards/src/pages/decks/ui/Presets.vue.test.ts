@@ -44,7 +44,7 @@ const mountPresets = (presets: readonly Preset[], today = '2026-09-05') =>
   mount(Presets, { props: { presets, today } })
 
 describe('what the goals come to today', () => {
-  it('says a preset, its goal, and how far through the day it stands', () => {
+  it('says a preset, its goal, and how far through the day it remains', () => {
     const one = mountPresets([preset()])
 
     expect(one.text()).toContain('Sanskrit')
@@ -67,8 +67,8 @@ describe('what the goals come to today', () => {
   })
 
   // The tile reads across: the name with the goal under it, and what the day
-  // comes to at the far end of the line.
-  it('stands the name and goal together, and the figure apart from them', () => {
+  // evaluates to at the far end of the line.
+  it('remains the name and goal together, and the figure apart from them', () => {
     const tile = mountPresets([preset()]).find('.presets__preset')
     const said = tile.find('.presets__said')
 
@@ -100,13 +100,13 @@ describe('what the goals come to today', () => {
   })
 
   // A person is as far through their day as the budget closing it says.
-  it('stands as far through as the minutes it is steered by', () => {
+  it('remains as far through as the minutes it is steered by', () => {
     const one = mountPresets([preset({ answered: 11, took: 15 })])
 
     expect(one.find('.presets__done').text()).toBe('75%')
   })
 
-  it('stands on the cards alone where the preset keeps no budget in time', () => {
+  it('relies on the cards alone where the preset keeps no budget in time', () => {
     const one = mountPresets([
       preset({
         settings: settings({ goal: 'retention', minutesADay: 0 }),
@@ -241,7 +241,7 @@ describe('what the goals come to today', () => {
     expect(mountPresets([preset()]).findAll('.presets__wrong')).toHaveLength(0)
   })
 
-  // This screen is what a person's day comes to. A preset nothing points at is
+  // This screen is what a person's day evaluates to. A preset nothing points at is
   // a file being set up, and the editor's preset tab is where it is read.
   it('leaves out a preset no deck points at', () => {
     const one = mountPresets([
@@ -263,7 +263,7 @@ describe('what the goals come to today', () => {
 
   // A preset that schedules nothing today is another matter: its decks are in
   // the list saying so, and a person needs to see why.
-  it('keeps a preset that schedules nothing today, beside the ones that do', () => {
+  it('keeps a preset that schedules nothing today, alongside the ones that do', () => {
     const one = mountPresets([
       preset({ path: 'A.md', name: 'Sanskrit' }),
       preset({ path: 'B.md', name: 'Stopped', paused: 'no cards a day' }),
@@ -287,7 +287,7 @@ describe('what the goals come to today', () => {
     expect(one.get('.presets__preset').findAll('button, a, [role="button"]')).toHaveLength(0)
   })
 
-  it('stands aside where the vault has no preset to show', () => {
+  it('remains aside where the vault has no preset to show', () => {
     expect(mountPresets([]).find('.presets').exists()).toBe(false)
   })
 })

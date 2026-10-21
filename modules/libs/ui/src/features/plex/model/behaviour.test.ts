@@ -14,7 +14,7 @@ describe('the behaviour a plex has by default', () => {
     expect(DEFAULT_BEHAVIOUR.showing).toBe(byDoubleClick)
   })
 
-  it('opens a box on a clock that tells the time', () => {
+  it('opens a box on a clock that notifies the time', () => {
     expect(typeof DEFAULT_BEHAVIOUR.clock.now()).toBe('number')
   })
 })

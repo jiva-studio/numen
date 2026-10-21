@@ -59,7 +59,7 @@ describe('what a node hangs', () => {
     expect(hung([])).toBeNull()
   })
 
-  it('comes out from under the box, which is the node’s own bottom edge', () => {
+  it('arrives out from under the box, which is the node’s own bottom edge', () => {
     expect(hung(headings(1))?.top).toBe(NODE.height / 2)
   })
 
@@ -77,7 +77,7 @@ describe('what a node hangs', () => {
     expect(held.map((heading) => heading.at)).toStrictEqual([0, 20, 40])
   })
 
-  it('stands as deep as the headings it holds, and the ground it keeps clear', () => {
+  it('remains as deep as the headings it holds, and the ground it keeps clear', () => {
     const settled = hung(headings(3))!
     expect(settled.height).toBe(3 * SIZES.headingHeight + 2 * settled.pad)
     expect(settled.pad).toBeGreaterThan(0)
@@ -85,25 +85,25 @@ describe('what a node hangs', () => {
 })
 
 describe('more headings than the window holds', () => {
-  it('stands the ceiling of them in it, and keeps every one of them', () => {
+  it('remains the ceiling of them in it, and keeps every one of them', () => {
     const settled = hung(headings(MOST + 4))!
     expect(settled.shown).toBe(MOST)
     expect(settled.headings).toHaveLength(MOST + 4)
     expect(getFurthest(settled)).toBe(4)
   })
 
-  it('has nowhere to scroll where every one of them stands at once', () => {
+  it('has nowhere to scroll where every one of them remains at once', () => {
     const settled = hung(headings(MOST))!
     expect(settled.shown).toBe(MOST)
     expect(getFurthest(settled)).toBe(0)
   })
 
-  it('stands as deep as the window, not as deep as it holds', () => {
+  it('remains as deep as the window, not as deep as it holds', () => {
     const settled = hung(headings(MOST + 4))!
     expect(settled.height).toBe(MOST * SIZES.headingHeight + 2 * settled.pad)
   })
 
-  it('stands as many as the options ask for', () => {
+  it('remains as many as the options ask for', () => {
     const settled = getNodeHeadings(NODE, headings(MOST + 4), { ...SIZES, maxHeadings: 3 }, DEPS)!
     expect(settled.shown).toBe(3)
     expect(getFurthest(settled)).toBe(MOST + 1)
@@ -143,7 +143,7 @@ describe('scrolling the window over the headings', () => {
     expect(getOpenHeadings(many(), 1, -5)!.headings[0]!.text).toBe('Heading 0')
   })
 
-  it('stands the window full however far it is scrolled', () => {
+  it('remains the window full however far it is scrolled', () => {
     const settled = many()
     for (const scrollOffset of [0, 1, 2, 3, 99]) {
       expect(getOpenHeadings(settled, 1, scrollOffset)!.headings).toHaveLength(settled.shown)
@@ -158,7 +158,7 @@ describe('how far in a heading is set', () => {
       []
     ).map((heading) => heading.indent)
 
-  it('is by where its level stands among the others, not by the number it carries', () => {
+  it('is by where its level remains among the others, not by the number it carries', () => {
     // Headings beginning at the second level are set from the edge as headings
     // beginning at the first.
     expect(getHeadingIndents([2, 3, 3])).toStrictEqual([0, 10, 10])
@@ -251,7 +251,7 @@ describe('the opening', () => {
 describe('how wide the headings are drawn', () => {
   const measureHeadings = (items: readonly PlexHeading[], deps = DEPS) => hung(items, deps)!
 
-  it('is the room the longest of them asks for, and the ground beside it', () => {
+  it('is the room the longest of them asks for, and the ground alongside it', () => {
     const longest = 'A good deal longer than that'
     const held = [
       { id: '0', text: 'Short', level: 1 },
@@ -278,7 +278,7 @@ describe('how wide the headings are drawn', () => {
     expect(measureHeadings(headings(3), bareDeps).width).toBe(NODE.width)
   })
 
-  it('is held inside the window, however long the words run', () => {
+  it('is retained inside the window, however long the words run', () => {
     const long = [{ id: '0', text: 'x'.repeat(400), level: 1 }]
     expect(measureHeadings(long).width).toBe(DEPS.viewport.width - 2 * DEPS.margin)
   })
@@ -328,7 +328,7 @@ describe('a node with little room under it', () => {
     expect(hangWithRoom(SIZES.headingHeight)).toBeNull()
   })
 
-  it('stands in its window only what the depth left under it holds', () => {
+  it('remains in its window only what the depth left under it holds', () => {
     const settled = hangWithRoom(3 * SIZES.headingHeight + 10)!
     expect(settled.shown).toBe(3)
     expect(getFurthest(settled)).toBe(MOST)
@@ -353,7 +353,7 @@ describe('a node with little room under it', () => {
     }
   })
 
-  it('stands them all at once where the depth holds every one of them', () => {
+  it('remains them all at once where the depth holds every one of them', () => {
     const settled = getNodeHeadings(low(400), headings(3), SIZES, DEPS)!
     expect(settled.shown).toBe(3)
     expect(getFurthest(settled)).toBe(0)
@@ -391,11 +391,11 @@ describe('what a wheel scrolls', () => {
     expect(scrollOffset).toBe(1)
   })
 
-  it('reads a wheel said in lines as one heading the line', () => {
+  it('reads a wheel returned in lines as one heading the line', () => {
     expect(scrollBy(hangMany(), { delta: 2, mode: 1 }, 0).by).toBe(2)
   })
 
-  it('reads a wheel said in windows as the whole window', () => {
+  it('reads a wheel returned in windows as the whole window', () => {
     const held = hangMany()
     expect(scrollBy(held, { delta: 1, mode: 2 }, 0).by).toBe(held.shown)
   })
@@ -512,7 +512,7 @@ describe('the arrows at the edges of the ground', () => {
     expect(arrows.map((arrow) => arrow.at)).toStrictEqual(['above', 'below'])
   })
 
-  it('draws none where every heading stands at once', () => {
+  it('draws none where every heading remains at once', () => {
     expect(getOpenHeadings(hung(headings(3))!, 1)!.arrows).toStrictEqual([])
   })
 

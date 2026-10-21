@@ -116,7 +116,7 @@ type AskAgentRequest struct {
 	// The note in focus, for a task that says "this note". Empty when nothing
 	// is in focus.
 	Focus string `protobuf:"bytes,2,opt,name=focus,proto3" json:"focus,omitempty"`
-	// Which thread of talk this question belongs to. Questions carrying one name
+	// Which conversation thread this question belongs to. Questions carrying one name
 	// are answered in one conversation with the agent, so the name has to be the
 	// client's alone: unique among the conversations it has open, and never
 	// given to a second one for as long as the application is running. Empty is
@@ -727,7 +727,7 @@ func (x *ToolDeclaration) GetText() string {
 
 type FinishConversationRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Which thread of talk is over, by the name its questions carried. Empty is
+	// Which conversation thread is over, by the name its questions carried. Empty is
 	// no conversation, and there is nothing to finish.
 	Conversation  string `protobuf:"bytes,1,opt,name=conversation,proto3" json:"conversation,omitempty"`
 	unknownFields protoimpl.UnknownFields

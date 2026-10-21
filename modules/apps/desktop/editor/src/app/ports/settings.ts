@@ -23,7 +23,7 @@ export interface SettingsPort {
    * and nothing where it was. A count left out stands as it is.
    */
   setNestingSettings(isNesting: boolean, headings?: number): Promise<string | null>
-  /** Every setting as it stands, and the models the settings offer. */
+  /** Every setting currently, and the models the settings offer. */
   getSettings(): Promise<Configuration>
   /**
    * Settings written into the settings file, together or not at all. A value
@@ -31,7 +31,7 @@ export interface SettingsPort {
    * holds is unchanged.
    */
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
-  /** The settings file as its person wrote it, and where it stands. */
+  /** The settings file as its person wrote it, and at its current position. */
   getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
    * The settings file replaced whole, with the bytes as they were typed. A file

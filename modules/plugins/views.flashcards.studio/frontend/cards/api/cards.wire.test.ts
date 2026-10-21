@@ -2,7 +2,7 @@
  * The vault's decks and stencils, read by the client the schema generates.
  *
  * What is proved here is the crossing: a field the answer leaves at its default
- * arrives as the default, a section a card stands under arrives as a number or
+ * arrives as the default, a section a card is placed under arrives as a number or
  * as nothing at all, and a file the caller read goes back out as the three
  * parts the schema holds it in.
  */
@@ -46,7 +46,7 @@ describe('the stencils of a vault', () => {
     })
   })
 
-  it('are asked for without a ceiling where none was named', async () => {
+  it('are requested for without a ceiling where none was named', async () => {
     replyWith({ stencils: [], total: 0 })
 
     await cards.stencils()
@@ -204,7 +204,7 @@ describe('writing a deck', () => {
 })
 
 describe('a stencil', () => {
-  it('comes back with every face it shows a card through', async () => {
+  it('arrives back with every face it shows a card through', async () => {
     replyWith({
       stencil: {
         path: 'Word.md',

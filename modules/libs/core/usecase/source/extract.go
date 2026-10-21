@@ -200,7 +200,7 @@ func (u Extract) removeGone(
 		}
 		slices.Sort(gone)
 		// The recognitions those paths stood on are read before the rows saying so
-		// are taken out; which of them nothing stands on any more is settled once
+		// are taken out; which of them nothing relies on any more is settled once
 		// every source has been cut.
 		went, err := u.readSourceTexts(ctx, v, kind, gone)
 		if err != nil {
@@ -243,12 +243,12 @@ func (u Extract) readSourceTexts(
 	return out, nil
 }
 
-// sweep takes out the files of a recognition no source stands on any more.
+// sweep takes out the files of a recognition no source relies on any more.
 //
 // A recognition is named by the hash of the bytes it was made from, so a document
 // renamed is the same recognition at another path and two copies of one document
 // are one recognition. What is asked is whether any source still names it, and the
-// question is asked once every source has been cut and says what it stands on.
+// question is asked once every source has been cut and says what it relies on.
 //
 // A walk that failed returns before any of this, so a folder that could not be
 // read takes nothing with it.
@@ -277,7 +277,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	return nil
 }
 
-// readReferencedRecognitions returns the recognitions some source stands on and the hashes some
+// readReferencedRecognitions returns the recognitions some source relies on and the hashes some
 // source names.
 func (u Extract) readReferencedRecognitions(ctx context.Context, v domain.Vault) (map[port.SourceText]bool, map[string]bool, error) {
 	stood := make(map[port.SourceText]bool)
@@ -379,7 +379,7 @@ func (u Extract) hasAny(ctx context.Context, names ...domain.ArtifactName) bool 
 // Which those are is asked of the data, on both keys that answer it: a source
 // with no small chunk has never been cut, and a source carrying another recipe
 // was cut by another extractor or at other sizes. Each question is asked again
-// until it names nothing that has not been tried, so a run that stopped part way
+// until it is empty that has not been tried, so a run that stopped part way
 // is continued by starting another.
 func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	sizes := u.sizes()
@@ -519,7 +519,7 @@ func (u Extract) source(
 	// A document read by a recogniser has a text of its own, and the chunks are
 	// places in that. It is found by the hash of the bytes it was read from, so a
 	// file whose modification time moved without its content is claimed again
-	// rather than read from scratch.
+	// and not read from scratch.
 	doc, from, err := u.text(ctx, ref, raw, hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		res.Unreadable++

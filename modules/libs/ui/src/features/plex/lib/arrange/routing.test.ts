@@ -233,7 +233,7 @@ describe('a title cut to the line it is set on', () => {
     expect(asked).toStrictEqual(['the scene in the assembly'])
   })
 
-  it('halves in on the cut rather than stepping through the label', () => {
+  it('halves in on the cut and not stepping through the label', () => {
     const label = 'a'.repeat(400)
     const asked: string[] = []
     routeEdges(
@@ -441,7 +441,7 @@ describe('the run of a line between two boxes', () => {
     expect(edge.toPoint).toStrictEqual({ x: 30, y: -10 })
   })
 
-  it('runs across the page for a horizontal relation with clear space beside it', () => {
+  it('runs across the page for a horizontal relation with clear space alongside it', () => {
     const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 150, 200))
 
     expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
@@ -503,7 +503,7 @@ describe('the run of a line between two boxes', () => {
     expect(edge.toPoint).toStrictEqual({ x: 10, y: -20 })
   })
 
-  it('leaves from the right of a box at the same height beside the one it arrives at', () => {
+  it('leaves from the right of a box at the same height alongside the one it arrives at', () => {
     const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 0, 10))
 
     expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })

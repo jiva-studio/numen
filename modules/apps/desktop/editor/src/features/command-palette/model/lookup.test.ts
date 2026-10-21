@@ -63,7 +63,7 @@ const createHit = (over: Partial<SearchHit> = {}): SearchHit => ({
 })
 
 describe('a note found by its title', () => {
-  it('stands under its path, offers the plex first, and is a note', () => {
+  it('is placed under its path, offers the plex first, and is a note', () => {
     const row = createNameItem(createName(), WORDS)
 
     expect(row.item.id).toBe('physics/Ontology.md')
@@ -76,7 +76,7 @@ describe('a note found by its title', () => {
 })
 
 describe('a heading found by its name', () => {
-  it('stands under its path and line, offers the note first, and is a note', () => {
+  it('is placed under its path and line, offers the note first, and is a note', () => {
     const row = createNameItem(createName({ heading: 'Being', line: 7, type: 'deck' }), WORDS)
 
     expect(row.item.id).toBe('physics/Ontology.md#7')
@@ -93,7 +93,7 @@ describe('a heading found by its name', () => {
 })
 
 describe('a passage found in a note', () => {
-  it('offers the note and the plex, and stands at its line', () => {
+  it('offers the note and the plex, and remains at its line', () => {
     const row = createPassageItem('text', createPassage(), WORDS)
 
     expect(row.item.id).toBe('text:physics/Ontology.md:12')
@@ -108,7 +108,7 @@ describe('a passage found in a note', () => {
 })
 
 describe('a passage found in a source that is not a note', () => {
-  it('offers the document, stands at no line, and is of no note type', () => {
+  it('offers the document, remains at no line, and is of no note type', () => {
     const row = createPassageItem(
       'meaning',
       createPassage({ isNote: false, kind: 'book', title: '', type: 'deck' }),
@@ -137,7 +137,7 @@ describe('where choosing an item takes the person', () => {
     expect(resolveDestination(createHit({ offers: ['note'] }), 'plex')).toBeNull()
   })
 
-  it('is the plex, by the note it stands in', () => {
+  it('is the plex, by the note it remains in', () => {
     expect(resolveDestination(createHit(), 'plex')).toStrictEqual({
       at: 'plex',
       path: 'physics/Ontology.md',
@@ -165,7 +165,7 @@ describe('where choosing an item takes the person', () => {
     expect(resolveDestination(createHit({ line: 5 }), 'note')).toMatchObject({ line: 5 })
   })
 
-  it('is the file with no line where the item stands at none', () => {
+  it('is the file with no line where the item remains at none', () => {
     expect(resolveDestination(createHit({ line: -1 }), 'note')).toStrictEqual({
       at: 'file',
       path: 'physics/Ontology.md',

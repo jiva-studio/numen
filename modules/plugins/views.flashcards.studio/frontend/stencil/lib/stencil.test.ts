@@ -54,7 +54,7 @@ describe('a stencil as the window holds it', () => {
     expect(parseStencil('')).toStrictEqual({ fields: [], preamble: '', faces: [], tail: '' })
   })
 
-  it('hands the vault the faces without the identities it minted', () => {
+  it('passes the vault the faces without the identities it minted', () => {
     expect(createVaultFaces(stencil())[0]).toStrictEqual({
       name: 'Recognise',
       preamble: '',
@@ -123,7 +123,7 @@ describe('a face of a stencil', () => {
     expect(removeFace(stencil(), 'c1').faces.map((face) => face.name)).toStrictEqual(['Name it'])
   })
 
-  it('takes what was written into one half, and the other stands', () => {
+  it('takes what was written into one half, and the other remains', () => {
     const held = writeFace(stencil(), 'c1', 'front', '{{Height}}')
     expect(held.faces[0]?.front).toBe('{{Height}}')
     expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')

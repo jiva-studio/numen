@@ -95,7 +95,7 @@ export function convertNeighbourhood(
 /**
  * The headings of a note as the lines its node hangs.
  *
- * A heading is named by the line it stands on: that is what taking someone to it
+ * A heading is named by the line it relies on: that is what taking someone to it
  * needs, and it tells two headings of one wording apart.
  */
 export function convertHeadings(headings: readonly NoteHeading[]): PlexHeading[] {

@@ -85,7 +85,7 @@ describe('a goal with nothing to work on', () => {
 
   // A preset holding cards is never told it holds none, so a curve of zeros
   // keeps its control and says nothing about the vault.
-  it('draws the control for a preset holding cards, whatever its curve comes to', () => {
+  it('draws the control for a preset holding cards, whatever its curve evaluates to', () => {
     const { tab } = mountPresetTab({ ...nothing, decks: 4, cards: 900 })
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(1)
     expect(tab.text()).not.toContain(words.unpointed)

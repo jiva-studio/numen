@@ -301,7 +301,7 @@ describe('createPluginLoader', () => {
 })
 
 describe('createPluginLoader catalog manifests', () => {
-  it('hands the catalog manifest to the context of a plugin, on every activation', async () => {
+  it('passes the catalog manifest to the context of a plugin, on every activation', async () => {
     const createContext = vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext)
     const host = {
       createContext,

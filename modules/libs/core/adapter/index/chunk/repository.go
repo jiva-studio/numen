@@ -71,7 +71,7 @@ func ConvertTimeToNanos(t time.Time) int64 {
 	return t.UnixNano()
 }
 
-// Chunk is one cut of a source's text. `Location` is where it sits in the terms
+// Chunk is one cut of a source's text. `Location` is where it is located in the terms
 // the source's own numbering uses, and is empty when the format offered none.
 //
 // `Text` is what the chunk holds, and is indexed and hashed, not kept: it is

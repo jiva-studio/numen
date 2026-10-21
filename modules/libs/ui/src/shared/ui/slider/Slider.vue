@@ -29,7 +29,7 @@ const props = withDefaults(
 const model = defineModel<number>({ default: 0 })
 
 const emit = defineEmits<{
-  /** The handle let go of, at the end of a drag or of a walk with the keys. */
+  /** The handle release, at the end of a drag or of a walk with the keys. */
   commit: [value: number]
 }>()
 
@@ -70,7 +70,7 @@ let began = 0
 /**
  * The handle taken hold of by the keys, and moved to where the key leaves it. A
  * key held down and a key struck again are one walk, which is over when the key
- * is let go of.
+ * is release.
  */
 const onKeyDown = (event: KeyboardEvent) => {
   if (!isWalkingKey(event.key)) return
@@ -88,7 +88,7 @@ const onKeyDown = (event: KeyboardEvent) => {
   if (next !== null) setValue(next)
 }
 
-/** The handle let go of, at what the walk left it standing at. */
+/** The handle release, at what the walk left it standing at. */
 const onRelease = () => {
   if (!walking) return
   walking = false

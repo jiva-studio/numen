@@ -40,7 +40,7 @@ const createStore = (text: string, refuses: string | null = null) => {
   return { asked, said, kept: createSettingsStore(core, words, said) }
 }
 
-describe('what stands at a setting', () => {
+describe('what remains at a setting', () => {
   it('is what the file holds, once the vault has answered', async () => {
     const { kept } = createStore('{"agent": {"claude": {"model": "opus"}}}')
     await kept.start()
@@ -54,7 +54,7 @@ describe('what stands at a setting', () => {
     expect(kept.getSetting(['agent', 'claude', 'model'])).toBeUndefined()
   })
 
-  it('is nothing where the vault cannot be asked', async () => {
+  it('is nothing where the vault cannot be requested', async () => {
     const said = vi.fn()
     const kept = createSettingsStore(
       {
@@ -71,7 +71,7 @@ describe('what stands at a setting', () => {
     expect(kept.path.value).toBe('')
   })
 
-  it('is nothing where the vault answers with what is not JSON, and is said', async () => {
+  it('is nothing where the vault answers with what is not JSON, and is returned', async () => {
     const { kept, said } = createStore('not JSON at all')
     await kept.start()
     expect(kept.getSetting(['agent'])).toBeUndefined()
@@ -168,13 +168,13 @@ describe('the models a setting offers', () => {
 })
 
 describe('a setting written', () => {
-  it('is asked of the vault as it was given', async () => {
+  it('is requested of the vault as it was given', async () => {
     const { kept, asked } = createStore('{}')
     await kept.writeSetting(['agent', 'use'], 'claude')
     expect(asked).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
 
-  it('clears what was last said before it is written', async () => {
+  it('clears what was last returned before it is written', async () => {
     const { kept, said } = createStore('{}')
     await kept.writeSetting(['agent', 'claude', 'model'], 'opus')
     expect(said).toHaveBeenCalledTimes(1)
@@ -187,7 +187,7 @@ describe('a setting written', () => {
     expect(asked).toStrictEqual([])
   })
 
-  it('is said where it was refused', async () => {
+  it('is returned where it was refused', async () => {
     const { kept, said } = createStore('{}', 'the file could not be written')
     await kept.writeSetting(['agent', 'use'], 'claude')
     expect(said).toHaveBeenLastCalledWith(
@@ -230,7 +230,7 @@ describe('a setting written twice in quick succession', () => {
     return { core, writes, reads, getFile: () => file }
   }
 
-  it('stands at the last value through the answer of the first write and a read between', async () => {
+  it('remains at the last value through the answer of the first write and a read between', async () => {
     const vault = createHeldVault()
     const kept = createSettingsStore(vault.core, words, vi.fn())
 
@@ -278,7 +278,7 @@ describe('a setting written twice in quick succession', () => {
   })
 })
 
-describe('what stands at a path through a tree', () => {
+describe('what remains at a path through a tree', () => {
   it('is the value the path leads to', () => {
     expect(getSettingAt({ a: { b: [1, 2] } }, ['a', 'b'])).toStrictEqual([1, 2])
   })

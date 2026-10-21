@@ -40,7 +40,7 @@ describe('the name a size is offered under', () => {
 describe('the pair of sizes', () => {
   const both = { interfaceScale: 1, textScale: 1.5 }
 
-  it('says what is held of one of the two', () => {
+  it('says what is retained of one of the two', () => {
     expect(its(both, TEXT_SCALE)).toBe(1.5)
   })
 

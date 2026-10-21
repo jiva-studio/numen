@@ -194,7 +194,7 @@ func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T)
 }
 
 // No module requires a plugin but a composition root: a
-// requirement is how a build comes to be compiled from one.
+// requirement is how a build evaluates to be compiled from one.
 func TestNoModuleButACompositionRootRequiresAPlugin(t *testing.T) {
 	root := filepath.Join("..", "..", "..")
 	found := 0

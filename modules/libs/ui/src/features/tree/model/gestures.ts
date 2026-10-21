@@ -1,5 +1,5 @@
 /**
- * What a press, a double press, a key or a menu asked for on a row comes to.
+ * What a press, a double press, a key or a menu asked for on a row evaluates to.
  *
  * The selection and the drag work out what a gesture makes of them; this is
  * where a gesture is read and the tree says what happened.

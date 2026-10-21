@@ -22,7 +22,7 @@ func TestAFileIsSkippedOnItsSizeAndItsTime(t *testing.T) {
 	if was.IsUnchanged(domain.Fingerprint{Size: 10, ModTime: at.Add(time.Nanosecond)}) {
 		t.Error("a file written again is skipped")
 	}
-	// The path is not the key: a fingerprint the index hands back carries
+	// The path is not the key: a fingerprint the index returns carries
 	// neither path nor kind.
 	if !was.IsUnchanged(domain.Fingerprint{Path: "elsewhere.md", Size: 10, ModTime: at}) {
 		t.Error("the path decided whether the file was read")

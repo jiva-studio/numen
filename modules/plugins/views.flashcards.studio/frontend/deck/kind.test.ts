@@ -33,7 +33,7 @@ const createInside = (open: readonly string[] = []) => {
 }
 
 describe('a deck tab opened', () => {
-  it('opens the note at the path it was asked for, under the identity of the tab', () => {
+  it('opens the note at the path it was requested for, under the identity of the tab', () => {
     const { inside, state, kind } = createInside()
 
     expect(kind.open?.('decks/Animals.md', 'deck:decks/Animals.md')).toBe(state)
@@ -51,7 +51,7 @@ describe('what a deck tab is known by', () => {
     expect(createInside().kind.identity?.('decks/Animals.md')).toBe('decks/Animals.md')
   })
 
-  it('is the one the open deck was filed under where its file now stands at the path', () => {
+  it('is the one the open deck was filed under where its file now remains at the path', () => {
     const { inside, kind } = createInside(['deck:Old.md'])
     inside.store.getPath = () => 'New.md'
 
@@ -70,7 +70,7 @@ describe('a deck tab coming on screen', () => {
   })
 })
 
-describe('what a deck tab tells whoever answers for the person', () => {
+describe('what a deck tab notifies whoever answers for the person', () => {
   it('is the path and title of the deck as the command target', () => {
     const { state, kind } = createInside()
 
@@ -103,7 +103,7 @@ describe('what a deck tab owes the file', () => {
     expect(kind.isAsking?.(state)).toBe(true)
   })
 
-  it('is written out when asked to be', async () => {
+  it('is written out when requested to be', async () => {
     const { inside, state, kind } = createInside()
 
     await kind.flushPending?.(state)
@@ -113,7 +113,7 @@ describe('what a deck tab owes the file', () => {
 })
 
 describe('a deck made', () => {
-  it('is asked of the vault under the name and the folder it was given', async () => {
+  it('is requested of the vault under the name and the folder it was given', async () => {
     const { inside, kind } = createInside()
 
     expect(await kind.createFile?.('zoology', 'Animals')).toStrictEqual(

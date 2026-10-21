@@ -2,7 +2,7 @@
  * The words set on the one control's picture, and the room each of them takes.
  *
  * Everything here is worked out in the picture's own units. A word is placed
- * against a line or over a mark, and what it comes to is a box; two boxes that
+ * against a line or over a mark, and what it evaluates to is a box; two boxes that
  * touch are two words that would print over each other, and the picture drops
  * one of them.
  */
@@ -28,7 +28,7 @@ export const AXIS_LABEL_HEIGHT = 15
 
 /**
  * The room the bubble over the knob takes, and how far off the knob it sits.
- * The width and height are what it comes to at the interface's own size, and
+ * The width and height are what it evaluates to at the interface's own size, and
  * are what everything else on the picture is kept clear of. The gap stands off
  * far enough that the curve on either side of the knob is read through it, and
  * is the same gap on whichever side the bubble hangs.
@@ -193,10 +193,10 @@ export interface Height {
 }
 
 /**
- * What the height of the picture comes to, against the lines it is read off. An
+ * What the height of the picture evaluates to, against the lines it is read off. An
  * extent of no width is one number and is said once, on the foot, where a curve
  * that never moves is drawn. A number the line, a mark or the readout over the
- * knob stands on is dropped: the axis gives way, and the drawing keeps what it.
+ * knob relies on is dropped: the axis gives way, and the drawing keeps what it.
  */
 export interface AxisLabelsContext {
   places: readonly Position[]

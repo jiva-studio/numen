@@ -12,13 +12,13 @@ import (
 )
 
 // vocabulary is the words a generated cutting draws its chunks from. It is
-// small, so one text stands twice in a source about as often as it stands
+// small, so one text stands twice in a source about as often currently
 // once, and a large chunk holds what a chunk inside one holds.
 var vocabulary = []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
 
 // generateChunks generates a source cut into large chunks with small chunks inside
 // them. What a chunk holds is what identifies it, so the words are what varies;
-// where it stands is what a cut moves, and it moves with the text.
+// at its current position is what a cut moves, and it moves with the text.
 func generateChunks(t *rapid.T, name string) []chunk.Chunk {
 	word := rapid.SampledFrom(vocabulary)
 	inside := rapid.Custom(func(t *rapid.T) chunk.Chunk {
@@ -70,7 +70,7 @@ func hashText(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// getSourceRows is the rows one source stands on, by the text and the size each
+// getSourceRows is the rows one source relies on, by the text and the size each
 // holds.
 func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	t.Helper()
@@ -96,7 +96,7 @@ func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	return out
 }
 
-// countByText is what a set of rows comes to, one key at a time.
+// countByText is what a set of rows evaluates to, one key at a time.
 func countByText(rows map[textOf][]int64) map[textOf]int {
 	out := make(map[textOf]int, len(rows))
 	for key, held := range rows {
@@ -106,7 +106,7 @@ func countByText(rows map[textOf][]int64) map[textOf]int {
 }
 
 // cutSource puts one book in and cuts it into the chunks given, answering with
-// the row the source stands on.
+// the row the source relies on.
 func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 	t.Helper()
 	if err := db.Chunks().SaveSource(t.Context(), first.ID, chunk.Source{
@@ -151,7 +151,7 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 		}
 		after := getSourceRows(outer, db, source)
 
-		// The source stands on exactly the chunks this cut asked for.
+		// The source relies on exactly the chunks this cut asked for.
 		if want := countChunks(now); !maps.Equal(countByText(after), want) {
 			t.Fatalf("%v cut again as %v stands on %v, want %v",
 				was, now, countByText(after), want)

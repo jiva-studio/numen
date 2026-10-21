@@ -151,7 +151,7 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 
 // newTargetedNotes is a vault of two presets asking for different shares of the
 // cards, with a deck of one card under each. Neither evens its days out, so
-// what separates two cards here is the target each stands under.
+// what separates two cards here is the target each is placed under.
 func newTargetedNotes(high, low float64) map[string]string {
 	return map[string]string{
 		"Term.md": term,
@@ -174,7 +174,7 @@ var (
 
 // answerBothAlike takes both cards through the same answers at the same
 // moments, far enough for each to be learned, so what separates their schedules
-// is the preset each stands under.
+// is the preset each is placed under.
 func answerBothAlike(t *testing.T, s vaulted) {
 	t.Helper()
 	for day := range 3 {
@@ -242,7 +242,7 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 }
 
 // Pointing a deck at the other preset works the schedules out again. The two
-// targets in force did not move; which card stands under which did, and that is
+// targets in force did not move; which card is placed under which did, and that is
 // what the cache is held against.
 func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
 	t.Parallel()

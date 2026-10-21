@@ -17,12 +17,12 @@ export interface DropMetrics {
 }
 
 /**
- * What letting go at a height comes to.
+ * What letting go at a height evaluates to.
  *
  * A row that holds is read in three bands: the middle half means into it, and
  * the quarter at either end means between. Every other row is halved, and each
  * half means between. Past the last row is the top level, which is what the
- * tree's own empty area comes to. A drop target naming one of the rows being
+ * tree's own empty area evaluates to. A drop target naming one of the rows being
  * dragged moves nothing and answers nothing.
  */
 export function getRowDropTarget(

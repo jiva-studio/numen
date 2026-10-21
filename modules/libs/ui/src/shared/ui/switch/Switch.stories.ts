@@ -37,7 +37,7 @@ const meta: Meta<Knobs> = {
       const isOn = ref(args.isOn)
       return { args, isOn }
     },
-    // A switch is not a form control, so a label around it names nothing: the
+    // A switch is not a form control, so a label around it is empty: the
     // words beside it are pointed at instead, which is how a window does it.
     template: `
       <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem; inline-size: 20rem">
@@ -99,7 +99,7 @@ export const Dark: Story = {
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
     await waitFor(() => expect(getComputedStyle(control).backgroundColor).not.toBe(off))
 
-    // The accent the track comes to rest in stands above the quiet colour it
+    // The accent the track evaluates to rest in stands above the quiet colour it
     // was, which is the way round the dark set is written.
     await waitFor(() =>
       expect(lightness(getComputedStyle(control).backgroundColor)).toBeGreaterThan(

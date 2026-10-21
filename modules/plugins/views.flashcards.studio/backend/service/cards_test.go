@@ -335,7 +335,7 @@ func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 
 // TestACardWithNoStencilKeepsTheHeadingItStandsUnder. Nothing can say which of
 // that card's fields is first, so nothing can write its heading again: it is
-// left exactly as it stands, and a person who changed nothing sees the file
+// left exactly currently, and a person who changed nothing sees the file
 // they wrote.
 func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 	f := newCutting(t, map[string]string{

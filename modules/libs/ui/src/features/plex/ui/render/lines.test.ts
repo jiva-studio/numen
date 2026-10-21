@@ -16,7 +16,7 @@ describe('the line of an edge', () => {
     expect(new Set(lines.map((line) => line.key)).size).toBe(edges.length)
   })
 
-  it('stands its title at the fraction of the line the arrangement chose', () => {
+  it('remains its title at the fraction of the line the arrangement chose', () => {
     const [edge] = edges
     const [line] = getLines([{ ...edge!, wordsAt: 0.25 }], 'plex')
     expect(line?.titleAt).toBe('25%')

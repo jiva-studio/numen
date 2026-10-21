@@ -157,7 +157,7 @@ describe('a neighbourhood the vault answers with', () => {
     expect((await core.neighbourhood('Rota.md')).related).toEqual([])
   })
 
-  it('stands on nothing where the vault no longer holds the note', async () => {
+  it('relies on nothing where the vault no longer holds the note', async () => {
     answerWith({ related: [] })
 
     expect((await core.neighbourhood('Gone.md')).focus.path).toBe('')

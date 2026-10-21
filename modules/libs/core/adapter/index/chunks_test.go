@@ -427,7 +427,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// What is left is the note as it stands now, cut once.
+	// What is left is the note currently now, cut once.
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
 		t.Errorf("%d large chunks after a note was rewritten", got)
 	}
@@ -442,7 +442,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
-	// The words of the note as it stands now are what the full-text index holds.
+	// The words of the note currently now are what the full-text index holds.
 	found, err := db.ChunkQueries().FindLexical(ctx, first.ID, "longer", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)

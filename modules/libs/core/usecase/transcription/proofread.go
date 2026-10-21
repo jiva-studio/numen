@@ -392,7 +392,7 @@ func (p *transcriptProofreadJob) joinCues(line, last int) {
 }
 
 // current is the transcript as it now stands, and whether it is the file that
-// stands beside the artifact. A recording nothing has listened to is nothing to
+// is stored alongside the artifact. A recording nothing has listened to is nothing to
 // put right.
 func (u Proofread) current(
 	ctx context.Context,
@@ -470,7 +470,7 @@ func isJoined(merged map[int]bool, first, last int) bool {
 	return false
 }
 
-// getProgress is where a run stands once the lines before the one numbered end
+// getProgress is where a run appears once the lines before the one numbered end
 // have been answered: the moment the last of them ended.
 func getProgress(original []domain.TranscriptCue, end int) putting {
 	if end <= 0 {

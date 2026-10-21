@@ -40,7 +40,7 @@ export const Playground: Story = {
 
 /**
  * Beside the small print it belongs to, taking that print's size and colour
- * rather than the size and colour of the text above it.
+ * and not the size and colour of the text above it.
  */
 export const BesideAName: Story = {
   render: () => ({

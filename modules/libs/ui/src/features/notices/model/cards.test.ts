@@ -234,7 +234,7 @@ describe('a card that has been read', () => {
     expect(dismiss.mock.calls).toEqual([['a'], ['a']])
   })
 
-  it('is not forgotten while its caller still hands it in', async () => {
+  it('is not forgotten while its caller still passes it in', async () => {
     const { dismiss, notices, wind } = stand([report('a'), asked('k')])
     await wind(MIN_DURATION * 10)
 
@@ -380,7 +380,7 @@ describe('putting a card away by hand', () => {
     expect(stood.dismiss.mock.calls).toEqual([['a']])
   })
 
-  it('puts away a card that was never held', async () => {
+  it('puts away a card that was never retained', async () => {
     const { state, dismiss } = stand(three)
 
     await expect(state.dismissByHand('b')).resolves.toBeUndefined()
@@ -398,7 +398,7 @@ describe('putting a card away by hand', () => {
     await expect(stood.state.dismissByHand('b')).resolves.toBeUndefined()
   })
 
-  it('moves on when the card that takes its place is not held', async () => {
+  it('moves on when the card that takes its place is not retained', async () => {
     const stood = stand(three)
     const way = button()
     stood.state.holdCard('b', { way })

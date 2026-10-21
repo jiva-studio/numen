@@ -24,7 +24,7 @@ const createReviewDays = (
 })
 
 describe('what a vault was answered on', () => {
-  it('is held by the day it was answered on', async () => {
+  it('is retained by the day it was answered on', async () => {
     const cards: ReviewDaysClient = {
       async listReviewDays() {
         return createReviewDays(
@@ -119,7 +119,7 @@ describe('what a vault was answered on', () => {
 
 // A vault grows a day for every day it is reviewed, and the grid draws the
 // stretch it has room for. The ask is that stretch and not the whole of it.
-describe('the days asked about', () => {
+describe('the days requested about', () => {
   it('is the stretch the widest grid could draw, and not every day there is', async () => {
     let asked: { vault: string; from: string; to: string } | null = null
     const cards: ReviewDaysClient = {
@@ -146,7 +146,7 @@ describe('the days asked about', () => {
   })
 })
 
-describe('what is held of a vault after another answer', () => {
+describe('what is retained of a vault after another answer', () => {
   it('holds nothing, and asks nothing, once it is read for no vault at all', async () => {
     const asked: string[] = []
     const errors: unknown[] = []
@@ -170,7 +170,7 @@ describe('what is held of a vault after another answer', () => {
     expect(one.of.value).toBe('')
   })
 
-  it('drops what it held of a vault whose days could not be read again', async () => {
+  it('drops what it retained of a vault whose days could not be read again', async () => {
     let fails = false
     const cards: ReviewDaysClient = {
       async listReviewDays() {

@@ -145,7 +145,7 @@ func (r *Worker) recognise(ctx context.Context, v domain.Vault, id, path string)
 	}
 	defer release()
 
-	// Getting the models is a step of its own and stands under its own name.
+	// Getting the models is a step of its own and is placed under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	r.reportTask(run.Task{ID: id, Title: "Fetching models"})
 	by, letGo, err := r.with.Runtime.Open(ctx, func(what string, done, total int64) {

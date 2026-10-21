@@ -15,7 +15,7 @@ import (
 // Replace puts one stretch of a note's prose in place of another, and leaves
 // every byte around it as it was.
 //
-// What is replaced is named by the text standing there, not by where it stands,
+// What is replaced is named by the text standing there, not by at its current position,
 // and the caller presents the fingerprint of the note it read.
 type Replace struct {
 	readers port.VaultReaders

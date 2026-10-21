@@ -25,7 +25,7 @@ export interface DisplayOptions {
   wait?(ms: number): Promise<unknown>
   /**
    * What hears that the vault changed, and is waited for. A change carrying no
-   * paths names nothing: everything showing the vault reads again.
+   * paths is empty: everything showing the vault reads again.
    */
   onVaultChanged?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */

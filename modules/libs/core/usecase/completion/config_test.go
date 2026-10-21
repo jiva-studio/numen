@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
 
-// The default stands under ai.default, with the agent, the model and the limit.
+// The default is placed under ai.default, with the agent, the model and the limit.
 func TestTheDefaultIsReadFromItsOwnKey(t *testing.T) {
 	var config completion.Config
 	if err := json.Unmarshal([]byte(`{"default": {"agent": "a", "model": "m", "concurrency": 3}}`), &config); err != nil {

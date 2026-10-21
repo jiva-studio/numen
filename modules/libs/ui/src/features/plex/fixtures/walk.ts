@@ -103,7 +103,7 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
 
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so
-      // it belongs here rather than in the plex.
+      // it belongs here and not in the plex.
       const shared = getParents(id).find((parent) => getParents(node.id).includes(parent))
       return shared ? [{ from: shared, to: node.id, label: 'contains' }] : []
     }),

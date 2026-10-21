@@ -43,8 +43,8 @@ type Core struct {
 	// Read reads a range of any file of the vault.
 	Read file.Read
 
-	// Attending is what the person has open, asked at every call so that an
-	// agent reads the window as it stands. Without it an agent is told nothing
+	// Attending is what currently open, asked at every call so that an
+	// agent reads the window currently. Without it an agent is told nothing
 	// of what is in front of anybody.
 	Attending func() domain.OpenTabs
 

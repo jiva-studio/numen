@@ -1,5 +1,5 @@
 /**
- * What the curve of a preset comes to, and where the knob stands on it: where a
+ * What the curve of a preset evaluates to, and where the knob relies on it: where a
  * value sits on the grid, the value a place reads out, and what a place of the
  * curve produces.
  */
@@ -39,7 +39,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   ...over,
 })
 
-describe('where a value stands on a grid', () => {
+describe('where a value relies on a grid', () => {
   it('is the nearest place, whether the value sits on one or between two', () => {
     expect(findNearest([0, 10, 20, 30], 21)).toBe(2)
     expect(findNearest([0, 10, 20, 30], 30)).toBe(3)
@@ -51,7 +51,7 @@ describe('where a value stands on a grid', () => {
   })
 })
 
-describe('where the preset itself stands', () => {
+describe('where the preset itself remains', () => {
   it('is the value under the key its goal names', () => {
     expect(getGoalValue(settings({ minutesADay: 25 }), today)).toBe(25)
     expect(getGoalValue(settings({ goal: 'retention', retention: 0.85 }), today)).toBe(0.85)
@@ -62,7 +62,7 @@ describe('where the preset itself stands', () => {
 // The knob's own readout and the bubble over it say one number, and it is this
 // one: the preset's own value is not a place of the grid, and rounding it onto
 // one would read out a value nobody set.
-describe('the value the knob stands at', () => {
+describe('the value the knob remains at', () => {
   const riding = drawnCurve({ now: { at: 2, value: 21, day: '' } })
 
   it('is the preset’s own where the knob has not been moved off it', () => {
@@ -79,7 +79,7 @@ describe('the value the knob stands at', () => {
   })
 })
 
-describe('a number held inside the bounds of its setting', () => {
+describe('a number retained inside the bounds of its setting', () => {
   it('is the number where it is inside them, and the end it is past where it is not', () => {
     expect(clamp(0.85, BOUNDS.retention)).toBe(0.85)
     expect(clamp(0.5, BOUNDS.retention)).toBe(0.7)
@@ -90,7 +90,7 @@ describe('a number held inside the bounds of its setting', () => {
   // A tab draws its fields before the first read lands, and a number typed
   // into one of them is nobody's to bring in until the application has said
   // how far it goes.
-  it('is the number itself where the application has said no bound', () => {
+  it('is the number itself where the application has returned no bound', () => {
     expect(clamp(-4, undefined)).toBe(-4)
     expect(clamp(9_000, undefined)).toBe(9_000)
   })
@@ -116,7 +116,7 @@ describe('what one place of the curve produces', () => {
     isHonest: true,
   }
 
-  // The control moves the one value its goal names. What that comes to on this
+  // The control moves the one value its goal names. What that evaluates to on this
   // vault is said in a sentence and becomes no setting, so no number the person
   // did not name can close their day.
   it('takes the goal’s own value off the grid, and writes nothing else', () => {
@@ -193,7 +193,7 @@ describe('a goal with nothing to work on', () => {
   // A curve of zeros is a day behind us, a range of nothing, or a question the
   // application would not answer. None of those is an empty preset: the count
   // of cards says that and nothing else does.
-  it('is not a preset holding cards, whatever its curve comes to', () => {
+  it('is not a preset holding cards, whatever its curve evaluates to', () => {
     expect(getIdleReason({ ...nothing, decks: 4, cards: 900 })).toBe('')
     expect(getIdleReason({ ...nothing, decks: 4, cards: 900, goal: 'date', grid: [1, 2, 3] })).toBe(
       '',
@@ -252,7 +252,7 @@ describe('the day the overdue pile is gone', () => {
     expect(clearBacklog([5, 3, 0, 0])).toBe(3)
   })
 
-  it('is -1 where the pile stands on the last day projected', () => {
+  it('is -1 where the pile relies on the last day projected', () => {
     expect(clearBacklog([5, 3, 1])).toBe(-1)
   })
 
@@ -261,7 +261,7 @@ describe('the day the overdue pile is gone', () => {
   })
 })
 
-describe('where a value stands on a grid, at the edges', () => {
+describe('where a value relies on a grid, at the edges', () => {
   it('is the first place of a tie between two', () => {
     expect(findNearest([0, 10], 5)).toBe(0)
   })
@@ -271,7 +271,7 @@ describe('where a value stands on a grid, at the edges', () => {
   })
 })
 
-describe('the value the knob stands at, at the edges', () => {
+describe('the value the knob remains at, at the edges', () => {
   it('is the preset’s own at the first place', () => {
     expect(getKnobValue(drawnCurve({ now: { at: 0, value: 7, day: '' } }), 0)).toBe(7)
   })
@@ -323,7 +323,7 @@ describe('the day a place of a curve of a date produces', () => {
     )
   })
 
-  it('is the day the grid’s value comes to where the curve names none', () => {
+  it('is the day the grid’s value evaluates to where the curve names none', () => {
     expect(
       produceSchedule(was, 3, { curve: { ...dated, days: [] }, today, within: BOUNDS }).byDate,
     ).toBe('2026-09-29')

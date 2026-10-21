@@ -31,7 +31,7 @@ const isCode = (node: SyntaxNode): boolean => {
 }
 
 /**
- * The address a position in the text stands in, and nothing where it stands in
+ * The address a position in the text stands in, and nothing at its current position in
  * none. A note in brackets is read by the parser every link is read by.
  */
 export const getAddress = (state: EditorState, at: number): string | null => {

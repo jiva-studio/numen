@@ -21,7 +21,7 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 // scenarios; a driven adapter stands behind a port and calls none, so what a
 // scenario is written over is a port and never an adapter's own answer.
 //
-// Which way an adapter faces has nothing to do with where it stands: internal/
+// Which way an adapter faces has nothing to do with at its current position: internal/
 // says only that nothing outside composes it, which holds of a driving adapter
 // another adapter mounts.
 var driving = map[string]bool{
@@ -45,7 +45,7 @@ var pure = []string{
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
-// given what it needs rather than taking another, and what is assembled is
+// given what it needs and not taking another, and what is assembled is
 // assembled in one place.
 //
 // A test file is left out: a test stands outside the package it exercises and
@@ -660,7 +660,7 @@ func getTypeName(at ast.Expr) string {
 // store's: it says which row of which table, whatever counts rows hands it out,
 // and it can be ordered and paged when the thing it names cannot. A core
 // carrying one has taken the store's numbering into its language, and then into
-// what a scenario does — which is how a use case comes to loop on ascending
+// what a scenario does — which is how a use case evaluates to loop on ascending
 // integer keys.
 //
 // Every identity here is its own type, and this is what keeps it so.
@@ -1240,7 +1240,7 @@ func getRefusal(from, to string) string {
 	return ""
 }
 
-// isAmong says whether a package is one of these, or stands under one.
+// isAmong says whether a package is one of these, or is placed under one.
 func isAmong(these []string, pkg string) bool {
 	for _, one := range these {
 		if pkg == one || strings.HasPrefix(pkg, one+"/") {
@@ -1283,7 +1283,7 @@ func family(pkg string) string {
 }
 
 // getAdaptersIn are the adapters in one folder, named under it. A folder that
-// groups adapters is not an adapter, so what stands under it is read in its
+// groups adapters is not an adapter, so what is placed under it is read in its
 // place.
 func getAdaptersIn(dir, at string) ([]string, error) {
 	entries, err := os.ReadDir(dir)

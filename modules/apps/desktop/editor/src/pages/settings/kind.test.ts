@@ -76,13 +76,13 @@ describe('the settings tab', () => {
     expect(settings.kind.identity?.('something else')).toBe(SETTINGS)
   })
 
-  it('is put in front when the window is asked to show it', () => {
+  it('is put in front when the window is requested to show it', () => {
     const { handle, opened } = window_()
     useSettingsTab(handle, installation()).openSettings()
     expect(opened).toEqual([SETTINGS])
   })
 
-  it('is not open until a tab is opened or settings are asked for', () => {
+  it('is not open until a tab is opened or settings are requested for', () => {
     const settings = useSettingsTab(window_().handle, installation())
     expect(settings.isOpen.value).toBe(false)
   })
@@ -93,7 +93,7 @@ describe('the settings tab', () => {
     expect(settings.isOpen.value).toBe(true)
   })
 
-  it('is open once the settings are asked for', () => {
+  it('is open once the settings are requested for', () => {
     const settings = useSettingsTab(window_().handle, installation())
     settings.openSettings()
     expect(settings.isOpen.value).toBe(true)

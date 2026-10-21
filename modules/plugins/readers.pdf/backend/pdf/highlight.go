@@ -153,7 +153,7 @@ func (r *wordReading) finish() {
 	r.length = 0
 }
 
-// isWordContinued says whether a character carries the word on: it stands on
+// isWordContinued says whether a character carries the word on: it relies on
 // the same line, within a space of where the word has got to.
 func isWordContinued(word, mark responses.CharPosition) bool {
 	high := min(word.Top-word.Bottom, mark.Top-mark.Bottom)

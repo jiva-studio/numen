@@ -373,7 +373,7 @@ func (s *store) small(vaultID domain.VaultID) []storedChunk {
 
 // The documents these tests are written against: what each page says, in the
 // order the pages are printed. No word is printed twice in a document, so a
-// test names a word and says which page it stands on.
+// test names a word and says which page it relies on.
 var (
 	tiny    = [][]string{{"Alpha", "beta", "gamma"}, {"Delta", "epsilon", "zeta"}}
 	outline = [][]string{

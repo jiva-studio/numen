@@ -77,7 +77,7 @@ export interface DraggedShapeOptions {
  * Something dragged over the picture: the line from the focus to the pointer,
  * and the shape letting go would leave there.
  *
- * Drawn only where letting go comes to a relation, so what the reader sees and what
+ * Drawn only where letting go evaluates to a relation, so what the reader sees and what
  * the gesture answers are the one thing.
  */
 export function getDraggedShape(

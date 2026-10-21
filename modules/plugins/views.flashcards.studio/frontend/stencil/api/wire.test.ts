@@ -3,7 +3,7 @@
  *
  * What is proved here is the remembering: a file the vault has said nothing
  * about yet stands at nothing, the message shown for a fault is the one the
- * last read or write earned, and a file that moved keeps what was said of it.
+ * last read or write earned, and a file that moved keeps the transcript of it.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
@@ -55,7 +55,7 @@ const createWire = (cards: ReturnType<typeof vault>) => {
 }
 
 describe('reading a stencil', () => {
-  it('comes back as the body the tab is dirty against', async () => {
+  it('arrives back as the body the tab is dirty against', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
     const { wire } = createWire(cards)
@@ -299,14 +299,14 @@ describe('renaming a field', () => {
 })
 
 describe('what the window remembers of a file', () => {
-  it('is nothing where the vault has said nothing about it', () => {
+  it('is nothing where the vault has returned nothing about it', () => {
     const { wire } = createWire(vault())
 
     expect(wire.getProblems('Word.md')).toEqual(NOTHING.problems)
     expect(wire.getTitle('Word.md')).toBeUndefined()
   })
 
-  it('is let go of when the last tab on it closes', async () => {
+  it('is release when the last tab on it closes', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(
       asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
@@ -342,7 +342,7 @@ describe('what the window remembers of a file', () => {
     expect(wire.getTitle('Word.md')).toBeUndefined()
   })
 
-  it('leaves what was said of the file moved onto where the one moved from was never read', async () => {
+  it('leaves the transcript of the file moved onto where the one moved from was never read', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(
       asValue({ stencil: stencil({ problems: [problem] }), at: '' }),

@@ -16,7 +16,7 @@ describe('a note a plex tab opens', () => {
     expect(recorded.opened).toStrictEqual([])
   })
 
-  it('opens at the line asked even where a tab is linked to it', () => {
+  it('opens at the line requested even where a tab is linked to it', () => {
     const { host, recorded } = createHost({ linked: { 'plex:1': true } })
 
     createPlexTabDeps(host, 'plex:1').openNote('One.md', { title: 'One', line: 4 })
@@ -25,7 +25,7 @@ describe('a note a plex tab opens', () => {
     expect(recorded.opened).toStrictEqual([['One.md', { title: 'One', line: 4 }]])
   })
 
-  it('opens where the person asked, at the line asked, where no tab is linked to it', () => {
+  it('opens where the person requested, at the line requested, where no tab is linked to it', () => {
     const { host, recorded } = createHost()
 
     createPlexTabDeps(host, 'plex:1').openNote('One.md', {
@@ -39,7 +39,7 @@ describe('a note a plex tab opens', () => {
     ])
   })
 
-  it('opens with no title, placement or line where none is asked', () => {
+  it('opens with no title, placement or line where none is requested', () => {
     const { host, recorded } = createHost()
 
     createPlexTabDeps(host, 'plex:1').openNote('One.md')

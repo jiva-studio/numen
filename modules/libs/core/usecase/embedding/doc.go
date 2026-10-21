@@ -3,7 +3,7 @@
 // question is asked with.
 //
 // The two are asked one text and held to answering it alike. A provider that
-// disagrees is let go of, and a question is answered by the words.
+// disagrees is release, and a question is answered by the words.
 //
 // A model on this machine is fetched and compiled behind the window, and how far
 // that has got is one line in the list of what is being done. Until it is here a
@@ -11,5 +11,5 @@
 //
 // Which provider answers, and what its settings are, is settled before anything
 // here is called: a provider is opened one way or the other, and this package
-// reads nothing about where it stands.
+// reads nothing about at its current position.
 package embedding

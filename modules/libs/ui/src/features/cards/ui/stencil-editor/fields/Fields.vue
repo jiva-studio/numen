@@ -4,7 +4,7 @@
  * handle, the name typed in it and the way to be rid of it.
  *
  * The first field names the cards the stencil cuts, so it stands first and goes
- * nowhere. What is wrong with a field is the caller's, and stands under that
+ * nowhere. What is wrong with a field is the caller's, and is placed under that
  * field's row.
  */
 import { computed, useId } from 'vue'
@@ -131,7 +131,7 @@ const add = (): void => {
 .stencil__fields {
   display: flex;
   flex-direction: column;
-  /* The room between rows is the editor's, and this is what it comes to
+  /* The room between rows is the editor's, and this is what it evaluates to
      where the rows stand anywhere else. */
   gap: var(--row-gap, 0.5rem);
   inline-size: 100%;

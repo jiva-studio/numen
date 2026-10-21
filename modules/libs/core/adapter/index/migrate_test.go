@@ -119,7 +119,7 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	defer db.Close()
 
 	// A statement that cannot apply must leave the version where it was, so the
-	// next start retries the whole migration rather than resuming half-way.
+	// next start retries the whole migration and not resuming half-way.
 	broken := migration{version: 99, name: "0099_broken.sql", body: "CREATE TABLE ok (x INTEGER);\nNOT SQL AT ALL;"}
 	if err := apply(ctx, db, broken); err == nil {
 		t.Fatal("a broken migration reported success")

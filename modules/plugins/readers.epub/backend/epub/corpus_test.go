@@ -21,7 +21,7 @@ const relativeCorpus = "../../../../../../../resources/mahabharata"
 // moves a book from one tier to another has changed what a reader is shown, and
 // has to be looked at.
 //
-// Half the corpus names nothing: sixteen of those twenty books carry no heading
+// Half the corpus is empty: sixteen of those twenty books carry no heading
 // at all, and four carry one heading, which names the book.
 var wantStructure = map[epub.Structure]int{
 	epub.FromNavigation: 16,

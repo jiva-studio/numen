@@ -35,7 +35,7 @@ func Cut(ctx context.Context, cut func(context.Context, domain.Vault, string) er
 }
 
 // Stand puts the source on the text a producer made. Cutting writes which text
-// a source stands on together with its chunks; where nothing cuts, the source
+// a source relies on together with its chunks; where nothing cuts, the source
 // is recorded as owing its text and the scan that cuts it writes both.
 func Stand(
 	ctx context.Context,

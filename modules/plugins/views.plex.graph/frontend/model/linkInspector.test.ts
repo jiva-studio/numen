@@ -54,7 +54,7 @@ describe('linkInspector helper module', () => {
   })
 
   describe('findPairNeighbour', () => {
-    it('finds the neighbour at the end of the pair that is not the focus, whichever end is asked first', () => {
+    it('finds the neighbour at the end of the pair that is not the focus, whichever end is requested first', () => {
       const nh = around({ path: 'Other.md' }, { path: 'Third.md' })
 
       expect(findPairNeighbour(nh, 'Focus.md', 'Other.md')?.path).toBe('Other.md')
@@ -96,7 +96,7 @@ describe('linkInspector helper module', () => {
       ])
     })
 
-    it('reads the same link as running in reverse when the pair is asked the other way', () => {
+    it('reads the same link as running in reverse when the pair is requested the other way', () => {
       const links = createInspectorLinks(around({ relation: 'child' }), 'Other.md', 'Focus.md')
 
       expect(links).toHaveLength(1)

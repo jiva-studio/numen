@@ -52,7 +52,7 @@ func NewDeferredEmbedder(is port.EmbeddingModel) *Embedder {
 
 // SetModel is the model turning up, or the reason it never will. It is the
 // first of these that counts, and a model arriving after the wait is over is
-// let go of where it stands.
+// release at its current position.
 func (e *Embedder) SetModel(held port.Embedder, why error) {
 	e.mu.Lock()
 	late := e.isDone
@@ -69,7 +69,7 @@ func (e *Embedder) SetModel(held port.Embedder, why error) {
 }
 
 // DiscardModel is the model turning out not to be the one whose vectors are stored.
-// It is let go of, and nothing is asked of it again.
+// It is release, and nothing is asked of it again.
 //
 // The reason is in place before anybody can see the wait is over.
 func (e *Embedder) DiscardModel(why error) error {
@@ -113,7 +113,7 @@ func (e *Embedder) Wait(ctx context.Context) error {
 }
 
 // Close lets go of the model. The wait is over from here, so a model still on
-// its way down is let go of the moment it arrives.
+// its way down is release the moment it arrives.
 func (e *Embedder) Close() error {
 	e.mu.Lock()
 	held := e.held

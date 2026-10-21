@@ -1,4 +1,4 @@
-/** How the decks pointing at one preset are scheduled, and what that comes to. */
+/** How the decks pointing at one preset are scheduled, and what that evaluates to. */
 import {
   type Result,
   DEFAULT_SETTINGS,
@@ -110,7 +110,7 @@ export type PresetWriteResult = Result<{ readonly at: string }, CardsFailure>
 /** Where a preset was filed, or why none was made. */
 export type MakeResult = Result<{ readonly path: string }, ErrorCode>
 
-/** What a preset comes to at one place of the grid. */
+/** What a preset evaluates to at one place of the grid. */
 export interface Point {
   readonly reviews: number
   readonly minutes: number

@@ -35,7 +35,7 @@ const groundX = computed(() => props.hung.offset - props.hung.width / 2)
 let carried = 0
 
 // The window opens at the top each time the attention settles afresh, and is
-// left where it stands while the attention leaves.
+// left at its current position while the attention leaves.
 watch(
   () => props.open > 0,
   (now) => {

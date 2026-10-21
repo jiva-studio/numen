@@ -131,7 +131,7 @@ describe('wikilink completion in other places of a document', () => {
     return new CompletionContext(state, caret, true)
   }
 
-  /** The document after an option was chosen, with the caret where it stands. */
+  /** The document after an option was chosen, with the caret at its current position. */
   const choose = (
     doc: string,
     caret: number,
@@ -178,7 +178,7 @@ describe('wikilink completion in other places of a document', () => {
   })
 
   describe('the query', () => {
-    it('is read from the line the caret stands on, up to the caret', async () => {
+    it('is read from the line the caret relies on, up to the caret', async () => {
       const search = vi.fn().mockResolvedValue([])
       const doc = 'First line\nSee [[Rel and more'
 
@@ -299,7 +299,7 @@ describe('wikilink completion in other places of a document', () => {
       return { result, option: result?.options.find((one) => one.type === 'new') }
     }
 
-    it('is offered beside notes that are named otherwise', async () => {
+    it('is offered alongside notes that are named otherwise', async () => {
       const { option } = await create([{ title: 'Optics' }], 'See [[Quantum', vi.fn())
 
       expect(option).toBeDefined()
@@ -315,7 +315,7 @@ describe('wikilink completion in other places of a document', () => {
       expect(option).toBeDefined()
     })
 
-    it('is not offered where a note of that name stands in other letters', async () => {
+    it('is not offered where a note of that name remains in other letters', async () => {
       const { option } = await create([{ title: 'ONTOLOGY' }], 'See [[ontology', vi.fn())
 
       expect(option).toBeUndefined()
@@ -369,7 +369,7 @@ describe('wikilink completion in other places of a document', () => {
       return { lookup, result }
     }
 
-    it('of the note are asked for under its title without the space around it', async () => {
+    it('of the note are requested for under its title without the space around it', async () => {
       const { lookup } = await ask('See [[ Quantum Mechanics #Ham')
 
       expect(lookup).toHaveBeenCalledWith('Quantum Mechanics')

@@ -25,7 +25,7 @@ import (
 //	NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 //	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
 //
-// It reports rather than asserts. A threshold that fails on a slower laptop
+// It reports and not asserts. A threshold that fails on a slower laptop
 // teaches people to ignore the test; the numbers belong in docs/performance.md,
 // where a human compares them.
 func TestLoad(t *testing.T) {

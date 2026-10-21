@@ -161,7 +161,7 @@ describe('what the window follows', () => {
     window.unmount()
   })
 
-  it('hands the work being done over as cards to draw', async () => {
+  it('passes the work being done over as cards to draw', async () => {
     wire.tasks = () =>
       sends({
         tasks: [
@@ -199,7 +199,7 @@ describe('what the window follows', () => {
   })
 })
 
-describe('whether a card can be asked about', () => {
+describe('whether a card can be requested about', () => {
   it('is what the agent says', async () => {
     wire.agent = async () => ({ unreachable: 'no model is set up' })
     const { window, deps } = openWindow()
@@ -209,7 +209,7 @@ describe('whether a card can be asked about', () => {
     window.unmount()
   })
 
-  it('is no, when the agent cannot be asked', async () => {
+  it('is no, when the agent cannot be requested', async () => {
     wire.agent = async () => {
       throw new Error('the connection went')
     }

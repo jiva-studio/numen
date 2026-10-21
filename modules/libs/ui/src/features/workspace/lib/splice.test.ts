@@ -93,11 +93,11 @@ describe('commit', () => {
     'c',
   )
 
-  it('focuses the pane asked for', () => {
+  it('focuses the pane requested for', () => {
     expect(commit(three, 'b').focus).toBe('b')
   })
 
-  it('keeps the focus it had when the pane asked for is gone', () => {
+  it('keeps the focus it had when the pane requested for is gone', () => {
     expect(commit(three, 'missing').focus).toBe('c')
   })
 

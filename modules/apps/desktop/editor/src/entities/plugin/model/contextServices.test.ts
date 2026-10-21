@@ -130,7 +130,7 @@ const BUFFER_WRITES: Record<string, Call> = {
   addFlushHandler: (c) => c.buffers!.addFlushHandler(async () => {}),
 }
 
-describe('the open files a plugin hands the window', () => {
+describe('the open files a plugin passes the window', () => {
   it.each(Object.entries(BUFFER_WRITES))(
     'are refused through %s without vault:write',
     async (_, call) => {

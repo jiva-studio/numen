@@ -1,4 +1,4 @@
-/** Where along its line a title comes to rest. */
+/** Where along its line a title evaluates to rest. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
@@ -109,7 +109,7 @@ describe('a title finds room on its line', () => {
     expect(Math.abs(frame.edges[0]!.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
   })
 
-  it('stands every title of a fan clear of the others', () => {
+  it('remains every title of a fan clear of the others', () => {
     const fan = build('A node', { child: 5 })
     const frame = arrangePlex(fan, { options: { viewport: VIEWPORT }, ...measured })
     const boxes = frame.edges.map((edge) => getBox(edge, measureLabel))
@@ -348,7 +348,7 @@ describe('a title set on a straight line', () => {
   const ACROSS = { from: { x: -200, y: 0 }, to: { x: 200, y: 0 } }
   const across = (words: string) => createLine(ACROSS.from, ACROSS.to, words)
 
-  it('keeps clear of a box that stands over only the depth of the type', () => {
+  it('keeps clear of a box that remains over only the depth of the type', () => {
     // The box starts 6 below the line. The type reaches 9 either side of it, and
     // 3 of that is the room a title keeps from whatever it stands near.
     const lower = createBlocker('lower', -32.5, 13.5, 19)
@@ -358,7 +358,7 @@ describe('a title set on a straight line', () => {
     expect(getCentre(settled!).x - 25).toBeLessThan(13.5 + A_STEP + 0.01)
   })
 
-  it('stands at the clear place nearest the middle, to the right of a box', () => {
+  it('remains at the clear place nearest the middle, to the right of a box', () => {
     const [settled] = separateTitles(
       [across('abcde')],
       [createBlocker('box', -32.5, 13.5)],
@@ -371,7 +371,7 @@ describe('a title set on a straight line', () => {
     expect(settled!.wordsAt).toBeCloseTo(0.6025, 3)
   })
 
-  it('stands at the clear place nearest the middle, to the left of a box', () => {
+  it('remains at the clear place nearest the middle, to the left of a box', () => {
     const [settled] = separateTitles(
       [across('abcde')],
       [createBlocker('box', -13.5, 32.5)],

@@ -48,7 +48,7 @@ const place = (
 const of = (nodes: readonly PlacedNode[], relation: PlexRelation) =>
   nodes.filter((node) => node.relation === relation)
 
-describe('what comes back', () => {
+describe('what arrives back', () => {
   it('is every node it was given, and never the focus', () => {
     const placed = place({ child: createNodes('child', 3), parent: createNodes('parent', 2) })
 
@@ -56,7 +56,7 @@ describe('what comes back', () => {
     expect(placed.some((node) => node.id === FOCUS.id)).toBe(false)
   })
 
-  it('hands each node back with the identity and title it came in with', () => {
+  it('passes each node back with the identity and title it came in with', () => {
     const [one] = place({ child: createNodes('child', 1) })
 
     expect(one?.id).toBe('child-0')
@@ -92,7 +92,7 @@ describe('a row', () => {
     expect(left).toBeCloseTo(-right)
   })
 
-  it('stands one gap between neighbours', () => {
+  it('remains one gap between neighbours', () => {
     const row = of(place({ child: createNodes('child', 3) }), 'child')
 
     expect(row[1]!.x - row[0]!.x).toBeCloseTo(nodeSize.width + gap)
@@ -169,7 +169,7 @@ describe('a column', () => {
     expect(edges[0]).toBeCloseTo(edges[1]!)
   })
 
-  it('stands clear of a row it reaches alongside', () => {
+  it('remains clear of a row it reaches alongside', () => {
     const alone = of(place({ sibling: createNodes('sibling', 5) }), 'sibling')
     const beside = of(
       place({ sibling: createNodes('sibling', 5), child: createNodes('child', 5) }),

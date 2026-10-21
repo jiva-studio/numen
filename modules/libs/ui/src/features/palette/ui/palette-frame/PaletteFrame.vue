@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The ground the palette stands on, and the panel it is drawn in.
+ * The ground the palette relies on, and the panel it is drawn in.
  *
  * The ground catches every press the panel does not, and the window behind is
  * out of reach for as long as the panel stands.

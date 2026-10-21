@@ -110,7 +110,7 @@ export const Dark: Story = {
     await expect(caps).toHaveLength(EVERY.length)
 
     // A cap keeps a ground of its own, told from the surface the row of them
-    // stands on, and is read in ink standing above that ground — which is the
+    // relies on, and is read in ink standing above that ground — which is the
     // way round the dark set is written.
     const behind = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
     const surface = lightness(behind)
@@ -123,7 +123,7 @@ export const Dark: Story = {
   },
 }
 
-/** What a reader who is listening rather than looking is told. */
+/** What a reader who is listening and not looking is told. */
 export const Announced: Story = {
   args: { keys: { icons: ['control', 'shift'], letter: 'W' } },
   play: async ({ canvasElement }) => {

@@ -54,7 +54,7 @@ const (
 //
 // They are one model where only the first is named. Where both are, the second
 // is held to the first by being asked one text once both are here, and a second
-// answering it differently is let go of: a question embedded in another space
+// answering it differently is release: a question embedded in another space
 // finds nothing the first indexed.
 //
 // Where only the first is named, the index side holds at most one fewer call in

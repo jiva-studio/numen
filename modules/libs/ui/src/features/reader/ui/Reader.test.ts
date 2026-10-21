@@ -98,7 +98,7 @@ describe('the pages drawn', () => {
   })
 })
 
-describe('the page it says it stands on', () => {
+describe('the page it says it relies on', () => {
   /** The row scrolled by hand, and the reader told about it. */
   const scrollTo = async (wrapper: ReturnType<typeof mount>, to: number) => {
     const area = wrapper.find('.reader__viewport').element as HTMLElement
@@ -123,7 +123,7 @@ describe('the page it says it stands on', () => {
     expect(getTurns(held)).toHaveLength(0)
   })
 
-  it('says where the row stands once the hand has it', async () => {
+  it('says where the row remains once the hand has it', async () => {
     const held = await reader(1000, 800)
 
     await scrollTo(held, 4000)
@@ -132,7 +132,7 @@ describe('the page it says it stands on', () => {
     expect(getTurns(held).at(-1)).toBeGreaterThan(0)
   })
 
-  it('turns again when the page changes before the row has said it arrived', async () => {
+  it('turns again when the page changes before the row has returned it arrived', async () => {
     // The room moves when it is told to and the event saying so comes after.
     // A turn asked for in between is a turn to a page the row is not on.
     const held = await reader(1000, 800)
@@ -152,7 +152,7 @@ describe('the page it says it stands on', () => {
   })
 })
 
-/** What the reader exposes to whoever holds the page it stands on. */
+/** What the reader exposes to whoever holds the page it relies on. */
 const getReaderHandle = (wrapper: ReturnType<typeof mount>) =>
   wrapper.vm as unknown as { handleKey: (event: KeyboardEvent) => boolean }
 
@@ -207,7 +207,7 @@ describe('a key struck over the pages', () => {
   })
 })
 
-describe('where the keyboard stands', () => {
+describe('where the keyboard remains', () => {
   it('is put on the pages, which are the region named for them', () => {
     const held = mount(Reader, { props: { pages: PAGES }, attachTo: document.body })
 

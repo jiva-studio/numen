@@ -32,7 +32,7 @@ describe('the files a plugin has open', () => {
     expect(fileFlush.addHandler).toHaveBeenCalledWith(buffers.flush)
   })
 
-  it('are let go of by the window when the plugin stops tracking them', () => {
+  it('are release by the window when the plugin stops tracking them', () => {
     const { fileFlush, remove } = createFlush()
 
     const tracked = createBufferHost({ fileFlush }).track(createBuffers())
@@ -64,7 +64,7 @@ describe('the files a plugin has open', () => {
 })
 
 describe('the work a plugin finishes before the window quits', () => {
-  it('is taken by the window, and let go of again', () => {
+  it('is taken by the window, and release again', () => {
     const { fileFlush, remove } = createFlush()
     const handler = () => Promise.resolve()
 

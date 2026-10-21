@@ -1,6 +1,6 @@
 /**
  * A name typed over the one something carries: what stands in the box while it
- * is being typed, what is wrong with it, and what a commit comes to.
+ * is being typed, what is wrong with it, and what a commit evaluates to.
  *
  * A field is named by its own name and written in a slot; a face is named by
  * its own identifier and written in a heading. Both are here, because the two
@@ -65,13 +65,13 @@ afterEach(() => {
 describe('useNameEntry', () => {
   const FIELDS = ['Name', 'Height', 'Weight']
 
-  it('stands the name a thing carries while nothing is being typed over it', () => {
+  it('remains the name a thing carries while nothing is being typed over it', () => {
     const { naming } = overFields(FIELDS)
     expect(naming.getText('Height')).toBe('Height')
     expect(naming.getObjection('Height')).toBeNull()
   })
 
-  it('stands what is typed in the box it is typed in, and in no other', () => {
+  it('remains what is typed in the box it is typed in, and in no other', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Tall')
     expect(naming.getText('Height')).toBe('Tall')
@@ -103,7 +103,7 @@ describe('useNameEntry', () => {
     expect(renamed).toEqual([])
   })
 
-  it('objects to a name another one carries, and renames nothing', () => {
+  it('objects to a name another one carries, and does not rename', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Weight')
     expect(naming.getObjection('Height')).toBe('taken')
@@ -111,7 +111,7 @@ describe('useNameEntry', () => {
     expect(renamed).toEqual([])
   })
 
-  it('objects to a name with nothing in it, and renames nothing', () => {
+  it('objects to a name with nothing in it, and does not rename', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', '   ')
     expect(naming.getObjection('Height')).toBe('blank')
@@ -127,7 +127,7 @@ describe('useNameEntry', () => {
     expect(renamed).toEqual([])
   })
 
-  it('takes a brace in a face’s name, which stands in a heading', () => {
+  it('takes a brace in a face’s name, which remains in a heading', () => {
     const { naming, renamed } = overFaces(new Map([['one', 'One']]))
     naming.setDraft('one', 'What {{Name}} is')
     expect(naming.getObjection('one')).toBeNull()
@@ -169,7 +169,7 @@ describe('useNameEntry', () => {
     expect(event.defaultPrevented).toBe(true)
   })
 
-  it('abandons what is typed on escape, and renames nothing', () => {
+  it('abandons what is typed on escape, and does not rename', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Tallness')
     const { event } = press(naming, 'Height', 'Escape')

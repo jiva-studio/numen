@@ -1,7 +1,7 @@
 /**
  * The words set on the one control's picture, and the room each takes.
  *
- * A word is placed against a line or over a mark, and what it comes to is a
+ * A word is placed against a line or over a mark, and what it evaluates to is a
  * box. Two boxes that touch are two words that would print over each other,
  * and the picture drops one of them.
  */
@@ -53,7 +53,7 @@ const isInside = (one: Box): boolean =>
   one.x >= 0 && one.y >= 0 && one.x + one.wide <= PLOT_WIDTH && one.y + one.high <= PLOT_HEIGHT
 
 describe('where a name over a mark is set', () => {
-  it('stands over the mark, and above it by the lift', () => {
+  it('remains over the mark, and above it by the lift', () => {
     const at = getMarkNameStyle({ x: PLOT_WIDTH / 2, y: 100 })
 
     expect(at.insetInlineStart).toBe('50%')
@@ -66,7 +66,7 @@ describe('where a name over a mark is set', () => {
     expect(getMarkNameStyle({ x: PLOT_RIGHT, y: 100 }).translate).toBe('-100% -100%')
   })
 
-  it('is held inside the top of the picture, so no word is set over the edge', () => {
+  it('is retained inside the top of the picture, so no word is set over the edge', () => {
     expect(getMarkNameStyle({ x: PLOT_WIDTH / 2, y: PLOT_TOP }).insetBlockStart).toBe(
       `${(PLOT_TOP / PLOT_HEIGHT) * 100}%`,
     )
@@ -74,7 +74,7 @@ describe('where a name over a mark is set', () => {
 })
 
 describe('the room a name over a mark takes', () => {
-  it('stands where the name does, and is as wide as a label either side', () => {
+  it('remains where the name does, and is as wide as a label either side', () => {
     const room = getNameBox({ x: PLOT_WIDTH / 2, y: 100 })
 
     expect(room).toStrictEqual({
@@ -92,7 +92,7 @@ describe('the room a name over a mark takes', () => {
 })
 
 describe('where a number against a line is set', () => {
-  it('stands at the left of the picture, at the height it is read off', () => {
+  it('remains at the left of the picture, at the height it is read off', () => {
     const at = getAxisNumber(PLOT_BOTTOM, '0')
 
     expect(at.insetInlineStart).toBe(`${(PLOT_LEFT / PLOT_WIDTH) * 100}%`)
@@ -117,7 +117,7 @@ describe('the room a number against a line takes', () => {
     })
   })
 
-  it('stands above the height where it is lifted off it', () => {
+  it('remains above the height where it is lifted off it', () => {
     expect(getAxisNumberBox(PLOT_TOP, '-100%').y).toBe(PLOT_TOP - AXIS_LABEL_HEIGHT)
   })
 })
@@ -215,7 +215,7 @@ describe('the names of the marks that fit', () => {
     expect(names.map((one) => one.key)).toStrictEqual(['first', 'second'])
   })
 
-  it('leaves off a name the bubble over the knob stands on', () => {
+  it('leaves off a name the bubble over the knob relies on', () => {
     const over = createCallout({ x: 280, y: PLOT_TOP }).box
 
     expect(createLabels([mark('suggested', 280, 100)], over)).toStrictEqual([])
@@ -272,7 +272,7 @@ describe('the numbers read off the picture’s edges', () => {
     ])
   })
 
-  it('drops the number the curve itself stands on', () => {
+  it('drops the number the curve itself relies on', () => {
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
       { places: [{ x: PLOT_LEFT, y: PLOT_BOTTOM }], marks: [] },
@@ -282,7 +282,7 @@ describe('the numbers read off the picture’s edges', () => {
     expect(numbers.map((one) => one.text)).toStrictEqual(['10'])
   })
 
-  it('drops the number a mark stands on', () => {
+  it('drops the number a mark relies on', () => {
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
       { places: clear, marks: [{ x: PLOT_LEFT, y: PLOT_TOP }] },
@@ -292,7 +292,7 @@ describe('the numbers read off the picture’s edges', () => {
     expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
   })
 
-  it('drops the number the bubble over the knob stands on', () => {
+  it('drops the number the bubble over the knob relies on', () => {
     const over = box(PLOT_LEFT, 0, CALLOUT_WIDTH, CALLOUT_HEIGHT)
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
@@ -315,7 +315,7 @@ describe('the numbers read off the picture’s edges', () => {
 })
 
 describe('where the knob’s own value is set', () => {
-  it('is nowhere at all while the knob stands nowhere', () => {
+  it('is nowhere at all while the knob remains nowhere', () => {
     expect(getKnobValueStyle(null)).toStrictEqual({})
   })
 
@@ -406,7 +406,7 @@ describe('where a name is pulled back at the ends', () => {
 })
 
 describe('where the number over the top is set', () => {
-  it('stands over the top line, lifted clear of it', () => {
+  it('remains over the top line, lifted clear of it', () => {
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
       { places: clear, marks: [] },

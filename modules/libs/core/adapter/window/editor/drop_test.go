@@ -30,7 +30,7 @@ func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e domain.So
 
 // dropper is a window holding one recording a model has listened to, with the
 // use case that takes what it heard away. `known` is what the index says the
-// recording stands on.
+// recording relies on.
 func dropper(t *testing.T, held port.DerivedStore, known indexed) (*Services, *noting, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
@@ -50,7 +50,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*Services, *n
 	return api, index, api.NewHandler(http.NotFoundHandler())
 }
 
-// newTranscriptIndex is what the index says a recording a model listened to stands on.
+// newTranscriptIndex is what the index says a recording a model listened to relies on.
 func newTranscriptIndex() indexed {
 	return indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}}
 }

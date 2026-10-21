@@ -18,7 +18,7 @@ const vault = (isOn: boolean, error: string | null = null) => {
 }
 
 describe('whether a title and a filename are one name', () => {
-  it('opens on what the settings hold, so the list stands on what is in force', async () => {
+  it('opens on what the settings hold, so the list relies on what is in force', async () => {
     const core = vault(false)
     const held = syncSetting(core, words, writer().write)
     await held.start()
@@ -30,7 +30,7 @@ describe('whether a title and a filename are one name', () => {
     expect(items.find((one) => one.isCurrent)?.id).toBe(OFF)
   })
 
-  it('keeps the two one name where the vault cannot be asked', async () => {
+  it('keeps the two one name where the vault cannot be requested', async () => {
     const held = syncSetting(
       {
         getSyncEnabled: async () => Promise.reject(new Error('no')),
@@ -44,7 +44,7 @@ describe('whether a title and a filename are one name', () => {
     expect(held.kept.value).toBe(true)
   })
 
-  it('says which of the two is the one in force, and nothing beside the other', async () => {
+  it('says which of the two is the one in force, and nothing alongside the other', async () => {
     const held = syncSetting(vault(true), words, writer().write)
     await held.start()
 
@@ -53,7 +53,7 @@ describe('whether a title and a filename are one name', () => {
     expect(items.find((row) => row.id === OFF)?.detail).toBeUndefined()
   })
 
-  it('writes the row chosen and stands on it', async () => {
+  it('writes the row chosen and relies on it', async () => {
     const core = vault(true)
     const held = syncSetting(core, words, writer().write)
     await held.start()
@@ -145,7 +145,7 @@ describe('a switch turned twice in quick succession', () => {
     }
   }
 
-  it('stands on the last choice while the first write is refused', async () => {
+  it('relies on the last choice while the first write is refused', async () => {
     const core = slowVault()
     const held = syncSetting(core, words, writer().write)
     await held.start()

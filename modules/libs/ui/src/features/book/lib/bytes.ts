@@ -2,7 +2,7 @@
 
 const encoder = new TextEncoder()
 
-/** How many bytes a text comes to. */
+/** How many bytes a text evaluates to. */
 export function countBytes(text: string): number {
   return encoder.encode(text).length
 }

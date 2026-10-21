@@ -1,5 +1,5 @@
 /**
- * What a line of choices says, what it opens, and what it hands back.
+ * What a line of choices says, what it opens, and what it returns.
  *
  * The choices are drawn at the end of the document, so they are read off the
  * document. A control a hand can open and a keyboard cannot is not a control.
@@ -71,7 +71,7 @@ describe('the line at rest', () => {
     expect(line(control).text()).toContain('Nothing')
   })
 
-  it('draws the mark itself, and opens nothing until it is asked', () => {
+  it('draws the mark itself, and opens nothing until it is requested', () => {
     const control = mountSelect()
     expect(control.find('.select__mark').exists()).toBe(true)
     expect(line(control).attributes('aria-expanded')).toBe('false')
@@ -136,14 +136,14 @@ describe('the choices offered', () => {
 })
 
 describe('choosing', () => {
-  it('hands back the identifier it was given', async () => {
+  it('returns the identifier it was given', async () => {
     const control = mountSelect()
     await openSelect(control)
     await rows()[2]!.click()
     expect(getEmitted(control)).toStrictEqual(['large'])
   })
 
-  it('hands nothing back where the choices were put away untouched', async () => {
+  it('passes nothing back where the choices were put away untouched', async () => {
     const control = mountSelect()
     await openSelect(control)
     document.dispatchEvent(new Event('scroll', { bubbles: true }))
@@ -206,13 +206,13 @@ describe('how wide the choices are drawn', () => {
 describe('searching the choices', () => {
   const getSearch = () => document.body.querySelector<HTMLInputElement>('.menu__search')
 
-  it('carries no search line unless it is asked for', async () => {
+  it('carries no search line unless it is requested for', async () => {
     const control = mountSelect()
     await openSelect(control)
     expect(getSearch()).toBeNull()
   })
 
-  it('leaves the choices that name the words typed, and hands back the one chosen', async () => {
+  it('leaves the choices that name the words typed, and returns the one chosen', async () => {
     const control = mountSelect({ searchable: true })
     await openSelect(control)
     const search = getSearch()!

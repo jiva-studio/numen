@@ -30,7 +30,7 @@ func (d *Document) SetIdentifier(identifier string) error {
 }
 
 // Title is what the frontmatter says the note is called, and whether it says.
-// A key with nothing in it names nothing, and the note is named by what comes
+// A key with nothing in it is empty, and the note is named by what comes
 // after it.
 func (d *Document) Title() (string, bool) {
 	node, err := d.readMapping()

@@ -57,7 +57,7 @@ export function useNotices() {
     tasks.value = work.map((task) => createNotice(task))
   }
 
-  /** One card let go of. Work put away is the corner's own to keep away. */
+  /** One card release. Work put away is the corner's own to keep away. */
   const dismissNotice = (id: string) => {
     told.value = told.value.filter((one) => one.id !== id)
   }

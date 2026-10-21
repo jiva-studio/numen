@@ -348,7 +348,7 @@ func cueOf(text string, from, to int32) *v1.Cue {
 	return &v1.Cue{Text: text, From: from, To: to}
 }
 
-// What a transcript was put right to is kept beside what was heard, and what
+// What a transcript was put right to is kept along with what was heard, and what
 // was heard stays where it is.
 func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 	held := whole(newCues())

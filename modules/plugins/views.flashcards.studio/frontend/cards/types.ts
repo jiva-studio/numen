@@ -56,7 +56,7 @@ export interface VaultCard {
    */
   readonly mark: string
   /**
-   * Where the section it stands under stands among the deck's, counting from the first.
+   * Where the section it is placed under stands among the deck's, counting from the first.
    */
   readonly sectionIndex: number | null
   /**

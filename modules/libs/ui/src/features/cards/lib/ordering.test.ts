@@ -71,7 +71,7 @@ describe('canDropField', () => {
     expect(canDropField(FIELDS, 'Weight', 'Name')).toBe(false)
   })
 
-  it('moves nothing let go where it stands', () => {
+  it('moves nothing let go at its current position', () => {
     expect(canDropField(FIELDS, 'Height', 'Height')).toBe(false)
   })
 

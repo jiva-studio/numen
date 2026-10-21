@@ -96,9 +96,9 @@ type CardsServiceClient interface {
 	// RenameStencilField gives one of a stencil's fields a different name,
 	// everywhere it is written: where the stencil declares it, in the braces of
 	// every face that places it, and as a heading in every card of every deck
-	// that stencil cuts. What stands under each heading is left as it was.
+	// that stencil cuts. What is placed under each heading is left as it was.
 	//
-	// Every field a stencil declares stands under its own heading in every card,
+	// Every field a stencil declares is placed under its own heading in every card,
 	// the first included, so renaming any of them reaches every deck that
 	// stencil cuts. A deck the rename could not be written to keeps the old
 	// heading and comes back under `not_written`.
@@ -111,7 +111,7 @@ type CardsServiceClient interface {
 	// before a card is written into it.
 	CreateDeck(context.Context, *connect.Request[v1.CreateDeckRequest]) (*connect.Response[v1.CreateDeckResponse], error)
 	// ReadDeck is the sections and the cards of one deck, in the order they
-	// stand in the file. Each card says which section it stands under.
+	// stand in the file. Each card says which section it is placed under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
 	// WriteDeck puts sections and cards into a deck, in the order they are
 	// given. A path the vault holds no note at is refused `missing`; CreateDeck
@@ -120,7 +120,7 @@ type CardsServiceClient interface {
 	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
-	// card stands under is written where the cards around it put it.
+	// card is placed under is written where the cards around it put it.
 	//
 	// The preamble, the tail and each card's own preamble are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -273,9 +273,9 @@ type CardsServiceHandler interface {
 	// RenameStencilField gives one of a stencil's fields a different name,
 	// everywhere it is written: where the stencil declares it, in the braces of
 	// every face that places it, and as a heading in every card of every deck
-	// that stencil cuts. What stands under each heading is left as it was.
+	// that stencil cuts. What is placed under each heading is left as it was.
 	//
-	// Every field a stencil declares stands under its own heading in every card,
+	// Every field a stencil declares is placed under its own heading in every card,
 	// the first included, so renaming any of them reaches every deck that
 	// stencil cuts. A deck the rename could not be written to keeps the old
 	// heading and comes back under `not_written`.
@@ -288,7 +288,7 @@ type CardsServiceHandler interface {
 	// before a card is written into it.
 	CreateDeck(context.Context, *connect.Request[v1.CreateDeckRequest]) (*connect.Response[v1.CreateDeckResponse], error)
 	// ReadDeck is the sections and the cards of one deck, in the order they
-	// stand in the file. Each card says which section it stands under.
+	// stand in the file. Each card says which section it is placed under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
 	// WriteDeck puts sections and cards into a deck, in the order they are
 	// given. A path the vault holds no note at is refused `missing`; CreateDeck
@@ -297,7 +297,7 @@ type CardsServiceHandler interface {
 	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
-	// card stands under is written where the cards around it put it.
+	// card is placed under is written where the cards around it put it.
 	//
 	// The preamble, the tail and each card's own preamble are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the

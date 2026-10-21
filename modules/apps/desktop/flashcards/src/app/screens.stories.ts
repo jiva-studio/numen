@@ -36,7 +36,7 @@ const tally = (answers: number, recalls: number): HeatmapTally => ({
 
 /**
  * A number between nought and one from a day's place and a name, so a year of
- * work is scattered the way a year is rather than stepping with the arithmetic
+ * work is scattered the way a year is and not stepping with the arithmetic
  * that made it.
  */
 const scatter = (at: number, salt: number): number => {

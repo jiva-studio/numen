@@ -19,12 +19,12 @@ const createCard = (sectionIndex: number | null): VaultCard => ({
 })
 
 describe('a card on its way out', () => {
-  it('names the section it stands under by its number, zero included', () => {
+  it('names the section it is placed under by its number, zero included', () => {
     expect(serializeCardToWire(createCard(0))).toHaveProperty('sectionIndex', 0)
     expect(serializeCardToWire(createCard(2))).toHaveProperty('sectionIndex', 2)
   })
 
-  it('names no section where it stands under none', () => {
+  it('names no section where it is placed under none', () => {
     expect(serializeCardToWire(createCard(null))).not.toHaveProperty('sectionIndex')
   })
 

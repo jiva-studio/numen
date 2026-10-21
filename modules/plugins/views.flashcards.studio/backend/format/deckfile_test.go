@@ -274,7 +274,7 @@ func TestSetValueReachesTheCardOfThatMarkAlone(t *testing.T) {
 	}
 }
 
-// A section is made at the end of the deck, given another name where it stands,
+// A section is made at the end of the deck, given another name at its current position,
 // and taken away. Taking one away takes its heading and nothing else: the cards
 // that stood under it stay where they are.
 func TestTheSplicesASectionNeeds(t *testing.T) {
@@ -695,7 +695,7 @@ func TestWholeSaysWhichCardsItGave(t *testing.T) {
 
 // A deck's body is the preamble as it arrived, its sections and its cards in
 // the order they stand, and the tail below the last value. A section no card
-// stands under is written where it stands.
+// is placed under is written at its current position.
 func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
 	body, err := format.DeckBody(format.Deck{
 		Preamble: "Cards I am learning.",
@@ -1015,7 +1015,7 @@ func TestRemoveSectionOfACrlfDeck(t *testing.T) {
 	}
 }
 
-// A card that already names a stencil has the name replaced where it stands.
+// A card that already names a stencil has the name replaced at its current position.
 func TestSetStencilOnACardThatNamedOne(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {

@@ -1,6 +1,6 @@
 /**
  * Which preset schedules each deck of a vault, and what a day under each of
- * them comes to.
+ * them evaluates to.
  *
  * It is asked for when a vault is opened and again whenever that vault moves,
  * and the decks of one preset are counted together however many there are.
@@ -148,7 +148,7 @@ const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTa
   return at
 }
 
-/** One preset as it stands before a deck has been counted into it. */
+/** One preset currently before a deck has been counted into it. */
 const createTally = (preset: DeckPreset['held']): PresetTally => ({
   path: preset.path,
   name: preset.name || 'The defaults',

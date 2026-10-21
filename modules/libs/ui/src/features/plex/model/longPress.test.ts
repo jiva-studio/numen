@@ -73,7 +73,7 @@ describe('a rest on a node', () => {
     expect(reached).not.toHaveBeenCalled()
   })
 
-  it('is not asked for by a mouse, which has the handle', () => {
+  it('is not requested for by a mouse, which has the handle', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding()
 
@@ -83,7 +83,7 @@ describe('a rest on a node', () => {
     expect(reached).not.toHaveBeenCalled()
   })
 
-  it('is not asked for by a node that will not take one', () => {
+  it('is not requested for by a node that will not take one', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding(() => false)
 
@@ -117,7 +117,7 @@ describe('a rest on a node', () => {
     expect(held.isResting()).toBe(false)
   })
 
-  it('follows the latest press when a second one comes before the wait is out', () => {
+  it('follows the latest press when a second one arrives before the wait is out', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding()
     const second = press({ clientX: 140 })

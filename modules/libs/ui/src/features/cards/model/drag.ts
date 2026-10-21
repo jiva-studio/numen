@@ -3,7 +3,7 @@
  * by the keyboard.
  *
  * Everything that knows about events is here; where a drop is allowed and
- * what a drop comes to are the caller's, and each is stated once.
+ * what a drop evaluates to are the caller's, and each is stated once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
 import { getStepInsertionPoint, type InsertionPoint, type StepDirection } from '../lib/order'
@@ -23,7 +23,7 @@ export interface DragDeps<At extends InsertionPoint | undefined> {
   readonly nowhere: At
   /** Whether letting the thing dragged go there moves it. */
   readonly isMoved: (dragged: string, at: InsertionPoint) => boolean
-  /** What a drop that is allowed comes to. */
+  /** What a drop that is allowed evaluates to. */
   readonly move: (dragged: string, at: InsertionPoint) => void
 }
 
@@ -39,7 +39,7 @@ export interface DragState<At extends InsertionPoint | undefined> {
   readonly hover: (at: At, press: DragEvent) => void
   /** The drag is over, and nothing was let go. */
   readonly release: () => void
-  /** It was let go where it stands. */
+  /** It was let go at its current position. */
   readonly drop: () => void
   /** It was asked to go one place along the order. */
   readonly step: (what: string, direction: StepDirection, press: KeyboardEvent) => void

@@ -140,7 +140,7 @@ describe('the commands reach the window', () => {
     vi.unstubAllGlobals()
   })
 
-  it('hands file gestures to the vault and answers with what the vault answered', async () => {
+  it('passes file gestures to the vault and answers with what the vault answered', async () => {
     const { deps, calls } = createOptions()
 
     expect(await deps.files.createNote('Llama', 'Animals.md', null)).toBe('created')
@@ -183,7 +183,7 @@ describe('the commands reach the window', () => {
     },
   )
 
-  it('tells the recording and the address tabs a transcript went, and reads the file again', async () => {
+  it('notifies the recording and the address tabs a transcript went, and reads the file again', async () => {
     vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
     const told: string[] = []
     const loaded: string[] = []
@@ -201,7 +201,7 @@ describe('the commands reach the window', () => {
     expect(loaded).toStrictEqual(['talk.mp3'])
   })
 
-  it('tells no tab of a transcript that did not go', async () => {
+  it('notifies no tab of a transcript that did not go', async () => {
     vi.spyOn(running, 'deleteTranscript').mockResolvedValue(false)
     const told: string[] = []
     const { deps } = createOptions({
@@ -285,7 +285,7 @@ describe('the commands reach the window', () => {
     expect(went).toStrictEqual(['travel Llama.md', 'leave Llama.md Alpaca.md'])
   })
 
-  it('hands each choice of a setting to the setting it is for', async () => {
+  it('passes each choice of a setting to the setting it is for', async () => {
     const chosen: string[] = []
     const { deps } = createOptions({
       oneName: { choose: async (item) => void chosen.push(`sync ${item}`) },

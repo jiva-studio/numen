@@ -1,10 +1,10 @@
 /**
- * The palette a person types into: which step it stands on, what it draws
+ * The palette a person types into: which step it relies on, what it draws
  * there, and the invocation an answer makes.
  *
  * A command that needs nothing is carried out the moment it is chosen. One that
  * needs a name, a note, a vault or an answer opens a step of its own, and the
- * step it stands on is what the field means. What a step draws is read again
+ * step it relies on is what the field means. What a step draws is read again
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'

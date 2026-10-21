@@ -43,7 +43,7 @@ func TestEditingANoteChangesOnlyTheSpanNamed(t *testing.T) {
 }
 
 // A span standing twice is refused, and the refusal says how many places
-// there are rather than picking one.
+// there are and not picking one.
 func TestEditingRefusesASpanThatStandsTwice(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "A foe advances.\n\nAnother foe advances.\n",

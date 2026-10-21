@@ -25,7 +25,7 @@ describe('a line of work', () => {
     expect(drawn.get('.activity__words').classes()).toContain('flex-col')
   })
 
-  it('draws how far and how long as figures, beside the words', () => {
+  it('draws how far and how long as figures, alongside the words', () => {
     const drawn = line({
       text: 'Learning what it says',
       about: 'Sabhaparva.epub',
@@ -60,7 +60,7 @@ describe('a line of work', () => {
     expect(drawn.find('.activity__count').exists()).toBe(false)
   })
 
-  it('waits rather than draw a share of nothing', () => {
+  it('waits and not draw a share of nothing', () => {
     const drawn = line({ text: 'Fetching models', about: 'inference.onnx', isWorking: true })
 
     expect(drawn.find('.activity__percent').exists()).toBe(false)

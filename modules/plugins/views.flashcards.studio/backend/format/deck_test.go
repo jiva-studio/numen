@@ -400,7 +400,7 @@ The ones I began with.
 		t.Errorf("sections = %+v, want no text under either", deck.Sections[1:])
 	}
 
-	// A card may stand before the first section, and stands under none.
+	// A card may stand before the first section, and is placed under none.
 	var under []int
 	for _, c := range deck.Cards {
 		under = append(under, c.Section)

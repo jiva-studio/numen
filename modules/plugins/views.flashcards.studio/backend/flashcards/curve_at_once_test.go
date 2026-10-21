@@ -8,10 +8,10 @@ import (
 )
 
 // A curve works every place of its grid out alongside the others, and the curve
-// it comes to is the same curve every time it is asked for.
+// it evaluates to is the same curve every time it is asked for.
 //
 // Run under the race detector this is what holds the places to sharing nothing:
-// each run reads the schedules it is given and writes only what it hands back.
+// each run reads the schedules it is given and writes only what it returns.
 // Read without it, what it holds is that the answer does not depend on the order
 // the places happen to finish in, which is the order of the cores the machine
 // has.

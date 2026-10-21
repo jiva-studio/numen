@@ -61,7 +61,7 @@ describe('the keys a session is done with', () => {
 
   // The letters on their own are what a card is answered by, so the panels are
   // held with the overlay key: control here, command on a Mac.
-  it('brings the panels in on either side of the card, held with the overlay key', () => {
+  it('brings the panels in on either side of the card, retained with the overlay key', () => {
     for (const held of ['ctrlKey', 'metaKey'] as const) {
       expect(getSessionKeyIntent(createPress('a', { [held]: true }), { isShown: true })).toEqual({
         does: 'ask',
@@ -78,7 +78,7 @@ describe('the keys a session is done with', () => {
     }
   })
 
-  it('is not asked for by the letters on their own', () => {
+  it('is not requested for by the letters on their own', () => {
     expect(getSessionKeyIntent(createPress('a'), { isShown: true })).toBeNull()
     expect(getSessionKeyIntent(createPress('r'), { isShown: true })).toBeNull()
   })
@@ -117,7 +117,7 @@ describe('the keys a session is done with', () => {
 
   // The reading is read down, and space is the key the hand is already on. The
   // answer is still shown by the control standing under both panes.
-  it('scrolls the reading with the space bar instead of turning the card', () => {
+  it('scrolls the reading with the space bar and not turning the card', () => {
     expect(getSessionKeyIntent(createPress(' '), { isShown: false, isNotesOpen: true })).toEqual({
       does: 'scroll',
       back: false,
@@ -134,7 +134,7 @@ describe('the keys a session is done with', () => {
   })
 
   // A key held down repeats, and a card is answered once.
-  it('is not answered again by a key held down', () => {
+  it('is not answered again by a key retained down', () => {
     expect(getSessionKeyIntent(createPress('3', { repeat: true }), { isShown: true })).toBeNull()
     expect(getSessionKeyIntent(createPress(' ', { repeat: true }), { isShown: false })).toBeNull()
   })
@@ -200,7 +200,7 @@ describe('the keys a session is done with', () => {
     )
   })
 
-  it('brings no panel in from the overlay key held down or pressed with alt', () => {
+  it('brings no panel in from the overlay key retained down or pressed with alt', () => {
     for (const letter of ['a', 'r']) {
       expect(
         getSessionKeyIntent(createPress(letter, { ctrlKey: true, repeat: true }), {
@@ -224,7 +224,7 @@ describe('the keys a deck is chosen with', () => {
   })
 
   // A person reads down the list and presses what they see.
-  it('sits down to the deck a letter stands at', () => {
+  it('sits down to the deck a letter remains at', () => {
     expect(getPickerKeyIntent(createPress('a'), 5)).toEqual({ does: 'deck', at: 0 })
     expect(getPickerKeyIntent(createPress('c'), 5)).toEqual({ does: 'deck', at: 2 })
     expect(getPickerKeyIntent(createPress('e'), 5)).toEqual({ does: 'deck', at: 4 })
@@ -255,7 +255,7 @@ describe('the keys a deck is chosen with', () => {
     expect(getPickerKeyIntent(createPress('Escape'), 5)).toEqual({ does: 'back' })
   })
 
-  it('is not a choice from a key held down or pressed with a modifier', () => {
+  it('is not a choice from a key retained down or pressed with a modifier', () => {
     expect(getPickerKeyIntent(createPress('a', { repeat: true }), 5)).toBeNull()
     expect(getPickerKeyIntent(createPress('a', { ctrlKey: true }), 5)).toBeNull()
     expect(getPickerKeyIntent(createPress('Enter', { metaKey: true }), 5)).toBeNull()

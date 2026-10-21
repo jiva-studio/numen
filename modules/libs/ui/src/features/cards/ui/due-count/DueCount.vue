@@ -18,7 +18,7 @@ const props = withDefaults(
      * said once above the list and not on every row of it.
      */
     isBare?: boolean
-    /** Drawn on a ground of its own, where it stands on a filled button. */
+    /** Drawn on a ground of its own, where it relies on a filled button. */
     isOnButton?: boolean
     /** The words it is drawn with. */
     words?: DueWords

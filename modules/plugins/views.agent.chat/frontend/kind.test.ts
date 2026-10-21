@@ -47,7 +47,7 @@ describe('the agent tab as the window keeps it', () => {
 })
 
 describe('what an agent tab is called', () => {
-  it('is the first thing asked of it, shortened', () => {
+  it('is the first thing requested of it, shortened', () => {
     const one = window()
     const state = one.open()
     one.conversations[0]!.said.value = [turn('a', 'asked', 'what is this whole vault about')]
@@ -55,7 +55,7 @@ describe('what an agent tab is called', () => {
     expect(one.kind.getTitle?.(state)).toBe('what is this whole…')
   })
 
-  it('is the first thing asked, whatever was said before it', () => {
+  it('is the first thing requested, whatever was returned before it', () => {
     const one = window()
     const state = one.open()
     one.conversations[0]!.said.value = [
@@ -66,15 +66,15 @@ describe('what an agent tab is called', () => {
     expect(one.kind.getTitle?.(state)).toBe('the question')
   })
 
-  it('is the word for an agent while nothing has been asked of it', () => {
+  it('is the word for an agent while nothing has been requested of it', () => {
     const one = window()
 
     expect(one.kind.getTitle?.(one.open())).toBe('Agent')
   })
 })
 
-describe('what a command asked over an agent tab is over', () => {
-  it('is the note the window stands on, which is no note of the tab itself', () => {
+describe('what a command requested over an agent tab is over', () => {
+  it('is the note the window relies on, which is no note of the tab itself', () => {
     const one = window({ focus: { path: 'physics/Ontology.md', title: 'Ontology' } })
 
     expect(one.kind.getTarget!(one.open())).toStrictEqual({
@@ -85,7 +85,7 @@ describe('what a command asked over an agent tab is over', () => {
 })
 
 describe('an agent tab that closes', () => {
-  it('tells the conversation it is over, so the agent lets go of what it kept', () => {
+  it('notifies the conversation it is over, so the agent lets go of what it kept', () => {
     const one = window()
     const state = one.open()
 

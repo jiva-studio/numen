@@ -146,7 +146,7 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 }
 
 // A window can be made hard to read only as far as the bounds go, and the file
-// is left as it stands.
+// is left currently.
 func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
@@ -178,7 +178,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 }
 
 // What the command line said stands over the file, and a person choosing that
-// size for themselves is what it is let go of for.
+// size for themselves is what it is release for.
 func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 	cfg := newConfig(t)
 	cfg.InterfaceScale = 1.25

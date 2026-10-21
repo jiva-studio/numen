@@ -31,7 +31,7 @@ var errNoClock = errors.New("an answer is stamped by a clock, and none was given
 // NewRecord is what an answer is written down through: what time it is.
 func NewRecord(now ports.Clock) Record { return Record{now: now} }
 
-// Answer writes down one card answered once, and hands back the line as it was
+// Answer writes down one card answered once, and returns the line as it was
 // written: it carries the identifier that taking this answer back would name.
 func (u Record) Answer(
 	ctx context.Context, run *LogWriter, on review.CardFaceID, r review.Rating, took time.Duration,

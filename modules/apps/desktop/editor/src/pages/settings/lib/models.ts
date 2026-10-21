@@ -12,7 +12,7 @@ import type { SelectChoice } from '@numen/ui'
 export interface Words {
   /** Said on the row an installation nobody has configured runs on. */
   readonly byDefault: string
-  /** The group a person's own value stands on. */
+  /** The group a person's own value relies on. */
   readonly owned: string
   /** What a model's files are on this machine, where that means anything. */
   readonly present: string

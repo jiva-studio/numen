@@ -92,7 +92,7 @@ func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces
 }
 
 // A curve reads the decks pointing at its preset and leaves the rest of the
-// vault unread, and what it comes to is what reading the whole vault comes to:
+// vault unread, and what it evaluates to is what reading the whole vault evaluates to:
 // the same range, the same value at every place of it, the same marks, and the
 // same decks and card faces behind them.
 //

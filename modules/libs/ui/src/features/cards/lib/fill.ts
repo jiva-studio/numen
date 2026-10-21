@@ -11,7 +11,7 @@ import type { FieldValue } from './card'
 /** The braces, and what a person may write between them. */
 const SLOT = /\{\{([^{}]*)\}\}/g
 
-/** One slot where it stands in a face. */
+/** One slot at its current position in a face. */
 export interface Slot {
   /** The name between the braces, which is a field's name written exactly. */
   readonly field: string
@@ -42,7 +42,7 @@ const escapeHtml = (text: string): string =>
 
 /**
  * A face as its preview shows it. A slot the fields do not name keeps its
- * braces and is marked where it stands, so what is wrong is read in its place.
+ * braces and is marked at its current position, so what is wrong is read in its place.
  */
 export function renderPreview(
   template: string,
@@ -68,7 +68,7 @@ export function getUndeclaredSlots(template: string, fields: readonly string[]):
   return [...seen]
 }
 
-/** A field put into a face: the text it comes to, and where the caret lands. */
+/** A field put into a face: the text it evaluates to, and where the caret lands. */
 export interface InsertResult {
   readonly text: string
   readonly caret: number

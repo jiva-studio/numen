@@ -74,7 +74,7 @@ describe('the stencil a body reads as', () => {
     expect(fields.getStencil('a').fields).toStrictEqual(['Height'])
   })
 
-  it('is read afresh once it is let go of', () => {
+  it('is read afresh once it is release', () => {
     const { fields } = create()
     const was = fields.getStencil('a')
 
@@ -125,7 +125,7 @@ describe('the marks a stencil carries', () => {
     expect(fields.getMarks('a')).toBe(was)
   })
 
-  it('are drawn afresh once they are let go of', () => {
+  it('are drawn afresh once they are release', () => {
     const { fields, state } = create()
     state.problems = [lacking(0, 'no back')]
     const was = fields.getMarks('a')

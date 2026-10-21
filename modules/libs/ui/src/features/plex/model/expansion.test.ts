@@ -101,7 +101,7 @@ describe('a box opening under the attention', () => {
     expect(world.pending).toBe(false)
   })
 
-  it('opens across several frames rather than in one', async () => {
+  it('opens across several frames and not in one', async () => {
     const on = ref<string | null>(null)
     const { open, world } = createExpansion(() => on.value)
 

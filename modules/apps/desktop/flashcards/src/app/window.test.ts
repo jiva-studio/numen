@@ -2,7 +2,7 @@
 /**
  * A person who goes in and comes back out finds the window as they opened it.
  *
- * What a screen took up is declared beside the screen and let go of when the
+ * What a screen took up is declared beside the screen and release when the
  * screen is left. Nothing here names those holdings: it walks everything the
  * window hands out and compares the round trip against the opening. So a
  * collaborator left un-forgotten fails this whether or not anybody remembered
@@ -459,7 +459,7 @@ describe('a session sat down to', () => {
     expect(wire.notesAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
   })
 
-  it('lets the conversation in before the agent has said whether it can be reached', async () => {
+  it('lets the conversation in before the agent has returned whether it can be reached', async () => {
     wire.agent = () => new Promise<never>(() => {})
     const opened = await openSession()
     opened.session.toggleAgent()

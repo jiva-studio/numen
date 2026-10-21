@@ -51,7 +51,7 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
   readonly words?: string | undefined
   /**
    * Where those words sit: the fraction of the line they are read along that
-   * the middle of them stands on. The middle of the line, unless the title
+   * the middle of them relies on. The middle of the line, unless the title
    * had to slide along it to find room.
    */
   readonly wordsAt: number

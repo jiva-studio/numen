@@ -76,7 +76,7 @@ describe('a file chosen', () => {
 })
 
 describe('a passage chosen', () => {
-  it('opens the document it stands in, at the span it names', async () => {
+  it('opens the document it remains in, at the span it names', async () => {
     const one = window()
 
     await openDestination(

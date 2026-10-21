@@ -25,7 +25,7 @@ type CardMark struct {
 // Stencils is the stencil each card is cut by, keyed by what stands in the
 // card's brackets. A card whose stencil is not among them, or whose stencil
 // declares no field, is not reprojected: nothing can say which of its fields is
-// first, so its heading is left exactly as it stands. Neither is a card that
+// first, so its heading is left exactly currently. Neither is a card that
 // writes no heading at all for the field that is first. A card is given its
 // mark all the same.
 //

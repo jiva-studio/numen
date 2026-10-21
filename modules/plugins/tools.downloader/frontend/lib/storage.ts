@@ -16,7 +16,7 @@ export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem'>
 
 const KEY = 'numen.embed.height'
 
-/** The storage is asked for on every call, and a call it refuses comes to nothing. */
+/** The storage is asked for on every call, and a call it refuses evaluates to nothing. */
 export function createHeightStore(
   getStorage: () => KeyValueStorage = () => localStorage,
 ): HeightStore {

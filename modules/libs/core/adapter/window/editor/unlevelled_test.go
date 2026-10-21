@@ -116,7 +116,7 @@ func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
 
 // findLevellingTask is what the list of what is being done says about the index, asked
 // for the way the window asks for it. The first message of the stream is the
-// list as it stands, so nothing here waits on anything.
+// list currently, so nothing here waits on anything.
 func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	t.Helper()
 

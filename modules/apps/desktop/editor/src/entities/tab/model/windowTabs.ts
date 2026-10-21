@@ -2,7 +2,7 @@
  * The window as a set of kinds, and the tabs it keeps of each.
  *
  * A kind says how one of its tabs opens, what it is called, what is drawn in
- * it and what letting go of it comes to. Everything here is written once for
+ * it and what letting go of it evaluates to. Everything here is written once for
  * all of them: a kind is added by declaring one, and the window is not told
  * about it twice.
  */
@@ -26,7 +26,7 @@ import { createUnavailableKind } from '../lib/unavailable'
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
 
-/** The file path a tab stands on. */
+/** The file path a tab relies on. */
 const getTabPath = (tab: WindowTab): string => {
   const openTab = tab.kind.getOpenTab?.(tab.state)
   if (openTab?.path) return openTab.path
@@ -399,7 +399,7 @@ function dispatchTabKeyPress(
   return false
 }
 
-/** One tab let go of, and the rest kept. */
+/** One tab release, and the rest kept. */
 const without = <T>(held: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
   const rest = new Map(held)
   rest.delete(id)

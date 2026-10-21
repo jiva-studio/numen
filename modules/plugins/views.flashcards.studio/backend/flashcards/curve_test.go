@@ -461,7 +461,7 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 }
 
 // inRange says the two marks fall on the curve, and that each mark named
-// stands on it at all.
+// relies on it at all.
 func inRange(t *testing.T, c review.Curve, stands ...string) {
 	t.Helper()
 	marks := map[string]review.CurvePoint{"now": c.Now, "suggested": c.Suggested}
@@ -478,7 +478,7 @@ func inRange(t *testing.T, c review.Curve, stands ...string) {
 			t.Errorf("the %s mark is at place %d of %d", name, mark.Index, len(c.Grid))
 			continue
 		}
-		// A mark stands on a place of the grid, so the figures a person reads
+		// A mark relies on a place of the grid, so the figures a person reads
 		// under it are the figures of the setting they are standing at.
 		if mark.Value != c.Grid[mark.Index] {
 			t.Errorf("the %s mark is at %v and the place it names is %v",
@@ -490,7 +490,7 @@ func inRange(t *testing.T, c review.Curve, stands ...string) {
 	}
 }
 
-// The range a date is chosen from stands on the vault and not on the date, so a
+// The range a date is chosen from relies on the vault and not on the date, so a
 // day the file names close at hand is a range a person can still drag out.
 func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 	t.Parallel()
@@ -788,7 +788,7 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 	}
 }
 
-// The day the file names is a place of the grid, and the mark stands on it.
+// The day the file names is a place of the grid, and the mark relies on it.
 //
 // The picture puts the mark on the range and the person reads the numbers
 // beneath it, so those numbers are the day they named and not the day beside
@@ -1161,7 +1161,7 @@ func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 // A curve is drawn under the settings a save would take.
 //
 // A control asks for a curve at the value under the hand, and that value is
-// written the moment the hand is let go of. Settings the writer refuses draw no
+// written the moment the hand is release. Settings the writer refuses draw no
 // curve.
 func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	t.Parallel()

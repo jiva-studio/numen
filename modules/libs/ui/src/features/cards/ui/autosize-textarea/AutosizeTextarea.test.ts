@@ -35,7 +35,7 @@ describe('the box', () => {
   })
 })
 
-describe('what a caller hands it', () => {
+describe('what a caller passes it', () => {
   // A caller lays out the cell and talks to the box, so the two are told
   // apart: everything but the class and the style is the box's.
   it('lays the class and the style on the cell', () => {
@@ -58,7 +58,7 @@ describe('what a caller hands it', () => {
     expect(one.get('.autosize').attributes('aria-label')).toBeUndefined()
   })
 
-  it('hands back the box itself, for a caller putting the caret in it', () => {
+  it('returns the box itself, for a caller putting the caret in it', () => {
     const one = mountBox()
     expect(one.vm.box).toBe(box(one).element)
   })

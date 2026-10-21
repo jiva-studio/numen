@@ -53,7 +53,7 @@ describe('the menu on a row standing for a note', () => {
 })
 
 describe('the menu on a row standing for any other file', () => {
-  it('stands what the tab does before the window’s commands, a run after the path', () => {
+  it('remains what the tab does before the window’s commands, a run after the path', () => {
     expect(getGroupedIds({ kind: 'recording', path: 'Lecture.mp3' })).toStrictEqual([
       ...OWN,
       'copy',

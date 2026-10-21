@@ -5,7 +5,7 @@ import { Rating } from '@numen/protocol'
 import { GRADE_LABELS, grades, RATING_BY_GRADE } from './grades'
 
 describe('the four answers', () => {
-  it('are asked in the order they get harder to say', () => {
+  it('are requested in the order they get harder to say', () => {
     expect(grades).toEqual(['again', 'hard', 'good', 'easy'])
   })
 

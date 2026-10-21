@@ -1,5 +1,5 @@
 /**
- * What a stencil comes to, as plain values. No DOM, no measurement: every
+ * What a stencil evaluates to, as plain values. No DOM, no measurement: every
  * number and every flag a stencil draws is worked out here.
  */
 import { describe, expect, it } from 'vitest'
@@ -84,7 +84,7 @@ describe('faceRows', () => {
     expect(face?.backPreview).toBe('about 45"')
   })
 
-  it('keeps the markup a half was written with beside what it shows', () => {
+  it('keeps the markup a half was written with along with what it shows', () => {
     expect(faceRows(FACES, FIELDS, SAMPLE)[0]?.front).toBe('{{Name}}')
   })
 
@@ -97,7 +97,7 @@ describe('faceRows', () => {
     expect(face?.backStray).toEqual(['Weight'])
   })
 
-  it('marks a stray slot in the preview where it stands, and fills the rest', () => {
+  it('marks a stray slot in the preview at its current position, and fills the rest', () => {
     const faces: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '{{Name}} {{Colour}}', back: '' },
     ]
@@ -110,7 +110,7 @@ describe('faceRows', () => {
     expect(face?.backStray).toEqual([])
   })
 
-  it('hands each face the names of the other faces', () => {
+  it('passes each face the names of the other faces', () => {
     expect(faceRows(FACES, FIELDS, SAMPLE).map((each) => each.taken)).toEqual([
       ['Name it'],
       ['Recognise'],
@@ -154,7 +154,7 @@ describe('panes', () => {
     back: '{{Height}}',
   }
 
-  it('divides a face into four, the markup of each half before what it comes to', () => {
+  it('divides a face into four, the markup of each half before what it evaluates to', () => {
     expect(getFacePanes(FULL).map((pane) => [pane.half, pane.mode])).toEqual([
       ['front', 'written'],
       ['front', 'preview'],
@@ -163,7 +163,7 @@ describe('panes', () => {
     ])
   })
 
-  it('stands the markup in one part and the sample filling it in the next', () => {
+  it('remains the markup in one part and the sample filling it in the next', () => {
     expect(getFacePanes(FULL).map((pane) => pane.text)).toEqual([
       '{{Name}}',
       'Llama',
@@ -185,7 +185,7 @@ describe('panes', () => {
     expect(getFacePanes(FULL)[1]?.named).toBe('Preview: Recognise Front')
   })
 
-  it('calls a part blank while nothing but space stands in it', () => {
+  it('calls a part blank while nothing but space remains in it', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: ' \n ', back: '{{Height}}' }
     expect(getFacePanes(face).map((pane) => pane.isBlank)).toEqual([true, true, false, false])
   })

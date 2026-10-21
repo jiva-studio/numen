@@ -2,7 +2,7 @@
  * Every situation the stencil editor has to survive. Also the test corpus:
  * each story is run in a browser by `@storybook/addon-vitest`.
  *
- * What the editor hands back is applied here, which is the application's part.
+ * What the editor returns is applied here, which is the application's part.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
@@ -340,7 +340,7 @@ export const WhatAPersonDoesToIt: Story = {
     expect(getBox(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
     expect(getBox(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
-    // A field asked for stands under a name nothing had taken, below the last.
+    // A field asked for is placed under a name nothing had taken, below the last.
     await userEvent.click(buttonSaying(canvasElement, 'Add a field'))
     expect(getDrawnFields(canvasElement)).toEqual([
       'Name',
@@ -412,7 +412,7 @@ export const WhatIsWrong: Story = {
     const chips = [...canvasElement.querySelectorAll('[data-face="stray"] [data-insert]')]
     expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])
 
-    // What the caller found wrong with one face stands under that face's name,
+    // What the caller found wrong with one face is placed under that face's name,
     // and under no other's.
     expect(
       found(canvasElement, '[data-face="stray"] [data-pane="front-written"]').textContent?.trim(),

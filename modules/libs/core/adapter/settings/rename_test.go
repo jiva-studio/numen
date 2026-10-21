@@ -43,7 +43,7 @@ func TestWhatIsNotRenamed(t *testing.T) {
 	}
 }
 
-// The name is replaced where it is written and the value is left where it sits,
+// The name is replaced where it is written and the value is left where it is located,
 // whatever lies between the two.
 func TestARenamedFieldKeepsItsValueAndItsPlace(t *testing.T) {
 	const held = "{\n  \"appearance\": {\n    \"zoom\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"

@@ -28,7 +28,7 @@ func (landed) Embed(_ context.Context, texts []string) ([][]float32, error) {
 
 func (landed) Close() error { return nil }
 
-// shut is a model that says when it was let go of.
+// shut is a model that says when it was release.
 type shut struct {
 	landed
 	isClosed bool
@@ -87,7 +87,7 @@ func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 	}
 }
 
-// A model here and not the one whose vectors are stored is let go of, and
+// A model here and not the one whose vectors are stored is release, and
 // nothing is asked of it again.
 func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	wrong := errors.New("not one model")
@@ -121,7 +121,7 @@ func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 	}
 }
 
-// A model let go of before it arrived is let go of when it does: the weights
+// A model release before it arrived is release when it does: the weights
 // are compiled by then and nothing else holds them.
 func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
 	arriving := embedding.NewDeferredEmbedder(bge)
@@ -149,7 +149,7 @@ func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
 	}
 }
 
-// Whoever was waiting on a model let go of is told why. The reason is in place
+// Whoever was waiting on a model release is told why. The reason is in place
 // before anybody can see the wait is over.
 func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 	wrong := errors.New("not one model")

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { useRefRegistry } from './refs'
 
 describe('the refs of a loop', () => {
-  it('hands a key the same function until its element goes', () => {
+  it('passes a key the same function until its element goes', () => {
     const { getRef } = useRefRegistry<string>(() => {})
     const first = getRef('a')
 
@@ -14,7 +14,7 @@ describe('the refs of a loop', () => {
     expect(getRef('a')).not.toBe(first)
   })
 
-  it('tells of an element as it is set, and of null as it goes', () => {
+  it('notifies of an element as it is set, and of null as it goes', () => {
     const heard: [string, unknown][] = []
     const { getRef } = useRefRegistry<string>((key, element) => heard.push([key, element]))
     const element = {}

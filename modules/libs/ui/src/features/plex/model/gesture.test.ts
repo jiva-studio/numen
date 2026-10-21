@@ -1,6 +1,6 @@
 /**
  * The pointer, driven without a browser: the drawing is a stand-in with a
- * matrix, and the events are made here. What a drop comes to is
+ * matrix, and the events are made here. What a drop evaluates to is
  * `lib/arrange/drop.test.ts`; this holds what the pointer does to the window and
  * the drawing.
  */
@@ -149,7 +149,7 @@ describe('where a gesture can begin', () => {
     expect(add).not.toHaveBeenCalled()
   })
 
-  it('goes on when the pointer cannot be held', () => {
+  it('goes on when the pointer cannot be retained', () => {
     const { gesture, drawing } = setUp()
     drawing.setPointerCapture.mockImplementation(() => {
       throw new Error('the pointer is not down')
@@ -204,7 +204,7 @@ describe('how far a gesture must go to be a drag', () => {
   })
 })
 
-describe('what a gesture comes to when nothing has begun', () => {
+describe('what a gesture evaluates to when nothing has begun', () => {
   it('is nothing', () => {
     const { gesture } = setUp()
 
@@ -235,7 +235,7 @@ describe('one pointer at a time', () => {
     expect(gesture.at.value).toEqual({ x: 50, y: 60 })
   })
 
-  it('is not let go of by another pointer coming up', () => {
+  it('is not release by another pointer coming up', () => {
     const { gesture, drawing, commits } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0, 1))
 
@@ -280,7 +280,7 @@ describe('letting go', () => {
     expect(gesture.outcome.value).toBeNull()
   })
 
-  it('lets go of the pointer it held', () => {
+  it('lets go of the pointer it retained', () => {
     const { drawing, gesture } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0, 7))
 
@@ -289,7 +289,7 @@ describe('letting go', () => {
     expect(drawing.releasePointerCapture).toHaveBeenCalledWith(7)
   })
 
-  it('is over even when the pointer was never held', () => {
+  it('is over even when the pointer was never retained', () => {
     const { drawing, gesture } = setUp()
     drawing.releasePointerCapture.mockImplementation(() => {
       throw new Error('not held')

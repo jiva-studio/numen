@@ -53,7 +53,7 @@ describe('the vault in front', () => {
     expect(held.listed.value.showing).toBe('roots')
   })
 
-  it('names nothing while the list shows a vault it does not hold', async () => {
+  it('is empty while the list shows a vault it does not hold', async () => {
     const held = open()
     await held.loadVaults()
 
@@ -63,7 +63,7 @@ describe('the vault in front', () => {
   })
 })
 
-describe('the vault list before and after it is asked for', () => {
+describe('the vault list before and after it is requested for', () => {
   it('is empty and shows nothing before the first answer', () => {
     const held = open()
 

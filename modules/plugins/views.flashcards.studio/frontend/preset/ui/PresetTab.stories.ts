@@ -224,7 +224,7 @@ export const TheRowsShareTheirColumns: Story = {
     expect(new Set(names.map((box) => Math.round(box.right))).size).toBe(1)
 
     // The controls stand in the second column, past the line every name stops
-    // on, and inside the section rather than spilling out of it.
+    // on, and inside the section and not spilling out of it.
     const edge = names[0]!.right
     const room = settings.getBoundingClientRect()
     for (const control of controls) {
@@ -281,7 +281,7 @@ export const TheReadoutStaysUnderThePicture: Story = {
  *
  * It is hung off the knob's own point and pulled back by half its width, or by
  * the whole of it at the trailing end, so it stays over the picture. Its tail
- * stands on the knob whichever way it was pulled.
+ * relies on the knob whichever way it was pulled.
  */
 export const TheBubbleStandsOverTheKnob: Story = {
   play: async ({ canvasElement }) => {
@@ -321,7 +321,7 @@ export const TheBacklogKeepsItsRoom: Story = {
     const backlogRoom = (tab: HTMLElement): DOMRect => getRooms(tab)[1]!.getBoundingClientRect()
 
     // The backlog's own two axes are named, and it is drawn under the picture it
-    // belongs to rather than beside it.
+    // belongs to and not beside it.
     const canvas = within(answered!)
     const backlog = canvas.getByText(words.backlogY)
     const along = canvas.getByText(words.backlogX)

@@ -284,7 +284,7 @@ func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
 }
 
 // A session that scaled its own text goes on being drawn by it, whether the
-// file names nothing about size or names the size of the text alone.
+// file is empty about size or names the size of the text alone.
 func TestAFileNamingNoSizeIsDrawnAtWhatTheDesktopAsksFor(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
 	for _, body := range []string{`{}`, `{"appearance":{"zoom":0}}`, `{"appearance":{"text_scale":1.25}}`} {

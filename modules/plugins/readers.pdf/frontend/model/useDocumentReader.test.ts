@@ -72,7 +72,7 @@ describe('a document opened', () => {
     expect(asked).toStrictEqual(['Book.pdf'])
   })
 
-  it('stands on the first page, under the name the document gives it', async () => {
+  it('relies on the first page, under the name the document gives it', async () => {
     const { documents } = book()
     const read = useDocumentReader(documents, 'Book.pdf')
 
@@ -118,7 +118,7 @@ describe('a page turned', () => {
     expect(read.picture.value).toBe(first)
   })
 
-  it('stands at the end when it is turned past it', async () => {
+  it('remains at the end when it is turned past it', async () => {
     const { documents } = book()
     const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
@@ -132,7 +132,7 @@ describe('a page turned', () => {
 })
 
 describe('the width a page is drawn at', () => {
-  it('is the width the page is asked for', async () => {
+  it('is the width the page is requested for', async () => {
     const { documents } = book()
     const read = useDocumentReader(documents, 'Book.pdf')
     await read.goToPage(0)
@@ -173,7 +173,7 @@ describe('what is highlighted', () => {
 })
 
 describe('a document opened at a place in its text', () => {
-  it('highlights what stands there, on the first page it falls on', async () => {
+  it('highlights what remains there, on the first page it falls on', async () => {
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const { documents, spans } = book(LAYOUT, [[{ page: 1, rects: [rect] }]])
     const read = useDocumentReader(documents, 'Book.pdf')
@@ -186,7 +186,7 @@ describe('a document opened at a place in its text', () => {
     expect(read.highlighted.value).toStrictEqual([rect])
   })
 
-  it('highlights the other places asked for where they fall, apart from the first', async () => {
+  it('highlights the other places requested for where they fall, apart from the first', async () => {
     const here = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const there = { minX: 0.1, minY: 0.5, maxX: 0.4, maxY: 0.53 }
     const onTheNextPage = { minX: 0.1, minY: 0.8, maxX: 0.4, maxY: 0.83 }
@@ -216,7 +216,7 @@ describe('a document opened at a place in its text', () => {
     expect(read.getHighlightsOn(2)).toStrictEqual([])
   })
 
-  it('stands on the first page with nothing highlighted where nothing stands there', async () => {
+  it('relies on the first page with nothing highlighted where nothing remains there', async () => {
     const { documents } = book()
     const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
@@ -260,7 +260,7 @@ describe('a document tab that closes', () => {
 })
 
 describe('a document that will not open', () => {
-  it('says why, and stands with nothing in it', async () => {
+  it('says why, and remains with nothing in it', async () => {
     const { documents } = book(new Error('no such document'))
     const read = useDocumentReader(documents, 'Gone.pdf')
 

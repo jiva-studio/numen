@@ -116,7 +116,7 @@ const (
 // first span that matched, or about the hit itself when no word matched at all.
 //
 // A passage is the whole of the window enclosing its hit, which for a note is
-// the whole note. A hit by meaning stands on no word, so `from` is where the
+// the whole note. A hit by meaning relies on no word, so `from` is where the
 // chunk that matched begins and is what the window opens near.
 //
 // The spans move with the text and the ones left outside are dropped, so what

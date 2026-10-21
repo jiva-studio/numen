@@ -18,7 +18,7 @@ const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   })
 
 describe('choosing a node', () => {
-  it('hands back the identifier it was given, untouched', () => {
+  it('returns the identifier it was given, untouched', () => {
     const plex = mountPlex()
     plex.get('[aria-label^="Domain"]').trigger('click')
     expect(plex.emitted('activate')).toStrictEqual([['child-0']])
@@ -44,13 +44,13 @@ describe('choosing a node', () => {
 })
 
 describe('asking for a node on its own', () => {
-  it('hands back the identifier and where it is to be drawn', async () => {
+  it('returns the identifier and where it is to be drawn', async () => {
     const plex = mountPlex()
     await plex.get('[aria-label^="Domain"]').trigger('dblclick')
     expect(plex.emitted('show')).toStrictEqual([['child-0', 'here']])
   })
 
-  it('says beside when the modifier was held, which is read at the node', async () => {
+  it('says alongside when the modifier was retained, which is read at the node', async () => {
     const plex = mountPlex()
     await plex.get('[aria-label^="Domain"]').trigger('dblclick', { altKey: true })
     expect(plex.emitted('show')).toStrictEqual([['child-0', 'beside']])
@@ -124,12 +124,12 @@ describe('what a screen reader and a keyboard are given', () => {
 })
 
 describe('what did not fit', () => {
-  it('says so rather than hiding it', () => {
+  it('says so and not hiding it', () => {
     const plex = mountPlex({ neighbourhood: neighbourhoods.overcrowded })
     const status = plex.get('[role="status"]').text()
 
     // How much fits depends on the window, so the sentence is read against
-    // what was actually drawn rather than against a number written here.
+    // what was actually drawn and not against a number written here.
     const countDrawn = (relation: string) =>
       plex
         .findAll('.plex__node')
@@ -144,7 +144,7 @@ describe('what did not fit', () => {
     expect(mountPlex().find('[role="status"]').exists()).toBe(false)
   })
 
-  it('hands the counts over, so the words are not the plex to choose', () => {
+  it('passes the counts over, so the words are not the plex to choose', () => {
     // Knowing English is the same mistake as knowing the domain, one step down.
     const plex = mount(Plex, {
       props: { neighbourhood: neighbourhoods.overcrowded, duration: 0 },
@@ -252,7 +252,7 @@ describe('how wide a box is drawn', () => {
     expect(plex.vm.isMoving).toBe(false)
   })
 
-  it('stands still while the type it was measured in stands', async () => {
+  it('remains still while the type it was measured in remains', async () => {
     // The box of the plex's own type is watched, and it is looked at again
     // whenever the window says it may have moved.
     stubCanvas()
@@ -301,7 +301,7 @@ describe('being given the next neighbourhood', () => {
     expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
   })
 
-  it('sets off rather than jumping when it has time to move', async () => {
+  it('sets off and not jumping when it has time to move', async () => {
     const plex = mountPlex({ duration: 400 })
     await plex.setProps({ neighbourhood: neighbourhoods.leaf })
 
@@ -310,13 +310,13 @@ describe('being given the next neighbourhood', () => {
     expect(plex.vm.isMoving).toBe(true)
   })
 
-  it('stands still when it has nowhere left to go', async () => {
+  it('remains still when it has nowhere left to go', async () => {
     const plex = mountPlex()
     await plex.setProps({ neighbourhood: neighbourhoods.leaf })
     expect(plex.vm.isMoving).toBe(false)
   })
 
-  it('re-aims at the newest neighbourhood instead of queueing them', async () => {
+  it('re-aims at the newest neighbourhood and not queueing them', async () => {
     const plex = mountPlex({ duration: 400 })
     await plex.setProps({ neighbourhood: neighbourhoods.leaf })
     await plex.setProps({ neighbourhood: neighbourhoods.root })

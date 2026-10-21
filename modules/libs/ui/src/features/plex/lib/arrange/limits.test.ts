@@ -30,7 +30,7 @@ const WINDOWS = [
   { width: 1400, height: 900 },
   { width: 1200, height: 800 },
   { width: 900, height: 700 },
-  // A window narrow enough that a column has to be given up rather than drawn
+  // A window narrow enough that a column has to be given up and not drawn
   // past the edge.
   { width: 700, height: 600 },
   { width: 600, height: 520 },
@@ -57,7 +57,7 @@ describe('nothing reaches past the edge', () => {
 })
 
 describe('the space above and below is used before anything is dropped', () => {
-  it('wraps a wide row into more rows rather than hiding children', () => {
+  it('wraps a wide row into more rows and not hiding children', () => {
     const viewport = { width: 1400, height: 900 }
     const many = build('A node', { parent: 2, child: 15, jump: 3, sibling: 3 })
     const frame = arrangePlex(many, { options: { viewport, maxPerLine: 9 } })
@@ -96,7 +96,7 @@ describe('the two sides are read as a pair', () => {
 })
 
 describe('the row is measured against the window either way', () => {
-  it('wraps a wide row even when nothing sits beside it', () => {
+  it('wraps a wide row even when nothing sits alongside it', () => {
     // A row is measured against the window whether or not anything sits beside
     // it: with no jumps and no siblings there is no column to make room for,
     // and the row still has to fit.
@@ -110,7 +110,7 @@ describe('the row is measured against the window either way', () => {
 })
 
 describe('the rows keep the room when it runs out', () => {
-  it('narrows a row only as far as it must to fit a column beside it', () => {
+  it('narrows a row only as far as it must to fit a column alongside it', () => {
     const viewport = { width: 1000, height: 800 }
     const limits = getLimits(
       { ...DEFAULT_OPTIONS, viewport },
@@ -135,7 +135,7 @@ describe('the rows keep the room when it runs out', () => {
     expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
-  it('gives a row the whole window when nothing sits beside it', () => {
+  it('gives a row the whole window when nothing sits alongside it', () => {
     const viewport = { width: 1000, height: 800 }
     const alone = getLimits(
       { ...DEFAULT_OPTIONS, viewport },
@@ -185,7 +185,7 @@ describe('how many lines a column may run to', () => {
     }
   })
 
-  it('is none at all when the window leaves no room beside the rows', () => {
+  it('is none at all when the window leaves no room alongside the rows', () => {
     // Reported as overflow, which the reader can act on. Drawn past the edge of
     // the window, which they cannot.
     const viewport = { width: 420, height: 700 }
@@ -196,7 +196,7 @@ describe('how many lines a column may run to', () => {
 })
 
 describe('given no window', () => {
-  it('takes the limits the caller asked for literally', () => {
+  it('takes the limits the caller requested for literally', () => {
     const limits = getLimits(DEFAULT_OPTIONS, {
       parent: 3,
       child: 3,
@@ -235,7 +235,7 @@ describe('what a column asks of the rows', () => {
     expect(getRows(3, { focusGap: 47 })).toBeLessThan(6)
   })
 
-  it('keeps the widest row the window holds when no row width fits a column beside it', () => {
+  it('keeps the widest row the window holds when no row width fits a column alongside it', () => {
     const narrow = getLimits(
       { ...DEFAULT_OPTIONS, viewport: { width: 600, height: 1400 } },
       { parent: 0, child: 6, jump: 4, sibling: 0 },

@@ -37,7 +37,7 @@ describe('what a tab carries', () => {
     expect(mountTab().find('.tab__mark').exists()).toBe(false)
   })
 
-  it('is drawn as a dot, and said in the word it was given', () => {
+  it('is drawn as a dot, and returned in the word it was given', () => {
     const mark = mountTab({ mark: 'unsaved' }).find('.tab__mark')
 
     expect(mark.exists()).toBe(true)
@@ -68,14 +68,14 @@ describe('what a tab is to a keyboard', () => {
 })
 
 describe('picking a tab up', () => {
-  it('is asked for under the primary button', () => {
+  it('is requested for under the primary button', () => {
     const tab = mountTab()
     pressOn(tab, 0)
 
     expect(tab.emitted('lift')).toHaveLength(1)
   })
 
-  it('is not asked for under any other button', () => {
+  it('is not requested for under any other button', () => {
     const tab = mountTab()
     pressOn(tab, 2)
 
@@ -137,7 +137,7 @@ describe('asking for a menu', () => {
 })
 
 describe('closing', () => {
-  it('is asked for by the close', async () => {
+  it('is requested for by the close', async () => {
     const tab = mountTab()
     await tab.find('button').trigger('click')
 

@@ -1,7 +1,7 @@
 /**
  * The splitter that composes panes, drawn on its own.
  *
- * A branch is told what the workspace holds rather than handed it, so these
+ * A branch is told what the workspace holds and not handed it, so these
  * provide that themselves and keep the shares a handle settles on.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'

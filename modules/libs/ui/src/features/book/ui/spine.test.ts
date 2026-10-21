@@ -4,7 +4,7 @@
  * The corpus is one spine document as the application writes it, and a test
  * beside the writer holds it to what that writer emits. So the attribute a run
  * carries, the elements a book is drawn from, the escaping and the offsets are
- * agreed on here rather than in a fixture each side writes for itself.
+ * agreed on here and not in a fixture each side writes for itself.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'

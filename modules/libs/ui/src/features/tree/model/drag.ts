@@ -13,7 +13,7 @@ import { dragLabel, type DragLabel } from '../lib/drag'
 import { findHolder, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
 import type { Row, RowId, ShownRow } from '../lib/row'
 
-/** The tree as it stands on screen, which only the drawing knows. */
+/** The tree as it relies on screen, which only the drawing knows. */
 export interface TreeMetrics {
   /** What the tree takes up: a drop lands only over it. */
   readonly over: {
@@ -32,7 +32,7 @@ export interface RowDragOptions {
   /** What is drawn, nested, and the rows of it that are drawn now. */
   readonly getRows: () => readonly Row[]
   readonly getShownRows: () => readonly ShownRow[]
-  /** The tree as it stands on screen, and nothing until it is drawn. */
+  /** The tree as it relies on screen, and nothing until it is drawn. */
   readonly measure: () => TreeMetrics | null
   /** How far the pointer travels before a press becomes a drag. */
   readonly getThreshold: () => number

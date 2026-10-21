@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/ports"
 )
 
-// answering is a store that hands back what it was given for every name.
+// answering is a store that returns what it was given for every name.
 type answering struct {
 	ports.DerivedStore
 	why error

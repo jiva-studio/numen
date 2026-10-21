@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<{ label?: string }>(), { label: 'Loadingâ
 </template>
 
 <style scoped>
-/* The ring stands on the line of the word beside it. */
+/* The ring relies on the line of the word beside it. */
 .waiting__ring {
   --spinner-size: 1em;
 }

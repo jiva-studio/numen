@@ -190,7 +190,7 @@ func (State) EnumDescriptor() ([]byte, []int) {
 
 // An Artifact is one thing a model wrote about one file of the vault.
 //
-// Where it stands on disk is the application's own and is never said: a request
+// Where it relies on disk is the application's own and is never said: a request
 // names the file and the kind of it, and the vault is the one the window is
 // showing.
 type Artifact struct {

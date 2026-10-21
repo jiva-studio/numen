@@ -21,7 +21,7 @@ async function toastAfter(why: unknown) {
 }
 
 describe('a core that cannot be reached', () => {
-  it('says what the call said, where the code carries a sentence', async () => {
+  it('says what the call returned, where the code carries a sentence', async () => {
     const thrown = new ConnectError('numen is still starting', Code.Unavailable)
     const { page, open, said } = await toastAfter(thrown)
 

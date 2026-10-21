@@ -23,7 +23,7 @@ const props = defineProps<{
 </template>
 
 <style scoped>
-/* A failure carries filesystem paths, and a long one breaks where it stands. */
+/* A failure carries filesystem paths, and a long one breaks at its current position. */
 .failure {
   margin: auto;
   font-family: var(--numen-font-sans);

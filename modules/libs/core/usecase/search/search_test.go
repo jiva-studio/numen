@@ -34,7 +34,7 @@ var (
 		"notes/Quasar.md": "# Quasar\n\nA distant beacon, shared by no textbook here.\n",
 	}
 
-	// A note whose prose stands under a frontmatter block, with the words
+	// A note whose prose is placed under a frontmatter block, with the words
 	// looked for on the seventh line of that prose.
 	isotherm = "---\nid: 01M0DEM0000000000000000002\n---\n" +
 		"# Isotherm\n\nA curve of one temperature.\n\n## Below\n\nThe curve holds throughout.\n"
@@ -517,7 +517,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 
 func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	// The recipe is what the vector was written under. A search asking under
-	// anything else joins on nothing, and the failure is silence rather than an
+	// anything else joins on nothing, and the failure is silence and not an
 	// error: a search by words answers and the search looks like it worked.
 	ctx := t.Context()
 	c := newCorpus(t)

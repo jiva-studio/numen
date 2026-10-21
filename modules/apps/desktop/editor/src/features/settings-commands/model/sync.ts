@@ -41,7 +41,7 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
       const held = await core.getSyncEnabled()
       if (guard.isIdle()) isEnabled.value = held
     } catch {
-      // A vault that cannot be asked leaves the setting where it stands.
+      // A vault that cannot be asked leaves the setting at its current position.
     }
   }
 

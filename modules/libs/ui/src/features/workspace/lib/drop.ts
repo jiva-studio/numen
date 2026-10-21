@@ -1,5 +1,5 @@
 /**
- * What letting go of a dragged tab comes to, as geometry alone.
+ * What letting go of a dragged tab evaluates to, as geometry alone.
  *
  * A point and a box in, a side out. Which pane that box belongs to and what
  * the side then does to the tree are settled elsewhere; `getRect` is the one

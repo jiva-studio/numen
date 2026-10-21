@@ -128,7 +128,7 @@ func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 	}, func(writes func() v1.State) v1.State { return writes() })
 }
 
-// Every artifact the schema names stands under a name in the store, and is
+// Every artifact the schema names is placed under a name in the store, and is
 // carried by a file of some kind.
 func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 	testsupport.CheckHandled(t, func(of v1.ArtifactKind) bool {

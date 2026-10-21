@@ -1,5 +1,5 @@
 /**
- * The row of an appearance list the keyboard stands on, and what standing on it
+ * The row of an appearance list the keyboard relies on, and what standing on it
  * or choosing it does.
  *
  * A theme and a mode are worn while the keyboard is on their row. A size is

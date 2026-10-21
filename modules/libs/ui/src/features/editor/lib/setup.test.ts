@@ -57,7 +57,7 @@ describe('live preview', () => {
     expect(open().plugin(live)).not.toBeNull()
   })
 
-  it('is on where it is asked for', () => {
+  it('is on where it is requested for', () => {
     expect(open({ isLivePreview: true }).plugin(live)).not.toBeNull()
   })
 
@@ -114,7 +114,7 @@ describe('Tab', () => {
     expect(view.state.doc.toString()).not.toBe('one')
   })
 
-  it('is still held after the text changed', () => {
+  it('is still retained after the text changed', () => {
     const view = open({}, 'one')
     view.dispatch({ changes: { from: 3, insert: ' two' } })
     expect(tab(view)).toBe(true)
@@ -178,7 +178,7 @@ describe('Shift-Tab', () => {
 })
 
 describe('Escape', () => {
-  it('hands Tab over once however often it is pressed', () => {
+  it('passes Tab over once however often it is pressed', () => {
     const handed: number[] = []
     const view = open({
       extensions: EditorView.updateListener.of((update) => {

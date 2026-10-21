@@ -19,7 +19,7 @@ export interface DebouncedAskOptions {
   guard?: AnswerGuard
 }
 
-/** What a typed text comes to. */
+/** What a typed text evaluates to. */
 export interface DebouncedAskSteps {
   /** The text holds nothing to ask. */
   blank(): void

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Projection is what a preset comes to over the days ahead.
+// Projection is what a preset evaluates to over the days ahead.
 //
 // Everything in it is a number a caller shows. It is worked out from the
 // schedules the answers have already produced, and nothing in it is written

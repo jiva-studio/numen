@@ -92,7 +92,7 @@ const flushPromises = () => new Promise((then) => setTimeout(then, 0))
 describe('counting what every vault owes', () => {
   // The window opens counting, and has no day to stand in until the first
   // message names one.
-  it('reads as counting, in no day yet, before the first count is asked for', () => {
+  it('reads as counting, in no day yet, before the first count is requested for', () => {
     const one = useReviewCounter({ cards: createFeed().cards, reportError: () => {} })
 
     expect(one.isCounting.value).toBe(true)
@@ -181,7 +181,7 @@ describe('counting what every vault owes', () => {
   })
 
   // A vault being read into the index has no numbers yet, so its row goes on
-  // waiting for them rather than standing at nothing.
+  // waiting for them and not standing at nothing.
   it('leaves a vault being read uncounted, and says it is being read', async () => {
     const front = createFeed()
     const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
@@ -253,7 +253,7 @@ describe('counting what every vault owes', () => {
 
   // A vault read while a count was running lands after that count worked its
   // row out, so the asking it wakes is answered by a count of its own.
-  it('counts again when asked after it has worked a row out', async () => {
+  it('counts again when requested after it has worked a row out', async () => {
     let asked = 0
     const front = createFeed()
     const cards: CardsDueClient = {

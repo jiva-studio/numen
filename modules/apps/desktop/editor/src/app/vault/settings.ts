@@ -15,7 +15,7 @@ const SYNCS = ['naming', 'sync_title_and_filename']
 const NESTING = ['appearance', 'nest_headings_under_notes']
 const HEADINGS = ['appearance', 'nested_heading_limit']
 
-/** Every setting as it stands, with the defaults under what the file leaves out. */
+/** Every setting currently, with the defaults under what the file leaves out. */
 const readSettings = async (): Promise<unknown> =>
   JSON.parse((await settingsService.getSettings({})).written)
 

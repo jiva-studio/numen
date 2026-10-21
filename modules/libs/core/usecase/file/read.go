@@ -45,7 +45,7 @@ type ReadResult struct {
 	// within the file and cut at the characters around it.
 	Start  int
 	Length int
-	// Whole is how long the file is, in bytes, so a caller knows what stands on
+	// Whole is how long the file is, in bytes, so a caller knows what relies on
 	// either side of the range.
 	Whole int
 }

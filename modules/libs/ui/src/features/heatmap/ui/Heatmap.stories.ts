@@ -102,7 +102,7 @@ export const Narrow: Story = {
     const one = drawn[0] as SVGRectElement | undefined
     await expect(one?.getAttribute('width')).toBe('11')
 
-    // The grid reaches the far edge, rather than ending short of it.
+    // The grid reaches the far edge, and not ending short of it.
     const grid = within(canvasElement).getByRole('img', {
       name: 'What was answered on each day',
     })
@@ -229,7 +229,7 @@ export const ADayReviewed: Story = {
     await expect(came.textContent?.trim()).toBe('83% of cards you are reviewing came back')
 
     // 8rem is the least the panel is drawn at and not the most, so the panel
-    // takes the width of its longest line and the share stands on one line.
+    // takes the width of its longest line and the share relies on one line.
     const box = came.getBoundingClientRect()
     await expect(box.height).toBeLessThan(2 * Number.parseFloat(getComputedStyle(came).lineHeight))
     await expect(Math.round(box.width)).toBe(Math.round(said.getBoundingClientRect().width))

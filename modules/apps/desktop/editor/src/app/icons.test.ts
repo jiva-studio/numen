@@ -79,7 +79,7 @@ describe('the icon of a kind of note', () => {
     for (const kind of kinds) expect(getNoteIcon(kind), kind).toBeTruthy()
   })
 
-  it('tells the five kinds apart', () => {
+  it('notifies the five kinds apart', () => {
     expect(new Set(kinds.map(getNoteIcon)).size).toBe(kinds.length)
   })
 

@@ -51,7 +51,7 @@ func TestSavingTheSameIdentityMovesTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The identity travels with the folder; the registry only remembers where it
-	// was last seen, so re-adding must move the entry rather than duplicate it.
+	// was last seen, so re-adding must move the entry and not duplicate it.
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/new"}); err != nil {
 		t.Fatal(err)
 	}

@@ -67,7 +67,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const turns = computed<Turn[]>(() => held.value?.conversation.turns.value ?? [])
   const isWorking = computed(() => held.value?.conversation.isWorking.value ?? false)
 
-  /** The conversation about one card, made once and let go of with the card. */
+  /** The conversation about one card, made once and release with the card. */
   const startTalk = (card: CardFace) => {
     if (held.value?.card.mark === card.mark && held.value.card.face === card.face) return
     endConversation()
@@ -88,7 +88,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     deps.showPanel(true)
   }
 
-  /** The panel put away, with what was said in it kept. */
+  /** The panel put away, with the transcript in it kept. */
   const closePanel = () => deps.showPanel(false)
 
   const setWritten = (text: string) => {
@@ -96,7 +96,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   }
 
   /**
-   * A question sent about the card the panel stands on.
+   * A question sent about the card the panel relies on.
    *
    * What goes is what the person wrote and nothing else. Which card they are on
    * is the agent's to ask for: the deck, the mark and the face are named by a

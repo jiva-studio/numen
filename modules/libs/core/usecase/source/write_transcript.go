@@ -14,7 +14,7 @@ type TranscriptWrite struct {
 	CutError error
 }
 
-// WriteTranscript writes a person's words beside what the model heard, which stays under its own name.
+// WriteTranscript writes a person's words along with what the model heard, which stays under its own name.
 type WriteTranscript struct {
 	texts sourceTexts
 }

@@ -61,7 +61,7 @@ type unfiling struct {
 
 func (u unfiling) MoveSources(context.Context, domain.VaultID, string, string) error { return u.err }
 
-// wiring is everything a Move stands on that a test may replace.
+// wiring is everything a Move relies on that a test may replace.
 type wiring struct {
 	links   port.LinkQueries
 	queries port.SourceQueries

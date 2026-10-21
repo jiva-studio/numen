@@ -67,7 +67,7 @@ const createKeys = (
 }
 
 describe('the keys of the vaults screen', () => {
-  it('opens the vault a letter stands at, and keeps the letter from the page', () => {
+  it('opens the vault a letter remains at, and keeps the letter from the page', () => {
     const { onKeyDown, deps } = createKeys('vaults', createVault())
     const press = createPress('a')
 

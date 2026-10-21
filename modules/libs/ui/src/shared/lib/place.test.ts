@@ -10,7 +10,7 @@ import { getPlaceBeside } from './place'
 const span = (over: Partial<Parameters<typeof getPlaceBeside>[0]> = {}) =>
   getPlaceBeside({ from: 100, to: 120, size: 60, room: 240, margin: 8, gap: 8, ...over })
 
-describe('where a thing standing beside a span goes', () => {
+describe('where a thing standing alongside a span goes', () => {
   it('runs on from the far end of the span, clear of it', () => {
     expect(span()).toBe(128)
   })
@@ -27,7 +27,7 @@ describe('where a thing standing beside a span goes', () => {
     expect(span({ size: 300 })).toBe(8)
   })
 
-  it('touches the span it stands beside when it is given no gap', () => {
+  it('touches the span it remains alongside when it is given no gap', () => {
     expect(span({ gap: 0 })).toBe(120)
   })
 

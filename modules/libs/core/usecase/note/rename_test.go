@@ -30,7 +30,7 @@ func (c changing) renameApart() note.Rename {
 }
 
 // title is what the vault shows the note at this path as, asked of the index
-// rather than of the file: it is the answer the person sees.
+// and not of the file: it is the answer the person sees.
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
 	shown, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{path})
@@ -473,7 +473,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 }
 
 // A note taken out of the vault is taken out of it, and one that was never
-// there is said to be missing rather than reported as the vault failing.
+// there is said to be missing and not reported as the vault failing.
 func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})

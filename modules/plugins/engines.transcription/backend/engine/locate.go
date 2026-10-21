@@ -61,7 +61,7 @@ func getWantedFiles(cfg Config, into *paths) []models.Wanted {
 	}
 }
 
-// getModelName is what a model is called, for the record kept beside what it produced.
+// getModelName is what a model is called, for the record kept along with what it produced.
 // A name in the settings stands, and a model without one is called after the
 // file it was loaded from.
 func getModelName(name, at string) string {

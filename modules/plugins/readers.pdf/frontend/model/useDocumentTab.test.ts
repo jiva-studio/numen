@@ -27,7 +27,7 @@ describe('what a document tab holds', () => {
     expect(pages.measure).toHaveBeenCalledTimes(1)
   })
 
-  it('stands at the path the document is filed at', () => {
+  it('remains at the path the document is filed at', () => {
     expect(useDocumentTab(read('doc.pdf')).path).toBe('doc.pdf')
   })
 

@@ -178,7 +178,7 @@ func (u Transcribe) saveTranscript(
 	if err := u.record(ctx, store, area, hash); err != nil {
 		return err
 	}
-	// The source stands on the artifact before the partial goes.
+	// The source relies on the artifact before the partial goes.
 	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
@@ -327,7 +327,7 @@ func (u Transcribe) answer(
 	return run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
 }
 
-// record keeps what listened to the recording beside what it heard. Nothing on
+// record keeps what listened to the recording along with what it heard. Nothing on
 // any path that answers a question reads it: it is there so that a person can
 // ask what produced a text, and so that everything a transcriber now known to
 // be bad produced can be found again.
@@ -354,7 +354,7 @@ func describeFailure(why string) string {
 }
 
 // trimHeader is a run of cues as they are added to a file that has been written
-// to already. The header stands once, at the top.
+// to already. The header appears once, at the top.
 func trimHeader(raw []byte, opened bool) []byte {
 	if !opened {
 		return raw

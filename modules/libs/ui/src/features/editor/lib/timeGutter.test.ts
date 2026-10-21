@@ -115,7 +115,7 @@ describe('the line being read', () => {
     expect(current(view)).toStrictEqual([])
   })
 
-  it('is no line where the document is shorter than the one asked for', () => {
+  it('is no line where the document is shorter than the one requested for', () => {
     const { times, view } = editor()
 
     times.show({ ...TIMED, current: 9 })
@@ -179,7 +179,7 @@ describe('an editor drawn a second time', () => {
     expect(gutter(view)).toStrictEqual(['0:01', '0:03', '0:06'])
   })
 
-  it('is the one shown what comes next, and the one before it is left alone', async () => {
+  it('is the one shown what arrives next, and the one before it is left alone', async () => {
     const times = createTimeGutter(() => {})
     const first = drawing(times)
     times.show(TIMED)
@@ -216,7 +216,7 @@ describe('the times in the gutter', () => {
   })
 })
 
-describe('the view going after the line being said', () => {
+describe('the view going after the line being returned', () => {
   /**
    * Every scroll the extension asked for, counted. It shows what it shows in
    * one effect and asks to be moved in a second, so a dispatch carrying two is
@@ -235,7 +235,7 @@ describe('the view going after the line being said', () => {
     return () => scrolls
   }
 
-  it('does not move for words arriving while nothing is being said', async () => {
+  it('does not move for words arriving while nothing is being returned', async () => {
     const { times, view } = editor()
     await waitTick()
     times.show({ ...TIMED, current: 1, isFollowing: true })
@@ -248,7 +248,7 @@ describe('the view going after the line being said', () => {
     expect(scrolls()).toBe(0)
   })
 
-  it('moves where the line being said becomes another', async () => {
+  it('moves where the line being returned becomes another', async () => {
     const { times, view } = editor()
     await waitTick()
     times.show({ ...TIMED, current: 0, isFollowing: true })
@@ -286,8 +286,8 @@ describe('an editor drawn a second time', () => {
   })
 })
 
-describe('an editor drawn again while the recording stands still', () => {
-  it('is not moved by the words being asked for again', async () => {
+describe('an editor drawn again while the recording remains still', () => {
+  it('is not moved by the words being requested for again', async () => {
     const times = createTimeGutter(() => {})
     const first = drawing(times)
     times.show({ ...TIMED, current: 2, isFollowing: true })
@@ -478,7 +478,7 @@ describe('the same times given again', () => {
   })
 })
 
-describe('the view following the line being said', () => {
+describe('the view following the line being returned', () => {
   it('moves to it where following is turned on', () => {
     const { times, view } = editor()
     times.show({ ...TIMED, current: 1 })
@@ -520,7 +520,7 @@ describe('the view following the line being said', () => {
     expect(moves(seen)).toHaveLength(1)
   })
 
-  it('does not move where no line is being said', () => {
+  it('does not move where no line is being returned', () => {
     const { times, view } = editor()
     times.show({ ...TIMED, current: 2, isFollowing: true })
     const seen = recordEffects(view)
@@ -612,7 +612,7 @@ describe('a time that changes in place', () => {
 })
 
 describe('a time whose slot in the gutter is taken by another line', () => {
-  it('goes to the line it now stands against', () => {
+  it('goes to the line it now remains against', () => {
     const fold = StateEffect.define<null>()
     const folded = StateField.define<DecorationSet>({
       create: () => Decoration.none,

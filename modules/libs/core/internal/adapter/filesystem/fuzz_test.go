@@ -49,7 +49,7 @@ func vault(tb testing.TB) string {
 // Everything that reaches a vault from outside the application comes through
 // the two rules, so what they answer is the whole of the containment: a path is
 // the vault's or the application's and never both, and whichever of them
-// answers, what it hands back is under the root once every link on the way to
+// answers, what it returns is under the root once every link on the way to
 // it is resolved.
 //
 // A path arrives from a person's editor, from another machine's sync, and from
@@ -160,7 +160,7 @@ var configSeeds = []string{
 }
 
 // A folder carries an identity or it does not, and ReadConfig says which. An
-// identity it hands back is one that could have been made here.
+// identity it returns is one that could have been made here.
 //
 // Bytes nobody can read out are refused as unreadable, and Initialize leaves
 // them where they are. The file sits in a folder a person keeps in their own

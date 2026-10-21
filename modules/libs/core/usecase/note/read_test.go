@@ -62,7 +62,7 @@ func TestAPathWithNoFileIsMissing(t *testing.T) {
 }
 
 // The vault holds notes. Anything else in the folder — an export, an
-// attachment, a book — is refused by name rather than handed over as prose.
+// attachment, a book — is refused by name and not handed over as prose.
 func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 	t.Parallel()
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "# Entropy\n"})

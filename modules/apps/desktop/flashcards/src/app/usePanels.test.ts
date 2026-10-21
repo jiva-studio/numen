@@ -85,7 +85,7 @@ describe('the window', () => {
     expect(agentPanel.open.value).toBe(false)
   })
 
-  it('puts one panel away when the other comes in', () => {
+  it('puts one panel away when the other arrives in', () => {
     const { showing, agentPanel, notesPanel, toggleNotes, toggleAgent } = panels()
 
     toggleNotes()

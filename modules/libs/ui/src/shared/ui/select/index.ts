@@ -8,6 +8,6 @@ export interface SelectChoice {
   readonly text: string
   /** A second line under the words, in the small print. */
   readonly detail?: string
-  /** The group it stands under. Choices naming one group are drawn together. */
+  /** The group it is placed under. Choices naming one group are drawn together. */
   readonly group?: string
 }

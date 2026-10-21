@@ -1,5 +1,5 @@
 /**
- * What a press outside an element comes to.
+ * What a press outside an element evaluates to.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'

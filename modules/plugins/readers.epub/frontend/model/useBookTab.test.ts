@@ -24,11 +24,11 @@ describe('what a book tab holds', () => {
     expect(drawn.measure).toHaveBeenCalledTimes(1)
   })
 
-  it('stands at the path the book is filed at', () => {
+  it('remains at the path the book is filed at', () => {
     expect(useBookTab(read('library/Mahabharata.epub')).path).toBe('library/Mahabharata.epub')
   })
 
-  it('delegates focus and keypresses to the held elements', () => {
+  it('delegates focus and keypresses to the retained elements', () => {
     const focus = vi.fn()
     const element = { focus } as unknown as HTMLElement
     const handleKey = vi.fn(() => true)

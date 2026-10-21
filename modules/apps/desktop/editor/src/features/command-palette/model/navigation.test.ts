@@ -62,7 +62,7 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
 const match = (path: string, title: string) => ({ path, title }) as NameMatch
 
 describe('the palette at its list of commands', () => {
-  it('stands on no step, and asks for a command', () => {
+  it('relies on no step, and asks for a command', () => {
     const { steps } = createSteps()
 
     expect(steps.steps.value).toStrictEqual([])
@@ -97,7 +97,7 @@ describe('a step taken', () => {
     expect(steps.placeholder.value).toBe(words.typeBack)
   })
 
-  it('is taken back with what was found and lit let go of', () => {
+  it('is taken back with what was found and lit release', () => {
     const { steps, happened, text } = createSteps()
     steps.pushStep(pending('naming'))
     text.value = 'Alpaca'
@@ -111,7 +111,7 @@ describe('a step taken', () => {
 })
 
 describe('what a step is over', () => {
-  it('is said as a count where it is over several files', () => {
+  it('is returned as a count where it is over several files', () => {
     const { steps } = createSteps()
 
     expect(steps.getStepLabel(pending('asking', { on: { ...on, others: ['a.md', 'b.md'] } }))).toBe(
@@ -119,7 +119,7 @@ describe('what a step is over', () => {
     )
   })
 
-  it('is said by its title where it is over one', () => {
+  it('is returned by its title where it is over one', () => {
     const { steps } = createSteps()
 
     expect(steps.getStepLabel(pending('asking'))).toBe('“Llama”')
@@ -138,7 +138,7 @@ describe('the steps when files move', () => {
     expect(steps.steps.value).toBe(before)
   })
 
-  it('are all let go of on a reset', () => {
+  it('are all release on a reset', () => {
     const { steps } = createSteps()
     steps.pushStep(pending('naming'))
 
@@ -217,7 +217,7 @@ describe('the row a list opens on', () => {
     expect(steps.opensOn.value).toBe('dark')
   })
 
-  it('is none where no row stands now', () => {
+  it('is none where no row remains now', () => {
     const { steps } = createSteps([{ id: 'g', title: 'Themes', items: [row('light')] }])
 
     steps.pushStep(pending('choosing'))

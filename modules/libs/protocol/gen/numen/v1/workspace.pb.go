@@ -321,7 +321,7 @@ type Tab struct {
 	// Kind is what sort of tab it is.
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Path is the file it holds, by the path the vault files it under, and empty
-	// for a tab holding no file. A plex holds the note it stands on.
+	// for a tab holding no file. A plex holds the note it relies on.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Title is what the tab is called, as the person reads it.
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`

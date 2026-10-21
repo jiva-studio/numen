@@ -105,7 +105,7 @@ func (u Drop) Execute(
 }
 
 // getProducer is the producer and the fingerprint a recording's transcript is
-// kept under, and whether the index says the recording stands on one.
+// kept under, and whether the index says the recording relies on one.
 //
 // A recording that gave no words is recorded as standing on nothing, and what
 // the run wrote is kept under the fingerprint of the bytes.

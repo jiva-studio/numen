@@ -55,7 +55,7 @@ describe('the panel the deck is read in', () => {
 
   // What the deck was made from and what has since been hung off it are read
   // differently, so which way the link runs is said.
-  it('says which of them point at the deck rather than being pointed at', async () => {
+  it('says which of them point at the deck and not being pointed at', async () => {
     const one = await mountPanel({
       notes: [
         createNeighbour(),
@@ -92,7 +92,7 @@ describe('the panel the deck is read in', () => {
     expect(one.text()).toContain('that note is not in the vault')
   })
 
-  // The bound is where a person can see it, rather than a list that quietly
+  // The bound is where a person can see it, and not a list that quietly
   // stops.
   it('says how many at the end it did not read', async () => {
     const one = await mountPanel({ notes: [createNeighbour()], unread: 4 })
@@ -114,7 +114,7 @@ describe('a reading opened on one note', () => {
   })
 
   // The panel comes in while the notes are still being asked for, so what was
-  // named is waited for rather than looked for once and given up on.
+  // named is waited for and not looked for once and given up on.
   it('scrolls to it once the notes have arrived', async () => {
     const panel = createPanel({
       notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],

@@ -1,6 +1,6 @@
 /**
  * The runs of a drawn document: where each of them begins in the book's text,
- * where it stands across the columns, and what part of the drawn nodes an
+ * at its current position across the columns, and what part of the drawn nodes an
  * offset falls on.
  *
  * A run is an element carrying `data-offset`, the byte offset at which its text

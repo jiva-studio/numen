@@ -99,7 +99,7 @@ describe('how far each setting goes', () => {
     })
   })
 
-  it('is nothing at all until the application has said', async () => {
+  it('is nothing at all until the application has returned', async () => {
     replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
 
     const answer = await presets.read('Daily.md')
@@ -108,7 +108,7 @@ describe('how far each setting goes', () => {
 })
 
 describe('the presets of a vault', () => {
-  it('come back as what each is called and where it stands', async () => {
+  it('come back as what each is called and at its current position', async () => {
     replyWith({ presets: [{ path: 'Daily.md', title: 'Daily' }] })
 
     expect(await presets.list()).toEqual([{ path: 'Daily.md', title: 'Daily' }])
@@ -182,7 +182,7 @@ describe('writing settings into a preset', () => {
   })
 })
 
-describe('what a preset comes to over the range of its goal', () => {
+describe('what a preset evaluates to over the range of its goal', () => {
   it('carries every place, and the day one is learned on where the rule has one', async () => {
     replyWith({
       curve: {
@@ -213,7 +213,7 @@ describe('what a preset comes to over the range of its goal', () => {
     })
   })
 
-  it('stands nowhere where the answer suggests no place', async () => {
+  it('remains nowhere where the answer suggests no place', async () => {
     replyWith({ curve: { goal: 'GOAL_MINUTES_A_DAY', grid: [], days: [], at: [] } })
 
     const curve = await presets.curve('Daily.md', DEFAULTS)

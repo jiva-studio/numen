@@ -226,7 +226,7 @@ func ask(t *testing.T, s *Server, task *numenv1.AskAgentRequest) []*numenv1.AskA
 	return steps
 }
 
-// describeSteps writes the steps out one word each, a run of pieces of what was said as one.
+// describeSteps writes the steps out one word each, a run of pieces of the transcript as one.
 func describeSteps(steps []*numenv1.AskAgentResponse) string {
 	words := make([]string, 0, len(steps))
 	for _, one := range steps {
@@ -248,7 +248,7 @@ func describeSteps(steps []*numenv1.AskAgentResponse) string {
 	return strings.Join(words, " ")
 }
 
-// getSaid is every piece of what was said, in the order it was sent.
+// getSaid is every piece of the transcript, in the order it was sent.
 func getSaid(steps []*numenv1.AskAgentResponse) []string {
 	var said []string
 	for _, one := range steps {

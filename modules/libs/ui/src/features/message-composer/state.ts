@@ -8,7 +8,7 @@ export type ComposerAction = 'send' | 'stop'
 export interface ComposerStateDescriptor {
   /** Whether pressing the disc does anything. */
   readonly canAct: boolean
-  /** What stands on the disc, which is what pressing it does. */
+  /** What relies on the disc, which is what pressing it does. */
   readonly action: ComposerAction
 }
 

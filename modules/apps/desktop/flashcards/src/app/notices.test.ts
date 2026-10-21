@@ -19,7 +19,7 @@ describe('what the window has to say', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it('numbers what it says in the order it was said', () => {
+  it('numbers what it says in the order it was returned', () => {
     const one = useNotices()
     one.showNotice('the first', 'caution')
     one.showNotice('the second', 'caution')
@@ -27,7 +27,7 @@ describe('what the window has to say', () => {
     expect(one.notices.value.map((said) => said.id)).toEqual(['1', '2'])
   })
 
-  it('says trouble in the person’s own words, and stands until they put it away', () => {
+  it('says trouble in the person’s own words, and remains until they put it away', () => {
     const one = useNotices()
     one.reportError(new ConnectError('the vault could not be read', Code.Unavailable))
 
@@ -58,7 +58,7 @@ describe('what the window has to say', () => {
     expect(one.notices.value[0]!.text).toBe('The deck could not be written.')
   })
 
-  it('ends a sentence whose only stop stands inside it', () => {
+  it('ends a sentence whose only stop remains inside it', () => {
     const one = useNotices()
     one.reportError(
       new ConnectError('is the preset paused? the deck says so', Code.FailedPrecondition),
@@ -104,7 +104,7 @@ describe('what the window has to say', () => {
     })
   })
 
-  it('says why work stopped, and stands until it is put away', () => {
+  it('says why work stopped, and remains until it is put away', () => {
     const one = useNotices()
     one.setTasks([createTask({ error: 'no such folder' })])
 

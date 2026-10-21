@@ -113,8 +113,8 @@ describe('whether two curves are drawn over the same range', () => {
   })
 })
 
-describe('where the knob stands', () => {
-  it('is where the curve says the preset stands, the first place among them', () => {
+describe('where the knob remains', () => {
+  it('is where the curve says the preset remains, the first place among them', () => {
     expect(getKnobPosition(curve({ now: { at: 0, value: 0, day: '' } }), settings(), today)).toBe(0)
     expect(getKnobPosition(curve({ now: { at: 3, value: 30, day: '' } }), settings(), today)).toBe(
       3,
@@ -143,7 +143,7 @@ describe('a curve that landed', () => {
 })
 
 describe('asking for a curve', () => {
-  it('draws the sketch meanwhile, the knob where the preset stands on it', async () => {
+  it('draws the sketch meanwhile, the knob where the preset relies on it', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     state.curve.value = curve()
     const gate = createGate()
@@ -214,7 +214,7 @@ describe('asking for a curve', () => {
     await drawn
   })
 
-  it('draws an answer already held without asking again', async () => {
+  it('draws an answer already retained without asking again', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const held = curve({ now: { at: 3, value: 30, day: '' } })
     state.answers.set(getShapeKey(DEFAULTS), held)
@@ -270,7 +270,7 @@ describe('asking for a curve', () => {
 })
 
 describe('an answer nobody is waiting for any more', () => {
-  it('is not drawn over an answer already held', async () => {
+  it('is not drawn over an answer already retained', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const held = curve({ cards: 99 })
     const other = settings({ minutesADay: 30 })
@@ -338,7 +338,7 @@ describe('an answer nobody is waiting for any more', () => {
     expect(said).toStrictEqual([])
   })
 
-  it('is said where the question still stands', async () => {
+  it('is returned where the question still remains', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const gate = createGate()
     const { core } = createCore(gate.answered)

@@ -46,7 +46,7 @@ describe('a book with nothing drawn', () => {
 })
 
 describe('a document drawn', () => {
-  it('stands as the one being read, its pictures pointed where the book serves them', async () => {
+  it('remains as the one being read, its pictures pointed where the book serves them', async () => {
     const { held, pending, urls } = create()
 
     const drawing = held.draw(FIRST)
@@ -59,7 +59,7 @@ describe('a document drawn', () => {
     expect(urls).toStrictEqual(['library/b.epub|pics/a.png|print-1'])
   })
 
-  it('is dropped when a newer document was asked for meanwhile', async () => {
+  it('is dropped when a newer document was requested for meanwhile', async () => {
     const { held, pending } = create()
 
     const older = held.draw(FIRST)
@@ -88,7 +88,7 @@ describe('a document drawn', () => {
 })
 
 describe('a document that will not be read', () => {
-  it('is said as an error', async () => {
+  it('is returned as an error', async () => {
     const { held, pending, written } = create()
 
     const drawing = held.draw(FIRST)
@@ -99,7 +99,7 @@ describe('a document that will not be read', () => {
     expect(written[0]?.[1]).toBe('error')
   })
 
-  it('is not said when a newer document was asked for meanwhile', async () => {
+  it('is not returned when a newer document was requested for meanwhile', async () => {
     const { held, pending, written } = create()
 
     const older = held.draw(FIRST)
@@ -111,7 +111,7 @@ describe('a document that will not be read', () => {
     expect(written).toStrictEqual([])
   })
 
-  it('is not said once the tab is closed', async () => {
+  it('is not returned once the tab is closed', async () => {
     const open = { value: true }
     const { held, pending, written } = create(open)
 

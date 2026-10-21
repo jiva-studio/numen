@@ -72,7 +72,7 @@ func TestPunctuationIsReadAsTheMarkItStandsFor(t *testing.T) {
 	}
 }
 
-// The offsets are into the text as it stands, whichever reading found them, so
+// The offsets are into the text currently, whichever reading found them, so
 // a replacement leaves the bytes around it as the person wrote them.
 func TestOffsetsAreIntoTheTextAsItStands(t *testing.T) {
 	text := "before «дa» after"

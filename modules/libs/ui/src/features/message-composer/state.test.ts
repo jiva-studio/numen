@@ -38,7 +38,7 @@ describe('what state a composer is in', () => {
   })
 })
 
-describe('what was said', () => {
+describe('the transcript', () => {
   it('is what is left after the whitespace around it', () => {
     expect(getMessage('  hello  ')).toBe('hello')
   })

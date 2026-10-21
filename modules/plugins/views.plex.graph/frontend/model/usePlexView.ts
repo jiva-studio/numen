@@ -24,7 +24,7 @@ export function usePlexView(core: Neighbours) {
    * The note this plex is showing, as it asked for it.
    */
   const here = ref('')
-  /** What this plex could not show, in words the window puts up for it. */
+  /** What this plex could not show, in words the window sets up for it. */
   const error = ref('')
 
   /**

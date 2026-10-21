@@ -19,7 +19,7 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	when := parseTime("2026-08-29T09:00:00Z")
 
 	// A card already spaced, so that the four answers are told apart by what
-	// they do to it rather than by the first steps of learning.
+	// they do to it and not by the first steps of learning.
 	learnt := by.Next(by.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
 	later := learnt.Due

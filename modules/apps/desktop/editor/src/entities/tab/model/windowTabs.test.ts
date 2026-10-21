@@ -143,7 +143,7 @@ describe('what a kind is given', () => {
 })
 
 describe('a tab that closes', () => {
-  it('lets go of what it held', async () => {
+  it('lets go of what it retained', async () => {
     const thing = kind()
     const window = told([thing.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -182,8 +182,8 @@ describe('a tab that closes', () => {
   })
 })
 
-describe('a tab let go of from outside', () => {
-  it('lets go of what it held and comes off the screen', async () => {
+describe('a tab release from outside', () => {
+  it('lets go of what it retained and arrives off the screen', async () => {
     const thing = kind()
     const window = told([thing.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -255,7 +255,7 @@ describe('the tab the person is looking at', () => {
     expect(window.handle.last('thing')?.id).toBe(two)
   })
 
-  it('answers under no kind for a tab the window has let go of', async () => {
+  it('answers under no kind for a tab the window has release', async () => {
     const thing = kind()
     const window = told([thing.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -473,7 +473,7 @@ describe('a window with nothing open', () => {
   })
 })
 
-describe('what a tab of a kind holds, asked by kind', () => {
+describe('what a tab of a kind holds, requested by kind', () => {
   it('is nothing for an identity the window does not hold', () => {
     const window = told([kind().declared])
 
@@ -491,7 +491,7 @@ describe('what a tab of a kind holds, asked by kind', () => {
 })
 
 describe('what a tab watches', () => {
-  /** A kind whose tabs watch something that records when it is let go of. */
+  /** A kind whose tabs watch something that records when it is release. */
   const watching = () => {
     const stopped: string[] = []
     const one = kind({
@@ -503,7 +503,7 @@ describe('what a tab watches', () => {
     return { stopped, one }
   }
 
-  it('is let go of when the tab closes itself', async () => {
+  it('is release when the tab closes itself', async () => {
     const watch = watching()
     const window = told([watch.one.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -513,7 +513,7 @@ describe('what a tab watches', () => {
     expect(watch.stopped).toEqual(['Note.md'])
   })
 
-  it('is let go of when the tab is let go of', async () => {
+  it('is release when the tab is release', async () => {
     const watch = watching()
     const window = told([watch.one.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -523,7 +523,7 @@ describe('what a tab watches', () => {
     expect(watch.stopped).toEqual(['Note.md'])
   })
 
-  it('is let go of when the window goes', async () => {
+  it('is release when the window goes', async () => {
     const watch = watching()
     const window = told([watch.one.declared])
     await window.openTabOfKind('thing', 'Note.md')
@@ -551,7 +551,7 @@ describe('what a tab watches', () => {
   })
 })
 
-describe('a tab opened beside', () => {
+describe('a tab opened alongside', () => {
   it('lands in a new pane on the right, in a horizontal layout', async () => {
     const window = told([kind().declared])
     const one = await window.openTabOfKind('thing', 'One.md')
@@ -562,7 +562,7 @@ describe('a tab opened beside', () => {
     expect(window.layout.value.axis).toBe('horizontal')
   })
 
-  it('draws a plugin unavailable tab beside for a kind the window was never told about', async () => {
+  it('draws a plugin unavailable tab alongside for a kind the window was never told about', async () => {
     const window = told([kind().declared])
     await window.openTabOfKind('thing', 'One.md')
 
@@ -652,7 +652,7 @@ describe('a key struck on the window, offered in turn', () => {
   })
 })
 
-describe('a tab let go of', () => {
+describe('a tab release', () => {
   it('goes where its kind has nothing to finish', async () => {
     const simpleKind = kind()
     delete simpleKind.one.onClose
@@ -665,8 +665,8 @@ describe('a tab let go of', () => {
   })
 })
 
-describe('reconciling tabs for a path, by what a tab stands on', () => {
-  it('leaves a tab with no path alone when asked for no path', async () => {
+describe('reconciling tabs for a path, by what a tab relies on', () => {
+  it('leaves a tab with no path alone when requested for no path', async () => {
     const pathlessKind = kind({ kind: 'bare' })
     const window = told([pathlessKind.declared])
     const id = await window.openTabOfKind('bare', 'x')
@@ -677,7 +677,7 @@ describe('reconciling tabs for a path, by what a tab stands on', () => {
     expect(pathlessKind.closedPaths).toEqual([])
   })
 
-  it('leaves a tab of another kind alone where it stands on another path', async () => {
+  it('leaves a tab of another kind alone where it relies on another path', async () => {
     const note = kind({
       kind: 'note',
       getOpenTab: (state: { at: string }) => ({ path: state.at }),
@@ -719,7 +719,7 @@ describe('reconciling tabs for a path, by what a tab stands on', () => {
 })
 
 describe('a tab opened on nothing', () => {
-  it('is opened by its kind on the empty address, in front or beside', async () => {
+  it('is opened by its kind on the empty address, in front or alongside', async () => {
     const thing = kind()
     const window = told([thing.declared])
 
@@ -742,7 +742,7 @@ describe('a window going, with kinds that say nothing about it', () => {
 })
 
 describe('reconciling tabs for a path, by what a tab names', () => {
-  it('leaves a tab alone whose kind says nothing of where it stands', async () => {
+  it('leaves a tab alone whose kind says nothing of at its current position', async () => {
     const pathlessKind = kind({ kind: 'bare' })
     const window = told([pathlessKind.declared])
     const id = await window.openTabOfKind('bare', 'x')
@@ -1072,7 +1072,7 @@ describe('text put to the tabs of a kind', () => {
 })
 
 describe('where a command over a file leads', () => {
-  it('is where the first kind that answers for it says, asked with the type of the file', async () => {
+  it('is where the first kind that answers for it says, requested with the type of the file', async () => {
     const asked: string[][] = []
     const window = told([
       kind({
@@ -1091,7 +1091,7 @@ describe('where a command over a file leads', () => {
     expect(asked).toStrictEqual([['Animals.md', 'preset', 'deck']])
   })
 
-  it('is asked of the next kind where one answers nothing', async () => {
+  it('is requested of the next kind where one answers nothing', async () => {
     const window = told([
       kind({ resolveCommand: async () => null }).declared,
       kind({
@@ -1115,7 +1115,7 @@ describe('where a command over a file leads', () => {
 })
 
 describe('a file made as the kind that edits it', () => {
-  it('is asked of that kind, under the folder and the name given', async () => {
+  it('is requested of that kind, under the folder and the name given', async () => {
     const made: string[][] = []
     const window = told([
       kind({
@@ -1133,7 +1133,7 @@ describe('a file made as the kind that edits it', () => {
     expect(made).toStrictEqual([['dir', 'Name']])
   })
 
-  it('is asked of nothing where the kind makes no file or is not registered', () => {
+  it('is requested of nothing where the kind makes no file or is not registered', () => {
     const window = told([kind().declared])
 
     expect(window.createFileOfKind('thing', 'dir', 'Name')).toBeUndefined()

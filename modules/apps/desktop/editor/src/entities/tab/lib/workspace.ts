@@ -25,7 +25,7 @@ export const SETTINGS = 'settings'
 /** The settings file itself, opened whole as text, one tab of it to a window. */
 export const SETTINGS_FILE = 'settings-file'
 
-/** One thread of talk, under the name the agent hears it by. */
+/** One conversation thread, under the name the agent hears it by. */
 export const CONVERSATION = 'conversation'
 
 /**

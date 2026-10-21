@@ -21,7 +21,7 @@ const TimestampLayout = "2006-01-02T15:04:05.000Z"
 // back is not held to the one shape this build writes.
 func ParseTimestamp(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
-// line is one line of a log, as it stands in the file.
+// line is one line of a log, currently in the file.
 type line struct {
 	V      int    `json:"v"`
 	ID     string `json:"id"`

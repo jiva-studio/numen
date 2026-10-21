@@ -23,7 +23,7 @@ describe('the address under a position in the text', () => {
     expect(getAddressIn('under [[note://01J8]] it sits', 'note://')).toBe('note://01J8')
   })
 
-  it('is nothing where the position stands in no link', () => {
+  it('is nothing where the position remains in no link', () => {
     expect(getAddressIn('under nothing at all', 'nothing')).toBeNull()
   })
 
@@ -88,7 +88,7 @@ describe('a link followed with the pointer', () => {
     views.splice(0).forEach((view) => view.destroy())
   })
 
-  it('is opened with the meta key held', () => {
+  it('is opened with the meta key retained', () => {
     const { view, opened, coordinates, passed } = open(SOURCE.indexOf('there') + 1)
     const event = press(view, { metaKey: true })
     expect(opened).toHaveBeenCalledWith('https://example.invalid')
@@ -97,7 +97,7 @@ describe('a link followed with the pointer', () => {
     expect(coordinates).toHaveBeenCalledWith({ x: 12, y: 34 })
   })
 
-  it('is opened with the control key held', () => {
+  it('is opened with the control key retained', () => {
     const { view, opened, passed } = open(SOURCE.indexOf('there') + 1)
     const event = press(view, { ctrlKey: true })
     expect(opened).toHaveBeenCalledWith('https://example.invalid')
@@ -105,7 +105,7 @@ describe('a link followed with the pointer', () => {
     expect(passed).not.toHaveBeenCalled()
   })
 
-  it('is left alone with no key held', () => {
+  it('is left alone with no key retained', () => {
     const { view, opened, coordinates, passed } = open(SOURCE.indexOf('there') + 1)
     press(view, {})
     expect(opened).not.toHaveBeenCalled()

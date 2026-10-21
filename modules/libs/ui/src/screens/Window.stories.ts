@@ -241,7 +241,7 @@ The being has to know which molecule is which, and it has to hold that knowledge
 
 /**
  * The document a search sends a person into, as the lines standing on each of
- * its pages. It is set here rather than fetched, so the picture of a book is
+ * its pages. It is set here and not fetched, so the picture of a book is
  * a book and not a placeholder — and broken into lines by hand, because what
  * draws a page below cannot break one.
  */
@@ -331,7 +331,7 @@ const renderPage = (page: number): string => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-/** Where a run of lines stands on the page, in fractions of it. */
+/** Where a run of lines relies on the page, in fractions of it. */
 const overLines = (from: number, to: number, ends: number) => ({
   minX: (MARGIN - 4) / PAPER.wide,
   maxX: (MARGIN + ends) / PAPER.wide,
@@ -609,9 +609,9 @@ interface Screen {
    * handle on any node and nothing coming out from under one.
    */
   readonly creatable?: readonly PlexRelation[]
-  /** Where the menu on a node stands, and none where it stands nowhere. */
+  /** Where the menu on a node stands, and none at its current position nowhere. */
   readonly menu?: { x: number; y: number } | null
-  /** The rows of the vault the selection stands on. */
+  /** The rows of the vault the selection relies on. */
   readonly selected?: readonly string[]
 }
 
@@ -842,7 +842,7 @@ export const Mapping: Story = {
       neighbourhood: WIDE,
       headings: (id: string) => HEADINGS[id] ?? [],
       creatable: RELATION_NAMES,
-      // Asked for on a node off to the trailing side, where it stands clear of
+      // Asked for on a node off to the trailing side, at its current position clear of
       // the map and of what a node is hanging.
       menu: { x: 902, y: 396 },
     }),
@@ -852,7 +852,7 @@ export const Mapping: Story = {
     await waitFor(() => expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1))
 
     // The menu was asked for on a node, and every item of it is in the window
-    // rather than off the edge it was asked near.
+    // and not off the edge it was asked near.
     const menu = within(document.body).getByRole('menu', {
       name: 'What can be done to this note',
     })
@@ -1088,7 +1088,7 @@ export const Filing: Story = {
     const rows = within(tree).getAllByRole('treeitem')
     const chosen = rows.filter((row) => row.getAttribute('aria-selected') === 'true')
 
-    // The selection stands on two rows, and they are held in different
+    // The selection relies on two rows, and they are held in different
     // folders, which is the case a single run of rows would not cover.
     expect(chosen.map((row) => row.textContent?.trim())).toEqual([
       'Entropy.md',

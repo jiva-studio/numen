@@ -110,7 +110,7 @@ describe('calculateAggregate eta and cancelling', () => {
     expect(aggregate.etaSeconds).toBe(100)
   })
 
-  it('takes the eta of a task that has one beside tasks that have none', () => {
+  it('takes the eta of a task that has one alongside tasks that have none', () => {
     const aggregate = calculateAggregate([createTask({}), createTask({ etaSeconds: 45 })])
     expect(aggregate.etaSeconds).toBe(45)
   })

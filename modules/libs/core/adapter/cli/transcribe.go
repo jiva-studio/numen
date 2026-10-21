@@ -52,7 +52,7 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By().GetTranscriptionModel())
 	started := time.Now()
 
-	// The line of minutes is closed once it stops, so what follows it stands on
+	// The line of minutes is closed once it stops, so what follows it relies on
 	// a line of its own.
 	shown := false
 	transcribe.IsRepeat = again

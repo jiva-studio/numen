@@ -55,7 +55,7 @@ describe('the row a document makes', () => {
     expect(laid.widths[2]).toBe(laid.widths[0])
   })
 
-  it('lays out a page whose size nothing said', () => {
+  it('lays out a page whose size nothing returned', () => {
     // A page the document could not measure stands here all the same, and the
     // pages after it are still where they were. A page at no width at all is a
     // row that jumps once its size is known.
@@ -131,7 +131,7 @@ describe('which pages are drawn', () => {
     expect(shown.length).toBeLessThan(500)
   })
 
-  it('draws a page just left behind, in case the hand comes back', () => {
+  it('draws a page just left behind, in case the hand arrives back', () => {
     const laid = row(book(500), VIEWPORT, 1)
     const at = 300
 
@@ -184,8 +184,8 @@ describe('which page is in front', () => {
   })
 })
 
-describe('where the row stands', () => {
-  it('puts the page asked for against the left edge', () => {
+describe('where the row remains', () => {
+  it('puts the page requested for against the left edge', () => {
     const laid = row(book(20), VIEWPORT, 1)
 
     expect(findPageScroll(laid, 5)).toBe(laid.starts[5]! - GAP)
@@ -231,7 +231,7 @@ describe('how close a page is drawn', () => {
     expect(clampZoom(CLOSEST * NEARER)).toBe(CLOSEST)
   })
 
-  it('leaves alone what stands between the two', () => {
+  it('leaves alone what remains between the two', () => {
     expect(clampZoom(2 * NEARER)).toBeCloseTo(2 * NEARER, 5)
     expect(clampZoom(2 / NEARER)).toBeCloseTo(2 / NEARER, 5)
   })

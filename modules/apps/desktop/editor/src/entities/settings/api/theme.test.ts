@@ -53,7 +53,7 @@ describe('every theme there is', () => {
 })
 
 describe('which half of a colour pair is read', () => {
-  it('is said in the window’s own words', async () => {
+  it('is returned in the window’s own words', async () => {
     for (const [said, word] of [
       [Modes.LIGHT, 'light'],
       [Modes.DARK, 'dark'],
@@ -66,7 +66,7 @@ describe('which half of a colour pair is read', () => {
 
   // A mode the window has no word for is one the machine decides, which is what
   // a window that was never told anything is drawn as.
-  it('is the system’s where the window has no word for what was said', async () => {
+  it('is the system’s where the window has no word for the transcript', async () => {
     asked.listThemes.mockResolvedValue(createAnswer({ mode: 99 }))
     expect((await themes.getAppearance()).mode).toBe('system')
   })
@@ -110,8 +110,8 @@ describe('how far a size goes', () => {
   })
 })
 
-describe('the rest of what is asked', () => {
-  it('hands back the text of a theme’s file as it stands', async () => {
+describe('the rest of what is requested', () => {
+  it('returns the text of a theme’s file currently', async () => {
     asked.readTheme.mockResolvedValue({ css: ':root { --numen-surface: black }' })
     expect(await themes.readTheme('own/Dusk.css')).toBe(':root { --numen-surface: black }')
     expect(asked.readTheme.mock.calls[0]?.[0]).toEqual({ name: 'own/Dusk.css' })
@@ -147,7 +147,7 @@ describe('the rest of what is asked', () => {
     expect(heard).toEqual([['own/Dusk.css'], ['own/Dusk.css', 'own/Dawn.css']])
   })
 
-  it('is asked for under the signal it was given', async () => {
+  it('is requested for under the signal it was given', async () => {
     asked.watchThemes.mockImplementation(async function* () {})
     const controller = new AbortController()
 

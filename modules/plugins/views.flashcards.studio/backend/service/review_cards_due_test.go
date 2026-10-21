@@ -50,7 +50,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	api, held := newAPI(t, deck, other)
 
-	// The vaults are read when the window opens them, and what a count comes to
+	// The vaults are read when the window opens them, and what a count evaluates to
 	// is what is under test here.
 	front(t, api)
 

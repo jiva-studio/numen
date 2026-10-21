@@ -143,7 +143,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	}
 }
 
-// Every field stands under a heading of its own, the first included, so a card
+// Every field is placed under a heading of its own, the first included, so a card
 // writing the first field twice is the one fault a card writing any field twice
 // is, and it is reported once.
 func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {

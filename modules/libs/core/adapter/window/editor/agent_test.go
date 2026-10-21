@@ -157,7 +157,7 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 }
 
 // A call says where in the vault it was working, so that an answer can name the
-// place it stands on. A call the vault serves is drawn as a tool in hand
+// place it relies on. A call the vault serves is drawn as a tool in hand
 // whatever that tool does to the vault.
 func TestACallSaysWhereItIsWorking(t *testing.T) {
 	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{
@@ -179,7 +179,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 }
 
 // TestAConversationSaidToBeOverReachesTheAgent, under the name its questions
-// carried. A tab closes, and what was kept for it is let go of.
+// carried. A tab closes, and what was kept for it is release.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 	taking := &askedAgent{over: make(chan string, 1)}
 	client := newAgentClient(t, newAgentAPI(taking))

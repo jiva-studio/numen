@@ -2,7 +2,7 @@
  * Every situation the deck editor has to survive. Also the test corpus: each
  * story is run in a browser by `@storybook/addon-vitest`.
  *
- * What the editor hands back is applied here, which is the application's part.
+ * What the editor returns is applied here, which is the application's part.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
@@ -451,7 +451,7 @@ type Story = StoryObj<Knobs>
 
 /**
  * Three cards, two stencils, and one card leaving a field out. The plus asks
- * which stencil, and the card it makes stands on empty fields.
+ * which stencil, and the card it makes relies on empty fields.
  */
 export const ADeck: Story = {
   play: async ({ canvasElement }) => {
@@ -465,7 +465,7 @@ export const ADeck: Story = {
     const tiles = [...canvasElement.querySelectorAll('[data-card]')]
     const made = tiles[tiles.length - 1]
 
-    // Every field the stencil declares stands under its own name, the first
+    // Every field the stencil declares is placed under its own name, the first
     // included, and all of them stand empty.
     const boxes = [...(made?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? [])]
     expect(boxes.map((box) => box.getAttribute('data-value'))).toEqual([
@@ -528,7 +528,7 @@ export const InSections: Story = {
     expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
     expect(drawn.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
 
-    // Each card stands under the section it is in, and the ones before the
+    // Each card is placed under the section it is in, and the ones before the
     // first stand under none.
     expect(canvasElement.querySelectorAll('[data-section="roots"]')).toHaveLength(2)
     expect(found(canvasElement, '[data-card="p4h6c8vzn2"]').getAttribute('data-section')).toBeNull()
@@ -608,7 +608,7 @@ export const NothingAtAll: Story = {
 }
 
 /**
- * A deck the vault found five things wrong with. Every mark stands on the card
+ * A deck the vault found five things wrong with. Every mark relies on the card
  * it was read against and on no other, and what a card is drawn as is the
  * card's own.
  */
@@ -671,7 +671,7 @@ const measure = (canvasElement: HTMLElement, least = 3): void => {
 /**
  * A window too narrow for two columns: one column, and no sideways scrolling.
  * A value with no newline in it wraps to several lines, and its box stands at
- * what the wrapping comes to, which is worked out by the ground behind it.
+ * what the wrapping evaluates to, which is worked out by the ground behind it.
  */
 export const Narrow: Story = {
   args: { corpus: 'a value that wraps', width: '22rem' },

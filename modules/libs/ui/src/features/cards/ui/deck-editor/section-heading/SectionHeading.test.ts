@@ -1,6 +1,6 @@
 /**
- * The heading one section of a deck stands under: what is drawn on the rule,
- * what a name typed over it comes to, and what it is pressed to be rid of.
+ * The heading one section of a deck is placed under: what is drawn on the rule,
+ * what a name typed over it evaluates to, and what it is pressed to be rid of.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -33,11 +33,11 @@ describe('SectionHeading', () => {
     expect(held.get('.divider').find('input').exists()).toBe(true)
   })
 
-  it('stands the name the section carries in the box', () => {
+  it('remains the name the section carries in the box', () => {
     expect(getBox(mountHeading()).element.value).toBe('Roots')
   })
 
-  it('announces the box by the place the section stands among them', () => {
+  it('announces the box by the place the section remains among them', () => {
     expect(getBox(mountHeading()).attributes('aria-label')).toBe('Section 1')
   })
 
@@ -48,7 +48,7 @@ describe('SectionHeading', () => {
     expect(held.emitted('rename')).toEqual([['Leaves']])
   })
 
-  it('renames nothing while the name is only being typed', async () => {
+  it('does not rename while the name is only being typed', async () => {
     const held = mountHeading()
     await type(held, 'Leaves')
     expect(held.emitted('rename')).toBeUndefined()
@@ -83,7 +83,7 @@ describe('SectionHeading', () => {
     expect(held.emitted('rename')).toBeUndefined()
   })
 
-  it('emits the section asked to go, named to a reader', async () => {
+  it('emits the section requested to go, named to a reader', async () => {
     const held = mountHeading()
     const away = held.get('.remove-button')
     expect(away.attributes('aria-label')).toBe('Remove: Section 1')
@@ -91,7 +91,7 @@ describe('SectionHeading', () => {
     expect(held.emitted('remove')).toEqual([[]])
   })
 
-  it('names the way to be rid of it by the place it stands, a bare heading and all', () => {
+  it('names the way to be rid of it by the place it remains, a bare heading and all', () => {
     const held = mountHeading({ section: { id: 'bare', name: '', at: 2 } })
     expect(held.get('.remove-button').attributes('aria-label')).toBe('Remove: Section 2')
   })

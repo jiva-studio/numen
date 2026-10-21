@@ -13,7 +13,7 @@ const BOOK = { from: 0, to: CHAPTER.span.to + 500 }
 
 /**
  * A book reader in a room nothing has laid out. jsdom measures nothing, so the
- * text comes to no countSpreads at all and what is asked here is what the reader
+ * text evaluates to no countSpreads at all and what is asked here is what the reader
  * does when it has none.
  */
 const reader = async (book = BOOK) => {
@@ -175,7 +175,7 @@ describe('a link inside a book', () => {
     expect(held.emitted('follow')).toEqual([['OEBPS/second.xhtml']])
   })
 
-  it('asks for the offset the place stands at, inside the document being read', async () => {
+  it('asks for the offset the place remains at, inside the document being read', async () => {
     const held = await mountPointing()
 
     await press(held, 'the note')

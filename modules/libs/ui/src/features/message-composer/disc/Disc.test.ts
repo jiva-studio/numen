@@ -24,7 +24,7 @@ describe('the disc', () => {
     expect(disc({ disabled: true }).get('button').attributes('disabled')).toBeDefined()
   })
 
-  it('stands one disc either way, and changes the glyph on it', () => {
+  it('remains one disc either way, and changes the glyph on it', () => {
     const glyph = (action: string) => {
       const wrapper = disc({ action })
       expect(wrapper.findAll('button')).toHaveLength(1)

@@ -160,7 +160,7 @@ describe('following the vault', () => {
     expect(deps.ask).toHaveBeenCalledTimes(1)
   })
 
-  it('draws the page again on a reload that swaps the vault, and tells nothing', async () => {
+  it('draws the page again on a reload that swaps the vault, and notifies nothing', async () => {
     const deps = setup({
       core: {
         ...setup().core,
@@ -238,7 +238,7 @@ describe('following the tasks', () => {
     expect(deps.ask).not.toHaveBeenCalled()
   })
 
-  it('asks for the counts again when a list that held work empties, and only then', async () => {
+  it('asks for the counts again when a list that retained work empties, and only then', async () => {
     const deps = setup({
       core: {
         ...setup().core,

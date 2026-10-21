@@ -21,7 +21,7 @@ const getEmitted = (field: ReturnType<typeof mountField>): readonly unknown[] =>
   (field.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
 describe('what is typed', () => {
-  it('stands as it was typed while it is being typed', async () => {
+  it('remains as it was typed while it is being typed', async () => {
     const field = mountField()
     await field.get('input').setValue('12x')
 
@@ -53,7 +53,7 @@ describe('what is typed', () => {
     expect(getEmitted(field)).toEqual([null])
   })
 
-  it('marks a thousands group and hands nothing on', async () => {
+  it('marks a thousands group and passes nothing on', async () => {
     const field = mountField()
     await field.get('input').setValue('1,200')
 
@@ -63,7 +63,7 @@ describe('what is typed', () => {
 })
 
 describe('a number between two places the step lays', () => {
-  it('hands nothing on while it stands there', async () => {
+  it('passes nothing on while active there', async () => {
     const field = mountField()
     await field.get('input').setValue('13')
 
@@ -91,7 +91,7 @@ describe('a number between two places the step lays', () => {
 })
 
 describe('the bounds', () => {
-  it('marks a number past them and hands nothing on', async () => {
+  it('marks a number past them and passes nothing on', async () => {
     const field = mountField()
     await field.get('input').setValue('900')
 
@@ -100,7 +100,7 @@ describe('the bounds', () => {
     expect(getEmitted(field)).toEqual([])
   })
 
-  it('brings what stands there inside them once the field is left', async () => {
+  it('brings what remains there inside them once the field is left', async () => {
     const field = mountField()
     await field.get('input').setValue('900')
     await field.get('input').trigger('blur')
@@ -141,7 +141,7 @@ describe('the bounds moving under the number', () => {
     expect(field.get('input').element.value).toBe('100')
   })
 
-  it('brings in a number the bounds it opened on never held', () => {
+  it('brings in a number the bounds it opened on never retained', () => {
     const field = mountField({ modelValue: 900 })
     expect(field.get('input').element.value).toBe('240')
     expect(getEmitted(field)).toEqual([240])
@@ -173,7 +173,7 @@ describe('the arrow keys', () => {
     expect(field.get('input').element.value).toBe('0.82')
   })
 
-  it('leave a field nobody may type into where it stands', async () => {
+  it('leave a field nobody may type into at its current position', async () => {
     const field = mountField({ disabled: true })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
     expect(getEmitted(field)).toEqual([])
@@ -207,7 +207,7 @@ describe('the other keys a spin button answers', () => {
     expect(field.get('input').element.value).toBe('0')
   })
 
-  it('leaves a field nobody may type into where it stands', async () => {
+  it('leaves a field nobody may type into at its current position', async () => {
     const field = mountField({ disabled: true })
     await field.get('input').trigger('keydown', { key: 'End' })
     await field.get('input').trigger('keydown', { key: 'PageUp' })
@@ -246,7 +246,7 @@ describe('leaving the field', () => {
     expect(getCommits(field)).toEqual([])
   })
 
-  it('says it where the number the field comes to rest at is another one', async () => {
+  it('says it where the number the field evaluates to rest at is another one', async () => {
     const field = mountField()
     await field.get('input').setValue('45')
     await field.get('input').trigger('blur')
@@ -265,7 +265,7 @@ describe('leaving the field', () => {
 })
 
 describe('what a screen reader is told', () => {
-  it('is a number with bounds, and where in them it stands', () => {
+  it('is a number with bounds, and where in them it remains', () => {
     const input = mountField().get('input')
     expect(input.attributes('role')).toBe('spinbutton')
     expect(input.attributes('aria-valuemin')).toBe('0')
@@ -273,19 +273,19 @@ describe('what a screen reader is told', () => {
     expect(input.attributes('aria-valuenow')).toBe('20')
   })
 
-  it('says no number stands there where none does', () => {
+  it('says no number remains there where none does', () => {
     const input = mountField({ modelValue: null }).get('input')
     expect(input.attributes('aria-valuenow')).toBeUndefined()
     expect(input.element.value).toBe('')
   })
 
-  it('says nothing of its own where the number in force is what stands there', () => {
+  it('says nothing of its own where the number in force is what remains there', () => {
     expect(mountField().get('input').attributes('aria-valuetext')).toBeUndefined()
   })
 
   // A line refused with no number to announce is refused in silence, and the
   // eye can see what the ear is not told.
-  it('reads out a line that is no number, where no number stands with it', async () => {
+  it('reads out a line that is no number, where no number remains with it', async () => {
     const field = mountField({ modelValue: null })
     await field.get('input').setValue('twenty')
     const input = field.get('input')
@@ -295,7 +295,7 @@ describe('what a screen reader is told', () => {
     expect(input.attributes('aria-valuetext')).toBe('twenty')
   })
 
-  it('reads out a number past the bounds, which are said beside it', async () => {
+  it('reads out a number past the bounds, which are returned alongside it', async () => {
     const field = mountField()
     await field.get('input').setValue('900')
     const input = field.get('input')
@@ -358,7 +358,7 @@ describe('a field the caller holds the value of', () => {
     return field
   }
 
-  it('stands on the number the caller holds where the caller refuses one', async () => {
+  it('relies on the number the caller holds where the caller refuses one', async () => {
     const field = mountControlledField((val) => val === null)
     await field.get('input').setValue('')
     await field.get('input').trigger('blur')
@@ -367,7 +367,7 @@ describe('a field the caller holds the value of', () => {
     expect(field.get('input').element.value).toBe('20')
   })
 
-  it('stands on the number the caller took where the caller took one', async () => {
+  it('relies on the number the caller took where the caller took one', async () => {
     const field = mountControlledField((val) => val === null)
     await field.get('input').setValue('45')
     await field.get('input').trigger('blur')

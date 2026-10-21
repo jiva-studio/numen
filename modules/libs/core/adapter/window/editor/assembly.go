@@ -19,7 +19,7 @@ import (
 // vault list and the cache of the installation it serves, the ports it reaches
 // a vault through, and the scenarios and passes it opens one with.
 //
-// Everything belonging to the installation is answered as it stands. What
+// Everything belonging to the installation is answered currently. What
 // belongs to a vault is opened here and opened again each time another vault is
 // shown.
 //

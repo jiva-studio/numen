@@ -95,7 +95,7 @@ describe('a name nothing in a folder carries', () => {
   })
 })
 
-describe('where a row let go of lands', () => {
+describe('where a row release lands', () => {
   it('is the folder it went into', () => {
     expect(resolveDropFolder({ into: 'physics/heat' })).toBe('physics/heat')
   })
@@ -248,7 +248,7 @@ describe('a change the vault reports', () => {
     expect(paths(list.rows.value)).toContain('trips')
   })
 
-  it('reads every open folder when it names nothing at all', async () => {
+  it('reads every open folder when it is empty at all', async () => {
     const { core, asked } = vault()
     const list = useFileTree(core)
     await list.openFolder(ROOT)
@@ -346,7 +346,7 @@ describe('the tree walked down to a path', () => {
 })
 
 describe('a folder that could not be read', () => {
-  it('is said in the tab, and the tree stands as it was', async () => {
+  it('is returned in the tab, and the tree remains as it was', async () => {
     const list = useFileTree({
       list: async () => {
         throw new Error('the vault is not there')
@@ -468,8 +468,8 @@ describe('the refresh of every open folder', () => {
   })
 })
 
-describe('a tree before anything is asked of it', () => {
-  it('holds nothing chosen, nothing said, and the root open', () => {
+describe('a tree before anything is requested of it', () => {
+  it('holds nothing chosen, nothing returned, and the root open', () => {
     const { core } = vault()
     const list = useFileTree(core)
 
@@ -490,7 +490,7 @@ describe('a tree before anything is asked of it', () => {
   })
 })
 
-describe('a tab that has closed, asked for more', () => {
+describe('a tab that has closed, requested for more', () => {
   it('leaves only the root open', async () => {
     const { core } = vault()
     const list = useFileTree(core)
@@ -569,7 +569,7 @@ describe('a folder toggled', () => {
 })
 
 describe('a folder that could not be read, then read', () => {
-  it('stops being said in the tab', async () => {
+  it('stops being returned in the tab', async () => {
     let fails = true
     const list = useFileTree({
       list: async () => {

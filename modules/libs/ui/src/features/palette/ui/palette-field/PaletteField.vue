@@ -16,7 +16,7 @@ defineProps<{
    * row that is lit, so the two are addressed off one prefix.
    */
   uid: string
-  /** The number of the row the keyboard stands on, and -1 for none. */
+  /** The number of the row the keyboard relies on, and -1 for none. */
   here: number
   /** Whether there is a list under the field at all. */
   isExpanded: boolean

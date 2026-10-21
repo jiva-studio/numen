@@ -170,7 +170,7 @@ func touch(b *testing.B, path string, seed int) {
 // A scan runs in the background over a vault big enough to take seconds, and
 // searches run against the same database throughout. WAL is what makes this
 // possible at all — a reader never waits for the writer — and the write pool is
-// capped at one connection so writers queue instead of colliding.
+// capped at one connection so writers queue and not colliding.
 func BenchmarkSearchDuringScan(b *testing.B) {
 	const notes = 10_000
 	v := testsupport.GenerateVault(b, notes)
@@ -196,7 +196,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 				return
 			}
 			// Keep writing for as long as the benchmark reads: reindex from
-			// scratch rather than measuring against an index that is finished.
+			// scratch and not measuring against an index that is finished.
 			if err := touchAll(v.Path); err != nil {
 				return
 			}
@@ -227,7 +227,7 @@ func touchAll(root string) error {
 
 // BenchmarkLinks measures resolution, which is where the cost of links actually
 // lands: storing them is a handful of rows per note, but every link is resolved
-// again each time it is asked for, because resolution is a query rather than a
+// again each time it is asked for, because resolution is a query and not a
 // stored fact.
 func BenchmarkLinks(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
@@ -255,7 +255,7 @@ func BenchmarkLinks(b *testing.B) {
 }
 
 // BenchmarkBacklinks measures the other direction, which is the one that has to
-// look at every link in the vault rather than at one note's worth.
+// look at every link in the vault and not at one note's worth.
 func BenchmarkBacklinks(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {

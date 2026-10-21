@@ -136,7 +136,7 @@ describe('usePressDrag', () => {
     press.scope.stop()
   })
 
-  it('lets go of the window when the release comes', () => {
+  it('lets go of the window when the release arrives', () => {
     const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 40, 60))
@@ -184,7 +184,7 @@ describe('usePressDrag', () => {
     press.scope.stop()
   })
 
-  it('becomes a drag when nobody asked to hear of it', () => {
+  it('becomes a drag when nobody requested to hear of it', () => {
     const press = createPress(4, false)
     const faults: unknown[] = []
     const onError = (event: ErrorEvent) => void faults.push(event.error)

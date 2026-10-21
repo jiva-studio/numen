@@ -89,7 +89,7 @@ describe('while an answer is being written', () => {
     expect(wrapper.emitted('stop')).toBeUndefined()
   })
 
-  it('stands one disc either way, and changes the glyph on it', () => {
+  it('remains one disc either way, and changes the glyph on it', () => {
     const glyph = (isWriting: boolean) => {
       const wrapper = composer({ modelValue: 'hello', isWorking: isWriting })
       expect(wrapper.findAll('button')).toHaveLength(1)
@@ -139,7 +139,7 @@ describe('the depth of reasoning', () => {
     expect(wrapper.findComponent({ name: 'ReasoningSelector' }).exists()).toBe(false)
   })
 
-  it('shows a selector beside the model selector while the model offers levels', () => {
+  it('shows a selector alongside the model selector while the model offers levels', () => {
     const wrapper = composer({
       options: [
         {

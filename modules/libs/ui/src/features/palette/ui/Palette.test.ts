@@ -5,7 +5,7 @@
  * all look right in a picture.
  *
  * It is drawn at the end of the document, so everything here is read off the
- * document rather than off the wrapper.
+ * document and not off the wrapper.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -212,7 +212,7 @@ describe('walking the list', () => {
     expect(lit()?.textContent).not.toContain('Not this one')
   })
 
-  it('names what is lit to a screen reader rather than focusing it', async () => {
+  it('names what is lit to a screen reader and not focusing it', async () => {
     mountPalette()
     await settle()
     await press('ArrowDown')
@@ -305,7 +305,7 @@ describe('where the keyboard is standing', () => {
     expect(palette.emitted('light')).toEqual([['engine']])
   })
 
-  it('stands on nothing once it is put away', async () => {
+  it('relies on nothing once it is put away', async () => {
     const palette = mountPalette()
     await settle()
 
@@ -371,7 +371,7 @@ describe('choosing', () => {
     expect(keys().map(getText)).toEqual(['Return Open the note'])
   })
 
-  it('draws each key held as its own mark, in the order it is held', async () => {
+  it('draws each key retained as its own mark, in the order it is retained', async () => {
     mountPalette()
     await settle()
     expect(keys().map((key) => getMarks(key.querySelector('.cap')))).toEqual([
@@ -394,7 +394,7 @@ describe('a group arriving while it is being read', () => {
     expect(options()).toHaveLength(4)
   })
 
-  it('hands the keyboard to the first item when the one it was on is gone', async () => {
+  it('passes the keyboard to the first item when the one it was on is gone', async () => {
     const palette = mountPalette()
     await settle()
     await press('ArrowDown')
@@ -517,7 +517,7 @@ describe('marking why an item is here', () => {
   })
 })
 
-describe('which group stands where', () => {
+describe('which group remains where', () => {
   const groups = () =>
     Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="title"]')).map((group) =>
       group.textContent?.trim(),
@@ -650,7 +650,7 @@ describe('the action panel', () => {
     ).toEqual(['Return', 'Shift Return', '', '', ''])
   })
 
-  it('opens on the same chord held with the other key', async () => {
+  it('opens on the same chord retained with the other key', async () => {
     mountPalette({ groups: OFFERING })
     await settle()
 
@@ -838,7 +838,7 @@ describe('the action panel', () => {
     expect(litAction()?.textContent).toContain('Open beside')
   })
 
-  it('stands on the first action left when the one it was on is gone', async () => {
+  it('relies on the first action left when the one it was on is gone', async () => {
     const palette = await open()
     await pressOn(hunt(), 'ArrowDown')
     expect(litAction()?.textContent).toContain('Open the note')
@@ -900,7 +900,7 @@ describe('the chord that opens the action panel', () => {
   })
 })
 
-describe('the keyboard while the palette stands', () => {
+describe('the keyboard while the palette remains', () => {
   it('stays in the field on Tab', async () => {
     mountPalette({ groups: OFFERING })
     await settle()
@@ -912,7 +912,7 @@ describe('the keyboard while the palette stands', () => {
 })
 
 describe('what the action panel is called', () => {
-  it('is said by whoever offers it', async () => {
+  it('is returned by whoever offers it', async () => {
     mountPalette({
       groups: OFFERING,
       actionWords: {
@@ -957,7 +957,7 @@ describe('one step of several', () => {
     expect(field()?.getAttribute('aria-describedby')).toBeNull()
   })
 
-  it('takes the keyboard back and selects what stands there when the step changes', async () => {
+  it('takes the keyboard back and selects what remains there when the step changes', async () => {
     const palette = mountPalette({ groups: OFFERING, step: 'find' })
     await settle()
 

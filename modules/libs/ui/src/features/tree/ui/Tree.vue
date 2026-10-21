@@ -28,7 +28,7 @@ const props = withDefaults(
     rows: readonly Row[]
     /** The rows whose contents are drawn. */
     open?: readonly RowId[]
-    /** The rows the selection stands on. */
+    /** The rows the selection relies on. */
     selected?: readonly RowId[]
     /** How far the pointer travels before a press becomes a drag. */
     threshold?: number
@@ -64,7 +64,7 @@ const renamingPath = defineModel<RowId | null>('renamingPath', { default: null }
 const emit = defineEmits<{
   (event: 'open', row: RowId): void
   (event: 'close', row: RowId): void
-  /** The rows the selection now stands on. */
+  /** The rows the selection now relies on. */
   (event: 'select', rows: readonly RowId[]): void
   /** A row acted on: a double press, or Enter. A row that holds turns as well. */
   (event: 'activate', row: RowId): void
@@ -77,7 +77,7 @@ const emit = defineEmits<{
    * beside it. Where they end up there is not the tree's to say.
    */
   (event: 'drag', rows: readonly RowId[]): void
-  /** The rows let go of, wherever the pointer had got to. */
+  /** The rows release, wherever the pointer had got to. */
   (event: 'drop'): void
   /** The selection asked to go. */
   (event: 'remove', rows: readonly RowId[]): void

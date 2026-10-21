@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// The fingerprint an agent is handed and hands back is the size and the
+// The fingerprint an agent is handed and returns is the size and the
 // modification time in nanoseconds since the epoch, and no other number.
 func TestTheFingerprintAnAgentCarriesIsSizeAndNanoseconds(t *testing.T) {
 	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
@@ -20,7 +20,7 @@ func TestTheFingerprintAnAgentCarriesIsSizeAndNanoseconds(t *testing.T) {
 }
 
 // A stamp a clock handed out carries a monotonic reading, and the string an
-// agent hands back carries none. The note is still the note that was read.
+// agent returns carries none. The note is still the note that was read.
 func TestAFingerprintTakenFromAClockComesBackAsTheSameFile(t *testing.T) {
 	ref := domain.Fingerprint{Path: "notes/Compost.md", Size: 12, ModTime: time.Now()}
 

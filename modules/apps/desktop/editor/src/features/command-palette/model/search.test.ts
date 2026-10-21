@@ -180,7 +180,7 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'names')?.items?.[0]?.title).toBe('Entropy')
   })
 
-  it('says a group could not be asked in the window’s own words, and fills the others', async () => {
+  it('says a group could not be requested in the window’s own words, and fills the others', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
 
@@ -196,7 +196,7 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
   })
 
-  it('says nothing of a group that was asked and came back with nothing', async () => {
+  it('says nothing of a group that was requested and came back with nothing', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
 
@@ -321,7 +321,7 @@ describe('where a thing found takes the person', () => {
     })
   })
 
-  it('opens a note found by a heading inside it on the line that heading stands on', async () => {
+  it('opens a note found by a heading inside it on the line that heading relies on', async () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[1]!
 
@@ -339,7 +339,7 @@ describe('where a thing found takes the person', () => {
     })
   })
 
-  it('opens a passage as the note it was read out of, on the line it stands on', async () => {
+  it('opens a passage as the note it was read out of, on the line it relies on', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.setTyped('ent')
@@ -454,7 +454,7 @@ describe('what a row is drawn as', () => {
     ])
   })
 
-  it('draws a heading as the note it stands in', async () => {
+  it('draws a heading as the note it remains in', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.setTyped('ent')
@@ -516,7 +516,7 @@ describe('what a row is drawn as', () => {
     expect(items.map((one) => palette.findHitSource(one.id))).toEqual(['note', 'book', 'recording'])
   })
 
-  it('says a name stands in a note, whatever kind of note it is', async () => {
+  it('says a name remains in a note, whatever kind of note it is', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.setTyped('ent')
@@ -541,7 +541,7 @@ describe('what a row is drawn as', () => {
 })
 
 describe('a group landing under the keyboard', () => {
-  it('names a passage by where it stands in the vault, not by where it stands in the list', async () => {
+  it('names a passage by at its current position in the vault, not by at its current position in the list', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.setTyped('war')
@@ -642,7 +642,7 @@ describe('the hold before a question', () => {
 })
 
 describe('what was typed taken back', () => {
-  it('forgets what each group found and said, before anything else is typed', async () => {
+  it('forgets what each group found and returned, before anything else is typed', async () => {
     const vault = createVault()
     const { holds, wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })

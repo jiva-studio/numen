@@ -73,7 +73,7 @@ const asked = computed(() => getDeclaredFields(props.fields))
 /**
  * The face under the pointer's hand, and where letting go would put it. The
  * order of the faces is the order a card's repetitions are taken from it, so
- * nothing among them is fixed and a face lands anywhere but where it stands.
+ * nothing among them is fixed and a face lands anywhere but at its current position.
  */
 const {
   dragged: face,
