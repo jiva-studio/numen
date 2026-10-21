@@ -11,7 +11,7 @@ import (
 
 func TestReadManifest(t *testing.T) {
 	raw := `{
-		"id": "md.numen.ocr",
+		"id": "md.numen.engines.ocr",
 		"name": "Document OCR",
 		"version": "1.0.0",
 		"description": "Optical character recognition",
@@ -26,7 +26,7 @@ func TestReadManifest(t *testing.T) {
 		},
 		"backend": {
 			"type": "process",
-			"entrypoint": "bin/ocr",
+			"entrypoint": "bin/engines.ocr",
 			"serviceName": "numen.v1.OcrService"
 		},
 		"frontend": {
@@ -54,8 +54,8 @@ func TestReadManifest(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if m.ID != "md.numen.ocr" {
-		t.Errorf("got id %q, want md.numen.ocr", m.ID)
+	if m.ID != "md.numen.engines.ocr" {
+		t.Errorf("got id %q, want md.numen.engines.ocr", m.ID)
 	}
 	if !m.CanTarget("desktop.editor") {
 		t.Errorf("expected target desktop.editor to be accepted")
@@ -402,7 +402,7 @@ func TestAManifestDeclaresTheAgentSettingOnceWithoutADefault(t *testing.T) {
 		{"none", `"permissions":["ai:complete"]`, false},
 		{"without the permission", `"settings":[` + agent + `]`, true},
 		{"two", `"permissions":["ai:complete"],"settings":[` + agent + `,{"key":"other","type":"agent","title":"Other"}]`, true},
-		{"a default", `"permissions":["ai:complete"],"settings":[{"key":"model","type":"agent","title":"Model","default":{"agent":"md.numen.agent"}}]`, true},
+		{"a default", `"permissions":["ai:complete"],"settings":[{"key":"model","type":"agent","title":"Model","default":{"agent":"md.numen.agents.numen"}}]`, true},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			text := `{"id":"a.b","name":"A","version":"1.0.0",` + one.fields + `}`

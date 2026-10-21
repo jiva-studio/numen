@@ -65,7 +65,7 @@ describe('createPluginPaneWrapper', () => {
 
 describe('createReaderTabKind', () => {
   it('computes dynamic title and book target for epub reader', () => {
-    const readerKind = createReaderTabKind('md.numen.epub', {
+    const readerKind = createReaderTabKind('md.numen.readers.epub', {
       id: 'reader-epub',
       fileExtensions: ['.epub'],
       component: null,
@@ -112,7 +112,7 @@ describe('createReaderTabKind', () => {
 
 describe('createCustomTabKind', () => {
   it('computes note title and note target', () => {
-    const customKind = createCustomTabKind('md.numen.editor-markdown', {
+    const customKind = createCustomTabKind('md.numen.editors.markdown', {
       kind: 'note',
       component: null,
       title: 'Markdown Note',
@@ -150,7 +150,7 @@ describe('createCustomTabKind', () => {
   it('populates note body from readNote dependency', async () => {
     let savedBody = ''
     const customKind = createCustomTabKind(
-      'md.numen.editor-markdown',
+      'md.numen.editors.markdown',
       {
         kind: 'note',
         component: null,
@@ -194,7 +194,7 @@ describe('createCustomTabKind (loading)', () => {
     ...(readNote ? { readNote } : {}),
   })
   const open = (readNote?: (path: string) => Promise<string | undefined>) =>
-    createCustomTabKind('md.numen.editor-markdown', registration, createHost(readNote)).open(
+    createCustomTabKind('md.numen.editors.markdown', registration, createHost(readNote)).open(
       'notes/test.md',
       'tab',
     ) as { isLoading: { value: boolean } }
@@ -231,7 +231,7 @@ describe('createCustomTabKind (failed writes)', () => {
   })
   const open = (writeNote: (path: string, body: string) => Promise<void>) =>
     createCustomTabKind(
-      'md.numen.editor-markdown',
+      'md.numen.editors.markdown',
       { kind: 'note', component: null, title: 'Markdown Note' },
       host(writeNote),
     ).open('notes/test.md', 'tab') as {

@@ -14,7 +14,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest1 := `{
-		"id": "md.numen.ocr",
+		"id": "md.numen.engines.ocr",
 		"name": "OCR",
 		"version": "1.0.0",
 		"description": "OCR plugin",
@@ -23,7 +23,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		"activationEvents": ["onFile:*.pdf"],
 		"permissions": [],
 		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 100, "keepAliveWhileVisible": false},
-		"backend": {"type": "process", "entrypoint": "bin/ocr", "serviceName": "OcrService"},
+		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "OcrService"},
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []
 	}`
@@ -62,7 +62,7 @@ func TestDiscoverPlugins(t *testing.T) {
 	}
 
 	editorPlugins := FilterPluginsByTarget(found, "desktop.editor")
-	if len(editorPlugins) != 1 || editorPlugins[0].Manifest.ID != "md.numen.ocr" {
+	if len(editorPlugins) != 1 || editorPlugins[0].Manifest.ID != "md.numen.engines.ocr" {
 		t.Errorf("unexpected editor plugins: %v", editorPlugins)
 	}
 
@@ -148,7 +148,7 @@ func TestABrokenManifestDoesNotHideTheOtherPlugins(t *testing.T) {
 
 	found, problems := DiscoverPlugins([]string{tempDir})
 
-	if len(found) != 1 || found[0].Manifest.ID != "md.numen.ocr" {
+	if len(found) != 1 || found[0].Manifest.ID != "md.numen.engines.ocr" {
 		t.Fatalf("expected the valid plugin to be discovered, got %v", found)
 	}
 	if len(problems) != 1 || problems[0].Dir != broken || problems[0].Err == nil {

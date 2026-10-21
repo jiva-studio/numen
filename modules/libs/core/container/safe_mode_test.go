@@ -170,15 +170,16 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	manifest := `{"id": "md.numen.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["recognition"],
-		"targets": ["desktop.editor"], "backend": {"type": "process", "entrypoint": "bin/ocr"}}`
+	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["recognition"],
+		"targets": ["desktop.editor"], "backend": {"type": "process", "entrypoint": "bin/engines.ocr"}}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cfg := Config{PluginHost: NewPluginHost("desktop.editor", tmp)}
+	host := NewPluginHost("desktop.editor", tmp)
+	cfg := Config{PluginHost: host}
 
 	cfg.SetPluginVaultPath("vault")
-	if got := cfg.PluginHost.GetVaultPath(); got != "vault" {
+	if got := host.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
 	if !cfg.RecogniserReady() {

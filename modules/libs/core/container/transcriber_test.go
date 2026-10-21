@@ -53,7 +53,7 @@ func TestATranscriberIsReadyOnlyWherePluginIsAvailable(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest := `{
-		"id": "md.numen.transcription",
+		"id": "md.numen.engines.transcription",
 		"name": "Transcription",
 		"version": "1.0.0",
 		"capabilities": ["transcription"],

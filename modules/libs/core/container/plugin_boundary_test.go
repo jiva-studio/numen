@@ -63,8 +63,8 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 		dep      string
 		isPlugin bool
 	}{
-		{pluginsPrefix + "reader-epub/backend/epub", true},
-		{pluginsPrefix + "reader-pdf", true},
+		{pluginsPrefix + "readers.epub/backend/epub", true},
+		{pluginsPrefix + "readers.pdf", true},
 		{module + "usecase/document", false},
 		{wire + "/gen/numen/v1", false},
 		{"github.com/jiva-studio/numen/modules/pluginsx/other", false},
@@ -84,7 +84,7 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 		{"apps/desktop", false},
 		{"apps/mobile", false},
 		{"apps/desktop-monolith", true},
-		{"plugins/reader-epub", false},
+		{"plugins/readers.epub", false},
 		{"pluginsx", false},
 	} {
 		if got := mayNamePlugins(one.dir); got != one.may {
@@ -92,18 +92,18 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 		}
 	}
 
-	require := "module example.com/x\n\nrequire (\n\t" + pluginsPrefix + "reader-epub v0.0.0\n)\n"
-	replace := "module example.com/x\n\nreplace " + pluginsPrefix + "reader-epub => ../../plugins/reader-epub\n"
+	require := "module example.com/x\n\nrequire (\n\t" + pluginsPrefix + "readers.epub v0.0.0\n)\n"
+	replace := "module example.com/x\n\nreplace " + pluginsPrefix + "readers.epub => ../../plugins/readers.epub\n"
 	for name, gomod := range map[string]string{"a require": require, "a replace": replace} {
 		if len(getPluginRequirements(gomod)) == 0 {
 			t.Errorf("%s of a plugin is not found", name)
 		}
 	}
-	cross := "module " + pluginsPrefix + "reader-epub\n\nrequire " + pluginsPrefix + "reader-pdf v0.0.0\n"
+	cross := "module " + pluginsPrefix + "readers.epub\n\nrequire " + pluginsPrefix + "readers.pdf v0.0.0\n"
 	if len(getPluginRequirements(cross)) == 0 {
 		t.Error("a requirement of one plugin by another is not found")
 	}
-	clean := "module " + pluginsPrefix + "reader-epub\n\nrequire example.com/y v1.0.0\n// " + pluginsPrefix + "x\n"
+	clean := "module " + pluginsPrefix + "readers.epub\n\nrequire example.com/y v1.0.0\n// " + pluginsPrefix + "x\n"
 	if got := getPluginRequirements(clean); len(got) != 0 {
 		t.Errorf("a go.mod naming no plugin is found to name %v", got)
 	}

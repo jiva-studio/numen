@@ -44,7 +44,7 @@ func writeSecretPlugin(t *testing.T) string {
 		t.Fatal(err)
 	}
 	manifest := `{
-		"id": "md.numen.agent",
+		"id": "md.numen.agents.numen",
 		"name": "Agent",
 		"version": "1.0.0",
 		"capabilities": ["ai.agent.provider"],
@@ -80,10 +80,10 @@ func TestASecretWrittenThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	cfg := Config{KeyStore: jar, SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
 	cfg = cfg.SetSettings(DefaultSettings())
 
-	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agent", "apiKey", "value-1"); err != nil {
+	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agents.numen", "apiKey", "value-1"); err != nil {
 		t.Fatal(err)
 	}
-	if jar["md.numen.agent/apiKey"] != "value-1" {
+	if jar["md.numen.agents.numen/apiKey"] != "value-1" {
 		t.Errorf("the store holds %v", jar)
 	}
 	written, err := os.ReadFile(settingsPath)
@@ -93,7 +93,7 @@ func TestASecretWrittenThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	if !strings.Contains(string(written), `"storedSecrets"`) || strings.Contains(string(written), "value-1") {
 		t.Errorf("the settings file holds:\n%s", written)
 	}
-	if err := cfg.GetPluginSecretDeleter()(t.Context(), "md.numen.agent", "apiKey"); err != nil {
+	if err := cfg.GetPluginSecretDeleter()(t.Context(), "md.numen.agents.numen", "apiKey"); err != nil {
 		t.Fatal(err)
 	}
 	if len(jar) != 0 {
@@ -106,7 +106,7 @@ func TestASecretNoPluginDeclaresIsRefused(t *testing.T) {
 	jar := keyJar{}
 	cfg := Config{KeyStore: jar, SettingsPath: filepath.Join(t.TempDir(), "numen.json"), PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
 	cfg = cfg.SetSettings(DefaultSettings())
-	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agent", "other", "value"); err == nil {
+	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agents.numen", "other", "value"); err == nil {
 		t.Error("an undeclared secret was stored")
 	}
 	if len(jar) != 0 {

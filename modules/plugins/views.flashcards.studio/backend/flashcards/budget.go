@@ -1,0 +1,515 @@
+package flashcards
+
+import (
+	"cmp"
+	"context"
+	"fmt"
+	"slices"
+	"strings"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
+)
+
+// budgets is what today leaves each preset a vault's decks are scheduled by,
+// and which preset each card face stands under.
+//
+// The presets are separate scopes: one running out closes its own decks and no
+// others. A preset standing in no note schedules the decks naming none.
+type budgets struct {
+	under      map[review.CardFaceID]string
+	allowances map[string]*allowance
+	// decks says which preset schedules each deck, by the path of its file.
+	decks map[string]string
+	// cards is how many card faces stand under each preset.
+	cards map[string]int
+	// faced are the card faces answered in the review day being sat.
+	faced map[review.CardFaceID]bool
+	// spentUnder is what the review day came to in each deck.
+	spentUnder map[string]review.Spent
+}
+
+// allowance is one preset's day: what the day admits, what an answer under it
+// costs, how it counts, and what has gone on it already.
+type allowance struct {
+	admits review.Allowance
+	cost   review.AnswerCost
+	counts review.BudgetUnit
+	spent  review.Spent
+}
+
+// getBudgets works out the day's budgets over the cards standing.
+//
+// What has been answered since the day opened is off it, so a second session
+// takes up where the first left off.
+func getBudgets(
+	ctx context.Context, v domain.Vault, reads *PresetReads, day review.Day,
+	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
+	log ReviewLog, by review.Scheduler, at func(retention float64) review.Scheduler,
+	now time.Time,
+) (*budgets, error) {
+	out := &budgets{
+		under:      make(map[review.CardFaceID]string, len(faces)),
+		allowances: make(map[string]*allowance),
+		cards:      make(map[string]int),
+	}
+	survey, err := readPresetSurvey(ctx, v, reads, faces, schedules, out)
+	if err != nil {
+		return nil, err
+	}
+
+	out.decks = survey.asked
+	counting := make(map[string]review.BudgetUnit, len(survey.asked))
+	for deck, path := range survey.asked {
+		counting[deck] = survey.settings[path].Counts
+	}
+	named := day.GetName(now)
+	out.faced = review.GetFaced(day, named, log.Answers)
+
+	// A card face stands in one deck and one preset, so a preset's day is the
+	// sum of the days of the decks that name it.
+	out.spentUnder = review.GetSpentUnder(day, named, log.Answers, survey.in, counting)
+	spent := sumSpentByPreset(out.spentUnder, survey.asked)
+
+	costed := review.GetCostUnder(by, log.Answers, out.under)
+	for path, p := range survey.settings {
+		cost, held := costed[path]
+		if !held {
+			cost = review.DefaultCost
+		}
+		// A date paces the day against how long a card face begun today takes to
+		// be learned, worked out under the scheduler this preset's cards are
+		// spaced by. No other goal reads it, and it is asked for under no other.
+		learn := 0
+		if p.Goal == review.GoalDate {
+			learn = review.GetDaysToLearn(at(p.Retention), day, p, now)
+		}
+		out.allowances[path] = &allowance{
+			admits: p.GetAllowance(day, now, spent[path], survey.unseen[path], learn),
+			cost:   cost,
+			counts: p.Counts,
+			spent:  spent[path],
+		}
+	}
+	return out, nil
+}
+
+// presetSurvey is what reading the presets of the standing faces yields.
+type presetSurvey struct {
+	// asked is the path of the preset each deck is scheduled by.
+	asked map[string]string
+	// in is the deck each card face stands in, which is how the day's answers
+	// are grouped.
+	in map[review.CardFaceID]string
+	// settings is what each preset was read with.
+	settings map[string]review.Preset
+	// unseen is the material each preset has still to begin.
+	unseen map[string]int
+}
+
+// readPresetSurvey reads the preset of every deck the faces stand in, and
+// records in out which preset each face stands under and how many faces each
+// preset holds. A deck is asked once however many faces it holds, and a preset
+// note is opened once however many decks name it.
+func readPresetSurvey(
+	ctx context.Context, v domain.Vault, reads *PresetReads, faces []CardFace,
+	schedules map[review.CardFaceID]review.Schedule, out *budgets,
+) (presetSurvey, error) {
+	sv := presetSurvey{
+		asked:    make(map[string]string, len(faces)),
+		in:       make(map[review.CardFaceID]string, len(faces)),
+		settings: make(map[string]review.Preset),
+		unseen:   make(map[string]int),
+	}
+	for _, one := range faces {
+		path, known := sv.asked[one.Deck]
+		if !known {
+			p, err := reads.GetForDeck(ctx, v, one.Deck)
+			if err != nil {
+				return presetSurvey{}, err
+			}
+			path = p.Path
+			sv.asked[one.Deck] = path
+			if _, held := sv.settings[path]; !held {
+				sv.settings[path] = p.Settings
+			}
+		}
+		out.under[one.ID] = path
+		sv.in[one.ID] = one.Deck
+		out.cards[path]++
+		if _, answered := schedules[one.ID]; !answered {
+			sv.unseen[path]++
+		}
+	}
+	return sv, nil
+}
+
+// sumSpentByPreset is what each preset's decks have spent of the day together.
+func sumSpentByPreset(
+	spentUnder map[string]review.Spent, asked map[string]string,
+) map[string]review.Spent {
+	spent := make(map[string]review.Spent, len(asked))
+	for deck, one := range spentUnder {
+		sum := spent[asked[deck]]
+		sum.Answered += one.Answered
+		sum.New += one.New
+		sum.Reviews += one.Reviews
+		sum.Took += one.Took
+		spent[asked[deck]] = sum
+	}
+	return spent
+}
+
+// charge reports whether the preset a card face stands under has room for it
+// today, in the deck the face stands in, and spends the room where it has.
+//
+// The day is closed by the budget the preset's goal names, and every other
+// budget charge no part. A card is charged both to the deck's share of the day
+// and to the day itself, so a deck spends its own share and the preset's
+// ceiling holds over all of them. A preset counting in cards charges a card
+// face the first time the day answers it, so a face the day has already charged
+// comes round again for no count. The minutes are spent on every answer
+// whichever way the preset counts.
+func (b *budgets) charge(share *allowance, face review.CardFaceID, fresh bool) bool {
+	one, held := b.allowances[b.under[face]]
+	if !held || one.admits.IsPaused() {
+		return false
+	}
+	counted := one.counts.IsCharged(b.faced[face])
+	cost := one.cost.Review
+	if fresh {
+		cost = one.cost.New
+	}
+	if !one.hasRoom(fresh, counted, cost) || !share.hasRoom(fresh, counted, cost) {
+		return false
+	}
+	one.spend(fresh, counted, cost)
+	share.spend(fresh, counted, cost)
+	return true
+}
+
+// hasRoom reports whether this day has a place left for a card face of this kind
+// at this cost.
+func (a *allowance) hasRoom(fresh, counted bool, cost time.Duration) bool {
+	left, closes := a.admits.Reviews, a.admits.Limits.Reviews
+	if fresh {
+		left, closes = a.admits.New, a.admits.Limits.New
+	}
+	if counted && closes != review.ClosedNothing && left <= 0 {
+		return false
+	}
+	return a.admits.Limits.Minutes == review.ClosedNothing || a.admits.Minutes >= cost
+}
+
+// spend takes a card face of this kind out of this day.
+func (a *allowance) spend(fresh, counted bool, cost time.Duration) {
+	if counted {
+		if fresh {
+			a.admits.New--
+		} else {
+			a.admits.Reviews--
+		}
+	}
+	a.admits.Minutes -= cost
+}
+
+// asking is what a day holds of the cards standing: the ones owed, the one
+// waiting longest at the front, and then the ones nobody has answered.
+type asking struct {
+	owed  []CardFace
+	fresh []CardFace
+}
+
+// isAllowed reports whether a card standing here is one of the cards the
+// session is opened over.
+//
+// A session over a preset takes the cards of every deck pointing at it, so the
+// one budget spent is that preset's.
+func (b *budgets) isAllowed(one CardFace, over Scope) bool {
+	if over.IsNamed {
+		return b.under[one.ID] == over.Preset
+	}
+	return over.Deck == "" || one.Deck == over.Deck
+}
+
+// getStopError says why a preset has nothing to ask in the day being sat, in
+// the person's own words.
+func (b *budgets) getStopError(preset string) error {
+	one, scheduling := b.allowances[preset]
+	switch {
+	case !scheduling:
+		return fmt.Errorf("%w: no deck of this vault is scheduled by it", ErrSchedulesNothing)
+	case one.admits.IsPaused():
+		return fmt.Errorf("%w: it is paused", ErrSchedulesNothing)
+	case one.spent.Answered > 0:
+		return fmt.Errorf("%w: its day is spent", ErrSchedulesNothing)
+	default:
+		return fmt.Errorf("%w: nothing under it is owed yet", ErrSchedulesNothing)
+	}
+}
+
+// getAsking is what the budgets leave of the cards standing, in the order they
+// are put to a person.
+//
+// Each preset spends its day between the debt before it and the material it has
+// not begun, in the share it names. What is taken is then put in one order: the
+// debt first, the card waiting longest at the front, and the cards nobody has
+// answered after it, in the order they stand in their decks.
+//
+// The day is divided over every deck the preset schedules before anything is
+// held back, and the session is then the slice of that division belonging to
+// what it was opened over. A deck's row on the front door and what pressing
+// that deck hands over are the one division.
+func (b *budgets) getAsking(
+	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
+	day review.Day, now time.Time, over Scope,
+) asking {
+	var owed, fresh []CardFace
+	for _, one := range faces {
+		s, answered := schedules[one.ID]
+		switch {
+		case !answered:
+			fresh = append(fresh, one)
+		case day.IsOwed(s, now):
+			owed = append(owed, one)
+		}
+	}
+	slices.SortStableFunc(owed, func(a, b CardFace) int {
+		return schedules[a.ID].Due.Compare(schedules[b.ID].Due)
+	})
+
+	allocations := b.spend(owed, fresh)
+	var out asking
+	for at, one := range owed {
+		if allocations.owed[at] && b.isAllowed(one, over) {
+			out.owed = append(out.owed, one)
+		}
+	}
+	for at, one := range fresh {
+		if allocations.fresh[at] && b.isAllowed(one, over) {
+			out.fresh = append(out.fresh, one)
+		}
+	}
+	return out
+}
+
+// budgetAllocation is which of the cards put to a preset its day took.
+type budgetAllocation struct{ owed, fresh []bool }
+
+// deckShare is one deck's cards under one preset, in the order they stand, and
+// how far its share of the day has been walked through them.
+type deckShare struct {
+	deck        string
+	owed, fresh []int
+	// owedIndex and freshIndex are how far each side has been walked, and debt and begun
+	// how many of each the deck has taken.
+	owedIndex, freshIndex int
+	debt, begun           int
+}
+
+// countRemaining is how many of a deck's cards no share has taken, which is
+// what the deck still owes of the day.
+func (q *deckShare) countRemaining(out budgetAllocation) int {
+	held := 0
+	for _, at := range q.owed {
+		if !out.owed[at] {
+			held++
+		}
+	}
+	for _, at := range q.fresh {
+		if !out.fresh[at] {
+			held++
+		}
+	}
+	return held
+}
+
+// getTimeSpent is how much of the day a deck has had, in the time it took: what
+// an earlier session spent of today, and what the deck's own share has just
+// spent.
+func (b *budgets) getTimeSpent(q *deckShare, cost review.AnswerCost) time.Duration {
+	return b.spentUnder[q.deck].Took +
+		time.Duration(q.debt)*cost.Review + time.Duration(q.begun)*cost.New
+}
+
+// spend is what each preset's day takes of the debt before it and the material
+// it has not begun.
+//
+// The day is divided over the decks the preset schedules, each deck's share in
+// proportion to what it owes. Within a deck the debt and the material not begun
+// are offered one against the other in the share the preset names, and a side
+// that runs out leaves the rest of the deck's share to the other. An odd card
+// goes to the debt, so a share holding one card spend it on what is already
+// begun. What no deck could use out of its own share is offered round again, so
+// the day spend what it holds.
+func (b *budgets) spend(owed, fresh []CardFace) budgetAllocation {
+	out := budgetAllocation{owed: make([]bool, len(owed)), fresh: make([]bool, len(fresh))}
+	book := b.collectShares(owed, fresh)
+	for _, path := range book.order {
+		one, held := b.allowances[path]
+		if !held || one.admits.IsPaused() {
+			continue
+		}
+		b.spendPreset(one, book.getSorted(path), owed, fresh, &out)
+	}
+	return out
+}
+
+// shareBook holds the decks' shares grouped by the preset they stand under.
+type shareBook struct {
+	at    map[string]map[string]*deckShare
+	order []string
+}
+
+// getShare is the share of a deck under a preset, created when it is new.
+func (k *shareBook) getShare(path, deck string) *deckShare {
+	decks, held := k.at[path]
+	if !held {
+		decks = make(map[string]*deckShare)
+		k.at[path] = decks
+		k.order = append(k.order, path)
+	}
+	one, held := decks[deck]
+	if !held {
+		one = &deckShare{deck: deck}
+		decks[deck] = one
+	}
+	return one
+}
+
+// getSorted is a preset's deck shares in the order their paths stand, so the
+// division does not turn on the order the vault was walked in.
+func (k *shareBook) getSorted(path string) []*deckShare {
+	decks := make([]*deckShare, 0, len(k.at[path]))
+	for _, q := range k.at[path] {
+		decks = append(decks, q)
+	}
+	slices.SortFunc(decks, func(a, b *deckShare) int {
+		return strings.Compare(a.deck, b.deck)
+	})
+	return decks
+}
+
+// collectShares groups the debt and the material not begun into one share per
+// deck. The presets are held in one order, so a session asked twice is the same
+// session.
+func (b *budgets) collectShares(owed, fresh []CardFace) *shareBook {
+	book := &shareBook{at: make(map[string]map[string]*deckShare)}
+	for i, one := range owed {
+		q := book.getShare(b.under[one.ID], one.Deck)
+		q.owed = append(q.owed, i)
+	}
+	for i, one := range fresh {
+		q := book.getShare(b.under[one.ID], one.Deck)
+		q.fresh = append(q.fresh, i)
+	}
+	// A deck already sat through today holds a share of the day whether or not
+	// it has a card left to give, so what it took stands against its own share.
+	for deck, path := range b.decks {
+		if _, spent := b.spentUnder[deck]; spent {
+			book.getShare(path, deck)
+		}
+	}
+	slices.Sort(book.order)
+	return book
+}
+
+// spendPreset deals one preset's day to its decks: each deck its share, then
+// what is left to the decks that still hold a card, the one holding most
+// first. What a deck has left to answer is what it still owes of the day, and
+// decks holding the same number take it in the order of the time the day has
+// given them already, least first.
+func (b *budgets) spendPreset(
+	one *allowance, decks []*deckShare, owed, fresh []CardFace, out *budgetAllocation,
+) {
+	shares := b.divide(one, decks)
+	for i, q := range decks {
+		b.deal(&shares[i], q, owed, fresh, out)
+	}
+	remaining := make(map[string]int, len(decks))
+	for _, q := range decks {
+		remaining[q.deck] = q.countRemaining(*out)
+	}
+	slices.SortStableFunc(decks, func(x, y *deckShare) int {
+		return cmp.Or(
+			cmp.Compare(remaining[y.deck], remaining[x.deck]),
+			cmp.Compare(b.getTimeSpent(x, one.cost), b.getTimeSpent(y, one.cost)),
+		)
+	})
+	for _, q := range decks {
+		q.owedIndex, q.freshIndex = 0, 0
+		over := *one
+		b.deal(&over, q, owed, fresh, out)
+	}
+}
+
+// divide is each deck's share of one preset's day.
+//
+// The whole day is handed out in proportion to what each deck owes of it, and
+// what a deck has already answered today comes off that deck's own share, so a
+// deck sat first spends its share and no other deck's.
+func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
+	reviews := make([]int, len(decks))
+	begun := make([]int, len(decks))
+	minutes := make([]int, len(decks))
+	for at, q := range decks {
+		spent := b.spentUnder[q.deck]
+		reviews[at] = len(q.owed) + spent.Reviews
+		begun[at] = len(q.fresh) + spent.New
+		minutes[at] = int(time.Duration(len(q.owed))*one.cost.Review +
+			time.Duration(len(q.fresh))*one.cost.New + spent.Took)
+	}
+	keeps := one.admits.Keeps
+	reviews = review.DivideBudget(keeps.Reviews, reviews)
+	begun = review.DivideBudget(keeps.New, begun)
+	minutes = review.DivideBudget(int(keeps.Minutes*float64(time.Minute)), minutes)
+
+	out := make([]allowance, len(decks))
+	for at, q := range decks {
+		spent := b.spentUnder[q.deck]
+		out[at] = *one
+		out[at].admits.Reviews = max(0, reviews[at]-spent.Reviews)
+		out[at].admits.New = max(0, begun[at]-spent.New)
+		out[at].admits.Minutes = max(0, time.Duration(minutes[at])-spent.Took)
+	}
+	return out
+}
+
+// deal is what one deck's share of the day takes of the debt before it and the
+// material it has not begun. A card another share has already taken is passed
+// over, and the deck picks up where its share left off.
+func (b *budgets) deal(share *allowance, q *deckShare, owed, fresh []CardFace, out *budgetAllocation) {
+	for {
+		q.advancePastOthers(*out)
+		debt, begun := q.owedIndex < len(q.owed), q.freshIndex < len(q.fresh)
+		if !debt && !begun {
+			return
+		}
+		// The next card comes from the side the share leaves short, and from
+		// whichever side is left when the other is done.
+		if share.admits.IsNextCardDebt(q.debt, q.begun, debt, begun) {
+			if card := owed[q.owed[q.owedIndex]]; b.charge(share, card.ID, false) {
+				out.owed[q.owed[q.owedIndex]] = true
+				q.debt++
+			}
+			q.owedIndex++
+			continue
+		}
+		if card := fresh[q.fresh[q.freshIndex]]; b.charge(share, card.ID, true) {
+			out.fresh[q.fresh[q.freshIndex]] = true
+			q.begun++
+		}
+		q.freshIndex++
+	}
+}
+
+// advancePastOthers moves both walks past the cards another share has taken.
+func (q *deckShare) advancePastOthers(out budgetAllocation) {
+	for q.owedIndex < len(q.owed) && out.owed[q.owed[q.owedIndex]] {
+		q.owedIndex++
+	}
+	for q.freshIndex < len(q.fresh) && out.fresh[q.fresh[q.freshIndex]] {
+		q.freshIndex++
+	}
+}

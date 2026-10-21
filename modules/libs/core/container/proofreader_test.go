@@ -88,7 +88,7 @@ func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest := `{
-		"id": "md.numen.proofreading",
+		"id": "md.numen.tools.proofreading",
 		"name": "test-model",
 		"version": "1.0.0",
 		"capabilities": ["proofreading"],

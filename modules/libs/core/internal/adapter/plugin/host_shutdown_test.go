@@ -18,11 +18,11 @@ func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("md.numen.ocr")
-	return host, getExitSignal(host.supervisors["md.numen.ocr"])
+	host.Release("md.numen.engines.ocr")
+	return host, getExitSignal(host.supervisors["md.numen.engines.ocr"])
 }
 
 func waitForProcessExit(t *testing.T, exited <-chan struct{}) {
@@ -43,7 +43,7 @@ func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); !errors.Is(err, errHostClosed) {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); !errors.Is(err, errHostClosed) {
 		t.Fatalf("expected errHostClosed, got %v", err)
 	}
 	if started.Load() != 0 {
@@ -81,12 +81,12 @@ func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
 func TestADisabledPluginIsStopped(t *testing.T) {
 	host, exited := newRunningHost(t)
 
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", false); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.engines.ocr", false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 
 	waitForProcessExit(t, exited)
-	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
+	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -94,34 +94,34 @@ func TestADisabledPluginIsStopped(t *testing.T) {
 func TestDisablingThroughTheSettingStopsThePluginAndIsOneSourceOfTruth(t *testing.T) {
 	host, exited := newRunningHost(t)
 
-	if err := host.SetPluginSetting(t.Context(), "md.numen.ocr", "enabled", false); err != nil {
+	if err := host.SetPluginSetting(t.Context(), "md.numen.engines.ocr", "enabled", false); err != nil {
 		t.Fatalf("SetPluginSetting failed: %v", err)
 	}
 
-	if host.IsPluginEnabled("md.numen.ocr") {
+	if host.IsPluginEnabled("md.numen.engines.ocr") {
 		t.Fatal("the plugin is still enabled after its enabled setting was cleared")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err == nil {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err == nil {
 		t.Fatal("a disabled plugin was activated")
 	}
 
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", true); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.engines.ocr", true); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
-	if got := host.GetPluginSettings("md.numen.ocr")["enabled"]; got != true {
+	if got := host.GetPluginSettings("md.numen.engines.ocr")["enabled"]; got != true {
 		t.Fatalf("expected the enabled setting to follow SetPluginEnabled, got %v", got)
 	}
 }
 
 func TestSettingsLoadedAsDisabledDisableThePlugin(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.SetSettings(map[string]map[string]any{"md.numen.ocr": {"enabled": false}})
+	host.SetSettings(map[string]map[string]any{"md.numen.engines.ocr": {"enabled": false}})
 
-	if host.IsPluginEnabled("md.numen.ocr") {
+	if host.IsPluginEnabled("md.numen.engines.ocr") {
 		t.Fatal("expected the plugin to be disabled by its stored setting")
 	}
-	if _, ok := host.GetPlugin("md.numen.ocr"); ok {
+	if _, ok := host.GetPlugin("md.numen.engines.ocr"); ok {
 		t.Fatal("GetPlugin resolved a disabled plugin")
 	}
 }
@@ -132,26 +132,26 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 	host.SetSafeMode(true)
 
 	waitForProcessExit(t, exited)
-	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
+	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
 
 func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 	host := NewHost("desktop.editor")
-	manifest := port.PluginManifest{ID: "md.numen.epub", FileExtensions: []string{".epub"}}
-	host.plugins["md.numen.epub"] = DiscoveredPlugin{Manifest: manifest}
+	manifest := port.PluginManifest{ID: "md.numen.readers.epub", FileExtensions: []string{".epub"}}
+	host.plugins["md.numen.readers.epub"] = DiscoveredPlugin{Manifest: manifest}
 
 	if _, ok := host.FindPluginByFileExtension(".epub"); !ok {
 		t.Fatal("expected an enabled plugin to be found")
 	}
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.epub", false); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.readers.epub", false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 	if _, ok := host.FindPluginByFileExtension(".epub"); ok {
 		t.Fatal("a disabled plugin was found by extension")
 	}
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.epub", true); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.readers.epub", true); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 	host.SetSafeMode(true)
@@ -260,20 +260,20 @@ func TestADisableThatCannotBePersistedLeavesThePluginRunning(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("md.numen.ocr")
+	host.Release("md.numen.engines.ocr")
 	host.SetPersistHandler(func(string, string, any) error { return errors.New("disk full") })
 
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", false); err == nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.engines.ocr", false); err == nil {
 		t.Fatal("expected the persist error to be returned")
 	}
 
-	if !host.IsPluginEnabled("md.numen.ocr") {
+	if !host.IsPluginEnabled("md.numen.engines.ocr") {
 		t.Fatal("the plugin is disabled in memory although the choice was not stored")
 	}
-	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateIdle {
+	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != StateIdle {
 		t.Fatalf("expected the plugin to keep running, got state %v", state)
 	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {

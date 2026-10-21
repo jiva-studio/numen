@@ -26,7 +26,7 @@ import {
   type DeckTabState,
   type PresetTabState,
   type StencilTabState,
-} from '@plugins/flashcards-studio/frontend'
+} from '@plugins/views.flashcards.studio/frontend'
 import {
   DEFAULTS,
   type Curve,
@@ -35,15 +35,15 @@ import {
   type PresetCounts,
   type Settings as Scheduling,
   type SettingsBounds,
-} from '@plugins/flashcards-studio/frontend/cards'
-import { AudioPlayerTab } from '@plugins/media-player/frontend'
+} from '@plugins/views.flashcards.studio/frontend/cards'
+import { AudioPlayerTab } from '@plugins/views.media.player/frontend'
 import {
   DocumentTab,
   useDocumentReader,
   useDocumentTab,
   type Documents,
-} from '@plugins/reader-pdf/frontend'
-import { FilesTab, ROOT, useFilesTab, useFileTree } from '@plugins/view-file-tree/frontend'
+} from '@plugins/readers.pdf/frontend'
+import { FilesTab, ROOT, useFilesTab, useFileTree } from '@plugins/views.file.tree/frontend'
 import { createPathCommandHost } from './fileServices'
 import { FolderTree } from '@lucide/vue'
 import type { CommandTarget } from '@/features/command-palette'

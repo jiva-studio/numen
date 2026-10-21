@@ -19,7 +19,7 @@ function listFrontendPlugins(): string[] {
 describe('pluginCatalog', () => {
   it('has a loader for every plugin directory that has a frontend directory', async () => {
     const directories = listFrontendPlugins()
-    expect(directories).toContain('embeddings')
+    expect(directories).toContain('engines.embeddings')
     expect(Object.keys(pluginCatalog.loaders)).toHaveLength(directories.length)
     for (const id of Object.keys(pluginCatalog.loaders)) {
       expect(pluginCatalog.manifests[id]?.id).toBe(id)
@@ -32,7 +32,7 @@ describe('pluginCatalog', () => {
   })
 
   it('takes the permissions of a plugin from its manifest.json', () => {
-    expect(pluginCatalog.manifests['md.numen.downloader']?.permissions).toStrictEqual([
+    expect(pluginCatalog.manifests['md.numen.tools.downloader']?.permissions).toStrictEqual([
       'network:outbound',
       'vault:write',
     ])

@@ -1,0 +1,60 @@
+{
+  "id": "md.numen.engines.embeddings",
+  "name": "Vector Embeddings",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "Vector embeddings engine for semantic search",
+  "capabilities": [
+    "embedding"
+  ],
+  "targets": [
+    "desktop.editor"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "permissions": [
+    "vault:read",
+    "network:outbound"
+  ],
+  "runtimes": [
+    "onnxruntime"
+  ],
+  "secrets": [
+    "apiKey"
+  ],
+  "lifecycle": {
+    "idleTimeoutSeconds": 0,
+    "keepAliveWhileVisible": true,
+    "memoryLimitBytes": 2147483648
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/engines.embeddings",
+    "serviceName": "numen.v1.EmbeddingService"
+  },
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  },
+  "settings": [
+    {
+      "key": "provider",
+      "type": "string",
+      "title": "Embedding Provider",
+      "description": "Embedding provider engine (local or service)",
+      "default": "local",
+      "palette": false,
+      "options": [
+        {
+          "value": "local",
+          "label": "Local (On-device)"
+        },
+        {
+          "value": "service",
+          "label": "Remote Service (OpenAI / OpenRouter)"
+        }
+      ]
+    }
+  ]
+}

@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
 import type { AgentHost, WorkspaceHost } from '@numen/plugin-sdk'
-import { activate } from '@plugins/view-agent-chat/frontend'
-import manifest from '@plugins/view-agent-chat/manifest.json'
+import { activate } from '@plugins/views.agent.chat/frontend'
+import manifest from '@plugins/views.agent.chat/manifest.json'
 import { createPluginSupport } from './useWindowPlugins'
 
 const createSupport = () => {

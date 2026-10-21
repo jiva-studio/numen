@@ -171,11 +171,11 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 func TestValidateExecutablePath(t *testing.T) {
 	t.Run("valid binary inside regular directory", func(t *testing.T) {
 		pluginDir := filepath.Join(string(filepath.Separator), "opt", "numen", "plugins", "ocr")
-		got, err := validateExecutablePath(pluginDir, "bin/ocr")
+		got, err := validateExecutablePath(pluginDir, "bin/engines.ocr")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		want := filepath.Join(pluginDir, "bin", "ocr")
+		want := filepath.Join(pluginDir, "bin", "engines.ocr")
 		if got != want {
 			t.Fatalf("got %s, want %s", got, want)
 		}

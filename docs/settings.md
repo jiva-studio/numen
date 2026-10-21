@@ -379,7 +379,7 @@ Scans and transcripts through the `claude` command line on this machine, two que
     "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
   },
   "plugins": {
-    "md.numen.proofreading": { "aiConsent": true }
+    "md.numen.tools.proofreading": { "aiConsent": true }
   },
   "indexing": {
     "proofreading": {
@@ -445,7 +445,7 @@ None of this is turned in the window. Every key here is a machine's answer rathe
 
 | | |
 | --- | --- |
-| `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. `numen` is Numen Agent, numen's own: the `md.numen.agent` plugin asks an OpenAI-compatible chat API and calls this vault's tools for the model. Empty answers with none, and the panel says so. |
+| `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin asks an OpenAI-compatible chat API and calls this vault's tools for the model. Empty answers with none, and the panel says so. |
 | `serve_tools` | whether the tools go on a port, which is how an agent a person runs themselves reaches this vault. Off. The agent `use` names is served either way, so an installation naming one has the port open for it. |
 | `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
 | `claude.model` | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
@@ -454,7 +454,7 @@ None of this is turned in the window. Every key here is a machine's answer rathe
 | `numen.model` | which model of the chat API answers. Empty takes the plugin's own `model` setting. |
 | `numen.max_steps` | how many requests it may make to the model before it is stopped. 25. |
 
-Which chat API Numen Agent asks is the plugin's own setting, `plugins.md.numen.agent.baseUrl`: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the plugin's `apiKey` secret, kept in the system keychain; an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.
+Which chat API Numen Agent asks is the plugin's own setting, `plugins.md.numen.agents.numen.baseUrl`: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the plugin's `apiKey` secret, kept in the system keychain; an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.
 
 A section is kept whether it is the one in use or not, so trying another agent for an afternoon costs nothing.
 
@@ -471,7 +471,7 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
     "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
   },
   "plugins": {
-    "md.numen.proofreading": {
+    "md.numen.tools.proofreading": {
       "agent": { "agent": "claude", "model": "sonnet" },
       "aiConsent": true
     }
@@ -489,7 +489,7 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
 
 A program that is not installed or that no plugin lists is answered `NO_ROUTE`, and so is a question when `agent.use` is empty or no program is installed; no other program answers in its place. A program whose plugin cannot be reached, that stops without an answer or that says nothing is answered `UNAVAILABLE`, with the reason it stopped for in the log. The command line, the options and the model of the program's section under `agent` apply to the task as they do to the panel's. A model the program does not offer is the program's own error.
 
-Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agent-claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agent-codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agent-antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agent` asks the chat API with no tool and connects to no tool server. `md.numen.agent-acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused. It stops a task that names a tool.
+Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agents.claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agents.codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agents.antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agents.numen` asks the chat API with no tool and connects to no tool server. `md.numen.agents.acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused. It stops a task that names a tool.
 
 The file is read at every question, so a choice written while the application runs applies to the next one.
 

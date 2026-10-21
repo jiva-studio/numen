@@ -1,0 +1,20 @@
+{
+  "id": "md.numen.views.plex.graph",
+  "name": "Plexus Graph Visualizer",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "Modular knowledge graph visualizer and plexus network explorer",
+  "capabilities": [],
+  "targets": [
+    "desktop.editor"
+  ],
+  "activationEvents": [],
+  "permissions": [
+    "vault:read",
+    "vault:write"
+  ],
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  }
+}

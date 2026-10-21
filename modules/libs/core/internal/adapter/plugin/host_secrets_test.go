@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	secretPluginID = "md.numen.agent"
+	secretPluginID = "md.numen.agents.numen"
 	declared       = "apiKey"
 	fromKeychain   = "value-held-by-the-keychain"
 	fromSettings   = "value-typed-into-the-settings"

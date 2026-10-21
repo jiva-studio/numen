@@ -97,7 +97,7 @@ func createTestTranscriptionPluginTree(t *testing.T, dir string) {
 	}
 
 	manifest := `{
-		"id": "md.numen.transcription",
+		"id": "md.numen.engines.transcription",
 		"name": "Transcription Plugin",
 		"version": "1.0.0",
 		"description": "Transcription",

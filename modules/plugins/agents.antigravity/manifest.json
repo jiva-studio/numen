@@ -1,0 +1,32 @@
+{
+  "id": "md.numen.agents.antigravity",
+  "name": "Antigravity Agent",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "Antigravity CLI agent runner and provider service",
+  "capabilities": [
+    "agent",
+    "ai.agent.provider"
+  ],
+  "targets": [
+    "desktop.editor"
+  ],
+  "activationEvents": [
+    "onCommand:askAntigravity"
+  ],
+  "permissions": [
+    "network:outbound",
+    "vault:read",
+    "vault:write"
+  ],
+  "lifecycle": {
+    "idleTimeoutSeconds": 180,
+    "keepAliveWhileVisible": false,
+    "memoryLimitBytes": 4294967296
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/agents.antigravity",
+    "serviceName": "numen.v1.AgentService"
+  }
+}

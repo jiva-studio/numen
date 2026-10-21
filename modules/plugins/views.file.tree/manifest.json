@@ -1,0 +1,20 @@
+{
+  "id": "md.numen.views.file.tree",
+  "name": "File Tree Explorer",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "Modular file tree explorer and vault navigator",
+  "capabilities": [],
+  "targets": [
+    "desktop.editor"
+  ],
+  "activationEvents": [],
+  "permissions": [
+    "vault:read",
+    "vault:write"
+  ],
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  }
+}

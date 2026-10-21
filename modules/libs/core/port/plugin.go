@@ -160,7 +160,6 @@ type PluginAuthorizer interface {
 
 // PluginPathValidator validates paths within the vault boundary for plugins.
 type PluginPathValidator interface {
-	GetVaultPath() string
 	ValidatePluginPath(pluginID, targetPath string) (string, error)
 }
 

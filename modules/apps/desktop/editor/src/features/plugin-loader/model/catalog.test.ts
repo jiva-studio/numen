@@ -7,22 +7,27 @@ describe('buildPluginCatalog', () => {
   it('keys manifests and loaders by the manifest id, not the directory', async () => {
     const module = { activate: () => {} }
     const catalog = buildPluginCatalog(
-      { [`${root}/reader-pdf/manifest.json`]: { id: 'md.numen.pdf', permissions: ['vault:read'] } },
-      { [`${root}/reader-pdf/frontend/index.ts`]: async () => module },
+      {
+        [`${root}/readers.pdf/manifest.json`]: {
+          id: 'md.numen.readers.pdf',
+          permissions: ['vault:read'],
+        },
+      },
+      { [`${root}/readers.pdf/frontend/index.ts`]: async () => module },
     )
-    expect(catalog.manifests['md.numen.pdf']).toStrictEqual({
-      id: 'md.numen.pdf',
+    expect(catalog.manifests['md.numen.readers.pdf']).toStrictEqual({
+      id: 'md.numen.readers.pdf',
       permissions: ['vault:read'],
     })
-    expect(await catalog.loaders['md.numen.pdf']?.()).toBe(module)
+    expect(await catalog.loaders['md.numen.readers.pdf']?.()).toBe(module)
   })
 
   it('holds a manifest of a plugin that has no frontend and no loader for it', () => {
     const catalog = buildPluginCatalog(
-      { [`${root}/ocr/manifest.json`]: { id: 'md.numen.ocr' } },
+      { [`${root}/engines.ocr/manifest.json`]: { id: 'md.numen.engines.ocr' } },
       {},
     )
-    expect(Object.keys(catalog.manifests)).toStrictEqual(['md.numen.ocr'])
+    expect(Object.keys(catalog.manifests)).toStrictEqual(['md.numen.engines.ocr'])
     expect(catalog.loaders).toStrictEqual({})
   })
 
