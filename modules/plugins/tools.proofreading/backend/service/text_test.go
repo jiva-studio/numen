@@ -100,7 +100,7 @@ func speech(count int) []Line {
 	return out
 }
 
-func TestSpeechIsAskedUnderTheSpeechInstructionWithWhatTheRecordingHolds(t *testing.T) {
+func TestSpeechIsAskedBelowTheSpeechInstructionWithWhatTheRecordingContains(t *testing.T) {
 	m := says("")
 	got, err := proofreadSpeech(t.Context(), m.ask, speech(3), 10, 0, 0, 0)
 	if err != nil {
@@ -117,7 +117,7 @@ func TestSpeechIsAskedUnderTheSpeechInstructionWithWhatTheRecordingHolds(t *test
 	}
 }
 
-func TestSpeechIsAnsweredAWindowAtATimeAndSaysWhereToContinue(t *testing.T) {
+func TestSpeechIsAnsweredAWindowAtATimeAndReturnsWhereToContinue(t *testing.T) {
 	m := says("")
 	got, err := proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 0, 8)
 	if err != nil {
@@ -144,14 +144,14 @@ func TestSpeechIsAnsweredAWindowAtATimeAndSaysWhereToContinue(t *testing.T) {
 	}
 }
 
-func TestSpeechPastTheEndIsDone(t *testing.T) {
+func TestSpeechPastTheEndIsCompleted(t *testing.T) {
 	got, err := proofreadSpeech(t.Context(), says("").ask, speech(3), 4, 1, 9, 8)
 	if err != nil || !got.isDone || got.next != 9 {
 		t.Errorf("result %+v, %v", got, err)
 	}
 }
 
-func TestACutBatchIsAskedWhereARunReachedPastABatch(t *testing.T) {
+func TestASplitBatchIsAskedWhereARunReachedPastABatch(t *testing.T) {
 	request := 0
 	m := &model{script: func(prompt string) string {
 		request++

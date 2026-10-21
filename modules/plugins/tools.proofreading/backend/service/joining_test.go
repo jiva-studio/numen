@@ -13,7 +13,7 @@ func makeBrokenBatch() Batch {
 
 // A run of lines is answered for as one, and the answer says which lines it
 // covers.
-func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
+func TestASentenceBrokenAcrossLinesIsInsertBackTogether(t *testing.T) {
 	placed, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Radha, Krishna is connected with Radhika.", 0)
 	if !ok {
 		t.Fatal("the batch failed")
@@ -41,7 +41,7 @@ func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 // A sentence running on past the last line a batch was given is named whole by
 // a model reading it. That run is dropped, the rest of the batch stands, and
 // the reply says a sentence ran past the end.
-func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
+func TestARunReachingPastTheBatchIsDroppedAndTheRestExists(t *testing.T) {
 	placed, past, ok := GetFixedLines(makeBrokenBatch(), "5-9 | whatever it says\n6 | Sure of it.", 0)
 	if !ok {
 		t.Fatal("the batch failed")
@@ -55,7 +55,7 @@ func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
 }
 
 // A reply whose runs all stand inside the batch says nothing ran past the end.
-func TestARunInsideTheBatchSaysNothingRanPastIt(t *testing.T) {
+func TestARunInsideTheBatchReturnsNothingRanPastIt(t *testing.T) {
 	for _, reply := range []string{"4-5 | Krishna is Radha, connected with Radhika.", "6 | Sure of it.", ""} {
 		if _, past, ok := GetFixedLines(makeBrokenBatch(), reply, 0); !ok || past {
 			t.Errorf("%q answered %v and ran past %v", reply, ok, past)
@@ -64,7 +64,7 @@ func TestARunInsideTheBatchSaysNothingRanPastIt(t *testing.T) {
 }
 
 // A batch the gates refuse says nothing about what ran past its end.
-func TestARefusedBatchSaysNothingRanPastIt(t *testing.T) {
+func TestARefusedBatchReturnsNothingRanPastIt(t *testing.T) {
 	if _, past, ok := GetFixedLines(makeBrokenBatch(), "5-9 | whatever it says\n9 | no such line", 0); ok || past {
 		t.Errorf("the batch answered %v and ran past %v", ok, past)
 	}
@@ -81,7 +81,7 @@ func TestARunSkippingALineRefusesTheBatch(t *testing.T) {
 }
 
 // A run written backwards is not a run.
-func TestARunWrittenBackwardsRefusesTheBatch(t *testing.T) {
+func TestARunSavedBackwardsRefusesTheBatch(t *testing.T) {
 	if _, _, ok := GetFixedLines(makeBrokenBatch(), "6-4 | whatever it says", 0); ok {
 		t.Error("the batch was taken")
 	}
@@ -97,7 +97,7 @@ func TestAnAnswerOfNothingButMarksRefusesTheBatch(t *testing.T) {
 	}
 }
 
-func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
+func TestARunContainsEverySentenceItsLinesCarry(t *testing.T) {
 	batch := Batch{Number: 1, IsJoinable: true, Lines: []Line{
 		{Number: 4, Last: 4, Text: "we should go. And then"},
 		{Number: 5, Last: 5, Text: "the next day he left."},

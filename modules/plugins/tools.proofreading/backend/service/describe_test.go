@@ -29,7 +29,7 @@ func getListedWords(t *testing.T, about string) string {
 }
 
 // A digest says how the speech opens and which of its words recur.
-func TestADigestSaysWhatTheRecordingHolds(t *testing.T) {
+func TestADigestReturnsWhatTheRecordingContains(t *testing.T) {
 	about := describeSpeech(makeLines(
 		"The assembly at Mithila heard Ganaka.",
 		"The teacher listened. Then Ganaka spoke of Mithila",
@@ -62,7 +62,7 @@ func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
 }
 
 // A shortening ends no sentence, so the name it stands before is a name.
-func TestANameBehindAShorteningIsStillAName(t *testing.T) {
+func TestANamePriorAShorteningIsStillAName(t *testing.T) {
 	about := describeSpeech(makeLines("Mr. Ganaka arrived. Mr. Ganaka left."))
 	if response := getListedWords(t, about); response != "Ganaka" {
 		t.Errorf("the digest lists %q", response)
@@ -82,7 +82,7 @@ func TestTheWordAPersonCallsHimselfIsNotAName(t *testing.T) {
 
 // The opening is as much of the speech as the digest quotes, and says it was
 // cut short.
-func TestTheOpeningIsCutShort(t *testing.T) {
+func TestTheOpeningIsSplitShort(t *testing.T) {
 	var response []string
 	for at := range 200 {
 		response = append(response, "word"+strconv.Itoa(at))

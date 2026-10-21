@@ -14,7 +14,7 @@ func oneLine(text string) Batch {
 
 // Held to no distance, a correction stands however far from the line it puts
 // right.
-func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
+func TestACorrectionHeldToNoDistanceExistsHoweverFar(t *testing.T) {
 	if apart := EditDistance(asHeard, asSaid); apart <= MaxEditDistance {
 		t.Fatalf("the two stand %.2f apart, which the recognition's own limit allows", apart)
 	}

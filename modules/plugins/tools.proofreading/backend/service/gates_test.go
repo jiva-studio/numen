@@ -79,13 +79,13 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 		if apart < one.least || apart > one.most {
 			t.Errorf("%q -> %q stands %.4f apart, want between %v and %v", one.was, one.put, apart, one.least, one.most)
 		}
-		if retained := apart <= MaxEditDistance; retained != one.isKept {
-			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.put, apart, retained, one.isKept)
+		if isAccepted := apart <= MaxEditDistance; isAccepted != one.isKept {
+			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.put, apart, isAccepted, one.isKept)
 		}
 	}
 }
 
-func TestACorrectionThatMovedTooFarIsDroppedAndTheBatchKept(t *testing.T) {
+func TestGetFixedLines_ExcessiveEditDistanceDropped(t *testing.T) {
 	reply := "10|the Södërby garden hedge.\n" +
 		"11|Södërby Trädgård's Handbök\n" +
 		"12|TRÄDGÅRD HANDBÖK At the request of the Sodërby committee\n" +
@@ -104,7 +104,7 @@ func TestACorrectionThatMovedTooFarIsDroppedAndTheBatchKept(t *testing.T) {
 	}
 }
 
-func TestACorrectionSayingWhatTheLineSaysIsNotACorrection(t *testing.T) {
+func TestGetFixedLines_IdenticalLineIgnored(t *testing.T) {
 	reply := "20|blessings.\n10|the Södërby garden hedge."
 
 	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
@@ -159,20 +159,20 @@ func TestANumberRunningIntoTheLineRefusesTheBatch(t *testing.T) {
 
 // A separator the reply invented stands where the line begins, and the letters
 // either side of it are the same, so the third gate cannot see it.
-func TestAWordlessThingPutInFrontOfALineIsNoCorrection(t *testing.T) {
-	for _, placed := range []string{
+func TestGetFixedLines_SeparatorPrefixIgnored(t *testing.T) {
+	for _, lineText := range []string{
 		"10 - the Sodërby gardin hcdge.",
 		"10 — the Sodërby gardin hcdge.",
 		"10 → the Sodërby gardin hcdge.",
 		"10 : the Sodërby gardin hcdge.",
 	} {
-		fixed, _, reply := GetFixedLines(batch(), placed, MaxEditDistance)
+		fixed, _, reply := GetFixedLines(batch(), lineText, MaxEditDistance)
 		if !reply {
-			t.Errorf("%q rejected the batch", placed)
+			t.Errorf("%q rejected the batch", lineText)
 			continue
 		}
 		if len(fixed) != 0 {
-			t.Errorf("%q put %q in front of the line", placed, fixed[0].Text)
+			t.Errorf("%q put %q in front of the line", lineText, fixed[0].Text)
 		}
 	}
 }

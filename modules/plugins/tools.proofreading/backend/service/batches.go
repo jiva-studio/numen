@@ -46,13 +46,13 @@ func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	reach := -1
-	for _, trimmed := range cuts {
-		if trimmed < 0 || trimmed >= len(batches)-1 {
+	for _, cutIndex := range cuts {
+		if cutIndex < 0 || cutIndex >= len(batches)-1 {
 			continue
 		}
 		// One window covers two cuts near the end of the transcript, and each
 		// batch over a cut batch reaches further than the one before it.
-		end := min(max((trimmed+1)*step-size/2, 0)+size, len(lines))
+		end := min(max((cutIndex+1)*step-size/2, 0)+size, len(lines))
 		if end <= reach {
 			continue
 		}

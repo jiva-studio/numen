@@ -42,7 +42,7 @@ func narrow() Batch {
 	return Batch{Number: 1, Lines: []Line{makeLine(3), makeLine(4)}}
 }
 
-func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
+func TestACorrectionReachesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 	replies := map[int]string{
 		0: "3|we spoke of the harbour lights",
 		1: "3|we spoke of the harbor lite",
@@ -76,7 +76,7 @@ func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
 	}
 }
 
-func TestARefusedReplyLeavesItsLinesToTheOtherBatch(t *testing.T) {
+func TestARefusedReplyPreservesItsLinesToTheOtherBatch(t *testing.T) {
 	replies := map[int]string{
 		0: "3|the " + Opens + "3" + Closes + " harbour lights",
 		1: "3|we spoke of the harbor lite\n4|until the fogg came in",
@@ -114,7 +114,7 @@ func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 	}
 }
 
-func TestABatchNothingCameBackAboutPutsNothingRight(t *testing.T) {
+func TestABatchNothingCameBackAboutInsertsNothingRight(t *testing.T) {
 	if placed, _ := gatherReplies([]Batch{wide()}, nil, MaxEditDistance); len(placed) != 0 {
 		t.Errorf("a batch with no reply put %v right", placed)
 	}
@@ -180,7 +180,7 @@ func coveredOnce(t *testing.T, put map[int]Line) {
 	}
 }
 
-func TestARunSeenFromFurtherBackTakesTheLineOfASingleCorrection(t *testing.T) {
+func TestARunObservedFromFurtherBackConsumesTheLineOfASingleCorrection(t *testing.T) {
 	replies := map[int]string{
 		0: "4|until the fog came in.",
 		1: "3-4|We spoke of the harbour lights until the fog came in.",
@@ -197,7 +197,7 @@ func TestARunSeenFromFurtherBackTakesTheLineOfASingleCorrection(t *testing.T) {
 	coveredOnce(t, placed)
 }
 
-func TestTwoRunsSharingALineAreNotBothKept(t *testing.T) {
+func TestTwoRunsSharingALineAreNotBothCached(t *testing.T) {
 	replies := map[int]string{
 		0: "2-3|And the sea was calm, we spoke of the harbour lights.",
 		1: "3-4|We spoke of the harbour lights until the fog came in.",

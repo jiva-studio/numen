@@ -57,16 +57,16 @@ func getRecurringNames(said []string) []string {
 		here := opens
 		opens = isSentenceEnd(word)
 
-		trimmed := strings.TrimFunc(word, func(r rune) bool {
+		cleanWord := strings.TrimFunc(word, func(r rune) bool {
 			return !unicode.IsLetter(r) && !unicode.IsMark(r)
 		})
-		if trimmed == "" || here || !isName(trimmed) {
+		if cleanWord == "" || here || !isName(cleanWord) {
 			continue
 		}
-		key := strings.ToLower(trimmed)
+		key := strings.ToLower(cleanWord)
 		if times[key] == 0 {
 			order = append(order, key)
-			content[key] = trimmed
+			content[key] = cleanWord
 		}
 		times[key]++
 	}
