@@ -62,15 +62,79 @@ func (v VaultPathValidator) ValidatePath(vaultRoot, targetPath string) (string, 
 	}
 
 	realVault, errV := filepath.EvalSymlinks(cleanVault)
-	realTarget, errT := filepath.EvalSymlinks(cleanTarget)
-	if errV == nil && errT == nil {
-		relReal, errRel := filepath.Rel(realVault, realTarget)
-		if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
-			return "", port.ErrPathTraversal
-		}
+	if errV != nil {
+		return "", fmt.Errorf("resolve vault root symlinks: %w", errV)
+	}
+
+	if err := checkVaultSymlinks(realVault, cleanTarget); err != nil {
+		return "", err
 	}
 
 	return cleanTarget, nil
+}
+
+func checkVaultSymlinks(realVault, cleanTarget string) error {
+	realTarget, err := filepath.EvalSymlinks(cleanTarget)
+	if err == nil {
+		return checkPathInside(realVault, realTarget)
+	}
+
+	checkPath, err := resolveSymlinkTarget(cleanTarget)
+	if err != nil {
+		return port.ErrPathTraversal
+	}
+
+	realParent, err := resolveDeepestParent(checkPath)
+	if err != nil {
+		return port.ErrPathTraversal
+	}
+
+	return checkParentInside(realVault, realParent)
+}
+
+func checkPathInside(realVault, target string) error {
+	relReal, errRel := filepath.Rel(realVault, target)
+	if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
+		return port.ErrPathTraversal
+	}
+	return nil
+}
+
+func checkParentInside(realVault, parent string) error {
+	relReal, errRel := filepath.Rel(realVault, parent)
+	if errRel != nil || (relReal != "." && (relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)))) {
+		return port.ErrPathTraversal
+	}
+	return nil
+}
+
+func resolveSymlinkTarget(cleanTarget string) (string, error) {
+	if fi, err := os.Lstat(cleanTarget); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+		dest, err := os.Readlink(cleanTarget)
+		if err != nil {
+			return "", err
+		}
+		if !filepath.IsAbs(dest) {
+			dest = filepath.Join(filepath.Dir(cleanTarget), dest)
+		}
+		return filepath.Clean(dest), nil
+	}
+	return cleanTarget, nil
+}
+
+func resolveDeepestParent(path string) (string, error) {
+	at := filepath.Dir(path)
+	for {
+		rp, err := filepath.EvalSymlinks(at)
+		if err == nil {
+			return rp, nil
+		}
+		next := filepath.Dir(at)
+		if next == at {
+			return "", err
+		}
+		at = next
+	}
 }
 
 // isSystemTempDir reports whether the given path resides within an operating system temporary directory.

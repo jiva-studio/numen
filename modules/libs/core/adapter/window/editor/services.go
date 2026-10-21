@@ -112,7 +112,7 @@ func (s *Services) readDocuments(readers port.VaultReaders, books port.Book, v *
 	s.Document.viewer, s.Document.getDocument, s.Document.getPage = v, &getDocument, &getPage
 	getBook, readBookMarkup := document.NewGetBook(books), document.NewReadBookMarkup(books)
 
-	s.Book.viewer, s.Book.getBookPicture = v, &getBookPicture
+	s.Book.viewer, s.Book.readers, s.Book.getBookPicture = v, readers, &getBookPicture
 	s.Book.getBook, s.Book.readBookMarkup = &getBook, &readBookMarkup
 }
 
