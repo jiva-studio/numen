@@ -137,6 +137,8 @@ describe('every setting', () => {
           isDefault: true,
           writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"' }],
           presence: 'not fetched',
+          reasoningLevels: [],
+          defaultReasoning: undefined,
         },
       ],
       plugins: [],
