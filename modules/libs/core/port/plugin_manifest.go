@@ -41,20 +41,44 @@ func PluginPermissions() []string {
 	return []string{PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete}
 }
 
+// PluginCapabilities is every core capability the guide lists.
+func PluginCapabilities() []string {
+	return []string{
+		"document",
+		"compute",
+		"agent",
+		"recognition",
+		"transcription",
+		"proofreading",
+		"ai.agent.provider",
+	}
+}
+
+// PluginActivationEvents is every activation event pattern the guide lists.
+func PluginActivationEvents() []string {
+	return []string{
+		"onFile:<glob>",
+		"onCommand:<id>",
+		"*",
+	}
+}
+
 var (
-	ErrEmptyID             = errors.New("plugin id cannot be empty")
-	ErrEmptyName           = errors.New("plugin name cannot be empty")
-	ErrEmptyVersion        = errors.New("plugin version cannot be empty")
-	ErrInvalidID           = errors.New("plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)")
-	ErrInvalidVersion      = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
-	ErrUnsupportedProtocol = errors.New("unsupported plugin protocol")
-	ErrInvalidLifecycle    = errors.New("invalid lifecycle")
-	ErrEmptySettingTitle   = errors.New("setting title cannot be empty")
-	ErrInvalidBackend      = errors.New("invalid backend")
-	ErrInvalidFrontend     = errors.New("invalid frontend")
-	ErrInvalidPermission   = errors.New("invalid permission")
-	ErrInvalidRuntime      = errors.New("invalid runtime")
-	ErrEmptySettingKey     = errors.New("setting key cannot be empty")
+	ErrEmptyID                 = errors.New("plugin id cannot be empty")
+	ErrEmptyName               = errors.New("plugin name cannot be empty")
+	ErrEmptyVersion            = errors.New("plugin version cannot be empty")
+	ErrInvalidID               = errors.New("plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)")
+	ErrInvalidVersion          = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
+	ErrUnsupportedProtocol     = errors.New("unsupported plugin protocol")
+	ErrInvalidLifecycle        = errors.New("invalid lifecycle")
+	ErrEmptySettingTitle       = errors.New("setting title cannot be empty")
+	ErrInvalidBackend          = errors.New("invalid backend")
+	ErrInvalidFrontend         = errors.New("invalid frontend")
+	ErrInvalidPermission       = errors.New("invalid permission")
+	ErrInvalidCapability       = errors.New("invalid capability")
+	ErrInvalidActivationEvent  = errors.New("invalid activation event")
+	ErrInvalidRuntime          = errors.New("invalid runtime")
+	ErrEmptySettingKey         = errors.New("setting key cannot be empty")
 	ErrInvalidSettingKey   = errors.New("invalid setting key")
 	ErrDuplicateSettingKey = errors.New("duplicate setting key")
 	ErrInvalidSettingType  = errors.New("invalid setting type")
@@ -458,6 +482,41 @@ func (m PluginManifest) listPermissionIssues() []error {
 		}
 	}
 	return issues
+}
+
+// ValidateCapabilities checks that every capability is one the validator recognizes.
+func (m PluginManifest) ValidateCapabilities() error {
+	var issues []error
+	for _, c := range m.Capabilities {
+		if !slices.Contains(PluginCapabilities(), c) {
+			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidCapability, c))
+		}
+	}
+	return errors.Join(issues...)
+}
+
+// ValidateActivationEvents checks that every activation event matches a recognized pattern.
+func (m PluginManifest) ValidateActivationEvents() error {
+	var issues []error
+	for _, e := range m.ActivationEvents {
+		if !isRecognizedActivationEvent(e) {
+			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidActivationEvent, e))
+		}
+	}
+	return errors.Join(issues...)
+}
+
+func isRecognizedActivationEvent(event string) bool {
+	if event == "*" {
+		return true
+	}
+	if strings.HasPrefix(event, "onFile:") && len(event) > len("onFile:") {
+		return true
+	}
+	if strings.HasPrefix(event, "onCommand:") && len(event) > len("onCommand:") {
+		return true
+	}
+	return false
 }
 
 func (m PluginManifest) listRuntimeIssues() []error {
