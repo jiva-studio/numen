@@ -89,14 +89,14 @@ describe('what the goals come to today', () => {
     const presetElements = one.findAll('.presets__preset')
 
     expect(presetElements).toHaveLength(3)
-    expect(renderedElement.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
+    expect(presetElements.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
       'Sanskrit',
       'Pali',
       'Greek',
     ])
     // The heading, the goal under it, and the number a person looks for.
-    expect(renderedElement[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
-    expect(renderedElement[1]?.find('.presets__done').text()).toBe('20%')
+    expect(presetElements[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
+    expect(presetElements[1]?.find('.presets__done').text()).toBe('20%')
   })
 
   // A person is as far through their day as the budget closing it says.
@@ -271,9 +271,9 @@ describe('what the goals come to today', () => {
     ])
     const presetElements = one.findAll('.presets__preset')
 
-    expect(renderedElement).toHaveLength(2)
-    expect(renderedElement[1]?.text()).toBe('Stoppedno cards a day')
-    expect(renderedElement[1]?.find('.presets__done').exists()).toBe(false)
+    expect(presetElements).toHaveLength(2)
+    expect(presetElements[1]?.text()).toBe('Stoppedno cards a day')
+    expect(presetElements[1]?.find('.presets__done').exists()).toBe(false)
   })
 
   // The decks naming no preset are a tile like any other, and it carries no act.

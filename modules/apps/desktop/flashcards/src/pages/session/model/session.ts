@@ -82,7 +82,7 @@ function useSessionCards() {
     answers.value = []
   }
 
-  return { asked: request, at, shown: displayedItems, answers, card, left: remaining, over: isOver, done: isDone, reset }
+  return { asked: request, at, shown: isAnswerShown, answers, card, left: remaining, over: isOver, done: isDone, reset }
 }
 
 async function openSession(deps: {

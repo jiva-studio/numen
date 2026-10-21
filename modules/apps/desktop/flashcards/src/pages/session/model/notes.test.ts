@@ -121,7 +121,7 @@ describe('what is read belongs to the deck', () => {
     const second = target.openPanel()
 
     // The second deck is answered, and the first only afterwards.
-    pendingItem[1]?.()
+    pendingCallbacks[1]?.()
     await second
     pendingCallbacks[0]?.()
     await first
@@ -156,7 +156,7 @@ describe('what is read belongs to the deck', () => {
     const second = target.openPanel()
     expect(target.notes.value).toEqual([])
 
-    pendingItem[1]?.()
+    pendingCallbacks[1]?.()
     await second
     expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
   })
@@ -217,7 +217,7 @@ describe('the asking', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: (_vault, of) =>
         new Promise((then, fail) =>
-          pendingCallbacks.push({
+          pendingRequests.push({
             deck: of,
             answer: () => then({ notes: [createNeighbour({ path: of })], unread: 1 }),
             refuse: () => fail(new Error('out of reach')),
@@ -225,7 +225,7 @@ describe('the asking', () => {
         ),
       showNotice: (one) => notices.push(one),
     })
-    return { held: target, waiting: pendingItem, deck, notices }
+    return { held: target, waiting: pendingRequests, deck, notices }
   }
 
   it('is working while the deck is being requested for, and not once it has answered', async () => {
