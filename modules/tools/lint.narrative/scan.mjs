@@ -491,7 +491,11 @@ if (isStagedOnly) {
     if (fs.existsSync(file)) scanFile(file)
   }
 } else {
-  walk(rootDir)
+  if (fs.existsSync(rootDir) && fs.statSync(rootDir).isFile()) {
+    scanFile(rootDir)
+  } else {
+    walk(rootDir)
+  }
 }
 
 // Compute Aggregates
