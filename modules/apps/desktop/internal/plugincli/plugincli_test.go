@@ -10,121 +10,6 @@ import (
 	"testing"
 )
 
-func TestPluginCreate_Native(t *testing.T) {
-	tmpDir := t.TempDir()
-	outDir := filepath.Join(tmpDir, "sample-native")
-
-	opts := CreateOptions{
-		Name:      "sample-native",
-		Type:      "native",
-		Template:  "",
-		OutputDir: outDir,
-	}
-
-	var buf bytes.Buffer
-	if err := Create(opts, &buf); err != nil {
-		t.Fatalf("unexpected error creating native plugin: %v", err)
-	}
-
-	for _, file := range []string{
-		"manifest.json",
-		"go.mod",
-		"backend/main.go",
-		"Makefile",
-		"README.md",
-	} {
-		path := filepath.Join(outDir, file)
-		if _, err := os.Stat(path); err != nil {
-			t.Errorf("expected file %s to exist: %v", file, err)
-		}
-	}
-
-	issues, err := Validate(outDir)
-	if err != nil {
-		t.Fatalf("unexpected validate error: %v", err)
-	}
-	if len(issues) > 0 {
-		t.Fatalf("validation issues found on created plugin: %v", issues)
-	}
-}
-
-func TestPluginCreate_Frontend(t *testing.T) {
-	tmpDir := t.TempDir()
-	outDir := filepath.Join(tmpDir, "sample-frontend")
-
-	opts := CreateOptions{
-		Name:      "sample-frontend",
-		Type:      "frontend",
-		Template:  "",
-		OutputDir: outDir,
-	}
-
-	var buf bytes.Buffer
-	if err := Create(opts, &buf); err != nil {
-		t.Fatalf("unexpected error creating frontend plugin: %v", err)
-	}
-
-	for _, file := range []string{
-		"manifest.json",
-		"frontend/index.ts",
-		"frontend/Viewer.vue",
-		"frontend/package.json",
-		"frontend/vite.config.ts",
-		"Makefile",
-	} {
-		path := filepath.Join(outDir, file)
-		if _, err := os.Stat(path); err != nil {
-			t.Errorf("expected file %s to exist: %v", file, err)
-		}
-	}
-
-	issues, err := Validate(outDir)
-	if err != nil {
-		t.Fatalf("unexpected validate error: %v", err)
-	}
-	if len(issues) > 0 {
-		t.Fatalf("validation issues found: %v", issues)
-	}
-}
-
-func TestPluginCreate_ReaderTemplate(t *testing.T) {
-	tmpDir := t.TempDir()
-	outDir := filepath.Join(tmpDir, "sample-reader")
-
-	opts := CreateOptions{
-		Name:      "sample-reader",
-		Type:      "native",
-		Template:  "reader",
-		OutputDir: outDir,
-	}
-
-	var buf bytes.Buffer
-	if err := Create(opts, &buf); err != nil {
-		t.Fatalf("unexpected error creating reader plugin: %v", err)
-	}
-
-	manifestBytes, err := os.ReadFile(filepath.Join(outDir, "manifest.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	manifestStr := string(manifestBytes)
-
-	if !strings.Contains(manifestStr, `"document"`) {
-		t.Errorf("expected document capability in reader manifest: %s", manifestStr)
-	}
-	if !strings.Contains(manifestStr, `"onFile:*.sample-reader"`) {
-		t.Errorf("expected onFile activation in reader manifest: %s", manifestStr)
-	}
-
-	issues, err := Validate(outDir)
-	if err != nil {
-		t.Fatalf("unexpected validate error: %v", err)
-	}
-	if len(issues) > 0 {
-		t.Fatalf("validation issues found: %v", issues)
-	}
-}
-
 func TestPluginValidate_InvalidID(t *testing.T) {
 	tmpDir := t.TempDir()
 	manifestPath := filepath.Join(tmpDir, "manifest.json")
@@ -222,15 +107,11 @@ func TestPluginPackage_Success(t *testing.T) {
 	tmpDir := t.TempDir()
 	pluginDir := filepath.Join(tmpDir, "my-plugin")
 
-	opts := CreateOptions{
-		Name:      "my-plugin",
-		Type:      "native",
-		Template:  "",
-		OutputDir: pluginDir,
+	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
+		t.Fatal(err)
 	}
-
-	var createBuf bytes.Buffer
-	if err := Create(opts, &createBuf); err != nil {
+	manifest := `{"id": "md.numen.my-plugin", "name": "my-plugin", "version": "1.0.0"}`
+	if err := os.WriteFile(filepath.Join(pluginDir, "manifest.json"), []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -318,12 +199,12 @@ func TestPluginCLI_Run(t *testing.T) {
 		t.Errorf("expected code 0 for help, got %d", code)
 	}
 
-	// Create
-	stdout.Reset()
-	stderr.Reset()
-	code = Run([]string{"create", "cli-test", "--type=native", "--out=" + pluginPath}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("create failed with code %d: %s", code, stderr.String())
+	if err := os.MkdirAll(pluginPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{"id": "md.numen.cli-test", "name": "CLI Test", "version": "1.0.0"}`
+	if err := os.WriteFile(filepath.Join(pluginPath, "manifest.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
 	}
 
 	// Validate
@@ -352,31 +233,6 @@ func TestPluginCLI_Run(t *testing.T) {
 	code = Run([]string{"unknown-cmd"}, &stdout, &stderr)
 	if code != 1 {
 		t.Errorf("expected code 1 for unknown command, got %d", code)
-	}
-}
-
-func TestPluginCreate_ReaderCompiles(t *testing.T) {
-	tmpDir := t.TempDir()
-	outDir := filepath.Join(tmpDir, "sample-reader")
-
-	opts := CreateOptions{
-		Name:      "sample-reader",
-		Type:      "native",
-		Template:  "reader",
-		OutputDir: outDir,
-	}
-
-	var buf bytes.Buffer
-	if err := Create(opts, &buf); err != nil {
-		t.Fatalf("unexpected error creating reader plugin: %v", err)
-	}
-
-	goModBytes, err := os.ReadFile(filepath.Join(outDir, "go.mod"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(goModBytes), "replace github.com/jiva-studio/numen/modules/libs/protocol") {
-		t.Errorf("expected protocol replace directive in go.mod")
 	}
 }
 
@@ -469,22 +325,5 @@ func TestPluginValidate_MissingEntrypointFiles(t *testing.T) {
 func TestPluginValidate_MissingPath(t *testing.T) {
 	if _, err := Validate(filepath.Join(t.TempDir(), "absent")); err == nil {
 		t.Fatal("expected error for a missing path")
-	}
-}
-
-func TestPluginCreate_ManifestCarriesProtocolAndNoMode(t *testing.T) {
-	outDir := filepath.Join(t.TempDir(), "p")
-	if err := Create(CreateOptions{Name: "p", Type: "frontend", OutputDir: outDir}, &bytes.Buffer{}); err != nil {
-		t.Fatal(err)
-	}
-	raw, err := os.ReadFile(filepath.Join(outDir, "manifest.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(raw), `"protocol": 1`) {
-		t.Errorf("manifest lacks protocol: %s", raw)
-	}
-	if strings.Contains(string(raw), `"mode"`) || strings.Contains(string(raw), `"backend"`) {
-		t.Errorf("frontend manifest carries mode or backend: %s", raw)
 	}
 }

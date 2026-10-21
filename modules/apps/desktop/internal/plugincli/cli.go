@@ -11,7 +11,6 @@ import (
 const usage = `numen plugin — plugin developer tooling
 
 usage:
-  numen plugin create <name> [--type=<native|frontend>] [--template=<reader|compute|agent>] [--out=<dir>]
   numen plugin validate <path>
   numen plugin package <path> [--out=<archive>]
 `
@@ -24,8 +23,6 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	switch args[0] {
-	case "create":
-		return runCreate(args[1:], stdout, stderr)
 	case "validate":
 		return runValidate(args[1:], stdout, stderr)
 	case "package":
@@ -37,44 +34,6 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "unknown plugin command: %q\n\n%s", args[0], usage)
 		return 1
 	}
-}
-
-func runCreate(args []string, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("create", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-
-	var pluginType string
-	var template string
-	var outDir string
-
-	fs.StringVar(&pluginType, "type", "native", "plugin type: native or frontend")
-	fs.StringVar(&template, "template", "", "plugin template: reader, compute, or agent")
-	fs.StringVar(&outDir, "out", "", "output directory path")
-
-	positional, err := parseInterspersed(fs, args)
-	if err != nil {
-		return 1
-	}
-
-	if len(positional) == 0 {
-		fmt.Fprintln(stderr, "error: plugin name is required")
-		fmt.Fprintln(stderr, "usage: numen plugin create <name> [--type=<native|frontend>] [--template=<reader|compute|agent>] [--out=<dir>]")
-		return 1
-	}
-
-	name := positional[0]
-	opts := CreateOptions{
-		Name:      name,
-		Type:      pluginType,
-		Template:  template,
-		OutputDir: outDir,
-	}
-
-	if err := Create(opts, stdout); err != nil {
-		fmt.Fprintf(stderr, "error creating plugin: %v\n", err)
-		return 1
-	}
-	return 0
 }
 
 func runValidate(args []string, stdout, stderr io.Writer) int {
