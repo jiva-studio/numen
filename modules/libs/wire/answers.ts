@@ -75,7 +75,7 @@ export const getBytesQuery = (file: string): string => {
 }
 
 /** How often a document that is busy is waited out before it errors. */
-const MAX_BUSY_RETRIES = 3
+export const MAX_BUSY_RETRIES = 3
 
 /** How long the window waits before asking a busy document again. */
 const BUSY_RETRY_DELAY_MS = 1000
