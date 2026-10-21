@@ -18,27 +18,9 @@ type Config struct {
 	Progress       func(what string, done, total int64) `json:"-"`
 }
 
-// getRuntimeLibrary returns the library the runtime is opened from: the runtime
-// setting, the library in the models folder the settings name, and the one the
-// host provisioned.
-func (c Config) getRuntimeLibrary() string {
-	return onnx.ResolveLibrary(c.Runtime, c.Dir)
-}
-
-// getSessionProvider returns the execution provider the sessions open on: the
-// one the host names, and the CPU when it names auto.
-func getSessionProvider() onnx.Provider {
-	return onnx.GetProviderOr(onnx.ProviderCPU)
-}
-
 // folder is where the models are kept and whether they may be fetched.
 func (c Config) folder() models.Folder {
-	return models.Folder{
-		Section:        "indexing.recognition",
-		Dir:            c.Dir,
-		ShouldDownload: c.ShouldDownload,
-		Progress:       c.Progress,
-	}
+	return models.NewFolder("indexing.recognition", c.Dir, c.ShouldDownload, c.Progress)
 }
 
 // LayoutModel divides a page into its parts and puts them in reading order.

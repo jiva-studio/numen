@@ -55,3 +55,26 @@ func Locate(ctx context.Context, src Source, pins Pins, path, name, kind string)
 	}
 	return found, nil
 }
+
+// Wanted is a model file to locate.
+type Wanted struct {
+	Dst  *string
+	Path string
+	Name string
+	Kind string
+}
+
+// LocateAll locates every wanted model file into its destination.
+func LocateAll(ctx context.Context, src Source, pins Pins, wanted []Wanted) error {
+	for _, one := range wanted {
+		at, err := Locate(ctx, src, pins, one.Path, one.Name, one.Kind)
+		if err != nil {
+			return err
+		}
+		if one.Dst != nil {
+			*one.Dst = at
+		}
+	}
+	return nil
+}
+

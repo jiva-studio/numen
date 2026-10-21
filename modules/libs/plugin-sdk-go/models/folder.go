@@ -18,6 +18,16 @@ type Folder struct {
 	Progress func(what string, done, total int64)
 }
 
+// NewFolder returns a Folder for a settings section.
+func NewFolder(section, dir string, shouldDownload bool, progress func(what string, done, total int64)) Folder {
+	return Folder{
+		Section:        section,
+		Dir:            dir,
+		ShouldDownload: shouldDownload,
+		Progress:       progress,
+	}
+}
+
 // GetDir returns the folder a fetched file is put in: the folder the settings
 // name, or the shared models folder.
 func (f Folder) GetDir() (string, error) {
@@ -63,3 +73,9 @@ func (f Folder) GetPaths(file string) []string {
 func (f Folder) Source() Source {
 	return Source{GetPaths: f.GetPaths, Fetch: f.Fetch}
 }
+
+// Locate finds and fetches each wanted model file, writing its path to its destination.
+func (f Folder) Locate(ctx context.Context, pins Pins, wanted []Wanted) error {
+	return LocateAll(ctx, f.Source(), pins, wanted)
+}
+

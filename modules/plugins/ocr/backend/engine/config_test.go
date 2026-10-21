@@ -221,7 +221,7 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 		ShouldDownload: true,
 		Progress:       func(what string, _, _ int64) { told = what },
 	}
-	if got := cfg.getRuntimeLibrary(); got != "lib.so" {
+	if got := onnx.ResolveLibrary(cfg.Runtime, cfg.Dir); got != "lib.so" {
 		t.Errorf("runtime = %q, want lib.so", got)
 	}
 	got := cfg.folder()
@@ -237,8 +237,8 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 func TestTheSessionsOpenOnTheCPUUnlessTheHostNamesAProvider(t *testing.T) {
 	for name, want := range map[string]onnx.Provider{"": onnx.ProviderCPU, "auto": onnx.ProviderCPU, "cuda": onnx.ProviderCUDA} {
 		t.Setenv("NUMEN_ONNX_PROVIDER", name)
-		if got := getSessionProvider(); got != want {
-			t.Errorf("with %q, getSessionProvider() = %q, want %q", name, got, want)
+		if got := onnx.GetSessionProvider(); got != want {
+			t.Errorf("with %q, GetSessionProvider() = %q, want %q", name, got, want)
 		}
 	}
 }
