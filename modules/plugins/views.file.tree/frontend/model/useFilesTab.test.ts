@@ -114,35 +114,35 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     },
     showError: (text) => void isDone.push(`says ${text}`),
   })
-  return { done: isDone, list, one: gestures, asked: request, sources }
+  return { recorded: isDone, list, one: gestures, requests: request, sources }
 }
 
 describe('a row activated', () => {
   it('takes the person to the note it remains for', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.activate('Entropy.md')
 
-    expect(done).toStrictEqual(['lands file Entropy.md'])
+    expect(recorded).toStrictEqual(['lands file Entropy.md'])
   })
 
   it('takes the person to the book it remains for', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.activate('Heat.pdf')
 
-    expect(done).toStrictEqual(['lands file Heat.pdf'])
+    expect(recorded).toStrictEqual(['lands file Heat.pdf'])
   })
 
   it('takes the person to a file the vault holds no source for', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.activate('Cover.png')
 
-    expect(done).toStrictEqual(['lands file Cover.png'])
+    expect(recorded).toStrictEqual(['lands file Cover.png'])
   })
 
   it('leaves it the whole of what is chosen', async () => {
@@ -155,21 +155,21 @@ describe('a row activated', () => {
   })
 
   it('does nothing at all for a row the tree does not draw', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.activate('physics/Kelvin.md')
 
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 
   it('opens nothing for a folder, and selects it', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.activate('physics')
 
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
     expect(list.selectedPaths.value).toStrictEqual(['physics'])
   })
 })
@@ -201,97 +201,97 @@ describe('what the menu offers', () => {
 
 describe('rows dragged out of the tree', () => {
   it('are the note the row remains for', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.drag(['Entropy.md'])
 
-    expect(done).toStrictEqual(['drags Entropy.md'])
+    expect(recorded).toStrictEqual(['drags Entropy.md'])
   })
 
   it('are every note of a selection, in the order the rows were dragged', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
     await list.openFolder('physics')
 
     one.drag(['Entropy.md', 'physics/Kelvin.md'])
 
-    expect(done).toStrictEqual(['drags Entropy.md physics/Kelvin.md'])
+    expect(recorded).toStrictEqual(['drags Entropy.md physics/Kelvin.md'])
   })
 
   it('are the notes of a mixed selection, and the rest stay where they are', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.drag(['physics', 'Entropy.md', 'Heat.pdf', 'Cover.png'])
 
-    expect(done).toStrictEqual(['drags Entropy.md'])
+    expect(recorded).toStrictEqual(['drags Entropy.md'])
   })
 
   it('are nothing where the rows hold no note at all', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.drag(['physics', 'Heat.pdf', 'Cover.png'])
 
-    expect(done).toStrictEqual(['drags —'])
+    expect(recorded).toStrictEqual(['drags —'])
   })
 
   it('are nothing for a row the tree is no longer drawing', async () => {
-    const { done, one } = tab()
+    const { recorded, one } = tab()
 
     one.drag(['Entropy.md'])
 
-    expect(done).toStrictEqual(['drags —'])
+    expect(recorded).toStrictEqual(['drags —'])
   })
 
   it('are nothing once they have been release', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.drag(['Entropy.md'])
     one.drop()
 
-    expect(done).toStrictEqual(['drags Entropy.md', 'drags —'])
+    expect(recorded).toStrictEqual(['drags Entropy.md', 'drags —'])
   })
 })
 
 describe('rows release', () => {
   it('are filed in the folder they went into, under the names they carry', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.move(['Entropy.md'], { into: 'physics' })
 
-    expect(done).toStrictEqual(['moves Entropy.md physics/Entropy.md'])
+    expect(recorded).toStrictEqual(['moves Entropy.md physics/Entropy.md'])
   })
 
   it('are filed in the folder holding the row they came before', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
     await list.openFolder('physics')
 
     await one.move(['Entropy.md'], { before: 'physics/Kelvin.md' })
 
-    expect(done).toStrictEqual(['moves Entropy.md physics/Entropy.md'])
+    expect(recorded).toStrictEqual(['moves Entropy.md physics/Entropy.md'])
   })
 
   it('are a folder dragged whole, under the name it carries', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.move(['physics'], { into: 'notes' })
 
-    expect(done).toStrictEqual(['moves physics notes/physics'])
+    expect(recorded).toStrictEqual(['moves physics notes/physics'])
   })
 
   it('all land in the one folder', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.move(['Entropy.md', 'Heat.pdf', 'Cover.png'], { into: 'notes' })
 
-    expect(done).toStrictEqual([
+    expect(recorded).toStrictEqual([
       'moves Entropy.md notes/Entropy.md',
       'moves Heat.pdf notes/Heat.pdf',
       'moves Cover.png notes/Cover.png',
@@ -330,89 +330,89 @@ describe('rows release', () => {
   })
 
   it('leave behind the one whose name that folder holds, and say which', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.move(['Entropy.md', 'Heat.pdf'], { into: 'heat' })
 
-    expect(done).toStrictEqual(['moves Heat.pdf heat/Heat.pdf', `says ${words.taken} Entropy.md`])
+    expect(recorded).toStrictEqual(['moves Heat.pdf heat/Heat.pdf', `says ${words.taken} Entropy.md`])
   })
 
   it('ask nothing where they landed where they already were', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
     await list.openFolder('physics')
 
     await one.move(['physics/Kelvin.md'], { into: 'physics' })
 
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 
   it('ask nothing at all where nothing was dragged', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.move([], { into: 'physics' })
 
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 })
 
 describe('rows requested to go', () => {
   it('are handed to the window as one command over all of them', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.remove(['Entropy.md', 'Cover.png'])
 
-    expect(done).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('ask for nothing where nothing is selected', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.remove([])
 
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 })
 
 describe('a name given to a row', () => {
   it('moves the file within the folder it is in', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.rename('Entropy.md', 'Order.md')
 
-    expect(done).toStrictEqual(['moves Entropy.md Order.md'])
+    expect(recorded).toStrictEqual(['moves Entropy.md Order.md'])
   })
 
   it('asks the vault for nothing where the name is the one it carries', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.rename('Entropy.md', 'Entropy.md')
 
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 
   it('keeps the ending the file carries, so a note typed over stays a note', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.rename('Entropy.md', 'Order')
 
-    expect(done).toStrictEqual(['moves Entropy.md Order.md'])
+    expect(recorded).toStrictEqual(['moves Entropy.md Order.md'])
   })
 
   it('takes what was typed for a folder', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
 
     await one.rename('physics', 'heat')
 
-    expect(done).toStrictEqual(['moves physics heat'])
+    expect(recorded).toStrictEqual(['moves physics heat'])
   })
 })
 
@@ -425,30 +425,30 @@ describe('an item chosen in the menu on a row', () => {
   }
 
   it('puts the name of the row in a field, and asks the window for nothing', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem(RENAME)
 
     expect(one.renamingPath.value).toBe('Entropy.md')
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 
   it('makes a folder alongside the row, under a name nothing there carries', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_FOLDER)
     await settle()
 
-    expect(done).toStrictEqual(['makes New folder'])
+    expect(recorded).toStrictEqual(['makes New folder'])
   })
 
   it('makes a folder inside the row where the row is a folder', async () => {
-    const { done, one } = await openRowMenu('physics')
+    const { recorded, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_FOLDER)
     await settle()
 
-    expect(done).toStrictEqual(['makes physics/New folder'])
+    expect(recorded).toStrictEqual(['makes physics/New folder'])
   })
 
   it('puts the name of a folder it made in a field', async () => {
@@ -470,27 +470,27 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a note alongside the row, and puts its name in a field', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_NOTE)
     await settle()
 
-    expect(done).toStrictEqual(['writes Untitled note.md'])
+    expect(recorded).toStrictEqual(['writes Untitled note.md'])
     expect(one.renamingPath.value).toBe('Untitled note.md')
   })
 
   it('makes a deck alongside the row, and puts its name in a field', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_DECK)
     await settle()
 
-    expect(done).toStrictEqual([`decks / ${words.newDeck}`])
+    expect(recorded).toStrictEqual([`decks / ${words.newDeck}`])
     expect(one.renamingPath.value).toBe(`${words.newDeck}.note`)
   })
 
   it('asks under the name alone, putting no ending on it', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_DECK)
     await settle()
@@ -499,21 +499,21 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a stencil the same way, under a name of its own', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_STENCIL)
     await settle()
 
-    expect(done).toStrictEqual([`stencils / ${words.newStencil}`])
+    expect(recorded).toStrictEqual([`stencils / ${words.newStencil}`])
   })
 
   it('makes a preset the same way, under a name of its own', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_PRESET)
     await settle()
 
-    expect(done).toStrictEqual([`presets / ${words.newPreset}`])
+    expect(recorded).toStrictEqual([`presets / ${words.newPreset}`])
     expect(one.renamingPath.value).toBe(`${words.newPreset}.note`)
   })
 
@@ -527,12 +527,12 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a preset inside the row where the row is a folder', async () => {
-    const { done, one } = await openRowMenu('physics')
+    const { recorded, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_PRESET)
     await settle()
 
-    expect(done).toStrictEqual([`presets physics ${words.newPreset}`])
+    expect(recorded).toStrictEqual([`presets physics ${words.newPreset}`])
   })
 
   it('is empty where the vault made no preset', async () => {
@@ -545,12 +545,12 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a deck inside the row where the row is a folder', async () => {
-    const { done, one } = await openRowMenu('physics')
+    const { recorded, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_DECK)
     await settle()
 
-    expect(done).toStrictEqual([`decks physics ${words.newDeck}`])
+    expect(recorded).toStrictEqual([`decks physics ${words.newDeck}`])
   })
 
   it('is empty where the vault made no deck', async () => {
@@ -563,16 +563,16 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a note inside the row where the row is a folder', async () => {
-    const { done, one } = await openRowMenu('physics')
+    const { recorded, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_NOTE)
     await settle()
 
-    expect(done).toStrictEqual(['writes physics/Untitled note.md'])
+    expect(recorded).toStrictEqual(['writes physics/Untitled note.md'])
   })
 
   it('makes a note and a folder at the root, requested off every row', async () => {
-    const { done, one } = await openRowMenu(null)
+    const { recorded, one } = await openRowMenu(null)
 
     one.chooseMenuItem(NEW_NOTE)
     await settle()
@@ -580,7 +580,7 @@ describe('an item chosen in the menu on a row', () => {
     one.chooseMenuItem(NEW_FOLDER)
     await settle()
 
-    expect(done).toStrictEqual(['writes Untitled note.md', 'makes New folder'])
+    expect(recorded).toStrictEqual(['writes Untitled note.md', 'makes New folder'])
   })
 
   it('does not rename where the menu was requested off every row', async () => {
@@ -592,11 +592,11 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('passes a command over the file to the window', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem('remove')
 
-    expect(done).toStrictEqual(['runs remove Entropy.md Entropy.md'])
+    expect(recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
   })
 
   it('passes the whole selection to the window, on a row standing in it', async () => {
@@ -618,11 +618,11 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('does nothing at all for a choice the menu does not offer', async () => {
-    const { done, one } = await openRowMenu()
+    const { recorded, one } = await openRowMenu()
 
     one.chooseMenuItem('destroyEverything')
 
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 
   it('puts the menu away whatever was chosen', async () => {
@@ -653,10 +653,10 @@ describe('useFilesTab helper and interaction methods', () => {
     expect(one.menu.value).toBeNull()
 
     one.importUrl('https://example.com/video')
-    expect(done).toContain('imports physics https://example.com/video')
+    expect(recorded).toContain('imports physics https://example.com/video')
 
     one.importUrls(['https://example.com/1', 'https://example.com/2'])
-    expect(done).toContain('imports-multi physics https://example.com/1 https://example.com/2')
+    expect(recorded).toContain('imports-multi physics https://example.com/1 https://example.com/2')
 
     expect(one.getNameOf('Entropy.md')).toBe('Entropy.md')
     expect(one.getNameOf('nonexistent/file.txt')).toBe('file.txt')
@@ -688,7 +688,7 @@ describe('a field already holding a name, and a file rejected', () => {
 
 describe('a menu item chosen off every row', () => {
   it('leaves the field alone and runs nothing for an item that needs a row', async () => {
-    const { done, one } = tab()
+    const { recorded, one } = tab()
     one.setRenamingPath('Cover.png')
 
     one.openMenu({ path: null, at: { x: 0, y: 0 } })
@@ -697,7 +697,7 @@ describe('a menu item chosen off every row', () => {
     one.chooseMenuItem('transcribe')
 
     expect(one.renamingPath.value).toBe('Cover.png')
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 })
 
@@ -725,43 +725,43 @@ describe('the source a command is run over', () => {
 
 describe('rows release, in more detail', () => {
   it('are filed at the top of the vault under the names they carry', async () => {
-    const { done, list, one } = tab()
+    const { recorded, list, one } = tab()
     await list.openFolder(ROOT)
     await list.openFolder('physics')
 
     await one.move(['physics/Kelvin.md'], { into: null })
 
-    expect(done).toStrictEqual(['moves physics/Kelvin.md Kelvin.md'])
+    expect(recorded).toStrictEqual(['moves physics/Kelvin.md Kelvin.md'])
   })
 
   it('leave behind the second of two that carry the one name', async () => {
-    const { done, one } = tab()
+    const { recorded, one } = tab()
 
     await one.move(['heat/Entropy.md', 'physics/Entropy.md'], { into: 'notes' })
 
-    expect(done).toStrictEqual([
+    expect(recorded).toStrictEqual([
       'moves heat/Entropy.md notes/Entropy.md',
       `says ${words.taken} Entropy.md`,
     ])
   })
 
   it('say every name left behind, parted by commas', async () => {
-    const { done, one } = tab(false, {
+    const { recorded, one } = tab(false, {
       notes: [file('notes/Entropy.md'), file('notes/Heat.pdf')],
     })
 
     await one.move(['Entropy.md', 'Heat.pdf'], { into: 'notes' })
 
-    expect(done).toStrictEqual([`says ${words.taken} Entropy.md, Heat.pdf`])
+    expect(recorded).toStrictEqual([`says ${words.taken} Entropy.md, Heat.pdf`])
   })
 
   it('read nothing from the vault where nothing was dragged', async () => {
-    const { asked, done, one } = tab()
+    const { requests, recorded, one } = tab()
 
     await one.move([], { into: 'physics' })
 
-    expect(asked).toStrictEqual([])
-    expect(done).toStrictEqual([])
+    expect(requests).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 })
 
@@ -781,20 +781,20 @@ describe('a folder closed in the tab', () => {
 
 describe('a name given to a row, in more detail', () => {
   it('is taken whole for a folder whose name carries a dot', async () => {
-    const { done, list, one } = tab(false, { [ROOT]: [...target[ROOT]!, folder('v1.0')] })
+    const { recorded, list, one } = tab(false, { [ROOT]: [...target[ROOT]!, folder('v1.0')] })
     await list.openFolder(ROOT)
 
     await one.rename('v1.0', 'v2')
 
-    expect(done).toStrictEqual(['moves v1.0 v2'])
+    expect(recorded).toStrictEqual(['moves v1.0 v2'])
   })
 
   it('is given to a row the tree does not hold, which is taken for a file', async () => {
-    const { done, one } = tab()
+    const { recorded, one } = tab()
 
     await one.rename('ghost/Note.md', 'Other')
 
-    expect(done).toStrictEqual(['moves ghost/Note.md ghost/Other.md'])
+    expect(recorded).toStrictEqual(['moves ghost/Note.md ghost/Other.md'])
   })
 })
 
@@ -830,6 +830,6 @@ describe('a file rejected in a folder that is shut', () => {
     one.chooseMenuItem(NEW_NOTE)
     await settle()
 
-    expect(done).toStrictEqual(['writes ghost/Untitled note.md'])
+    expect(recorded).toStrictEqual(['writes ghost/Untitled note.md'])
   })
 })
