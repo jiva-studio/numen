@@ -17,7 +17,7 @@ const scanPath = "library/scan.pdf"
 func TestGetDocumentAnswersTheShapeOfEachPage(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}, {unmeasured: true}, {wide: 300, high: 400}}}}
+	target := &fakeDocuments{scan: scan{leaves: []leaf{{width: 600, height: 800}, {unmeasured: true}, {width: 300, height: 400}}}}
 
 	got, err := document.NewGetDocument(readers, target).Execute(t.Context(), v, scanPath)
 	if err != nil {
@@ -42,7 +42,7 @@ func TestGetDocumentRefusesAFileTheVaultDoesNotHold(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, nil)
 
-	_, err := document.NewGetDocument(readers, &shelf{}).Execute(t.Context(), v, scanPath)
+	_, err := document.NewGetDocument(readers, &fakeDocuments{}).Execute(t.Context(), v, scanPath)
 
 	if err == nil {
 		t.Fatal("a file the vault does not hold was read")
@@ -52,7 +52,7 @@ func TestGetDocumentRefusesAFileTheVaultDoesNotHold(t *testing.T) {
 func TestGetPageDrawsAJPEGOnceHoweverOftenItIsAsked(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
+	target := &fakeDocuments{scan: scan{leaves: []leaf{{width: 600, height: 800}}}}
 	pages := &drawn{}
 	get := document.NewGetPage(readers, target, pages)
 	request := document.PageKey{
@@ -83,7 +83,7 @@ func TestGetPageDrawsAJPEGOnceHoweverOftenItIsAsked(t *testing.T) {
 func TestGetPageRefusesAFileThatChangedSinceTheAddressWasGivenOut(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
+	target := &fakeDocuments{scan: scan{leaves: []leaf{{width: 600, height: 800}}}}
 	pages := &drawn{}
 	staleKey := document.PageKey{Document: document.Fingerprint{Path: scanPath, Size: 1, Mtime: 2}, Width: 64}
 
@@ -100,7 +100,7 @@ func TestGetPageRefusesAFileThatChangedSinceTheAddressWasGivenOut(t *testing.T) 
 func TestGetPageRefusesAPageTheDocumentDoesNotHave(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
+	target := &fakeDocuments{scan: scan{leaves: []leaf{{width: 600, height: 800}}}}
 	found, err := document.NewGetDocument(readers, target).Execute(t.Context(), v, scanPath)
 	if err != nil {
 		t.Fatal(err)
@@ -130,9 +130,9 @@ func TestGetBookPictureSettlesTheTypeByTheBytes(t *testing.T) {
 	if got.Type != "image/png" || string(got.Body) != plate {
 		t.Errorf("the picture is %q of %d bytes", got.Type, len(got.Body))
 	}
-	if len(target.asked) != 1 || target.asked[0].Path != named.Path || target.asked[0].Size != named.Size ||
-		target.asked[0].ModTime.UnixNano() != named.Mtime {
-		t.Errorf("the archive was asked at %+v, want once at %+v", target.asked, named)
+	if len(target.requested) != 1 || target.requested[0].Path != named.Path || target.requested[0].Size != named.Size ||
+		target.requested[0].ModTime.UnixNano() != named.Mtime {
+		t.Errorf("the archive was requested at %+v, want once at %+v", target.requested, named)
 	}
 
 	if _, err := get.Execute(t.Context(), v, bookPath, named, "OEBPS/pictures/cover.svg"); !errors.Is(err, document.ErrNotAPicture) {
@@ -150,8 +150,8 @@ func TestGetBookPictureRefusesAFileThatIsNotTheBytesNamed(t *testing.T) {
 	if _, err := get.Execute(t.Context(), v, bookPath, staleFp, "OEBPS/pictures/plate.png"); !errors.Is(err, document.ErrChanged) {
 		t.Errorf("a stale fingerprint was answered with %v", err)
 	}
-	if len(target.asked) != 0 {
-		t.Errorf("the archive was asked %d times for a file that is not the one named", len(target.asked))
+	if len(target.requested) != 0 {
+		t.Errorf("the archive was requested %d times for a file that is not the one named", len(target.requested))
 	}
 }
 
@@ -198,7 +198,7 @@ func TestGetBookPictureRefusesAPathTheVaultLacks(t *testing.T) {
 // fingerprintOf is what the vault says about the book.
 func fingerprintOf(t *testing.T, v domain.Vault) document.Fingerprint {
 	t.Helper()
-	found, err := document.NewGetDocument(readers, &shelf{}).Execute(t.Context(), v, bookPath)
+	found, err := document.NewGetDocument(readers, &fakeDocuments{}).Execute(t.Context(), v, bookPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,8 +234,8 @@ func TestReadBookMarkupAsksWithTheBaselineAndPassesTheErrorOn(t *testing.T) {
 	if err != nil || got != "<p>Alpha</p>" {
 		t.Fatalf("the markup is %q, err = %v", got, err)
 	}
-	if len(target.asked) != 1 || target.asked[0] != *baseline {
-		t.Errorf("the book was asked at %+v, want once at %+v", target.asked, *baseline)
+	if len(target.requested) != 1 || target.requested[0] != *baseline {
+		t.Errorf("the book was requested at %+v, want once at %+v", target.requested, *baseline)
 	}
 	if _, err := read.Execute(t.Context(), bookPath, "OEBPS/gone.xhtml", nil); !errors.Is(err, document.ErrNoEntry) {
 		t.Errorf("a section the book lacks was answered with %v", err)

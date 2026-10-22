@@ -2,16 +2,8 @@
 //
 // Source: numen/v1/flashcards.proto
 
-// What a client running a person's cards may ask.
-//
-// Flashcards is an application of its own, beside the editor and over the same
-// core, so this service stands beside the editor's and shares nothing with it.
-// It reaches every vault the installation knows, because what a person owes
-// today is owed across all of them.
-//
-// A card is laid out here, unlike the cards service, which hands a face over as
-// it was written: what a person is shown is the face filled with one card's
-// values, and nothing above this has the two halves to fill it with.
+// Flashcards service definitions.
+// Manages flashcard review sessions, card scheduling counts, and answer logs across vaults.
 package numenv1connect
 
 import (
@@ -71,52 +63,23 @@ const (
 
 // FlashcardsServiceClient is a client for the numen.v1.FlashcardsService service.
 type FlashcardsServiceClient interface {
-	// WatchCardsDue is what every vault the installation knows evaluates to today:
-	// how much it holds, how much is due, and how much has never been asked. It
-	// is what the application opens on.
-	//
-	// The first message is every vault as the registry holds it, with nothing
-	// counted, and one message follows for each vault as it is worked out.
-	// Counting a vault reads every deck in it and replays its whole answer log,
-	// so the list stands while that runs.
-	//
-	// A vault the index does not carry is indexed here, and its counts
-	// follow when indexing is done. What that indexing is doing is the window's
-	// own WatchTasks.
+	// WatchCardsDue streams due card counts across registered vaults.
+	// The first message contains vault metadata, followed by individual evaluation updates.
 	WatchCardsDue(context.Context, *connect.Request[v1.WatchCardsDueRequest]) (*connect.ServerStreamForClient[v1.WatchCardsDueResponse], error)
-	// StartSession opens a run and hands over what to ask, in order. A run writes
-	// one file of its own in the vault and nothing else ever appends to it.
-	//
-	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
-	// deck pointing at it, held to that preset's own budget. Naming neither asks
-	// the whole vault, which is the ordinary way to sit down to this.
-	//
-	// Naming both is refused. A preset with nothing to ask today is refused with
-	// the reason, so a person pressing it is told why and not shown an empty
-	// session.
+	// StartSession initializes a review session and returns ordered cards to review.
+	// Accepts a deck path, a preset note path, or targets all decks in the vault when neither is specified.
 	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
-	// AnswerCard writes down how a card came back. What comes back is the
-	// identifier of the line, which is what taking that answer back names.
+	// AnswerCard records an answer rating and review latency for a card face.
 	AnswerCard(context.Context, *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error)
-	// TakeBackAnswer writes down that an answer was taken back. Both lines stay
-	// in the file: nothing in a log is ever rewritten or removed.
+	// TakeBackAnswer appends an undo entry for a previously recorded answer.
 	TakeBackAnswer(context.Context, *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error)
-	// WatchReloads says a vault moved underneath the window, for as long as the
-	// caller listens. Which files moved is not carried: what this application
-	// shows is counts, and they are asked for again whatever changed.
+	// WatchReloads notifies clients when vault content changes and requires recount.
 	WatchReloads(context.Context, *connect.Request[v1.WatchReloadsRequest]) (*connect.ServerStreamForClient[v1.WatchReloadsResponse], error)
-	// ListReviewDays is how much of a vault was answered on each day it was
-	// reviewed, and how many days up to now were reviewed without a gap.
+	// ListReviewDays returns historical review counts and review streaks for a vault.
 	ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error)
-	// GetDeckNeighbourhood is what the deck of a person's session is joined to:
-	// the notes it points at and the notes that point at it, with the text of
-	// each. A card is a line out of something longer, and what it was cut from is
-	// what a person reaches for when it will not come back to them.
+	// GetDeckNeighbourhood returns notes linked to and from the specified deck note.
 	GetDeckNeighbourhood(context.Context, *connect.Request[v1.GetDeckNeighbourhoodRequest]) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error)
-	// GetVaultDeckPreset is the preset a deck of the named vault is scheduled by.
-	// A deck naming none is answered with the defaults under no path, and a deck
-	// whose link reaches something that is not a preset is answered with the
-	// defaults and told so.
+	// GetVaultDeckPreset returns the scheduling preset configured for a deck within a vault.
 	GetVaultDeckPreset(context.Context, *connect.Request[v1.GetVaultDeckPresetRequest]) (*connect.Response[v1.GetVaultDeckPresetResponse], error)
 }
 
@@ -236,52 +199,23 @@ func (c *flashcardsServiceClient) GetVaultDeckPreset(ctx context.Context, req *c
 
 // FlashcardsServiceHandler is an implementation of the numen.v1.FlashcardsService service.
 type FlashcardsServiceHandler interface {
-	// WatchCardsDue is what every vault the installation knows evaluates to today:
-	// how much it holds, how much is due, and how much has never been asked. It
-	// is what the application opens on.
-	//
-	// The first message is every vault as the registry holds it, with nothing
-	// counted, and one message follows for each vault as it is worked out.
-	// Counting a vault reads every deck in it and replays its whole answer log,
-	// so the list stands while that runs.
-	//
-	// A vault the index does not carry is indexed here, and its counts
-	// follow when indexing is done. What that indexing is doing is the window's
-	// own WatchTasks.
+	// WatchCardsDue streams due card counts across registered vaults.
+	// The first message contains vault metadata, followed by individual evaluation updates.
 	WatchCardsDue(context.Context, *connect.Request[v1.WatchCardsDueRequest], *connect.ServerStream[v1.WatchCardsDueResponse]) error
-	// StartSession opens a run and hands over what to ask, in order. A run writes
-	// one file of its own in the vault and nothing else ever appends to it.
-	//
-	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
-	// deck pointing at it, held to that preset's own budget. Naming neither asks
-	// the whole vault, which is the ordinary way to sit down to this.
-	//
-	// Naming both is refused. A preset with nothing to ask today is refused with
-	// the reason, so a person pressing it is told why and not shown an empty
-	// session.
+	// StartSession initializes a review session and returns ordered cards to review.
+	// Accepts a deck path, a preset note path, or targets all decks in the vault when neither is specified.
 	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
-	// AnswerCard writes down how a card came back. What comes back is the
-	// identifier of the line, which is what taking that answer back names.
+	// AnswerCard records an answer rating and review latency for a card face.
 	AnswerCard(context.Context, *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error)
-	// TakeBackAnswer writes down that an answer was taken back. Both lines stay
-	// in the file: nothing in a log is ever rewritten or removed.
+	// TakeBackAnswer appends an undo entry for a previously recorded answer.
 	TakeBackAnswer(context.Context, *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error)
-	// WatchReloads says a vault moved underneath the window, for as long as the
-	// caller listens. Which files moved is not carried: what this application
-	// shows is counts, and they are asked for again whatever changed.
+	// WatchReloads notifies clients when vault content changes and requires recount.
 	WatchReloads(context.Context, *connect.Request[v1.WatchReloadsRequest], *connect.ServerStream[v1.WatchReloadsResponse]) error
-	// ListReviewDays is how much of a vault was answered on each day it was
-	// reviewed, and how many days up to now were reviewed without a gap.
+	// ListReviewDays returns historical review counts and review streaks for a vault.
 	ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error)
-	// GetDeckNeighbourhood is what the deck of a person's session is joined to:
-	// the notes it points at and the notes that point at it, with the text of
-	// each. A card is a line out of something longer, and what it was cut from is
-	// what a person reaches for when it will not come back to them.
+	// GetDeckNeighbourhood returns notes linked to and from the specified deck note.
 	GetDeckNeighbourhood(context.Context, *connect.Request[v1.GetDeckNeighbourhoodRequest]) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error)
-	// GetVaultDeckPreset is the preset a deck of the named vault is scheduled by.
-	// A deck naming none is answered with the defaults under no path, and a deck
-	// whose link reaches something that is not a preset is answered with the
-	// defaults and told so.
+	// GetVaultDeckPreset returns the scheduling preset configured for a deck within a vault.
 	GetVaultDeckPreset(context.Context, *connect.Request[v1.GetVaultDeckPresetRequest]) (*connect.Response[v1.GetVaultDeckPresetResponse], error)
 }
 

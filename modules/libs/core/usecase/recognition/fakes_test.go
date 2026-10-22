@@ -35,12 +35,10 @@ type store struct {
 	sources map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks  []storedChunk
 	vectors map[domain.ChunkID][]port.Vector // the coarse rows, by chunk, appended, so a second write shows
-	groups  [][]port.Vector                  // every write of vectors, in order
-	written map[string]int                   // extractions per path
-	next    int64
-	// kept is what the index already holds, by recipe and hash. A test seeds it
-	// to stand for vectors bought before the run under test.
-	kept map[string][]byte
+	groups   [][]port.Vector                  // every write of vectors, in order
+	outBytes map[string]int                   // extractions per path
+	next     int64
+	retained map[string][]byte
 }
 
 // storedChunk is one row of chunks. `parent` is zero for a large chunk.
@@ -58,9 +56,9 @@ type storedChunk struct {
 
 func newStore() *store {
 	return &store{
-		sources: map[domain.VaultID]map[string]domain.Source{},
-		vectors: map[domain.ChunkID][]port.Vector{},
-		written: map[string]int{},
+		sources:  map[domain.VaultID]map[string]domain.Source{},
+		vectors:  map[domain.ChunkID][]port.Vector{},
+		outBytes: map[string]int{},
 	}
 }
 
@@ -70,7 +68,7 @@ func (s *store) SaveSource(_ context.Context, vaultID domain.VaultID, src domain
 }
 
 func (s *store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
-	s.written[e.Source.Fingerprint.Path]++
+	s.outBytes[e.Source.Fingerprint.Path]++
 	s.put(vaultID, e.Source)
 	s.clear(vaultID, e.Source.Fingerprint.Path)
 
@@ -101,12 +99,12 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 func (s *store) GetKeptVectors(_ context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	if s.kept == nil {
+	if s.retained == nil {
 		return nil, nil
 	}
 	out := map[string][]byte{}
 	for _, one := range of {
-		if v, target := s.kept[recipe+"/"+hex.EncodeToString(one)]; target {
+		if v, target := s.retained[recipe+"/"+hex.EncodeToString(one)]; target {
 			out[hex.EncodeToString(one)] = v
 		}
 	}
@@ -178,7 +176,7 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	return out, next, nil
 }
 
-// chunkID is how this store spells the row a chunk sits on, as an index does.
+// chunkID formats the row index as domain.ChunkID.
 func chunkID(row int64) domain.ChunkID {
 	return domain.ChunkID(strconv.FormatInt(row, 10))
 }
@@ -439,13 +437,12 @@ func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.O
 	return scanned{read: documentOf(raw)}, nil
 }
 
-// scanned is a document held open. Its pages are blank: what a model reads on
-// one is the model's to say.
+// scanned represents an open test document with stub page count and geometry.
 type scanned struct{ read document }
 
 func (s scanned) GetPageCount() int { return len(s.read.pages) }
 
-func (scanned) GetPageSize(int) (wide, high float64, err error) { return pageWide, pageHigh, nil }
+func (scanned) GetPageSize(int) (width, height float64, err error) { return pageWide, pageHigh, nil }
 
 func (scanned) RenderPage(int, int) (image.Image, error) {
 	return image.NewGray(image.Rect(0, 0, pageWide, pageHigh)), nil

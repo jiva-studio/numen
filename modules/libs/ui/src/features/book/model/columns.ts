@@ -60,8 +60,8 @@ export function useBookColumns(options: BookColumnsOptions) {
   /** The reading area, taken again whenever it changes. */
   const { viewport, measure } = useViewport(options.area)
 
-  /** How far the columns run, taken once they have been laid out. */
-  const alongOffset = ref(0)
+  /** Rendered columns content width in CSS pixels. */
+  const contentWidth = ref(0)
 
   const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(
     options.paper,
@@ -81,7 +81,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const columns = computed(() => countColumns(viewport.value.width, textSize.value))
 
   const flow = computed<Flow>(() => ({
-    along: alongOffset.value,
+    contentWidth: contentWidth.value,
     width: viewport.value.width,
     gap: GAP,
     columns: columns.value,
@@ -103,7 +103,7 @@ export function useBookColumns(options: BookColumnsOptions) {
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): void => {
     text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
-    alongOffset.value = text.scrollWidth
+    contentWidth.value = text.scrollWidth
     gather()
   }
 

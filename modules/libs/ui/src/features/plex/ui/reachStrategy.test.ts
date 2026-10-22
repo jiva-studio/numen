@@ -41,8 +41,8 @@ const mountPlex = (props: Record<string, unknown> = {}) => {
   return { plex, svg }
 }
 
-const pointer = (type: string, x: number, y: number, over: PointerEventInit = {}) =>
-  new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true, ...over })
+const pointer = (type: string, x: number, y: number, overrides: PointerEventInit = {}) =>
+  new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true, ...overrides })
 
 afterEach(() => {
   vi.useRealTimers()

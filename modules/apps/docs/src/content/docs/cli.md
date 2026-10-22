@@ -56,7 +56,7 @@ numen-cli search Research "entropy"
 
 **`recognise`** reads a scanned document with the OCR models, page by page, and writes the text into the vault's own folder. This is the long job worth leaving in a terminal overnight, and it is the same work the window would do — do it here and the window finds it done.
 
-**`proofread`** corrects that text afterwards with the model named in [the settings](/reading/#correcting-what-ocr-read). With nothing named there, it has nothing to correct with and says so.
+**`proofread`** corrects that text afterwards with the model named in [the settings](/reader/#correcting-what-ocr-read). With nothing named there, it has nothing to correct with and says so.
 
 **`search`** is the words half of what the window does: names and text, in one vault.
 

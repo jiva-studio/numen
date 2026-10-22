@@ -30,12 +30,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Where the document a test asks about sits in its vault, and a file beside it
-// that the vault holds as nothing.
+// Document and adjacent fixture paths in test vault.
 const (
-	book    = "library/scan.pdf"
-	another = "library/other.pdf"
-	beside  = "library/beside.txt"
+	book     = "library/scan.pdf"
+	another  = "library/other.pdf"
+	adjacent = "library/beside.txt"
 )
 
 // paper is a document a test draws from: pages of a size it names, counting
@@ -50,8 +49,8 @@ type paper struct {
 	each map[int]int
 
 	pages int
-	// wide and high are what every page measures in its own units.
-	wide, high int
+	// width and height are what every page measures in its own units.
+	width, height int
 
 	// gate stops an opening where a test can see it, and is nil for a document
 	// that opens at once.
@@ -59,7 +58,7 @@ type paper struct {
 }
 
 func sheets(pages int) *paper {
-	return &paper{pages: pages, wide: 612, high: 792}
+	return &paper{pages: pages, width: 612, height: 792}
 }
 
 // openScan is what the viewer is given in place of pdf.OpenReader.
@@ -79,8 +78,8 @@ func (p *paper) GetPageCount() int { return p.pages }
 // Label numbers the first two pages as front matter, the way a book does.
 // Size is what the page measures in its own units, which the document answers
 // without drawing anything.
-func (p *paper) GetPageSize(int) (wide, high float64, err error) {
-	return float64(p.wide), float64(p.high), nil
+func (p *paper) GetPageSize(int) (width, height float64, err error) {
+	return float64(p.width), float64(p.height), nil
 }
 
 func (p *paper) RenderPage(index, dpi int) (image.Image, error) {
@@ -92,7 +91,7 @@ func (p *paper) RenderPage(index, dpi int) (image.Image, error) {
 	p.each[index]++
 	p.mu.Unlock()
 
-	img := image.NewRGBA(image.Rect(0, 0, p.wide*dpi/pool.PointsDPI, p.high*dpi/pool.PointsDPI))
+	img := image.NewRGBA(image.Rect(0, 0, p.width*dpi/pool.PointsDPI, p.height*dpi/pool.PointsDPI))
 	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
 		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
 			img.Set(x, y, color.RGBA{R: uint8(x), G: uint8(y), B: uint8(index), A: 255})
@@ -171,9 +170,9 @@ func (s *Services) stat(ctx context.Context, path string) (document.Fingerprint,
 func openViewerWindow(t *testing.T, from *paper) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{
-		book:    "the bytes of a scan",
-		another: "the bytes of a second scan",
-		beside:  "a file the vault leaves alone",
+		book:     "the bytes of a scan",
+		another:  "the bytes of a second scan",
+		adjacent: "a file the vault leaves alone",
 	})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
@@ -229,9 +228,9 @@ func printOf(t *testing.T, api *Services, path string) document.Fingerprint {
 }
 
 // getPageAddress is where one page of a file of this window's vault is drawn.
-func getPageAddress(t *testing.T, api *Services, path string, at, wide int) string {
+func getPageAddress(t *testing.T, api *Services, path string, at, targetWidth int) string {
 	t.Helper()
-	return pageURL(path, at, wide, printOf(t, api, path))
+	return pageURL(path, at, targetWidth, printOf(t, api, path))
 }
 
 // A page comes back drawn at least as wide as the window asked for it, and
@@ -284,7 +283,7 @@ func TestWhatADocumentIsIsHowManyPagesAndWhatEachMeasures(t *testing.T) {
 	}
 }
 
-// getDocument is what a document is, as the window is told it.
+// getDocument fetches document details for book.
 func getDocument(t *testing.T, api *Services) *v1.GetDocumentResponse {
 	t.Helper()
 	out, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
@@ -302,7 +301,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 		"library/../../outside.pdf",
 		"/etc/passwd",
 		"library/nothing.pdf",
-		beside,
+		adjacent,
 	} {
 		t.Run(path, func(t *testing.T) {
 			from := sheets(4)
@@ -325,12 +324,12 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	}
 }
 
-// A page the document does not have, and a width that is not one, are refused.
+// Invalid page indices and widths return error status.
 func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 	for _, one := range []struct {
-		at   string
-		wide string
-		want int
+		at         string
+		widthQuery string
+		want       int
 	}{
 		{"4", "?wide=400", http.StatusNotFound},
 		{"99", "?wide=400", http.StatusNotFound},
@@ -340,13 +339,13 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 		{"0", "?wide=0", http.StatusBadRequest},
 		{"0", "?wide=99999", http.StatusBadRequest},
 	} {
-		request := one.at + one.wide
+		request := one.at + one.widthQuery
 		t.Run(request, func(t *testing.T) {
 			api, handler := openViewerWindow(t, sheets(4))
 			stopReadAhead(api)
 
 			join := "&"
-			if one.wide == "" {
+			if one.widthQuery == "" {
 				join = "?"
 			}
 			at := assetURL(book) + "/" + pagesName + "/" + request +
@@ -587,8 +586,7 @@ func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 	}
 }
 
-// Only so many documents are held open at once. Each holds a worker of the
-// pool, and a recognition holds another for as long as it reads.
+// TestOnlySoManyDocumentsAreHeldOpen verifies LRU pooling limits concurrently open documents.
 func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
@@ -700,7 +698,7 @@ func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
 	}
 
 	replaced := filepath.Join(vault.Path, filepath.FromSlash(book))
-	if err := os.WriteFile(replaced, []byte("the bytes of a longer scan, written again"), 0o644); err != nil {
+	if err := os.WriteFile(replaced, []byte("the bytes of a longer scan, updated bytes"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {

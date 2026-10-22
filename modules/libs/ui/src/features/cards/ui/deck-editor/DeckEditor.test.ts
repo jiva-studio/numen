@@ -91,10 +91,10 @@ const pressKey = (on: Element, key: string): KeyboardEvent => {
 }
 
 /** A card picked up and the drag ended without it being let go anywhere. */
-const dragOff = async (wrapper: Grid, id: string, over: string | null): Promise<void> => {
+const dragOff = async (wrapper: Grid, id: string, targetId: string | null): Promise<void> => {
   const grip = getTile(wrapper, id).get('[data-grip]')
   await grip.trigger('dragstart')
-  if (over !== null) await getTile(wrapper, over).trigger('dragover')
+  if (targetId !== null) await getTile(wrapper, targetId).trigger('dragover')
   await grip.trigger('dragend')
 }
 

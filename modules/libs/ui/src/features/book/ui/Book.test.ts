@@ -214,8 +214,8 @@ const setSize = (area: HTMLElement, wide: number, high: number): void => {
 }
 
 /** What the browser is told about the laid-out text: how far it runs, where each run stands. */
-const setLayout = (paper: HTMLElement, along: number, lefts: readonly number[]): void => {
-  Object.defineProperty(paper, 'scrollWidth', { value: along, configurable: true })
+const setLayout = (paper: HTMLElement, scrollWidth: number, lefts: readonly number[]): void => {
+  Object.defineProperty(paper, 'scrollWidth', { value: scrollWidth, configurable: true })
   Object.defineProperty(paper, 'getBoundingClientRect', {
     value: () => ({ left: 0 }),
     configurable: true,

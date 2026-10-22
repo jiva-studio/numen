@@ -194,7 +194,7 @@ describe('the relation something dragged in evaluates to', () => {
 
   const getRelationAt = (
     at: { x: number; y: number },
-    over: Partial<Parameters<typeof getDropRelation>[0]> = {},
+    overrides: Partial<Parameters<typeof getDropRelation>[0]> = {},
   ) =>
     getDropRelation({
       frame,
@@ -203,7 +203,7 @@ describe('the relation something dragged in evaluates to', () => {
       at,
       relations: ALLOWED,
       threshold: THRESHOLD,
-      ...over,
+      ...overrides,
     })
 
   it('is a parent above the focus, a child below it, and a jump to the side', () => {

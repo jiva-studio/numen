@@ -53,7 +53,7 @@ func TestOneChangeIsSaidTwice(t *testing.T) {
 	stream := openTaskStream(t, tasks)
 
 	if first := receiveTasks(t, stream); len(first) != 0 {
-		t.Fatalf("a window that opened with nothing running was told of %d", len(first))
+		t.Fatalf("expected 0 tasks, got %d", len(first))
 	}
 
 	tasks.Set(run.Task{ID: "recognition", Title: "Recognising a scan"})

@@ -1,11 +1,6 @@
 <script setup lang="ts">
 /**
- * The heading one section of a deck is placed under: a rule across the grid with
- * the section's name typed on it, and the way to be rid of it at its end.
- *
- * A section is a name and nothing else. Two of them may carry one name, so what
- * is typed here is measured against nothing, and only a name with nothing in it
- * is refused.
+ * Deck section heading component with editable title and removal action.
  */
 import { computed, useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
@@ -16,6 +11,7 @@ import { DECK_WORDS, type DeckWords } from '../../../lib/deck'
 import type { PlacedSection } from '../../../lib/grid'
 import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
 
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(
   defineProps<{
     /** The section, and at its current position among them. */
@@ -31,32 +27,20 @@ const emit = defineEmits<{
   (event: 'remove'): void
 }>()
 
-/** What this heading's objection is named by, which is this heading's alone. */
+/* --------------------------------- State ---------------------------------- */
 const uid = useId()
-
 const objectionsId = `${uid}-objections`
 
-/** A name typed over the one this section carries, until it is committed. */
 const naming = useNameEntry<HeadingObjection>({
   getName: () => props.section.name,
   getTakenNames: () => [],
   checkName: checkHeadingName,
-  rename: (_over, name) => emit('rename', name),
+  rename: (_targetId, name) => emit('rename', name),
 })
 
-/** What is in the box: the name it carries, or what is being typed over it. */
 const text = computed(() => naming.getText(props.section.id))
-
-/** Why what is in the box cannot be used, and nothing while it can. */
 const objections = computed(() => naming.getObjection(props.section.id))
-
-/** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => (objections.value === null ? null : props.words.sectionObjection))
-
-/**
- * What the section is announced by. A section's name is a person's own text and
- * may be nothing at all, so what it is called here is the place it stands in.
- */
 const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
 </script>
 
@@ -67,7 +51,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
            and nothing of the line either side. -->
       <SectionName
         :naming="naming"
-        :over="section.id"
+        :target-id="section.id"
         :stem="stem"
         :text="text"
         :described-by="says ? objectionsId : null"

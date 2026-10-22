@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/**
- * One field of a stencil, edited: a handle it is dragged by, the name typed in
- * it, and the way to be rid of it. What is wrong with it is placed under its row.
- */
 import { computed } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { Icon } from '../../icon'
@@ -19,47 +15,45 @@ import {
 } from '../../../lib/order'
 import { STENCIL_WORDS, type FieldRow, type StencilWords } from '../../../lib/stencil'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The field, laid out against the order it stands in. */
+    /** Field row data and positional state. */
     row: FieldRow
-    /** The name typed over the one it carries, held by the list it stands in. */
+    /** Name entry state managing this field. */
     naming: NameEntryState<Objection>
-    /** What is wrong with its name is named by this, which is this field's alone. */
+    /** Unique element identifier for error messages. */
     objectionsId: string
-    /** What the caller found wrong with this field. */
+    /** Validation error messages for the field. */
     wrong?: readonly string[]
-    /** A field let go here would land before it. */
+    /** Whether the drop indicator is positioned above this row. */
     isDropAbove?: boolean
-    /** The words it is drawn with. */
+    /** Localization words for stencil UI. */
     words?: StencilWords
   }>(),
   { wrong: () => [], isDropAbove: false, words: () => STENCIL_WORDS },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** A field is dragged over this row. */
   (event: 'drag-over', at: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
-  /** This field taken up by the pointer, and let go again. */
   (event: 'lift', press: DragEvent): void
   (event: 'release'): void
-  /** This field asked to go one place along the order. */
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
   (event: 'remove'): void
 }>()
 
-/** Why what is in the name box cannot be used, and nothing while it can. */
+/* --------------------------------- State ---------------------------------- */
 const objections = computed(() => props.naming.getObjection(props.row.field))
 
-/** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {
   const objection = objections.value
   return objection === null ? null : props.words.objection(objection)
 })
 
-/** A field asked by the keyboard to go one place along the order. */
-const onGripKey = (event: KeyboardEvent): void => {
+/* -------------------------------- Handlers -------------------------------- */
+function onGripKey(event: KeyboardEvent): void {
   const direction = parseStepKey(event.key)
   if (direction !== null) emit('step', direction, event)
 }
@@ -76,10 +70,6 @@ const onGripKey = (event: KeyboardEvent): void => {
     @drop.stop="emit('drop')"
   >
     <CardRow class="stencil__row" :data-objections="objections ?? undefined">
-      <!-- The first field names every card, so its handle is there and
-           turned off, and the row keeps the shape every other row has. The
-           handle is what a row is dragged by, by the pointer and by the
-           arrows along the order alike. -->
       <span
         class="stencil__grip text-hushed flex shrink-0 items-center"
         data-grip
@@ -101,7 +91,7 @@ const onGripKey = (event: KeyboardEvent): void => {
       <NameBox
         class="stencil__box min-w-0 flex-1"
         :naming="naming"
-        :over="row.field"
+        :target-id="row.field"
         :stem="`${words.fieldStem} ${row.at}`"
         :described-by="objections ? objectionsId : null"
       />
@@ -140,7 +130,7 @@ const onGripKey = (event: KeyboardEvent): void => {
 <style scoped>
 @import '../../caret.css';
 
-/* The row is one block; what is wrong with it is placed under that block. */
+/* Field layout container. */
 .stencil__field {
   position: relative;
   display: flex;
@@ -158,13 +148,13 @@ const onGripKey = (event: KeyboardEvent): void => {
   -webkit-user-select: none;
 }
 
-/* What is turned off is quiet, and answers neither the pointer nor a gesture. */
+/* Disabled grip styling. */
 .stencil__grip[data-disabled] {
   opacity: 0.4;
   cursor: default;
 }
 
-/* What a row is reached for stands quietly until the row is. */
+/* Controls are muted until hovered or focused. */
 .stencil__grip,
 .stencil__away {
   opacity: 0.45;
@@ -185,13 +175,11 @@ const onGripKey = (event: KeyboardEvent): void => {
   }
 }
 
-/* The line and the ground are the row's, so what is wrong is said by the row. */
+/* Validation objection indicator. */
 .stencil__row[data-objections] {
   border-color: var(--numen-alarm);
 }
 
-/* A press on the name works the box, and does not take hold of the row it
-   stands in. */
 .stencil__box {
   min-inline-size: 0;
 }

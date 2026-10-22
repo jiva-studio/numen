@@ -4,7 +4,7 @@ Running the cards a vault holds.
 
 Flashcards is an application of its own, beside the editor and over the same core. Writing cards is occasional and running them is daily, so the daily one is not reached through the other.
 
-## The front door
+## Vault listing
 
 The window opens on the vaults this installation holds and what is due in each. The list is names and where the vaults are, which the registry answers before any vault is opened, so the whole of it is on screen at once.
 
@@ -30,7 +30,7 @@ A card whose first field is empty is asked like any other. Its heading is empty,
 
 A card is owed when the day holding now reaches the day its schedule falls on. **A card owed today is owed for the whole of it**, whatever hour it falls at, because a person sits down when they sit down.
 
-A day begins four hours past midnight, and that is `review.day_start_time` in [Settings](settings.md). A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one session in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
+A day begins four hours past midnight, and that is `review.day_start_time` in [Settings](settings.md). Reviewing cards at one in the morning finishes the day before, not starting the next, and a boundary at midnight would split one session in two. The hour uses local time, so the review day begins and ends according to the user's schedule.
 
 A card nobody has answered is owed the first time it is asked about.
 
@@ -38,7 +38,7 @@ How much of what is owed a day holds — how many new cards, how many returning 
 
 ## The order
 
-A session runs over **the whole vault** by default, and a deck is a filter inside it. What a person owes is what they owe, and which file a card was written in is not something they think about while answering.
+A session runs over **the whole vault** by default, and a deck is a filter inside it. Cards due across the entire vault are reviewed together, regardless of which file each card was written in.
 
 Cards owed and answered before come first, the one waiting longest at the front, because a card left late is the one closest to being forgotten. Cards nobody has answered come after them, in the order they stand in their decks.
 
@@ -89,7 +89,7 @@ The answers are the vault's and travel with it. What is worked out from them —
 
 A card typed by hand carries no mark until the application writes its file ([cards](cards.md)), and a card with no mark has nothing an answer could be recorded against.
 
-**A vault is marked when a person sits down to it**, and never for the counting. Its decks holding such a card are written once, which mints a mark for every card in them, and they are read again before anything is asked. What a person owes is counted from what is already marked, so opening the window writes to nothing: the vault they choose is the vault that is written to.
+**A vault is marked when a review session begins**, and never during count calculation. Decks containing unmarked cards are written once to assign unique card identifiers, and are reloaded before review begins. Due cards are counted from what is already marked, so opening the window writes to nothing: the vault they choose is the vault that is written to.
 
 So a person who never opens the editor can still run their cards, and one write to a deck is the whole of what review changes in a vault. Nothing else about a deck is touched: not its text, not its order, and never a schedule.
 

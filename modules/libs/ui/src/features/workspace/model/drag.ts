@@ -132,8 +132,8 @@ interface StripTarget {
 const isInside = (at: Position, box: Rect): boolean =>
   at.x >= box.x && at.x <= box.x + box.width && at.y >= box.y && at.y <= box.y + box.height
 
-const getClosest = (under: Element | null, selector: string): Element | null =>
-  under?.closest(selector) ?? null
+const getClosest = (targetElement: Element | null, selector: string): Element | null =>
+  targetElement?.closest(selector) ?? null
 
 /** A tab put in order among the tabs already drawn on a strip. */
 function getStripDropTarget(target: StripTarget, local: ToLocal): TabDropTarget {

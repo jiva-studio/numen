@@ -45,11 +45,11 @@ export default defineConfig({
         {
           label: 'Notes',
           items: [
-            { slug: 'writing' },
+            { slug: 'editor' },
             { slug: 'links' },
             { slug: 'plex' },
             { slug: 'files' },
-            { slug: 'finding' },
+            { slug: 'search' },
             { slug: 'documents' },
             { slug: 'recordings' },
           ],
@@ -67,8 +67,8 @@ export default defineConfig({
           items: [
             { slug: 'settings' },
             { slug: 'themes' },
-            { slug: 'meaning' },
-            { slug: 'reading' },
+            { slug: 'semantic-search' },
+            { slug: 'reader' },
           ],
         },
         {

@@ -63,7 +63,11 @@ Options:
   --check               Exit with code 1 if any findings exist (for CI / pre-commit)
   --category <name>     Filter by category:
                           fake-casts | participles | prepositions | metaphors |
-                          third-person | domain | tests | comments | gerunds | regular-participles
+                          third-person | domain | tests | comments | gerunds |
+                          regular-participles | test-assertions |
+                          conversational | async | domestic |
+                          error-storytelling | domestic-structs | domestic-verbs |
+                          masked-primitives | boolean-prefixes
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
   --help, -h            Show this help message
 `)
@@ -80,7 +84,7 @@ const IGNORED_DIRS = new Set([
   'testdata',
 ])
 
-const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto', '.md'])
+const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto', '.md', '.mdx', '.css', '.scss'])
 
 // 1. Full English irregular & narrative past participles used as identifiers
 const BANNED_PARTICIPLE_IDENTIFIERS = [
@@ -89,7 +93,8 @@ const BANNED_PARTICIPLE_IDENTIFIERS = [
   'stood', 'led', 'built', 'hit', 'cast', 'lost', 'bound', 'heard', 'meant',
   'worn', 'hung', 'spoken', 'born', 'felt', 'caught', 'given', 'grown', 'bent',
   'fed', 'met', 'shaken', 'spent', 'split', 'torn', 'thrown', 'woken', 'forgotten',
-  'frozen', 'hidden', 'settled', 'arriving', 'doing', 'asked', 'answered', 'listed', 'offered'
+  'frozen', 'hidden', 'settled', 'arriving', 'doing', 'asked', 'answered', 'listed', 'offered',
+  'stands', 'sits', 'listened', 'spoke'
 ]
 
 // 2. Prepositions used as bare variable/parameter names
@@ -114,7 +119,8 @@ const BANNED_THIRD_PERSON_FUNCTIONS = [
 
 // 5. Forbidden domain terms (Rule 8 & 9 AGENTS.md)
 const FORBIDDEN_DOMAIN_TERMS = [
-  'refusal', 'refused', 'refusalReason', 'readings', 'spoken', 'spokenBy', 'reflow'
+  'refusal', 'refused', 'refusalReason', 'readings', 'spoken', 'spokenBy', 'speaks',
+  'reflow', 'reflows', 'reflowed', 'reflowing'
 ]
 
 // 6. Distinctive Anglish/biblical narrative idioms in comments
@@ -124,7 +130,15 @@ const ANGLISH_IDIOMS = [
   'while being said', 'what was said', 'thread of talk', 'talk the window',
   'let go of', 'names nothing', 'what an answer comes to', 'the person has open',
   'what the person sees', 'as it stands', 'rather than ', 'instead of ',
-  'which is why this exists'
+  'which is why this exists',
+  'as the file stands', 'as the file now stands', 'file now stands', 'file as it stands',
+  'file stands', 'stands behind', 'stands in', 'stands over', 'stands at', 'stands between',
+  'sits on', 'sits down', 'sits inside', 'sits in', 'ground a field sits',
+  'nobody named', 'nobody has answered', 'person may say', 'person is told',
+  'the host is told', 'window is told', 'leaves behind', 'left behind',
+  'held apart', 'held open', 'held for ever', 'held to',
+  'refused by the use', 'refused a call', 'refused under',
+  'the words the core holds', 'code sits on crust'
 ]
 
 // 7. Banned gerund variables (Rule 5 & 6 AGENTS.md)
@@ -176,8 +190,16 @@ const RE_TS_VAR_PREPOSITION = new RegExp(
   `\\b(?:const|let|var)\\s+(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
 )
 
+const RE_TS_PARAM_OR_PROP_PREPOSITION = new RegExp(
+  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:[^:]|\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:`,
+)
+
 const RE_TS_VAR_METAPHOR = new RegExp(
   `\\b(?:const|let|var)\\s+(${BANNED_METAPHORS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
+)
+
+const RE_TS_PARAM_METAPHOR = new RegExp(
+  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_METAPHORS.join('|')})\\s*:[^:]`,
 )
 
 const RE_TS_THIRD_PERSON_FUNC = new RegExp(
@@ -187,6 +209,10 @@ const RE_TS_THIRD_PERSON_FUNC = new RegExp(
 // Go Regexes
 const RE_GO_VAR_PARTICIPLE = new RegExp(
   `\\b(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[A-Za-z*]|for\\s+(?:[a-zA-Z0-9_]+,\\s*)?(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=`,
+)
+
+const RE_GO_PARAM_OR_FIELD_PARTICIPLE = new RegExp(
+  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|^\\s*(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]`,
 )
 
 const RE_GO_VAR_GERUND = new RegExp(
@@ -201,8 +227,16 @@ const RE_GO_VAR_PREPOSITION = new RegExp(
   `\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[A-Za-z*]`,
 )
 
+const RE_GO_PARAM_OR_FIELD_PREPOSITION = new RegExp(
+  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|^\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:`,
+)
+
 const RE_GO_VAR_METAPHOR = new RegExp(
   `\\b(${BANNED_METAPHORS.join('|')})\\s*:=|var\\s+(${BANNED_METAPHORS.join('|')})\\s+[A-Za-z*]`,
+)
+
+const RE_GO_PARAM_METAPHOR = new RegExp(
+  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_METAPHORS.join('|')})(?:,\\s*[a-zA-Z0-9_]+)*\\s+[*a-zA-Z0-9_.\\[\\]]|^\\s*(${BANNED_METAPHORS.join('|')})(?:,\\s*[a-zA-Z0-9_]+)*\\s+[*a-zA-Z0-9_.\\[\\]]`,
 )
 
 const RE_GO_THIRD_PERSON_FUNC = new RegExp(
@@ -215,8 +249,133 @@ const RE_DOMAIN_TERM = new RegExp(
 
 const RE_TS_TEST_TITLE = /\b(?:describe|it|test)\s*\(\s*['"`]([^'"`]*)['"`]/
 const RE_GO_TEST_FUNC = /^func\s+(Test[A-Za-z0-9_]+)\s*\(/
+const RE_GO_TEST_ASSERTION_NARRATIVE = /\bt\.(?:Errorf|Fatalf|Fatal|Error)\s*\(\s*["`']([^"`']*(?:stands\s+(?:at|in|under|on|over|against|behind)|told\s+(?:to|of|apart)|never\s+told|was\s+told|held\s+by|held\s+open|held\s+apart|held\s+to|left\s+behind|nobody\s+asked|nobody\s+named|nobody\s+has\s+answered)[^"`']*)["`']/i
 
 const RE_ANGLISH_COMMENT = new RegExp(`(?:${ANGLISH_IDIOMS.join('|')})`)
+
+// 10. Conversational request slop (questions/answers instead of query/request)
+const BANNED_CONVERSATIONAL_REQUEST_IDENTIFIERS = [
+  'createAnswerGuard',
+  'AnswerGuard',
+  'useDebouncedAsk',
+  'DebouncedAskOptions',
+  'DebouncedAskSteps',
+  'debouncedAsk',
+]
+const RE_CONVERSATIONAL_REQUEST = new RegExp(
+  `\\b(${BANNED_CONVERSATIONAL_REQUEST_IDENTIFIERS.join('|')})\\b`,
+)
+
+// 11. Anthropomorphic async primitives (wake, nap)
+const RE_PROMISE_WAKE = /\bnew\s+Promise(?:\s*<[^>]+>)?\s*\(\s*\(\s*wake\s*[,)]/
+const RE_FUNC_NAP = /\b(?:const|let|var|function)\s+nap\s*(?:=|\()/
+
+// 12. Domestic metaphors
+const DOMESTIC_METAPHORS = [
+  'front door',
+  'clock on the wall',
+  'the heat a pixel',
+  'heat a pixel',
+  'air a row keeps',
+  'model that hears',
+  'what listened',
+  'two questions are asked as a person types',
+  'latest question wins',
+  'a person owes',
+  'a person answering',
+  'a person who asked',
+]
+const RE_DOMESTIC_METAPHOR = new RegExp(`(?:${DOMESTIC_METAPHORS.join('|')})`, 'i')
+
+// 15. Error Storytelling in errors.New, fmt.Errorf, throw new Error, ConnectError
+const ERROR_STORYTELLING_PATTERNS = [
+  'nobody',
+  'nothing has listened',
+  'nothing has read',
+  'nothing of that name is made',
+  'nothing answers',
+  'nothing said',
+  'nothing drawn',
+  'being listened to',
+  'the agent said nothing',
+  'holds no card',
+  'holds no section',
+  'the fixture holds no card',
+  'its day is spent',
+  'nothing under it is owed',
+  'a page is holding work a person has to answer for',
+  'the person has not let',
+  'nothing on this machine downloads',
+  'leaves nothing a file can be named after',
+  'and a question embedded by the second finds nothing',
+  'the index refuses',
+  'the deck says so',
+  'the handle caught nothing',
+  'the preset kind opens nothing',
+  'a command over a vault touches nothing else',
+  'stands on one line',
+  'there is nobody here to pick a folder',
+]
+const RE_ERROR_STORYTELLING = new RegExp(
+  `(?:errors\\.New|fmt\\.Errorf|throw\\s+new\\s+Error|new\\s+ConnectError)\\s*\\(\\s*["\`'][^"\`']*\\b(?:${ERROR_STORYTELLING_PATTERNS.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
+  'i',
+)
+
+// 16. Domestic Metaphor Data Structures (shareBook, shelf, drawer, pile)
+const BANNED_DATASTRUCTURE_METAPHORS = [
+  'shareBook',
+  'shelf',
+  'shelves',
+  'drawer',
+  'pile',
+  'piles',
+]
+const RE_DOMESTIC_STRUCT = new RegExp(
+  `\\b(?:type|struct|interface|class)\\s+([A-Za-z0-9_]*(?:${BANNED_DATASTRUCTURE_METAPHORS.join('|')})[A-Za-z0-9_]*)\\b`,
+  'i',
+)
+
+// 17. Banned Domestic Verbs in function/method names
+const BANNED_DOMESTIC_VERBS = [
+  'sitDeck',
+  'lookAt',
+  'lookingCore',
+  'lookKeys',
+  'tellWritten',
+]
+const RE_DOMESTIC_FUNC = new RegExp(
+  `\\b(${BANNED_DOMESTIC_VERBS.join('|')})\\b`,
+)
+
+// 18. Masked UI interaction primitives (generic interaction primitives disguised with conversational/poetic names)
+const MASKED_PRIMITIVE_FILES = new Set([
+  'questions.ts',
+  'outward.ts',
+  'turn.ts',
+  'ground.ts',
+  'Waiting.vue',
+])
+const MASKED_PRIMITIVE_SYMBOLS = [
+  'isOutward',
+  'interceptOutwardLinks',
+  'useMenuGround',
+  'keyTurn',
+  'getPlaceBeside',
+]
+const RE_MASKED_PRIMITIVE = new RegExp(
+  `\\b(${MASKED_PRIMITIVE_SYMBOLS.join('|')})\\b`,
+)
+
+// 19. Bare Boolean Properties (Rule 6: prefix is/has/can/should) and forbidden 'stale' (Rule 9: 'overtaken')
+const BARE_BOOL_NAMES = [
+  'open', 'shut', 'closed', 'paused', 'dirty', 'empty', 'disabled', 'fresh', 'stale',
+]
+const RE_TS_BARE_BOOL = new RegExp(
+  `^\\s*(?:readonly\\s+)?(${BARE_BOOL_NAMES.join('|')})\\s*\\??:\\s*boolean\\b`,
+)
+const RE_GO_BARE_BOOL = new RegExp(
+  `^\\s*(${BARE_BOOL_NAMES.join('|')})\\s+bool\\b`,
+)
 
 const findings = {
   fakeTurnCasts: [],
@@ -229,11 +388,25 @@ const findings = {
   anglishComments: [],
   gerundIdentifiers: [],
   regularParticipleIdentifiers: [],
+  narrativeTestAssertions: [],
+  conversationalRequests: [],
+  anthropomorphicAsync: [],
+  domesticMetaphors: [],
+  errorStorytelling: [],
+  domesticStructs: [],
+  domesticVerbs: [],
+  maskedPrimitives: [],
+  bareBooleans: [],
 }
 
 const stats = {
   frontendTotal: 0,
   backendTotal: 0,
+}
+
+const filterCategories = filterCategory ? new Set(filterCategory.split(',').map(s => s.trim())) : null
+function shouldCheckCategory(cat) {
+  return !filterCategories || filterCategories.has(cat)
 }
 
 function scanFile(filePath) {
@@ -242,8 +415,34 @@ function scanFile(filePath) {
   if (!EXTENSIONS.has(ext)) return
 
   const isGo = ext === '.go'
+  const isTs = ext === '.ts' || ext === '.tsx' || ext === '.js' || ext === '.jsx' || ext === '.vue'
+  const isCode = isGo || isTs
   if (filterLang === 'ts' && isGo) return
   if (filterLang === 'go' && !isGo) return
+
+  const baseName = path.basename(filePath)
+  if (shouldCheckCategory('conversational') && (baseName === 'questions.ts' || (baseName === 'answers.ts' && !relPath.includes('wire/errorCode')))) {
+    findings.conversationalRequests.push({
+      file: relPath,
+      line: 1,
+      lang: 'ts',
+      symbol: baseName,
+      text: `File naming slop: ${baseName} represents request/response or query sequence`,
+    })
+    stats.frontendTotal++
+  }
+
+  if (shouldCheckCategory('masked-primitives') && MASKED_PRIMITIVE_FILES.has(baseName)) {
+    findings.maskedPrimitives.push({
+      file: relPath,
+      line: 1,
+      lang: isGo ? 'go' : 'ts',
+      symbol: baseName,
+      text: `Masked primitive file: ${baseName} (disguised UI/CS interaction primitive)`,
+    })
+    if (isGo) stats.backendTotal++
+    else stats.frontendTotal++
+  }
 
   let content = ''
   try {
@@ -261,7 +460,7 @@ function scanFile(filePath) {
     const isCommentLine = trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')
 
     // 1. Fake Turn casts (Frontend only)
-    if (!isGo && (!filterCategory || filterCategory === 'fake-casts')) {
+    if (isTs && shouldCheckCategory('fake-casts')) {
       for (const castCheck of RE_TS_FAKE_CASTS) {
         if (castCheck.re.test(line)) {
           castCheck.re.lastIndex = 0
@@ -278,11 +477,11 @@ function scanFile(filePath) {
     }
 
     // 2. Participle Identifiers (variables & params)
-    if (!isCommentLine && (!filterCategory || filterCategory === 'participles')) {
+    if (isCode && !isCommentLine && shouldCheckCategory('participles')) {
       if (isGo) {
-        const m = RE_GO_VAR_PARTICIPLE.exec(line)
+        const m = RE_GO_VAR_PARTICIPLE.exec(line) || RE_GO_PARAM_OR_FIELD_PARTICIPLE.exec(line)
         if (m) {
-          const word = m[1] || m[2] || m[3]
+          const word = m[1] || m[2] || m[3] || m[4]
           if (!filterWord || filterWord === word) {
             findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'go', word, text: trimmed })
             stats.backendTotal++
@@ -304,10 +503,12 @@ function scanFile(filePath) {
     }
 
     // 3. Prepositions used as bare variables
-    if (!isCommentLine && (!filterCategory || filterCategory === 'prepositions')) {
-      const m = isGo ? RE_GO_VAR_PREPOSITION.exec(line) : RE_TS_VAR_PREPOSITION.exec(line)
+    if (isCode && !isCommentLine && shouldCheckCategory('prepositions')) {
+      const m = isGo
+        ? (RE_GO_VAR_PREPOSITION.exec(line) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(line))
+        : (RE_TS_VAR_PREPOSITION.exec(line) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(line))
       if (m) {
-        const word = m[1] || m[2]
+        const word = m[1] || m[2] || m[3]
         if (!filterWord || filterWord === word) {
           findings.prepositionIdentifiers.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word, text: trimmed })
           if (isGo) stats.backendTotal++
@@ -317,10 +518,12 @@ function scanFile(filePath) {
     }
 
     // 4. Literary metaphors & bare narrative adjectives
-    if (!isCommentLine && (!filterCategory || filterCategory === 'metaphors')) {
-      const m = isGo ? RE_GO_VAR_METAPHOR.exec(line) : RE_TS_VAR_METAPHOR.exec(line)
+    if (isCode && !isCommentLine && shouldCheckCategory('metaphors')) {
+      const m = isGo
+        ? (RE_GO_VAR_METAPHOR.exec(line) || RE_GO_PARAM_METAPHOR.exec(line))
+        : (RE_TS_VAR_METAPHOR.exec(line) || RE_TS_PARAM_METAPHOR.exec(line))
       if (m) {
-        const word = m[1] || m[2]
+        const word = m[1] || m[2] || m[3]
         if (!filterWord || filterWord === word) {
           findings.literaryMetaphors.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word, text: trimmed })
           if (isGo) stats.backendTotal++
@@ -330,7 +533,7 @@ function scanFile(filePath) {
     }
 
     // 5. Third-person singular function names
-    if (!isCommentLine && (!filterCategory || filterCategory === 'third-person')) {
+    if (isCode && !isCommentLine && shouldCheckCategory('third-person')) {
       const m = isGo ? RE_GO_THIRD_PERSON_FUNC.exec(line) : RE_TS_THIRD_PERSON_FUNC.exec(line)
       if (m) {
         const funcName = m[1]
@@ -343,12 +546,12 @@ function scanFile(filePath) {
     }
 
     // 6. Forbidden domain terminology (Rule 8 & 9)
-    if (!isCommentLine && (!filterCategory || filterCategory === 'domain')) {
+    if (shouldCheckCategory('domain')) {
       const m = RE_DOMAIN_TERM.exec(line)
       if (m) {
         const term = m[1]
         if (!filterWord || filterWord === term) {
-          findings.domainViolations.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', term, text: trimmed })
+          findings.domainViolations.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : (isTs ? 'ts' : 'doc'), term, text: trimmed })
           if (isGo) stats.backendTotal++
           else stats.frontendTotal++
         }
@@ -356,7 +559,7 @@ function scanFile(filePath) {
     }
 
     // 7. Narrative test titles
-    if (!filterCategory || filterCategory === 'tests') {
+    if (isCode && shouldCheckCategory('tests')) {
       if (isGo) {
         const testMatch = RE_GO_TEST_FUNC.exec(line)
         if (testMatch) {
@@ -395,12 +598,12 @@ function scanFile(filePath) {
     }
 
     // 8. Anglish narrative comments
-    if (isCommentLine && (!filterCategory || filterCategory === 'comments')) {
+    if (isCommentLine && shouldCheckCategory('comments')) {
       if (RE_ANGLISH_COMMENT.test(line)) {
         findings.anglishComments.push({
           file: relPath,
           line: lineNum,
-          lang: isGo ? 'go' : 'ts',
+          lang: isGo ? 'go' : (isTs ? 'ts' : 'doc'),
           text: trimmed.slice(0, 140),
         })
         if (isGo) stats.backendTotal++
@@ -409,7 +612,7 @@ function scanFile(filePath) {
     }
 
     // 9. Gerund variables (Rule 5 & 6 AGENTS.md)
-    if (!isCommentLine && (!filterCategory || filterCategory === 'gerunds')) {
+    if (isCode && !isCommentLine && shouldCheckCategory('gerunds')) {
       const m = isGo ? RE_GO_VAR_GERUND.exec(line) : RE_TS_VAR_GERUND.exec(line)
       if (m) {
         const word = m[1] || m[2]
@@ -428,7 +631,7 @@ function scanFile(filePath) {
     }
 
     // 10. Regular -ed participles as variables
-    if (!isCommentLine && (!filterCategory || filterCategory === 'regular-participles')) {
+    if (isCode && !isCommentLine && shouldCheckCategory('regular-participles')) {
       const m = isGo ? RE_GO_VAR_REGULAR_PARTICIPLE.exec(line) : RE_TS_VAR_REGULAR_PARTICIPLE.exec(line)
       if (m) {
         const word = m[1] || m[2]
@@ -443,6 +646,147 @@ function scanFile(filePath) {
           if (isGo) stats.backendTotal++
           else stats.frontendTotal++
         }
+      }
+    }
+
+    // 11. Narrative assertions in tests
+    if (isCode && shouldCheckCategory('test-assertions')) {
+      if (isGo) {
+        const m = RE_GO_TEST_ASSERTION_NARRATIVE.exec(line)
+        if (m) {
+          findings.narrativeTestAssertions.push({
+            file: relPath,
+            line: lineNum,
+            lang: 'go',
+            text: trimmed,
+          })
+          stats.backendTotal++
+        }
+      }
+    }
+
+    // 12. Conversational request slop
+    if (isCode && shouldCheckCategory('conversational')) {
+      const m = RE_CONVERSATIONAL_REQUEST.exec(line)
+      if (m) {
+        findings.conversationalRequests.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          symbol: m[1],
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
+
+    // 13. Anthropomorphic async primitives
+    if (isCode && shouldCheckCategory('async')) {
+      if (RE_PROMISE_WAKE.test(line) || RE_FUNC_NAP.test(line)) {
+        findings.anthropomorphicAsync.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
+
+    // 14. Domestic metaphors in code and comments
+    if (shouldCheckCategory('domestic')) {
+      const m = RE_DOMESTIC_METAPHOR.exec(line)
+      if (m) {
+        findings.domesticMetaphors.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : (isTs ? 'ts' : 'doc'),
+          phrase: m[0],
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
+
+    // 15. Error Storytelling in errors.New, fmt.Errorf, throw new Error, ConnectError
+    if (isCode && shouldCheckCategory('error-storytelling')) {
+      const m = RE_ERROR_STORYTELLING.exec(line)
+      if (m) {
+        findings.errorStorytelling.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
+
+    // 16. Domestic Metaphor Data Structures (shareBook, shelf, drawer, pile)
+    if (isCode && !isCommentLine && shouldCheckCategory('domestic-structs')) {
+      const m = RE_DOMESTIC_STRUCT.exec(line)
+      if (m) {
+        findings.domesticStructs.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          symbol: m[1],
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
+
+    // 17. Banned Domestic Verbs in function/method names
+    if (isCode && !isCommentLine && shouldCheckCategory('domestic-verbs')) {
+      const m = RE_DOMESTIC_FUNC.exec(line)
+      if (m) {
+        findings.domesticVerbs.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          symbol: m[1],
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
+
+    // 18. Masked UI interaction primitives (symbols)
+    if (isCode && !isCommentLine && shouldCheckCategory('masked-primitives')) {
+      const m = RE_MASKED_PRIMITIVE.exec(line)
+      if (m) {
+        findings.maskedPrimitives.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          symbol: m[1],
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
+
+    // 19. Bare Boolean Properties (Rule 6)
+    if (isCode && !isCommentLine && shouldCheckCategory('boolean-prefixes')) {
+      const m = isGo ? RE_GO_BARE_BOOL.exec(line) : RE_TS_BARE_BOOL.exec(line)
+      if (m) {
+        findings.bareBooleans.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          symbol: m[1],
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
       }
     }
   }
@@ -509,7 +853,16 @@ const totalIssues =
   findings.narrativeTestTitles.length +
   findings.anglishComments.length +
   findings.gerundIdentifiers.length +
-  findings.regularParticipleIdentifiers.length
+  findings.regularParticipleIdentifiers.length +
+  findings.narrativeTestAssertions.length +
+  findings.conversationalRequests.length +
+  findings.anthropomorphicAsync.length +
+  findings.domesticMetaphors.length +
+  findings.errorStorytelling.length +
+  findings.domesticStructs.length +
+  findings.domesticVerbs.length +
+  findings.maskedPrimitives.length +
+  findings.bareBooleans.length
 
 const fileCounts = {}
 for (const cat of Object.keys(findings)) {
@@ -575,6 +928,15 @@ console.log(`7. Narrative test titles (storytelling in tests)          : ${findi
 console.log(`8. Anglish comments (hands back, comes to, stands on)     : ${findings.anglishComments.length}`)
 console.log(`9. Gerund variables (asking, reading, standing, waiting) : ${findings.gerundIdentifiers.length}`)
 console.log(`10. Regular -ed participles (typed, rendered, opened)    : ${findings.regularParticipleIdentifiers.length}`)
+console.log(`11. Narrative test assertions (stands at, told to)        : ${findings.narrativeTestAssertions.length}`)
+console.log(`12. Conversational request slop (AnswerGuard, questions)  : ${findings.conversationalRequests.length}`)
+console.log(`13. Anthropomorphic async primitives (wake, nap)          : ${findings.anthropomorphicAsync.length}`)
+console.log(`14. Domestic metaphors (front door, clock, heat, air)      : ${findings.domesticMetaphors.length}`)
+console.log(`15. Error storytelling (errors.New, fmt.Errorf, ConnectErr): ${findings.errorStorytelling.length}`)
+console.log(`16. Domestic metaphor structs (shareBook, shelf, drawer)    : ${findings.domesticStructs.length}`)
+console.log(`17. Banned domestic verbs (sitDeck, lookAt, tellWritten)   : ${findings.domesticVerbs.length}`)
+console.log(`18. Masked UI interaction primitives (questions, outward)   : ${findings.maskedPrimitives.length}`)
+console.log(`19. Bare boolean properties (open, closed, disabled, stale): ${findings.bareBooleans.length}`)
 console.log('----------------------------------------------------------------------')
 console.log(`FRONTEND VIOLATIONS (TypeScript / Vue)                    : ${stats.frontendTotal}`)
 console.log(`BACKEND VIOLATIONS (Go)                                   : ${stats.backendTotal}`)
@@ -649,6 +1011,8 @@ if (!isSummaryOnly) {
 
 if (isJsonOutput) {
   const targetJson = jsonOutPath || path.join(rootDir, 'narrative-report.json')
+  const dir = path.dirname(targetJson)
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(
     targetJson,
     JSON.stringify(

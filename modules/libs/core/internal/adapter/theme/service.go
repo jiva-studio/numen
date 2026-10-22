@@ -20,10 +20,8 @@ type Appearance struct {
 	ThemeName string
 	Mode      appearance.ColorScheme
 
-	// InterfaceScale is how large the window is drawn and TextScale how large the
-	// text a person reads is set, AsDesigned being the size each was designed at.
-	// Zero is a size nobody named: in a choice it stands as it is, and in what is
-	// worn the tokens hold their own.
+	// InterfaceScale scales UI components and TextScale scales typography.
+	// Zero values preserve default scale multipliers.
 	InterfaceScale, TextScale float64
 }
 
@@ -41,14 +39,11 @@ type Appearances interface {
 	// Read is what the settings say the window wears.
 	Read() (Appearance, error)
 
-	// Write puts a dress into the settings, and leaves the rest of them as they
-	// are. A number outside the bounds of the size it is written into is
-	// refused and nothing is written.
+	// Write persists the appearance settings. Out-of-bounds scale values are
+	// rejected without writing.
 	Write(Appearance) error
 
-	// Warn is where a person is told what this could not do: a theme named in
-	// the settings that is not in the catalogue, and settings that could not be
-	// read.
+	// Warn reports non-fatal configuration issues or missing themes.
 	Warn(string)
 }
 
@@ -102,15 +97,13 @@ func (s *Service) ListThemes(
 	}), nil
 }
 
-// encodeBounds is how far a size goes, as the schema says it.
-func encodeBounds(held Bounds) *v1.Bounds {
-	return &v1.Bounds{Least: held.Least, Most: held.Most}
+// encodeBounds converts domain Bounds to wire representation.
+func encodeBounds(bounds Bounds) *v1.Bounds {
+	return &v1.Bounds{Least: bounds.Least, Most: bounds.Most}
 }
 
-// ReadTheme is one theme's file, as the file stands. A name this build ships
-// no file for and holds none under is no theme, and is answered with no CSS:
-// the page wears what it already has, and nobody is shown a failure they did
-// not ask for.
+// ReadTheme returns CSS definitions for a theme. If the theme is not found,
+// an empty response is returned.
 func (s *Service) ReadTheme(
 	_ context.Context,
 	req *connect.Request[v1.ReadThemeRequest],
@@ -125,13 +118,8 @@ func (s *Service) ReadTheme(
 	return connect.NewResponse(&v1.ReadThemeResponse{Css: text}), nil
 }
 
-// WriteAppearance writes the theme, the mode and the two sizes into the
-// settings.
-//
-// A theme that is not there, a mode that was not said and a size outside what
-// it goes to are all refused, and the settings are left as they are. What
-// stopped the write is answered with: the person is standing in front of the
-// list they chose from. A size the choice does not name stands as it is.
+// WriteAppearance validates and saves theme name, mode, and interface/text scale values.
+// Invalid inputs return an error message in the response without updating settings.
 func (s *Service) WriteAppearance(
 	_ context.Context,
 	req *connect.Request[v1.WriteAppearanceRequest],

@@ -100,7 +100,7 @@ Variables:
 
 Secrets: `BUNNY_STORAGE_KEY`, `BUNNY_SITE_STORAGE_KEY` and `BUNNY_DOCS_STORAGE_KEY` are the three stores' own passwords; `BUNNY_API_KEY` is the account key, which is what purging asks for. They are in 1Password beside the account key they came from.
 
-Each workflow names every one of these before it does anything, so a missing one is reported by name rather than as a refusal further down.
+Each workflow names every one of these before it does anything, so a missing one is reported by name before downstream operations fail.
 
 ## How it happens
 
@@ -130,4 +130,4 @@ Two settings on every pull zone, and they are not the same one.
 
 ## The names on the web
 
-`numen.md`, `www.numen.md`, `docs.numen.md` and `dl.numen.md` answer, each with a certificate of its own, and each is what its `SERVED_FROM` variable names. A name is put on the web in three steps: add the hostname to the pull zone, point a CNAME at the zone's `b-cdn.net` address, and ask for the free certificate — which is refused until the CNAME resolves.
+`numen.md`, `www.numen.md`, `docs.numen.md` and `dl.numen.md` answer, each with a certificate of its own, and each is what its `SERVED_FROM` variable names. A name is put on the web in three steps: add the hostname to the pull zone, point a CNAME at the zone's `b-cdn.net` address, and ask for the free certificate — which fails until the CNAME resolves.

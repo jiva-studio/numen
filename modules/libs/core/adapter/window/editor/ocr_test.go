@@ -60,8 +60,8 @@ func openHighlightWindow(t *testing.T) (*Services, http.Handler, *testsupport.PD
 		Text: "Alpha Beta\nGamma Delta\n",
 	}
 	vault := testsupport.NewVault(t, map[string]string{
-		book:   string(raw),
-		beside: "a file the vault leaves alone",
+		book:     string(raw),
+		adjacent: "a file the vault leaves alone",
 	})
 	hl := source.NewHighlight(
 		filesystem.VaultReaders{},
@@ -163,7 +163,7 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		"../outside.pdf",
 		"library/../../outside.pdf",
 		"library/nothing.pdf",
-		beside,
+		adjacent,
 	} {
 		t.Run(path, func(t *testing.T) {
 			api, _, _ := openHighlightWindow(t)

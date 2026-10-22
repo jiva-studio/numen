@@ -2,17 +2,8 @@
 //
 // Source: numen/v1/presets.proto
 
-// What a client may ask about the presets a vault holds.
-//
-// A preset is a note of `type: preset`, and its settings are frontmatter keys.
-// A deck names the preset it is scheduled by with an entry of its `links:`
-// block carrying `type: preset`, and a deck naming none is scheduled by the
-// defaults.
-//
-// One control steers a preset: `goal` says which value it moves, and the curve
-// says what the whole range of that value evaluates to. A curve is asked for with
-// the settings a person is moving and has not written yet, and asking for one
-// writes nothing.
+// Presets service definitions.
+// Manages deck scheduling presets and computes retention/load projection curves.
 package numenv1connect
 
 import (
@@ -69,46 +60,19 @@ const (
 
 // PresetsServiceClient is a client for the numen.v1.PresetsService service.
 type PresetsServiceClient interface {
-	// GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
-	// answered with the defaults under no path, and a deck whose link reaches
-	// something that is not a preset is answered with the defaults and told so.
+	// GetDeckPreset returns the preset configured for a deck.
 	GetDeckPreset(context.Context, *connect.Request[v1.GetDeckPresetRequest]) (*connect.Response[v1.GetDeckPresetResponse], error)
-	// ListPresets is every preset the vault holds, by path and by what it is
-	// called. It is the list a deck's preset is chosen from, and the defaults are
-	// not in it: they are what schedules a deck naming no preset, and no note
-	// holds them.
+	// ListPresets returns all presets available in the vault.
 	ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error)
-	// CreatePreset puts a preset naming none of its settings in the vault. The
-	// file says it is a preset from the moment it exists, so it is one to
-	// everything that reads the vault before a setting has been chosen.
-	//
-	// A key the file does not carry stands at the default, so the decks pointed
-	// at it are scheduled by the defaults until the person moves one.
+	// CreatePreset creates a new preset note with default settings.
 	CreatePreset(context.Context, *connect.Request[v1.CreatePresetRequest]) (*connect.Response[v1.CreatePresetResponse], error)
-	// ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
-	// block that carries `type: preset`. The entry keeps the role and the words
-	// the person wrote on it, and every other entry of the block is left as the
-	// bytes it was. An empty preset takes the entry out, and the deck is
-	// scheduled by the defaults.
-	//
-	// A preset the vault holds no note at is refused `missing`, and a preset
-	// naming a note that is not one is refused `not_a_preset`. A deck that no
-	// longer holds what the caller read is left alone and refused `stale`.
+	// ScheduleDeck assigns a deck to a preset or resets it to defaults.
 	ScheduleDeck(context.Context, *connect.Request[v1.ScheduleDeckRequest]) (*connect.Response[v1.ScheduleDeckResponse], error)
-	// ReadPreset is the settings of one preset. A note that is not a preset is
-	// answered with the defaults and a problem: what is wrong with the file is
-	// settled in the editor, and nothing is guessed at here.
+	// ReadPreset returns settings and validation errors for a preset note.
 	ReadPreset(context.Context, *connect.Request[v1.ReadPresetRequest]) (*connect.Response[v1.ReadPresetResponse], error)
-	// WritePreset puts settings into a preset. Each key the application owns is
-	// replaced on its own, and every other key, the order they stand in and the
-	// body are left as the person wrote them.
-	//
-	// A path the vault holds no note at is refused `missing`. A note that is not
-	// a preset is refused `not_a_preset`, and one that no longer holds what the
-	// caller read is left alone and refused `stale`.
+	// WritePreset updates frontmatter configuration settings in a preset note.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
-	// ComputeCurve is what the settings come to over the whole range of the goal
-	// they name. The whole range is worked out in one pass.
+	// ComputeCurve calculates review projections across the parameter range of the target goal.
 	ComputeCurve(context.Context, *connect.Request[v1.ComputeCurveRequest]) (*connect.Response[v1.ComputeCurveResponse], error)
 }
 
@@ -216,46 +180,19 @@ func (c *presetsServiceClient) ComputeCurve(ctx context.Context, req *connect.Re
 
 // PresetsServiceHandler is an implementation of the numen.v1.PresetsService service.
 type PresetsServiceHandler interface {
-	// GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
-	// answered with the defaults under no path, and a deck whose link reaches
-	// something that is not a preset is answered with the defaults and told so.
+	// GetDeckPreset returns the preset configured for a deck.
 	GetDeckPreset(context.Context, *connect.Request[v1.GetDeckPresetRequest]) (*connect.Response[v1.GetDeckPresetResponse], error)
-	// ListPresets is every preset the vault holds, by path and by what it is
-	// called. It is the list a deck's preset is chosen from, and the defaults are
-	// not in it: they are what schedules a deck naming no preset, and no note
-	// holds them.
+	// ListPresets returns all presets available in the vault.
 	ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error)
-	// CreatePreset puts a preset naming none of its settings in the vault. The
-	// file says it is a preset from the moment it exists, so it is one to
-	// everything that reads the vault before a setting has been chosen.
-	//
-	// A key the file does not carry stands at the default, so the decks pointed
-	// at it are scheduled by the defaults until the person moves one.
+	// CreatePreset creates a new preset note with default settings.
 	CreatePreset(context.Context, *connect.Request[v1.CreatePresetRequest]) (*connect.Response[v1.CreatePresetResponse], error)
-	// ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
-	// block that carries `type: preset`. The entry keeps the role and the words
-	// the person wrote on it, and every other entry of the block is left as the
-	// bytes it was. An empty preset takes the entry out, and the deck is
-	// scheduled by the defaults.
-	//
-	// A preset the vault holds no note at is refused `missing`, and a preset
-	// naming a note that is not one is refused `not_a_preset`. A deck that no
-	// longer holds what the caller read is left alone and refused `stale`.
+	// ScheduleDeck assigns a deck to a preset or resets it to defaults.
 	ScheduleDeck(context.Context, *connect.Request[v1.ScheduleDeckRequest]) (*connect.Response[v1.ScheduleDeckResponse], error)
-	// ReadPreset is the settings of one preset. A note that is not a preset is
-	// answered with the defaults and a problem: what is wrong with the file is
-	// settled in the editor, and nothing is guessed at here.
+	// ReadPreset returns settings and validation errors for a preset note.
 	ReadPreset(context.Context, *connect.Request[v1.ReadPresetRequest]) (*connect.Response[v1.ReadPresetResponse], error)
-	// WritePreset puts settings into a preset. Each key the application owns is
-	// replaced on its own, and every other key, the order they stand in and the
-	// body are left as the person wrote them.
-	//
-	// A path the vault holds no note at is refused `missing`. A note that is not
-	// a preset is refused `not_a_preset`, and one that no longer holds what the
-	// caller read is left alone and refused `stale`.
+	// WritePreset updates frontmatter configuration settings in a preset note.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
-	// ComputeCurve is what the settings come to over the whole range of the goal
-	// they name. The whole range is worked out in one pass.
+	// ComputeCurve calculates review projections across the parameter range of the target goal.
 	ComputeCurve(context.Context, *connect.Request[v1.ComputeCurveRequest]) (*connect.Response[v1.ComputeCurveResponse], error)
 }
 

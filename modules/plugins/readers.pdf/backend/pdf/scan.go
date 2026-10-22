@@ -8,12 +8,8 @@ import (
 	"github.com/klippa-app/go-pdfium/requests"
 )
 
-// A Scan is a document held open so that its pages can be looked at rather than
-// read: what a recogniser is given is the picture of a page, because a scan has
-// no text to take out.
-//
-// It holds one of the library's workers for as long as it is open, so it is
-// closed as soon as the document is done with.
+// Scan renders raster images of document pages for recognition.
+// It retains an underlying PDF worker until Close is called.
 type Scan struct {
 	doc *document
 }
@@ -45,7 +41,7 @@ func (s *Scan) GetPageCount() int { return s.doc.pages }
 // The page is not loaded to be measured. A window laying out a book asks for
 // every page's size before it has drawn any of them, and loading five hundred
 // pages to measure them is seconds before anything is on the screen.
-func (s *Scan) GetPageSize(index int) (wide, high float64, err error) {
+func (s *Scan) GetPageSize(index int) (width, height float64, err error) {
 	if index < 0 || index >= s.doc.pages {
 		return 0, 0, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
 	}
@@ -71,13 +67,13 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	if dpi <= 0 {
 		dpi = 300
 	}
-	wide, high, err := s.GetPageSize(index)
+	width, height, err := s.GetPageSize(index)
 	// gomutants:disable-next-line BRANCH_IF reason="page dimension lookup failure stops rendering"
 	if err != nil {
 		return nil, err
 	}
 	// gomutants:disable-next-line ARITHMETIC_BASE reason="raster pixel count computes area scaled by DPI over point resolution"
-	if pixels := wide * high * float64(dpi) * float64(dpi) / (pointsPerInch * pointsPerInch); pixels > mostPixels {
+	if pixels := width * height * float64(dpi) * float64(dpi) / (pointsPerInch * pointsPerInch); pixels > mostPixels {
 		return nil, fmt.Errorf("pdf: page %d cannot be drawn at %d DPI: it is %.0f pixels, and %d is the most",
 			index, dpi, pixels, mostPixels)
 	}

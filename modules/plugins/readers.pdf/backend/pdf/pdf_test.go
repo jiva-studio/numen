@@ -200,7 +200,7 @@ func TestLocate(t *testing.T) {
 				t.Errorf("part is %q, want %q", where.Part, c.part)
 			}
 			if where.Page != c.sheet {
-				t.Errorf("page stands at %d in the file, want %d", where.Page, c.sheet)
+				t.Errorf("page is %d, want %d", where.Page, c.sheet)
 			}
 		})
 	}
@@ -313,7 +313,7 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 			defer target.Close()
 
 			for page := range target.GetPageCount() {
-				wide, high, err := target.GetPageSize(page)
+				width, height, err := target.GetPageSize(page)
 				if err != nil {
 					t.Fatalf("page %d: %v", page, err)
 				}
@@ -335,11 +335,11 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 				if !hasPixels {
 					t.Errorf("page %d: expected non-zero pixel data", page)
 				}
-				if got := float64(rendered.Bounds().Dx()); got < wide-1 || got > wide+1 {
-					t.Errorf("page %d says it is %g across and is drawn %g", page, wide, got)
+				if got := float64(rendered.Bounds().Dx()); got < width-1 || got > width+1 {
+					t.Errorf("page %d says it is %g across and is drawn %g", page, width, got)
 				}
-				if got := float64(rendered.Bounds().Dy()); got < high-1 || got > high+1 {
-					t.Errorf("page %d says it is %g high and is drawn %g", page, high, got)
+				if got := float64(rendered.Bounds().Dy()); got < height-1 || got > height+1 {
+					t.Errorf("page %d says it is %g high and is drawn %g", page, height, got)
 				}
 			}
 			if _, _, err := target.GetPageSize(-1); err == nil {

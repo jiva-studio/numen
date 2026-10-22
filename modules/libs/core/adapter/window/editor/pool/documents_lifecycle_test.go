@@ -16,7 +16,7 @@ import (
 // shelf is a Scan that counts what is asked of it.
 type shelf struct {
 	mu       sync.Mutex
-	across   float64
+	width    float64
 	sizeErr  error
 	imageErr error
 	sizes    int
@@ -30,7 +30,7 @@ func (s *shelf) GetPageSize(int) (float64, float64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sizes++
-	return s.across, 792, s.sizeErr
+	return s.width, 792, s.sizeErr
 }
 
 func (s *shelf) RenderPage(_, dpi int) (image.Image, error) {
@@ -277,18 +277,18 @@ func TestADocumentIsHeldByOneCallAtATime(t *testing.T) {
 	first, cancelFirst := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancelFirst()
 	if !doc.Lock(first) {
-		t.Fatal("a free document could not be held")
+		t.Fatal("failed to lock available document")
 	}
 	second, cancelSecond := context.WithTimeout(t.Context(), 30*time.Millisecond)
 	defer cancelSecond()
 	if doc.Lock(second) {
-		t.Fatal("a document held by one call was held by another")
+		t.Fatal("concurrent lock acquisition succeeded unexpectedly")
 	}
 	doc.Unlock()
 	third, cancelThird := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancelThird()
 	if !doc.Lock(third) {
-		t.Error("a document let go could not be held")
+		t.Error("failed to acquire lock after unlock")
 	}
 	doc.Unlock()
 }
@@ -479,7 +479,7 @@ func TestShuttingAnOpenDocumentClosesItsScan(t *testing.T) {
 func TestAPageIsGeneratedAtTheResolutionItsWidthNeeds(t *testing.T) {
 	for _, c := range []struct {
 		name          string
-		across        float64
+		pageWidth     float64
 		width, wantAt int
 	}{
 		{"as wide as the page", 612, 612, 72},
@@ -490,7 +490,7 @@ func TestAPageIsGeneratedAtTheResolutionItsWidthNeeds(t *testing.T) {
 		{"a page one unit wide", 1, 5, 360},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			s := &shelf{across: c.across}
+			s := &shelf{width: c.pageWidth}
 			doc := &Document{Scan: s, points: map[int]int{}}
 			if _, err := doc.Render(0, c.width); err != nil {
 				t.Fatal(err)
@@ -503,7 +503,7 @@ func TestAPageIsGeneratedAtTheResolutionItsWidthNeeds(t *testing.T) {
 }
 
 func TestAPagesWidthIsMeasuredOnce(t *testing.T) {
-	s := &shelf{across: 612}
+	s := &shelf{width: 612}
 	doc := &Document{Scan: s, points: map[int]int{}}
 	for range 3 {
 		if _, err := doc.Render(4, 612); err != nil {
@@ -524,7 +524,7 @@ func TestAPagesWidthIsMeasuredOnce(t *testing.T) {
 func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 	cause := errors.New("the library said no")
 
-	measure := &shelf{across: 612, sizeErr: cause}
+	measure := &shelf{width: 612, sizeErr: cause}
 	if _, err := (&Document{Scan: measure, points: map[int]int{}}).Render(0, 100); !errors.Is(err, cause) {
 		t.Errorf("a page that cannot be measured was answered %v", err)
 	}
@@ -532,7 +532,7 @@ func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 		t.Error("a page that cannot be measured was drawn")
 	}
 
-	empty := &shelf{across: 0.5}
+	empty := &shelf{width: 0.5}
 	doc := &Document{Scan: empty, points: map[int]int{}}
 	if _, err := doc.Render(0, 100); err == nil {
 		t.Error("a page with no width was drawn")
@@ -541,7 +541,7 @@ func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 		t.Error("a page with no width was drawn or remembered")
 	}
 
-	draw := &shelf{across: 612, imageErr: cause}
+	draw := &shelf{width: 612, imageErr: cause}
 	img, err := (&Document{Scan: draw, points: map[int]int{}}).Render(0, 100)
 	if !errors.Is(err, cause) || img != nil {
 		t.Errorf("a page the library cannot draw was answered %v, %v", img, err)
@@ -630,11 +630,11 @@ func TestADocumentGivenBackAfterItWasReplacedPreservesTheReplacementHeld(t *test
 	docs.Release(mark, failed)
 
 	if docs.open[mark] != replacement {
-		t.Error("giving back the document that failed removed the one that replaced it")
+		t.Error("releasing failed document evicted active replacement document")
 	}
 	select {
 	case <-docs.empty:
-		t.Error("the window was told nothing is open while the replacement is held")
+		t.Error("documents pool empty signal fired while replacement document is active")
 	default:
 	}
 }

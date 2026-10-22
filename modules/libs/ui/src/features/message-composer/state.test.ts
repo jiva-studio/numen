@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
 
-const press = (over: Partial<Parameters<typeof keyIntent>[0]> = {}) => ({
+const press = (overrides: Partial<Parameters<typeof keyIntent>[0]> = {}) => ({
   key: 'Enter',
   shiftKey: false,
-  ...over,
+  ...overrides,
 })
 
 describe('what state a composer is in', () => {

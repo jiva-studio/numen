@@ -12,27 +12,25 @@ import type { Span } from '@/shared/lib/span'
 export interface Mark {
   /** The byte offset the run begins at, read off `data-offset`. */
   readonly at: number
-  /** at its current position along the columns, in CSS pixels from the first of them. */
+  /** Position along the columns, in CSS pixels from the first column. */
   readonly x: number
 }
 
 /** A document set in columns, measured. */
 export interface Flow {
-  /** How far the columns run, in CSS pixels. */
-  readonly along: number
+  /** Total rendered columns width, in CSS pixels. */
+  readonly contentWidth: number
   /** The reading area one spread fills, in CSS pixels. */
   readonly width: number
-  /** What stands between two columns, in CSS pixels. */
+  /** Spacing between two columns, in CSS pixels. */
   readonly gap: number
   /** How many columns stand in one spread. */
   readonly columns: number
 }
 
 /**
- * What stands between two columns, in CSS pixels. Half of it stands beside the
- * outermost column at either edge, so a column keeps the same distance from the
- * one beside it as two columns of a spread keep from each other, and a spread
- * begins every reading area's width along.
+ * Spacing between two columns, in CSS pixels. Half spacing is applied at outer
+ * edges, so outer columns keep the same distance from container borders.
  */
 export const GAP = 72
 
@@ -53,9 +51,7 @@ export function countColumns(width: number, size: number): number {
 }
 
 /**
- * How tall a column is set: a whole number of lines, and never fewer than one.
- * A column set to the height of the area it stands in ends part of the way
- * through a line, and the half of it below the edge is cut off.
+ * Column height calculated to fit full lines.
  */
 export function columnHeight(height: number, line: number): number {
   if (line <= 0 || height <= 0) return Math.max(height, 0)
@@ -63,8 +59,7 @@ export function columnHeight(height: number, line: number): number {
 }
 
 /**
- * How far one column stands from the next, which is the reading area shared out
- * between the columns of a spread.
+ * Distance between consecutive columns.
  */
 export function columnPitch(flow: Flow): number {
   if (flow.columns <= 0) return 0
@@ -83,8 +78,8 @@ export function columnWidth(flow: Flow): number {
  */
 export function columnsInAll(flow: Flow): number {
   const pitch = columnPitch(flow)
-  if (pitch <= 0 || flow.along <= 0) return 0
-  return Math.max(1, Math.round(flow.along / pitch))
+  if (pitch <= 0 || flow.contentWidth <= 0) return 0
+  return Math.max(1, Math.round(flow.contentWidth / pitch))
 }
 
 /**
@@ -100,9 +95,9 @@ export function getColumn(flow: Flow, x: number): number {
 }
 
 /**
- * How many columns the text of this document actually fills. The layout draws
- * as many column boxes as a spread has, so a document of one line stands in one
- * column and beside an empty one, and only the runs say which.
+ * How many columns the text of this document actually fills. The layout renders
+ * as many column boxes as a spread has, so a single-line document occupies one
+ * column beside an empty one, and only the marks indicate which.
  */
 export function countFilledColumns(marks: readonly Mark[], flow: Flow): number {
   if (columnWidth(flow) <= 0 || marks.length === 0) return 0
@@ -111,15 +106,14 @@ export function countFilledColumns(marks: readonly Mark[], flow: Flow): number {
   return last + 1
 }
 
-/** Where a person stands in a book: the column in front, and how many there are. */
+/** Reading position: active column index and total column count. */
 export interface Pages {
   readonly page: number
   readonly pages: number
 }
 
 /**
- * How many columns of this document stand after the spread in front. The
- * document is laid out, so what is left of it is known exactly.
+ * Number of columns of this document after the active spread.
  */
 export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[]): number {
   const here = countFilledColumns(marks, flow)
@@ -166,9 +160,7 @@ export function countSpreads(flow: Flow): number {
 }
 
 /**
- * Where a spread begins along the columns, in CSS pixels. The gap a column
- * keeps stands inside the area at either edge, so one spread begins the whole
- * of a reading area along from the one before it.
+ * Computes spread starting horizontal offset in CSS pixels.
  */
 export function getSpreadStart(flow: Flow, spread: number): number {
   return spread * flow.width
@@ -182,8 +174,7 @@ export function getSpread(flow: Flow, x: number): number {
 }
 
 /**
- * The offset of the first run standing in a spread, and nothing where no run
- * stands there. The marks are in the order the text is.
+ * Returns the byte offset of the first mark in a spread, or undefined if empty.
  */
 export function inFront(marks: readonly Mark[], flow: Flow, spread: number): number | undefined {
   for (const mark of marks) {
@@ -192,7 +183,7 @@ export function inFront(marks: readonly Mark[], flow: Flow, spread: number): num
   return undefined
 }
 
-/** The spread an offset stands in: that of the last run beginning at or before it. */
+/** Finds the spread index containing or preceding the given byte offset. */
 export function findSpreadAt(marks: readonly Mark[], flow: Flow, at: number): number {
   let found: Mark | undefined
   for (const mark of marks) {

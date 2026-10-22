@@ -1,11 +1,3 @@
-/**
- * A name typed over the one something carries: what stands in the box while it
- * is being typed, what is wrong with it, and what a commit evaluates to.
- *
- * A field is named by its own name and written in a slot; a face is named by
- * its own identifier and written in a heading. Both are here, because the two
- * are not written under the same rules.
- */
 import { afterEach, describe, expect, it } from 'vitest'
 import { useNameEntry, type NameEntryState } from './nameEntry'
 import {
@@ -15,7 +7,6 @@ import {
   type HeadingObjection,
 } from '../lib/order'
 
-/** A naming of the fields a stencil declares, with what it renamed. */
 const overFields = (fields: readonly string[]) => {
   const renamedPairs: (readonly [string, string])[] = []
   const naming = useNameEntry<Objection>({
@@ -29,7 +20,6 @@ const overFields = (fields: readonly string[]) => {
   return { naming, renamed: renamedPairs }
 }
 
-/** A naming of the faces a stencil shows, each under the name it carries. */
 const overFaces = (faces: ReadonlyMap<string, string>) => {
   const renamedPairs: (readonly [string, string])[] = []
   const naming = useNameEntry<HeadingObjection>({
@@ -43,15 +33,14 @@ const overFaces = (faces: ReadonlyMap<string, string>) => {
   return { naming, renamed: renamedPairs }
 }
 
-/** A key struck in the box a name is typed in, which is what a break blurs. */
 const press = <Why extends Objection>(
   naming: NameEntryState<Why>,
-  over: string,
+  targetId: string,
   key: string,
 ): { box: HTMLInputElement; event: KeyboardEvent } => {
   const box = document.createElement('input')
   document.body.append(box)
-  box.addEventListener('keydown', (event) => naming.onKey(event, over))
+  box.addEventListener('keydown', (event) => naming.onKey(event, targetId))
   box.focus()
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
   box.dispatchEvent(event)
@@ -76,7 +65,6 @@ describe('useNameEntry', () => {
     naming.setDraft('Height', 'Tall')
     expect(naming.getText('Height')).toBe('Tall')
     expect(naming.getText('Weight')).toBe('Weight')
-    // It stands there until it is committed, and nothing is renamed meanwhile.
     expect(renamed).toEqual([])
   })
 
@@ -148,8 +136,6 @@ describe('useNameEntry', () => {
     expect(renamed).toEqual([])
   })
 
-  /* The commit clears what was typed, and a box nothing is being typed in
-     objects to nothing. */
   it('consults on a commit the objection that was drawn', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Weight')

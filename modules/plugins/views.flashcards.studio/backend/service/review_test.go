@@ -68,9 +68,7 @@ func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, v
 	return &reviewHandler{Backend: backend}, target, installation
 }
 
-// newFlashcardsClient is the window's own client, over a server of the test's
-// own. The front door is a stream, and a stream is asked for the way the page
-// asks for it.
+// newFlashcardsClient returns a test client connected to the service.
 func newFlashcardsClient(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -80,12 +78,7 @@ func newFlashcardsClient(t *testing.T, api *API) numenv1connect.FlashcardsServic
 	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 }
 
-// front is the whole front door as a person evaluates to see it: the vaults it
-// opens on, each count filled into its row, and the vaults read before they are
-// counted.
-//
-// A row saying it is being indexed is a row the page asks about again when the
-// indexing wakes it, so the asking is done here until nothing is being indexed.
+// front polls WatchCardsDue until all vaults complete indexing.
 func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	t.Helper()
 	client := newFlashcardsClient(t, api)
@@ -102,8 +95,7 @@ func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	return out
 }
 
-// readCardsDue is one opening of the front door, with each count filled into
-// the row it belongs to as it arrives.
+// readCardsDue collects the full response from WatchCardsDue stream.
 func readCardsDue(
 	t *testing.T, client numenv1connect.FlashcardsServiceClient,
 ) *v1.WatchCardsDueResponse {
@@ -133,7 +125,7 @@ func readCardsDue(
 		}
 		where, items := at[one.GetId()]
 		if !items {
-			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetId())
+			t.Fatalf("unexpected vault %s in count response", one.GetId())
 		}
 		out.Vaults[where] = one
 	}
@@ -265,15 +257,15 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 	}
 }
 
-// findVaultCount is one vault out of what the front door answered.
-func findVaultCount(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
+// findVaultCount returns the vault matching id from the response.
+func findVaultCount(t *testing.T, resp *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
 	t.Helper()
-	for _, one := range said.GetVaults() {
+	for _, one := range resp.GetVaults() {
 		if one.GetId() == id {
 			return one
 		}
 	}
-	t.Fatalf("the front door did not count %s", id)
+	t.Fatalf("vault %s not found in response", id)
 	return nil
 }
 
@@ -457,8 +449,7 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 	}
 }
 
-// Flashcards works on any vault the installation holds without one being opened
-// first, because a person owes what they owe across all of them.
+// TestEveryVaultIsCountedOnTheFrontDoor verifies all vaults are reported.
 func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	api, target := newAPI(t, deck, other)
 
@@ -468,13 +459,12 @@ func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	}
 	for _, one := range out.GetVaults() {
 		if one.GetFaces() != 1 || one.GetNew() != 1 {
-			t.Errorf("%s comes to %+v", one.GetName(), one)
+			t.Errorf("got %s = %+v, want Faces=1, New=1", one.GetName(), one)
 		}
 	}
 }
 
-// Counting the front door writes nothing into any vault: a mark is given when
-// a person sits down to a vault, and not for every vault at every launch.
+// Counting cards does not modify vault files.
 func TestCountingTheFrontDoorWritesIntoNoVault(t *testing.T) {
 	handwritten := map[string]string{
 		"Term.md": deck["Term.md"],
@@ -509,8 +499,7 @@ var pointed = map[string]string{
 		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 }
 
-// The front door says what today came to under each preset the vault's decks
-// name: what was answered under it, how long that took, and what the day holds.
+// WatchCardsDue returns daily progress and limits for each preset.
 func TestTheFrontDoorReturnsWhatTodayCameToBelowEachPreset(t *testing.T) {
 	api, target := newAPI(t, pointed)
 	v := target[0]
@@ -599,8 +588,7 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 	}
 }
 
-// The front door says what each of a vault's presets holds today, and neither
-// of them carries the other's budget.
+// WatchCardsDue returns settings for each preset independently.
 func TestTheFrontDoorReturnsWhatEachPresetOfAVaultContains(t *testing.T) {
 	api, _ := newAPI(t, twoPresets)
 
@@ -792,9 +780,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 // What is overdue is a fact about the vault, and how long it takes to clear is
 // a fact about the setting being chosen.
 //
-// The overdue count stands over the whole curve and does not move when the goal
-// does. What the deck screen owes today is that backlog and the cards falling
-// due today besides, so it is never the smaller of the two.
+// The overdue count applies across the whole curve and does not change with the goal.
 func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
@@ -817,18 +803,16 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 
 	overdue := int(byMinutes.GetOverdue())
 	if overdue == 0 {
-		t.Fatal("nothing stands overdue, and this vault was left alone for days")
+		t.Fatal("got overdue == 0, want overdue > 0 for abandoned vault")
 	}
 	if overdue > owes {
-		t.Errorf("%d card faces stand overdue and the deck screen owes %d today",
-			overdue, owes)
+		t.Errorf("got overdue = %d, want <= %d (deck due count)", overdue, owes)
 	}
 
 	// The same vault under another goal is the same backlog.
 	p.Goal = review.GoalRetention
 	if got := int(getCurve(t, api, v, "Sanskrit.md", p).GetOverdue()); got != overdue {
-		t.Errorf("steered by its retention the same vault stands %d overdue, and by its "+
-			"minutes %d", got, overdue)
+		t.Errorf("got overdue = %d for GoalRetention, want %d (from GoalMinutes)", got, overdue)
 	}
 
 	// A shorter day is longer about clearing it, or never gets there at all.
@@ -844,19 +828,18 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 	}
 }
 
-// A vault nobody has answered has nothing overdue, and no place of its curve
-// has a backlog to clear.
+// A vault with no review history has nothing overdue.
 func TestAVaultNobodyHasAnsweredHasNothingOverdue(t *testing.T) {
 	api, target := newAPI(t, backlogged)
 	v := target[0]
 
 	curveResp := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
 	if got := curveResp.GetOverdue(); got != 0 {
-		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
+		t.Errorf("got overdue = %d, want 0", got)
 	}
 	for i, one := range curveResp.GetAt() {
 		if one.GetClears() != 0 {
-			t.Errorf("%v minutes a day clears nothing in %d days",
+			t.Errorf("at %v minutes a day: got clears = %d, want 0",
 				curveResp.GetGrid()[i], one.GetClears())
 		}
 	}
@@ -916,15 +899,15 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 			t.Errorf("the tile over %q offers nothing to compare", one.GetPreset())
 		}
 
-		sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+		sessionResp, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 			Vault: string(v.ID), Preset: newPresetName(one.GetPreset()),
 		}))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := len(sat.Msg.GetCards()); got != want {
-			t.Errorf("the tile over %q says %d and the session it opens asks %d",
-				one.GetPreset(), want, got)
+		if got := len(sessionResp.Msg.GetCards()); got != want {
+			t.Errorf("deck %q: got session card count = %d, want %d",
+				one.GetPreset(), got, want)
 		}
 
 		// What the count leaves under a preset is what its decks were left,
@@ -935,29 +918,26 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 			newCards += int(rows[deck].GetNew())
 		}
 		if due != int(one.GetOwedDue()) || newCards != int(one.GetOwedNew()) {
-			t.Errorf("the decks under %q come to %d owed and %d new, the preset to %d and %d",
+			t.Errorf("deck %q: got due=%d, new=%d; want preset OwedDue=%d, OwedNew=%d",
 				one.GetPreset(), due, newCards, one.GetOwedDue(), one.GetOwedNew())
 		}
 
-		// A figure worked out from the budget instead would be held to counts
-		// the goal need not name, and this vault is where that shows.
+		// Budget allocation restricts counts when configured.
 		if min(due, int(one.GetReviews()))+min(newCards, int(one.GetNew())) < want {
 			clamped++
 		}
 	}
 	if scopes != 3 {
-		t.Errorf("the vault holds %d scopes with cards under them, want three", scopes)
+		t.Errorf("got scopes = %d, want 3", scopes)
 	}
 	if clamped == 0 {
-		t.Error("no preset here is held short by its counts, and the tile's arithmetic is not under test")
+		t.Error("no preset clamped by counts")
 	}
 }
 
 // The count never allocates past the budget it is spending.
 //
-// A budget the goal does not name is not the one being spent: it stands in the
-// file as the person left it, and a day may hand out far more than it says. A
-// budget the goal does name is a wall, and nothing goes over it.
+// Only the budget active for the selected goal constrains daily allocations.
 func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 	for _, one := range []struct {
 		what  string
@@ -1126,12 +1106,11 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 	}
 }
 
-// sat is what a session over one preset came to: how many cards, and how they
-// divided between the debt and the material it had not begun.
-type sat struct{ asked, owed, fresh int }
+// sessionCounts holds review counts for a session.
+type sessionCounts struct{ total, due, unbegun int }
 
-// session opens a session over one preset, the way pressing its tile does.
-func session(t *testing.T, api *API, v domain.Vault, preset string) sat {
+// session opens a session for one preset.
+func session(t *testing.T, api *API, v domain.Vault, preset string) sessionCounts {
 	t.Helper()
 	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Preset: newPresetName(preset),
@@ -1139,26 +1118,20 @@ func session(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := sat{asked: len(out.Msg.GetCards())}
+	target := sessionCounts{total: len(out.Msg.GetCards())}
 	for _, one := range out.Msg.GetCards() {
 		if one.GetIsNew() {
-			target.fresh++
+			target.unbegun++
 			continue
 		}
-		target.owed++
+		target.due++
 	}
 	return target
 }
 
-// The share of a day that goes to the debt moves the session and the projection
-// alike, and moves them together.
-//
-// A share is read where a day is spent, which is one place, so the cards a
-// person is asked for and the cards the picture is drawn from are the same
-// cards. Were the projection to read its own rule, moving the share would
-// change tomorrow's session and leave the curve and the overdue band standing.
+// The backlog share moves the session and the projection together.
 func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
-	target := make(map[int]sat, 2)
+	target := make(map[int]sessionCounts, 2)
 	bands := make(map[int][]int32, 2)
 
 	for _, share := range []int{100, 0} {
@@ -1171,8 +1144,7 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 		p.Goal, p.Backlog = review.GoalMinutes, share
 		writePreset(t, api, v, "Sanskrit.md", p)
 
-		// The control is left on a place of its own grid, so the picture is
-		// drawn for the day the vault is held to.
+		// Evaluate curve for the preset.
 		curveResp := getCurve(t, api, v, "Sanskrit.md", p)
 		value := curveResp.GetGrid()[2]
 		p.MinutesADay = int(value)
@@ -1181,35 +1153,29 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 		curveResp = getCurve(t, api, v, "Sanskrit.md", p)
 		at := 2
 		if curveResp.GetGrid()[at] != value {
-			t.Fatalf("the control was left at %v and the grid holds %v there",
-				value, curveResp.GetGrid()[at])
+			t.Fatalf("got grid[%d] = %v, want %v", at, curveResp.GetGrid()[at], value)
 		}
 
 		one := session(t, api, v, "Sanskrit.md")
-		if got := int(curveResp.GetAt()[at].GetReviews()); got != one.asked {
-			t.Errorf("giving the debt %d of the day, the session asks %d cards and the "+
-				"picture draws %d", share, one.asked, got)
+		if got := int(curveResp.GetAt()[at].GetReviews()); got != one.total {
+			t.Errorf("share %d: got reviews = %d, want %d", share, got, one.total)
 		}
 		target[share], bands[share] = one, curveResp.GetAt()[at].GetBacklog()
 	}
 
-	// Each share put its own side of the day first: paying the debt filled the
-	// day with it, and putting it last spent the day on new cards.
-	if target[100].owed == 0 || target[0].fresh == 0 {
-		t.Fatalf("paying the debt first asked %+v and putting it last %+v, and neither "+
-			"side is under test", target[100], target[0])
+	if target[100].due == 0 || target[0].unbegun == 0 {
+		t.Fatalf("target[100].due = %d, target[0].unbegun = %d, want non-zero",
+			target[100].due, target[0].unbegun)
 	}
-	// The two shares are two different days, in the session and in the picture
-	// both. A setting inert in either half would show as one of these matching.
-	if target[100].owed == target[0].owed {
-		t.Errorf("paying the debt first asked %+v and putting it last %+v",
-			target[100], target[0])
+	if target[100].due == target[0].due {
+		t.Errorf("target[100].due == target[0].due (%d), want different",
+			target[100].due)
 	}
-	if target[100].owed <= target[0].owed {
-		t.Errorf("paying the debt first asked %d owed and putting it last %d",
-			target[100].owed, target[0].owed)
+	if target[100].due <= target[0].due {
+		t.Errorf("got target[100].due = %d <= target[0].due = %d, want >",
+			target[100].due, target[0].due)
 	}
 	if slices.Equal(bands[100], bands[0]) {
-		t.Error("the overdue band is the same whether the debt is paid first or last")
+		t.Error("bands[100] and bands[0] are equal, want different")
 	}
 }

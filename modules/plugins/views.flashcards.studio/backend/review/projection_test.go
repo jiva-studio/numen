@@ -59,11 +59,7 @@ func TestAProjectionAnswersTheReturningShareForTheDaysItIsAskedFor(t *testing.T)
 	}
 }
 
-// A preset scheduling nothing answers nothing inside a projection, whatever
-// room the budgets it is not steered by stand at.
-//
-// A goal of a date past holds the day to a count of new cards alone, so nothing
-// but the pause stands between the reviews and the debt.
+// A preset scheduling nothing answers nothing inside a projection.
 func TestAProjectionAnswersNothingBelowAPresetThatSchedulesNothing(t *testing.T) {
 	by := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -267,8 +263,7 @@ func TestAPresetWithNoMaterialIsThroughIt(t *testing.T) {
 	}
 	for day, dayProj := range got.Through {
 		if dayProj != 1 {
-			t.Errorf("day %d stands %v through a material of nothing, want the whole of it",
-				day, dayProj)
+			t.Errorf("day %d: got Through = %v, want 1.0", day, dayProj)
 		}
 	}
 }
@@ -296,10 +291,10 @@ func getDayStart(at time.Time) time.Time { return ahead.GetEnd(at).AddDate(0, 0,
 // runProjection is one projection, over a context nothing gives up on.
 func runProjection(
 	t *testing.T, run review.Simulation, now time.Time, p review.Preset,
-	at map[review.CardFaceID]review.Schedule, unseen int,
+	at map[review.CardFaceID]review.Schedule, unbegunCount int,
 ) review.Projection {
 	t.Helper()
-	out, err := run.Run(t.Context(), now, p, at, unseen)
+	out, err := run.Run(t.Context(), now, p, at, unbegunCount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,7 +524,7 @@ func TestAPresetSchedulingNothingProjectsNothing(t *testing.T) {
 		t.Errorf("projection = %+v, want nothing answered", got)
 	}
 	if got.Seen != len(at) || got.Faces != len(at)+8 {
-		t.Errorf("projection = %+v, want the eight nobody has answered still unseen", got)
+		t.Errorf("got Seen=%d Faces=%d, want Seen=%d Faces=%d", got.Seen, got.Faces, len(at), len(at)+8)
 	}
 }
 
@@ -544,7 +539,7 @@ func TestHowLongABacklogConsumesToClear(t *testing.T) {
 	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost}
 
 	if got := review.CountOverdue(ahead, at, now); got == 0 {
-		t.Fatal("nothing stands overdue, and there is no backlog to clear")
+		t.Fatal("got 0 overdue cards, want > 0")
 	}
 
 	// A day of one review is a day that never gets through two hundred of them.
@@ -579,10 +574,10 @@ func TestNothingOverdueClearsInNoDays(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost}
 
-	// A vault of cards nobody has answered: none of them has had a day.
+	// Vault with only unreviewed cards: none have scheduled reviews.
 	at := map[review.CardFaceID]review.Schedule{}
 	if got := review.CountOverdue(ahead, at, now); got != 0 {
-		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
+		t.Errorf("got %d overdue cards, want 0", got)
 	}
 	got := runProjection(t, run, now, review.Preset{
 		Goal: review.GoalRetention, NewADay: 1, ReviewsADay: 1,
@@ -609,7 +604,7 @@ func TestBeginningNewCardsDoesNotHoldTheBacklogOpen(t *testing.T) {
 	}
 
 	if got := review.CountOverdue(ahead, at, now); got == 0 {
-		t.Fatal("nothing stands overdue, and there is no backlog to clear")
+		t.Fatal("got 0 overdue cards, want > 0")
 	}
 	got := runProjection(t, run, now, p, at, 500)
 	if got.Clears != 1 {
@@ -644,7 +639,7 @@ func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
 		}
 		for day, backlog := range got.Backlog {
 			if backlog < 0 {
-				t.Errorf("%s stands %d behind on day %d", one.what, backlog, day)
+				t.Errorf("%s: got backlog = %d on day %d, want >= 0", one.what, backlog, day)
 			}
 		}
 
@@ -789,7 +784,7 @@ func TestACardAtTheTargetExactlyIsLearned(t *testing.T) {
 		Last: now.Add(-away), Due: now, Reps: 3, Stability: stability, Difficulty: 5, Phase: 2,
 	}
 	if !p.IsLearned(c, now) {
-		t.Errorf("a card face recalled with a chance of %v stands short of a target of %v",
+		t.Errorf("got IsLearned = false for recall %v, want true (target %v)",
 			review.Recall(away, stability), p.Retention)
 	}
 	// And a target above at its current position does not learn it.
@@ -848,7 +843,7 @@ func TestAMaterialAlreadyLearnedIsLearnedInNoDays(t *testing.T) {
 
 	got := runProjection(t, run, now, p, map[review.CardFaceID]review.Schedule{face: schedule}, 0)
 	if got.Learned != 1 || got.Learns != 0 {
-		t.Errorf("a material of one learned card face stands %d learned, learned in %d days",
+		t.Errorf("got Learned = %d, Learns = %d; want Learned = 1, Learns = 0",
 			got.Learned, got.Learns)
 	}
 }
@@ -1191,8 +1186,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	}
 }
 
-// makeOverdueFaces is this many card faces answered once a long while ago, so
-// every one of them stands overdue.
+// makeOverdueFaces creates overdue card faces for testing.
 func makeOverdueFaces(
 	by review.Scheduler, at time.Time, faces int,
 ) map[review.CardFaceID]review.Schedule {
@@ -1204,11 +1198,7 @@ func makeOverdueFaces(
 	return out
 }
 
-// A day two budgets closed names both.
-//
-// Under a goal of retention the day is held to its new cards and to its reviews
-// at once. A day that hands over the whole of each has been closed by each, and
-// a person told only one of them raises that one and finds nothing changed.
+// Under a retention goal, both new card and review budgets apply simultaneously.
 func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 	by := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))

@@ -289,7 +289,7 @@ func (d *remoteDocument) GetPageCount() int {
 	return len(d.pages)
 }
 
-func (d *remoteDocument) GetPageSize(index int) (wide, high float64, err error) {
+func (d *remoteDocument) GetPageSize(index int) (width, height float64, err error) {
 	if index < 0 || index >= len(d.pages) {
 		return 0, 0, errors.New("page index out of range")
 	}

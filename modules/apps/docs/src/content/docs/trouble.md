@@ -68,7 +68,7 @@ Each is filed against the note you would open to settle it:
 
 | | |
 | --- | --- |
-| *searching by words only — no model set* | search by meaning has nothing to read your notes with. The other two bands work as they always do. See [finding](/finding/). |
+| *searching by words only — no model set* | search by meaning has nothing to read your notes with. The other two bands work as they always do. See [search](/search/). |
 | *this vault has not been read for meaning yet* | there is a model, and it has not got to this vault. It is working behind the window. |
 | *the vault could not answer* | the search reached the vault and got nothing back. |
 
@@ -91,4 +91,4 @@ Each is filed against the note you would open to settle it:
 
 | | |
 | --- | --- |
-| *that setting could not be written* | a choice made in the commands — a theme, a size, whether [a title and a filename are one name](/writing/#renaming) — did not reach `numen.json`. The window goes on as it was; the file is where to look. |
+| *that setting could not be written* | a choice made in the commands — a theme, a size, whether [a title and a filename are one name](/editor/#renaming) — did not reach `numen.json`. The window goes on as it was; the file is where to look. |

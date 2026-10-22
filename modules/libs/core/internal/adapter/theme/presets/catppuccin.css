@@ -1,17 +1,10 @@
 /*
- * Catppuccin: Latte in the light, Mocha in the dark, from the hex values in
- * catppuccin/palette.
+ * Catppuccin: Latte (light) and Mocha (dark) palettes.
  *
- * The ground is mantle and the card is base, which is the flavour's own
- * guidance — base for the main pane, mantle beneath it. Code sits on crust,
- * the tone below both.
- *
- * The syntax colours are the language defaults in the style guide: mauve
- * keywords, blue methods and properties, yellow types, green strings, peach
- * numbers, and overlay 2 for comments and delimiters alike.
- *
- * Mixed from the palette: the caution band, the marks in marked-up text, and
- * the alpha the selection and the highlight are laid on at.
+ * Surface uses mantle, card containers use base, and code blocks use crust.
+ * Syntax tokens follow Catppuccin language defaults: mauve for keywords,
+ * blue for functions/methods, yellow for types, green for strings, peach for
+ * numbers, and overlay 2 for comments and delimiters.
  */
 :root {
   --numen-surface: light-dark(#e6e9ef, #181825);
@@ -38,7 +31,7 @@
   --numen-caution-fg: light-dark(#df8e1d, #f9e2af);
   --numen-highlight: light-dark(#df8e1d33, #f9e2af3d);
 
-  /* The marks take overlay 0, a step quieter than the comments. */
+  /* Markdown marks use overlay 0. */
   --numen-syntax-mark: light-dark(#9ca0b0, #6c7086);
   --numen-code-bg: light-dark(#dce0e8, #11111b);
   --numen-table-head-bg: light-dark(#dce0e8, #11111b);

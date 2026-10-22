@@ -1,14 +1,8 @@
 /*
- * Gruvbox, from morhetz's published palette. Light takes bg0 and the faded
- * accents, dark takes bg0_hard and the bright ones, so each half keeps the
- * contrast the palette was drawn for.
- *
- * Orange is the accent, which is what the focus, the ring and the selection
- * are. Nothing here is mixed: the palette names every colour this needs.
- *
- * The syntax colours are morhetz's own links: red keywords, blue identifiers,
- * yellow types, green strings, purple numbers, grey comments, operators in the
- * text colour, and bg4 for the characters that structure a line.
+ * Gruvbox palette by morhetz.
+ * Light mode uses bg0 with faded accents; dark mode uses bg0_hard with bright accents.
+ * Syntax tokens: red keywords, blue identifiers, yellow types, green strings,
+ * purple numbers, grey comments, and default ink for operators.
  */
 :root {
   --numen-surface: light-dark(#fbf1c7, #1d2021);
@@ -35,8 +29,7 @@
   --numen-caution-fg: light-dark(#b57614, #fabd2f);
   --numen-highlight: light-dark(#b5761433, #fabd2f3d);
 
-  /* Code takes bg1, which is a step off the card either half is drawn on. The
-     dark half draws its cell rules in bg1, so its head row stands on bg2. */
+  /* Code blocks use bg1. Table headers use bg1 in light mode and bg2 in dark mode. */
   --numen-syntax-mark: light-dark(#a89984, #7c6f64);
   --numen-code-bg: light-dark(#ebdbb2, #3c3836);
   --numen-table-head-bg: light-dark(#ebdbb2, #504945);

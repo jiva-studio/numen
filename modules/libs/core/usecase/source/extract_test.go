@@ -43,8 +43,8 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			if res.Chunks != len(index.chunks) {
 				t.Errorf("the run counted %d chunks and wrote %d", res.Chunks, len(index.chunks))
 			}
-			if index.written[bookPath] != 1 {
-				t.Errorf("the source was written %d times, want one write", index.written[bookPath])
+			if index.outBytes[bookPath] != 1 {
+				t.Errorf("the source was written %d times, want one write", index.outBytes[bookPath])
 			}
 
 			source := index.sources[first.ID][bookPath]
@@ -157,8 +157,8 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 	if shelf.reads[bookPath] != reads {
 		t.Errorf("the file was read %d times over two runs, want %d", shelf.reads[bookPath], reads)
 	}
-	if index.written[bookPath] != 1 {
-		t.Errorf("the source was written %d times, want the one write", index.written[bookPath])
+	if index.outBytes[bookPath] != 1 {
+		t.Errorf("the source was written %d times, want the one write", index.outBytes[bookPath])
 	}
 
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 2)
@@ -169,8 +169,8 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 	if res.Recorded != 1 || res.Extracted != 1 {
 		t.Errorf("the run after the file changed reports %+v, want it read again", res)
 	}
-	if index.written[bookPath] != 2 {
-		t.Errorf("the source was written %d times, want a second write", index.written[bookPath])
+	if index.outBytes[bookPath] != 2 {
+		t.Errorf("the source was written %d times, want a second write", index.outBytes[bookPath])
 	}
 }
 
@@ -225,8 +225,8 @@ func TestTheRecipeFollowsTheSplitSizesAndStalenessFollowsTheRecipe(t *testing.T)
 	if res.Extracted != 1 || res.Recorded != 0 {
 		t.Errorf("the run at other sizes reports %+v, want the book cut again and nothing recorded", res)
 	}
-	if index.written[bookPath] != 2 {
-		t.Errorf("the source was written %d times, want the cut at each of the two sizes", index.written[bookPath])
+	if index.outBytes[bookPath] != 2 {
+		t.Errorf("the source was written %d times, want the cut at each of the two sizes", index.outBytes[bookPath])
 	}
 	if want := recipe(text.ReaderEPUB, extract.sizes()); index.sources[first.ID][bookPath].Recipe != want {
 		t.Errorf("recipe = %q, want %q", index.sources[first.ID][bookPath].Recipe, want)
@@ -235,8 +235,8 @@ func TestTheRecipeFollowsTheSplitSizesAndStalenessFollowsTheRecipe(t *testing.T)
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	if index.written[bookPath] != 2 {
-		t.Errorf("a run at the sizes already used wrote the source again, %d writes in all", index.written[bookPath])
+	if index.outBytes[bookPath] != 2 {
+		t.Errorf("a run at the sizes already used wrote the source again, %d writes in all", index.outBytes[bookPath])
 	}
 }
 

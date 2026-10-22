@@ -48,62 +48,14 @@ How a vault is made searchable.
 | `embedding.query.use` | text |  |
 | `embedding.floor` | a number |  |
 | `recognition` |  | how a scanned document is read when a person asks for it. |
-| `recognition.runtime` | text | the shared library of ONNX runtime. Empty means the one beside the application. |
-| `recognition.dir` | text | a folder holding the models. Empty means the folder beside the application, and then the download cache. |
-| `recognition.download` | yes or no | allows fetching what is not on this machine. |
-| `recognition.layout` |  | divides a page into its parts and puts them in reading order. |
-| `recognition.layout.name` | text | where the model is fetched from, and `path` is a file on this machine. |
-| `recognition.layout.path` | text | this model as a file on this machine. |
-| `recognition.layout.labels` | a list of words | the parts the model knows, in the order of its class ids. |
-| `recognition.layout.minimum` | a number | the score a part carries to be a part at all. |
-| `recognition.layout.overlap` | a number | how much of two parts may be common before the second is taken to be the first found again. |
-| `recognition.layout.margin` | a number | what a part is widened by before it is read, because the first letter of a line sits on the boundary the model drew. |
-| `recognition.detect` |  | finds the lines one part holds. |
-| `recognition.detect.name` | text | where this model is fetched from. |
-| `recognition.detect.path` | text | this model as a file on this machine. |
-| `recognition.detect.max_side` | a number | the longest side a part is read at. |
-| `recognition.detect.expand` | a number | how many pixels a found line is widened by, in the image the detector reads: the part scaled so that its longest side is `max_side`. |
-| `recognition.detect.minimum` | a number | the heat a pixel carries to be part of a line. |
-| `recognition.recognise` |  | reads what a line says: which model, at what size a page and a line reach it, and how much of the machine it takes. |
-| `recognition.recognise.name` | text | where this model is fetched from. |
-| `recognition.recognise.path` | text | this model as a file on this machine. |
-| `recognition.recognise.dict` | text | the model's characters, one to a line. Empty is the ordinary case: the model carries them, and asking it is the only way to be sure. |
-| `recognition.recognise.classes` | a number | how many characters the model knows and two more. |
-| `recognition.recognise.dpi` | a number | what a page is rendered at. |
-| `recognition.recognise.height` | a number | what a line is scaled to before it is read. |
-| `recognition.recognise.jobs` | a number | how many recognition sessions run at once. Zero takes the performance profile. |
-| `recognition.recognise.threads` | a number | how many threads one model may use. Zero takes the performance profile. |
-| `recognition.regions` |  | says what the parts of a page are for. A part the model names that `body` does not carry is not read. |
-| `recognition.regions.body` | a list of words | carry what the document says. |
-| `recognition.regions.head` | a list of words | open a part of the document, outermost first: where a name stands in the list is how deep the part it opens sits. |
+| `recognition.recognise` |  | names the OCR model that reads scanned pages. |
+| `recognition.recognise.name` | text |  |
 | `recognition.proofread` |  | names the profile a recognition is put right at. |
 | `recognition.proofread.with` | text | the profile, by the name the profiles carry it under. |
 | `recognition.proofread.automatically` | yes or no | whether a text already written down is put right without anybody asking for it. |
 | `proofreading` |  | what puts a recognition right. Naming no profile here is naming no proofreader, and a recognition is used as it was read. |
-| `proofreading.max_edit_distance` | a number | how far a correction may stand from the line as read and still be a correction: the Levenshtein distance between their letters, as a share of the longer of the two. |
-| `proofreading.profiles` |  | the places a text is put right at, by the name a consumer asks for one under. |
+| `proofreading.profiles` |  |  |
 | `transcription` |  | how a recording is listened to: which models hear it, where they came from, and how the speech in it is found. |
-| `transcription.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
-| `transcription.dir` | text | a folder holding the models. Empty means the folder beside the application, and then the download cache. |
-| `transcription.download` | yes or no | allows fetching what is not on this machine. |
-| `transcription.threads` | a number | how many threads the encoder may use. Zero takes one per core, up to eight. |
-| `transcription.model` |  | turns speech into words. It is exported as three graphs and the pieces they write, and all four are one model: three graphs from two exports answer with nothing anybody can read. |
-| `transcription.model.name` | text | what this model is called in the record kept beside a text. |
-| `transcription.model.from` | text | the folder the four files are fetched from. |
-| `transcription.model.encoder` | text | `encoder`, `decoder`, `joiner` and `tokens` are the files on this machine. |
-| `transcription.model.decoder` | text |  |
-| `transcription.model.joiner` | text |  |
-| `transcription.model.tokens` | text |  |
-| `transcription.segmenter` |  | finds where in a recording somebody is speaking. |
-| `transcription.segmenter.name` | text | what this segmenter is called in the record kept beside a text. |
-| `transcription.segmenter.from` | text | where the model is fetched from, and `path` is a file on this machine. |
-| `transcription.segmenter.path` | text |  |
-| `transcription.segmenter.threshold` | a number | how sure the model has to be that a window carries speech. |
-| `transcription.segmenter.silence` | a number | how much quiet, in milliseconds, closes a segment. |
-| `transcription.segmenter.pad` | a number | how many milliseconds are kept on each side of a segment, so that the first and last sound of a word are inside it. |
-| `transcription.segmenter.longest` | a number | how many milliseconds one segment may run to. |
-| `transcription.segmenter.shortest` | a number | how many milliseconds a segment carries to be a segment at all. |
-| `transcription.segmenter.least` | a number | how many milliseconds a segment runs to before it stands as a line of its own. |
 | `transcription.proofread` |  | names the profile a transcript is put right at. |
 | `transcription.proofread.with` | text | the profile, by the name the profiles carry it under. |
 | `transcription.proofread.automatically` | yes or no | whether a text already written down is put right without anybody asking for it. |
@@ -121,22 +73,14 @@ Which agent answers in the panel, and what it may reach.
 
 ### `importing`
 
-How an address a link note points at is reached, and where the tools that reach it are.
+How an address a link note points at is reached.
 
 | | | |
 | --- | --- | --- |
 | `captions` | a list of words | the languages published words are preferred in, best first. |
 | `automatic_captions` | yes or no | whether words a machine wrote count where a person published none. |
-| `copy_max_size_mb` | a number | how large a copy may be. Above it, a copy asked for says the size it failed at and nothing is fetched. |
+| `copy_max_size_mb` | a number | maximum copy size in megabytes. Above this limit, download requests fail with the exceeded size and no data is fetched. |
 | `copies_to_vault` | yes or no | whether a copy is kept beside the note as a file of the person's own. |
-| `yt_dlp` |  | what is run to reach a video. Empty asks the path. |
-| `yt_dlp.command` | a list of words | what is run, so a machine that writes the path afresh at every build names whatever does know where the tool is. |
-| `yt_dlp.arguments` | a list of words | handed to every run before its own: what answers for a person at a site that refuses an unattended fetch — the cookies of a browser, a token, a proxy — is that machine's and is passed through as it stands. |
-| `yt_dlp.environment` |  | set on every run, over what this process was started with. |
-| `ffmpeg` |  | what brings a container to what a transcriber opens. |
-| `ffmpeg.command` | a list of words | what is run, so a machine that writes the path afresh at every build names whatever does know where the tool is. |
-| `ffmpeg.arguments` | a list of words | handed to every run before its own: what answers for a person at a site that refuses an unattended fetch — the cookies of a browser, a token, a proxy — is that machine's and is passed through as it stands. |
-| `ffmpeg.environment` |  | set on every run, over what this process was started with. |
 
 ### `naming`
 
@@ -145,14 +89,6 @@ How a note's title and the name of its file are held together.
 | | | |
 | --- | --- | --- |
 | `sync_title_and_filename` | yes or no | whether renaming either of the two brings the other into line. |
-
-### `review`
-
-What a day of review is, on this person's clock.
-
-| | | |
-| --- | --- | --- |
-| `day_start_time` | text | the hour a day of review begins at, on the clock on the wall, written as hours and minutes. |
 
 ### `performance`
 

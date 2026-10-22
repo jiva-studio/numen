@@ -93,10 +93,10 @@ const pointer = (
   kind: string,
   y: number,
   on: EventTarget = window,
-  over: MouseEventInit = {},
+  overrides: MouseEventInit = {},
 ): void => {
   on.dispatchEvent(
-    new MouseEvent(kind, { bubbles: true, button: 0, clientX: 10, clientY: y, ...over }),
+    new MouseEvent(kind, { bubbles: true, button: 0, clientX: 10, clientY: y, ...overrides }),
   )
 }
 
@@ -107,13 +107,13 @@ const getMiddle = (wrapper: Tree, row: string): number => {
 }
 
 /** A row pressed and let go, with whatever was held down as it was. */
-const press = async (wrapper: Tree, row: string, over: MouseEventInit = {}): Promise<void> => {
+const press = async (wrapper: Tree, row: string, overrides: MouseEventInit = {}): Promise<void> => {
   const on = getRow(wrapper, row)
   const at = getMiddle(wrapper, row)
 
-  pointer('pointerdown', at, on.element, over)
+  pointer('pointerdown', at, on.element, overrides)
   pointer('pointerup', at)
-  await on.trigger('click', over)
+  await on.trigger('click', overrides)
 }
 
 /** A row picked up and let go at a height, in as many steps as a hand takes. */
@@ -239,8 +239,8 @@ describe('a press', () => {
 })
 
 describe('the keyboard', () => {
-  const pressKey = (wrapper: Tree, row: string, key: string, over: Record<string, unknown> = {}) =>
-    getRow(wrapper, row).trigger('keydown', { key, ...over })
+  const pressKey = (wrapper: Tree, row: string, key: string, overrides: Record<string, unknown> = {}) =>
+    getRow(wrapper, row).trigger('keydown', { key, ...overrides })
 
   it('moves the selection a row at a time', async () => {
     const target = mountTree({ selected: ['work'] })
@@ -670,15 +670,15 @@ describe('the attribute rows are marked with', () => {
 })
 
 /** A cancelable key press: the tree took it where it is prevented. */
-const sendKey = (target: Element, key: string, over: KeyboardEventInit = {}): KeyboardEvent => {
-  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...over })
+const sendKey = (target: Element, key: string, overrides: KeyboardEventInit = {}): KeyboardEvent => {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...overrides })
   target.dispatchEvent(event)
   return event
 }
 
 describe('the keys the tree takes', () => {
-  const sendKeyOn = (wrapper: Tree, row: string, key: string, over: KeyboardEventInit = {}) =>
-    sendKey(getRow(wrapper, row).element, key, over)
+  const sendKeyOn = (wrapper: Tree, row: string, key: string, overrides: KeyboardEventInit = {}) =>
+    sendKey(getRow(wrapper, row).element, key, overrides)
 
   it('takes Ctrl and A, in either case, to select every row', () => {
     const wrapper = mountTree()

@@ -49,7 +49,7 @@ const GLYPH = `
   </svg>
 `
 
-const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (a: Knobs, overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: a.title,
   relation: a.relation,
@@ -59,7 +59,7 @@ const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
   height: a.height,
   order: 0,
   opacity: a.opacity,
-  ...over,
+  ...overrides,
 })
 
 /**

@@ -2,16 +2,8 @@
 // @generated from file numen/v1/flashcards.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client running a person's cards may ask.
-//
-// Flashcards is an application of its own, beside the editor and over the same
-// core, so this service stands beside the editor's and shares nothing with it.
-// It reaches every vault the installation knows, because what a person owes
-// today is owed across all of them.
-//
-// A card is laid out here, unlike the cards service, which hands a face over as
-// it was written: what a person is shown is the face filled with one card's
-// values, and nothing above this has the two halves to fill it with.
+// Flashcards service definitions.
+// Manages flashcard review sessions, card scheduling counts, and answer logs across vaults.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -28,14 +20,13 @@ export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
   fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSLXAQoNVmF1bHRDYXJkc0R1ZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIlCgVkZWNrcxgHIAMoCzIWLm51bWVuLnYxLkRlY2tDYXJkc0R1ZRIpCgdwcmVzZXRzGAggAygLMhgubnVtZW4udjEuUHJlc2V0Q2FyZHNEdWUSDgoGdW5yZWFkGAkgASgJEhMKC2lzX2luZGV4aW5nGAogASgIInkKDERlY2tDYXJkc0R1ZRIMCgRkZWNrGAEgASgJEg0KBWZhY2VzGAIgASgFEgsKA2R1ZRgDIAEoBRILCgNuZXcYBCABKAUSEAoIYW5zd2VyZWQYBSABKAUSDwoHbGVhcm5lZBgGIAEoBRIPCgd1bmJlZ3VuGAcgASgFIvcCCg5QcmVzZXRDYXJkc0R1ZRIOCgZwcmVzZXQYASABKAkSDQoFdGl0bGUYAiABKAkSDQoFZGVja3MYAyABKAUSDQoFY2FyZHMYBCABKAUSEAoIb3dlZF9kdWUYBSABKAUSEAoIb3dlZF9uZXcYBiABKAUSEAoIYW5zd2VyZWQYByABKAUSDwoHdG9va19tcxgIIAEoAxIUCgxhbnN3ZXJlZF9uZXcYCSABKAUSGAoQYW5zd2VyZWRfcmV2aWV3cxgKIAEoBRILCgNuZXcYCyABKAUSDwoHcmV2aWV3cxgMIAEoBRIPCgdtaW51dGVzGA0gASgBEhIKCmNsb3Nlc19uZXcYDiABKAkSFgoOY2xvc2VzX3Jldmlld3MYDyABKAkSFgoOY2xvc2VzX21pbnV0ZXMYECABKAkSFgoOY2xvc2VzX2JhY2tsb2cYESABKAkSJgoIc3RvcHNfb24YEiABKA4yFC5udW1lbi52MS5TdG9wUmVhc29uIkQKCUludGVydmFscxINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyK7AQoLU2Vzc2lvbkNhcmQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBG1hcmsYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDgoGaXNfbmV3GAggASgIEgsKA2R1ZRgJIAEoCRImCglpbnRlcnZhbHMYCiABKAsyEy5udW1lbi52MS5JbnRlcnZhbHMiFgoUV2F0Y2hDYXJkc0R1ZVJlcXVlc3QidwoVV2F0Y2hDYXJkc0R1ZVJlc3BvbnNlEicKBnZhdWx0cxgBIAMoCzIXLm51bWVuLnYxLlZhdWx0Q2FyZHNEdWUSCwoDZGF5GAIgASgJEigKB2NvdW50ZWQYAyABKAsyFy5udW1lbi52MS5WYXVsdENhcmRzRHVlIlIKE1N0YXJ0U2Vzc2lvblJlcXVlc3QSDQoFdmF1bHQYASABKAkSDAoEZGVjaxgCIAEoCRITCgZwcmVzZXQYAyABKAlIAIgBAUIJCgdfcHJlc2V0Im0KFFN0YXJ0U2Vzc2lvblJlc3BvbnNlEgsKA3J1bhgBIAEoCRIkCgVjYXJkcxgCIAMoCzIVLm51bWVuLnYxLlNlc3Npb25DYXJkEhEKCXVud3JpdHRlbhgDIAMoCRIPCgdza2lwcGVkGAQgASgFIn4KEUFuc3dlckNhcmRSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgsKA3J1bhgCIAEoCRIMCgRtYXJrGAMgASgJEgwKBGZhY2UYBCABKAkSIAoGcmF0aW5nGAUgASgOMhAubnVtZW4udjEuUmF0aW5nEg8KB3Rvb2tfbXMYBiABKAMiJAoSQW5zd2VyQ2FyZFJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJDChVUYWtlQmFja0Fuc3dlclJlcXVlc3QSDQoFdmF1bHQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSIYChZUYWtlQmFja0Fuc3dlclJlc3BvbnNlIkAKFUxpc3RSZXZpZXdEYXlzUmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRmcm9tGAIgASgJEgoKAnRvGAMgASgJIn8KFkxpc3RSZXZpZXdEYXlzUmVzcG9uc2USIQoEZGF5cxgBIAMoCzITLm51bWVuLnYxLlJldmlld0RheRIgCgNkdWUYAiADKAsyEy5udW1lbi52MS5SZXZpZXdEYXkSDgoGc3RyZWFrGAMgASgFEhAKCGFuc3dlcmVkGAQgASgFIoQBCglSZXZpZXdEYXkSCwoDZGF5GAEgASgJEhAKCGFuc3dlcmVkGAIgASgFEg0KBWFnYWluGAMgASgFEgwKBGhhcmQYBCABKAUSDAoEZ29vZBgFIAEoBRIMCgRlYXN5GAYgASgFEg0KBWFza2VkGAcgASgFEhAKCHJlY2FsbGVkGAggASgFIjoKG0dldERlY2tOZWlnaGJvdXJob29kUmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIlYKHEdldERlY2tOZWlnaGJvdXJob29kUmVzcG9uc2USJgoFbm90ZXMYASADKAsyFy5udW1lbi52MS5EZWNrTmVpZ2hib3VyEg4KBnVucmVhZBgCIAEoBSK6AQoNRGVja05laWdoYm91chIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSDAoEYm9keRgEIAEoCRINCgVsYWJlbBgFIAEoCRIVCg1pc19wb2ludGVkX2F0GAYgASgIEhQKDGlzX2FtYmlndW91cxgHIAEoCBInCgVlcnJvchgIIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciIVChNXYXRjaFJlbG9hZHNSZXF1ZXN0IiYKFFdhdGNoUmVsb2Fkc1Jlc3BvbnNlEg4KBnJlbG9hZBgBIAEoCCI4ChlHZXRWYXVsdERlY2tQcmVzZXRSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgwKBGRlY2sYAiABKAkigQEKGkdldFZhdWx0RGVja1ByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQFCCQoHX3ByZXNldEIICgZfZXJyb3IqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMsIFChFGbGFzaGNhcmRzU2VydmljZRJSCg1XYXRjaENhcmRzRHVlEh4ubnVtZW4udjEuV2F0Y2hDYXJkc0R1ZVJlcXVlc3QaHy5udW1lbi52MS5XYXRjaENhcmRzRHVlUmVzcG9uc2UwARJNCgxTdGFydFNlc3Npb24SHS5udW1lbi52MS5TdGFydFNlc3Npb25SZXF1ZXN0Gh4ubnVtZW4udjEuU3RhcnRTZXNzaW9uUmVzcG9uc2USRwoKQW5zd2VyQ2FyZBIbLm51bWVuLnYxLkFuc3dlckNhcmRSZXF1ZXN0GhwubnVtZW4udjEuQW5zd2VyQ2FyZFJlc3BvbnNlElMKDlRha2VCYWNrQW5zd2VyEh8ubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0GiAubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXNwb25zZRJPCgxXYXRjaFJlbG9hZHMSHS5udW1lbi52MS5XYXRjaFJlbG9hZHNSZXF1ZXN0Gh4ubnVtZW4udjEuV2F0Y2hSZWxvYWRzUmVzcG9uc2UwARJTCg5MaXN0UmV2aWV3RGF5cxIfLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVzcG9uc2USZQoUR2V0RGVja05laWdoYm91cmhvb2QSJS5udW1lbi52MS5HZXREZWNrTmVpZ2hib3VyaG9vZFJlcXVlc3QaJi5udW1lbi52MS5HZXREZWNrTmVpZ2hib3VyaG9vZFJlc3BvbnNlEl8KEkdldFZhdWx0RGVja1ByZXNldBIjLm51bWVuLnYxLkdldFZhdWx0RGVja1ByZXNldFJlcXVlc3QaJC5udW1lbi52MS5HZXRWYXVsdERlY2tQcmVzZXRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_presets, file_numen_v1_shared]);
 
 /**
- * VaultCardsDue is one vault, and what its cards come to today.
+ * VaultCardsDue holds card scheduling counts for a vault.
  *
  * @generated from message numen.v1.VaultCardsDue
  */
 export type VaultCardsDue = Message<"numen.v1.VaultCardsDue"> & {
   /**
-   * Id is the identity the folder carries, and how this vault is asked for
-   * again. Name is what the person calls the collection.
+   * Vault identifier and display name.
    *
    * @generated from field: string id = 1;
    */
@@ -52,9 +43,7 @@ export type VaultCardsDue = Message<"numen.v1.VaultCardsDue"> & {
   path: string;
 
   /**
-   * Faces is every card the vault holds, counted once for each face it is shown
-   * through. Due is what was answered before and is owed today; New is what
-   * nobody has answered.
+   * Total card faces, currently due faces, and unreviewed faces.
    *
    * @generated from field: int32 faces = 4;
    */
@@ -71,32 +60,28 @@ export type VaultCardsDue = Message<"numen.v1.VaultCardsDue"> & {
   new: number;
 
   /**
-   * Decks is the same three numbers for each deck, by the path of its file.
+   * Scheduling counts per deck file.
    *
    * @generated from field: repeated numen.v1.DeckCardsDue decks = 7;
    */
   decks: DeckCardsDue[];
 
   /**
-   * Presets is what the day evaluates to under each preset the vault's decks are
-   * scheduled by.
+   * Scheduling counts evaluated per preset.
    *
    * @generated from field: repeated numen.v1.PresetCardsDue presets = 8;
    */
   presets: PresetCardsDue[];
 
   /**
-   * Set when the vault could not be counted: its files could not be reached, or
-   * indexing it failed. The three numbers are then zero and this
-   * says why, in the person's own words.
+   * Error message if counting or indexing failed.
    *
    * @generated from field: string unread = 9;
    */
   unread: string;
 
   /**
-   * Set while the vault is being indexed. The three numbers are not
-   * in yet, and a further count follows when indexing is done.
+   * True while the vault is being indexed.
    *
    * @generated from field: bool is_indexing = 10;
    */
@@ -135,27 +120,21 @@ export type DeckCardsDue = Message<"numen.v1.DeckCardsDue"> & {
   new: number;
 
   /**
-   * How many of this deck's cards were answered since the day opened, counted
-   * the way its preset counts. A deck holding nothing more today and answered
-   * nothing today was not studied.
+   * Number of cards answered during the current review day.
    *
    * @generated from field: int32 answered = 5;
    */
   answered: number;
 
   /**
-   * How many of the deck's card faces stand learned now, under the rule the
-   * preset scheduling the deck counts by. It is a count of faces, and says
-   * nothing about what a preset has got through of its day.
+   * Number of card faces meeting the preset learned criteria.
    *
    * @generated from field: int32 learned = 6;
    */
   learned: number;
 
   /**
-   * How many of the deck's card faces nobody has answered at all. A deck every
-   * face of which is one of these has nothing that can come round until
-   * something begins them.
+   * Number of card faces that have never been reviewed.
    *
    * @generated from field: int32 unbegun = 7;
    */
@@ -170,47 +149,41 @@ export const DeckCardsDueSchema: GenMessage<DeckCardsDue> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 1);
 
 /**
- * PresetCardsDue is one preset of a vault, and what the day evaluates to under it.
+ * PresetCardsDue holds daily review counts evaluated under a preset.
  *
  * @generated from message numen.v1.PresetCardsDue
  */
 export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   /**
-   * The note the settings were read from, and empty for the decks naming no
-   * preset.
+   * Path to the preset note, or empty for the default preset.
    *
    * @generated from field: string preset = 1;
    */
   preset: string;
 
   /**
-   * What the preset is called. Empty where nothing names the note.
+   * Display title of the preset.
    *
    * @generated from field: string title = 2;
    */
   title: string;
 
   /**
-   * How many decks point at it. Nothing points at a preset of no decks, and
-   * the day stands at nothing under it.
+   * Number of decks configured with this preset.
    *
    * @generated from field: int32 decks = 3;
    */
   decks: number;
 
   /**
-   * How many card faces stand in those decks. A deck holding none points at
-   * its preset all the same, so a preset of decks and no cards is its own
-   * state.
+   * Total card faces across assigned decks.
    *
    * @generated from field: int32 cards = 4;
    */
   cards: number;
 
   /**
-   * What the day leaves under it: the card faces owed and the ones nobody has
-   * answered, held to its budget. Their sum is what a session over this preset
-   * asks, because a preset is the whole scope of its own budget.
+   * Due and new card faces available within the preset budget.
    *
    * @generated from field: int32 owed_due = 5;
    */
@@ -222,9 +195,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   owedNew: number;
 
   /**
-   * How many of its cards were answered since the day opened, and how long
-   * those answers took. The two beside the total divide it the way a budget
-   * does, so each is weighed against the budget of its own kind.
+   * Answer counts and elapsed review time for the current review day.
    *
    * @generated from field: int32 answered = 7;
    */
@@ -246,13 +217,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   answeredReviews: number;
 
   /**
-   * What the preset keeps for this day of the week: how many cards of each
-   * kind, and how long the day runs, at the share of the load that day of the
-   * week carries.
-   *
-   * A budget the preset's goal does not name stands here as the person left it
-   * and closes nothing. `owed_due` and `owed_new` are already held to the ones
-   * that do, so holding them to these again is capping a number twice.
+   * Configured daily budget limits for the current day of the week.
    *
    * @generated from field: int32 new = 11;
    */
@@ -269,9 +234,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   minutes: number;
 
   /**
-   * Which of the three closes the day, each written as the preset writes the
-   * key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
-   * that budget takes no part.
+   * Budget key that capped reviews, or empty if budget was not reached.
    *
    * @generated from field: string closes_new = 14;
    */
@@ -293,9 +256,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   closesBacklog: string;
 
   /**
-   * Why the preset schedules nothing on this day: whatever stops it at all, and
-   * a day of the week carrying none of the load. It is the core's own verdict,
-   * so a window says of a preset what the session hands its cards out by.
+   * Reason why no reviews are scheduled for the current day.
    *
    * @generated from field: numen.v1.StopReason stops_on = 18;
    */
@@ -310,9 +271,7 @@ export const PresetCardsDueSchema: GenMessage<PresetCardsDue> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 2);
 
 /**
- * Intervals is how long each of the four answers would leave this card, in seconds
- * from the moment it was asked. A person choosing between them is choosing
- * between these.
+ * Intervals specifies next review intervals in seconds for each rating choice.
  *
  * @generated from message numen.v1.Intervals
  */
@@ -346,15 +305,13 @@ export const IntervalsSchema: GenMessage<Intervals> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 3);
 
 /**
- * SessionCard is one card face as it is put to a person in a session.
+ * SessionCard represents a rendered card face presented during a review session.
  *
  * @generated from message numen.v1.SessionCard
  */
 export type SessionCard = Message<"numen.v1.SessionCard"> & {
   /**
-   * Deck is the path of the file the card stands in, and section the name of
-   * the section it is placed under. A card standing before the first section
-   * carries none.
+   * Deck file path and section header name.
    *
    * @generated from field: string deck = 1;
    */
@@ -366,8 +323,7 @@ export type SessionCard = Message<"numen.v1.SessionCard"> & {
   section: string;
 
   /**
-   * Mark is what the card is known by, and face the name of the face it is
-   * shown through. The two together are what an answer is recorded against.
+   * Card identifier and face template name.
    *
    * @generated from field: string mark = 3;
    */
@@ -379,15 +335,14 @@ export type SessionCard = Message<"numen.v1.SessionCard"> & {
   face: string;
 
   /**
-   * Heading is what the card's heading shows, which is the first line of its
-   * first field.
+   * First line of the card primary field.
    *
    * @generated from field: string heading = 5;
    */
   heading: string;
 
   /**
-   * Front and back are the face laid out with this card's values, as HTML.
+   * Rendered HTML content for card front and back.
    *
    * @generated from field: string front = 6;
    */
@@ -399,8 +354,7 @@ export type SessionCard = Message<"numen.v1.SessionCard"> & {
   back: string;
 
   /**
-   * New is a card nobody has answered. Due is when it comes round, and stands
-   * only where it has been answered.
+   * Status flags and next due timestamp.
    *
    * @generated from field: bool is_new = 8;
    */
@@ -412,7 +366,7 @@ export type SessionCard = Message<"numen.v1.SessionCard"> & {
   due: string;
 
   /**
-   * Where each of the four would leave it.
+   * Projected intervals for each rating.
    *
    * @generated from field: numen.v1.Intervals intervals = 10;
    */
@@ -444,31 +398,21 @@ export const WatchCardsDueRequestSchema: GenMessage<WatchCardsDueRequest> = /*@_
  */
 export type WatchCardsDueResponse = Message<"numen.v1.WatchCardsDueResponse"> & {
   /**
-   * Vaults is every vault the installation holds, by name and by where it is,
-   * with nothing counted. It is what the list is drawn from.
-   *
-   * It stands in the first message, and again wherever counting one vault takes
-   * long enough that the stream would otherwise say nothing: a client is told
-   * what it already knows, and a page that has gone is found by the write that
-   * fails. So the list is laid over what a client already shows, and a vault it
-   * has a count for keeps it.
+   * Registered vaults list.
    *
    * @generated from field: repeated numen.v1.VaultCardsDue vaults = 1;
    */
   vaults: VaultCardsDue[];
 
   /**
-   * Day is the review day these counts stand in, written as the year, the month
-   * and the day. A day of review begins at the hour the settings name, so an
-   * hour past midnight is still the day before. It stands beside the vaults.
+   * Current review day in YYYY-MM-DD format based on day rollover settings.
    *
    * @generated from field: string day = 2;
    */
   day: string;
 
   /**
-   * Counted is one vault worked out. Until one arrives for a vault, nothing is
-   * known about what that vault owes.
+   * Count update for an individual vault.
    *
    * @generated from field: numen.v1.VaultCardsDue counted = 3;
    */
@@ -492,17 +436,14 @@ export type StartSessionRequest = Message<"numen.v1.StartSessionRequest"> & {
   vault: string;
 
   /**
-   * Deck is the path of one deck, or empty for every deck the vault holds.
+   * Path of a specific deck, or empty to include all decks in the vault.
    *
    * @generated from field: string deck = 2;
    */
   deck: string;
 
   /**
-   * Preset is the note one preset stands in, and the empty path is the preset
-   * that schedules the decks naming none. Set it to sit to the cards of every
-   * deck pointing at that preset, held to its budget. Naming a deck and a
-   * preset at once is refused.
+   * Path of a preset note, or empty for default preset. Deck and preset are mutually exclusive.
    *
    * @generated from field: optional string preset = 3;
    */
@@ -521,8 +462,7 @@ export const StartSessionRequestSchema: GenMessage<StartSessionRequest> = /*@__P
  */
 export type StartSessionResponse = Message<"numen.v1.StartSessionResponse"> & {
   /**
-   * Run is what an answer given in this session is written to, and it is what
-   * an AnswerCard names.
+   * Run log identifier used for recording answers.
    *
    * @generated from field: string run = 1;
    */
@@ -534,16 +474,14 @@ export type StartSessionResponse = Message<"numen.v1.StartSessionResponse"> & {
   cards: SessionCard[];
 
   /**
-   * Unwritten are the decks holding a card with no mark that could not be given
-   * one. Their cards are not in this session and are asked for at the next.
+   * Paths of decks containing cards without valid identifiers.
    *
    * @generated from field: repeated string unwritten = 3;
    */
   unwritten: string[];
 
   /**
-   * Skipped is how many lines of the vault's answers could not be read: a run
-   * that stopped partway, or a line of a version this build does not know.
+   * Count of unparseable answer log entries encountered during replay.
    *
    * @generated from field: int32 skipped = 4;
    */
@@ -572,8 +510,7 @@ export type AnswerCardRequest = Message<"numen.v1.AnswerCardRequest"> & {
   run: string;
 
   /**
-   * The mark the card is known by, and the name of the face it was shown
-   * through.
+   * Card identifier and face name.
    *
    * @generated from field: string mark = 3;
    */
@@ -590,8 +527,7 @@ export type AnswerCardRequest = Message<"numen.v1.AnswerCardRequest"> & {
   rating: Rating;
 
   /**
-   * Took is how long the card stood on the screen, in milliseconds. It is the
-   * one thing about an answer that cannot be measured later.
+   * Time spent viewing the card in milliseconds.
    *
    * @generated from field: int64 took_ms = 6;
    */
@@ -610,8 +546,7 @@ export const AnswerCardRequestSchema: GenMessage<AnswerCardRequest> = /*@__PURE_
  */
 export type AnswerCardResponse = Message<"numen.v1.AnswerCardResponse"> & {
   /**
-   * Answer is the identifier of the line written, which is what taking it back
-   * names.
+   * Answer entry identifier for undo operations.
    *
    * @generated from field: string answer = 1;
    */
@@ -640,7 +575,7 @@ export type TakeBackAnswerRequest = Message<"numen.v1.TakeBackAnswerRequest"> & 
   run: string;
 
   /**
-   * Answer is the identifier a previous AnswerCard came back with.
+   * Identifier of the previous answer entry to undo.
    *
    * @generated from field: string answer = 3;
    */
@@ -677,13 +612,7 @@ export type ListReviewDaysRequest = Message<"numen.v1.ListReviewDaysRequest"> & 
   vault: string;
 
   /**
-   * The stretch of time wanted, each written as the year, the month and the
-   * day, and both ends inside it. An empty end is unbounded at that end, so a
-   * request naming neither asks for every day there is.
-   *
-   * A vault grows a day for every day it is reviewed, and a caller draws a
-   * fixed stretch of them. Streak and answered are over the whole of it
-   * whatever is asked for here.
+   * Date range in YYYY-MM-DD format (inclusive). Empty bounds represent open intervals.
    *
    * @generated from field: string from = 2;
    */
@@ -707,32 +636,28 @@ export const ListReviewDaysRequestSchema: GenMessage<ListReviewDaysRequest> = /*
  */
 export type ListReviewDaysResponse = Message<"numen.v1.ListReviewDaysResponse"> & {
   /**
-   * Days is what each day a person answered on came to. A day nobody answered
-   * on is not in it.
+   * Historical review activity by day.
    *
    * @generated from field: repeated numen.v1.ReviewDay days = 1;
    */
   days: ReviewDay[];
 
   /**
-   * Due is how many card faces fall on each day still to come. A card owed
-   * today, or owed and late, is not in it: what a person owes now is what the
-   * front door counts, and this is what is after it.
+   * Projected review load for upcoming days.
    *
    * @generated from field: repeated numen.v1.ReviewDay due = 2;
    */
   due: ReviewDay[];
 
   /**
-   * Streak is how many days up to now were reviewed without a gap. A day
-   * nobody has answered on yet does not end one.
+   * Current consecutive review day streak count.
    *
    * @generated from field: int32 streak = 3;
    */
   streak: number;
 
   /**
-   * Answered is how many answers the vault holds altogether.
+   * Total answers recorded across the vault.
    *
    * @generated from field: int32 answered = 4;
    */
@@ -747,14 +672,13 @@ export const ListReviewDaysResponseSchema: GenMessage<ListReviewDaysResponse> = 
   messageDesc(file_numen_v1_flashcards, 14);
 
 /**
- * ReviewDay is one day, and what was answered on it.
+ * ReviewDay represents review statistics for a single day.
  *
  * @generated from message numen.v1.ReviewDay
  */
 export type ReviewDay = Message<"numen.v1.ReviewDay"> & {
   /**
-   * Day is the day it began on, as the year, the month and the day: an answer
-   * given in the small hours belongs to the day before, and is named for it.
+   * Review day date in YYYY-MM-DD format.
    *
    * @generated from field: string day = 1;
    */
@@ -766,9 +690,7 @@ export type ReviewDay = Message<"numen.v1.ReviewDay"> & {
   answered: number;
 
   /**
-   * How each of the four was said, for a day that is behind. A day of fifty
-   * cards a person could not recall is a different day from fifty they could,
-   * and the two are the same number without these.
+   * Rating counts for reviews completed on this day.
    *
    * @generated from field: int32 again = 3;
    */
@@ -790,11 +712,7 @@ export type ReviewDay = Message<"numen.v1.ReviewDay"> & {
   easy: number;
 
   /**
-   * How much of what came round in days came back: `asked` is the answers
-   * given to card faces the scheduler sends days away, `recalled` the ones
-   * among them that were not Again. A card face still coming round in minutes
-   * is in neither — what is asked of one is whether it comes back after ten
-   * minutes, which says nothing about memory.
+   * Long-interval card retention counts.
    *
    * @generated from field: int32 asked = 7;
    */
@@ -823,8 +741,7 @@ export type GetDeckNeighbourhoodRequest = Message<"numen.v1.GetDeckNeighbourhood
   vault: string;
 
   /**
-   * Deck is the path of the deck being sat to. One deck is asked about at a
-   * time, because what a person is reading around is the deck in front of them.
+   * Deck file path to query neighboring links for.
    *
    * @generated from field: string deck = 2;
    */
@@ -848,9 +765,7 @@ export type GetDeckNeighbourhoodResponse = Message<"numen.v1.GetDeckNeighbourhoo
   notes: DeckNeighbour[];
 
   /**
-   * Unread is how many at the end of the list came without their text. Reading
-   * stops once a session's worth has been gathered, so a deck at the centre of
-   * a vault is still answered promptly and says how much it left.
+   * Count of linked notes whose content was omitted to preserve performance limits.
    *
    * @generated from field: int32 unread = 2;
    */
@@ -865,16 +780,13 @@ export const GetDeckNeighbourhoodResponseSchema: GenMessage<GetDeckNeighbourhood
   messageDesc(file_numen_v1_flashcards, 17);
 
 /**
- * DeckNeighbour is one note the deck stands next to.
+ * DeckNeighbour represents a note linked to or from a deck.
  *
  * @generated from message numen.v1.DeckNeighbour
  */
 export type DeckNeighbour = Message<"numen.v1.DeckNeighbour"> & {
   /**
-   * Written is the address as the deck wrote it, and all a link resolving to
-   * nothing ever has. It is empty for a note that points at the deck, which
-   * wrote the deck's name and not its own. Path is where the link landed, and
-   * is empty where it landed nowhere.
+   * Original link target address and resolved file path.
    *
    * @generated from field: string written = 1;
    */
@@ -886,9 +798,7 @@ export type DeckNeighbour = Message<"numen.v1.DeckNeighbour"> & {
   path: string;
 
   /**
-   * Title is what the note is called and body its prose, as it was written.
-   * Both are empty for a link that reached no note, and for one whose note
-   * could not be read.
+   * Note title and markdown content.
    *
    * @generated from field: string title = 3;
    */
@@ -900,32 +810,28 @@ export type DeckNeighbour = Message<"numen.v1.DeckNeighbour"> & {
   body: string;
 
   /**
-   * Label is what the link was shown as, where the person gave it words of
-   * their own and not the note's name.
+   * Custom link anchor label.
    *
    * @generated from field: string label = 5;
    */
   label: string;
 
   /**
-   * IsPointedAt says the deck points at this note; otherwise this note points at the
-   * deck. A person reads the two differently: one is what the deck was made
-   * from, the other is what has since been hung off it.
+   * True if the deck links to this note; false if this note links to the deck.
    *
    * @generated from field: bool is_pointed_at = 6;
    */
   isPointedAt: boolean;
 
   /**
-   * IsAmbiguous says more than one note answers to the name written, and the one
-   * here is only the first of them.
+   * True if multiple notes match the link target.
    *
    * @generated from field: bool is_ambiguous = 7;
    */
   isAmbiguous: boolean;
 
   /**
-   * Set when the note is there and its text could not be had, and says why.
+   * Error code if the note could not be read.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 8;
    */
@@ -957,8 +863,7 @@ export const WatchReloadsRequestSchema: GenMessage<WatchReloadsRequest> = /*@__P
  */
 export type WatchReloadsResponse = Message<"numen.v1.WatchReloadsResponse"> & {
   /**
-   * Reload says the vaults are to be counted again. It is false in the first
-   * message, which says the window is listening and nothing has moved yet.
+   * True when vault files change and require recounting.
    *
    * @generated from field: bool reload = 1;
    */
@@ -973,6 +878,8 @@ export const WatchReloadsResponseSchema: GenMessage<WatchReloadsResponse> = /*@_
   messageDesc(file_numen_v1_flashcards, 20);
 
 /**
+ * Presets query messages for multi-vault clients.
+ *
  * @generated from message numen.v1.GetVaultDeckPresetRequest
  */
 export type GetVaultDeckPresetRequest = Message<"numen.v1.GetVaultDeckPresetRequest"> & {
@@ -982,7 +889,7 @@ export type GetVaultDeckPresetRequest = Message<"numen.v1.GetVaultDeckPresetRequ
   vault: string;
 
   /**
-   * The deck whose preset this is, by the path it is filed under.
+   * Deck file path.
    *
    * @generated from field: string deck = 2;
    */
@@ -1001,14 +908,14 @@ export const GetVaultDeckPresetRequestSchema: GenMessage<GetVaultDeckPresetReque
  */
 export type GetVaultDeckPresetResponse = Message<"numen.v1.GetVaultDeckPresetResponse"> & {
   /**
-   * Absent when the preset was refused.
+   * Preset configuration, absent if resolution failed.
    *
    * @generated from field: optional numen.v1.Preset preset = 1;
    */
   preset?: Preset | undefined;
 
   /**
-   * Set when the preset was not read, and why.
+   * Error code if the preset could not be read.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
@@ -1023,8 +930,7 @@ export const GetVaultDeckPresetResponseSchema: GenMessage<GetVaultDeckPresetResp
   messageDesc(file_numen_v1_flashcards, 22);
 
 /**
- * Rating is how well a card came back. A person says which of the four, and
- * nothing decides it for them.
+ * Rating represents review recall accuracy.
  *
  * @generated from enum numen.v1.Rating
  */
@@ -1035,28 +941,28 @@ export enum Rating {
   UNSPECIFIED = 0,
 
   /**
-   * RATING_AGAIN is a card that did not come back at all.
+   * RATING_AGAIN indicates failure to recall.
    *
    * @generated from enum value: RATING_AGAIN = 1;
    */
   AGAIN = 1,
 
   /**
-   * RATING_HARD is a card that came back, slowly and with effort.
+   * RATING_HARD indicates correct recall with significant effort.
    *
    * @generated from enum value: RATING_HARD = 2;
    */
   HARD = 2,
 
   /**
-   * RATING_GOOD is a card that came back.
+   * RATING_GOOD indicates successful recall.
    *
    * @generated from enum value: RATING_GOOD = 3;
    */
   GOOD = 3,
 
   /**
-   * RATING_EASY is a card that came back with none.
+   * RATING_EASY indicates effortless recall.
    *
    * @generated from enum value: RATING_EASY = 4;
    */
@@ -1070,24 +976,14 @@ export const RatingSchema: GenEnum<Rating> = /*@__PURE__*/
   enumDesc(file_numen_v1_flashcards, 0);
 
 /**
- * FlashcardsService is the front door, a session, and the answers given in it.
+ * FlashcardsService manages card review sessions, progress tracking, and deck scheduling.
  *
  * @generated from service numen.v1.FlashcardsService
  */
 export const FlashcardsService: GenService<{
   /**
-   * WatchCardsDue is what every vault the installation knows evaluates to today:
-   * how much it holds, how much is due, and how much has never been asked. It
-   * is what the application opens on.
-   *
-   * The first message is every vault as the registry holds it, with nothing
-   * counted, and one message follows for each vault as it is worked out.
-   * Counting a vault reads every deck in it and replays its whole answer log,
-   * so the list stands while that runs.
-   *
-   * A vault the index does not carry is indexed here, and its counts
-   * follow when indexing is done. What that indexing is doing is the window's
-   * own WatchTasks.
+   * WatchCardsDue streams due card counts across registered vaults.
+   * The first message contains vault metadata, followed by individual evaluation updates.
    *
    * @generated from rpc numen.v1.FlashcardsService.WatchCardsDue
    */
@@ -1097,16 +993,8 @@ export const FlashcardsService: GenService<{
     output: typeof WatchCardsDueResponseSchema;
   },
   /**
-   * StartSession opens a run and hands over what to ask, in order. A run writes
-   * one file of its own in the vault and nothing else ever appends to it.
-   *
-   * Naming a deck asks that deck alone. Naming a preset asks the cards of every
-   * deck pointing at it, held to that preset's own budget. Naming neither asks
-   * the whole vault, which is the ordinary way to sit down to this.
-   *
-   * Naming both is refused. A preset with nothing to ask today is refused with
-   * the reason, so a person pressing it is told why and not shown an empty
-   * session.
+   * StartSession initializes a review session and returns ordered cards to review.
+   * Accepts a deck path, a preset note path, or targets all decks in the vault when neither is specified.
    *
    * @generated from rpc numen.v1.FlashcardsService.StartSession
    */
@@ -1116,8 +1004,7 @@ export const FlashcardsService: GenService<{
     output: typeof StartSessionResponseSchema;
   },
   /**
-   * AnswerCard writes down how a card came back. What comes back is the
-   * identifier of the line, which is what taking that answer back names.
+   * AnswerCard records an answer rating and review latency for a card face.
    *
    * @generated from rpc numen.v1.FlashcardsService.AnswerCard
    */
@@ -1127,8 +1014,7 @@ export const FlashcardsService: GenService<{
     output: typeof AnswerCardResponseSchema;
   },
   /**
-   * TakeBackAnswer writes down that an answer was taken back. Both lines stay
-   * in the file: nothing in a log is ever rewritten or removed.
+   * TakeBackAnswer appends an undo entry for a previously recorded answer.
    *
    * @generated from rpc numen.v1.FlashcardsService.TakeBackAnswer
    */
@@ -1138,9 +1024,7 @@ export const FlashcardsService: GenService<{
     output: typeof TakeBackAnswerResponseSchema;
   },
   /**
-   * WatchReloads says a vault moved underneath the window, for as long as the
-   * caller listens. Which files moved is not carried: what this application
-   * shows is counts, and they are asked for again whatever changed.
+   * WatchReloads notifies clients when vault content changes and requires recount.
    *
    * @generated from rpc numen.v1.FlashcardsService.WatchReloads
    */
@@ -1150,8 +1034,7 @@ export const FlashcardsService: GenService<{
     output: typeof WatchReloadsResponseSchema;
   },
   /**
-   * ListReviewDays is how much of a vault was answered on each day it was
-   * reviewed, and how many days up to now were reviewed without a gap.
+   * ListReviewDays returns historical review counts and review streaks for a vault.
    *
    * @generated from rpc numen.v1.FlashcardsService.ListReviewDays
    */
@@ -1161,10 +1044,7 @@ export const FlashcardsService: GenService<{
     output: typeof ListReviewDaysResponseSchema;
   },
   /**
-   * GetDeckNeighbourhood is what the deck of a person's session is joined to:
-   * the notes it points at and the notes that point at it, with the text of
-   * each. A card is a line out of something longer, and what it was cut from is
-   * what a person reaches for when it will not come back to them.
+   * GetDeckNeighbourhood returns notes linked to and from the specified deck note.
    *
    * @generated from rpc numen.v1.FlashcardsService.GetDeckNeighbourhood
    */
@@ -1174,10 +1054,7 @@ export const FlashcardsService: GenService<{
     output: typeof GetDeckNeighbourhoodResponseSchema;
   },
   /**
-   * GetVaultDeckPreset is the preset a deck of the named vault is scheduled by.
-   * A deck naming none is answered with the defaults under no path, and a deck
-   * whose link reaches something that is not a preset is answered with the
-   * defaults and told so.
+   * GetVaultDeckPreset returns the scheduling preset configured for a deck within a vault.
    *
    * @generated from rpc numen.v1.FlashcardsService.GetVaultDeckPreset
    */

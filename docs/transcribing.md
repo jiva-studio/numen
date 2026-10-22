@@ -14,7 +14,7 @@ Every file is named by the hash of the recording's bytes, so a file renamed or m
 | `<hash>.asr.partial.vtt` | a run still going, or one that stopped part way |
 | `<hash>.asr.corrected.vtt` | the transcript as it now reads, once something has been put right |
 | `<hash>.asr.answer` | why there will never be a transcript |
-| `<hash>.asr.json` | what listened: the model, the segmenter and where they came from |
+| `<hash>.asr.json` | transcription metadata: the model, the segmenter, and where they originated |
 
 `asr` is the producer: a transcript is a transcript whoever wrote it down, and this folder also holds the words a site published with a video, under `.captions` — see [Importing an address](importing.md).
 
@@ -66,7 +66,7 @@ A recording is transcribed without anybody asking, so a run that comes to nothin
 
 Deleting an answer is how a person asks for a recording to be tried again, and `numen-cli transcribe <vault> <file> --again` is how they ask without going into the folder. It throws away the transcript, the run that was going and the answer, and listens from the start — which is what a person who changed the model wants.
 
-In the window, **Delete transcript** stands where the words of the recording do. It takes away the transcript, what a person put right, the record of what listened, the answer and the chunks cut from any of them, leaving a recording nothing has listened to. A recording a run is listening to is refused, and is asked for again once that run ends.
+In the window, **Delete transcript** stands where the words of the recording do. It removes the transcript, any manual corrections, transcriber metadata, status answers, and chunks indexed from them, returning the recording to an untranscribed state. Deleting a transcript while transcription is in progress is rejected and must be retried after the run completes.
 
 The queue takes what it can carry: a recording larger than `indexing.transcribe_under_mb` is left alone until somebody asks for it by name. A folder of albums is days of a machine, and nobody put them in a vault to be read.
 

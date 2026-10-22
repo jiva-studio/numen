@@ -39,7 +39,7 @@ func TestAPageReturnsNothingUntilItIsAsked(t *testing.T) {
 
 	select {
 	case requestVal := <-notified:
-		t.Errorf("the page was told to flush %q before anything asked", requestVal)
+		t.Errorf("unexpected flush call for %q", requestVal)
 	default:
 	}
 
@@ -50,10 +50,10 @@ func TestAPageReturnsNothingUntilItIsAsked(t *testing.T) {
 	select {
 	case requestItem := <-notified:
 		if requestItem != token {
-			t.Errorf("the page was told to flush under %q and listens under %q", requestItem, token)
+			t.Errorf("flush token mismatch: request %q, listener %q", requestItem, token)
 		}
 	default:
-		t.Fatal("the page was never told to flush")
+		t.Fatal("expected flush call, got none")
 	}
 
 	pages.recordFlush(token, flushWritten)
@@ -144,10 +144,10 @@ func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 	select {
 	case request := <-notified:
 		if request != token {
-			t.Errorf("the page was told to flush under %q and listens under %q", request, token)
+			t.Errorf("flush token mismatch: request %q, listener %q", request, token)
 		}
 	default:
-		t.Fatal("the second request never told the page to flush")
+		t.Fatal("expected flush notification for second request")
 	}
 
 	pages.recordFlush(token, flushWritten)
@@ -171,7 +171,7 @@ func TestAPageThatOpensWhileTheWindowIsGoingIsAsked(t *testing.T) {
 	select {
 	case requestVal := <-notified:
 		if requestVal != token {
-			t.Errorf("the page was told to flush under %q and listens under %q", requestVal, token)
+			t.Errorf("flush token mismatch: request %q, listener %q", requestVal, token)
 		}
 	default:
 		t.Error("a page that opened while the window was going was never asked")
@@ -225,7 +225,7 @@ func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	select {
 	case request := <-toldAgain:
 		if request != again {
-			t.Errorf("the page was told to flush under %q and listens under %q", request, again)
+			t.Errorf("flush token mismatch: request %q, listener %q", request, again)
 		}
 	default:
 		t.Fatal("the page that came back was never asked")
@@ -241,9 +241,8 @@ func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	}
 }
 
-// TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence. Silence is
-// what a request waits its bound for, so the window is not held for ever by a
-// webview that will not answer again.
+// TestAPageThatGoesWithAQuestionActiveAndDoesNotComeBackIsSilence tests timeout
+// handling when an active page disconnects during a flush cycle.
 func TestAPageThatGoesWithAQuestionActiveAndDoesNotComeBackIsSilence(t *testing.T) {
 	var pages flushCoordinator
 
@@ -287,7 +286,7 @@ func TestAPageWithNothingLeftAndOneThatHasSavedBothLetTheWindowGo(t *testing.T) 
 			pages.recordFlush(token, response)
 
 			if !isClosed(request.allWritten) {
-				t.Error("the window was held by a page that had nothing left")
+				t.Error("window remained blocked by empty page")
 			}
 		})
 	}

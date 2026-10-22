@@ -214,8 +214,8 @@ describe('given no window', () => {
 
 describe('what a column asks of the rows', () => {
   const viewport = { width: 1000, height: 800 }
-  const getRows = (jump: number, over: Partial<typeof DEFAULT_OPTIONS> = {}) =>
-    getLimits({ ...DEFAULT_OPTIONS, viewport, ...over }, { parent: 0, child: 12, jump, sibling: 0 })
+  const getRows = (jump: number, overrides: Partial<typeof DEFAULT_OPTIONS> = {}) =>
+    getLimits({ ...DEFAULT_OPTIONS, viewport, ...overrides }, { parent: 0, child: 12, jump, sibling: 0 })
       .child.perLine
 
   it.each([1, 2, 3])(

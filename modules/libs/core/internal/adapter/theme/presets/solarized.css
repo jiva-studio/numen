@@ -1,13 +1,8 @@
 /*
- * Solarized, from the eight base tones and eight accents published by Ethan
- * Schoonover. Light is base3 down to base01; dark is base03 up to base1.
- *
- * The syntax colours are Schoonover's own: green keywords, blue identifiers,
- * yellow types, cyan constants, and comments a tone below the text. Strings
- * and numbers are both constants there, so they share cyan.
- *
- * Mixed from those: the borders and edges, which the palette does not name,
- * and the ground a field sits in.
+ * Solarized palette by Ethan Schoonover.
+ * Light mode uses base3 to base01; dark mode uses base03 to base1.
+ * Syntax tokens: green keywords, blue identifiers, yellow types,
+ * cyan constants (strings and numbers), and base01/base1 comments.
  */
 :root {
   --numen-surface: light-dark(#fdf6e3, #002b36);
@@ -18,8 +13,7 @@
   --numen-accent: light-dark(#268bd2, #268bd2);
   --numen-accent-ink: light-dark(#fdf6e3, #002b36);
 
-  /* Blue is what the node in hand is painted, so a parent takes cyan and the
-     four relations stand apart from it. */
+  /* Node relations use cyan for parent and distinct hues for child, jump, and sibling. */
   --numen-relation-parent: light-dark(#2aa198, #2aa198);
   --numen-relation-child: light-dark(#859900, #859900);
   --numen-relation-jump: light-dark(#cb4b16, #cb4b16);
@@ -36,8 +30,7 @@
   --numen-caution-fg: light-dark(#b58900, #b58900);
   --numen-highlight: light-dark(#b5890033, #b589003d);
 
-  /* Three base tones in a row, the marks between the brackets and the
-     comments. Code and a table's head row take the tone a node is raised off. */
+  /* Code blocks and table headers use the raised background tone. */
   --numen-syntax-mark: light-dark(#839496, #657b83);
   --numen-code-bg: light-dark(#fdf6e3, #002b36);
   --numen-table-head-bg: light-dark(#fdf6e3, #002b36);

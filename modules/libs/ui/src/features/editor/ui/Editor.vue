@@ -121,9 +121,9 @@ onBeforeUnmount(() => {
 // is already in. The caret, the selection and the scroll offset stay where
 // they were, and the replacement is no step to undo. The string this editor
 // last emitted is the document currently.
-watch(text, (fresh) => {
-  if (!view || fresh === lastEmitted || view.state.doc.toString() === fresh) return
-  view.dispatch(replace(view.state, fresh))
+watch(text, (newText) => {
+  if (!view || newText === lastEmitted || view.state.doc.toString() === newText) return
+  view.dispatch(replace(view.state, newText))
 })
 
 watch(

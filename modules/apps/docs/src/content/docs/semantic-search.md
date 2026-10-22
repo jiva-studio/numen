@@ -3,7 +3,7 @@ title: Semantic search
 description: The model that reads your notes — running it on your machine, handing it to a service, or turning it off.
 ---
 
-Two of the three bands in [search](/finding/) are words, and need nothing. The third finds notes
+Two of the three bands in [search](/search/) are words, and need nothing. The third finds notes
 that are *about* what you typed, and for that your notes have to be read by a model.
 
 Out of the box that model is small, runs on your machine, and is fetched the first time it is

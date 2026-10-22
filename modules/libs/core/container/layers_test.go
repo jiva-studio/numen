@@ -14,16 +14,10 @@ import (
 	"testing"
 )
 
-// module is what every package of the core is named under.
+// module is the base import path prefix for core packages.
 const module = "github.com/jiva-studio/numen/modules/libs/core/"
 
-// driving are the adapters something outside comes in through. They call the
-// scenarios; a driven adapter stands behind a port and calls none, so what a
-// scenario is written over is a port and never an adapter's own answer.
-//
-// Which way an adapter faces has nothing to do with at its current position: internal/
-// says only that nothing outside composes it, which holds of a driving adapter
-// another adapter mounts.
+// driving lists driving adapters that expose external interfaces and call use cases.
 var driving = map[string]bool{
 	"adapter/cli":               true,
 	"adapter/mcp":               true,
@@ -203,7 +197,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 			t.Errorf("no file of adapter/%s was read: the rule stops at that adapter", one)
 		}
 	}
-	for _, one := range held {
+	for _, one := range internalAdapters {
 		if !reached["internal/adapter/"+one] {
 			t.Errorf("no file of internal/adapter/%s was read: the rule stops at that adapter", one)
 		}
@@ -260,16 +254,12 @@ func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 	}
 }
 
-// isMachinery says whether a package is the composition root or a fixture only
-// a test is compiled from. Reaching outward is what they are, so they are held
-// to none of the abstinences below.
+// isMachinery reports whether a package is the composition root or a test fixture.
 func isMachinery(pkg string) bool {
 	return pkg == "container" || strings.HasPrefix(pkg, "internal/test")
 }
 
-// isShared says whether a package is a shared adapter library. Each is held to
-// the adapter rules, and the machine and the clock are open to it as they are to
-// an adapter.
+// isShared reports whether a package is a shared adapter library.
 func isShared(pkg string) bool {
 	return strings.HasPrefix(pkg, "internal/adapterlib/")
 }
@@ -614,8 +604,7 @@ var numbered = map[string]bool{
 	"uintptr": true, "byte": true, "rune": true,
 }
 
-// identity is an exported field naming one: the type it stands in, the field,
-// and how its own type is written.
+// identity records an ID field: containing type, field name, and field type.
 type identity struct{ in, field, spelled string }
 
 // identities are the exported struct fields of one file whose names end in ID.
@@ -797,10 +786,8 @@ func mount() {
 // interface it answers to, so nothing but the messages is left to read.
 const schema = wire + "/gen/numen/v1"
 
-// Which way an adapter faces is read off what it does, and not off the folder
-// it sits in. An adapter that serves or mounts the generated handler is a
-// driving adapter wherever it stands, and the list above says so, so the day
-// one of them needs a scenario it is allowed one.
+// TestEveryAdapterServingTheSchemaIsDriving ensures adapters serving or mounting
+// generated protocol handlers are declared as driving adapters.
 func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 	var wrong []string
 	var found int
@@ -1114,11 +1101,7 @@ var layers = map[string]bool{
 	"adapter": true, "container": true, "domain": true, "port": true, "usecase": true,
 }
 
-// A package is named at the call site for what it is. An alias naming a layer
-// says only which folder the package sits in, which the import path already
-// says, and the reader is left with usecase.Add for what is vaults.Add.
-//
-// The tests are read too: most of a package's call sites are in them.
+// TestNoPackageIsImportedBelowItsLayer verifies that packages do not use layer names as import aliases.
 func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 	var wrong []string
 	var read, aliased int
@@ -1164,9 +1147,7 @@ func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. The name
-// of a layer says only which folder the package sits in; any other word is the
-// caller saying what the package is, which is the whole point of writing one.
+// TestWhatTheLayerAliasRuleRefuses verifies rejection of layer names as import aliases.
 func TestWhatTheLayerAliasRuleRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "alias.go", `package p
 
@@ -1201,9 +1182,7 @@ func getPackage(root, path string) string {
 	return filepath.ToSlash(target)
 }
 
-// isAdapter says whether a package is an adapter, wherever it stands. An
-// adapter the compiler holds sits under internal/ and is held to the same
-// rules.
+// isAdapter reports whether a package is an adapter.
 func isAdapter(pkg string) bool {
 	return strings.HasPrefix(pkg, "adapter/") ||
 		strings.HasPrefix(pkg, "internal/adapter/")
@@ -1340,9 +1319,8 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 	}
 }
 
-// held are the adapters the compiler keeps to this module. Naming them is what
-// makes a new one arrive as a decision.
-var held = []string{
+// internalAdapters lists adapters internal to this module.
+var internalAdapters = []string{
 	"appstate", "download", "filesystem", "keychain", "onnxruntime", "plugin",
 	"theme", "trash",
 }
@@ -1356,11 +1334,11 @@ func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
 	there := make(map[string]bool, len(found))
 	for _, one := range found {
 		there[one] = true
-		if !isAmong(held, one) {
+		if !isAmong(internalAdapters, one) {
 			t.Errorf("internal/adapter/%s stands here and is named nowhere", one)
 		}
 	}
-	for _, one := range held {
+	for _, one := range internalAdapters {
 		if !there[one] {
 			t.Errorf("internal/adapter/%s is named here and is not there", one)
 		}
@@ -1544,16 +1522,11 @@ type Reading struct {
 		}
 	}
 	if !slices.Equal(rejected, []string{"SeenTime"}) {
-		t.Errorf("the rule rejected %v, want the one instant written as a number", rejected)
+		t.Errorf("rejected %v, want SeenTime", rejected)
 	}
 }
 
-// getMethodIdentities are the parameters and results of a file's interface
-// methods whose names end in ID, by the interface each method stands in.
-//
-// A parameter carries its name in the signature, so a walk reads it the same
-// way it reads a field. One written with no name at all names no identity and
-// is not read.
+// getMethodIdentities extracts ID parameters and return types from interface methods.
 func getMethodIdentities(file *ast.File) []identity {
 	var found []identity
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -1734,8 +1707,7 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 	}
 }
 
-// getPackageDir is where the package the rules call at is read from. The domain is the vocabulary the
-// core and the plugins share, and stands in a module of its own beside the core.
+// getPackageDir returns the filesystem path for a package name.
 func getPackageDir(at string) string {
 	if at == "domain" {
 		return filepath.Join("..", "..", "notes", "domain")

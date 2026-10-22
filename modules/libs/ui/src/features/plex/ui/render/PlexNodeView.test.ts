@@ -15,7 +15,7 @@ import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import type { PlexNodeRelation } from '../../lib/relation'
 
-const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
   relation: 'child',
@@ -25,11 +25,11 @@ const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   height: 36,
   order: 0,
   opacity: 1,
-  ...over,
+  ...overrides,
 })
 
-const mountNode = (over: Partial<PlacedNode> = {}) =>
-  mount(PlexNodeView, { props: { node: createNode(over) } })
+const mountNode = (overrides: Partial<PlacedNode> = {}) =>
+  mount(PlexNodeView, { props: { node: createNode(overrides) } })
 
 /** A pointer arrives, which is the only thing that offers a handle. */
 const hover = async (node: ReturnType<typeof mountNode>) => {
@@ -317,14 +317,14 @@ describe('a box with more of its title to show', () => {
 
   const mountWide = (
     wide: WideBox | null = WIDE,
-    over: Partial<PlacedNode> = {},
+    overrides: Partial<PlacedNode> = {},
     gestureRole: GestureRole = 'open',
   ) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
-        node: createNode(over),
+        node: createNode(overrides),
         wide,
         behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
         gestureRole,

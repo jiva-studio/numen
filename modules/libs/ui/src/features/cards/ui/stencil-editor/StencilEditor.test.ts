@@ -63,10 +63,10 @@ const pressKey = (on: Element, key: string): KeyboardEvent => {
 }
 
 /** A field picked up and the drag ended without it being let go anywhere. */
-const dragOff = async (wrapper: Editor, field: string, over: string | null): Promise<void> => {
+const dragOff = async (wrapper: Editor, field: string, targetField: string | null): Promise<void> => {
   const grip = getRow(wrapper, field).get('[data-grip]')
   await grip.trigger('dragstart')
-  if (over !== null) await getRow(wrapper, over).trigger('dragover')
+  if (targetField !== null) await getRow(wrapper, targetField).trigger('dragover')
   await grip.trigger('dragend')
 }
 

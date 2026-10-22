@@ -9,7 +9,7 @@ const WINDOW = { width: 1200, height: 800 }
 const MARGIN = 16
 const BOUNDS = { viewport: WINDOW, margin: MARGIN }
 
-const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
   relation: 'child',
@@ -19,7 +19,7 @@ const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   height: 36,
   order: 0,
   opacity: 1,
-  ...over,
+  ...overrides,
 })
 
 /** Where a widened box begins and ends, in the plex's own coordinates. */

@@ -48,7 +48,7 @@ const emit = defineEmits<{
 const uid = useId()
 
 /** What is wrong with a name, where what it is wrong about says so. */
-const objectionsId = (over: string): string => `${uid}-${encodeURIComponent(over)}-objections`
+const objectionsId = (targetId: string): string => `${uid}-${encodeURIComponent(targetId)}-objections`
 
 /**
  * A name typed over the one a field carries. A field is named by its own name,

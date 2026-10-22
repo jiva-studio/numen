@@ -16,9 +16,7 @@ const Points = 25
 // the range.
 const MostAhead = 5 * 365
 
-// Curve is what the one control of a preset evaluates to over the whole range of
-// its goal. The grid, what stands at each place of it, and the two places
-// pointed at are all here.
+// Curve represents preset evaluation across the goal range.
 type Curve struct {
 	Goal Goal
 	// Grid is the value of the goal at each place: minutes for minutes_a_day, a
@@ -28,27 +26,19 @@ type Curve struct {
 	Days []string
 	// Points are what the preset evaluates to at each place of the grid.
 	Points []Point
-	// Now is where the preset stands.
+	// Now is the current preset point.
 	Now CurvePoint
-	// Suggested is the place worth pointing at: under a goal of minutes the
-	// shortest day the clock no longer cuts short, and under a goal of a date
-	// the soonest day the material is learned by at a cost the minutes the
-	// preset keeps allow. A goal of retention has none, and stands at OutsideGrid.
+	// Suggested is the recommended point on the curve.
+	// For retention goals, this is OutsideGrid.
 	Suggested CurvePoint
-	// Stops is why the settings this curve was drawn under schedule nothing,
-	// and is empty where they schedule something. It is asked of the settings
-	// the request carried.
+	// Stops indicates why settings schedule nothing, empty when scheduling cards.
 	Stops StopReason
-	// Decks is how many decks are scheduled by this preset. Zero is a preset no
-	// deck points at, and every place of the curve stands at zero with it.
+	// Decks is the count of decks scheduled by this preset.
 	Decks int
-	// Cards is how many card faces stand in those decks. Zero is a preset with
-	// nothing to schedule, and every place of the curve stands at zero with it.
+	// Cards is the total count of card faces in those decks.
 	Cards int
-	// Overdue is how many of those card faces have had their day and were not
-	// answered on it, and Unbegun how many nobody has answered at all, so they
-	// have had no day. Both are one number over the whole curve: facts about the
-	// vault currently, and not about the setting being chosen.
+	// Overdue is the count of card faces past due.
+	// Unbegun is the count of card faces with no review history.
 	Overdue int
 	Unbegun int
 }
@@ -76,9 +66,8 @@ type Point struct {
 	// Ahead days off under a goal of minutes or of retention, and the day the
 	// place names under a goal of a date.
 	Owed int
-	// Share is the share of the material learned by this day, and Enough is
-	// whether the pace this place sets learns every card face that can be
-	// learned by it. A goal keeping no such account stands at true.
+	// Share is the fraction of cards learned by this day.
+	// IsEnough reports whether all learnable cards are learned.
 	Share    float64
 	IsEnough bool
 	// Short is how many card faces cannot be learned by this day whatever the
@@ -103,45 +92,34 @@ type Point struct {
 	Backlog []int
 }
 
-// CurvePoint is one place on the curve worth pointing at.
+// CurvePoint is a point on the curve.
 type CurvePoint struct {
-	// Index is the place of the grid, and is -1 when the value falls outside it.
+	// Index is the grid index, or -1 when outside the grid.
 	Index int
-	// Value is the goal's value at the place, in the units of the grid. What the
-	// preset stands at need not sit on the grid.
+	// Value is the goal value at this point.
 	Value float64
-	// Day is the day at the place, and is filled for a goal of a date.
+	// Day is the date string for date goals.
 	Day string
 }
 
-// OutsideGrid is a place that falls outside the grid.
+// OutsideGrid indicates a point falling outside the grid.
 var OutsideGrid = CurvePoint{Index: -1}
 
-// curveBuilder is one curve being worked out: the run every place of it is projected
-// with, and what stands the same at every place.
+// curveBuilder holds simulation state for computing a curve.
 type curveBuilder struct {
-	run    Simulation
-	now    time.Time
-	preset Preset
-	at     map[CardFaceID]Schedule
-	unseen int
-	by     func(retention float64) Scheduler
-	places func(count int, each func(at int) error) error
+	run          Simulation
+	now          time.Time
+	preset       Preset
+	at           map[CardFaceID]Schedule
+	unbegunCount int
+	by           func(retention float64) Scheduler
+	places       func(count int, each func(at int) error) error
 }
 
-// Curve is what the one control of a preset evaluates to over the whole range of
-// its goal, worked out by running this projection at every place of the range.
-//
-// The map is where the answers have left every card face the preset schedules,
-// and unseen is how many of its card faces nobody has answered, as Run reads
-// them. By is the scheduler asking for a share of the cards to come back, and
-// is asked again at each place of a goal of retention.
-//
-// Places runs the places of the range and is where a caller says how many of
-// them run at once; a caller handing over none runs them one at a time.
+// Curve evaluates a preset over the goal range using simulation.
 func (s Simulation) Curve(
 	ctx context.Context, now time.Time, p Preset, at map[CardFaceID]Schedule,
-	unseen int, by func(retention float64) Scheduler,
+	unbegunCount int, by func(retention float64) Scheduler,
 	places func(count int, each func(at int) error) error,
 ) (Curve, error) {
 	if by == nil {
@@ -157,7 +135,7 @@ func (s Simulation) Curve(
 			return nil
 		}
 	}
-	d := curveBuilder{run: s, now: now, preset: p, at: at, unseen: unseen, by: by, places: places}
+	d := curveBuilder{run: s, now: now, preset: p, at: at, unbegunCount: unbegunCount, by: by, places: places}
 	switch p.Goal {
 	case GoalRetention:
 		return d.retention(ctx)
@@ -168,13 +146,9 @@ func (s Simulation) Curve(
 	}
 }
 
-// minutes is the curve of how long a day of review runs.
-//
-// It runs from a short day to twice what carrying the whole load costs, so the
-// place where the load is carried stands inside it. Each place is the session a
-// person would sit down to now, which is the day the deck screen offers.
+// minutes computes the curve for daily review duration goals.
 func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
-	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
 
 	free := p
 	free.MinutesADay = int(MinutesADayBounds.Most)
@@ -235,7 +209,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
-	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
 
 	out := Curve{Goal: GoalRetention, Now: OutsideGrid, Suggested: OutsideGrid}
 	least, most := RetentionBounds.Least, RetentionBounds.Most
@@ -269,21 +243,12 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	}
 
 	out.Now = CurvePoint{Index: findNearest(out.Grid, p.Retention), Value: p.Retention}
-	// A goal of retention suggests nothing, and its place stands at OutsideGrid.
 	return out, nil
 }
 
-// date is the curve of getting through the material by a day.
-//
-// Each day of it carries what a day of review has to run to be through by then,
-// and what the budget the preset keeps gets through by then.
-//
-// The range relies on the vault and not on the day the file names, so a person
-// can always give themselves longer than they have. It begins tomorrow and
-// reaches whichever is further off: twice as far as the day named, or the day
-// the material is through at one card a day, the slowest a day of review goes.
+// date computes the curve of completing reviews by a specified target date.
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
-	run, now, p, at, unreviewedCount := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewedCount := d.run, d.now, d.preset, d.at, d.unbegunCount
 
 	out := Curve{Goal: GoalDate, Now: OutsideGrid, Suggested: OutsideGrid}
 	open := run.Day.GetStart(now)
@@ -397,28 +362,22 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	return out, nil
 }
 
-// getDaysToLearnWithoutForgetting is how many days of review it takes before the whole material stands
-// learned, projected on the assumption that nothing is forgotten.
-//
-// The day it names is the day a person reaches if the answers go well. It is
-// the one figure drawn under that assumption, and the run and the arithmetic
-// are those of every figure beside it.
+// getDaysToLearnWithoutForgetting calculates days needed to learn all cards assuming full recall.
 func getDaysToLearnWithoutForgetting(
 	ctx context.Context, run Simulation, now time.Time, p Preset,
-	at map[CardFaceID]Schedule, unseen int,
+	at map[CardFaceID]Schedule, unbegunCount int,
 ) (int, error) {
 	run.Recalls = GetFullRecall
 	// The day the material is learned is all this run is read for.
 	run.Retains = nil
-	ran, err := run.Run(ctx, now, p, at, unseen)
+	ran, err := run.Run(ctx, now, p, at, unbegunCount)
 	if err != nil {
 		return 0, err
 	}
 	return ran.Learns, nil
 }
 
-// isLearned reports whether the whole material stands learned on this day: no
-// card face out of reach of it, and the pace it sets through every one of them.
+// isLearned reports whether all material is learned on this day.
 func isLearned(one Point) bool { return one.Short == 0 && one.IsEnough }
 
 // point is a projection as one place of a curve, at the load it carries over
@@ -455,12 +414,7 @@ func getSessionClosed(p Projection) BudgetNames {
 	return p.Closed[day]
 }
 
-// session is a projection as one place of a curve, at the first day of it the
-// preset admits: the next session a person will sit down to.
-//
-// It is one real day of the run, worked out by the arithmetic the deck screen
-// runs, so the count here is the count that session hands a person. A preset
-// admitting no day at all holds no session, and stands at nothing.
+// session converts a projection to a Point for the first admitted day.
 func session(p Projection) Point {
 	out := point(p)
 	day, isAdmitted := p.Session()
@@ -471,8 +425,7 @@ func session(p Projection) Point {
 	return out
 }
 
-// getSessionMinutes is how long the first day the preset admits took, which is
-// what carrying the whole load costs on the next session.
+// getSessionMinutes returns the duration in minutes for the first admitted day.
 func getSessionMinutes(p Projection) float64 {
 	day, isAdmitted := p.Session()
 	if !isAdmitted {

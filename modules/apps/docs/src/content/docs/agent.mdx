@@ -48,18 +48,18 @@ A note it names in its answer is a link you can press: it opens in a tab beside 
 
 ## What it cannot do
 
-**It has no shell.** It reaches your vault through the operations above and through nothing else. It cannot run a command on your machine, and the one tool that reads a file by its path reads inside the vault folder and nowhere else — a path leading out of it, or at a file the vault passes over, is refused.
+**It has no shell.** It reaches your vault through the operations above and through nothing else. It cannot run a command on your machine, and the one tool that reads a file by its path reads inside the vault folder and nowhere else — a path leading out of it, or at a file the vault passes over, is rejected.
 
 **It reads no instructions carried by the vault.** A vault is a folder that arrives from
 somewhere — synced, cloned, shared, restored — and a configuration file inside one names
-commands for your machine to run. Those are refused, always, whatever the settings say.
+commands for your machine to run. Those are rejected, always, whatever the settings say.
 
 **It cannot erase a vault from your disk.** Taking a folder away is asked for in front of you. Putting a folder on the list it can do, when you ask: nothing already in the folder is moved or rewritten, and the vault's identity is written into it so the folder is recognised wherever it moves to.
 
 By default it also ignores what is configured for the assistant on this machine — standing
 instructions, hooks, skills, plugins. If you want your own configuration used, turn on
 `agent.claude.reads_hooks_and_skills` in [the settings](/settings/); a vault's own files stay
-refused either way.
+rejected either way.
 
 ## Setting it up
 
@@ -102,5 +102,5 @@ The agent runs on your machine and answers through your own account with whoever
 model. numen has no server, and there is nothing for your notes to be uploaded to: what leaves
 the machine is what the model is asked, by the program you installed and signed in to.
 
-[Searching by meaning](/finding/) is separate from this, and by default it runs a small model
+[Searching by meaning](/search/) is separate from this, and by default it runs a small model
 locally with no account at all.

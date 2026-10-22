@@ -109,7 +109,7 @@ The reduction from a title to a filename drops control characters, writes `-` fo
 
 Where a title survives that whole, the filename says it and nothing is written into the frontmatter. Where it does not, the name is what survived and the frontmatter carries the exact title under `title`.
 
-A title that leaves nothing a file can be named after is refused, and so is one carrying a line break. Nothing is written.
+A title that leaves nothing a file can be named after is rejected, and so is one carrying a line break. Nothing is written.
 
 Creating a note under a name another note already has is allowed and said out loud in the answer, which carries the other notes filed under that name.
 
@@ -121,21 +121,21 @@ Renaming brings into line whichever of the two names the note. One title is aske
 - the note has none, and the title cannot survive as a filename — the key is added, carrying the exact title;
 - the note has none, and the title can — nothing is written, and the filename says it.
 
-Creating a note and renaming one are the same convention read in two directions: the same characters are refused, the same length is the ceiling, and the same answer says whether the title survived.
+Creating a note and renaming one are the same convention read in two directions: the same characters are rejected, the same length is the ceiling, and the same answer says whether the title survived.
 
-**A title that reduces to nothing is refused**, by renaming and by creating alike. There is no name to file the note under, so the note is not opened and nothing is written. A title that only fails to survive whole is reduced, the frontmatter carries it, and the rename goes through.
+**A title that reduces to nothing is rejected**, by renaming and by creating alike. There is no name to file the note under, so the note is not opened and nothing is written. A title that only fails to survive whole is reduced, the frontmatter carries it, and the rename goes through.
 
-**The note is brought into line before the file is moved.** A move can be refused — something already sits where the note would go — and a refusal there leaves the title right and the filename behind, which is a rename asked for again once the name is free.
+**The note is brought into line before the file is moved.** A move can fail — something already sits where the note would go — and an error there leaves the title right and the filename behind, which is a rename asked for again once the name is free.
 
 **`title` is added only where the filename cannot carry the title whole.** A vault of notes whose filenames say their names stays a vault of notes without the key.
 
 **A note its filename names keeps its bytes.** Nothing in it has to be brought into line, so nothing is written and the rename is a move. It takes no identifier. A rename that writes the key is an edit, and stamps one the way every other edit does.
 
-**A note whose frontmatter cannot be read is not renamed.** The order above cannot be walked without reading the frontmatter, and a block that does not parse is one the application refuses to read past. It cannot be known whether the note carries a `title`, so it cannot be known what renaming the note means. The application says so and changes nothing.
+**A note whose frontmatter cannot be read is not renamed.** The order above cannot be walked without reading the frontmatter, and a block that does not parse is one the application halts reading at. It cannot be known whether the note carries a `title`, so it cannot be known what renaming the note means. The application says so and changes nothing.
 
 **The file keeps the extension it had.** A note is created under `.md`, and a rename never touches what a note already carries. Inline renaming in the file tree opens directly on the row, selecting the name stem while preserving the extension.
 
-**A heading in the prose names nothing.** What a person types into the body is the body: writing `# Something` at the top of a note does not rename it, and neither does changing one. The name is the `title` key, else the filename.
+**A heading in the body text does not define the note title.** What a person types into the body is content: writing `# Something` at the top of a note does not rename it, and neither does changing one. The name is the `title` key, else the filename.
 
 ## After a move
 
@@ -167,7 +167,7 @@ A file dragged off the machine and let go over the tree is copied into the vault
 
 The file is copied, so what was let go of stays where it was. A folder arrives with everything under it. A file of any kind arrives — a picture, a recording, an archive — and the bytes are streamed, so the size of what arrives is the size of the disk and not of the machine's memory. Each file lands beside its destination and is renamed over it, so what is watching the vault reads it once and reads it whole.
 
-**A name the folder already carries is refused, and that file stays outside.** What a person meant by a second file of that name is theirs to say. The rest of the drop arrives, and what did not stands in the corner under what stopped it. A folder that the vault itself sits inside is refused whole.
+**A filename already present in the folder is rejected, and that file is skipped.** Remaining dropped files are imported, and any skipped files appear in the status corner with the reason. A folder containing the vault root itself is rejected entirely.
 
 A picture or an archive is reported to nobody by the watcher, so what arrived is named to everyone drawing the vault and the tree draws it at once.
 
@@ -198,12 +198,12 @@ Tabs in separate panes can be linked into synchronized groups. Right-clicking a 
 stateDiagram-v2
     [*] --> loading
     loading --> clean: the note is read
-    loading --> stuck: the read is refused
+    loading --> stuck: the read fails
     clean --> unsaved: the person types
     unsaved --> saving: the text is still, or the bound is reached
     saving --> clean: the write lands
     saving --> unsaved: typing arrived while the write was in the air
-    saving --> stuck: the write is refused
+    saving --> stuck: the write fails
     saving --> stale: the file holds prose this tab has not read
     clean --> gone: a re-read finds no file
     stale --> saving: keep mine

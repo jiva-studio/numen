@@ -4,16 +4,8 @@
 // 	protoc        (unknown)
 // source: numen/v1/flashcards.proto
 
-// What a client running a person's cards may ask.
-//
-// Flashcards is an application of its own, beside the editor and over the same
-// core, so this service stands beside the editor's and shares nothing with it.
-// It reaches every vault the installation knows, because what a person owes
-// today is owed across all of them.
-//
-// A card is laid out here, unlike the cards service, which hands a face over as
-// it was written: what a person is shown is the face filled with one card's
-// values, and nothing above this has the two halves to fill it with.
+// Flashcards service definitions.
+// Manages flashcard review sessions, card scheduling counts, and answer logs across vaults.
 
 package numenv1
 
@@ -32,19 +24,18 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Rating is how well a card came back. A person says which of the four, and
-// nothing decides it for them.
+// Rating represents review recall accuracy.
 type Rating int32
 
 const (
 	Rating_RATING_UNSPECIFIED Rating = 0
-	// RATING_AGAIN is a card that did not come back at all.
+	// RATING_AGAIN indicates failure to recall.
 	Rating_RATING_AGAIN Rating = 1
-	// RATING_HARD is a card that came back, slowly and with effort.
+	// RATING_HARD indicates correct recall with significant effort.
 	Rating_RATING_HARD Rating = 2
-	// RATING_GOOD is a card that came back.
+	// RATING_GOOD indicates successful recall.
 	Rating_RATING_GOOD Rating = 3
-	// RATING_EASY is a card that came back with none.
+	// RATING_EASY indicates effortless recall.
 	Rating_RATING_EASY Rating = 4
 )
 
@@ -93,31 +84,24 @@ func (Rating) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{0}
 }
 
-// VaultCardsDue is one vault, and what its cards come to today.
+// VaultCardsDue holds card scheduling counts for a vault.
 type VaultCardsDue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Id is the identity the folder carries, and how this vault is asked for
-	// again. Name is what the person calls the collection.
+	// Vault identifier and display name.
 	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// Faces is every card the vault holds, counted once for each face it is shown
-	// through. Due is what was answered before and is owed today; New is what
-	// nobody has answered.
+	// Total card faces, currently due faces, and unreviewed faces.
 	Faces int32 `protobuf:"varint,4,opt,name=faces,proto3" json:"faces,omitempty"`
 	Due   int32 `protobuf:"varint,5,opt,name=due,proto3" json:"due,omitempty"`
 	New   int32 `protobuf:"varint,6,opt,name=new,proto3" json:"new,omitempty"`
-	// Decks is the same three numbers for each deck, by the path of its file.
+	// Scheduling counts per deck file.
 	Decks []*DeckCardsDue `protobuf:"bytes,7,rep,name=decks,proto3" json:"decks,omitempty"`
-	// Presets is what the day evaluates to under each preset the vault's decks are
-	// scheduled by.
+	// Scheduling counts evaluated per preset.
 	Presets []*PresetCardsDue `protobuf:"bytes,8,rep,name=presets,proto3" json:"presets,omitempty"`
-	// Set when the vault could not be counted: its files could not be reached, or
-	// indexing it failed. The three numbers are then zero and this
-	// says why, in the person's own words.
+	// Error message if counting or indexing failed.
 	Unread string `protobuf:"bytes,9,opt,name=unread,proto3" json:"unread,omitempty"`
-	// Set while the vault is being indexed. The three numbers are not
-	// in yet, and a further count follows when indexing is done.
+	// True while the vault is being indexed.
 	IsIndexing    bool `protobuf:"varint,10,opt,name=is_indexing,json=isIndexing,proto3" json:"is_indexing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -229,17 +213,11 @@ type DeckCardsDue struct {
 	Faces int32                  `protobuf:"varint,2,opt,name=faces,proto3" json:"faces,omitempty"`
 	Due   int32                  `protobuf:"varint,3,opt,name=due,proto3" json:"due,omitempty"`
 	New   int32                  `protobuf:"varint,4,opt,name=new,proto3" json:"new,omitempty"`
-	// How many of this deck's cards were answered since the day opened, counted
-	// the way its preset counts. A deck holding nothing more today and answered
-	// nothing today was not studied.
+	// Number of cards answered during the current review day.
 	Answered int32 `protobuf:"varint,5,opt,name=answered,proto3" json:"answered,omitempty"`
-	// How many of the deck's card faces stand learned now, under the rule the
-	// preset scheduling the deck counts by. It is a count of faces, and says
-	// nothing about what a preset has got through of its day.
+	// Number of card faces meeting the preset learned criteria.
 	Learned int32 `protobuf:"varint,6,opt,name=learned,proto3" json:"learned,omitempty"`
-	// How many of the deck's card faces nobody has answered at all. A deck every
-	// face of which is one of these has nothing that can come round until
-	// something begins them.
+	// Number of card faces that have never been reviewed.
 	Unbegun       int32 `protobuf:"varint,7,opt,name=unbegun,proto3" json:"unbegun,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -324,53 +302,35 @@ func (x *DeckCardsDue) GetUnbegun() int32 {
 	return 0
 }
 
-// PresetCardsDue is one preset of a vault, and what the day evaluates to under it.
+// PresetCardsDue holds daily review counts evaluated under a preset.
 type PresetCardsDue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The note the settings were read from, and empty for the decks naming no
-	// preset.
+	// Path to the preset note, or empty for the default preset.
 	Preset string `protobuf:"bytes,1,opt,name=preset,proto3" json:"preset,omitempty"`
-	// What the preset is called. Empty where nothing names the note.
+	// Display title of the preset.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// How many decks point at it. Nothing points at a preset of no decks, and
-	// the day stands at nothing under it.
+	// Number of decks configured with this preset.
 	Decks int32 `protobuf:"varint,3,opt,name=decks,proto3" json:"decks,omitempty"`
-	// How many card faces stand in those decks. A deck holding none points at
-	// its preset all the same, so a preset of decks and no cards is its own
-	// state.
+	// Total card faces across assigned decks.
 	Cards int32 `protobuf:"varint,4,opt,name=cards,proto3" json:"cards,omitempty"`
-	// What the day leaves under it: the card faces owed and the ones nobody has
-	// answered, held to its budget. Their sum is what a session over this preset
-	// asks, because a preset is the whole scope of its own budget.
+	// Due and new card faces available within the preset budget.
 	OwedDue int32 `protobuf:"varint,5,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
 	OwedNew int32 `protobuf:"varint,6,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
-	// How many of its cards were answered since the day opened, and how long
-	// those answers took. The two beside the total divide it the way a budget
-	// does, so each is weighed against the budget of its own kind.
+	// Answer counts and elapsed review time for the current review day.
 	Answered        int32 `protobuf:"varint,7,opt,name=answered,proto3" json:"answered,omitempty"`
 	TookMs          int64 `protobuf:"varint,8,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
 	AnsweredNew     int32 `protobuf:"varint,9,opt,name=answered_new,json=answeredNew,proto3" json:"answered_new,omitempty"`
 	AnsweredReviews int32 `protobuf:"varint,10,opt,name=answered_reviews,json=answeredReviews,proto3" json:"answered_reviews,omitempty"`
-	// What the preset keeps for this day of the week: how many cards of each
-	// kind, and how long the day runs, at the share of the load that day of the
-	// week carries.
-	//
-	// A budget the preset's goal does not name stands here as the person left it
-	// and closes nothing. `owed_due` and `owed_new` are already held to the ones
-	// that do, so holding them to these again is capping a number twice.
+	// Configured daily budget limits for the current day of the week.
 	New     int32   `protobuf:"varint,11,opt,name=new,proto3" json:"new,omitempty"`
 	Reviews int32   `protobuf:"varint,12,opt,name=reviews,proto3" json:"reviews,omitempty"`
 	Minutes float64 `protobuf:"fixed64,13,opt,name=minutes,proto3" json:"minutes,omitempty"`
-	// Which of the three closes the day, each written as the preset writes the
-	// key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
-	// that budget takes no part.
+	// Budget key that capped reviews, or empty if budget was not reached.
 	ClosesNew     string `protobuf:"bytes,14,opt,name=closes_new,json=closesNew,proto3" json:"closes_new,omitempty"`
 	ClosesReviews string `protobuf:"bytes,15,opt,name=closes_reviews,json=closesReviews,proto3" json:"closes_reviews,omitempty"`
 	ClosesMinutes string `protobuf:"bytes,16,opt,name=closes_minutes,json=closesMinutes,proto3" json:"closes_minutes,omitempty"`
 	ClosesBacklog string `protobuf:"bytes,17,opt,name=closes_backlog,json=closesBacklog,proto3" json:"closes_backlog,omitempty"`
-	// Why the preset schedules nothing on this day: whatever stops it at all, and
-	// a day of the week carrying none of the load. It is the core's own verdict,
-	// so a window says of a preset what the session hands its cards out by.
+	// Reason why no reviews are scheduled for the current day.
 	StopsOn       StopReason `protobuf:"varint,18,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.StopReason" json:"stops_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -532,9 +492,7 @@ func (x *PresetCardsDue) GetStopsOn() StopReason {
 	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
-// Intervals is how long each of the four answers would leave this card, in seconds
-// from the moment it was asked. A person choosing between them is choosing
-// between these.
+// Intervals specifies next review intervals in seconds for each rating choice.
 type Intervals struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Again         int64                  `protobuf:"varint,1,opt,name=again,proto3" json:"again,omitempty"`
@@ -603,29 +561,24 @@ func (x *Intervals) GetEasy() int64 {
 	return 0
 }
 
-// SessionCard is one card face as it is put to a person in a session.
+// SessionCard represents a rendered card face presented during a review session.
 type SessionCard struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Deck is the path of the file the card stands in, and section the name of
-	// the section it is placed under. A card standing before the first section
-	// carries none.
+	// Deck file path and section header name.
 	Deck    string `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
 	Section string `protobuf:"bytes,2,opt,name=section,proto3" json:"section,omitempty"`
-	// Mark is what the card is known by, and face the name of the face it is
-	// shown through. The two together are what an answer is recorded against.
+	// Card identifier and face template name.
 	Mark string `protobuf:"bytes,3,opt,name=mark,proto3" json:"mark,omitempty"`
 	Face string `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
-	// Heading is what the card's heading shows, which is the first line of its
-	// first field.
+	// First line of the card primary field.
 	Heading string `protobuf:"bytes,5,opt,name=heading,proto3" json:"heading,omitempty"`
-	// Front and back are the face laid out with this card's values, as HTML.
+	// Rendered HTML content for card front and back.
 	Front string `protobuf:"bytes,6,opt,name=front,proto3" json:"front,omitempty"`
 	Back  string `protobuf:"bytes,7,opt,name=back,proto3" json:"back,omitempty"`
-	// New is a card nobody has answered. Due is when it comes round, and stands
-	// only where it has been answered.
+	// Status flags and next due timestamp.
 	IsNew bool   `protobuf:"varint,8,opt,name=is_new,json=isNew,proto3" json:"is_new,omitempty"`
 	Due   string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
-	// Where each of the four would leave it.
+	// Projected intervals for each rating.
 	Intervals     *Intervals `protobuf:"bytes,10,opt,name=intervals,proto3" json:"intervals,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -769,21 +722,11 @@ func (*WatchCardsDueRequest) Descriptor() ([]byte, []int) {
 
 type WatchCardsDueResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Vaults is every vault the installation holds, by name and by where it is,
-	// with nothing counted. It is what the list is drawn from.
-	//
-	// It stands in the first message, and again wherever counting one vault takes
-	// long enough that the stream would otherwise say nothing: a client is told
-	// what it already knows, and a page that has gone is found by the write that
-	// fails. So the list is laid over what a client already shows, and a vault it
-	// has a count for keeps it.
+	// Registered vaults list.
 	Vaults []*VaultCardsDue `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
-	// Day is the review day these counts stand in, written as the year, the month
-	// and the day. A day of review begins at the hour the settings name, so an
-	// hour past midnight is still the day before. It stands beside the vaults.
+	// Current review day in YYYY-MM-DD format based on day rollover settings.
 	Day string `protobuf:"bytes,2,opt,name=day,proto3" json:"day,omitempty"`
-	// Counted is one vault worked out. Until one arrives for a vault, nothing is
-	// known about what that vault owes.
+	// Count update for an individual vault.
 	Counted       *VaultCardsDue `protobuf:"bytes,3,opt,name=counted,proto3" json:"counted,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -843,12 +786,9 @@ func (x *WatchCardsDueResponse) GetCounted() *VaultCardsDue {
 type StartSessionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
-	// Deck is the path of one deck, or empty for every deck the vault holds.
+	// Path of a specific deck, or empty to include all decks in the vault.
 	Deck string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
-	// Preset is the note one preset stands in, and the empty path is the preset
-	// that schedules the decks naming none. Set it to sit to the cards of every
-	// deck pointing at that preset, held to its budget. Naming a deck and a
-	// preset at once is refused.
+	// Path of a preset note, or empty for default preset. Deck and preset are mutually exclusive.
 	Preset        *string `protobuf:"bytes,3,opt,name=preset,proto3,oneof" json:"preset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -907,15 +847,12 @@ func (x *StartSessionRequest) GetPreset() string {
 
 type StartSessionResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Run is what an answer given in this session is written to, and it is what
-	// an AnswerCard names.
+	// Run log identifier used for recording answers.
 	Run   string         `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
 	Cards []*SessionCard `protobuf:"bytes,2,rep,name=cards,proto3" json:"cards,omitempty"`
-	// Unwritten are the decks holding a card with no mark that could not be given
-	// one. Their cards are not in this session and are asked for at the next.
+	// Paths of decks containing cards without valid identifiers.
 	Unwritten []string `protobuf:"bytes,3,rep,name=unwritten,proto3" json:"unwritten,omitempty"`
-	// Skipped is how many lines of the vault's answers could not be read: a run
-	// that stopped partway, or a line of a version this build does not know.
+	// Count of unparseable answer log entries encountered during replay.
 	Skipped       int32 `protobuf:"varint,4,opt,name=skipped,proto3" json:"skipped,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -983,13 +920,11 @@ type AnswerCardRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	Run   string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
-	// The mark the card is known by, and the name of the face it was shown
-	// through.
+	// Card identifier and face name.
 	Mark   string `protobuf:"bytes,3,opt,name=mark,proto3" json:"mark,omitempty"`
 	Face   string `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
 	Rating Rating `protobuf:"varint,5,opt,name=rating,proto3,enum=numen.v1.Rating" json:"rating,omitempty"`
-	// Took is how long the card stood on the screen, in milliseconds. It is the
-	// one thing about an answer that cannot be measured later.
+	// Time spent viewing the card in milliseconds.
 	TookMs        int64 `protobuf:"varint,6,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1069,8 +1004,7 @@ func (x *AnswerCardRequest) GetTookMs() int64 {
 
 type AnswerCardResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Answer is the identifier of the line written, which is what taking it back
-	// names.
+	// Answer entry identifier for undo operations.
 	Answer        string `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1117,7 +1051,7 @@ type TakeBackAnswerRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	Run   string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
-	// Answer is the identifier a previous AnswerCard came back with.
+	// Identifier of the previous answer entry to undo.
 	Answer        string `protobuf:"bytes,3,opt,name=answer,proto3" json:"answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1213,13 +1147,7 @@ func (*TakeBackAnswerResponse) Descriptor() ([]byte, []int) {
 type ListReviewDaysRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
-	// The stretch of time wanted, each written as the year, the month and the
-	// day, and both ends inside it. An empty end is unbounded at that end, so a
-	// request naming neither asks for every day there is.
-	//
-	// A vault grows a day for every day it is reviewed, and a caller draws a
-	// fixed stretch of them. Streak and answered are over the whole of it
-	// whatever is asked for here.
+	// Date range in YYYY-MM-DD format (inclusive). Empty bounds represent open intervals.
 	From          string `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
 	To            string `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1279,17 +1207,13 @@ func (x *ListReviewDaysRequest) GetTo() string {
 
 type ListReviewDaysResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Days is what each day a person answered on came to. A day nobody answered
-	// on is not in it.
+	// Historical review activity by day.
 	Days []*ReviewDay `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
-	// Due is how many card faces fall on each day still to come. A card owed
-	// today, or owed and late, is not in it: what a person owes now is what the
-	// front door counts, and this is what is after it.
+	// Projected review load for upcoming days.
 	Due []*ReviewDay `protobuf:"bytes,2,rep,name=due,proto3" json:"due,omitempty"`
-	// Streak is how many days up to now were reviewed without a gap. A day
-	// nobody has answered on yet does not end one.
+	// Current consecutive review day streak count.
 	Streak int32 `protobuf:"varint,3,opt,name=streak,proto3" json:"streak,omitempty"`
-	// Answered is how many answers the vault holds altogether.
+	// Total answers recorded across the vault.
 	Answered      int32 `protobuf:"varint,4,opt,name=answered,proto3" json:"answered,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1353,25 +1277,18 @@ func (x *ListReviewDaysResponse) GetAnswered() int32 {
 	return 0
 }
 
-// ReviewDay is one day, and what was answered on it.
+// ReviewDay represents review statistics for a single day.
 type ReviewDay struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Day is the day it began on, as the year, the month and the day: an answer
-	// given in the small hours belongs to the day before, and is named for it.
+	// Review day date in YYYY-MM-DD format.
 	Day      string `protobuf:"bytes,1,opt,name=day,proto3" json:"day,omitempty"`
 	Answered int32  `protobuf:"varint,2,opt,name=answered,proto3" json:"answered,omitempty"`
-	// How each of the four was said, for a day that is behind. A day of fifty
-	// cards a person could not recall is a different day from fifty they could,
-	// and the two are the same number without these.
+	// Rating counts for reviews completed on this day.
 	Again int32 `protobuf:"varint,3,opt,name=again,proto3" json:"again,omitempty"`
 	Hard  int32 `protobuf:"varint,4,opt,name=hard,proto3" json:"hard,omitempty"`
 	Good  int32 `protobuf:"varint,5,opt,name=good,proto3" json:"good,omitempty"`
 	Easy  int32 `protobuf:"varint,6,opt,name=easy,proto3" json:"easy,omitempty"`
-	// How much of what came round in days came back: `asked` is the answers
-	// given to card faces the scheduler sends days away, `recalled` the ones
-	// among them that were not Again. A card face still coming round in minutes
-	// is in neither — what is asked of one is whether it comes back after ten
-	// minutes, which says nothing about memory.
+	// Long-interval card retention counts.
 	Asked         int32 `protobuf:"varint,7,opt,name=asked,proto3" json:"asked,omitempty"`
 	Recalled      int32 `protobuf:"varint,8,opt,name=recalled,proto3" json:"recalled,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1467,8 +1384,7 @@ func (x *ReviewDay) GetRecalled() int32 {
 type GetDeckNeighbourhoodRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
-	// Deck is the path of the deck being sat to. One deck is asked about at a
-	// time, because what a person is reading around is the deck in front of them.
+	// Deck file path to query neighboring links for.
 	Deck          string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1521,9 +1437,7 @@ func (x *GetDeckNeighbourhoodRequest) GetDeck() string {
 type GetDeckNeighbourhoodResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Notes []*DeckNeighbour       `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
-	// Unread is how many at the end of the list came without their text. Reading
-	// stops once a session's worth has been gathered, so a deck at the centre of
-	// a vault is still answered promptly and says how much it left.
+	// Count of linked notes whose content was omitted to preserve performance limits.
 	Unread        int32 `protobuf:"varint,2,opt,name=unread,proto3" json:"unread,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1573,31 +1487,22 @@ func (x *GetDeckNeighbourhoodResponse) GetUnread() int32 {
 	return 0
 }
 
-// DeckNeighbour is one note the deck stands next to.
+// DeckNeighbour represents a note linked to or from a deck.
 type DeckNeighbour struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Written is the address as the deck wrote it, and all a link resolving to
-	// nothing ever has. It is empty for a note that points at the deck, which
-	// wrote the deck's name and not its own. Path is where the link landed, and
-	// is empty where it landed nowhere.
+	// Original link target address and resolved file path.
 	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
 	Path    string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// Title is what the note is called and body its prose, as it was written.
-	// Both are empty for a link that reached no note, and for one whose note
-	// could not be read.
+	// Note title and markdown content.
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Body  string `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	// Label is what the link was shown as, where the person gave it words of
-	// their own and not the note's name.
+	// Custom link anchor label.
 	Label string `protobuf:"bytes,5,opt,name=label,proto3" json:"label,omitempty"`
-	// IsPointedAt says the deck points at this note; otherwise this note points at the
-	// deck. A person reads the two differently: one is what the deck was made
-	// from, the other is what has since been hung off it.
+	// True if the deck links to this note; false if this note links to the deck.
 	IsPointedAt bool `protobuf:"varint,6,opt,name=is_pointed_at,json=isPointedAt,proto3" json:"is_pointed_at,omitempty"`
-	// IsAmbiguous says more than one note answers to the name written, and the one
-	// here is only the first of them.
+	// True if multiple notes match the link target.
 	IsAmbiguous bool `protobuf:"varint,7,opt,name=is_ambiguous,json=isAmbiguous,proto3" json:"is_ambiguous,omitempty"`
-	// Set when the note is there and its text could not be had, and says why.
+	// Error code if the note could not be read.
 	Error         *ErrorCode `protobuf:"varint,8,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1727,8 +1632,7 @@ func (*WatchReloadsRequest) Descriptor() ([]byte, []int) {
 
 type WatchReloadsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Reload says the vaults are to be counted again. It is false in the first
-	// message, which says the window is listening and nothing has moved yet.
+	// True when vault files change and require recounting.
 	Reload        bool `protobuf:"varint,1,opt,name=reload,proto3" json:"reload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1771,10 +1675,11 @@ func (x *WatchReloadsResponse) GetReload() bool {
 	return false
 }
 
+// Presets query messages for multi-vault clients.
 type GetVaultDeckPresetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
-	// The deck whose preset this is, by the path it is filed under.
+	// Deck file path.
 	Deck          string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1826,9 +1731,9 @@ func (x *GetVaultDeckPresetRequest) GetDeck() string {
 
 type GetVaultDeckPresetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Absent when the preset was refused.
+	// Preset configuration, absent if resolution failed.
 	Preset *Preset `protobuf:"bytes,1,opt,name=preset,proto3,oneof" json:"preset,omitempty"`
-	// Set when the preset was not read, and why.
+	// Error code if the preset could not be read.
 	Error         *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

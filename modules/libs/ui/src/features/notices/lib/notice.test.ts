@@ -14,10 +14,10 @@ import { foldNotices } from './fold'
 import { measureMovement, type Movement } from './movement'
 import { getStillAway, getReadable, findTally, type Notice } from './notice'
 
-const createNotice = (over: Partial<Notice> = {}): Notice => ({
+const createNotice = (overrides: Partial<Notice> = {}): Notice => ({
   id: 'embedding',
   text: 'Preparing search by meaning',
-  ...over,
+  ...overrides,
 })
 
 describe('which notices stand in the corner', () => {

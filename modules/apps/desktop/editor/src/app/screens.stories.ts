@@ -29,6 +29,7 @@ import {
 } from '@plugins/views.flashcards.studio/frontend'
 import {
   DEFAULTS,
+  createMarks,
   type Curve,
   type Marks,
   type Point,
@@ -113,8 +114,8 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** A window holding a note or a transcript: Tab indents until Escape hands it back. */
-const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
+/** A window holding a note or a transcript: Tab indents until Escape returns focus. */
+const WRITING = { reach: { keeps: 'Escape returns Tab focus to the page' } }
 
 /* The settings. ------------------------------------------------------------ */
 
@@ -184,27 +185,27 @@ export const Settings: Story = {
 
 /* A preset. ---------------------------------------------------------------- */
 
-/** One place on the curve: what a day there costs, and what it evaluates to. */
-const point = (over: Partial<Point> = {}): Point => ({
+/** One place on the curve: daily cost and evaluation metrics. */
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
   owed: 0,
-  through: 0,
+  ['through']: 0,
   canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 const GRID = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
 
 /**
- * What stands overdue at the end of each day, one entry a day. A longer day
- * pays the debt off sooner, and a day too short never pays it off at all.
+ * Backlog count at the end of each day, one entry per day. A longer study session
+ * clears the backlog sooner.
  */
 const createBacklog = (rate: number): readonly number[] =>
   Array.from({ length: 60 }, (_, day) =>
@@ -214,12 +215,11 @@ const createBacklog = (rate: number): readonly number[] =>
 const AT: readonly Point[] = GRID.map((minutes, at) =>
   point({
     minutes,
-    // A longer day buys fewer extra cards than the one before it.
     reviews: Math.round(28 + 44 * Math.sqrt(at)),
     retained: 0.62 + at * 0.026,
     learned: 140 + Math.round(210 * Math.sqrt(at)),
     clears: at < 2 ? -1 : Math.max(4, Math.round(140 / at)),
-    through: Math.min(1, 0.18 + at * 0.075),
+    ['through']: Math.min(1, 0.18 + at * 0.075),
     backlog: createBacklog(0.4 + at * 0.55),
   }),
 )
@@ -282,12 +282,7 @@ export const Preset: Story = {
 
 /* A deck and the stencil that cuts it. ------------------------------------- */
 
-const NO_MARKS: Marks = {
-  at: new Map(),
-  under: new Map(),
-  fields: new Map(),
-  whole: [],
-}
+const NO_MARKS: Marks = createMarks([], [], [])
 
 const WORD = { name: 'Word', fields: ['Word', 'Reading', 'Meaning', 'In a sentence'] }
 const ROOT_CUT = { name: 'Root', fields: ['Root', 'Class', 'Present', 'Meaning'] }
@@ -543,7 +538,7 @@ export const NoTranscript: Story = {
 }
 
 /**
- * The same recording with the run going. The player stands at its current position in
+ * Active recording during playback. The player position is set in
  * every other recording, and only what is below it says a run is on.
  */
 export const Transcribing: Story = {
@@ -558,13 +553,13 @@ export const Transcribing: Story = {
 
 /* The tree, and the runs a row can be put through. ------------------------- */
 
-const entry = (path: string, over: Partial<Entry> = {}): Entry => ({
+const entry = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const createOtherEntry = (path: string, kind: Entry['kind']): Entry =>
@@ -794,7 +789,7 @@ const createMenuStory = (
   `,
 })
 
-/** The run a recording can be put through, offered on the row it stands at. */
+/** Recording pipeline options displayed on its corresponding row. */
 export const Transcribed: Story = {
   parameters: WRITING,
   render: () =>
@@ -811,7 +806,7 @@ export const Transcribed: Story = {
     }),
 }
 
-/** The run a scanned document can be put through, on the row it stands at. */
+/** Document processing options displayed on its corresponding row. */
 export const Recognised: Story = {
   render: () => {
     const state = useDocumentTab(useDocumentReader(BOOK, 'Reading/Boltzmann 1877.pdf'))

@@ -127,7 +127,7 @@ func TestADeckTellsAnAgentWhereItsSectionsStand(t *testing.T) {
 	}
 	for at, target := range read.Cards {
 		if target.Section != 0 {
-			t.Errorf("card %d stands under section %d", at, target.Section)
+			t.Errorf("card %d in section %d, unexpected", at, target.Section)
 		}
 	}
 }
@@ -143,11 +143,10 @@ func TestAFaultExistsAgainstTheCardItIsAbout(t *testing.T) {
 	}
 	at := read.Faults[0].Card
 	if at < 0 || at >= len(read.Cards) {
-		t.Fatalf("the fault stands against card %d, and the deck answered with %d", at, len(read.Cards))
+		t.Fatalf("fault reported for card %d, deck count %d", at, len(read.Cards))
 	}
 	if name := getFieldText(read.Cards[at], "Name"); name != "Alpaca" {
-		t.Errorf("the card with no wikilink under it is %q, and the fault stands against %q",
-			"Alpaca", name)
+		t.Errorf("expected fault against %q, got %q", "Alpaca", name)
 	}
 }
 
@@ -276,7 +275,7 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 	// The heading is the first field read back, and the mark is what the card
 	// is from now on.
 	if !strings.Contains(content, "## Vicuña ^") {
-		t.Errorf("the card stands under the heading %q", content)
+		t.Errorf("card heading = %q, unexpected", content)
 	}
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if read.Total != 3 || read.Cards[2].Stencil != "Animal" {
@@ -368,7 +367,7 @@ func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
 		t.Fatalf("the deck was written as %q", content)
 	}
 	if strings.Index(content, "Vicuña") > strings.Index(content, "# Others") {
-		t.Errorf("the card asked for the first section stands under the second: %q", content)
+		t.Errorf("expected card in first section before second section: %q", content)
 	}
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})

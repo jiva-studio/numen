@@ -82,8 +82,7 @@ var reviewDay = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 // firstMorning is the instant the history begins at, well inside its review day.
 var firstMorning = time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
 
-// setNow puts the whole window on one instant: the day the counts stand in,
-// the day a session is held to, and the day a curve is drawn for.
+// setNow synchronizes window time, review day calculation, and scenario clocks to now.
 func setNow(api *API, now time.Time) {
 	at := func() time.Time { return now }
 	api.now = at
@@ -94,12 +93,7 @@ func setNow(api *API, now time.Time) {
 	api.scenarios().flash.GetReviewDays = api.scenarios().flash.GetReviewDays.WithDay(reviewDay).WithNow(at)
 }
 
-// runDays sits down to the vault on each of as many days running.
-//
-// It is the history a person leaves behind: days finished and days given up on
-// part way, days missed altogether, card faces at every stage of being learned,
-// and answer times the projections are costed from. A day nobody sat to leaves
-// its cards owed, which is the backlog the budgets then have to carry.
+// runDays simulates consecutive daily review sessions across a vault.
 func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 	t.Helper()
 	for day := range days {
@@ -135,7 +129,7 @@ func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 	}
 }
 
-// getVaultCount is what the front door says about one vault.
+// getVaultCount returns the cards due summary for one vault.
 func getVaultCount(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range front(t, api).GetVaults() {
@@ -146,15 +140,15 @@ func getVaultCount(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
 			return one
 		}
 	}
-	t.Fatalf("the front door does not hold the vault %s", string(v.ID))
+	t.Fatalf("summary does not contain vault %s", string(v.ID))
 	return nil
 }
 
 // countOfferedCards returns how many card faces the deck screen puts in front of a person under
 // one preset: the cards of every deck that preset schedules, owed and new.
-func countOfferedCards(said *v1.VaultCardsDue, decks []string) int {
+func countOfferedCards(due *v1.VaultCardsDue, decks []string) int {
 	out := 0
-	for _, one := range said.GetDecks() {
+	for _, one := range due.GetDecks() {
 		for _, deck := range decks {
 			if one.GetDeck() == deck {
 				out += int(one.GetDue()) + int(one.GetNew())
@@ -164,7 +158,7 @@ func countOfferedCards(said *v1.VaultCardsDue, decks []string) int {
 	return out
 }
 
-// asWritten is the preset at path as its file now stands.
+// asWritten reads the preset configuration stored at path.
 func asWritten(t *testing.T, api *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
 	found, err := api.scenarios().flash.Presets.Read(t.Context(), v, path)
@@ -245,8 +239,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 			p := asWritten(t, api, v, "Sanskrit.md")
 			p.Goal = one.goal
 			for _, at := range one.places {
-				// The control is moved to a place of the grid and release, so
-				// the preset the decks are held to is the one the curve drew.
+				// Apply curve configuration to preset.
 				curveResp := getCurve(t, api, v, "Sanskrit.md", p)
 				if len(curveResp.GetGrid()) <= at {
 					t.Fatalf("the curve has %d places", len(curveResp.GetGrid()))
@@ -280,13 +273,13 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	curveResp := getCurve(t, api, v, "Sanskrit.md", asWritten(t, api, v, "Sanskrit.md"))
 	want := facesIn["decks/Verbs.md"] + facesIn["decks/Nouns.md"]
 	if int(curveResp.GetDecks()) != len(underSanskrit) || int(curveResp.GetCards()) != want {
-		t.Errorf("the curve stands over %d decks and %d card faces, want %d and %d",
+		t.Errorf("curve deck count = %d, face count = %d, want %d and %d",
 			curveResp.GetDecks(), curveResp.GetCards(), len(underSanskrit), want)
 	}
 }
 
-// sole are the decks that are the only deck of their preset, so the budget the
-// front door divided among the decks of that preset went to this one.
+// sole are the decks that are the only deck of their preset, so the daily budget
+// allocated to that preset went to this deck.
 var sole = map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 
 // What each deck offers adds up to what the vault offers, and a session on one
@@ -339,8 +332,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	}
 }
 
-// A deck says how much of it was answered in the day holding now, so a deck
-// nobody has answered in today is told apart from one whose day is done.
+// TestADeckReturnsHowMuchOfItWasAnsweredToday verifies answered count metrics per deck.
 func TestADeckReturnsHowMuchOfItWasAnsweredToday(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
@@ -387,15 +379,14 @@ func TestADeckReturnsHowMuchOfItWasAnsweredToday(t *testing.T) {
 	}
 }
 
-// The front door holds each vault once, and each row carries that vault's own
-// count.
-func TestTheFrontDoorContainsEachVaultOnce(t *testing.T) {
+// CardsDue summary includes each vault once.
+func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 	api, target := newAPI(t, lived, deck)
 	setNow(api, firstMorning)
 
 	rows := front(t, api).GetVaults()
 	if len(rows) != len(target) {
-		t.Fatalf("the front door holds %d rows for %d vaults", len(rows), len(target))
+		t.Fatalf("summary contains %d rows for %d vaults", len(rows), len(target))
 	}
 	observed := make(map[string]int, len(rows))
 	for _, one := range rows {
@@ -403,7 +394,7 @@ func TestTheFrontDoorContainsEachVaultOnce(t *testing.T) {
 	}
 	for _, v := range target {
 		if observed[string(v.ID)] != 1 {
-			t.Errorf("the vault %s stands on the front door %d times", string(v.ID), observed[string(v.ID)])
+			t.Errorf("vault %s count = %d", string(v.ID), observed[string(v.ID)])
 		}
 	}
 

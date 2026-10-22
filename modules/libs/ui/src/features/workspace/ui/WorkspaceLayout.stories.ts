@@ -228,13 +228,13 @@ const AWAY = [-10, -6, -3, 0, 3, 6, 10]
  * cursor it draws there. The line is taken a quarter of the way along the
  * handle, clear of the handles a branch further in lays across this one.
  */
-async function measureAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<readonly Caught[]> {
+async function measureAcross(handle: HTMLElement, axis: 'x' | 'y'): Promise<readonly Caught[]> {
   const box = getRect(handle)
   const found: Caught[] = []
 
   for (const away of AWAY) {
     const at =
-      along === 'x'
+      axis === 'x'
         ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
         : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
 
@@ -251,7 +251,7 @@ const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <=
 function getFurthest(places: readonly Caught[]): Position {
   const target = places.filter((place) => place.cursor)
   const edge = target[target.length - 1]?.at
-  if (!edge) throw new Error('the handle caught nothing')
+  if (!edge) throw new Error('missing handle edge position')
   return edge
 }
 
@@ -355,8 +355,8 @@ export const DividesTheWorkspace: Story = {
     await expect(panes).toHaveLength(3)
 
     // One of them runs the whole width along the foot.
-    const alongPanes = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
-    await expect(alongPanes).toHaveLength(1)
+    const fullWidthPanes = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
+    await expect(fullWidthPanes).toHaveLength(1)
   },
 }
 

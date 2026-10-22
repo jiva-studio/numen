@@ -12,7 +12,7 @@ import type { Flow, Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
 import { useBookTurns } from './turns'
 
-const FLOW: Flow = { along: 4000, width: 1000, gap: 0, columns: 1 }
+const FLOW: Flow = { contentWidth: 4000, width: 1000, gap: 0, columns: 1 }
 const MARKS: readonly Mark[] = [
   { at: 0, x: 0 },
   { at: 100, x: 1000 },

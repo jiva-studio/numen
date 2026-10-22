@@ -19,7 +19,7 @@ A line carries a rectangle on a page. A cue carries two times on a clock. Neithe
 
 The model is given prose with the lines numbered inside it, and it must answer with those numbers. A number is a name, not a position: it says which line, and nothing about where that line stands. The coordinates are reattached afterwards from what was originally read or transcribed, by the number.
 
-This is what makes a correction safe to apply. Putting a line's letters right leaves its words inside that line, so the rectangle it was read at and the times it was spoken between hold unchanged. A reply that renames a line, or that moves a word from one line into another, has broken the one thing the coordinates depend on, and it is refused whole.
+This is what makes a correction safe to apply. Putting a line's letters right leaves its words inside that line, so the rectangle it was read at and the timestamp interval remain unchanged. A reply that renames a line, or that moves a word from one line into another, has broken the one thing the coordinates depend on, and it is rejected entirely.
 
 ```mermaid
 graph TD
@@ -60,7 +60,7 @@ The reply is only the lines that changed. A batch the proofreader would leave al
 866|In the Gauḍīya Vaiṣṇava Abhidhāna, it is
 ```
 
-A row whose number runs into a word is not a row. Where no bar tells the two apart and the line as read opens with the digits the row opens with, the row's number was left out and the batch is refused.
+A row whose number runs into a word is not a row. Where no bar tells the two apart and the line as read opens with the digits the row opens with, the row's number was left out and the batch is rejected.
 
 ## What a transcript says it holds
 
@@ -87,9 +87,9 @@ None of them asks whether a correction is right.
 - **A line two rows both answer for refuses the batch.** A line stands in one answer, so the words of a line are in that answer and in no other.
 - **Letters that moved further than `max_edit_distance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case come off both sides, and the Levenshtein distance between what is left is taken as a share of the longer. 0.30 where the file names nothing.
 
-Two more corrections are dropped without refusing the batch: one saying what the line already says, and one that only puts something wordless in front of what the line already says.
+Two more corrections are dropped without rejecting the batch: one saying what the line already says, and one that only puts something wordless in front of what the line already says.
 
-A refused batch is left as it was read or transcribed. So is a batch nothing came back about. That is the ordinary outcome and not a failure.
+A rejected batch is left as it was read or transcribed. So is a batch nothing came back about. That is the ordinary outcome and not a failure.
 
 ## The two instructions
 
@@ -101,7 +101,7 @@ A transcript is corrected for what a machine took wrongly: a word for its homoph
 
 Both instructions carry the same rules about the answer: a line is answered for once, nothing is added that the page does not print or the recording does not say, the marks are never written back, and a line to leave alone is a line not answered with.
 
-A printed line holds its words: on a page they stay where they were printed. Speech runs on past the stretch it was cut into, so a transcript is also answered for in runs, written as the first line of the run and the last: `12-14|the whole sentence, put right`. The lines of a run become one cue, spanning the moments they were spoken between. A line where one sentence ends and the next begins stands in the run of both, and that run is answered with every sentence it covers.
+A printed line holds its words: on a page they stay where they were printed. Speech runs on past the stretch it was cut into, so a transcript is also answered for in runs, written as the first line of the run and the last: `12-14|the whole sentence, put right`. The lines of a run become one cue, spanning their recorded time interval. A line where one sentence ends and the next begins stands in the run of both, and that run is answered with every sentence it covers.
 
 ## Who does it
 
@@ -158,9 +158,9 @@ In the recording tab the transcript is text, in the same editor a note is writte
 
 It is read-only while the recording is still being listened to and while proofreading is running. The words are moving underneath, and what a person typed into a line a run is about to rewrite would be lost. When both are done, the text is editable and a save writes `.corrected.vtt`.
 
-**Proofread transcript** stands in the menu at the end of the player strip, and asks for the transcript in front to be put right now. It is offered where the recording has a transcript, where no run is going over it, and where the settings name a profile for speech; a run asked for this way is the run `automatically` would have started, and reports itself in the same line of the work behind the window.
+**Proofread transcript** appears in the menu at the end of the player strip, and asks for the transcript in front to be put right now. It is offered where the recording has a transcript, where no run is going over it, and where the settings name a profile for speech; a run asked for this way is the run `automatically` would have started, and reports itself in the same line of the work behind the window.
 
-**Proofread document** stands in the document viewer toolbar, allowing on-demand proofreading of recognized PDF or scanned pages. A fingerprint check reuses existing corrections when the underlying source has not changed.
+**Proofread document** appears in the document viewer toolbar, allowing on-demand proofreading of recognized PDF or scanned pages. A fingerprint check reuses existing corrections when the underlying source has not changed.
 
 Asking always answers in a sentence, because a person who pressed it is owed one. The run begins, or it says what it found instead: the transcript has already been put right, the words were written by hand, another run holds the recording, or nothing has been transcribed. The answer comes back before the work is over — what a run settles before it puts its first question to the proofreader is a few reads off the disk, and that is all the asking waits for. Where `automatically` is on, every transcript has already been put right, so this is the answer a person will usually get.
 

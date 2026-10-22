@@ -139,7 +139,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		return nil, err
 	}
 
-	watching, stop := context.WithCancel(o.under)
+	watching, stop := context.WithCancel(o.ctx)
 	recognising := o.made.OpenRecognitionWorker(watching, o.tasks, o.models)
 	sources := o.made.GetSourceQueries()
 

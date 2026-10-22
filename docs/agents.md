@@ -1,6 +1,6 @@
 # What the panel's agent can reach
 
-A person types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what it is refused.
+A person types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what is restricted.
 
 ## What the agent is given
 
@@ -12,11 +12,11 @@ This vault's tools are approved ahead of the run, as `mcp__numen__*`, and nothin
 
 The working directory is the vault.
 
-## What is refused
+## What is restricted
 
-Hooks, skills, standing instructions, plugins and custom agents are refused by default: the sources of configuration the agent may read are named, and by default the list is empty.
+Hooks, skills, standing instructions, plugins and custom agents are blocked by default: the sources of configuration the agent may read are named, and by default the list is empty.
 
-`agent.claude.reads_hooks_and_skills` gives back the person's own, and only theirs. What a vault itself carries is refused in either mode: a vault is a folder that arrives from elsewhere — synced, cloned, shared, restored — and a configuration file inside one names commands for this machine to run.
+`agent.claude.reads_hooks_and_skills` gives back the person's own, and only theirs. What a vault itself carries is blocked in either mode: a vault is a folder that arrives from elsewhere — synced, cloned, shared, restored — and a configuration file inside one names commands for this machine to run.
 
 The sources are named one by one. This vault's own tools arrive on a command line and are read as a customisation like any other.
 
@@ -143,6 +143,6 @@ Where `command` is empty, the path is asked first, then the folders the command 
 
 **An agent whose tools did not arrive answers anyway.** The stream says the server was unreachable, the run continues, and the reason is reported after the answer. The posture intended is fail-closed and what is implemented is answer-then-explain.
 
-**A file the agent leaves in the vault is read by the person's own terminal.** The panel's agent reads the vault's instructions in neither mode. A note it writes stays in the folder, though, and the person's own agent, started in that folder, reads what is there. Where a note may be written is bounded to places a note may live and this application's own folders, so another tool's dot-folder is refused; the vault's root is not, and a file named for what another tool reads can land in it.
+**A file the agent leaves in the vault is read by the person's own terminal.** The panel's agent reads the vault's instructions in neither mode. A note it writes stays in the folder, though, and the person's own agent, started in that folder, reads what is there. Where a note may be written is bounded to places a note may live and this application's own folders, so another tool's dot-folder is blocked; the vault's root is not, and a file named for what another tool reads can land in it.
 
-**Two hand-maintained lists track somebody else's program.** The nine refused variables and the named built-in tools are both lists, and the program they filter changes without asking. Each release is a thing to check, and nothing checks it automatically.
+**Two hand-maintained lists track somebody else's program.** The nine filtered environment variables and the named built-in tools are both lists, and the program they filter changes without asking. Each release is a thing to check, and nothing checks it automatically.

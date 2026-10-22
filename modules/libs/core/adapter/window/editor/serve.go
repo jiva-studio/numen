@@ -57,13 +57,11 @@ type Installation struct {
 	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.
 	models *run.Lock
-	// under is what every vault's passes run under.
-	under context.Context
+	// ctx is the root context for vault sessions.
+	ctx context.Context
 	// indexer brings the index of the vault in the window level with it.
 	indexer *indexing.Worker
-	// embedderError says why this installation embeds nothing, when it does not. It
-	// stands in the list of what is being done, and is put back there when a
-	// vault going takes its own entries out.
+	// embedderError records the error if embedding model initialization failed.
 	embedderError error
 	// stopEmbedder gives back the models the installation is holding.
 	stopEmbedder func() error
@@ -75,27 +73,12 @@ type Installation struct {
 // nothing.
 var errNoVault = errors.New("the window has no vault")
 
-// Open stands the window on what it was given: the vault it shows, the
-// questions it may ask, and a scan running behind it.
-//
-// made is every piece of the installation this window serves. A window that
-// cannot be opened gives the index back.
-//
-// asked is the vault a person named — a name, a path or an identity. Naming
-// none opens the one shown last. An installation holding no vault opens a
-// window standing on nothing, and a person makes or adds one there.
-//
-// The scan is started and left running, and a note is answerable before it
-// ends.
-//
-// Going takes two steps. RequestFlush is called while the window is still open:
-// the clients write what only they hold and the writes in the air land.
-// Closing then stops the scan, waits for it, and closes the database, in that
-// order.
-func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Installation, error) {
+// Open initializes the editor window session for the specified vault.
+// When targetVault is empty, opens the most recently viewed vault.
+func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer) (*Installation, error) {
 	registry := made.GetRegistry()
 
-	first, err := vaults.NewGetVaultToShow(registry).Execute(asked)
+	first, err := vaults.NewGetVaultToShow(registry).Execute(targetVault)
 	if err != nil {
 		_ = made.CloseIndex()
 		return nil, err
@@ -113,9 +96,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	embedder, asking, closeEmbedder, why := made.OpenEmbedders(ctx, tasks)
 	if why != nil {
 		fmt.Fprintf(out, "not embedding: %v\n", why)
-		// A provider that made no model is an installation with no vectors for
-		// as long as the window is open. It stands in the list under what
-		// stopped it.
+		// Record indexing task failure when embedding provider initialization fails.
 		tasks.Set(run.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
 	}
 	if closeEmbedder == nil {
@@ -148,7 +129,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		tasks:         tasks,
 		models:        &run.Lock{},
 		out:           out,
-		under:         ctx,
+		ctx:           ctx,
 		indexer:       indexer,
 		embedderError: why,
 		stopEmbedder:  closeEmbedder,
@@ -222,13 +203,13 @@ func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurren
 // is Notes.Drawing and is asked for there.
 func (o *Installation) Notes() note.Scenarios { return o.notes }
 
-// DraftingLocation locates where a stretch stands in a note as UTF-16 count offsets.
-func (o *Installation) DraftingLocation(ctx context.Context, path, stood string) (int, int, bool) {
+// DraftingLocation locates where target text occurs in a note as UTF-16 count offsets.
+func (o *Installation) DraftingLocation(ctx context.Context, path, text string) (int, int, bool) {
 	contents, err := o.notes.Read.Execute(ctx, o.GetCurrentVault(), path)
 	if err != nil || contents.Outcome != note.Ok {
 		return 0, 0, false
 	}
-	at, _ := markdown.FindSpans(contents.Body, stood)
+	at, _ := markdown.FindSpans(contents.Body, text)
 	if len(at) != 1 {
 		return 0, 0, false
 	}
@@ -292,17 +273,14 @@ const (
 	levellingTheIndex = "levelling the index"
 )
 
-// SayTheme puts what dressing the window had to tell a person in the list of
-// what is being done. A theme the settings name that the catalogue has not is
-// said there.
-func (o *Installation) SayTheme(said string) {
-	o.State.reportTask(run.Task{ID: wearingATheme, Title: "Wearing a theme", Error: said})
+// SayTheme records a theme warning task.
+func (o *Installation) SayTheme(message string) {
+	o.State.reportTask(run.Task{ID: wearingATheme, Title: "Wearing a theme", Error: message})
 }
 
-// Report puts what reading the settings had to tell a person in the list of
-// what is being done, which is where a person is.
-func (o *Installation) Report(said []string) {
-	for at, one := range said {
+// Report records configuration messages as tasks.
+func (o *Installation) Report(messages []string) {
+	for at, one := range messages {
 		o.State.reportTask(run.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),
 			Title: "Reading the settings",
@@ -317,8 +295,7 @@ func (o *Installation) Report(said []string) {
 func createWindow(
 	made Assembly, tasks *run.Tasks, embedder port.Embedder,
 ) (*State, *Services, *viewer) {
-	// Where a passage sits on the page is asked of whichever producer made the
-	// text it is a place in, which is what the index records.
+	// highlight resolves passage spans and text locations from indexed sources.
 	highlight := source.NewHighlight(
 		made.GetVaultReaders(), made.GetSourceQueries(), made.GetDerivedStores())
 	highlight.Documents = made.GetTextExtractor()
