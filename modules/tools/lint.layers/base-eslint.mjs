@@ -558,6 +558,38 @@ const numenPlugin = {
         }
       },
     },
+
+    'no-double-type-assertion': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Forbid fake double type assertions (e.g. as unknown as T, as any as T) to prevent AI type-safety bypasses',
+        },
+        messages: {
+          forbiddenDoubleAssertion:
+            'Double type assertion ("as unknown as T" / "as any as T") is forbidden. Fix the underlying type signature instead of forcing a cast.',
+        },
+      },
+      create(context) {
+        return {
+          TSAsExpression(node) {
+            if (node.expression?.type === 'TSAsExpression') {
+              const innerType = node.expression.typeAnnotation?.type
+              if (
+                innerType === 'TSUnknownKeyword' ||
+                innerType === 'TSAnyKeyword'
+              ) {
+                context.report({
+                  node,
+                  messageId: 'forbiddenDoubleAssertion',
+                })
+              }
+            }
+          },
+        }
+      },
+    },
   },
 }
 
@@ -630,6 +662,15 @@ export function createBaseConfig(dirname, options = {}) {
         'max-params': ['error', 4],
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
+        'numen/no-double-type-assertion': 'error',
+        '@typescript-eslint/no-explicit-any': 'error',
+        '@typescript-eslint/consistent-type-assertions': [
+          'error',
+          {
+            assertionStyle: 'as',
+            objectLiteralTypeAssertions: 'never',
+          },
+        ],
       },
     },
 
@@ -750,6 +791,8 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/handler-naming': 'off',
         'numen/max-composable-return-properties': 'off',
         'numen/enforce-vue-reactivity-in-composable': 'off',
+        'numen/no-double-type-assertion': 'off',
+        '@typescript-eslint/consistent-type-assertions': 'off',
         'max-depth': 'off',
         complexity: 'off',
         'max-params': 'off',

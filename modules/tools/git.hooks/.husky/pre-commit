@@ -33,3 +33,4 @@ PRETTIER_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue|json|css)$' || true)
 if [ -n "$PRETTIER_FILES" ]; then
   npx prettier --check $PRETTIER_FILES || exit 1
 fi
+
