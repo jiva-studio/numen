@@ -364,6 +364,200 @@ const numenPlugin = {
         }
       },
     },
+
+    'max-composable-return-properties': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Enforce maximum number of properties returned from a composable to avoid God-composables',
+        },
+        messages: {
+          tooManyReturnedProperties:
+            'Composable "{{name}}" returns {{count}} properties (max: {{max}}). Decompose into smaller focused composables.',
+        },
+        schema: [
+          {
+            type: 'object',
+            properties: {
+              max: { type: 'integer', minimum: 1 },
+            },
+            additionalProperties: false,
+          },
+        ],
+      },
+      create(context) {
+        const max = context.options[0]?.max ?? 8
+        const filename = context.filename || ''
+
+        // Check if file is a composable file (e.g. use*.ts) or function is use*
+        function checkReturnObject(node, fnName) {
+          if (!fnName || !/^use[A-Z]/.test(fnName)) return
+          let count = 0
+          for (const prop of node.properties) {
+            if (prop.type === 'Property') {
+              count++
+            } else if (prop.type === 'SpreadElement') {
+              // Spreading another object/state counts as multiple properties (at least 2)
+              count += 2
+            }
+          }
+          if (count > max) {
+            context.report({
+              node,
+              messageId: 'tooManyReturnedProperties',
+              data: { name: fnName, count, max },
+            })
+          }
+        }
+
+        return {
+          'FunctionDeclaration:exit'(node) {
+            const fnName = node.id?.name
+            if (!fnName || !/^use[A-Z]/.test(fnName)) return
+            const body = node.body
+            if (!body || body.type !== 'BlockStatement') return
+            for (const stmt of body.body) {
+              if (
+                stmt.type === 'ReturnStatement' &&
+                stmt.argument?.type === 'ObjectExpression'
+              ) {
+                checkReturnObject(stmt.argument, fnName)
+              }
+            }
+          },
+
+          'VariableDeclarator:exit'(node) {
+            const fnName = node.id?.name
+            if (!fnName || !/^use[A-Z]/.test(fnName)) return
+            const init = node.init
+            if (!init) return
+            if (
+              init.type === 'ArrowFunctionExpression' ||
+              init.type === 'FunctionExpression'
+            ) {
+              if (init.body.type === 'ObjectExpression') {
+                checkReturnObject(init.body, fnName)
+              } else if (init.body.type === 'BlockStatement') {
+                for (const stmt of init.body.body) {
+                  if (
+                    stmt.type === 'ReturnStatement' &&
+                    stmt.argument?.type === 'ObjectExpression'
+                  ) {
+                    checkReturnObject(stmt.argument, fnName)
+                  }
+                }
+              }
+            }
+          },
+        }
+      },
+    },
+
+    'enforce-vue-reactivity-in-composable': {
+      meta: {
+        type: 'suggestion',
+        docs: {
+          description:
+            'Enforce that any use* function contains Vue reactivity primitives, or rename to create*',
+        },
+        messages: {
+          missingReactivity:
+            'Function "{{name}}" starts with "use" but contains no Vue reactivity primitives (ref, computed, watch, etc.). Rename to create{{suffix}} or pure service.',
+        },
+      },
+      create(context) {
+        const REACTIVITY_NAMES = new Set([
+          'ref',
+          'shallowRef',
+          'computed',
+          'watch',
+          'watchEffect',
+          'watchSyncEffect',
+          'watchPostEffect',
+          'reactive',
+          'shallowReactive',
+          'toRef',
+          'toRefs',
+          'toValue',
+          'onMounted',
+          'onUnmounted',
+          'onBeforeMount',
+          'onBeforeUnmount',
+          'onUpdated',
+          'onBeforeUpdate',
+          'onScopeDispose',
+          'provide',
+          'inject',
+          'useTemplateRef',
+        ])
+
+        function checkFunction(node, name) {
+          if (!name || !/^use[A-Z]/.test(name)) return
+          let hasReactivity = false
+
+          // Traverse descendants to find reactivity calls or other use* calls
+          function inspect(n) {
+            if (!n || hasReactivity) return
+            if (n.type === 'CallExpression') {
+              let calleeName = ''
+              if (n.callee.type === 'Identifier') {
+                calleeName = n.callee.name
+              } else if (
+                n.callee.type === 'MemberExpression' &&
+                n.callee.property.type === 'Identifier'
+              ) {
+                calleeName = n.callee.property.name
+              }
+              if (
+                REACTIVITY_NAMES.has(calleeName) ||
+                /^use[A-Z]/.test(calleeName)
+              ) {
+                hasReactivity = true
+                return
+              }
+            }
+            for (const key of Object.keys(n)) {
+              if (key === 'parent') continue
+              const child = n[key]
+              if (Array.isArray(child)) {
+                for (const c of child) {
+                  if (c && typeof c === 'object' && c.type) inspect(c)
+                }
+              } else if (child && typeof child === 'object' && child.type) {
+                inspect(child)
+              }
+            }
+          }
+
+          inspect(node.body)
+
+          if (!hasReactivity) {
+            const suffix = name.slice(3)
+            context.report({
+              node: node.id || node,
+              messageId: 'missingReactivity',
+              data: { name, suffix },
+            })
+          }
+        }
+
+        return {
+          FunctionDeclaration(node) {
+            if (node.id) checkFunction(node, node.id.name)
+          },
+          VariableDeclarator(node) {
+            if (
+              node.id?.type === 'Identifier' &&
+              (node.init?.type === 'ArrowFunctionExpression' ||
+                node.init?.type === 'FunctionExpression')
+            ) {
+              checkFunction(node.init, node.id.name)
+            }
+          },
+        }
+      },
+    },
   },
 }
 
@@ -434,6 +628,8 @@ export function createBaseConfig(dirname, options = {}) {
         'max-depth': ['error', 3],
         complexity: ['error', 12],
         'max-params': ['error', 4],
+        'numen/max-composable-return-properties': ['error', { max: 8 }],
+        'numen/enforce-vue-reactivity-in-composable': 'error',
       },
     },
 
@@ -485,6 +681,8 @@ export function createBaseConfig(dirname, options = {}) {
         ],
         'vue/no-side-effects-in-computed-properties': 'error',
         'vue/no-async-in-computed-properties': 'error',
+        'vue/no-watch-after-await': 'error',
+        'vue/no-lifecycle-after-await': 'error',
         'vue/no-ref-as-operand': 'error',
         'vue/no-useless-v-bind': 'error',
         'vue/no-lone-template': 'error',
@@ -550,6 +748,8 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/vue-script-sections': 'off',
         'numen/boolean-prop-naming': 'off',
         'numen/handler-naming': 'off',
+        'numen/max-composable-return-properties': 'off',
+        'numen/enforce-vue-reactivity-in-composable': 'off',
         'max-depth': 'off',
         complexity: 'off',
         'max-params': 'off',
