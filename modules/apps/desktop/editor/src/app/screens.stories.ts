@@ -715,7 +715,7 @@ const createPage = (page: number): string => {
  * off a scan is highlighted where it is located on the paper, so a passage is a
  * rectangle a line at a time and not a block.
  */
-const overLine = (at: number, ends: number) => ({
+const overLine = (pos: number, ends: number) => ({
   minX: (MARGIN - 4) / PAGE.width,
   maxX: (MARGIN + ends) / PAGE.width,
   minY: (FIRST + at * LEADING - 22) / PAGE.height,

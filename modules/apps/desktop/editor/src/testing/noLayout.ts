@@ -15,7 +15,7 @@ const createEmptyRect = (): DOMRect => new DOMRect(0, 0, 0, 0)
 /** An empty list of boxes, in the shape the DOM hands one over in. */
 const noBoxes = (): DOMRectList => {
   const list: DOMRect[] = []
-  const item = (at: number): DOMRect | null => list[at] ?? null
+  const item = (pos: number): DOMRect | null => list[pos] ?? null
   return Object.assign(list, { item }) as unknown as DOMRectList
 }
 

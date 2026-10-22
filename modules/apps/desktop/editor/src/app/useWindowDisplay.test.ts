@@ -34,7 +34,7 @@ const resolved = {
 function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
   const request: string[] = []
   return {
-    asked: request,
+    requested: request,
     neighbourhood: async (path) => {
       request.push(path)
       return answer(path)

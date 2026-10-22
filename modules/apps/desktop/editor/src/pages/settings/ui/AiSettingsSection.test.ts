@@ -78,8 +78,8 @@ const createSection = (
   return { recordedWrites: content, secrets, wrapper }
 }
 
-const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: number) =>
-  pick(wrapper.findAllComponents({ name: 'Select' }), at).props('choices') as readonly {
+const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], pos: number) =>
+  pick(wrapper.findAllComponents({ name: 'Select' }), pos).props('choices') as readonly {
     id: string
     text: string
   }[]

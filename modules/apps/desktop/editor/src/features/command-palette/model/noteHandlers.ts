@@ -41,7 +41,7 @@ export const navigateToPath = async (
   words: AnswerWords,
 ): Promise<void> => {
   if (!path) return on.writeMessage(words.nowhere, 'caution')
-  await on.goes.travel(path)
+  await on.navigator.travel(path)
 }
 
 export interface CreateNoteOptions {

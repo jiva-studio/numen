@@ -90,7 +90,7 @@ function onOpen(id: string) {
 
 function onKeyDown(event: KeyboardEvent) {
   if (event.defaultPrevented || !welcoming.value) return
-  const at = getVaultForKey(event, onList.value.length)
+  const pos = getVaultForKey(event, onList.value.length)
   const one = at === null ? undefined : onList.value[at]
   if (!one) return
   event.preventDefault()

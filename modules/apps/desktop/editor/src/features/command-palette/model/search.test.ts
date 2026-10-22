@@ -64,17 +64,17 @@ const flushPromises = async () => {
   for (let turn = 0; turn < 6; turn += 1) await Promise.resolve()
 }
 
-const createNameMatch = (over: Partial<NameMatch> = {}): NameMatch => ({
+const createNameMatch = (override: Partial<NameMatch> = {}): NameMatch => ({
   path: 'notes/entropy.md',
   title: 'Entropy',
   heading: '',
   line: -1,
   at: [{ from: 0, to: 3 }],
   type: 'note',
-  ...over,
+  ...override,
 })
 
-const passage = (over: Partial<Passage> = {}): Passage => ({
+const passage = (override: Partial<Passage> = {}): Passage => ({
   path: 'notes/heat.md',
   title: 'Heat engines',
   text: 'no engine beats a reversible one',
@@ -85,7 +85,7 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   length: 0,
   line: 0,
   at: [{ from: 3, to: 9 }],
-  ...over,
+  ...override,
 })
 
 /** The group under one identity, from what the palette is drawing now. */
@@ -378,8 +378,8 @@ describe('what a key reaches, per kind of thing found', () => {
     vault.mode('words')?.answer([passage()])
     await flushPromises()
 
-    const getActions = (group: string, at: number) =>
-      (palette.groups.value.find((one) => one.id === group)?.items[at]?.actions ?? []).map(
+    const getActions = (group: string, pos: number) =>
+      (palette.groups.value.find((one) => one.id === group)?.items[pos]?.actions ?? []).map(
         (one) => one.id,
       )
 

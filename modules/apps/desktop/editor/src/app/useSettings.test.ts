@@ -65,7 +65,7 @@ describe('the settings as they are put together', () => {
 
   it('puts the appearance away when it is put away', () => {
     const { settings } = createSettings()
-    const close = vi.spyOn(settings.dressed, 'close')
+    const close = vi.spyOn(settings.appearance, 'close')
 
     settings.close()
 
@@ -166,7 +166,7 @@ describe('the lists the palette offers for a setting', () => {
 
   it('previews what the keyboard relies on in an appearance list, and nowhere else', () => {
     const { settings } = createSettings()
-    const preview = vi.spyOn(settings.dressed, 'previewItem').mockImplementation(vi.fn())
+    const preview = vi.spyOn(settings.appearance, 'previewItem').mockImplementation(vi.fn())
 
     settings.kept.previewItem('syncing', 'off')
     settings.kept.previewItem('appearance', 'preset:dracula')
@@ -180,17 +180,17 @@ describe('the settings tab', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
 
-    expect(installation.themes).toBe(settings.dressed.list)
-    expect(installation.applied).toBe(settings.dressed.applied)
-    expect(installation.mode).toBe(settings.dressed.mode)
-    expect(installation.isPinned).toBe(settings.dressed.isPinned)
-    expect(installation.sizes).toBe(settings.dressed.sized)
-    expect(installation.bounds).toBe(settings.dressed.bounds)
+    expect(installation.themes).toBe(settings.appearance.list)
+    expect(installation.applied).toBe(settings.appearance.applied)
+    expect(installation.mode).toBe(settings.appearance.mode)
+    expect(installation.isPinned).toBe(settings.appearance.isPinned)
+    expect(installation.sizes).toBe(settings.appearance.sized)
+    expect(installation.bounds).toBe(settings.appearance.bounds)
   })
 
   it('chooses an appearance through the palette’s own choice', () => {
     const { settings } = createSettings()
-    const choose = vi.spyOn(settings.dressed, 'chooseItem').mockResolvedValue()
+    const choose = vi.spyOn(settings.appearance, 'chooseItem').mockResolvedValue()
 
     settings.configured.state.installation.choose('preset:dracula')
 

@@ -22,7 +22,7 @@ const vault = (stands: Record<string, FileKind> = {}) => {
       return found
     },
   }
-  return { core, asked: request }
+  return { core, requested: request }
 }
 
 const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
@@ -148,7 +148,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Animals.md')
 
-    expect(one.asked).toStrictEqual([['Animals.md']])
+    expect(one.requested).toStrictEqual([['Animals.md']])
   })
 
   it('passes an editor an empty title where the caller gave none', async () => {
@@ -298,7 +298,7 @@ describe('a file just made here', () => {
     tabOpeners.openNewFile('Animals.md', 'Animals', 'deck')
 
     expect(activeEditors).toStrictEqual(['deck Animals.md Animals here —'])
-    expect(one.asked).toStrictEqual([])
+    expect(one.requested).toStrictEqual([])
   })
 })
 

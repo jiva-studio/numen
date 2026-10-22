@@ -31,7 +31,7 @@ export function useWindowNotices({
       state: {
         unwatched: window.unwatched.value,
         unread: window.error.value,
-        lost: window.lost.value || settings.dressed.lost.value,
+        lost: window.lost.value || settings.appearance.lost.value,
         isIndexing: window.isIndexing.value,
         hasNote: window.hasNote.value,
       },

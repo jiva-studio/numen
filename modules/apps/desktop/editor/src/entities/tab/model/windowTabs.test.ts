@@ -17,26 +17,26 @@ import { useWindowTabs } from './windowTabs'
  * A kind that records what it was asked to do, under the names it opened on. A
  * kind that keeps its tabs has something to finish and never lets one go.
  */
-const kind = ({ isKept = false, ...over }: Partial<AnyTabKind> & { isKept?: boolean } = {}) => {
+const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: boolean } = {}) => {
   const openedTab: string[] = []
   const closedPaths: string[] = []
   const observed: string[] = []
   const one: AnyTabKind = {
     kind: 'thing',
-    open: (at: string) => {
-      openedTab.push(at)
-      return { at, title: at || 'a thing' }
+    open: (targetPath: string) => {
+      openedTab.push(targetPath)
+      return { targetPath, title: targetPath || 'a thing' }
     },
     getTitle: (state: { title: string }) => state.title,
     pane: {},
-    onClose: (state: { at: string }) => {
-      closedPaths.push(state.at)
+    onClose: (state: { targetPath: string }) => {
+      closedPaths.push(state.targetPath)
       return !isKept
     },
-    onShow: (state: { at: string }) => {
-      observed.push(state.at)
+    onShow: (state: { targetPath: string }) => {
+      observed.push(state.targetPath)
     },
-    ...over,
+    ...options,
   }
   return { declared: () => one, one, opened: openedTab, closedPaths, seen: observed }
 }
@@ -61,11 +61,11 @@ describe('a tab of a kind', () => {
     expect(thing.opened).toEqual(['Note.md'])
     expect(onScreen(window.layout.value)).toContain(id)
     expect(window.tabs.value).toEqual([{ id, title: 'Note.md' }])
-    expect(window.getTab(id)?.state).toEqual({ at: 'Note.md', title: 'Note.md' })
+    expect(window.getTab(id)?.state).toEqual({ targetPath: 'Note.md', title: 'Note.md' })
   })
 
   it('carries the word its kind gives it, and none where the kind gives none', async () => {
-    const marked = kind({ getMark: (state: { at: string }) => (state.at ? 'unsaved' : undefined) })
+    const marked = kind({ getMark: (state: { targetPath: string }) => (state.targetPath ? 'unsaved' : undefined) })
     const window = notifiedCalls([marked.declared])
 
     const one = await window.openTabOfKind('thing', 'Note.md')
@@ -87,7 +87,7 @@ describe('a tab of a kind', () => {
   })
 
   it('is the tab already open, for a kind whose identity is what it opens on', async () => {
-    const thing = kind({ identity: (at: string) => at })
+    const thing = kind({ identity: (targetPath: string) => targetPath })
     const window = notifiedCalls([thing.declared])
 
     const one = await window.openTabOfKind('thing', 'Note.md')
@@ -98,8 +98,8 @@ describe('a tab of a kind', () => {
   })
 
   it('is a tab of its own where another kind names one after the same thing', async () => {
-    const thing = kind({ identity: (at: string) => at })
-    const other = kind({ kind: 'other', identity: (at: string) => at })
+    const thing = kind({ identity: (targetPath: string) => targetPath })
+    const other = kind({ kind: 'other', identity: (targetPath: string) => targetPath })
     const window = notifiedCalls([thing.declared, other.declared])
 
     const one = await window.openTabOfKind('thing', 'Note.md')
@@ -169,7 +169,7 @@ describe('a tab that closes', () => {
     expect(onScreen(window.layout.value)).toContain(id)
   })
 
-  it('goes when the kind that took it says it is done', async () => {
+  it('closes when the kind that took it says it is done', async () => {
     const heldKind = kind({ isKept: true })
     const window = notifiedCalls([heldKind.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -238,7 +238,7 @@ describe('the tab the person is looking at', () => {
     expect(window.handle.front()).toEqual({
       id: two,
       kind: 'thing',
-      state: { at: 'Two.md', title: 'Two.md' },
+      state: { targetPath: 'Two.md', title: 'Two.md' },
     })
   })
 
@@ -278,9 +278,9 @@ describe('a key struck on the window', () => {
     return {
       took,
       one: kind({
-        onKeyPress: (state: { at: string }, event: KeyboardEvent) => {
+        onKeyPress: (state: { targetPath: string }, event: KeyboardEvent) => {
           if (!event.key.startsWith('Arrow')) return false
-          took.push(`${state.at} ${event.key}`)
+          took.push(`${state.targetPath} ${event.key}`)
           return true
         },
       }),
@@ -289,7 +289,7 @@ describe('a key struck on the window', () => {
 
   const createKeyEvent = (key: string) => new KeyboardEvent('keydown', { key })
 
-  it('goes to the tab of the pane the person is in, and to no other', async () => {
+  it('routes to the tab of the pane the person is in, and to no other', async () => {
     // Two panes are drawn at once, so a tab that listened for itself would have
     // both of them answering the one key.
     const readItem = readTabs()
@@ -303,7 +303,7 @@ describe('a key struck on the window', () => {
     expect(readItem.took).toStrictEqual(['One.epub ArrowRight'])
   })
 
-  it('goes to the other pane once the person is in it', async () => {
+  it('routes to the other pane once the person is in it', async () => {
     const readItem = readTabs()
     const window = notifiedCalls([readItem.one.declared])
     await window.openTabOfKind('thing', 'One.epub')
@@ -352,7 +352,7 @@ describe('the window going', () => {
 
   it('lets a kind that has its own way of going take it, and asks no more', async () => {
     const going: string[] = []
-    const thing = kind({ onDestroy: (state: { at: string }) => going.push(state.at) })
+    const thing = kind({ onDestroy: (state: { at: string }) => going.push(state.targetPath) })
     const window = notifiedCalls([thing.declared])
     await window.openTabOfKind('thing', 'One.md')
 
@@ -367,11 +367,11 @@ describe('reconciling tabs for a path', () => {
   it('closes existing tabs of a different kind for the same path', async () => {
     const noteKind = kind({
       kind: 'note',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const deckKind = kind({
       kind: 'deck',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([noteKind.declared, deckKind.declared])
 
@@ -387,7 +387,7 @@ describe('reconciling tabs for a path', () => {
   it('keeps existing tabs when the kind matches', async () => {
     const noteKind = kind({
       kind: 'note',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([noteKind.declared])
 
@@ -402,11 +402,11 @@ describe('reconciling tabs for a path', () => {
     const plexKind = kind({
       kind: 'plex',
       isTool: true,
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const noteKind = kind({
       kind: 'note',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([plexKind.declared, noteKind.declared])
 
@@ -424,11 +424,11 @@ describe('reconciling tabs for a path', () => {
   it('reconciles and opens the new tab when a file kind changes on reopen', async () => {
     const noteKind = kind({
       kind: 'note',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const deckKind = kind({
       kind: 'deck',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([noteKind.declared, deckKind.declared])
 
@@ -486,7 +486,7 @@ describe('what a tab of a kind holds, requested by kind', () => {
     const id = await window.openTabOfKind('thing', 'Note.md')
 
     expect(window.getTabStateIn(id, 'other')).toBeNull()
-    expect(window.getTabStateIn(id, 'thing')).toEqual({ at: 'Note.md', title: 'Note.md' })
+    expect(window.getTabStateIn(id, 'thing')).toEqual({ targetPath: 'Note.md', title: 'Note.md' })
   })
 })
 
@@ -495,9 +495,9 @@ describe('what a tab watches', () => {
   const watching = () => {
     const stoppedTabs: string[] = []
     const one = kind({
-      open: (at: string) => {
-        onScopeDispose(() => stoppedTabs.push(at))
-        return { at, title: at }
+      open: (targetPath: string) => {
+        onScopeDispose(() => stoppedTabs.push(targetPath))
+        return { targetPath, title: targetPath }
       },
     })
     return { stopped: stoppedTabs, one }
@@ -523,7 +523,7 @@ describe('what a tab watches', () => {
     expect(watch.stopped).toEqual(['Note.md'])
   })
 
-  it('is release when the window goes', async () => {
+  it('is released when the window closes', async () => {
     const watch = watching()
     const window = notifiedCalls([watch.one.declared])
     await window.openTabOfKind('thing', 'Note.md')
@@ -588,16 +588,16 @@ describe('a key struck on the window, offered in turn', () => {
   const offerTab = (takes: string) => {
     const proposed: string[] = []
     const one = kind({
-      onKeyPress: (state: { at: string }) => {
-        proposed.push(state.at)
-        return state.at === takes
+      onKeyPress: (state: { targetPath: string }) => {
+        proposed.push(state.targetPath)
+        return state.targetPath === takes
       },
     })
     return { offered: proposed, one }
   }
   const strike = new KeyboardEvent('keydown', { key: 'a' })
 
-  it('goes to the pane in front, then to the rest from the one the person was last in', async () => {
+  it('routes to the pane in front, then to the rest from the one the person was last in', async () => {
     const offer = offerTab('none')
     const window = notifiedCalls([offer.one.declared])
     const first = await window.openTabOfKind('thing', 'A')
@@ -653,7 +653,7 @@ describe('a key struck on the window, offered in turn', () => {
 })
 
 describe('a tab release', () => {
-  it('goes where its kind has nothing to finish', async () => {
+  it('closes where its kind has nothing to finish', async () => {
     const simpleKind = kind()
     delete simpleKind.one.onClose
     const window = notifiedCalls([simpleKind.declared])
@@ -680,7 +680,7 @@ describe('reconciling tabs for a path, by what a tab relies on', () => {
   it('leaves a tab of another kind alone where it relies on another path', async () => {
     const note = kind({
       kind: 'note',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([note.declared])
     const id = await window.openTabOfKind('note', 'Other.md')
@@ -693,7 +693,7 @@ describe('reconciling tabs for a path, by what a tab relies on', () => {
   it('reads the path from the target where the kind has no open tab', async () => {
     const note = kind({
       kind: 'note',
-      getTarget: (state: { at: string }) => ({ path: state.at }),
+      getTarget: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([note.declared])
     const id = await window.openTabOfKind('note', 'Cards.md')
@@ -707,7 +707,7 @@ describe('reconciling tabs for a path, by what a tab relies on', () => {
     const note = kind({
       kind: 'note',
       getOpenTab: () => ({ path: '' }),
-      getTarget: (state: { at: string }) => ({ path: state.at }),
+      getTarget: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([note.declared])
     const id = await window.openTabOfKind('note', 'Cards.md')
@@ -731,7 +731,7 @@ describe('a tab opened on nothing', () => {
 })
 
 describe('a window going, with kinds that say nothing about it', () => {
-  it('goes without a word to a tab whose kind has neither way of going', async () => {
+  it('closes without a word to a tab whose kind has neither way of going', async () => {
     const closingKind = kind()
     delete closingKind.one.onClose
     const window = notifiedCalls([closingKind.declared])
@@ -755,7 +755,7 @@ describe('reconciling tabs for a path, by what a tab names', () => {
   it('reads the file from the target where it names no path', async () => {
     const note = kind({
       kind: 'note',
-      getTarget: (state: { at: string }) => ({ file: state.at }),
+      getTarget: (state: { targetPath: string }) => ({ file: state.targetPath }),
     })
     const window = notifiedCalls([note.declared])
     const id = await window.openTabOfKind('note', 'Cards.md')
@@ -796,7 +796,7 @@ describe('the registration of a kind', () => {
     dispose()
 
     const id = await window.createTab('thing', 'a')
-    expect(window.getTab(id)?.state).toEqual({ kind: 'thing', at: 'a' })
+    expect(window.getTab(id)?.state).toEqual({ kind: 'thing', targetPath: 'a' })
   })
 
   it('is kept when the disposer of a registration it replaced runs late', async () => {
@@ -841,7 +841,7 @@ describe('a tab of a kind that is not registered', () => {
     const openedTab = await window.createTab('thing', 'b')
 
     expect(openedTab).not.toBe(missing)
-    expect(window.getTab(openedTab)?.state).toEqual({ at: 'b', title: 'b' })
+    expect(window.getTab(openedTab)?.state).toEqual({ targetPath: 'b', title: 'b' })
   })
 })
 
@@ -849,9 +849,9 @@ describe('the identity a kind is told as its tab opens', () => {
   it('is the one the window files the tab under', async () => {
     const provided: string[] = []
     const thing = kind({
-      open: (at: string, id: string) => {
+      open: (targetPath: string, id: string) => {
         provided.push(id)
-        return { at, title: at }
+        return { targetPath, title: targetPath }
       },
     })
     const window = useWindowTabs()
@@ -963,10 +963,10 @@ describe('a tab of a kind moved to a path', () => {
   const walker = (name = 'walker') =>
     kind({
       kind: name,
-      open: (at: string) => ({ at, title: at }),
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
-      navigate: (state: { at: string; title: string }, path: string) => {
-        state.at = path
+      open: (targetPath: string) => ({ targetPath, title: targetPath }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
+      navigate: (state: { targetPath: string; title: string }, path: string) => {
+        state.targetPath = path
       },
     })
 
@@ -982,8 +982,8 @@ describe('a tab of a kind moved to a path', () => {
     const moved = await window.navigateTab('walker', 'Wanted.md')
 
     expect(moved).toBe(first)
-    expect(window.getTab(first)?.state).toMatchObject({ at: 'Wanted.md' })
-    expect(window.getTab(second)?.state).toMatchObject({ at: 'Two.md' })
+    expect(window.getTab(first)?.state).toMatchObject({ targetPath: 'Wanted.md' })
+    expect(window.getTab(second)?.state).toMatchObject({ targetPath: 'Two.md' })
     expect(paneById(window.layout.value.root, window.layout.value.focus)?.active).toBe(first)
   })
 
@@ -993,7 +993,7 @@ describe('a tab of a kind moved to a path', () => {
 
     const id = await window.navigateTab('walker', 'Wanted.md')
 
-    expect(window.getTab(id)?.state).toMatchObject({ at: 'Wanted.md' })
+    expect(window.getTab(id)?.state).toMatchObject({ targetPath: 'Wanted.md' })
   })
 })
 
@@ -1002,14 +1002,14 @@ describe('the tabs standing on a path that went', () => {
     const window = useWindowTabs()
     const fixed = kind({
       kind: 'fixed',
-      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     window.registerKinds([
       kind({
         kind: 'walker',
-        getOpenTab: (state: { at: string }) => ({ path: state.at }),
-        navigate: (state: { at: string }, path: string) => {
-          state.at = path
+        getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
+        navigate: (state: { targetPath: string }, path: string) => {
+          state.targetPath = path
         },
       }).one,
       fixed.one,
@@ -1020,9 +1020,9 @@ describe('the tabs standing on a path that went', () => {
 
     await window.navigateTabsAt('Gone.md', 'Root.md')
 
-    expect(window.getTab(removed)?.state).toMatchObject({ at: 'Root.md' })
-    expect(window.getTab(survivor)?.state).toMatchObject({ at: 'Elsewhere.md' })
-    expect(window.getTab(stationary)?.state).toMatchObject({ at: 'Gone.md' })
+    expect(window.getTab(removed)?.state).toMatchObject({ targetPath: 'Root.md' })
+    expect(window.getTab(survivor)?.state).toMatchObject({ targetPath: 'Elsewhere.md' })
+    expect(window.getTab(stationary)?.state).toMatchObject({ targetPath: 'Gone.md' })
   })
 })
 
@@ -1037,7 +1037,7 @@ describe('text put to the tabs of a kind', () => {
       },
     })
 
-  it('goes to the tab the person was last in, which is put in front', async () => {
+  it('switches to the tab the person was last in, which is put in front', async () => {
     const window = useWindowTabs()
     window.registerKinds([listener().one])
     const first = await window.openTabOfKind('listener')

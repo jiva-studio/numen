@@ -114,7 +114,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     writeSettings([{ at: path, value: write(value) }])
 
   return {
-    held: target,
+    target: target,
     path,
     models,
     plugins,

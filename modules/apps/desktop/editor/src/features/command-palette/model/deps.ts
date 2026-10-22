@@ -135,7 +135,7 @@ export interface VaultContext {
 export interface TabContext {
   /** The open files a command reaches, whichever store holds each. */
   readonly notes: Notes
-  readonly goes: WindowNavigator
+  readonly navigator: WindowNavigator
 }
 
 /** The runs a command asks for, and the ones this build has said it cannot do. */

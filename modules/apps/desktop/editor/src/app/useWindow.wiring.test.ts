@@ -192,7 +192,7 @@ describe('what the window answers about the tab in front', () => {
 
   it('is what the kind of the tab says it remains over', () => {
     const kind = createKind({ file: 'a.md', path: 'a', title: 'A', source: 'src' })
-    front.value = { id: 't1', kind, state: { held: 1 } }
+    front.value = { id: 't1', kind, state: { target: 1 } }
     h.f.vaults.makes.value = new Map([['a.md', { flashcards: true }]])
     const window = useWindow()
 
@@ -207,7 +207,7 @@ describe('what the window answers about the tab in front', () => {
       vault: { id: 'vault' },
       isReady: true,
     })
-    expect(kind.getTarget).toHaveBeenCalledWith({ held: 1 })
+    expect(kind.getTarget).toHaveBeenCalledWith({ target: 1 })
   })
 
   it('has made nothing from a file that nothing was made from', () => {

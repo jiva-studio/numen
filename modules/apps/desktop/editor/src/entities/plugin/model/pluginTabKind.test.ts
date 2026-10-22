@@ -44,7 +44,7 @@ describe('a registration that says what its tabs hold', () => {
   it('opens its tabs itself, under the identity the window gives them', () => {
     const kind = createDeclaredTabKind('md.numen.sample', declare())
 
-    expect(kind.open('Graph.md', 'held:1')).toEqual({ at: 'Graph.md', id: 'held:1', title: '' })
+    expect(kind.open('Graph.md', 'target: 1')).toEqual({ at: 'Graph.md', id: 'target: 1', title: '' })
     expect(kind.kind).toBe('held')
     expect(kind.pluginId).toBe('md.numen.sample')
   })
@@ -108,7 +108,7 @@ describe('the hooks a registration passes over', () => {
 describe('the pane of a declared kind', () => {
   it('draws the component on the state of the tab, outside a shadow root and with nothing else', () => {
     const view = mount(createDeclaredPane('md.numen.sample', Pane), {
-      props: { state: { at: 'Graph.md', id: 'held:1', title: '' } },
+      props: { state: { at: 'Graph.md', id: 'target: 1', title: '' } },
     })
 
     expect(view.find('.held').text()).toBe('Graph.md')
@@ -158,7 +158,7 @@ describe('a declared kind registered through a plugin context', () => {
 
     const [kind] = registered as ReturnType<typeof createDeclaredTabKind>[]
     expect(kind?.isTool).toBe(true)
-    expect(kind?.open('A.md', 'held:1')).toEqual({ at: 'A.md', id: 'held:1', title: 'T' })
+    expect(kind?.open('A.md', 'target: 1')).toEqual({ at: 'A.md', id: 'target: 1', title: 'T' })
     sub.dispose()
     expect(registered).toHaveLength(0)
   })

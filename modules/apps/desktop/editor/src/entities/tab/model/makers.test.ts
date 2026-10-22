@@ -22,7 +22,7 @@ const maker = (
     return error ? { ok: false, error } : { ok: true, value: { path } }
   }
   return {
-    asked: request,
+    requested: request,
     createDeck: (title, folder) => {
       request.push(`deck ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)

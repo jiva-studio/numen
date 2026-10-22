@@ -48,7 +48,7 @@ export interface CommandsDepsOptions {
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   openPreset: (path: string) => Promise<void>
-  dressed: { chooseItem: (item: string) => Promise<void> | void }
+  appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
   nesting: {
     choose: (item: string) => Promise<void> | void

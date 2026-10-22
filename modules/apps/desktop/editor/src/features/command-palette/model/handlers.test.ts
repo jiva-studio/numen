@@ -24,7 +24,7 @@ import { WORDS } from '@/shared/words'
 import { ANSWER_WORDS as words } from '../words'
 
 /** What is in front, which every invocation is carried out over. */
-const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
+const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'plex',
   path: 'physics/Ontology.md',
@@ -34,8 +34,8 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   made: {},
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
-  ...over,
-})
+  ...override,
+  })
 
 /** One vault as the list answers one. */
 const createVault = (id: string, name: string): Vault => ({
@@ -45,13 +45,13 @@ const createVault = (id: string, name: string): Vault => ({
   isMissing: false,
 })
 
-const createRenameResult = (over: Partial<RenamedNote> = {}): RenameResult =>
+const createRenameResult = (override: Partial<RenamedNote> = {}): RenameResult =>
   asValue({
     path: 'physics/Entropy.md',
     title: 'Entropy',
     hasFrontmatter: false,
     moved: null,
-    ...over,
+    ...override,
   })
 
 const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
@@ -61,11 +61,11 @@ const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
   error,
 })
 
-const createRemoveResult = (over: Partial<RemovedNote> = {}): RemoveResult =>
+const createRemoveResult = (override: Partial<RemovedNote> = {}): RemoveResult =>
   asValue({
     trashed: '.trash/Ontology.md',
     dangling: [],
-    ...over,
+    ...override,
   })
 
 /**
@@ -107,7 +107,7 @@ const window = (
   const tones: string[] = []
   /** Every call to the voice, the empty ones and the missing tones included. */
   const calls: [string | undefined, string | undefined][] = []
-  const at = answers.at ?? 'physics/Ontology.md'
+  const targetPath = answers.targetPath ?? answers.at ?? 'physics/Ontology.md'
   const turnedDown = answers.turnedDown ?? null
   /** The runs this one window has been told this build cannot do. */
   const runs = runSupport()
@@ -181,8 +181,8 @@ const window = (
       },
     },
     notes: {
-      getTabAt: (path) => (path === at ? 'held' : null),
-      getPath: (id) => (id === 'held' ? at : id),
+      getTabAt: (path) => (path === targetPath ? 'active' : null),
+      getPath: (id) => (id === 'active' || id === 'held' ? targetPath : id),
       asking: () => answers.isAsking === true,
       flushPending: async (id) => void isDone.push(`flushPending ${id}`),
       close: (id) => void isDone.push(`close ${id}`),
@@ -218,7 +218,7 @@ const window = (
       setVaultName: (vault: VaultRef) => void isDone.push(`calls ${vault.id} ${vault.name}`),
       reload: () => void isDone.push('reloads'),
     },
-    goes: {
+    navigator: {
       revealPath: (path) => void isDone.push(`revealPath ${path}`),
       travel: async (path) => void isDone.push(`travel ${path}`),
       leave: async (from, to) => void isDone.push(`leave ${from} ${to}`),
@@ -544,7 +544,7 @@ describe('a note renamed', () => {
 
     await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Ontology.md Entropy'])
+    expect(one.done).toStrictEqual(['flushPending active', 'rename physics/Ontology.md Entropy'])
   })
 
   it('is rejected while the note is waiting on the person', async () => {
@@ -636,7 +636,7 @@ describe('a note removed', () => {
     await carry(createInvocation('remove', front()), one.on)
 
     expect(one.done.slice(0, 2)).toStrictEqual([
-      'flushPending held',
+      'flushPending active',
       'remove physics/Ontology.md false',
     ])
   })
@@ -676,7 +676,7 @@ describe('a note removed', () => {
 
   it('leaves the plexes alone where the vault opens with no note at all', async () => {
     const one = window()
-    const nowhere: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
+    const nowhere: CommandDeps = { ...one.on, navigator: { ...one.on.navigator, getOpeningNote: () => '' } }
 
     await carry(createInvocation('remove', front()), nowhere)
 
@@ -686,17 +686,17 @@ describe('a note removed', () => {
   it('lets go of the tab that was reading it', async () => {
     const one = window()
 
-    await carry(createInvocation('remove', front(), '', 'held'), one.on)
+    await carry(createInvocation('remove', front(), '', 'active'), one.on)
 
-    expect(one.done).toContain('close held')
+    expect(one.done).toContain('close active')
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
     const one = window({ removed: asFailure('missing' as const) })
 
-    await carry(createInvocation('remove', front(), '', 'held'), one.on)
+    await carry(createInvocation('remove', front(), '', 'active'), one.on)
 
-    expect(one.done).not.toContain('close held')
+    expect(one.done).not.toContain('close active')
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
@@ -786,7 +786,7 @@ describe('a file filed somewhere else', () => {
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.done).toStrictEqual([
-      'flushPending held',
+      'flushPending active',
       'move physics/Ontology.md notes/Ontology.md',
     ])
   })
@@ -796,7 +796,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done.indexOf('flushPending held')).toBeLessThan(
+    expect(one.done.indexOf('flushPending active')).toBeLessThan(
       one.done.indexOf('move physics/Ontology.md notes/Ontology.md'),
     )
   })
@@ -867,26 +867,26 @@ describe('a folder made', () => {
  */
 describe('a note that moved between the answer and the invocation', () => {
   it('is renamed at its current position now, not at the name the invocation was made over', async () => {
-    const one = window({ at: 'physics/Being.md' })
+    const one = window({ targetPath: 'physics/Being.md' })
 
     await carry(createInvocation('title', front(), 'Substance', 'held'), one.on)
 
-    expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Being.md Substance'])
+    expect(one.done).toStrictEqual(['flushPending active', 'rename physics/Being.md Substance'])
   })
 
   it('is removed at its current position now', async () => {
-    const one = window({ at: 'physics/Being.md' })
+    const one = window({ targetPath: 'physics/Being.md' })
 
-    await carry(createInvocation('remove', front(), '', 'held'), one.on)
+    await carry(createInvocation('remove', front(), '', 'active'), one.on)
 
     expect(one.done.slice(0, 2)).toStrictEqual([
-      'flushPending held',
+      'flushPending active',
       'remove physics/Being.md false',
     ])
   })
 
   it('is left at the name it was made over where no tab holds it', async () => {
-    const one = window({ at: 'physics/Being.md' })
+    const one = window({ targetPath: 'physics/Being.md' })
 
     await carry(createInvocation('remove', front()), one.on)
 
@@ -934,7 +934,7 @@ describe('a command over the vault', () => {
 
   it('says a vault that opens with no note at all', async () => {
     const one = window()
-    const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
+    const empty: CommandDeps = { ...one.on, navigator: { ...one.on.navigator, getOpeningNote: () => '' } }
 
     await runInvocation(createInvocation('first', front()), empty, words)
 
@@ -1167,7 +1167,7 @@ describe('indexingModel command', () => {
   it('changes the indexing model', async () => {
     const isDone: string[] = []
     const deps = {
-      goes: { getOpeningNote: () => '' },
+      navigator: { getOpeningNote: () => '' },
       settings: { chooseIndexingModel: async (c: string) => void isDone.push(`indexingModel ${c}`) },
       writeMessage: () => {},
     } as unknown as Parameters<typeof runInvocation>[1]
@@ -1294,7 +1294,7 @@ describe('a command nothing carries out', () => {
 describe('what the voice says in which tone', () => {
   it('cautions that a vault opens with no note at all', async () => {
     const one = window()
-    const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
+    const empty: CommandDeps = { ...one.on, navigator: { ...one.on.navigator, getOpeningNote: () => '' } }
 
     await runInvocation(createInvocation('first', front()), empty, words)
 
@@ -1406,17 +1406,17 @@ describe('the tab holding a note flushed', () => {
     const one = window()
 
     expect(await flushTab('physics/Ontology.md', one.on)).toStrictEqual({
-      tabId: 'held',
+      tabId: 'active',
       isWaiting: false,
     })
-    expect(one.done).toStrictEqual(['flushPending held'])
+    expect(one.done).toStrictEqual(['flushPending active'])
   })
 
   it('is the tab, waiting and not flushed, where it waits on the person', async () => {
     const one = window({ isAsking: true })
 
     expect(await flushTab('physics/Ontology.md', one.on)).toStrictEqual({
-      tabId: 'held',
+      tabId: 'active',
       isWaiting: true,
     })
     expect(one.done).toStrictEqual([])

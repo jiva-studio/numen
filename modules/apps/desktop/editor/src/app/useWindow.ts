@@ -72,7 +72,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reached: editing.reached,
     openPreset: (path) =>
       openCommandTab({ vaultCore: core, windowTabs, writeMessage }, path, 'preset'),
-    dressed: settings.dressed,
+    appearance: settings.appearance,
     oneName: settings.oneName,
     nesting: settings.nesting,
     rest: settings.rest,
