@@ -21,6 +21,7 @@ import { runComplexityCheck } from "./checks/complexity.mjs";
 import { runDeadcodeCheck } from "./checks/deadcode.mjs";
 import { runInterfacesCheck } from "./checks/interfaces.mjs";
 import { runFrontendCheck } from "./checks/frontend.mjs";
+import { runStructureCheck } from "./checks/structure.mjs";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../../..");
@@ -51,6 +52,11 @@ const ALL_CHECKS = [
     name: "Frontend Conventions & Quality (ESLint)",
     run: (opts) => runFrontendCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
+  {
+    id: "structure",
+    name: "Directory Structure & Size (max 20 source files)",
+    run: (opts) => runStructureCheck({ repoRoot: REPO_ROOT, ...opts }),
+  },
 ];
 
 function printHelp() {
@@ -58,7 +64,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,complexity,deadcode,interfaces,frontend)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,complexity,deadcode,interfaces,frontend,structure)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -128,6 +134,7 @@ function resolveChecks(args, changedOnly) {
       if (id === "deadcode") return hasUi || hasGoCore;
       if (id === "interfaces") return hasGo;
       if (id === "frontend") return hasTsOrVue;
+      if (id === "structure") return hasGo || hasTsOrVue;
       return true;
     });
   }
@@ -195,7 +202,12 @@ async function main() {
   }
 
   const startTime = Date.now();
-  const results = await Promise.all(selected.map((c) => c.run({ warnOnly: isWarn })));
+  const targetDirs = isChangedOnly
+    ? Array.from(new Set(getChangedFiles().map((f) => path.dirname(f))))
+    : null;
+  const results = await Promise.all(
+    selected.map((c) => c.run({ warnOnly: isWarn, targetDirs }))
+  );
   const totalMs = Date.now() - startTime;
 
   if (isJson) {
