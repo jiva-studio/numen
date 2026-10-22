@@ -6,10 +6,10 @@
  */
 import type { Ref } from 'vue'
 import type { Vault } from '@/entities/vault'
-import type { PendingStep } from '../lib/step'
-import type { Command, PaletteLists, RunSupport } from '../types'
-import type { Words } from '../words'
-import type { NameMatch } from './search'
+import type { PendingStep } from '../../lib/step/step'
+import type { Command, PaletteLists, RunSupport } from '../../types'
+import type { Words } from '../../words'
+import type { NameMatch } from '../search/search'
 
 /** Everything the view reads, which is the palette's own state. */
 export interface ViewState {

@@ -3,7 +3,7 @@
  * An identity is answered by the store holding it, and one nobody holds by
  * nothing at all.
  */
-import type { Notes, Store } from '../types'
+import type { Notes, Store } from '../../types'
 
 export const createNotes = (
   stores: readonly Store[],

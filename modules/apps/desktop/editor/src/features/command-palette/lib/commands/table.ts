@@ -1,17 +1,17 @@
 /**
  * Construction of the full list of commands offered by the application.
  */
-import { createArtifactCommands, createDeletionCommands } from './fileCommands'
-import { createNoteCommands } from './noteCommands'
-import { createVaultCommands } from './vaultCommands'
+import { createArtifactCommands, createDeletionCommands } from '../file-commands/fileCommands'
+import { createNoteCommands } from '../note-commands/noteCommands'
+import { createVaultCommands } from '../vault-commands/vaultCommands'
 import {
   createWindowCreationCommands,
   createWindowDisplayCommands,
   createWindowFeatureCommands,
   createWindowNavigationCommands,
-} from './windowCommands'
-import type { Command } from '../types'
-import type { Words } from '../words'
+} from '../window-commands/windowCommands'
+import type { Command } from '../../types'
+import type { Words } from '../../words'
 
 /**
  * Every command, in the order it is drawn. The keyboard it is being read on

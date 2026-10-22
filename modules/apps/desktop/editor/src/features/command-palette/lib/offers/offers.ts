@@ -7,8 +7,8 @@
  */
 import type { PaletteGroup } from '@numen/ui'
 import { createInvocation } from './invocation'
-import type { CommandInvocation, CommandTarget } from '../types'
-import type { Words } from '../words'
+import type { CommandInvocation, CommandTarget } from '../../types'
+import type { Words } from '../../words'
 
 /** The group and the item that offer to make the note a search did not find. */
 export const CREATE_NOTE_ID = 'creating'

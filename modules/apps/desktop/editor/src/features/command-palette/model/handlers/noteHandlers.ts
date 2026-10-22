@@ -3,8 +3,8 @@
  */
 import type { PlexRelation } from '@numen/ui'
 import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
-import type { CommandInvocation } from '../types'
-import type { AnswerWords } from '../words'
+import type { CommandInvocation } from '../../types'
+import type { AnswerWords } from '../../words'
 import { NOTE } from '@/entities/tab'
 
 /** A tab asked to flush its pending write: which one it was, and whether it is still waiting. */

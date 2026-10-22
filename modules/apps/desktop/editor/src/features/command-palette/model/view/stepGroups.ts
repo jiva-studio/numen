@@ -9,11 +9,11 @@
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
 import type { Vault } from '@/entities/vault'
-import { isWebUrl } from '../lib/url'
-import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../lib/step'
-import type { StepRow } from '../types'
-import type { ConfirmWords, RetypeWords, Words } from '../words'
-import type { NameMatch } from './search'
+import { isWebUrl } from '../../lib/url/url'
+import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../../lib/step/step'
+import type { StepRow } from '../../types'
+import type { ConfirmWords, RetypeWords, Words } from '../../words'
+import type { NameMatch } from '../search/search'
 import type { ViewState } from './viewState'
 
 function getNamingGroup(text: string, words: Words): PaletteGroup {

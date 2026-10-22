@@ -7,7 +7,7 @@
  */
 import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
-import type { CommandTarget, RunSupport } from '../types'
+import type { CommandTarget, RunSupport } from '../../types'
 
 /** A command over the note in front, which there has to be one of. */
 export const isNoteOpen = (target: CommandTarget): boolean => target.isReady && target.path !== ''

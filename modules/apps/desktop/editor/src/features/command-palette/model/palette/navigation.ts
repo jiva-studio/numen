@@ -4,17 +4,17 @@
 import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
-import { EXACT, NO, YES, type PendingStep } from '../lib/step'
+import { EXACT, NO, YES, type PendingStep } from '../../lib/step/step'
 import type {
   CommandInvocation,
   CommandTarget,
   NoteLookup,
   PaletteLists,
   PromptStep,
-} from '../types'
-import type { Words } from '../words'
-import type { NameMatch } from './search'
-import { isWebUrl } from '../lib/url'
+} from '../../types'
+import type { Words } from '../../words'
+import type { NameMatch } from '../search/search'
+import { isWebUrl } from '../../lib/url/url'
 
 /** What the field asks for on each step that asks for one thing. */
 const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({

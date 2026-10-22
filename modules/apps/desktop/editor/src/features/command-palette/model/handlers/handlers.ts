@@ -9,9 +9,9 @@
  */
 import { formatErrorMessage } from '@numen/wire'
 import type { CommandDeps, CommandHandler, RunContext, Voice } from './deps'
-import type { CommandInvocation } from '../types'
-import type { AnswerWords } from '../words'
-import { joinAll, formatNames } from '../lib/voice'
+import type { CommandInvocation } from '../../types'
+import type { AnswerWords } from '../../words'
+import { joinAll, formatNames } from '../../lib/voice/voice'
 export type { CommandDeps }
 import {
   withCurrentNotePath,
@@ -204,10 +204,10 @@ export async function runInvocation(
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
-    if (isPlugin) {
-      await handlePluginInvocation(invocation, on)
-    } else {
+    if (handler && !isPlugin) {
       await handler(withCurrentNotePath(invocation, on), on, words)
+    } else {
+      await handlePluginInvocation(invocation, on)
     }
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')

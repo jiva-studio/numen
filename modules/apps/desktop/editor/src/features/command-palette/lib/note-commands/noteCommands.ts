@@ -1,10 +1,10 @@
 /**
  * The commands offered over the note in front.
  */
-import { createRowKeys } from './chords'
-import { isNoteOpen } from './availability'
-import type { Command } from '../types'
-import type { Words } from '../words'
+import { createRowKeys } from '../chords/chords'
+import { isNoteOpen } from '../commands/availability'
+import type { Command } from '../../types'
+import type { Words } from '../../words'
 
 export const createNoteCommands = (words: Words, agent: string): readonly Command[] => [
   { id: 'read', text: words.read, group: 'note', isOffered: isNoteOpen, also: 'beside' },

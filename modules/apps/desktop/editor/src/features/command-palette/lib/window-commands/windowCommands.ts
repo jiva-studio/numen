@@ -1,10 +1,10 @@
 /**
  * The commands offered over the window: what it opens, and how it is drawn.
  */
-import { createRowKeys } from './chords'
-import { isAlwaysOffered } from './availability'
-import type { Command } from '../types'
-import type { Words } from '../words'
+import { createRowKeys } from '../chords/chords'
+import { isAlwaysOffered } from '../commands/availability'
+import type { Command } from '../../types'
+import type { Words } from '../../words'
 
 export const createWindowCreationCommands = (words: Words, agent: string): readonly Command[] => [
   {

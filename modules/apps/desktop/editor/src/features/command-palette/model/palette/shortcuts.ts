@@ -1,7 +1,7 @@
 import { onMounted, onUnmounted } from 'vue'
-import { isChord } from '../lib/chords'
+import { isChord } from '../../lib/chords/chords'
 import type { Commands } from './palette'
-import type { SearchState } from './search'
+import type { SearchState } from '../search/search'
 
 export function usePaletteShortcuts(search: SearchState, commands: Commands) {
   function onKeyDown(event: KeyboardEvent) {

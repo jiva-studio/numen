@@ -9,10 +9,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { runSupport } from './runSupport'
-import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../types'
+import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../../types'
 import { useCommandPalette } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
-import type { NameMatch } from './search'
+import type { NameMatch } from '../search/search'
 import { WORDS as words } from '@/shared/words'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 

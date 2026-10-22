@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from './offers'
-import type { CommandTarget } from '../types'
+import type { CommandTarget } from '../../types'
 import { WORDS as words } from '@/shared/words'
 
 /** What is in front, which a test moves under the commands. */

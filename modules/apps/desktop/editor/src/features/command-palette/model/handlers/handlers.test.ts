@@ -6,13 +6,13 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { createCommands } from '../lib/commands'
-import { runSupport } from './runSupport'
-import { createInvocation } from '../lib/invocation'
-import { createNotes } from '../lib/notes'
-import type { VaultRef } from '../types'
+import { createCommands } from '../../lib/commands/commands'
+import { runSupport } from '../palette/runSupport'
+import { createInvocation } from '../../lib/offers/invocation'
+import { createNotes } from '../../lib/notes/notes'
+import type { VaultRef } from '../../types'
 import type { CommandDeps } from './deps'
-import type { CommandInvocation, CommandTarget, Store } from '../types'
+import type { CommandInvocation, CommandTarget, Store } from '../../types'
 import { commands, flushTab, registerCommand, runInvocation } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/entities/artifact'
 import { asFailure, asValue } from '@numen/wire'
@@ -21,7 +21,13 @@ import type { RemovedNote, RemoveResult, RenamedNote, RenameResult } from '@/ent
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
-import { ANSWER_WORDS as words } from '../words'
+import { ANSWER_WORDS as words } from '../../words'
+
+function getMadeWords(artifact: Artifact, state: ArtifactState): string {
+  const text = words.made[artifact]?.[state]
+  if (text === undefined) throw new Error(`no words for ${artifact} ${state}`)
+  return text
+}
 
 /** What is in front, which every invocation is carried out over. */
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -467,7 +473,7 @@ describe('an artifact requested for over a file', () => {
 
       await carry(invocation, one.on)
 
-      expect(one.notices, createdItem).toStrictEqual([words.made.transcript[createdItem]])
+      expect(one.notices, createdItem).toStrictEqual([getMadeWords('transcript', createdItem)])
     }
   })
 
@@ -492,7 +498,7 @@ describe('an artifact requested for over a file', () => {
 
     await carry(invocation, one.on)
 
-    expect(one.notices).toStrictEqual([words.made.transcript.done])
+    expect(one.notices).toStrictEqual([getMadeWords('transcript', 'done')])
   })
 
   // A run that could not read the file wrote down what it got, and asking again
@@ -504,7 +510,7 @@ describe('an artifact requested for over a file', () => {
     await carry(invocation, one.on)
 
     expect(one.actions).toStrictEqual(['makes transcript talks/Ants.mp3'])
-    expect(one.notices).toStrictEqual([`${words.made.transcript.failed} ${reason}`])
+    expect(one.notices).toStrictEqual([`${getMadeWords('transcript', 'failed')} ${reason}`])
   })
 
   it('says the same of a scan already recognised', async () => {
@@ -513,7 +519,7 @@ describe('an artifact requested for over a file', () => {
     await carry(createInvocation('recognise', front({ file: 'books/Ants.pdf' })), one.on)
 
     expect(one.actions).toStrictEqual(['makes ocr books/Ants.pdf'])
-    expect(one.notices).toStrictEqual([words.made.ocr.done])
+    expect(one.notices).toStrictEqual([getMadeWords('ocr', 'done')])
   })
 
   // No two of them may say the same thing: a person reads the sentence and not

@@ -1,10 +1,10 @@
 /**
  * The commands offered over the vaults an installation holds.
  */
-import { createRowKeys } from './chords'
-import { isAlwaysOffered, isVaultOpen } from './availability'
-import type { Command } from '../types'
-import type { Words } from '../words'
+import { createRowKeys } from '../chords/chords'
+import { isAlwaysOffered, isVaultOpen } from '../commands/availability'
+import type { Command } from '../../types'
+import type { Words } from '../../words'
 
 export const createVaultCommands = (words: Words, agent: string): readonly Command[] => [
   { id: 'first', text: words.first, group: 'vault', isOffered: (target) => target.isReady },

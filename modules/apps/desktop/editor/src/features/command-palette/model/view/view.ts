@@ -7,9 +7,9 @@
  * application for anything: `palette.ts` holds the steps and does that.
  */
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
-import { getGroupCommands } from '../lib/commands'
-import type { PendingStep } from '../lib/step'
-import type { Command, CommandGroup, CommandTarget } from '../types'
+import { getGroupCommands } from '../../lib/commands/commands'
+import type { PendingStep } from '../../lib/step/step'
+import type { Command, CommandGroup, CommandTarget } from '../../types'
 import { createStepGroups } from './stepGroups'
 import type { ViewState } from './viewState'
 

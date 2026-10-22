@@ -3,7 +3,7 @@
  * names below are what an item of a step is chosen under, so the view and the
  * navigation agree on one word for one answer.
  */
-import type { Command, CommandTarget, PromptStep } from '../types'
+import type { Command, CommandTarget, PromptStep } from '../../types'
 
 /** One step of a command: what it asks for, and what it is over. */
 export interface PendingStep {

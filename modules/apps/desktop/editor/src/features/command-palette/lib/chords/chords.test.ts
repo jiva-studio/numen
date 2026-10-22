@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { isChord, findChordCommand, findChordKeys, createRowKeys, CHORDS } from './chords'
-import { createCommands } from './commands'
+import { createCommands } from '../commands/commands'
 import { WORDS as words } from '@/shared/words'
 
 const createKeyEvent = (overrides: Partial<KeyboardEventInit> = {}) => ({

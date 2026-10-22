@@ -11,9 +11,9 @@ import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef 
 import { createRequestGuard as latest } from '@numen/plugin-sdk'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
-import { createCommands } from '../lib/commands'
-import { getPaletteView } from './view'
-import { createInvocation } from '../lib/invocation'
+import { createCommands } from '../../lib/commands/commands'
+import { getPaletteView } from '../view/view'
+import { createInvocation } from '../../lib/offers/invocation'
 import type {
   Command,
   CommandsDeps,
@@ -22,9 +22,9 @@ import type {
   NoteLookup,
   PaletteLists,
   RunSupport,
-} from '../types'
-import type { Words } from '../words'
-import type { NameMatch } from './search'
+} from '../../types'
+import type { Words } from '../../words'
+import type { NameMatch } from '../search/search'
 import { createPaletteSteps } from './navigation'
 
 /** How many notes the step that picks one asks for. */

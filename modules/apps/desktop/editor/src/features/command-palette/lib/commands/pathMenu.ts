@@ -12,7 +12,7 @@ import type { BookFormat, DocumentFormat, Source } from '@/entities/file'
 import { WORDS as words } from '@/shared/words'
 import { getNoteCommands } from './commands'
 import { createCommands } from './table'
-import { PATH_WORDS as own } from '../words'
+import { PATH_WORDS as own } from '../../words'
 
 /** One command the menu offers, in the group it is drawn in. */
 export type PathItem = MenuItem & { readonly group: string }

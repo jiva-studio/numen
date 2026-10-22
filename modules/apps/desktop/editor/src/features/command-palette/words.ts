@@ -14,7 +14,7 @@ import { VAULT_ERRORS } from '@/entities/vault'
 import type { VaultErrorCode } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
-import type { EmptyWords } from './model/search'
+import type { EmptyWords } from './model/search/search'
 
 export const ANSWER_WORDS: AnswerWords = {
   ...WORDS,

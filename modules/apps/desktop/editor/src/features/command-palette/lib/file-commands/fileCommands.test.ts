@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { WORDS as words } from '@/shared/words'
 import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
-import type { Command, CommandTarget, RunSupport } from '../types'
+import type { Command, CommandTarget, RunSupport } from '../../types'
 import { createFileCommands } from './fileCommands'
 
 const getCommand = (id: string): Command => {

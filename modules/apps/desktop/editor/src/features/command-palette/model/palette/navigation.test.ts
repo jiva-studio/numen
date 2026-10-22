@@ -6,9 +6,9 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
-import { EXACT, YES, type PendingStep } from '../lib/step'
-import type { Command, CommandTarget, PromptStep, StepGroup } from '../types'
-import type { NameMatch } from './search'
+import { EXACT, YES, type PendingStep } from '../../lib/step/step'
+import type { Command, CommandTarget, PromptStep, StepGroup } from '../../types'
+import type { NameMatch } from '../search/search'
 import { createPaletteSteps } from './navigation'
 
 const on: CommandTarget = {

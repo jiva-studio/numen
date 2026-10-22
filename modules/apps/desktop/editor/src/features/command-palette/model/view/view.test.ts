@@ -6,10 +6,10 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
-import { createCommands } from '../lib/commands'
-import type { PendingStep } from '../lib/step'
-import type { Command, CommandTarget, PaletteLists } from '../types'
-import { runSupport } from './runSupport'
+import { createCommands } from '../../lib/commands/commands'
+import type { PendingStep } from '../../lib/step/step'
+import type { Command, CommandTarget, PaletteLists } from '../../types'
+import { runSupport } from '../palette/runSupport'
 import { getPaletteView } from './view'
 
 const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({

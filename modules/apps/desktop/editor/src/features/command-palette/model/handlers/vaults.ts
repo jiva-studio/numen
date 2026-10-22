@@ -6,8 +6,8 @@
  * of these leaves the window standing somewhere else than it stood.
  */
 import type { VaultContext, Voice } from './deps'
-import type { CommandInvocation } from '../types'
-import type { AnswerWords } from '../words'
+import type { CommandInvocation } from '../../types'
+import type { AnswerWords } from '../../words'
 
 /**
  * Another vault under this window. What the page holds belongs to the vault

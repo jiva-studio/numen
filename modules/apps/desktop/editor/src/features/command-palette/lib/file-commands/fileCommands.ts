@@ -1,9 +1,9 @@
 /**
  * The commands offered over the file in front, on what has been made from it.
  */
-import { createArtifactOffer, isArtifactMissing } from './availability'
-import type { Command, CommandTarget, RunSupport } from '../types'
-import type { Words } from '../words'
+import { createArtifactOffer, isArtifactMissing } from '../commands/availability'
+import type { Command, CommandTarget, RunSupport } from '../../types'
+import type { Words } from '../../words'
 
 const isRecordingProofreadOffered = createArtifactOffer(
   'proofread',
