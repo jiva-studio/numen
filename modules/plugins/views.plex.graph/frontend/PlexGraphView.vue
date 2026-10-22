@@ -222,7 +222,7 @@ function closeMenu(id?: string) {
       :items="items"
       :at="menu!.at"
       :trigger="menu!.opening"
-      open
+      is-open
       @choose="onChooseMenuItem"
       @dismiss="onDismissMenu"
     >

@@ -18,7 +18,7 @@ interface Knobs {
   /** What each segment says, one to a line. */
   words: string
   chosen: string
-  disabled: boolean
+  isDisabled: boolean
   /** How wide the box drawing the control is. */
   width: string
 }
@@ -30,13 +30,13 @@ const meta: Meta<Knobs> = {
   argTypes: {
     words: { control: 'text' },
     chosen: { control: 'text' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     width: { control: 'text' },
   },
   args: {
     words: 'Small\nMedium\nLarge',
     chosen: 'small',
-    disabled: false,
+    isDisabled: false,
     width: 'auto',
   },
   render: (args) => ({
@@ -60,7 +60,7 @@ const meta: Meta<Knobs> = {
           v-model="chosen"
           aria-label="How large it is drawn"
           :choices="choices"
-          :disabled="args.disabled"
+          :is-disabled="args.isDisabled"
         />
       </div>
     `,
@@ -192,7 +192,7 @@ export const NoTextAtAll: Story = {
 }
 
 /** A control nobody may turn. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /**
  * The same control on the dark set of tokens, where the segment in force is

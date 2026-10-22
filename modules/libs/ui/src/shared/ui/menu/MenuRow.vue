@@ -52,7 +52,7 @@ defineExpose({ focus })
     :role="current === null ? 'menuitem' : 'menuitemradio'"
     :aria-checked="current === null ? undefined : item.id === current"
     tabindex="-1"
-    :disabled="item.disabled"
+    :disabled="item.isDisabled"
     @focus="$emit('focus')"
     @click="$emit('choose')"
   >

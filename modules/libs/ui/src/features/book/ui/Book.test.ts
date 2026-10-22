@@ -248,8 +248,8 @@ const mountBook = async () => {
   ;(wrapper.vm as unknown as { measure(): void }).measure()
   // The columns are measured after the browser has laid them out, which is the
   // frame after the one that asked, and a frame jsdom draws on its own clock.
-  await new Promise((wake) => setTimeout(wake, 50))
-  await new Promise((wake) => setTimeout(wake, 50))
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((resolve) => setTimeout(resolve, 50))
   await wrapper.vm.$nextTick()
   return wrapper
 }
@@ -340,7 +340,7 @@ describe('a document replaced while a later spread of the one before is in front
     // carried to the old spread is not shown in the meantime.
     expect(target.find('.book__paper').classes()).toContain('book__paper--unset')
 
-    await new Promise((wake) => setTimeout(wake, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50))
     await target.vm.$nextTick()
 
     expect(target.find('.book__paper').classes()).not.toContain('book__paper--unset')

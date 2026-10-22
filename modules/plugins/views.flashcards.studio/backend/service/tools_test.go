@@ -249,7 +249,7 @@ func TestReadingACardOfAMarkTheDeckHasNotGotIsRefused(t *testing.T) {
 
 	if response := getToolError(t, session, "card_read", map[string]any{
 		"path": "Animals.md", "mark": "zzzzzzzzzz",
-	}); !strings.Contains(response, "no card") {
+	}); !strings.Contains(response, "card face not found") {
 		t.Errorf("reading a card the deck has not got was answered %q", response)
 	}
 }
@@ -485,7 +485,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 	if response := getToolError(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(response, "no card") {
+	}); !strings.Contains(response, "card face not found") {
 		t.Errorf("removing a card twice was answered %q", response)
 	}
 }
@@ -910,7 +910,7 @@ func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
 	if response := getToolError(t, session, "card_section_remove", map[string]any{
 		"path": "Animals.md", "section": 0,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(response, "no section") {
+	}); !strings.Contains(response, "section not found") {
 		t.Errorf("removing a section twice was answered %q", response)
 	}
 }

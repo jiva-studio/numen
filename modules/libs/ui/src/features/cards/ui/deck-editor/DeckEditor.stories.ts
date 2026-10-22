@@ -684,7 +684,6 @@ export const Narrow: Story = {
 
     const box = found(canvasElement, '[data-card="c5n8q2wxjb"] [data-value="Answer"]')
 
-    // It wrapped: the box stands taller than the one line it is written on.
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
     expect(box.clientHeight).toBeGreaterThan(line * 2)
 

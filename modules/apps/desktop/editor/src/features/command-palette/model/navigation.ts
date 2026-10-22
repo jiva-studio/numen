@@ -89,7 +89,7 @@ function resolveInputOrChoiceAction(
   if (step.step === 'choosing') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
-    return !one || one.disabled ? null : deps.invocation(step.command.id, step.on, one.id)
+    return !one || one.isDisabled ? null : deps.invocation(step.command.id, step.on, one.id)
   }
   return null
 }

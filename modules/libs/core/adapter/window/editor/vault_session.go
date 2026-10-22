@@ -46,7 +46,7 @@ type vaultSession struct {
 
 // errAnswerPending is a vault asked for while a page holds work a person is being
 // asked about.
-var errAnswerPending = errors.New("a page is holding work a person has to answer for")
+var errAnswerPending = errors.New("pending review confirmation")
 
 // Show puts a vault in the window: another in place of the one it has, or the
 // first where it is standing on nothing. The index and the embedder belong to

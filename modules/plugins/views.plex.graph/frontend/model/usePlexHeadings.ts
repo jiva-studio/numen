@@ -3,7 +3,7 @@
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import type { PlexHeading } from '@numen/ui'
-import { createAnswerGuard } from '../lib/questions'
+import { createRequestGuard } from '@numen/plugin-sdk'
 import { convertHeadings } from '../lib/picture'
 import type { PlexTabDeps, NoteType } from '../types'
 import type { NodeIdMap } from '../lib/nodeIdMap'
@@ -14,11 +14,11 @@ export function usePlexHeadings(
   ...[deps, nodeIdMap]: [deps: PlexTabDeps, nodeIdMap: NodeIdMap]
 ) {
   const headings = shallowRef<ReadonlyMap<string, readonly PlexHeading[]>>(new Map())
-  const guard = createAnswerGuard()
+  const guard = createRequestGuard()
 
   const readHeadings = async () => {
     const notes = paths.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')
-    const mine = guard.ask()
+    const mine = guard.acquireRequest()
     if (!deps.isNesting.value || notes.length === 0) {
       headings.value = new Map()
       return

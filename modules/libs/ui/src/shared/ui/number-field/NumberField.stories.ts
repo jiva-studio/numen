@@ -15,7 +15,7 @@ interface Knobs {
   min: number
   max: number
   step: number
-  disabled: boolean
+  isDisabled: boolean
   placeholder: string
 }
 
@@ -28,7 +28,7 @@ const meta: Meta<Knobs> = {
     min: { control: 'number' },
     max: { control: 'number' },
     step: { control: 'number' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     placeholder: { control: 'text' },
   },
   args: {
@@ -36,7 +36,7 @@ const meta: Meta<Knobs> = {
     min: 0,
     max: 240,
     step: 1,
-    disabled: false,
+    isDisabled: false,
     placeholder: 'Minutes',
   },
   render: (args) => ({
@@ -53,7 +53,7 @@ const meta: Meta<Knobs> = {
           :min="args.min"
           :max="args.max"
           :step="args.step"
-          :disabled="args.disabled"
+          :is-disabled="args.isDisabled"
           :placeholder="args.placeholder"
         />
       </div>
@@ -100,7 +100,7 @@ export const PastTheCeiling: Story = {
 export const FarTooMany: Story = { args: { value: 123456789, max: 999999999 } }
 
 /** A field nobody may type into. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /** Words in another script standing in for the number. */
 export const OtherScripts: Story = { args: { value: null, placeholder: 'Минут в день' } }

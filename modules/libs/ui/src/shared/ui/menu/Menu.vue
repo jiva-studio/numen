@@ -11,7 +11,7 @@ import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import MenuRow from './MenuRow.vue'
 import { filterItems, groupItems, getInitialIndex, type MenuItem, type MenuTrigger } from './item'
 import { isLetter } from './typeahead'
-import { useMenuGround } from './ground'
+import { useMenuDismissal } from './menuDismissal'
 import { useMenuKeys } from './keys'
 import { useMenuOpen } from './open'
 import { useMenuPlacement } from './place'
@@ -24,7 +24,7 @@ const props = withDefaults(
     /** Where it was asked for, in the coordinates of the area it is drawn into. */
     at: Position
     /** Whether it is drawn at all. */
-    open?: boolean
+    isOpen?: boolean
     /** What opened it. Opened by hand it appears with nothing chosen. */
     trigger?: MenuTrigger
     /**
@@ -64,7 +64,7 @@ const props = withDefaults(
     searchName?: string
   }>(),
   {
-    open: false,
+    isOpen: false,
     trigger: 'pointer',
     current: null,
     from: null,
@@ -123,12 +123,12 @@ const measure = () => {
   if (box) setSize({ width: box.width, height: box.height })
 }
 
-const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
+const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'))
 
 const { here, holdRow, goTo, onKey: onRowKey } = useMenuKeys(() => visibleItems.value, menu, props.clock)
 
 const choose = (item: MenuItem) => {
-  if (item.disabled) return
+  if (item.isDisabled) return
   emit('choose', item.id)
   emit('dismiss')
 }
@@ -143,7 +143,7 @@ const onKey = (event: KeyboardEvent): void => {
   if (event.target === search.value) {
     if (event.key === 'Enter') {
       event.preventDefault()
-      const first = visibleItems.value.find((one) => !one.disabled)
+      const first = visibleItems.value.find((one) => !one.isDisabled)
       if (first && query.value) choose(first)
     } else if (['ArrowDown', 'ArrowUp', 'Tab'].includes(event.key)) {
       here.value = -1
@@ -155,8 +155,10 @@ const onKey = (event: KeyboardEvent): void => {
   else onRowKey(event)
 }
 
+const isMenuVisible = computed(() => Boolean(props.isOpen))
+
 useMenuOpen({
-  isOpen: () => props.open,
+  isOpen: () => isMenuVisible.value,
   listen,
   release,
   measure,
@@ -185,7 +187,7 @@ watch(query, () => (here.value = -1))
 watch(
   () => [visibleItems.value, props.at],
   async () => {
-    if (!props.open) return
+    if (!isMenuVisible.value) return
     await nextTick()
     measure()
   },
@@ -204,7 +206,7 @@ const menuStyle = computed(() => ({
 <template>
   <Teleport :to="to">
     <div
-      v-if="open"
+      v-if="isMenuVisible"
       ref="menu"
       class="menu numen panel-numen text-ink flex flex-col p-1.5 font-sans text-base"
       role="menu"

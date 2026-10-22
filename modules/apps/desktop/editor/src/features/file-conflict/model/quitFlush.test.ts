@@ -107,9 +107,9 @@ function createConflict(note: string) {
   }
 }
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const delay = () => new Promise((resolve) => setTimeout(resolve, 0))
 const settle = async () => {
-  for (let i = 0; i < 20; i++) await nap()
+  for (let i = 0; i < 20; i++) await delay()
 }
 
 describe('a page requested to write what it owes', () => {

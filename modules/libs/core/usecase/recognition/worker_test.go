@@ -53,7 +53,7 @@ func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 	w := &watched{tasks: tasks, held: &blank{}}
 	w.Worker = NewWorker(ctx, Config{
 		Readers:   vaults{},
-		Derived:   shelves{newShelf()},
+		Derived:   fakeStores{newShelf()},
 		Sources:   newStore(),
 		Documents: documents{},
 		Tasks:     tasks,

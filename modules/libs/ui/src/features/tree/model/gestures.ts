@@ -107,7 +107,7 @@ function useTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelp
   }
 
   function applyStep(step: Step, press: Press): void {
-    if (step.turn?.open) tell('open', step.turn.row)
+    if (step.turn?.isOpen) tell('open', step.turn.row)
     else if (step.turn) tell('close', step.turn.row)
     if (step.at !== null) selection.selectRow(step.at, press)
     void rows.focusRow(step.at)
@@ -136,7 +136,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
   const { getSelected, renamingPath, rows, selection, drag, tell } = options
 
   function toggleRow(row: ShownRow): void {
-    if (row.open) tell('close', row.id)
+    if (row.isOpen) tell('close', row.id)
     else tell('open', row.id)
   }
 

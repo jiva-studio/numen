@@ -136,7 +136,7 @@ func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput,
 	return addVaultAt(core, picked.Path, in.Name)
 }
 
-var errNoDialog = errors.New("there is nobody here to pick a folder: name the one to add")
+var errNoDialog = errors.New("folder selection dialog unavailable: specify path parameter")
 
 func addVaultAt(core Core, root, name string) (vaultAddOutput, error) {
 	if err := core.Vaults.CheckRoot.Execute(root); err != nil {

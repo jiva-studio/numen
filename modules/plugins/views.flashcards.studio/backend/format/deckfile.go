@@ -13,7 +13,7 @@ import (
 // ErrNoSuchCard is what changing a card says when the deck holds no card of
 // that mark. A card is known by its mark, so a card rewritten from end to end
 // is still that card.
-var ErrNoSuchCard = errors.New("this deck holds no card of that mark")
+var ErrNoSuchCard = errors.New("card face not found in deck")
 
 // ErrTwoCards is what changing a card says when two cards of the deck carry
 // the mark it was addressed by. Both are read and both are shown, and which of
@@ -22,7 +22,7 @@ var ErrTwoCards = errors.New("two cards of this deck carry that mark")
 
 // ErrNoSuchSection is what changing a section says when the deck holds no
 // section standing there.
-var ErrNoSuchSection = errors.New("this deck holds no section standing there")
+var ErrNoSuchSection = errors.New("section not found in deck")
 
 // ErrNoSuchValue is what removing a value says when the card writes nothing
 // under that field. The stencil may well declare it: what is not there is what

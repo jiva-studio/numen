@@ -59,7 +59,7 @@ func collectPluginSettingsMigrations(plugins []port.PluginInfo, file map[string]
 
 func migrateOneSetting(pluginID string, setting port.PluginSetting, file map[string]any) (port.Setting, bool) {
 	for _, place := range setting.Replaces {
-		value, found := lookKeys(file, strings.Split(place, ".")...)
+		value, found := findSettingsKeys(file, strings.Split(place, ".")...)
 		if !found {
 			continue
 		}
@@ -74,8 +74,8 @@ func migrateOneSetting(pluginID string, setting port.PluginSetting, file map[str
 	return port.Setting{}, false
 }
 
-// lookKeys is the value at the keys of a decoded document, and whether the document holds one.
-func lookKeys(document map[string]any, keys ...string) (any, bool) {
+// findSettingsKeys is the value at the keys of a decoded document, and whether the document holds one.
+func findSettingsKeys(document map[string]any, keys ...string) (any, bool) {
 	var at any = document
 	for _, key := range keys {
 		object, isObject := at.(map[string]any)
@@ -92,6 +92,6 @@ func lookKeys(document map[string]any, keys ...string) (any, bool) {
 }
 
 func hasKeys(document map[string]any, keys ...string) bool {
-	_, found := lookKeys(document, keys...)
+	_, found := findSettingsKeys(document, keys...)
 	return found
 }

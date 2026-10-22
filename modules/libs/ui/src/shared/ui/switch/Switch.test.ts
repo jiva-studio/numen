@@ -32,7 +32,7 @@ describe('Switch', () => {
   })
 
   it('passes nothing on while nobody may turn it', async () => {
-    const control = mountSwitch({ disabled: true })
+    const control = mountSwitch({ isDisabled: true })
     await control.get('button').trigger('click')
     expect(getEmitted(control)).toEqual([])
   })

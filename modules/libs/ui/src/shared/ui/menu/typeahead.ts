@@ -63,7 +63,7 @@ export function jumpTo(items: readonly MenuItem[], was: Typeahead, strike: JumpS
   for (const step of items.keys()) {
     const at = (start + step) % items.length
     const item = items[at]
-    if (!item || item.disabled) continue
+    if (!item || item.isDisabled) continue
     if (item.text.toLowerCase().startsWith(prefix)) return { typed: nextTypeahead, at }
   }
   return { typed: nextTypeahead, at: null }

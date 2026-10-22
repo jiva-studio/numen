@@ -9,11 +9,11 @@ import type { PaletteAction, PaletteGroup, PaletteItem } from '../lib/item'
 
 const OPEN: PaletteAction = { id: 'open', text: 'Open the note' }
 
-const item = (id: string, disabled = false): PaletteItem => ({
+const item = (id: string, isDisabled = false): PaletteItem => ({
   id,
   title: id,
   actions: [OPEN],
-  disabled,
+  isDisabled,
 })
 
 const group = (

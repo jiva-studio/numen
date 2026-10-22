@@ -13,7 +13,7 @@ import (
 // newWholeRun is a run over a transcript asked about in one window.
 func newWholeRun(
 	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
-) (Proofread, domain.Vault, *shelf, string) {
+) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	u, v, retained, by, hash := newProofreadTranscript(t, told, words...)
 	by.limit = len(words)
@@ -70,7 +70,7 @@ func TestJoiningPreservesWhatWasHeardWhereItIs(t *testing.T) {
 // asked for.
 func newOverlappingRun(
 	t *testing.T, lines int, told map[int]domain.ProofreadCorrection,
-) (Proofread, domain.Vault, *shelf, string) {
+) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	u, v, retained, by, hash := newProofreadTranscript(t,
 		told,
@@ -173,7 +173,7 @@ func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
 // runJoinUntilStopped is a run over four spans, two lines to a call, that puts
 // the first two together and is stopped in its second call. It returns a run
 // taking the transcript up again with the proofreader given.
-func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *shelf, string) {
+func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
 	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)

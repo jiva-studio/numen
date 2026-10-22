@@ -70,7 +70,7 @@ func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Work
 	v := domain.Vault{ID: "v", Path: "/vault"}
 	target := NewWorker(t.Context(), Config{
 		Readers: vaults{v.ID: shelved},
-		Derived: shelves{newShelf()},
+		Derived: fakeStores{newShelf()},
 		Tasks:   run.NewTasks(),
 		Wait:    waitForContext,
 		Delay:   neverDelay,

@@ -19,7 +19,7 @@ interface Knobs {
   /** What each row says, one to a line. A line after a tab names its group. */
   words: string
   chosen: string
-  disabled: boolean
+  isDisabled: boolean
   /** How wide the box drawing the control is. */
   width: string
 }
@@ -38,13 +38,13 @@ const meta: Meta<Knobs> = {
   argTypes: {
     words: { control: 'text' },
     chosen: { control: 'text' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     width: { control: 'text' },
   },
   args: {
     words: 'Small\nMedium\nLarge',
     chosen: 'small',
-    disabled: false,
+    isDisabled: false,
     width: '14rem',
   },
   render: (args) => ({
@@ -61,7 +61,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
-        <Select v-model="chosen" aria-label="How large it is drawn" :choices="choices" :disabled="args.disabled" />
+        <Select v-model="chosen" aria-label="How large it is drawn" :choices="choices" :is-disabled="args.isDisabled" />
       </div>
     `,
   }),
@@ -154,7 +154,7 @@ export const AValueNotAmongThem: Story = {
 }
 
 /** A control nobody may turn. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /** The keyboard lands on it, opens it, and walks the choices. */
 export const OneStopOnTheWayRound: Story = {

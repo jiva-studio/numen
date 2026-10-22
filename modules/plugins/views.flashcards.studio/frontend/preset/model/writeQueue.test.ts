@@ -37,7 +37,7 @@ const createMessages = () => {
   return { said: response, writeMessage: (text: string, kind?: string) => void response.push([text, kind]) }
 }
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const createWriteOpts = (core: Presets, writeMessage: MessageWriter = () => {}) => ({
   path: PATH,
@@ -190,7 +190,7 @@ describe('flushing a preset', () => {
     const flushed = flushWrites(queue, createWriteOpts(core, writeMessage)).then(() => {
       isFlushed = true
     })
-    await nap()
+    await flushPromises()
     expect(isFlushed).toBe(false)
 
     first.open({ ok: true, value: { at: 'v1' } })

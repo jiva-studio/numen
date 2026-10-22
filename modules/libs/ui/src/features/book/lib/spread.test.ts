@@ -22,7 +22,7 @@ import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
 import { EDGE, SWIPE, handTurn, pressTurn, swipeTurn, turnTo } from './turn'
 import type { Span } from '@/shared/lib/span'
-import type { PageTurn } from '@/shared/lib/turn'
+import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
 
 /** A wide reading area, which takes two columns, and a narrow one, which takes one. */
 const WIDE = 800
@@ -409,7 +409,7 @@ describe('BOOK_WORDS', () => {
 describe('turnTo', () => {
   const span = { from: 400, to: 900 }
   const book = { from: 0, to: 1400 }
-  const to = (way: PageTurn, spread: number, count: number, s = span, b = book) =>
+  const to = (way: PageNavigationAction, spread: number, count: number, s = span, b = book) =>
     turnTo(way, { spread, count, span: s, book: b })
 
   it('navigates to target spread within document boundaries', () => {

@@ -123,7 +123,7 @@ describe('moving the handle', () => {
   })
 
   it('passes nothing on while nobody may move it', async () => {
-    const control = mountSlider({ disabled: true })
+    const control = mountSlider({ isDisabled: true })
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     expect(getEmitted(control)).toEqual([])
   })

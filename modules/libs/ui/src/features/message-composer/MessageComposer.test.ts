@@ -59,7 +59,7 @@ describe('what is not sent', () => {
   })
 
   it('sends nothing while turned off', async () => {
-    const wrapper = composer({ modelValue: 'hello', disabled: true })
+    const wrapper = composer({ modelValue: 'hello', isDisabled: true })
     await wrapper.get('textarea').trigger('keydown', enter)
     expect(wrapper.emitted('submit')).toBeUndefined()
   })
@@ -115,7 +115,7 @@ describe('what cannot be reached', () => {
   })
 
   it('disables the field when the composer is turned off', () => {
-    const wrapper = composer({ modelValue: 'hello', disabled: true })
+    const wrapper = composer({ modelValue: 'hello', isDisabled: true })
     expect(wrapper.get('textarea').attributes('disabled')).toBeDefined()
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
   })
@@ -169,6 +169,6 @@ describe('the depth of reasoning', () => {
 
   it('cannot be changed while an answer is on its way', () => {
     const wrapper = composer({ reasoningLevels: levels, isWorking: true })
-    expect(wrapper.findComponent({ name: 'ReasoningSelector' }).props('disabled')).toBe(true)
+    expect(wrapper.findComponent({ name: 'ReasoningSelector' }).props('isDisabled')).toBe(true)
   })
 })

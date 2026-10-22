@@ -87,7 +87,7 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** What is drawn between a row's disclosure and its name. */
-  icon(props: { id: RowId; hasChildren: boolean; open: boolean }): unknown
+  icon(props: { id: RowId; hasChildren: boolean; isOpen: boolean }): unknown
   /** What is said when there is nothing to draw. */
   silence(): unknown
 }>()
@@ -236,7 +236,7 @@ function getRowHeight(): number {
         @abandon="onAbandon(row.id)"
         @blur="onFieldBlur"
       >
-        <slot name="icon" :id="row.id" :has-children="row.hasChildren" :open="row.open" />
+        <slot name="icon" :id="row.id" :has-children="row.hasChildren" :is-open="row.isOpen" />
       </TreeRow>
     </div>
 

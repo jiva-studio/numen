@@ -19,10 +19,10 @@ const props = withDefaults(
     min?: number
     max?: number
     step?: number
-    disabled?: boolean
+    isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { min: 0, max: 100, step: 1, disabled: false },
+  { min: 0, max: 100, step: 1, isDisabled: false },
 )
 
 /** Where the handle stands. */
@@ -76,7 +76,7 @@ const onKeyDown = (event: KeyboardEvent) => {
   if (!isWalkingKey(event.key)) return
   event.preventDefault()
   event.stopPropagation()
-  if (props.disabled) return
+  if (props.isDisabled) return
   if (!walking) {
     walking = true
     began = handed
@@ -116,7 +116,7 @@ const onCommit = (value: number[]) => {
     :min="min"
     :max="max"
     :step="step"
-    :disabled="disabled"
+    :disabled="isDisabled"
     :class="
       cn(
         'relative flex w-full touch-none items-center select-none',

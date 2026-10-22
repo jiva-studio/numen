@@ -14,7 +14,7 @@ interface Knobs {
   hour: string
   min: string
   max: string
-  disabled: boolean
+  isDisabled: boolean
   /** How wide the box drawing the field is. */
   width: string
 }
@@ -27,10 +27,10 @@ const meta: Meta<Knobs> = {
     hour: { control: 'text' },
     min: { control: 'text' },
     max: { control: 'text' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     width: { control: 'text' },
   },
-  args: { hour: '04:00', min: '', max: '', disabled: false, width: '8rem' },
+  args: { hour: '04:00', min: '', max: '', isDisabled: false, width: '8rem' },
   render: (args) => ({
     components: { TimeField },
     setup: () => {
@@ -39,7 +39,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
-        <TimeField v-model="hour" aria-label="A day begins at" :min="args.min" :max="args.max" :disabled="args.disabled" />
+        <TimeField v-model="hour" aria-label="A day begins at" :min="args.min" :max="args.max" :is-disabled="args.isDisabled" />
       </div>
     `,
   }),
@@ -78,7 +78,7 @@ export const NoHourAtAll: Story = {
 }
 
 /** A field nobody may type into. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /** A label written beside the field names it, through the id it is given. */
 export const NamedByItsLabel: Story = {

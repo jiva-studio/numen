@@ -6,7 +6,7 @@
  * asks them without a browser.
  */
 import type { Size } from '@/shared/lib/geometry'
-import { keyTurn } from '@/shared/lib/turn'
+import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
 
 /** Where something sits on a page, in fractions of it. */
 export interface Rect {
@@ -169,7 +169,7 @@ export function getScrollTarget(row: Row, viewport: Size, page: number): number 
  * no page, a document with no pages, or a turn that leaves the document.
  */
 export function getTurnTarget(key: string, at: number, pageCount: number): number | undefined {
-  const way = keyTurn(key)
+  const way = getPageNavigationAction(key)
   if (!way || pageCount === 0) return undefined
 
   const last = pageCount - 1

@@ -1,35 +1,35 @@
 /**
- * A search asked as a person types: a pause after the last keystroke, and the
- * answer to the latest question alone.
+ * A search performed as a person types: a pause after the last keystroke, and the
+ * response to the latest query alone.
  */
 import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
-import { createAnswerGuard, type AnswerGuard, type Question } from './questions'
+import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@numen/plugin-sdk'
 
 export const SEARCH_DEBOUNCE_MS = 120
 
 export type Wait = (ms: number) => Promise<unknown>
 
-const sleep: Wait = (ms) => new Promise((wake) => setTimeout(wake, ms))
+const sleep: Wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export interface DebouncedAskOptions {
+export interface DebouncedSearchOptions {
   wait?: Wait
-  guard?: AnswerGuard
+  guard?: RequestGuard
 }
 
-export interface DebouncedAskSteps {
+export interface DebouncedSearchSteps {
   blank(): void
   pending?(): void
-  run(query: string, mine: Question): Promise<void>
+  run(query: string, mine: InFlightRequest): Promise<void>
 }
 
-export function useDebouncedAsk(options: DebouncedAskOptions = {}) {
+export function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
   const wait = options.wait ?? sleep
-  const guard = options.guard ?? createAnswerGuard()
+  const guard = options.guard ?? createRequestGuard()
 
   if (getCurrentScope()) onScopeDispose(guard.close)
 
-  const ask = async (text: string, steps: DebouncedAskSteps): Promise<void> => {
-    const mine = guard.ask()
+  const search = async (text: string, steps: DebouncedSearchSteps): Promise<void> => {
+    const mine = guard.acquireRequest()
     const query = text.trim()
     if (!query) return steps.blank()
     steps.pending?.()
@@ -38,19 +38,19 @@ export function useDebouncedAsk(options: DebouncedAskOptions = {}) {
     await steps.run(query, mine)
   }
 
-  return { ask, drop: guard.drop }
+  return { search, ask: search, cancel: guard.cancel, drop: guard.cancel }
 }
 
 export function useSearchResults<T>(
   search: (query: string) => Promise<readonly T[]>,
-  options: DebouncedAskOptions = {},
+  options: DebouncedSearchOptions = {},
 ) {
   const results = shallowRef<readonly T[]>([])
   const isLoading = ref(false)
-  const debounced = useDebouncedAsk(options)
+  const debounced = useDebouncedSearch(options)
 
   const setQuery = (text: string): Promise<void> =>
-    debounced.ask(text, {
+    debounced.search(text, {
       blank: () => {
         results.value = []
         isLoading.value = false
@@ -72,3 +72,4 @@ export function useSearchResults<T>(
 
   return { results, isLoading, setQuery }
 }
+

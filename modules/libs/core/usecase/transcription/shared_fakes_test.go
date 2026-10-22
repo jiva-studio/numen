@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// A shelf is what a recognition is written to, in memory.
-type shelf struct {
+// fakeStorage is what a recognition is written to, in memory.
+type fakeStorage struct {
 	mu     sync.Mutex
 	files  map[domain.ArtifactName][]byte
 	held   map[domain.ArtifactName]bool
@@ -22,17 +22,17 @@ type shelf struct {
 	closes int
 }
 
-func newShelf() *shelf {
-	return &shelf{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
+func newShelf() *fakeStorage {
+	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
 }
 
-// shelves hands the one shelf to whatever opens a vault's store.
-type shelves struct{ *shelf }
+// fakeStores hands the one store to whatever opens a vault's store.
+type fakeStores struct{ *fakeStorage }
 
-func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf, nil }
+func (s fakeStores) Open(domain.Vault) (port.DerivedStore, error) { return s.fakeStorage, nil }
 
 // Open is one file of the store, which a copy of a video is played from.
-func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
+func (s *fakeStorage) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw, target := s.files[name]
@@ -44,7 +44,7 @@ func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.Re
 }
 
 // WriteStream puts what a reader gives under a name.
-func (s *shelf) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
+func (s *fakeStorage) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -55,11 +55,11 @@ func (s *shelf) WriteArtifactStream(_ context.Context, name domain.ArtifactName,
 	return int64(len(raw)), nil
 }
 
-// trackedCloser is one file opened from a shelf, counted against it once it
+// trackedCloser is one file opened from a store, counted against it once it
 // is closed.
 type trackedCloser struct {
 	*bytes.Reader
-	of *shelf
+	of *fakeStorage
 }
 
 func (c trackedCloser) Close() error {
@@ -69,7 +69,7 @@ func (c trackedCloser) Close() error {
 	return nil
 }
 
-func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
+func (s *fakeStorage) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw, target := s.files[name]
@@ -79,14 +79,14 @@ func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byt
 	return raw, nil
 }
 
-func (s *shelf) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
+func (s *fakeStorage) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[name] = append([]byte(nil), content...)
 	return nil
 }
 
-func (s *shelf) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
+func (s *fakeStorage) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[name] = append(s.files[name], content...)
@@ -95,7 +95,7 @@ func (s *shelf) AppendArtifact(_ context.Context, name domain.ArtifactName, cont
 
 // Remove takes a name out of the store, along with the claim on it: a claim is
 // held on a file, and taking that file away frees the name.
-func (s *shelf) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
+func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
@@ -103,7 +103,7 @@ func (s *shelf) RemoveArtifact(_ context.Context, name domain.ArtifactName) erro
 	return nil
 }
 
-func (s *shelf) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
+func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.held[name] {
@@ -119,20 +119,20 @@ func (s *shelf) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func
 }
 
 // hold takes a name the way another run holds it.
-func (s *shelf) hold(name domain.ArtifactName) {
+func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.held[name] = true
 }
 
 // claims says whether a name is held by anybody.
-func (s *shelf) claims(name domain.ArtifactName) bool {
+func (s *fakeStorage) claims(name domain.ArtifactName) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.held[name]
 }
 
-func (s *shelf) artifactNames() []domain.ArtifactName {
+func (s *fakeStorage) artifactNames() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []domain.ArtifactName
@@ -252,7 +252,7 @@ func says(corrections ...domain.ProofreadCorrection) map[int]domain.ProofreadCor
 	return out
 }
 
-func readShelf(t *testing.T, shelved *shelf, name domain.ArtifactName) []byte {
+func readShelf(t *testing.T, shelved *fakeStorage, name domain.ArtifactName) []byte {
 	t.Helper()
 	raw, err := shelved.ReadArtifact(t.Context(), name)
 	if err != nil {

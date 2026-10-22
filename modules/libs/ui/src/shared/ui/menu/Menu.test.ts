@@ -24,7 +24,7 @@ let mounted: { unmount: () => void } | null = null
 
 const mountMenu = (props: Partial<MenuProps> = {}) => {
   const menu = mount(Menu, {
-    props: { items: ITEMS, at: { x: 40, y: 40 }, open: true, ...props },
+    props: { items: ITEMS, at: { x: 40, y: 40 }, isOpen: true, ...props },
     attachTo: document.body,
   })
   mounted = menu
@@ -47,10 +47,10 @@ afterEach(() => {
 
 describe('being open and being closed', () => {
   it('draws nothing at all until it is opened', async () => {
-    const menu = mountMenu({ open: false })
+    const menu = mountMenu({ isOpen: false })
     expect(getDrawnMenu()).toBeNull()
 
-    await menu.setProps({ open: true })
+    await menu.setProps({ isOpen: true })
     await settle()
     expect(getDrawnMenu()).not.toBeNull()
   })
@@ -65,7 +65,7 @@ describe('being open and being closed', () => {
     const menu = mountMenu()
     await settle()
 
-    await menu.setProps({ open: false })
+    await menu.setProps({ isOpen: false })
     expect(getDrawnMenu()).toBeNull()
 
     // Nothing left behind answering for a menu nobody has open.
@@ -86,7 +86,7 @@ describe('choosing an item', () => {
 
   it('says nothing for an item that cannot be chosen', async () => {
     const menu = mountMenu({
-      items: [{ id: 'open', text: 'Open', disabled: true }],
+      items: [{ id: 'open', text: 'Open', isDisabled: true }],
     })
     await settle()
 
@@ -159,7 +159,7 @@ describe('where the keyboard is while it is open', () => {
   const openMenu = (props: Partial<MenuProps> = {}) => mountMenu({ trigger: 'keyboard', ...props })
 
   it('is on the first item that can be chosen', async () => {
-    openMenu({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
+    openMenu({ items: [{ id: 'open', text: 'Open', isDisabled: true }, ...ITEMS] })
     await settle()
     expect(document.activeElement).toBe(choices()[1])
   })
@@ -258,7 +258,7 @@ describe('where the keyboard goes when it closes', () => {
     await settle()
     expect(document.activeElement).not.toBe(from)
 
-    await menu.setProps({ open: false })
+    await menu.setProps({ isOpen: false })
     expect(document.activeElement).toBe(from)
     from.remove()
   })
@@ -280,7 +280,7 @@ describe('where the keyboard goes when it closes', () => {
     await settle()
     from.remove()
 
-    await menu.setProps({ open: false })
+    await menu.setProps({ isOpen: false })
     expect(document.activeElement).not.toBe(from)
   })
 })
@@ -312,7 +312,7 @@ describe('when there is nothing to choose', () => {
 
   it('says it in the words it was given', async () => {
     mounted = mount(Menu, {
-      props: { items: [], at: { x: 0, y: 0 }, open: true },
+      props: { items: [], at: { x: 0, y: 0 }, isOpen: true },
       slots: { silence: 'ничего' },
       attachTo: document.body,
     })
@@ -481,8 +481,8 @@ describe('searching the items', () => {
     const menu = mountMenu({ searchable: true })
     await settle()
     await type('copy')
-    await menu.setProps({ open: false })
-    await menu.setProps({ open: true })
+    await menu.setProps({ isOpen: false })
+    await menu.setProps({ isOpen: true })
     await settle()
     expect(getSearch()!.value).toBe('')
     expect(choices()).toHaveLength(3)

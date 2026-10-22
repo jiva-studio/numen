@@ -364,7 +364,6 @@ export const AValueThatWraps: Story = {
   play: async ({ canvasElement }) => {
     const box = found(canvasElement, '[data-value="Answer"]')
 
-    // It wrapped: the box stands taller than the one line it is written on.
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
     expect(box.clientHeight).toBeGreaterThan(line * 2)
     expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)

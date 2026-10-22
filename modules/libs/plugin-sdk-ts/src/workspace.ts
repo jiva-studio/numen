@@ -140,7 +140,7 @@ export interface MenuEntry {
   readonly id: string
   readonly text: string
   readonly group: string
-  readonly disabled?: boolean
+  readonly isDisabled?: boolean
 }
 
 // PathMenuRow is the row of the vault a menu is asked for on.

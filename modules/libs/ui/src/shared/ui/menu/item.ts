@@ -16,7 +16,7 @@ export interface MenuItem {
   /** A second line under the words, in the small print. */
   readonly detail?: string
   /** Drawn and announced, and not choosable. */
-  readonly disabled?: boolean
+  readonly isDisabled?: boolean
   /**
    * The group it belongs to. Items of one group stand together, and a rule is
    * drawn where one group gives way to the next. A menu whose items name no
@@ -114,12 +114,12 @@ export const getInitialIndex = (
   current: string | null = null,
 ): number => {
   if (!MENU_TRIGGERS[trigger].hasInitialFocus) return -1
-  const at = items.findIndex((item) => item.id === current && !item.disabled)
+  const at = items.findIndex((item) => item.id === current && !item.isDisabled)
   return stepTo(items, { from: Math.max(at, 0) - 1, by: 1 }, canLandOn)
 }
 
 /** Whether the keyboard may land on the item. */
-export const canLandOn = (item: MenuItem): boolean => !item.disabled
+export const canLandOn = (item: MenuItem): boolean => !item.isDisabled
 
 /**
  * The items a search words name. Every word has to be found in an item's text,

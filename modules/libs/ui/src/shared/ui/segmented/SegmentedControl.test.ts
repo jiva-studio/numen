@@ -74,13 +74,13 @@ describe('choosing', () => {
   })
 
   it('is left where it is on Home and End while nobody may turn it', async () => {
-    const control = mountSegmentedControl({ modelValue: 'medium', disabled: true })
+    const control = mountSegmentedControl({ modelValue: 'medium', isDisabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('keydown', { key: 'End' })
     expect(getEmitted(control)).toEqual([])
   })
 
   it('passes nothing on while nobody may turn it', async () => {
-    const control = mountSegmentedControl({ disabled: true })
+    const control = mountSegmentedControl({ isDisabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('click')
     expect(getEmitted(control)).toEqual([])
   })

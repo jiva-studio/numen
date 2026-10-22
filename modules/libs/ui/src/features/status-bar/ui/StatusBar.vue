@@ -3,7 +3,7 @@
  * Persistent bottom status bar displaying background task activity and details popover.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuGround } from '@/shared/ui/menu/ground'
+import { useMenuDismissal } from '@/shared/ui/menu/menuDismissal'
 import type { StatusBarTask } from '../model/types'
 import { calculateAggregate } from '../lib/aggregate'
 import CircularProgress from './CircularProgress.vue'
@@ -40,7 +40,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-const ground = useMenuGround(root, onClose)
+const dismissal = useMenuDismissal(root, onClose)
 
 const taskList = computed(() => props.tasks ?? [])
 const aggregate = computed(() => calculateAggregate(taskList.value))
@@ -50,7 +50,7 @@ const summaryText = computed(() => {
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(isOpen, (open) => (open ? ground.listen() : ground.release()))
+watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {

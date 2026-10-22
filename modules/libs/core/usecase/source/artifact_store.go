@@ -9,15 +9,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// artifactShelf is where the artifacts made from a vault's files are found.
-type artifactShelf struct {
+// artifactStore is where the artifacts made from a vault's files are found.
+type artifactStore struct {
 	queries port.SourceQueries
 	derived port.DerivedStores
 }
 
 // getHash is the hash everything made from one file is placed under. A url stands
 // under its address, and the index recorded that when it walked past.
-func (s artifactShelf) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
+func (s artifactStore) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
 	response, target, err := s.queries.GetSourceText(ctx, v.ID, path)
 	if err != nil || !target {
 		return "", err
@@ -63,7 +63,7 @@ type artifactSet struct {
 
 // getArtifacts is what the store holds for one file. An empty hash is a file
 // the index does not hold.
-func (s artifactShelf) getArtifacts(ctx context.Context, v domain.Vault, path string) (artifactSet, error) {
+func (s artifactStore) getArtifacts(ctx context.Context, v domain.Vault, path string) (artifactSet, error) {
 	hash, err := s.getHash(ctx, v, path)
 	if err != nil || hash == "" {
 		return artifactSet{}, err

@@ -23,11 +23,11 @@ type ArtifactText struct {
 
 // GetArtifactText reads a range of one artifact as it relies on disk.
 type GetArtifactText struct {
-	shelf artifactShelf
+	store artifactStore
 }
 
 func NewGetArtifactText(queries port.SourceQueries, derived port.DerivedStores) *GetArtifactText {
-	return &GetArtifactText{shelf: artifactShelf{queries: queries, derived: derived}}
+	return &GetArtifactText{store: artifactStore{queries: queries, derived: derived}}
 }
 
 // Execute reads the range of the artifact of the given kind. A length of zero
@@ -36,7 +36,7 @@ func NewGetArtifactText(queries port.SourceQueries, derived port.DerivedStores) 
 func (u *GetArtifactText) Execute(
 	ctx context.Context, v domain.Vault, path, kind string, start, length int,
 ) (ArtifactText, error) {
-	set, err := u.shelf.getArtifacts(ctx, v, path)
+	set, err := u.store.getArtifacts(ctx, v, path)
 	if err != nil {
 		return ArtifactText{}, err
 	}

@@ -18,7 +18,7 @@ var ErrUnnameable = errors.New("a note cannot be given this title")
 func Filename(title string) (name string, exact bool, err error) {
 	switch name, exact = GetReducedFilename(title); {
 	case name == "":
-		return "", false, fmt.Errorf("%w: %q leaves nothing a file can be named after", ErrUnnameable, title)
+		return "", false, fmt.Errorf("%w: %q generates empty filename", ErrUnnameable, title)
 	case strings.ContainsAny(title, "\n\r"):
 		return "", false, fmt.Errorf("%w: %q is more than one line", ErrUnnameable, title)
 	}

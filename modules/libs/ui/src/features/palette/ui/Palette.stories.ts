@@ -159,7 +159,7 @@ const renderOverWindow = (args: Knobs) => ({
       <Palette
         v-model="typed"
         :groups="args.groups"
-        :open="open"
+        :is-open="open"
         :placeholder="args.placeholder"
         :crumb="args.crumb"
         :step="args.step"
@@ -402,7 +402,7 @@ export const NotLit: Story = {
         title: 'Names',
         items: [
           { ...createItem('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
-          { id: 'stuck', title: 'Enthalpy — this file cannot be read', disabled: true },
+          { id: 'stuck', title: 'Enthalpy — this file cannot be read', isDisabled: true },
           createItem('gibbs', 'Gibbs free energy', 'e'),
         ],
       },
@@ -455,7 +455,7 @@ export const Filling: Story = {
         <Palette
           v-model="typed"
           :groups="groups"
-          :open="open"
+          :is-open="open"
           @choose="args.onChoose"
           @dismiss="args.onDismiss"
         />
@@ -502,7 +502,7 @@ export const NothingHeard: Story = {
         <Palette
           v-model="typed"
           :groups="groups"
-          :open="open"
+          :is-open="open"
           @choose="args.onChoose"
           @dismiss="args.onDismiss"
         />
@@ -605,7 +605,7 @@ const renderWithIcons = (args: Knobs) => ({
       <Palette
         v-model="typed"
         :groups="args.groups"
-        :open="open"
+        :is-open="open"
         @choose="args.onChoose"
         @dismiss="args.onDismiss"
       >
@@ -827,7 +827,7 @@ export const NotToBeChosen: Story = {
         title: 'Names',
         items: [
           createItem('entropy', 'Entropy', 'ent'),
-          { id: 'stuck', title: 'Enthalpy — this file cannot be read', disabled: true },
+          { id: 'stuck', title: 'Enthalpy — this file cannot be read', isDisabled: true },
           createItem('gibbs', 'Gibbs free energy', 'e'),
         ],
       },
@@ -989,7 +989,7 @@ export const Steps: Story = {
         <Palette
           v-model="typed"
           :groups="step === 'find' ? [NAMED] : []"
-          :open="open"
+          :is-open="open"
           :step="step"
           :crumb="crumb"
           :placeholder="step === 'find' ? 'Search' : 'The new name'"

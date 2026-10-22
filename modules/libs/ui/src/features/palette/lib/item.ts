@@ -30,7 +30,7 @@ export interface PaletteItem {
    */
   readonly keys?: PaletteKeys
   /** Drawn and announced, and not choosable. */
-  readonly disabled?: boolean
+  readonly isDisabled?: boolean
 }
 
 /** One group of the list. What the groups are is the caller's. */
@@ -82,7 +82,7 @@ export const flatten = (groups: readonly PaletteGroup[]): readonly PalettePlace[
 
 /** Whether the keyboard may land here. An item with nothing to do is passed over. */
 export const canChoose = (item: PaletteItem): boolean =>
-  !item.disabled && (item.actions?.length ?? 0) > 0
+  !item.isDisabled && (item.actions?.length ?? 0) > 0
 
 /** Whether the keyboard may land on the place. */
 export const canLandOn = (place: PalettePlace): boolean => canChoose(place.item)

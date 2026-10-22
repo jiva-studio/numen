@@ -15,7 +15,7 @@ import (
 // newDrop is one vault holding one recording, with the run that
 // writes its words down, the cut that follows it, and the drop that takes both
 // away.
-func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *store, *shelf, *voice, string) {
+func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *store, *fakeStorage, *voice, string) {
 	t.Helper()
 	raw := newRecording(words)
 	shelved := newLibrary()
@@ -26,7 +26,7 @@ func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *st
 
 	cutting := source.NewExtract(vaults{first.ID: shelved}, index, index)
 	cutting.Derived = shelf
-	listen := NewTranscribe(vaults{first.ID: shelved}, index, shelves{shelf}, model)
+	listen := NewTranscribe(vaults{first.ID: shelved}, index, fakeStores{shelf}, model)
 	listen.Batch = 1
 	listen.Cut = func(ctx context.Context, v domain.Vault, path string) error {
 		_, err := cutting.ExtractOne(ctx, v, path)
@@ -36,7 +36,7 @@ func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *st
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
 		Queries: index,
-		Derived: shelves{shelf},
+		Derived: fakeStores{shelf},
 	}
 	return listen, drop, first, index, shelf, model, text.Fingerprint(raw)
 }

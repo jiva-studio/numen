@@ -60,7 +60,7 @@ function getRowItem(one: StepRow, word: string, words: Words): PaletteItem | nul
     title: one.title,
     ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
     ...(one.detail ? { detail: one.detail } : {}),
-    ...(one.disabled ? { disabled: true } : {}),
+    ...(one.isDisabled ? { isDisabled: true } : {}),
     actions: [{ id: CHOSEN, text: words.chooses }],
   }
 }
@@ -127,7 +127,7 @@ function getExactlyGroup(
         id: EXACT,
         title: `${action} “${title}”`,
         detail,
-        disabled: text.trim() !== title,
+        isDisabled: text.trim() !== title,
         actions: [{ id: EXACT, text: action }],
       },
     ],
@@ -174,7 +174,7 @@ function createVaultsGroup(
         id: one.id,
         title: one.name,
         detail: why ? `${why} · ${one.path}` : one.path,
-        ...(why ? { disabled: true } : {}),
+        ...(why ? { isDisabled: true } : {}),
         actions: [{ id: OPEN, text: step.command.text }],
       }
     })

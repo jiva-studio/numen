@@ -55,7 +55,7 @@ export interface ShownRow {
   /** Holding at least one row. */
   readonly hasRows: boolean
   /** What it holds is drawn. */
-  readonly open: boolean
+  readonly isOpen: boolean
 }
 
 /**
@@ -78,7 +78,7 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
         level,
         isLast: at === children.length - 1,
         hasRows: inside.length > 0,
-        open: isOpened,
+        isOpen: isOpened,
       })
 
       if (isOpened) walk(inside, row.id, level + 1)

@@ -58,7 +58,7 @@ describe('what a run of letters lands on', () => {
 
   it('passes over an item that cannot be chosen', () => {
     const items: MenuItem[] = [
-      { id: 'copy', text: 'Copy path', disabled: true },
+      { id: 'copy', text: 'Copy path', isDisabled: true },
       { id: 'cut', text: 'Cut' },
     ]
     expect(jumpTo(items, NOTHING_TYPED, { letter: 'c', from: -1, now: 0 }).at).toBe(1)

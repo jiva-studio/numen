@@ -4,7 +4,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, shallowRef, type ShallowRef } from 'vue'
-import { useMenuGround, type MenuGroundState } from './ground'
+import { useMenuDismissal, type MenuDismissalState } from './menuDismissal'
 
 let mounted: { unmount: () => void } | null = null
 const elements: HTMLElement[] = []
@@ -25,16 +25,16 @@ const createElement = (): HTMLElement => {
 const setup = (menuElement: HTMLElement | null = null) => {
   const dismiss = vi.fn<() => void>()
   const menu: ShallowRef<HTMLElement | null> = shallowRef(menuElement)
-  let ground: MenuGroundState | null = null
+  let dismissal: MenuDismissalState | null = null
   const host = defineComponent({
     setup() {
-      ground = useMenuGround(menu, dismiss)
+      dismissal = useMenuDismissal(menu, dismiss)
       return () => null
     },
   })
   const wrapper = mount(host)
   mounted = wrapper
-  return { dismiss, ground: ground as unknown as MenuGroundState, wrapper }
+  return { dismiss, ground: dismissal as unknown as MenuDismissalState, wrapper }
 }
 
 describe('what dismisses the menu', () => {

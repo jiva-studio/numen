@@ -16,16 +16,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// lookAt gives the core a person to put notes and passages in front of.
-func lookAt(core *mcp.Core, queries port.NoteQueries, view port.Window) {
+// observeView configures the core with queries and a window view.
+func observeView(core *mcp.Core, queries port.NoteQueries, view port.Window) {
 	core.Notes.FocusNote = note.NewFocusNote(queries, view)
 	core.Sources.FocusPassage = source.NewFocusPassage(filesystem.VaultReaders{}, view)
 }
 
-// lookingCore is a core with nothing but a person to look.
-func lookingCore(view port.Window) mcp.Core {
+// attachViewer returns a core configured with the window view.
+func attachViewer(view port.Window) mcp.Core {
 	core := mcp.Core{}
-	lookAt(&core, nil, view)
+	observeView(&core, nil, view)
 	return core
 }
 
@@ -51,7 +51,7 @@ func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSes
 	t.Helper()
 	_, core, queries := newCoreWithQueries(t, notes)
 	looking := &window{}
-	lookAt(&core, queries, looking)
+	observeView(&core, queries, looking)
 	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
 		_ = looking.ShowEdit(ctx, said)
 	})
@@ -105,7 +105,7 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 
 func TestFocusReturnsSoWhenTheWindowWouldNot(t *testing.T) {
 	_, core, queries := newCoreWithQueries(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	lookAt(&core, queries, &window{fails: errors.New("nobody is looking")})
+	observeView(&core, queries, &window{fails: errors.New("nobody is looking")})
 	session := newSessionOver(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{

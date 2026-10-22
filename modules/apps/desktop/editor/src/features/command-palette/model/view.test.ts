@@ -167,7 +167,7 @@ describe('a command that gives no words for its confirmation', () => {
         id: 'exactly',
         title: ' “Ontology”',
         detail: '',
-        disabled: false,
+        isDisabled: false,
         actions: [{ id: 'exactly', text: '' }],
       },
     ])

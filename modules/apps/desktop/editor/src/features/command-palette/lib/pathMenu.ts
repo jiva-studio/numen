@@ -95,12 +95,12 @@ const getRecordingRuns = (
 ): readonly PathItem[] => {
   const runs: PathItem[] = []
   if (canRun(TRANSCRIBE.id)) {
-    runs.push({ ...TRANSCRIBE, disabled: isBusyOrDone(createdItem?.transcript) })
+    runs.push({ ...TRANSCRIBE, isDisabled: isBusyOrDone(createdItem?.transcript) })
   }
   if (canRun(PROOFREAD.id)) {
     runs.push({
       ...PROOFREAD,
-      disabled: isProofreadDisabled(createdItem?.transcript, createdItem?.['transcript.corrected']),
+      isDisabled: isProofreadDisabled(createdItem?.transcript, createdItem?.['transcript.corrected']),
     })
   }
   return runs
@@ -115,12 +115,12 @@ const getBookRuns = (
   if (format === 'epub') return []
   const runs: PathItem[] = []
   if (canRun(RECOGNISE.id)) {
-    runs.push({ ...RECOGNISE, disabled: isBusyOrDone(createdItem?.ocr) })
+    runs.push({ ...RECOGNISE, isDisabled: isBusyOrDone(createdItem?.ocr) })
   }
   if (canRun(PROOFREAD.id)) {
     runs.push({
       ...PROOFREAD,
-      disabled: isProofreadDisabled(createdItem?.ocr, createdItem?.['ocr.corrected']),
+      isDisabled: isProofreadDisabled(createdItem?.ocr, createdItem?.['ocr.corrected']),
     })
   }
   return runs

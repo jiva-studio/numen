@@ -476,7 +476,7 @@ describe('destroying a note', () => {
     const { commands } = createPalette()
     commands.startCommand('destroy', front())
 
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
 
     void commands.setTyped('Ontolog')
@@ -489,7 +489,7 @@ describe('destroying a note', () => {
     commands.startCommand('destroy', front())
     void commands.setTyped('Ontology')
 
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(false)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
     expect(commands.chooseItem('exactly', 'exactly')?.id).toBe('destroy')
   })
 })
@@ -518,7 +518,7 @@ describe('a note that moves under an open step', () => {
 
     void commands.setTyped('Ontology')
 
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
 
     void commands.setTyped('Being')
@@ -852,7 +852,7 @@ describe('a command that offers a list the window holds', () => {
       id: 'half',
       title: 'Light and dark',
       items: [
-        { id: 'mode:system', title: 'Follow the system', disabled: true },
+        { id: 'mode:system', title: 'Follow the system', isDisabled: true },
         { id: 'mode:light', title: 'Light', detail: 'The theme worn sets this itself' },
       ],
     },
@@ -901,7 +901,7 @@ describe('a command that offers a list the window holds', () => {
     const { commands } = createPalette({}, [], target)
     commands.startCommand('mode', front())
 
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.chooseItem('mode:system', 'chosen')).toBeNull()
     expect(commands.chooseItem('mode:none', 'chosen')).toBeNull()
   })
@@ -1080,7 +1080,7 @@ describe('a command that asks for a vault', () => {
     commands.startCommand('openVault', front())
     await settle()
 
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.groups.value[0]?.items[0]?.detail).toBe(`${words.gone} · /vaults/Gone`)
     expect(commands.chooseItem('gone', 'open')).toBeNull()
   })
@@ -1095,7 +1095,7 @@ describe('a command that asks for a vault', () => {
     commands.startCommand('openVault', front())
     await settle()
 
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.groups.value[0]?.items[0]?.detail).toBe(`${words.current} · /vaults/Physics`)
     expect(commands.chooseItem('physics', 'open')).toBeNull()
   })
@@ -1232,7 +1232,7 @@ describe('a vault taken off the list', () => {
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Erase “Heat”')
     expect(commands.groups.value[0]?.items[0]?.detail).toBe(words.binned)
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.placeholder.value).toBe(words.typeVaultBack)
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
   })
@@ -1242,7 +1242,7 @@ describe('a vault taken off the list', () => {
 
     void commands.setTyped('Heat')
 
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(false)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
     expect(commands.chooseItem('exactly', 'exactly')).toMatchObject({
       id: 'eraseVault',
       vault: { id: 'heat', name: 'Heat' },
@@ -1730,7 +1730,7 @@ describe('what a step draws', () => {
     void commands.setTyped('  Ontology  ')
 
     expect(commands.groups.value[0]?.id).toBe('exactly')
-    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(false)
+    expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
     expect(commands.groups.value[0]?.items[0]?.actions).toStrictEqual([
       { id: 'exactly', text: words.destroys },
     ])

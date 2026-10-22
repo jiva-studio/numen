@@ -33,9 +33,8 @@ var (
 	// ErrUnavailable means the agent the plugin is routed to cannot be reached or
 	// stopped without an answer.
 	ErrUnavailable = errors.New("ai: routed agent did not answer")
-	// ErrNoConsent means the person has not let the plugin ask a model, or has
-	// refused it. The window asks them in the settings.
-	ErrNoConsent = errors.New("ai: the person has not let this plugin ask a model")
+	// ErrNoConsent means user consent is required to invoke an AI model.
+	ErrNoConsent = errors.New("ai: user consent required to invoke model")
 	// ErrNoAnswer means the host replied without an answer.
 	ErrNoAnswer = errors.New("ai: host sent no answer")
 )

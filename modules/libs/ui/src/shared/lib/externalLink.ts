@@ -7,13 +7,13 @@
  */
 
 /** The schemes a browser is handed. Anything else is nobody's to open. */
-const HANDED = new Set(['http:', 'https:', 'mailto:', 'tel:'])
+const ALLOWED_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
 /** Hands an address to wherever the person's own browser opens it. */
 export type LinkOpener = (href: string) => void
 
 /** Whether an address names somewhere this page is not served from. */
-export const isOutward = (at: URL, here: URL): boolean =>
+export const isExternalLink = (at: URL, here: URL): boolean =>
   at.protocol !== here.protocol || at.host !== here.host
 
 /**
@@ -24,7 +24,7 @@ export const isOutward = (at: URL, here: URL): boolean =>
  * can carry the window off. What a link inside the application means is still
  * the application's, and is left alone.
  */
-export const interceptOutwardLinks = (
+export const interceptExternalLinks = (
   openLink: LinkOpener,
   root: Document = document,
 ): (() => void) => {
@@ -42,10 +42,10 @@ export const interceptOutwardLinks = (
       // page's own and is left to it.
       return
     }
-    if (!isOutward(at, here)) return
+    if (!isExternalLink(at, here)) return
 
     press.preventDefault()
-    if (HANDED.has(at.protocol)) openLink(at.href)
+    if (ALLOWED_SCHEMES.has(at.protocol)) openLink(at.href)
   }
 
   root.addEventListener('click', onPress, true)
@@ -55,3 +55,4 @@ export const interceptOutwardLinks = (
     root.removeEventListener('auxclick', onPress, true)
   }
 }
+

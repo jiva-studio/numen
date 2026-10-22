@@ -27,7 +27,7 @@ describe('reaching the core', () => {
     const request: string[] = []
     vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
       request.push(input instanceof Request ? input.url : String(input))
-      throw new Error('nothing answers')
+      throw new Error('speech recognition failed: no speech detected')
     })
 
     const core = await startCore()

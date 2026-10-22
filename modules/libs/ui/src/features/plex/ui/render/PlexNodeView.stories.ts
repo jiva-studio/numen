@@ -199,7 +199,7 @@ export const EveryRelation: Story = {
       if (!node) throw new Error(`no node ${name}`)
       const icon = node.querySelector('.plex__icon')
       const title = node.querySelector('.plex__title')
-      if (!icon || !title) throw new Error(`nothing drawn before ${name}`)
+      if (!icon || !title) throw new Error('node not found')
       return [getComputedStyle(icon).color, getComputedStyle(title).color]
     }
 

@@ -75,7 +75,7 @@ export { clock } from './shared/lib/duration'
 export { createFollower } from './shared/lib/stream'
 
 export { Spinner } from './shared/ui/spinner'
-export { Waiting } from './shared/ui/waiting'
+export { LoadingOverlay, Waiting } from './shared/ui/waiting'
 export { Skeleton } from './shared/ui/skeleton'
 
 export type { Turn } from './features/thread'
@@ -87,7 +87,7 @@ export type { AgentPort, AgentQuery, AgentStep } from './features/thread'
 export { isNoteAddress, getWikilinks } from './shared/lib/address'
 
 /** A link that leads out of the application, and the window held against it. */
-export { interceptOutwardLinks } from './shared/lib/outward'
+export { interceptExternalLinks, isExternalLink } from './shared/lib/externalLink'
 
 /** Numbers as they are read out, which both windows read the same way. */
 export { many, percent, plural } from './shared/lib/digits'

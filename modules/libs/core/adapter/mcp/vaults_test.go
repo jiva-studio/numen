@@ -519,7 +519,7 @@ func TestAddingWithNoPathAndNoFolderDialogReturnsSo(t *testing.T) {
 		t.Fatal("vault_add is missing, and a folder can be named")
 	}
 	why := getToolError(t, session, "vault_add", struct{}{})
-	if !strings.Contains(why, "pick a folder") {
+	if !strings.Contains(why, "folder selection dialog unavailable") {
 		t.Errorf("a build with no dialog failed with %q", why)
 	}
 }

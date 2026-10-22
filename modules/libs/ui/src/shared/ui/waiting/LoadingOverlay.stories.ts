@@ -3,11 +3,11 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
-import Waiting from './Waiting.vue'
+import LoadingOverlay from './LoadingOverlay.vue'
 
 const meta = {
-  title: 'Waiting',
-  component: Waiting,
+  title: 'LoadingOverlay',
+  component: LoadingOverlay,
   parameters: {
     layout: 'fullscreen',
     docs: {
@@ -20,7 +20,7 @@ const meta = {
       },
     },
   },
-} satisfies Meta<typeof Waiting>
+} satisfies Meta<typeof LoadingOverlay>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -28,10 +28,10 @@ type Story = StoryObj<typeof meta>
 /** In the room a pane gives it. */
 export const Playground: Story = {
   render: () => ({
-    components: { Waiting },
+    components: { LoadingOverlay },
     template: `
       <div class="numen" style="block-size:320px;background:var(--numen-surface)">
-        <Waiting />
+        <LoadingOverlay />
       </div>
     `,
   }),
@@ -43,11 +43,11 @@ export const Playground: Story = {
  */
 export const OneSizeInEveryRoom: Story = {
   render: () => ({
-    components: { Waiting },
+    components: { LoadingOverlay },
     template: `
       <div class="numen" style="display:flex;gap:2px;background:var(--numen-surface)">
-        <div style="flex:1;block-size:320px;font-size:2rem"><Waiting /></div>
-        <div style="flex:1;block-size:120px;font-size:0.75rem"><Waiting /></div>
+        <div style="flex:1;block-size:320px;font-size:2rem"><LoadingOverlay /></div>
+        <div style="flex:1;block-size:120px;font-size:0.75rem"><LoadingOverlay /></div>
       </div>
     `,
   }),

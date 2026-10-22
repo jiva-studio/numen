@@ -96,4 +96,4 @@ export const retryWhileBusy = async <T>(ask: () => Promise<T>): Promise<T> => {
   }
 }
 
-const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

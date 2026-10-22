@@ -8,7 +8,7 @@ import type { ComposerAction } from '../state'
 const props = defineProps<{
   /** What pressing it does. */
   action: ComposerAction
-  disabled: boolean
+  isDisabled: boolean
   /** What it is called while it sends. */
   sendLabel: string
   /** What it is called while it stops. */
@@ -30,7 +30,7 @@ const named = computed(() => (props.action === 'stop' ? props.stopLabel : props.
       <Button
         :key="action"
         size="icon-small"
-        :disabled="disabled"
+        :disabled="isDisabled"
         :aria-label="named"
         @click="emit('press')"
       >

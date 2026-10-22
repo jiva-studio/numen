@@ -13,7 +13,7 @@ import (
 // stoppedDone is the reason an agent gives when it stopped because it was done.
 const stoppedDone = "done"
 
-var errNoAnswer = errors.New("the agent said nothing")
+var errNoAnswer = errors.New("agent returned empty response")
 
 // Starter starts the tasks an agent is given.
 type Starter interface {

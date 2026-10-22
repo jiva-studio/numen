@@ -374,7 +374,7 @@ export const NothingInIt: Story = {
     for (const pane of PANES) {
       const element = getPane(canvasElement, pane)
       const ghost = element.querySelector<HTMLElement>('.face__ghost')
-      if (!ghost) throw new Error(`nothing said in ${pane}`)
+      if (!ghost) throw new Error('face not found')
       placeholders.push(ghost.textContent?.trim() ?? '')
 
       const box = element.getBoundingClientRect()

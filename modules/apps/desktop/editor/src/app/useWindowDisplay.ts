@@ -197,4 +197,4 @@ export function useWindowDisplay(
   }
 }
 
-const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

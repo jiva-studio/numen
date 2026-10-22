@@ -6,7 +6,7 @@
  * A link to another document of the book names a place inside markup that has
  * not been drawn yet, so where it targetLink is held until that document is there.
  */
-import { isOutwardHref, parseBookLink, type BookLink } from '../lib/link'
+import { isExternalHref, parseBookLink, type BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
 /** What the reader says when a link is followed. */
@@ -38,7 +38,7 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
     const href = link.getAttribute('href') as string
 
     press.preventDefault()
-    if (isOutwardHref(href)) return
+    if (isExternalHref(href)) return
 
     const place = parseBookLink(href)
     if (place.path !== '' && place.path !== props.path) {

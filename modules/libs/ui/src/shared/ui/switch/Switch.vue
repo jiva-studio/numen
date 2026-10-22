@@ -12,10 +12,10 @@ import { cn } from '@/shared/lib/classes'
 
 const props = withDefaults(
   defineProps<{
-    disabled?: boolean
+    isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { disabled: false },
+  { isDisabled: false },
 )
 
 const model = defineModel<boolean>({ default: false })
@@ -25,7 +25,7 @@ const model = defineModel<boolean>({ default: false })
   <SwitchRoot
     v-model="model"
     data-slot="switch"
-    :disabled="disabled"
+    :disabled="isDisabled"
     :class="
       cn(
         'rounded-pill inline-flex h-5 w-9 shrink-0 items-center p-px',

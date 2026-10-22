@@ -37,7 +37,7 @@ func (s scripted) ProofreadSpeech(
 // line.
 func newProofreadTranscript(
 	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
-) (Proofread, domain.Vault, *shelf, *corrector, string) {
+) (Proofread, domain.Vault, *fakeStorage, *corrector, string) {
 	t.Helper()
 	raw := newRecording(words)
 	shelved := newLibrary()
@@ -49,7 +49,7 @@ func newProofreadTranscript(
 		t.Fatal(err)
 	}
 	by := &corrector{says: told, limit: 1}
-	return newTranscriptProofreading(t, vaults{first.ID: shelved}, shelves{shelf}, by),
+	return newTranscriptProofreading(t, vaults{first.ID: shelved}, fakeStores{shelf}, by),
 		first, shelf, by, hash
 }
 
@@ -76,7 +76,7 @@ func newCues(words []string) []domain.TranscriptCue {
 }
 
 // readCues is what a transcript on the shelf says, cue by cue.
-func readCues(t *testing.T, shelved *shelf, name domain.ArtifactName) []domain.TranscriptCue {
+func readCues(t *testing.T, shelved *fakeStorage, name domain.ArtifactName) []domain.TranscriptCue {
 	t.Helper()
 	_, cues := transcript.Parse(readShelf(t, shelved, name))
 	return cues

@@ -733,7 +733,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     joined: vault.joined,
     /** The vault holds every answer back until it is release. */
     holdAnswers: () => {
-      pendingGate = new Promise<void>((wake) => (release = wake))
+      pendingGate = new Promise<void>((resolve) => (release = resolve))
     },
     answers: () => release(),
   }

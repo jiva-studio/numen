@@ -8,8 +8,8 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
-import { createAnswerGuard as latest } from '@numen/plugin-sdk'
-import { useDebouncedAsk, type Wait } from '@/shared/search'
+import { createRequestGuard as latest } from '@numen/plugin-sdk'
+import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
 import { createCommands } from '../lib/commands'
 import { getPaletteView } from './view'
@@ -53,7 +53,7 @@ export interface CommandPaletteDeps {
 interface PaletteSearchDeps {
   readonly core: CommandsDeps
   readonly words: Words
-  readonly debounced: ReturnType<typeof useDebouncedAsk>
+  readonly debounced: ReturnType<typeof useDebouncedSearch>
   readonly found: Ref<readonly NameMatch[]>
   readonly isWorking: Ref<boolean>
   readonly failureMessage: Ref<string>
@@ -99,7 +99,7 @@ interface PaletteVaultsDeps {
 
 function createVaultsLoader(deps: PaletteVaultsDeps) {
   return async () => {
-    const mine = deps.asked.ask()
+    const mine = deps.asked.acquireRequest()
     deps.isWorking.value = true
     deps.failureMessage.value = ''
     try {
@@ -185,10 +185,10 @@ function createPaletteState(wait?: Wait) {
   const isWorking = ref(BLANK.isWorking)
   const failureMessage = ref(BLANK.failureMessage)
   const request = latest()
-  const debounced = useDebouncedAsk({ guard: request, ...(wait ? { wait } : {}) })
+  const debounced = useDebouncedSearch({ guard: request, ...(wait ? { wait } : {}) })
 
   const drop = () => {
-    request.drop()
+    request.cancel()
     found.value = BLANK.found
     recognized.value = BLANK.known
     showing.value = BLANK.showing

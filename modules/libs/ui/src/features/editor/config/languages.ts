@@ -1,9 +1,4 @@
-/**
- * What a fenced block can be written in.
- *
- * The word after the fence is looked up here; a word that is not here leaves
- * the block plain. Each grammar is fetched the first time its language loads.
- */
+/** Supported code block syntax highlighting languages for CodeMirror markdown. */
 import { LanguageDescription, LanguageSupport, StreamLanguage } from '@codemirror/language'
 
 type StreamParser = Parameters<typeof StreamLanguage.define>[0]

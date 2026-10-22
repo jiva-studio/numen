@@ -101,8 +101,8 @@ function onDismissMenu() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function getRowIcon(id: string, open: boolean): Component {
-  return props.state.getEntryIcon(props.state.list.getEntryAt(id), open)
+function getRowIcon(id: string, isOpen: boolean): Component {
+  return props.state.getEntryIcon(props.state.list.getEntryAt(id), isOpen)
 }
 
 function getItemIcon(id: string): Component | null {
@@ -136,8 +136,8 @@ function getItemIcon(id: string): Component | null {
       @remove="onRemoveEntries"
       @menu="onOpenMenu"
     >
-      <template #icon="{ id, open }">
-        <component :is="getRowIcon(id, open)" class="files__icon" aria-hidden="true" />
+      <template #icon="{ id, isOpen }">
+        <component :is="getRowIcon(id, isOpen)" class="files__icon" aria-hidden="true" />
       </template>
 
       <template #silence>{{ words.empty }}</template>
@@ -147,7 +147,7 @@ function getItemIcon(id: string): Component | null {
       v-if="props.state.menu.value"
       :items="items"
       :at="props.state.menu.value!.at"
-      open
+      is-open
       @choose="onChooseMenuItem"
       @dismiss="onDismissMenu"
     >

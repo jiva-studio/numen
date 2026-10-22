@@ -120,7 +120,7 @@ describe('typing', () => {
     await settle()
 
     notes.setBody('Heat.md', 'one')
-    await new Promise((wake) => setTimeout(wake, 20))
+    await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(wrote).toHaveLength(0)
   })
@@ -276,7 +276,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     const slow: Notes = {
       ...core,
       write: async (path, body, seen) => {
-        await new Promise((wake) => setTimeout(wake, 20))
+        await new Promise((resolve) => setTimeout(resolve, 20))
         return core.write(path, body, seen)
       },
     }
@@ -286,7 +286,7 @@ describe('a note whose file is about to be renamed or removed', () => {
 
     notes.setBody('Heat.md', 'one two')
     await notes.flushPending('Heat.md')
-    await new Promise((wake) => setTimeout(wake, 20))
+    await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
   })
@@ -422,7 +422,7 @@ describe('a note that changed on disk under a save', () => {
     expect(notes.getOpenNote('Heat.md').body).toBe('mine')
 
     notes.setBody('Heat.md', 'mine and more')
-    await new Promise((wake) => setTimeout(wake, 20))
+    await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(wrote).toHaveLength(1)
     expect(notes.getOpenNote('Heat.md').state).toBe('stale')

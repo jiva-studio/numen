@@ -16,7 +16,7 @@ import {
   type Flow,
   type Mark,
 } from '../lib/spread'
-import type { PageTurn } from '@/shared/lib/turn'
+import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
 import { turnTo } from '../lib/turn'
 import type { SettledBookProps } from '../lib/props'
 
@@ -92,7 +92,7 @@ export function useBookTurns(options: BookTurnsOptions) {
   const getSpreadOf = (at: number) => findSpreadAt(options.marks.value, options.flow.value, at)
 
   /** What a turn of the page asks for, and where it lands. */
-  const turn = (way: PageTurn) => {
+  const turn = (way: PageNavigationAction) => {
     const to = turnTo(way, {
       spread: activeSpread.value,
       count: options.spreadCount.value,

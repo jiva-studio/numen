@@ -56,7 +56,7 @@ const (
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
 // this file's kind does not carry.
 var (
-	errNoArtifact = errors.New("nothing of that name is made from a file")
+	errNoArtifact = errors.New("artifact not found for file")
 	errNotCarried = errors.New("this file carries no artifact of that name")
 )
 

@@ -7,19 +7,19 @@
  * lifted again means is a decision, and a test asks it without a browser.
  */
 import type { Span } from '@/shared/lib/span'
-import type { PageTurn } from '@/shared/lib/turn'
+import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
 
-/** How far a hand travels sideways before it is a swipe, in CSS pixels. */
+/** Minimum horizontal distance in CSS pixels for a swipe gesture. */
 export const SWIPE = 40
 
-/** Which way a swipe turns the page: the page follows the hand. */
-export function swipeTurn(by: number): PageTurn | undefined {
+/** Determine page turn direction from swipe delta. */
+export function swipeTurn(by: number): PageNavigationAction | undefined {
   if (by <= -SWIPE) return 'next'
   if (by >= SWIPE) return 'back'
   return undefined
 }
 
-/** How much of either edge of the reading area is a press that turns, as a share of it. */
+/** Edge margin ratio of the reading area that triggers a page turn tap. */
 export const EDGE = 0.15
 
 /**
@@ -39,13 +39,13 @@ export interface HandTurnOptions {
  * neither. Taking words up and swiping are one gesture until the hand lifts,
  * and a run worth quoting is wider than a swipe.
  */
-export function handTurn(from: number, to: number, options: HandTurnOptions): PageTurn | undefined {
+export function handTurn(from: number, to: number, options: HandTurnOptions): PageNavigationAction | undefined {
   if (options.hasSelection) return undefined
   return swipeTurn(to - from) ?? pressTurn(to, options.wide)
 }
 
 /** Which way a press across the reading area turns the page. */
-export function pressTurn(x: number, wide: number): PageTurn | undefined {
+export function pressTurn(x: number, wide: number): PageNavigationAction | undefined {
   if (wide <= 0) return undefined
   if (x <= wide * EDGE) return 'back'
   if (x >= wide * (1 - EDGE)) return 'next'
@@ -75,7 +75,7 @@ export interface TurnContext {
  * for; past either end stands the document beside this one, which the holder
  * of the book opens at the offset the turn names.
  */
-export function turnTo(way: PageTurn, context: TurnContext): Destination {
+export function turnTo(way: PageNavigationAction, context: TurnContext): Destination {
   if (way === 'first') return { spread: 0 }
   if (way === 'last') return { spread: context.count - 1 }
 

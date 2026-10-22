@@ -30,7 +30,7 @@ const countMetric = (id: string, isDone: number): Notice => ({
   isUserStarted: true,
   done: isDone,
   total: 100,
-  counting: 'things',
+  counting: 'items',
 })
 
 let mounted: VueWrapper | undefined

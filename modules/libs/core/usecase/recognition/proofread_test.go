@@ -22,7 +22,7 @@ type proofreadable struct {
 	readers port.VaultReaders
 	derived port.DerivedStores
 	vault   domain.Vault
-	shelved *shelf
+	shelved *fakeStorage
 }
 
 // put is a proofreading of that recognition, by the proofreader given.
@@ -37,7 +37,7 @@ func (p proofreadable) put(t *testing.T, by port.Proofreader) Proofread {
 
 // newProofreadRecognition is that recognition, a proofreading of it, and the
 // proofreader the proofreading was made with.
-func newProofreadRecognition(t *testing.T, says map[int]domain.ProofreadCorrection) (Proofread, domain.Vault, *shelf, *corrector) {
+func newProofreadRecognition(t *testing.T, says map[int]domain.ProofreadCorrection) (Proofread, domain.Vault, *fakeStorage, *corrector) {
 	t.Helper()
 	target := newProofreadable(t)
 	by := &corrector{says: says}
@@ -52,7 +52,7 @@ func newProofreadable(t *testing.T) proofreadable {
 	if _, err := read.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	return proofreadable{readers: read.readers, derived: shelves{shelved}, vault: v, shelved: shelved}
+	return proofreadable{readers: read.readers, derived: fakeStores{shelved}, vault: v, shelved: shelved}
 }
 
 // A proofreading with nothing to proofread with fails where it would be
@@ -318,7 +318,7 @@ type names struct {
 
 // textNames finds the one recognition on the shelf and says what its files are
 // called.
-func textNames(t *testing.T, shelved *shelf) names {
+func textNames(t *testing.T, shelved *fakeStorage) names {
 	t.Helper()
 	for _, name := range shelved.artifactNames() {
 		if name.File != domain.ArtifactText || name.Producer != domain.OCR {
@@ -338,7 +338,7 @@ func textNames(t *testing.T, shelved *shelf) names {
 
 // getCheckpoint is what the recognition says about who put it right and how far
 // they got.
-func getCheckpoint(t *testing.T, shelved *shelf) checkpoint {
+func getCheckpoint(t *testing.T, shelved *fakeStorage) checkpoint {
 	t.Helper()
 	var status checkpoint
 	if err := json.Unmarshal(readShelf(t, shelved, textNames(t, shelved).far), &status); err != nil {

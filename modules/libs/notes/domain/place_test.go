@@ -9,7 +9,7 @@ import (
 func TestASpanIsEmptyWhenItEndsWhereItBeginsOrBefore(t *testing.T) {
 	for _, one := range []struct {
 		from, to int
-		empty    bool
+		isEmpty  bool
 		length   int
 	}{
 		{3, 9, false, 6},
@@ -19,15 +19,15 @@ func TestASpanIsEmptyWhenItEndsWhereItBeginsOrBefore(t *testing.T) {
 		{0, 0, true, 0},
 	} {
 		bytes := domain.ByteSpan{From: one.from, To: one.to}
-		if bytes.Empty() != one.empty {
-			t.Errorf("bytes %d..%d: Empty is %v, want %v", one.from, one.to, bytes.Empty(), one.empty)
+		if bytes.Empty() != one.isEmpty {
+			t.Errorf("bytes %d..%d: Empty is %v, want %v", one.from, one.to, bytes.Empty(), one.isEmpty)
 		}
 		if bytes.Len() != one.length {
 			t.Errorf("bytes %d..%d: Len is %d, want %d", one.from, one.to, bytes.Len(), one.length)
 		}
 		units := domain.UnitSpan{From: one.from, To: one.to}
-		if units.Empty() != one.empty {
-			t.Errorf("units %d..%d: Empty is %v, want %v", one.from, one.to, units.Empty(), one.empty)
+		if units.Empty() != one.isEmpty {
+			t.Errorf("units %d..%d: Empty is %v, want %v", one.from, one.to, units.Empty(), one.isEmpty)
 		}
 		if units.Len() != one.length {
 			t.Errorf("units %d..%d: Len is %d, want %d", one.from, one.to, units.Len(), one.length)

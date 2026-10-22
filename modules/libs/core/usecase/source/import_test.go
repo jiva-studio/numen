@@ -74,7 +74,7 @@ const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
 
 // newImportURL is a vault holding one link note, and the store what is
 // downloaded for it is kept in.
-func newImportURL(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
+func newImportURL(t *testing.T, written string, from *site) (ImportURL, *fakeStorage, string) {
 	t.Helper()
 	shelved := newLibrary()
 	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
@@ -82,7 +82,7 @@ func newImportURL(t *testing.T, written string, from *site) (ImportURL, *shelf, 
 	paths := []string{}
 	return ImportURL{
 		Readers: vaults{first.ID: shelved},
-		Derived: shelves{shelf},
+		Derived: fakeStores{shelf},
 		By:      from,
 		Cut: func(_ context.Context, _ domain.Vault, path string) error {
 			paths = append(paths, path)

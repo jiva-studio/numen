@@ -74,7 +74,7 @@ function onDismissScheduleMenu() {
       :at="scheduleMenuTarget.at"
       :from="scheduleMenuTarget.from"
       :current="props.scheduled.path"
-      open
+      is-open
       trigger="keyboard"
       :name="words.scheduledBy"
       @choose="onChooseSchedule"

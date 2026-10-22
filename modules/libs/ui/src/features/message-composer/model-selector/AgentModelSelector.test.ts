@@ -62,7 +62,7 @@ describe('AgentModelSelector', () => {
     const wrapper = mount(AgentModelSelector, {
       props: {
         options: OPTIONS,
-        disabled: true,
+        isDisabled: true,
       },
     })
     const button = wrapper.find('button')
@@ -83,7 +83,7 @@ describe('AgentModelSelector', () => {
 
     const menu = wrapper.findComponent({ name: 'Menu' })
     expect(menu.exists()).toBe(true)
-    expect(menu.props('open')).toBe(true)
+    expect(menu.props('isOpen')).toBe(true)
 
     // Simulate choose event from Menu
     await menu.vm.$emit('choose', 'antigravity:gemini-3.7-flash')

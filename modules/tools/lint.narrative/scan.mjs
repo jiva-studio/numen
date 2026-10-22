@@ -14,6 +14,7 @@ let filterCategory = ''
 let filterWord = ''
 let filterLang = 'all' // all | ts | go
 let jsonOutPath = ''
+let isFixMode = false
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i]
@@ -22,6 +23,8 @@ for (let i = 0; i < args.length; i++) {
     process.exit(0)
   } else if (arg === '--staged') {
     isStagedOnly = true
+  } else if (arg === '--fix') {
+    isFixMode = true
   } else if (arg === '--json') {
     isJsonOutput = true
     if (args[i + 1] && !args[i + 1].startsWith('-')) {
@@ -94,19 +97,20 @@ const BANNED_PARTICIPLE_IDENTIFIERS = [
   'worn', 'hung', 'spoken', 'born', 'felt', 'caught', 'given', 'grown', 'bent',
   'fed', 'met', 'shaken', 'spent', 'split', 'torn', 'thrown', 'woken', 'forgotten',
   'frozen', 'hidden', 'settled', 'arriving', 'doing', 'asked', 'answered', 'listed', 'offered',
-  'stands', 'sits', 'listened', 'spoke'
+  'stands', 'sits', 'listened', 'spoke', 'lit'
 ]
 
 // 2. Prepositions used as bare variable/parameter names
 const BANNED_PREPOSITION_IDENTIFIERS = [
   'beside', 'under', 'over', 'behind', 'along', 'near', 'across', 'against',
-  'without', 'around', 'through', 'beyond', 'among', 'beneath', 'upon'
+  'without', 'around', 'through', 'beyond', 'among', 'beneath', 'upon', 'by', 'at'
 ]
 
 // 3. Literary metaphors and bare narrative adjectives (Rule 2 & 6 AGENTS.md)
 const BANNED_METAPHORS = [
   'bare', 'wide', 'stale', 'fresh', 'plain', 'shut', 'loose', 'quiet', 'warm',
-  'unseen', 'still', 'untouched', 'cold', 'minting', 'mint'
+  'unseen', 'still', 'untouched', 'cold', 'minting', 'mint',
+  'closer', 'further', 'silence', 'ticket', 'dressed', 'worn', 'widen'
 ]
 
 // 4. Third-person singular verbs used as function names (Rule 2 AGENTS.md)
@@ -114,7 +118,8 @@ const BANNED_THIRD_PERSON_FUNCTIONS = [
   'carries', 'attends', 'reads', 'opens', 'closes', 'speaks', 'hears', 'stands',
   'sits', 'names', 'tells', 'holds', 'hangs', 'answers', 'asks', 'reaches',
   'leaves', 'makes', 'takes', 'keeps', 'finds', 'shows', 'comes', 'goes',
-  'puts', 'runs', 'gives', 'sets', 'brings', 'leads', 'lies', 'draws', 'writes'
+  'puts', 'runs', 'gives', 'sets', 'brings', 'leads', 'lies', 'draws', 'writes',
+  'knows', 'warns', 'chooses', 'destroys', 'erases', 'stays', 'owes', 'says'
 ]
 
 // 5. Forbidden domain terms (Rule 8 & 9 AGENTS.md)
@@ -138,13 +143,32 @@ const ANGLISH_IDIOMS = [
   'the host is told', 'window is told', 'leaves behind', 'left behind',
   'held apart', 'held open', 'held for ever', 'held to',
   'refused by the use', 'refused a call', 'refused under',
-  'the words the core holds', 'code sits on crust'
+  'the words the core holds', 'code sits on crust',
+  'stops offering', 'offering anything', 'item offering', 'as they were offered', 'order it was offered',
+  'nothing said in it', 'with nothing said', 'found at the place given',
+  'model the window lists', 'setting the window lists', 'vault answers with',
+  'answers whichever vault', 'window is showing',
+  'follows the hand', 'hand travels', 'hand put down', 'hand lifts', 'hand that took',
+  'run of the book', 'where the run begins', 'each run stands', 'swipe turns',
+  'whoever counts a page', 'owes the person an answer', 'roads that ask',
+  'every road to a file', 'making a file from nothing', 'words along the line',
+  'stylesheet the window wears', 'hangs the headings', 'brackets answer one question',
+  'stencil a card is cut by', 'quieter than', 'younger than', 'older than the',
+  'wider than', 'taller than', 'stands taller', 'larger than the room', 'larger than the material',
+  'reached further than',
+  'is an example of a link and not a link',
+  'where a link is an example of one',
+  'address a position in the text stands in',
+  'read by the parser every link is read by',
+  'a drawn link is followed with',
+  'where the position remains in no link'
 ]
 
 // 7. Banned gerund variables (Rule 5 & 6 AGENTS.md)
 const BANNED_GERUND_IDENTIFIERS = [
   'asking', 'reading', 'standing', 'waiting', 'holding', 'drawing',
-  'counting', 'resting', 'routing', 'listening', 'pointing', 'moving'
+  'counting', 'resting', 'routing', 'listening', 'pointing', 'moving',
+  'offering', 'hunting'
 ]
 
 // 8. Banned regular -ed past participle variables
@@ -193,6 +217,8 @@ const RE_TS_VAR_PREPOSITION = new RegExp(
 const RE_TS_PARAM_OR_PROP_PREPOSITION = new RegExp(
   `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:[^:]|\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:`,
 )
+const RE_TS_BARE_AT_FIELD = /^\s*(?:readonly\s+)?(at)\??:\s*(?:number|string)\b/
+const RE_GO_BARE_AT_FIELD = /^\s*(at)\s+(?:int|int64|float64)\b/
 
 const RE_TS_VAR_METAPHOR = new RegExp(
   `\\b(?:const|let|var)\\s+(${BANNED_METAPHORS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
@@ -360,7 +386,22 @@ const MASKED_PRIMITIVE_SYMBOLS = [
   'interceptOutwardLinks',
   'useMenuGround',
   'keyTurn',
+  'handTurn',
+  'swipeTurn',
+  'pressTurn',
+  'turnTo',
   'getPlaceBeside',
+  'namedAt',
+  'named_at',
+  'nth',
+  'goes',
+  'ticket',
+  'silence',
+  'closer',
+  'further',
+  'widen',
+  'dressed',
+  'getAddress',
 ]
 const RE_MASKED_PRIMITIVE = new RegExp(
   `\\b(${MASKED_PRIMITIVE_SYMBOLS.join('|')})\\b`,
@@ -375,6 +416,17 @@ const RE_TS_BARE_BOOL = new RegExp(
 )
 const RE_GO_BARE_BOOL = new RegExp(
   `^\\s*(${BARE_BOOL_NAMES.join('|')})\\s+bool\\b`,
+)
+
+// 20. Hunting and offering interaction metaphors (hunt, hunted, offered, offering, isOffering, lit, tellLit)
+const HUNT_OFFER_SYMBOLS = [
+  'hunt', 'hunted', 'offered', 'offering', 'isOffering', 'tellLit'
+]
+const RE_TS_HUNT_OFFER = new RegExp(
+  `\\b(?:const|let|var|ref|computed|props)\\s+(${HUNT_OFFER_SYMBOLS.join('|')})\\b|\\b(${HUNT_OFFER_SYMBOLS.join('|')})\\s*:[^:]|data-actions=['"]hunt['"]|actions__hunt`,
+)
+const RE_GO_HUNT_OFFER = new RegExp(
+  `\\b(${HUNT_OFFER_SYMBOLS.join('|')})\\s*:=|var\\s+(${HUNT_OFFER_SYMBOLS.join('|')})\\s+[A-Za-z*]`,
 )
 
 const findings = {
@@ -397,6 +449,7 @@ const findings = {
   domesticVerbs: [],
   maskedPrimitives: [],
   bareBooleans: [],
+  huntAndOffering: [],
 }
 
 const stats = {
@@ -410,7 +463,8 @@ function shouldCheckCategory(cat) {
 }
 
 function scanFile(filePath) {
-  const relPath = path.relative(rootDir, filePath)
+  const relBase = fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
+  const relPath = path.relative(relBase, filePath) || path.basename(filePath)
   const ext = path.extname(filePath)
   if (!EXTENSIONS.has(ext)) return
 
@@ -449,6 +503,79 @@ function scanFile(filePath) {
     content = fs.readFileSync(filePath, 'utf8')
   } catch {
     return
+  }
+
+  if (isFixMode) {
+    let modified = content
+    modified = modified.replace(/\bnew\s+Promise(?:\s*<[^>]+>)?\s*\(\s*\(\s*wake\s*[,)]/g, (m) => m.replace(/\bwake\b/, 'resolve'))
+    modified = modified.replace(/\bconst\s+nap\s*=\s*\(\)\s*=>/g, 'const delay = () =>')
+    modified = modified.replace(/\btype\s+TallyUnit\s*=\s*'things'\s*\|/g, "type TallyUnit = 'items' |")
+    modified = modified.replace(/\bunit:\s*'things'/g, "unit: 'items'")
+
+    // Clean known poetic docblocks
+    modified = modified.replace(
+      /\/\*\*\s*\*\s*What a fenced block can be written in\.[\s\S]*?\*\//g,
+      '/** Supported code block syntax highlighting languages for CodeMirror markdown. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*One run of the book's text as it is drawn\.\s*\*\//g,
+      '/** Single contiguous text run in rendered book. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*Where the run begins, in bytes of the book's text\.\s*\*\//g,
+      '/** Byte offset where the text run begins. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*The element the run is drawn in\.\s*\*\//g,
+      '/** DOM element containing the rendered text run. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*Which way a swipe turns the page: the page follows the hand\.\s*\*\//g,
+      '/** Determine page turn direction from swipe delta. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*How far a hand travels sideways before it is a swipe, in CSS pixels\.\s*\*\//g,
+      '/** Minimum horizontal distance in CSS pixels for a swipe gesture. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*How much of either edge of the reading area is a press that turns, as a share of it\.\s*\*\//g,
+      '/** Edge margin ratio of the reading area that triggers a page turn tap. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*\*\s*The address a position in the text stands in[\s\S]*?\*\//g,
+      '/** Resolves destination addresses for links and wikilinks in editor text. */'
+    )
+    modified = modified.replace(
+      /\/\*\*\s*A drawn link is followed with the platform's modifier held down\.\s*\*\//g,
+      "/** Handles ctrl/cmd click on links to open their destination addresses. */"
+    )
+    modified = modified.replace(/\bconst\s+at\s*=\s*view\.posAtCoords/g, 'const pos = view.posAtCoords')
+    modified = modified.replace(/\bgetAddress\s*\(\s*view\.state\s*,\s*at\s*\)/g, 'getLinkAddressAt(view.state, pos)')
+
+    // Remove useless poetic single-line comments
+    const POETIC_PATTERNS = [
+      /\/\/\s*A\s+mark\s+shown\s+under\s+the\s+caret\s+is\s+quieter[^\n]*/i,
+      /\/\/[^\n]*is\s+quieter\s+than\s+the\s+words\s+it\s+marks[^\n]*/i,
+      /\/\/[^\n]*which\s+is\s+why\s+this\s+exists[^\n]*/i,
+      /\/\/[^\n]*owes\s+the\s+person\s+an\s+answer[^\n]*/i,
+      /\/\/[^\n]*stylesheet\s+the\s+window\s+wears[^\n]*/i,
+      /\/\/[^\n]*brackets\s+answer\s+one\s+question[^\n]*/i,
+      /\/\/[^\n]*stencil\s+a\s+card\s+is\s+cut\s+by[^\n]*/i,
+      /\/\/[^\n]*making\s+a\s+file\s+from\s+nothing[^\n]*/i,
+      /\/\/[^\n]*stands\s+taller\s+than[^\n]*/i,
+      /\/\/[^\n]*larger\s+than\s+the\s+room[^\n]*/i,
+      /\/\/[^\n]*larger\s+than\s+the\s+material[^\n]*/i,
+      /\/\/[^\n]*reached\s+further\s+than[^\n]*/i,
+      /\/\/[^\n]*follows\s+the\s+hand[^\n]*/i,
+    ]
+    for (const pat of POETIC_PATTERNS) {
+      modified = modified.replace(new RegExp(`[ \\t]*${pat.source}\\n?`, 'gi'), '')
+    }
+
+    if (modified !== content) {
+      fs.writeFileSync(filePath, modified, 'utf8')
+      content = modified
+    }
   }
 
   const lines = content.split('\n')
@@ -505,8 +632,8 @@ function scanFile(filePath) {
     // 3. Prepositions used as bare variables
     if (isCode && !isCommentLine && shouldCheckCategory('prepositions')) {
       const m = isGo
-        ? (RE_GO_VAR_PREPOSITION.exec(line) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(line))
-        : (RE_TS_VAR_PREPOSITION.exec(line) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(line))
+        ? (RE_GO_VAR_PREPOSITION.exec(line) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(line) || RE_GO_BARE_AT_FIELD.exec(line))
+        : (RE_TS_VAR_PREPOSITION.exec(line) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(line) || RE_TS_BARE_AT_FIELD.exec(line))
       if (m) {
         const word = m[1] || m[2] || m[3]
         if (!filterWord || filterWord === word) {
@@ -789,6 +916,22 @@ function scanFile(filePath) {
         else stats.frontendTotal++
       }
     }
+
+    // 20. Hunting and offering interaction metaphors (hunt, offered, lit)
+    if (isCode && !isCommentLine && shouldCheckCategory('hunt-offer')) {
+      const m = isGo ? RE_GO_HUNT_OFFER.exec(line) : RE_TS_HUNT_OFFER.exec(line)
+      if (m) {
+        findings.huntAndOffering.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          symbol: m[1] || m[2] || m[0],
+          text: trimmed,
+        })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
+      }
+    }
   }
 }
 
@@ -862,7 +1005,8 @@ const totalIssues =
   findings.domesticStructs.length +
   findings.domesticVerbs.length +
   findings.maskedPrimitives.length +
-  findings.bareBooleans.length
+  findings.bareBooleans.length +
+  findings.huntAndOffering.length
 
 const fileCounts = {}
 for (const cat of Object.keys(findings)) {
@@ -937,6 +1081,7 @@ console.log(`16. Domestic metaphor structs (shareBook, shelf, drawer)    : ${fin
 console.log(`17. Banned domestic verbs (sitDeck, lookAt, tellWritten)   : ${findings.domesticVerbs.length}`)
 console.log(`18. Masked UI interaction primitives (questions, outward)   : ${findings.maskedPrimitives.length}`)
 console.log(`19. Bare boolean properties (open, closed, disabled, stale): ${findings.bareBooleans.length}`)
+console.log(`20. Hunting and offering metaphors (hunt, offered, lit)    : ${findings.huntAndOffering.length}`)
 console.log('----------------------------------------------------------------------')
 console.log(`FRONTEND VIOLATIONS (TypeScript / Vue)                    : ${stats.frontendTotal}`)
 console.log(`BACKEND VIOLATIONS (Go)                                   : ${stats.backendTotal}`)

@@ -87,7 +87,7 @@ const createCore = (...answers: Promise<Curve>[]) => {
   return { core, requests: request }
 }
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('a preset tab before any curve has landed', () => {
   it('is waiting for one, and holds no answer of the application', () => {
@@ -159,7 +159,7 @@ describe('asking for a curve', () => {
       today,
       () => {},
     )
-    await nap()
+    await flushPromises()
 
     expect(state.curve.value).toStrictEqual(sketch)
     expect(sketch.now.at).toBeGreaterThan(0)
@@ -183,7 +183,7 @@ describe('asking for a curve', () => {
       today,
       () => {},
     )
-    await nap()
+    await flushPromises()
 
     expect(state.curve.value).toStrictEqual(estimateCurve(DEFAULTS, today, BOUNDS))
     gate.open(curve())
@@ -205,7 +205,7 @@ describe('asking for a curve', () => {
       today,
       () => {},
     )
-    await nap()
+    await flushPromises()
 
     expect(state.curve.value).toStrictEqual(curve({ isHonest: false }))
     expect(state.isReal).toBe(false)

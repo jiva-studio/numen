@@ -34,7 +34,7 @@ const props = withDefaults(
      */
     groups?: readonly PaletteGroup[]
     /** Whether it is drawn at all. */
-    open?: boolean
+    isOpen?: boolean
     /** The words standing in for what has not been typed. */
     placeholder?: string
     /**
@@ -66,7 +66,7 @@ const props = withDefaults(
   }>(),
   {
     groups: () => [],
-    open: false,
+    isOpen: false,
     placeholder: 'Search',
     crumb: '',
     step: '',
@@ -152,7 +152,7 @@ const { onKey } = usePaletteKeys({
   isPanelOpen,
   getOfferedActions: () => offered.value,
   typed: searchQuery,
-  isOpen: () => props.open,
+  isOpen: () => props.isOpen,
   getStep: () => props.step,
   getOpensOn: () => props.opensOn,
   getOpenedFrom: () => props.from,
@@ -169,7 +169,7 @@ const onOver = (at: number, event: PointerEvent) => {
 
 <template>
   <PaletteFrame
-    v-if="open"
+    v-if="isOpen"
     :name="name"
     :to="to"
     @keydown="onKey"

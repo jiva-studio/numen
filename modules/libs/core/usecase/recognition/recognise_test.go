@@ -67,13 +67,13 @@ const documentPath = "library/scan.pdf"
 //
 // The document is four pages a reader can open and count, which is all this
 // needs — what the pages say comes from the model, and the model here is a fake.
-func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
+func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *fakeStorage, *speaker) {
 	t.Helper()
 	return createRecognise(t, says, outline)
 }
 
 // createRecognise is a Recognise over a vault holding a document printed as these pages.
-func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
+func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *fakeStorage, *speaker) {
 	t.Helper()
 	raw := printPages(pages)
 	shelved := newLibrary()
@@ -83,7 +83,7 @@ func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, do
 	index := newStore()
 	shelf := newShelf()
 	model := &speaker{says: says}
-	r := NewRecognise(readers, index, shelves{shelf}, documents{}, model)
+	r := NewRecognise(readers, index, fakeStores{shelf}, documents{}, model)
 	r.Batch = 1
 	return r, v, index, shelf, model
 }
@@ -565,7 +565,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 }
 
 // artifact is what recognition wrote for the document under test.
-func artifact(t *testing.T, v domain.Vault, index *store, written *shelf) []byte {
+func artifact(t *testing.T, v domain.Vault, index *store, written *fakeStorage) []byte {
 	t.Helper()
 	src := index.sources[v.ID][documentPath]
 	raw, err := written.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, src.Producer, src.Hash))

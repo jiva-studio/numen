@@ -35,7 +35,7 @@ func setPlacer(u Highlight, where func(raw []byte, pages []int) ([]domain.Highli
 //
 // The document is pages of a few words each, so a test can name a word and say
 // which page it is printed on.
-func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *shelf, document, *library) {
+func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *fakeStorage, document, *library) {
 	t.Helper()
 	raw := printPages(pages)
 	book := documentOf(raw)
@@ -43,7 +43,7 @@ func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *shelf, do
 	shelved.hold(documentPath, domain.KindBook, raw, 1)
 	index := newStore()
 	store := newShelf()
-	hl := NewHighlight(vaults{first.ID: shelved}, index, shelves{store})
+	hl := NewHighlight(vaults{first.ID: shelved}, index, fakeStores{store})
 	hl.Documents = documents{}
 	return hl, index, store, book, shelved
 }

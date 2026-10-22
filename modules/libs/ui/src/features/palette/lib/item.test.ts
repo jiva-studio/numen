@@ -59,7 +59,7 @@ const group = (
 /** Two groups, four items, and one of them not to be landed on. */
 const SECTIONS: PaletteGroup[] = [
   group('names', [item('one'), item('two')]),
-  group('text', [item('three', { disabled: true }), item('four')]),
+  group('text', [item('three', { isDisabled: true }), item('four')]),
 ]
 
 describe('one list drawn in groups', () => {
@@ -96,7 +96,7 @@ describe('one list drawn in groups', () => {
 
 describe('what may be landed on', () => {
   it('passes over an item that is turned off', () => {
-    expect(canChoose(item('one', { disabled: true }))).toBe(false)
+    expect(canChoose(item('one', { isDisabled: true }))).toBe(false)
   })
 
   it('passes over an item with nothing that can be done to it', () => {
@@ -134,7 +134,7 @@ describe('walking the list', () => {
   })
 
   it('lands nowhere when nothing in the list can be chosen', () => {
-    const off = flatten([group('names', [item('one', { disabled: true })])])
+    const off = flatten([group('names', [item('one', { isDisabled: true })])])
     expect(stepTo(off, { from: -1, by: 1 }, canLandOn)).toBe(-1)
   })
 
@@ -180,7 +180,7 @@ describe('what a key reaches', () => {
   })
 
   it('reaches nothing on an item that cannot be chosen', () => {
-    expect(getActionId(item('one', { disabled: true, actions: BOTH }), false)).toBe('')
+    expect(getActionId(item('one', { isDisabled: true, actions: BOTH }), false)).toBe('')
     expect(getActionId(undefined, false)).toBe('')
   })
 
@@ -199,7 +199,7 @@ describe('what a key reaches', () => {
   })
 
   it('says nothing at all of an item that cannot be chosen', () => {
-    expect(getShortcuts(item('one', { disabled: true, actions: MANY }))).toEqual([])
+    expect(getShortcuts(item('one', { isDisabled: true, actions: MANY }))).toEqual([])
     expect(getShortcuts(undefined)).toEqual([])
   })
 })

@@ -1,9 +1,5 @@
 /**
- * The address a position in the text stands in, and following it.
- *
- * A link written in brackets and a note in double brackets are two spellings
- * of the same thing, and inside code neither is one: what is written there is
- * an example of a link and not a link.
+ * Resolves destination addresses for links and wikilinks in editor text.
  */
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
@@ -12,15 +8,15 @@ import type { SyntaxNode } from '@lezer/common'
 import { findWikilink } from '@/shared/lib/address'
 import { addressOpener } from './outside'
 
-/** The first child of a node under that name, and nothing where it has none. */
-export const findChild = (node: SyntaxNode, name: string) => {
+/** Finds the first child node matching the specified syntax type. */
+export const findChild = (node: SyntaxNode, name: string): SyntaxNode | null => {
   for (let child = node.firstChild; child; child = child.nextSibling) {
     if (child.name === name) return child
   }
   return null
 }
 
-/** Whether a position stands in code, where a link is an example of one. */
+/** Whether the syntax node is enclosed within code formatting. */
 const isCode = (node: SyntaxNode): boolean => {
   for (let one: SyntaxNode | null = node; one; one = one.parent) {
     if (one.name === 'FencedCode' || one.name === 'CodeBlock' || one.name === 'InlineCode') {
@@ -31,14 +27,13 @@ const isCode = (node: SyntaxNode): boolean => {
 }
 
 /**
- * The address a position in the text stands in, and nothing at its current position in
- * none. A note in brackets is read by the parser every link is read by.
+ * Returns destination address of the markdown link or wikilink at the specified document offset.
  */
-export const getAddress = (state: EditorState, at: number): string | null => {
-  const innermost = syntaxTree(state).resolveInner(at, 1)
+export const getLinkAddressAt = (state: EditorState, pos: number): string | null => {
+  const innermost = syntaxTree(state).resolveInner(pos, 1)
   if (!isCode(innermost)) {
-    const line = state.doc.lineAt(at)
-    const wiki = findWikilink(line.text, at - line.from)
+    const line = state.doc.lineAt(pos)
+    const wiki = findWikilink(line.text, pos - line.from)
     if (wiki) return wiki.address
   }
 
@@ -52,16 +47,16 @@ export const getAddress = (state: EditorState, at: number): string | null => {
   return null
 }
 
-/** A drawn link is followed with the platform's modifier held down. */
+/** Handles ctrl/cmd click on links to open their destination addresses. */
 export const follow = EditorView.domEventHandlers({
   mousedown(event, view) {
     if (!event.metaKey && !event.ctrlKey) return false
-    const at = view.posAtCoords({ x: event.clientX, y: event.clientY })
-    if (at === null) return false
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+    if (pos === null) return false
 
-    const address = getAddress(view.state, at)
-    if (address === null) return false
-    view.state.facet(addressOpener)(address)
+    const targetAddress = getLinkAddressAt(view.state, pos)
+    if (targetAddress === null) return false
+    view.state.facet(addressOpener)(targetAddress)
     return true
   },
 })

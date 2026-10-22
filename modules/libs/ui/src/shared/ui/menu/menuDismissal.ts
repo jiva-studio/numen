@@ -11,17 +11,17 @@ import type { ShallowRef } from 'vue'
 import { isInside } from './outside'
 import { MENU_INPUT_EVENTS, createScrollGate } from './scroll'
 
-export interface MenuGroundState {
+export interface MenuDismissalState {
   /** The window listened to, and listened to once however often this is called. */
   readonly listen: () => void
   /** The window release. */
   readonly release: () => void
 }
 
-export function useMenuGround(
+export function useMenuDismissal(
   menu: Readonly<ShallowRef<HTMLElement | null>>,
   dismiss: () => void,
-): MenuGroundState {
+): MenuDismissalState {
   /**
    * A pointer, or a scroll, that did not happen inside the menu. A scroll of
    * the menu's own list is not the ground moving, and everything else is.

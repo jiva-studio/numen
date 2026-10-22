@@ -12,7 +12,7 @@ const createRow = (id: RowId): ShownRow => ({
   level: 1,
   isLast: false,
   hasRows: false,
-  open: false,
+  isOpen: false,
 })
 
 const ROWS = ['a', 'b', 'c', 'd'].map(createRow)

@@ -602,7 +602,7 @@ describe('a value written into a card', () => {
   it('is the one of two under a field that was typed in, and the other remains', () => {
     const twice = deck()
     const targetCard = twice.cards[0]
-    if (!targetCard) throw new Error('the fixture holds no card')
+    if (!targetCard) throw new Error('card not found')
     const updatedDeck = replaceCardValue(
       {
         ...twice,

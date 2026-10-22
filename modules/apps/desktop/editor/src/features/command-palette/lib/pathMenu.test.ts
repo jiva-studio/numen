@@ -132,26 +132,26 @@ describe('disabling of runs based on artifact states', () => {
 
   it('disables transcribe and enables proofread when transcript is done', () => {
     const items = getRuns('recording', { transcript: 'done' })
-    expect(items.find((one) => one.id === 'transcribe')?.disabled).toBe(true)
-    expect(items.find((one) => one.id === 'proofread')?.disabled).toBe(false)
+    expect(items.find((one) => one.id === 'transcribe')?.isDisabled).toBe(true)
+    expect(items.find((one) => one.id === 'proofread')?.isDisabled).toBe(false)
   })
 
   it('disables both when transcript and proofread are done', () => {
     const items = getRuns('recording', { transcript: 'done', 'transcript.corrected': 'done' })
-    expect(items.find((one) => one.id === 'transcribe')?.disabled).toBe(true)
-    expect(items.find((one) => one.id === 'proofread')?.disabled).toBe(true)
+    expect(items.find((one) => one.id === 'transcribe')?.isDisabled).toBe(true)
+    expect(items.find((one) => one.id === 'proofread')?.isDisabled).toBe(true)
   })
 
   it('disables recognise and enables proofread when OCR is done on a PDF', () => {
     const items = getRuns('book', { ocr: 'done' })
-    expect(items.find((one) => one.id === 'recognise')?.disabled).toBe(true)
-    expect(items.find((one) => one.id === 'proofread')?.disabled).toBe(false)
+    expect(items.find((one) => one.id === 'recognise')?.isDisabled).toBe(true)
+    expect(items.find((one) => one.id === 'proofread')?.isDisabled).toBe(false)
   })
 
   it('disables both when OCR and reading proofread are done on a PDF', () => {
     const items = getRuns('book', { ocr: 'done', 'ocr.corrected': 'done' })
-    expect(items.find((one) => one.id === 'recognise')?.disabled).toBe(true)
-    expect(items.find((one) => one.id === 'proofread')?.disabled).toBe(true)
+    expect(items.find((one) => one.id === 'recognise')?.isDisabled).toBe(true)
+    expect(items.find((one) => one.id === 'proofread')?.isDisabled).toBe(true)
   })
 
   it('offers no scan runs on an EPUB book, which offers exactly what a file offers', () => {
@@ -184,7 +184,7 @@ describe('a run that is under way or finished', () => {
       { source, isFolder: false, format: 'pdf', made: createdItem },
       false,
       canRunAnything,
-    ).find((one) => one.id === id)?.disabled
+    ).find((one) => one.id === id)?.isDisabled
 
   it('disables transcribe while the transcript is running or queued', () => {
     expect(getDisabled('recording', { transcript: 'running' }, 'transcribe')).toBe(true)

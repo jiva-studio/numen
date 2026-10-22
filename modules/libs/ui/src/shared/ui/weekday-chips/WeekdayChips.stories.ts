@@ -37,7 +37,7 @@ interface Knobs {
   names: 'English' | 'Russian'
   /** The levels a day is offered. */
   levels: readonly number[]
-  disabled: boolean
+  isDisabled: boolean
   /** The names themselves, where a story draws something other than a week. */
   named?: readonly DayName[]
 }
@@ -51,7 +51,7 @@ const meta: Meta<Knobs> = {
     startsOn: { control: 'inline-radio', options: ['mon', 'sun'] },
     names: { control: 'inline-radio', options: ['English', 'Russian'] },
     levels: { control: 'object' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     named: { table: { disable: true } },
   },
   args: {
@@ -59,7 +59,7 @@ const meta: Meta<Knobs> = {
     startsOn: 'mon',
     names: 'English',
     levels: LEVELS,
-    disabled: false,
+    isDisabled: false,
   },
   render: (args) => ({
     components: { WeekdayChips },
@@ -81,7 +81,7 @@ const meta: Meta<Knobs> = {
           aria-label="The level each day stands at"
           :days="days"
           :levels="args.levels"
-          :disabled="args.disabled"
+          :is-disabled="args.isDisabled"
           @choose="onChoose"
         />
       </div>
@@ -231,14 +231,14 @@ export const AwkwardNames: Story = {
 }
 
 /** Days nobody may turn. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /**
  * A row nobody may turn is still read: the chips keep the keyboard and say
  * they are disabled, and pressing one offers nothing.
  */
 export const DisabledOffersNothing: Story = {
-  args: { disabled: true },
+  args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     const chip = chips(canvasElement)[2] as HTMLElement
     expect(chip.getAttribute('aria-disabled')).toBe('true')

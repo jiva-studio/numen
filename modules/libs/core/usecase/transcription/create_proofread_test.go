@@ -25,7 +25,7 @@ func (r *replying) ProofreadSpeech(
 // corrections in. A proofreading is refused without them, so the tests here
 // hand over both and watch the proofreader.
 func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
-	return vaults{}, shelves{newShelf()}
+	return vaults{}, fakeStores{newShelf()}
 }
 
 // A transcript is put right with the proofreader the installation names.

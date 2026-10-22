@@ -37,7 +37,7 @@ export interface Tally {
  * Bytes are read out in the sizes a person reads them in and seconds on a
  * clock. Everything else is counted one by one.
  */
-export type TallyUnit = 'things' | 'bytes' | 'seconds'
+export type TallyUnit = 'items' | 'bytes' | 'seconds'
 
 /** What a line of activity draws. */
 export interface ActivityDescriptor {

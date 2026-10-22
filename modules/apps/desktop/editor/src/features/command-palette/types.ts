@@ -136,7 +136,7 @@ export interface StepRow {
   /** A second line: what is true of this row and not of the ones beside it. */
   readonly detail?: string
   /** Drawn, said, and not chosen. */
-  readonly disabled?: boolean
+  readonly isDisabled?: boolean
   /** The value the setting this list is of holds now, which is where it opens. */
   readonly isCurrent?: boolean
 }

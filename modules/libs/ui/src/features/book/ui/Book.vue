@@ -10,7 +10,7 @@
  */
 import { useTemplateRef } from 'vue'
 
-import { keyTurn } from '@/shared/lib/turn'
+import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
 import { useBookHand } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'
@@ -81,7 +81,7 @@ const follow = (press: MouseEvent) => links.follow(press, layout.findFragmentOff
  * page it turns is answered for and the key is not listened for here.
  */
 const handleKey = (event: KeyboardEvent): boolean => {
-  const way = keyTurn(event.key)
+  const way = getPageNavigationAction(event.key)
   if (!way) return false
   layout.turn(way)
   return true

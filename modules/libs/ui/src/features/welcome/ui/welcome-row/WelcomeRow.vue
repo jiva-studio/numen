@@ -21,7 +21,7 @@ defineProps<{
   /** The keystroke that reaches it, where one does. */
   keys?: PaletteKeys | undefined
   /** A row whose answer is still on its way, which does not answer to a hand. */
-  disabled?: boolean | undefined
+  isDisabled?: boolean | undefined
 }>()
 
 defineSlots<{
@@ -31,7 +31,7 @@ defineSlots<{
 </script>
 
 <template>
-  <button type="button" class="welcome-page__row" :disabled="disabled">
+  <button type="button" class="welcome-page__row" :disabled="isDisabled">
     <component :is="icon" v-if="icon" class="welcome-page__icon" />
     <span v-if="aside" class="welcome-page__named">
       <span class="welcome-page__what">{{ text }}</span>

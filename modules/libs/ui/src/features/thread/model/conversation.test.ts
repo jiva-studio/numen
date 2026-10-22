@@ -22,7 +22,7 @@ const now = (draw: () => void) => draw()
 /** What one conversation is called. Every question it sends carries it. */
 const called = 'conversation:one'
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const useConversation = (
   agent: AgentPort,
@@ -191,7 +191,7 @@ describe('giving up', () => {
     )
 
     const askPromise = conversation.ask('what is here?', '')
-    await nap()
+    await flushPromises()
     conversation.stop()
     release()
     await askPromise
@@ -236,7 +236,7 @@ describe('a wait that explains itself', () => {
       now,
     )
     const askPromise = conversation.ask('write it up', '')
-    await nap()
+    await flushPromises()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.text).toBe('Create a note')
@@ -265,7 +265,7 @@ describe('a wait that explains itself', () => {
       now,
     )
     const askPromise = conversation.ask('write it up', '')
-    await nap()
+    await flushPromises()
 
     // Which tool answered is not said, and with two in hand this is one of them.
     // The line keeps its name and stops claiming to be running.
@@ -296,7 +296,7 @@ describe('a wait that explains itself', () => {
       now,
     )
     const askPromise = conversation.ask('write it up', '')
-    await nap()
+    await flushPromises()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.text).toBe(words.thinking)
@@ -328,7 +328,7 @@ describe('a wait that explains itself', () => {
       now,
     )
     const askPromise = conversation.ask('write it up', '')
-    await nap()
+    await flushPromises()
 
     const lines = conversation.turns.value.filter((turn) => turn.voice === 'doing')
     expect(lines.map((turn) => [turn.text, turn.state])).toEqual([
@@ -347,7 +347,7 @@ describe('a wait that explains itself', () => {
     })
     const conversation = useConversation(createPort([], target), words, called, now)
     const askPromise = conversation.ask('write it up', '')
-    await nap()
+    await flushPromises()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.text).toBe(words.thinking)
@@ -376,7 +376,7 @@ describe('a call that was working on a place', () => {
       now,
     )
     const askPromise = conversation.ask('what does it say of frost?', '')
-    await nap()
+    await flushPromises()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.canOpen).toBe(true)
@@ -399,7 +399,7 @@ describe('a call that was working on a place', () => {
       now,
     )
     const askPromise = conversation.ask('what does it say of frost?', '')
-    await nap()
+    await flushPromises()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.canOpen).toBeUndefined()
@@ -421,7 +421,7 @@ describe('a call that was working on a place', () => {
       now,
     )
     const askPromise = conversation.ask('what does it say of frost?', '')
-    await nap()
+    await flushPromises()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.canOpen).toBeUndefined()
@@ -458,7 +458,7 @@ describe('where the line about work remains', () => {
       now,
     )
     const askPromise = conversation.ask('tell me about him', '')
-    await nap()
+    await flushPromises()
 
     // A tool answering says nothing about the answer being written over it, and
     // a line put back here is placed under the answer for the rest of the conversation.
@@ -486,7 +486,7 @@ describe('where the line about work remains', () => {
       now,
     )
     const askPromise = conversation.ask('tell me about him', '')
-    await nap()
+    await flushPromises()
 
     expect(getDrawnTurns(conversation)).toEqual([
       'asked: tell me about him',
@@ -510,7 +510,7 @@ describe('where the line about work remains', () => {
       now,
     )
     const askPromise = conversation.ask('tell me about him', '')
-    await nap()
+    await flushPromises()
 
     // An answer with nothing in it is drawn as a turn with no words and a gap
     // above and below it.
@@ -573,7 +573,7 @@ describe('a conversation that is over', () => {
     )
 
     const askPromise = conversation.ask('what is here?', '')
-    await nap()
+    await flushPromises()
     conversation.finish()
     release()
     await askPromise
@@ -594,7 +594,7 @@ describe('a conversation that is over', () => {
     )
 
     expect(() => conversation.finish()).not.toThrow()
-    await nap()
+    await flushPromises()
 
     expect(conversation.turns.value).toStrictEqual([])
   })
@@ -633,7 +633,7 @@ describe('a window nobody is looking at', () => {
       never,
     )
     const askPromise = conversation.ask('what is here?', '')
-    await nap()
+    await flushPromises()
 
     // The question with nothing under it is the failure this guards against.
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
@@ -659,7 +659,7 @@ describe('giving up on an answer', () => {
       now,
     )
     const askPromise = conversation.ask('what is here?', '')
-    await nap()
+    await flushPromises()
 
     conversation.stop()
 
@@ -691,7 +691,7 @@ describe('two tools in hand at once', () => {
       now,
     )
     const askPromise = conversation.ask('tell me about him', '')
-    await nap()
+    await flushPromises()
 
     // Which tool answered is not said. The one still running is not finished,
     // and what the model is doing is not known.
@@ -749,7 +749,7 @@ describe('words with none in them', () => {
       now,
     )
     const askPromise = conversation.ask('what is here?', '')
-    await nap()
+    await flushPromises()
 
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
       'asked: what is here?',
@@ -910,7 +910,7 @@ describe('a question that cannot be requested', () => {
       now,
     )
     const askPromise = conversation.ask('what is here?', '')
-    await nap()
+    await flushPromises()
     expect(conversation.isWorking.value).toBe(true)
 
     await conversation.ask('and below it?', '')
@@ -1042,7 +1042,7 @@ describe('the line about work and the answer beginning', () => {
       now,
     )
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
 
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
       'asked: q',
@@ -1062,7 +1062,7 @@ describe('the line about work and the answer beginning', () => {
       now,
     )
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
 
     expect(getDrawn(conversation)).toEqual([
       ['asked', 'q', undefined],
@@ -1083,7 +1083,7 @@ describe('the line about work and the answer beginning', () => {
       now,
     )
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
 
     expect(conversation.turns.value[1]?.text).toBe('One moment. ')
     expect(conversation.turns.value[1]?.state).toBeUndefined()
@@ -1109,7 +1109,7 @@ describe('which tool answered', () => {
     const { target, release } = createHold()
     const conversation = useConversation(createPort(steps(between), target), words, called, now)
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
 
     expect(getDoing(conversation)).toEqual([
       ['Write a note', 'settled'],
@@ -1138,7 +1138,7 @@ describe('giving up on an answer in the middle', () => {
       now,
     )
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
     conversation.stop()
     release()
     await askPromise
@@ -1153,7 +1153,7 @@ describe('giving up on an answer in the middle', () => {
     const { target, release } = createHold()
     const conversation = useConversation(createPort([], target), words, called, now)
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
     conversation.stop()
     release()
     await askPromise
@@ -1176,7 +1176,7 @@ describe('giving up on an answer in the middle', () => {
       now,
     )
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
     conversation.stop()
     release()
     await askPromise
@@ -1198,10 +1198,10 @@ describe('giving up on an answer in the middle', () => {
       now,
     )
     const first = conversation.ask('one', '')
-    await nap()
+    await flushPromises()
     conversation.stop()
     const second = conversation.ask('two', '')
-    await nap()
+    await flushPromises()
 
     holds[0]?.()
     await first
@@ -1255,7 +1255,7 @@ describe('a conversation that is over, while an answer is on its way', () => {
       now,
     )
     const askPromise = conversation.ask('q', '')
-    await nap()
+    await flushPromises()
 
     conversation.finish()
 

@@ -82,7 +82,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
   }
 }
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 /**
  * What the window makes of what it is told: that the vault changed, and that a
@@ -279,8 +279,8 @@ describe('another vault under this window', () => {
     )
 
     await one.window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
     expect(one.drawn.at(-1)).toBe('reloaded')
 
@@ -303,9 +303,9 @@ describe('another vault under this window', () => {
     )
 
     await one.window.start()
-    await nap()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
+    await flushPromises()
 
     expect(one.drawn).toContain('changed Heat.md')
     expect(one.drawn.at(-1)).toBe('reloaded')
@@ -324,8 +324,8 @@ describe('another vault under this window', () => {
     )
 
     await one.window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
     expect(one.drawn).not.toContain('reloaded')
 
@@ -336,8 +336,8 @@ describe('another vault under this window', () => {
     const one = createWindow(createReloadingCore(async () => resolved))
 
     await one.window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
     expect(one.drawn).not.toContain('reloaded')
     expect(one.drawn.at(-1)).toBe('changed ')
@@ -433,7 +433,7 @@ describe('a vault that could not be read', () => {
     const window = useWindowDisplay(core, { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.isIndexing.value).toBe(false)
     expect(window.error.value).toBe('permission denied')
@@ -446,7 +446,7 @@ describe('a vault with a note in it', () => {
     const window = useWindowDisplay(fake(), { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.hasNote.value).toBe(true)
     expect(window.error.value).toBe('')
@@ -464,7 +464,7 @@ describe('a vault that is not being followed', () => {
     const window = useWindowDisplay(core, { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.unwatched.value).toBe('too many watches')
   })
@@ -481,7 +481,7 @@ describe('chunks with nothing to embed them', () => {
     const window = useWindowDisplay(core, { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.chunks.value).toBe(4823)
     expect(window.embedded.value).toBe(0)
@@ -521,7 +521,7 @@ describe('what the application is doing', () => {
     const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.tasks.value.map((one) => one.done)).toEqual([32])
 
@@ -552,8 +552,8 @@ describe('what the application is doing', () => {
     const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
     expect(openedWindows).toBeGreaterThan(1)
     expect(window.tasks.value.map((one) => one.done)).toEqual([48])
@@ -593,7 +593,7 @@ describe('what the application is doing', () => {
     const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(asks).toBeGreaterThan(1)
     expect(window.chunks.value).toBe(asks * 1000)
@@ -635,7 +635,7 @@ describe('the first note shown', () => {
     const one = createDisplay(fake())
 
     await one.window.start()
-    await nap()
+    await flushPromises()
 
     expect(one.window.isIndexing.value).toBe(false)
     expect(one.changed).toStrictEqual([''])
@@ -663,7 +663,7 @@ describe('the first note shown', () => {
     })
 
     await window.start()
-    await nap()
+    await flushPromises()
     window.close()
 
     expect(response).toStrictEqual([edit])
@@ -684,7 +684,7 @@ describe('the first note shown', () => {
     })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.isIndexing.value).toBe(true)
     expect(changed).toStrictEqual([])
@@ -708,7 +708,7 @@ describe('the first note shown', () => {
     })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.isIndexing.value).toBe(true)
     expect(changed).toStrictEqual([])
@@ -728,7 +728,7 @@ describe('a closed window', () => {
     const window = useWindowDisplay(core, { wait: waitForever })
 
     await window.start()
-    await nap()
+    await flushPromises()
     window.close()
 
     expect(signals).toHaveLength(1)

@@ -166,12 +166,12 @@ func (a Vault) Write(
 	}
 	at, err := writer.Write(ctx, path, content, baseline)
 	if err == nil {
-		a.tellWritten()
+		a.notifyFileWritten()
 	}
 	return at, err
 }
 
-func (a Vault) tellWritten() {
+func (a Vault) notifyFileWritten() {
 	if a.Written != nil {
 		a.Written()
 	}
@@ -185,7 +185,7 @@ func (a Vault) Create(ctx context.Context, path string, content []byte) error {
 	if err := writer.Create(ctx, path, content); err != nil {
 		return err
 	}
-	a.tellWritten()
+	a.notifyFileWritten()
 	return nil
 }
 
@@ -202,7 +202,7 @@ func (a Vault) Scan(ctx context.Context, paths []string) error {
 	if err != nil || a.Index == nil {
 		return err
 	}
-	a.tellWritten()
+	a.notifyFileWritten()
 	return a.Index(ctx, v, paths)
 }
 

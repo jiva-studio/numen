@@ -48,7 +48,7 @@ const SECTIONS: PaletteGroup[] = [
     id: 'text',
     title: 'Text',
     items: [
-      { id: 'stuck', title: 'Not this one', disabled: true, actions: OPEN },
+      { id: 'stuck', title: 'Not this one', isDisabled: true, actions: OPEN },
       { id: 'engine', title: 'Heat engine', detail: 'a reversible engine', actions: OPEN },
     ],
   },
@@ -60,7 +60,7 @@ let mounted: { unmount: () => void } | null = null
 
 const mountPalette = (props: Partial<PaletteProps> = {}) => {
   const palette = mount(Palette, {
-    props: { groups: SECTIONS, open: true, ...props },
+    props: { groups: SECTIONS, isOpen: true, ...props },
     attachTo: document.body,
   })
   mounted = palette
@@ -126,7 +126,7 @@ afterEach(() => {
 
 describe('being open and being closed', () => {
   it('draws nothing at all until it is opened', async () => {
-    mountPalette({ open: false })
+    mountPalette({ isOpen: false })
     await settle()
     expect(getDrawnGround()).toBeNull()
   })
@@ -146,7 +146,7 @@ describe('being open and being closed', () => {
 
     const palette = mountPalette({ from: opener })
     await settle()
-    await palette.setProps({ open: false })
+    await palette.setProps({ isOpen: false })
     await settle()
 
     expect(document.activeElement).toBe(opener)
@@ -309,7 +309,7 @@ describe('where the keyboard is standing', () => {
     const palette = mountPalette()
     await settle()
 
-    await palette.setProps({ open: false })
+    await palette.setProps({ isOpen: false })
     await settle()
 
     expect(palette.emitted('light')?.at(-1)).toEqual([''])
@@ -800,9 +800,9 @@ describe('the action panel', () => {
   it('goes when the palette closes, and does not come back with it', async () => {
     const palette = await open()
 
-    await palette.setProps({ open: false })
+    await palette.setProps({ isOpen: false })
     await settle()
-    await palette.setProps({ open: true })
+    await palette.setProps({ isOpen: true })
     await settle()
 
     expect(sheet()).toBeNull()

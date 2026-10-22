@@ -16,7 +16,7 @@ interface Knobs {
   min: number
   max: number
   step: number
-  disabled: boolean
+  isDisabled: boolean
   /** What the slider is called, shown before it. */
   label: string
   /** How wide the box drawing the control is. */
@@ -32,7 +32,7 @@ const meta: Meta<Knobs> = {
     min: { control: 'number' },
     max: { control: 'number' },
     step: { control: 'number' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     label: { control: 'text' },
     width: { control: 'text' },
   },
@@ -41,7 +41,7 @@ const meta: Meta<Knobs> = {
     min: 0,
     max: 100,
     step: 1,
-    disabled: false,
+    isDisabled: false,
     label: 'Overdue share',
     width: '12rem',
   },
@@ -61,7 +61,7 @@ const meta: Meta<Knobs> = {
             :min="args.min"
             :max="args.max"
             :step="args.step"
-            :disabled="args.disabled"
+            :is-disabled="args.isDisabled"
           />
         </div>
         <span style="font-variant-numeric: tabular-nums">{{ share }}%</span>
@@ -146,7 +146,7 @@ export const FarTooLong: Story = {
 }
 
 /** A slider nobody may move. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /** It is announced as a slider standing at a value, and takes its name from the words beside it. */
 export const AnnouncedAsASlider: Story = {
@@ -239,7 +239,7 @@ export const CommitsWhenTheKeyIsLetGo: Story = {
 
 /** The keyboard goes nowhere near a slider nobody may move. */
 export const DisabledTakesNoKeyboard: Story = {
-  args: { disabled: true },
+  args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     const control = handle(canvasElement)
     await userEvent.tab()

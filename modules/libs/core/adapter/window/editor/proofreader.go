@@ -39,5 +39,5 @@ type RecognitionProofreader interface {
 // transcript or recognition right with.
 var errNoProofreading = errors.New("this installation has no proofreader")
 
-// errNotRead is a document nothing has read yet.
-var errNotRead = errors.New("nothing has read this document")
+// errNotRead is a document not processed yet.
+var errNotRead = errors.New("document not processed")

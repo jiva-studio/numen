@@ -53,10 +53,10 @@ func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	return len(sat.Queue)
 }
 
-// sitDeck answers everything one deck hands over, session again until it hands
+// reviewDeckSession answers everything one deck hands over, session again until it hands
 // over nothing, and says how many card faces went through. A card the day comes
 // back to is the one card.
-func (s vaulted) sitDeck(t *testing.T, now time.Time, deck string) int {
+func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	faces := make(map[review.CardFaceID]bool)
 	for range 100 {
@@ -212,7 +212,7 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 			s := newDeckVault(t, counts, 40, 40, 40)
 			whole, each := 0, make(map[string]int)
 			for _, at := range order {
-				took := s.sitDeck(t, when, deckAt(at))
+				took := s.reviewDeckSession(t, when, deckAt(at))
 				each[deckAt(at)] = took
 				whole += took
 			}

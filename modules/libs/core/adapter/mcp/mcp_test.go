@@ -232,7 +232,7 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 	_, core, queries := newCoreWithQueries(t, nil)
 	core.Vaults = onTheList(t).core.Vaults
-	lookAt(&core, queries, &window{})
+	observeView(&core, queries, &window{})
 	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
 
 	checkToolNames(t, getServedTools(t, newSessionOver(t, core)), []string{

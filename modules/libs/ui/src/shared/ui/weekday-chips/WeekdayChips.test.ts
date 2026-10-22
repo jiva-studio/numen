@@ -202,7 +202,7 @@ describe('giving a day a level', () => {
   // A chip nobody may turn is pressed like any other and answers with nothing.
   // It keeps the keyboard, so the week is still read while it is disabled.
   it('offers nothing while nobody may turn them, and says so on every chip', async () => {
-    const row = mountChips({ disabled: true })
+    const row = mountChips({ isDisabled: true })
     const chips = row.findAll('button')
     expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(Array(7).fill('true'))
     expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(Array(7).fill(undefined))

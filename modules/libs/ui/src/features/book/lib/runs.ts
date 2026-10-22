@@ -12,11 +12,11 @@ import { countBytes, getUnitOffset } from './bytes'
 import type { Span } from '@/shared/lib/span'
 import type { Mark } from './spread'
 
-/** One run of the book's text as it is drawn. */
+/** Single contiguous text run in rendered book. */
 export interface Run {
-  /** Where the run begins, in bytes of the book's text. */
+  /** Byte offset where the text run begins. */
   readonly at: number
-  /** The element the run is drawn in. */
+  /** DOM element containing the rendered text run. */
   readonly element: HTMLElement
 }
 

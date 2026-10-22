@@ -64,7 +64,7 @@ describe('what is drawn', () => {
 
   it('leaves a row that cannot hold shut, named or not', () => {
     expect(getRowIds('loose')).toStrictEqual(['work', 'empty', 'loose'])
-    expect(getShownRows('loose')[2]?.open).toBe(false)
+    expect(getShownRows('loose')[2]?.isOpen).toBe(false)
   })
 
   it('counts the level from one, down the levels it walked', () => {
@@ -183,7 +183,7 @@ describe('where a key takes the keyboard', () => {
   it('opens a shut row and stays on it', () => {
     expect(step('plans', 'ArrowRight')).toStrictEqual({
       at: 'plans',
-      turn: { row: 'plans', open: true },
+      turn: { row: 'plans', isOpen: true },
     })
   })
 
@@ -202,7 +202,7 @@ describe('where a key takes the keyboard', () => {
   it('closes an open row and stays on it', () => {
     expect(step('work', 'ArrowLeft')).toStrictEqual({
       at: 'work',
-      turn: { row: 'work', open: false },
+      turn: { row: 'work', isOpen: false },
     })
   })
 

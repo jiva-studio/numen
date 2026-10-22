@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
-import { createAnswerGuard } from '@numen/plugin-sdk'
+import { createRequestGuard } from '@numen/plugin-sdk'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { DESIGNED, EMPTY_RANGE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
@@ -36,7 +36,7 @@ interface ThemeWearDeps {
 function createThemeWear(deps: ThemeWearDeps) {
   const { core, dressed, write, words, applied } = deps
   const files = new Map<string, string>()
-  const asks = createAnswerGuard()
+  const guard = createRequestGuard()
 
   const fileOf = async (name: string): Promise<string> => {
     const cached = files.get(name)
@@ -48,7 +48,7 @@ function createThemeWear(deps: ThemeWearDeps) {
 
   const wear = async (theme: string, half: Mode) => {
     if (!applied.value) return
-    const mine = asks.ask()
+    const mine = guard.acquireRequest()
     dressed.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
     try {
       const css = await fileOf(theme)
@@ -240,4 +240,4 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   }
 }
 
-const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

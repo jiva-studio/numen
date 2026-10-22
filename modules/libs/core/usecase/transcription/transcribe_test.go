@@ -92,7 +92,7 @@ func newRecording(words []string) []byte {
 
 // listener is a Transcribe over one vault holding one recording, and the hash
 // its artifact is named by.
-func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, *shelf, *voice, string) {
+func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, *fakeStorage, *voice, string) {
 	t.Helper()
 	raw := newRecording(words)
 	shelved := newLibrary()
@@ -100,7 +100,7 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	index := newStore()
 	shelf := newShelf()
 	model := &voice{words: words}
-	tr := NewTranscribe(vaults{first.ID: shelved}, index, shelves{shelf}, model)
+	tr := NewTranscribe(vaults{first.ID: shelved}, index, fakeStores{shelf}, model)
 	tr.Batch = 1
 	return tr, first, index, shelf, model, text.Fingerprint(raw)
 }

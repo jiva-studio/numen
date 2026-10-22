@@ -83,7 +83,7 @@ const renderMenu = (args: Knobs) => ({
       <Menu
         :items="args.items"
         :at="at"
-        :open="open"
+        :is-open="open"
         :from="from"
         :trigger="args.trigger"
         :current="args.current"
@@ -253,7 +253,7 @@ export const NotClipped: Story = {
 
           <!-- Written where a menu would be written: inside the thing that
                asked for it, which is the thing that clips. -->
-          <Menu :items="args.items" :at="at" :open="open" :from="from" :margin="args.margin" />
+          <Menu :items="args.items" :at="at" :is-open="open" :from="from" :margin="args.margin" />
         </div>
       </div>
     `,
@@ -446,7 +446,7 @@ export const NotChoosable: Story = {
     trigger: 'keyboard',
     items: [
       { id: 'open', text: 'Open' },
-      { id: 'ask', text: 'Ask the agent about this note', disabled: true },
+      { id: 'ask', text: 'Ask the agent about this note', isDisabled: true },
       { id: 'copy', text: 'Copy path' },
     ],
   },
@@ -578,7 +578,7 @@ const renderScrollingOpening = (args: Knobs) => ({
       <Menu
         :items="args.items"
         :at="at"
-        :open="open"
+        :is-open="open"
         :from="from"
         @dismiss="open = false; args.onDismiss()"
       />

@@ -19,10 +19,10 @@ const props = withDefaults(
     days: readonly Day[]
     /** The levels offered, in the order they are offered. */
     levels: readonly number[]
-    disabled?: boolean
+    isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { disabled: false },
+  { isDisabled: false },
 )
 
 const emit = defineEmits<{
@@ -48,7 +48,7 @@ const availableLevels = computed(() =>
 const current = computed(() => (popoverAnchor.value === null ? null : `${popoverAnchor.value.level}`))
 
 const openLevels = (day: Day, event: Event) => {
-  if (props.disabled) return
+  if (props.isDisabled) return
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
   const box = chip.getBoundingClientRect()
@@ -92,7 +92,7 @@ const getFillStyle = (level: number) => {
     <RovingFocusItem v-for="day in days" :key="day.id" as-child>
       <button
         type="button"
-        :aria-disabled="disabled || undefined"
+        :aria-disabled="isDisabled || undefined"
         :aria-label="`${day.long}, ${getFillPercent(day.level)}`"
         aria-haspopup="menu"
         :aria-expanded="popoverAnchor?.day === day.id"
@@ -119,7 +119,7 @@ const getFillStyle = (level: number) => {
     :at="popoverAnchor.at"
     :from="popoverAnchor.from"
     :current="current"
-    open
+    is-open
     trigger="keyboard"
     @choose="onChoose"
     @dismiss="popoverAnchor = null"

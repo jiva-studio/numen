@@ -53,9 +53,9 @@ describe('a fault', () => {
 
   it('says the sentence the application wrote, where it wrote one', () => {
     const message = formatErrorMessage(
-      new ConnectError('this recording is being listened to', Code.FailedPrecondition),
+      new ConnectError('request error', Code.FailedPrecondition),
     )
-    expect(message).toBe('this recording is being listened to')
+    expect(message).toBe('request error')
   })
 
   it('falls back on the code where the application sent no sentence', () => {

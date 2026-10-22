@@ -25,9 +25,9 @@ type bookCache struct {
 	// openFile opens the file at a path.
 	openFile func(path string) (*os.File, error)
 
-	mu     sync.Mutex
-	books  []*cachedBook // least recently read first
-	closed bool
+	mu       sync.Mutex
+	books    []*cachedBook // least recently read first
+	isClosed bool
 }
 
 func newBookCache() *bookCache {
@@ -58,7 +58,7 @@ func (c *bookCache) acquire(path string) (*cachedBook, error) {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.closed {
+	if c.isClosed {
 		return nil, errCacheClosed
 	}
 	for i, book := range c.books {
@@ -140,7 +140,7 @@ func (c *bookCache) release(book *cachedBook) {
 func (c *bookCache) Close() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.closed = true
+	c.isClosed = true
 	for _, book := range c.books {
 		c.evict(book)
 	}

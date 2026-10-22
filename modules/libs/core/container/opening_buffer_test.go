@@ -121,7 +121,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		v := testsupport.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
 
 		opening := cfg.VaultOpener(db)
-		broken := errors.New("the index refuses")
+		broken := errors.New("index unavailable")
 		opening.refresh = vault.NewRefresh(
 			cfg.VaultReaders(), db.Vaults(), repositoryAnswering{err: broken},
 			db.SourcesKnown(), db.Sources(), cfg.Clock(),

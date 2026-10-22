@@ -8,7 +8,7 @@ import (
 
 var (
 	// ErrNoTool is an address no provider on this machine supports.
-	ErrNoTool = errors.New("nothing on this machine downloads that address")
+	ErrNoTool = errors.New("unsupported protocol scheme for download")
 
 	// ErrNothingDownloaded is an address that answered, and carries nothing of what was asked for.
 	ErrNothingDownloaded = errors.New("nothing of the sort is published there")

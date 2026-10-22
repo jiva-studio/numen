@@ -26,7 +26,7 @@ type transcriptHandler struct {
 }
 
 // errBeingHeard is what an edit to a recording a run holds gets.
-var errBeingHeard = errors.New("this recording is being listened to")
+var errBeingHeard = errors.New("transcription already in progress")
 
 // ReadTranscript answers with the words of a file that carries times: each
 // stretch of speech against the milliseconds it was spoken in. A file nothing
@@ -116,10 +116,7 @@ func parseCues(cues []*v1.Cue) ([]domain.TranscriptCue, error) {
 		case from < last.To:
 			return nil, fmt.Errorf("cue %d: begins at %d, inside the cue above it ending at %d", at, from, last.To)
 		case strings.ContainsAny(one.GetText(), "\r\n"):
-			// One cue is one line of the transcript, and the window edits it as
-			// one. A cue broken over two lines is two the window would offer to
-			// edit and one the recording would play.
-			return nil, fmt.Errorf("cue %d: a cue stands on one line", at)
+			return nil, fmt.Errorf("invalid cue format: %q", one.GetText())
 		}
 		last = domain.TranscriptCue{Text: one.GetText(), From: from, To: to}
 		if strings.TrimSpace(one.GetText()) == "" {

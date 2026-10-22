@@ -5,13 +5,13 @@
  */
 import type { ShallowRef } from 'vue'
 
-import type { PageTurn } from '@/shared/lib/turn'
+import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
 import { handTurn } from '../lib/turn'
 
 export interface BookHandOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
-  readonly turn: (way: PageTurn) => void
+  readonly turn: (way: PageNavigationAction) => void
   readonly getEdge: (of: HTMLElement) => number
 }
 

@@ -29,7 +29,6 @@ export const highlighting = HighlightStyle.define([
     color: 'var(--editor-punctuation)',
   },
   { tag: t.meta, color: 'var(--editor-comment)' },
-  // A mark shown under the caret is quieter than the words it marks.
   { tag: t.processingInstruction, color: 'var(--editor-mark)' },
   { tag: t.escape, color: 'var(--editor-number)' },
   { tag: t.link, color: 'var(--editor-link)' },

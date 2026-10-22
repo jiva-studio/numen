@@ -37,9 +37,9 @@ defineSlots<{
     class="palette__item rounded-node flex items-center gap-2 px-2 py-1.5"
     role="option"
     :aria-selected="isCurrent"
-    :aria-disabled="row.item.disabled || undefined"
+    :aria-disabled="row.item.isDisabled || undefined"
     :data-here="isCurrent || undefined"
-    :data-disabled="row.item.disabled || undefined"
+    :data-disabled="row.item.isDisabled || undefined"
     @pointermove="emit('point-at', $event)"
     @pointerdown.prevent
     @click="emit('choose', $event.shiftKey)"

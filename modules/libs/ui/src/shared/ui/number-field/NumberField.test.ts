@@ -174,7 +174,7 @@ describe('the arrow keys', () => {
   })
 
   it('leave a field nobody may type into at its current position', async () => {
-    const field = mountField({ disabled: true })
+    const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
     expect(getEmitted(field)).toEqual([])
   })
@@ -208,7 +208,7 @@ describe('the other keys a spin button answers', () => {
   })
 
   it('leaves a field nobody may type into at its current position', async () => {
-    const field = mountField({ disabled: true })
+    const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'End' })
     await field.get('input').trigger('keydown', { key: 'PageUp' })
     expect(getEmitted(field)).toEqual([])

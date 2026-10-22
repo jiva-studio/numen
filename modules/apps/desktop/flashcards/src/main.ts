@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { interceptOutwardLinks } from '@numen/ui'
+import { interceptExternalLinks } from '@numen/ui'
 import App from './app/App.vue'
 import './app/app.css'
 
@@ -18,7 +18,7 @@ document.addEventListener('contextmenu', (event) => {
 // through the runtime the window serves beside the page.
 const runtime = '/wails/runtime.js'
 const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
-interceptOutwardLinks((href) => {
+interceptExternalLinks((href) => {
   void wails.then((it) => it?.Browser.OpenURL(href))
 })
 

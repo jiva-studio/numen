@@ -762,11 +762,11 @@ const screen = ({
         v-if="panel"
         v-model="typed"
         :groups="groups"
-        open
+        is-open
         :placeholder="placeholder"
       />
 
-      <Menu v-if="menu" :items="MENU" :at="menu" open name="What can be done to this note">
+      <Menu v-if="menu" :items="MENU" :at="menu" is-open name="What can be done to this note">
         <template #icon="{ id }">
           <component
             :is="menuIcon(id)"

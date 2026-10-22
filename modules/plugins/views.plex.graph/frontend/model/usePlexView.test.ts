@@ -39,7 +39,7 @@ describe('a plex still being read', () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
     const plex = usePlexView(
       fake(async (path) => {
-        await new Promise((wake) => setTimeout(wake, delays[path] ?? 0))
+        await new Promise((resolve) => setTimeout(resolve, delays[path] ?? 0))
         return answer(path)
       }),
     )
@@ -58,7 +58,7 @@ describe('a plex whose first answer is stale', () => {
     let releaseSecond = () => {}
     const plex = usePlexView(
       fake(async (path) => {
-        if (path === 'Second') await new Promise<void>((wake) => (releaseSecond = wake))
+        if (path === 'Second') await new Promise<void>((resolve) => (releaseSecond = resolve))
         return answer(path)
       }),
     )
@@ -81,7 +81,7 @@ describe('two questions in flight', () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
     const plex = usePlexView(
       fake(async (path) => {
-        await new Promise((wake) => setTimeout(wake, delays[path] ?? 0))
+        await new Promise((resolve) => setTimeout(resolve, delays[path] ?? 0))
         return answer(path)
       }),
     )
@@ -107,7 +107,7 @@ describe('a note that moved while a question was in flight', () => {
     )
     await plex.go('Note.md')
 
-    pendingGate = new Promise<void>((wake) => (release = wake))
+    pendingGate = new Promise<void>((resolve) => (release = resolve))
     const goPromise = plex.go('Note.md')
     plex.followMoves([{ from: 'Note.md', to: 'moved/Note.md' }])
     release()
@@ -127,7 +127,7 @@ describe('a note that moved while a question was in flight', () => {
       }),
     )
 
-    pendingGate = new Promise<void>((wake) => (release = wake))
+    pendingGate = new Promise<void>((resolve) => (release = resolve))
     const goPromise = plex.go('Note.md')
     plex.followMoves([{ from: 'Elsewhere.md', to: 'moved/Elsewhere.md' }])
     release()
@@ -164,7 +164,7 @@ describe('a plex whose tab has closed', () => {
   it('says nothing about the answer that was on its way', async () => {
     const plex = usePlexView(
       fake(async () => {
-        await new Promise((wake) => setTimeout(wake, 0))
+        await new Promise((resolve) => setTimeout(resolve, 0))
         return createEmptyNeighbourhood()
       }),
     )

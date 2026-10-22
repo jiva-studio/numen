@@ -2,7 +2,7 @@
  * Curve calculation, caching, and throttling for preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { createAnswerGuard, type AnswerGuard } from '@numen/plugin-sdk'
+import { createRequestGuard, type RequestGuard } from '@numen/plugin-sdk'
 import {
   DEFAULTS,
   type Curve,
@@ -26,7 +26,7 @@ export interface CurveState {
   shouldDrawAgain: boolean
   shape: string
   isReal: boolean
-  readonly asks: AnswerGuard
+  readonly asks: RequestGuard
   readonly answers: Map<string, Curve>
 }
 
@@ -44,7 +44,7 @@ export function createCurveState(
     shouldDrawAgain: false,
     shape: '',
     isReal: false,
-    asks: createAnswerGuard(),
+    asks: createRequestGuard(),
     answers: new Map<string, Curve>(),
   }
 }
@@ -84,7 +84,7 @@ export interface CurveContext {
 /** One curve, asked for and landed. */
 const fetchCurve = async (state: CurveState, context: CurveContext): Promise<void> => {
   const { path, getSettings, core, bounds, today, setErrorMessage } = context
-  const mine = state.asks.ask()
+  const mine = state.asks.acquireRequest()
   const settings = getSettings()
   const shape = getShapeKey(settings)
   state.shape = shape
@@ -125,7 +125,7 @@ export const updateCurves = async (state: CurveState, context: CurveContext): Pr
   const shape = getShapeKey(settings)
   const heldCurve = state.answers.get(shape)
   if (heldCurve) {
-    state.asks.drop()
+    state.asks.cancel()
     state.shape = shape
     applyCurveAnswer(state, heldCurve)
     state.place.value = getKnobPosition(heldCurve, settings, today)

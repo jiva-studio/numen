@@ -11,9 +11,9 @@ import (
 
 const artifactHash = "abc123"
 
-// newArtifactShelf is one vault whose recording is indexed under a hash, with
+// newArtifactStore is one vault whose recording is indexed under a hash, with
 // the transcript a model heard kept in the store.
-func newArtifactShelf(t *testing.T, cues ...domain.TranscriptCue) (*store, *shelf) {
+func newArtifactStore(t *testing.T, cues ...domain.TranscriptCue) (*store, *fakeStorage) {
 	t.Helper()
 	index := newStore()
 	index.sources[first.ID] = map[string]domain.Source{
@@ -39,9 +39,9 @@ func getCueTexts(cues []domain.TranscriptCue) []string {
 }
 
 func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
-	index, shelf := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
+	index, shelf := newArtifactStore(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 
-	target, err := NewGetArtifactList(index, shelves{shelf}).Execute(t.Context(), first, recordingPath)
+	target, err := NewGetArtifactList(index, fakeStores{shelf}).Execute(t.Context(), first, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,9 +55,9 @@ func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
 }
 
 func TestListingArtifactsOfAFileTheIndexDoesNotHoldIsEmpty(t *testing.T) {
-	index, shelf := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
+	index, shelf := newArtifactStore(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 
-	target, err := NewGetArtifactList(index, shelves{shelf}).Execute(t.Context(), first, "library/other.mp3")
+	target, err := NewGetArtifactList(index, fakeStores{shelf}).Execute(t.Context(), first, "library/other.mp3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,26 +67,26 @@ func TestListingArtifactsOfAFileTheIndexDoesNotHoldIsEmpty(t *testing.T) {
 }
 
 func TestACopyIsListedAndIsNotReadable(t *testing.T) {
-	index, shelf := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
+	index, shelf := newArtifactStore(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 	if err := shelf.WriteArtifact(t.Context(), domain.NewCopyName(artifactHash), []byte("video")); err != nil {
 		t.Fatal(err)
 	}
 
-	target, err := NewGetArtifactList(index, shelves{shelf}).Execute(t.Context(), first, recordingPath)
+	target, err := NewGetArtifactList(index, fakeStores{shelf}).Execute(t.Context(), first, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(target) != 2 || target[1].Kind != KindCopy || target[1].IsReadable() || target[1].Bytes != 5 {
 		t.Fatalf("the copy was listed as %+v", target)
 	}
-	if _, err := NewGetArtifactText(index, shelves{shelf}).Execute(t.Context(), first, recordingPath, KindCopy, 0, 0); err == nil {
+	if _, err := NewGetArtifactText(index, fakeStores{shelf}).Execute(t.Context(), first, recordingPath, KindCopy, 0, 0); err == nil {
 		t.Error("a copy was read as words")
 	}
 }
 
 func TestReadingAnArtifactProducesTheRangeAsItExistsOnDisk(t *testing.T) {
-	index, shelf := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
-	read := NewGetArtifactText(index, shelves{shelf})
+	index, shelf := newArtifactStore(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
+	read := NewGetArtifactText(index, fakeStores{shelf})
 
 	whole, err := read.Execute(t.Context(), first, recordingPath, KindTranscript, 0, 0)
 	if err != nil {
@@ -106,22 +106,22 @@ func TestReadingAnArtifactProducesTheRangeAsItExistsOnDisk(t *testing.T) {
 }
 
 func TestReadingAKindNothingWasMadeAsIsRefused(t *testing.T) {
-	index, shelf := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
+	index, shelf := newArtifactStore(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 
-	_, err := NewGetArtifactText(index, shelves{shelf}).Execute(t.Context(), first, recordingPath, KindArticle, 0, 0)
+	_, err := NewGetArtifactText(index, fakeStores{shelf}).Execute(t.Context(), first, recordingPath, KindArticle, 0, 0)
 	if err == nil || !strings.Contains(err.Error(), "nothing of the kind") {
 		t.Errorf("an article that was never made read as %v", err)
 	}
 }
 
 func TestACorrectionReplacesTheCuesBeginningInsideItsSpan(t *testing.T) {
-	index, shelf := newArtifactShelf(t,
+	index, shelf := newArtifactStore(t,
 		domain.TranscriptCue{Text: "a", From: 0, To: 1000},
 		domain.TranscriptCue{Text: "b", From: 1000, To: 2000},
 		domain.TranscriptCue{Text: "c", From: 2000, To: 3000},
 	)
 	var changed []string
-	write := NewWriteCorrections(index, shelves{shelf}, func(path string) { changed = append(changed, path) })
+	write := NewWriteCorrections(index, fakeStores{shelf}, func(path string) { changed = append(changed, path) })
 
 	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "B", From: 1000, To: 2000}}))
 	n, err := write.Execute(t.Context(), first, Correction{Path: recordingPath, Kind: KindTranscript, Words: words})
@@ -148,14 +148,14 @@ func TestACorrectionReplacesTheCuesBeginningInsideItsSpan(t *testing.T) {
 }
 
 func TestACorrectionNamingASpanReplacesEveryCueInIt(t *testing.T) {
-	index, shelf := newArtifactShelf(t,
+	index, shelf := newArtifactStore(t,
 		domain.TranscriptCue{Text: "a", From: 0, To: 1000},
 		domain.TranscriptCue{Text: "b", From: 1000, To: 2000},
 		domain.TranscriptCue{Text: "c", From: 2000, To: 3000},
 	)
 	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "X", From: 0, To: 1000}}))
 
-	n, err := NewWriteCorrections(index, shelves{shelf}, nil).Execute(t.Context(), first, Correction{
+	n, err := NewWriteCorrections(index, fakeStores{shelf}, nil).Execute(t.Context(), first, Correction{
 		Path: recordingPath, Kind: KindTranscript, Words: words, Start: 0, Length: 2000,
 	})
 	if err != nil {
@@ -167,8 +167,8 @@ func TestACorrectionNamingASpanReplacesEveryCueInIt(t *testing.T) {
 }
 
 func TestACorrectionIsRefusedWhereItCannotBeSaved(t *testing.T) {
-	index, shelf := newArtifactShelf(t, domain.TranscriptCue{Text: "a", From: 0, To: 1000})
-	write := NewWriteCorrections(index, shelves{shelf}, nil)
+	index, shelf := newArtifactStore(t, domain.TranscriptCue{Text: "a", From: 0, To: 1000})
+	write := NewWriteCorrections(index, fakeStores{shelf}, nil)
 	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "A", From: 0, To: 1000}}))
 
 	if _, err := write.Execute(t.Context(), first, Correction{

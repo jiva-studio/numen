@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
-// shelf is a Scan that counts what is asked of it.
-type shelf struct {
+// fakeStorage is a Scan that counts what is asked of it.
+type fakeStorage struct {
 	mu       sync.Mutex
 	width    float64
 	sizeErr  error
@@ -24,16 +24,16 @@ type shelf struct {
 	closes   int
 }
 
-func (s *shelf) GetPageCount() int { return 1 }
+func (s *fakeStorage) GetPageCount() int { return 1 }
 
-func (s *shelf) GetPageSize(int) (float64, float64, error) {
+func (s *fakeStorage) GetPageSize(int) (float64, float64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sizes++
 	return s.width, 792, s.sizeErr
 }
 
-func (s *shelf) RenderPage(_, dpi int) (image.Image, error) {
+func (s *fakeStorage) RenderPage(_, dpi int) (image.Image, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dpis = append(s.dpis, dpi)
@@ -43,19 +43,19 @@ func (s *shelf) RenderPage(_, dpi int) (image.Image, error) {
 	return image.NewRGBA(image.Rect(0, 0, 1, 1)), nil
 }
 
-func (s *shelf) Close() {
+func (s *fakeStorage) Close() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.closes++
 }
 
-func (s *shelf) getCloses() int {
+func (s *fakeStorage) getCloses() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.closes
 }
 
-func (s *shelf) isClosed() bool { return s.getCloses() > 0 }
+func (s *fakeStorage) isClosed() bool { return s.getCloses() > 0 }
 
 func openerOf(s port.OpenDocument) func() (port.OpenDocument, error) {
 	return func() (port.OpenDocument, error) { return s, nil }
@@ -101,9 +101,9 @@ func TestTheBoundsAWindowKeepsDocumentsBelow(t *testing.T) {
 func TestAWindowKeepsMostOpenDocumentsAndClosesTheOldest(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	var scans []*shelf
+	var scans []*fakeStorage
 	for _, name := range []string{"a", "b", "c"} {
-		s := &shelf{}
+		s := &fakeStorage{}
 		scans = append(scans, s)
 		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
@@ -125,8 +125,8 @@ func TestAWindowKeepsMostOpenDocumentsAndClosesTheOldest(t *testing.T) {
 func TestDocumentsAtTheBoundAreAllCached(t *testing.T) {
 	docs := NewDocuments(2, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	a, b := &shelf{}, &shelf{}
-	for name, s := range map[string]*shelf{"a": a, "b": b} {
+	a, b := &fakeStorage{}, &fakeStorage{}
+	for name, s := range map[string]*fakeStorage{"a": a, "b": b} {
 		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
 			t.Fatal(err)
@@ -141,8 +141,8 @@ func TestDocumentsAtTheBoundAreAllCached(t *testing.T) {
 func TestADocumentAskedForAgainIsTheNewestInTheOrder(t *testing.T) {
 	docs := NewDocuments(2, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	a, b, c := &shelf{}, &shelf{}, &shelf{}
-	take := func(name string, s *shelf) {
+	a, b, c := &fakeStorage{}, &fakeStorage{}, &fakeStorage{}
+	take := func(name string, s *fakeStorage) {
 		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
 			t.Fatal(err)
@@ -174,7 +174,7 @@ func TestADocumentAskedForAgainIsTheNewestInTheOrder(t *testing.T) {
 func TestADocumentInUseIsNotClosedForTheBound(t *testing.T) {
 	docs := NewDocuments(1, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	a, b := &shelf{}, &shelf{}
+	a, b := &fakeStorage{}, &fakeStorage{}
 	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(a))
 	if err != nil {
 		t.Fatal(err)
@@ -194,7 +194,7 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotCached(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	cause := errors.New("not a document")
-	good := &shelf{}
+	good := &fakeStorage{}
 	_, giveGood, err := docs.Acquire(t.Context(), markOf("good"), openerOf(good))
 	if err != nil {
 		t.Fatal(err)
@@ -230,7 +230,7 @@ func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
 	go func() {
 		defer close(isDone)
 		for range 2 {
-			if _, _, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{})); !errors.Is(err, ErrBusy) {
+			if _, _, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&fakeStorage{})); !errors.Is(err, ErrBusy) {
 				t.Errorf("answered %v", err)
 			}
 		}
@@ -250,7 +250,7 @@ func TestACallerThatRanOutOfTimeIsReportedTheDocumentIsBusy(t *testing.T) {
 	release := make(chan struct{})
 	slow := func() (port.OpenDocument, error) {
 		<-release
-		return &shelf{}, nil
+		return &fakeStorage{}, nil
 	}
 	_, _, err := docs.Acquire(ctx, markOf("a"), slow)
 	if !errors.Is(err, ErrBusy) {
@@ -268,7 +268,7 @@ func TestACallerThatRanOutOfTimeIsReportedTheDocumentIsBusy(t *testing.T) {
 func TestADocumentIsHeldByOneCallAtATime(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	doc, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{}))
+	doc, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&fakeStorage{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +296,7 @@ func TestADocumentIsHeldByOneCallAtATime(t *testing.T) {
 func TestAskingAgainStopsTheClockOnClosingTheDocument(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
-	s := &shelf{}
+	s := &fakeStorage{}
 	_, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
@@ -324,7 +324,7 @@ func TestAskingAgainStopsTheClockOnClosingTheDocument(t *testing.T) {
 func TestADocumentStillHeldByAnotherCallIsNotOnTheClock(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
-	s := &shelf{}
+	s := &fakeStorage{}
 	_, giveOne, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
@@ -348,7 +348,7 @@ func TestADocumentStillHeldByAnotherCallIsNotOnTheClock(t *testing.T) {
 func TestADocumentNobodyLooksAtIsClosedAndForgotten(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, 10*time.Millisecond)
 	t.Cleanup(docs.Close)
-	s := &shelf{}
+	s := &fakeStorage{}
 	_, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
@@ -363,7 +363,7 @@ func TestADocumentNobodyLooksAtIsClosedAndForgotten(t *testing.T) {
 func TestADocumentGivenBackAfterItWasEvictedIsClosedOnce(t *testing.T) {
 	docs := NewDocuments(1, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	a, b := &shelf{}, &shelf{}
+	a, b := &fakeStorage{}, &fakeStorage{}
 	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(a))
 	if err != nil {
 		t.Fatal(err)
@@ -381,11 +381,11 @@ func TestADocumentGivenBackAfterItWasEvictedIsClosedOnce(t *testing.T) {
 
 func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 	docs := NewDocuments(100, time.Hour)
-	var idle, busy []*shelf
+	var idle, busy []*fakeStorage
 	var clocks []*time.Timer
 	var gives []func()
 	for i := range 12 {
-		s := &shelf{}
+		s := &fakeStorage{}
 		name := string(rune('a' + i))
 		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
@@ -449,7 +449,7 @@ func TestShuttingADocumentThatNeverOpenedClosesNothing(t *testing.T) {
 }
 
 func TestShuttingADocumentStillOpeningClosesItOnceOpened(t *testing.T) {
-	s := &shelf{}
+	s := &fakeStorage{}
 	doc := &Document{ready: make(chan struct{})}
 	doc.Close()
 	time.Sleep(20 * time.Millisecond)
@@ -467,7 +467,7 @@ func TestShuttingADocumentStillOpeningClosesItOnceOpened(t *testing.T) {
 }
 
 func TestShuttingAnOpenDocumentClosesItsScan(t *testing.T) {
-	s := &shelf{}
+	s := &fakeStorage{}
 	ready := make(chan struct{})
 	close(ready)
 	(&Document{ready: ready, Scan: s}).Close()
@@ -490,7 +490,7 @@ func TestAPageIsGeneratedAtTheResolutionItsWidthNeeds(t *testing.T) {
 		{"a page one unit wide", 1, 5, 360},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			s := &shelf{width: c.pageWidth}
+			s := &fakeStorage{width: c.pageWidth}
 			doc := &Document{Scan: s, points: map[int]int{}}
 			if _, err := doc.Render(0, c.width); err != nil {
 				t.Fatal(err)
@@ -503,7 +503,7 @@ func TestAPageIsGeneratedAtTheResolutionItsWidthNeeds(t *testing.T) {
 }
 
 func TestAPagesWidthIsMeasuredOnce(t *testing.T) {
-	s := &shelf{width: 612}
+	s := &fakeStorage{width: 612}
 	doc := &Document{Scan: s, points: map[int]int{}}
 	for range 3 {
 		if _, err := doc.Render(4, 612); err != nil {
@@ -524,7 +524,7 @@ func TestAPagesWidthIsMeasuredOnce(t *testing.T) {
 func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 	cause := errors.New("the library said no")
 
-	measure := &shelf{width: 612, sizeErr: cause}
+	measure := &fakeStorage{width: 612, sizeErr: cause}
 	if _, err := (&Document{Scan: measure, points: map[int]int{}}).Render(0, 100); !errors.Is(err, cause) {
 		t.Errorf("a page that cannot be measured was answered %v", err)
 	}
@@ -532,7 +532,7 @@ func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 		t.Error("a page that cannot be measured was drawn")
 	}
 
-	empty := &shelf{width: 0.5}
+	empty := &fakeStorage{width: 0.5}
 	doc := &Document{Scan: empty, points: map[int]int{}}
 	if _, err := doc.Render(0, 100); err == nil {
 		t.Error("a page with no width was drawn")
@@ -541,7 +541,7 @@ func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 		t.Error("a page with no width was drawn or remembered")
 	}
 
-	draw := &shelf{width: 612, imageErr: cause}
+	draw := &fakeStorage{width: 612, imageErr: cause}
 	img, err := (&Document{Scan: draw, points: map[int]int{}}).Render(0, 100)
 	if !errors.Is(err, cause) || img != nil {
 		t.Errorf("a page the library cannot draw was answered %v, %v", img, err)
@@ -551,12 +551,12 @@ func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 func TestAnEvictedDocumentFromTheMiddleOfTheOrderPreservesTheRestInOrder(t *testing.T) {
 	docs := NewDocuments(1, time.Hour)
 	t.Cleanup(docs.Close)
-	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{}))
+	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&fakeStorage{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer giveA()
-	b := &shelf{}
+	b := &fakeStorage{}
 	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), openerOf(b))
 	if err != nil {
 		t.Fatal(err)
@@ -564,7 +564,7 @@ func TestAnEvictedDocumentFromTheMiddleOfTheOrderPreservesTheRestInOrder(t *test
 	giveB()
 	clock := docs.open[markOf("b")].idle
 
-	_, giveC, err := docs.Acquire(t.Context(), markOf("c"), openerOf(&shelf{}))
+	_, giveC, err := docs.Acquire(t.Context(), markOf("c"), openerOf(&fakeStorage{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -583,7 +583,7 @@ func TestAnEvictedDocumentFromTheMiddleOfTheOrderPreservesTheRestInOrder(t *test
 func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	s := &shelf{}
+	s := &fakeStorage{}
 	cause := errors.New("half open")
 	if _, _, err := docs.Acquire(t.Context(), markOf("a"), func() (port.OpenDocument, error) { return s, cause }); !errors.Is(err, cause) {
 		t.Fatalf("answered %v", err)
@@ -596,7 +596,7 @@ func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
 func TestRetiringClosesOnlyTheDocumentNobodyContains(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
-	s := &shelf{}
+	s := &fakeStorage{}
 	doc, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)

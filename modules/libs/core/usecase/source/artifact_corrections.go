@@ -33,7 +33,7 @@ type Correction struct {
 // WriteCorrections writes a span of a transcript as it should read. What was
 // transcribed stays as it was and the corrections are kept beside it.
 type WriteCorrections struct {
-	shelf   artifactShelf
+	store   artifactStore
 	changed func(path string)
 }
 
@@ -43,7 +43,7 @@ type WriteCorrections struct {
 func NewWriteCorrections(
 	queries port.SourceQueries, derived port.DerivedStores, changed func(path string),
 ) *WriteCorrections {
-	return &WriteCorrections{shelf: artifactShelf{queries: queries, derived: derived}, changed: changed}
+	return &WriteCorrections{store: artifactStore{queries: queries, derived: derived}, changed: changed}
 }
 
 // Execute writes the cues in place of every cue beginning inside the span they
@@ -57,7 +57,7 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 		return 0, ErrNoCue
 	}
 
-	set, err := u.shelf.getArtifacts(ctx, v, in.Path)
+	set, err := u.store.getArtifacts(ctx, v, in.Path)
 	if err != nil {
 		return 0, err
 	}

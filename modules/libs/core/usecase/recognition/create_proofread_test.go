@@ -30,7 +30,7 @@ func (r *replying) ProofreadSpeech(
 // corrections in. A proofreading is refused without them, so the tests here
 // hand over both and watch the proofreader.
 func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
-	return vaults{}, shelves{newShelf()}
+	return vaults{}, fakeStores{newShelf()}
 }
 
 // newProofreadingConfig is an installation with a proofreader.

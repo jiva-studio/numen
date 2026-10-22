@@ -3,8 +3,8 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/ui'
-import type { Question } from '@numen/plugin-sdk'
-import { useDebouncedAsk, type Wait } from '@/shared/search'
+import type { InFlightRequest } from '@numen/plugin-sdk'
+import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { NoteType, Source } from '@/entities/file'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
@@ -60,7 +60,7 @@ export interface SearchOptions {
 }
 
 interface FillOptions<T> {
-  readonly mine: Question
+  readonly mine: InFlightRequest
   readonly group: SearchGroup
   readonly question: () => Promise<readonly T[]>
   readonly into: (found: readonly T[]) => void
@@ -139,7 +139,7 @@ async function executeSearchQuery(
   ctx: {
     core: SearchDeps
     query: string
-    mine: Question
+    mine: InFlightRequest
     notAskedWord: string
   },
   state: SearchRefs,
@@ -201,7 +201,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
   const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages }
 
-  const debounced = useDebouncedAsk(how.wait ? { wait: how.wait } : {})
+  const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
   const drop = () => {
     names.value = []
@@ -211,12 +211,12 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     failureMessages.value = {}
   }
 
-  const ask = (query: string, mine: Question) =>
+  const ask = (query: string, mine: InFlightRequest) =>
     executeSearchQuery({ core, query, mine, notAskedWord: words.notAsked }, state)
 
   const setTyped = async (text: string) => {
     inputValue.value = text
-    await debounced.ask(text, { blank: drop, run: ask })
+    await debounced.search(text, { blank: drop, run: ask })
   }
 
   const setOpen = (now: boolean) => {
