@@ -4,7 +4,7 @@ import plugin, { activate, MediaUrlTab } from './index'
 
 describe('downloader frontend plugin', () => {
   it('registers url tab kind upon activation', () => {
-    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.downloader' })
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
     activate(ctx)
 
     const tabKinds = ctx.getRegisteredTabKinds()
@@ -15,7 +15,7 @@ describe('downloader frontend plugin', () => {
   })
 
   it('registers downloader.open command that opens url tab', async () => {
-    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.downloader' })
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
     activate(ctx)
 
     const commands = ctx.getRegisteredCommands()
@@ -34,7 +34,7 @@ describe('downloader frontend plugin', () => {
   })
 
   it('activates using default plugin lifecycle', async () => {
-    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.downloader' })
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
     await plugin.activate(ctx)
 
     expect(ctx.getRegisteredTabKinds()).toHaveLength(1)

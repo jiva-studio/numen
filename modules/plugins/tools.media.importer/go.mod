@@ -1,4 +1,4 @@
-module github.com/jiva-studio/numen/modules/plugins/tools.downloader
+module github.com/jiva-studio/numen/modules/plugins/tools.media.importer
 
 go 1.26.9
 

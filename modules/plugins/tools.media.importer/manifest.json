@@ -1,6 +1,6 @@
 {
-  "id": "md.numen.tools.downloader",
-  "name": "Media Downloader",
+  "id": "md.numen.tools.media.importer",
+  "name": "Media Importer",
   "version": "1.0.0",
   "protocol": 1,
   "description": "Media and web page downloader with transcript extraction via yt-dlp",
@@ -15,7 +15,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/tools.downloader",
+    "entrypoint": "bin/tools.media.importer",
     "serviceName": "numen.v1.DownloadService"
   },
   "frontend": {

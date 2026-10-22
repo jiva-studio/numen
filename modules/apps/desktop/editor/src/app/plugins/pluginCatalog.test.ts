@@ -32,7 +32,7 @@ describe('pluginCatalog', () => {
   })
 
   it('takes the permissions of a plugin from its manifest.json', () => {
-    expect(pluginCatalog.manifests['md.numen.tools.downloader']?.permissions).toStrictEqual([
+    expect(pluginCatalog.manifests['md.numen.tools.media.importer']?.permissions).toStrictEqual([
       'network:outbound',
       'vault:write',
     ])

@@ -1,4 +1,4 @@
-# Media Downloader Plugin
+# Media Importer Plugin
 
 Media and web page downloader with transcript extraction via `yt-dlp`.
 

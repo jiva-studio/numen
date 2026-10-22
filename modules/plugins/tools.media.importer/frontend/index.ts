@@ -1,5 +1,5 @@
 /**
- * Frontend entrypoint for the Media Downloader plugin.
+ * Frontend entrypoint for the Media Importer plugin.
  */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import MediaUrlTab from './MediaUrlTab.vue'

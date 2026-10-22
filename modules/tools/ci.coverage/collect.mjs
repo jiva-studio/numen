@@ -23,7 +23,7 @@ const GO_MODULES = [
   'modules/plugins/agents.antigravity',
   'modules/plugins/agents.claude',
   'modules/plugins/agents.codex',
-  'modules/plugins/tools.downloader',
+  'modules/plugins/tools.media.importer',
   'modules/plugins/engines.embeddings',
   'modules/plugins/engines.ocr',
   'modules/plugins/tools.proofreading',

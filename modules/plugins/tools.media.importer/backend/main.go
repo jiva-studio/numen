@@ -3,7 +3,7 @@ package main
 
 import (
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/modules/plugins/tools.downloader/backend/service"
+	"github.com/jiva-studio/numen/modules/plugins/tools.media.importer/backend/service"
 )
 
 func main() {

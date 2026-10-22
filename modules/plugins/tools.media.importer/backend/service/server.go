@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/modules/plugins/tools.downloader/backend/download"
+	"github.com/jiva-studio/numen/modules/plugins/tools.media.importer/backend/download"
 )
 
 type downloadServer struct {

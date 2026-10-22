@@ -56,7 +56,7 @@ require (
 	github.com/jiva-studio/numen/modules/plugins/engines.embeddings v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/engines.ocr v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/engines.transcription v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/tools.downloader v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/tools.media.importer v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/tools.proofreading v0.0.0
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.21.3 // indirect
@@ -113,7 +113,7 @@ replace github.com/jiva-studio/numen/modules/plugins/agents.acp => ../../plugins
 
 replace github.com/jiva-studio/numen/modules/plugins/tools.proofreading => ../../plugins/tools.proofreading
 
-replace github.com/jiva-studio/numen/modules/plugins/tools.downloader => ../../plugins/tools.downloader
+replace github.com/jiva-studio/numen/modules/plugins/tools.media.importer => ../../plugins/tools.media.importer
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent => ../../libs/plugin-sdk-go/agent
 

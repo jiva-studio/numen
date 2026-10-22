@@ -27,8 +27,8 @@ import (
 	epubservice "github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/service"
 	readerpdf "github.com/jiva-studio/numen/modules/plugins/readers.pdf"
 	pdfservice "github.com/jiva-studio/numen/modules/plugins/readers.pdf/backend/service"
-	downloader "github.com/jiva-studio/numen/modules/plugins/tools.downloader"
-	downloadservice "github.com/jiva-studio/numen/modules/plugins/tools.downloader/backend/service"
+	downloader "github.com/jiva-studio/numen/modules/plugins/tools.media.importer"
+	downloadservice "github.com/jiva-studio/numen/modules/plugins/tools.media.importer/backend/service"
 	proofreading "github.com/jiva-studio/numen/modules/plugins/tools.proofreading"
 	proofreadservice "github.com/jiva-studio/numen/modules/plugins/tools.proofreading/backend/service"
 )

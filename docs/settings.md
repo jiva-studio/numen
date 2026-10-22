@@ -402,7 +402,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 
 ## Reaching an address
 
-`importing` is how what a url points at is fetched. What is kept, and where, is [Importing an address](importing.md). Tool paths for `yt-dlp` and `ffmpeg` are configured on the Media Downloader plugin.
+`importing` is how what a url points at is fetched. What is kept, and where, is [Importing an address](importing.md). Tool paths for `yt-dlp` and `ffmpeg` are configured on the Media Importer plugin.
 
 ```json
 {
