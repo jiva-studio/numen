@@ -7,7 +7,6 @@ import (
 	"flag"
 	"net/http"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
@@ -27,7 +26,7 @@ func (d *DebugOptions) isServingHTTP() bool {
 }
 
 func (d *DebugOptions) serveHTTP(
-	context.Context, container.Config, *editor.Installation, http.Handler, *agents.Endpoint,
+	context.Context, container.Config, *editor.Installation, http.Handler,
 ) error {
 	return nil
 }

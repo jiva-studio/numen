@@ -45,7 +45,7 @@ func main() {
 		return
 	}
 
-	if err := run(cfg, noAgent); err != nil {
+	if err := run(cfg); err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards:", err)
 		os.Exit(1)
 	}
@@ -70,7 +70,7 @@ func makeNotes(cfg container.Config, db *container.Index, vaults *container.Open
 	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.UpdateIndex)
 }
 
-func run(cfg container.Config, noAgent bool) error {
+func run(cfg container.Config) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
@@ -112,13 +112,8 @@ func run(cfg container.Config, noAgent bool) error {
 	}
 	cfg.SetPluginVault(lent)
 
-	// The agent reaches the cards through tools on a port this window opens, and
-	// is started and stopped around a session.
-	away := serveAgents(ctx, cfg, api, noAgent, os.Stderr)
-
-	// The agents stop, then the walk and the watch, then the index they write to closes.
+	// The walk and the watch, then the index they write to closes.
 	target := shutdown.NewSequence(
-		shutdown.Report("numen-flashcards", os.Stderr, "agents", away),
 		stop,
 		vaults.CloseAndWait,
 		shutdown.Report("numen-flashcards", os.Stderr, "", db.Close),

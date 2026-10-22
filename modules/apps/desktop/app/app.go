@@ -15,7 +15,6 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
@@ -28,6 +27,9 @@ import (
 )
 
 const appName = "numen"
+
+// DefaultAgentAddr is the default MCP listening address.
+const DefaultAgentAddr = "127.0.0.1:23579"
 
 // Options holds command-line options for running the desktop application.
 type Options struct {
@@ -75,16 +77,12 @@ func Run(opts ...*Options) error {
 	cfg.ShouldRebuildIndex = opt.RebuildIndex
 	cfg = cfg.SetSafeMode(opt.SafeMode)
 
-	agentFlags := agentOptions{
-		addr:  opt.McpAddr,
-		isOff: opt.NoMcp,
-	}
 	scaleFlags := scaleSettings{
 		interfaceScale: opt.InterfaceScale,
 		textScale:      opt.TextScale,
 	}
 
-	if err := run(cfg, agentFlags, opt.Vault, scaleFlags, &opt.Debug); err != nil {
+	if err := run(cfg, opt.Vault, scaleFlags, &opt.Debug); err != nil {
 		if !opt.Debug.isServingHTTP() {
 			failWithDialog(cfg, err)
 		}
@@ -142,7 +140,7 @@ func (s scaleSettings) validate() error {
 	return nil
 }
 
-func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings, debugOpts *DebugOptions) error {
+func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts *DebugOptions) error {
 	debugOpts.apply(&cfg)
 	if err := debugOpts.ensureVault(cfg, vault); err != nil {
 		return err
@@ -179,10 +177,8 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	installation.Report(selected.Notices)
 
-	reachable := makeEndpoint(ctx, cfg, installation, mcp)
 	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(
-		reachable.Stop,
 		shutdown.Report(appName, os.Stderr, "", installation.Close),
 		shutdown.Report(appName, os.Stderr, "plugins", func() error {
 			return cfg.StopPlugins(context.Background())
@@ -196,7 +192,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	}()
 
 	if debugOpts.isServingHTTP() {
-		return debugOpts.serveHTTP(ctx, cfg, installation, pages, reachable)
+		return debugOpts.serveHTTP(ctx, cfg, installation, pages)
 	}
 
 	tracker := newWindowTracker()
@@ -209,7 +205,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	app := makeApplication(installation, pages, shutdownSeq, going, observed)
 	window = makeWindow(app, installation)
 	tracker.addWindow()
-	connectWindow(ctx, app, cfg, window, installation, reachable, tracker, going)
+	connectWindow(ctx, app, cfg, window, installation, tracker, going)
 
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		if !handleWindowClosing(ctx, tracker, going, observed, installation.WaitForFlush, window.Close) {
@@ -255,19 +251,6 @@ func openInstallation(
 	}
 	cfg.SetPluginVault(shared)
 	return shownInstallation{pages: pages, opened: opened}, nil
-}
-
-func makeEndpoint(
-	ctx context.Context, cfg container.Config, opened *editor.Installation, mcp agentOptions,
-) *agents.Endpoint {
-	return &agents.Endpoint{
-		Serve: func() (func() error, error) {
-			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
-		},
-		GetVault:       opened.GetCurrentVault,
-		SetUnreachable: func(response string) { opened.State.Unreachable.Store(response) },
-		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
-	}
 }
 
 func makeApplication(
@@ -324,7 +307,7 @@ func makeSecondaryWindow(
 
 func connectWindow(
 	ctx context.Context, app *application.App, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
-	reachable *agents.Endpoint, tracker *windowTracker, going *vaultFlush,
+	tracker *windowTracker, going *vaultFlush,
 ) {
 	opened.Services.SetFolderDialog(&folderDialog{window: window})
 
@@ -337,7 +320,7 @@ func connectWindow(
 
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		cfg.SetPluginVaultPath(v.Path)
-		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
+		err := opened.Show(ctx, v)
 		naming(opened.State.GetOpenTabs())
 		return err
 	}
@@ -359,8 +342,6 @@ func connectWindow(
 		})
 		return nil
 	}
-
-	reachable.Start()
 }
 
 func importDroppedFiles(ctx context.Context, opened *editor.Installation, event *application.WindowEvent) {
@@ -385,9 +366,4 @@ func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
 		return appName
 	}
 	return "numen — " + v.Name
-}
-
-type agentOptions struct {
-	addr  string
-	isOff bool
 }

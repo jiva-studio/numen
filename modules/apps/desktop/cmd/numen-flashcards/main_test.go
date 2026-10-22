@@ -2,12 +2,77 @@ package main
 
 import (
 	"context"
+	"io"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
+	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
+
+// deck is a vault holding one stencil and one deck.
+var deck = map[string]string{
+	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
+	"decks/Words.md": "---\ntype: deck\n---\n" +
+		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+}
+
+// makeWindow is this window as the binary builds it: an installation of its
+// own, an index it may write, and two vaults to sit down to.
+func makeWindow(
+	t *testing.T,
+) (container.Config, *container.Index, *container.OpenVaults, *window.API, []domain.Vault) {
+	t.Helper()
+
+	state := t.TempDir()
+	cfg := container.Config{
+		IndexPath:    filepath.Join(state, "index.db"),
+		RegistryPath: filepath.Join(state, "vaults.json"),
+	}
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	target := []domain.Vault{
+		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
+		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
+	}
+	vaults := &container.OpenVaults{
+		Config: cfg, Index: db, Lifetime: t.Context(),
+		RecordVault: func(domain.Vault) {}, Out: io.Discard,
+	}
+	t.Cleanup(vaults.CloseAndWait)
+	return cfg, db, vaults, &window.API{}, target
+}
+
+// vaultOf is a folder holding one stencil and one deck, as a vault.
+func vaultOf(t *testing.T, cfg container.Config) string {
+	t.Helper()
+
+	root := t.TempDir()
+	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range deck {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return root
+}
 
 // The notes the page and the tools are served are built, not empty.
 func TestTheNotesAreBuilt(t *testing.T) {

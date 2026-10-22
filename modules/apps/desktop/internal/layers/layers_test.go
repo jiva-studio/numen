@@ -131,7 +131,7 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 
 	// A walk that read no edge is a rule checked against nothing, and it
 	// passes. The floor is well under what the applications hold.
-	if read < 50 {
+	if read < 40 {
 		t.Fatalf("%d edges read: the walk is not reading the applications", read)
 	}
 }

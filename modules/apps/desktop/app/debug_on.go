@@ -22,7 +22,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -91,7 +90,6 @@ func (d *DebugOptions) serveHTTP(
 	cfg container.Config,
 	opened *editor.Installation,
 	pages http.Handler,
-	reachable *agents.Endpoint,
 ) error {
 	server := &http.Server{
 		Addr:    d.HttpAddr,
@@ -121,11 +119,10 @@ func (d *DebugOptions) serveHTTP(
 	opened.State.NotifyOpenTabs = naming
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		cfg.SetPluginVaultPath(v.Path)
-		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
+		err := opened.Show(ctx, v)
 		naming(opened.State.GetOpenTabs())
 		return err
 	}
-	reachable.Start()
 
 	scheme := "http"
 	if tlsConf != nil {
