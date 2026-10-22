@@ -1,6 +1,6 @@
 //go:build unix
 
-package agentrun_test
+package process_test
 
 // spawning prints a line, then starts a child that outlives it unless the command is supervised.
 var spawning = []string{"sh", "-c", "sleep 120 & echo started; wait"}

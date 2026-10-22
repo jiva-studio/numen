@@ -1,6 +1,6 @@
 //go:build !unix && !windows
 
-package agentrun
+package process
 
 import "os/exec"
 

@@ -1,6 +1,6 @@
 //go:build unix || windows
 
-package agentrun_test
+package process_test
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/process"
 )
 
 // Cancelling the context of a supervised command ends what the command started as well. The output
@@ -19,7 +19,7 @@ func TestSuperviseEndsWhatTheChildStarted(t *testing.T) {
 	running, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	cmd := exec.CommandContext(running, spawning[0], spawning[1:]...)
-	agentrun.Supervise(cmd)
+	process.Supervise(cmd)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatal(err)

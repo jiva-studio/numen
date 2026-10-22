@@ -1,4 +1,4 @@
-package agentrun
+package programs
 
 import numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 

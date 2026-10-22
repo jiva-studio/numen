@@ -1,4 +1,5 @@
-package agentrun
+// Package process supervises the child processes an agent program starts.
+package process
 
 import (
 	"os/exec"

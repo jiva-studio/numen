@@ -1,4 +1,4 @@
-package agentrun
+package models
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func TestModelCachePreservesWhatWasListedWhileTheKeyStays(t *testing.T) {
-	var cache ModelCache[string]
+func TestCachePreservesWhatWasListedWhileTheKeyStays(t *testing.T) {
+	var cache Cache[string]
 	request := 0
 	list := func(context.Context) ([]string, error) {
 		request++
@@ -28,9 +28,9 @@ func TestModelCachePreservesWhatWasListedWhileTheKeyStays(t *testing.T) {
 	}
 }
 
-func TestModelCachePreservesAFailedKeyAloneForAWhile(t *testing.T) {
+func TestCachePreservesAFailedKeyAloneForAWhile(t *testing.T) {
 	now := time.Unix(1000, 0)
-	cache := ModelCache[string]{Now: func() time.Time { return now }}
+	cache := Cache[string]{Now: func() time.Time { return now }}
 	failing := true
 	request := 0
 	list := func(context.Context) ([]string, error) {
@@ -48,14 +48,14 @@ func TestModelCachePreservesAFailedKeyAloneForAWhile(t *testing.T) {
 	if got := cache.Get(t.Context(), "k", list); got != nil || request != 1 {
 		t.Fatalf("a key that just failed was asked again: %v after %d asks", got, request)
 	}
-	now = now.Add(ModelFailureBackoff)
+	now = now.Add(FailureBackoff)
 	if got := cache.Get(t.Context(), "k", list); len(got) != 1 {
 		t.Errorf("the next listing gave %v", got)
 	}
 }
 
-func TestModelCachePreservesNothingFromAnEndedRequest(t *testing.T) {
-	var cache ModelCache[string]
+func TestCachePreservesNothingFromAnEndedRequest(t *testing.T) {
+	var cache Cache[string]
 	list := func(ctx context.Context) ([]string, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err

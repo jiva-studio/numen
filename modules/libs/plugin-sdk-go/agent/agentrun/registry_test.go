@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/process"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -23,7 +24,7 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 		command, args = "cmd", []string{"/c", "ping -n 60 127.0.0.1"}
 	}
 	cmd := exec.CommandContext(running, command, args...)
-	agentrun.Supervise(cmd)
+	process.Supervise(cmd)
 
 	w := agentrun.NewWork(conversation, 1, cancel)
 	if !registry.Add(w) {

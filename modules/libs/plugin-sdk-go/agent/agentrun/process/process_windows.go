@@ -1,6 +1,6 @@
 //go:build windows
 
-package agentrun
+package process
 
 import (
 	"os"

@@ -154,11 +154,17 @@ func (d disk) remove(filePath string) error { return os.Remove(d.at(filePath)) }
 func (d disk) paths() []string {
 	var out []string
 	_ = filepath.WalkDir(d.root, func(p string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() {
+		if err != nil {
+			return fs.SkipDir
+		}
+		if entry.IsDir() {
 			return nil
 		}
 		rel, relErr := filepath.Rel(d.root, p)
-		if relErr != nil || strings.HasPrefix(path.Base(rel), ".") {
+		if relErr != nil {
+			return relErr
+		}
+		if strings.HasPrefix(path.Base(rel), ".") {
 			return nil
 		}
 		out = append(out, filepath.ToSlash(rel))

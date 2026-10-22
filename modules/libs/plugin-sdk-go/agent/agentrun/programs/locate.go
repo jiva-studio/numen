@@ -1,4 +1,5 @@
-package agentrun
+// Package programs finds the command-line programs an agent plugin runs.
+package programs
 
 import (
 	"os"

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/process"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -110,7 +111,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 	if cmd.Stderr == nil {
 		cmd.Stderr = &stderr
 	}
-	Supervise(cmd)
+	process.Supervise(cmd)
 
 	fail := func(err error) (*Work, error) {
 		cleanup()

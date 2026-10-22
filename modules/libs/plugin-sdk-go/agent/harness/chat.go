@@ -234,7 +234,10 @@ func (c chat) checkKey() error {
 		base = DefaultBaseURL
 	}
 	address, err := url.Parse(base)
-	if err != nil || isLocalHost(address.Hostname()) {
+	if err != nil {
+		return fmt.Errorf("the chat API address %q is not valid: %w", base, err)
+	}
+	if isLocalHost(address.Hostname()) {
 		return nil
 	}
 	return errNoKey

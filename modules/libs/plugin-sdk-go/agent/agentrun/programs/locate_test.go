@@ -1,4 +1,4 @@
-package agentrun
+package programs
 
 import (
 	"os"
