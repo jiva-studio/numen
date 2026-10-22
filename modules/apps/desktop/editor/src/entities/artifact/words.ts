@@ -3,7 +3,7 @@
  * scan is recognised, a recording is transcribed, an address is fetched.
  */
 // Stryker disable StringLiteral: interface copy
-import type { Artifact, ArtifactState } from './types'
+import type { ArtifactState, BuiltInArtifact } from './types'
 
 export const FETCHED: Record<ArtifactState, string> = {
   none: 'The address published none of what was asked for.',
@@ -15,7 +15,7 @@ export const FETCHED: Record<ArtifactState, string> = {
   failed: 'This address could not be fetched:',
 }
 
-export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
+export const BUILT_IN_WORDS: Record<BuiltInArtifact, Record<ArtifactState, string>> = {
   ocr: {
     none: 'This scan has not been recognised.',
     queued: 'This scan is in line, behind the one being recognised now.',

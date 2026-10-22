@@ -238,7 +238,7 @@ const reportOutcome = (
   const why =
     invocation.id === 'downloadText'
       ? words.fetched[outcome.made]
-      : words.made[outcome.of][outcome.made]
+      : (words.made[outcome.of] ?? words.fetched)[outcome.made]
   const message = outcome.error ? `${why} ${outcome.error}` : why
   on.writeMessage(message, ERROR_STATES.includes(outcome.made) ? 'error' : 'report')
 }

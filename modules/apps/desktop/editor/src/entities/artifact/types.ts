@@ -13,8 +13,25 @@
  * What made it is another question. A transcript is a transcript whether a
  * model here wrote it down or a site published it with a video.
  */
-export type Artifact =
+export type Artifact = string
+
+/** The artifacts the window itself registers, before any plugin adds its own. */
+export type BuiltInArtifact =
   'ocr' | 'ocr.corrected' | 'transcript' | 'transcript.corrected' | 'article' | 'copy'
+
+/**
+ * One artifact the window knows: its name, the words each state is told in, and
+ * the number the schema gives it. One no schema number names is made by no run
+ * the application offers.
+ */
+export interface ArtifactDefinition {
+  readonly id: Artifact
+  readonly words: Readonly<Record<ArtifactState, string>>
+  readonly wireKind?: number
+}
+
+/** Why registering an artifact was refused. */
+export type ArtifactRegistryError = 'invalid' | 'duplicate'
 
 /**
  * What has become of one artifact: nothing has been made, a run over it waits

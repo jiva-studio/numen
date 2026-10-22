@@ -8,7 +8,7 @@
  */
 // Stryker disable StringLiteral: interface copy
 import type { PaletteKeys } from '@numen/ui'
-import { FETCHED, MADE } from '@/entities/artifact'
+import { FETCHED, useArtifactRegistry } from '@/entities/artifact'
 import type { Artifact, ArtifactState } from '@/entities/artifact'
 import { VAULT_ERRORS } from '@/entities/vault'
 import type { VaultErrorCode } from '@/entities/vault'
@@ -18,7 +18,9 @@ import type { EmptyWords } from './model/search'
 
 export const ANSWER_WORDS: AnswerWords = {
   ...WORDS,
-  made: MADE,
+  get made() {
+    return useArtifactRegistry().getArtifactWords()
+  },
   fetched: FETCHED,
   vaultErrors: VAULT_ERRORS,
 }

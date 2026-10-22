@@ -8,8 +8,8 @@
 import { Code } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
 import { ArtifactKind as Kinds, State as States } from '@numen/protocol'
-import { getNames } from '@numen/wire'
 import { artifacts } from '@/shared/clients'
+import { useArtifactRegistry } from '../registry'
 import type { Artifact, ArtifactRunner, ArtifactState } from '../types'
 
 /**
@@ -22,14 +22,16 @@ export const running: ArtifactRunner = {
     const answer = await artifacts.listArtifacts({ path })
     const target: Record<string, ArtifactState> = {}
     for (const one of answer.artifacts) {
-      const of = ARTIFACT_BY_KIND[one.kind]
-      if (of) target[of] = parseState(one.state)
+      const of = useArtifactRegistry().getArtifactByWireKind(one.kind)
+      if (of) target[of.id] = parseState(one.state)
     }
     return target
   },
   createArtifact: async (path, of) => {
+    const kind = useArtifactRegistry().getArtifact(of)?.wireKind
+    if (kind === undefined) return { able: false }
     try {
-      const answer = await artifacts.createArtifact({ path, kind: KIND_BY_ARTIFACT[of] })
+      const answer = await artifacts.createArtifact({ path, kind })
       return {
         able: true,
         of,
@@ -71,24 +73,6 @@ const deleteArtifact = async (path: string, kind: Kinds): Promise<boolean> => {
     throw error
   }
 }
-
-/**
- * What each artifact the schema names is called in the window. Keyed by the
- * schema, so an artifact added to it has to be given a word here before this
- * compiles.
- */
-const ARTIFACT_BY_KIND: Readonly<Record<Kinds, Artifact | null>> = {
-  [Kinds.UNSPECIFIED]: null,
-  [Kinds.OCR]: 'ocr',
-  [Kinds.OCR_CORRECTED]: 'ocr.corrected',
-  [Kinds.TRANSCRIPT]: 'transcript',
-  [Kinds.TRANSCRIPT_CORRECTED]: 'transcript.corrected',
-  [Kinds.ARTICLE]: 'article',
-  [Kinds.COPY]: 'copy',
-}
-
-/** And back, for asking for one. */
-const KIND_BY_ARTIFACT = getNames<Artifact, Kinds>(ARTIFACT_BY_KIND)
 
 /** What has become of an artifact, in the words the window uses. */
 const become: Record<States, ArtifactState> = {
