@@ -1,0 +1,14 @@
+{
+  "id": "md.numen.agents.tools.window",
+  "name": "Window Interaction Tools",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "Provides window interaction, active tab inspection, and interactive diff edit preview tools for AI agents",
+  "capabilities": ["tools"],
+  "targets": ["desktop.editor"],
+  "permissions": ["vault:read"],
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/agents.tools.window"
+  }
+}
