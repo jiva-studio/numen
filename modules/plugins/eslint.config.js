@@ -1,7 +1,4 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import pluginVue from 'eslint-plugin-vue'
-import tseslint from 'typescript-eslint'
+import { createBaseConfig } from '../tools/lint.layers/base-eslint.mjs'
 
 /** The packages a plugin frontend names besides its own directory and third-party code. */
 const contract = ['plugin-sdk', 'ui', 'wire', 'protocol']
@@ -84,41 +81,10 @@ function pluginImportBlocks() {
   return blocks
 }
 
-export default tseslint.config(
-  {
-    ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**'],
-  },
-  js.configs.recommended,
-  tseslint.configs.recommended,
-  pluginVue.configs['flat/essential'],
-  {
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-      },
-    },
-  },
-  {
-    files: ['**/*.vue'],
-    languageOptions: {
-      parserOptions: {
-        parser: tseslint.parser,
-      },
-    },
-  },
-  {
-    rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
-    },
-  },
-  {
-    files: ['**/*.test.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
+export default [
+  ...createBaseConfig(import.meta.dirname, {
+    useProjectService: false,
+    extraIgnores: ['**/dist/**', '**/coverage/**', '**/node_modules/**'],
+  }),
   ...pluginImportBlocks(),
-)
+]

@@ -382,6 +382,8 @@ export function createBaseConfig(dirname, options = {}) {
     ...(options.allowDefaultProject || []),
   ]
 
+  const useProjectService = options.useProjectService !== false
+
   return [
     {
       ignores: [
@@ -404,23 +406,34 @@ export function createBaseConfig(dirname, options = {}) {
       languageOptions: {
         globals: globals.browser,
         parserOptions: {
-          projectService: {
-            allowDefaultProject: allowDefault,
-          },
-          tsconfigRootDir: dirname,
+          ...(useProjectService
+            ? {
+                projectService: {
+                  allowDefaultProject: allowDefault,
+                },
+                tsconfigRootDir: dirname,
+              }
+            : {}),
           extraFileExtensions: ['.vue'],
         },
       },
       rules: {
         'no-console': 'error',
-        '@typescript-eslint/no-floating-promises': 'error',
-        '@typescript-eslint/no-misused-promises': 'error',
-        '@typescript-eslint/await-thenable': 'error',
+        ...(useProjectService
+          ? {
+              '@typescript-eslint/no-floating-promises': 'error',
+              '@typescript-eslint/no-misused-promises': 'error',
+              '@typescript-eslint/await-thenable': 'error',
+            }
+          : {}),
         '@typescript-eslint/no-unused-vars': [
           'error',
           { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
         ],
         'vue/multi-word-component-names': 'off',
+        'max-depth': ['error', 3],
+        complexity: ['error', 12],
+        'max-params': ['error', 4],
       },
     },
 
@@ -429,8 +442,12 @@ export function createBaseConfig(dirname, options = {}) {
       languageOptions: {
         parserOptions: {
           parser: tseslint.parser,
-          projectService: true,
-          tsconfigRootDir: dirname,
+          ...(useProjectService
+            ? {
+                projectService: true,
+                tsconfigRootDir: dirname,
+              }
+            : {}),
           extraFileExtensions: ['.vue'],
         },
       },
@@ -452,7 +469,7 @@ export function createBaseConfig(dirname, options = {}) {
         'vue/require-explicit-emits': 'error',
         'vue/no-undef-components': 'error',
         'vue/attribute-hyphenation': ['error', 'always'],
-        'vue/custom-event-name-casing': ['error', 'kebab-case'],
+        'vue/custom-event-name-casing': ['error', 'kebab-case', { ignores: ['update:modelValue'] }],
         'vue/v-on-event-hyphenation': ['error', 'always'],
         'vue/no-unused-refs': 'error',
         'vue/component-api-style': ['error', ['script-setup', 'composition']],
@@ -533,6 +550,9 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/vue-script-sections': 'off',
         'numen/boolean-prop-naming': 'off',
         'numen/handler-naming': 'off',
+        'max-depth': 'off',
+        complexity: 'off',
+        'max-params': 'off',
       },
     },
 
