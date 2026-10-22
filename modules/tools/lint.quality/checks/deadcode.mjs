@@ -66,7 +66,7 @@ function checkKnip(repoRoot, relDir, pkgName) {
       return;
     }
 
-    const child = spawn(knipBin, [], {
+    const child = spawn(knipBin, ["--include", "files"], {
       cwd: targetDir,
       stdio: ["ignore", "pipe", "pipe"],
     });

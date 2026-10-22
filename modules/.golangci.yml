@@ -418,3 +418,7 @@ linters:
       - path: (^|/)flashcards/review/
         linters: [cyclop, gocognit, nestif, funlen]
 
+      # Plugin SDK server bootstrap handles raw flags, socket listen, and signal loops.
+      - path: (^|/)plugin-sdk-go/server/server\.go$
+        linters: [cyclop, gocognit, nestif, funlen]
+

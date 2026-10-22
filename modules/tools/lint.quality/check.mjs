@@ -118,9 +118,9 @@ function resolveChecks(args, changedOnly) {
 
     targetIds = targetIds.filter((id) => {
       if (id === "duplication") return hasGo || hasTsOrVue;
-      if (id === "complexity") return hasGoPlugins;
+      if (id === "complexity") return hasGo;
       if (id === "deadcode") return hasUi || hasGoCore;
-      if (id === "interfaces") return hasGoCore;
+      if (id === "interfaces") return hasGo;
       return true;
     });
   }

@@ -56,7 +56,7 @@ function lintPlugin(dir, configFile, pluginName) {
 }
 
 /**
- * Checks cyclomatic and cognitive complexity in Go code asynchronously.
+ * Checks cyclomatic and cognitive complexity in Go code asynchronously across all modules.
  *
  * @param {{ repoRoot: string, warnOnly?: boolean }} options
  * @returns {Promise<{ id: string, name: string, pass: boolean, summary: string, details?: string, durationMs: number }>}
@@ -65,17 +65,28 @@ export async function runComplexityCheck({ repoRoot, warnOnly = false }) {
   const start = Date.now();
   const configFile = path.join(repoRoot, "modules/.golangci.yml");
   const pluginsDir = path.join(repoRoot, "modules/plugins");
-  const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
 
-  const pluginDirs = entries
-    .filter((e) => e.isDirectory() && fs.existsSync(path.join(pluginsDir, e.name, "go.mod")))
-    .map((e) => ({
-      name: e.name,
-      dir: path.join(pluginsDir, e.name),
-    }));
+  const targets = [
+    { name: "libs/core", dir: path.join(repoRoot, "modules/libs/core") },
+    { name: "libs/notes", dir: path.join(repoRoot, "modules/libs/notes") },
+    { name: "apps/desktop", dir: path.join(repoRoot, "modules/apps/desktop") },
+    { name: "libs/plugin-sdk-go", dir: path.join(repoRoot, "modules/libs/plugin-sdk-go") },
+  ].filter((t) => fs.existsSync(path.join(t.dir, "go.mod")));
+
+  if (fs.existsSync(pluginsDir)) {
+    const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.isDirectory() && fs.existsSync(path.join(pluginsDir, e.name, "go.mod"))) {
+        targets.push({
+          name: `plugin/${e.name}`,
+          dir: path.join(pluginsDir, e.name),
+        });
+      }
+    }
+  }
 
   const results = await Promise.all(
-    pluginDirs.map(({ dir, name }) => lintPlugin(dir, configFile, name))
+    targets.map(({ dir, name }) => lintPlugin(dir, configFile, name))
   );
 
   const allIssues = results.flat();
@@ -83,8 +94,8 @@ export async function runComplexityCheck({ repoRoot, warnOnly = false }) {
   const pass = allIssues.length === 0 || warnOnly;
   const summary =
     allIssues.length === 0
-      ? "Zero complexity violations in Go plugins"
-      : `${allIssues.length} complexity violations in Go plugins`;
+      ? `Zero complexity violations across ${targets.length} Go modules`
+      : `${allIssues.length} complexity violations across Go modules`;
 
   return {
     id: "complexity",
