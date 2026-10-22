@@ -31,8 +31,8 @@ describe('AudioPlayerTab', () => {
     expect(button15).toBeDefined()
     await button15!.trigger('click')
 
-    expect(wrapper.emitted('rateChange')).toBeTruthy()
-    expect(wrapper.emitted('rateChange')![0]).toEqual([1.5])
+    expect(wrapper.emitted('rate-change')).toBeTruthy()
+    expect(wrapper.emitted('rate-change')![0]).toEqual([1.5])
   })
 
   it('navigates transcript timestamps when cues are clicked', async () => {

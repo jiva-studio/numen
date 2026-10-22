@@ -54,7 +54,7 @@ function onOpen(url: string) {
     <Editor
       :model-value="props.modelValue"
       :language="editorLanguage"
-      :is-live="true"
+      is-live
       v-bind="props.extensions ? { extensions: props.extensions as Extension } : {}"
       class="markdown-editor__pane"
       @update:model-value="onUpdateModelValue"

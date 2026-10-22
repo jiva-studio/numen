@@ -21,14 +21,14 @@ describe('MediaRecordingTab', () => {
     const recordBtn = wrapper.find('.media-recorder__btn--record')
     await recordBtn.trigger('click')
 
-    expect(wrapper.emitted('recordStart')).toBeTruthy()
+    expect(wrapper.emitted('record-start')).toBeTruthy()
     expect(wrapper.text()).toContain('RECORDING')
 
     const stopBtn = wrapper.find('.media-recorder__btn--stop')
     expect(stopBtn.exists()).toBe(true)
     await stopBtn.trigger('click')
 
-    expect(wrapper.emitted('recordStop')).toBeTruthy()
+    expect(wrapper.emitted('record-stop')).toBeTruthy()
     expect(wrapper.text()).toContain('STOPPED')
   })
 

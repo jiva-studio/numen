@@ -8,6 +8,7 @@ import { computed, ref, useId, useTemplateRef } from 'vue'
 import type { Cue } from '@numen/protocol'
 import { downloaderClient } from './client'
 import MediaEmbed from './embed/MediaEmbed.vue'
+import MediaCueList from './MediaCueList.vue'
 import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -95,14 +96,6 @@ function onSeekCue(ms: number): void {
 function onTimeUpdate(_ms: number): void {
   // Seek sync hook
 }
-
-/* -------------------------------- Helpers --------------------------------- */
-function formatTime(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
 </script>
 
 <template>
@@ -144,7 +137,7 @@ function formatTime(ms: number): string {
         <MediaEmbed
           ref="player"
           :embed="activeUrl"
-          :copy="''"
+          copy=""
           :words="words"
           @time-update="onTimeUpdate"
         />
@@ -152,17 +145,7 @@ function formatTime(ms: number): string {
 
       <section v-if="hasCues" class="media-downloader__transcript">
         <h3 class="media-downloader__subtitle">{{ words.transcript }}</h3>
-        <ul class="media-downloader__cue-list">
-          <li
-            v-for="(cue, index) in cues"
-            :key="index"
-            class="media-downloader__cue"
-            @click="onSeekCue(cue.startMs)"
-          >
-            <span class="media-downloader__cue-time">{{ formatTime(cue.startMs) }}</span>
-            <span class="media-downloader__cue-text">{{ cue.text }}</span>
-          </li>
-        </ul>
+        <MediaCueList :cues="cues" @seek="onSeekCue" />
       </section>
     </main>
   </div>
