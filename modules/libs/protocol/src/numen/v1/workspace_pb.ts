@@ -184,6 +184,13 @@ export type Tab = Message<"numen.v1.Tab"> & {
    */
   title: string;
 
+  /**
+   * How far the person has got through what the tab holds. A tab holding a
+   * document sets document, a tab holding a recording sets recording, a tab
+   * none of them.
+   *
+   * @generated from field: numen.v1.DocumentProgress document = 5;
+   */
   document?: DocumentProgress | undefined;
 
   /**
@@ -232,6 +239,12 @@ export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
 export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*/
   messageDesc(file_numen_v1_workspace, 7);
 
+/**
+ * is. Such a book has no pages of its own, so where they stand is an offset
+ * into its text and the page is counted from that.
+ *
+ * @generated from message numen.v1.BookProgress
+ */
 export type BookProgress = Message<"numen.v1.BookProgress"> & {
   /**
    * Offset is where they are reading, in bytes of the book's text.

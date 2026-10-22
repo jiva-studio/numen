@@ -115,6 +115,11 @@ export const EntrySchema: GenMessage<Entry> = /*@__PURE__*/
  * @generated from message numen.v1.ListFileKindsRequest
  */
 export type ListFileKindsRequest = Message<"numen.v1.ListFileKindsRequest"> & {
+  /**
+   * The paths to answer about, as the vault files them. More than the vault
+   *
+   * @generated from field: repeated string paths = 1;
+   */
   paths: string[];
 };
 
@@ -402,6 +407,12 @@ export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@_
  * @generated from message numen.v1.CreateURLRequest
  */
 export type CreateURLRequest = Message<"numen.v1.CreateURLRequest"> & {
+  /**
+   * The address, as a browser would go to it. It is read into the one form
+   * every spelling of it reaches, and one nothing can be fetched from is
+   *
+   * @generated from field: string url = 1;
+   */
   url: string;
 
   /**
@@ -487,6 +498,12 @@ export enum SourceKind {
 export const SourceKindSchema: GenEnum<SourceKind> = /*@__PURE__*/
   enumDesc(file_numen_v1_file, 0);
 
+/**
+ * the reader made for it: one is drawn as pictures a page at a time, the other
+ * that is no book is unspecified.
+ *
+ * @generated from enum numen.v1.BookFormat
+ */
 export enum BookFormat {
   /**
    * @generated from enum value: BOOK_FORMAT_UNSPECIFIED = 0;
@@ -527,6 +544,15 @@ export const FileService: GenService<{
     input: typeof ListFilesRequestSchema;
     output: typeof ListFilesResponseSchema;
   },
+  /**
+   * ListFileKinds is what the vault holds at each of those paths, so a client
+   * holding a path opens what stands there in the editor made for it. The kind
+   * is read off the vault itself, so a path nothing has scanned is answered
+   * with what stands there. A path with nothing at it is absent from the
+   * answer, and a path named twice is answered once. More paths than the vault
+   *
+   * @generated from rpc numen.v1.FileService.ListFileKinds
+   */
   listFileKinds: {
     methodKind: "unary";
     input: typeof ListFileKindsRequestSchema;

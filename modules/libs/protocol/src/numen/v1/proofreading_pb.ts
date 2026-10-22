@@ -140,6 +140,11 @@ export type ProofreadTextRequest = Message<"numen.v1.ProofreadTextRequest"> & {
    */
   groups: ProofreadGroup[];
 
+  /**
+   * The settings of the kind named. A request whose options are of the other
+   *
+   * @generated from oneof numen.v1.ProofreadTextRequest.options
+   */
   options: {
     /**
      * @generated from field: numen.v1.ProofreadScanOptions scan = 3;
@@ -238,6 +243,9 @@ export const ProofreadTextResponseSchema: GenMessage<ProofreadTextResponse> = /*
  * @generated from enum numen.v1.ProofreadKind
  */
 export enum ProofreadKind {
+  /**
+   * @generated from enum value: PROOFREAD_KIND_UNSPECIFIED = 0;
+   */
   UNSPECIFIED = 0,
 
   /**

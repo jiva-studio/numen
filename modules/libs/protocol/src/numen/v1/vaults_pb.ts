@@ -329,7 +329,6 @@ export const OpenVaultRequestSchema: GenMessage<OpenVaultRequest> = /*@__PURE__*
  */
 export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
   /**
-   *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
   error?: VaultsErrorCode | undefined;
@@ -393,7 +392,6 @@ export enum VaultsErrorCode {
   LAST_VAULT = 5,
 
   /**
-   *
    * @generated from enum value: VAULTS_ERROR_CODE_SHOWING = 6;
    */
   SHOWING = 6,

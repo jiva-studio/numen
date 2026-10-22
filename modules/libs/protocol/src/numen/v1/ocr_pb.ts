@@ -106,7 +106,6 @@ export type Box = Message<"numen.v1.Box"> & {
   span?: Span | undefined;
 
   /**
-   *
    * @generated from field: int32 page = 2;
    */
   page: number;

@@ -76,6 +76,11 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    */
   printedPages: PrintedPage[];
 
+  /**
+   * own, so they are counted over its text and not over anything drawn.
+   *
+   * @generated from field: int32 page_count = 5;
+   */
   pageCount: number;
 
   /**
@@ -237,6 +242,11 @@ export type ReadBookEntryRequest = Message<"numen.v1.ReadBookEntryRequest"> & {
    */
   entry: string;
 
+  /**
+   * Which bytes the ask was given out for. A file that is other bytes now is
+   *
+   * @generated from field: numen.v1.Fingerprint baseline = 3;
+   */
   baseline?: Fingerprint | undefined;
 };
 
@@ -357,6 +367,9 @@ export type PrintedPage = Message<"numen.v1.PrintedPage"> & {
 export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
   messageDesc(file_numen_v1_book, 10);
 
+/**
+ * @generated from service numen.v1.BookService
+ */
 export const BookService: GenService<{
   /**
    * GetBook is what the book is: what it is called, the documents it is read

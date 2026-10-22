@@ -132,6 +132,9 @@ export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
    */
   maxSteps: number;
 
+  /**
+   * @generated from field: repeated numen.v1.ToolDeclaration tool_declarations = 11;
+   */
   toolDeclarations: ToolDeclaration[];
 
   /**
@@ -351,6 +354,11 @@ export type AgentModel = Message<"numen.v1.AgentModel"> & {
 export const AgentModelSchema: GenMessage<AgentModel> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 7);
 
+/**
+ * while it is being written.
+ *
+ * @generated from message numen.v1.ToolDeclaration
+ */
 export type ToolDeclaration = Message<"numen.v1.ToolDeclaration"> & {
   /**
    * The tool, by the name the vault serves it under.

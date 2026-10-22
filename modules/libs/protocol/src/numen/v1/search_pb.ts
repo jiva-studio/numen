@@ -129,6 +129,9 @@ export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & 
    */
   limit: number;
 
+  /**
+   * @generated from field: numen.v1.SearchMode mode = 3;
+   */
   mode: SearchMode;
 };
 

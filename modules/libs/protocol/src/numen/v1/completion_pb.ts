@@ -44,8 +44,14 @@ export type HostServiceCompleteResponse = Message<"numen.v1.HostServiceCompleteR
    */
   answer?: CompletionAnswer | undefined;
 
+  /**
+   * @generated from field: numen.v1.CompletionErrorCode error = 2;
+   */
   error: CompletionErrorCode;
 
+  /**
+   * @generated from field: string detail = 3;
+   */
   detail: string;
 };
 
@@ -128,6 +134,11 @@ export type CompletionAnswer = Message<"numen.v1.CompletionAnswer"> & {
 export const CompletionAnswerSchema: GenMessage<CompletionAnswer> = /*@__PURE__*/
   messageDesc(file_numen_v1_completion, 4);
 
+/**
+ * value means it was not.
+ *
+ * @generated from enum numen.v1.CompletionErrorCode
+ */
 export enum CompletionErrorCode {
   /**
    * @generated from enum value: COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
@@ -150,6 +161,12 @@ export enum CompletionErrorCode {
    */
   UNAVAILABLE = 2,
 
+  /**
+   * The window asks the person, and a plugin shows this as the reason nothing
+   * was answered.
+   *
+   * @generated from enum value: COMPLETION_ERROR_CODE_NO_CONSENT = 3;
+   */
   NO_CONSENT = 3,
 }
 

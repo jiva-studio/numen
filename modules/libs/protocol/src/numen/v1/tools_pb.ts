@@ -100,7 +100,6 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
   servers: ToolServer[];
 
   /**
-   *
    * @generated from field: numen.v1.ToolStep step = 8;
    */
   step: ToolStep;
@@ -197,6 +196,9 @@ export type ToolResult = Message<"numen.v1.ToolResult"> & {
    */
   structured: Uint8Array;
 
+  /**
+   * @generated from field: bool is_refusal = 3;
+   */
   isRefusal: boolean;
 };
 

@@ -112,6 +112,18 @@ export type WriteTranscriptRequest = Message<"numen.v1.WriteTranscriptRequest"> 
    */
   path: string;
 
+  /**
+   * The words as the person left them, against the milliseconds they were said
+   * in. A client that merged and split lines does the arithmetic.
+   *
+   * Speech runs forward: a cue ends no earlier than it begins, and begins after
+   * the one before it ends. A cue whose words trim away is dropped, and its
+   * timings still bound the cue after it. Words carrying nothing at all are
+   * writing nothing over the words would leave the recording saying nothing
+   * with nothing to edit.
+   *
+   * @generated from field: repeated numen.v1.Cue cues = 2;
+   */
   cues: Cue[];
 };
 

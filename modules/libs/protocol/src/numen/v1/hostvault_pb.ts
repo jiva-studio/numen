@@ -1233,6 +1233,11 @@ export type WatchVaultResponse = Message<"numen.v1.WatchVaultResponse"> & {
 export const WatchVaultResponseSchema: GenMessage<WatchVaultResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 57);
 
+/**
+ * means it was not.
+ *
+ * @generated from enum numen.v1.HostVaultErrorCode
+ */
 export enum HostVaultErrorCode {
   /**
    * @generated from enum value: HOST_VAULT_ERROR_CODE_UNSPECIFIED = 0;
@@ -1303,7 +1308,6 @@ export const HostVaultErrorCodeSchema: GenEnum<HostVaultErrorCode> = /*@__PURE__
   enumDesc(file_numen_v1_hostvault, 0);
 
 /**
- *
  * @generated from enum numen.v1.HostIndexState
  */
 export enum HostIndexState {
