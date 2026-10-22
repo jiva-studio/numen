@@ -5,23 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
-
-// isServing says whether the tools are in front of the agents.
-func (s *Endpoint) isServing() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.close != nil
-}
 
 // newEndpoint is a window on a vault, serving tools that do nothing.
 func newEndpoint() *Endpoint {
 	return &Endpoint{
 		Serve:          func() (func() error, error) { return func() error { return nil }, nil },
 		GetVault:       func() domain.Vault { return domain.Vault{ID: "one"} },
-		SetAgent:       func(port.Agent) {},
 		SetUnreachable: func(string) {},
 		ErrorHandler:   func(error) {},
 	}
@@ -33,7 +24,7 @@ func newEndpoint() *Endpoint {
 func TestRunWhileStopped_AgentsRemainStopped(t *testing.T) {
 	s := newEndpoint()
 	s.Start()
-	if !s.isServing() {
+	if !s.IsServing() {
 		t.Fatal("the tools were never served")
 	}
 
@@ -64,7 +55,7 @@ func TestRunWhileStopped_AgentsRemainStopped(t *testing.T) {
 	case <-second:
 	case <-time.After(time.Second):
 	}
-	served := s.isServing()
+	served := s.IsServing()
 
 	close(release)
 	swaps.Wait()
@@ -72,7 +63,7 @@ func TestRunWhileStopped_AgentsRemainStopped(t *testing.T) {
 	if served {
 		t.Error("the tools were served again while a swap was running")
 	}
-	if !s.isServing() {
+	if !s.IsServing() {
 		t.Error("the tools were not served again once the swap was over")
 	}
 }

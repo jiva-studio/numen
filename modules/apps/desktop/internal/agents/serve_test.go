@@ -6,14 +6,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -147,128 +145,5 @@ func TestWindowWithoutDiscoveryWritesNoFile(t *testing.T) {
 	}
 	for _, entry := range remaining {
 		t.Errorf("%s was written where the application keeps its own state", entry.Name())
-	}
-}
-
-// TestTheAgentsGoBeforeTheEndpoint. An agent still answering goes on writing to
-// the vault, so it is stopped while the tools it writes through are still
-// there.
-func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
-	cfg := makeInstallation(t)
-
-	served, err := Serve(t.Context(), Options{
-		Config: cfg, Core: vault(t), Token: "secret", Root: t.TempDir(), Out: io.Discard,
-		Provider: &fakeProvider{},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if served.Agent == nil {
-		t.Fatal("the settings name an agent and none was started")
-	}
-
-	// A request left half-written holds the endpoint open, so the close is
-	// still in front of it while the agent is asked for work.
-	target, err := net.Dial("tcp", authority(t, served.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := target.Write([]byte("GET /mcp HTTP/1.1\r\nHost: numen\r\n")); err != nil {
-		t.Fatal(err)
-	}
-
-	closeErr := make(chan error, 1)
-	go func() { closeErr <- served.Close() }()
-
-	// The endpoint stops taking connections as it begins closing, which is
-	// where the agents are already gone.
-	startTime := time.Now()
-	for isListening(authority(t, served.URL)) {
-		if time.Since(startTime) > 5*time.Second {
-			t.Fatal("the endpoint never began closing")
-		}
-		time.Sleep(time.Millisecond)
-	}
-	if _, err := served.Agent.StartRun(t.Context(), port.Task{Question: "anything"}); err == nil {
-		t.Error("the agent took work while the endpoint was closing")
-	}
-
-	target.Close()
-	if err := <-closeErr; err != nil {
-		t.Fatal(err)
-	}
-}
-
-// The panel's child is told which tools it may call, one by one, and where to reach them. The
-// endpoint in front of it serves the whole surface for an agent a person configured themselves,
-func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
-	cfg := makeInstallation(t)
-	provider := &fakeProvider{}
-
-	dir := t.TempDir()
-	core := vault(t)
-	served, err := Serve(t.Context(), Options{
-		Config: cfg, Core: core, Token: "secret", Root: dir, Out: io.Discard, Provider: provider,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = served.Close() })
-	if served.Agent == nil {
-		t.Fatal("the settings name an agent and none was started")
-	}
-
-	work, err := served.Agent.StartRun(t.Context(), port.Task{Question: "what is here?", Agent: "claude"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	for range work.GetSteps() {
-	}
-	provided := provider.getTasks()[0]
-
-	words, err := mcp.Vocabulary(t.Context(), core)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(words) == 0 {
-		t.Fatal("the surface serves no tool, and an allowance naming none would pass")
-	}
-	var surfaced []string
-	for name := range words {
-		surfaced = append(surfaced, name)
-	}
-	slices.Sort(surfaced)
-	if !slices.Equal(provided.Tools, surfaced) {
-		t.Errorf("the allowance is %q, and the surface serves %q", provided.Tools, surfaced)
-	}
-	if len(provided.ToolDeclarations) != len(words) {
-		t.Errorf("%d tools are declared, and the surface serves %d", len(provided.ToolDeclarations), len(words))
-	}
-	if provided.Endpoint.URL != served.URL || provided.Endpoint.Token != "secret" || provided.Root != dir {
-		t.Errorf("the child is given %q at %+v", provided.Root, provided.Endpoint)
-	}
-}
-
-// The agent is the router where the settings name one, and nothing where they name none.
-func TestTheAgentIsTheRouterWhereTheSettingsNameOne(t *testing.T) {
-	for name, agent := range map[string]settings.Agent{
-		"left to the default": {},
-		"named":               {Use: settings.UseProgram("claude")},
-		"named none":          {Use: settings.UseProgram(""), ShouldServeTools: true},
-	} {
-		t.Run(name, func(t *testing.T) {
-			cfg := makeInstallation(t)
-			cfg.Agent = agent
-			served, err := Serve(t.Context(), Options{
-				Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard, Provider: &fakeProvider{},
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(func() { _ = served.Close() })
-			if got, want := served.Agent != nil, agent.IsNamed(); got != want {
-				t.Errorf("an agent is started: %v, and the settings name one: %v", got, want)
-			}
-		})
 	}
 }

@@ -265,7 +265,6 @@ func makeEndpoint(
 			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
 		GetVault:       opened.GetCurrentVault,
-		SetAgent:       opened.State.SetAgent,
 		SetUnreachable: func(response string) { opened.State.Unreachable.Store(response) },
 		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}

@@ -1,15 +1,13 @@
 // Package agents is how a window lets an agent reach the vault it is showing.
 //
-// The tools go on a port, the token an agent presents is kept between launches,
-// and the agent the settings name is started against them. A window says here
-// what an agent may reach.
+// The tools go on a port, and the token an agent presents is kept between launches.
+// A window says here what an agent may reach.
 package agents
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -23,9 +21,6 @@ type Endpoint struct {
 	// GetVault is the vault the window is on. A window standing on none serves
 	// no tools.
 	GetVault func() domain.Vault
-	// SetAgent is who the panel's tasks go to, and nothing while the tools are
-	// away.
-	SetAgent func(port.Agent)
 	// SetUnreachable is told why an agent cannot be reached, and an empty string
 	// while one can be.
 	SetUnreachable func(string)
@@ -38,6 +33,13 @@ type Endpoint struct {
 
 	mu    sync.Mutex
 	close func() error
+}
+
+// IsServing reports whether the tools are currently served.
+func (s *Endpoint) IsServing() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.close != nil
 }
 
 // RunWhileStopped runs one swap with the tools taken away, and serves them again on the
@@ -73,7 +75,7 @@ func (s *Endpoint) Start() {
 	s.close = shut
 }
 
-// Stop stops the endpoint and the agents this window started.
+// Stop stops the endpoint this window started.
 func (s *Endpoint) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -85,5 +87,4 @@ func (s *Endpoint) Stop() {
 		s.ErrorHandler(fmt.Errorf("agents: %w", err))
 	}
 	s.close = nil
-	s.SetAgent(nil)
 }

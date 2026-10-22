@@ -46,17 +46,13 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	}
 
 	// The whole surface, and this is the one endpoint an agent a person runs
-	// themselves reaches too, announced with the token it presents. Serving a
-	// narrow one here would take the vault's writers off that agent, which is
-	// not what a person configured it for. What the panel's own child may call
-	// is that child's allowance and is narrowed there.
+	// themselves reaches too, announced with the token it presents.
 	served, err := agents.Serve(ctx, agents.Options{
 		Config:       cfg,
 		Core:         makeAgentCore(cfg, opened, root, out),
 		Addr:         addr,
 		IsAnnouncing: true,
 		Root:         root,
-		Preview:      makeEditPreview(opened),
 		Out:          out,
 	})
 	if err != nil && opts.addr == "" {
@@ -66,7 +62,6 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 			Addr:         "127.0.0.1:0",
 			IsAnnouncing: false,
 			Root:         root,
-			Preview:      makeEditPreview(opened),
 			Out:          out,
 		})
 	}
@@ -74,25 +69,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 		return nil, err
 	}
 
-	// The panel answers with the agent the settings name. An installation
-	// naming none is served the tools alone, and the panel says so.
-	if served.Agent == nil {
-		opened.State.Unreachable.Store(unnamed)
-	} else {
-		opened.State.SetAgent(served.Agent)
-	}
 	return served.Close, nil
-}
-
-// makeEditPreview is how a change the agent is making reaches the window before it
-// lands. Where a stretch stands is the vault's to say.
-func makeEditPreview(opened *editor.Installation) agents.EditPreview {
-	return agents.EditPreview{
-		Emit: func(ctx context.Context, response domain.Edit) {
-			_ = opened.State.GetWindow().ShowEdit(ctx, response)
-		},
-		Locate: opened.DraftingLocation,
-	}
 }
 
 // makeAgentCore wires the tools to the use cases the window works this vault
@@ -138,7 +115,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			CreateAndImportURL:        cfg.CreateAndImportURL(opened.GetCreateURL(), opened.GetImportURL()),
 			GetArtifactList:           cfg.GetArtifactList(opened.SourcesKnown()),
 			GetArtifactText:           cfg.GetArtifactText(opened.SourcesKnown()),
-			WriteCorrections:          cfg.WriteCorrections(opened.SourcesKnown(), opened.Services.Artifact.ReportArtifactChange),
+			WriteCorrections:          cfg.WriteCorrections(opened.SourcesKnown(), nil),
 			FocusPassage:              cfg.FocusPassage(opened.State.GetWindow()),
 		},
 

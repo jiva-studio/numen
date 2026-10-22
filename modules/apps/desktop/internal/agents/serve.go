@@ -8,17 +8,14 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // ephemeral is a loopback port this machine picks, for a window that is not the
 // one an agent is configured against.
 const ephemeral = "127.0.0.1:0"
 
-// bound is how long the agents' transport has to be cut off. A session an agent
-// left open holds its connection until it is closed under it, and this is how
-// long that costs. The calls already running are waited for afterwards, without
-// a bound.
+// bound is how long the transport has to be cut off. A session left open holds
+// its connection until it is closed under it, and this is how long that costs.
 const bound = 2 * time.Second
 
 // Options is what a window says about letting agents in.
@@ -46,28 +43,19 @@ type Options struct {
 	IsAnnouncing bool
 	// Root is the folder the agent is started in.
 	Root string
-	// Preview is how a change the agent is making is drawn before it lands.
-	Preview EditPreview
-	// Provider runs the tasks, in place of the one the plugins make.
-	Provider port.AgentProvider
-	// LimitedToolsOnly refuses the programs that run tools of their own.
-	LimitedToolsOnly bool
 	// Out is where what happened is said.
 	Out io.Writer
 }
 
-// Server is the tools on a port, and the agent the settings name reaching them.
+// Server is the tools on a port.
 type Server struct {
-	// Agent is the agent this window asks on the person's behalf, and nothing
-	// where the settings name none.
-	Agent port.Agent
 	// URL is where an agent reaches the tools, naming the port that was bound.
 	URL string
 
 	close func() error
 }
 
-// Close takes the agents away and then the endpoint.
+// Close takes the endpoint away.
 func (s *Server) Close() error {
 	if s == nil || s.close == nil {
 		return nil
@@ -75,8 +63,7 @@ func (s *Server) Close() error {
 	return s.close()
 }
 
-// Serve puts the tools on a port and starts the agent the settings name
-// against them.
+// Serve puts the tools on a port.
 func Serve(ctx context.Context, opts Options) (*Server, error) {
 	secret, err := getSecret(opts)
 	if err != nil {
@@ -108,30 +95,16 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		fmt.Fprintf(opts.Out, "agents: %s is reachable from the network, not only from this machine\n", addr)
 	}
 
-	words, err := getVocabularyFunc(opts)(ctx, opts.Core)
-	if err != nil {
-		fmt.Fprintln(opts.Out, "agents:", err)
-	}
-
-	router := NewRouter(opts, endpoint.URL, secret, words)
-
 	served := &Server{
 		URL: endpoint.URL,
-	}
-	if opts.Config.Agent.IsNamed() {
-		served.Agent = router
 	}
 
 	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
 	served.close = func() error {
 		forget()
-		closeErr := router.Close()
 		shutdown, cancel := context.WithTimeout(context.Background(), bound)
 		defer cancel()
-		if err := endpoint.Close(shutdown); err != nil {
-			return err
-		}
-		return closeErr
+		return endpoint.Close(shutdown)
 	}
 	return served, nil
 }
@@ -156,15 +129,4 @@ func getServeFunc(
 		return mcp.ServeReviewHTTP
 	}
 	return mcp.ServeHTTP
-}
-
-// getVocabularyFunc is the function that lists the tools the options select.
-func getVocabularyFunc(opts Options) func(context.Context, mcp.Core) (map[string]mcp.Tool, error) {
-	switch {
-	case opts.ShouldRead:
-		return mcp.ReadingVocabulary
-	case opts.ShouldReview:
-		return mcp.GetReviewVocabulary
-	}
-	return mcp.Vocabulary
 }

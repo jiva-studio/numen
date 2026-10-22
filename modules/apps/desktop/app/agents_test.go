@@ -71,9 +71,6 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if response.Token == "" {
 		t.Error("the announcement carries no token")
 	}
-	if opened.State.GetAgent() == nil {
-		t.Error("the panel has no agent to ask")
-	}
 
 	if err := shut(); err != nil {
 		t.Fatal(err)
@@ -104,12 +101,6 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	response, content := readAnnouncement(t, cfg)
 	if !content || response.Token == "" {
 		t.Fatal("an agent has nothing to be configured from")
-	}
-	if opened.State.GetAgent() != nil {
-		t.Error("the panel was given an agent the settings do not name")
-	}
-	if opened.State.Unreachable.Why() == "" {
-		t.Error("expected error reason for missing agent")
 	}
 
 	if err := shut(); err != nil {

@@ -19,9 +19,9 @@ import (
 // errNoAgentNamed is what the panel is told where the settings name no agent.
 const errNoAgentNamed = "no agent is named in the settings"
 
-// vaultTracker is the agent on the vault a person's session is on.
+// vaultTracker is the endpoint on the vault a person's session is on.
 //
-// A session is on one vault and an agent is told which vault it works when it
+// A session is on one vault and an endpoint is served for the vault it works when it
 // starts, so the endpoint is stopped and served again when a session opens on
 // another one.
 type vaultTracker struct {
@@ -29,6 +29,13 @@ type vaultTracker struct {
 
 	mu    sync.Mutex
 	vault domain.Vault
+	url   string
+}
+
+func (r *vaultTracker) getURL() string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.url
 }
 
 // SetSessionVault is a session opening on a vault. A session opened on the same
@@ -67,16 +74,29 @@ func serveAgents(
 	off bool,
 	out io.Writer,
 ) func() error {
+	_, away := serveAgentsTracker(ctx, cfg, db, notes, api, off, out)
+	return away
+}
+
+func serveAgentsTracker(
+	ctx context.Context,
+	cfg container.Config,
+	db *container.Index,
+	notes container.Notes,
+	api *window.API,
+	off bool,
+	out io.Writer,
+) (*vaultTracker, func() error) {
 	if off || !cfg.Agent.IsNamed() {
 		api.Unreachable.Store(errNoAgentNamed)
-		return func() error { return nil }
+		return &vaultTracker{}, func() error { return nil }
 	}
 
 	secret, err := agents.CreateToken()
 	if err != nil {
 		api.Unreachable.Store(err.Error())
 		fmt.Fprintln(out, "numen-flashcards: no agent:", err)
-		return func() error { return nil }
+		return &vaultTracker{}, func() error { return nil }
 	}
 
 	// The page asks whether a card can be asked about as it opens, and the agent
@@ -92,28 +112,33 @@ func serveAgents(
 				return nil, err
 			}
 			served, err := agents.Serve(ctx, agents.Options{
-				Config:           cfg,
-				Core:             makeReviewCore(cfg, db, notes, api, v, root, out),
-				ShouldReview:     true,
-				LimitedToolsOnly: true,
-				Token:            secret,
-				Root:             root,
-				Out:              out,
+				Config:       cfg,
+				Core:         makeReviewCore(cfg, db, notes, api, v, root, out),
+				ShouldReview: true,
+				Token:        secret,
+				Root:         root,
+				Out:          out,
 			})
 			if err != nil {
 				return nil, err
 			}
-			api.SetAgent(served.Agent)
-			return served.Close, nil
+			target.mu.Lock()
+			target.url = served.URL
+			target.mu.Unlock()
+			return func() error {
+				target.mu.Lock()
+				target.url = ""
+				target.mu.Unlock()
+				return served.Close()
+			}, nil
 		},
 		GetVault:       target.getVault,
-		SetAgent:       api.SetAgent,
 		SetUnreachable: func(why string) { api.Unreachable.Store(why) },
 		ErrorHandler:   func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
 	api.Opened = target.SetSessionVault
-	return func() error {
+	return target, func() error {
 		target.endpoint.Stop()
 		return nil
 	}

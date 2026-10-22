@@ -170,26 +170,26 @@ func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 	cfg.Agent = settings.Agent{}
 
 	notes := makeNotes(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
+	tracker, away := serveAgentsTracker(t.Context(), cfg, db, notes, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
-	if api.GetAgent() != nil {
+	if tracker.getURL() != "" {
 		t.Error("a card can be asked about before anybody has sat down")
 	}
 
 	api.Opened(t.Context(), vaults[0])
-	first := api.GetAgent()
-	if first == nil {
+	first := tracker.getURL()
+	if first == "" {
 		t.Fatal("nothing answers about a card once a session is open")
 	}
 
 	api.Opened(t.Context(), vaults[0])
-	if api.GetAgent() != first {
+	if tracker.getURL() != first {
 		t.Error("a session on the same vault again started the agent over")
 	}
 
 	api.Opened(t.Context(), vaults[1])
-	if api.GetAgent() == first {
+	if tracker.getURL() == first {
 		t.Error("the agent stayed on the vault the person left")
 	}
 }
@@ -217,18 +217,18 @@ func TestTakingTheAgentsAwayStopsTheEndpoint(t *testing.T) {
 	cfg.Agent = settings.Agent{}
 
 	notes := makeNotes(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
+	tracker, away := serveAgentsTracker(t.Context(), cfg, db, notes, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Opened(t.Context(), vaults[0])
-	if api.GetAgent() == nil {
+	if tracker.getURL() == "" {
 		t.Fatal("nothing answers about a card once a session is open")
 	}
 
 	if err := away(); err != nil {
 		t.Fatal(err)
 	}
-	if api.GetAgent() != nil {
+	if tracker.getURL() != "" {
 		t.Error("a card can still be asked about")
 	}
 }
