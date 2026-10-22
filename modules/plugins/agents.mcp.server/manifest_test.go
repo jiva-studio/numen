@@ -30,8 +30,8 @@ func TestManifestValid(t *testing.T) {
 		t.Errorf("got ID %q, want %q", manifest.ID, "md.numen.agents.mcp.server")
 	}
 
-	if !slices.Contains(manifest.Capabilities, "mcp.server") {
-		t.Errorf("manifest missing mcp.server capability: %v", manifest.Capabilities)
+	if !slices.Contains(manifest.Capabilities, "tools") {
+		t.Errorf("manifest missing tools capability: %v", manifest.Capabilities)
 	}
 
 	if manifest.Backend.ServiceName != "numen.v1.McpServerService" {

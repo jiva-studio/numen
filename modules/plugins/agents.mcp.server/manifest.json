@@ -4,9 +4,13 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Exposes an external MCP (Model Context Protocol) SSE/stdio server aggregating tools from Numén plugins and host",
-  "capabilities": ["mcp.server"],
+  "capabilities": ["tools"],
   "targets": ["desktop.editor"],
-  "permissions": ["vault:read", "vault:write", "network:listen"],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "lifecycle": {
+    "idleTimeoutSeconds": 0,
+    "memoryLimitBytes": 134217728
+  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/agents.mcp.server",
