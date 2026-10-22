@@ -47,9 +47,9 @@ const BOUNDS = {
   load: { least: 0, most: 100 },
 }
 
-const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
+const settings = (overrides: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...overrides })
 
-const curve = (over: Partial<Curve> = {}): Curve => ({
+const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [0, 10, 20, 30],
   days: [],
@@ -61,7 +61,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   overdue: 3,
   unbegun: 7,
   isHonest: true,
-  ...over,
+  ...overrides,
 })
 
 /** An answer the test gives when it chooses. */

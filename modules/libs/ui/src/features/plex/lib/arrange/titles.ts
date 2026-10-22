@@ -171,13 +171,13 @@ function clearSpans(
   const spans: Span[] = []
   let open: number | null = null
 
-  for (let at = ends; at < last; at += step) {
-    const box = boxAt(at, Math.min(at + step, last))
+  for (let offset = ends; offset < last; offset += step) {
+    const box = boxAt(offset, Math.min(offset + step, last))
     if (boxes.some((other) => isOverlapping(other, box))) {
-      if (open !== null) spans.push({ from: open, to: at })
+      if (open !== null) spans.push({ from: open, to: offset })
       open = null
     } else if (open === null) {
-      open = at
+      open = offset
     }
   }
   if (open !== null) spans.push({ from: open, to: last })
@@ -195,9 +195,9 @@ function findNearestPlace(clear: readonly Span[], half: number): number | null {
 
   for (const span of clear) {
     if (getSpanLength(span) < 2 * half) continue
-    const at = Math.min(Math.max(MIDDLE, span.from + half), span.to - half)
-    if (nearest === null || Math.abs(at - MIDDLE) < Math.abs(nearest - MIDDLE)) {
-      nearest = at
+    const pos = Math.min(Math.max(MIDDLE, span.from + half), span.to - half)
+    if (nearest === null || Math.abs(pos - MIDDLE) < Math.abs(nearest - MIDDLE)) {
+      nearest = pos
     }
   }
 

@@ -21,9 +21,9 @@ func New(_ context.Context, c Config) (*Downloader, error) {
 }
 
 // CanHandle reports whether any provider handles the address.
-func (f *Downloader) CanHandle(at string) bool {
+func (f *Downloader) CanHandle(address string) bool {
 	for _, one := range f.providers {
-		if one.CanHandle(at) {
+		if one.CanHandle(address) {
 			return true
 		}
 	}
@@ -52,39 +52,39 @@ func (f *Downloader) playerFor(pos string) (Player, error) {
 }
 
 // GetDownloadModel returns tool identity for the address.
-func (f *Downloader) GetDownloadModel(at string) DownloadModel {
-	delta, err := f.providerFor(at)
+func (f *Downloader) GetDownloadModel(address string) DownloadModel {
+	delta, err := f.providerFor(address)
 	if err != nil {
 		return DownloadModel{}
 	}
-	return delta.GetDownloadModel(at)
+	return delta.GetDownloadModel(address)
 }
 
 // GetMetadata returns media metadata.
-func (f *Downloader) GetMetadata(ctx context.Context, at string) (Metadata, error) {
-	delta, err := f.providerFor(at)
+func (f *Downloader) GetMetadata(ctx context.Context, address string) (Metadata, error) {
+	delta, err := f.providerFor(address)
 	if err != nil {
 		return Metadata{}, err
 	}
-	return delta.GetMetadata(ctx, at)
+	return delta.GetMetadata(ctx, address)
 }
 
 // GetText returns published words or cues.
-func (f *Downloader) GetText(ctx context.Context, at string, want PreferredCaptions) (Text, error) {
-	delta, err := f.providerFor(at)
+func (f *Downloader) GetText(ctx context.Context, address string, want PreferredCaptions) (Text, error) {
+	delta, err := f.providerFor(address)
 	if err != nil {
 		return Text{}, err
 	}
-	return delta.GetText(ctx, at, want)
+	return delta.GetText(ctx, address, want)
 }
 
 // Download brings media bytes into the writer.
-func (f *Downloader) Download(ctx context.Context, at string, into io.Writer) (Copy, error) {
-	plays, err := f.playerFor(at)
+func (f *Downloader) Download(ctx context.Context, address string, into io.Writer) (Copy, error) {
+	plays, err := f.playerFor(address)
 	if err != nil {
 		return Copy{}, err
 	}
-	return plays.Download(ctx, at, into)
+	return plays.Download(ctx, address, into)
 }
 
 type program struct {

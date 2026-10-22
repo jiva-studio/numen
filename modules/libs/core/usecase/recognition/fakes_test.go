@@ -34,7 +34,7 @@ type store struct {
 	mu       sync.RWMutex
 	sources  map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks   []storedChunk
-	vectors  map[domain.ChunkID][]port.Vector // the coarse rows, by chunk, appended, so a second write shows
+	vectors  map[domain.ChunkID][]port.Vector // the coarse rows, per chunk, appended, so a second write shows
 	groups   [][]port.Vector                  // every write of vectors, in order
 	outBytes map[string]int                   // extractions per path
 	next     int64

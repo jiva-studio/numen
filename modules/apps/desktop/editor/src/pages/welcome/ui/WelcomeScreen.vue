@@ -37,7 +37,7 @@ const props = defineProps<{
   doing: CommandDeps
   getTarget: () => CommandTarget
   /** A command asked for, which is what every way in but the commands evaluates to. */
-  runCommand: (id: string, at: CommandTarget) => void
+  runCommand: (id: string, target: CommandTarget) => void
 }>()
 
 // --- State ---
@@ -52,9 +52,9 @@ const adding = computed(() => {
 })
 
 const ways = computed(() => {
-  const at = props.getTarget()
+  const target = props.getTarget()
   return createWelcomeActions(
-    { vault: at.vault.id, isReady: at.isReady },
+    { vault: target.vault.id, isReady: target.isReady },
     words,
     navigator.userAgent,
   ).map((one) => {
@@ -91,7 +91,7 @@ function onOpen(id: string) {
 function onKeyDown(event: KeyboardEvent) {
   if (event.defaultPrevented || !welcoming.value) return
   const pos = getVaultForKey(event, onList.value.length)
-  const one = at === null ? undefined : onList.value[at]
+  const one = pos === null ? undefined : onList.value[pos]
   if (!one) return
   event.preventDefault()
   onOpen(one.id)

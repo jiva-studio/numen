@@ -91,7 +91,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 // written. The priority is the one every name resolves by, so a wikilink
 // nobody recorded as a link is answered as a link is.
 func (q *Queries) ResolveLinks(
-	ctx context.Context, vaultID domain.VaultID, from string, written []string,
+	ctx context.Context, vaultID domain.VaultID, from string, content []string,
 ) (map[string]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -101,9 +101,9 @@ func (q *Queries) ResolveLinks(
 		return nil, err
 	}
 
-	request := make(map[string]bool, len(written))
-	out := make(map[string]domain.ResolvedLink, len(written))
-	for _, raw := range written {
+	request := make(map[string]bool, len(content))
+	out := make(map[string]domain.ResolvedLink, len(content))
+	for _, raw := range content {
 		if request[raw] {
 			continue
 		}

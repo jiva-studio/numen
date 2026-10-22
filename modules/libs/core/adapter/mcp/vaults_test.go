@@ -479,8 +479,8 @@ func TestOpeningTheVaultInFrontIsRefused(t *testing.T) {
 // serves nothing an agent could call and be rejected by.
 func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 	for _, one := range []struct {
-		tool    string
-		without func(*mcp.Core)
+		tool     string
+		override func(*mcp.Core)
 	}{
 		{"vault_list", func(c *mcp.Core) { c.Vaults.GetKnownVaults = nil }},
 		{"vault_add", func(c *mcp.Core) { c.Vaults.Add = nil }},
@@ -498,7 +498,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 			}
 
 			core := f.core
-			one.without(&core)
+			one.override(&core)
 			if hasTool(t, newSessionOver(t, core), one.tool) {
 				t.Errorf("%s is served with nothing behind it", one.tool)
 			}

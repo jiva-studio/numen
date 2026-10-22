@@ -155,20 +155,20 @@ func Body(raw []byte) string {
 func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
 	var f Fence
-	for line, at := 0, 0; at <= len(body); line++ {
+	for line, pos := 0, 0; pos <= len(body); line++ {
 		end := len(body)
-		if next := bytes.IndexByte(body[at:], '\n'); next >= 0 {
-			end = at + next
+		if next := bytes.IndexByte(body[pos:], '\n'); next >= 0 {
+			end = pos + next
 		}
-		text := bytes.TrimRight(body[at:end], "\r")
+		text := bytes.TrimRight(body[pos:end], "\r")
 		if f.IsCrossedByBytes(text) || f.IsInside() || len(text) == 0 || text[0] != '#' {
-			at = end + 1
+			pos = end + 1
 			continue
 		}
 		if level, headingText, ok := parseHeading(string(text)); ok {
-			out = append(out, domain.Heading{Level: level, Text: headingText, Line: line, Offset: at})
+			out = append(out, domain.Heading{Level: level, Text: headingText, Line: line, Offset: pos})
 		}
-		at = end + 1
+		pos = end + 1
 	}
 	return out
 }

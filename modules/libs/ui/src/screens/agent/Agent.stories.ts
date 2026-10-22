@@ -81,11 +81,11 @@ const conversation =
         turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
 
         const reply = `You asked about “${message}”. ${LONG}`
-        let at = 0
+        let offset = 0
         tick = setInterval(() => {
-          at = Math.min(reply.length, at + 3)
-          const isDone = at === reply.length
-          putTurn(id, reply.slice(0, at), isDone)
+          offset = Math.min(reply.length, offset + 3)
+          const isDone = offset === reply.length
+          putTurn(id, reply.slice(0, offset), isDone)
           if (isDone) settle()
         }, 16)
       }

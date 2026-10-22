@@ -20,7 +20,7 @@ type puts struct {
 	says map[int]domain.ProofreadCorrection
 
 	mu    sync.Mutex
-	asked []int
+	query []int
 }
 
 func (p *puts) GetName() string { return "a proofreader" }
@@ -32,7 +32,7 @@ func (p *puts) ProofreadScan(
 	defer p.mu.Unlock()
 	var out domain.ScanProofreading
 	for _, page := range pages {
-		p.asked = append(p.asked, page.Number)
+		p.query = append(p.query, page.Number)
 		if response, target := p.says[page.Number]; target {
 			out.Corrections = append(out.Corrections, response)
 		}
@@ -54,20 +54,20 @@ var errSpeechNotProofread = errors.New("a recognition has no speech to proofread
 func (p *puts) lines() []int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return slices.Clone(p.asked)
+	return slices.Clone(p.query)
 }
 
 // fakeStorage is what a recognition is written to, in memory.
 type fakeStorage struct {
-	mu     sync.Mutex
-	files  map[domain.ArtifactName][]byte
-	held   map[domain.ArtifactName]bool
-	opens  int
-	closes int
+	mu         sync.Mutex
+	files      map[domain.ArtifactName][]byte
+	activeItem map[domain.ArtifactName]bool
+	opens      int
+	closes     int
 }
 
 func newShelf() *fakeStorage {
-	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
+	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, activeItem: map[domain.ArtifactName]bool{}}
 }
 
 // fakeStores hands the one store to whatever opens a vault's store.
@@ -143,21 +143,21 @@ func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
-	delete(s.held, name)
+	delete(s.activeItem, name)
 	return nil
 }
 
 func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.held[name] {
+	if s.activeItem[name] {
 		return nil, port.ErrClaimed
 	}
-	s.held[name] = true
+	s.activeItem[name] = true
 	return func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.held, name)
+		delete(s.activeItem, name)
 		return nil
 	}, nil
 }
@@ -166,7 +166,7 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.held[name] = true
+	s.activeItem[name] = true
 }
 
 func (s *fakeStorage) artifactNames() []domain.ArtifactName {
@@ -186,7 +186,7 @@ type corrector struct {
 	says map[int]domain.ProofreadCorrection
 	// refuses is the pages whose reply is no answer.
 	refuses map[int]bool
-	asked   [][]int
+	query   [][]int
 	fail    error
 	// stop is called with the number of requests made so far.
 	stop func(int)
@@ -202,13 +202,13 @@ func (c *corrector) GetName() string {
 func (c *corrector) ProofreadScan(
 	ctx context.Context, pages []domain.ProofreadPage,
 ) (domain.ScanProofreading, error) {
-	var at []int
+	var offset []int
 	for _, page := range pages {
-		at = append(at, page.Number)
+		offset = append(offset, page.Number)
 	}
-	c.asked = append(c.asked, at)
+	c.query = append(c.query, offset)
 	if c.stop != nil {
-		c.stop(len(c.asked))
+		c.stop(len(c.query))
 	}
 	if err := ctx.Err(); err != nil {
 		return domain.ScanProofreading{}, err

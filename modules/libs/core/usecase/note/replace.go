@@ -90,9 +90,9 @@ var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 // Fingerprint is what the caller believes is on disk. A note that has changed
 // since it was read is left alone and port.ErrStale comes back.
 func (u Replace) Execute(
-	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.Fingerprint,
+	ctx context.Context, v domain.Vault, path, current, becomes string, fingerprint domain.Fingerprint,
 ) (ReplaceResult, error) {
-	if stood == "" {
+	if current == "" {
 		return ReplaceResult{}, fmt.Errorf("name the text to replace")
 	}
 
@@ -106,7 +106,7 @@ func (u Replace) Execute(
 	pos, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalise(doc.Body())
 
-		where, plainly := markdown.FindSpans(body, stood)
+		where, plainly := markdown.FindSpans(body, current)
 		if len(where) > 1 {
 			return AmbiguousSpan{Places: len(where)}
 		}
@@ -114,7 +114,7 @@ func (u Replace) Execute(
 			if becomes != "" && strings.Contains(body, becomes) {
 				return ErrAlreadyWritten
 			}
-			return newMissingSpan(body, stood)
+			return newMissingSpan(body, current)
 		}
 
 		span := where[0]
@@ -148,16 +148,16 @@ func (u Replace) Execute(
 //
 // The opening is found by halving over the ends of its runes, which the text being
 // present for every shorter opening allows.
-func newMissingSpan(body, stood string) MissingSpan {
+func newMissingSpan(body, state string) MissingSpan {
 	var ends []int
-	for pos := 0; pos < len(stood); {
-		_, width := utf8.DecodeRuneInString(stood[pos:])
+	for pos := 0; pos < len(state); {
+		_, width := utf8.DecodeRuneInString(state[pos:])
 		pos += width
 		ends = append(ends, pos)
 	}
 	var first markdown.Span
 	count := sort.Search(len(ends), func(i int) bool {
-		offset, _ := markdown.FindSpans(body, stood[:ends[i]])
+		offset, _ := markdown.FindSpans(body, state[:ends[i]])
 		if len(offset) == 0 {
 			return true
 		}
@@ -167,9 +167,9 @@ func newMissingSpan(body, stood string) MissingSpan {
 	if count == 0 {
 		return MissingSpan{}
 	}
-	end := min(first.From+len(stood), len(body))
+	end := min(first.From+len(state), len(body))
 	for end < len(body) && !utf8.RuneStart(body[end]) {
 		end++
 	}
-	return MissingSpan{Matched: stood[:ends[count-1]], Instead: body[first.From:end]}
+	return MissingSpan{Matched: state[:ends[count-1]], Instead: body[first.From:end]}
 }

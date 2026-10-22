@@ -286,11 +286,11 @@ func (d *drawn) preview(unique bool) EditPreview {
 			defer d.mu.Unlock()
 			d.edits = append(d.edits, response)
 		},
-		Locate: func(_ context.Context, path, stood string) (int, int, bool) {
+		Locate: func(_ context.Context, path, text string) (int, int, bool) {
 			d.mu.Lock()
 			defer d.mu.Unlock()
-			d.located = append(d.located, path+":"+stood)
-			return 10, 10 + len(stood), unique
+			d.located = append(d.located, path+":"+text)
+			return 10, 10 + len(text), unique
 		},
 	}
 }

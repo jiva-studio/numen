@@ -337,13 +337,13 @@ func (h *documentHandler) prefetchNextPage(v domain.Vault, key document.PageKey)
 // parsePageQuery is which page the window asks for and how width, in the pixels of the
 // device it draws on. A document is asked for a page of it and no other place
 // in it.
-func parsePageQuery(where string, query url.Values) (at, width int, named document.Fingerprint, err error) {
+func parsePageQuery(where string, query url.Values) (offset, width int, named document.Fingerprint, err error) {
 	request, found := strings.CutPrefix(where, pagesName+"/")
 	if !found {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
 	}
-	at, err = strconv.Atoi(request)
-	if err != nil || at < 0 || at > math.MaxInt32 {
+	offset, err = strconv.Atoi(request)
+	if err != nil || offset < 0 || offset > math.MaxInt32 {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", request)
 	}
 	widthStr := query.Get("width")
@@ -358,7 +358,7 @@ func parsePageQuery(where string, query url.Values) (at, width int, named docume
 	if err != nil {
 		return 0, 0, document.Fingerprint{}, err
 	}
-	return at, width, named, nil
+	return offset, width, named, nil
 }
 
 // getDrawCode is the code a question about a document that could not be

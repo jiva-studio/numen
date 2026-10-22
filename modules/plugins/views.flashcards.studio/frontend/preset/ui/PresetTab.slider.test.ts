@@ -308,7 +308,7 @@ describe('what a day cannot reach', () => {
   const getBoughtTexts = (tab: ReturnType<typeof mount>) =>
     tab.findAll('[data-control="bought"]').map((one) => one.text())
 
-  const createDatedTab = (over: Partial<Point> = {}) =>
+  const createDatedTab = (overrides: Partial<Point> = {}) =>
     mountPresetTab(
       {
         goal: 'date',
@@ -317,7 +317,7 @@ describe('what a day cannot reach', () => {
         cards: 79,
         now: { at: 0, value: 14, day: '2026-09-14' },
         at: [
-          point({ minutes: 40, short: 38, ...over }),
+          point({ minutes: 40, short: 38, ...overrides }),
           point({ minutes: 30, short: 11 }),
           point({ minutes: 20, short: 0 }),
           point({ minutes: 15, short: 0 }),

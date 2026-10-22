@@ -10,7 +10,7 @@ import (
 
 // TellEdit is told what a write is doing while it is being made, for whoever is
 // looking at the note. Nothing is told where nobody is drawing.
-type TellEdit func(ctx context.Context, said domain.Edit)
+type TellEdit func(ctx context.Context, edit domain.Edit)
 
 // beginChange names one change and says what it is about to do. What comes back
 //

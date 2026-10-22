@@ -61,7 +61,7 @@ function createThemeWear(deps: ThemeWearDeps) {
   return { files, wear }
 }
 
-function createSizesWriter(dressed: ReturnType<typeof getStyleElements>, sheet: Document) {
+function createSizesWriter(styleElements: ReturnType<typeof getStyleElements>, sheet: Document) {
   // Stryker disable next-line StringLiteral: Empty initial string represents unapplied state.
   let appliedSizesCss = ''
   return (sizes: Sizes) => {
@@ -177,7 +177,7 @@ function createAppearanceGroups(
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const { core, words, write, sheet = document, wait = sleep } = deps
-  const dressed = getStyleElements(sheet)
+  const styleElements = getStyleElements(sheet)
   const served = dressed.theme.textContent ?? ''
   const state = initAppearanceState()
   const { files, wear } = createThemeWear({ core, dressed, write, words, applied: state.applied })

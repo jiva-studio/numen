@@ -108,8 +108,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     if (initialTab) {
       const colonIdx = initialTab.indexOf(':')
       const kind = colonIdx !== -1 ? initialTab.slice(0, colonIdx) : initialTab
-      const at = colonIdx !== -1 ? initialTab.slice(colonIdx + 1) : ''
-      const openedTab = await windowTabs.openTabOfKind(kind, at)
+      const target = colonIdx !== -1 ? initialTab.slice(colonIdx + 1) : ''
+      const openedTab = await windowTabs.openTabOfKind(kind, target)
       if (openedTab) {
         windowTabs.layout.value = {
           root: { kind: 'pane', id: 'main', tabs: [openedTab], active: openedTab },

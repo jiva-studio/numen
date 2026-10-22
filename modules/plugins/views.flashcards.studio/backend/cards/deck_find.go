@@ -25,8 +25,8 @@ func findCard(target []format.Card, mark string) (int, error) {
 	return pos, nil
 }
 
-func getMark(given []format.CardMark, pos int) string {
-	for _, one := range given {
+func getMark(marks []format.CardMark, pos int) string {
+	for _, one := range marks {
 		if one.Card == pos {
 			return string(one.Mark)
 		}

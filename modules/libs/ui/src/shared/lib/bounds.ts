@@ -51,8 +51,8 @@ const getStepsAbove = (value: number, bounds: Bounds): number => {
 export const stepBy = (value: number, delta: number, bounds: Bounds): number => {
   const from = clamp(value, bounds)
   if (bounds.step <= 0 || delta === 0) return from
-  const at = getStepsAbove(from, bounds)
-  const place = (delta > 0 ? Math.floor(at) : Math.ceil(at)) + delta
+  const steps = getStepsAbove(from, bounds)
+  const place = (delta > 0 ? Math.floor(steps) : Math.ceil(steps)) + delta
   const places = Math.max(getDecimalPlaces(bounds.min), getDecimalPlaces(bounds.step))
   return clamp(roundToPlaces(bounds.min + place * bounds.step, places), bounds)
 }

@@ -12,7 +12,7 @@ import { ERRORS } from '@numen/wire'
 import { createStencilWire, NOTHING } from './wire'
 
 /** One stencil as the vault reads it, with whatever a test wants said of it. */
-const stencil = (over: Partial<VaultStencil> = {}): VaultStencil => ({
+const stencil = (overrides: Partial<VaultStencil> = {}): VaultStencil => ({
   path: 'Word.md',
   title: 'Word',
   fields: ['Front', 'Back'],
@@ -20,7 +20,7 @@ const stencil = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   faces: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
   tail: '',
   problems: [],
-  ...over,
+  ...overrides,
 })
 
 /** One thing wrong with a stencil, in the shape the vault names it. */
@@ -206,8 +206,8 @@ describe('what is shown for a fault', () => {
 
 describe('renaming a field', () => {
   /** What the vault answered a rename with, or the rejection instead. */
-  const getRenameAnswer = (over: Partial<RenamedField> = {}): FieldRenameResult =>
-    asValue({ decks: [], cards: 0, notWritten: [], at: '', ...over })
+  const getRenameAnswer = (overrides: Partial<RenamedField> = {}): FieldRenameResult =>
+    asValue({ decks: [], cards: 0, notWritten: [], at: '', ...overrides })
 
   it('asks the vault for nothing where the name is unchanged or empty', async () => {
     const cards = vault()

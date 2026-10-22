@@ -80,11 +80,11 @@ export interface PlexViewEvents {
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask', id: string): void
   /** A menu was asked for on a node: which, where, and by what. */
-  (event: 'menu', id: string, at: Position, trigger: MenuTrigger): void
+  (event: 'menu', id: string, point: Position, trigger: MenuTrigger): void
   /** A heading of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, heading: string): void
   /** A menu or inspector was asked for on an edge. */
-  (event: 'edge-menu', pair: string, at: Position): void
+  (event: 'edge-menu', pair: string, point: Position): void
 }
 
 export interface PlexNodeProps {
@@ -122,7 +122,7 @@ export interface PlexNodeEvents {
    * it. A keypress carries no point of its own, so the middle of the box is
    * where it is asked.
    */
-  (event: 'menu', at: Position, trigger: MenuTrigger): void
+  (event: 'menu', point: Position, trigger: MenuTrigger): void
   /**
    * The attention has settled on this node, or has left it. A widened box is
    * drawn last of all, and which box that is only the whole picture knows.

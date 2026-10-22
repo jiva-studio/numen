@@ -26,10 +26,10 @@ func is(name string) port.EmbeddingModel {
 // given. It counts the times it was asked the text two providers are compared
 // over, and the times it was release.
 type saying struct {
-	model  port.EmbeddingModel
-	vector []float32
-	asked  atomic.Int64
-	closed atomic.Int64
+	model        port.EmbeddingModel
+	vector       []float32
+	requestCount atomic.Int64
+	closed       atomic.Int64
 }
 
 func newSaying(name string, vector ...float32) *saying {
@@ -42,7 +42,7 @@ func (s *saying) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
 	for i, one := range texts {
 		if one == agreement.Asked {
-			s.asked.Add(1)
+			s.requestCount.Add(1)
 		}
 		out[i] = s.vector
 	}
@@ -55,7 +55,7 @@ func (s *saying) Close() error {
 }
 
 // refuseFetch is a model that is not on this machine and is not to be fetched.
-func refuseFetch(context.Context, func(done, total int64)) (port.Embedder, error) {
+func refuseFetch(context.Context, func(finished, total int64)) (port.Embedder, error) {
 	return nil, errors.New("the model is not on this machine")
 }
 
@@ -210,9 +210,9 @@ func TestAProviderReachedAtOnceExistsInNoList(t *testing.T) {
 // of nothing against a size is a row sitting at nought per cent for the length
 // of a download, which says less than a ring that turns.
 func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
-	progressCh := make(chan func(done, total int64), 1)
+	progressCh := make(chan func(completed, total int64), 1)
 	stop := make(chan struct{})
-	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(processed, total int64)) (port.Embedder, error) {
 		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
@@ -260,7 +260,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 // what is happening, not a record of what happened.
 func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 	target := newSaying("a/model", 1, 0, 0)
-	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(finishedVal, total int64)) (port.Embedder, error) {
 		tell(90_000_000, 90_000_000)
 		return target, nil
 	}
@@ -299,15 +299,15 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 // it settles is waited for and not assumed.
 func waitForComparison(t *testing.T, first, second *saying) {
 	t.Helper()
-	waitFor(t, func() bool { return first.asked.Load() > 0 && second.asked.Load() > 0 },
+	waitFor(t, func() bool { return first.requestCount.Load() > 0 && second.requestCount.Load() > 0 },
 		"the two providers were never compared")
 }
 
 // waitFor is something happening somewhere else, waited for.
-func waitFor(t *testing.T, done func() bool, why string) {
+func waitFor(t *testing.T, finishedVal func() bool, why string) {
 	t.Helper()
 	for range 400 {
-		if done() {
+		if finishedVal() {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)

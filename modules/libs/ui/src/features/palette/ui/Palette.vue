@@ -121,13 +121,13 @@ const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 const places = usePalettePlaces({
   groups: () => props.groups,
   typed: searchQuery,
-  tellLit: (item) => emit('light', item),
+  onItemActive: (item) => emit('light', item),
   tellChoice: (item, action) => emit('choose', item, action),
 })
-const { placed, said, here, lit, offered, held, chooseAt } = places
+const { placed, said, here, activeItem, actions, held, chooseAt } = places
 
 /** The actions a key reaches, which is what the foot of the palette says. */
-const hinted = computed(() => getShortcuts(lit.value))
+const hinted = computed(() => getShortcuts(activeItem.value))
 
 /** What is lit is brought into sight. */
 const reveal = (): void => void results.value?.reveal(held.value)
@@ -138,8 +138,8 @@ const {
   onPress,
   onGround,
 } = useActionPanel({
-  getActions: () => offered.value,
-  getLit: () => lit.value?.id,
+  getActions: () => actions.value,
+  getLit: () => activeItem.value?.id,
   choose: (item, action) => emit('choose', item, action),
   dismiss: () => emit('dismiss'),
 })
@@ -149,7 +149,7 @@ const { onKey } = usePaletteKeys({
   reveal,
   places,
   isPanelOpen,
-  getOfferedActions: () => offered.value,
+  getActions: () => actions.value,
   typed: searchQuery,
   isOpen: () => props.isOpen,
   getStep: () => props.step,
@@ -219,7 +219,7 @@ const onOver = (pos: number, event: PointerEvent) => {
     <PaletteActions
       v-if="isPanelOpen"
       v-model:open="isPanelOpen"
-      :offered="offered"
+      :actions="actions"
       :words="actionWords"
       @choose="chooseAction"
     />
@@ -227,7 +227,7 @@ const onOver = (pos: number, event: PointerEvent) => {
     <!-- What the item now lit can be asked. An item offering one action says
          one key, and the last word opens the rest. -->
     <PaletteKeyHints
-      v-if="offered.length"
+      v-if="actions.length"
       :hinted="hinted"
       :action-key="actionKey"
       :name="actionWords.name"

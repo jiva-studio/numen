@@ -98,17 +98,17 @@ func NewModel(name, title string, levels []Level, byDefault string) *numenv1.Age
 }
 
 // Normalize is the level a task asks for if the levels hold it, else the default of the levels.
-func Normalize(levels []Level, asked string) string {
-	if Contains(levels, asked) {
-		return asked
+func Normalize(levels []Level, requested string) string {
+	if Contains(levels, requested) {
+		return requested
 	}
 	return GetDefault(levels)
 }
 
 // Pick is the level a task asks for if the levels hold it, else empty.
-func Pick(levels []Level, asked string) string {
-	if Contains(levels, asked) {
-		return asked
+func Pick(levels []Level, requested string) string {
+	if Contains(levels, requested) {
+		return requested
 	}
 	return ""
 }

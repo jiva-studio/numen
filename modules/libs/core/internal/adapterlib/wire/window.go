@@ -203,9 +203,9 @@ func (w *Window) checkWindowName(named string) error {
 }
 
 // AddTask puts one piece of work in the list.
-func (w *Window) AddTask(at run.Task) {
+func (w *Window) AddTask(pos run.Task) {
 	if w != nil && w.Tasking != nil {
-		w.Tasking.Set(at)
+		w.Tasking.Set(pos)
 	}
 }
 

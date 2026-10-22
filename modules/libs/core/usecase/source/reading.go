@@ -18,7 +18,7 @@ const progressStep = 1 << 20
 type passing struct {
 	from     io.Reader
 	total    int64
-	report   func(done, total int64)
+	report   func(finished, total int64)
 	read     int64
 	reported int64
 }
@@ -38,11 +38,11 @@ var errTooLarge = errors.New("over the size a copy may be")
 
 // limitReader is what comes down, stopped at the size the settings name. A site
 // everything through.
-func limitReader(from io.Reader, under int64) io.Reader {
-	if under <= 0 {
+func limitReader(from io.Reader, limit int64) io.Reader {
+	if limit <= 0 {
 		return from
 	}
-	return &limited{from: from, remaining: under + 1}
+	return &limited{from: from, remaining: limit + 1}
 }
 
 type limited struct {

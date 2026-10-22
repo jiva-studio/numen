@@ -73,8 +73,8 @@ export function scrollBy(
   leftover: number,
 ): { by: number; left: number } {
   const pixels = leftover + wheel.delta * getStride(suspended, wheel.mode)
-  const by = Math.trunc(pixels / suspended.headingHeight)
-  return { by, left: pixels - by * suspended.headingHeight }
+  const lineCount = Math.trunc(pixels / suspended.headingHeight)
+  return { by: lineCount, left: pixels - lineCount * suspended.headingHeight }
 }
 
 /** What one of a wheel's own units evaluates to in pixels: a line, or a window. */
@@ -151,12 +151,12 @@ export function getOpenHeadings(
  * An arrow at one edge of the ground, pointing the way there is more to scroll
  * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function createArrow(suspended: NodeHeadings, down: number, at: Arrow['at']): Arrow {
-  const direction = ARROW_DIRECTION[at]
+function createArrow(suspended: NodeHeadings, down: number, edge: Arrow['at']): Arrow {
+  const direction = ARROW_DIRECTION[edge]
   const middle = suspended.offset
   const y = suspended.top + down
   return {
-    at,
+    at: edge,
     points: [
       { x: middle - ARROW.wide, y: y - direction * ARROW.deep },
       { x: middle, y: y + direction * ARROW.deep },

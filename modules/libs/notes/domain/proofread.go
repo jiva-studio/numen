@@ -33,10 +33,10 @@ func (c ProofreadCorrection) IsJoined() bool { return c.Last > c.Number }
 // FindUnaskedCorrection returns the first correction whose line is none of the
 // lines asked about, or whose run reaches past the last of them, and false
 // where every correction stands within the lines asked about.
-func FindUnaskedCorrection(asked []ProofreadLine, made []ProofreadCorrection) (ProofreadCorrection, bool) {
-	numbers := make(map[int]bool, len(asked))
+func FindUnaskedCorrection(lines []ProofreadLine, made []ProofreadCorrection) (ProofreadCorrection, bool) {
+	numbers := make(map[int]bool, len(lines))
 	last := -1
-	for _, line := range asked {
+	for _, line := range lines {
 		numbers[line.Number] = true
 		last = max(last, line.Number)
 	}
@@ -72,14 +72,14 @@ type SpeechWindow struct {
 // numbered From or later, no more than Limit of them. The lines stand in the
 // order of their numbers.
 func (w SpeechWindow) GetLines(lines []ProofreadLine) []ProofreadLine {
-	at, _ := slices.BinarySearchFunc(lines, w.From, func(line ProofreadLine, from int) int {
+	idx, _ := slices.BinarySearchFunc(lines, w.From, func(line ProofreadLine, from int) int {
 		return cmp.Compare(line.Number, from)
 	})
 	end := len(lines)
 	if w.Limit > 0 {
-		end = min(end, at+w.Limit)
+		end = min(end, idx+w.Limit)
 	}
-	return lines[at:end]
+	return lines[idx:end]
 }
 
 // A SpeechProofreading is what a proofreader put right over a window of a

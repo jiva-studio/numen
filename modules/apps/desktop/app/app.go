@@ -270,8 +270,8 @@ func makeEndpoint(
 }
 
 func makeApplication(
-	opened *editor.Installation, pages http.Handler, behind *shutdown.Sequence,
-	going *vaultFlush, seen visibility,
+	opened *editor.Installation, pages http.Handler, shutdownSeq *shutdown.Sequence,
+	going *vaultFlush, windowVis visibility,
 ) *application.App {
 	return application.New(application.Options{
 		Name: "numen",
@@ -281,9 +281,9 @@ func makeApplication(
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		PostShutdown: behind.Run,
+		PostShutdown: shutdownSeq.Run,
 		ShouldQuit: func() bool {
-			return requestQuit(going, seen, func() { application.Get().Quit() })
+			return requestQuit(going, windowVis, func() { application.Get().Quit() })
 		},
 	})
 }

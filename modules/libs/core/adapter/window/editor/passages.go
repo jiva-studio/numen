@@ -22,7 +22,7 @@ func spans(text, query string) []domain.UnitSpan {
 	}
 	folded, units := getFoldedRunes(text)
 
-	var at []domain.UnitSpan
+	var offset []domain.UnitSpan
 	for i, word := range words {
 		wanted, _ := getFoldedRunes(word)
 		if len(wanted) == 0 {
@@ -37,10 +37,10 @@ func spans(text, query string) []domain.UnitSpan {
 			if !isWordStart(folded, from) || (whole && !isWordEnd(folded, to)) {
 				continue
 			}
-			at = append(at, domain.UnitSpan{From: units[from], To: units[to]})
+			offset = append(offset, domain.UnitSpan{From: units[from], To: units[to]})
 		}
 	}
-	return mergeSpans(at)
+	return mergeSpans(offset)
 }
 
 // isWordRune is what a word is made of, so that what stands either side of one is
@@ -220,8 +220,8 @@ const reach = 8 * glancing
 // A passage is the whole of the window enclosing its hit, which for a section
 // of a book is the whole section. What is read is what a window can be cut
 // from.
-func nearby(text string, hit int) (string, int) {
-	from, to := hit-reach, hit+reach
+func nearby(text string, index int) (string, int) {
+	from, to := index-reach, index+reach
 	if from < 0 {
 		from = 0
 	}
@@ -234,5 +234,5 @@ func nearby(text string, hit int) (string, int) {
 	for to < len(text) && !utf8.RuneStart(text[to]) {
 		to++
 	}
-	return text[from:to], hit - from
+	return text[from:to], index - from
 }

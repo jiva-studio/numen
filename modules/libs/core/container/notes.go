@@ -19,7 +19,7 @@ func (c Config) Notes(
 	queries port.NoteQueries,
 	links port.LinkQueries,
 	sources port.SourceRepository,
-	known port.SourceQueries,
+	indexed port.SourceQueries,
 	index note.Levels,
 ) note.Scenarios {
 	readers := c.VaultReaders()
@@ -32,7 +32,7 @@ func (c Config) Notes(
 	mover.Sync = c.SyncSetting()
 
 	linking := note.NewEditLinks(readers, writers, index, now)
-	remove := note.NewRemove(writers, links, known, index)
+	remove := note.NewRemove(writers, links, indexed, index)
 
 	return note.Scenarios{
 		Read:         note.NewRead(readers),

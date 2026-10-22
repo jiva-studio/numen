@@ -162,9 +162,9 @@ func (e EditorAssembly) OpenDownloader(ctx context.Context) port.Downloader {
 }
 
 func (e EditorAssembly) OpenImportURL(
-	ctx context.Context, by port.Downloader,
+	ctx context.Context, downloader port.Downloader,
 ) source.ImportURL {
-	return e.cfg.ImportURL(ctx, e.db, by)
+	return e.cfg.ImportURL(ctx, e.db, downloader)
 }
 
 func (e EditorAssembly) OpenRecognitionWorker(
@@ -197,7 +197,7 @@ func (e EditorAssembly) ReadWholeVault(
 // the walk, the watch, the levelling and why the vault is not being followed.
 func (e EditorAssembly) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool,
-	told func(paths, assets []string, reload bool),
+	notified func(paths, assets []string, reload bool),
 	handleError port.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
@@ -211,8 +211,8 @@ func (e EditorAssembly) StartVault(
 	opening := request.VaultOpener(e.db)
 	opening.ShouldRebuild = rebuild
 	opening.ErrorHandler = handleError
-	if told != nil {
-		opening.Told = func(m VaultChanges) { told(m.Paths, m.Assets, m.ShouldReload) }
+	if notified != nil {
+		opening.Told = func(m VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v)

@@ -41,8 +41,8 @@ export function getTitleBoxes(
 ): Box[] {
   const { from, to } = span
   const boxes: Box[] = []
-  for (let at = from; at < to; at += step) {
-    boxes.push(boxAt(at, Math.min(at + step, to)))
+  for (let offset = from; offset < to; offset += step) {
+    boxes.push(boxAt(offset, Math.min(offset + step, to)))
   }
   return boxes
 }

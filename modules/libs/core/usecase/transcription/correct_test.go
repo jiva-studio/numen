@@ -18,7 +18,7 @@ import (
 
 // getTask is what the list of what is being done says about putting a
 // transcript right.
-func getTask(target *Worker, path string) (doing, failed string) {
+func getTask(target *Worker, path string) (handler, failed string) {
 	for _, item := range target.with.Tasks.List() {
 		if item.ID == run.GetProofreadID(path) {
 			return item.Title, item.Error
@@ -94,7 +94,7 @@ func cues(words []string) []domain.TranscriptCue {
 func newStoppedWorker(
 	t *testing.T,
 	delta port.Proofreader,
-	through int,
+	paths int,
 	words ...string,
 ) (*Worker, domain.Vault, port.DerivedStore, string) {
 	t.Helper()
@@ -121,19 +121,19 @@ func newStoppedWorker(
 	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(cuesList)); err != nil {
 		t.Fatal(err)
 	}
-	if through == 0 {
+	if paths == 0 {
 		return target, v, store, hash
 	}
 
 	// The shelf as a run that ended among the batches left it: the lines it put
 	// right, and the count standing after them.
-	for item := range through {
+	for item := range paths {
 		cuesList[item].Text = strings.ToUpper(cuesList[item].Text)
 	}
 	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), transcript.Marshal(cuesList)); err != nil {
 		t.Fatal(err)
 	}
-	status, err := json.Marshal(putting{By: delta.GetName(), At: cuesList[through-1].To})
+	status, err := json.Marshal(putting{By: delta.GetName(), At: cuesList[paths-1].To})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +277,7 @@ func TestATranscriptAlreadyInsertRightReturnsThatNothingWasLeft(t *testing.T) {
 // not keep whoever asked waiting for the whole of it.
 func TestAProofreadingWithWorkToDoAnswersBeforeItIsOver(t *testing.T) {
 	stand := make(chan struct{})
-	delta := &waits{on: stand, asked: make(chan struct{})}
+	delta := &waits{on: stand, requestChan: make(chan struct{})}
 	target, v, _, _ := newStoppedWorker(t, delta, 0, "first thing", "second thing")
 
 	res, err := target.Proofread(t.Context(), v, recording)
@@ -288,16 +288,16 @@ func TestAProofreadingWithWorkToDoAnswersBeforeItIsOver(t *testing.T) {
 	if res.IsAlready || res.IsNone || res.IsEdited || res.IsBusy {
 		t.Errorf("a run with work to do answered %+v", res)
 	}
-	<-delta.asked
+	<-delta.requestChan
 	close(stand)
 	target.Wait()
 }
 
 // waits is a proofreader that says it was asked and then waits to be let go.
 type waits struct {
-	on    chan struct{}
-	asked chan struct{}
-	once  sync.Once
+	on          chan struct{}
+	requestChan chan struct{}
+	once        sync.Once
 }
 
 func (w *waits) GetName() string { return "a proofreader that waits" }
@@ -309,7 +309,7 @@ func (w *waits) ProofreadScan(context.Context, []domain.ProofreadPage) (domain.S
 func (w *waits) ProofreadSpeech(
 	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {
-	w.once.Do(func() { close(w.asked) })
+	w.once.Do(func() { close(w.requestChan) })
 	<-w.on
 	return domain.SpeechProofreading{IsDone: true}, nil
 }

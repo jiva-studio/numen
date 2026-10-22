@@ -96,8 +96,8 @@ function orderPair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNod
 /** The branch with the new pane among its children, taking half the share of the child at `index`. */
 function joinBeside(parent: Branch, newPane: Pane, join: JoinBeside): WorkspaceNode {
   const { index, side } = join
-  const at = isLeading(side) ? index : index + 1
-  const children = [...parent.children.slice(0, at), newPane, ...parent.children.slice(at)]
+  const targetIndex = isLeading(side) ? index : index + 1
+  const children = [...parent.children.slice(0, targetIndex), newPane, ...parent.children.slice(targetIndex)]
   return withChildren(parent, children, insert(parent.sizes, index, isLeading(side)))
 }
 
@@ -110,9 +110,9 @@ export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
   if (!holder) return root
 
   return mapPane(root, holder.id, (target) => {
-    const at = target.tabs.indexOf(tab)
+    const tabIndex = target.tabs.indexOf(tab)
     const tabs = target.tabs.filter((each) => each !== tab)
-    const active = target.active === tab ? (tabs[at] ?? tabs[at - 1] ?? null) : target.active
+    const active = target.active === tab ? (tabs[tabIndex] ?? tabs[tabIndex - 1] ?? null) : target.active
     return { ...target, tabs, active }
   })
 }

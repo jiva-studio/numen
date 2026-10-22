@@ -430,12 +430,12 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 
 	// The bytes cross under a name the watcher passes over, and nothing is left
 	// beside the file.
-	beside, err := os.ReadDir(filepath.Join(root, "scans"))
+	entries, err := os.ReadDir(filepath.Join(root, "scans"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(beside) != 1 {
-		t.Errorf("the folder holds %d files", len(beside))
+	if len(entries) != 1 {
+		t.Errorf("the folder holds %d files", len(entries))
 	}
 }
 

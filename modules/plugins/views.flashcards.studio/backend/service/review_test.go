@@ -646,7 +646,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 	for _, one := range []struct {
 		what   string
 		goal   review.Goal
-		by     time.Time
+		byDate time.Time
 		closed review.BudgetName
 		never  []review.BudgetName
 		// learned is the rule the goal is worked out against, where the goal
@@ -672,7 +672,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 		},
 		{
 			what: "a date", goal: review.GoalDate, learned: review.RuleRetention,
-			by: time.Now().AddDate(0, 0, 6), closed: review.ClosedDate, isSameDay: true,
+			byDate: time.Now().AddDate(0, 0, 6), closed: review.ClosedDate, isSameDay: true,
 			never: []review.BudgetName{
 				review.ClosedNew, review.ClosedReviews, review.ClosedMinutes,
 			},
@@ -683,7 +683,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 			v := target[0]
 
 			p := asWritten(t, api, v, "Steady.md")
-			p.Goal, p.By = one.goal, one.by
+			p.Goal, p.By = one.goal, one.byDate
 			if one.learned != "" {
 				p.Rule = one.learned
 			}

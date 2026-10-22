@@ -10,13 +10,13 @@ import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { useFileTree, ROOT } from '../model/useFileTree'
 import { renderDeps } from '../fixtures/host'
 
-const file = (path: string, over: Partial<Entry> = {}): Entry => ({
+const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
@@ -32,7 +32,7 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 /** A tab of that vault, drawn, and what it asked of the window written down. */
 const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
-  const list = useFileTree({ list: async (at: string) => target[at] ?? [] })
+  const list = useFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
     ...renderDeps,
     openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
@@ -53,7 +53,7 @@ const mountFiles = async (open: readonly string[] = []) => {
     showError: (text) => void isDone.push(`says ${text}`),
   })
   await list.openFolder(ROOT)
-  for (const at of open) await list.openFolder(at)
+  for (const folderPath of open) await list.openFolder(folderPath)
   const window = mount(FilesTab, { props: { state: tab } })
   await settle()
   return { recorded: isDone, list, tab, window }

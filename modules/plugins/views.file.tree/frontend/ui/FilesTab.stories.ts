@@ -13,13 +13,13 @@ import { useFileTree, ROOT } from '../model/useFileTree'
 import type { Entry } from '../types'
 import { renderDeps } from '../fixtures/host'
 
-const file = (path: string, over: Partial<Entry> = {}): Entry => ({
+const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
@@ -37,7 +37,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A tab of that vault, reading the folders named as it is drawn. */
 const createFilesTab = (open: readonly string[]): FilesTabState => {
-  const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
+  const list = useFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
     ...renderDeps,
     openEntry: () => {},
@@ -56,7 +56,7 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
 
   void (async () => {
     await list.openFolder(ROOT)
-    for (const at of open) await list.openFolder(at)
+    for (const folderPath of open) await list.openFolder(folderPath)
   })()
 
   return state
@@ -126,9 +126,9 @@ export const TheMenuOnARow: Story = {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(4))
 
     const note = rows(canvasElement)[1] as HTMLElement
-    const at = note.getBoundingClientRect()
+    const rect = note.getBoundingClientRect()
     await userEvent.click(note)
-    await fireEvent.contextMenu(note, { clientX: at.left + 8, clientY: at.top + 8 })
+    await fireEvent.contextMenu(note, { clientX: rect.left + 8, clientY: rect.top + 8 })
 
     const getMenuItems = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     await waitFor(() => expect(getMenuItems().length).toBeGreaterThan(0))

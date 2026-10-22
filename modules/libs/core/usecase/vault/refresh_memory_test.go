@@ -38,7 +38,7 @@ type sourceRemoval struct {
 // afterwards.
 type memWorld struct {
 	files map[string]*memFile
-	held  map[string][]domain.Fingerprint
+	item  map[string][]domain.Fingerprint
 	clock func() time.Time
 
 	openErr     error
@@ -59,7 +59,7 @@ type memWorld struct {
 }
 
 func newMemWorld() *memWorld {
-	w := &memWorld{files: map[string]*memFile{}, held: map[string][]domain.Fingerprint{}}
+	w := &memWorld{files: map[string]*memFile{}, item: map[string][]domain.Fingerprint{}}
 	w.clock = func() time.Time { return memBase }
 	return w
 }
@@ -77,7 +77,7 @@ func (w *memWorld) addNote(path, content string, mtime time.Time) *memFile {
 
 // index makes the index hold the file as it is.
 func (w *memWorld) index(path string) {
-	w.held[path] = []domain.Fingerprint{w.files[path].fp}
+	w.item[path] = []domain.Fingerprint{w.files[path].fp}
 }
 
 func (w *memWorld) refresh() vaults.Refresh {
@@ -154,7 +154,7 @@ func (n memNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.NoteC
 	var paths []string
 	for _, note := range notes {
 		paths = append(paths, note.Note.Fingerprint.Path)
-		n.w.held[note.Note.Fingerprint.Path] = []domain.Fingerprint{note.Note.Fingerprint}
+		n.w.item[note.Note.Fingerprint.Path] = []domain.Fingerprint{note.Note.Fingerprint}
 	}
 	n.w.saves = append(n.w.saves, paths)
 	return nil
@@ -177,7 +177,7 @@ func (q memQueries) GetSourcesUnder(_ context.Context, _ domain.VaultID, path st
 	if q.w.queriesErr != nil {
 		return nil, q.w.queriesErr
 	}
-	return q.w.held[path], nil
+	return q.w.item[path], nil
 }
 
 type memSources struct {
@@ -379,7 +379,7 @@ func TestARefreshFailsWhenASourceCannotBeRemoved(t *testing.T) {
 	w := newMemWorld()
 	w.sourcesErr = errMemory
 	w.files["Gone"] = &memFile{statErr: fs.ErrNotExist}
-	w.held["Gone"] = []domain.Fingerprint{{Path: "Gone/b.epub", Kind: domain.KindBook}}
+	w.item["Gone"] = []domain.Fingerprint{{Path: "Gone/b.epub", Kind: domain.KindBook}}
 
 	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone"})
 	if !errors.Is(err, errMemory) {
@@ -391,7 +391,7 @@ func TestAFolderThatWentConsumesItsBooksAndRecordingsOutOfTheIndexByKind(t *test
 	t.Parallel()
 	w := newMemWorld()
 	w.files["Gone"] = &memFile{statErr: fs.ErrNotExist}
-	w.held["Gone"] = []domain.Fingerprint{
+	w.item["Gone"] = []domain.Fingerprint{
 		{Path: "Gone/a.md", Kind: domain.KindNote},
 		{Path: "Gone/c.mp3", Kind: domain.KindRecording},
 		{Path: "Gone/b.epub", Kind: domain.KindBook},
@@ -415,18 +415,18 @@ func TestOnlyAnIndexedNoteOfThatPathIsTakenForCurrent(t *testing.T) {
 	asBook := domain.Fingerprint{Path: "Note.md", Kind: domain.KindBook, Size: 7, ModTime: old}
 	asNote := domain.Fingerprint{Path: "Note.md", Kind: domain.KindNote, Size: 7, ModTime: old}
 	for name, tc := range map[string]struct {
-		held  []domain.Fingerprint
+		item  []domain.Fingerprint
 		saved int
 	}{
-		"a note of another path": {held: []domain.Fingerprint{other}, saved: 1},
-		"a book at the path":     {held: []domain.Fingerprint{asBook}, saved: 1},
-		"the note after another": {held: []domain.Fingerprint{other, asNote}, saved: 0},
+		"a note of another path": {item: []domain.Fingerprint{other}, saved: 1},
+		"a book at the path":     {item: []domain.Fingerprint{asBook}, saved: 1},
+		"the note after another": {item: []domain.Fingerprint{other, asNote}, saved: 0},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			w := newMemWorld()
 			w.addNote("Note.md", "entropy", old)
-			w.held["Note.md"] = tc.held
+			w.item["Note.md"] = tc.item
 
 			execute(t, w.refresh(), "Note.md")
 

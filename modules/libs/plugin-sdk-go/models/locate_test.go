@@ -29,8 +29,8 @@ func sourceIn(dir string) Source {
 
 func TestAModelAdjacentTheApplicationIsUsedWhenItContainsThePinnedSum(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "model.onnx")
-	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
+	targetPath := filepath.Join(dir, "model.onnx")
+	if err := os.WriteFile(targetPath, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -54,8 +54,8 @@ func TestAModelAdjacentTheApplicationWithAnotherSumIsNotUsed(t *testing.T) {
 
 func TestAModelNobodyPinnedAdjacentTheApplicationIsUsedAsFound(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "model.onnx")
-	if err := os.WriteFile(at, []byte("anything"), 0o644); err != nil {
+	targetPath := filepath.Join(dir, "model.onnx")
+	if err := os.WriteFile(targetPath, []byte("anything"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

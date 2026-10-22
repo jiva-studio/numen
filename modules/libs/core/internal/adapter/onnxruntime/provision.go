@@ -28,7 +28,7 @@ type Config struct {
 	// Check returns an error when this machine cannot open the library at a
 	// path. Nil opens it with the platform loader and asks it for the API the
 	// plugins call.
-	Check func(at string) error
+	Check func(targetPath string) error
 }
 
 // Provisioner finds or fetches the library once per plugin folder and hands the

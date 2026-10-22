@@ -44,11 +44,11 @@ const replaceCardValue = (deck: BufferDeck, id: string, field: string, index: nu
 
 /** Identities counted out, so a test names the card it means. */
 const createIds = () => {
-  let at = 0
-  return () => `c${(at += 1)}`
+  let count = 0
+  return () => `c${(count += 1)}`
 }
 
-const readItem = (over: Partial<VaultDeck> = {}): VaultDeck => ({
+const readItem = (overrides: Partial<VaultDeck> = {}): VaultDeck => ({
   path: 'Animals.md',
   title: 'Animals',
   preamble: 'about the animals\n',
@@ -79,14 +79,14 @@ const readItem = (over: Partial<VaultDeck> = {}): VaultDeck => ({
   sections: [],
   tail: '\n',
   problems: [],
-  ...over,
+  ...overrides,
 })
 
 /** The two cards of the fixture, by the mark each carries. */
 const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
-const deck = (over: Partial<VaultDeck> = {}): BufferDeck =>
+const deck = (overrides: Partial<VaultDeck> = {}): BufferDeck =>
   deserializeVaultDeck(readItem(over), createIds())
 
 describe('a deck as the window holds it', () => {

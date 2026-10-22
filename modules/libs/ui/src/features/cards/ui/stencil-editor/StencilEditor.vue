@@ -53,7 +53,7 @@ const emit = defineEmits<{
   (event: 'rename-field', field: string, name: string): void
   (event: 'remove-field', field: string): void
   /** A field let go somewhere in the order: before another, or at the end. */
-  (event: 'move-field', field: string, at: InsertionPoint): void
+  (event: 'move-field', field: string, target: InsertionPoint): void
   (event: 'add-face', name: string): void
   (event: 'rename-face', id: string, name: string): void
   (event: 'remove-face', id: string): void
@@ -62,7 +62,7 @@ const emit = defineEmits<{
    * order of the faces is the order a card's repetitions are taken from it, so
    * nothing among them is fixed.
    */
-  (event: 'move-face', id: string, at: InsertionPoint): void
+  (event: 'move-face', id: string, target: InsertionPoint): void
   /** One half of one face, as it now reads. */
   (event: 'write', id: string, half: Half, text: string): void
 }>()

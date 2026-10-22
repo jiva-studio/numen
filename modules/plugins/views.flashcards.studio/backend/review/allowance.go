@@ -141,7 +141,7 @@ func (a Allowance) IsPaused() bool { return a.Stops != StoppedNothing }
 // and daysToLearn is how many days of review a card face begun now needs before
 // the preset counts it learned, which a date paces the day against.
 func (p Preset) GetAllowance(
-	d Day, now time.Time, spent Spent, unbegunCards, daysToLearn int,
+	d Day, now time.Time, used Spent, unbegunCards, daysToLearn int,
 ) Allowance {
 	date := d.GetDate(now)
 	out := Allowance{
@@ -161,9 +161,9 @@ func (p Preset) GetAllowance(
 	if out.Limits.Backlog != ClosedNothing {
 		out.Backlog = p.Backlog
 	}
-	out.New = out.Keeps.New - spent.New
-	out.Reviews = out.Keeps.Reviews - spent.Reviews
-	out.Minutes = time.Duration(out.Keeps.Minutes*float64(time.Minute)) - spent.Took
+	out.New = out.Keeps.New - used.New
+	out.Reviews = out.Keeps.Reviews - used.Reviews
+	out.Minutes = time.Duration(out.Keeps.Minutes*float64(time.Minute)) - used.Took
 	return out
 }
 
@@ -176,11 +176,11 @@ func (p Preset) GetAllowance(
 // rest of the day to the other, and an odd card goes to the debt.
 //
 // It is the one rule for how a day is spent.
-func (a Allowance) IsNextCardDebt(debt, begun int, owed, fresh bool) bool {
+func (a Allowance) IsNextCardDebt(debt, begun int, owed, isNew bool) bool {
 	if !owed {
 		return false
 	}
-	if !fresh {
+	if !isNew {
 		return true
 	}
 	return debt*AllBacklog < a.Backlog*(debt+begun+1)

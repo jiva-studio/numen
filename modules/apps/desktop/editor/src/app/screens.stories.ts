@@ -610,7 +610,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A files tab over that vault, and the reading of the folders named in it. */
 const files = (open: readonly string[]) => {
-  const list = useFileTree({ list: (at: string) => Promise.resolve(VAULT[at] ?? []) })
+  const list = useFileTree({ list: (folderPath: string) => Promise.resolve(VAULT[folderPath] ?? []) })
   const state = useFilesTab(list, {
     ...createPathCommandHost({
       runs: { canRun: () => true },
@@ -633,7 +633,7 @@ const files = (open: readonly string[]) => {
   })
   const readItem = (async () => {
     await list.openFolder(ROOT)
-    for (const at of open) await list.openFolder(at)
+    for (const folder of open) await list.openFolder(folder)
   })()
   return { state, read: readItem }
 }

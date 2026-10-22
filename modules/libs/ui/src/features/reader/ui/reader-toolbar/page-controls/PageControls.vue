@@ -21,7 +21,7 @@ withDefaults(
 )
 
 /** Which page is in front, counted from the first. */
-const at = defineModel<number>('at', { default: 0 })
+const currentPage = defineModel<number>('at', { default: 0 })
 
 /**
  * What is being typed over the page in front, and nothing while nothing is. A
@@ -32,7 +32,7 @@ const typing = ref<string | number | null>(null)
 
 /** What is in the field: the page in front, or what is being typed over it. */
 const inputValue = computed({
-  get: () => typing.value ?? String(at.value + 1),
+  get: () => typing.value ?? String(currentPage.value + 1),
   set: (text: string | number) => {
     typing.value = text
   },
@@ -48,7 +48,7 @@ const turn = () => {
   if (rawInput === null || (typeof rawInput === 'string' && !rawInput.trim())) return
 
   const page = Number(rawInput)
-  if (Number.isFinite(page)) at.value = Math.round(page) - 1
+  if (Number.isFinite(page)) currentPage.value = Math.round(page) - 1
 }
 </script>
 
@@ -59,8 +59,8 @@ const turn = () => {
       size="icon-small"
       class="rounded-pill"
       :aria-label="words.back"
-      :disabled="at <= 0"
-      @click="at -= 1"
+      :disabled="currentPage <= 0"
+      @click="currentPage -= 1"
     >
       <svg
         viewBox="0 0 16 16"
@@ -79,8 +79,8 @@ const turn = () => {
       size="icon-small"
       class="rounded-pill"
       :aria-label="words.next"
-      :disabled="at >= pageCount - 1"
-      @click="at += 1"
+      :disabled="currentPage >= pageCount - 1"
+      @click="currentPage += 1"
     >
       <svg
         viewBox="0 0 16 16"

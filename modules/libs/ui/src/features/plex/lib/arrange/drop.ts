@@ -70,15 +70,15 @@ export function getRelationTowards(
  * in or out, and it would be a link to something the reader never saw. That is
  * the same rule that decides the click and the tab stop.
  */
-export function findNode(at: Position, frame: PlexFrame): PlacedNode | null {
+export function findNode(point: Position, frame: PlexFrame): PlacedNode | null {
   return (
     [...frame.nodes]
       .reverse()
       .find(
         (node) =>
           node.opacity >= 1 &&
-          Math.abs(at.x - node.x) <= node.width / 2 &&
-          Math.abs(at.y - node.y) <= node.height / 2,
+          Math.abs(point.x - node.x) <= node.width / 2 &&
+          Math.abs(point.y - node.y) <= node.height / 2,
       ) ?? null
   )
 }

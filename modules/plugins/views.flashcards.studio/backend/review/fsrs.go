@@ -92,15 +92,15 @@ func (FSRS) IsSpaced(s Schedule) bool {
 }
 
 // Next is where an answer leaves a schedule.
-func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
-	one := f.readAtAnswer(s, at)
+func (f FSRS) Next(s Schedule, now time.Time, r Rating) Schedule {
+	one := f.readAtAnswer(s, now)
 	switch one.phase {
 	case fsrs.New:
-		return f.getNextFromNew(one, at, fsrs.Rating(r))
+		return f.getNextFromNew(one, now, fsrs.Rating(r))
 	case fsrs.Review:
-		return f.getNextFromReview(one, at, f.getRecall(one), fsrs.Rating(r))
+		return f.getNextFromReview(one, now, f.getRecall(one), fsrs.Rating(r))
 	default:
-		return f.getNextFromLearning(one, at, fsrs.Rating(r))
+		return f.getNextFromLearning(one, now, fsrs.Rating(r))
 	}
 }
 
@@ -109,18 +109,18 @@ func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
 // A card face this scheduler has put into review is settled at every rating by
 // one reckoning of how likely it was to come back, so both endings are worked
 // out from that one reckoning.
-func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
-	one := f.readAtAnswer(s, at)
+func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
+	one := f.readAtAnswer(s, now)
 	switch one.phase {
 	case fsrs.New:
-		return f.getNextFromNew(one, at, fsrs.Good), f.getNextFromNew(one, at, fsrs.Again)
+		return f.getNextFromNew(one, now, fsrs.Good), f.getNextFromNew(one, now, fsrs.Again)
 	case fsrs.Review:
 		back := f.getRecall(one)
-		return f.getNextFromReview(one, at, back, fsrs.Good),
-			f.getNextFromReview(one, at, back, fsrs.Again)
+		return f.getNextFromReview(one, now, back, fsrs.Good),
+			f.getNextFromReview(one, now, back, fsrs.Again)
 	default:
-		return f.getNextFromLearning(one, at, fsrs.Good),
-			f.getNextFromLearning(one, at, fsrs.Again)
+		return f.getNextFromLearning(one, now, fsrs.Good),
+			f.getNextFromLearning(one, now, fsrs.Again)
 	}
 }
 

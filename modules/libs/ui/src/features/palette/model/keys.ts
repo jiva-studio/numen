@@ -24,7 +24,7 @@ export interface PaletteKeysOptions {
   readonly reveal: () => void
   readonly places: PalettePlacesState
   readonly isPanelOpen: Ref<boolean>
-  readonly getOfferedActions: () => readonly PaletteAction[]
+  readonly getActions: () => readonly PaletteAction[]
   readonly typed: Ref<string>
   /** Whether the palette is drawn at all, and which step it is on. */
   readonly isOpen: () => boolean
@@ -112,7 +112,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
 
   /** The action panel over the palette, when there is anything to put in it. */
   const openActions = (event: KeyboardEvent): void => {
-    if (!options.getOfferedActions().length) return
+    if (!options.getActions().length) return
     event.preventDefault()
     isPanelOpen.value = true
   }

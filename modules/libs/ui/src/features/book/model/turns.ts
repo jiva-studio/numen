@@ -17,7 +17,7 @@ import {
   type Mark,
 } from '../lib/spread'
 import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
-import { goToPage } from '../lib/turn'
+import { goToPage } from '../lib/pageStep'
 import type { SettledBookProps } from '../lib/props'
 
 function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {

@@ -16,8 +16,8 @@ type RemoveCard struct {
 
 func NewRemoveCard(read Read, write Write) RemoveCard { return RemoveCard{read: read, write: write} }
 
-func (u RemoveCard) Execute(ctx context.Context, v domain.Vault, at DeckVersion, mark string) (EditResult, error) {
-	changed, err := changeDeck(ctx, u.read, u.write, v, at, func(_ DeckContents, file *format.DeckFile) error {
+func (u RemoveCard) Execute(ctx context.Context, v domain.Vault, version DeckVersion, mark string) (EditResult, error) {
+	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(_ DeckContents, file *format.DeckFile) error {
 		return file.RemoveCard(cardid.ID(mark))
 	})
 	return changed.result, err

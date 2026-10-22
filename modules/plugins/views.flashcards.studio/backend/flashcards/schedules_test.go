@@ -395,11 +395,11 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stands := dayFrom(when, reply[on].Due)
+	actualDay := dayFrom(when, reply[on].Due)
 
-	if comes == 0 || comes != stands {
+	if comes == 0 || comes != actualDay {
 		t.Errorf("the projection has the card back on day %d and the answer on day %d",
-			comes, stands)
+			comes, actualDay)
 	}
 	if stands == dayFrom(when, fell) {
 		t.Errorf("the card stood on the %v it fell on", fell.Weekday())

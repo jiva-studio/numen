@@ -9,8 +9,8 @@ import (
 
 func TestAPagePreservesWhatReturnsWhichPageItIs(t *testing.T) {
 	for _, one := range []struct {
-		written string
-		want    string
+		input string
+		want  string
 	}{
 		{"https://example.com/a?utm_source=news&id=7", "https://example.com/a?id=7"},
 		{"https://example.com/a?fbclid=xyz", "https://example.com/a"},
@@ -23,13 +23,13 @@ func TestAPagePreservesWhatReturnsWhichPageItIs(t *testing.T) {
 		{"http://example.com:8080/a", "http://example.com:8080/a"},
 		{"https://example.com/a#section", "https://example.com/a"},
 	} {
-		got, err := domain.ParseURL(one.written)
+		got, err := domain.ParseURL(one.input)
 		if err != nil {
-			t.Errorf("%q: %v", one.written, err)
+			t.Errorf("%q: %v", one.input, err)
 			continue
 		}
 		if string(got) != one.want {
-			t.Errorf("%q reached %q, want %q", one.written, string(got), one.want)
+			t.Errorf("%q reached %q, want %q", one.input, string(got), one.want)
 		}
 	}
 }

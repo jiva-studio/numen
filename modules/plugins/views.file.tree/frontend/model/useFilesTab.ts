@@ -54,7 +54,7 @@ function useFileCreation(
 }
 
 function useFileMoves(list: FileTree, deps: FilesTabDeps) {
-  const move = async (paths: readonly string[], at: DropPosition) => {
+  const move = async (paths: readonly string[], target: DropPosition) => {
     if (paths.length === 0) return
 
     const into = resolveDropFolder(at)

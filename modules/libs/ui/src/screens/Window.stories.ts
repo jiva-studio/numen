@@ -382,8 +382,8 @@ const TURNS: readonly Turn[] = [
 const marks = (title: string, word: string): Span[] => {
   const spans: Span[] = []
   const lower = title.toLowerCase()
-  for (let at = lower.indexOf(word); at >= 0; at = lower.indexOf(word, at + 1)) {
-    spans.push({ from: at, to: at + word.length })
+  for (let pos = lower.indexOf(word); pos >= 0; pos = lower.indexOf(word, pos + 1)) {
+    spans.push({ from: pos, to: pos + word.length })
   }
   return spans
 }
@@ -629,7 +629,7 @@ const screen = ({
     const other = ref(OTHER)
     const activePrompt = ref('')
     const searchQuery = ref(panel === 'search' ? 'entrop' : '')
-    const at = ref(BOOK_FIRST)
+    const page = ref(BOOK_FIRST)
     const currentNeighbourhood = ref(neighbourhood)
 
     const onActivate = (id: string) => {
@@ -661,7 +661,7 @@ const screen = ({
       other,
       asking: activePrompt,
       typed: searchQuery,
-      at,
+      page,
       panel,
       currentNeighbourhood,
       onActivate,
@@ -674,10 +674,10 @@ const screen = ({
       groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
-      picture: (page: number) => renderPage(page),
-      highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
-      go: (page: number) => {
-        at.value = Math.min(Math.max(page, 0), BOOK_LEAVES - 1)
+      picture: (pageIndex: number) => renderPage(pageIndex),
+      highlightsOn: (pageIndex: number) => (pageIndex === BOOK_FIRST ? HIGHLIGHTS : []),
+      go: (targetPage: number) => {
+        page.value = Math.min(Math.max(targetPage, 0), BOOK_LEAVES - 1)
       },
       TURNS,
       TABS,
@@ -736,7 +736,7 @@ const screen = ({
             v-else-if="id === BOOK"
             class="h-full"
             :pages="pages"
-            :at="at"
+            :at="page"
             :picture="picture"
             :highlights="highlightsOn"
             @go="go"

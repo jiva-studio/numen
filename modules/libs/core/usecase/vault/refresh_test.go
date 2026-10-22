@@ -355,7 +355,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 	})
 
 	refresh := vaults.NewRefresh(
-		vanishingReaders{VaultReaders: filesystem.VaultReaders{}, gone: "Note.md"},
+		vanishingReaders{VaultReaders: filesystem.VaultReaders{}, vanishedVal: "Note.md"},
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),

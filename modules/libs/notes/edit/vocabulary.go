@@ -75,9 +75,9 @@ func MapMissingNote(err error) error {
 
 // CheckSize holds a file to the most it may be: its frontmatter and its prose together, as they are
 // about to go to disk. Zero holds it to nothing.
-func CheckSize(path string, size, bound int) error {
-	if bound <= 0 || size <= bound {
+func CheckSize(path string, size, maxSize int) error {
+	if maxSize <= 0 || size <= maxSize {
 		return nil
 	}
-	return fmt.Errorf("write %s: %w: %d bytes, and %d is the most", path, ErrTooLarge, size, bound)
+	return fmt.Errorf("write %s: %w: %d bytes, and %d is the most", path, ErrTooLarge, size, maxSize)
 }

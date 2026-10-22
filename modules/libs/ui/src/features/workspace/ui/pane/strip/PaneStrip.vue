@@ -25,8 +25,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
-  (event: 'lift', tab: TabId, at: PointerEvent): void
-  (event: 'menu', tab: TabId, at: { x: number; y: number }): void
+  (event: 'lift', tab: TabId, pointer: PointerEvent): void
+  (event: 'menu', tab: TabId, pos: { x: number; y: number }): void
 }>()
 
 defineSlots<{
@@ -82,11 +82,11 @@ defineExpose({ reach })
     :data-workspace-strip="pane.id"
   >
     <WorkspaceTab
-      v-for="(tab, at) in pane.tabs"
-      :id="tabName(at)"
+      v-for="(tab, index) in pane.tabs"
+      :id="tabName(index)"
       :ref="(element) => holdTab(tab, element)"
       :key="tab"
-      :aria-controls="panelName(at)"
+      :aria-controls="panelName(index)"
       :tab="tab"
       :title="getTitle(tab)"
       :mark="getMarkOf(tab)"
@@ -96,7 +96,7 @@ defineExpose({ reach })
       @close="emit('close', tab)"
       @menu="emit('menu', tab, $event)"
       @click="emit('choose', tab)"
-      @keydown="(event: KeyboardEvent) => onStripKey(at, event)"
+      @keydown="(event: KeyboardEvent) => onStripKey(index, event)"
     >
       <template v-if="$slots.icon" #icon>
         <slot name="icon" :id="tab" />

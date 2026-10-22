@@ -39,7 +39,7 @@ type acpListing struct {
 // same. A failure keeps nothing, and the agent that failed is left alone for a while.
 type acpModelCache struct {
 	mu       sync.Mutex
-	kept     map[string]acpListing
+	entries  map[string]acpListing
 	failedAt map[string]time.Time
 	// now is the clock the backoff is kept by. Nil is the system clock.
 	now func() time.Time
@@ -58,11 +58,11 @@ func (c *acpModelCache) getNow() time.Time {
 func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
 	key := agent.Program + "\x00" + strings.Join(agent.Command, "\x00")
 	c.mu.Lock()
-	listing, isKept := c.kept[key]
+	listing, ok := c.entries[key]
 	failedAt, hasFailed := c.failedAt[key]
 	isBackingOff := hasFailed && c.getNow().Sub(failedAt) < acpFailureBackoff
 	c.mu.Unlock()
-	if isKept || isBackingOff {
+	if ok || isBackingOff {
 		return listing
 	}
 	listing, err := readACPListing(ctx, agent)
@@ -77,10 +77,10 @@ func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
 		}
 		return acpListing{}
 	}
-	if c.kept == nil {
-		c.kept = make(map[string]acpListing)
+	if c.entries == nil {
+		c.entries = make(map[string]acpListing)
 	}
-	c.kept[key] = listing
+	c.entries[key] = listing
 	delete(c.failedAt, key)
 	return listing
 }

@@ -20,9 +20,9 @@ import {
 
 const today = '2026-08-30'
 
-const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
+const settings = (overrides: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...overrides })
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -34,7 +34,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 describe('where a value relies on a grid', () => {

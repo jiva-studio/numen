@@ -159,9 +159,9 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 // changes, so a setting that moves a card and not the mark is a cache read back
 // under settings it was never worked out for.
 func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
-	stands := review.Defaults()
-	stands.Load = map[time.Weekday]int{time.Saturday: 50}
-	was := stands.GetPlacing()
+	preset := review.Defaults()
+	preset.Load = map[time.Weekday]int{time.Saturday: 50}
+	was := preset.GetPlacing()
 
 	for what, alter := range map[string]func(p *review.Preset){
 		"an even load off":   func(p *review.Preset) { p.IsEvenLoad = false },
@@ -169,8 +169,8 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 		"a Saturday freed":   func(p *review.Preset) { p.Load = nil },
 		"a lighter Saturday": func(p *review.Preset) { p.Load[time.Saturday] = 20 },
 	} {
-		one := stands
-		one.Load = maps.Clone(stands.Load)
+		one := preset
+		one.Load = maps.Clone(preset.Load)
 		alter(&one)
 		if got := one.GetPlacing(); got == was {
 			t.Errorf("with %s a card is placed under %q, the same mark as without it",
@@ -178,8 +178,8 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 		}
 	}
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		one := stands
-		one.Load = maps.Clone(stands.Load)
+		one := preset
+		one.Load = maps.Clone(preset.Load)
 		one.Load[day] = 30
 		if got := one.GetPlacing(); got == was {
 			t.Errorf("a %v at thirty is placed under %q, the same mark as one at the "+

@@ -141,7 +141,7 @@ func parseBlock(lines [][]byte, outBuf []byte, cues []domain.TranscriptCue, cueL
 	return outBuf, cues, cueLens
 }
 
-func findTiming(lines [][]byte) (at int, from, to int, ok bool) {
+func findTiming(lines [][]byte) (index int, from, to int, ok bool) {
 	for i, line := range lines {
 		before, after, found := bytes.Cut(line, []byte(arrow))
 		if !found {

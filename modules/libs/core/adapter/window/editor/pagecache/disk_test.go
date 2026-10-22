@@ -172,8 +172,8 @@ func TestASweepIsDueEachTimeItsShareHasBeenSaved(t *testing.T) {
 	cache.every = 1000
 
 	for _, step := range []struct {
-		size int
-		kept int
+		size      int
+		preserved int
 	}{
 		{1000, 0},
 		{999, 1},
@@ -181,8 +181,8 @@ func TestASweepIsDueEachTimeItsShareHasBeenSaved(t *testing.T) {
 	} {
 		cache.Put(newDrawingID(step.size), make([]byte, step.size))
 		cache.going.Wait()
-		if n := countDrawings(t, cache); n != step.kept {
-			t.Fatalf("after a page of %d bytes the folder holds %d drawings, want %d", step.size, n, step.kept)
+		if n := countDrawings(t, cache); n != step.preserved {
+			t.Fatalf("after a page of %d bytes the folder holds %d drawings, want %d", step.size, n, step.preserved)
 		}
 	}
 	cache.Close()
@@ -221,7 +221,7 @@ func TestASweepDropsWhatWasLookedAtLongestAgo(t *testing.T) {
 func TestTheDiskIsAFolderOfThisMachinesCache(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", "")
 	t.Setenv("HOME", t.TempDir())
-	under, err := os.UserCacheDir()
+	underCtx, err := os.UserCacheDir()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestTheDiskIsAFolderOfThisMachinesCache(t *testing.T) {
 	if cache == nil {
 		t.Fatal("no disk where the machine has a cache folder")
 	}
-	want := filepath.Join(under, "numen", "pages")
+	want := filepath.Join(underCtx, "numen", "pages")
 	if cache.GetDir() != want {
 		t.Errorf("the folder is %s, want %s", cache.GetDir(), want)
 	}

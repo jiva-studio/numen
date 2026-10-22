@@ -110,8 +110,8 @@ function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): bool
 }
 
 /** The control point standing out from a getEdgeAnchor along the run. */
-function getControl(at: Position, vertical: boolean, reach: number): Position {
-  return vertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
+function getControl(point: Position, vertical: boolean, reach: number): Position {
+  return vertical ? { x: point.x, y: point.y + reach } : { x: point.x + reach, y: point.y }
 }
 
 /** The same curve read from its other end. */

@@ -32,7 +32,7 @@ import { ERRORS, type ErrorCode } from '@numen/wire'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 import { WORDS as words } from './words'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -44,7 +44,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 const curve: Curve = {
@@ -89,11 +89,11 @@ type ReadOver = Partial<ReadPreset> & { readonly error?: ErrorCode }
 type WriteOver = { readonly error?: CardsFailure; readonly at?: string }
 
 /** A read built from what the test said of it. */
-const readAs = (base: ReadPreset, over: ReadOver): PresetReadResult =>
-  over.error ? asFailure(over.error) : asValue({ ...base, ...over })
+const readAs = (base: ReadPreset, overrides: ReadOver): PresetReadResult =>
+  over.error ? asFailure(over.error) : asValue({ ...base, ...overrides })
 
 /** A write built from what the test said of it. */
-const writeAs = (over: WriteOver): PresetWriteResult =>
+const writeAs = (overrides: WriteOver): PresetWriteResult =>
   over.error ? asFailure(over.error) : asValue({ at: over.at ?? 'two' })
 
 const openPresetTab = async (

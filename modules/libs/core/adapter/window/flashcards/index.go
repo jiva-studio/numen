@@ -49,7 +49,7 @@ func (r *indexRuns) clear(id domain.VaultID) {
 // window indexes nothing.
 func (r *indexRuns) tryStart(
 	v domain.Vault,
-) (read IndexVault, under context.Context, underway bool, reason string) {
+) (read IndexVault, limit context.Context, underway bool, reason string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.indexed[v.ID] {
@@ -103,12 +103,12 @@ func (a *API) SetVaultIndexer(ctx context.Context, read IndexVault) {
 // from there. One vault is indexed once at a time however many counts ask for it,
 // and an indexing that failed is not begun again until the vault moves.
 func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool, reason string) {
-	read, behind, running, reason := a.indexRuns.tryStart(v)
+	read, item, running, reason := a.indexRuns.tryStart(v)
 	if read == nil {
 		return running, reason
 	}
 	//nolint:contextcheck // a vault is indexed for the life of the window, under behind, not under the count that asked
-	go a.runIndexing(behind, read, v, a.IsVaultIndexed.Execute(ctx, v))
+	go a.runIndexing(item, read, v, a.IsVaultIndexed.Execute(ctx, v))
 	return true, ""
 }
 

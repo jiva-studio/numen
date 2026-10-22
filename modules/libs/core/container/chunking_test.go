@@ -169,11 +169,11 @@ func TestNothingElseAssemblesASplit(t *testing.T) {
 					}
 				}
 			}
-			lit, ok := n.(*ast.CompositeLit)
+			literal, ok := n.(*ast.CompositeLit)
 			if !ok {
 				return true
 			}
-			named, ok := lit.Type.(*ast.SelectorExpr)
+			named, ok := literal.Type.(*ast.SelectorExpr)
 			if !ok {
 				return true
 			}

@@ -28,11 +28,11 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
 }
 
 /** Rows put where a drop target says, in the order they were dragged. */
-const insertRows = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]): readonly Row[] =>
+const insertRows = (rows: readonly Row[], target: RowDropTarget, dragRows: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
-    const below = row.rows ? { ...row, rows: insertRows(row.rows, at, dragRows) } : row
-    if ('before' in at && row.id === at.before) return [...dragRows, below]
-    if ('into' in at && row.id === at.into) {
+    const below = row.rows ? { ...row, rows: insertRows(row.rows, target, dragRows) } : row
+    if ('before' in target && row.id === target.before) return [...dragRows, below]
+    if ('into' in target && row.id === target.into) {
       return [{ ...below, rows: [...(below.rows ?? []), ...dragRows] }]
     }
     return [below]
@@ -231,8 +231,8 @@ const meta: Meta<Knobs> = {
         onSelect: (picked: readonly RowId[]) => {
           selected.value = picked
         },
-        onMove: (dragged: readonly RowId[], at: RowDropTarget) => {
-          rows.value = moveRows(rows.value, dragged, at)
+        onMove: (dragged: readonly RowId[], target: RowDropTarget) => {
+          rows.value = moveRows(rows.value, dragged, target)
         },
         onRemove: (dragged: readonly RowId[]) => {
           rows.value = removeRows(rows.value, dragged)
@@ -326,10 +326,10 @@ const getMiddle = (element: Element) => {
 
 /** A row picked up and let go somewhere, in as many steps as a hand takes. */
 async function dragTo(from: Element, to: { clientX: number; clientY: number }): Promise<void> {
-  const at = getMiddle(from)
+  const start = getMiddle(from)
   await userEvent.pointer([
-    { keys: '[MouseLeft>]', target: from, coords: at },
-    { coords: { clientX: (at.clientX + to.clientX) / 2, clientY: (at.clientY + to.clientY) / 2 } },
+    { keys: '[MouseLeft>]', target: from, coords: start },
+    { coords: { clientX: (start.clientX + to.clientX) / 2, clientY: (start.clientY + to.clientY) / 2 } },
     { coords: to },
     { keys: '[/MouseLeft]' },
   ])
@@ -434,12 +434,12 @@ export const DraggingSeveral: Story = {
   args: { selected: ['notes', 'loose'] },
   play: async ({ canvasElement }) => {
     const from = getRow(canvasElement, 'loose')
-    const at = getMiddle(from)
+    const start = getMiddle(from)
     const to = getMiddle(getRow(canvasElement, 'work'))
 
     await userEvent.pointer([
-      { keys: '[MouseLeft>]', target: from, coords: at },
-      { coords: { clientX: at.clientX, clientY: (at.clientY + to.clientY) / 2 } },
+      { keys: '[MouseLeft>]', target: from, coords: start },
+      { coords: { clientX: start.clientX, clientY: (start.clientY + to.clientY) / 2 } },
       { coords: to },
     ])
 

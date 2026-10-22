@@ -9,7 +9,7 @@ import type { Curve, Point } from '../../types'
 import { WORDS as words } from '../../words'
 import { useCurveSlider, type CurveSliderProps } from './useCurveSlider'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -21,10 +21,10 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
-const curve = (over: Partial<Curve> = {}): Curve => ({
+const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [10, 20, 30, 40],
   days: [],
@@ -41,11 +41,11 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   overdue: 0,
   unbegun: 0,
   isHonest: true,
-  ...over,
+  ...overrides,
 })
 
 /** The control standing at a place of a curve, and everything it emitted. */
-const slider = (over: Partial<CurveSliderProps> = {}) => {
+const slider = (overrides: Partial<CurveSliderProps> = {}) => {
   const emitted: unknown[][] = []
   const props = reactive<CurveSliderProps>({
     curve: curve(),
@@ -53,7 +53,7 @@ const slider = (over: Partial<CurveSliderProps> = {}) => {
     place: 2,
     valueText: '',
     isWaiting: false,
-    ...over,
+    ...overrides,
   })
   const emit = (...args: unknown[]) => void emitted.push(args)
   const state = useCurveSlider(props, emit as unknown as Parameters<typeof useCurveSlider>[1])

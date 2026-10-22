@@ -10,7 +10,7 @@ import {
 import type { CommandTarget } from '@/features/command-palette'
 import type { NoteCreator } from '@/entities/note'
 
-const createWorkspace = (over: Partial<WorkspaceHostDeps> = {}) => {
+const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
   const failure = ref('')
   const deps = {
     window: {
@@ -34,7 +34,7 @@ const createWorkspace = (over: Partial<WorkspaceHostDeps> = {}) => {
     today: () => '2026-09-04',
     runs: { canRun: (run: string) => run !== 'transcribe' },
     vaults: { makes: { value: new Map([['Lecture.mp3', { transcript: 'done' as const }]]) } },
-    ...over,
+    ...overrides,
   } satisfies WorkspaceHostDeps
   return { deps, failure, workspace: createWorkspaceHost(deps) }
 }

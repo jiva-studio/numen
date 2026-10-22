@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { clamp, getDecimalPlaces, roundToPlaces, stepBy, type Bounds } from './bounds'
 
-const bounds = (over: Partial<Bounds> = {}): Bounds => ({ min: 0, max: 100, step: 1, ...over })
+const bounds = (overrides: Partial<Bounds> = {}): Bounds => ({ min: 0, max: 100, step: 1, ...overrides })
 
 describe('the ends of the track', () => {
   it('hold a value standing outside them', () => {

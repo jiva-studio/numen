@@ -372,8 +372,8 @@ type overheard struct {
 	*asked
 	tasks *run.Tasks
 
-	mu   sync.Mutex
-	seen [][]run.Task
+	mu      sync.Mutex
+	visited [][]run.Task
 }
 
 // GetModel is asked at the head of every pass, before a source has been opened.
@@ -391,14 +391,14 @@ func (*overheard) Concurrency() int { return 1 }
 
 func (o *overheard) keep() {
 	o.mu.Lock()
-	o.seen = append(o.seen, o.tasks.List())
+	o.visited = append(o.visited, o.tasks.List())
 	o.mu.Unlock()
 }
 
 func (o *overheard) lists() [][]run.Task {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	return o.seen
+	return o.visited
 }
 
 // The row a person watches for minutes must say what it is on. A pass that

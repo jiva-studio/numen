@@ -30,17 +30,17 @@ func TestThePlaceOfTheGridAValueFallsAt(t *testing.T) {
 	grid := []float64{10, 20, 30, 40}
 	for _, one := range []struct {
 		value float64
-		at    int
+		expectedIndex int
 	}{
-		{value: 9, at: OutsideGrid.Index},
-		{value: 41, at: OutsideGrid.Index},
-		{value: 10, at: 0},
-		{value: 15, at: 0},
-		{value: 24, at: 1},
-		{value: 40, at: 3},
+		{value: 9, expectedIndex: OutsideGrid.Index},
+		{value: 41, expectedIndex: OutsideGrid.Index},
+		{value: 10, expectedIndex: 0},
+		{value: 15, expectedIndex: 0},
+		{value: 24, expectedIndex: 1},
+		{value: 40, expectedIndex: 3},
 	} {
-		if got := findNearest(grid, one.value); got != one.at {
-			t.Errorf("%v falls at place %d of %v, want %d", one.value, got, grid, one.at)
+		if got := findNearest(grid, one.value); got != one.expectedIndex {
+			t.Errorf("%v falls at place %d of %v, want %d", one.value, got, grid, one.expectedIndex)
 		}
 	}
 	if got := findNearest(nil, 10); got != OutsideGrid.Index {

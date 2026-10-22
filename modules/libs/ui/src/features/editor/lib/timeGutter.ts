@@ -33,9 +33,9 @@ const timeGutterField = StateField.define<TimeGutterState>({
 const currentLine = Decoration.line({ class: 'cm-current' })
 
 const currentLineMarks = EditorView.decorations.compute([timeGutterField, 'doc'], (state) => {
-  const at = state.field(timeGutterField).current
-  if (at < 0 || at >= state.doc.lines) return Decoration.none
-  return Decoration.set([currentLine.range(state.doc.line(at + 1).from)])
+  const lineIndex = state.field(timeGutterField).current
+  if (lineIndex < 0 || lineIndex >= state.doc.lines) return Decoration.none
+  return Decoration.set([currentLine.range(state.doc.line(lineIndex + 1).from)])
 })
 
 interface TimeOptions {
@@ -86,10 +86,10 @@ const createTimeGutterExtension = (goToLine: (line: number) => void): Extension 
   gutter({
     class: 'cm-times',
     lineMarker: (view, line) => {
-      const at = view.state.doc.lineAt(line.from).number - 1
+      const lineIndex = view.state.doc.lineAt(line.from).number - 1
       const { times: all, current } = view.state.field(timeGutterField)
-      const text = all[at]
-      return text === undefined ? null : new Time({ text, at, isCurrent: at === current, goToLine })
+      const text = all[lineIndex]
+      return text === undefined ? null : new Time({ text, at: lineIndex, isCurrent: lineIndex === current, goToLine })
     },
     lineMarkerChange: (update) =>
       update.startState.field(timeGutterField) !== update.state.field(timeGutterField),

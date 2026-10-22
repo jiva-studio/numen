@@ -39,11 +39,11 @@ func OrderAnswers(answers []Answer) History { return getActiveAnswers(answers) }
 //
 // The days the answers have already filled are what the next card is placed
 // against.
-func (h History) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
+func (h History) Replay(d Day, assignment Assignment) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
 	on := NewDueByDay(d)
 	for _, a := range h {
-		one := by(a.CardFace)
+		one := assignment(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
 		next.Due = one.Preset.AssignDueDay(on, a.At, next.Due)
 		out[a.CardFace] = next
@@ -69,10 +69,10 @@ type RecallTally struct {
 //
 // It is worked out with the replay: whether a card face was spaced is a thing
 // only the answers before it can say.
-func (h History) GetRetained(by Scheduler, d Day) map[string]RecallTally {
+func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
-	h.walkAnswers(by, func(before Schedule, a Answer) {
-		if !by.IsSpaced(before) {
+	h.walkAnswers(scheduler, func(before Schedule, a Answer) {
+		if !scheduler.IsSpaced(before) {
 			return
 		}
 		day := d.GetName(a.At)

@@ -73,12 +73,12 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 			t.Errorf("the vector under the recipe in use went with the rest: %x", hash)
 		}
 	}
-	under, err := db.ChunkQueries().GetKeptVectors(ctx, before, hashes)
+	limit, err := db.ChunkQueries().GetKeptVectors(ctx, before, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(under) != 0 {
-		t.Errorf("%d vectors of the recipe nobody asks for are still here", len(under))
+	if len(limit) != 0 {
+		t.Errorf("%d vectors of the recipe nobody asks for are still here", len(limit))
 	}
 
 	// run that has no model to say what it is holding vectors for.

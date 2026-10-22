@@ -15,12 +15,12 @@ import (
 // A site that answers with what a test puts in it, and counts what it was asked
 // for: nothing here reaches a network.
 type site struct {
-	title  string
-	length int
-	cues   []domain.TranscriptCue
-	prose  string
-	bytes  []byte
-	asked  []string
+	title     string
+	length    int
+	cues      []domain.TranscriptCue
+	prose     string
+	bytes     []byte
+	requested []string
 	// inOperation records, for each Metadata and Download, whether it ran under an operation.
 	inOperation []bool
 	refusing    error
@@ -36,7 +36,7 @@ func (s *site) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadM
 
 func (s *site) GetMetadata(ctx context.Context, pos domain.URL) (port.Metadata, error) {
 	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
-	s.asked = append(s.asked, "metadata "+string(pos))
+	s.requested = append(s.requested, "metadata "+string(pos))
 	if s.refusing != nil {
 		return port.Metadata{}, s.refusing
 	}
@@ -46,7 +46,7 @@ func (s *site) GetMetadata(ctx context.Context, pos domain.URL) (port.Metadata, 
 func (s *site) GetText(
 	_ context.Context, pos domain.URL, _ port.PreferredCaptions,
 ) (port.Text, error) {
-	s.asked = append(s.asked, "text "+string(pos))
+	s.requested = append(s.requested, "text "+string(pos))
 	if len(s.cues) > 0 {
 		return port.Text{
 			Producer: domain.Captions, Cues: s.cues, Title: s.title, Length: s.length,
@@ -60,7 +60,7 @@ func (s *site) GetText(
 
 func (s *site) Download(ctx context.Context, pos domain.URL, into io.Writer) (port.Copy, error) {
 	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
-	s.asked = append(s.asked, "download "+string(pos))
+	s.requested = append(s.requested, "download "+string(pos))
 	if len(s.bytes) == 0 {
 		return port.Copy{}, port.ErrNothingDownloaded
 	}
@@ -142,12 +142,12 @@ func TestAnAddressAlreadyDownloaded(t *testing.T) {
 	if _, err := u.Execute(t.Context(), first, videoNote, false); err != nil {
 		t.Fatal(err)
 	}
-	request := len(from.asked)
+	request := len(from.requested)
 	if _, err := u.Execute(t.Context(), first, videoNote, false); err != nil {
 		t.Fatal(err)
 	}
-	if len(from.asked) != request {
-		t.Errorf("the address was asked again: %v", from.asked)
+	if len(from.requested) != request {
+		t.Errorf("the address was asked again: %v", from.requested)
 	}
 }
 
@@ -191,8 +191,8 @@ func TestThePagePointedAt(t *testing.T) {
 	if string(raw) != "A measure of disorder." {
 		t.Errorf("the prose reads %q", raw)
 	}
-	if request := strings.Count(strings.Join(from.asked, " "), "text "); request != 1 {
-		t.Errorf("the address was asked for its text %d times: %v", request, from.asked)
+	if request := strings.Count(strings.Join(from.requested, " "), "text "); request != 1 {
+		t.Errorf("the address was asked for its text %d times: %v", request, from.requested)
 	}
 }
 
@@ -292,8 +292,8 @@ func TestACopyAlreadyInTheApplicationsFolder(t *testing.T) {
 	if !got.IsExisted {
 		t.Error("the video was downloaded again over a copy already standing")
 	}
-	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
-		t.Errorf("the site was asked %v", from.asked)
+	if strings.Count(strings.Join(from.requested, "\n"), "download") != 1 {
+		t.Errorf("the site was asked %v", from.requested)
 	}
 	if retained.closeCount() != retained.opens {
 		t.Errorf("checking for an existing copy opened %d files and closed %d", retained.opens, retained.closeCount())
@@ -351,8 +351,8 @@ func TestACopyAlreadyAdjacentTheNote(t *testing.T) {
 	if !got.IsExisted {
 		t.Error("the video was downloaded again over a copy already standing")
 	}
-	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
-		t.Errorf("the site was asked %v", from.asked)
+	if strings.Count(strings.Join(from.requested, "\n"), "download") != 1 {
+		t.Errorf("the site was asked %v", from.requested)
 	}
 }
 

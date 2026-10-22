@@ -121,7 +121,7 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 
 	listening, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	tasks, err := f.drawn.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
+	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
 		Window: wire.Editor,
 	}))
 	if err != nil {

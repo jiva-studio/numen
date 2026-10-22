@@ -85,7 +85,7 @@ type Registry struct {
 }
 
 type registered struct {
-	listed *numenv1.PluginTool
+	tool *numenv1.PluginTool
 	run    func(ctx context.Context, arguments []byte) *numenv1.ToolResult
 }
 
@@ -108,7 +108,7 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 		}
 	}
 	return r.add(registered{
-		listed: &numenv1.PluginTool{
+		tool: &numenv1.PluginTool{
 			Name:         spec.Name,
 			Title:        spec.Title,
 			Description:  spec.Description,
@@ -137,8 +137,8 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 func (r *Registry) add(one registered) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if slices.ContainsFunc(r.tools, func(held registered) bool { return held.listed.GetName() == one.listed.GetName() }) {
-		return fmt.Errorf("%w: %s", ErrDuplicate, one.listed.GetName())
+	if slices.ContainsFunc(r.tools, func(reg registered) bool { return reg.tool.GetName() == one.tool.GetName() }) {
+		return fmt.Errorf("%w: %s", ErrDuplicate, one.tool.GetName())
 	}
 	r.tools = append(r.tools, one)
 	return nil
@@ -157,7 +157,7 @@ func (r *Registry) ListTools(
 	defer r.mu.RUnlock()
 	items := make([]*numenv1.PluginTool, 0, len(r.tools))
 	for _, one := range r.tools {
-		items = append(items, one.listed)
+		items = append(items, one.tool)
 	}
 	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: items}), nil
 }
@@ -168,7 +168,7 @@ func (r *Registry) CallTool(
 	ctx context.Context, req *connect.Request[numenv1.CallToolRequest],
 ) (*connect.Response[numenv1.CallToolResponse], error) {
 	r.mu.RLock()
-	index := slices.IndexFunc(r.tools, func(held registered) bool { return held.listed.GetName() == req.Msg.GetName() })
+	index := slices.IndexFunc(r.tools, func(reg registered) bool { return reg.tool.GetName() == req.Msg.GetName() })
 	var one registered
 	if index >= 0 {
 		one = r.tools[index]

@@ -46,7 +46,7 @@ const MIDDLE = 0.9
  */
 export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
   const grid = createGrid(settings, today, within)
-  const at = grid.map((value) => estimatePoint(settings, value, grid))
+  const points = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = getGoalValue(settings, today)
   const place = findNearest(grid, value)
@@ -55,7 +55,7 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
     goal: settings.goal,
     grid,
     days,
-    at,
+    at: points,
     now,
     suggested: NO_CURVE_POINT,
     decks: 0,

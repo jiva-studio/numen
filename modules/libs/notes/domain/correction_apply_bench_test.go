@@ -18,19 +18,19 @@ func benchRecognition(n, step int) (string, []domain.OCRPageStart, []domain.High
 	var marks []domain.OCRPageStart
 	var parts []domain.OCRPart
 	boxes := make([]domain.HighlightBox, 0, n)
-	at := 0
+	offset := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
-			marks = append(marks, domain.OCRPageStart{Offset: at})
+			marks = append(marks, domain.OCRPageStart{Offset: offset})
 		}
 		if i%10 == 0 {
-			parts = append(parts, domain.OCRPart{Start: at, Length: len(line) * 4, Depth: i / 10 % 3})
+			parts = append(parts, domain.OCRPart{Start: offset, Length: len(line) * 4, Depth: i / 10 % 3})
 		}
 		boxes = append(boxes, domain.HighlightBox{
 			Page:     i / perPage,
-			ByteSpan: domain.ByteSpan{From: at, To: at + len(line)},
+			ByteSpan: domain.ByteSpan{From: offset, To: offset + len(line)},
 		})
-		at += len(line) + 1
+		offset += len(line) + 1
 	}
 	var placed []domain.CorrectionLine
 	for i := 0; i < n; i += step {

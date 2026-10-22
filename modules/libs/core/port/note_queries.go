@@ -69,5 +69,5 @@ type LinkQueries interface {
 	// and keyed by what was written. It answers the question a link is answered
 	// with, asked about text nobody recorded as a link: the wikilink a card
 	// names its stencil by. An address that reaches nothing is absent.
-	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, written []string) (map[string]domain.ResolvedLink, error)
+	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, content []string) (map[string]domain.ResolvedLink, error)
 }

@@ -43,7 +43,7 @@ func newScanArtifact(lines []string) ([]byte, []byte) {
 func newHaltedWorker(
 	t *testing.T,
 	delta port.Proofreader,
-	through int,
+	paths int,
 	lines ...string,
 ) (*watched, domain.Vault, port.DerivedStore, string) {
 	t.Helper()
@@ -71,20 +71,20 @@ func newHaltedWorker(
 	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", hash), boxes); err != nil {
 		t.Fatal(err)
 	}
-	if through == 0 {
+	if paths == 0 {
 		return w, v, store, hash
 	}
 
 	// The shelf as a run that ended among the batches left it: the corrections
 	// it wrote, and the count standing after them.
-	correctionLines := make([]domain.CorrectionLine, 0, through)
-	for item := range through {
+	correctionLines := make([]domain.CorrectionLine, 0, paths)
+	for item := range paths {
 		correctionLines = append(correctionLines, domain.CorrectionLine{Number: item, Text: correctLine(lines[item])})
 	}
 	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), correction.Pack(correctionLines)); err != nil {
 		t.Fatal(err)
 	}
-	status, err := json.Marshal(checkpoint{By: delta.GetName(), Pages: through})
+	status, err := json.Marshal(checkpoint{By: delta.GetName(), Pages: paths})
 	if err != nil {
 		t.Fatal(err)
 	}

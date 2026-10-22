@@ -19,11 +19,11 @@ import {
 
 /** Identities counted out, so a test names the face it means. */
 const createIds = () => {
-  let at = 0
-  return () => `c${(at += 1)}`
+  let count = 0
+  return () => `c${(count += 1)}`
 }
 
-const createTestStencil = (over: Partial<VaultStencil> = {}): VaultStencil => ({
+const createTestStencil = (overrides: Partial<VaultStencil> = {}): VaultStencil => ({
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
@@ -34,10 +34,10 @@ const createTestStencil = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   ],
   tail: '',
   problems: [],
-  ...over,
+  ...overrides,
 })
 
-const stencil = (over: Partial<VaultStencil> = {}): BufferStencil =>
+const stencil = (overrides: Partial<VaultStencil> = {}): BufferStencil =>
   createBufferStencil(createTestStencil(over), createIds())
 
 describe('a stencil as the window holds it', () => {

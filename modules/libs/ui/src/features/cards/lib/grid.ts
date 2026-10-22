@@ -200,10 +200,10 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const isMoved = (runs: readonly Run[], dragCard: string, at: InsertionPoint): boolean => {
-  if (at === dragCard) return false
-  if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragCard
+export const isMoved = (runs: readonly Run[], dragCard: string, target: InsertionPoint): boolean => {
+  if (target === dragCard) return false
+  if (target === HEAD) return runs[0]?.tiles[0]?.id !== dragCard
 
-  const run = getRunEnd(at)
+  const run = getRunEnd(target)
   return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragCard
 }

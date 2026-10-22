@@ -89,7 +89,7 @@ export interface DeckActions {
     section: string | null,
   ): void
   removeCard(card: string): void
-  moveCard(card: string, at: string | null): void
+  moveCard(card: string, target: string | null): void
   writeCardField(card: string, field: string, index: number, text: string): void
   addSection(name: string): void
   renameSection(section: string, name: string): void

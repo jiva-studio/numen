@@ -64,7 +64,7 @@ const heights = (d: string): readonly number[] =>
     .slice(1)
     .map((one) => Number(one.trim().split(' ')[1]))
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -76,10 +76,10 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
-const curve = (over: Partial<Curve> = {}): Curve => ({
+const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [0, 10, 20, 30],
   days: [],
@@ -96,7 +96,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   overdue: 0,
   unbegun: 0,
   isHonest: true,
-  ...over,
+  ...overrides,
 })
 
 /** What an answer counted the material at, and nothing where none has landed. */
@@ -112,7 +112,7 @@ export interface TabFixtureOptions {
 
 /** A tab standing at those settings, and everything it was asked to do. */
 const createTab = (
-  over: Partial<Curve> = {},
+  overrides: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   options: TabFixtureOptions = {},
 ) => {
@@ -145,7 +145,7 @@ const createTab = (
 }
 
 const mountPresetTab = (
-  over: Partial<Curve> = {},
+  overrides: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   options: TabFixtureOptions = {},
 ) => {

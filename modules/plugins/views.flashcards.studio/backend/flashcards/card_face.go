@@ -136,7 +136,7 @@ func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []str
 		misses = append(misses, item)
 	}
 
-	stencils := &stencilMemo{read: cards.NewRead(u.readers, u.links), by: make(map[string]stencilRead)}
+	stencils := &stencilMemo{read: cards.NewRead(u.readers, u.links), stencils: make(map[string]stencilRead)}
 	places := min(max(1, u.Cores), len(misses))
 	var running sync.WaitGroup
 	queue := make(chan int)
@@ -225,7 +225,7 @@ func (u ListCardFaces) parseDeck(
 type stencilMemo struct {
 	read cards.Read
 	mu   sync.Mutex
-	by   map[string]stencilRead
+	stencils map[string]stencilRead
 }
 
 // stencilRead is a stencil as the request read it. A note that is not a stencil
@@ -239,7 +239,7 @@ type stencilRead struct {
 func (m *stencilMemo) get(ctx context.Context, v domain.Vault, path string) stencilRead {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if target, observed := m.by[path]; observed {
+	if target, observed := m.stencils[path]; observed {
 		return target
 	}
 	// A card whose stencil is not one is a card no face shows. It is a problem
@@ -249,7 +249,7 @@ func (m *stencilMemo) get(ctx context.Context, v domain.Vault, path string) sten
 	if err == nil && one.Outcome == note.Ok && one.Type == format.TypeStencil {
 		out = stencilRead{stencil: one.Body, fingerprint: one.Fingerprint, isWhole: true}
 	}
-	m.by[path] = out
+	m.stencils[path] = out
 	return out
 }
 

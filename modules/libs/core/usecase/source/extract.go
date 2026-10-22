@@ -82,12 +82,12 @@ type ExtractResult struct {
 	Seen          int    // sources found in the vault
 	Recorded      int    // new or changed, so owing their text
 	Unchanged     int    // skipped on size and modification time alone
-	Extracted     int    // read, cut and written
+	Extracted     int    // read, chunked and written
 	Chunks        int    // chunks written, of both sizes
 	Unreadable    int    // read, and not a book
 	Removed       int    // held by the index, no longer in the vault
 	Forgotten     int    // read by a model once, and that recognition is gone
-	Vanished      int    // named by the index, gone by the time it was read
+	Vanished      int    // named by the index, vanished by the time it was read
 	CurrentSource string // the source open now
 }
 
@@ -153,12 +153,12 @@ func (u Extract) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
-	known map[domain.SourceKind]map[string]domain.Fingerprint,
+	indexed map[domain.SourceKind]map[string]domain.Fingerprint,
 	res *ExtractResult,
 ) (map[string]bool, error) {
 	found := make(map[string]bool)
 	err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
-		target, ours := known[ref.Kind]
+		target, ours := indexed[ref.Kind]
 		if !ours {
 			return nil
 		}
@@ -183,14 +183,14 @@ func (u Extract) walkAndRecord(
 func (u Extract) removeGone(
 	ctx context.Context,
 	v domain.Vault,
-	known map[domain.SourceKind]map[string]domain.Fingerprint,
+	existing map[domain.SourceKind]map[string]domain.Fingerprint,
 	found map[string]bool,
 	res *ExtractResult,
 	swept *[]port.SourceText,
 ) error {
 	for _, kind := range u.kinds() {
 		removed := make([]string, 0)
-		for path := range known[kind] {
+		for path := range existing[kind] {
 			if !found[path] {
 				removed = append(removed, path)
 			}

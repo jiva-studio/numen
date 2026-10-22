@@ -59,7 +59,7 @@ type Reservation struct {
 
 	file string
 	stop chan struct{}
-	done sync.WaitGroup
+	wg sync.WaitGroup
 	once sync.Once
 }
 

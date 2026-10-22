@@ -122,7 +122,7 @@ func (d *Document) appendKey(node *yaml.Node, rendered []byte) error {
 	if node == nil && len(d.open) == 0 {
 		// A note with no frontmatter grows one.
 		d.open = []byte("---" + d.eol)
-		d.shut = []byte("---" + d.eol)
+		d.closeDelimiter = []byte("---" + d.eol)
 	}
 	return nil
 }
@@ -156,11 +156,11 @@ func (d *Document) indent(node *yaml.Node) string {
 		return ""
 	}
 	lines := lineOffsets(d.front)
-	at := node.Content[0].Line
-	if at < 1 || at >= len(lines) {
+	targetLine := node.Content[0].Line
+	if targetLine < 1 || targetLine >= len(lines) {
 		return ""
 	}
-	return getIndent(string(d.front[lines[at-1]:lines[at]]))
+	return getIndent(string(d.front[lines[targetLine-1]:lines[targetLine]]))
 }
 
 // indentLines is rendered lines written at the indentation the block's keys
@@ -170,16 +170,16 @@ func indentLines(rendered []byte, indent string) []byte {
 		return rendered
 	}
 	out := make([]byte, 0, len(rendered)+4*len(indent))
-	for at := 0; at < len(rendered); {
+	for pos := 0; pos < len(rendered); {
 		end := len(rendered)
-		if next := bytes.IndexByte(rendered[at:], '\n'); next >= 0 {
-			end = at + next + 1
+		if next := bytes.IndexByte(rendered[pos:], '\n'); next >= 0 {
+			end = pos + next + 1
 		}
-		if len(bytes.TrimSpace(rendered[at:end])) > 0 {
+		if len(bytes.TrimSpace(rendered[pos:end])) > 0 {
 			out = append(out, indent...)
 		}
-		out = append(out, rendered[at:end]...)
-		at = end
+		out = append(out, rendered[pos:end]...)
+		pos = end
 	}
 	return out
 }
@@ -194,29 +194,29 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 	if node == nil {
 		return 0, 0, false
 	}
-	at := -1
+	keyIdx := -1
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		if node.Content[i].Value == key {
-			at = i
+			keyIdx = i
 			break
 		}
 	}
-	if at < 0 {
+	if keyIdx < 0 {
 		return 0, 0, false
 	}
 
 	lines := lineOffsets(d.front)
-	keyLine := node.Content[at].Line
+	keyLine := node.Content[keyIdx].Line
 	if keyLine < 1 || keyLine >= len(lines) {
 		return 0, 0, false
 	}
 
-	last := d.endLine(lines, node.Content[at+1], node.Content[at].Column)
+	last := d.endLine(lines, node.Content[keyIdx+1], node.Content[keyIdx].Column)
 	if last < keyLine {
 		last = keyLine
 	}
-	if at+2 < len(node.Content) && last > node.Content[at+2].Line-1 {
-		last = node.Content[at+2].Line - 1
+	if keyIdx+2 < len(node.Content) && last > node.Content[keyIdx+2].Line-1 {
+		last = node.Content[keyIdx+2].Line - 1
 	}
 	if last > len(lines)-1 {
 		last = len(lines) - 1
@@ -262,15 +262,15 @@ func (d *Document) endLineOfSequence(lines []int, node *yaml.Node) int {
 
 func (d *Document) endLineOfScalar(lines []int, node *yaml.Node, column int) int {
 	last := node.Line
-	for at := node.Line + 1; at < len(lines); at++ {
-		text := d.front[lines[at-1]:lines[at]]
+	for lineIdx := node.Line + 1; lineIdx < len(lines); lineIdx++ {
+		text := d.front[lines[lineIdx-1]:lines[lineIdx]]
 		if len(bytes.TrimSpace(text)) == 0 {
 			continue
 		}
 		if len(text)-len(bytes.TrimLeft(text, " \t")) < column {
 			break
 		}
-		last = at
+		last = lineIdx
 	}
 	return last
 }

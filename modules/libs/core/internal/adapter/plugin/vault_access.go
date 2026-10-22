@@ -253,13 +253,13 @@ func (a Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLi
 }
 
 func (a Vault) ResolveLinks(
-	ctx context.Context, from string, written []string,
+	ctx context.Context, from string, targets []string,
 ) (map[string]domain.ResolvedLink, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
 	}
-	return a.Links.ResolveLinks(ctx, v.ID, from, written)
+	return a.Links.ResolveLinks(ctx, v.ID, from, targets)
 }
 
 func (a Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {

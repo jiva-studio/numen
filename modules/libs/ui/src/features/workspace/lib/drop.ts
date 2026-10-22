@@ -34,9 +34,9 @@ export const DEFAULT_DROP: DropOptions = { share: 0.2, limit: 96 }
  * goes to whichever edge it is deeper inside. A place in no zone lands in the
  * middle, and the tab joins the stack.
  */
-export function getSide(at: Position, box: Rect, options: Partial<DropOptions> = {}): Side {
+export function getSide(point: Position, box: Rect, options: Partial<DropOptions> = {}): Side {
   const { share, limit } = { ...DEFAULT_DROP, ...options }
-  const { x, y } = getPlaceInBox(at, box)
+  const { x, y } = getPlaceInBox(point, box)
 
   const acrossZone = Math.min(box.width * share, limit)
   const downZone = Math.min(box.height * share, limit)
@@ -96,17 +96,17 @@ export function getCaretRect(slot: number, tabs: readonly Rect[], strip: Rect): 
   const besideElement = tabs[slot] ?? tabs[tabs.length - 1]
   if (!besideElement) return strip
 
-  const at = slot < tabs.length ? besideElement.x : besideElement.x + besideElement.width
-  return { x: at, y: besideElement.y, width: 0, height: besideElement.height }
+  const caretX = slot < tabs.length ? besideElement.x : besideElement.x + besideElement.width
+  return { x: caretX, y: besideElement.y, width: 0, height: besideElement.height }
 }
 
 /** The outer edge a place is within reach of, and nothing away from every edge. */
-export function findEdgeSide(at: Position, box: Rect, reach: number): Side | null {
+export function findEdgeSide(point: Position, box: Rect, reach: number): Side | null {
   const nearSides: readonly (readonly [Side, number])[] = [
-    ['left', at.x - box.x],
-    ['right', box.x + box.width - at.x],
-    ['top', at.y - box.y],
-    ['bottom', box.y + box.height - at.y],
+    ['left', point.x - box.x],
+    ['right', box.x + box.width - point.x],
+    ['top', point.y - box.y],
+    ['bottom', box.y + box.height - point.y],
   ]
 
   let side: Side | null = null

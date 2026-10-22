@@ -40,11 +40,11 @@ func NewWireSummary(s cards.StencilSummary) *v1.StencilSummary {
 // NewRenameResponse is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func NewRenameResponse(r cards.RenameResult, at *v1.Fingerprint) *v1.RenameStencilFieldResponse {
+func NewRenameResponse(r cards.RenameResult, fingerprint *v1.Fingerprint) *v1.RenameStencilFieldResponse {
 	out := &v1.RenameStencilFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),
-		At:    at,
+		At:    fingerprint,
 	}
 	for _, deck := range r.NotWritten {
 		out.NotWritten = append(out.NotWritten, &v1.UnwrittenDeck{

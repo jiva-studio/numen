@@ -33,15 +33,15 @@ func NewGetPage(readers port.VaultReaders, documents Documents, pages Pages) Get
 // Execute answers while the file at the path is the bytes the key names by size
 // and stamp, and refuses it with ErrChanged otherwise. Several asks for one page
 // draw it once.
-func (u GetPage) Execute(ctx context.Context, v domain.Vault, asked PageKey) ([]byte, error) {
-	reader, mark, err := getFingerprint(ctx, u.readers, v, asked.Document.Path)
+func (u GetPage) Execute(ctx context.Context, v domain.Vault, requested PageKey) ([]byte, error) {
+	reader, mark, err := getFingerprint(ctx, u.readers, v, requested.Document.Path)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkUnchanged(asked.Document, mark); err != nil {
+	if err := checkUnchanged(requested.Document, mark); err != nil {
 		return nil, err
 	}
-	key := PageKey{Document: mark, Page: asked.Page, Width: asked.Width}
+	key := PageKey{Document: mark, Page: requested.Page, Width: requested.Width}
 	return u.pages.GetPage(ctx, key, func() ([]byte, error) {
 		return u.draw(ctx, reader, key)
 	})

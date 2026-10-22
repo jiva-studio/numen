@@ -45,9 +45,9 @@ func noteWith(vocabulary []string, n int) string {
 type asked struct {
 	dims int
 
-	mu    sync.Mutex
-	calls int
-	seen  []string
+	mu      sync.Mutex
+	calls   int
+	visited []string
 }
 
 func (a *asked) GetModel() port.EmbeddingModel {
@@ -57,7 +57,7 @@ func (a *asked) GetModel() port.EmbeddingModel {
 func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	a.mu.Lock()
 	a.calls++
-	a.seen = append(a.seen, texts...)
+	a.visited = append(a.visited, texts...)
 	a.mu.Unlock()
 
 	out := make([][]float32, 0, len(texts))
@@ -79,7 +79,7 @@ func (a *asked) times() int {
 func (a *asked) saw(word string) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	for _, text := range a.seen {
+	for _, text := range a.visited {
 		if strings.Contains(text, word) {
 			return true
 		}
@@ -93,20 +93,20 @@ func (a *asked) saw(word string) bool {
 type sulking struct {
 	*asked
 
-	mu     sync.Mutex
-	left   int
-	turned int
+	mu            sync.Mutex
+	remainingErrs int
+	turned        int
 }
 
 func newSulking(dims, errs int) *sulking {
-	return &sulking{asked: &asked{dims: dims}, left: errs}
+	return &sulking{asked: &asked{dims: dims}, remainingErrs: errs}
 }
 
 func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	s.mu.Lock()
-	refusing := s.left > 0
+	refusing := s.remainingErrs > 0
 	if refusing {
-		s.left--
+		s.remainingErrs--
 		s.turned++
 	}
 	s.mu.Unlock()
@@ -152,16 +152,16 @@ func (w *walking) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return counts{VaultReader: reader, at: w}, nil
+	return counts{VaultReader: reader, posVal: w}, nil
 }
 
 type counts struct {
 	port.VaultReader
-	at *walking
+	posVal *walking
 }
 
 func (r counts) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
-	r.at.walks.Add(1)
+	r.posVal.walks.Add(1)
 	return r.VaultReader.WalkFiles(ctx, fn)
 }
 

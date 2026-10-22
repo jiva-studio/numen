@@ -377,20 +377,20 @@ func (h holdingOpen) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return holdsOpen{VaultReader: reader, at: h}, nil
+	return holdsOpen{VaultReader: reader, posVal: h}, nil
 }
 
 type holdsOpen struct {
 	port.VaultReader
-	at holdingOpen
+	posVal holdingOpen
 }
 
 func (h holdsOpen) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
 	select {
-	case h.at.begun <- struct{}{}:
+	case h.posVal.begun <- struct{}{}:
 	default:
 	}
-	<-h.at.until
+	<-h.posVal.until
 	return h.VaultReader.GetFingerprint(ctx, path)
 }
 

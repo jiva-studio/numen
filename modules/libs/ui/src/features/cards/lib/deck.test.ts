@@ -332,8 +332,8 @@ describe('NO_DECK_PROBLEMS', () => {
   })
 
   it('remains for every caller at once, so nothing can be put into it', () => {
-    const at = NO_DECK_PROBLEMS.at as Map<string, readonly string[]>
-    expect(() => at.set('llama', ['put here by one caller'])).toThrow()
+    const problems = NO_DECK_PROBLEMS.at as Map<string, readonly string[]>
+    expect(() => problems.set('llama', ['put here by one caller'])).toThrow()
     expect(NO_DECK_PROBLEMS.at.size).toBe(0)
 
     const underItem = NO_DECK_PROBLEMS.under as Map<string, ReadonlyMap<string, readonly string[]>>

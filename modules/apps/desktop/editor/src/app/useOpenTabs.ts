@@ -24,12 +24,12 @@ const getTabSource = (tab: OpenTab<'document' | 'recording' | 'book'> | undefine
 export function useOpenTabs({ core, windowTabs }: OpenTabsDeps) {
   /** Returns the ID of the front/active tab. */
   const getActiveTabId = (): string => {
-    const at = windowTabs.handle.front()
-    if (at && at.kind !== AGENT) return at.id
+    const frontTab = windowTabs.handle.front()
+    if (frontTab && frontTab.kind !== AGENT) return frontTab.id
     const nextTabs = [...windowTabs.tabs.value]
       .reverse()
       .find((one) => windowTabs.getTab(one.id)?.kind.kind !== AGENT)
-    return nextTabs?.id ?? at?.id ?? ''
+    return nextTabs?.id ?? frontTab?.id ?? ''
   }
 
   const getOpenTabs = (): OpenTabs => ({

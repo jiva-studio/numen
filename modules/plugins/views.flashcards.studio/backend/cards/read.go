@@ -155,13 +155,13 @@ func getStencilPaths(
 // A name landing on a note that is not a stencil is left out of the stencils
 func (u Read) readStencils(
 	ctx context.Context, v domain.Vault, pos map[string]string,
-) (by map[string]format.Stencil, ordinary map[string]bool, err error) {
+) (stencils map[string]format.Stencil, ordinary map[string]bool, err error) {
 	if len(pos) == 0 {
 		return nil, nil, nil
 	}
 	read := make(map[string]format.Stencil, len(pos))
 	isLoose := make(map[string]bool, len(pos))
-	by = make(map[string]format.Stencil, len(pos))
+	stencils = make(map[string]format.Stencil, len(pos))
 	ordinary = make(map[string]bool, len(pos))
 	for content, path := range pos {
 		target, observed := read[path]
@@ -176,10 +176,10 @@ func (u Read) readStencils(
 			read[path] = target
 			isLoose[path] = found.Outcome == note.Ok && found.Type != format.TypeStencil
 		}
-		by[content] = target
+		stencils[content] = target
 		ordinary[content] = isLoose[path]
 	}
-	return by, ordinary, nil
+	return stencils, ordinary, nil
 }
 
 // getNonStencilProblems returns one problem per card whose wikilink reaches a note that is not
@@ -214,7 +214,7 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 // readNote is the file at a path: what the vault says is there, and the note
 // its bytes parse to once everything that would refuse them has been asked.
 func (u Read) readNote(
-	ctx context.Context, v domain.Vault, path string, bound int64,
+	ctx context.Context, v domain.Vault, path string, maxSize int64,
 ) (domain.Note, domain.Fingerprint, note.ReadOutcome, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -231,7 +231,7 @@ func (u Read) readNote(
 		if ref.Kind != domain.KindNote {
 			return domain.Note{}, ref, note.NotANote, nil
 		}
-		if ref.Size > bound {
+		if ref.Size > maxSize {
 			return domain.Note{}, ref, note.TooLarge, nil
 		}
 	case errors.Is(err, ports.ErrNotANote):

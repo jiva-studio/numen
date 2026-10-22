@@ -102,20 +102,20 @@ const getMiddle = (wrapper: Tree, row: string): number => {
 /** A row pressed and let go, with whatever was held down as it was. */
 const press = async (wrapper: Tree, row: string, overrides: MouseEventInit = {}): Promise<void> => {
   const on = getRow(wrapper, row)
-  const at = getMiddle(wrapper, row)
+  const pos = getMiddle(wrapper, row)
 
-  pointer('pointerdown', at, on.element, overrides)
-  pointer('pointerup', at)
+  pointer('pointerdown', pos, on.element, overrides)
+  pointer('pointerup', pos)
   await on.trigger('click', overrides)
 }
 
 /** A row picked up and let go at a height, in as many steps as a hand takes. */
 const dragTo = async (wrapper: Tree, row: string, y: number): Promise<void> => {
   const from = getRow(wrapper, row).element
-  const at = getMiddle(wrapper, row)
+  const start = getMiddle(wrapper, row)
 
-  pointer('pointerdown', at, from)
-  pointer('pointermove', (at + y) / 2)
+  pointer('pointerdown', start, from)
+  pointer('pointermove', (start + y) / 2)
   pointer('pointermove', y)
   pointer('pointerup', y)
   await wrapper.vm.$nextTick()

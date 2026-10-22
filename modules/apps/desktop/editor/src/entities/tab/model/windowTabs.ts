@@ -323,7 +323,7 @@ function createTabNavigation(
    * The tab of a kind the person was last in, put in front and moved to the
    * path; a tab of it opened there where the window holds none.
    */
-  const navigateTab = async (kind: string, at: string): Promise<string> => {
+  const navigateTab = async (kind: string, targetPath: string): Promise<string> => {
     const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
     if (!last) return openers.openTabOfKind(kind, at)
     const [id, one] = last

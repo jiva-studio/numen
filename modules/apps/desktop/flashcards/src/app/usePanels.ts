@@ -36,7 +36,7 @@ export const usePanels = (deps: PanelsDeps) => {
   const showing = ref<'reading' | 'here' | 'asking'>('here')
 
   /** The same thing in the words the strip stands the three in. */
-  const at = computed<PanelPlace>(() => {
+  const panelPlace = computed<PanelPlace>(() => {
     if (showing.value === 'reading') return 'before'
     if (showing.value === 'asking') return 'after'
     return 'here'

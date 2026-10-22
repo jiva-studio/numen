@@ -13,7 +13,7 @@ type fakeEngine struct{ at string }
 
 func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	var r Runtime[*fakeEngine]
-	_, _, err := r.Open(t.Context(), "", func(at string) (*fakeEngine, error) {
+	_, _, err := r.Open(t.Context(), "", func(libPath string) (*fakeEngine, error) {
 		t.Fatal("load ran with no library")
 		return nil, nil
 	})
@@ -29,8 +29,8 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	var loads atomic.Int32
 	var received []string
-	r.Register(func(at string) { received = append(received, at) })
-	load := func(at string) (*fakeEngine, error) {
+	r.Register(func(libPath string) { received = append(received, libPath) })
+	load := func(libPath string) (*fakeEngine, error) {
 		loads.Add(1)
 		return &fakeEngine{at: at}, nil
 	}
@@ -49,7 +49,7 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	if len(received) != 1 || received[0] != "/lib/one.so" {
 		t.Errorf("hooks heard %v, want [/lib/one.so]", received)
 	}
-	if engine, at := r.GetLoaded(); engine != first || at != "/lib/one.so" {
+	if engine, loadedPath := r.GetLoaded(); engine != first || loadedPath != "/lib/one.so" {
 		t.Errorf("GetLoaded() = %v, %q", engine, at)
 	}
 	if !r.IsAvailable("") {
@@ -65,10 +65,10 @@ func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 	}); !errors.Is(err, broken) {
 		t.Fatalf("Open() = %v, want %v", err, broken)
 	}
-	if engine, at := r.GetLoaded(); engine != nil || at != "" {
+	if engine, loadedPath := r.GetLoaded(); engine != nil || loadedPath != "" {
 		t.Fatalf("GetLoaded() = %v, %q after a failed load", engine, at)
 	}
-	engine, _, err := r.Open(t.Context(), "/lib/one.so", func(at string) (*fakeEngine, error) {
+	engine, _, err := r.Open(t.Context(), "/lib/one.so", func(libPath string) (*fakeEngine, error) {
 		return &fakeEngine{at: at}, nil
 	})
 	if err != nil || engine == nil {
@@ -81,7 +81,7 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	var loads atomic.Int32
-	load := func(at string) (*fakeEngine, error) {
+	load := func(libPath string) (*fakeEngine, error) {
 		loads.Add(1)
 		close(entered)
 		<-release
@@ -117,14 +117,14 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 
 func TestALibraryIsAvailableWhereTheFileIs(t *testing.T) {
 	var r Runtime[*fakeEngine]
-	at := filepath.Join(t.TempDir(), "libonnxruntime.so")
-	if r.IsAvailable(at) {
+	libPath := filepath.Join(t.TempDir(), "libonnxruntime.so")
+	if r.IsAvailable(libPath) {
 		t.Error("a missing file is available")
 	}
-	if err := os.WriteFile(at, nil, 0o644); err != nil {
+	if err := os.WriteFile(libPath, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !r.IsAvailable(at) {
+	if !r.IsAvailable(libPath) {
 		t.Error("a file that is there is not available")
 	}
 }

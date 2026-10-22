@@ -121,8 +121,8 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
 
   /** The same, carried to where the file was filed instead. */
   const moveFile = (from: string, to: string): void => {
-    const by = scheduled.value.get(from)
-    if (by) scheduled.value.set(to, by)
+    const preset = scheduled.value.get(from)
+    if (preset) scheduled.value.set(to, preset)
     scheduled.value.delete(from)
   }
 

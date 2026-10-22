@@ -7,7 +7,7 @@ import type { VaultCardsDue } from '@/entities/vault'
 import { getDueByVault, getVaultRows } from './rows'
 import { VAULTS_WORDS } from '../words'
 
-const vault = (over: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
+const vault = (overrides: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Roots',
   path: '/vaults/Roots',
@@ -19,7 +19,7 @@ const vault = (over: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   presets: [],
   unread: '',
   isIndexing: false,
-  ...over,
+  ...overrides,
 })
 
 describe('a vault as a row', () => {

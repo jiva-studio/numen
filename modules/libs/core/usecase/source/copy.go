@@ -41,7 +41,7 @@ func (r CopyResult) IsTooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit 
 //
 // The progress function, where given, is told how much of the copy has arrived out of how much the site declared.
 func (u ImportURL) Copy(
-	ctx context.Context, v domain.Vault, path string, progress func(done, total int64),
+	ctx context.Context, v domain.Vault, path string, progress func(finished, total int64),
 ) (CopyResult, error) {
 	res := CopyResult{Path: path, Limit: u.CopyMaxSize}
 	pos, _, store, err := u.readURLFile(ctx, v, path)
@@ -126,23 +126,23 @@ func CopyBeside(path string) string {
 
 // landing is where the copy is, as the vault names it, and nothing where it is
 // in the application's own folder.
-func (u ImportURL) landing(beside string) string {
+func (u ImportURL) landing(copyPath string) string {
 	if !u.IsToVault {
 		return ""
 	}
-	return beside
+	return copyPath
 }
 
 // getExistingCopy says whether a copy is already here, and how large.
 func (u ImportURL) getExistingCopy(
-	ctx context.Context, v domain.Vault, store port.DerivedStore, hash, beside string,
+	ctx context.Context, v domain.Vault, store port.DerivedStore, hash, copyPath string,
 ) (int64, bool, error) {
 	if u.IsToVault {
 		reader, err := u.Readers.Open(v)
 		if err != nil {
 			return 0, false, err
 		}
-		ref, err := reader.GetFingerprint(ctx, beside)
+		ref, err := reader.GetFingerprint(ctx, copyPath)
 		if errors.Is(err, fs.ErrNotExist) {
 			return 0, false, nil
 		}
@@ -168,7 +168,7 @@ func (u ImportURL) getExistingCopy(
 // A copy in the vault is the person's file: the application does not replace
 // one that is there, and putting the folders above it right is the writer's.
 func (u ImportURL) writeCopy(
-	ctx context.Context, v domain.Vault, store port.DerivedStore, name domain.ArtifactName, beside string, from io.Reader,
+	ctx context.Context, v domain.Vault, store port.DerivedStore, name domain.ArtifactName, adjacent string, from io.Reader,
 ) (int64, error) {
 	if !u.IsToVault {
 		return store.WriteArtifactStream(ctx, name, from)
@@ -178,7 +178,7 @@ func (u ImportURL) writeCopy(
 		return 0, err
 	}
 	counted := &passing{from: from}
-	if err := writer.Import(ctx, beside, counted); err != nil {
+	if err := writer.Import(ctx, adjacent, counted); err != nil {
 		return 0, err
 	}
 	return counted.read, nil

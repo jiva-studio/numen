@@ -136,7 +136,7 @@ func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 
 	// More changed at once than the watch could follow, which is answered by
 	// reading the vault again.
-	watcher.lost <- struct{}{}
+	watcher.lostChan <- struct{}{}
 	select {
 	case m := <-changesCh:
 		t.Fatalf("the vault was read again beside the first walk: %+v", m)
@@ -172,16 +172,16 @@ func receiveFrom[T any](t *testing.T, from <-chan T, what string) T {
 // makeWatcher is a watcher whose events a test sends itself, so what happens
 // when a vault changes can be asked without a filesystem or a timer.
 func makeWatcher() *waves {
-	return &waves{changes: make(chan []string), lost: make(chan struct{}, 1)}
+	return &waves{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
 
 type waves struct {
-	changes chan []string
-	lost    chan struct{}
+	changes  chan []string
+	lostChan chan struct{}
 }
 
 func (w *waves) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
-	return w.changes, w.lost, nil
+	return w.changes, w.lostChan, nil
 }
 
 // makeStagedReaders is readers whose first walk holds every note it has read,
@@ -210,13 +210,13 @@ func (s *staged) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return stagedRead{VaultReader: reader, at: s, isHolding: s.walks.Add(1) == 1}, nil
+	return stagedRead{VaultReader: reader, targetPath: s, isHolding: s.walks.Add(1) == 1}, nil
 }
 
 type stagedRead struct {
 	port.VaultReader
-	at        *staged
-	isHolding bool
+	targetPath *staged
+	isHolding  bool
 }
 
 func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
@@ -225,11 +225,11 @@ func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
 		return raw, err
 	}
 	select {
-	case r.at.read <- path:
+	case r.targetPath.read <- path:
 	default:
 	}
 	select {
-	case <-r.at.first:
+	case <-r.targetPath.first:
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -292,22 +292,22 @@ func (g *gate) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return gating{VaultReader: reader, at: g}, nil
+	return gating{VaultReader: reader, targetPath: g}, nil
 }
 
 type gating struct {
 	port.VaultReader
-	at *gate
+	targetPath *gate
 }
 
 func (r gating) Read(ctx context.Context, path string) ([]byte, error) {
 	raw, err := r.VaultReader.Read(ctx, path)
 	select {
-	case r.at.begun <- path:
+	case r.targetPath.begun <- path:
 	default:
 	}
 	select {
-	case <-r.at.getWaiting():
+	case <-r.targetPath.getWaiting():
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}

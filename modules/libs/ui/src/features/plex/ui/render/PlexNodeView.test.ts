@@ -221,8 +221,8 @@ describe('the handle', () => {
   })
 
   it('positions at trailing edge vertical center', async () => {
-    const at = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
-    expect(at.attributes('transform')).toBe('translate(72 0)')
+    const handle = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
+    expect(handle.attributes('transform')).toBe('translate(72 0)')
   })
 })
 
@@ -491,13 +491,13 @@ describe('the headings a node hangs', () => {
       level: 1,
     }))
 
-  const mountInside = (items: readonly PlexHeading[], wide: WideBox | null = null) => {
+  const mountInside = (items: readonly PlexHeading[], expanded: WideBox | null = null) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(),
-        wide,
+        wide: expanded,
         hung: getNodeHeadings(createNode(), items, {
           options: SIZES,
           deps: {
@@ -577,7 +577,7 @@ describe('the headings a node hangs', () => {
     await wheel(-1)
     expect(node.findAll('.plex__heading')[0]!.text()).toBe('Heading 0')
 
-    for (let at = 0; at < 5; at++) await wheel(1)
+    for (let step = 0; step < 5; step++) await wheel(1)
     expect(node.findAll('.plex__heading').at(-1)!.text()).toBe(`Heading ${MOST}`)
   })
 

@@ -41,7 +41,7 @@ type showing struct {
 	client questions
 	// drawn is the window itself, which the drain that holds it back is asked
 	// of.
-	drawn        numenv1connect.WindowServiceClient
+	canvas       numenv1connect.WindowServiceClient
 	installation *editor.Installation
 	cfg          container.Config
 	first        domain.Vault
@@ -82,7 +82,7 @@ func openTwoVaults(t *testing.T) *showing {
 
 	f := &showing{
 		client:       newQuestionsClient(server.Client(), server.URL),
-		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
+		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
 		cfg:          cfg,
 		first:        first,
@@ -183,7 +183,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 
 	// And the question is the window's, so another window's name reaches
 	// nothing here.
-	_, err := f.drawn.GetCurrentVault(t.Context(),
+	_, err := f.canvas.GetCurrentVault(t.Context(),
 		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Review}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("err = %v, want the question about another window turned away", err)
@@ -194,7 +194,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 
-	out, err := f.drawn.GetCurrentVault(t.Context(),
+	out, err := f.canvas.GetCurrentVault(t.Context(),
 		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: window}))
 	if err != nil {
 		t.Fatal(err)
@@ -414,7 +414,7 @@ func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.Wat
 	t.Helper()
 
 	listening, hangUp := context.WithCancel(t.Context())
-	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{
+	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{
 		Window: wire.Editor,
 	}))
 	if err != nil {
@@ -473,7 +473,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_ASKING,
@@ -522,7 +522,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			}
 			close(signalCh)
 			<-release
-			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_NOTHING,

@@ -66,18 +66,18 @@ export interface SessionDeps {
 
 function useSessionCards() {
   const request = shallowRef<readonly CardFace[]>([])
-  const at = ref(0)
+  const cardIndex = ref(0)
   const isAnswerShown = ref(false)
   const answers = ref<string[]>([])
 
-  const card = computed<CardFace | null>(() => request.value[at.value] ?? null)
-  const remaining = computed(() => request.value.length - at.value)
+  const card = computed<CardFace | null>(() => request.value[cardIndex.value] ?? null)
+  const remaining = computed(() => request.value.length - cardIndex.value)
   const isOver = computed(() => card.value === null)
   const isDone = computed(() => answers.value.length)
 
   const reset = () => {
     request.value = []
-    at.value = 0
+    cardIndex.value = 0
     isAnswerShown.value = false
     answers.value = []
   }
@@ -181,7 +181,7 @@ function useAnswerActions(deps: {
     } finally {
       deps.writing.value = false
     }
-    deps.cards.at.value += 1
+    deps.cards.cardIndex.value += 1
     deps.cards.shown.value = false
     deps.setPut(deps.now())
   }
@@ -203,7 +203,7 @@ function useAnswerActions(deps: {
       deps.writing.value = false
     }
     deps.cards.answers.value.pop()
-    deps.cards.at.value = Math.max(0, deps.cards.at.value - 1)
+    deps.cards.cardIndex.value = Math.max(0, deps.cards.cardIndex.value - 1)
     deps.cards.shown.value = true
     deps.setPut(deps.now())
   }
@@ -236,7 +236,7 @@ function useSessionOpener(deps: {
     deps.vault.value = id
     deps.run.value = startedSession.run
     deps.cards.asked.value = startedSession.cards
-    deps.cards.at.value = 0
+    deps.cards.cardIndex.value = 0
     deps.cards.shown.value = false
     deps.cards.answers.value = []
     deps.setPut(deps.now())

@@ -10,11 +10,11 @@ import { isChord, findChordCommand, findChordKeys, createRowKeys, CHORDS } from 
 import { createCommands } from './commands'
 import { WORDS as words } from '@/shared/words'
 
-const createKeyEvent = (over: Partial<KeyboardEventInit> = {}) => ({
+const createKeyEvent = (overrides: Partial<KeyboardEventInit> = {}) => ({
   altKey: false,
   ctrlKey: false,
   metaKey: false,
-  ...over,
+  ...overrides,
 })
 
 describe('a keystroke the window answers', () => {

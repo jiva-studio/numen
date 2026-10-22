@@ -44,10 +44,10 @@ export function createMarks(runs: readonly Run[], origin: number): Mark[] {
 }
 
 /** The run an offset falls in: the last one beginning at or before it. */
-export function findRun(runs: readonly Run[], at: number): Run | undefined {
+export function findRun(runs: readonly Run[], offset: number): Run | undefined {
   let found: Run | undefined
   for (const run of runs) {
-    if (run.at > at) break
+    if (run.at > offset) break
     found = run
   }
   return found

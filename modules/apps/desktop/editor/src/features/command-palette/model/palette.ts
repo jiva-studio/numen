@@ -122,15 +122,15 @@ interface PaletteCommandsDeps {
   readonly runs: RunSupport
   readonly open: Ref<boolean>
   readonly words: Words
-  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   readonly steps: ReturnType<typeof createPaletteSteps>
 }
 
 function createPaletteCommands(deps: PaletteCommandsDeps) {
-  const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
+  const startCommand = (id: string, target: CommandTarget): CommandInvocation | null => {
     const command = deps.byId.get(id)
     if (!command || !command.isOffered(over, deps.runs)) return null
-    if (!command.needs) return deps.invocation(command.id, over)
+    if (!command.needs) return deps.invocation(command.id, target)
     if (!deps.open.value) {
       deps.steps.reset()
       deps.open.value = true
@@ -139,7 +139,7 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
     return null
   }
 
-  const getObjection = (id: string, over: CommandTarget): string => {
+  const getObjection = (id: string, target: CommandTarget): string => {
     const command = deps.byId.get(id)
     if (!command || command.isOffered(over, deps.runs)) return ''
     return over.isReady ? deps.words.noNote : deps.words.noVault
@@ -202,7 +202,7 @@ function createPaletteState(wait?: Wait) {
 function createPaletteStepsAndSearch(
   deps: CommandPaletteDeps,
   state: ReturnType<typeof createPaletteState>,
-  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation,
+  invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation,
 ) {
   const loadVaults = createVaultsLoader({
     core: deps.core,
@@ -263,7 +263,7 @@ function createPaletteExecution(options: {
   runs: RunSupport
   open: Ref<boolean>
   words: Words
-  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   steps: ReturnType<typeof createPaletteSteps>
   draws: ReturnType<typeof getPaletteView>
   found: ShallowRef<readonly NameMatch[]>
@@ -301,7 +301,7 @@ function createPalettePresentation(
   context: {
     steps: ReturnType<typeof createPaletteSteps>
     on: ComputedRef<CommandTarget>
-    invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+    invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   },
 ) {
   const { steps, on, invocation } = context
@@ -355,7 +355,7 @@ export function useCommandPalette(
   const state = createPaletteState(deps.wait)
   const on = computed<CommandTarget>(() => deps.at())
 
-  const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
+  const invocation = (id: string, target: CommandTarget, name = ''): CommandInvocation =>
     createInvocation(id, over, name, over.path ? deps.knows.getTabAt(over.path) : null)
 
   const { steps, previewItem, setOpen, setTyped } = createPaletteStepsAndSearch(

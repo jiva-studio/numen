@@ -25,10 +25,10 @@ withDefaults(
 )
 
 const emit = defineEmits<{
-  (event: 'lift', at: PointerEvent): void
+  (event: 'lift', pointer: PointerEvent): void
   (event: 'close'): void
   /** A menu asked for on the tab, and where on the screen. */
-  (event: 'menu', at: { x: number; y: number }): void
+  (event: 'menu', pos: { x: number; y: number }): void
 }>()
 
 defineSlots<{

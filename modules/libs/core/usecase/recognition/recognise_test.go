@@ -485,13 +485,13 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var without []string
+	var override []string
 	for _, line := range strings.SplitAfter(string(target), "\n") {
 		if !strings.HasPrefix(line, resumeMark) {
-			without = append(without, line)
+			override = append(override, line)
 		}
 	}
-	if err := shelf.WriteArtifact(t.Context(), partial, []byte(strings.Join(without, ""))); err != nil {
+	if err := shelf.WriteArtifact(t.Context(), partial, []byte(strings.Join(override, ""))); err != nil {
 		t.Fatal(err)
 	}
 

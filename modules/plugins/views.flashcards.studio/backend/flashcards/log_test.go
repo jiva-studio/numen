@@ -307,14 +307,14 @@ func (b *brimming) Open(v domain.Vault) (ports.DerivedStore, error) {
 
 type filling struct {
 	ports.DerivedStore
-	asked int
+	callCount int
 }
 
 var errNoRoom = errors.New("no room left on the disk")
 
 func (f *filling) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
-	f.asked++
-	if f.asked > 1 {
+	f.callCount++
+	if f.callCount > 1 {
 		return errNoRoom
 	}
 	return f.DerivedStore.AppendArtifact(ctx, name, content)

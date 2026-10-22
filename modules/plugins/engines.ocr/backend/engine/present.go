@@ -9,25 +9,25 @@ import (
 
 // IsFetched says whether one recogniser model file is on this machine, by the
 // same rule model() finds it.
-func IsFetched(cfg Config, held RecogniserModel) bool {
-	if held.Path != "" {
-		return isPresent(held.Path)
+func IsFetched(cfg Config, model RecogniserModel) bool {
+	if model.Path != "" {
+		return isPresent(model.Path)
 	}
-	if held.Name == "" {
+	if model.Name == "" {
 		return false
 	}
-	if _, ok := models.FindLocal(cfg.source(), pinnedSums, held.Name); ok {
+	if _, ok := models.FindLocal(cfg.source(), pinnedSums, model.Name); ok {
 		return true
 	}
-	if !models.IsAddress(held.Name) {
+	if !models.IsAddress(model.Name) {
 		return false
 	}
 	dir, err := cfg.folder().GetDir()
 	if err != nil {
 		return false
 	}
-	sum := pinnedSums.GetSum(held.Name)
-	pos := filepath.Join(dir, models.GetCacheName(held.Name, sum))
+	sum := pinnedSums.GetSum(model.Name)
+	pos := filepath.Join(dir, models.GetCacheName(model.Name, sum))
 	if !isPresent(pos) {
 		return false
 	}

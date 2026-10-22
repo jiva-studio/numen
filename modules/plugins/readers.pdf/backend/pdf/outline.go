@@ -27,7 +27,7 @@ const (
 // starts is where each page's text begins, so an entry pointing past the pages
 // that were read is empty and is dropped.
 func (d *document) outline(starts []int) []Part {
-	w := &outlineWalk{doc: d, starts: starts, seen: map[references.FPDF_BOOKMARK]bool{}}
+	w := &outlineWalk{doc: d, starts: starts, bookmarks: map[references.FPDF_BOOKMARK]bool{}}
 	w.walk(nil, 1)
 	return w.parts
 }
@@ -35,10 +35,10 @@ func (d *document) outline(starts []int) []Part {
 // outlineWalk is the reading of an outline: the parts found, and the entries
 // already read.
 type outlineWalk struct {
-	doc    *document
-	starts []int
-	parts  []Part
-	seen   map[references.FPDF_BOOKMARK]bool
+	doc       *document
+	starts    []int
+	parts     []Part
+	bookmarks map[references.FPDF_BOOKMARK]bool
 }
 
 // walk reads the children of a bookmark, each with what lies under it, down to
@@ -76,11 +76,11 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 // goes on. An outline that points back at itself is read once.
 func (w *outlineWalk) visit(pos *references.FPDF_BOOKMARK, level int) bool {
 	// gomutants:disable-next-line EXPRESSION_REMOVE reason="visit drops seen bookmarks to prevent cycles and respects mostEntries limit"
-	if len(w.parts) >= mostEntries || w.seen[*pos] {
+	if len(w.parts) >= mostEntries || w.bookmarks[*pos] {
 		return false
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="marks bookmark as seen to prevent cycles"
-	w.seen[*pos] = true
+	w.bookmarks[*pos] = true
 
 	if part, ok := w.doc.readPart(*pos, level, w.starts); ok {
 		w.parts = append(w.parts, part)

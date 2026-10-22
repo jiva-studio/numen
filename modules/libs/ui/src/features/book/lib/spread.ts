@@ -184,10 +184,10 @@ export function inFront(marks: readonly Mark[], flow: Flow, spread: number): num
 }
 
 /** Finds the spread index containing or preceding the given byte offset. */
-export function findSpreadAt(marks: readonly Mark[], flow: Flow, at: number): number {
+export function findSpreadAt(marks: readonly Mark[], flow: Flow, offset: number): number {
   let found: Mark | undefined
   for (const mark of marks) {
-    if (mark.at > at) break
+    if (mark.at > offset) break
     found = mark
   }
   return found ? getSpread(flow, found.x) : 0

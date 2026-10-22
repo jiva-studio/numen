@@ -21,7 +21,7 @@ import {
 import { BACKLOG_PLOT_HEIGHT, PLOT_HEIGHT, PLOT_WIDTH } from '../lib/plot'
 import { WORDS as words } from '../words'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -33,14 +33,14 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 /**
  * A curve of four places, the backlog running down over a fortnight. The grid
  * is what the knob walks, and the run under each place is what the backlog draws.
  */
-const curve = (over: Partial<Curve> = {}): Curve => ({
+const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [0, 10, 20, 30],
   days: [],
@@ -57,7 +57,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   overdue: 120,
   unbegun: 40,
   isHonest: true,
-  ...over,
+  ...overrides,
 })
 
 const MATERIAL: PresetCounts = { decks: 3, cards: 400, overdue: 120, unbegun: 40 }
@@ -423,7 +423,7 @@ export const TheKnobFollowsThePointer: Story = {
     // pointer leaves the knob.
     expect(picture.getScreenCTM?.()).not.toBeNull()
 
-    const at = (share: number) => ({
+    const coords = (share: number) => ({
       clientX: box.left + box.width * share,
       clientY: box.top + box.height / 2,
       pointerId: 1,
@@ -432,9 +432,9 @@ export const TheKnobFollowsThePointer: Story = {
       cancelable: true,
     })
 
-    picture.dispatchEvent(new PointerEvent('pointerdown', { ...at(0.1), button: 0 }))
-    picture.dispatchEvent(new PointerEvent('pointermove', at(0.9)))
-    picture.dispatchEvent(new PointerEvent('pointerup', at(0.9)))
+    picture.dispatchEvent(new PointerEvent('pointerdown', { ...coords(0.1), button: 0 }))
+    picture.dispatchEvent(new PointerEvent('pointermove', coords(0.9)))
+    picture.dispatchEvent(new PointerEvent('pointerup', coords(0.9)))
 
     await waitFor(() => expect(picture.getAttribute('aria-valuenow')).not.toBe(was))
   },

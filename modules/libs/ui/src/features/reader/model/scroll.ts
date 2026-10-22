@@ -46,11 +46,11 @@ function followPointer(element: HTMLElement | null, event: PointerEvent): void {
 
 function applyWheelScroll(area: HTMLElement, event: WheelEvent): boolean {
   const hasBelow = area.scrollHeight > area.clientHeight
-  const by = getWheelOffset({ x: event.deltaX, y: event.deltaY }, hasBelow)
-  if (by.x === 0 && by.y === 0) return false
+  const delta = getWheelOffset({ x: event.deltaX, y: event.deltaY }, hasBelow)
+  if (delta.x === 0 && delta.y === 0) return false
   event.preventDefault()
-  area.scrollLeft += by.x
-  area.scrollTop += by.y
+  area.scrollLeft += delta.x
+  area.scrollTop += delta.y
   return true
 }
 

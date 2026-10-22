@@ -25,11 +25,11 @@ const embedRoute = "embed"
 // It carries the address the note points at. Which player that address is
 // played by is the domain's to say, and a host learned about later is played
 // here without this route learning anything.
-func (l *Loopback) Embed(at domain.URL) string {
-	if l == nil || l.stopped.Load() || getPlayerURL(at) == "" {
+func (l *Loopback) Embed(targetURL domain.URL) string {
+	if l == nil || l.stopped.Load() || getPlayerURL(targetURL) == "" {
 		return ""
 	}
-	return l.address + "/" + l.token + "/" + embedRoute + "/" + url.PathEscape(string(at))
+	return l.address + "/" + l.token + "/" + embedRoute + "/" + url.PathEscape(string(targetURL))
 }
 
 // player is the page that holds one player.

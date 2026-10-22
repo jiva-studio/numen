@@ -90,8 +90,8 @@ export interface Command {
   /** The group it is offered in. */
   readonly group: CommandGroup
   /** Whether it is offered at all over what is in front, in this window. */
-  isOffered(at: CommandTarget, runs: RunSupport): boolean
-  getFieldText?(at: CommandTarget): string
+  isOffered(target: CommandTarget, runs: RunSupport): boolean
+  getFieldText?(target: CommandTarget): string
   /** What its step says, where that step confirms or asks for the name back. */
   readonly answers?: ConfirmWords
   readonly warns?: RetypeWords

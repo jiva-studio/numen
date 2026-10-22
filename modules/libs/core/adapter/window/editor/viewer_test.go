@@ -327,7 +327,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 // Invalid page indices and widths return error status.
 func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 	for _, one := range []struct {
-		at         string
+		posVal     string
 		widthQuery string
 		want       int
 	}{
@@ -339,7 +339,7 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 		{"0", "?wide=0", http.StatusBadRequest},
 		{"0", "?wide=99999", http.StatusBadRequest},
 	} {
-		request := one.at + one.widthQuery
+		request := one.posVal + one.widthQuery
 		t.Run(request, func(t *testing.T) {
 			api, handler := openViewerWindow(t, sheets(4))
 			stopReadAhead(api)

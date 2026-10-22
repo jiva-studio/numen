@@ -621,7 +621,7 @@ describe('the runs over the file in front', () => {
   // The window can ask what a book carries, so a book already read is not
   // offered to be read again.
   it('offers a scan to be recognised only where nothing has read it', () => {
-    for (const [made, offered] of [
+    for (const [made, isOffered] of [
       ['none', true],
       ['stopped', true],
       ['queued', false],
@@ -633,7 +633,7 @@ describe('the runs over the file in front', () => {
       const { commands } = createPalette({ ...scanned, made: { ocr: made } })
 
       expect(getItemIds(commands.groups).file, made).toStrictEqual(
-        offered ? ['recognise'] : made === 'done' ? ['proofread'] : undefined,
+        isOffered ? ['recognise'] : made === 'done' ? ['proofread'] : undefined,
       )
     }
   })

@@ -23,16 +23,16 @@ import (
 
 // memoryVault is a vault of files kept in memory that answers as the host does.
 type memoryVault struct {
-	mu      sync.Mutex
-	vault   *domain.Vault
-	files   map[string]string
-	stamp   int64
-	data    map[string][]byte
-	cache   map[string][]byte
-	scanned [][]string
-	locks   int
-	changes chan []string
-	lost    chan struct{}
+	mu          sync.Mutex
+	vault       *domain.Vault
+	files       map[string]string
+	stamp       int64
+	data        map[string][]byte
+	cache       map[string][]byte
+	scanned     [][]string
+	locks       int
+	changes     chan []string
+	droppedChan chan struct{}
 	// others are the vaults beside the shown one, by identity.
 	others map[domain.VaultID]*memoryVault
 	state  port.PluginIndexState
@@ -42,14 +42,14 @@ type memoryVault struct {
 
 func newMemoryVault(files map[string]string) *memoryVault {
 	return &memoryVault{
-		vault:   &domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"},
-		files:   files,
-		data:    map[string][]byte{},
-		cache:   map[string][]byte{},
-		changes: make(chan []string, 4),
-		lost:    make(chan struct{}),
-		moves:   make(chan struct{}, 4),
-		state:   port.PluginIndexState{Status: port.PluginIndexed},
+		vault:       &domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"},
+		files:       files,
+		data:        map[string][]byte{},
+		cache:       map[string][]byte{},
+		changes:     make(chan []string, 4),
+		droppedChan: make(chan struct{}),
+		moves:       make(chan struct{}, 4),
+		state:       port.PluginIndexState{Status: port.PluginIndexed},
 	}
 }
 
@@ -285,7 +285,7 @@ func (m *memoryVault) WriteCache(_ context.Context, pluginID, name string, conte
 }
 
 func (m *memoryVault) Watch(context.Context) (<-chan []string, <-chan struct{}, error) {
-	return m.changes, m.lost, nil
+	return m.changes, m.droppedChan, nil
 }
 
 // newVaultClient serves the host's vault endpoint over the callers and returns a client for the plugin the token names.
@@ -536,7 +536,7 @@ func TestAWatchReturnsItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	if !stream.Receive() || !slices.Equal(stream.Msg().GetPaths(), []string{"decks/A.md"}) {
 		t.Fatalf("the change was not told: %v %v", stream.Msg(), stream.Err())
 	}
-	close(vault.lost)
+	close(vault.droppedChan)
 	if stream.Receive() {
 		t.Errorf("a watch that was lost went on with %v", stream.Msg())
 	}

@@ -14,9 +14,9 @@ export function useSliderInteractions({ getPlace, places, emit }: SliderInteract
   const picture = ref<SVGSVGElement | null>(null)
 
   function getPlaceUnder(event: PointerEvent): number {
-    const at = picture.value?.getScreenCTM?.()
-    if (!at || at.a === 0) return getPlace()
-    return getPlaceAtX((event.clientX - at.e) / at.a, places.value)
+    const ctm = picture.value?.getScreenCTM?.()
+    if (!ctm || ctm.a === 0) return getPlace()
+    return getPlaceAtX((event.clientX - ctm.e) / ctm.a, places.value)
   }
 
   function onPointerDown(event: PointerEvent): void {

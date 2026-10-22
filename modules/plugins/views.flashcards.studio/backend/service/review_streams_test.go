@@ -48,12 +48,12 @@ func (b breaking) WrapStreamingHandler(next connect.StreamingHandlerFunc) connec
 type breakingConn struct {
 	connect.StreamingHandlerConn
 	fails func(n int, msg any) bool
-	sent  int
+	sentCount int
 }
 
 func (c *breakingConn) Send(msg any) error {
-	c.sent++
-	if c.fails(c.sent, msg) {
+	c.sentCount++
+	if c.fails(c.sentCount, msg) {
 		return errPageGone
 	}
 	return c.StreamingHandlerConn.Send(msg)

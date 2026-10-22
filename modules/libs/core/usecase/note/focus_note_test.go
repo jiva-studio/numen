@@ -11,15 +11,15 @@ import (
 
 // looking is a window that records what is put in front of the person.
 type looking struct {
-	asked []domain.Place
-	fails error
+	requested []domain.Place
+	fails     error
 }
 
 func (l *looking) FocusPlace(_ context.Context, pos domain.Place) error {
 	if l.fails != nil {
 		return l.fails
 	}
-	l.asked = append(l.asked, pos)
+	l.requested = append(l.requested, pos)
 	return nil
 }
 func (l *looking) ShowMove(context.Context, domain.Move) error { return nil }
@@ -35,8 +35,8 @@ func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ref.Path != "Heat.md" || len(view.asked) != 1 || view.asked[0].Path != "Heat.md" {
-		t.Errorf("focused %+v, window asked %+v", ref, view.asked)
+	if ref.Path != "Heat.md" || len(view.requested) != 1 || view.requested[0].Path != "Heat.md" {
+		t.Errorf("focused %+v, window asked %+v", ref, view.requested)
 	}
 }
 
@@ -52,8 +52,8 @@ func TestFocusingNothingOrANoteThatIsNotThereMovesNobody(t *testing.T) {
 	if _, err := focus.Execute(t.Context(), c.vault, "Gone.md"); err == nil {
 		t.Error("a note that is not there was focused")
 	}
-	if len(view.asked) != 0 {
-		t.Errorf("the person was moved to %+v", view.asked)
+	if len(view.requested) != 0 {
+		t.Errorf("the person was moved to %+v", view.requested)
 	}
 
 	view.fails = errors.New("no active view")

@@ -29,7 +29,7 @@ export const createMarks = (
   cards: readonly string[],
   faces: readonly string[],
 ): Marks => {
-  const at = new Map<string, string[]>()
+  const marksAt = new Map<string, string[]>()
   const underMap = new Map<string, Map<string, string[]>>()
   const fields = new Map<string, string[]>()
   const whole: string[] = []
@@ -44,7 +44,7 @@ export const createMarks = (
     const card = cards[problem.card ?? -1]
     if (card !== undefined) {
       if (problem.field === '') {
-        addProblemMark(at, card, problem.text)
+        addProblemMark(marksAt, card, problem.text)
         continue
       }
       let cardMarks = underMap.get(card)
@@ -57,7 +57,7 @@ export const createMarks = (
     }
     const face = faces[problem.face ?? -1]
     if (face !== undefined) {
-      addProblemMark(at, face, problem.text)
+      addProblemMark(marksAt, face, problem.text)
       continue
     }
     if (problem.field !== '') {
@@ -67,12 +67,12 @@ export const createMarks = (
     whole.push(problem.text)
   }
 
-  return { at, under: underMap, fields, whole }
+  return { at: marksAt, under: underMap, fields, whole }
 }
 
 /** Whether two lists of words read the same, in the same order. */
 const areWordsEqual = (one: readonly string[], other: readonly string[]): boolean =>
-  one.length === other.length && one.every((text, at) => text === other[at])
+  one.length === other.length && one.every((text, index) => text === other[index])
 
 /** Whether two of those maps stand against the same things, saying the same. */
 const areMarkMapsEqual = (

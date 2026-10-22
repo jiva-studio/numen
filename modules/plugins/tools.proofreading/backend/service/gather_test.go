@@ -167,10 +167,10 @@ func joinable(number, first, last int) Batch {
 }
 
 // coveredOnce fails for a line two corrections cover.
-func coveredOnce(t *testing.T, put map[int]Line) {
+func coveredOnce(t *testing.T, lines map[int]Line) {
 	t.Helper()
 	observed := map[int]int{}
-	for first, line := range put {
+	for first, line := range lines {
 		for pos := first; pos <= max(line.Last, line.Number); pos++ {
 			if other, twice := observed[pos]; twice {
 				t.Errorf("line %d is covered by the corrections of %d and %d", pos, other, first)

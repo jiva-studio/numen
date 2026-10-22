@@ -53,7 +53,7 @@ func TestFetchPreservesAPinnedFileBelowItsSum(t *testing.T) {
 	if want := filepath.Join(r.Dir, sumOf("weights")[:12]+"-model.onnx"); at != want {
 		t.Fatalf("Fetch() = %q, want %q", at, want)
 	}
-	if got, _ := os.ReadFile(at); string(got) != "weights" {
+	if got, _ := os.ReadFile(targetPath); string(got) != "weights" {
 		t.Fatalf("file holds %q", got)
 	}
 	if !hasProgress {
@@ -94,7 +94,7 @@ func TestFetchConsumesAnUnpinnedFileAsNamed(t *testing.T) {
 func TestFetchReturnsAFileThatIsPresentWithoutTheNetwork(t *testing.T) {
 	r := request(t, "https://example.invalid/model.onnx", sumOf("weights"))
 	r.ShouldDownload = false
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +266,7 @@ func TestFetchRejectsAPresentPinnedFileWithAnotherSum(t *testing.T) {
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +308,7 @@ func TestFetchReplacesAPresentPinnedFileWithAnotherSumWhenDownloadsAreAllowed(t 
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +317,7 @@ func TestFetchReplacesAPresentPinnedFileWithAnotherSumWhenDownloadsAreAllowed(t 
 	if err != nil || got != at {
 		t.Fatalf("Fetch() = %q, %v", got, err)
 	}
-	if body, _ := os.ReadFile(at); string(body) != "weights" {
+	if body, _ := os.ReadFile(targetPath); string(body) != "weights" {
 		t.Fatalf("file holds %q", body)
 	}
 }
@@ -327,7 +327,7 @@ func TestFetchRejectsAPresentPinnedFileWithAnotherSumWhileOffline(t *testing.T) 
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}

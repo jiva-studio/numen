@@ -19,8 +19,8 @@ var ErrNoLibrary = errors.New("no onnx runtime: the host names the library of a 
 type Runtime[E any] struct {
 	mu      sync.Mutex
 	engine  E
-	at      string
-	hooks   []func(at string)
+	libPath string
+	hooks   []func(libPath string)
 	opening chan struct{}
 	loaded  atomic.Bool
 }
@@ -28,7 +28,7 @@ type Runtime[E any] struct {
 // Open returns the engine of this process, made from the library at by load
 // the first time it succeeds. Every hook registered runs once, with the
 // library, in the same step that records the engine.
-func (r *Runtime[E]) Open(ctx context.Context, at string, load func(at string) (E, error)) (E, string, error) {
+func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath string) (E, error)) (E, string, error) {
 	var none E
 	for {
 		r.mu.Lock()
@@ -50,11 +50,11 @@ func (r *Runtime[E]) Open(ctx context.Context, at string, load func(at string) (
 		r.opening = mine
 		r.mu.Unlock()
 
-		engine, err := r.load(at, load)
+		engine, err := r.load(libPath, load)
 
 		r.mu.Lock()
 		if err == nil {
-			r.record(engine, at)
+			r.record(engine, libPath)
 		}
 		r.opening = nil
 		r.mu.Unlock()
@@ -62,24 +62,24 @@ func (r *Runtime[E]) Open(ctx context.Context, at string, load func(at string) (
 		if err != nil {
 			return none, "", err
 		}
-		return engine, at, nil
+		return engine, libPath, nil
 	}
 }
 
 // load makes the engine. Nothing here is held under the lock.
-func (r *Runtime[E]) load(at string, load func(at string) (E, error)) (E, error) {
-	if at == "" {
+func (r *Runtime[E]) load(libPath string, load func(libPath string) (E, error)) (E, error) {
+	if libPath == "" {
 		var none E
 		return none, ErrNoLibrary
 	}
-	return load(at)
+	return load(libPath)
 }
 
 // record keeps the engine and runs every hook. The lock is the caller's.
-func (r *Runtime[E]) record(engine E, at string) {
+func (r *Runtime[E]) record(engine E, libPath string) {
 	r.engine, r.at = engine, at
 	for _, hook := range r.hooks {
-		hook(at)
+		hook(libPath)
 	}
 	r.loaded.Store(true)
 }
@@ -89,7 +89,7 @@ func (r *Runtime[E]) record(engine E, at string) {
 //
 // A hook runs under the runtime's lock and works only with the path it is
 // given; it calls no method of this Runtime.
-func (r *Runtime[E]) Register(hook func(at string)) {
+func (r *Runtime[E]) Register(hook func(libPath string)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.hooks = append(r.hooks, hook)
@@ -107,19 +107,19 @@ func (r *Runtime[E]) HasRegistration() bool {
 func (r *Runtime[E]) GetLoaded() (E, string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.engine, r.at
+	return r.engine, r.libPath
 }
 
 // IsAvailable reports whether the runtime is open, or the library at is there
 // to open it from. It opens nothing and does not wait on a caller that is
 // opening it.
-func (r *Runtime[E]) IsAvailable(at string) bool {
+func (r *Runtime[E]) IsAvailable(libPath string) bool {
 	if r.loaded.Load() {
 		return true
 	}
-	if at == "" {
+	if libPath == "" {
 		return false
 	}
-	_, err := os.Stat(at)
+	_, err := os.Stat(libPath)
 	return err == nil
 }

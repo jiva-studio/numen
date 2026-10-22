@@ -190,7 +190,7 @@ func (a appearances) Read() (theme.Appearance, error) { return theme.Appearance{
 			what: "an adapter named only in what the root is given",
 			src: `package container
 import "` + module + `internal/adapter/filesystem"
-func (c Config) Options(held filesystem.Options) error { return nil }`,
+func (c Config) Options(opts filesystem.Options) error { return nil }`,
 			isRefused: false,
 		},
 	} {

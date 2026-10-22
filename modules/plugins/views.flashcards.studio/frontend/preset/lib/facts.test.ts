@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { getBuyFacts, getLearningFacts, getMaterialFacts } from './facts'
 
-const at = {
+const targetPoint = {
   value: 30,
   reviews: 12,
   minutes: 25,
@@ -16,14 +16,14 @@ const at = {
 
 describe('what a place buys', () => {
   it('is the minutes and the session under a goal of minutes', () => {
-    expect(getBuyFacts('minutes', at).map((one) => one.kind)).toStrictEqual([
+    expect(getBuyFacts('minutes', targetPoint).map((one) => one.kind)).toStrictEqual([
       'minutesADay',
       'cardsASession',
     ])
   })
 
   it('is the share remembered and the minutes under a goal of retention', () => {
-    expect(getBuyFacts('retention', at).map((one) => one.kind)).toStrictEqual([
+    expect(getBuyFacts('retention', targetPoint).map((one) => one.kind)).toStrictEqual([
       'remembered',
       'minutesADay',
     ])

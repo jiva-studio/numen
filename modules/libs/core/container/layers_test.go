@@ -1630,15 +1630,15 @@ func TestWhatTheClockRuleRefuses(t *testing.T) {
 
 import "time"
 
-func run(at time.Time) {
+func run(origin time.Time) {
 	_ = time.Now()
-	_ = time.Since(at)
+	_ = time.Since(origin)
 	<-time.After(time.Second)
 	time.AfterFunc(time.Second, func() {})
 	_ = time.NewTimer(time.Second)
 	_ = time.NewTicker(time.Second)
 	_ = time.Tick(time.Second)
-	_ = at.Add(time.Second)
+	_ = origin.Add(time.Second)
 	_ = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	_ = time.Duration(3)
 }

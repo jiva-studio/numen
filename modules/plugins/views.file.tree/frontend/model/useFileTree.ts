@@ -18,8 +18,8 @@ export const getFolderPath = (path: string): string => {
  * The folder a dropped row lands in: the one it went into, or the one holding
  * the row it came before. Into no row at all is the root.
  */
-export const resolveDropFolder = (at: { into: string | null } | { before: string }): string =>
-  'into' in at ? (at.into ?? ROOT) : getFolderPath(at.before)
+export const resolveDropFolder = (target: { into: string | null } | { before: string }): string =>
+  'into' in target ? (target.into ?? ROOT) : getFolderPath(at.before)
 
 /** The folders above a path, from the root down. */
 export const getParentFolders = (path: string): readonly string[] => {

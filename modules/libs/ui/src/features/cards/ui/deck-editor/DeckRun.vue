@@ -35,7 +35,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   /** A card is dragged over a place that would take it. */
-  (event: 'drag-over', at: InsertionPoint | undefined, press: DragEvent): void
+  (event: 'drag-over', target: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
   (event: 'rename-section', id: string, name: string): void
   (event: 'remove-section', id: string): void

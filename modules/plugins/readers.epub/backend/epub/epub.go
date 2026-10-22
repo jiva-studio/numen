@@ -56,9 +56,9 @@ type Book struct {
 	Direction Direction
 
 	// files is the archive the book was read out of, which Markup reads one
-	// document out of again, and held is the document of each name.
-	files map[string]*zip.File
-	held  map[string]Document
+	// document out of again, and documents is the document of each name.
+	files     map[string]*zip.File
+	documents map[string]Document
 
 	// pageBytes is how many bytes of this book's text stand on one page.
 	pageBytes int
@@ -162,7 +162,7 @@ func Read(raw []byte) (*Book, error) {
 		Layout:    pkg.layout,
 		Direction: pkg.direction,
 		files:     files,
-		held:      map[string]Document{},
+		documents: map[string]Document{},
 	}
 	remaining := int64(mostPerBook)
 	for _, item := range pkg.spine {
@@ -180,10 +180,10 @@ func Read(raw []byte) (*Book, error) {
 		doc := text.readDocument(item.path, markup)
 		doc.IsLinear, doc.Layout, doc.mediaType = item.isLinear, item.layout, item.mediaType
 		book.Documents = append(book.Documents, doc)
-		if _, twice := book.held[doc.Path]; !twice {
+		if _, twice := book.documents[doc.Path]; !twice {
 			// A spine may read one document twice, and the first standing is the
 			// one a name is answered with.
-			book.held[doc.Path] = doc
+			book.documents[doc.Path] = doc
 		}
 	}
 	book.Text = string(text.out)
@@ -292,17 +292,17 @@ type Location struct {
 
 // Locate answers where one offset in the book's text is.
 func (b *Book) Locate(offset int) Location {
-	var at Location
+	var loc Location
 	if i := findPreceding(len(b.Documents), offset, func(i int) int { return b.Documents[i].Offset }); i >= 0 {
-		at.Document = b.Documents[i].Path
+		loc.Document = b.Documents[i].Path
 	}
 	if i := findPreceding(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
-		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
+		loc.Part, loc.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
 	if i := findPreceding(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
-		at.Page = b.Pages[i].Label
+		loc.Page = b.Pages[i].Label
 	}
-	return at
+	return loc
 }
 
 // findPreceding is the index of the last item at or before an offset, and -1 when

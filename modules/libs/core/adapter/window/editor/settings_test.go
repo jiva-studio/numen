@@ -52,7 +52,7 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
 		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
 	}
-	if _, stands := target["appearance"]; !stands {
+	if _, exists := target["appearance"]; !exists {
 		t.Errorf("the settings read out as %v", target)
 	}
 
@@ -96,9 +96,9 @@ func TestASettingSavedIsAnsweredByTheNextQuestion(t *testing.T) {
 // correct, and nothing is written.
 func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 	for _, one := range []struct {
-		what  string
-		at    []string
-		value string
+		what   string
+		posVal []string
+		value  string
 	}{
 		{"is not JSON at all", []string{"agent", "claude", "model"}, `opus`},
 		{"is of the wrong shape", []string{"agent", "claude", "model"}, `7`},
@@ -114,7 +114,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 			_, err = f.configuring.WriteSettings(
 				t.Context(),
 				connect.NewRequest(&v1.WriteSettingsRequest{
-					Settings: []*v1.Setting{{At: one.at, Value: one.value}},
+					Settings: []*v1.Setting{{At: one.posVal, Value: one.value}},
 				}),
 			)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -208,7 +208,7 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 
 	for _, one := range []struct {
 		name    string
-		written string
+		encoded string
 	}{
 		{"not JSON at all", `{ "agent": `},
 		{"a value of the wrong kind", `{"appearance": {"text_scale": "large"}}`},
@@ -217,7 +217,7 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			_, err := f.configuring.WriteSettingsFile(
 				t.Context(),
-				connect.NewRequest(&v1.WriteSettingsFileRequest{Written: one.written}),
+				connect.NewRequest(&v1.WriteSettingsFileRequest{Written: one.encoded}),
 			)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Fatalf("the file was taken as %v", err)

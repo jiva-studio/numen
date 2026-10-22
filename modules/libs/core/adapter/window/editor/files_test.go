@@ -191,13 +191,13 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Errorf("the note under the folder holds:\n%s", now)
 	}
 
-	around, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
+	center, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
 		Path: "Heat.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	related := around.Msg.GetRelated()
+	related := center.Msg.GetRelated()
 	if len(related) != 1 {
 		t.Fatalf("want the one note the link reaches, got %+v", related)
 	}

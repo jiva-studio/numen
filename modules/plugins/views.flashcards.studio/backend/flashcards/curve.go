@@ -98,7 +98,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	decks, pos, under, unbegunCount := mine.decks, mine.at, mine.under, mine.unseen
+	decks, pos, under, unbegunCount := mine.decks, mine.schedules, mine.presetMap, mine.unreviewed
 
 	// How many decks this preset schedules, counted over every deck that could
 	// name it: a deck of no cards points at its preset like any other.
@@ -107,7 +107,7 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 
-	cost, costed := review.GetCostUnder(u.schedules.by, target.Answers, under)[path]
+	cost, costed := review.GetCostUnder(u.schedules.scheduler, target.Answers, under)[path]
 	if !costed {
 		cost = review.DefaultCost
 	}
@@ -136,12 +136,12 @@ func (u ProjectCurve) Execute(
 type scheduledFaces struct {
 	// decks says for each deck asked whether the preset schedules it.
 	decks map[string]bool
-	// at is the schedule of each face that has been answered.
-	at map[review.CardFaceID]review.Schedule
-	// under is the faces the preset is costed from.
-	under map[review.CardFaceID]string
+	// schedules is the schedule of each face that has been answered.
+	schedules map[review.CardFaceID]review.Schedule
+	// presetMap is the faces the preset is costed from.
+	presetMap map[review.CardFaceID]string
 	// unseen is how many of the faces have not been answered.
-	unseen int
+	unreviewed int
 }
 
 // readScheduledFaces picks out of faces the ones the preset at path schedules.
@@ -150,9 +150,9 @@ func (u ProjectCurve) readScheduledFaces(
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 ) (scheduledFaces, error) {
 	out := scheduledFaces{
-		decks: make(map[string]bool),
-		at:    make(map[review.CardFaceID]review.Schedule),
-		under: make(map[review.CardFaceID]string),
+		decks:     make(map[string]bool),
+		schedules: make(map[review.CardFaceID]review.Schedule),
+		presetMap: make(map[review.CardFaceID]string),
 	}
 	for _, one := range faces {
 		mine, request := out.decks[one.Deck]
@@ -167,13 +167,13 @@ func (u ProjectCurve) readScheduledFaces(
 		if !mine {
 			continue
 		}
-		out.under[one.ID] = path
+		out.presetMap[one.ID] = path
 		s, reply := schedules[one.ID]
 		if !reply {
-			out.unseen++
+			out.unreviewed++
 			continue
 		}
-		out.at[one.ID] = s
+		out.schedules[one.ID] = s
 	}
 	return out, nil
 }
@@ -247,7 +247,7 @@ func (u ProjectCurve) countPointingDecks(
 // A place that fails is left to the places beside it, and the error handed back
 // is the earliest place's. A request nobody is waiting for is ended by the run
 // of each place reading the context it was given.
-func (u ProjectCurve) computePlaces(count int, each func(at int) error) error {
+func (u ProjectCurve) computePlaces(count int, each func(index int) error) error {
 	failed := make([]error, count)
 	room := make(chan struct{}, max(1, u.Cores))
 	var running sync.WaitGroup

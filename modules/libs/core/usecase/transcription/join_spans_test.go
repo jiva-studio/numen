@@ -12,10 +12,10 @@ import (
 
 // newWholeRun is a run over a transcript asked about in one window.
 func newWholeRun(
-	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
+	t *testing.T, notified map[int]domain.ProofreadCorrection, words ...string,
 ) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
-	u, v, retained, delta, hash := newProofreadTranscript(t, told, words...)
+	u, v, retained, delta, hash := newProofreadTranscript(t, notified, words...)
 	delta.limit = len(words)
 	return u, v, retained, hash
 }
@@ -69,11 +69,11 @@ func TestJoiningPreservesWhatWasHeardWhereItIs(t *testing.T) {
 // newOverlappingRun is a run over four spans, with as many lines to a call as
 // asked for.
 func newOverlappingRun(
-	t *testing.T, lines int, told map[int]domain.ProofreadCorrection,
+	t *testing.T, lines int, callback map[int]domain.ProofreadCorrection,
 ) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	u, v, retained, delta, hash := newProofreadTranscript(t,
-		told,
+		callback,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
 	delta.limit = lines
 	return u, v, retained, hash
@@ -112,8 +112,8 @@ func (s *sequenced) ProofreadSpeech(
 // a cut is taken up.
 func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 	for name, one := range map[string]struct {
-		lines int
-		by    port.Proofreader
+		lines    int
+		provider port.Proofreader
 	}{
 		"in one call": {4, &corrector{says: correctionsMap(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
 		"in two calls": {2, &sequenced{replies: []domain.SpeechProofreading{
@@ -123,7 +123,7 @@ func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			u, v, shelved, hash := newOverlappingRun(t, one.lines, nil)
-			u.by = one.by
+			u.provider = one.provider
 
 			if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 				t.Fatal(err)

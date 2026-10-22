@@ -17,17 +17,17 @@ import {
   RENAME,
 } from './menu'
 
-const entry = (over: Partial<Entry> = {}): Entry => ({
+const entry = (overrides: Partial<Entry> = {}): Entry => ({
   path: 'Entropy.md',
   name: 'Entropy.md',
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 /** What the menu offers on one row, by the identity of each item, as it is drawn. */
-const getGroupedIds = (over: Partial<Entry> = {}, isSeveral = false): readonly string[] =>
+const getGroupedIds = (overrides: Partial<Entry> = {}, isSeveral = false): readonly string[] =>
   groupItems([
     ...createMenuItems(getPathCommands({ entry: entry(over), isSeveral }), isSeveral),
   ]).map((one) => `${one.isRule ? '— ' : ''}${one.id}`)

@@ -99,11 +99,11 @@ func TestNothingIsAskedForAndNothingIsLit(t *testing.T) {
 func TestTheBoxesComeBackInTheOrderTheyAreRead(t *testing.T) {
 	boxes := read(4, 2)
 
-	var at []int
+	var offset []int
 	for _, one := range highlight.GetBoxesOver(boxes, run(0, 48)) {
-		at = append(at, one.Page)
+		offset = append(offset, one.Page)
 	}
-	if want := []int{0, 0, 1, 1, 2, 2, 3, 3}; !reflect.DeepEqual(at, want) {
-		t.Errorf("pages %v, want %v", at, want)
+	if want := []int{0, 0, 1, 1, 2, 2, 3, 3}; !reflect.DeepEqual(offset, want) {
+		t.Errorf("pages %v, want %v", offset, want)
 	}
 }

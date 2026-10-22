@@ -74,12 +74,12 @@ func isValidScalarSpan(front []byte, start, end int, want string) bool {
 	return true
 }
 
-func canEscapeBackslash(front []byte, at int, quote byte) bool {
-	return quote == '"' && at+1 < len(front) && breakWidth(front, at+1) == 0
+func canEscapeBackslash(front []byte, offset int, quote byte) bool {
+	return quote == '"' && offset+1 < len(front) && breakWidth(front, offset+1) == 0
 }
 
-func isEscapedSingleQuote(front []byte, at int, quote byte) bool {
-	return quote == '\'' && at+1 < len(front) && front[at+1] == '\''
+func isEscapedSingleQuote(front []byte, offset int, quote byte) bool {
+	return quote == '\'' && offset+1 < len(front) && front[offset+1] == '\''
 }
 
 // findQuotedEnd is where a quoted scalar ends, counting from the quote it opens
@@ -89,21 +89,21 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 	if front[start] != quote {
 		return 0, false
 	}
-	for at := start + 1; at < len(front); at++ {
-		if breakWidth(front, at) > 0 {
+	for pos := start + 1; pos < len(front); pos++ {
+		if breakWidth(front, pos) > 0 {
 			return 0, false
 		}
-		switch front[at] {
+		switch front[pos] {
 		case '\\':
-			if canEscapeBackslash(front, at, quote) {
-				at++
+			if canEscapeBackslash(front, pos, quote) {
+				pos++
 			}
 		case quote:
-			if isEscapedSingleQuote(front, at, quote) {
-				at++
+			if isEscapedSingleQuote(front, pos, quote) {
+				pos++
 				continue
 			}
-			return at + 1, true
+			return pos + 1, true
 		}
 	}
 	return 0, false

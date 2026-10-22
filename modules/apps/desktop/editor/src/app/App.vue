@@ -62,7 +62,7 @@ function onCloseTab(id: string, hold?: () => void) {
   closeTab(id, hold)
 }
 
-async function onTearOffTab(id: string, at: { x: number; y: number }) {
+async function onTearOffTab(id: string, position: { x: number; y: number }) {
   try {
     await detachTab(id, at)
     onCloseTab(id)
@@ -79,7 +79,7 @@ function dismissNotice(id: string) {
   log.dismiss(id)
 }
 
-function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
+function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
   linkMenu.open(tabId, at)
 }
 </script>

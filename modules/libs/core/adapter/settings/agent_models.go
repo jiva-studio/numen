@@ -15,13 +15,13 @@ const (
 
 // AgentModels are the rows the agent section offers a person: the programs the setting can name, and
 // file under the key given.
-func AgentModels(at string, held Agent, programs []port.AgentProgram) []port.Model {
-	useAt := []string{at, "use"}
+func AgentModels(targetPath string, target Agent, programs []port.AgentProgram) []port.Model {
+	useAt := []string{targetPath, "use"}
 	models := getProgramModels(useAt, programs)
 	for _, one := range programs {
-		if one.IsInstalled || one.Name == held.GetUse() {
-			modelAt := []string{at, one.Name, "model"}
-			models = append(models, getModelsOfProgram(modelAt, one, held.GetProgram(one.Name).Model)...)
+		if one.IsInstalled || one.Name == target.GetUse() {
+			modelAt := []string{targetPath, one.Name, "model"}
+			models = append(models, getModelsOfProgram(modelAt, one, target.GetProgram(one.Name).Model)...)
 		}
 	}
 	return models
@@ -77,11 +77,11 @@ func getModelsOfProgram(pos []string, program port.AgentProgram, set string) []p
 
 // getReportedModels are the rows of the models a program reported, the one the settings name last
 // where it is not among them.
-func getReportedModels(pos []string, set string, offered []port.AgentModel) []port.Model {
-	isSet := slices.ContainsFunc(offered, func(one port.AgentModel) bool { return one.Name == set })
-	isReportedDefault := slices.ContainsFunc(offered, func(one port.AgentModel) bool { return one.IsDefault })
+func getReportedModels(pos []string, set string, available []port.AgentModel) []port.Model {
+	isSet := slices.ContainsFunc(available, func(one port.AgentModel) bool { return one.Name == set })
+	isReportedDefault := slices.ContainsFunc(available, func(one port.AgentModel) bool { return one.IsDefault })
 	var models []port.Model
-	for place, one := range offered {
+	for place, one := range available {
 		title := one.Title
 		if title == "" {
 			title = one.Name

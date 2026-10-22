@@ -94,7 +94,7 @@ export function useCommands(options: CommandsDepsOptions) {
     },
   })
 
-  const runCommand = (id: string, at: CommandTarget) => {
+  const runCommand = (id: string, target: CommandTarget) => {
     if (options.pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
       void options.pluginHost.executeCommand(id)

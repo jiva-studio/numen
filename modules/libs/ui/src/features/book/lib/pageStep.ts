@@ -21,18 +21,18 @@ export function swipePage(delta: number): PageNavigationAction | undefined {
 /** Edge margin ratio of the reading area that triggers a page turn tap. */
 export const EDGE = 0.15
 
-export interface HandTurnOptions {
+export interface DragPageOptions {
   readonly wide: number
   readonly hasSelection: boolean
 }
 
-export function handTurn(from: number, to: number, options: HandTurnOptions): PageNavigationAction | undefined {
+export function dragPage(from: number, to: number, options: DragPageOptions): PageNavigationAction | undefined {
   if (options.hasSelection) return undefined
-  return swipePage(to - from) ?? pressTurn(to, options.wide)
+  return swipePage(to - from) ?? pressPage(to, options.wide)
 }
 
 /** Which way a press across the reading area turns the page. */
-export function pressTurn(x: number, width: number): PageNavigationAction | undefined {
+export function pressPage(x: number, width: number): PageNavigationAction | undefined {
   if (width <= 0) return undefined
   if (x <= width * EDGE) return 'back'
   if (x >= width * (1 - EDGE)) return 'next'

@@ -69,12 +69,12 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 	// that text costs no model call. It still needs a coarse row of its own:
 	// the coarse pass is the only way a dense search reaches a chunk.
 	for _, tc := range []struct {
-		name string
-		put  func(t *testing.T, db *DB) (domain.Vault, string)
+		name   string
+		placed func(t *testing.T, db *DB) (domain.Vault, string)
 	}{
 		{
 			name: "the same book in a second vault",
-			put: func(t *testing.T, db *DB) (domain.Vault, string) {
+			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				book(t, db, first, "library/tale.epub", 0x0f)
 				cutBook(t, db, second, "library/tale.epub")
 				return second, "library/tale.epub"
@@ -82,7 +82,7 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 		},
 		{
 			name: "the same book at a second path",
-			put: func(t *testing.T, db *DB) (domain.Vault, string) {
+			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				book(t, db, first, "library/tale.epub", 0x0f)
 				cutBook(t, db, first, "copies/tale.epub")
 				return first, "copies/tale.epub"
@@ -90,7 +90,7 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 		},
 		{
 			name: "a second copy whose first is gone",
-			put: func(t *testing.T, db *DB) (domain.Vault, string) {
+			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				book(t, db, first, "library/tale.epub", 0x0f)
 				cutBook(t, db, first, "copies/tale.epub")
 				if err := db.Chunks().RemoveSources(t.Context(), first.ID, "book", []string{"library/tale.epub"}); err != nil {
@@ -101,7 +101,7 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 		},
 		{
 			name: "a book removed and put back",
-			put: func(t *testing.T, db *DB) (domain.Vault, string) {
+			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				book(t, db, first, "library/tale.epub", 0x0f)
 				if err := db.Chunks().RemoveSources(t.Context(), first.ID, "book", []string{"library/tale.epub"}); err != nil {
 					t.Fatal(err)
@@ -113,7 +113,7 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db := openDB(t)
-			vault, path := tc.put(t, db)
+			vault, path := tc.placed(t, db)
 
 			_, small := coarseRows(t, db, vault, path)
 			target, isDone, err := db.ChunkQueries().GetProgress(t.Context(), vault.ID, testRecipe)

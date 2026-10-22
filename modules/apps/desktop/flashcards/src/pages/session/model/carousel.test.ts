@@ -356,7 +356,7 @@ describe('a strip taken off the screen', () => {
 })
 
 /** The owner's hold on where the strip is, which hears of every write made to it. */
-const createOwner = (at: PanelPlace) => {
+const createOwner = (place: PanelPlace) => {
   const target = ref<PanelPlace>(at)
   const writes: PanelPlace[] = []
   const owner = computed<PanelPlace>({

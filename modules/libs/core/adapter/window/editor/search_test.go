@@ -320,17 +320,17 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
 	})
 
-	around, err := client.GetNeighbourhood(t.Context(),
+	center, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if is := around.Msg.GetFocusType(); is != "" {
+	if is := center.Msg.GetFocusType(); is != "" {
 		t.Errorf("the note in focus is drawn as %v", is)
 	}
 	types := map[string]string{}
-	for _, one := range around.Msg.GetRelated() {
+	for _, one := range center.Msg.GetRelated() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
 	want := map[string]string{
@@ -344,12 +344,12 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	}
 
 	// And the note in focus is said the same way, a plex standing on a deck.
-	near, err := client.GetNeighbourhood(t.Context(),
+	item, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if is := near.Msg.GetFocusType(); is != "deck" {
+	if is := item.Msg.GetFocusType(); is != "deck" {
 		t.Errorf("the deck in focus is drawn as %v", is)
 	}
 }

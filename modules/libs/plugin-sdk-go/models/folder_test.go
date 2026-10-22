@@ -28,8 +28,8 @@ func TestGetDirIsTheSharedModelsFolder(t *testing.T) {
 func TestFolderFetchReturnsAFileThatIsAlreadyThere(t *testing.T) {
 	dir := t.TempDir()
 	address, sum := "https://example.invalid/model.onnx", "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
-	at := filepath.Join(dir, GetCacheName(address, sum))
-	if err := os.WriteFile(at, []byte("x"), 0o644); err != nil {
+	targetPath := filepath.Join(dir, GetCacheName(address, sum))
+	if err := os.WriteFile(targetPath, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	got, err := Folder{Dir: dir}.Fetch(context.Background(), address, sum)
@@ -73,7 +73,7 @@ func TestGetPathsAreTheSettingsFolderAndTheInstallFolder(t *testing.T) {
 	if !slices.Contains(got, want) {
 		t.Errorf("GetPaths() = %v lacks %s", got, want)
 	}
-	for _, at := range (Folder{}).GetPaths("m.onnx") {
+	for _, p := range (Folder{}).GetPaths("m.onnx") {
 		if filepath.Dir(at) == "." {
 			t.Errorf("GetPaths() names %s, a folder the settings do not", at)
 		}
@@ -106,8 +106,8 @@ func TestNewFolderSetsFields(t *testing.T) {
 
 func TestFolderLocateFillsDestinations(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "m.onnx")
-	if err := os.WriteFile(at, []byte("x"), 0o644); err != nil {
+	targetPath := filepath.Join(dir, "m.onnx")
+	if err := os.WriteFile(targetPath, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	f := NewFolder("indexing.test", dir, false, nil)

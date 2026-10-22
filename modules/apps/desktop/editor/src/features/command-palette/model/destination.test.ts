@@ -23,11 +23,11 @@ const window = () => {
   return { places, travelled, opened: openedTab, shown: displayedItems }
 }
 
-const landing = (over: Partial<SearchDestination>): SearchDestination => ({
+const landing = (overrides: Partial<SearchDestination>): SearchDestination => ({
   at: 'file',
   path: 'Note.md',
   title: 'A note',
-  ...over,
+  ...overrides,
 })
 
 describe('a name chosen', () => {

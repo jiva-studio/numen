@@ -61,13 +61,13 @@ type Copy struct {
 
 // Provider is one source of what is published at an address.
 type Provider interface {
-	CanHandle(at string) bool
-	GetDownloadModel(at string) DownloadModel
-	GetMetadata(ctx context.Context, at string) (Metadata, error)
-	GetText(ctx context.Context, at string, want PreferredCaptions) (Text, error)
+	CanHandle(address string) bool
+	GetDownloadModel(address string) DownloadModel
+	GetMetadata(ctx context.Context, address string) (Metadata, error)
+	GetText(ctx context.Context, address string, want PreferredCaptions) (Text, error)
 }
 
 // Player is a provider that also reaches the bytes a person plays.
 type Player interface {
-	Download(ctx context.Context, at string, into io.Writer) (Copy, error)
+	Download(ctx context.Context, address string, into io.Writer) (Copy, error)
 }

@@ -469,13 +469,13 @@ func (u Embed) prepareBatch(
 
 // queueText queues the text at index i for inference. A nil seen queues every
 // text; otherwise a key already in seen shares the position of its first text.
-func (p *preparedBatch) queueText(i int, key, value string, seen map[string]int) {
-	if seen != nil {
-		if pos, ok := seen[key]; ok {
+func (p *preparedBatch) queueText(i int, key, value string, visited map[string]int) {
+	if visited != nil {
+		if pos, ok := visited[key]; ok {
 			p.askingMap[i] = pos
 			return
 		}
-		seen[key] = len(p.asking)
+		visited[key] = len(p.asking)
 	}
 	p.askingMap[i] = len(p.asking)
 	p.asking = append(p.asking, value)

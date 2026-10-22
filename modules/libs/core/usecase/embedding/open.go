@@ -12,7 +12,7 @@ import (
 
 // OpenModel is a model on this machine becoming answerable. It is told how far
 // fetching and compiling it has got, counted in the bytes of it that are here.
-type OpenModel func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error)
+type OpenModel func(ctx context.Context, tell func(finished, total int64)) (port.Embedder, error)
 
 // Provider is one place vectors are made: the identity what it answers is kept
 // under, the name to call it by while it arrives, and the one way it is opened.
@@ -25,13 +25,13 @@ type Provider struct {
 	// One of the two, for a provider that is named at all. A service answers
 	// the moment there is something to ask; a model on this machine answers
 	// once it is here.
-	held  port.Embedder
-	fetch OpenModel
+	activeItem port.Embedder
+	fetch      OpenModel
 }
 
 // NewReached is a provider that answers at once.
-func NewReached(model port.EmbeddingModel, name string, held port.Embedder) Provider {
-	return Provider{model: model, name: name, held: held}
+func NewReached(model port.EmbeddingModel, name string, embedder port.Embedder) Provider {
+	return Provider{model: model, name: name, activeItem: embedder}
 }
 
 // NewFetched is a model on this machine, opened behind whoever asked.
@@ -40,7 +40,7 @@ func NewFetched(model port.EmbeddingModel, name string, open OpenModel) Provider
 }
 
 // isPlaced says whether this half was placed anywhere.
-func (p Provider) isPlaced() bool { return p.held != nil || p.fetch != nil }
+func (p Provider) isPlaced() bool { return p.activeItem != nil || p.fetch != nil }
 
 // Which half of the work a provider is for. An arrival is called by its role
 // and its name, and two providers naming one repository are two lines.
@@ -101,7 +101,7 @@ func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
 func open(ctx context.Context, tasks *run.Tasks, pos arrival) *embedding.Embedder {
 	target := embedding.NewDeferredEmbedder(pos.from.model)
 	if pos.from.fetch == nil {
-		target.SetModel(pos.from.held, nil)
+		target.SetModel(pos.from.activeItem, nil)
 		return target
 	}
 
@@ -179,14 +179,14 @@ func (p Provider) newArrival(role string) arrival {
 // window's to write. A share is drawn once some of the model is here.
 //
 // A run with no list to tell is told nothing and still asks.
-func newProgressReport(tasks *run.Tasks, pos arrival) func(done, total int64) {
+func newProgressReport(tasks *run.Tasks, pos arrival) func(completed, total int64) {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}
-	return func(done, total int64) {
+	return func(processed, total int64) {
 		target := run.Task{ID: pos.id, Title: "Preparing the model", About: pos.name}
-		if done > 0 {
-			target.Count, target.Total, target.Unit = done, total, run.Bytes
+		if processed > 0 {
+			target.Count, target.Total, target.Unit = processed, total, run.Bytes
 		}
 		tasks.Set(target)
 	}

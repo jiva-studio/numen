@@ -343,8 +343,8 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	}
 	start, length := locate(t, book, "Afterword")
 
-	lit := litOn(t, u, documentPath, start, length)
-	if len(lit) == 0 {
+	literal := litOn(t, u, documentPath, start, length)
+	if len(literal) == 0 {
 		t.Fatal("the recognition lit nothing, so rewriting the file proves nothing")
 	}
 

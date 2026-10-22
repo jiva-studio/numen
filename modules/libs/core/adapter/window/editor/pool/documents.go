@@ -314,21 +314,21 @@ const PointsDPI = 72
 // window lays the page out at the width it asked for, so the browser takes those
 // pixels off; resampling them off here is a pass over every pixel of the page to
 // change nothing anybody sees.
-func (d *Document) Render(at, width int) (image.Image, error) {
-	points, measured := d.points[at]
+func (d *Document) Render(pos, width int) (image.Image, error) {
+	points, measured := d.points[pos]
 	if !measured {
-		across, _, err := d.Scan.GetPageSize(at)
+		item, _, err := d.Scan.GetPageSize(pos)
 		if err != nil {
 			return nil, err
 		}
-		points = int(across)
+		points = int(item)
 		if points < 1 {
-			return nil, fmt.Errorf("page %d has no width", at)
+			return nil, fmt.Errorf("page %d has no width", pos)
 		}
-		d.points[at] = points
+		d.points[pos] = points
 	}
 	dpi := (width*PointsDPI + points - 1) / points
-	rendered, err := d.Scan.RenderPage(at, max(dpi, 1))
+	rendered, err := d.Scan.RenderPage(pos, max(dpi, 1))
 	if err != nil {
 		return nil, err
 	}

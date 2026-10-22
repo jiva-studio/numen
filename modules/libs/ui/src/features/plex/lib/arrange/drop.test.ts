@@ -13,8 +13,8 @@ const frame = arrangePlex(build('A node', { parent: 2, child: 4, jump: 2, siblin
 const focus = frame.nodes.find((n) => n.relation === 'focus')!
 const child = frame.nodes.find((n) => n.relation === 'child')!
 
-const drop = (from: string, at: { x: number; y: number }, relations = ALLOWED) =>
-  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at, relations })
+const drop = (from: string, point: { x: number; y: number }, relations = ALLOWED) =>
+  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at: point, relations })
 
 describe('the relation a direction remains for', () => {
   it('reads the arrangement and not assuming which way is up', () => {

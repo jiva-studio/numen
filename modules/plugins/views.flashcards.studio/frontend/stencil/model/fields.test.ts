@@ -26,9 +26,9 @@ const lacking = (face: number, text: string): DeckProblem => ({
 
 /** One stencil tab's fields over a body held in a variable, and what it asked for. */
 const create = () => {
-  let at = 0
+  let count = 0
   const state = {
-    body: serializeStencil(createBufferStencil(baseStencil, () => `f${(at += 1)}`)),
+    body: serializeStencil(createBufferStencil(baseStencil, () => `f${(count += 1)}`)),
     problems: [] as readonly DeckProblem[],
   }
   const onType = vi.fn((_id: string, body: string) => {

@@ -128,15 +128,15 @@ const shiftCells = (row: Row, delta: number): Row =>
 export const moveBlock = (widget: WidgetType, changes: ChangeDesc): WidgetType => {
   if (!(widget instanceof Grid)) return widget
   const table = widget.table
-  const by = changes.mapPos(table.from, 1) - table.from
-  if (by === 0) return widget
+  const delta = changes.mapPos(table.from, 1) - table.from
+  if (delta === 0) return widget
   return new Grid(
     {
       ...table,
-      from: table.from + by,
-      to: table.to + by,
-      head: shiftCells(table.head, by),
-      body: table.body.map((row) => shiftCells(row, by)),
+      from: table.from + delta,
+      to: table.to + delta,
+      head: shiftCells(table.head, delta),
+      body: table.body.map((row) => shiftCells(row, delta)),
     },
     widget.isWritable,
   )

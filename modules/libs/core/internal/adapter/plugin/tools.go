@@ -35,7 +35,7 @@ type ToolsBridge struct {
 
 	mu sync.Mutex
 	// listed is the effect of each tool the last listing found, by plugin and name.
-	listed map[toolKey]port.ToolEffect
+	registeredVal map[toolKey]port.ToolEffect
 }
 
 type toolKey struct {
@@ -45,7 +45,7 @@ type toolKey struct {
 
 // OpenToolsBridge makes the bridge to the plugins the host runs. It starts none.
 func OpenToolsBridge(host ToolsPluginHost) *ToolsBridge {
-	return &ToolsBridge{host: host, listed: map[toolKey]port.ToolEffect{}}
+	return &ToolsBridge{host: host, registeredVal: map[toolKey]port.ToolEffect{}}
 }
 
 // Close releases nothing: a call holds its reference on the plugin for the length of the call.
@@ -72,7 +72,7 @@ func (b *ToolsBridge) ListTools(ctx context.Context) []port.PluginTool {
 		}
 	}
 	b.mu.Lock()
-	b.listed = items
+	b.registeredVal = items
 	b.mu.Unlock()
 	return found
 }
@@ -80,10 +80,10 @@ func (b *ToolsBridge) ListTools(ctx context.Context) []port.PluginTool {
 // CallTool runs the tool the plugin listed, once the plugin is known to hold the permission its
 // effect needs.
 func (b *ToolsBridge) CallTool(
-	ctx context.Context, pluginID, name string, arguments []byte, asked map[string]string,
+	ctx context.Context, pluginID, name string, arguments []byte, toolContext map[string]string,
 ) (port.PluginToolResult, error) {
 	b.mu.Lock()
-	effect, recognized := b.listed[toolKey{pluginID, name}]
+	effect, recognized := b.registeredVal[toolKey{pluginID, name}]
 	b.mu.Unlock()
 	if !recognized {
 		return port.PluginToolResult{}, ErrUnknownTool
@@ -97,7 +97,7 @@ func (b *ToolsBridge) CallTool(
 	}
 	defer func() { _ = lease.Close() }()
 
-	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: arguments, Context: asked}))
+	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: arguments, Context: toolContext}))
 	if err != nil {
 		return port.PluginToolResult{}, readToolError(ctx, err)
 	}

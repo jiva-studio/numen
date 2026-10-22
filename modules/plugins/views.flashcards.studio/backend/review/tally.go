@@ -11,8 +11,8 @@ const DayLayout = "2006-01-02"
 // It is the day a person would say they answered on, which is the day the
 // review day began — an answer given at one in the morning belongs to the day
 // before, and is named for it.
-func (d Day) GetName(at time.Time) string {
-	return d.GetDate(at).Format(DayLayout)
+func (d Day) GetName(target time.Time) string {
+	return d.GetDate(target).Format(DayLayout)
 }
 
 // Tally is one day's answers: how many were given, and how each of the four was
@@ -95,14 +95,14 @@ type Spent struct {
 // it is answered in it. Every one of those answers counts its time either way.
 func GetSpentUnder(
 	d Day, day string, answers []Answer,
-	under map[CardFaceID]string, counts map[string]BudgetUnit,
+	presetMap map[CardFaceID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
-	return OrderAnswers(answers).GetSpentUnder(d, day, under, counts)
+	return OrderAnswers(answers).GetSpentUnder(d, day, presetMap, counts)
 }
 
 // GetSpentUnder is the same over a history already in order.
 func (h History) GetSpentUnder(
-	d Day, day string, under map[CardFaceID]string, counts map[string]BudgetUnit,
+	d Day, day string, presetMap map[CardFaceID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
 	// Which card faces have been answered before the answer in hand, over the
 	// whole history and not this day alone.
@@ -117,7 +117,7 @@ func (h History) GetSpentUnder(
 		if d.GetName(a.At) != day {
 			continue
 		}
-		path, target := under[a.CardFace]
+		path, target := presetMap[a.CardFace]
 		if !target {
 			continue
 		}

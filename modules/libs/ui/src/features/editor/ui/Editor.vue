@@ -182,8 +182,8 @@ defineExpose({
    */
   reveal: (line: number) => {
     if (!view || view.state.doc.length === 0) return false
-    const at = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
-    const { from } = view.state.doc.line(at)
+    const lineNumber = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
+    const { from } = view.state.doc.line(lineNumber)
     view.dispatch({
       selection: { anchor: from },
       effects: EditorView.scrollIntoView(from, { y: 'start' }),

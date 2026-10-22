@@ -143,11 +143,11 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 
 	s := openVault(t, files)
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
-	sits := func(over flashcards.Scope) flashcards.SessionResult {
+	runSession := func(scope flashcards.Scope) flashcards.SessionResult {
 		sat, err := flashcards.NewSession(
 			s.marking, s.standings, s.kept,
 			s.presets, today, func() time.Time { return now },
-		).Execute(t.Context(), s.vault, over)
+		).Execute(t.Context(), s.vault, scope)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -155,7 +155,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	}
 
 	whole := 0
-	for _, target := range byDeck(sits(flashcards.Scope{})) {
+	for _, target := range byDeck(runSession(flashcards.Scope{})) {
 		whole += target
 	}
 	if whole != 30 {
@@ -163,7 +163,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	}
 	for d := range 3 {
 		deck := fmt.Sprintf("decks/D%d.md", d)
-		if got := len(sits(flashcards.Scope{Deck: deck}).Queue); got > 30 {
+		if got := len(runSession(flashcards.Scope{Deck: deck}).Queue); got > 30 {
 			t.Errorf("%s alone hands over %d card faces, and the day holds 30", deck, got)
 		}
 	}

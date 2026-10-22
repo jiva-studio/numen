@@ -292,8 +292,8 @@ var pluginIDLiteral = regexp.MustCompile(`md\.numen\.[A-Za-z0-9]`)
 func getPluginIDLiterals(file *ast.File) []string {
 	var spelled []string
 	ast.Inspect(file, func(n ast.Node) bool {
-		if lit, ok := n.(*ast.BasicLit); ok && lit.Kind == token.STRING && pluginIDLiteral.MatchString(lit.Value) {
-			spelled = append(spelled, lit.Value)
+		if literal, ok := n.(*ast.BasicLit); ok && literal.Kind == token.STRING && pluginIDLiteral.MatchString(literal.Value) {
+			spelled = append(spelled, literal.Value)
 		}
 		return true
 	})
@@ -385,8 +385,8 @@ func TestNoCoreOrHostSourceSpellsOutAPluginID(t *testing.T) {
 		filepath.Join(numenModulesDir, "apps", "mobile"),
 	}
 	parseSources(t, roots, func(path string, file *ast.File) {
-		for _, lit := range getPluginIDLiterals(file) {
-			t.Errorf("%s spells out a plugin id: %s", path, lit)
+		for _, boxes := range getPluginIDLiterals(file) {
+			t.Errorf("%s spells out a plugin id: %s", path, boxes)
 		}
 	})
 }

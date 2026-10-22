@@ -175,7 +175,7 @@ func TestASpanNeverSplitsARune(t *testing.T) {
 func TestAnOffsetIsCountedTheWayAClientCountsText(t *testing.T) {
 	for name, c := range map[string]struct {
 		text string
-		at   int
+		targetOffset int
 		want int
 	}{
 		"ascii":              {"one two", 4, 4},
@@ -186,7 +186,7 @@ func TestAnOffsetIsCountedTheWayAClientCountsText(t *testing.T) {
 		"past the end of it": {"сказал", 999, 6},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := CountUTF16(c.text, c.at); got != c.want {
+			if got := CountUTF16(c.text, c.targetOffset); got != c.want {
 				t.Errorf("counted %d, wanted %d", got, c.want)
 			}
 		})

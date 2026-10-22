@@ -47,11 +47,11 @@ func (s *mockAgentServer) AskAgent(
 	_ = stream.Send(&v1.AskAgentResponse{
 		Step: &v1.AskAgentResponse_ToolCall{
 			ToolCall: &v1.ToolCall{
-				Tool:    "note_search",
-				About:   "query",
-				Length:  10,
-				Path:    "notes/test.md",
-				Span:    &v1.Span{From: 0, To: 100},
+				Tool:   "note_search",
+				About:  "query",
+				Length: 10,
+				Path:   "notes/test.md",
+				Span:   &v1.Span{From: 0, To: 100},
 			},
 		},
 	})
@@ -317,14 +317,14 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 
 type programsServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	asked []*v1.AgentProgramCommand
+	requested []*v1.AgentProgramCommand
 }
 
 func (s *programsServer) GetAgentPrograms(
 	_ context.Context,
 	req *connect.Request[v1.GetAgentProgramsRequest],
 ) (*connect.Response[v1.GetAgentProgramsResponse], error) {
-	s.asked = req.Msg.GetCommands()
+	s.requested = req.Msg.GetCommands()
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: []*v1.AgentProgram{{
 		Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
 		Models: []*v1.AgentModel{{
@@ -355,9 +355,9 @@ func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
-	if len(served.asked) != 1 || served.asked[0].GetProgram() != "one" ||
-		!slices.Equal(served.asked[0].GetCommand(), []string{"/bin/one", "--x"}) {
-		t.Errorf("the plugin received %v", served.asked)
+	if len(served.requested) != 1 || served.requested[0].GetProgram() != "one" ||
+		!slices.Equal(served.requested[0].GetCommand(), []string{"/bin/one", "--x"}) {
+		t.Errorf("the plugin received %v", served.requested)
 	}
 }
 

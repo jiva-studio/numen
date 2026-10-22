@@ -61,7 +61,7 @@ const TimestampGranularity = 2 * time.Second
 // file is inside that window.
 type Ledger struct {
 	mu   sync.Mutex
-	held map[ledgerKey]ledgerEntry
+	item map[ledgerKey]ledgerEntry
 }
 
 type ledgerKey struct {
@@ -75,7 +75,7 @@ type ledgerEntry struct {
 }
 
 // NewLedger is a ledger holding nothing.
-func NewLedger() *Ledger { return &Ledger{held: make(map[ledgerKey]ledgerEntry)} }
+func NewLedger() *Ledger { return &Ledger{item: make(map[ledgerKey]ledgerEntry)} }
 
 func (l *Ledger) get(now time.Time, v domain.VaultID, path string) (ledgerEntry, bool) {
 	if l == nil {
@@ -84,7 +84,7 @@ func (l *Ledger) get(now time.Time, v domain.VaultID, path string) (ledgerEntry,
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.prune(now)
-	entry, ok := l.held[ledgerKey{v, path}]
+	entry, ok := l.item[ledgerKey{v, path}]
 	return entry, ok
 }
 
@@ -94,7 +94,7 @@ func (l *Ledger) put(now time.Time, v domain.VaultID, path string, entry ledgerE
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.held[ledgerKey{v, path}] = entry
+	l.item[ledgerKey{v, path}] = entry
 	l.prune(now)
 }
 
@@ -105,15 +105,15 @@ func (l *Ledger) Len() int {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return len(l.held)
+	return len(l.item)
 }
 
 // prune forgets the entries whose file has left the window. The caller holds the
 // lock.
 func (l *Ledger) prune(now time.Time) {
-	for key, entry := range l.held {
+	for key, entry := range l.item {
 		if now.Sub(entry.fingerprint.ModTime) >= TimestampGranularity {
-			delete(l.held, key)
+			delete(l.item, key)
 		}
 	}
 }
@@ -124,7 +124,7 @@ func (l *Ledger) drop(v domain.VaultID, path string) {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	delete(l.held, ledgerKey{v, path})
+	delete(l.item, ledgerKey{v, path})
 }
 
 // isRecent reports whether a file modified at mtime can still be edited again
@@ -325,11 +325,11 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 	// A path names one file, and a folder names everything under it.
 	target := make(map[domain.SourceKind][]string)
 	for _, path := range paths {
-		under, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
+		limit, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
 		if err != nil {
 			return err
 		}
-		for _, ref := range under {
+		for _, ref := range limit {
 			if ref.Kind == domain.KindNote {
 				continue
 			}

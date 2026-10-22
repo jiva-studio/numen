@@ -97,7 +97,7 @@ export interface FilesTabState {
   close(path: string): void
   select(paths: readonly string[]): void
   rename(path: string, name: string): Promise<void>
-  move(paths: readonly string[], at: DropPosition): Promise<void>
+  move(paths: readonly string[], target: DropPosition): Promise<void>
   drag(paths: readonly string[]): void
   drop(): void
   remove(paths: readonly string[]): void

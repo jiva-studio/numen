@@ -135,8 +135,8 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 	})
 
 	for _, one := range []struct {
-		at    time.Time
-		cards int
+		targetTime time.Time
+		cards      int
 	}{
 		// Two in the morning of the Saturday is the Friday's review day, which
 		// carries the whole of the load.
@@ -144,9 +144,9 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 		// And two in the morning of the Sunday is the half Saturday itself.
 		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 4},
 	} {
-		got := byDeck(s.sessionAt(t, today, one.at))["decks/Light.md"]
+		got := byDeck(s.sessionAt(t, today, one.targetTime))["decks/Light.md"]
 		if got != one.cards {
-			t.Errorf("at %v the deck was asked %d cards, want %d", one.at, got, one.cards)
+			t.Errorf("at %v the deck was asked %d cards, want %d", one.targetTime, got, one.cards)
 		}
 	}
 }
@@ -163,8 +163,8 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 	})
 
 	for _, one := range []struct {
-		at    time.Time
-		cards int
+		targetTime time.Time
+		cards      int
 	}{
 		// The last day of it holds all the material still to begin.
 		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 20},
@@ -172,7 +172,7 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 20},
 		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
 	} {
-		got := byDeck(s.sessionAt(t, today, one.at))["decks/By.md"]
+		got := byDeck(s.sessionAt(t, today, one.targetTime))["decks/By.md"]
 		if got != one.cards {
 			t.Errorf("at %v the deck was asked %d cards, want %d", one.at, got, one.cards)
 		}
@@ -803,16 +803,16 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 	}
 
 	for _, one := range []struct {
-		at    time.Time
-		fresh int
+		targetTime time.Time
+		newCount   int
 	}{
 		{evening.Add(time.Hour), 0},
 		// Three in the morning is the Friday's review day still.
 		{time.Date(2026, 9, 5, 3, 0, 0, 0, time.Local), 0},
 		{time.Date(2026, 9, 5, 5, 0, 0, 0, time.Local), 5},
 	} {
-		if got := unseen(s.sessionAt(t, today, one.at)); got != one.fresh {
-			t.Errorf("at %v the day was asked %d new cards, want %d", one.at, got, one.fresh)
+		if got := unseen(s.sessionAt(t, today, one.targetTime)); got != one.newCount {
+			t.Errorf("at %v the day was asked %d new cards, want %d", one.targetTime, got, one.newCount)
 		}
 	}
 }
@@ -828,16 +828,16 @@ func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
 	})
 
 	for _, one := range []struct {
-		at    time.Time
-		cards int
+		targetTime time.Time
+		cards      int
 	}{
 		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 8},
 		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
 		{time.Date(2026, 9, 7, 10, 0, 0, 0, time.Local), 8},
 	} {
-		got := unseen(s.sessionAt(t, today, one.at))
+		got := unseen(s.sessionAt(t, today, one.targetTime))
 		if got != one.cards {
-			t.Errorf("%v was asked %d new cards, want %d", one.at.Weekday(), got, one.cards)
+			t.Errorf("%v was asked %d new cards, want %d", one.targetTime.Weekday(), got, one.cards)
 		}
 	}
 }
@@ -1211,7 +1211,7 @@ func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 }
 
 // what a session came to, of each kind.
-type session struct{ owed, fresh int }
+type session struct{ owed, newCount int }
 
 func s0(t *testing.T, s vaulted) session {
 	t.Helper()

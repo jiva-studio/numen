@@ -24,7 +24,7 @@ var expectedPlans = []struct {
 	args       []any
 	// An index name, or the columns for a primary key: SQLite names those
 	// itself, and the name changes when a constraint is added.
-	through []string
+	endPos []string
 }{
 	{note.Statements(), "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_folded_name"}},
 	{note.Statements(), "backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
@@ -107,7 +107,7 @@ func TestEveryQuestionIsAnsweredThroughAnIndex(t *testing.T) {
 		t.Logf("%s:\n    %s", q.name, strings.Join(plan, "\n    "))
 
 		joined := strings.Join(plan, "\n")
-		for _, want := range q.through {
+		for _, want := range q.endPos {
 			if !strings.Contains(joined, want) {
 				t.Errorf("%s is not answered through %s", q.name, want)
 			}

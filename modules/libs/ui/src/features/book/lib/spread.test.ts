@@ -20,7 +20,7 @@ import {
 } from './spread'
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
-import { EDGE, SWIPE, goToPage, handTurn, pressTurn, swipePage } from './turn'
+import { EDGE, SWIPE, goToPage, dragPage, pressPage, swipePage } from './pageStep'
 import type { Span } from '@/shared/lib/span'
 import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
 
@@ -293,7 +293,7 @@ describe('countBytes and getUnitOffset', () => {
   })
 })
 
-describe('swipePage and pressTurn', () => {
+describe('swipePage and pressPage', () => {
   it('maps swipe leftward to next page and swipe rightward to previous page', () => {
     expect(swipePage(-SWIPE)).toBe('next')
     expect(swipePage(SWIPE)).toBe('back')
@@ -306,21 +306,21 @@ describe('swipePage and pressTurn', () => {
   })
 
   it('maps edge presses to page turns', () => {
-    expect(pressTurn(0, WIDE)).toBe('back')
-    expect(pressTurn(WIDE * EDGE, WIDE)).toBe('back')
-    expect(pressTurn(WIDE, WIDE)).toBe('next')
-    expect(pressTurn(WIDE * (1 - EDGE), WIDE)).toBe('next')
+    expect(pressPage(0, WIDE)).toBe('back')
+    expect(pressPage(WIDE * EDGE, WIDE)).toBe('back')
+    expect(pressPage(WIDE, WIDE)).toBe('next')
+    expect(pressPage(WIDE * (1 - EDGE), WIDE)).toBe('next')
   })
 
   it('ignores presses in the central area', () => {
-    expect(pressTurn(WIDE / 2, WIDE)).toBeUndefined()
-    expect(pressTurn(10, 0)).toBeUndefined()
+    expect(pressPage(WIDE / 2, WIDE)).toBeUndefined()
+    expect(pressPage(10, 0)).toBeUndefined()
   })
 })
 
-describe('handTurn', () => {
+describe('dragPage', () => {
   const turn = (from: number, to: number, hasSelection = false) =>
-    handTurn(from, to, { wide: WIDE, hasSelection })
+    dragPage(from, to, { wide: WIDE, hasSelection })
 
   it('determines page turn direction from swipe gesture', () => {
     expect(turn(500, 500 - SWIPE)).toBe('next')

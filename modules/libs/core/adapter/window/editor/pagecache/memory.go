@@ -60,7 +60,7 @@ func NewMemory(limit int) *Memory {
 
 // GetOrRender hands over one drawn page, drawing it where it is not held. Several asks
 // for the same page draw it once and are answered with the one drawing.
-func (p *Memory) GetOrRender(ctx context.Context, key document.PageKey, drawn func() ([]byte, error)) ([]byte, error) {
+func (p *Memory) GetOrRender(ctx context.Context, key document.PageKey, rendered func() ([]byte, error)) ([]byte, error) {
 	p.mu.Lock()
 	if el, ok := p.index[key]; ok {
 		p.order.MoveToFront(el)
@@ -72,7 +72,7 @@ func (p *Memory) GetOrRender(ctx context.Context, key document.PageKey, drawn fu
 	p.index[key] = p.order.PushFront(&entry{key: key, pic: pic})
 	p.mu.Unlock()
 
-	pic.body, pic.why = drawn()
+	pic.body, pic.why = rendered()
 	close(pic.ready)
 
 	p.mu.Lock()

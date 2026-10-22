@@ -50,7 +50,7 @@ func newWatched(
 
 func (w watched) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool,
-	told func(paths, assets []string, reload bool),
+	notified func(paths, assets []string, reload bool),
 	handleError port.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
@@ -64,8 +64,8 @@ func (w watched) StartVault(
 	opening := request.VaultOpenerWith(w.db, w.readers, w.watcher)
 	opening.ShouldRebuild = rebuild
 	opening.ErrorHandler = handleError
-	if told != nil {
-		opening.Told = func(m container.VaultChanges) { told(m.Paths, m.Assets, m.ShouldReload) }
+	if notified != nil {
+		opening.Told = func(m container.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v)

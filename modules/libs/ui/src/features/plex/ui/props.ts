@@ -101,7 +101,7 @@ export interface PlexEvents {
    * Every node answers this, the focus included. What the menu holds and what
    * choosing an item does are the caller's.
    */
-  (event: 'menu', id: string, at: Position, trigger: MenuTrigger): void
+  (event: 'menu', id: string, point: Position, trigger: MenuTrigger): void
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
   /**
@@ -110,7 +110,7 @@ export interface PlexEvents {
    */
   (event: 'enter', id: string, heading: string): void
   /** A menu or inspector was asked for on an edge between two nodes. */
-  (event: 'edge-menu', pair: string, at: Position): void
+  (event: 'edge-menu', pair: string, point: Position): void
 }
 
 export interface PlexSlots {

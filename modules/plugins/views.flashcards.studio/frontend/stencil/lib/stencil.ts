@@ -116,7 +116,7 @@ export const moveField = (
  * The order of the faces is the order a card's repetitions are taken from it,
  * and nothing among them is fixed.
  */
-export const moveFace = (stencil: BufferStencil, id: string, at: InsertionPoint): BufferStencil => {
+export const moveFace = (stencil: BufferStencil, id: string, target: InsertionPoint): BufferStencil => {
   const order = orderNames(
     stencil.faces.map((face) => face.id),
     id,

@@ -43,7 +43,7 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUn
 }
 
 func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
-	engine, at := runtimeState.GetLoaded()
+	engine, loadedPath := runtimeState.GetLoaded()
 
 	if engine == nil || at == "" {
 		return fmt.Errorf("onnx runtime not loaded")

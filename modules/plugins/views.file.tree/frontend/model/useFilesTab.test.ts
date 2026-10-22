@@ -8,13 +8,13 @@ import { getFolderPath, ROOT, useFileTree } from './useFileTree'
 import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from '../lib/menu'
 import { WORDS as words } from '../words'
 
-const file = (path: string, over: Partial<Entry> = {}): Entry => ({
+const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
@@ -56,7 +56,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const sources: string[] = []
   const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
   const list = useFileTree({
-    list: async (at: string) => {
+    list: async (folderPath: string) => {
       request.push(at)
       return vault[at] ?? []
     },
@@ -301,7 +301,7 @@ describe('rows release', () => {
   it('read the folders again once, when all of them are done', async () => {
     const request: string[] = []
     const list = useFileTree({
-      list: async (at: string) => {
+      list: async (folderPath: string) => {
         request.push(at)
         return target[at] ?? []
       },

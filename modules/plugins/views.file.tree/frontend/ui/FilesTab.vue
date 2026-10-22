@@ -72,7 +72,7 @@ function onRenameEntry(row: string, name: string) {
   void props.state.rename(row, name)
 }
 
-function onMoveEntries(targetRows: readonly string[], at: DropPosition) {
+function onMoveEntries(targetRows: readonly string[], target: DropPosition) {
   void props.state.move(targetRows, at)
 }
 
@@ -88,7 +88,7 @@ function onRemoveEntries(rows: readonly string[]) {
   props.state.remove(rows)
 }
 
-function onOpenMenu(row: string | null, at: Position) {
+function onOpenMenu(row: string | null, position: Position) {
   props.state.openMenu({ path: row, at })
 }
 

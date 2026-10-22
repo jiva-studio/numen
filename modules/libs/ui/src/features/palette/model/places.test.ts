@@ -30,10 +30,10 @@ const group = (
 const setUp = (initial: PaletteGroup[]) => {
   const groups = ref<PaletteGroup[]>(initial)
   const searchQuery = ref('')
-  const tellLit = vi.fn<(item: string) => void>()
+  const onItemActive = vi.fn<(item: string) => void>()
   const tellChoice = vi.fn<(item: string, action: string) => void>()
-  const state = usePalettePlaces({ groups: () => groups.value, typed: searchQuery, tellLit, tellChoice })
-  return { groups, typed: searchQuery, tellLit, tellChoice, state }
+  const state = usePalettePlaces({ groups: () => groups.value, typed: searchQuery, onItemActive, tellChoice })
+  return { groups, typed: searchQuery, onItemActive, tellChoice, state }
 }
 
 const move = (x: number, y: number): PointerEvent => ({ clientX: x, clientY: y }) as PointerEvent
@@ -71,7 +71,7 @@ describe('usePalettePlaces', () => {
       groups.value = [group('g', [item('a'), item('b'), item('c')])]
       await nextTick()
       expect(state.here.value).toBe(0)
-      expect(state.lit.value?.id).toBe('a')
+      expect(state.activeItem.value?.id).toBe('a')
     })
 
     it('stays on the item it is on while the list changes', async () => {
@@ -80,7 +80,7 @@ describe('usePalettePlaces', () => {
       state.goTo(1)
       groups.value = [group('g', [item('a'), item('b'), item('c')])]
       await nextTick()
-      expect(state.lit.value?.id).toBe('b')
+      expect(state.activeItem.value?.id).toBe('b')
     })
 
     it('stays on the first row when that row is the one it holds', async () => {
@@ -92,21 +92,21 @@ describe('usePalettePlaces', () => {
     })
 
     it('says at its current position whenever it moves', async () => {
-      const { tellLit, state } = setUp([group('g', [item('a'), item('b')])])
+      const { onItemActive, state } = setUp([group('g', [item('a'), item('b')])])
       state.goTo(1)
       await nextTick()
-      expect(tellLit).toHaveBeenLastCalledWith('b')
+      expect(onItemActive).toHaveBeenLastCalledWith('b')
     })
 
     it('is put on nothing by a fresh question', async () => {
-      const { typed, tellLit, state } = setUp([group('g', [item('a'), item('b')])])
+      const { typed, onItemActive, state } = setUp([group('g', [item('a'), item('b')])])
       state.goTo(1)
       await nextTick()
       typed.value = 'n'
       await nextTick()
       expect(state.held.value).toBe('')
-      expect(state.lit.value).toBeUndefined()
-      expect(tellLit).toHaveBeenLastCalledWith('')
+      expect(state.activeItem.value).toBeUndefined()
+      expect(onItemActive).toHaveBeenLastCalledWith('')
     })
   })
 
@@ -116,7 +116,7 @@ describe('usePalettePlaces', () => {
     it('lights the row it first moves over', () => {
       const { state } = list()
       state.lightAt(1, move(5, 5))
-      expect(state.lit.value?.id).toBe('b')
+      expect(state.activeItem.value?.id).toBe('b')
     })
 
     it('does not light a row for a pointer that has never been seen to move', () => {
@@ -130,30 +130,30 @@ describe('usePalettePlaces', () => {
       state.lightAt(1, move(5, 5))
       state.goTo(0)
       state.lightAt(1, move(5, 5))
-      expect(state.lit.value?.id).toBe('a')
+      expect(state.activeItem.value?.id).toBe('a')
     })
 
     it('lights a row when only one coordinate has moved', () => {
       const { state } = list()
       state.lightAt(0, move(5, 5))
       state.lightAt(1, move(5, 6))
-      expect(state.lit.value?.id).toBe('b')
+      expect(state.activeItem.value?.id).toBe('b')
       state.lightAt(0, move(6, 6))
-      expect(state.lit.value?.id).toBe('a')
+      expect(state.activeItem.value?.id).toBe('a')
     })
 
     it('passes over a row that cannot be chosen', () => {
       const { state } = list()
       state.goTo(0)
       state.lightAt(2, move(5, 5))
-      expect(state.lit.value?.id).toBe('a')
+      expect(state.activeItem.value?.id).toBe('a')
     })
 
     it('ignores a row that is not in the list', () => {
       const { state } = list()
       state.goTo(0)
       expect(() => state.lightAt(9, move(5, 5))).not.toThrow()
-      expect(state.lit.value?.id).toBe('a')
+      expect(state.activeItem.value?.id).toBe('a')
     })
   })
 

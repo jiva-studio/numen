@@ -28,9 +28,9 @@ var errRefused = errors.New("rejected on purpose")
 var notebook = domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 
 // runWithDeps runs the terminal on the values it is handed.
-func runWithDeps(given cli.Deps, args ...string) (string, error) {
+func runWithDeps(deps cli.Deps, args ...string) (string, error) {
 	var out bytes.Buffer
-	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Deps { return given })
+	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Deps { return deps })
 	return out.String(), err
 }
 
@@ -271,7 +271,7 @@ func TestProblemsNeedsAVault(t *testing.T) {
 func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		given cli.Deps
+		input cli.Deps
 		args  []string
 	}{
 		"the list of vaults cannot be opened": {
@@ -290,7 +290,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 			[]string{"problems", "notebook", "nonsense"},
 		},
 	} {
-		out, err := runWithDeps(c.given, c.args...)
+		out, err := runWithDeps(c.input, c.args...)
 		if err == nil {
 			t.Errorf("%s: problems succeeded", name)
 		}

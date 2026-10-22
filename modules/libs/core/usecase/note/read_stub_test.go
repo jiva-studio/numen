@@ -56,18 +56,18 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 		t.Errorf("a note of exactly the ceiling is %q", atCeiling.Outcome)
 	}
 
-	over, err := readStated(t, statedReader{
+	finished, err := readStated(t, statedReader{
 		ref: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling + 1},
 		raw: body,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if over.Outcome != note.TooLarge {
-		t.Errorf("a note one byte over the ceiling is %q", over.Outcome)
+	if finished.Outcome != note.TooLarge {
+		t.Errorf("a note one byte over the ceiling is %q", finished.Outcome)
 	}
-	if over.Body != "" {
-		t.Errorf("a note over the ceiling came back with prose: %q", over.Body)
+	if finished.Body != "" {
+		t.Errorf("a note over the ceiling came back with prose: %q", finished.Body)
 	}
 }
 

@@ -76,7 +76,7 @@ const vault: VaultCardsDue = {
   isIndexing: false,
 }
 
-const mountDecks = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
+const mountDecks = (presets: readonly Preset[], overrides: VaultCardsDue = vault) =>
   mount(Decks, {
     props: {
       vault: over,
@@ -118,10 +118,10 @@ describe('the decks of a vault', () => {
 
 describe('a deck with nothing waiting', () => {
   /** A vault whose one deck holds these cards and owes this much of them. */
-  const createVault = (faces: number, due: number, fresh: number, unbegun = 0): VaultCardsDue => ({
+  const createVault = (faces: number, due: number, freshCount: number, unbegun = 0): VaultCardsDue => ({
     ...vault,
     due,
-    new: fresh,
+    new: fresh: freshCount,
     decks: [{ deck: 'decks/Words.md', faces, due, new: fresh, learned: 0, unbegun }],
   })
 

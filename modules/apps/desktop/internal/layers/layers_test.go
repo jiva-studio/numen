@@ -31,7 +31,7 @@ func isAssembled(pkg string) bool {
 
 // standing is a file of the applications, under the package it belongs to.
 type standing struct {
-	at   string
+	relPath string
 	in   string
 	file *ast.File
 }
@@ -69,7 +69,7 @@ func readSources(t *testing.T) []standing {
 			return err
 		}
 		found = append(found, standing{
-			at:   filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
+			relPath: filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
 			in:   getPackage(root, path),
 			file: file,
 		})
@@ -86,7 +86,7 @@ func readSources(t *testing.T) []standing {
 		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
 	}
 	for _, one := range named {
-		if !slices.ContainsFunc(found, func(target standing) bool { return target.at == one }) {
+		if !slices.ContainsFunc(found, func(target standing) bool { return target.relPath == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
 	}
@@ -160,7 +160,7 @@ func TestNoApplicationLogs(t *testing.T) {
 				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, target.at+" imports "+to)
+				wrong = append(wrong, target.relPath+" imports "+to)
 			}
 		}
 	}
@@ -196,7 +196,7 @@ func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	for _, target := range readSources(t) {
 		for _, one := range getClaimedPorts(target.file) {
-			wrong = append(wrong, target.at+" names port."+one)
+			wrong = append(wrong, target.relPath+" names port."+one)
 		}
 	}
 	for _, one := range wrong {

@@ -35,10 +35,10 @@ func TestOrderMatchesTime(t *testing.T) {
 }
 
 func TestDistinctWithinTheSameMillisecond(t *testing.T) {
-	at := time.Now()
+	stamp := time.Now()
 	observed := map[string]bool{}
 	for range 1000 {
-		id := ulid.New(at)
+		id := ulid.New(stamp)
 		if observed[id] {
 			t.Fatalf("duplicate within one millisecond: %s", id)
 		}
@@ -106,10 +106,10 @@ func TestTheFirstTenCharactersAreTheMillisecond(t *testing.T) {
 // every one of them is set in some and clear in others.
 func TestEveryRandomBitVaries(t *testing.T) {
 	const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-	at := time.UnixMilli(1469918176385)
+	stamp := time.UnixMilli(1469918176385)
 	var isSet, isClear [130]bool
 	for range 64 {
-		id := ulid.New(at)
+		id := ulid.New(stamp)
 		for bit := 50; bit < 130; bit++ {
 			value := strings.IndexByte(alphabet, id[bit/5])
 			if value>>(4-bit%5)&1 == 1 {

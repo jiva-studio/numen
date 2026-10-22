@@ -13,12 +13,12 @@ var runtimeState Runtime[*ort.Engine]
 // Open returns the engine of the library at, opened on the first call. One
 // engine serves every caller here, and every library registered makes its own
 // engine in the same step.
-func Open(ctx context.Context, at string) (*ort.Engine, string, error) {
-	return runtimeState.Open(ctx, at, openEngine)
+func Open(ctx context.Context, libPath string) (*ort.Engine, string, error) {
+	return runtimeState.Open(ctx, libPath, openEngine)
 }
 
 // openEngine loads the library at.
-func openEngine(at string) (*ort.Engine, error) {
+func openEngine(libPath string) (*ort.Engine, error) {
 	preloadCppRuntime()
 	engine, err := ort.NewEngine(at)
 	if err != nil {
@@ -34,15 +34,15 @@ func openEngine(at string) (*ort.Engine, error) {
 // The binding gives every tensor to the engine made last and stamps it on for
 // that tensor's life, so one made on a library's first use moves what everything
 // already running was building its tensors through.
-func Register(also func(at string)) {
+func Register(also func(libPath string)) {
 	runtimeState.Register(also)
 }
 
 // IsAvailable reports whether this process has its runtime, or the library at
 // is there to make one from. It opens nothing, so it is answered while another
 // caller is opening one.
-func IsAvailable(at string) bool {
-	return runtimeState.IsAvailable(at)
+func IsAvailable(libPath string) bool {
+	return runtimeState.IsAvailable(libPath)
 }
 
 // HasRegistration reports whether any library has registered an initialisation hook.

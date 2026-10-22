@@ -66,11 +66,11 @@ export function getStepInsertionPoint(
   dragEntry: string,
   direction: StepDirection,
 ): InsertionPoint | undefined {
-  const at = names.indexOf(dragEntry)
-  if (at === -1) return undefined
-  if (direction === 'up') return names[at - 1]
-  if (at === names.length - 1) return undefined
-  return names[at + 2] ?? null
+  const pos = names.indexOf(dragEntry)
+  if (pos === -1) return undefined
+  if (direction === 'up') return names[pos - 1]
+  if (pos === names.length - 1) return undefined
+  return names[pos + 2] ?? null
 }
 
 /** The order a dragged field lands in, with the first field remaining where it is. */
@@ -124,8 +124,8 @@ export function checkHeadingName(
  */
 export function getFreeName(names: readonly string[], stem: string): string {
   const target = new Set(names.map((name) => name.trim()))
-  for (let at = 1; ; at += 1) {
-    const tried = `${stem} ${at}`
+  for (let i = 1; ; i += 1) {
+    const tried = `${stem} ${i}`
     if (!target.has(tried)) return tried
   }
 }

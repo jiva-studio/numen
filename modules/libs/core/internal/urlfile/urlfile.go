@@ -36,6 +36,6 @@ func Read(raw []byte) (domain.URL, error) {
 }
 
 // Write is a file holding one address, in the form every system reads.
-func Write(at domain.URL) []byte {
-	return []byte(section + "\n" + key + "=" + string(at) + "\n")
+func Write(targetURL domain.URL) []byte {
+	return []byte(section + "\n" + key + "=" + string(targetURL) + "\n")
 }

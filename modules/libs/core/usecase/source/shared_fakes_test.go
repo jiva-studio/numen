@@ -20,13 +20,13 @@ import (
 type fakeStorage struct {
 	mu     sync.Mutex
 	files  map[domain.ArtifactName][]byte
-	held   map[domain.ArtifactName]bool
+	item   map[domain.ArtifactName]bool
 	opens  int
 	closes int
 }
 
 func newShelf() *fakeStorage {
-	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
+	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, item: map[domain.ArtifactName]bool{}}
 }
 
 // fakeStores hands the one store to whatever opens a vault's store.
@@ -115,21 +115,21 @@ func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
-	delete(s.held, name)
+	delete(s.item, name)
 	return nil
 }
 
 func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.held[name] {
+	if s.item[name] {
 		return nil, port.ErrClaimed
 	}
-	s.held[name] = true
+	s.item[name] = true
 	return func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.held, name)
+		delete(s.item, name)
 		return nil
 	}, nil
 }
@@ -138,7 +138,7 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.held[name] = true
+	s.item[name] = true
 }
 
 func (s *fakeStorage) artifactNames() []domain.ArtifactName {

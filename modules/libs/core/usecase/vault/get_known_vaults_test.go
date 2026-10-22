@@ -14,17 +14,17 @@ import (
 // theList is the vaults an installation holds, held in memory: the rows, which
 // of them was opened last, and how often that was asked.
 type theList struct {
-	rows   []domain.Vault
-	last   domain.Vault
-	isKept bool
-	asked  int
-	fails  error
+	rows      []domain.Vault
+	last      domain.Vault
+	isKept    bool
+	requested int
+	fails     error
 }
 
 func (l *theList) List() ([]domain.Vault, error) { return l.rows, l.fails }
 
 func (l *theList) GetLastVault() (domain.Vault, bool, error) {
-	l.asked++
+	l.requested++
 	return l.last, l.isKept, l.fails
 }
 
@@ -140,8 +140,8 @@ func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 	if !recognized[0].IsCurrent || recognized[1].IsCurrent {
 		t.Error("the vault being worked is not the current one")
 	}
-	if list.asked != 0 {
-		t.Errorf("the list was asked what was opened last %d times", list.asked)
+	if list.requested != 0 {
+		t.Errorf("the list was asked what was opened last %d times", list.requested)
 	}
 }
 
@@ -214,8 +214,8 @@ func TestAnEmptyListIsNoVaults(t *testing.T) {
 	if len(recognized) != 0 {
 		t.Errorf("%d vaults on an empty list", len(recognized))
 	}
-	if list.asked != 0 {
-		t.Errorf("the list was asked what was opened last %d times", list.asked)
+	if list.requested != 0 {
+		t.Errorf("the list was asked what was opened last %d times", list.requested)
 	}
 }
 

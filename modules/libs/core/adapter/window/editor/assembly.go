@@ -112,7 +112,7 @@ type Assembly interface {
 	// on a machine holding neither of the tools that reach one. OpenImportURL
 	// is one such address fetched into the vault.
 	OpenDownloader(ctx context.Context) port.Downloader
-	OpenImportURL(ctx context.Context, by port.Downloader) source.ImportURL
+	OpenImportURL(ctx context.Context, downloader port.Downloader) source.ImportURL
 
 	// OpenRecognitionWorker reads a scanned document and
 	// OpenTranscriptionWorker hears a recording, each for whoever asks. models
@@ -147,7 +147,7 @@ type Assembly interface {
 	// through this opening, and why the vault is not being followed.
 	StartVault(
 		ctx context.Context, v domain.Vault, rebuild bool,
-		told func(paths, assets []string, reload bool),
+		notified func(paths, assets []string, reload bool),
 		handleError port.ErrorHandler,
 	) (
 		read func(ctx context.Context, during func()) (notes int, err error),

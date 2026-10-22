@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { many, percent } from '@numen/ui'
 import { WORDS } from './words'
 
-const at = {
+const samplePoint = {
   value: 30,
   reviews: 12,
   minutes: 20,
@@ -24,7 +24,7 @@ describe('WORDS.buys', () => {
   })
 
   it('says nothing about the overdue where nothing is overdue', () => {
-    expect(WORDS.buys('retention', at)).toEqual([
+    expect(WORDS.buys('retention', samplePoint)).toEqual([
       `${percent(30)} remembered`,
       `${many(20, 'minute')} a day`,
     ])

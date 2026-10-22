@@ -90,17 +90,17 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 func TestWhatTheInterfaceProbeRuleRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "probe.go", `package p
 
-func probe(held any, reader port.VaultReader) {
-	_, _ = held.(interface{ Concurrency() int })
+func probe(target any, reader port.VaultReader) {
+	_, _ = target.(interface{ Concurrency() int })
 	_, _ = reader.(port.SharedOpener)
-	switch held.(type) {
+	switch target.(type) {
 	case port.Trash:
 	case *os.File:
 	}
-	_, _ = held.(string)
-	_, _ = held.(*Embedder)
-	_, _ = held.(error)
-	switch held {
+	_, _ = target.(string)
+	_, _ = target.(*Embedder)
+	_, _ = target.(error)
+	switch target {
 	case 1:
 	}
 }

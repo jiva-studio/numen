@@ -13,7 +13,7 @@ export function useLinkInspector(
 ) {
   const linkInspector = ref<LinkInspectorRequest | null>(null)
 
-  const openLinkInspector = (pair: string, at: { x: number; y: number }) => {
+  const openLinkInspector = (pair: string, position: { x: number; y: number }) => {
     const [idA, idB] = pair.split(' ')
     const pathA = map.getNodePath(idA ?? '')
     const pathB = map.getNodePath(idB ?? '')

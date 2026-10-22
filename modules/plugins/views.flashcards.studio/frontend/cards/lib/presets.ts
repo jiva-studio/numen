@@ -129,7 +129,7 @@ export interface Point {
 
 /** One point on the curve worth pointing at. */
 export interface CurvePoint {
-  readonly at: number
+  readonly index: number
   readonly value: number
   readonly day: string
 }

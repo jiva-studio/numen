@@ -207,7 +207,7 @@ const defer = <T>() => {
 }
 
 describe('a setting written twice in quick succession', () => {
-  const at = ['appearance', 'nest_headings_under_notes']
+  const settingPath = ['appearance', 'nest_headings_under_notes']
 
   /** A file whose text a test sets, with every write and every read held until it is let through. */
   const createHeldVault = () => {
@@ -234,21 +234,21 @@ describe('a setting written twice in quick succession', () => {
     const vault = createHeldVault()
     const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const first = retainedState.writeSetting(at, false)
-    const second = retainedState.writeSetting(at, true)
-    expect(retainedState.getSetting(at)).toBe(true)
+    const first = retainedState.writeSetting(settingPath, false)
+    const second = retainedState.writeSetting(settingPath, true)
+    expect(retainedState.getSetting(settingPath)).toBe(true)
 
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve('{"appearance":{"nest_headings_under_notes":false}}')
     await first
-    expect(retainedState.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(settingPath)).toBe(true)
 
     vault.writes[1]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve(vault.getFile())
     await second
-    expect(retainedState.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(settingPath)).toBe(true)
   })
 
   it('does not take a read that answers after a newer one', async () => {
@@ -269,12 +269,12 @@ describe('a setting written twice in quick succession', () => {
     vault.core.updateSettings = () => Promise.reject(new Error('failed'))
     const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const content = retainedState.writeSetting(at, false)
-    expect(retainedState.getSetting(at)).toBe(false)
+    const content = retainedState.writeSetting(settingPath, false)
+    expect(retainedState.getSetting(settingPath)).toBe(false)
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve(vault.getFile())
     await content
-    expect(retainedState.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(settingPath)).toBe(true)
   })
 })
 

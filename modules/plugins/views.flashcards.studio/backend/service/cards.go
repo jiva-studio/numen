@@ -87,13 +87,13 @@ func (h *cardsHandler) CreateDeck(
 // being shown, the window's hold on writing, and the error codes a file that
 // could not be made comes back as.
 func (b *Backend) createCardNote(
-	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
+	ctx context.Context, create func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
 	showing, err := b.getCurrentVault(ctx)
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, false, err
 	}
-	made, err := cut(showing, cards.New{Title: title, Path: folder})
+	made, err := create(showing, cards.New{Title: title, Path: folder})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.

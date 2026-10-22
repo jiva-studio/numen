@@ -28,10 +28,10 @@ const joinProse = (above: string, below: string): string =>
  * A section taken out of the deck.
  */
 export const removeSection = (deck: BufferDeck, id: string): BufferDeck => {
-  const at = deck.sections.findIndex((section) => section.id === id)
-  const going = deck.sections[at]
+  const index = deck.sections.findIndex((section) => section.id === id)
+  const going = deck.sections[index]
   if (!going) return deck
-  const above = deck.sections[at - 1]
+  const above = deck.sections[index - 1]
   return {
     ...deck,
     preamble: above ? deck.preamble : joinProse(deck.preamble, going.preamble),

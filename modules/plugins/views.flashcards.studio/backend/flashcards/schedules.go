@@ -61,7 +61,7 @@ type Schedules struct {
 	// Cache is where the working out is remembered. A build holding none works
 	// it out at every launch.
 	Cache ports.ScheduleStore
-	by    review.Scheduler
+	scheduler review.Scheduler
 	// day is where one day of review gives way to the next, which is what says
 	// on which day a card placed by its preset lands.
 	day review.Day
@@ -81,12 +81,12 @@ type Schedules struct {
 // each card is worked out at.
 func NewSchedules(
 	logs ports.DerivedStores,
-	by review.Scheduler,
+	scheduler review.Scheduler,
 	day review.Day,
 	faces ListCardFaces,
 	presets Presets,
 ) Schedules {
-	return Schedules{logs: logs, by: by, day: day, cardFaces: faces, presets: presets}
+	return Schedules{logs: logs, scheduler: scheduler, day: day, cardFaces: faces, presets: presets}
 }
 
 // CardFaces returns the ListCardFaces Schedules reads through.
@@ -108,16 +108,16 @@ func (u Schedules) Presets() Presets {
 // depends on every answer before it, so nothing worked out under the old
 // assignment can be kept.
 type assignment struct {
-	under review.Assignment
-	mark  string
+	policy review.Assignment
+	mark   string
 }
 
 // createPlainAssignment returns every card face on the one scheduler, at the preset a deck naming
 // none is scheduled by.
 func (u Schedules) createPlainAssignment() assignment {
 	return assignment{
-		under: review.ScheduleBy(u.by),
-		mark:  getMark([]string{u.by.GetName(), u.getDayStartMark(), review.Defaults().GetPlacing()}),
+		policy: review.ScheduleBy(u.scheduler),
+		mark:   getMark([]string{u.scheduler.GetName(), u.getDayStartMark(), review.Defaults().GetPlacing()}),
 	}
 }
 
@@ -180,16 +180,16 @@ func (u Schedules) getAssignmentFrom(
 	}
 
 	marks := make([]string, 0, len(underMap)+2)
-	marks = append(marks, u.by.GetName(), u.getDayStartMark())
+	marks = append(marks, u.scheduler.GetName(), u.getDayStartMark())
 	for face, one := range underMap {
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.GetName()+"\t"+one.Preset.GetPlacing())
 	}
 	out.mark = getMark(marks)
-	out.under = func(face review.CardFaceID) review.SchedulingPolicy {
+	out.policy = func(face review.CardFaceID) review.SchedulingPolicy {
 		if one, targetVal := underMap[face]; targetVal {
 			return one
 		}
-		return review.SchedulingPolicy{By: u.by, Preset: review.Defaults()}
+		return review.SchedulingPolicy{By: u.scheduler, Preset: review.Defaults()}
 	}
 	return out, nil
 }
@@ -246,13 +246,13 @@ func (u Schedules) Execute(
 // GetFromLog is where a log that has already been read leaves every card face.
 // A caller holding the answers does not read them again to be told this.
 func (u Schedules) GetFromLog(
-	ctx context.Context, v domain.Vault, held ReviewLog,
+	ctx context.Context, v domain.Vault, log ReviewLog,
 ) (map[review.CardFaceID]review.Schedule, error) {
 	asks, err := u.getAssignment(ctx, v)
 	if err != nil {
 		return nil, err
 	}
-	return u.getSchedulesCached(ctx, v, held, asks), nil
+	return u.getSchedulesCached(ctx, v, log, asks), nil
 }
 
 // worked is where a log a caller has already read leaves the card faces of one
@@ -294,7 +294,7 @@ func (u Schedules) replayAndRemember(
 func replaySchedules(
 	d review.Day, target ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
-	return target.GetHistory().Replay(d, asks.under)
+	return target.GetHistory().Replay(d, asks.policy)
 }
 
 // readRemembered is what was worked out last time, when it was worked out from

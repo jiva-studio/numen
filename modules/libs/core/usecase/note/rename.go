@@ -63,19 +63,19 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		return RenameResult{}, err
 	}
 
-	var by NameSource
+	var source NameSource
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
-			by = ByFrontmatter
+			source = ByFrontmatter
 			return doc.SetTitle(title)
 		}
 		if exact {
-			by = ByFilename
+			source = ByFilename
 			return errFilenameNamesIt
 		}
 		// The filename cannot carry the title, so the frontmatter takes it.
-		by = ByFrontmatter
+		source = ByFrontmatter
 		return doc.SetTitle(title)
 	})
 	if err != nil && !errors.Is(err, errFilenameNamesIt) {
@@ -84,8 +84,8 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 
 	// The answer carries the note's name whatever the file does, the file's new
 	// path once the file is at it, and the path it still has until then.
-	res := RenameResult{Path: path, Title: title, By: by}
-	if moves, _ := u.Sync.GetSetting().GetRenameEffects(by); !moves {
+	res := RenameResult{Path: path, Title: title, By: source}
+	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves {
 		return res, nil
 	}
 	to := pathpkg.Join(pathpkg.Dir(path), name+pathpkg.Ext(path))

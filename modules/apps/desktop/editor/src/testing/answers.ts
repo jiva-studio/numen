@@ -122,8 +122,8 @@ export const outside = (() => {
   const queue: { path: string; spans: { from: number; to: number }[] }[] = []
   let wake: (() => void) | null = null
   return {
-    ask: (at: { path: string; start: number; length: number }) => {
-      queue.push({ path: at.path, spans: [{ from: at.start, to: at.start + at.length }] })
+    ask: (target: { path: string; start: number; length: number }) => {
+      queue.push({ path: target.path, spans: [{ from: target.start, to: at.start + target.length }] })
       wake?.()
       wake = null
     },

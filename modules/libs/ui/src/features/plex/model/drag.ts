@@ -45,10 +45,10 @@ export interface PlexDragDeps {
  */
 export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   /** Where the pointer is, and nothing at all while nothing is being dragged. */
-  const at = ref<Position | null>(null)
+  const pos = ref<Position | null>(null)
 
   const relation = computed<PlexRelation | null>(() => {
-    const now = at.value
+    const now = pos.value
     if (!now) return null
     return getDropRelation({
       frame: drag.getFrame(),
@@ -72,12 +72,12 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   const stop = () => {
     detach?.()
     detach = null
-    at.value = null
+    pos.value = null
   }
 
   const move = (event: PointerEvent) => {
     const element = drag.getSurface()
-    at.value = element ? getPosition(element, event) : null
+    pos.value = element ? getPosition(element, event) : null
   }
 
   const finish = (event: PointerEvent) => {
@@ -123,5 +123,5 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   // A plex can go while something is still being dragged over it.
   onScopeDispose(stop)
 
-  return { at, relation }
+  return { at: pos, relation }
 }

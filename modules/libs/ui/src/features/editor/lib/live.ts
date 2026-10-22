@@ -68,9 +68,9 @@ const isSelected = (selection: EditorSelection, node: BlockNode) =>
 /** Whether a changed range reaches the node. `start` is where the range's bounds begin in `ranges`. */
 const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => {
   // Stryker disable next-line EqualityOperator: a read past the last range is undefined, and no comparison with it holds
-  for (let at = 0; at < ranges.length; at += 4) {
-    const from = ranges[at + start] as number
-    const to = ranges[at + start + 1] as number
+  for (let i = 0; i < ranges.length; i += 4) {
+    const from = ranges[i + start] as number
+    const to = ranges[i + start + 1] as number
     if (from <= node.to && to >= node.from) return true
   }
   return false

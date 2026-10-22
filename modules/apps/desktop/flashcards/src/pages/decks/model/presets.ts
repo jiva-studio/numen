@@ -114,7 +114,7 @@ const groupDecksIntoPresets = (
   today: string,
 ): Preset[] => {
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
-  const at = countDecksIntoPresets(reads)
+  const tallies = countDecksIntoPresets(reads)
 
   const out = [...at.values()].map((one) => getPresetFromDecks(one, came.get(one.path), today))
 
@@ -131,21 +131,21 @@ const groupDecksIntoPresets = (
 
 /** The decks each preset schedules, counted into it, by the path it is filed under. */
 const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTally> => {
-  const at = new Map<string, PresetTally>()
+  const tallies = new Map<string, PresetTally>()
   for (const { deck, result } of reads) {
     if (!result.ok) continue
     const { held: preset } = result.value
-    let into = at.get(preset.path)
+    let into = tallies.get(preset.path)
     if (!into) {
       into = createTally(preset)
-      at.set(preset.path, into)
+      tallies.set(preset.path, into)
     }
     into.decks.push(deck.deck)
     for (const problem of preset.problems) into.problems.add(problem)
     into.due += deck.due
     into.fresh += deck.new
   }
-  return at
+  return tallies
 }
 
 /** One preset currently before a deck has been counted into it. */

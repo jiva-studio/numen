@@ -58,7 +58,7 @@ export interface WindowKeysDeps {
 
 const applyVaultKey = (press: KeyboardEvent, deps: WindowKeysDeps) => {
   const vaults = deps.getVaults()
-  const at = getVaultForKey(press, vaults.length)
+  const vaultIndex = getVaultForKey(press, vaults.length)
   const one = vaults[at ?? -1]
   if (!one?.isCounted) return
   press.preventDefault()

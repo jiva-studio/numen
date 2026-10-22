@@ -31,20 +31,20 @@ type store interface {
 // memory keeps the files in memory. Every write moves the modification time on by a second.
 type memory struct {
 	files map[string][]byte
-	at    map[string]domain.Fingerprint
+	fingerprints map[string]domain.Fingerprint
 	clock time.Time
 }
 
 func newMemory() *memory {
-	return &memory{files: map[string][]byte{}, at: map[string]domain.Fingerprint{}, clock: time.Unix(1_700_000_000, 0)}
+	return &memory{files: map[string][]byte{}, fingerprints: map[string]domain.Fingerprint{}, clock: time.Unix(1_700_000_000, 0)}
 }
 
 func (m *memory) stat(filePath string) (domain.Fingerprint, error) {
-	at, there := m.at[filePath]
+	fp, there := m.fingerprints[filePath]
 	if !there {
 		return domain.Fingerprint{}, fs.ErrNotExist
 	}
-	return at, nil
+	return fp, nil
 }
 
 func (m *memory) read(filePath string) ([]byte, error) {
@@ -58,8 +58,8 @@ func (m *memory) read(filePath string) ([]byte, error) {
 func (m *memory) write(filePath string, content []byte) (domain.Fingerprint, error) {
 	m.clock = m.clock.Add(time.Second)
 	m.files[filePath] = append([]byte(nil), content...)
-	m.at[filePath] = domain.Fingerprint{Path: filePath, Kind: kindOf(filePath), Size: int64(len(content)), ModTime: m.clock}
-	return m.at[filePath], nil
+	m.fingerprints[filePath] = domain.Fingerprint{Path: filePath, Kind: kindOf(filePath), Size: int64(len(content)), ModTime: m.clock}
+	return m.fingerprints[filePath], nil
 }
 
 func (m *memory) create(filePath string, content []byte) (domain.Fingerprint, error) {
@@ -74,7 +74,7 @@ func (m *memory) remove(filePath string) error {
 		return fs.ErrNotExist
 	}
 	delete(m.files, filePath)
-	delete(m.at, filePath)
+	delete(m.fingerprints, filePath)
 	return nil
 }
 

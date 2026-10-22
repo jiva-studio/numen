@@ -31,17 +31,17 @@ func attachViewer(view port.Window) mcp.Core {
 
 // window is what an agent puts a place in front of.
 type window struct {
-	asked []domain.Place
-	drawn []domain.Edit
-	went  []domain.Move
-	fails error
+	requested []domain.Place
+	rendered  []domain.Edit
+	went      []domain.Move
+	fails     error
 }
 
 func (w *window) FocusPlace(_ context.Context, pos domain.Place) error {
 	if w.fails != nil {
 		return w.fails
 	}
-	w.asked = append(w.asked, pos)
+	w.requested = append(w.requested, pos)
 	return nil
 }
 
@@ -81,8 +81,8 @@ func TestFocusInsertsANoteInFrontOfThePerson(t *testing.T) {
 	// A note is put in front of the person whole. Nothing about it names a
 	// span, so nothing is asked for one.
 	want := domain.Place{Path: "notes/Entropy.md"}
-	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 1 || !reflect.DeepEqual(looking.requested[0], want) {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
@@ -98,8 +98,8 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 	if !res.IsError {
 		t.Error("a note that is not there was shown anyway")
 	}
-	if len(looking.asked) != 0 {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 0 {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
@@ -158,8 +158,8 @@ func TestShowInsertsAPlaceInFrontOfThePerson(t *testing.T) {
 		t.Errorf("answered with %+v", out)
 	}
 	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}}
-	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 1 || !reflect.DeepEqual(looking.requested[0], want) {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
@@ -176,8 +176,8 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 	if !res.IsError {
 		t.Error("a document that is not there was shown anyway")
 	}
-	if len(looking.asked) != 0 {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 0 {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
@@ -187,7 +187,7 @@ func (w *window) ShowEdit(_ context.Context, response domain.Edit) error {
 	if w.fails != nil {
 		return w.fails
 	}
-	w.drawn = append(w.drawn, response)
+	w.rendered = append(w.rendered, response)
 	return nil
 }
 

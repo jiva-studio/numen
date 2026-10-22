@@ -17,7 +17,7 @@ const isBookProofreadOffered = createArtifactOffer(
   (createdItem) => createdItem.ocr === 'done' && isArtifactMissing(createdItem['ocr.corrected']),
 )
 
-const isProofreadOffered = (at: CommandTarget, runs: RunSupport): boolean =>
+const isProofreadOffered = (target: CommandTarget, runs: RunSupport): boolean =>
   isRecordingProofreadOffered(at, runs) || isBookProofreadOffered(at, runs)
 
 const isRecordingDeleteTextOffered = createArtifactOffer(
@@ -32,7 +32,7 @@ const isUrlDeleteTextOffered = createArtifactOffer(
   (createdItem) => createdItem.transcript !== 'none',
 )
 
-const isDeleteTextOffered = (at: CommandTarget, runs: RunSupport): boolean =>
+const isDeleteTextOffered = (target: CommandTarget, runs: RunSupport): boolean =>
   isRecordingDeleteTextOffered(at, runs) || isUrlDeleteTextOffered(at, runs)
 
 export const createArtifactCommands = (words: Words): readonly Command[] => [

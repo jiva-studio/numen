@@ -53,8 +53,8 @@ type Backend struct {
 	cfg    Config
 	runs   sessions
 
-	// built is the scenarios, made again when the settings change.
-	built atomic.Pointer[Scenarios]
+	// scenariosStore is the scenarios, made again when the settings change.
+	scenariosStore atomic.Pointer[Scenarios]
 }
 
 // Scenarios is everything the backend does to the cards of a vault, built against the settings in
@@ -68,7 +68,7 @@ type Scenarios struct {
 }
 
 // scenarios is what the backend does to the cards under the settings in force.
-func (b *Backend) scenarios() *Scenarios { return b.built.Load() }
+func (b *Backend) scenarios() *Scenarios { return b.scenariosStore.Load() }
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
@@ -78,14 +78,14 @@ func New(cfg Config) *Backend {
 		now = time.Now
 	}
 	b := &Backend{vault: cfg.Vault, ports: wired, titles: wired.Notes, now: now, cfg: cfg}
-	b.built.Store(b.build(cfg.DayStart))
+	b.scenariosStore.Store(b.build(cfg.DayStart))
 	return b
 }
 
 // Reconfigure makes the scenarios again with a day that begins at the hour given. Calls already
 // running finish under the settings they began under.
 func (b *Backend) Reconfigure(dayStart func() time.Duration) {
-	b.built.Store(b.build(dayStart))
+	b.scenariosStore.Store(b.build(dayStart))
 }
 
 // build makes the scenarios for a day that begins at dayStart.

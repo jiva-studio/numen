@@ -106,7 +106,7 @@ func TestNothingIsHeldOnceTheWalkIsOver(t *testing.T) {
 func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 	for _, one := range []struct {
 		what    string
-		written bool
+		encoded bool
 		reports int
 	}{
 		{"nothing written under the walk", false, 0},
@@ -131,7 +131,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		open := opening.Begin(t.Context(), v)
 
 		got, err := open.Read(t.Context(), func() {
-			if one.written {
+			if one.encoded {
 				opening.buffered.record("Leaf.md")
 			}
 		})

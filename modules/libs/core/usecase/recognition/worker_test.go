@@ -32,8 +32,8 @@ func (b *blank) Close() error {
 // said.
 type watched struct {
 	*Worker
-	tasks *run.Tasks
-	held  *blank
+	tasks      *run.Tasks
+	activeItem *blank
 
 	mu   sync.Mutex
 	open int
@@ -50,7 +50,7 @@ func newWatched(t *testing.T, why error) *watched {
 func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 	t.Helper()
 	tasks := run.NewTasks()
-	w := &watched{tasks: tasks, held: &blank{}}
+	w := &watched{tasks: tasks, activeItem: &blank{}}
 	w.Worker = NewWorker(ctx, Config{
 		Readers:   vaults{},
 		Derived:   fakeStores{newShelf()},
@@ -67,7 +67,7 @@ func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 				if why != nil {
 					return nil, nil, why
 				}
-				return w.held, w.held.Close, nil
+				return w.activeItem, w.activeItem.Close, nil
 			},
 		},
 	})
@@ -221,7 +221,7 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	w.Worker.with.Readers = vaults{somewhere.ID: lib}
 	w.Worker.with.Documents = documents{}
 	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
-		return w.held, w.held.Close, nil
+		return w.activeItem, w.activeItem.Close, nil
 	}
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -321,7 +321,7 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	if w.countOpens() != 1 {
 		t.Errorf("what was missing was fetched %d times", w.countOpens())
 	}
-	if !w.held.isClosed {
+	if !w.activeItem.isClosed {
 		t.Error("what was opened was not given back")
 	}
 }

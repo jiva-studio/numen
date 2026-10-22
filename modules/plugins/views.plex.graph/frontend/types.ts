@@ -198,7 +198,7 @@ export interface PlexQuickLinkState {
 
 export interface PlexLinkInspectorState {
   readonly linkInspector: Ref<LinkInspectorRequest | null>
-  openLinkInspector(pair: string, at: { x: number; y: number }): void
+  openLinkInspector(pair: string, position: { x: number; y: number }): void
   dismissLinkInspector(): void
   saveLinkInspector(rows: readonly DirectionalLinkItem[]): Promise<void>
 }

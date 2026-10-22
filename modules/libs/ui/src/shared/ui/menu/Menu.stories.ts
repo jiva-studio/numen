@@ -57,7 +57,7 @@ const renderMenu = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(true)
-    const at = ref(args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at)
+    const pos = ref(args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at)
     const node = ref<HTMLElement | null>(null)
     const from = ref<HTMLElement | null>(null)
 
@@ -65,12 +65,12 @@ const renderMenu = (args: Knobs) => ({
 
     const ask = (event: MouseEvent) => {
       event.preventDefault()
-      at.value = { x: event.clientX, y: event.clientY }
+      pos.value = { x: event.clientX, y: event.clientY }
       from.value = event.currentTarget as HTMLElement
       open.value = true
     }
 
-    return { args, open, at, node, from, ask }
+    return { args, open, at: pos, node, from, ask }
   },
   template: `
     <div class="numen" style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
@@ -229,15 +229,15 @@ export const NotClipped: Story = {
     components: { Menu },
     setup() {
       const open = ref(false)
-      const at = ref({ x: 0, y: 0 })
+      const pos = ref({ x: 0, y: 0 })
       const from = ref<HTMLElement | null>(null)
       const ask = (event: MouseEvent) => {
         event.preventDefault()
-        at.value = { x: event.clientX, y: event.clientY }
+        pos.value = { x: event.clientX, y: event.clientY }
         from.value = event.currentTarget as HTMLElement
         open.value = true
       }
-      return { args, open, at, from, ask }
+      return { args, open, at: pos, from, ask }
     },
     template: `
       <div class="numen" style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
@@ -543,20 +543,20 @@ const renderScrollingOpening = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(false)
-    const at = ref({ x: 0, y: 0 })
+    const pos = ref({ x: 0, y: 0 })
     const from = ref<HTMLElement | null>(null)
     const scroller = ref<HTMLElement | null>(null)
 
     const ask = async (event: MouseEvent) => {
       from.value = event.currentTarget as HTMLElement
       const box = from.value.getBoundingClientRect()
-      at.value = { x: box.left, y: box.bottom }
+      pos.value = { x: box.left, y: box.bottom }
       open.value = true
       await nextTick()
       scroller.value?.scrollTo({ top: scroller.value.scrollHeight })
     }
 
-    return { args, open, at, from, scroller, ask }
+    return { args, open, at: pos, from, scroller, ask }
   },
   template: `
     <div

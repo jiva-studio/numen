@@ -150,12 +150,12 @@ func readLogFiles(ctx context.Context, store ports.DerivedStore) ([]ports.Entry,
 // A run writes one file of its own and nothing else ever appends to it, which
 // is what makes two machines' histories merge by being put together: no file is
 // ever written by two of them.
-func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*LogWriter, error) {
+func (u Log) Open(ctx context.Context, v domain.Vault, now time.Time) (*LogWriter, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	id := ulid.New(at)
+	id := ulid.New(now)
 	return &LogWriter{store: store, name: domain.NewReviewLogName(id)}, nil
 }
 

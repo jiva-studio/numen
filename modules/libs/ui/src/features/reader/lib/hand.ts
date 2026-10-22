@@ -44,8 +44,8 @@ export class Hand {
   private hasMoved = false
 
   /** The hand took hold, at a point, with the row standing here. */
-  take(at: Offset, status: Offset) {
-    this.grip = { from: at, status: status }
+  take(point: Offset, status: Offset) {
+    this.grip = { from: point, status: status }
     this.hasMoved = false
   }
 
@@ -65,13 +65,13 @@ export class Hand {
    *
    * pulled left brings the pages after this one into the room.
    */
-  to(at: Offset): Offset | undefined {
+  to(point: Offset): Offset | undefined {
     if (!this.grip) return undefined
     const { from, status } = this.grip
-    const by = { x: at.x - from.x, y: at.y - from.y }
-    if (!this.hasMoved && Math.hypot(by.x, by.y) < DRAG_THRESHOLD) return undefined
+    const delta = { x: point.x - from.x, y: point.y - from.y }
+    if (!this.hasMoved && Math.hypot(delta.x, delta.y) < DRAG_THRESHOLD) return undefined
     this.hasMoved = true
-    return { x: status.x - by.x, y: status.y - by.y }
+    return { x: status.x - delta.x, y: status.y - delta.y }
   }
 
   /** The hand let go. */

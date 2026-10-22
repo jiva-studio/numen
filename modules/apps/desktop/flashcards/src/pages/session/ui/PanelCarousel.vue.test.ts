@@ -11,7 +11,7 @@ import type { PanelPlace } from '../model/carousel'
  * widths it would have had: a panel either side of a card the width of the
  * window, with a space between each pair.
  */
-const strip = (at: PanelPlace = 'here') => {
+const strip = (place: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
     // The window is listening and answers by setting the prop, so what is in the
     // window stays the window's answer. A strip nobody listens to keeps its own.

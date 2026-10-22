@@ -105,15 +105,15 @@ function useNoticeDismissal(context: DismissalContext) {
   }
 
   const dismissByHand = async (id: string): Promise<void> => {
-    const at = context.folds.value.shown.findIndex((one) => one.id === id)
+    const pos = context.folds.value.shown.findIndex((one) => one.id === id)
     const hadFocus = cards.get(id)?.way === document.activeElement
     context.forgotten.add(id)
     context.away.value = new Set([...context.away.value, id])
     context.dismiss(id)
-    if (!hadFocus || at < 0) return
+    if (!hadFocus || pos < 0) return
     await nextTick()
     const remainingFolds = context.folds.value.shown
-    const next = remainingFolds[Math.min(at, remainingFolds.length - 1)]
+    const next = remainingFolds[Math.min(pos, remainingFolds.length - 1)]
     if (next) cards.get(next.id)?.way?.focus()
   }
 

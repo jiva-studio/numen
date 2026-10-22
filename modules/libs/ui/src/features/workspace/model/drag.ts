@@ -43,7 +43,7 @@ export interface TabDragOptions {
   readonly getThreshold: () => number
   readonly getClock: () => Clock
   /** Called when a tab is dragged and released outside of any workspace drop target. */
-  readonly onTearOff?: ((tab: TabId, at: Position) => void) | undefined
+  readonly onTearOff?: ((tab: TabId, pos: Position) => void) | undefined
 }
 
 export interface TabDragState {
@@ -58,7 +58,7 @@ export interface TabDragState {
   /** Where the tab would land. */
   readonly dropTarget: Readonly<Ref<TabDropTarget | null>>
   /** A press on a tab, which a move turns into a drag. */
-  readonly press: (tab: TabId, at: PointerEvent) => void
+  readonly press: (tab: TabId, pointer: PointerEvent) => void
 }
 
 export function useTabDrag(options: TabDragOptions): TabDragState {
@@ -98,21 +98,21 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     return options.getTab(target.item.tab)?.title ?? target.item.tab
   })
 
-  function press(tab: TabId, at: PointerEvent): void {
-    if (at.button !== 0) return
+  function press(tab: TabId, pointer: PointerEvent): void {
+    if (pointer.button !== 0) return
 
     const holder = document.elementFromPoint
-      ? document.elementFromPoint(at.clientX, at.clientY)?.closest('[data-workspace-pane]')
+      ? document.elementFromPoint(pointer.clientX, pointer.clientY)?.closest('[data-workspace-pane]')
       : null
     const from = holder?.getAttribute('data-workspace-pane') ?? options.workspace.value.focus
 
-    lift({ tab, from }, at)
+    lift({ tab, from }, pointer)
   }
 
-  function land(drag: Drag, at: TabDropTarget): void {
+  function land(drag: Drag, target: TabDropTarget): void {
     options.workspace.value = landTab(options.workspace.value, {
       drag,
-      at,
+      at: target,
       ids: options.getIdFactory(),
     })
   }
@@ -129,8 +129,8 @@ interface StripTarget {
   readonly pane: NodeId
 }
 
-const isInside = (at: Position, box: Rect): boolean =>
-  at.x >= box.x && at.x <= box.x + box.width && at.y >= box.y && at.y <= box.y + box.height
+const isInside = (point: Position, box: Rect): boolean =>
+  point.x >= box.x && point.x <= box.x + box.width && point.y >= box.y && point.y <= box.y + box.height
 
 const getClosest = (targetElement: Element | null, selector: string): Element | null =>
   targetElement?.closest(selector) ?? null

@@ -62,7 +62,7 @@ func (b brokenRegistry) RecordOpened(id domain.VaultID) error {
 func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, error) {
 	s.t.Helper()
 	var out bytes.Buffer
-	err := cli.Run(s.t.Context(), &out, &s.said, append(s.base, args...), func(where cli.Locations) cli.Deps {
+	err := cli.Run(s.t.Context(), &out, &s.reply, append(s.base, args...), func(where cli.Locations) cli.Deps {
 		provided := s.deps(where)
 		open := provided.Vaults
 		provided.Vaults = func() (cli.Vaults, error) {

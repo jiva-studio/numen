@@ -26,11 +26,11 @@ defineExpose({ scrollPage })
 // panel comes in while they are still being asked for, and a note cannot be
 // scrolled to before it is drawn.
 watch(
-  () => [props.held.open.value, props.held.at.value, props.held.notes.value] as const,
-  ([open, at, notes]) => {
-    if (!open || !at || !notes.length) return
+  () => [props.held.open.value, props.held.col.value, props.held.notes.value] as const,
+  ([open, col, notes]) => {
+    if (!open || !col || !notes.length) return
     void nextTick(() => {
-      const found = notes.find((one) => one.written === at || one.path === at)
+      const found = notes.find((one) => one.written === col || one.path === col)
       if (found) noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
       props.held.read()
     })
@@ -58,9 +58,9 @@ const STEP = 0.85
 
 /** The panel scrolled by a key, because the caret is nowhere in it. */
 function scrollPage(back = false) {
-  const at = column.value
-  if (!at) return
-  at.scrollBy({ top: at.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
+  const col = column.value
+  if (!col) return
+  col.scrollBy({ top: col.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
 }
 </script>
 
@@ -98,7 +98,7 @@ function scrollPage(back = false) {
 </template>
 
 <style scoped>
-/* The panel stands where the card stood and is the same thing to look at, so it
+/* The panel stands where the card stood and is the same thing to look col, so it
    takes the card's ground. */
 .reading {
   display: flex;

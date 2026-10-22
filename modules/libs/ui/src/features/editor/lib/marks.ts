@@ -78,12 +78,12 @@ class MarkBuilder {
     end: number,
     add: (pos: number, first: boolean, isLast: boolean) => void,
   ): void {
-    for (let at = start, first = true; ; first = false) {
-      const row = this.doc.lineAt(at)
+    for (let offset = start, first = true; ; first = false) {
+      const row = this.doc.lineAt(offset)
       const isLast = row.to >= end
       add(row.from, first, isLast)
       if (isLast) break
-      at = row.to + 1
+      offset = row.to + 1
     }
   }
 

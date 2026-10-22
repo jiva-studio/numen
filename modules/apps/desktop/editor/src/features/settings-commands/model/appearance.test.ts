@@ -107,12 +107,12 @@ const folder = () => {
 }
 
 /** The window wearing a theme, over a page a test can read the head of. */
-const window = (over: Partial<Appearance> = {}, css = SERVED) => {
+const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
   const sheet = page(css)
   const response = folder()
   const request: string[] = []
   const selected: string[] = []
-  let appearance: Appearance = { ...APPEARANCE, ...over }
+  let appearance: Appearance = { ...APPEARANCE, ...overrides }
   let items = 0
   let failed = ''
   let textError = ''
@@ -156,7 +156,7 @@ const window = (over: Partial<Appearance> = {}, css = SERVED) => {
 }
 
 /** The window listing what it can wear, over a page it was served dressed. */
-const startWindow = async (over: Partial<Appearance> = {}, css = SERVED) => {
+const startWindow = async (overrides: Partial<Appearance> = {}, css = SERVED) => {
   const one = window(over, css)
   await one.worn.start()
   await settle()

@@ -145,10 +145,10 @@ func TestEditingTellsTheWindowWhereItIsChangingTheNote(t *testing.T) {
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	if len(looking.drawn) != 2 {
-		t.Fatalf("got %d notifications, want 2", len(looking.drawn))
+	if len(looking.rendered) != 2 {
+		t.Fatalf("got %d notifications, want 2", len(looking.rendered))
 	}
-	began, ended := looking.drawn[0], looking.drawn[1]
+	began, ended := looking.rendered[0], looking.rendered[1]
 	if began.Path != "Aggressor.md" || began.From != 0 || began.To != 10 {
 		t.Errorf("the change begins as %+v", began)
 	}
@@ -175,7 +175,7 @@ func TestARefusedEditIsStillEnded(t *testing.T) {
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	for _, response := range looking.drawn {
+	for _, response := range looking.rendered {
 		if !response.IsDone {
 			t.Fatalf("a change was begun and not ended: %+v", response)
 		}
@@ -197,10 +197,10 @@ func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	if len(looking.drawn) == 0 {
+	if len(looking.rendered) == 0 {
 		t.Fatal("expected window notification")
 	}
-	began := looking.drawn[0]
+	began := looking.rendered[0]
 	if began.Text != "An axe" {
 		t.Errorf("what goes in is %q, wanted only what changed", began.Text)
 	}
@@ -224,7 +224,7 @@ func TestTheSpanIsCountedTheWayAClientCountsText(t *testing.T) {
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	began := looking.drawn[0]
+	began := looking.rendered[0]
 	// "Он " is three characters and four bytes.
 	if began.From != 3 || began.To != 9 {
 		t.Errorf("the span is %d..%d, wanted 3..9", began.From, began.To)

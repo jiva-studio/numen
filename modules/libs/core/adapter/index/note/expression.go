@@ -19,9 +19,9 @@ func parseMarkedName(marked string) (string, []domain.UnitSpan) {
 	var name strings.Builder
 	name.Grow(len(marked))
 
-	var at []domain.UnitSpan
+	var pos []domain.UnitSpan
 	if n := strings.Count(marked, "\x02"); n > 0 {
-		at = make([]domain.UnitSpan, 0, n)
+		pos = make([]domain.UnitSpan, 0, n)
 	}
 
 	units, from := 0, -1
@@ -31,7 +31,7 @@ func parseMarkedName(marked string) (string, []domain.UnitSpan) {
 			from = units
 		case '\x03':
 			if from >= 0 && units > from {
-				at = append(at, domain.UnitSpan{From: from, To: units})
+				pos = append(pos, domain.UnitSpan{From: from, To: units})
 			}
 			from = -1
 		default:
@@ -42,5 +42,5 @@ func parseMarkedName(marked string) (string, []domain.UnitSpan) {
 			}
 		}
 	}
-	return name.String(), at
+	return name.String(), pos
 }

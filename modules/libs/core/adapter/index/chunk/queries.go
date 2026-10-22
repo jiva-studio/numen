@@ -238,11 +238,11 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 		return nil, err
 	}
 
-	near, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
+	item, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
 	if err != nil {
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, recipe, query, near, of, floor)
+	ranked, err := q.rerank(ctx, recipe, query, item, of, floor)
 	if err != nil {
 		return nil, err
 	}
@@ -262,16 +262,16 @@ func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []fl
 	}
 	defer rows.Close()
 
-	var near []int64
+	var val []int64
 	for rows.Next() {
 		var chunk int64
 		var distance float64
 		if err := rows.Scan(&chunk, &distance); err != nil {
 			return nil, err
 		}
-		near = append(near, chunk)
+		val = append(val, chunk)
 	}
-	return near, rows.Err()
+	return val, rows.Err()
 }
 
 // given.
@@ -421,7 +421,7 @@ func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement s
 // does, so the pair is what says how far there is to go.
 //
 // A vault the index has never heard of has nothing and owes nothing.
-func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recipe string) (held, embedded int64, err error) {
+func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recipe string) (target, embedded int64, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, 0, nil
@@ -430,8 +430,8 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 		return 0, 0, err
 	}
 	err = q.db.QueryRowContext(ctx, stmt.Get("progress"), recipe, vault).
-		Scan(&held, &embedded)
-	return held, embedded, err
+		Scan(&target, &embedded)
+	return target, embedded, err
 }
 
 // GetKeptVectors is the vectors already made for the texts given under the

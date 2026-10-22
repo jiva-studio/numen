@@ -20,7 +20,7 @@ var named = []string{"bind/mobile.go"}
 
 // standing is a file of this application, parsed.
 type standing struct {
-	at   string
+	path string
 	file *ast.File
 }
 
@@ -47,7 +47,7 @@ func readSources(t *testing.T) []standing {
 			return err
 		}
 		found = append(found, standing{
-			at:   filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
+			path: filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
 			file: file,
 		})
 		return nil
@@ -57,7 +57,7 @@ func readSources(t *testing.T) []standing {
 	}
 
 	for _, one := range named {
-		if !slices.ContainsFunc(found, func(target standing) bool { return target.at == one }) {
+		if !slices.ContainsFunc(found, func(target standing) bool { return target.path == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
 	}
@@ -87,7 +87,7 @@ func TestNoApplicationLogs(t *testing.T) {
 				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, target.at+" imports "+to)
+				wrong = append(wrong, target.path+" imports "+to)
 			}
 		}
 	}

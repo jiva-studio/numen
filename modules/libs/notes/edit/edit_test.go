@@ -18,13 +18,13 @@ type files struct {
 	content map[string]string
 	kinds   map[string]domain.SourceKind
 	clock   time.Time
-	at      map[string]domain.Fingerprint
+	fingerprints map[string]domain.Fingerprint
 	locks   int
 }
 
 func newFiles(content map[string]string) *files {
 	f := &files{
-		content: map[string]string{}, kinds: map[string]domain.SourceKind{}, at: map[string]domain.Fingerprint{},
+		content: map[string]string{}, kinds: map[string]domain.SourceKind{}, fingerprints: map[string]domain.Fingerprint{},
 		clock: time.Unix(1_700_000_000, 0),
 	}
 	for path, body := range content {
@@ -36,19 +36,19 @@ func newFiles(content map[string]string) *files {
 func (f *files) put(path, body string) domain.Fingerprint {
 	f.clock = f.clock.Add(time.Second)
 	f.content[path] = body
-	f.at[path] = domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: f.clock}
-	return f.at[path]
+	f.fingerprints[path] = domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: f.clock}
+	return f.fingerprints[path]
 }
 
 func (f *files) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
-	at, there := f.at[path]
+	fp, there := f.fingerprints[path]
 	if !there {
 		return domain.Fingerprint{}, fs.ErrNotExist
 	}
 	if kind, set := f.kinds[path]; set {
-		at.Kind = kind
+		fp.Kind = kind
 	}
-	return at, nil
+	return fp, nil
 }
 
 func (f *files) Read(_ context.Context, path string) ([]byte, error) {
@@ -60,7 +60,7 @@ func (f *files) Read(_ context.Context, path string) ([]byte, error) {
 }
 
 func (f *files) Write(_ context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error) {
-	if !fingerprint.IsZero() && !f.at[path].IsUnchanged(fingerprint) {
+	if !fingerprint.IsZero() && !f.fingerprints[path].IsUnchanged(fingerprint) {
 		return domain.Fingerprint{}, edit.ErrStale
 	}
 	return f.put(path, string(content)), nil

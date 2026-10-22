@@ -156,11 +156,11 @@ func getLoaderDirs(goos string) []string {
 
 // readLoaderConfig returns the folders a loader configuration file names,
 // following its include lines. seen holds the files already read.
-func readLoaderConfig(pos string, seen map[string]bool) []string {
-	if seen[pos] {
+func readLoaderConfig(pos string, visited map[string]bool) []string {
+	if visited[pos] {
 		return nil
 	}
-	seen[pos] = true
+	visited[pos] = true
 	raw, err := os.ReadFile(pos)
 	if err != nil {
 		return nil
@@ -173,7 +173,7 @@ func readLoaderConfig(pos string, seen map[string]bool) []string {
 		case len(fields) == 0, fields[0] == "hwcap":
 		case fields[0] == "include":
 			for _, pattern := range fields[1:] {
-				out = append(out, readIncludedConfig(pos, pattern, seen)...)
+				out = append(out, readIncludedConfig(pos, pattern, visited)...)
 			}
 		default:
 			out = append(out, fields...)
@@ -184,7 +184,7 @@ func readLoaderConfig(pos string, seen map[string]bool) []string {
 
 // readIncludedConfig returns the folders the files one include pattern names
 // hold. A relative pattern stands beside the file that includes it.
-func readIncludedConfig(from, pattern string, seen map[string]bool) []string {
+func readIncludedConfig(from, pattern string, seenCount map[string]bool) []string {
 	if !filepath.IsAbs(pattern) {
 		pattern = filepath.Join(filepath.Dir(from), pattern)
 	}
@@ -194,7 +194,7 @@ func readIncludedConfig(from, pattern string, seen map[string]bool) []string {
 	}
 	var out []string
 	for _, match := range matches {
-		out = append(out, readLoaderConfig(match, seen)...)
+		out = append(out, readLoaderConfig(match, seenCount)...)
 	}
 	return out
 }

@@ -59,21 +59,21 @@ type Downloader interface {
 	// GetDownloadModel is what this address is downloaded by. A video and a page
 	// are reached by different tools, and what is kept names the one that
 	// brought it. A provider that does not answer is an error and is empty.
-	GetDownloadModel(ctx context.Context, at domain.URL) (DownloadModel, error)
+	GetDownloadModel(ctx context.Context, targetURL domain.URL) (DownloadModel, error)
 
 	// GetMetadata is what the site says about the address, taking none of it.
-	GetMetadata(ctx context.Context, at domain.URL) (Metadata, error)
+	GetMetadata(ctx context.Context, rawURL domain.URL) (Metadata, error)
 
 	// GetText is what the address publishes as words. Which words those are is the
 	// provider's to say and the caller's to keep: a site that publishes them
 	// against a clock answers with cues, one that publishes prose answers with
 	// prose, and the provider names what made them. An address publishing none
 	// of what was asked for is ErrNothingDownloaded.
-	GetText(ctx context.Context, at domain.URL, want PreferredCaptions) (Text, error)
+	GetText(ctx context.Context, u domain.URL, want PreferredCaptions) (Text, error)
 
 	// Download is what is at the address as a person plays it, written as it was
 	// published. How large it may be is the caller's to hold to.
-	Download(ctx context.Context, at domain.URL, into io.Writer) (Copy, error)
+	Download(ctx context.Context, pos domain.URL, into io.Writer) (Copy, error)
 }
 
 // PreferredCaptions is which of the words a site published the caller will

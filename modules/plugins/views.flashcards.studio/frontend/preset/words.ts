@@ -52,7 +52,7 @@ export const WORDS = {
    * got through by that day and the day the pile goes says nothing. Where
    * nothing is overdue there is no such line either.
    */
-  buys: (goal: Goal, at: BuyInput): readonly string[] => getBuyFacts(goal, at).map(formatBuyFact),
+  buys: (goal: Goal, input: BuyInput): readonly string[] => getBuyFacts(goal, input).map(formatBuyFact),
   /** One height of the picture, against the line it is the height of. */
   formatGoalCost: (goal: Goal, value: number) =>
     goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,

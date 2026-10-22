@@ -39,7 +39,7 @@ func TestAProofreadingNeedsAVaultAStoreAndAProofreader(t *testing.T) {
 		name    string
 		readers port.VaultReaders
 		derived port.DerivedStores
-		by      port.Proofreader
+		source  port.Proofreader
 		want    error
 	}{
 		{"no vault", nil, stores{}, answering{}, ErrNoVaultToProofread},
@@ -47,7 +47,7 @@ func TestAProofreadingNeedsAVaultAStoreAndAProofreader(t *testing.T) {
 		{"no proofreader", readers{}, stores{}, nil, ErrNothingProofreads},
 		{"everything", readers{}, stores{}, answering{}, nil},
 	} {
-		if got := CheckProofread(tc.readers, tc.derived, tc.by); !errors.Is(got, tc.want) {
+		if got := CheckProofread(tc.readers, tc.derived, tc.source); !errors.Is(got, tc.want) {
 			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
 		}
 	}

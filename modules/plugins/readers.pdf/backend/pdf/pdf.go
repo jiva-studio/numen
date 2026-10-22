@@ -175,15 +175,15 @@ type Location struct {
 
 // Locate answers where one offset in the document's text is.
 func (b *Book) Locate(offset int) Location {
-	var at Location
+	var loc Location
 	if i := getPrecedingIndex(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
-		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
+		loc.Part, loc.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="page index matches when preceding index is non-negative"
 	if i := getPrecedingIndex(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
-		at.Page = i
+		loc.Page = i
 	}
-	return at
+	return loc
 }
 
 // getPrecedingIndex is the index of the last item at or before an offset, and -1 when

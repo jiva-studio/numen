@@ -29,8 +29,8 @@ export interface PalettePlacesState {
   /** The number of the row the keyboard is on, and -1 for none. */
   readonly here: ComputedRef<number>
   /** The item the keyboard is on, and what it can be asked. */
-  readonly lit: ComputedRef<PaletteItem | undefined>
-  readonly offered: ComputedRef<readonly PaletteAction[]>
+  readonly activeItem: ComputedRef<PaletteItem | undefined>
+  readonly actions: ComputedRef<readonly PaletteAction[]>
   /** The keyboard onto the row at that number. */
   readonly goTo: (pos: number) => void
   /** The keyboard put on nothing, which a fresh question leaves it on. */
@@ -47,7 +47,7 @@ export interface PalettePlacesOptions {
   /** What is typed, which a fresh question is a fresh list of. */
   readonly typed: Ref<string>
   /** Where the keyboard is standing, said whenever it moves. */
-  readonly tellLit: (item: string) => void
+  readonly onItemActive: (item: string) => void
   /** An item chosen, and what was asked of it. */
   readonly tellChoice: (item: string, action: string) => void
 }
@@ -77,8 +77,8 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
 
   const here = computed(() => places.value.findIndex((place) => place.item.id === target.value))
 
-  const lit = computed(() => places.value[here.value]?.item)
-  const proposed = computed(() => lit.value?.actions ?? [])
+  const activeItem = computed(() => places.value[here.value]?.item)
+  const proposed = computed(() => activeItem.value?.actions ?? [])
 
   const goTo = (pos: number): void => {
     target.value = places.value[pos]?.item.id ?? ''
@@ -108,7 +108,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
    * on. A pointer that has moved lights an item, so this is said for a pointer
    * crossing the list too.
    */
-  watch(target, (now) => options.tellLit(now), { flush: 'post' })
+  watch(target, (now) => options.onItemActive(now), { flush: 'post' })
 
   /**
    * Where the pointer was. Only a pointer that has actually moved lights what
@@ -132,5 +132,5 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     options.tellChoice(item.id, action)
   }
 
-  return { placed: placedPalette, places, said: response, here, lit, offered: proposed, goTo, held: target, lightAt, chooseAt }
+  return { placed: placedPalette, places, said: response, here, activeItem, actions: proposed, goTo, held: target, lightAt, chooseAt }
 }

@@ -352,8 +352,8 @@ const meta: Meta<Knobs> = {
         onRemove: (id: string) => {
           cards.value = cards.value.filter((card) => card.id !== id)
         },
-        onMove: (id: string, at: InsertionPoint) => {
-          cards.value = moveCard(cards.value, sections.value, id, at)
+        onMove: (id: string, target: InsertionPoint) => {
+          cards.value = moveCard(cards.value, sections.value, id, target)
         },
         onWrite: (id: string, field: string, index: number, text: string) => {
           cards.value = changeCard(id, (card) => {
@@ -591,9 +591,9 @@ export const NothingAtAll: Story = {
     expect(renderedElement.borderTopStyle).toBe('dashed')
     expect(Number.parseFloat(renderedElement.borderTopWidth)).toBeGreaterThan(0)
 
-    const at = plus.getBoundingClientRect()
-    expect(at.height).toBeGreaterThan(64)
-    expect(at.width).toBeGreaterThan(240)
+    const rect = plus.getBoundingClientRect()
+    expect(rect.height).toBeGreaterThan(64)
+    expect(rect.width).toBeGreaterThan(240)
 
     // What it opens stands where it was pressed, inside that same outline.
     await userEvent.click(button)

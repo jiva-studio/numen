@@ -36,7 +36,7 @@ function createDrag(
   options: {
     getTab?: typeof getTab
     hasFrame?: boolean
-    onTearOff?: (tab: string, at: { x: number; y: number }) => void
+    onTearOff?: (tab: string, pos: { x: number; y: number }) => void
   } = {},
 ) {
   const frame = createBox('div', null, [100, 50, 1000, 600])

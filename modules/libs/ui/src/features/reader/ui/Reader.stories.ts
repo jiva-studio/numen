@@ -69,18 +69,18 @@ const book =
   () => ({
     components: { Reader },
     setup() {
-      const at = ref(0)
+      const page = ref(0)
       /** The width the reader last asked for, in device pixels. */
       const width = ref(0)
-      const picture = (page: number) =>
-        width.value > 0 ? renderPage(String(page + 1), width.value) : ''
-      const highlightsOn = (page: number) => (page === 0 ? highlights : [])
+      const picture = (index: number) =>
+        width.value > 0 ? renderPage(String(index + 1), width.value) : ''
+      const highlightsOn = (index: number) => (index === 0 ? highlights : [])
 
-      const go = (page: number) => {
-        at.value = Math.min(Math.max(page, 0), pageCount - 1)
+      const go = (targetPage: number) => {
+        page.value = Math.min(Math.max(targetPage, 0), pageCount - 1)
       }
 
-      return { at, width, picture, highlightsOn, pages: createPages(pageCount), go }
+      return { page, width, picture, highlightsOn, pages: createPages(pageCount), go }
     },
     template: TEMPLATE,
   })
@@ -90,7 +90,7 @@ const TEMPLATE = `
     <Reader
       class="h-full"
       :pages="pages"
-      :at="at"
+      :at="page"
       :picture="picture"
       :highlights="highlightsOn"
       @go="go"
@@ -274,17 +274,17 @@ export const Undrawn: Story = {
   render: () => ({
     components: { Reader },
     setup() {
-      const at = ref(0)
-      const picture = (page: number) => `/assets/gone/pages/${page}?wide=400`
+      const page = ref(0)
+      const picture = (index: number) => `/assets/gone/pages/${index}?wide=400`
       return {
-        at,
+        page,
         picture,
         pages: createPages(4),
-        go: (page: number) => (at.value = page),
+        go: (index: number) => (page.value = index),
       }
     },
     template: `
-      <Reader class="h-full" :pages="pages" :at="at" :picture="picture" @go="go">
+      <Reader class="h-full" :pages="pages" :at="page" :picture="picture" @go="go">
         <template #silence>Nothing yet</template>
       </Reader>
     `,

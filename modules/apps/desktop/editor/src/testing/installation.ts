@@ -4,7 +4,7 @@ import type { Model, PluginInfo } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
 
 /** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
-export const createInstallation = (over: Partial<Installation> = {}): Installation => ({
+export const createInstallation = (overrides: Partial<Installation> = {}): Installation => ({
   getSetting: () => undefined,
   getModels: () => [],
   write: fn(),
@@ -29,14 +29,14 @@ export const createInstallation = (over: Partial<Installation> = {}): Installati
   headings: ref(6),
   headingsBounds: ref({ least: 1, most: 12 }),
   chooseHeadings: fn(),
-  ...over,
+  ...overrides,
 })
 
 /** A plugin the installation lists, with what a test cares about put over the defaults. */
 export const createPluginInfo = (
   id: string,
   name: string,
-  over: Partial<PluginInfo> = {},
+  overrides: Partial<PluginInfo> = {},
 ): PluginInfo => ({
   id,
   name,
@@ -48,7 +48,7 @@ export const createPluginInfo = (
   secrets: [],
   storedSecrets: [],
   consent: 'none',
-  ...over,
+  ...overrides,
 })
 
 /** A program a plugin lists, and the models it reports. */
@@ -60,7 +60,7 @@ export interface ProgramFixture {
   readonly models?: readonly { readonly name: string; readonly title: string }[]
 }
 
-const createModel = (at: readonly string[], over: Partial<Model>): Model => ({
+const createModel = (at: readonly string[], overrides: Partial<Model>): Model => ({
   namedAt: at,
   name: '',
   title: '',
@@ -68,7 +68,7 @@ const createModel = (at: readonly string[], over: Partial<Model>): Model => ({
   isDefault: false,
   writes: [],
   presence: 'nothing to fetch',
-  ...over,
+  ...overrides,
 })
 
 /**

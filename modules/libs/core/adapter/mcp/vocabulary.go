@@ -34,7 +34,7 @@ type Tool struct {
 //
 // The tools are written out by hand and so is this. A schema says what a call
 // takes and cannot say what taking it means.
-var doing = map[string]Tool{
+var handler = map[string]Tool{
 	"note_search":        {Kind: domain.StepSearch},
 	"note_titles":        {Kind: domain.StepRead},
 	"note_read":          {Kind: domain.StepRead},
@@ -115,8 +115,8 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error
 			About:  about,
 			Inside: firstRequiredInside(tool.InputSchema, about),
 			Kind:   getVocabularyKind(tool),
-			Match:  doing[tool.Name].Match,
-			Text:   doing[tool.Name].Text,
+			Match:  handler[tool.Name].Match,
+			Text:   handler[tool.Name].Text,
 		}
 	}
 	return words, nil
@@ -194,5 +194,5 @@ func getVocabularyKind(tool *sdk.Tool) domain.StepKind {
 	if declared, isDeclared := tool.Meta[stepMeta].(float64); isDeclared {
 		return domain.StepKind(int(declared))
 	}
-	return doing[tool.Name].Kind
+	return handler[tool.Name].Kind
 }

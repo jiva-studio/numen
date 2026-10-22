@@ -383,7 +383,7 @@ describe('what a wheel scrolls', () => {
     // A trackpad gives a few pixels at a time, dozens of times a flick.
     let carried = 0
     let scrollOffset = 0
-    for (let at = 0; at < 8; at++) {
+    for (let step = 0; step < 8; step++) {
       const wheel = scrollBy(hangMany(), pixels(3), carried)
       carried = wheel.left
       scrollOffset += wheel.by

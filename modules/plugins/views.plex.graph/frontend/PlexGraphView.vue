@@ -100,7 +100,7 @@ function onBringNodes(nodes: readonly string[], relation: PlexRelation) {
   void props.state.dropNodes(nodes, relation)
 }
 
-function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuTrigger) {
+function onOpenMenu(node: string, position: { x: number; y: number }, opening: MenuTrigger) {
   props.state.openMenu({ node, at, opening })
 }
 
@@ -136,14 +136,14 @@ function onDismissQuickLink() {
   props.state.dismissQuickLink()
 }
 
-function onEdgeMenu(pair: string, at: { x: number; y: number }) {
+function onEdgeMenu(pair: string, position: { x: number; y: number }) {
   const rect = rootElement.value?.getBoundingClientRect()
   if (rect) {
     const localX = at.x - rect.left
     const localY = at.y - rect.top
     props.state.openLinkInspector(pair, { x: localX, y: localY })
   } else {
-    props.state.openLinkInspector(pair, at)
+    props.state.openLinkInspector(pair, position)
   }
 }
 

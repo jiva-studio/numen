@@ -289,13 +289,13 @@ func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
 	}
 	for _, place := range []struct {
 		what string
-		at   *v1.CurvePoint
+		point *v1.CurvePoint
 	}{
 		{"where the preset stands", curve.GetNow()},
 		{"what is suggested", curve.GetSuggested()},
 	} {
-		if place.at.GetAt() < 0 || int(place.at.GetAt()) >= len(grid) {
-			t.Errorf("%s is at place %d of %d", place.what, place.at.GetAt(), len(grid))
+		if place.point.GetAt() < 0 || int(place.point.GetAt()) >= len(grid) {
+			t.Errorf("%s is at place %d of %d", place.what, place.point.GetAt(), len(grid))
 		}
 	}
 	if value := curve.GetNow().GetValue(); value != 20 {

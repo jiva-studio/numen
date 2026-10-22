@@ -51,11 +51,11 @@ function isAllowed(directive: string, address: string): boolean {
     const named = /^(?:([a-z]+):\/\/)?([^:/]+)(?::(\d+|\*))?$/.exec(source)
     if (!named) return false
     const [, scheme, host, port] = named
-    const at = new URL(address, PAGE)
+    const url = new URL(address, PAGE)
     return (
-      (!scheme || at.protocol === `${scheme}:`) &&
-      at.hostname === host &&
-      (port === '*' || (port ?? '') === at.port)
+      (!scheme || url.protocol === `${scheme}:`) &&
+      url.hostname === host &&
+      (port === '*' || (port ?? '') === url.port)
     )
   })
 }

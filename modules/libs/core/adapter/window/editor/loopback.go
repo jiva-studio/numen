@@ -168,7 +168,7 @@ const errNoVaultNamed = "no vault of that name"
 //
 // A range is answered as a range, so a player seeks in an hour of speech and
 // holds the second it is on. The whole file is never in memory.
-func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string) {
+func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath string) {
 	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -186,10 +186,10 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 	// A copy of what a url points at is kept in the vault's own folder,
 	// was written to. Every other file of the vault is
 	// served as the file it is.
-	if strings.HasSuffix(at, domain.URLExtension) && h.serveCopy(w, r, target, at, named) {
+	if strings.HasSuffix(targetPath, domain.URLExtension) && h.serveCopy(w, r, target, targetPath, named) {
 		return
 	}
-	opened, err := h.openFile.Execute(r.Context(), target, at, named)
+	opened, err := h.openFile.Execute(r.Context(), target, targetPath, named)
 	if err != nil {
 		refuse(w, err)
 		return

@@ -50,7 +50,7 @@ func TestARecognitionIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	if err != nil || !target {
 		t.Fatalf("held %v, %v", target, err)
 	}
-	if right.by != port.Proofreader(delta) {
+	if right.provider != port.Proofreader(delta) {
 		t.Error("a recognition is put right by something the installation did not place")
 	}
 }
@@ -65,7 +65,7 @@ func TestNamingNoProofreaderContainsNoneAndIsNoFailure(t *testing.T) {
 		{By: func() (port.Proofreader, error) { return nil, nil }},
 	} {
 		right, target, err := CreateProofread(response, readers, derived)
-		if err != nil || target || right.by != nil {
+		if err != nil || target || right.provider != nil {
 			t.Errorf("a recognition came back: held %v, %v", target, err)
 		}
 	}

@@ -71,7 +71,7 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 }
 
 func (u *WriteCorrections) write(
-	ctx context.Context, store port.DerivedStore, in Correction, producer, hash string, put []domain.TranscriptCue,
+	ctx context.Context, store port.DerivedStore, in Correction, producer, hash string, placed []domain.TranscriptCue,
 ) (int, error) {
 	words, err := getArtifactWords(ctx, store, producer, hash)
 	if err != nil {
@@ -90,7 +90,7 @@ func (u *WriteCorrections) write(
 	defer release()
 
 	_, status := transcript.Parse([]byte(words))
-	whole := spliceCues(status, put, in.Start, in.Length)
+	whole := spliceCues(status, placed, in.Start, in.Length)
 	content := append(transcript.Marshal(whole), transcript.GetHandWrittenMark()...)
 	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash), content); err != nil {
 		return 0, err
@@ -103,20 +103,20 @@ func (u *WriteCorrections) write(
 
 // spliceCues is the cues as they now read: the ones outside the span as they
 // were, and the ones sent in place of every cue beginning inside it.
-func spliceCues(stood, put []domain.TranscriptCue, start, length int) []domain.TranscriptCue {
+func spliceCues(current, applied []domain.TranscriptCue, start, length int) []domain.TranscriptCue {
 	// The cues sent are what they cover: a call naming no span replaces what
 	if length <= 0 {
-		start, length = put[0].From, put[len(put)-1].To-put[0].From
+		start, length = applied[0].From, applied[len(applied)-1].To-applied[0].From
 	}
 	end := start + length
-	out := make([]domain.TranscriptCue, 0, len(stood)+len(put))
-	for _, one := range stood {
+	out := make([]domain.TranscriptCue, 0, len(current)+len(applied))
+	for _, one := range current {
 		if one.From < start {
 			out = append(out, one)
 		}
 	}
-	out = append(out, put...)
-	for _, one := range stood {
+	out = append(out, applied...)
+	for _, one := range current {
 		if one.From >= end {
 			out = append(out, one)
 		}

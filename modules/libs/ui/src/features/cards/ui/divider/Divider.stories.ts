@@ -96,14 +96,14 @@ export const TheLineGivesWayToWhatItHolds: Story = {
 
     expect(before).toBeCloseTo(after ?? 0, 0)
 
-    const at = button.getBoundingClientRect()
+    const pos = button.getBoundingClientRect()
     const box = divider.getBoundingClientRect()
-    expect(at.left + at.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
+    expect(pos.left + pos.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
 
     // The line and the word are laid side by side, so neither runs over the
     // other: the two sides and what they hold take the whole width between them.
     const gap = Number.parseFloat(getComputedStyle(divider).columnGap)
-    expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
+    expect((before ?? 0) + (after ?? 0) + pos.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }
 
@@ -124,10 +124,10 @@ export const LeadingWithWhatItHolds: Story = {
     expect(after).toBeGreaterThan(before ?? 0)
 
     // whole width between them.
-    const at = button.getBoundingClientRect()
+    const pos = button.getBoundingClientRect()
     const box = divider.getBoundingClientRect()
-    expect(at.left - box.left).toBeLessThan(box.width / 4)
-    expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
+    expect(pos.left - box.left).toBeLessThan(box.width / 4)
+    expect((before ?? 0) + (after ?? 0) + pos.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }
 

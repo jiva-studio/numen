@@ -40,10 +40,10 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 // A preset is costed from the answers to its own card faces: a preset of long
 // cards and one of short cards turn the same minutes into different counts. A
 // card face nothing groups is left out, and a kind of answer a preset holds too
-func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]AnswerCost {
+func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[CardFaceID]string) map[string]AnswerCost {
 	target := make(map[string]*answerTimes)
-	walkAnswers(by, answers, func(before Schedule, a Answer) {
-		path, groups := under[a.CardFace]
+	walkAnswers(scheduler, answers, func(before Schedule, a Answer) {
+		path, groups := presetMap[a.CardFace]
 		if !groups {
 			return
 		}
@@ -52,7 +52,7 @@ func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) m
 			one = &answerTimes{}
 			target[path] = one
 		}
-		one.addAnswer(by.IsSpaced(before), a.GetCountedTime())
+		one.addAnswer(scheduler.IsSpaced(before), a.GetCountedTime())
 	})
 
 	out := make(map[string]AnswerCost, len(target))

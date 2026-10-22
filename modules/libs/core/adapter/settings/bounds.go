@@ -11,11 +11,11 @@ func (b Bounds) Contains(value float64) bool {
 }
 
 // Check returns what is wrong with a number the setting does not take, and
-func (b Bounds) Check(at string, value float64) error {
+func (b Bounds) Check(targetPath string, value float64) error {
 	if b.Contains(value) {
 		return nil
 	}
-	return &OutsideBounds{At: at, Number: value, Bounds: b}
+	return &OutsideBounds{At: targetPath, Number: value, Bounds: b}
 }
 
 // OutsideBounds is a number a setting does not take, and how far that setting

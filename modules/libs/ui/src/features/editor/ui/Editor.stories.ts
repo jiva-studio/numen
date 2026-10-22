@@ -142,8 +142,8 @@ export const Steady: Story = {
     const getHeight = (line: number) => {
       const row = view.state.doc.line(line)
       const viewElement = Array.from(view.contentDOM.children).find((block) => {
-        const at = view.posAtDOM(block)
-        return at >= row.from && at <= row.to
+        const pos = view.posAtDOM(block)
+        return pos >= row.from && pos <= row.to
       })
       if (!viewElement) throw new Error(`nothing is drawn for line ${line}`)
       return viewElement.getBoundingClientRect().height
@@ -431,8 +431,8 @@ const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDo
 /** The line at the top of what can be seen. */
 const topmost = (view: EditorView): number => {
   const box = view.scrollDOM.getBoundingClientRect()
-  const at = view.posAtCoords({ x: box.left + 8, y: box.top + 8 }) ?? 0
-  return view.state.doc.lineAt(at).number
+  const pos = view.posAtCoords({ x: box.left + 8, y: box.top + 8 }) ?? 0
+  return view.state.doc.lineAt(pos).number
 }
 
 /**

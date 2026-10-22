@@ -108,7 +108,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	threads := cfg.sessionThreads()
 	for _, one := range []struct {
 		dst     **ort.Session
-		at      string
+		path    string
 		kind    string
 		threads int
 	}{
@@ -117,10 +117,10 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		{&out.joiner, found.joiner, "joiner", threads.joiner},
 		{&out.segmenter, found.segmenter, "segmenter model", threads.segmenter},
 	} {
-		session, err := openSession(engine, one.at, one.threads)
+		session, err := openSession(engine, one.path, one.threads)
 		if err != nil {
 			out.Close()
-			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)
+			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.path, err)
 		}
 		*one.dst = session
 	}

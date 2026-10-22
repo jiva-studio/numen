@@ -160,9 +160,9 @@ func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
 	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 	v := domain.Vault{ID: "one"}
 
-	read, under, underway, reason := r.tryStart(v)
-	if read == nil || under == nil || !underway || reason != "" {
-		t.Fatalf("the first claim came back %v %v %v %q", read != nil, under != nil, underway, reason)
+	read, limit, underway, reason := r.tryStart(v)
+	if read == nil || limit == nil || !underway || reason != "" {
+		t.Fatalf("the first claim came back %v %v %v %q", read != nil, limit != nil, underway, reason)
 	}
 
 	read, _, underway, reason = r.tryStart(v)

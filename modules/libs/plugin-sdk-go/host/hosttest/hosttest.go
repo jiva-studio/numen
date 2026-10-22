@@ -22,7 +22,7 @@ import (
 type Vault struct {
 	world   *world
 	vault   domain.Vault
-	shown   bool
+	isShown bool
 	files   store
 	indexed map[string]domain.Note
 	rejected map[string]error
@@ -73,7 +73,7 @@ func OnDisk(tb testing.TB, name string, notes map[string]string, options ...Opti
 func newVault(v domain.Vault, files store) *Vault {
 	made := &Vault{
 		vault:   v,
-		shown:   true,
+		isShown: true,
 		files:   files,
 		indexed: map[string]domain.Note{},
 		rejected: map[string]error{},
@@ -198,7 +198,7 @@ func (v *Vault) gate(ctx context.Context) error {
 	if v.unknown {
 		return host.ErrUnknownVault
 	}
-	if !v.shown {
+	if !v.isShown {
 		return host.ErrNoVault
 	}
 	return nil
@@ -208,7 +208,7 @@ func (v *Vault) gate(ctx context.Context) error {
 func (v *Vault) Hide() {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	v.shown = false
+	v.isShown = false
 }
 
 // File makes a file, or replaces it, as another window would, and the index is told of it as the
@@ -472,7 +472,7 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 }
 
 // ResolveLinks answers each written link by the links the note holds whose target is written so.
-func (v *Vault) ResolveLinks(ctx context.Context, from string, written []string) (map[string]domain.ResolvedLink, error) {
+func (v *Vault) ResolveLinks(ctx context.Context, from string, links []string) (map[string]domain.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
@@ -480,7 +480,7 @@ func (v *Vault) ResolveLinks(ctx context.Context, from string, written []string)
 	}
 	notes := v.parsed()
 	out := map[string]domain.ResolvedLink{}
-	for _, raw := range written {
+	for _, raw := range links {
 		r := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}, From: from}
 		v.resolve(notes, from, &r)
 		if r.To != "" {
@@ -602,11 +602,11 @@ func (v *Vault) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	out := []domain.Vault{}
-	if v.shown {
+	if v.isShown {
 		out = append(out, v.vault)
 	}
 	for _, other := range v.world.members {
-		if other != v && other.shown {
+		if other != v && other.isShown {
 			out = append(out, other.vault)
 		}
 	}

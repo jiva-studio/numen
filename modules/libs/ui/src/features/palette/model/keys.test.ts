@@ -60,7 +60,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
         places = usePalettePlaces({
           groups: () => GROUPS,
           typed: searchQuery,
-          tellLit: () => undefined,
+          onItemActive: () => undefined,
           tellChoice: () => undefined,
         })
         keys = usePaletteKeys({
@@ -68,7 +68,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
           reveal,
           places,
           isPanelOpen,
-          getOfferedActions: () => places.offered.value,
+          getActions: () => places.actions.value,
           typed: searchQuery,
           isOpen: () => isOpen.value,
           getStep: () => step.value,
@@ -117,20 +117,20 @@ describe('usePaletteKeys', () => {
       reveal.mockClear()
       const down = press('ArrowDown')
       expect(down.defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('b')
+      expect(places.activeItem.value?.id).toBe('b')
       expect(reveal).toHaveBeenCalledOnce()
       const up = press('ArrowUp')
       expect(up.defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('a')
+      expect(places.activeItem.value?.id).toBe('a')
     })
 
     it('go to the first place on Home and the last on End', () => {
       const { places, press } = setUp({ isOpen: true })
       places.goTo(1)
       expect(press('End').defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('c')
+      expect(places.activeItem.value?.id).toBe('c')
       expect(press('Home').defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('a')
+      expect(places.activeItem.value?.id).toBe('a')
     })
 
     it('claim Enter', () => {
@@ -229,7 +229,7 @@ describe('usePaletteKeys', () => {
       places.held.value = 'c'
       isOpen.value = true
       await flushPromises()
-      expect(places.lit.value?.id).toBe('b')
+      expect(places.activeItem.value?.id).toBe('b')
     })
 
     it('relies on the item it was on when the step names none', async () => {
@@ -237,14 +237,14 @@ describe('usePaletteKeys', () => {
       places.held.value = 'c'
       isOpen.value = true
       await flushPromises()
-      expect(places.lit.value?.id).toBe('c')
+      expect(places.activeItem.value?.id).toBe('c')
     })
 
     it('relies on the first item when nothing is named or retained', async () => {
       const { isOpen, places } = setUp()
       isOpen.value = true
       await flushPromises()
-      expect(places.lit.value?.id).toBe('a')
+      expect(places.activeItem.value?.id).toBe('a')
     })
 
     it('carries on without a field', async () => {

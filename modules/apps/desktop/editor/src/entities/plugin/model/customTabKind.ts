@@ -88,7 +88,7 @@ export function createReaderTabKind(
   return {
     kind: kindId,
     pluginId,
-    open: (at: string) => {
+    open: (targetPath: string) => {
       const filename = extractFilename(at)
       return reactive({
         path: at,
@@ -116,7 +116,7 @@ export function createReaderTabKind(
       return registration.title || ''
     },
     pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
-    identity: (at: string) => at,
+    identity: (targetPath: string) => at,
     getTarget: (state: unknown) => {
       const s = state as { path?: string; title?: string } | undefined
       const path = s?.path
@@ -147,7 +147,7 @@ const FORBIDDEN_ACTION_NAMES = new Set([
 function bindCustomTabHandlers(
   at: string,
   actions: Record<string, unknown>,
-  handlers: Record<string, (at: string, ...args: unknown[]) => void> | undefined,
+  handlers: Record<string, (targetPath: string, ...args: unknown[]) => void> | undefined,
 ): void {
   if (!handlers) return
   for (const [name, handler] of Object.entries(handlers)) {
@@ -192,7 +192,7 @@ interface CustomTabStateDeps {
   readonly hostDeps?: PluginHostDeps | undefined
 }
 
-function createCustomTabState(at: string, deps: CustomTabStateDeps) {
+function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   const defaultName = stripMarkdownExtension(extractFilename(at))
   const noteRef = ref({ path: at, body: '' })
   const errorMessageRef = ref('')
@@ -259,7 +259,7 @@ export function createCustomTabKind(
   return {
     kind: registration.kind,
     pluginId,
-    open: (at: string) => createCustomTabState(at, { pluginId, registration, hostDeps: deps }),
+    open: (targetPath: string) => createCustomTabState(at, { pluginId, registration, hostDeps: deps }),
     getTitle: (state: unknown) => {
       const s = state as { title?: unknown; at?: string; path?: string } | undefined
       const titleVal = extractTitleValue(s?.title)
@@ -270,7 +270,7 @@ export function createCustomTabKind(
       return registration.title || registration.kind
     },
     pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
-    identity: (at: string) => at || registration.kind,
+    identity: (targetPath: string) => at || registration.kind,
     onShow: (state: unknown) => {
       const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
       s?.measure?.()

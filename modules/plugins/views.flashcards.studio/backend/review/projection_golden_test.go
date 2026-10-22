@@ -83,7 +83,7 @@ func projections(t *testing.T) string {
 				run.By = review.NewFSRSAt(p.preset.Retention)
 			}
 			fmt.Fprintf(&out, "== %s / %s\n", m.name, p.name)
-			ran, err := run.Run(t.Context(), goldenNow, p.preset, m.at, m.unseen)
+			ran, err := run.Run(t.Context(), goldenNow, p.preset, m.schedules, m.unreviewed)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -92,7 +92,7 @@ func projections(t *testing.T) string {
 			// The day the whole material stands learned is drawn on a second run
 			// of the same place, in which nothing is forgotten.
 			run.Recalls = review.GetFullRecall
-			nothing, err := run.Run(t.Context(), goldenNow, p.preset, m.at, m.unseen)
+			nothing, err := run.Run(t.Context(), goldenNow, p.preset, m.schedules, m.unreviewed)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -194,9 +194,9 @@ func formatShares(one []float64) string {
 
 // goldenMaterial is one vault a projection is drawn over.
 type goldenMaterial struct {
-	name   string
-	at     map[review.CardFaceID]review.Schedule
-	unseen int
+	name       string
+	schedules  map[review.CardFaceID]review.Schedule
+	unreviewed int
 }
 
 // goldenMaterials is the spread of vaults the projections are drawn over:
@@ -206,11 +206,11 @@ type goldenMaterial struct {
 // is split in decides what it asks for.
 func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 	return []goldenMaterial{
-		{name: "an empty vault", at: nil, unseen: 0},
-		{name: "nothing begun", at: nil, unseen: 40},
-		{name: "a small debt", at: goldenAt(delta, 25, 3), unseen: 5},
-		{name: "a large debt", at: goldenAt(delta, 90, 40), unseen: 60},
-		{name: "more than a day holds of each", at: goldenAt(delta, 120, 120), unseen: 200},
+		{name: "an empty vault", schedules: nil, unreviewed: 0},
+		{name: "nothing begun", schedules: nil, unreviewed: 40},
+		{name: "a small debt", schedules: goldenAt(delta, 25, 3), unreviewed: 5},
+		{name: "a large debt", schedules: goldenAt(delta, 90, 40), unreviewed: 60},
+		{name: "more than a day holds of each", schedules: goldenAt(delta, 120, 120), unreviewed: 200},
 	}
 }
 

@@ -92,7 +92,7 @@ function onFollow(destPath: string) {
       <BookListing
         :is-open="isListingOpen"
         :entries="tabState.contents.value"
-        :at="tabState.offset.value"
+        :offset="tabState.offset.value"
         @go="onSelectEntry"
         @dismiss="onDismissListing"
         @escape="onEscapeListing"

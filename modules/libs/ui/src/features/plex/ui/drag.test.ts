@@ -63,12 +63,12 @@ async function letGo(plex: ReturnType<typeof mountPlex>, x: number, y: number) {
 
 /** Where a node of this relation is drawn, in the page's own coordinates. */
 const getNode = (plex: ReturnType<typeof mountPlex>, relation: string) => {
-  const at = plex
+  const coord = plex
     .get(`[aria-label$=", ${relation}"]`)
     .attributes('transform')!
     .match(/-?[\d.]+/g)!
     .map(Number)
-  return { x: 600 + at[0]!, y: 400 + at[1]! }
+  return { x: 600 + coord[0]!, y: 400 + coord[1]! }
 }
 
 const findDragged = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
@@ -131,9 +131,9 @@ describe('letting go of something dragged in', () => {
     await letGo(plex, 600, 405)
     expect(plex.emitted('bring')).toBeUndefined()
 
-    const further = mountPlex()
-    await letGo(further, 600, 410)
-    expect(further.emitted('bring')).toStrictEqual([[DRAGGED, 'child']])
+    const secondary = mountPlex()
+    await letGo(secondary, 600, 410)
+    expect(secondary.emitted('bring')).toStrictEqual([[DRAGGED, 'child']])
   })
 
   it('joins nothing towards a relation the caller left out', async () => {

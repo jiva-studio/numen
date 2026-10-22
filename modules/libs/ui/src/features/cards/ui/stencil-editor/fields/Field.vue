@@ -36,7 +36,7 @@ const props = withDefaults(
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  (event: 'drag-over', at: InsertionPoint | undefined, press: DragEvent): void
+  (event: 'drag-over', target: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
   (event: 'lift', press: DragEvent): void
   (event: 'release'): void

@@ -79,8 +79,8 @@ const mostAnswers = 1000
 // face nothing and counts for none of the days the pace divides by. A week
 // carrying such a day needs as many days of review as its slowest day of the
 // week does, so the pace holds for a card face begun on any of them.
-func GetDaysToLearn(by Scheduler, d Day, p Preset, now time.Time) int {
-	s := Simulation{By: by, Day: d}
+func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
+	s := Simulation{By: scheduler, Day: d}
 	from := d.GetStart(now)
 	out := 0
 	for range 7 {
@@ -167,7 +167,7 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bo
 
 // short is how many of these card faces cannot be learned by the day the preset
 // aims at, whatever the pace, and how many of a material nobody has begun.
-func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time) int {
+func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.Time) int {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
@@ -178,8 +178,8 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 			out++
 		}
 	}
-	if unseen > 0 && !s.canReachGoal(p, Schedule{}, open, delta) {
-		out += unseen
+	if unreviewed > 0 && !s.canReachGoal(p, Schedule{}, open, delta) {
+		out += unreviewed
 	}
 	return out
 }
@@ -228,7 +228,7 @@ func (s Simulation) getRecallProbability(c Schedule, pos time.Time) float64 {
 // A run over many days is long enough that a caller may give up on it, so the
 // day it is on is where it is left.
 func (s Simulation) Run(
-	ctx context.Context, now time.Time, p Preset, at map[CardFaceID]Schedule, unseen int,
+	ctx context.Context, now time.Time, p Preset, schedules map[CardFaceID]Schedule, unreviewed int,
 ) (Projection, error) {
 	days := s.GetDurationDays()
 	// The days this run answers the returning share for.
@@ -241,8 +241,8 @@ func (s Simulation) Run(
 
 	// The map hands its schedules over in whatever order it holds them, and a
 	// projection asked twice answers the same both times.
-	cards := make([]Schedule, 0, len(at))
-	for _, one := range at {
+	cards := make([]Schedule, 0, len(schedules))
+	for _, one := range schedules {
 		cards = append(cards, one)
 	}
 	slices.SortFunc(cards, compareByDue)
@@ -257,14 +257,14 @@ func (s Simulation) Run(
 	}
 
 	out := Projection{
-		Days: days, Faces: len(at) + unseen, Seen: len(at),
+		Days: days, Faces: len(schedules) + unreviewed, Seen: len(schedules),
 		Clears: NeverClears, Learns: learns,
 	}
 	// A day that begins with nothing overdue has nothing to clear.
-	if CountOverdue(s.Day, at, now) == 0 {
+	if CountOverdue(s.Day, schedules, now) == 0 {
 		out.Clears = 0
 	}
-	remaining := unseen
+	remaining := unreviewed
 	var elapsed time.Duration
 
 	open := s.Day.GetStart(now)
@@ -289,7 +289,7 @@ func (s Simulation) Run(
 	// What no pace reaches, and how long a card face begun today takes to be
 	// learned. No goal but a date reads either, and neither is asked for under
 	// another.
-	out.Short = s.short(p, cards, unseen, open)
+	out.Short = s.short(p, cards, unreviewed, open)
 	daysToLearn := 0
 	if p.Goal == GoalDate {
 		daysToLearn = GetDaysToLearn(s.By, s.Day, p, now)

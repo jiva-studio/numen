@@ -12,7 +12,7 @@ type transducer struct {
 	frames    int
 	blank     int
 	encoded   int
-	encoder   func(at int, frame []float32) []float32
+	encoder   func(pos int, frame []float32) []float32
 	predictor func(token int) ([]float32, error)
 	joint     func(frame, predicted []float32) ([]float32, error)
 }

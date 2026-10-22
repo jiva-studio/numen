@@ -12,7 +12,7 @@ import (
 // deckChange is what a change wrote: the deck as it became and the marks given to cards that carried none.
 type deckChange struct {
 	result EditResult
-	given  []format.CardMark
+	marks  []format.CardMark
 }
 
 // changeDeck splices one change into a deck. Every byte the change does not name is written as it arrived.
@@ -34,6 +34,6 @@ func changeDeck(
 	}
 	return deckChange{
 		result: EditResult{Fingerprint: wrote.Fingerprint, Cards: len(file.Deck(domain.Fingerprint{}).Cards)},
-		given:  wrote.Given,
+		marks:  wrote.Given,
 	}, nil
 }

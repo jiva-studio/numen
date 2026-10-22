@@ -39,7 +39,7 @@ func newYtDLP(c Config) *ytDLP {
 	return v
 }
 
-func (v *ytDLP) CanHandle(at string) bool { return isVideoSite(at) && v.command.isPresent() }
+func (v *ytDLP) CanHandle(target string) bool { return isVideoSite(target) && v.command.isPresent() }
 
 func (v *ytDLP) GetDownloadModel(string) DownloadModel {
 	return DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: "captions"}
@@ -103,8 +103,8 @@ func (v *ytDLP) getTarget(pos string) []string {
 	return []string{pos}
 }
 
-func (v *ytDLP) GetMetadata(ctx context.Context, at string) (Metadata, error) {
-	output, err := v.readInfo(ctx, at)
+func (v *ytDLP) GetMetadata(ctx context.Context, target string) (Metadata, error) {
+	output, err := v.readInfo(ctx, target)
 	if err != nil {
 		return Metadata{}, err
 	}
@@ -118,7 +118,7 @@ func (v *ytDLP) GetMetadata(ctx context.Context, at string) (Metadata, error) {
 		AutomaticCaptions map[string][]struct{} `json:"automatic_captions"`
 	}
 	if err := json.Unmarshal(output, &metadata); err != nil {
-		return Metadata{}, fmt.Errorf("what yt-dlp output about %s: %w", at, err)
+		return Metadata{}, fmt.Errorf("what yt-dlp output about %s: %w", target, err)
 	}
 	return Metadata{
 		Title:       strings.TrimSpace(metadata.Title),
@@ -139,12 +139,12 @@ func getLanguages(tracks map[string][]struct{}) []string {
 	return out
 }
 
-func (v *ytDLP) GetText(ctx context.Context, at string, want PreferredCaptions) (Text, error) {
-	meta, err := v.GetMetadata(ctx, at)
+func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptions) (Text, error) {
+	meta, err := v.GetMetadata(ctx, target)
 	if err != nil {
 		return Text{}, err
 	}
-	cues, err := v.subtitles(ctx, at, chooseLanguage(meta, want.Languages, want.IsAutomatic))
+	cues, err := v.subtitles(ctx, target, chooseLanguage(meta, want.Languages, want.IsAutomatic))
 	if err != nil {
 		return Text{}, err
 	}
@@ -195,7 +195,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-func (v *ytDLP) Download(ctx context.Context, at string, into io.Writer) (Copy, error) {
+func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Copy, error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
 		return Copy{}, err
@@ -206,7 +206,7 @@ func (v *ytDLP) Download(ctx context.Context, at string, into io.Writer) (Copy, 
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
 		"-o", filepath.Join(folder, "copy.%(ext)s"),
 	}
-	arguments = append(arguments, v.getTarget(at)...)
+	arguments = append(arguments, v.getTarget(target)...)
 	if where := v.sound.getPath(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 	}

@@ -25,13 +25,13 @@ const createDeck = (...cards: BufferCard[]): BufferDeck => ({
   tail: '',
 })
 
-const problem = (over: Partial<DeckProblem>): DeckProblem => ({
+const problem = (overrides: Partial<DeckProblem>): DeckProblem => ({
   kind: 'unknown',
   card: null,
   face: null,
   field: '',
   text: 'Odd',
-  ...over,
+  ...overrides,
 })
 
 /** A store holding one string per tab, and a reader over it. */

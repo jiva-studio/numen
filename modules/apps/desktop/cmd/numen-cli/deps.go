@@ -154,7 +154,7 @@ func createRecognition(
 		_ = closeModels()
 		return cli.Recognise{}, err
 	}
-	db, cutFn := indexed.db, indexed.cut
+	db, cutFn := indexed.db, indexed.extractor
 	return cli.Recognise{
 		Recognise: cfg.Recognise(db.Sources(), models),
 		Cut:       cutFn,
@@ -183,7 +183,7 @@ func createTranscription(
 		_ = closeModels()
 		return cli.Transcribe{}, err
 	}
-	db, cutFn := indexed.db, indexed.cut
+	db, cutFn := indexed.db, indexed.extractor
 	return cli.Transcribe{
 		Transcribe: cfg.Transcribe(db.Sources(), models),
 		Cut:        cutFn,
@@ -196,8 +196,8 @@ func createTranscription(
 
 // indexedCut is the index and the extraction of a vault's sources over it.
 type indexedCut[C any] struct {
-	db  *container.Index
-	cut C
+	db        *container.Index
+	extractor C
 }
 
 // createCut opens the index and makes the extraction over it. The index is
@@ -210,12 +210,12 @@ func createCut[C any](
 	if err != nil {
 		return indexedCut[C]{}, err
 	}
-	cut, err := extract(db.Sources(), db.SourcesKnown(), v)
+	extractor, err := extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		_ = db.Close()
 		return indexedCut[C]{}, err
 	}
-	return indexedCut[C]{db: db, cut: cut}, nil
+	return indexedCut[C]{db: db, extractor: extractor}, nil
 }
 
 // createImportURL is the download of an address into the vault.
@@ -242,7 +242,7 @@ func createProofreadRecognition(
 		return cli.ProofreadRecognition{}, err
 	}
 	return cli.ProofreadRecognition{
-		Proofread: proofread, Cut: indexed.cut, IsHeld: true, Close: indexed.db.Close,
+		Proofread: proofread, Cut: indexed.extractor, IsHeld: true, Close: indexed.db.Close,
 	}, nil
 }
 
@@ -261,7 +261,7 @@ func createProofreadTranscript(
 		return cli.ProofreadTranscript{}, err
 	}
 	return cli.ProofreadTranscript{
-		Proofread: proofread, Cut: indexed.cut, IsHeld: true, Close: indexed.db.Close,
+		Proofread: proofread, Cut: indexed.extractor, IsHeld: true, Close: indexed.db.Close,
 	}, nil
 }
 

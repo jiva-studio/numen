@@ -18,12 +18,12 @@ const request = vi.hoisted(() => ({
 vi.mock('@/shared/clients', () => ({ settingsService: request }))
 
 /** The settings as the vault answers them, over a file holding `written`. */
-const answer = (content: unknown, over: Record<string, unknown> = {}) => ({
+const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
   models: [],
   nestedHeadingLimitBounds: { least: 2, most: 9 },
-  ...over,
+  ...overrides,
 })
 
 /** What the vault was last asked to write. */

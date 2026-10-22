@@ -32,7 +32,7 @@ export interface TabKind<TabState, K extends string = string> {
    * It is made at once, so whatever it watches is caught by the tab's scope
    * and release with the tab.
    */
-  open(at: string, id: string): TabState
+  open(targetPath: string, id: string): TabState
   /** What the tab is called, as what it holds now stands. */
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
@@ -44,7 +44,7 @@ export interface TabKind<TabState, K extends string = string> {
    * declares one has a tab per thing, so the same thing opened twice is the
    * tab it already has.
    */
-  identity?(at: string): string
+  identity?(targetPath: string): string
   /** The tab came on screen, where what it holds has room to measure. */
   onShow?(state: TabState, id: string): void
   /** The tab is handed text meant for it, such as a question the window puts to it. */
@@ -82,7 +82,7 @@ export interface TabKind<TabState, K extends string = string> {
   /** A file made in a folder under a name, as the file this kind edits. */
   createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
   /** Where a command named `command` over the file at `at`, of the type given, leads, and nothing where this kind has none. */
-  resolveCommand?(at: string, command: string, type: NoteType): Promise<TabResolution | null>
+  resolveCommand?(targetPath: string, command: string, type: NoteType): Promise<TabResolution | null>
   /** The icon its tabs carry before their title. */
   readonly icon?: Component
   /** Where a tab of it opens in a window that starts with nothing to restore. */

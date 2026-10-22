@@ -143,7 +143,7 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	stores := filesystem.DerivedStores{
 		Area: filesystem.TranscriptDir, Areas: []string{domain.Article, filesystem.CopyDir},
 	}
-	queries := &sourced{known: map[string]port.SourceText{}}
+	queries := &sourced{indexed: map[string]port.SourceText{}}
 	core.Sources.GetArtifactList = source.NewGetArtifactList(queries, stores)
 	core.Sources.GetArtifactText = source.NewGetArtifactText(queries, stores)
 	session := sessionOf(t, mcp.New(core))
@@ -155,7 +155,7 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	}
 	// The index is what says which producer stands for a path, and a scan is
 	// what writes it. This is that row.
-	queries.known[made.Path] = port.SourceText{
+	queries.indexed[made.Path] = port.SourceText{
 		Fingerprint: domain.Fingerprint{Path: made.Path},
 		Producer:    domain.Captions,
 		Hash:        derived.Fingerprint([]byte(aVideo)),
@@ -184,13 +184,13 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 // sourced is what the index says was made from each path.
 type sourced struct {
 	port.SourceQueries
-	known map[string]port.SourceText
+	indexed map[string]port.SourceText
 }
 
 func (s *sourced) GetSourceText(
 	_ context.Context, _ domain.VaultID, path string,
 ) (port.SourceText, bool, error) {
-	one, target := s.known[path]
+	one, target := s.indexed[path]
 	return one, target, nil
 }
 

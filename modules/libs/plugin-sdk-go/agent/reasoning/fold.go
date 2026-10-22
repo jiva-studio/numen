@@ -65,7 +65,7 @@ func SplitTitle(title string) (string, string) {
 func Fold(models []Listed) []Family {
 	type group struct {
 		base   string
-		listed []Listed
+		listings []Listed
 		levels []string
 	}
 	var groups []*group
@@ -101,7 +101,7 @@ func Fold(models []Listed) []Family {
 }
 
 // newFamily is the family of the models listed once per level.
-func newFamily(title string, listed []Listed, names []string) Family {
+func newFamily(title string, listings []Listed, names []string) Family {
 	levels := NewLevels(names...)
 	Sort(levels)
 	variants := make(map[string]string, len(listed))
@@ -109,14 +109,14 @@ func newFamily(title string, listed []Listed, names []string) Family {
 		variants[names[place]] = one.Name
 	}
 	return Family{
-		Name: getFamilyName(listed, names), Title: title, Levels: levels,
+		Name: getFamilyName(listings, names), Title: title, Levels: levels,
 		Default: GetDefault(levels), variants: variants,
 	}
 }
 
 // getFamilyName is the name the listed models share once the level is taken from the end of each,
 // else the name of the first.
-func getFamilyName(listed []Listed, levels []string) string {
+func getFamilyName(listings []Listed, levels []string) string {
 	shared := ""
 	for place, one := range listed {
 		trimmed, found := strings.CutSuffix(one.Name, "-"+levels[place])

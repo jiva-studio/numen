@@ -21,7 +21,7 @@ export function getPaletteView(state: ViewState) {
   const steps = createStepGroups(state)
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
-  const renderItem = (one: Command, over: CommandTarget, word: string): PaletteItem | null => {
+  const renderItem = (one: Command, target: CommandTarget, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
     const also = one.also ? byId.get(one.also) : undefined
@@ -37,14 +37,14 @@ export function getPaletteView(state: ViewState) {
     }
   }
 
-  const getSilenceMessage = (over: CommandTarget): string => {
+  const getSilenceMessage = (target: CommandTarget): string => {
     if (!over.isReady) return words.noVault
     if (over.path) return words.noneFound
     return words.noNote
   }
 
   /** Every command offered over what is in front, in the groups it holds. */
-  const getCommandGroups = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
+  const getCommandGroups = (target: CommandTarget, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
     const items = (group: CommandGroup): readonly PaletteItem[] =>
       getGroupCommands(commands, group)
@@ -70,7 +70,7 @@ export function getPaletteView(state: ViewState) {
   }
 
   /** What the palette draws at its current position, over the words typed into it. */
-  const createGroups = (step: PendingStep | null, over: CommandTarget, text: string) => {
+  const createGroups = (step: PendingStep | null, target: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(over, text)
     if (step.step === 'naming') return [steps.getNamingGroup(text)]
     if (step.step === 'address') return [steps.getAddressGroup(text)]

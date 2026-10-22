@@ -87,7 +87,7 @@ type PluginVault interface {
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
-	ResolveLinks(ctx context.Context, from string, written []string) (map[string]domain.ResolvedLink, error)
+	ResolveLinks(ctx context.Context, from string, output []string) (map[string]domain.ResolvedLink, error)
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 
 	// OpenData opens the folder of the store of the vault.

@@ -12,18 +12,18 @@ import (
 
 type fixed struct {
 	name  domain.Check
-	quiet bool
+	silent bool
 }
 
 func (f fixed) Name() domain.Check { return f.name }
-func (f fixed) IsOptIn() bool      { return f.quiet }
+func (f fixed) IsOptIn() bool      { return f.silent }
 func (f fixed) FindProblems(context.Context, domain.Vault) ([]domain.VaultProblem, error) {
 	return []domain.VaultProblem{{Path: string(f.name) + ".md", Kind: f.name}}, nil
 }
 
 func newChecks() *vault.GetProblems {
 	return vault.NewGetProblems(check.Checks{List: []check.Checker{
-		fixed{name: "parse"}, fixed{name: "dangling", quiet: true},
+		fixed{name: "parse"}, fixed{name: "dangling", silent: true},
 	}})
 }
 

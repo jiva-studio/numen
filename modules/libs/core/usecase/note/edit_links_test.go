@@ -58,7 +58,7 @@ func TestCheckingALinkNamesWhatItLacks(t *testing.T) {
 
 func TestLinkEditsAreHeldToTheFingerprintTheCallerPresents(t *testing.T) {
 	t.Parallel()
-	edits := map[string]func(c changing, held domain.Fingerprint) error{
+	edits := map[string]func(c changing, item domain.Fingerprint) error{
 		"adding": func(c changing, activeItem domain.Fingerprint) error {
 			_, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", activeItem, toEntropy(domain.RoleRef))
 			return err

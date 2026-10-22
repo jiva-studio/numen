@@ -19,23 +19,23 @@ const words: Words = {
   wordsOnly: 'Searching by words only — no model set',
 }
 
-const well = (over: Partial<State> = {}): State => ({
+const well = (overrides: Partial<State> = {}): State => ({
   unwatched: '',
   unread: '',
   lost: '',
   isIndexing: false,
   hasNote: true,
-  ...over,
+  ...overrides,
 })
 
-const vault = (over: Partial<IndexCoverage> = {}): IndexCoverage => ({
+const vault = (overrides: Partial<IndexCoverage> = {}): IndexCoverage => ({
   chunks: 0,
   embedded: 0,
   isEmbedding: true,
-  ...over,
+  ...overrides,
 })
 
-const createTask = (over: Partial<Task> = {}): Task => ({
+const createTask = (overrides: Partial<Task> = {}): Task => ({
   id: 'indexing-1',
   label: 'Recognising a scan',
   about: 'library/Sabhaparva.pdf',
@@ -44,15 +44,15 @@ const createTask = (over: Partial<Task> = {}): Task => ({
   counting: 'things',
   error: '',
   isUserStarted: true,
-  ...over,
+  ...overrides,
 })
 
-const createMessage = (over: Partial<WindowMessage> = {}): WindowMessage => ({
+const createMessage = (overrides: Partial<WindowMessage> = {}): WindowMessage => ({
   id: 'command#1',
   name: 'command',
   kind: 'report',
   text: 'The note is in the trash',
-  ...over,
+  ...overrides,
 })
 
 const corner = (

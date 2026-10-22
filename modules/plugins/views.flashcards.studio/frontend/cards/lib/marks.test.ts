@@ -6,13 +6,13 @@ import { areMarksEqual, createMarks } from './marks'
 import type { DeckProblem } from '../types'
 
 /** One problem as the vault reports one, against nothing in particular. */
-const problem = (over: Partial<DeckProblem> = {}): DeckProblem => ({
+const problem = (overrides: Partial<DeckProblem> = {}): DeckProblem => ({
   kind: 'cardWithoutAStencil',
   card: null,
   face: null,
   field: '',
   text: 'a card under no stencil',
-  ...over,
+  ...overrides,
 })
 
 describe('where a problem is drawn', () => {

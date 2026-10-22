@@ -158,7 +158,7 @@ func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (P
 // the file as it stood when the run began.
 type PresetReads struct {
 	Presets
-	held map[string]PresetContents
+	cachedPresets map[string]PresetContents
 	// scheduling is the preset each deck asked about is scheduled by, so a deck
 	// is asked once however many times the run comes round to it.
 	scheduling map[string]PresetContents
@@ -171,7 +171,7 @@ type PresetReads struct {
 func (u Presets) OpenReads() *PresetReads {
 	return &PresetReads{
 		Presets:    u,
-		held:       make(map[string]PresetContents),
+		cachedPresets: make(map[string]PresetContents),
 		scheduling: make(map[string]PresetContents),
 	}
 }
@@ -202,13 +202,13 @@ func (r *PresetReads) getSchedulingPreset(
 		return PresetContents{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
 
-	var at []domain.ResolvedLink
+	var matchedLinks []domain.ResolvedLink
 	for _, link := range links {
 		if link.Type == LinkType {
-			at = append(at, link)
+			matchedLinks = append(matchedLinks, link)
 		}
 	}
-	if len(at) == 0 {
+	if len(matchedLinks) == 0 {
 		out := CreateDefaultPreset()
 		if out.Problems, err = r.readRolelessProblems(ctx, v, deck); err != nil {
 			return PresetContents{}, err
@@ -216,7 +216,7 @@ func (r *PresetReads) getSchedulingPreset(
 		return out, nil
 	}
 
-	first := at[0]
+	first := matchedLinks[0]
 	delta := first.Target.GetWritten()
 	out := CreateDefaultPreset()
 	if first.To != "" {
@@ -232,7 +232,7 @@ func (r *PresetReads) getSchedulingPreset(
 	} else {
 		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
 	}
-	if len(at) > 1 {
+	if len(matchedLinks) > 1 {
 		out.Problems = append(slices.Clone(out.Problems),
 			"this deck names more than one preset, and is scheduled by "+delta)
 	}
@@ -269,14 +269,14 @@ func (r *PresetReads) readRolelessProblems(ctx context.Context, v domain.Vault, 
 
 // read is the preset at path, opened once however many decks name it.
 func (r *PresetReads) read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
-	if target, ok := r.held[path]; ok {
+	if target, ok := r.cachedPresets[path]; ok {
 		return target, nil
 	}
 	out, err := r.Read(ctx, v, path)
 	if err != nil {
 		return PresetContents{}, err
 	}
-	r.held[path] = out
+	r.cachedPresets[path] = out
 	return out, nil
 }
 

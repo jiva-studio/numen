@@ -36,12 +36,12 @@ var (
 // fakeBookClient is a book plugin that holds the entries it is given, and
 // records what it was asked.
 type fakeBookClient struct {
-	mu      sync.Mutex
-	entries map[string][]byte
-	failure error
-	asked   []domain.Fingerprint
-	markup  *markupAsk
-	book    string
+	mu       sync.Mutex
+	entries  map[string][]byte
+	failure  error
+	question []domain.Fingerprint
+	markup   *markupAsk
+	book     string
 }
 
 // markupAsk is what a plugin was asked of one section of a book.
@@ -84,7 +84,7 @@ func (c *fakeBookClient) ReadBookMarkup(
 func (c *fakeBookClient) ReadEntry(_ context.Context, baseline domain.Fingerprint, entry string) ([]byte, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.asked = append(c.asked, baseline)
+	c.question = append(c.question, baseline)
 	if c.failure != nil {
 		return nil, c.failure
 	}
@@ -103,7 +103,7 @@ func (c *fakeBookClient) countAsked() int {
 func (c *fakeBookClient) getAsked() []domain.Fingerprint {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return slices.Clone(c.asked)
+	return slices.Clone(c.question)
 }
 
 // readFrom is a window looking at one book of its vault, which the plugin it is

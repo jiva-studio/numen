@@ -145,7 +145,7 @@ const vault = (
   }
 
   /** Which preset the deck names, as the vault answers it. */
-  let by = answers.by ?? ''
+  let presetPath = answers.by ?? ''
   /** Every deck put on a preset, as the window asked for it. */
   const attached: { deck: string; preset: string; seen: string }[] = []
 
@@ -165,8 +165,8 @@ const vault = (
     getDeckPreset: async () =>
       asValue({
         preset: {
-          path: by,
-          title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+          path: presetPath,
+          title: presetPath === 'Sanskrit.md' ? 'Sanskrit' : '',
           settings: DEFAULTS,
           problems: answers.saying ? [answers.saying] : [],
           ...SCHEDULING,
@@ -178,7 +178,7 @@ const vault = (
       attached.push({ deck, preset, seen: observed })
       if (answers.notScheduled) return asFailure(answers.notScheduled)
       if (answers.hasSchedulingChanged) return asFailure('changed' as const)
-      by = preset
+      presetPath = preset
       return asValue({ at: 'scheduled' })
     },
     write: async () => asValue({ at: '' }),
@@ -204,6 +204,7 @@ const vault = (
     written: content,
     wrote: () => wrote,
     seen: observed,
+    observed,
     getReadCount: () => reads,
     listed: () => items,
     /** The file written from somewhere else, which the next read answers with. */
@@ -314,7 +315,7 @@ describe('a card written in a deck', () => {
   })
 
   it('reaches the vault as the cards of that file, with the file it was read from', async () => {
-    const { decks, tab, written: savedFiles, seen: observedRanks } = await open()
+    const { decks, tab, written: savedFiles, observed: observedRanks } = await open()
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.store.flush()
@@ -353,7 +354,7 @@ describe('a deck whose file moved past what was read', () => {
   })
 
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
-    const { decks, tab, written: savedFiles, seen: observedRanks } = await open({ isChanged: true })
+    const { decks, tab, written: savedFiles, observed: observedRanks } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.store.flush()

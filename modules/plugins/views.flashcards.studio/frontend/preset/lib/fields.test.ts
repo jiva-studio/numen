@@ -14,7 +14,7 @@ import {
   getGoalField,
 } from './fields'
 
-const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
+const settings = (overrides: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...overrides })
 
 describe('the settings a goal schedules by', () => {
   // A goal names one budget, and the budgets of the other two take no part in

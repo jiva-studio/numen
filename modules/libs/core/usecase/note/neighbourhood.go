@@ -36,17 +36,17 @@ func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbou
 }
 
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
-	around, err := u.getNeighbours(ctx, v, path)
+	center, err := u.getNeighbours(ctx, v, path)
 	if err != nil {
 		return domain.Neighbourhood{}, err
 	}
 
-	if err := u.addSiblings(ctx, v, around); err != nil {
+	if err := u.addSiblings(ctx, v, center); err != nil {
 		return domain.Neighbourhood{}, err
 	}
-	around.remove(path)
+	center.remove(path)
 
-	neighbour := around.getAll()
+	neighbour := center.getAll()
 	paths := make([]string, 0, len(neighbour)+1)
 	paths = append(paths, path)
 	for _, s := range neighbour {
@@ -73,8 +73,8 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 // addSiblings adds the other children of every parent, which is the whole of
 // what a sibling is. Each parent is asked in turn, and the sibling keeps the
 // parent it came through: that is the note the relationship runs from.
-func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, around *neighbourSet) error {
-	for _, parent := range around.getAll() {
+func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, targetSet *neighbourSet) error {
+	for _, parent := range targetSet.getAll() {
 		if parent.Relation != domain.RelationParent {
 			continue
 		}
@@ -86,7 +86,7 @@ func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, arou
 			if sibling.Relation != domain.RelationChild {
 				continue
 			}
-			around.add(domain.Neighbour{
+			targetSet.add(domain.Neighbour{
 				NoteRef:  domain.NoteRef{Path: sibling.Path},
 				Relation: domain.RelationSibling,
 				Label:    sibling.Label,
@@ -186,20 +186,20 @@ func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 // part of the answer, because it is what the picture is drawn in — and it is
 // total, so the same vault gives the same picture twice.
 type neighbourSet struct {
-	order []domain.Neighbour
-	at    map[string]int
+	order      []domain.Neighbour
+	targetPath map[string]int
 }
 
 // add records a neighbour under the highest-ranked relation it qualifies for,
 // replacing a lesser one recorded earlier: a pair who are each other's parent
 // is drawn once, and always the same way round.
 func (s *neighbourSet) add(neighbour domain.Neighbour) {
-	if s.at == nil {
-		s.at = map[string]int{}
+	if s.targetPath == nil {
+		s.targetPath = map[string]int{}
 	}
-	i, exists := s.at[neighbour.Path]
+	i, exists := s.targetPath[neighbour.Path]
 	if !exists {
-		s.at[neighbour.Path] = len(s.order)
+		s.targetPath[neighbour.Path] = len(s.order)
 		s.order = append(s.order, neighbour)
 		return
 	}
@@ -212,7 +212,7 @@ func (s *neighbourSet) add(neighbour domain.Neighbour) {
 // related already. Both ends naming the same relation is one relationship named
 // twice, and the word for it is the focus's own where it wrote one.
 func (s *neighbourSet) addMutual(neighbour domain.Neighbour) {
-	i := s.at[neighbour.Path]
+	i := s.targetPath[neighbour.Path]
 	current := s.order[i]
 	if current.Relation != neighbour.Relation {
 		s.add(neighbour)

@@ -87,7 +87,7 @@ func (u unanswered) ResolveLinks(context.Context, domain.VaultID, string, []stri
 // landing is an index that answers where each wikilink lands from a table.
 type landing struct {
 	ports.LinkQueries
-	at map[string]string
+	targets map[string]string
 }
 
 func (l landing) ResolveLinks(
@@ -95,7 +95,7 @@ func (l landing) ResolveLinks(
 ) (map[string]domain.ResolvedLink, error) {
 	out := make(map[string]domain.ResolvedLink, len(output))
 	for _, raw := range output {
-		if to, ok := l.at[raw]; ok {
+		if to, ok := l.targets[raw]; ok {
 			out[raw] = domain.ResolvedLink{From: from, To: to}
 		}
 	}
@@ -229,7 +229,7 @@ func TestAStencilNamedTwoWaysIsOpenedOnce(t *testing.T) {
 	write(t, vs.first, "decks/Pair.md", "---\ntype: deck\n---\n"+
 		"\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n"+
 		"\n## Wren\n\n[[Beast]]\n\n### Name\n\nWren\n")
-	links := landing{at: map[string]string{"Animal": "Animal.md", "Beast": "Animal.md"}}
+	links := landing{targets: map[string]string{"Animal": "Animal.md", "Beast": "Animal.md"}}
 	counted := &counting{VaultReaders: vs.ports.Readers}
 
 	got, err := cards.NewRead(counted, links).Deck(t.Context(), vs.first, "decks/Pair.md")

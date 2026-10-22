@@ -35,11 +35,11 @@ export interface PaletteStepsOptions {
   readonly onLights: (item: string) => void
   readonly onLists: () => void
   readonly onClose: () => void
-  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
 }
 
 interface StepActionDeps {
-  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   readonly pushStep: (step: PendingStep) => void
   readonly popStep: () => void
   readonly lists: PaletteLists

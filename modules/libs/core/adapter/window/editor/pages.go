@@ -40,12 +40,12 @@ type PluginServices = interface {
 // served is one service this build answers: where its calls arrive, and what
 // answers them.
 type served struct {
-	at string
-	to http.Handler
+	posVal string
+	to     http.Handler
 }
 
 // mount takes a generated handler and the path it answers under as one.
-func mount(pos string, to http.Handler) served { return served{at: pos, to: to} }
+func mount(pos string, to http.Handler) served { return served{posVal: pos, to: to} }
 
 // NewHandler puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.
@@ -81,7 +81,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 			return
 		}
 		for _, one := range routes {
-			if strings.HasPrefix(r.URL.Path, one.at) {
+			if strings.HasPrefix(r.URL.Path, one.posVal) {
 				one.to.ServeHTTP(w, r)
 				return
 			}

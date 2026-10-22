@@ -179,8 +179,8 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 // A run that is not one fails, and nothing is read to say so.
 func TestARunThatIsNotOneIsRefused(t *testing.T) {
 	for _, one := range []struct {
-		what string
-		at   []*v1.Span
+		what   string
+		posVal []*v1.Span
 	}{
 		{"no run at all", nil},
 		{"a place before the text", []*v1.Span{{From: -1, To: 4}}},
@@ -190,7 +190,7 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _, _ := openHighlightWindow(t)
 
-			if _, err := readRuns(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+			if _, err := readRuns(api, book, one.posVal...); connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Errorf("asking about %s failed %v", one.what, err)
 			}
 		})

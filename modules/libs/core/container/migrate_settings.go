@@ -75,9 +75,9 @@ func migrateOneSetting(pluginID string, setting port.PluginSetting, file map[str
 
 // findSettingsKeys is the value at the keys of a decoded document, and whether the document holds one.
 func findSettingsKeys(document map[string]any, keys ...string) (any, bool) {
-	var at any = document
+	var pos any = document
 	for _, key := range keys {
-		object, isObject := at.(map[string]any)
+		object, isObject := pos.(map[string]any)
 		if !isObject {
 			return nil, false
 		}
@@ -85,9 +85,9 @@ func findSettingsKeys(document map[string]any, keys ...string) (any, bool) {
 		if !found {
 			return nil, false
 		}
-		at = next
+		pos = next
 	}
-	return at, true
+	return pos, true
 }
 
 func hasKeys(document map[string]any, keys ...string) bool {

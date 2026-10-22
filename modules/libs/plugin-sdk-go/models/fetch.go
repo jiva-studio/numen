@@ -120,7 +120,7 @@ func (r Request) reportProgress(done, total int64) {
 // written beside its place, checked against the sum and the quota, and only
 // then put in its place.
 func Fetch(ctx context.Context, r Request) (string, error) {
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	var corrupt error
 	if _, err := os.Stat(at); err == nil {
 		if r.Sum == "" {
@@ -151,14 +151,14 @@ func Fetch(ctx context.Context, r Request) (string, error) {
 			return "", err
 		}
 	}
-	return at, download(ctx, r, at)
+	return at, download(ctx, r, targetPath)
 }
 
 // download writes what one address holds through a file beside at.
 //
 // The deadline is set twice: once for the host to answer, and once for the body
 // when its length is known.
-func download(ctx context.Context, r Request, at string) error {
+func download(ctx context.Context, r Request, targetPath string) error {
 	if !IsAddress(r.Address) {
 		return fmt.Errorf("%s is not an https address", r.Address)
 	}
@@ -237,7 +237,7 @@ func write(file *os.File, body io.Reader, r Request, claim *Reservation, total i
 type progressWriter struct {
 	to         io.Writer
 	total      int64
-	done       int64
+	downloaded int64
 	last       time.Time
 	onProgress func(done, total int64)
 }

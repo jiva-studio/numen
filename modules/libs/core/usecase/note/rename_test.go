@@ -48,7 +48,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		raw   string
 		title string
 		path  string
-		by    note.NameSource
+		delta note.NameSource
 		holds []string
 		lacks []string
 	}{
@@ -56,14 +56,14 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "---\ntitle: Old\n---\n# Old\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			by:    note.ByFrontmatter,
+			delta: note.ByFrontmatter,
 			holds: []string{"title: Entropy", "# Old"},
 		},
 		"a level-one heading, which names nothing and is left standing": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			by:    note.ByFilename,
+			delta: note.ByFilename,
 			holds: []string{"# Old", "A measure."},
 			lacks: []string{"title:", "id: "},
 		},
@@ -71,7 +71,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "TCP/IP",
 			path:  "TCP-IP.md",
-			by:    note.ByFrontmatter,
+			delta: note.ByFrontmatter,
 			holds: []string{"title: TCP/IP", "A measure.", "id: "},
 			lacks: []string{"# TCP/IP"},
 		},
@@ -79,7 +79,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			by:    note.ByFilename,
+			delta: note.ByFilename,
 			holds: []string{"A measure."},
 			lacks: []string{"id: ", "# Entropy", "title:"},
 		},
@@ -94,8 +94,8 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			if renamed.Path != c.path {
 				t.Errorf("want %s, got %s", c.path, renamed.Path)
 			}
-			if renamed.By != c.by {
-				t.Errorf("want named by %s, got %s", c.by, renamed.By)
+			if renamed.By != c.delta {
+				t.Errorf("want named by %s, got %s", c.delta, renamed.By)
 			}
 			if renamed.Title != c.title {
 				t.Errorf("want %q, got %q", c.title, renamed.Title)
@@ -525,19 +525,19 @@ func TestRenamingPreservesTheFileWhereItIsWhereTheTwoAreReportedApart(t *testing
 	for name, c := range map[string]struct {
 		raw   string
 		title string
-		by    note.NameSource
+		delta note.NameSource
 		holds string
 	}{
 		"a title in the frontmatter": {
 			raw:   "---\ntitle: Old\n---\nA measure.\n",
 			title: "Entropy",
-			by:    note.ByFrontmatter,
+			delta: note.ByFrontmatter,
 			holds: "title: Entropy",
 		},
 		"no key, and a title the filename cannot carry": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "TCP/IP",
-			by:    note.ByFrontmatter,
+			delta: note.ByFrontmatter,
 			holds: "title: TCP/IP",
 		},
 	} {
@@ -554,8 +554,8 @@ func TestRenamingPreservesTheFileWhereItIsWhereTheTwoAreReportedApart(t *testing
 			if renamed.Moved != nil {
 				t.Errorf("the file moved: %+v", renamed.Moved)
 			}
-			if renamed.By != c.by {
-				t.Errorf("want named by %s, got %s", c.by, renamed.By)
+			if renamed.By != c.delta {
+				t.Errorf("want named by %s, got %s", c.delta, renamed.By)
 			}
 			if body := v.read(t, "Old.md"); !strings.Contains(body, c.holds) {
 				t.Errorf("want %q in\n%s", c.holds, body)

@@ -26,13 +26,13 @@ const Pane = defineComponent({
   setup: (props) => () => h('p', { class: 'held' }, props.state.at),
 })
 
-const declare = (over: Partial<TabKindRegistration<Held>> = {}): DeclaredTabKindRegistration =>
+const declare = (overrides: Partial<TabKindRegistration<Held>> = {}): DeclaredTabKindRegistration =>
   ({
     kind: 'held',
     component: Pane,
     title: 'Held',
-    open: (at: string, id: string): Held => ({ at, id, title: '' }),
-    ...over,
+    open: (folderPath: string, id: string): Held => ({ at: folderPath, id, title: '' }),
+    ...overrides,
   }) as DeclaredTabKindRegistration
 
 describe('a registration that says what its tabs hold', () => {
@@ -165,11 +165,11 @@ describe('a declared kind registered through a plugin context', () => {
 })
 
 describe('the services a plugin context is given', () => {
-  const createDeps = (over: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+  const createDeps = (overrides: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve('tab'),
-    ...over,
+    ...overrides,
   })
 
   it('are the window and the notes the host has made by the time the plugin activates', () => {

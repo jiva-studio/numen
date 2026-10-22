@@ -20,9 +20,9 @@ var (
 // script that has cases.
 func TestANameReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 	for _, one := range []struct {
-		what    string
-		written string
-		filed   string
+		what   string
+		output string
+		filed  string
 	}{
 		{"Cyrillic", "энтропия", "Энтропия.md"},
 		{"an acute", "CAFÉ", "Café.md"},
@@ -31,7 +31,7 @@ func TestANameReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			db, v := newIndexedVault(t, map[string]string{
-				"source.md": "Points at [[" + one.written + "]].\n",
+				"source.md": "Points at [[" + one.output + "]].\n",
 				one.filed:   "# The note\n",
 			})
 
@@ -40,7 +40,7 @@ func TestANameReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 				t.Fatalf("got %+v", c.Links)
 			}
 			if c.Links[0].To != one.filed {
-				t.Errorf("[[%s]] resolved to %q, want %q", one.written, c.Links[0].To, one.filed)
+				t.Errorf("[[%s]] resolved to %q, want %q", one.output, c.Links[0].To, one.filed)
 			}
 		})
 	}
@@ -50,9 +50,9 @@ func TestANameReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 // of one Korean or Japanese name are different bytes and one name.
 func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 	for _, one := range []struct {
-		what    string
-		written string
-		filed   string
+		what   string
+		output string
+		filed  string
 	}{
 		{"a composed link to a decomposed name", hangulComposed, hangulDecomposed + ".md"},
 		{"a decomposed link to a composed name", hangulDecomposed, hangulComposed + ".md"},
@@ -60,11 +60,11 @@ func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 		{"a voiced mark written as two", kanaDecomposed, kanaComposed + ".md"},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			if one.written+".md" == one.filed {
+			if one.output+".md" == one.filed {
 				t.Fatal("the link and the filename are the same bytes, so nothing is tested")
 			}
 			db, v := newIndexedVault(t, map[string]string{
-				"source.md": "Points at [[" + one.written + "]].\n",
+				"source.md": "Points at [[" + one.output + "]].\n",
 				one.filed:   "# The note\n",
 			})
 
@@ -73,7 +73,7 @@ func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 				t.Fatalf("got %+v", c.Links)
 			}
 			if c.Links[0].To != one.filed {
-				t.Errorf("[[%s]] resolved to %q, want %q", one.written, c.Links[0].To, one.filed)
+				t.Errorf("[[%s]] resolved to %q, want %q", one.output, c.Links[0].To, one.filed)
 			}
 		})
 	}

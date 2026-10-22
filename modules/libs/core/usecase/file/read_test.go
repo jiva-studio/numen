@@ -336,7 +336,7 @@ func (r faultyReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 type shifting struct {
 	data []byte
 	size int64
-	at   int64
+	pos  int64
 	end  error
 	seek error
 	read error
@@ -347,25 +347,25 @@ func (f *shifting) Seek(offset int64, whence int) (int64, error) {
 		if f.end != nil {
 			return 0, f.end
 		}
-		f.at = f.size + offset
-		return f.at, nil
+		f.pos = f.size + offset
+		return f.pos, nil
 	}
 	if f.seek != nil {
 		return 0, f.seek
 	}
-	f.at = offset
-	return f.at, nil
+	f.pos = offset
+	return f.pos, nil
 }
 
 func (f *shifting) Read(p []byte) (int, error) {
 	if f.read != nil {
 		return 0, f.read
 	}
-	if f.at >= int64(len(f.data)) {
+	if f.pos >= int64(len(f.data)) {
 		return 0, io.EOF
 	}
-	n := copy(p, f.data[f.at:])
-	f.at += int64(n)
+	n := copy(p, f.data[f.pos:])
+	f.pos += int64(n)
 	return n, nil
 }
 

@@ -32,7 +32,7 @@ type scanVault struct {
 	openErr error
 	walkErr error
 
-	known          map[string]domain.Fingerprint
+	indexedVal     map[string]domain.Fingerprint
 	knownErr       error
 	registerErr    error
 	saveErr        error
@@ -84,7 +84,7 @@ func (m *scanVault) Register(context.Context, domain.VaultID) error {
 func (m *scanVault) Unregister(context.Context, domain.VaultID) error { return nil }
 
 func (m *scanVault) GetFingerprints(context.Context, domain.VaultID) (map[string]domain.Fingerprint, error) {
-	return m.known, m.knownErr
+	return m.indexedVal, m.knownErr
 }
 
 func (m *scanVault) Save(_ context.Context, _ domain.VaultID, notes []domain.NoteChunks) error {
@@ -258,8 +258,8 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 func TestARebuildReadsWhatTheIndexRemembers(t *testing.T) {
 	t.Parallel()
 	m := &scanVault{
-		files: map[string]scanFile{"a.md": noteFile(epoch)},
-		known: map[string]domain.Fingerprint{"a.md": {Path: "a.md", Size: 10, ModTime: epoch}},
+		files:      map[string]scanFile{"a.md": noteFile(epoch)},
+		indexedVal: map[string]domain.Fingerprint{"a.md": {Path: "a.md", Size: 10, ModTime: epoch}},
 	}
 
 	scan := m.scan()
@@ -296,8 +296,8 @@ func TestTheIndexIsMeasuredAfterTheSmallestChange(t *testing.T) {
 	t.Run("one note removed", func(t *testing.T) {
 		t.Parallel()
 		m := &scanVault{
-			files: map[string]scanFile{},
-			known: map[string]domain.Fingerprint{"gone.md": {Path: "gone.md", Size: 10, ModTime: epoch}},
+			files:      map[string]scanFile{},
+			indexedVal: map[string]domain.Fingerprint{"gone.md": {Path: "gone.md", Size: 10, ModTime: epoch}},
 		}
 		res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})
 		if err != nil {

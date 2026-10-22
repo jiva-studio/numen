@@ -53,7 +53,7 @@ type fakeChat struct {
 	refusesStream bool
 	ignoresStream bool
 	requests      []sentRequest
-	answered      int
+	replyCount    int
 }
 
 func (f *fakeChat) serve(t *testing.T) *httptest.Server {

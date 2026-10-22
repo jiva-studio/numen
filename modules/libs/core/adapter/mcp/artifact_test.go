@@ -71,7 +71,7 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 		},
 		closed: closed,
 	}
-	queries := &sourced{known: map[string]port.SourceText{}}
+	queries := &sourced{indexed: map[string]port.SourceText{}}
 	core.Sources.GetArtifactList = source.NewGetArtifactList(queries, stores)
 	core.Sources.GetArtifactText = source.NewGetArtifactText(queries, stores)
 	session := sessionOf(t, mcp.New(core))
@@ -82,7 +82,7 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 	if made.Error != "" || made.CopyError != "" {
 		t.Fatalf("the address or its copy was rejected: %q %q", made.Error, made.CopyError)
 	}
-	queries.known[made.Path] = port.SourceText{
+	queries.indexed[made.Path] = port.SourceText{
 		Fingerprint: domain.Fingerprint{Path: made.Path},
 		Producer:    domain.Captions,
 		Hash:        derived.Fingerprint([]byte(aVideo)),

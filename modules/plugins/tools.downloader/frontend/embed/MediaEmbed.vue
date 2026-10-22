@@ -60,7 +60,7 @@ onBeforeUnmount(() => onPointerUp())
  * all: a frame is a document of its own, and one dragged across takes every
  * move and the release with it.
  */
-function onPointerDown(at: PointerEvent): void {
+function onPointerDown(event: PointerEvent): void {
   const bar = at.currentTarget as HTMLElement
   const prevElement = bar.previousElementSibling
   bar.setPointerCapture(at.pointerId)
@@ -75,7 +75,7 @@ function onPointerDown(at: PointerEvent): void {
   bar.addEventListener('pointercancel', onPointerUp)
 }
 
-function onPointerMove(at: PointerEvent): void {
+function onPointerMove(event: PointerEvent): void {
   const currentDrag = dragSession.value
   if (!currentDrag) return
   tall.value = getDraggedHeight(currentDrag.was, at.clientY - currentDrag.from, window.innerHeight)

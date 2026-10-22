@@ -60,13 +60,13 @@ const { core, vaults } = await import('./index')
 
 describe('the file a save presents', () => {
   it('arrives back as the file it was, through a path that holds spaces', async () => {
-    const at = { path: 'mahabharata/The aggressor.md', size: 4096n, mtime: 1_700_000_000_123n }
-    request.readNote.mockResolvedValue({ body: 'prose', at })
+    const noteFile = { path: 'mahabharata/The aggressor.md', size: 4096n, mtime: 1_700_000_000_123n }
+    request.readNote.mockResolvedValue({ body: 'prose', at: noteFile })
     request.writeNote.mockResolvedValue({})
 
-    const readItem = await core.read(at.path)
+    const readItem = await core.read(noteFile.path)
     if (!readItem.ok) throw new Error('the read failed')
-    await core.write(at.path, 'prose and more', {
+    await core.write(noteFile.path, 'prose and more', {
       prose: readItem.value.body,
       fingerprint: readItem.value.at ?? '',
     })

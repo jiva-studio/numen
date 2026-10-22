@@ -13,7 +13,7 @@ const pointer = (type: string, x: number, y: number) =>
 
 /** A press under way, with the frame held until the test lets it come. */
 function createPress(threshold = 4, withBegin = true) {
-  const commit = vi.fn<(item: string, at: Position | null) => void>()
+  const commit = vi.fn<(item: string, target: Position | null) => void>()
   const begin = vi.fn<(item: string) => void>()
   let next: ((now: number) => void) | null = null
   let scheduled = 0

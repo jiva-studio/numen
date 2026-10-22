@@ -31,7 +31,7 @@ const resolved = {
 }
 
 /** A core that answers whatever it is told to, and records what it was asked. */
-function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
+function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
   const request: string[] = []
   return {
     requested: request,
@@ -78,7 +78,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     watchQuit: async function* () {},
     reportFlush: vi.fn(() => Promise.resolve()),
     detachTab: vi.fn(() => Promise.resolve()),
-    ...over,
+    ...overrides,
   }
 }
 

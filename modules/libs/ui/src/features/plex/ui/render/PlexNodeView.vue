@@ -54,7 +54,7 @@ const { isGhost, canStop, isAnnounced, listening } = press
  * When there is a handle to press. Under the hand, or under the keyboard while
  * the keyboard is what is being used.
  */
-const isOffering = computed(
+const hasDropTarget = computed(
   () =>
     props.behaviour.reaching.hasHandle &&
     props.node.opacity >= 1 &&
@@ -139,7 +139,7 @@ const hue = computed(() => ({
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->
     <PlexNodeHandle
-      v-if="isOffering"
+      v-if="hasDropTarget"
       :at="handle"
       @reach="(pointer) => emit('reach', pointer)"
       @ask="emit('ask')"

@@ -166,7 +166,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 	now := u.now()
 	day, err := getBudgets(
 		ctx, v, reads, u.day, faces, schedules, log,
-		u.schedules.by, u.schedules.getScheduler, now,
+		u.schedules.scheduler, u.schedules.getScheduler, now,
 	)
 	if err != nil {
 		return dueInputs{}, err
@@ -198,7 +198,7 @@ func (r deckRows) countFaces(in dueInputs) {
 		if in.schedules[one.ID].IsNew() {
 			row.Unbegun++
 		}
-		if in.asks.under(one.ID).Preset.IsLearned(in.schedules[one.ID], in.now) {
+		if in.asks.policy(one.ID).Preset.IsLearned(in.schedules[one.ID], in.now) {
 			row.Learned++
 		}
 	}

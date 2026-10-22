@@ -2,13 +2,13 @@
 import type { Clock } from '@/shared/lib/clock'
 
 export function stubClock() {
-  let at = 0
+  let current = 0
   let next: ((now: number) => void) | null = null
   let handles = 0
   const cancelled: number[] = []
 
   const clock: Clock = {
-    now: () => at,
+    now: () => current,
     schedule: (run) => {
       next = run
       return ++handles
@@ -27,10 +27,10 @@ export function stubClock() {
     },
     /** Advance to a moment and deliver the frame that was waiting for it. */
     tick(to: number) {
-      at = to
+      current = to
       const run = next
       next = null
-      run?.(at)
+      run?.(current)
     },
     /** Every frame that is asked for, from a moment to the end of the movement. */
     run(from = 0) {

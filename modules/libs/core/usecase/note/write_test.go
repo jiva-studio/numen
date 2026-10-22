@@ -15,9 +15,9 @@ import (
 func TestASizeIsHeldToItsBound(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
-		name        string
-		size, bound int
-		wantErr     bool
+		name           string
+		size, maxBound int
+		wantErr        bool
 	}{
 		{"no bound holds to nothing", 5, 0, false},
 		{"a negative bound holds to nothing", 5, -1, false},
@@ -28,9 +28,9 @@ func TestASizeIsHeldToItsBound(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			err := note.CheckSize("Entropy.md", tc.size, tc.bound)
+			err := note.CheckSize("Entropy.md", tc.size, tc.maxBound)
 			if got := errors.Is(err, note.ErrTooLarge); got != tc.wantErr {
-				t.Errorf("size %d at bound %d answered %v", tc.size, tc.bound, err)
+				t.Errorf("size %d at bound %d answered %v", tc.size, tc.maxBound, err)
 			}
 			if err != nil && !strings.Contains(err.Error(), "Entropy.md") {
 				t.Errorf("the rejection does not name the note: %v", err)
@@ -89,9 +89,9 @@ func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
 }
 
 // newDrawingWrite is a writer that records what it is told while a note is being drawn.
-func (c changing) newDrawingWrite(told *[]domain.Edit) note.Write {
+func (c changing) newDrawingWrite(callback *[]domain.Edit) note.Write {
 	w := c.newWrite()
-	w.Drawing = func(_ context.Context, response domain.Edit) { *told = append(*told, response) }
+	w.Drawing = func(_ context.Context, response domain.Edit) { *callback = append(*callback, response) }
 	return w
 }
 

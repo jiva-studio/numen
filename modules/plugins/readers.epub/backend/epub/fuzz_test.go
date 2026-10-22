@@ -348,9 +348,9 @@ func FuzzMarkup(f *testing.F) {
 // book wrote, this is what the browser parses.
 //
 // The runs say the document's text, in the order the markup writes them.
-func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Markup) {
+func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Markup) {
 	t.Helper()
-	root := parseHTML(t, drawn.HTML())
+	root := parseHTML(t, markup.HTML())
 	for _, name := range []string{
 		"script", "style", "link", "meta", "iframe", "frame", "object", "embed",
 		"form", "input", "button", "base", "svg", "math", "template",
@@ -380,7 +380,7 @@ func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Mar
 
 	var response strings.Builder
 	for _, one := range offsets(t, root) {
-		response.WriteString(one.said)
+		response.WriteString(one.text)
 	}
 	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; response.String() != want {
 		t.Fatalf("the runs of %s say %d bytes and the document is %d",

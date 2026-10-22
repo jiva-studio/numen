@@ -111,7 +111,7 @@ export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
  * vault of thirty decks is a vault where the last four are picked with the
  * hand.
  */
-export const getLetter = (at: number): string => LETTERS[at] ?? ''
+export const getLetter = (index: number): string => LETTERS[index] ?? ''
 
 /**
  * letter to the deck standing at it, and escape goes back to the vaults.
@@ -125,7 +125,7 @@ export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerK
   if (press.key === 'Enter' || press.key === ' ') return { does: 'all' }
 
   if (press.key.length !== 1) return null
-  const at = LETTERS.indexOf(press.key.toLowerCase())
+  const choiceIndex = LETTERS.indexOf(press.key.toLowerCase())
   if (at >= 0 && at < decks) return { does: 'deck', at }
   return null
 }

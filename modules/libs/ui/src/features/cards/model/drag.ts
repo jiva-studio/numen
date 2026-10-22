@@ -22,9 +22,9 @@ export interface DragDeps<At extends InsertionPoint | undefined> {
   /** Where a drop target stands while the pointer is over nothing that takes one. */
   readonly nowhere: At
   /** Whether letting the thing dragged go there moves it. */
-  readonly isMoved: (dragged: string, at: InsertionPoint) => boolean
+  readonly isMoved: (dragged: string, target: InsertionPoint) => boolean
   /** What a drop that is allowed evaluates to. */
-  readonly move: (dragged: string, at: InsertionPoint) => void
+  readonly move: (dragged: string, target: InsertionPoint) => void
 }
 
 /** What a drag answers: what is being dragged, where it would land, and the gestures. */
@@ -36,7 +36,7 @@ export interface DragState<At extends InsertionPoint | undefined> {
   /** It was taken up. */
   readonly lift: (what: string, press: DragEvent) => void
   /** It is over a place that would take it. */
-  readonly hover: (at: At, press: DragEvent) => void
+  readonly hover: (target: At, press: DragEvent) => void
   /** The drag is over, and nothing was let go. */
   readonly release: () => void
   /** It was let go at its current position. */
@@ -47,7 +47,7 @@ export interface DragState<At extends InsertionPoint | undefined> {
 
 export function useDrag<At extends InsertionPoint | undefined>(drag: DragDeps<At>): DragState<At> {
   const dragged = shallowRef<string | null>(null)
-  const at: ShallowRef<At> = shallowRef(drag.nowhere)
+  const dropTarget: ShallowRef<At> = shallowRef(drag.nowhere)
 
   const lift = (what: string, press: DragEvent): void => {
     dragged.value = what
@@ -57,17 +57,17 @@ export function useDrag<At extends InsertionPoint | undefined>(drag: DragDeps<At
   const hover = (lands: At, press: DragEvent): void => {
     if (dragged.value === null) return
     press.preventDefault()
-    at.value = lands
+    dropTarget.value = lands
   }
 
   const release = (): void => {
     dragged.value = null
-    at.value = drag.nowhere
+    dropTarget.value = drag.nowhere
   }
 
   const drop = (): void => {
     const target = dragged.value
-    const lands = at.value
+    const lands = dropTarget.value
     release()
     if (target === null || lands === undefined) return
     if (drag.isMoved(target, lands)) drag.move(target, lands)
@@ -80,5 +80,5 @@ export function useDrag<At extends InsertionPoint | undefined>(drag: DragDeps<At
     drag.move(what, lands)
   }
 
-  return { dragged, at, lift, hover, release, drop, step }
+  return { dragged, at: dropTarget, lift, hover, release, drop, step }
 }

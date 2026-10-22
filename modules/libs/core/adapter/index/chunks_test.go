@@ -327,11 +327,11 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, half := range []struct {
-		asked string
-		found []domain.Passage
+		requested string
+		found     []domain.Passage
 	}{{"words", lexical}, {"names", named}, {"meaning", dense}} {
 		if len(half.found) == 0 {
-			t.Errorf("the %s half answered with nothing, so it says nothing about a kind", half.asked)
+			t.Errorf("the %s half answered with nothing, so it says nothing about a kind", half.requested)
 		}
 		for _, p := range half.found {
 			if p.Kind != want[p.Source] {
@@ -932,12 +932,12 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, asked what it does hold.
-	near, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	val, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(near) != 2 {
-		t.Errorf("%d answers, want the book's two small chunks", len(near))
+	if len(val) != 2 {
+		t.Errorf("%d answers, want the book's two small chunks", len(val))
 	}
 }
 
@@ -976,15 +976,15 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		}
 	}
 
-	near, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
+	data, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(near) != 1 {
-		t.Fatalf("%d answers, want the one that was asked for", len(near))
+	if len(data) != 1 {
+		t.Fatalf("%d answers, want the one that was asked for", len(data))
 	}
-	if near[0].Source != "library/true.epub" {
-		t.Errorf("the answer is %s, which is the one the bits put first", near[0].Source)
+	if data[0].Source != "library/true.epub" {
+		t.Errorf("the answer is %s, which is the one the bits put first", data[0].Source)
 	}
 }
 
@@ -1078,12 +1078,12 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass answers, because the bits are there. What is asked of it
 	// afterwards is the model's own, and this vector is another model's.
-	near, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
+	itemVal, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(near) != 0 {
-		t.Errorf("a query of one model was answered by another model's vectors: %v", near)
+	if len(itemVal) != 0 {
+		t.Errorf("a query of one model was answered by another model's vectors: %v", itemVal)
 	}
 
 	// Asked of the model that made them, the same rows answer.

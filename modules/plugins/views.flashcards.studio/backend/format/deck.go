@@ -72,7 +72,7 @@ type deckBuilder struct {
 	deck  Deck
 	spans []cardSpan
 	read  int
-	under int
+	currentSection int
 }
 
 func findNextDeckHeading(secs []section, start int, bodyLen int) int {
@@ -87,7 +87,7 @@ func findNextDeckHeading(secs []section, start int, bodyLen int) int {
 func (b *deckBuilder) addSection(s section, body []byte, end int) {
 	lead, leadEnd := readTrimmedRun(body, s.from, end)
 	b.deck.Sections = append(b.deck.Sections, Section{Name: s.name, Preamble: lead})
-	b.under = len(b.deck.Sections) - 1
+	b.currentSection = len(b.deck.Sections) - 1
 	b.read = getTrimmedEnd(body, s.head, s.from)
 	if lead != "" {
 		b.read = leadEnd
@@ -119,7 +119,7 @@ func (b *deckBuilder) readCardFields(body []byte, secs []section, pos int, card 
 func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end int) {
 	pos := len(b.deck.Cards)
 	heading, carried := ReadHeading(s.name)
-	card := Card{Heading: heading, Mark: carried, Section: b.under}
+	card := Card{Heading: heading, Mark: carried, Section: b.currentSection}
 	span := cardSpan{
 		name: s.name, mark: carried, head: s.head, from: s.from, end: end,
 		linkFrom: s.from, linkTo: s.from,
@@ -152,7 +152,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 	secs := sections(body, SectionLevel, FieldLevel)
 	b := deckBuilder{
 		deck:  Deck{Ref: ref},
-		under: NoSection,
+		currentSection: NoSection,
 	}
 
 	first := len(body)

@@ -71,7 +71,7 @@ const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', row: RowId, name: string): void
   /** The rows let go somewhere, all of them drop target in the one place. */
-  (event: 'move', rows: readonly RowId[], at: RowDropTarget): void
+  (event: 'move', rows: readonly RowId[], target: RowDropTarget): void
   /**
    * The rows lifted clear of the tree, on their way across whatever is drawn
    * beside it. Where they end up there is not the tree's to say.
@@ -82,7 +82,7 @@ const emit = defineEmits<{
   /** The selection asked to go. */
   (event: 'remove', rows: readonly RowId[]): void
   /** A menu asked for, and where the pointer was. Nothing for a press off every row. */
-  (event: 'menu', row: RowId | null, at: Position): void
+  (event: 'menu', row: RowId | null, pos: Position): void
 }>()
 
 defineSlots<{

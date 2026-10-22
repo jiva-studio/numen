@@ -19,8 +19,8 @@ type SyncTitleAndFilename bool
 //
 // A note its filename names carries its name nowhere else, so its file moves
 // whatever this is set to and nothing is written into it.
-func (s SyncTitleAndFilename) GetRenameEffects(by NameSource) (moves, writes bool) {
-	if by == ByFilename {
+func (s SyncTitleAndFilename) GetRenameEffects(source NameSource) (moves, writes bool) {
+	if source == ByFilename {
 		return true, false
 	}
 	return bool(s), bool(s)

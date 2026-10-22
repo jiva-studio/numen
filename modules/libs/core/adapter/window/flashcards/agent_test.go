@@ -21,9 +21,9 @@ import (
 // take. What is asked of it is the hop: what the page sends arrives as a task,
 // and what the agent does arrives back as steps.
 type asking struct {
-	took  chan port.Task
-	takes []port.Step
-	over  chan string
+	took     chan port.Task
+	takes    []port.Step
+	overChan chan string
 }
 
 func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
@@ -37,7 +37,7 @@ func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
 }
 
 func (a *asking) EndConversation(_ context.Context, conversation string) error {
-	a.over <- conversation
+	a.overChan <- conversation
 	return nil
 }
 
@@ -209,7 +209,7 @@ func TestAWindowWithNoAgentAnswersNothingAboutACard(t *testing.T) {
 // A conversation said to be over reaches the agent under the name its questions
 // carried.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
-	agent := &asking{over: make(chan string, 1)}
+	agent := &asking{overChan: make(chan string, 1)}
 	api := &API{}
 	api.SetAgent(agent)
 
@@ -217,7 +217,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "3f4g5h6j7k"})); err != nil {
 		t.Fatal(err)
 	}
-	if overVal := <-agent.over; overVal != "3f4g5h6j7k" {
+	if overVal := <-agent.overChan; overVal != "3f4g5h6j7k" {
 		t.Errorf("finished %q", overVal)
 	}
 }

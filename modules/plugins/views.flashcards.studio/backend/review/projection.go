@@ -130,10 +130,10 @@ func (p Projection) CountAdmitted() int {
 //
 // A day the preset does not admit is no session at all and takes no part: a
 // week of five days runs its minutes over five days.
-func (p Projection) minutesADay(through int) float64 {
+func (p Projection) minutesADay(limitDay int) float64 {
 	var all time.Duration
 	days := 0
-	for i, one := range p.Spent[:through+1] {
+	for i, one := range p.Spent[:limitDay+1] {
 		if !p.Admitted[i] {
 			continue
 		}
@@ -176,10 +176,10 @@ func (p Projection) Session() (int, bool) {
 //
 // A card falling due later in the day holding at is not overdue: its day is
 // has had no day.
-func CountOverdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
+func CountOverdue(d Day, schedules map[CardFaceID]Schedule, now time.Time) int {
 	startTime := d.GetStart(now)
 	out := 0
-	for _, s := range at {
+	for _, s := range schedules {
 		if !s.IsNew() && s.Due.Before(startTime) {
 			out++
 		}
@@ -247,12 +247,12 @@ func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	stands := r.preset.IsLearned(c, pos)
-	if stands == r.learned[card] {
+	isLearned := r.preset.IsLearned(c, pos)
+	if isLearned == r.learned[card] {
 		return
 	}
-	r.learned[card] = stands
-	if stands {
+	r.learned[card] = isLearned
+	if isLearned {
 		r.count++
 		return
 	}
@@ -264,9 +264,9 @@ func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	stands := r.preset.IsLearned(c, pos)
-	r.learned = append(r.learned, stands)
-	if stands {
+	isLearned := r.preset.IsLearned(c, pos)
+	r.learned = append(r.learned, isLearned)
+	if isLearned {
 		r.count++
 	}
 }

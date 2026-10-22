@@ -38,8 +38,8 @@ var preloadCppRuntime = sync.OnceFunc(func() {
 	for _, dir := range dirs {
 		matches := findMatching(filepath.Join(dir, name+"*"))
 		sortNewestFirst(matches)
-		for _, at := range matches {
-			if _, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
+		for _, offset := range matches {
+			if _, err := purego.Dlopen(offset, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 				return
 			}
 		}

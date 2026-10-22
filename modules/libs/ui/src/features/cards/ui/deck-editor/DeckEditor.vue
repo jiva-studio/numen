@@ -49,7 +49,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'add', stencil: string, section: string | null): void
   (event: 'remove', card: string): void
-  (event: 'move', card: string, at: InsertionPoint): void
+  (event: 'move', card: string, target: InsertionPoint): void
   (event: 'write', card: string, field: string, index: number, text: string): void
   (event: 'add-section', name: string): void
   (event: 'rename-section', id: string, name: string): void
@@ -68,8 +68,8 @@ const activePickerRunId = shallowRef<string | null>(null)
 const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
-  isMoved: (held: string, at: InsertionPoint): boolean => isMoved(grid.value.runs, held, at),
-  move: (held, at) => emit('move', held, at),
+  isMoved: (held: string, target: InsertionPoint): boolean => isMoved(grid.value.runs, held, target),
+  move: (held, target) => emit('move', held, target),
 })
 
 const grid = computed(() => getGrid(props, dragged.value))

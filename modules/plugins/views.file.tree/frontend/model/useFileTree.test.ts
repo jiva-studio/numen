@@ -14,13 +14,13 @@ import {
   useFileTree,
 } from './useFileTree'
 
-const file = (path: string, over: Partial<Entry> = {}): Entry => ({
+const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
@@ -41,12 +41,12 @@ const vault = (
   return {
     requests: request,
     core: {
-      list: async (at: string) => {
+      list: async (folderPath: string) => {
         request.push(at)
         return folders[at] ?? []
       },
     },
-    puts: (at: string, entry: Entry) => {
+    puts: (folderPath: string, entry: Entry) => {
       folders[at] = [...(folders[at] ?? []), entry]
     },
   }
@@ -447,7 +447,7 @@ describe('the refresh of every open folder', () => {
     const one = vault()
     let isFailing = false
     const list = useFileTree({
-      list: async (at: string) => {
+      list: async (folderPath: string) => {
         if (isFailing && at === 'physics') throw new Error('gone')
         return one.core.list(at)
       },
@@ -519,7 +519,7 @@ describe('a tab that has closed, requested for more', () => {
     }
     const holder: { list?: ReturnType<typeof useFileTree> } = {}
     const list = useFileTree({
-      list: async (at: string) => {
+      list: async (folderPath: string) => {
         holder.list?.close()
         return folders[at] ?? []
       },
@@ -601,7 +601,7 @@ describe('a listing that changes in one field of one entry', () => {
     let listing: readonly Entry[] = [first, second]
     const list = useFileTree({ list: async () => listing })
     await list.openFolder(ROOT)
-    const changed = { ...second, ...over }
+    const changed = { ...second, ...overrides }
     listing = [first, changed]
 
     await list.refresh()

@@ -8,7 +8,7 @@ import type { CommandTarget } from '../types'
 import { WORDS as words } from '@/shared/words'
 
 /** What is in front, which a test moves under the commands. */
-const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
+const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'note',
   path: 'physics/Ontology.md',
@@ -18,7 +18,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   made: {},
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
-  ...over,
+  ...overrides,
 })
 
 describe('a search that turned up nothing', () => {

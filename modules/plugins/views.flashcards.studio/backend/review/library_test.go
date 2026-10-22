@@ -157,16 +157,16 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 // runs forwards.
 func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	type step struct {
-		s  review.Schedule
-		at time.Time
+		s         review.Schedule
+		timePoint time.Time
 	}
 	out := []review.Schedule{{}}
-	frontier := []step{{at: libraryNow.Add(-libraryWalkOpens)}}
+	frontier := []step{{timePoint: libraryNow.Add(-libraryWalkOpens)}}
 	for depth := range 7 {
 		var next []step
 		for _, f := range frontier {
 			for i, r := range libraryRatings {
-				pos := f.at.Add(libraryGaps[(depth+i)%len(libraryGaps)])
+				pos := f.timePoint.Add(libraryGaps[(depth+i)%len(libraryGaps)])
 				one := asSchedule(engine.Next(asCard(f.s), pos, r).Card)
 				out = append(out, one)
 				next = append(next, step{one, pos})

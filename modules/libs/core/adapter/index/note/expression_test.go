@@ -10,9 +10,9 @@ import (
 
 func TestAMarkedNameIsReadBackAsTheNameAndTheRunsInIt(t *testing.T) {
 	for _, c := range []struct {
-		marked string
-		name   string
-		at     []domain.UnitSpan
+		marked     string
+		name       string
+		targetPath []domain.UnitSpan
 	}{
 		{"Entropy", "Entropy", nil},
 		{"\x02Entropy\x03", "Entropy", []domain.UnitSpan{{From: 0, To: 7}}},
@@ -33,13 +33,13 @@ func TestAMarkedNameIsReadBackAsTheNameAndTheRunsInIt(t *testing.T) {
 		if name != c.name {
 			t.Errorf("split(%q) read %q, want %q", c.marked, name, c.name)
 		}
-		if len(pos) != len(c.at) {
-			t.Errorf("split(%q) marked %+v, want %+v", c.marked, pos, c.at)
+		if len(pos) != len(c.targetPath) {
+			t.Errorf("split(%q) marked %+v, want %+v", c.marked, pos, c.targetPath)
 			continue
 		}
 		for i := range pos {
-			if pos[i] != c.at[i] {
-				t.Errorf("split(%q) marked %+v, want %+v", c.marked, pos, c.at)
+			if pos[i] != c.targetPath[i] {
+				t.Errorf("split(%q) marked %+v, want %+v", c.marked, pos, c.targetPath)
 				break
 			}
 		}
@@ -64,7 +64,7 @@ func BenchmarkSplit(b *testing.B) {
 
 func splitReference(marked string) (string, []domain.UnitSpan) {
 	var name strings.Builder
-	var at []domain.UnitSpan
+	var offset []domain.UnitSpan
 
 	units, from := 0, -1
 	for _, r := range marked {
@@ -73,7 +73,7 @@ func splitReference(marked string) (string, []domain.UnitSpan) {
 			from = units
 		case '\x03':
 			if from >= 0 && units > from {
-				at = append(at, domain.UnitSpan{From: from, To: units})
+				offset = append(offset, domain.UnitSpan{From: from, To: units})
 			}
 			from = -1
 		default:
@@ -84,7 +84,7 @@ func splitReference(marked string) (string, []domain.UnitSpan) {
 			}
 		}
 	}
-	return name.String(), at
+	return name.String(), offset
 }
 
 func TestSplitReadsEveryMarkedNameAsTheReferenceDoes(t *testing.T) {

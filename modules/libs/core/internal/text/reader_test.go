@@ -86,8 +86,8 @@ func TestATranscriptIsComposedFromWhatItWasInsertRightTo(t *testing.T) {
 // heard is what the source says.
 func TestATranscriptInsertRightToNothingIsWhatWasHeard(t *testing.T) {
 	for _, one := range []struct {
-		what string
-		put  []byte
+		what    string
+		applied []byte
 	}{
 		{"a file holding no bytes", nil},
 		{"a file holding no cues", []byte(transcript.Head + "\n")},
@@ -95,7 +95,7 @@ func TestATranscriptInsertRightToNothingIsWhatWasHeard(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			store := artifactMap{
 				domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
-				domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): one.put,
+				domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): one.applied,
 			}
 			doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 			if err != nil {

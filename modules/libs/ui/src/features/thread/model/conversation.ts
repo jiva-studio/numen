@@ -161,9 +161,9 @@ function useConversationTurns() {
   let next = 0
 
   const saveTurn = (turn: Turn) => {
-    const at = turns.value.findIndex((other) => other.id === turn.id)
-    if (at < 0) turns.value.push(turn)
-    else turns.value[at] = turn
+    const index = turns.value.findIndex((other) => other.id === turn.id)
+    if (index < 0) turns.value.push(turn)
+    else turns.value[index] = turn
   }
 
   const drop = (id: string) => {

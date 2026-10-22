@@ -87,7 +87,7 @@ A vault carries its identity inside its own folder, so it is recognised wherever
 
 **Erasing** forgets it and puts the folder in the place this machine keeps what a person deleted. The folder is the person's own writing, so it goes where deleted things go and comes back from there. A machine with nowhere to put it fails with an error, and a folder that no longer carries this vault's identity stays where it is. A path with nothing at it any more is forgotten and nothing is moved.
 
-**Neither may take the vault the window is showing, and neither may take the last vault an installation has.** The window always operates on an active vault. The use cases are not informed which vault is active; the window manages that state and handles rejections.
+**Neither may close the vault currently displayed in the window, and neither may take the last vault an installation has.** The window always operates on an active vault. The use cases are not informed which vault is active; the window manages that state and handles rejections.
 
 ### What forgetting does to the index
 

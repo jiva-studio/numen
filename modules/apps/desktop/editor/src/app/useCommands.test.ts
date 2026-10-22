@@ -54,13 +54,13 @@ const setup = (preventHeld = false) => {
   return { written: content, press, ...useCommands(options) }
 }
 
-const keyEvent = (key: string, over: Partial<KeyboardEvent> = {}) => {
+const keyEvent = (key: string, overrides: Partial<KeyboardEvent> = {}) => {
   const event = {
     key,
     shiftKey: false,
     defaultPrevented: false,
     preventDefault: vi.fn(),
-    ...over,
+    ...overrides,
   }
   return event as unknown as KeyboardEvent & { preventDefault: ReturnType<typeof vi.fn> }
 }

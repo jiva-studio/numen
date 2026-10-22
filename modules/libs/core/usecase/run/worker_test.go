@@ -18,7 +18,7 @@ var somewhere = domain.Vault{ID: "somewhere"}
 type recorder struct {
 	*Worker
 	mu      sync.Mutex
-	taken   []string
+	claimed []string
 	reached chan int
 	first   chan struct{}
 	rest    chan struct{}
@@ -29,8 +29,8 @@ func newRecorder(t *testing.T, ctx context.Context) *recorder {
 	r := &recorder{reached: make(chan int, 8), first: make(chan struct{}), rest: make(chan struct{})}
 	r.Worker = NewWorker(ctx, NewTasks(), func(_ context.Context, _ domain.Vault, path string) {
 		r.mu.Lock()
-		r.taken = append(r.taken, path)
-		n := len(r.taken)
+		r.claimed = append(r.claimed, path)
+		n := len(r.claimed)
 		r.mu.Unlock()
 		r.reached <- n
 		if n == 1 {
@@ -45,24 +45,24 @@ func newRecorder(t *testing.T, ctx context.Context) *recorder {
 func (r *recorder) countTaken() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return len(r.taken)
+	return len(r.claimed)
 }
 
 // instant is a test naming a source at the instant a run finds the line empty.
 // The ask is made from a goroutine, because the run is holding the lock the ask
 // waits at, and the wait is what puts the two into the same instant.
 type instant struct {
-	once  sync.Once
-	taken chan port.StartOutcome
+	once    sync.Once
+	claimed chan port.StartOutcome
 }
 
-func newInstant() *instant { return &instant{taken: make(chan port.StartOutcome, 1)} }
+func newInstant() *instant { return &instant{claimed: make(chan port.StartOutcome, 1)} }
 
 // nameOnce names the source, once, and leaves the ask standing at the lock
 // before the run that called this carries on.
 func (c *instant) nameOnce(name func() port.StartOutcome) {
 	c.once.Do(func() {
-		go func() { c.taken <- name() }()
+		go func() { c.claimed <- name() }()
 		time.Sleep(20 * time.Millisecond)
 	})
 }
@@ -70,7 +70,7 @@ func (c *instant) nameOnce(name func() port.StartOutcome) {
 func (c *instant) getOutcome(t *testing.T) port.StartOutcome {
 	t.Helper()
 	select {
-	case task := <-c.taken:
+	case task := <-c.claimed:
 		return task
 	case <-time.After(10 * time.Second):
 		t.Fatal("the ask made as the line emptied was never answered")
@@ -95,12 +95,12 @@ func TestASourceInLineOutlivesTheContext(t *testing.T) {
 	var ran atomic.Int32
 	w := NewWorker(t.Context(), nil, func(context.Context, domain.Vault, string) { ran.Add(1) })
 
-	over, stop := context.WithCancel(t.Context())
+	finished, stop := context.WithCancel(t.Context())
 	stop()
 
 	w.Add(somewhere, "a.pdf")
 	w.Claim()
-	w.DrainAndRelease(over, nil)
+	w.DrainAndRelease(finished, nil)
 
 	if w.CountWaiting() != 1 {
 		t.Errorf("%d sources are in line after the context ended", w.CountWaiting())

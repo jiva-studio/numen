@@ -106,7 +106,7 @@ func (u Session) Execute(
 	now := u.now()
 	day, err := getBudgets(
 		ctx, v, reads, u.day, faces, schedules, target,
-		u.schedules.by, u.schedules.getScheduler, now,
+		u.schedules.scheduler, u.schedules.getScheduler, now,
 	)
 	if err != nil {
 		return SessionResult{}, err
@@ -126,13 +126,13 @@ func (u Session) Execute(
 	for _, one := range holds.owed {
 		s := schedules[one.ID]
 		out.Queue = append(out.Queue, QueuedCardFace{
-			CardFace: one, Schedule: s, Ahead: getIntervals(asks.under, dueTable, one.ID, s, now),
+			CardFace: one, Schedule: s, Ahead: getIntervals(asks.policy, dueTable, one.ID, s, now),
 		})
 	}
 	for _, one := range holds.newCards {
 		out.Queue = append(out.Queue, QueuedCardFace{
 			CardFace: one,
-			Ahead:    getIntervals(asks.under, dueTable, one.ID, review.Schedule{}, now),
+			Ahead:    getIntervals(asks.policy, dueTable, one.ID, review.Schedule{}, now),
 		})
 	}
 	return out, nil

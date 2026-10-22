@@ -185,9 +185,9 @@ func TestEraseRefusesAFolderWhoseIdentityIsNotThisVaults(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		name    string
-		answers func(gone domain.Vault) (domain.VaultID, bool)
+		answers func(vanished domain.Vault) (domain.VaultID, bool)
 	}{
-		{"carries none", func(gone domain.Vault) (domain.VaultID, bool) { return gone.ID, false }},
+		{"carries none", func(missing domain.Vault) (domain.VaultID, bool) { return missing.ID, false }},
 		{"carries another", func(domain.Vault) (domain.VaultID, bool) { return "01OTHER", true }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

@@ -35,7 +35,7 @@ type going struct {
 	configuring numenv1connect.SettingsServiceClient
 	// drawn is the window itself: what is being done behind it, and the drain
 	// that holds it back when it goes.
-	drawn        numenv1connect.WindowServiceClient
+	canvas       numenv1connect.WindowServiceClient
 	installation *editor.Installation
 	root         string
 	// settings is the vault list this window keeps, which is the folder its
@@ -46,20 +46,20 @@ type going struct {
 
 // order is a record of the moments a test is asking about the sequence of.
 type order struct {
-	mu   sync.Mutex
-	said []string
+	mu     sync.Mutex
+	outMsg []string
 }
 
 func (o *order) record(what string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	o.said = append(o.said, what)
+	o.outMsg = append(o.outMsg, what)
 }
 
 func (o *order) getAll() []string {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	return append([]string(nil), o.said...)
+	return append([]string(nil), o.outMsg...)
 }
 
 // openWindow opens a vault the way the window does for an installation nobody has
@@ -150,7 +150,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	return &going{
 		client:       newQuestionsClient(server.Client(), server.URL),
 		configuring:  numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
-		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
+		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
 		root:         root,
 		settings:     cfg.RegistryPath,
@@ -303,7 +303,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,7 +334,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
@@ -381,7 +381,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -419,10 +419,10 @@ func hasBody(file, body string) bool {
 // speaking is a page listening for the quit the way the window's page does,
 // answering each ask with what a test told it to.
 type speaking struct {
-	f      *going
-	token  string
-	asked  chan string
-	hangUp context.CancelFunc
+	f        *going
+	token    string
+	question chan string
+	hangUp   context.CancelFunc
 }
 
 // openQuitStream opens the quit stream and takes the token it opens with.
@@ -430,7 +430,7 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 	t.Helper()
 
 	ctx, hangUp := context.WithCancel(t.Context())
-	stream, err := f.drawn.WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 	if err != nil {
 		hangUp()
 		t.Fatal(err)
@@ -444,13 +444,13 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 		t.Fatal("the stream opened by asking for a flush")
 	}
 
-	p := &speaking{f: f, token: stream.Msg().GetToken(), asked: make(chan string, 8), hangUp: hangUp}
+	p := &speaking{f: f, token: stream.Msg().GetToken(), question: make(chan string, 8), hangUp: hangUp}
 	go func() {
-		defer close(p.asked)
+		defer close(p.question)
 		defer stream.Close()
 		for stream.Receive() {
 			if stream.Msg().GetFlush() {
-				p.asked <- stream.Msg().GetToken()
+				p.question <- stream.Msg().GetToken()
 			}
 		}
 	}()
@@ -459,17 +459,17 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 }
 
 // answerFlushes is the page doing, at every ask, what a test says a page does.
-func (p *speaking) answerFlushes(doing func(token string) v1.FlushResult) {
+func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 	go func() {
-		for token := range p.asked {
-			p.sendFlush(token, doing(token))
+		for token := range p.question {
+			p.sendFlush(token, handler(token))
 		}
 	}()
 }
 
 // sendFlush is the page telling the application what it has left.
 func (p *speaking) sendFlush(token string, response v1.FlushResult) {
-	_, _ = p.f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
+	_, _ = p.f.canvas.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: wire.Editor,
 		Token:  token,
 		Result: response,
@@ -483,7 +483,7 @@ func (p *speaking) endStream(t *testing.T) {
 
 	p.hangUp()
 	select {
-	case <-p.asked:
+	case <-p.question:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the stream never ended")
 	}

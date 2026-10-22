@@ -12,7 +12,7 @@ import type { Grade, Intervals } from '@/entities/card'
 defineProps<{
   how: Grade
   /** The number the answer is pressed with. */
-  at: number
+  shortcutNumber: number
   /** Where each of the four would leave the card. */
   ahead: Intervals | null
 }>()

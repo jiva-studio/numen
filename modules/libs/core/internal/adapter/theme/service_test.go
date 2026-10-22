@@ -16,29 +16,29 @@ import (
 // fakeAppearances is a service over a themes folder, and the settings behind it, held
 // in memory.
 type fakeAppearances struct {
-	service *theme.Service
-	worn    theme.Appearance
-	written []theme.Appearance
-	said    []string
-	refuses error
+	service    *theme.Service
+	appearance theme.Appearance
+	content    []theme.Appearance
+	reply      []string
+	refuses    error
 }
 
-func (d *fakeAppearances) Read() (theme.Appearance, error) { return d.worn, nil }
+func (d *fakeAppearances) Read() (theme.Appearance, error) { return d.appearance, nil }
 
 func (d *fakeAppearances) Write(one theme.Appearance) error {
 	if d.refuses != nil {
 		return d.refuses
 	}
-	d.written = append(d.written, one)
-	d.worn = one
+	d.content = append(d.content, one)
+	d.appearance = one
 	return nil
 }
 
-func (d *fakeAppearances) Warn(response string) { d.said = append(d.said, response) }
+func (d *fakeAppearances) Warn(response string) { d.reply = append(d.reply, response) }
 
-func createFakeAppearances(t *testing.T, worn theme.Appearance) *fakeAppearances {
+func createFakeAppearances(t *testing.T, appearance theme.Appearance) *fakeAppearances {
 	t.Helper()
-	appearances := &fakeAppearances{worn: worn}
+	appearances := &fakeAppearances{appearance: appearance}
 	appearances.service = &theme.Service{
 		Catalogue:            createThemeFolder(t),
 		Settings:             appearances,
@@ -133,8 +133,8 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	if failed := aged.choose(t, "preset:nord", v1.Mode_MODE_DARK); failed != "" {
 		t.Fatalf("failed: %s", failed)
 	}
-	if len(aged.written) != 1 || aged.written[0] != (theme.Appearance{ThemeName: "preset:nord", Mode: appearance.Dark}) {
-		t.Fatalf("written: %+v", aged.written)
+	if len(aged.content) != 1 || aged.content[0] != (theme.Appearance{ThemeName: "preset:nord", Mode: appearance.Dark}) {
+		t.Fatalf("written: %+v", aged.content)
 	}
 	if answer := aged.themes(t); answer.GetApplied() != "preset:nord" {
 		t.Errorf("wears %q", answer.GetApplied())
@@ -194,8 +194,8 @@ func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	if reason := answer.Msg.GetError(); reason != "" {
 		t.Fatalf("failed: %s", reason)
 	}
-	if len(aged.written) != 1 || aged.written[0].InterfaceScale != 1.75 || aged.written[0].TextScale != 0 {
-		t.Fatalf("written: %+v", aged.written)
+	if len(aged.content) != 1 || aged.content[0].InterfaceScale != 1.75 || aged.content[0].TextScale != 0 {
+		t.Fatalf("written: %+v", aged.content)
 	}
 }
 
@@ -219,8 +219,8 @@ func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 			t.Errorf("%s failed with %q", selected.name, failed)
 		}
 	}
-	if len(aged.written) != 0 {
-		t.Errorf("written: %+v", aged.written)
+	if len(aged.content) != 0 {
+		t.Errorf("written: %+v", aged.content)
 	}
 }
 
@@ -242,8 +242,8 @@ func TestAThemeTheSettingsNameThatIsMissingIsSaidAndTheDefaultWorn(t *testing.T)
 	if answer.GetMode() != v1.Mode_MODE_LIGHT {
 		t.Errorf("read as %v", answer.GetMode())
 	}
-	if len(aged.said) != 1 || !strings.Contains(aged.said[0], "mine:the-one-i-deleted") {
-		t.Errorf("said %v", aged.said)
+	if len(aged.reply) != 1 || !strings.Contains(aged.reply[0], "mine:the-one-i-deleted") {
+		t.Errorf("said %v", aged.reply)
 	}
 }
 

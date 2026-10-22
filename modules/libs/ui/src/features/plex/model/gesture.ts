@@ -147,19 +147,19 @@ function useGestureOutcome(points: GesturePoints, deps: PlexGestureDeps): Comput
 export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers {
   const surface = ref<SVGSVGElement | null>(null)
   const from = ref<string | null>(null)
-  const at = ref<Position | null>(null)
+  const pointerPosition = ref<Position | null>(null)
   const start = ref<Position | null>(null)
   const pointer = ref<number | null>(null)
   let detach: (() => void) | null = null
 
-  const outcome = useGestureOutcome({ from, at, start }, deps)
+  const outcome = useGestureOutcome({ from, at: pointerPosition, start }, deps)
 
   const stop = () => {
     detach?.()
     detach = null
     releasePointer(surface.value, pointer.value)
     from.value = null
-    at.value = null
+    pointerPosition.value = null
     start.value = null
     pointer.value = null
   }
@@ -172,14 +172,14 @@ export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers
     surface.value = element
     from.value = source
     start.value = began
-    at.value = began
+    pointerPosition.value = began
     pointer.value = event.pointerId
     capturePointer(element, event.pointerId)
 
     detach = listenGesture(event.pointerId, {
       onMove: (e) => {
         // Stryker disable next-line ConditionalExpression: the surface is set before any listener that calls this is installed
-        if (surface.value) at.value = getPosition(surface.value, e)
+        if (surface.value) pointerPosition.value = getPosition(surface.value, e)
       },
       onFinish: () => {
         const resolved = outcome.value
@@ -197,5 +197,5 @@ export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers
 
   onScopeDispose(stop)
 
-  return { from, at, outcome, begin, ask, cancel: stop }
+  return { from, at: pointerPosition, outcome, begin, ask, cancel: stop }
 }

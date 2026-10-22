@@ -11,11 +11,11 @@ func ReadPartialField(arguments, field string) string {
 	if field == "" {
 		return ""
 	}
-	at := strings.Index(arguments, `"`+field+`"`)
-	if at < 0 {
+	idx := strings.Index(arguments, `"`+field+`"`)
+	if idx < 0 {
 		return ""
 	}
-	rest := arguments[at+len(field)+2:]
+	rest := arguments[idx+len(field)+2:]
 	rest = strings.TrimLeft(rest, " \t\r\n")
 	if !strings.HasPrefix(rest, ":") {
 		return ""
@@ -55,9 +55,9 @@ func trimPartialRune(text string) string {
 }
 
 func unquote(text string) string {
-	for at := len(text); at > 0; at-- {
+	for pos := len(text); pos > 0; pos-- {
 		var out string
-		if err := json.Unmarshal([]byte(`"`+text[:at]+`"`), &out); err == nil {
+		if err := json.Unmarshal([]byte(`"`+text[:pos]+`"`), &out); err == nil {
 			return out
 		}
 	}

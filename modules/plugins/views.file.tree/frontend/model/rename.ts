@@ -16,8 +16,8 @@ const findExtensionStart = (name: string): number => {
  * The ending a name carries, the dot with it, and nothing where it carries none.
  */
 const getExtension = (name: string): string => {
-  const at = findExtensionStart(name)
-  return at > 0 ? name.slice(at) : ''
+  const extStart = findExtensionStart(name)
+  return extStart > 0 ? name.slice(extStart) : ''
 }
 
 /**

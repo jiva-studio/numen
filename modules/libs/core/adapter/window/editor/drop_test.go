@@ -20,30 +20,30 @@ import (
 // noting is an index that holds on to what a drop wrote to it.
 type noting struct {
 	unrecorded
-	written []domain.SourceChunks
+	encoded []domain.SourceChunks
 }
 
 func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e domain.SourceChunks) error {
-	n.written = append(n.written, e)
+	n.encoded = append(n.encoded, e)
 	return nil
 }
 
 // dropper is a window holding one recording a model has listened to, with the
 // use case that takes what it heard away. `known` is what the index says the
 // recording relies on.
-func dropper(t *testing.T, target port.DerivedStore, known indexed) (*Services, *noting, http.Handler) {
+func dropper(t *testing.T, target port.DerivedStore, sources indexed) (*Services, *noting, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	index := &noting{}
-	hl := source.NewHighlight(filesystem.VaultReaders{}, known, storing{target})
+	hl := source.NewHighlight(filesystem.VaultReaders{}, sources, storing{target})
 	api := newBareServices()
 	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
-	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, known, storing{target}))
+	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, sources, storing{target}))
 	api.Artifact.drops = &transcription.Drop{
 		Readers: filesystem.VaultReaders{},
 		Sources: index,
-		Queries: known,
+		Queries: sources,
 		Derived: storing{target},
 	}
 	api.state.setVault(vault)
@@ -77,10 +77,10 @@ func TestATranscriptDroppedConsumesEverythingListeningProduced(t *testing.T) {
 	if len(target) != 0 {
 		t.Errorf("the store still holds %v", target)
 	}
-	if len(index.written) != 1 {
-		t.Fatalf("the index was written %d times", len(index.written))
+	if len(index.encoded) != 1 {
+		t.Fatalf("the index was written %d times", len(index.encoded))
 	}
-	wrote := index.written[0]
+	wrote := index.encoded[0]
 	if wrote.Source.Fingerprint.Path != talk {
 		t.Errorf("indexed %q", wrote.Source.Fingerprint.Path)
 	}
@@ -108,7 +108,7 @@ func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T)
 	if _, hasArtifact := target.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !hasArtifact {
 		t.Error("the transcript went out from under the run")
 	}
-	if len(index.written) != 0 {
+	if len(index.encoded) != 0 {
 		t.Error("the index was written for a drop that did nothing")
 	}
 }
@@ -120,7 +120,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("dropped the transcript of a recording nothing heard and failed %v", err)
 	}
-	if len(index.written) != 0 {
+	if len(index.encoded) != 0 {
 		t.Error("the index was written for a drop that did nothing")
 	}
 }

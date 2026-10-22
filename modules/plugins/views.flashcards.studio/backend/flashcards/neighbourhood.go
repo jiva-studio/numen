@@ -140,7 +140,7 @@ func getNeighbours(v domain.Vault, deck string, linked note.NoteLinks) []Neighbo
 
 // getLinkedNeighbour is the neighbour a link of the deck leads to, and whether
 // it is one to show. A note reached is marked in seen.
-func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, seen map[string]bool) (Neighbour, bool) {
+func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[string]bool) (Neighbour, bool) {
 	// Only an address that names a note can name one that is missing. An
 	// attachment and a web address are neither read here nor gone, and
 	// drawing them as notes whose name has come loose says a vault has a
@@ -158,11 +158,11 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, seen map[string]b
 		// Dangling: named by how it is written, and there is nothing to read.
 		return one, true
 	}
-	if l.ToVault != v.ID || seen[l.To] {
+	if l.ToVault != v.ID || visited[l.To] {
 		// A link into another vault has nothing here to read it with.
 		return Neighbour{}, false
 	}
-	seen[l.To] = true
+	visited[l.To] = true
 	return one, true
 }
 
@@ -207,20 +207,20 @@ func getNeighbourTitle(
 // read fails when the vault itself is out of reach, and a panel of titles with
 // no prose under any of them would say nothing about why; what is wrong with
 // one note is an outcome, not an error.
-func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, shown []Neighbour) error {
-	for i := range shown {
+func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neighbours []Neighbour) error {
+	for i := range neighbours {
 		if i == MostRead {
 			break
 		}
-		if shown[i].Path == "" {
+		if neighbours[i].Path == "" {
 			continue
 		}
-		contents, err := u.reads.Execute(ctx, v, shown[i].Path)
+		contents, err := u.reads.Execute(ctx, v, neighbours[i].Path)
 		if err != nil {
 			return err
 		}
-		shown[i].Outcome = contents.Outcome
-		shown[i].Body = contents.Body
+		neighbours[i].Outcome = contents.Outcome
+		neighbours[i].Body = contents.Body
 	}
 	return nil
 }

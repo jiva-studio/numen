@@ -133,14 +133,14 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
   const runs: string[] = []
   let run: Position[] = []
   curve.at.forEach((point, place) => {
-    const at = places[place]
-    if (!at) return
+    const pos = places[place]
+    if (!pos) return
     if (point.canLearnEveryCard) {
       if (run.length > 1) runs.push(createLinePath(run))
       run = []
       return
     }
-    run.push(at)
+    run.push(pos)
   })
   if (run.length > 1) runs.push(createLinePath(run))
   return runs.join(' ')

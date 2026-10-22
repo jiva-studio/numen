@@ -32,10 +32,10 @@ func (s *debounceState) reset() {
 	s.queued = nil
 }
 
-func (s *debounceState) rescan(lost chan<- struct{}) {
+func (s *debounceState) rescan(lostChan chan<- struct{}) {
 	s.reset()
 	select {
-	case lost <- struct{}{}:
+	case lostChan <- struct{}{}:
 	default:
 	}
 }
@@ -60,9 +60,9 @@ func (s *debounceState) walkChan(requested chan<- string) (chan<- string, string
 	return nil, ""
 }
 
-func (s *debounceState) handleWalkResult(one walkResult, delay time.Duration, lost chan<- struct{}) {
+func (s *debounceState) handleWalkResult(one walkResult, delay time.Duration, droppedChan chan<- struct{}) {
 	if one.isWholeVault {
-		s.rescan(lost)
+		s.rescan(droppedChan)
 		return
 	}
 	for _, path := range one.paths {
@@ -71,16 +71,16 @@ func (s *debounceState) handleWalkResult(one walkResult, delay time.Duration, lo
 	s.startHold(delay)
 }
 
-func (s *debounceState) handleWaitingEvents(shape *folders, waiting *queue, delay time.Duration, lost chan<- struct{}) bool {
-	events, over, isDone := waiting.take()
-	if over {
-		s.rescan(lost)
+func (s *debounceState) handleWaitingEvents(shape *folders, waiting *queue, delay time.Duration, dropped chan<- struct{}) bool {
+	events, finished, isDone := waiting.take()
+	if finished {
+		s.rescan(dropped)
 		shape.reloadShape()
 	}
 	for _, event := range events {
 		paths, whole, folder := shape.getConcernedPaths(event.Path())
 		if whole {
-			s.rescan(lost)
+			s.rescan(dropped)
 			continue
 		}
 		if folder != "" {
@@ -125,7 +125,7 @@ func debounce(
 	opts Options,
 	waiting *queue,
 	changes chan<- []string,
-	lost chan<- struct{},
+	disconnected chan<- struct{},
 ) {
 	state := newDebounceState()
 	request := make(chan string)
@@ -157,10 +157,10 @@ func debounce(
 			state.popQueued()
 
 		case one := <-walked:
-			state.handleWalkResult(one, delay, lost)
+			state.handleWalkResult(one, delay, disconnected)
 
 		case <-waiting.woke:
-			if state.handleWaitingEvents(shape, waiting, delay, lost) {
+			if state.handleWaitingEvents(shape, waiting, delay, disconnected) {
 				return
 			}
 

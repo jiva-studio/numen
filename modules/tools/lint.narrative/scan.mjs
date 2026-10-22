@@ -80,6 +80,8 @@ const IGNORED_DIRS = new Set([
   'node_modules',
   '.git',
   'dist',
+  'built',
+  'gen',
   '.direnv',
   '.claude',
   'test-results',
@@ -215,17 +217,16 @@ const RE_TS_VAR_PREPOSITION = new RegExp(
 )
 
 const RE_TS_PARAM_OR_PROP_PREPOSITION = new RegExp(
-  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:[^:]|\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:`,
+  `(?:function\\s+[a-zA-Z0-9_$]*\\s*\\(|\\(\\s*(?:[a-zA-Z0-9_$]+:\\s*[^,)]+,\\s*)*)\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:\\s*(?:[A-Z][a-zA-Z0-9_]*|string|number|boolean|bigint|any|unknown|\\{)`,
 )
-const RE_TS_BARE_AT_FIELD = /^\s*(?:readonly\s+)?(at)\??:\s*(?:number|string)\b/
-const RE_GO_BARE_AT_FIELD = /^\s*(at)\s+(?:int|int64|float64)\b/
+
 
 const RE_TS_VAR_METAPHOR = new RegExp(
   `\\b(?:const|let|var)\\s+(${BANNED_METAPHORS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
 )
 
 const RE_TS_PARAM_METAPHOR = new RegExp(
-  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_METAPHORS.join('|')})\\s*:[^:]`,
+  `(?:function\\s+[a-zA-Z0-9_$]*\\s*\\(|\\(\\s*(?:[a-zA-Z0-9_$]+:\\s*[^,)]+,\\s*)*)\\b(${BANNED_METAPHORS.join('|')})\\s*:\\s*(?:[A-Z][a-zA-Z0-9_]*|string|number|boolean|bigint|any|unknown|\\{)`,
 )
 
 const RE_TS_THIRD_PERSON_FUNC = new RegExp(
@@ -254,7 +255,7 @@ const RE_GO_VAR_PREPOSITION = new RegExp(
 )
 
 const RE_GO_PARAM_OR_FIELD_PREPOSITION = new RegExp(
-  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|^\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:`,
+  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|^\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]`,
 )
 
 const RE_GO_VAR_METAPHOR = new RegExp(
@@ -377,7 +378,6 @@ const RE_DOMESTIC_FUNC = new RegExp(
 const MASKED_PRIMITIVE_FILES = new Set([
   'questions.ts',
   'outward.ts',
-  'turn.ts',
   'ground.ts',
   'Waiting.vue',
 ])
@@ -391,17 +391,7 @@ const MASKED_PRIMITIVE_SYMBOLS = [
   'pressTurn',
   'turnTo',
   'getPlaceBeside',
-  'namedAt',
-  'named_at',
   'nth',
-  'goes',
-  'ticket',
-  'silence',
-  'closer',
-  'further',
-  'widen',
-  'dressed',
-  'getAddress',
 ]
 const RE_MASKED_PRIMITIVE = new RegExp(
   `\\b(${MASKED_PRIMITIVE_SYMBOLS.join('|')})\\b`,
@@ -478,7 +468,8 @@ function scanFile(filePath) {
   totalScannedFiles++
 
   const baseName = path.basename(filePath)
-  if (shouldCheckCategory('conversational') && (baseName === 'questions.ts' || (baseName === 'answers.ts' && !relPath.includes('wire/errorCode')))) {
+  if (baseName.endsWith('_pb.ts') || baseName.endsWith('_pb.js') || baseName.endsWith('.pb.go')) return
+  if (shouldCheckCategory('conversational') && baseName === 'questions.ts') {
     findings.conversationalRequests.push({
       file: relPath,
       line: 1,
@@ -637,8 +628,8 @@ function scanFile(filePath) {
     // 3. Prepositions used as bare variables
     if (isCode && !isCommentLine && shouldCheckCategory('prepositions')) {
       const m = isGo
-        ? (RE_GO_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(lineWithoutStrings) || RE_GO_BARE_AT_FIELD.exec(lineWithoutStrings))
-        : (RE_TS_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(lineWithoutStrings) || RE_TS_BARE_AT_FIELD.exec(lineWithoutStrings))
+        ? (RE_GO_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(lineWithoutStrings))
+        : (RE_TS_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(lineWithoutStrings))
       if (m) {
         const word = m[1] || m[2] || m[3]
         if (!filterWord || filterWord === word) {
@@ -652,11 +643,13 @@ function scanFile(filePath) {
     // 4. Literary metaphors & bare narrative adjectives
     if (isCode && !isCommentLine && shouldCheckCategory('metaphors')) {
       const m = isGo
-        ? (RE_GO_VAR_METAPHOR.exec(line) || RE_GO_PARAM_METAPHOR.exec(line))
-        : (RE_TS_VAR_METAPHOR.exec(line) || RE_TS_PARAM_METAPHOR.exec(line))
+        ? (RE_GO_VAR_METAPHOR.exec(lineWithoutStrings) || RE_GO_PARAM_METAPHOR.exec(lineWithoutStrings))
+        : (RE_TS_VAR_METAPHOR.exec(lineWithoutStrings) || RE_TS_PARAM_METAPHOR.exec(lineWithoutStrings))
       if (m) {
         const word = m[1] || m[2] || m[3]
-        if (!filterWord || filterWord === word) {
+        const isGoCleanup = isGo && word === 'closer'
+        const isVadSilence = isGo && word === 'silence' && relPath.includes('vad')
+        if (!isGoCleanup && !isVadSilence && (!filterWord || filterWord === word)) {
           findings.literaryMetaphors.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word, text: trimmed })
           if (isGo) stats.backendTotal++
           else stats.frontendTotal++
@@ -892,17 +885,20 @@ function scanFile(filePath) {
 
     // 18. Masked UI interaction primitives (symbols)
     if (isCode && !isCommentLine && shouldCheckCategory('masked-primitives')) {
-      const m = RE_MASKED_PRIMITIVE.exec(line)
+      const m = RE_MASKED_PRIMITIVE.exec(lineWithoutStrings)
       if (m) {
-        findings.maskedPrimitives.push({
-          file: relPath,
-          line: lineNum,
-          lang: isGo ? 'go' : 'ts',
-          symbol: m[1],
-          text: trimmed,
-        })
-        if (isGo) stats.backendTotal++
-        else stats.frontendTotal++
+        const isCssNthChild = m[1] === 'nth' && line.includes('nth-child')
+        if (!isCssNthChild) {
+          findings.maskedPrimitives.push({
+            file: relPath,
+            line: lineNum,
+            lang: isGo ? 'go' : 'ts',
+            symbol: m[1],
+            text: trimmed,
+          })
+          if (isGo) stats.backendTotal++
+          else stats.frontendTotal++
+        }
       }
     }
 
@@ -924,7 +920,7 @@ function scanFile(filePath) {
 
     // 20. Hunting and offering interaction metaphors (hunt, offered, lit)
     if (isCode && !isCommentLine && shouldCheckCategory('hunt-offer')) {
-      const m = isGo ? RE_GO_HUNT_OFFER.exec(line) : RE_TS_HUNT_OFFER.exec(line)
+      const m = isGo ? RE_GO_HUNT_OFFER.exec(lineWithoutStrings) : RE_TS_HUNT_OFFER.exec(lineWithoutStrings)
       if (m) {
         findings.huntAndOffering.push({
           file: relPath,

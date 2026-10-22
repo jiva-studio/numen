@@ -118,9 +118,9 @@ type onTheList struct {
 	first    domain.Vault
 	second   domain.Vault
 
-	mu      sync.Mutex
-	shown   []domain.Vault
-	refuses error
+	mu       sync.Mutex
+	expected []domain.Vault
+	refuses  error
 }
 
 // onAList puts two vaults on a list of its own and serves the questions about
@@ -161,7 +161,7 @@ func onAList(t *testing.T) *onTheList {
 	f.api.state.OpenVault = func(_ context.Context, v domain.Vault) error {
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		f.shown = append(f.shown, v)
+		f.expected = append(f.expected, v)
 		return f.refuses
 	}
 	f.api.state.setVault(f.first)
@@ -187,7 +187,7 @@ func (f *onTheList) opening(why error) {
 func (f *onTheList) getShown() []domain.Vault {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return append([]domain.Vault(nil), f.shown...)
+	return append([]domain.Vault(nil), f.expected...)
 }
 
 // addVault makes a folder under a parent of its own and puts it on the list.

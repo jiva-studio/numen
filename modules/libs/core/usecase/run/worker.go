@@ -20,7 +20,7 @@ type Worker struct {
 	each  func(ctx context.Context, v domain.Vault, path string)
 
 	// ctx is the root context for runs, and going tracks active runs.
-	ctx context.Context
+	ctx   context.Context
 	going sync.WaitGroup
 
 	mu        sync.Mutex
@@ -184,10 +184,10 @@ func (w *Worker) RepeatRounds(ctx context.Context, wait port.Wait, every time.Du
 
 // Report puts one piece of work in the list. Work a person started is shown at
 // once, and work nobody asked for is shown once it has lasted.
-func (w *Worker) Report(at Task, isUserStarted bool) {
-	at.IsUserStarted = isUserStarted
+func (w *Worker) Report(pos Task, isUserStarted bool) {
+	pos.IsUserStarted = isUserStarted
 	if w.tasks != nil {
-		w.tasks.Set(at)
+		w.tasks.Set(pos)
 	}
 }
 

@@ -32,7 +32,7 @@ func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) 
 	if listing.Types["a.md"] != "stencil" {
 		t.Errorf("the note is %v", listing.Types["a.md"])
 	}
-	if len(index.asked) != 1 || len(index.asked[0]) != 1 {
-		t.Errorf("the index was asked %v, want one question about the one note", index.asked)
+	if len(index.requested) != 1 || len(index.requested[0]) != 1 {
+		t.Errorf("the index was asked %v, want one question about the one note", index.requested)
 	}
 }

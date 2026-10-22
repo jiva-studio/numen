@@ -225,7 +225,7 @@ func TestASeparateQuestionProviderPreservesTheIndexSideUnlimited(t *testing.T) {
 func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
 	model := newGated(4)
 	arrive := make(chan struct{})
-	opening := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
+	opening := func(ctx context.Context, _ func(finished, total int64)) (port.Embedder, error) {
 		select {
 		case <-arrive:
 			return model, nil

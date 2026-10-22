@@ -479,9 +479,9 @@ func TestANoteWithAnUnclosedBlockRejectsABodyWrite(t *testing.T) {
 // A rename reaches a link whether it is quoted or written plainly.
 func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 	for _, one := range []struct {
-		name    string
-		written string
-		target  string
+		name   string
+		input  string
+		target string
 	}{
 		{"double quoted brackets", `"[[The far corner]]"`, "[[The far corner]]"},
 		{"single quoted brackets", `'[[The far corner]]'`, "[[The far corner]]"},
@@ -492,7 +492,7 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			raw := "---\n" +
 				"links:\n" +
-				"  - to: " + one.written + "   # where it sat\n" +
+				"  - to: " + one.input + "   # where it sat\n" +
 				"    role: child\n" +
 				"---\n" +
 				"body\n"
@@ -538,7 +538,7 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 	for _, one := range []struct {
 		name    string
-		written string
+		content string
 		target  string
 	}{
 		{"a doubled quote", `'Alice''s key'`, "Alice's key"},
@@ -546,7 +546,7 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 		{"a hash that is not a comment", `"Shed #LXVI"`, "Shed #LXVI"},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			raw := "---\nlinks:\n  - to: " + one.written + "\n    role: child\n---\nbody\n"
+			raw := "---\nlinks:\n  - to: " + one.content + "\n    role: child\n---\nbody\n"
 			d, err := Open([]byte(raw))
 			if err != nil {
 				t.Fatal(err)
@@ -597,9 +597,9 @@ func TestARenamePreservesABlockScalarAlone(t *testing.T) {
 // the brackets inside them are how they wrote it, and a rename changes the name.
 func TestARenamePreservesTheNotationItFound(t *testing.T) {
 	for _, one := range []struct {
-		name    string
-		written string
-		wants   string
+		name  string
+		input string
+		wants string
 	}{
 		{"double stays double", `"[[The far corner]]"`, `to: "[[Marrowfield]]"`},
 		{"single stays single", `'[[The far corner]]'`, `to: '[[Marrowfield]]'`},
@@ -609,12 +609,12 @@ func TestARenamePreservesTheNotationItFound(t *testing.T) {
 		{"plainly written stays plain", `The far corner`, `to: Marrowfield`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			raw := "---\nlinks:\n  - to: " + one.written + "\n    role: child\n---\nbody\n"
+			raw := "---\nlinks:\n  - to: " + one.input + "\n    role: child\n---\nbody\n"
 			d, err := Open([]byte(raw))
 			if err != nil {
 				t.Fatal(err)
 			}
-			target := strings.Trim(one.written, `"'`)
+			target := strings.Trim(one.input, `"'`)
 			if _, err := d.RedirectLinks(domain.ParseAddress(target), "Marrowfield"); err != nil {
 				t.Fatalf("point links: %v", err)
 			}

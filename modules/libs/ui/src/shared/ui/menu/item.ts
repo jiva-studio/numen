@@ -1,7 +1,7 @@
 /**
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
-import { getPlaceBeside } from '@/shared/lib/place'
+import { getAdjacentPlace } from '@/shared/lib/place'
 import { stepTo } from '@/shared/lib/roving'
 import type { Position, Size } from '@/shared/lib/geometry'
 
@@ -63,7 +63,7 @@ export interface MenuPlacement {
  * sits at the near edge and scrolls.
  */
 export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Position => ({
-  x: getPlaceBeside({
+  x: getAdjacentPlace({
     from: at.x,
     to: at.x,
     size: size.width,
@@ -71,7 +71,7 @@ export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Positi
     margin,
     gap: 0,
   }),
-  y: getPlaceBeside({
+  y: getAdjacentPlace({
     from: at.y,
     to: at.y,
     size: size.height,
@@ -112,8 +112,8 @@ export const getInitialIndex = (
   current: string | null = null,
 ): number => {
   if (!MENU_TRIGGERS[trigger].hasInitialFocus) return -1
-  const at = items.findIndex((item) => item.id === current && !item.isDisabled)
-  return stepTo(items, { from: Math.max(at, 0) - 1, by: 1 }, canLandOn)
+  const pos = items.findIndex((item) => item.id === current && !item.isDisabled)
+  return stepTo(items, { from: Math.max(pos, 0) - 1, by: 1 }, canLandOn)
 }
 
 /** Whether the keyboard may land on the item. */

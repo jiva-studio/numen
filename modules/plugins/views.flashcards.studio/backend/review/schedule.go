@@ -41,13 +41,13 @@ type Scheduler interface {
 	GetName() string
 
 	// Next is where an answer leaves a schedule.
-	Next(s Schedule, at time.Time, r Rating) Schedule
+	Next(s Schedule, now time.Time, r Rating) Schedule
 
 	// Endings is where an answer leaves a schedule both ways: the ending it
 	// came back on and the ending it did not. It is Next at Good and Next at
 	// Again, asked together, because a projection weighs the two and a
 	// scheduler settles them from one reckoning of the card.
-	Endings(s Schedule, at time.Time) (good, again Schedule)
+	Endings(s Schedule, now time.Time) (good, again Schedule)
 
 	// Spaced reports whether a card face standing at this schedule comes round
 	// in days. One the scheduler is still putting into memory comes round in

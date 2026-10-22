@@ -20,7 +20,7 @@ import (
 type answering struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
 	code      v1.HostVaultErrorCode
-	asked     string
+	requested string
 	unlocked  string
 	named     string
 	baselines []*v1.HostFingerprint

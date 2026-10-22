@@ -103,7 +103,7 @@ const mountDeck = async (
   }
 
   /** Which preset the deck names, as the vault answers it. */
-  let by = schedule.by ?? ''
+  let presetPath = schedule.by ?? ''
   /** Every deck put on a preset, as the tab asked for it. */
   const appliedPresets: string[] = []
 
@@ -123,8 +123,8 @@ const mountDeck = async (
     getDeckPreset: async () =>
       asValue({
         preset: {
-          path: by,
-          title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+          path: presetPath,
+          title: presetPath === 'Sanskrit.md' ? 'Sanskrit' : '',
           settings: DEFAULTS,
           problems: schedule.saying ? [schedule.saying] : [],
           ...SCHEDULING,
@@ -135,7 +135,7 @@ const mountDeck = async (
     scheduleDeck: async (_deck, preset) => {
       appliedPresets.push(preset)
       if (schedule.notScheduled) return asFailure(schedule.notScheduled)
-      by = preset
+      presetPath = preset
       return asValue({ at: 'scheduled' })
     },
     write: async () => asValue({ at: '' }),

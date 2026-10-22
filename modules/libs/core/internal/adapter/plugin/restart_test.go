@@ -27,7 +27,7 @@ import (
 // it was asked.
 type restartedPlugin struct {
 	numenv1connect.UnimplementedEmbeddingServiceHandler
-	asked atomic.Int32
+	requested atomic.Int32
 }
 
 func (p *restartedPlugin) GetEmbeddingModel(
@@ -39,7 +39,7 @@ func (p *restartedPlugin) GetEmbeddingModel(
 func (p *restartedPlugin) EmbedBatch(
 	context.Context, *connect.Request[v1.EmbedBatchRequest],
 ) (*connect.Response[v1.EmbedBatchResponse], error) {
-	p.asked.Add(1)
+	p.requested.Add(1)
 	return connect.NewResponse(&v1.EmbedBatchResponse{}), nil
 }
 
@@ -57,7 +57,7 @@ func (r restartedRecognition) GetRecognitionModel(
 func (r restartedRecognition) RecognisePage(
 	context.Context, *connect.Request[v1.RecognisePageRequest],
 ) (*connect.Response[v1.RecognisePageResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.RecognisePageResponse{}), nil
 }
 
@@ -75,7 +75,7 @@ func (r restartedTranscription) GetTranscriptionModel(
 func (r restartedTranscription) Transcribe(
 	context.Context, *connect.Request[v1.TranscribeRequest],
 ) (*connect.Response[v1.TranscribeResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.TranscribeResponse{}), nil
 }
 
@@ -87,7 +87,7 @@ type restartedDocument struct {
 func (r restartedDocument) ExtractText(
 	context.Context, *connect.Request[v1.ExtractTextRequest],
 ) (*connect.Response[v1.ExtractTextResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.ExtractTextResponse{}), nil
 }
 
@@ -99,21 +99,21 @@ type restartedBook struct {
 func (r restartedBook) GetBook(
 	context.Context, *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.GetBookResponse{}), nil
 }
 
 func (r restartedBook) ReadBookEntry(
 	context.Context, *connect.Request[v1.ReadBookEntryRequest],
 ) (*connect.Response[v1.ReadBookEntryResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.ReadBookEntryResponse{}), nil
 }
 
 func (r restartedBook) ExtractBookText(
 	context.Context, *connect.Request[v1.ExtractBookTextRequest],
 ) (*connect.Response[v1.ExtractBookTextResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.ExtractBookTextResponse{}), nil
 }
 
@@ -125,7 +125,7 @@ type restartedDownload struct {
 func (r restartedDownload) GetMetadata(
 	context.Context, *connect.Request[v1.GetMetadataRequest],
 ) (*connect.Response[v1.GetMetadataResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.GetMetadataResponse{}), nil
 }
 
@@ -137,7 +137,7 @@ type restartedAgent struct {
 func (r restartedAgent) GetAgentPrograms(
 	context.Context, *connect.Request[v1.GetAgentProgramsRequest],
 ) (*connect.Response[v1.GetAgentProgramsResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{}), nil
 }
 
@@ -259,8 +259,8 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			if got := launcher.count(); got != 2 {
 				t.Fatalf("the plugin was started %d times, want 2", got)
 			}
-			if _, again, _ := launcher.get(1); again.asked.Load() != 1 {
-				t.Errorf("the plugin started again was asked %d times, want 1", again.asked.Load())
+			if _, again, _ := launcher.get(1); again.requested.Load() != 1 {
+				t.Errorf("the plugin started again was asked %d times, want 1", again.requested.Load())
 			}
 			if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 				t.Errorf("TeardownAll: %v", err)
@@ -277,7 +277,7 @@ type restartedProofreading struct {
 func (r restartedProofreading) ProofreadText(
 	context.Context, *connect.Request[v1.ProofreadTextRequest],
 ) (*connect.Response[v1.ProofreadTextResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.ProofreadTextResponse{Corrections: []*v1.ProofreadCorrection{{}}}), nil
 }
 
@@ -289,7 +289,7 @@ type restartedTools struct {
 func (r restartedTools) ListTools(
 	context.Context, *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
-	r.plugin.asked.Add(1)
+	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.ListToolsResponse{Tools: []*v1.PluginTool{{
 		Name: "stub_read", InputSchema: []byte("{}"), Effect: v1.ToolEffect_TOOL_EFFECT_READS,
 	}}}), nil

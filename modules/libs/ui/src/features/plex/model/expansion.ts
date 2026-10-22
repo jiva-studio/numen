@@ -52,11 +52,11 @@ export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds
  * one it opens to as far as it has got. A node with nothing more of its title
  * to show is drawn as it was placed, however long the attention rests on it.
  */
-export function interpolateBox(node: PlacedNode, wide: WideBox | null, open: number): WideBox {
-  if (!wide) return { width: node.width, offset: 0 }
+export function interpolateBox(node: PlacedNode, expanded: WideBox | null, open: number): WideBox {
+  if (!expanded) return { width: node.width, offset: 0 }
   return {
-    width: lerp(node.width, wide.width, open),
-    offset: lerp(0, wide.offset, open),
+    width: lerp(node.width, expanded.width, open),
+    offset: lerp(0, expanded.offset, open),
   }
 }
 
@@ -147,8 +147,8 @@ export function useOpenBox(options: OpenBoxOptions) {
   const box = computed(() => interpolateBox(node(), wide(), open.value))
 
   const handle = computed(() => {
-    const at = getHandle({ ...node(), width: box.value.width })
-    return { x: at.x + box.value.offset, y: at.y }
+    const pos = getHandle({ ...node(), width: box.value.width })
+    return { x: pos.x + box.value.offset, y: pos.y }
   })
 
   return { open, box, handle }

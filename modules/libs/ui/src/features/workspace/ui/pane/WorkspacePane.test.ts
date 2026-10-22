@@ -196,8 +196,8 @@ describe('the tab that is showing', () => {
   it('is returned once the panel it remains over is on screen', async () => {
     const onScreen: boolean[] = []
     const onShow = (tab: string) => {
-      const at = ['plex', 'chat', 'notes'].indexOf(tab)
-      const panel = document.getElementById(`later-panel-${at}`)
+      const index = ['plex', 'chat', 'notes'].indexOf(tab)
+      const panel = document.getElementById(`later-panel-${index}`)
       onScreen.push(panel?.hasAttribute('data-showing') ?? false)
     }
 

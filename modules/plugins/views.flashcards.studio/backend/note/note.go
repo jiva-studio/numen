@@ -49,7 +49,7 @@ var (
 func WrapUnlevelled(err error, paths ...string) error { return edit.WrapUnlevelled(err, paths...) }
 
 // CheckSize holds a file to the most it may be. Zero holds it to nothing.
-func CheckSize(path string, size, bound int) error { return edit.CheckSize(path, size, bound) }
+func CheckSize(path string, size, limit int) error { return edit.CheckSize(path, size, limit) }
 
 // GetAddress is how a note known by path is written into a link.
 func GetAddress(ctx context.Context, names ports.NoteQueries, vaultID domain.VaultID, path string) (domain.Address, error) {

@@ -29,14 +29,14 @@ func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 	body := string(d.body)
 	last, moved := 0, 0
 
-	for at := 0; at <= len(body); {
+	for pos := 0; pos <= len(body); {
 		end := len(body)
-		if next := strings.IndexByte(body[at:], '\n'); next >= 0 {
-			end = at + next
+		if next := strings.IndexByte(body[pos:], '\n'); next >= 0 {
+			end = pos + next
 		}
-		line := strings.TrimRight(body[at:end], "\r")
+		line := strings.TrimRight(body[pos:end], "\r")
 		if f.IsCrossedBy(line) || f.IsInside() {
-			at = end + 1
+			pos = end + 1
 			continue
 		}
 		for _, found := range WikilinksIn(line) {
@@ -45,12 +45,12 @@ func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 			}
 			// The brackets stay where they were: only the target between them
 			// moves, and each of them is two bytes.
-			out.WriteString(body[last : at+found.At+2])
+			out.WriteString(body[last : pos+found.At+2])
 			out.WriteString(to + getWikilinkSuffix(found.Inside))
-			last = at + found.To - 2
+			last = pos + found.To - 2
 			moved++
 		}
-		at = end + 1
+		pos = end + 1
 	}
 	if moved == 0 {
 		return 0, nil

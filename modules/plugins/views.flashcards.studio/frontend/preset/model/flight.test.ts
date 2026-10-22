@@ -23,7 +23,7 @@ const createGate = () => {
 const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)[]) => {
   const based: string[] = []
   const core = {
-    write: async (_path: string, _settings: unknown, at: string) => {
+    write: async (_path: string, _settings: unknown, target: string) => {
       based.push(at)
       return (await answers.shift()) ?? { ok: true, value: { at: 'v-last' } }
     },
@@ -34,7 +34,7 @@ const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)
 /** What the window was told, in order. */
 const createMessages = () => {
   const response: [string, string | undefined][] = []
-  return { said: response, writeMessage: (text: string, kind?: string) => void response.push([text, kind]) }
+  return { messages: response, said: response, writeMessage: (text: string, kind?: string) => void response.push([text, kind]) }
 }
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
@@ -65,7 +65,7 @@ describe('one write', () => {
   it('clears the transcript, and is based on the version last written', async () => {
     const flight = createWriteFlight()
     const { core, based } = createCore({ ok: true, value: { at: 'v1' } })
-    const { said, writeMessage } = createMessages()
+    const { messages, writeMessage } = createMessages()
 
     await sendWrite(flight, createFlightOpts(core, writeMessage))
     await sendWrite(flight, createFlightOpts(core, writeMessage))
@@ -91,11 +91,11 @@ describe('one write', () => {
   it('says an error as an error', async () => {
     const flight = createWriteFlight()
     const { core } = createCore({ ok: false, error: 'missing' } as PresetWriteResult)
-    const { said, writeMessage } = createMessages()
+    const { messages, writeMessage } = createMessages()
 
     await sendWrite(flight, createFlightOpts(core, writeMessage))
 
-    expect(said.at(-1)).toStrictEqual([flight.errorMessage.value, 'error'])
+    expect(messages.at(-1)).toStrictEqual([flight.errorMessage.value, 'error'])
   })
 })
 

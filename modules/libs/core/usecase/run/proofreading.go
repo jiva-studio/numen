@@ -31,13 +31,13 @@ var (
 
 // CheckProofread says why a proofreading cannot be made out of these, and
 // nothing where it can.
-func CheckProofread(readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader) error {
+func CheckProofread(readers port.VaultReaders, derived port.DerivedStores, proofreader port.Proofreader) error {
 	switch {
 	case readers == nil:
 		return ErrNoVaultToProofread
 	case derived == nil:
 		return ErrNoStoreToProofread
-	case by == nil:
+	case proofreader == nil:
 		return ErrNothingProofreads
 	}
 	return nil

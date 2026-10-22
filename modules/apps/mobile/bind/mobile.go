@@ -33,8 +33,8 @@ var (
 
 type runningCore struct {
 	port int
-	// gone says the server stopped on its own, so the port answers nothing.
-	gone   atomic.Bool
+	// isDown says the server stopped on its own, so the port answers nothing.
+	isDown atomic.Bool
 	stop   context.CancelFunc
 	opened *editor.Installation
 	server *http.Server
@@ -130,7 +130,7 @@ func Start(dir string) (int, error) {
 		if errors.Is(err, http.ErrServerClosed) {
 			return
 		}
-		current.gone.Store(true)
+		current.isDown.Store(true)
 		cfg.ErrorHandler(err)
 	}()
 	return running.port, nil
@@ -189,7 +189,7 @@ func Stop() error {
 func Port() int {
 	mu.Lock()
 	defer mu.Unlock()
-	if running == nil || running.gone.Load() {
+	if running == nil || running.isDown.Load() {
 		return 0
 	}
 	return running.port

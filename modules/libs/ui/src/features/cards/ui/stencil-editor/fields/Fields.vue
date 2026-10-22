@@ -41,7 +41,7 @@ const emit = defineEmits<{
   (event: 'rename', field: string, name: string): void
   (event: 'remove', field: string): void
   /** A field let go somewhere in the order: before another, or at the end. */
-  (event: 'move', field: string, at: InsertionPoint): void
+  (event: 'move', field: string, target: InsertionPoint): void
 }>()
 
 /** What these objections are named by, which is this list's alone. */

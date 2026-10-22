@@ -56,7 +56,7 @@ describe('the tab a command over a file leads to', () => {
 
     await openCommandTab(deps, 'Animals.md', 'preset')
 
-    expect(messages).toStrictEqual([[words.notOffered, 'error']])
+    expect(messages).toStrictEqual([[words.unavailable, 'error']])
     expect(windowTabs.openTabOfKind).not.toHaveBeenCalled()
   })
 })

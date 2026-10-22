@@ -490,13 +490,13 @@ describe('two selections', () => {
 
 describe('what follows the pointer', () => {
   const visibleRows = getShownRows('work')
-  const at = { x: 40, y: 60 }
+  const point = { x: 40, y: 60 }
   const formatCount = (rows: number) => `${rows} rows`
   const label = (rows: readonly RowId[]) =>
-    dragLabel(visibleRows, rows, { at, getCountWords: formatCount })
+    dragLabel(visibleRows, rows, { at: point, getCountWords: formatCount })
 
   it('is the name of the one row dragged', () => {
-    expect(label(['notes'])).toStrictEqual({ label: 'Notes', at })
+    expect(label(['notes'])).toStrictEqual({ label: 'Notes', at: point })
   })
 
   it('is how many are dragged, where there are several', () => {

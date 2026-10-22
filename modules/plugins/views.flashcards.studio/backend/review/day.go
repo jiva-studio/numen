@@ -43,8 +43,8 @@ func (d Day) zone() *time.Location {
 }
 
 // GetEnd is the instant the day holding at gives way to the next.
-func (d Day) GetEnd(at time.Time) time.Time {
-	local := at.In(d.zone())
+func (d Day) GetEnd(target time.Time) time.Time {
+	local := target.In(d.zone())
 	y, m, day := local.Date()
 	if startTime := d.getStartTime(y, m, day); local.Before(startTime) {
 		return startTime
@@ -53,8 +53,8 @@ func (d Day) GetEnd(at time.Time) time.Time {
 }
 
 // GetStart is the instant the day holding at began.
-func (d Day) GetStart(at time.Time) time.Time {
-	local := at.In(d.zone())
+func (d Day) GetStart(target time.Time) time.Time {
+	local := target.In(d.zone())
 	y, m, day := local.Date()
 	if startTime := d.getStartTime(y, m, day); !local.Before(startTime) {
 		return startTime
@@ -65,8 +65,8 @@ func (d Day) GetStart(at time.Time) time.Time {
 // GetDate is the date the day holding at began on, as a plain date. A day is
 // named and numbered from this, so that it is one day of review whatever the
 // clock did around its boundaries.
-func (d Day) GetDate(at time.Time) time.Time {
-	local := at.In(d.zone())
+func (d Day) GetDate(target time.Time) time.Time {
+	local := target.In(d.zone())
 	y, m, day := local.Date()
 	date := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
 	h, minute := d.boundary()
@@ -122,18 +122,18 @@ const LatestDayStart = 12 * time.Hour
 // ParseDayStart is how long past midnight a day of review begins, from the hour a person wrote it as,
 // `HH:MM`. Nothing written is the default. Anything that is not an hour of the day, or is past
 // LatestDayStart, is ErrNotAnHour, and the default stands with it.
-func ParseDayStart(written string) (time.Duration, error) {
-	written = strings.TrimSpace(written)
-	if written == "" {
+func ParseDayStart(raw string) (time.Duration, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
 		return DayStartTime, nil
 	}
-	pos, err := time.Parse("15:04", written)
+	pos, err := time.Parse("15:04", raw)
 	if err != nil {
-		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), written)
+		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), raw)
 	}
 	starts := time.Duration(pos.Hour())*time.Hour + time.Duration(pos.Minute())*time.Minute
 	if starts > LatestDayStart {
-		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), written)
+		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), raw)
 	}
 	return starts, nil
 }

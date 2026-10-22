@@ -57,8 +57,8 @@ const getCells = (state: EditorState, row: SyntaxNode): Cell[] => {
       continue
     }
     if (emptyFrom !== null) {
-      const at = Math.min(emptyFrom + 1, child.from)
-      cells.push({ from: at, to: at, text: '' })
+      const pos = Math.min(emptyFrom + 1, child.from)
+      cells.push({ from: pos, to: pos, text: '' })
     }
     emptyFrom = child.to
   }

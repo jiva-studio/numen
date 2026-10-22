@@ -8,7 +8,7 @@ import type { StencilSummary } from '../../cards'
 import type { BufferCard, BufferDeck, BufferSection } from '../types'
 import { applyReadHeadings, applyScreenIds, areDecksEqual, areOffersEqual } from './view'
 
-const card = (over: Partial<BufferCard> = {}): BufferCard => ({
+const card = (overrides: Partial<BufferCard> = {}): BufferCard => ({
   id: 'screen-card',
   mark: '',
   section: null,
@@ -17,28 +17,28 @@ const card = (over: Partial<BufferCard> = {}): BufferCard => ({
   stencilPath: 'stencils/Animal.md',
   preamble: '',
   values: [{ field: 'Name', text: 'Llama' }],
-  ...over,
+  ...overrides,
 })
 
-const section = (over: Partial<BufferSection> = {}): BufferSection => ({
+const section = (overrides: Partial<BufferSection> = {}): BufferSection => ({
   id: 'screen-section',
   name: 'Mammals',
   preamble: '',
-  ...over,
+  ...overrides,
 })
 
-const deck = (over: Partial<BufferDeck> = {}): BufferDeck => ({
+const deck = (overrides: Partial<BufferDeck> = {}): BufferDeck => ({
   preamble: '',
   cards: [],
   sections: [],
   tail: '',
-  ...over,
+  ...overrides,
 })
 
 /** The card just written by the window, and the same card read back with its new mark. */
-const data = (over: Partial<BufferCard> = {}) => ({
+const data = (overrides: Partial<BufferCard> = {}) => ({
   screen: deck({ cards: [card()] }),
-  read: deck({ cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', ...over })] }),
+  read: deck({ cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', ...overrides })] }),
 })
 
 describe('whether two decks read the same', () => {
@@ -198,11 +198,11 @@ describe('a reading under the identities the window drew it by', () => {
 })
 
 describe('whether two stencil listings are the same', () => {
-  const offer = (over: Partial<StencilSummary> = {}): StencilSummary => ({
+  const offer = (overrides: Partial<StencilSummary> = {}): StencilSummary => ({
     path: 'stencils/Animal.md',
     title: 'Animal',
     fields: ['Name', 'Height'],
-    ...over,
+    ...overrides,
   })
 
   it('is so for the same stencils in the same order', () => {

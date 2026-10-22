@@ -64,6 +64,6 @@ export const placeActions = (
  * the first there is; a list holding none takes it nowhere.
  */
 export const findKeptAction = (actions: readonly PlacedAction[], was: string): number => {
-  const at = actions.findIndex((one) => one.action.id === was)
-  return Math.max(at, actions.length > 0 ? 0 : -1)
+  const pos = actions.findIndex((one) => one.action.id === was)
+  return Math.max(pos, actions.length > 0 ? 0 : -1)
 }

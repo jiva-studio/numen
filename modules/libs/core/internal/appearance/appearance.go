@@ -81,10 +81,10 @@ func AddStyles(text []byte, styles string) []byte {
 // buildSizeElement is the two multipliers as the page carries them: how large the
 // interface is drawn, which is the root's font size, and how large the text a
 // person reads is set.
-func buildSizeElement(drawn, set float64) string {
+func buildSizeElement(rendered, set float64) string {
 	var vars []string
-	if drawn > 0 {
-		vars = append(vars, "--numen-interface-scale: "+number(drawn))
+	if rendered > 0 {
+		vars = append(vars, "--numen-interface-scale: "+number(rendered))
 	}
 	if set > 0 {
 		vars = append(vars, "--numen-text-scale: "+number(set))

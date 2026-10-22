@@ -23,19 +23,19 @@ const on: CommandTarget = {
   isReady: true,
 }
 
-const command = (over: Partial<Command> = {}): Command => ({
+const command = (overrides: Partial<Command> = {}): Command => ({
   id: 'rename',
   text: 'Rename',
   group: 'note',
   isOffered: () => true,
-  ...over,
+  ...overrides,
 })
 
-const pending = (step: PromptStep, over: Partial<PendingStep> = {}): PendingStep => ({
+const pending = (step: PromptStep, overrides: Partial<PendingStep> = {}): PendingStep => ({
   step,
   command: command(),
   on,
-  ...over,
+  ...overrides,
 })
 
 const createSteps = (groups: readonly StepGroup[] = []) => {

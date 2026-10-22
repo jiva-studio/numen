@@ -152,8 +152,8 @@ func (l Links) GetBacklinks(ctx context.Context, id domain.VaultID, to string) (
 	return l.Vault.With(id).GetBacklinks(ctx, to)
 }
 
-func (l Links) ResolveLinks(ctx context.Context, id domain.VaultID, from string, written []string) (map[string]domain.ResolvedLink, error) {
-	return l.Vault.With(id).ResolveLinks(ctx, from, written)
+func (l Links) ResolveLinks(ctx context.Context, id domain.VaultID, from string, rawLinks []string) (map[string]domain.ResolvedLink, error) {
+	return l.Vault.With(id).ResolveLinks(ctx, from, rawLinks)
 }
 
 // Problems answers what parsing a vault's files turned up.

@@ -8,7 +8,7 @@ import { openNotes, type Notes } from '../src/notes/notes'
 const getFingerprint = (body: string): string => `at:${body}`
 
 /** A core that answers reads and writes from what a test puts in it. */
-function fake(over: Partial<Notes> = {}) {
+function fake(overrides: Partial<Notes> = {}) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
   const core: Notes = {
@@ -32,7 +32,7 @@ function fake(over: Partial<Notes> = {}) {
       files.set(path, body)
       return asValue({ body: '', at: getFingerprint(body) })
     },
-    ...over,
+    ...overrides,
   }
   return { core, files, wrote }
 }

@@ -98,7 +98,7 @@ describe('what else a plex tab asks of the window', () => {
   })
 
   it('reads what the window shows, and asks the vault where it opens', async () => {
-    const { host, asked } = createHost({ opening: 'Root.md' })
+    const { host, requested } = createHost({ opening: 'Root.md' })
     const deps = createPlexTabDeps(host, 'plex:1')
 
     expect(deps.isReady.value).toBe(true)

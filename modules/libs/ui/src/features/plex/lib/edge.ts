@@ -184,17 +184,17 @@ export const ARROW_LENGTH = 15
  */
 export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
-  const at = getPoint(edge, t)
+  const point = getPoint(edge, t)
 
   const alongEdge = measureAlong(edge)
   const total = alongEdge[LENGTH_SAMPLES]!
   const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
   const behindPoint = getPoint(edge, getParameter(alongEdge, end === 'to' ? 1 - covered : covered))
 
-  const spanned = { x: at.x - behindPoint.x, y: at.y - behindPoint.y }
+  const spanned = { x: point.x - behindPoint.x, y: point.y - behindPoint.y }
   const way = getTangent(edge, t)
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent
 
-  return { at, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
+  return { at: point, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
 }

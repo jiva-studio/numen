@@ -32,7 +32,7 @@ const createSettings = () => {
 }
 
 /** One model the settings offer, at the setting that names the indexing model. */
-const model = (over: Partial<Model> = {}): Model => ({
+const model = (overrides: Partial<Model> = {}): Model => ({
   namedAt: ['indexing', 'embedding', 'model', 'name'],
   name: 'e5-small-int8',
   title: 'E5 small',
@@ -40,7 +40,7 @@ const model = (over: Partial<Model> = {}): Model => ({
   isDefault: false,
   presence: 'present',
   writes: [],
-  ...over,
+  ...overrides,
 })
 
 describe('the settings as they are put together', () => {
@@ -101,7 +101,7 @@ describe('the lists the palette offers for a setting', () => {
 
   it('offers the indexing models by group, with a model the file names first', () => {
     const { settings } = createSettings()
-    const at = vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
+    vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
     vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([
       model(),
       model({ name: 'bge-small', title: 'BGE small', group: '', presence: 'nothing to fetch' }),

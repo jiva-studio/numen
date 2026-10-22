@@ -33,7 +33,7 @@ export interface CarouselStripDeps {
 
 function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLElement | null>) {
   const getStops = (): Record<PanelPlace, number> => {
-    const at = window_.value
+    const place = window_.value
     const card = middle.value
     if (!at || !card) return { before: 0, here: 0, after: 0 }
     return { before: 0, here: card.offsetLeft, after: at.scrollWidth - at.clientWidth }
@@ -62,7 +62,7 @@ function useCarouselDrag(deps: {
   let was = 0
 
   const onPointerDown = (press: PointerEvent) => {
-    const at = deps.window_.value
+    const place = deps.window_.value
     if (!at || press.button !== 0) return
     taking.value = true
     from = press.clientX
@@ -71,14 +71,14 @@ function useCarouselDrag(deps: {
   }
 
   const onPointerMove = (press: PointerEvent) => {
-    const at = deps.window_.value
+    const place = deps.window_.value
     if (!at || !taking.value) return
     at.scrollLeft = was - (press.clientX - from)
   }
 
   const letGo = async () => {
     if (!taking.value) return
-    const at = deps.window_.value
+    const place = deps.window_.value
     const where = at ? deps.findNearest(at.scrollLeft) : deps.shown.value
     taking.value = false
     await nextTick()
@@ -100,7 +100,7 @@ function useCarouselMover(
 
   const slideTo = (where: PanelPlace) => {
     window.clearTimeout(snapTimer)
-    const at = window_.value
+    const place = window_.value
     if (!at || Math.abs(at.scrollLeft - getStops()[where]) <= 1) return
     window.clearTimeout(sending)
     sending = window.setTimeout(() => {
@@ -112,7 +112,7 @@ function useCarouselMover(
   }
 
   const placeAt = (where: PanelPlace) => {
-    const at = window_.value
+    const place = window_.value
     if (!at) return
     window.clearTimeout(snapTimer)
     window.clearTimeout(sending)
@@ -159,7 +159,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   })
 
   const onScroll = () => {
-    const at = window_.value
+    const place = window_.value
     if (!at) return
     mover.checkArrived(at.scrollLeft)
     const where = findNearest(at.scrollLeft)

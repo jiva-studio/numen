@@ -15,7 +15,7 @@ import { getSettingAt } from '@/entities/settings'
 import { createProgramModels } from '@/testing/installation'
 import type { Installation } from '../types'
 
-const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
+const createPlugin = (id: string, name: string, overrides: Partial<PluginInfo> = {}): PluginInfo => ({
   id,
   name,
   version: '1.0.0',
@@ -26,7 +26,7 @@ const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}):
   secrets: [],
   storedSecrets: [],
   consent: 'none',
-  ...over,
+  ...overrides,
 })
 
 const PLUGINS: readonly PluginInfo[] = [

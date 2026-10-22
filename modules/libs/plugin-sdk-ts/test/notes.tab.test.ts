@@ -18,7 +18,7 @@ import {
 } from '../src/notes/tab'
 
 /** A tab that has read its note and shows what it read. */
-const tab = (over: Partial<Tab> = {}): Tab => ({
+const tab = (overrides: Partial<Tab> = {}): Tab => ({
   path: 'Note.md',
   written: 'one',
   filePath: 'a1',
@@ -30,14 +30,14 @@ const tab = (over: Partial<Tab> = {}): Tab => ({
   since: null,
   reading: 1,
   error: null,
-  ...over,
+  ...overrides,
 })
 
 const kinds = (effects: readonly Effect[]) => effects.map((effect) => effect.kind)
 
 /** A tab whose write was told the file carries another fingerprint. */
-const createStaleTab = (over: Partial<Tab> = {}): Tab =>
-  transitionTab(tab({ shown: 'mine', pendingWrite: 'mine', since: 10, ...over }), {
+const createStaleTab = (overrides: Partial<Tab> = {}): Tab =>
+  transitionTab(tab({ shown: 'mine', pendingWrite: 'mine', since: 10, ...overrides }), {
     kind: 'written',
     answer: { kind: 'changed' },
   }).tab
@@ -352,11 +352,11 @@ describe('the interval fires', () => {
     // is what makes one happen.
     let currentTab = tab()
     let after = DEFAULT_WRITE_LIMITS.quiet
-    for (let at = 0; at <= DEFAULT_WRITE_LIMITS.bound; at += 100) {
-      const next = transitionTab(currentTab, { kind: 'edited', body: `${at}`, at })
+    for (let offset = 0; offset <= DEFAULT_WRITE_LIMITS.bound; offset += 100) {
+      const next = transitionTab(currentTab, { kind: 'edited', body: `${offset}`, at: offset })
       currentTab = next.tab
       after = next.effects[0]?.kind === 'startTimer' ? next.effects[0].after : after
-      expect(at + after).toBeLessThanOrEqual(DEFAULT_WRITE_LIMITS.bound)
+      expect(offset + after).toBeLessThanOrEqual(DEFAULT_WRITE_LIMITS.bound)
     }
 
     expect(after).toBe(0)
@@ -898,8 +898,8 @@ describe('a note that moved', () => {
 })
 
 describe('a note that is no longer there', () => {
-  const applyMissingRead = (over: Partial<Tab> = {}) =>
-    transitionTab(tab({ reading: 2, ...over }), {
+  const applyMissingRead = (overrides: Partial<Tab> = {}) =>
+    transitionTab(tab({ reading: 2, ...overrides }), {
       kind: 'read',
       generation: 2,
       answer: { kind: 'missing' },

@@ -40,7 +40,7 @@ type vaulted struct {
 	standings flashcards.ListCardFaces
 	presets   flashcards.Presets
 	marking   flashcards.MarkCards
-	kept      flashcards.Schedules
+	schedules flashcards.Schedules
 	counted   flashcards.CountReviews
 	logs      ports.DerivedStores
 	notes     ports.NoteQueries
@@ -79,7 +79,7 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 		marking: flashcards.NewMarkCards(
 			env.Ports.Readers, env.Ports.Writers,
 			env.Queries, env.Queries, scanned, time.Now),
-		kept:    schedules,
+		schedules: schedules,
 		counted: counted,
 		logs:    logs,
 		notes:   env.Queries,
@@ -154,13 +154,13 @@ func (s vaulted) run(t *testing.T, pos time.Time) sitting {
 // runNamed is a run whose file is named for one instant and whose answers were
 // given at another, which is what a run written on another machine and carried
 // here by a synchroniser looks like.
-func (s vaulted) runNamed(t *testing.T, named, given time.Time) sitting {
+func (s vaulted) runNamed(t *testing.T, named, answeredAt time.Time) sitting {
 	t.Helper()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newSitting(run, func() time.Time { return given })
+	return newSitting(run, func() time.Time { return answeredAt })
 }
 
 func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
@@ -169,7 +169,7 @@ func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
 
 func (s vaulted) newCountCardsDueAt(day review.Day, now func() time.Time) flashcards.CountCardsDue {
 	return flashcards.NewCountCardsDue(
-		s.standings, s.kept, s.presets, day, now,
+		s.standings, s.schedules, s.presets, day, now,
 	)
 }
 
@@ -177,7 +177,7 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now func() time.Time) flashc
 // is scheduled by the defaults.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
-		s.marking, s.standings, s.kept,
+		s.marking, s.standings, s.schedules,
 		flashcards.NewPresets(nil, nil, nil, nil, nil, day, time.Now), day, time.Now,
 	)
 }
@@ -515,7 +515,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schedules, err := s.kept.Execute(t.Context(), s.vault)
+	schedules, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -557,7 +557,7 @@ func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schedules, err := s.kept.Execute(t.Context(), s.vault)
+	schedules, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -590,7 +590,7 @@ func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schedules, err := s.kept.Execute(t.Context(), s.vault)
+	schedules, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -685,10 +685,10 @@ func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	}
 
 	// The first working out fills the cache; the second is answered from it.
-	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
+	if _, err := s.schedules.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
-	cached, err := s.kept.Execute(t.Context(), s.vault)
+	cached, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -720,7 +720,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
+	if _, err := s.schedules.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	rewrite(t, s, func(was *plantedCache) {
@@ -731,7 +731,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 		})
 	})
 
-	got, err := s.kept.Execute(t.Context(), s.vault)
+	got, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -754,7 +754,7 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	first, err := s.kept.Execute(t.Context(), s.vault)
+	first, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -767,7 +767,7 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.kept.Execute(t.Context(), s.vault)
+	second, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -788,7 +788,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	first, err := s.kept.Execute(t.Context(), s.vault)
+	first, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -801,7 +801,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.kept.Execute(t.Context(), s.vault)
+	second, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -822,14 +822,14 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
+	if _, err := s.schedules.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 
 	if _, err := record.TakeBack(t.Context(), provided.ID); err != nil {
 		t.Fatal(err)
 	}
-	after, err := s.kept.Execute(t.Context(), s.vault)
+	after, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -854,7 +854,7 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	// what no reading of the answers could: the card answered seven times, and
 	// a card face the vault has never held.
 	other := flashcards.NewSchedules(s.logs, named{Scheduler: review.NewFSRS(), name: "another-one"}, today, s.standings, s.presets)
-	other.Cache = s.kept.Cache
+	other.Cache = s.schedules.Cache
 	if _, err := other.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
@@ -868,7 +868,7 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 		}
 	})
 
-	got, err := s.kept.Execute(t.Context(), s.vault)
+	got, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -908,7 +908,7 @@ func formatTime(pos time.Time) string { return pos.UTC().Format(review.Timestamp
 // claims and see whether it was believed.
 func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	t.Helper()
-	raw, err := s.kept.Cache.Read(t.Context(), s.vault.ID)
+	raw, err := s.schedules.Cache.Read(t.Context(), s.vault.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -921,7 +921,7 @@ func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.kept.Cache.Write(t.Context(), s.vault.ID, now); err != nil {
+	if err := s.schedules.Cache.Write(t.Context(), s.vault.ID, now); err != nil {
 		t.Fatal(err)
 	}
 }

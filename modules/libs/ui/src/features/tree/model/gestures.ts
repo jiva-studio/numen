@@ -21,7 +21,7 @@ export interface TreeGesturesTell {
   (event: 'activate', row: RowId): void
   (event: 'rename', row: RowId, name: string): void
   (event: 'remove', rows: readonly RowId[]): void
-  (event: 'menu', row: RowId | null, at: Position): void
+  (event: 'menu', row: RowId | null, pos: Position): void
 }
 
 export interface TreeGesturesOptions {
@@ -75,7 +75,7 @@ function useTreeRenaming(
 
 interface TreeKeyboardHelpers {
   readonly activateRow: (row: ShownRow) => void
-  readonly requestMenu: (row: ShownRow | null, at: Position) => void
+  readonly requestMenu: (row: ShownRow | null, pos: Position) => void
 }
 
 function useTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelpers) {
@@ -101,8 +101,8 @@ function useTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelp
       selection.selectRow(on.id, { isJoining: true, isExtending: false })
     } else if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
       event.preventDefault()
-      const at = options.getMenuAt(on.id)
-      if (at) helpers.requestMenu(on, at)
+      const menuPos = options.getMenuAt(on.id)
+      if (menuPos) helpers.requestMenu(on, menuPos)
     }
   }
 
@@ -145,9 +145,9 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     tell('activate', row.id)
   }
 
-  function requestMenu(row: ShownRow | null, at: Position): void {
+  function requestMenu(row: ShownRow | null, pos: Position): void {
     if (row && !selection.picked.value.has(row.id)) selection.selectRow(row.id, PLAIN)
-    tell('menu', row?.id ?? null, at)
+    tell('menu', row?.id ?? null, pos)
   }
 
   function onContextMenu(event: MouseEvent): void {

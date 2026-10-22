@@ -212,15 +212,15 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.FindNearest(ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 20, search.DefaultFloor)
+	item, err := dense.FindNearest(ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(near) == 0 {
+	if len(item) == 0 {
 		t.Fatal("the first vault's dense half answered nothing at all")
 	}
 	// Every note of the first vault is a fair answer; nothing of the second is.
-	for _, p := range near {
+	for _, p := range item {
 		if _, target := firstNotes[p.Source]; !target {
 			t.Errorf("the dense half answered with %s, which the first vault does not hold", p.Source)
 		}
@@ -522,12 +522,12 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	under, err := c.db.ChunkQueries().FindNearest(
+	limit, err := c.db.ChunkQueries().FindNearest(
 		ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(under) == 0 {
+	if len(limit) == 0 {
 		t.Fatal("nothing came back under the recipe the vectors were written with")
 	}
 

@@ -19,7 +19,7 @@ type Source struct {
 // names. A model with a pinned sum is found only when the file holds that sum.
 func FindLocal(src Source, pins Pins, name string) (string, bool) {
 	sum := pins.GetSum(name)
-	for _, at := range src.GetPaths(filepath.Base(name)) {
+	for _, p := range src.GetPaths(filepath.Base(name)) {
 		if _, err := os.Stat(at); err != nil {
 			continue
 		}
@@ -43,8 +43,8 @@ func Locate(ctx context.Context, src Source, pins Pins, path, name, kind string)
 	if name == "" {
 		return "", fmt.Errorf("no %s: name one, or say where it is", kind)
 	}
-	if at, ok := FindLocal(src, pins, name); ok {
-		return at, nil
+	if foundPath, ok := FindLocal(src, pins, name); ok {
+		return foundPath, nil
 	}
 	if !IsAddress(name) {
 		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", kind, name)

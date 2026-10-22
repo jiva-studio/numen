@@ -133,7 +133,7 @@ describe('the files of the vault a plugin is handed', () => {
 
     expect(await files.createDeck('dir', 'D')).toBe('')
 
-    expect(writeMessage.mock.calls).toEqual([[words.notOffered, 'error']])
+    expect(writeMessage.mock.calls).toEqual([[words.unavailable, 'error']])
   })
 
   it('say why the vault rejected a stencil, in the words of the window', async () => {

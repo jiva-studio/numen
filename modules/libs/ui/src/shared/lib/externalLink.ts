@@ -13,8 +13,8 @@ const ALLOWED_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 export type LinkOpener = (href: string) => void
 
 /** Whether an address names somewhere this page is not served from. */
-export const isExternalLink = (at: URL, here: URL): boolean =>
-  at.protocol !== here.protocol || at.host !== here.host
+export const isExternalLink = (target: URL, here: URL): boolean =>
+  target.protocol !== here.protocol || target.host !== here.host
 
 /**
  * Holds the window on the pages it serves, for as long as the returned way of
@@ -34,18 +34,18 @@ export const interceptExternalLinks = (
     if (!href) return
 
     const here = new URL(root.location.href)
-    let at: URL
+    let target: URL
     try {
-      at = new URL(href, here)
+      target = new URL(href, here)
     } catch {
       // An href that is no address points nowhere outward, so the press is the
       // page's own and is left to it.
       return
     }
-    if (!isExternalLink(at, here)) return
+    if (!isExternalLink(target, here)) return
 
     press.preventDefault()
-    if (ALLOWED_SCHEMES.has(at.protocol)) openLink(at.href)
+    if (ALLOWED_SCHEMES.has(target.protocol)) openLink(target.href)
   }
 
   root.addEventListener('click', onPress, true)

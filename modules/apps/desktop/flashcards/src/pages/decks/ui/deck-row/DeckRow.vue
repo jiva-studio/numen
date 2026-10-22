@@ -17,9 +17,9 @@ import type { Preset } from '../../types'
 const props = defineProps<{
   deck: DeckCardsDue
   /** at its current position in the list, which is the letter it is picked by. */
-  at: number
+  index: number
   /** The preset scheduling it, and nothing where none was read. */
-  by: Preset | undefined
+  preset: Preset | undefined
   /** Whether the vault's presets have been read, which a deck missing from them needs. */
   hasPresets: boolean
   /** Whether the vault has been counted. */
@@ -35,7 +35,7 @@ defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 /** Why the deck is not studied today, and empty while its preset schedules it. */
-const paused = computed(() => props.by?.paused ?? '')
+const paused = computed(() => props.preset?.paused ?? '')
 
 /**
  * Whether the deck's day is done, which is the day's work met and not merely

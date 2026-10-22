@@ -67,7 +67,7 @@ export const WORDS = {
   /** The preset this note is: the note itself, or the one a deck is scheduled by. */
   preset: 'Open the preset',
   /** What a file is made as, or a command leads to, when the plugin that offers it is off or did not start. */
-  notOffered: 'That is not offered: the plugin that makes it is off or did not start.',
+  unavailable: 'That action is unavailable: the plugin providing it is disabled or failed to start.',
   newNote: 'New note',
   newDeck: 'New deck',
   newStencil: 'New stencil',

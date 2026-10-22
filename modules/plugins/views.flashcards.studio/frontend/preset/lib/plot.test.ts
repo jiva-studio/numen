@@ -26,7 +26,7 @@ import {
   yOfGridline,
 } from './plot'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -38,7 +38,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 /** A curve of a goal of minutes, which is read in the cards a day answers. */
@@ -117,9 +117,9 @@ describe('the curve as it is drawn', () => {
     ]) {
       const one = curve(run)
       const positions = createPositions(one, getExtent(one))
-      for (const [at, value] of run.entries()) {
-        if (value === 0) expect(positions[at]?.y).toBe(PLOT_BOTTOM)
-        expect(positions[at]?.y).toBeLessThanOrEqual(PLOT_BOTTOM)
+      for (const [index, value] of run.entries()) {
+        if (value === 0) expect(positions[index]?.y).toBe(PLOT_BOTTOM)
+        expect(positions[index]?.y).toBeLessThanOrEqual(PLOT_BOTTOM)
       }
     }
   })
@@ -214,8 +214,8 @@ describe('the extent a backlog is drawn against', () => {
 
 describe('a series drawn against an extent that does not begin at nothing', () => {
   it('measures each value up from the least of the extent', () => {
-    const at = createSeries([10, 15, 20], { least: 10, most: 20 })
-    expect(at.map((one) => one.y)).toStrictEqual([
+    const series = createSeries([10, 15, 20], { least: 10, most: 20 })
+    expect(series.map((one) => one.y)).toStrictEqual([
       PLOT_BOTTOM,
       PLOT_BOTTOM - (PLOT_BOTTOM - PLOT_TOP) / 2,
       PLOT_TOP,

@@ -39,7 +39,7 @@ type Disk struct {
 	mu sync.Mutex
 	// written is what has been written since the last sweep. Counting the folder
 	// on every write is a folder read per page turned.
-	written int64
+	writtenBytes int64
 	// isShut is the window gone. A sweep started after it would be one nobody is
 	// left to wait for.
 	isShut bool
@@ -60,11 +60,11 @@ const (
 // NewDisk is where this machine keeps pages already drawn, and nothing where it
 // says it keeps nothing.
 func NewDisk() *Disk {
-	under, err := os.UserCacheDir()
+	underCtx, err := os.UserCacheDir()
 	if err != nil {
 		return nil
 	}
-	dir := filepath.Join(under, "numen", "pages")
+	dir := filepath.Join(underCtx, "numen", "pages")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil
 	}
@@ -139,10 +139,10 @@ func (s *Disk) Put(key document.PageKey, body []byte) {
 	}
 
 	s.mu.Lock()
-	s.written += int64(len(body))
-	due := !s.isShut && s.written >= s.every
+	s.writtenBytes += int64(len(body))
+	due := !s.isShut && s.writtenBytes >= s.every
 	if due {
-		s.written = 0
+		s.writtenBytes = 0
 		// Counted before the sweep is started, so a close cannot come between
 		// the two and go without waiting for it.
 		s.going.Add(1)

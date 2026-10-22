@@ -15,15 +15,15 @@ import (
 
 // fakeStorage is what a recognition is written to, in memory.
 type fakeStorage struct {
-	mu     sync.Mutex
-	files  map[domain.ArtifactName][]byte
-	held   map[domain.ArtifactName]bool
-	opens  int
-	closes int
+	mu         sync.Mutex
+	files      map[domain.ArtifactName][]byte
+	activeItem map[domain.ArtifactName]bool
+	opens      int
+	closes     int
 }
 
 func newShelf() *fakeStorage {
-	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
+	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, activeItem: map[domain.ArtifactName]bool{}}
 }
 
 // fakeStores hands the one store to whatever opens a vault's store.
@@ -99,21 +99,21 @@ func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
-	delete(s.held, name)
+	delete(s.activeItem, name)
 	return nil
 }
 
 func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.held[name] {
+	if s.activeItem[name] {
 		return nil, port.ErrClaimed
 	}
-	s.held[name] = true
+	s.activeItem[name] = true
 	return func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.held, name)
+		delete(s.activeItem, name)
 		return nil
 	}, nil
 }
@@ -122,14 +122,14 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.held[name] = true
+	s.activeItem[name] = true
 }
 
 // claims says whether a name is held by anybody.
 func (s *fakeStorage) claims(name domain.ArtifactName) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.held[name]
+	return s.activeItem[name]
 }
 
 func (s *fakeStorage) artifactNames() []domain.ArtifactName {
@@ -169,9 +169,9 @@ type corrector struct {
 
 	// froms are the starting line numbers of every call, given the lines of every call, and
 	// asked the numbers of the lines each call answered.
-	froms []int
-	given [][]domain.ProofreadLine
-	asked [][]int
+	froms       []int
+	input       [][]domain.ProofreadLine
+	requestChan [][]int
 }
 
 func (c *corrector) GetName() string {
@@ -185,7 +185,7 @@ func (c *corrector) ProofreadSpeech(
 	ctx context.Context, lines []domain.ProofreadLine, from int,
 ) (domain.SpeechProofreading, error) {
 	c.froms = append(c.froms, from)
-	c.given = append(c.given, lines)
+	c.input = append(c.input, lines)
 	if c.stop != nil {
 		c.stop(len(c.froms))
 	}
@@ -212,7 +212,7 @@ func (c *corrector) ProofreadSpeech(
 			out.Corrections = append(out.Corrections, one)
 		}
 	}
-	c.asked = append(c.asked, reply)
+	c.requestChan = append(c.requestChan, reply)
 	if end == len(lines) {
 		out.IsDone = true
 		if end > 0 {
@@ -227,7 +227,7 @@ func (c *corrector) ProofreadSpeech(
 // lines are the numbers of the lines every call answered, in order.
 func (c *corrector) lines() []int {
 	var out []int
-	for _, one := range c.asked {
+	for _, one := range c.requestChan {
 		out = append(out, one...)
 	}
 	return out
@@ -239,8 +239,8 @@ func fixes(pos int, text string) domain.ProofreadCorrection {
 }
 
 // joins is a correction putting a run of lines together as one.
-func joins(pos, through int, text string) domain.ProofreadCorrection {
-	return domain.ProofreadCorrection{Number: pos, Last: through, Text: text}
+func joins(pos, paths int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: pos, Last: paths, Text: text}
 }
 
 // says is the corrections as a corrector is told them.

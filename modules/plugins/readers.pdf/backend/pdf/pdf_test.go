@@ -183,19 +183,19 @@ func TestLocate(t *testing.T) {
 	}
 
 	tests := []struct {
-		name  string
-		at    int
-		part  string
-		sheet int
+		name   string
+		offset int
+		part   string
+		sheet  int
 	}{
-		{name: "before every name", at: pos("Front"), part: "", sheet: 0},
-		{name: "at a name", at: pos("Opening"), part: "The First Part", sheet: 1},
-		{name: "inside a nested name", at: pos("closer"), part: "A Closer Reading", sheet: 2},
-		{name: "after the last name", at: pos("Afterword"), part: "Afterword", sheet: 3},
+		{name: "before every name", offset: pos("Front"), part: "", sheet: 0},
+		{name: "at a name", offset: pos("Opening"), part: "The First Part", sheet: 1},
+		{name: "inside a nested name", offset: pos("closer"), part: "A Closer Reading", sheet: 2},
+		{name: "after the last name", offset: pos("Afterword"), part: "Afterword", sheet: 3},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			where := book.Locate(c.at)
+			where := book.Locate(c.offset)
 			if where.Part != c.part {
 				t.Errorf("part is %q, want %q", where.Part, c.part)
 			}

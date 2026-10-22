@@ -46,7 +46,7 @@ export interface RowDragOptions {
 /** The rows lifted, where they were let go, and that they were let go at all. */
 export interface RowDragTell {
   (event: 'drag', rows: readonly RowId[]): void
-  (event: 'move', rows: readonly RowId[], at: RowDropTarget): void
+  (event: 'move', rows: readonly RowId[], target: RowDropTarget): void
   (event: 'drop'): void
 }
 

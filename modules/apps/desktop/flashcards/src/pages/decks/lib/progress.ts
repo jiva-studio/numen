@@ -7,7 +7,7 @@ import type { Preset } from '../types'
  * Whether starting a session on one deck is offered: it owes something today, and the
  * preset scheduling it schedules something.
  */
-export const canStart = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): boolean =>
+export const canStart = (deck: DeckCardsDue, presets: ReadonlyMap<string, Preset>): boolean =>
   deck.due + deck.new > 0 && !by.get(deck.deck)?.paused
 
 /**
@@ -17,7 +17,7 @@ export const canStart = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): b
  * It is a fact about the material, and not a reason the preset is stopped. The
  * preset schedules; there is nothing here for it to schedule.
  */
-export const hasNothingToBegin = (deck: DeckCardsDue, by: Preset | undefined): boolean =>
+export const hasNothingToBegin = (deck: DeckCardsDue, preset: Preset | undefined): boolean =>
   deck.faces > 0 && deck.unbegun === deck.faces && by?.budget.new === 0
 
 /**

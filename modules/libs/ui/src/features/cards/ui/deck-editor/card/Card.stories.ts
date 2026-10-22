@@ -391,9 +391,9 @@ export const NoStencil: Story = {
     )
 
     // over.
-    const silence = found(canvasElement, '.card__silence').getBoundingClientRect()
+    const gap = found(canvasElement, '.card__silence').getBoundingClientRect()
     const middle = (box: DOMRect): number => Math.round(box.left + box.width / 2)
-    expect(middle(silence)).toBe(middle(body.getBoundingClientRect()))
+    expect(middle(gap)).toBe(middle(body.getBoundingClientRect()))
   },
 }
 

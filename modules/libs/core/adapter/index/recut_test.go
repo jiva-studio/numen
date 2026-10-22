@@ -317,7 +317,7 @@ type cost struct {
 	// asked is the vectors the save left owing, kept the chunks that carried one
 	// and still do, and was and now how many chunks carry a vector on either
 	// side of the save.
-	asked, kept, was, now int
+	requested, preserved, was, now int
 }
 
 // costOf saves a note, embeds every chunk of it, saves the note as edited, and
@@ -347,7 +347,7 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 			t.Errorf("row %d kept its number and lost its vector", row)
 		}
 	}
-	return cost{asked: model.run(t, db, first), kept: count, was: len(was), now: len(now)}
+	return cost{requested: model.run(t, db, first), preserved: count, was: len(was), now: len(now)}
 }
 
 func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
@@ -370,26 +370,26 @@ func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
 		{
 			name:    "a line added to the frontmatter",
 			note:    frontmattered,
-			named:   cost{asked: 0, kept: 4, was: 4, now: 4},
-			unnamed: cost{asked: 0, kept: 5, was: 5, now: 5},
+			named:   cost{requested: 0, preserved: 4, was: 4, now: 4},
+			unnamed: cost{requested: 0, preserved: 5, was: 5, now: 5},
 		},
 		{
 			name:    "at the end of the body",
 			note:    parseNote(path, body+" wordzz"),
-			named:   cost{asked: 1, kept: 4, was: 4, now: 5},
-			unnamed: cost{asked: 1, kept: 4, was: 5, now: 5},
+			named:   cost{requested: 1, preserved: 4, was: 4, now: 5},
+			unnamed: cost{requested: 1, preserved: 4, was: 5, now: 5},
 		},
 		{
 			name:    "in the middle of the body",
 			note:    parseNote(path, insertWordBefore(body, 96)),
-			named:   cost{asked: 2, kept: 3, was: 4, now: 5},
-			unnamed: cost{asked: 3, kept: 2, was: 5, now: 5},
+			named:   cost{requested: 2, preserved: 3, was: 4, now: 5},
+			unnamed: cost{requested: 3, preserved: 2, was: 5, now: 5},
 		},
 		{
 			name:    "at the start of the body",
 			note:    parseNote(path, insertWordBefore(body, 0)),
-			named:   cost{asked: 2, kept: 3, was: 4, now: 5},
-			unnamed: cost{asked: 5, kept: 0, was: 5, now: 5},
+			named:   cost{requested: 2, preserved: 3, was: 4, now: 5},
+			unnamed: cost{requested: 5, preserved: 0, was: 5, now: 5},
 		},
 	} {
 		t.Run(edit.name, func(t *testing.T) {
@@ -740,26 +740,26 @@ func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
 		{
 			name:    "a line added to the frontmatter",
 			note:    frontmattered,
-			named:   cost{asked: 0, kept: 25, was: 25, now: 25},
-			unnamed: cost{asked: 0, kept: 25, was: 25, now: 25},
+			named:   cost{requested: 0, preserved: 25, was: 25, now: 25},
+			unnamed: cost{requested: 0, preserved: 25, was: 25, now: 25},
 		},
 		{
 			name:    "at the end of the body",
 			note:    parseNote(path, body+" wordzz"),
-			named:   cost{asked: 1, kept: 24, was: 25, now: 25},
-			unnamed: cost{asked: 1, kept: 25, was: 25, now: 26},
+			named:   cost{requested: 1, preserved: 24, was: 25, now: 25},
+			unnamed: cost{requested: 1, preserved: 25, was: 25, now: 26},
 		},
 		{
 			name:    "in the middle of the body",
 			note:    parseNote(path, insertWordBefore(body, 500)),
-			named:   cost{asked: 3, kept: 22, was: 25, now: 25},
-			unnamed: cost{asked: 14, kept: 12, was: 25, now: 26},
+			named:   cost{requested: 3, preserved: 22, was: 25, now: 25},
+			unnamed: cost{requested: 14, preserved: 12, was: 25, now: 26},
 		},
 		{
 			name:    "at the start of the body",
 			note:    parseNote(path, insertWordBefore(body, 0)),
-			named:   cost{asked: 5, kept: 20, was: 25, now: 25},
-			unnamed: cost{asked: 26, kept: 0, was: 25, now: 26},
+			named:   cost{requested: 5, preserved: 20, was: 25, now: 25},
+			unnamed: cost{requested: 26, preserved: 0, was: 25, now: 26},
 		},
 	} {
 		t.Run(edit.name, func(t *testing.T) {

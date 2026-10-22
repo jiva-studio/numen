@@ -301,16 +301,16 @@ func (b *budgets) spend(owed, newCards []CardFace) budgetAllocation {
 
 // shareRegistry holds deck shares grouped by preset path.
 type shareRegistry struct {
-	at    map[string]map[string]*deckShare
-	order []string
+	shares map[string]map[string]*deckShare
+	order  []string
 }
 
 // getShare returns the deck share for a preset and deck path, allocating it if absent.
 func (k *shareRegistry) getShare(path, deck string) *deckShare {
-	decks, target := k.at[path]
+	decks, target := k.shares[path]
 	if !target {
 		decks = make(map[string]*deckShare)
-		k.at[path] = decks
+		k.shares[path] = decks
 		k.order = append(k.order, path)
 	}
 	one, target := decks[deck]
@@ -323,8 +323,8 @@ func (k *shareRegistry) getShare(path, deck string) *deckShare {
 
 // getSorted returns deck shares for a preset sorted deterministically by deck path.
 func (k *shareRegistry) getSorted(path string) []*deckShare {
-	decks := make([]*deckShare, 0, len(k.at[path]))
-	for _, q := range k.at[path] {
+	decks := make([]*deckShare, 0, len(k.shares[path]))
+	for _, q := range k.shares[path] {
 		decks = append(decks, q)
 	}
 	slices.SortFunc(decks, func(a, b *deckShare) int {
@@ -335,7 +335,7 @@ func (k *shareRegistry) getSorted(path string) []*deckShare {
 
 // collectShares groups due and unreviewed cards into deck shares per preset.
 func (b *budgets) collectShares(owed, newCards []CardFace) *shareRegistry {
-	shares := &shareRegistry{at: make(map[string]map[string]*deckShare)}
+	shares := &shareRegistry{shares: make(map[string]map[string]*deckShare)}
 	for i, one := range owed {
 		q := shares.getShare(b.cardFacePresets[one.ID], one.Deck)
 		q.owed = append(q.owed, i)

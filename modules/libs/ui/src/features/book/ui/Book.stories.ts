@@ -75,7 +75,7 @@ const activeReading =
   () => ({
     components: { Book },
     setup() {
-      const at = ref(chapter.span.from)
+      const offset = ref(chapter.span.from)
       // How large the text is set belongs to whatever holds the reader, so the
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
@@ -90,14 +90,14 @@ const activeReading =
       onBeforeUnmount(() => window.removeEventListener('keydown', turns))
 
       return {
-        at,
+        offset,
         size,
         book,
         markup: chapter.markup,
         span: chapter.span,
         highlights,
         onMove: (to: number) => {
-          at.value = to
+          offset.value = to
         },
         larger: () => {
           size.value *= 1.25
@@ -105,7 +105,7 @@ const activeReading =
       }
     },
     template: `
-      <div class="h-full" :data-front="at">
+      <div class="h-full" :data-front="offset">
         <button type="button" aria-label="Larger" class="sr-only" @click="larger">Larger</button>
         <Book
           ref="book"
@@ -113,7 +113,7 @@ const activeReading =
           :markup="markup"
           :span="span"
           :book="span"
-          :at="at"
+          :at="offset"
           :text-size="size"
           :highlights="highlights"
           @move="onMove"
@@ -131,7 +131,7 @@ const outOfSight =
   () => ({
     components: { Book },
     setup() {
-      const at = ref(chapter.span.from)
+      const offset = ref(chapter.span.from)
       const room = ref(false)
       const markup = ref('')
       onMounted(() => {
@@ -143,24 +143,24 @@ const outOfSight =
         }, 150)
       })
       return {
-        at,
+        offset,
         room,
         markup,
         span: chapter.span,
         onMove: (to: number) => {
-          at.value = to
+          offset.value = to
         },
       }
     },
     template: `
-      <div class="h-full" :data-front="at">
+      <div class="h-full" :data-front="offset">
         <div class="h-full" :style="{ display: room ? 'block' : 'none' }">
           <Book
             class="h-full"
             :markup="markup"
             :span="span"
             :book="span"
-            :at="at"
+            :at="offset"
             @move="onMove"
           />
         </div>

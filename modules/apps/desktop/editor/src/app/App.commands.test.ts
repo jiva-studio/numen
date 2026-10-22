@@ -269,8 +269,8 @@ describe('a command reached by its own keystroke', () => {
   const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
   /** A keystroke taken on the window, and whether the window took it. */
-  const pressKey = (key: string, over: Partial<KeyboardEventInit> = {}) => {
-    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...over })
+  const pressKey = (key: string, overrides: Partial<KeyboardEventInit> = {}) => {
+    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...overrides })
     globalThis.dispatchEvent(event)
     return event
   }
@@ -465,8 +465,8 @@ describe('a command reached by its own keystroke', () => {
 
 describe('a command reached by a keystroke holding Shift', () => {
   /** A keystroke taken on the window, and whether the window took it. */
-  const pressKey = (key: string, over: Partial<KeyboardEventInit> = {}) => {
-    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...over })
+  const pressKey = (key: string, overrides: Partial<KeyboardEventInit> = {}) => {
+    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...overrides })
     globalThis.dispatchEvent(event)
     return event
   }

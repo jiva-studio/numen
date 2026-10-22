@@ -110,23 +110,23 @@ type curveBuilder struct {
 	run          Simulation
 	now          time.Time
 	preset       Preset
-	at           map[CardFaceID]Schedule
+	schedules    map[CardFaceID]Schedule
 	unbegunCount int
-	by           func(retention float64) Scheduler
-	places       func(count int, each func(at int) error) error
+	scheduler    func(retention float64) Scheduler
+	places       func(count int, each func(index int) error) error
 }
 
 // Curve evaluates a preset over the goal range using simulation.
 func (s Simulation) Curve(
-	ctx context.Context, now time.Time, p Preset, at map[CardFaceID]Schedule,
-	unbegunCount int, by func(retention float64) Scheduler,
-	places func(count int, each func(at int) error) error,
+	ctx context.Context, now time.Time, p Preset, schedules map[CardFaceID]Schedule,
+	unbegunCount int, scheduler func(retention float64) Scheduler,
+	places func(count int, each func(index int) error) error,
 ) (Curve, error) {
-	if by == nil {
-		by = func(retention float64) Scheduler { return NewFSRSAt(retention) }
+	if scheduler == nil {
+		scheduler = func(retention float64) Scheduler { return NewFSRSAt(retention) }
 	}
 	if places == nil {
-		places = func(count int, each func(at int) error) error {
+		places = func(count int, each func(index int) error) error {
 			for i := range count {
 				if err := each(i); err != nil {
 					return err
@@ -135,7 +135,7 @@ func (s Simulation) Curve(
 			return nil
 		}
 	}
-	d := curveBuilder{run: s, now: now, preset: p, at: at, unbegunCount: unbegunCount, by: by, places: places}
+	d := curveBuilder{run: s, now: now, preset: p, schedules: schedules, unbegunCount: unbegunCount, scheduler: scheduler, places: places}
 	switch p.Goal {
 	case GoalRetention:
 		return d.retention(ctx)
@@ -148,7 +148,7 @@ func (s Simulation) Curve(
 
 // minutes computes the curve for daily review duration goals.
 func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
-	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
+	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
 	free := p
 	free.MinutesADay = int(MinutesADayBounds.Most)
@@ -209,7 +209,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
-	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
+	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
 	out := Curve{Goal: GoalRetention, Now: OutsideGrid, Suggested: OutsideGrid}
 	least, most := RetentionBounds.Least, RetentionBounds.Most
@@ -227,7 +227,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	if err := d.places(len(out.Grid), func(i int) error {
 		one, asks := p, run
 		one.Retention = out.Grid[i]
-		asks.By = d.by(out.Grid[i])
+		asks.By = d.scheduler(out.Grid[i])
 		ran, err := asks.Run(ctx, now, one, pos, unreviewed)
 		if err != nil {
 			return err
@@ -248,7 +248,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 
 // date computes the curve of completing reviews by a specified target date.
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
-	run, now, p, pos, unreviewedCount := d.run, d.now, d.preset, d.at, d.unbegunCount
+	run, now, p, pos, unreviewedCount := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
 	out := Curve{Goal: GoalDate, Now: OutsideGrid, Suggested: OutsideGrid}
 	open := run.Day.GetStart(now)

@@ -19,7 +19,7 @@ type OpenCopy struct {
 	texts sourceTexts
 }
 
-func (u OpenCopy) Execute(ctx context.Context, v domain.Vault, at domain.URL) (CopyFile, bool) {
+func (u OpenCopy) Execute(ctx context.Context, v domain.Vault, targetURL domain.URL) (CopyFile, bool) {
 	if !u.texts.isReady() {
 		return CopyFile{}, false
 	}
@@ -27,7 +27,7 @@ func (u OpenCopy) Execute(ctx context.Context, v domain.Vault, at domain.URL) (C
 	if err != nil {
 		return CopyFile{}, false
 	}
-	file, size, err := store.OpenArtifact(ctx, domain.NewCopyName(text.Fingerprint([]byte(string(at)))))
+	file, size, err := store.OpenArtifact(ctx, domain.NewCopyName(text.Fingerprint([]byte(string(targetURL)))))
 	if err != nil {
 		return CopyFile{}, false
 	}

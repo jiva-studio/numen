@@ -37,7 +37,7 @@ type Document interface {
 	GetAppearance() *Appearance
 
 	// AddNotice leaves a person one line about what the file holds.
-	AddNotice(said string)
+	AddNotice(reply string)
 }
 
 type Titles struct {

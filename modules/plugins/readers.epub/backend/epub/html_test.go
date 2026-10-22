@@ -74,11 +74,11 @@ func TestEveryRunOfTextReturnsWhereItExists(t *testing.T) {
 	}
 	var out strings.Builder
 	for _, run := range runs {
-		if !strings.HasPrefix(book.Text[run.at:], run.said) {
+		if !strings.HasPrefix(book.Text[run.offset:], run.text) {
 			t.Errorf("a run says it begins at %d, where the text is %q",
-				run.at, excerpt(book.Text, run.at))
+				run.offset, excerpt(book.Text, run.offset))
 		}
-		out.WriteString(run.said)
+		out.WriteString(run.text)
 	}
 	if want := book.Text[rendered.Offset : rendered.Offset+rendered.Length]; out.String() != want {
 		t.Errorf("the runs say\n%q\nand the document is\n%q", out.String(), want)
@@ -116,8 +116,8 @@ func TestAnEntryOfTheArchive(t *testing.T) {
 
 // A run of text as the markup carries it.
 type run struct {
-	at   int
-	said string
+	offset int
+	text   string
 }
 
 // offsets are the runs of text the markup says, in the order the markup writes
@@ -135,7 +135,7 @@ func offsets(t *testing.T, root *html.Node) []run {
 				if err != nil {
 					t.Fatalf("a run says got path %q", response)
 				}
-				out = append(out, run{at: pos, said: text(c)})
+				out = append(out, run{offset: pos, text: text(c)})
 				continue
 			}
 			walk(c)

@@ -16,7 +16,7 @@ type Window interface {
 	// neighbourhood is seen from, and a document is opened where the place
 	// says. A place already in focus is focused again, which is what asking for
 	// it means.
-	FocusPlace(ctx context.Context, at domain.Place) error
+	FocusPlace(ctx context.Context, pos domain.Place) error
 
 	// ShowMove says a note is no longer where it was. Whoever is showing it at
 	// the name it had follows it to the name it now has.
@@ -24,5 +24,5 @@ type Window interface {
 
 	// ShowEdit says a change to a note's prose is being made, so that a person
 	// reading that note sees it arrive where it belongs.
-	ShowEdit(ctx context.Context, said domain.Edit) error
+	ShowEdit(ctx context.Context, response domain.Edit) error
 }

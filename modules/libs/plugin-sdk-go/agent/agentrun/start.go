@@ -45,9 +45,9 @@ type Reader struct {
 	registry     *Registry
 	conversation string
 	limit        int
-	done         int
+	completed    int
 	// sent is how many responses the run has written to the work.
-	sent int
+	sentCount int
 }
 
 // Send writes the response to the work, unless the work was asked to stop.

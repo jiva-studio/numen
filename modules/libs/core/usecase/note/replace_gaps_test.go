@@ -159,40 +159,40 @@ func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 	t.Parallel()
 	for name, tc := range map[string]struct {
-		note, stood      string
+		note, status     string
 		matched, instead string
 	}{
 		"a single byte that is nowhere": {
-			note: "abc\n", stood: "z",
+			note: "abc\n", status: "z",
 		},
 		"an opening of one byte": {
-			note: "ab\n", stood: "ax",
+			note: "ab\n", status: "ax",
 			matched: "a", instead: "ab",
 		},
 		"an opening that is most of the span": {
-			note: "abcdZ\n", stood: "abcdxy",
+			note: "abcdZ\n", status: "abcdxy",
 			matched: "abcd", instead: "abcdZ\n",
 		},
 		"a letter that differs inside a rune": {
-			note: "xéz\n", stood: "xèy",
+			note: "xéz\n", status: "xèy",
 			matched: "x", instead: "xéz",
 		},
 		"a rune the note cuts at the end of what stands there": {
-			note: "abcéfgh\n", stood: "abXY",
+			note: "abcéfgh\n", status: "abXY",
 			matched: "ab", instead: "abcé",
 		},
 		"a first rune that is nowhere": {
-			note: "é\n", stood: "èy",
+			note: "é\n", status: "èy",
 		},
 		"bytes that are not text": {
-			note: "abc\n", stood: "\x80ab",
+			note: "abc\n", status: "\x80ab",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Aggressor.md": tc.note})
 
-			_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", tc.stood, "q", domain.Fingerprint{})
+			_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", tc.status, "q", domain.Fingerprint{})
 			var nowhere note.MissingSpan
 			if !errors.As(err, &nowhere) {
 				t.Fatalf("want MissingSpan, got %v", err)

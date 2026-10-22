@@ -47,8 +47,8 @@ const getChangeMarks = (view: EditorView) => {
 }
 
 const setCaret = (view: EditorView, line: number, column: number) => {
-  const at = view.state.doc.line(line).from + column
-  view.dispatch({ selection: EditorSelection.single(at) })
+  const pos = view.state.doc.line(line).from + column
+  view.dispatch({ selection: EditorSelection.single(pos) })
 }
 
 /** A key pressed wherever the caret is, and the event as the page left it. */

@@ -55,10 +55,10 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 }
 
 // runWithStderr runs the terminal and keeps what it said beside its answer.
-func runWithStderr(t *testing.T, given cli.Deps, args ...string) (out, beside string, err error) {
+func runWithStderr(t *testing.T, deps cli.Deps, args ...string) (out, stderr string, err error) {
 	var answer, aside bytes.Buffer
 	t.Helper()
-	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Deps { return given })
+	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Deps { return deps })
 	return answer.String(), aside.String(), err
 }
 
@@ -99,23 +99,23 @@ func TestASearchByWordsAloneReturnsWhy(t *testing.T) {
 	t.Parallel()
 	folder := t.TempDir()
 
-	out, beside, err := runWithStderr(t, createSearchDeps(folder, fakeSearchIndex{}, errRefused), "search", "shelf", "bees")
+	out, copyPath, err := runWithStderr(t, createSearchDeps(folder, fakeSearchIndex{}, errRefused), "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if out != "nothing found\n" {
 		t.Errorf("search said %q", out)
 	}
-	if beside != "searching by words alone: rejected on purpose\n" {
-		t.Errorf("search said beside its answer %q", beside)
+	if copyPath != "searching by words alone: rejected on purpose\n" {
+		t.Errorf("search said beside its answer %q", copyPath)
 	}
 
-	_, beside, err = runWithStderr(t, createSearchDeps(folder, fakeSearchIndex{}, nil), "search", "shelf", "bees")
+	_, copyPath, err = runWithStderr(t, createSearchDeps(folder, fakeSearchIndex{}, nil), "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if beside != "" {
-		t.Errorf("a search with a model said beside its answer %q", beside)
+	if copyPath != "" {
+		t.Errorf("a search with a model said beside its answer %q", copyPath)
 	}
 }
 
@@ -170,11 +170,11 @@ func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
 		return open(ctx, errorHandler)
 	}
 
-	_, beside, err := runWithStderr(t, provided, "search", "shelf", "bees")
+	_, stderr, err := runWithStderr(t, provided, "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if beside != "answering by words alone: rejected on purpose\n" {
-		t.Errorf("search said beside its answer %q", beside)
+	if stderr != "answering by words alone: rejected on purpose\n" {
+		t.Errorf("search said beside its answer %q", stderr)
 	}
 }

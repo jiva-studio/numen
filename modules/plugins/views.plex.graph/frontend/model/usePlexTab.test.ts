@@ -195,7 +195,7 @@ describe('the menu on a node', () => {
  * them is a plex to offer a note over.
  */
 describe('a plex drawing nothing', () => {
-  const plex = (over: Partial<PlexTabDeps>) => {
+  const plex = (overrides: Partial<PlexTabDeps>) => {
     const view = {
       neighbourhood: ref(null),
       here: ref(''),
@@ -219,7 +219,7 @@ describe('a plex drawing nothing', () => {
       showMessage: () => {},
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
-      ...over,
+      ...overrides,
     })
   }
 

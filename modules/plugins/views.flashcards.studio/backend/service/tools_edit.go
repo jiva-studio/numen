@@ -23,7 +23,7 @@ func checkCardSize(vs []FieldValue) error {
 
 // writeDeck presents the fingerprint the caller read to one edit of the deck at path.
 func (b *Backend) writeDeck(
-	ctx context.Context, path, fingerprint string, edit func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error),
+	ctx context.Context, path, fingerprint string, edit func(v domain.Vault, version cards.DeckVersion) (cards.EditResult, error),
 ) (WriteOutcome, error) {
 	read, err := parseFingerprint(fingerprint)
 	if err != nil {

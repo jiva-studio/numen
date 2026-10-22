@@ -88,8 +88,8 @@ const kernelSteps = 512
 
 // A kernel is the windowed sinc, worked out once and read from.
 type kernel struct {
-	held []float64
-	step float64
+	values []float64
+	step   float64
 }
 
 // buildKernel works the kernel out over its whole reach.
@@ -100,7 +100,7 @@ func buildKernel(cutoff, reach float64) kernel {
 		d := float64(i) / step
 		target[i] = getSinc(cutoff*d) * getBlackmanWindow(d/reach)
 	}
-	return kernel{held: target, step: step}
+	return kernel{values: target, step: step}
 }
 
 // getValueAt is the kernel at a distance, between the two steps it falls
@@ -109,11 +109,11 @@ func buildKernel(cutoff, reach float64) kernel {
 func (w kernel) getValueAt(d float64) float64 {
 	pos := math.Abs(d) * w.step
 	i := int(pos)
-	if i+1 >= len(w.held) {
+	if i+1 >= len(w.values) {
 		return 0
 	}
 	part := pos - float64(i)
-	return w.held[i]*(1-part) + w.held[i+1]*part
+	return w.values[i]*(1-part) + w.values[i+1]*part
 }
 
 // getSinc is the interpolating kernel, one at nothing.

@@ -35,13 +35,13 @@ func (failingQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]domai
 // fixed is a check that finds what it was given, or fails with err.
 type fixed struct {
 	name  domain.Check
-	quiet bool
+	silent bool
 	found []domain.VaultProblem
 	err   error
 }
 
 func (f fixed) Name() domain.Check { return f.name }
-func (f fixed) IsOptIn() bool      { return f.quiet }
+func (f fixed) IsOptIn() bool      { return f.silent }
 
 func (f fixed) FindProblems(context.Context, domain.Vault) ([]domain.VaultProblem, error) {
 	return f.found, f.err
@@ -117,7 +117,7 @@ func TestProblemsStandByNoteAndThenByCheck(t *testing.T) {
 func TestEveryCheckIsNamedAndNothingElse(t *testing.T) {
 	l := check.Checks{List: []check.Checker{
 		fixed{name: "first"},
-		fixed{name: "second", quiet: true},
+		fixed{name: "second", silent: true},
 	}}
 
 	if got := l.Names(); !slices.Equal(got, []domain.Check{"first", "second"}) {

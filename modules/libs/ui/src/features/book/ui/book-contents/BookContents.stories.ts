@@ -65,20 +65,20 @@ const activeReading =
   () => ({
     components: { BookContents },
     setup() {
-      const at = ref(0)
+      const offset = ref(0)
       return {
-        at,
+        offset,
         entries,
         deep,
         go: (to: number) => {
-          at.value = to
+          offset.value = to
         },
       }
     },
     template: `
-      <div class="flex h-full flex-col" :data-front="at">
-        <button v-if="deep" type="button" class="p-1 text-small" @click="at = deep">Read on</button>
-        <BookContents class="min-h-0 flex-1" :entries="entries" :at="at" @go="go" />
+      <div class="flex h-full flex-col" :data-front="offset">
+        <button v-if="deep" type="button" class="p-1 text-small" @click="offset = deep">Read on</button>
+        <BookContents class="min-h-0 flex-1" :entries="entries" :at="offset" @go="go" />
       </div>
     `,
   })

@@ -29,7 +29,7 @@ type session struct {
 	// the machine it runs on.
 	bin *fakeTrash
 	// said is what the commands run here wrote beside their answers.
-	said bytes.Buffer
+	reply bytes.Buffer
 }
 
 func newSession(t *testing.T) *session {
@@ -51,7 +51,7 @@ func (s *session) run(args ...string) (string, error) {
 	var out bytes.Buffer
 	// No embedder and nothing this machine supplies: a test must not reach a
 	// model, a service, an account or a process.
-	err := cli.Run(context.Background(), &out, &s.said, append(s.base, args...), s.deps)
+	err := cli.Run(context.Background(), &out, &s.reply, append(s.base, args...), s.deps)
 	return out.String(), err
 }
 
@@ -154,8 +154,8 @@ func TestAddScanSearch(t *testing.T) {
 
 	// An installation with no model searches by words alone and says nothing
 	// about it: half a search is a whole answer.
-	if s.said.Len() > 0 {
-		t.Errorf("the commands said beside their answers:\n%s", s.said.String())
+	if s.reply.Len() > 0 {
+		t.Errorf("the commands said beside their answers:\n%s", s.reply.String())
 	}
 }
 

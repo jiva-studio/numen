@@ -84,14 +84,14 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   return { from: getDayName(behindDate), to: getDayName(ahead) }
 }
 
-function monday(at: Date): Date {
-  const out = new Date(at)
+function monday(date: Date): Date {
+  const out = new Date(date)
   out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }
 
 /** Monday is the first day of a week, and Sunday the seventh. */
-function weekday(at: Date): number {
-  const day = at.getDay()
+function weekday(date: Date): number {
+  const day = date.getDay()
   return day === 0 ? 7 : day
 }

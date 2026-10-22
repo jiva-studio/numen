@@ -173,8 +173,8 @@ const meta: Meta<Knobs> = {
         onRemoveField: (field: string) => {
           fields.value = fields.value.filter((each) => each !== field)
         },
-        onMoveField: (field: string, at: InsertionPoint) => {
-          fields.value = reorderFields(fields.value, field, at)
+        onMoveField: (field: string, target: InsertionPoint) => {
+          fields.value = reorderFields(fields.value, field, target)
         },
         onAddFace: (name: string) => {
           faces.value = [
@@ -189,11 +189,11 @@ const meta: Meta<Knobs> = {
           faces.value = faces.value.filter((face) => face.id !== id)
         },
         /* Nothing among the faces is fixed, so any of them lands anywhere. */
-        onMoveFace: (id: string, at: InsertionPoint) => {
+        onMoveFace: (id: string, target: InsertionPoint) => {
           const order = orderNames(
             faces.value.map((face) => face.id),
             id,
-            at,
+            target,
           )
           faces.value = order.flatMap((each) => faces.value.filter((face) => face.id === each))
         },
@@ -277,9 +277,9 @@ export const AStencil: Story = {
     // And all three stand within the row's own bounds.
     const bounds = row.getBoundingClientRect()
     for (const part of [grip, box, away]) {
-      const at = part.getBoundingClientRect()
-      expect(at.left).toBeGreaterThanOrEqual(bounds.left - 1)
-      expect(at.right).toBeLessThanOrEqual(bounds.right + 1)
+      const rect = part.getBoundingClientRect()
+      expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1)
+      expect(rect.right).toBeLessThanOrEqual(bounds.right + 1)
     }
 
     // The first field stays first, and its row lines up with every other.
@@ -311,8 +311,8 @@ export const AStencil: Story = {
     const adding = found(canvasElement, '.stencil__part .divider button')
     const alongRect = divider.getBoundingClientRect()
     expect(Math.round(alongRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
-    const at = adding.getBoundingClientRect()
-    expect(at.left + at.width / 2).toBeCloseTo(alongRect.left + alongRect.width / 2, 0)
+    const addingRect = adding.getBoundingClientRect()
+    expect(addingRect.left + addingRect.width / 2).toBeCloseTo(alongRect.left + alongRect.width / 2, 0)
     for (const side of ['::before', '::after']) {
       expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
     }

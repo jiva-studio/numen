@@ -77,7 +77,7 @@ const getDrawnGround = () => document.body.querySelector<HTMLElement>('[data-pal
 const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 const options = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
-const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
+const activeItem = () => document.body.querySelector<HTMLElement>('[data-here]')
 const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="key"]'))
 
 /** What a line says, with the runs it is written in run together. */
@@ -97,7 +97,7 @@ const getMarks = (cap: Element | null | undefined): readonly string[] =>
   )
 
 const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
-const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
+const searchInput = () => document.body.querySelector<HTMLInputElement>('[data-actions="search"]')
 const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 const litAction = () =>
@@ -197,7 +197,7 @@ describe('walking the list', () => {
   it('opens with the first item lit', async () => {
     mountPalette()
     await settle()
-    expect(lit()?.textContent).toContain('Entropy')
+    expect(activeItem()?.textContent).toContain('Entropy')
   })
 
   it('crosses a group and never stops on the name of one', async () => {
@@ -205,11 +205,11 @@ describe('walking the list', () => {
     await settle()
 
     await press('ArrowDown')
-    expect(lit()?.textContent).toContain('Enthalpy')
+    expect(activeItem()?.textContent).toContain('Enthalpy')
 
     await press('ArrowDown')
-    expect(lit()?.textContent).toContain('Heat engine')
-    expect(lit()?.textContent).not.toContain('Not this one')
+    expect(activeItem()?.textContent).toContain('Heat engine')
+    expect(activeItem()?.textContent).not.toContain('Not this one')
   })
 
   it('names what is lit to a screen reader and not focusing it', async () => {
@@ -334,7 +334,7 @@ describe('choosing', () => {
 
     await press('ArrowDown')
     await press('ArrowDown')
-    expect(lit()?.textContent).toContain('Heat engine')
+    expect(activeItem()?.textContent).toContain('Heat engine')
 
     await press('Enter', { shiftKey: true })
     expect(palette.emitted('choose')).toBeUndefined()
@@ -385,12 +385,12 @@ describe('a group arriving while it is being read', () => {
   it('keeps the keyboard on the item it was on', async () => {
     const palette = mountPalette({ groups: [SECTIONS[1]!] })
     await settle()
-    expect(lit()?.textContent).toContain('Heat engine')
+    expect(activeItem()?.textContent).toContain('Heat engine')
 
     await palette.setProps({ groups: SECTIONS })
     await settle()
 
-    expect(lit()?.textContent).toContain('Heat engine')
+    expect(activeItem()?.textContent).toContain('Heat engine')
     expect(options()).toHaveLength(4)
   })
 
@@ -398,12 +398,12 @@ describe('a group arriving while it is being read', () => {
     const palette = mountPalette()
     await settle()
     await press('ArrowDown')
-    expect(lit()?.textContent).toContain('Enthalpy')
+    expect(activeItem()?.textContent).toContain('Enthalpy')
 
     await palette.setProps({ groups: [SECTIONS[1]!] })
     await settle()
 
-    expect(lit()?.textContent).toContain('Heat engine')
+    expect(activeItem()?.textContent).toContain('Heat engine')
   })
 
   it('lights the first answer to a fresh question, however many have gone before', async () => {
@@ -418,7 +418,7 @@ describe('a group arriving while it is being read', () => {
     await palette.setProps({ groups: [SECTIONS[1]!] })
     await settle()
 
-    expect(lit()?.textContent).toContain('Heat engine')
+    expect(activeItem()?.textContent).toContain('Heat engine')
     expect(field()?.getAttribute('aria-activedescendant')).not.toBeNull()
   })
 
@@ -426,12 +426,12 @@ describe('a group arriving while it is being read', () => {
     const palette = mountPalette({ groups: [SECTIONS[1]!] })
     await settle()
     await press('ArrowDown')
-    const moved = lit()?.textContent
+    const moved = activeItem()?.textContent
 
     await palette.setProps({ groups: SECTIONS })
     await settle()
 
-    expect(lit()?.textContent).toBe(moved)
+    expect(activeItem()?.textContent).toBe(moved)
   })
 })
 
@@ -538,7 +538,7 @@ describe('which group remains where', () => {
     })
     await settle()
 
-    expect(lit()?.textContent).toContain('Heat engine')
+    expect(activeItem()?.textContent).toContain('Heat engine')
   })
 
   it('brings a group back up the moment it holds something', async () => {
@@ -590,7 +590,7 @@ describe('what the palette says about itself', () => {
     await nextTick()
 
     expect(off.getAttribute('data-here')).toBeNull()
-    expect(lit()?.textContent).toContain('Entropy')
+    expect(activeItem()?.textContent).toContain('Entropy')
   })
 })
 
@@ -670,15 +670,15 @@ describe('the action panel', () => {
 
   it('takes the keyboard into a field of its own', async () => {
     await open()
-    expect(document.activeElement).toBe(hunt())
+    expect(document.activeElement).toBe(searchInput())
   })
 
   it('is a second list, and takes the active one from the list underneath', async () => {
     await open()
 
     expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
-    expect(hunt()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
-    expect(hunt()?.getAttribute('aria-controls')).toBe(
+    expect(searchInput()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
+    expect(searchInput()?.getAttribute('aria-controls')).toBe(
       document.body.querySelector('[data-actions="list"]')?.id,
     )
     expect(actions()[0]?.getAttribute('aria-selected')).toBe('true')
@@ -688,26 +688,26 @@ describe('the action panel', () => {
   it('walks its own list, and leaves the list underneath where it was', async () => {
     await open()
 
-    await pressOn(hunt(), 'ArrowDown')
+    await pressOn(searchInput(), 'ArrowDown')
     expect(litAction()?.textContent).toContain('Open the note')
-    expect(lit()?.textContent).toContain('Entropy')
+    expect(activeItem()?.textContent).toContain('Entropy')
 
-    await pressOn(hunt(), 'ArrowUp')
-    await pressOn(hunt(), 'ArrowUp')
+    await pressOn(searchInput(), 'ArrowUp')
+    await pressOn(searchInput(), 'ArrowUp')
     expect(litAction()?.textContent).toContain('Move to trash')
   })
 
   it('keeps to the actions the words in its field name', async () => {
     await open()
 
-    await typeIn(hunt(), 'open')
+    await typeIn(searchInput(), 'open')
     expect(actions().map((row) => getText(row.querySelector('[data-actions="name"]')))).toEqual([
       'Open the note',
       'Open beside',
     ])
     expect(litAction()?.textContent).toContain('Open the note')
 
-    await typeIn(hunt(), 'nowhere')
+    await typeIn(searchInput(), 'nowhere')
     expect(actions()).toHaveLength(0)
     expect(document.body.querySelector('[data-actions="silence"]')).not.toBeNull()
   })
@@ -715,8 +715,8 @@ describe('the action panel', () => {
   it('runs the action it is on and puts itself away', async () => {
     const palette = await open()
 
-    await typeIn(hunt(), 'trash')
-    await pressOn(hunt(), 'Enter')
+    await typeIn(searchInput(), 'trash')
+    await pressOn(searchInput(), 'Enter')
     await settle()
 
     expect(palette.emitted('choose')?.at(-1)).toEqual(['entropy', 'remove'])
@@ -748,7 +748,7 @@ describe('the action panel', () => {
   it('closes on Escape and leaves the palette open', async () => {
     const palette = await open()
 
-    await pressOn(hunt(), 'Escape')
+    await pressOn(searchInput(), 'Escape')
     await settle()
 
     expect(palette.emitted('dismiss')).toBeUndefined()
@@ -760,7 +760,7 @@ describe('the action panel', () => {
   it('closes on the chord that opened it', async () => {
     await open()
 
-    await pressOn(hunt(), 'k', { ctrlKey: true })
+    await pressOn(searchInput(), 'k', { ctrlKey: true })
     await settle()
     expect(sheet()).toBeNull()
   })
@@ -784,7 +784,7 @@ describe('the action panel', () => {
     )
     await nextTick()
 
-    expect(lit()?.textContent).toContain('Entropy')
+    expect(activeItem()?.textContent).toContain('Entropy')
     expect(actions()).toHaveLength(5)
   })
 
@@ -810,8 +810,8 @@ describe('the action panel', () => {
 
   it('stays on the action it is on when the list is offered again', async () => {
     const palette = await open()
-    await pressOn(hunt(), 'ArrowDown')
-    await pressOn(hunt(), 'ArrowDown')
+    await pressOn(searchInput(), 'ArrowDown')
+    await pressOn(searchInput(), 'ArrowDown')
     expect(litAction()?.textContent).toContain('Open beside')
 
     // The same groups in arrays of their own, as a caller building them from
@@ -840,7 +840,7 @@ describe('the action panel', () => {
 
   it('relies on the first action left when the one it was on is gone', async () => {
     const palette = await open()
-    await pressOn(hunt(), 'ArrowDown')
+    await pressOn(searchInput(), 'ArrowDown')
     expect(litAction()?.textContent).toContain('Open the note')
 
     await palette.setProps({
@@ -873,7 +873,7 @@ describe('the action panel', () => {
   it('keeps the keyboard in its own field on Tab', async () => {
     await open()
 
-    const event = await pressOn(hunt(), 'Tab')
+    const event = await pressOn(searchInput(), 'Tab')
     expect(event.defaultPrevented).toBe(true)
   })
 })
@@ -926,13 +926,13 @@ describe('what the action panel is called', () => {
     await settle()
 
     expect(sheet()?.getAttribute('aria-label')).toBe('What you can do')
-    expect(hunt()?.getAttribute('aria-label')).toBe('Look for something')
-    expect(hunt()?.placeholder).toBe('Look for something')
+    expect(searchInput()?.getAttribute('aria-label')).toBe('Look for something')
+    expect(searchInput()?.placeholder).toBe('Look for something')
     expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain(
       'What you can do',
     )
 
-    await typeIn(hunt(), 'zzz')
+    await typeIn(searchInput(), 'zzz')
     expect(document.body.querySelector('[data-actions="silence"]')?.textContent?.trim()).toBe(
       'Nothing like that here',
     )
@@ -1004,7 +1004,7 @@ describe('one step of several', () => {
     await press('k', { ctrlKey: true })
     await settle()
 
-    await pressOn(hunt(), 'Backspace')
+    await pressOn(searchInput(), 'Backspace')
     expect(palette.emitted('back')).toBeUndefined()
   })
 })

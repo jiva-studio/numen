@@ -74,13 +74,13 @@ func (u Highlight) Execute(
 	if len(runs) == 0 {
 		return nil, nil
 	}
-	sourceText, stands, err := u.sources.GetSourceText(ctx, v.ID, path)
+	sourceText, exists, err := u.sources.GetSourceText(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
 	// Which producer made a source's text is what says where its offsets are,
 	// and a source the index does not hold says nothing about either.
-	if !stands {
+	if !exists {
 		return getRuns("", nil, runs), nil
 	}
 	var store port.DerivedStore

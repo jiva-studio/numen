@@ -35,11 +35,11 @@ func (s *DueByDay) Add(due time.Time) {
 }
 
 // CountOn is how many card faces fall on the day of review holding this instant.
-func (s *DueByDay) CountOn(at time.Time) int {
+func (s *DueByDay) CountOn(target time.Time) int {
 	if s == nil {
 		return 0
 	}
-	return s.on[s.number(at)]
+	return s.on[s.number(target)]
 }
 
 // number is the day of review holding an instant, as a whole number counted
@@ -104,11 +104,11 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	in := s.day.zone()
 	counted := pos.In(in)
 
-	stands := s.number(due)
+	dueDay := s.number(due)
 	from, to := s.number(counted.AddDate(0, 0, first)), s.number(counted.AddDate(0, 0, last))
-	on, heaviest := stands, -1.0
-	if stands >= from && stands <= to {
-		heaviest = p.getWeight(s, stands)
+	on, heaviest := dueDay, -1.0
+	if dueDay >= from && dueDay <= to {
+		heaviest = p.getWeight(s, dueDay)
 	}
 	for day := from; day <= to; day++ {
 		if weight := p.getWeight(s, day); weight > heaviest {
@@ -117,7 +117,7 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	}
 
 	// The instant is handed back in the zone it arrived in.
-	return due.In(in).AddDate(0, 0, on-stands).In(due.Location())
+	return due.In(in).AddDate(0, 0, on-dueDay).In(due.Location())
 }
 
 // getWeight is how much a numbered day of review wants another card: the share

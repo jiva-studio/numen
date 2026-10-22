@@ -6,7 +6,7 @@
 import type { ShallowRef } from 'vue'
 
 import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
-import { handTurn } from '../lib/turn'
+import { dragPage } from '../lib/pageStep'
 
 export interface BookHandOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
@@ -44,7 +44,7 @@ export function useBookHand(options: BookHandOptions) {
     if ((event.target as HTMLElement | null)?.closest?.('a')) return
 
     const edge = options.getEdge(box)
-    const way = handTurn(from - edge, event.clientX - edge, {
+    const way = dragPage(from - edge, event.clientX - edge, {
       wide: box.clientWidth,
       hasSelection: isSelecting(),
     })

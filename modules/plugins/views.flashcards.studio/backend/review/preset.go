@@ -135,13 +135,13 @@ func IsKnownRule(r LearnedRule) bool {
 //
 //
 // It is the one place the rule is read.
-func (p Preset) IsLearned(s Schedule, at time.Time) bool {
+func (p Preset) IsLearned(s Schedule, target time.Time) bool {
 	if s.IsNew() {
 		return false
 	}
 	rule, interval, retention := p.getLearnedRule()
 	if rule == RuleRetention {
-		return Recall(at.Sub(s.Last), s.Stability) >= retention
+		return Recall(target.Sub(s.Last), s.Stability) >= retention
 	}
 	return s.Due.Sub(s.Last) >= time.Duration(interval)*24*time.Hour
 }
@@ -182,7 +182,7 @@ const (
 // count, where shown is whether the day has asked that face already.
 //
 // It is the one place the counting is read.
-func (u BudgetUnit) IsCharged(shown bool) bool { return u == BudgetUnitShows || !shown }
+func (u BudgetUnit) IsCharged(isShown bool) bool { return u == BudgetUnitShows || !isShown }
 
 // IsKnownBudgetUnit reports whether a value is one of the two.
 func IsKnownBudgetUnit(u BudgetUnit) bool {

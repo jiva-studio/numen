@@ -54,7 +54,7 @@ export function createFileMakers({
   ): Promise<CreateResult | null> => {
     const createdItem = await windowTabs.createFileOfKind(kind, folder, title)
     if (createdItem === undefined) {
-      writeMessage(words.notOffered, 'error')
+      writeMessage(words.unavailable, 'error')
       return null
     }
     return createdItem.ok ? createdItem : asFailure(getKnownErrorCode(createdItem.error))

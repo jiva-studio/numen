@@ -116,8 +116,8 @@ const applyReadBody = (
 /**
  * When the write happens: once still for the quiet interval, and within bound of first unwritten change.
  */
-const getWriteDelay = (since: number, at: number, limits: WriteLimits): number =>
-  Math.max(0, Math.min(limits.quiet, since + limits.bound - at))
+const getWriteDelay = (since: number, now: number, limits: WriteLimits): number =>
+  Math.max(0, Math.min(limits.quiet, since + limits.bound - now))
 
 /**
  * An error about the body is cleared by typing when there is a written baseline.
@@ -131,14 +131,14 @@ const applyEdit = (
   edit: { body: string; at: number },
   limits: WriteLimits,
 ): Transition => {
-  const { body, at } = edit
+  const { body, at: editTime } = edit
   const state = getState(tab)
   if (state === 'loading') return keepTab(tab)
   const error = isRetryable(tab) ? null : tab.error
-  const since = tab.since ?? at
+  const since = tab.since ?? editTime
   const next: Tab = { ...tab, shown: body, since, error }
   if (state === 'stale') return keepTab(next)
-  return { tab: next, effects: [{ kind: 'startTimer', after: getWriteDelay(since, at, limits) }] }
+  return { tab: next, effects: [{ kind: 'startTimer', after: getWriteDelay(since, editTime, limits) }] }
 }
 
 const applyTimer = (tab: Tab): Transition => {

@@ -23,8 +23,8 @@ export const getPointCost = (goal: Goal, point: Point): number =>
  */
 export const clearBacklog = (backlog: readonly number[]): number | null => {
   if (!backlog.some((one) => one > 0)) return null
-  const at = backlog.indexOf(0)
-  return at < 0 ? -1 : at + 1
+  const index = backlog.indexOf(0)
+  return index < 0 ? -1 : index + 1
 }
 
 /**
@@ -36,11 +36,11 @@ export const clamp = (value: number, within: Bounds | undefined): number =>
 /** The place of the grid nearest a value, and the last one for an empty grid. */
 export const findNearest = (grid: readonly number[], value: number): number => {
   if (grid.length === 0) return -1
-  let at = 0
+  let nearestIndex = 0
   for (let i = 1; i < grid.length; i += 1) {
-    if (Math.abs((grid[i] ?? 0) - value) < Math.abs((grid[at] ?? 0) - value)) at = i
+    if (Math.abs((grid[i] ?? 0) - value) < Math.abs((grid[nearestIndex] ?? 0) - value)) nearestIndex = i
   }
-  return at
+  return nearestIndex
 }
 
 /**

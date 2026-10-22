@@ -62,15 +62,15 @@ func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Watch, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Watch{follow: u, vault: v, changes: changes, lost: missing}, nil
+	return &Watch{follow: u, vault: v, changes: changes, lostChan: missing}, nil
 }
 
 // Watch is a vault being watched, whose events are not being acted on yet.
 type Watch struct {
-	follow  Follow
-	vault   domain.Vault
-	changes <-chan []string
-	lost    <-chan struct{}
+	follow   Follow
+	vault    domain.Vault
+	changes  <-chan []string
+	lostChan <-chan struct{}
 }
 
 // Run acts on everything the watch has collected, and goes on until ctx is
@@ -93,7 +93,7 @@ func (f *Watch) Run(ctx context.Context) {
 			f.handleError(nil)
 			f.reportChanges(VaultChanges{Paths: res.GetChangedPaths(), Assets: res.Assets})
 
-		case <-f.lost:
+		case <-f.lostChan:
 			// More changed at once than could be followed, or something went
 			// that cannot be asked what it held. Reading the vault again is the
 			// answer, and whoever is listening is told to ask again.

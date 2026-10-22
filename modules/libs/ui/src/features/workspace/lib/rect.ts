@@ -10,7 +10,7 @@ export interface Rect {
   readonly height: number
 }
 
-export const getPlaceInBox = (at: Position, box: Rect): Position => ({
-  x: at.x - box.x,
-  y: at.y - box.y,
+export const getPlaceInBox = (point: Position, box: Rect): Position => ({
+  x: point.x - box.x,
+  y: point.y - box.y,
 })

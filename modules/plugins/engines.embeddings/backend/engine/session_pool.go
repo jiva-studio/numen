@@ -14,7 +14,7 @@ type sessionPool[S any] struct {
 	sessions []S
 	lanes    int
 	destroy  func(S)
-	done     chan struct{}
+	stop     chan struct{}
 	once     sync.Once
 }
 
@@ -26,7 +26,7 @@ func newSessionPool[S any](sessions []S, lanes int, destroy func(S)) *sessionPoo
 		sessions: sessions,
 		lanes:    lanes,
 		destroy:  destroy,
-		done:     make(chan struct{}),
+		stop:     make(chan struct{}),
 	}
 	for lane := range lanes {
 		p.idle <- sessions[lane%len(sessions)]
@@ -42,13 +42,13 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 		cancelled = ctx.Done()
 	}
 	select {
-	case <-p.done:
+	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, errClosed
 	default:
 	}
 	select {
-	case <-p.done:
+	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, errClosed
 	case <-cancelled:
@@ -56,7 +56,7 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 		return zero, ctx.Err()
 	case s := <-p.idle:
 		select {
-		case <-p.done:
+		case <-p.stop:
 			p.idle <- s
 			// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 			return zero, errClosed
@@ -74,7 +74,7 @@ func (p *sessionPool[S]) release(s S) {
 // close stops lending and destroys all sessions.
 func (p *sessionPool[S]) close() {
 	p.once.Do(func() {
-		close(p.done)
+		close(p.stop)
 		for range p.lanes {
 			<-p.idle
 		}

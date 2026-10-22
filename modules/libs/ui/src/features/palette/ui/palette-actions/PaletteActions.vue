@@ -7,7 +7,7 @@
  * reaches the palette underneath.
  *
  * `data-actions` names each part: `panel`, `list`, `name`, `hint`, `silence`
- * and `hunt`. An action is an option.
+ * and `search`. An action is an option.
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import ActionRow from './ActionRow.vue'
@@ -17,7 +17,7 @@ import { isActionsChord } from '../../lib/keys'
 
 const props = defineProps<{
   /** What the lit item offers, in the order it offers them. */
-  offered: readonly PaletteAction[]
+  actions: readonly PaletteAction[]
   words: ActionWords
 }>()
 
@@ -31,15 +31,15 @@ const emit = defineEmits<{
 const uid = useId()
 const actionName = (pos: number): string => `${uid}-action-${pos}`
 
-const hunt = useTemplateRef<HTMLInputElement>('hunt')
+const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
 
 /** What is typed here, which narrows the actions and nothing else. */
-const hunted = ref('')
+const searchQuery = ref('')
 
 /** The action the panel is on, by its identity. */
 const activeActionId = ref('')
 
-const actions = computed(() => placeActions(props.offered, hunted.value))
+const actions = computed(() => placeActions(props.actions, searchQuery.value))
 
 /** Which row that action relies on, counted over the actions the words left. */
 const here = computed(() => actions.value.findIndex((one) => one.action.id === activeActionId.value))
@@ -100,10 +100,10 @@ watch(
       activeActionId.value = ''
       return
     }
-    hunted.value = ''
+    searchQuery.value = ''
     goTo(findKeptAction(actions.value, ''))
     await nextTick()
-    hunt.value?.focus()
+    searchInput.value?.focus()
   },
   { immediate: true },
 )
@@ -169,10 +169,10 @@ const onKey = (event: KeyboardEvent) => {
     </p>
 
     <input
-      ref="hunt"
-      v-model="hunted"
-      class="actions__hunt w-full bg-transparent"
-      data-actions="hunt"
+      ref="searchInput"
+      v-model="searchQuery"
+      class="actions__search w-full bg-transparent"
+      data-actions="search"
       type="text"
       role="combobox"
       autocomplete="off"
@@ -211,7 +211,7 @@ const onKey = (event: KeyboardEvent) => {
   margin: 0;
 }
 
-.actions__hunt {
+.actions__search {
   block-size: var(--numen-field-min);
   padding-inline: var(--numen-field-text-inset);
   border: 0;
@@ -221,7 +221,7 @@ const onKey = (event: KeyboardEvent) => {
   outline: none;
 }
 
-.actions__hunt::placeholder {
+.actions__search::placeholder {
   color: var(--numen-edge-label);
 }
 </style>

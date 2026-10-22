@@ -593,13 +593,13 @@ describe('a key struck on the window, offered in turn', () => {
         return state.targetPath === takes
       },
     })
-    return { offered: proposed, one }
+    return { actions: proposed, one }
   }
   const strike = new KeyboardEvent('keydown', { key: 'a' })
 
   it('routes to the pane in front, then to the rest from the one the person was last in', async () => {
-    const offer = offerTab('none')
-    const window = notifiedCalls([offer.one.declared])
+    const sampleTab = offerTab('none')
+    const window = notifiedCalls([sampleTab.one.declared])
     const first = await window.openTabOfKind('thing', 'A')
     await window.handle.openTabBeside('thing', 'B')
     await window.handle.openTabBeside('thing', 'C')

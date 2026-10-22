@@ -5,13 +5,13 @@ import { nextTick } from 'vue'
 
 import Card from './Card.vue'
 
-const mountCard = (front: string, over: { back?: string; isShown?: boolean } = {}) =>
+const mountCard = (front: string, overrides: { back?: string; isShown?: boolean } = {}) =>
   mount(Card, {
     props: { front, back: over.back ?? '<p>the back</p>', isShown: over.isShown ?? false },
   })
 
 /** A hand going down on the card, across by so much, and up again. */
-const dragCard = async (face: ReturnType<typeof mountCard>, across: number) => {
+const dragCard = async (face: ReturnType<typeof mountCard>, distance: number) => {
   const card = face.find('.card').element as HTMLElement
   card.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100 }))
   card.dispatchEvent(new MouseEvent('click', { clientX: 100 + across }))

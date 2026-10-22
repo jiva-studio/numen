@@ -118,9 +118,9 @@ function getSize(pages: readonly Page[], page: number): Page {
  * A book is five hundred pages and a page is half a megabyte. A row that drew
  * all of them would ask for a book's worth of pixels to show one page.
  */
-export function getPagesWithin(row: Row, viewport: Size, along: number): number[] {
-  const from = along - viewport.width * BEYOND
-  const to = along + viewport.width * (1 + BEYOND)
+export function getPagesWithin(row: Row, viewport: Size, offset: number): number[] {
+  const from = offset - viewport.width * BEYOND
+  const to = offset + viewport.width * (1 + BEYOND)
   const out: number[] = []
   for (const [page, begins] of row.starts.entries()) {
     if (begins > to) break
@@ -133,11 +133,11 @@ export function getPagesWithin(row: Row, viewport: Size, along: number): number[
  * The page in front: the one under the middle of the viewport. A page scrolled
  * halfway off is not the page a person is reading.
  */
-export function inFront(row: Row, viewport: Size, along: number): number {
-  const at = along + viewport.width / 2
+export function inFront(row: Row, viewport: Size, offset: number): number {
+  const center = offset + viewport.width / 2
   let page = 0
   for (let i = 0; i < row.starts.length; i++) {
-    if (row.starts[i]! > at) break
+    if (row.starts[i]! > center) break
     page = i
   }
   return page

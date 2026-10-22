@@ -52,7 +52,7 @@ func getReachingRuns(batch Batch, reply string) []int {
 // accepted reply covers is not in the result.
 func gatherAnswers(answers []answer) (map[int]Line, []int) {
 	collector := gathering{
-		put:   make(map[int]Line),
+		lines: make(map[int]Line),
 		owner: make(map[int]int),
 		best:  make(map[int]int),
 	}
@@ -69,13 +69,13 @@ func gatherAnswers(answers []answer) (map[int]Line, []int) {
 			collector.offer(line, after)
 		}
 	}
-	return collector.put, past
+	return collector.lines, past
 }
 
 // gathering is the corrections kept so far.
 type gathering struct {
-	// put is the kept corrections by their first line.
-	put map[int]Line
+	// lines is the kept corrections by their first line.
+	lines map[int]Line
 	// owner is, for each line a kept correction covers, the first line of that
 	// correction.
 	owner map[int]int
@@ -98,7 +98,7 @@ func (g *gathering) offer(line Line, after map[int]int) {
 			g.evict(target)
 		}
 	}
-	g.put[first] = line
+	g.lines[first] = line
 	for index := first; index <= last; index++ {
 		g.owner[index], g.best[index] = first, after[index]
 	}
@@ -107,12 +107,12 @@ func (g *gathering) offer(line Line, after map[int]int) {
 // evict takes the kept correction that begins on the line out, with every line
 // it covers.
 func (g *gathering) evict(first int) {
-	line := g.put[first]
+	line := g.lines[first]
 	for pos := first; pos <= max(line.Last, line.Number); pos++ {
 		delete(g.owner, pos)
 		delete(g.best, pos)
 	}
-	delete(g.put, first)
+	delete(g.lines, first)
 }
 
 // countRemainingLines maps each line number to the count of lines following it in the batch.
@@ -125,9 +125,9 @@ func countRemainingLines(lines []Line) map[int]int {
 }
 
 // sortLines returns the lines in the order of their numbers.
-func sortLines(put map[int]Line) []Line {
-	out := make([]Line, 0, len(put))
-	for _, line := range put {
+func sortLines(lines map[int]Line) []Line {
+	out := make([]Line, 0, len(lines))
+	for _, line := range lines {
 		out = append(out, line)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Number < out[j].Number })

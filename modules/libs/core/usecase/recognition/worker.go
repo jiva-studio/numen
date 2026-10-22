@@ -21,7 +21,7 @@ func recognitionID(path string) string { return "recognition-" + path }
 
 // OpenRecogniser opens what reads a scanned page, when there is one to read.
 // It is told how far the fetching of what it needs has got.
-type OpenRecogniser func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error)
+type OpenRecogniser func(ctx context.Context, tell func(what string, finished, total int64)) (port.Recogniser, func() error, error)
 
 // A Runtime is what a page is recognised through on this machine.
 type Runtime struct {
@@ -147,12 +147,12 @@ func (r *Worker) recognise(ctx context.Context, v domain.Vault, id, path string)
 	// Getting the models is a step of its own and is placed under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	r.reportTask(run.Task{ID: id, Title: "Fetching models"})
-	delta, letGo, err := r.with.Runtime.Open(ctx, func(what string, done, total int64) {
+	delta, letGo, err := r.with.Runtime.Open(ctx, func(what string, completed, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		r.reportTask(run.Task{
 			ID: id, Title: "Fetching models", About: what,
-			Count: done, Total: total, Unit: run.Bytes,
+			Count: completed, Total: total, Unit: run.Bytes,
 		})
 	})
 	if err != nil {
@@ -296,7 +296,7 @@ func (r *Worker) finishTask(id string) { r.line.Finish(id) }
 // batches is taken up at that page. A recognition no proofreader has been over
 func (r *Worker) TakeUp(
 	ctx context.Context,
-	known port.SourceQueries,
+	queries port.SourceQueries,
 	vaults ...domain.Vault,
 ) {
 	proofreading := r.with.Proofreading
@@ -309,7 +309,7 @@ func (r *Worker) TakeUp(
 			return
 		}
 		for _, v := range vaults {
-			r.collect(ctx, known, delta, v)
+			r.collect(ctx, queries, delta, v)
 		}
 	})
 }
@@ -318,11 +318,11 @@ func (r *Worker) TakeUp(
 // page.
 func (r *Worker) collect(
 	ctx context.Context,
-	known port.SourceQueries,
+	sources port.SourceQueries,
 	delta port.Proofreader,
 	v domain.Vault,
 ) {
-	recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindBook)
+	recognised, err := sources.GetRecognisedSources(ctx, v.ID, domain.KindBook)
 	if err != nil {
 		return
 	}

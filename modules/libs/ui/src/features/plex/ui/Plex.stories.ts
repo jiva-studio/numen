@@ -42,7 +42,7 @@ interface Knobs {
   onCreate: (from: string, relation: PlexRelation) => void
   onLink: (from: string, to: string, relation: PlexRelation) => void
   onBring: (dragged: readonly string[], relation: PlexRelation) => void
-  onMenu: (id: string, at: Position, trigger: MenuTrigger) => void
+  onMenu: (id: string, point: Position, trigger: MenuTrigger) => void
   onDismiss: () => void
   headings: (id: string) => readonly PlexHeading[]
   onEnter: (id: string, heading: string) => void
@@ -860,8 +860,8 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     const onScreen = text.getScreenCTM()!
     const letters: Edges[] = []
 
-    for (let at = 0; at < text.getNumberOfChars(); at += 1) {
-      const letter = text.getExtentOfChar(at)
+    for (let charIndex = 0; charIndex < text.getNumberOfChars(); charIndex += 1) {
+      const letter = text.getExtentOfChar(charIndex)
       const corners = [
         new DOMPoint(letter.x, letter.y),
         new DOMPoint(letter.x + letter.width, letter.y),
@@ -991,8 +991,8 @@ export const ArrowedLines: Story = {
     const svg = canvasElement.querySelector('svg')!
 
     /** Whether a box holds a point, give or take a pixel. */
-    const hasPoint = (box: DOMRect, at: DOMPoint) =>
-      at.x >= box.left - 1 && at.x <= box.right + 1 && at.y >= box.top - 1 && at.y <= box.bottom + 1
+    const hasPoint = (box: DOMRect, point: DOMPoint) =>
+      point.x >= box.left - 1 && point.x <= box.right + 1 && point.y >= box.top - 1 && point.y <= box.bottom + 1
 
     /** Every line drawn, with both its ends where they land on the screen. */
     const lines = () => {
@@ -1082,8 +1082,8 @@ export const ArrowedLines: Story = {
       title.getStartPositionOfChar(0),
       title.getEndPositionOfChar(letters - 1),
     ]) {
-      const at = new DOMPoint(glyph.x, glyph.y).matrixTransform(onScreen)
-      await expect(Math.hypot(at.x - jump.end.x, at.y - jump.end.y)).toBeGreaterThan(clear)
+      const point = new DOMPoint(glyph.x, glyph.y).matrixTransform(onScreen)
+      await expect(Math.hypot(point.x - jump.end.x, point.y - jump.end.y)).toBeGreaterThan(clear)
     }
 
     // The hand on that line lifts it, and the head is brightened with it.

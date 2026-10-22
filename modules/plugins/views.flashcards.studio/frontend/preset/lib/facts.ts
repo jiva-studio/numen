@@ -31,7 +31,7 @@ export type BuyFact =
  * about the overdue, since every card is to be got through by that day; where
  * nothing is overdue there is no such fact either.
  */
-export function getBuyFacts(goal: Goal, at: BuyInput): readonly BuyFact[] {
+export function getBuyFacts(goal: Goal, input: BuyInput): readonly BuyFact[] {
   if (goal === 'date') {
     const facts: BuyFact[] = [
       { kind: 'daysOff', days: at.value },
@@ -44,7 +44,7 @@ export function getBuyFacts(goal: Goal, at: BuyInput): readonly BuyFact[] {
     goal === 'minutes'
       ? [
           { kind: 'minutesADay', minutes: at.value },
-          { kind: 'cardsASession', cards: at.reviews },
+          { kind: 'cardsASession', cards: input.reviews },
         ]
       : [
           { kind: 'remembered', share: at.value },

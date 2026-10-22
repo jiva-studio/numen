@@ -16,7 +16,7 @@ import corpus from '../../../../../libs/protocol/testdata/presets.json'
 
 const today = '2026-08-30'
 
-const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
+const settings = (overrides: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...overrides })
 
 describe('the line the window draws in the answer’s place', () => {
   it('says it is not the application’s', () => {

@@ -26,7 +26,7 @@ var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
 // A toolbox with no session offers nothing.
 type toolbox struct {
 	session *mcp.ClientSession
-	offered []functionTool
+	tools []functionTool
 }
 
 // bearer presents the token on every request to the tool server.

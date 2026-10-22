@@ -288,8 +288,8 @@ describe('measuring how fast a count moves', () => {
   it('measures a group over the stretch it took, not the moment it landed in', () => {
     // work did four hundred thousand a second, whatever the last reading saw.
     let movements = measureMovement(new Map(), [createFetching(0)], 1000)
-    for (let at = 1250; at < 11_000; at += 250) {
-      movements = measureMovement(movements, [createFetching(0)], at)
+    for (let time = 1250; time < 11_000; time += 250) {
+      movements = measureMovement(movements, [createFetching(0)], time)
     }
     movements = measureMovement(movements, [createFetching(4_000_000)], 11_000)
 

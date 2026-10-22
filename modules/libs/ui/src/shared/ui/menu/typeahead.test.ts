@@ -17,15 +17,15 @@ const ITEMS: MenuItem[] = [
 /** A word typed one letter at a time, each letter a moment after the last. */
 const typeWord = (word: string): { typed: Typeahead; at: number | null } => {
   let testTypeahead = NOTHING_TYPED
-  let at: number | null = null
+  let pos: number | null = null
   let now = 0
   for (const letter of word) {
-    const jumped = jumpTo(ITEMS, testTypeahead, { letter, from: at ?? -1, now })
+    const jumped = jumpTo(ITEMS, testTypeahead, { letter, from: pos ?? -1, now })
     testTypeahead = jumped.typed
-    at = jumped.at
+    pos = jumped.at
     now += 10
   }
-  return { typed: testTypeahead, at }
+  return { typed: testTypeahead, at: pos }
 }
 
 describe('what a run of letters lands on', () => {
@@ -87,8 +87,8 @@ describe('how long a run of letters stays one word', () => {
 })
 
 describe('a key that remains for a letter', () => {
-  const press = (over: Partial<KeyboardEvent> = {}) =>
-    isLetter({ key: 'c', ctrlKey: false, metaKey: false, altKey: false, ...over })
+  const press = (overrides: Partial<KeyboardEvent> = {}) =>
+    isLetter({ key: 'c', ctrlKey: false, metaKey: false, altKey: false, ...overrides })
 
   it('is a letter typed on its own', () => {
     expect(press()).toBe(true)

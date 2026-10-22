@@ -279,12 +279,12 @@ func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 }
 
 // hasLines reports whether a batch holds every line of a run, first to last.
-func hasLines(batch Batch, pos, through int) bool {
+func hasLines(batch Batch, first, last int) bool {
 	target := make(map[int]bool, len(batch.Lines))
 	for _, line := range batch.Lines {
 		target[line.Number] = true
 	}
-	for line := pos; line <= through; line++ {
+	for line := first; line <= last; line++ {
 		if !target[line] {
 			return false
 		}

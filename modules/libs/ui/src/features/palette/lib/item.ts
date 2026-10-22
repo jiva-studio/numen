@@ -101,6 +101,6 @@ export const getSteppedIndex = (total: number, from: number, delta: number): num
  * first item there is; a list with nothing to land on takes it nowhere.
  */
 export const findKeptPlace = (places: readonly PalettePlace[], was: string): number => {
-  const at = places.findIndex((place) => place.item.id === was && canChoose(place.item))
-  return stepTo(places, { from: Math.max(at, 0) - 1, by: 1 }, canLandOn)
+  const pos = places.findIndex((place) => place.item.id === was && canChoose(place.item))
+  return stepTo(places, { from: Math.max(pos, 0) - 1, by: 1 }, canLandOn)
 }

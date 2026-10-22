@@ -163,10 +163,10 @@ interface Position {
  * that whole pixel of the window falls back in the story. The story is drawn
  * at a scale, and the pointer goes to whole pixels of the window.
  */
-const mapToFrame = (at: Position): { window: Position; story: Position } => {
+const mapToFrame = (point: Position): { window: Position; story: Position } => {
   const frame = window.frameElement as HTMLElement | null
   if (!frame) {
-    const whole = { x: Math.round(at.x), y: Math.round(at.y) }
+    const whole = { x: Math.round(point.x), y: Math.round(point.y) }
     return { window: whole, story: whole }
   }
 
@@ -174,8 +174,8 @@ const mapToFrame = (at: Position): { window: Position; story: Position } => {
   const isAcross = box.width / window.innerWidth
   const down = box.height / window.innerHeight
   const driven = {
-    x: Math.round(box.x + at.x * isAcross),
-    y: Math.round(box.y + at.y * down),
+    x: Math.round(box.x + point.x * isAcross),
+    y: Math.round(box.y + point.y * down),
   }
   return {
     window: driven,
@@ -210,7 +210,7 @@ function getCursor(): string | null {
 /** A place the pointer was at, and the cursor the splitter drew there. */
 interface Caught {
   readonly away: number
-  readonly at: Position
+  readonly pos: Position
   readonly cursor: string | null
 }
 
@@ -233,13 +233,13 @@ async function measureAcross(handle: HTMLElement, axis: 'x' | 'y'): Promise<read
   const found: Caught[] = []
 
   for (const away of AWAY) {
-    const at =
+    const point =
       axis === 'x'
         ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
         : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
 
-    await sweep(at, at)
-    found.push({ away, at, cursor: getCursor() })
+    await sweep(point, point)
+    found.push({ away, pos: point, cursor: getCursor() })
   }
   return found
 }
@@ -250,7 +250,7 @@ const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <=
 /** The getFurthest out along that line the splitter still had the pointer. */
 function getFurthest(places: readonly Caught[]): Position {
   const target = places.filter((place) => place.cursor)
-  const edge = target[target.length - 1]?.at
+  const edge = target[target.length - 1]?.pos
   if (!edge) throw new Error('missing handle edge position')
   return edge
 }
@@ -258,11 +258,11 @@ function getFurthest(places: readonly Caught[]): Position {
 /** A tab picked up and let go somewhere, in as many steps as a hand takes. */
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
   const start = getRect(from)
-  const at = { clientX: start.x + start.width / 2, clientY: start.y + start.height / 2 }
+  const point = { clientX: start.x + start.width / 2, clientY: start.y + start.height / 2 }
 
   await userEvent.pointer([
-    { keys: '[MouseLeft>]', target: from, coords: at },
-    { coords: { clientX: (at.clientX + to.x) / 2, clientY: (at.clientY + to.y) / 2 } },
+    { keys: '[MouseLeft>]', target: from, coords: point },
+    { coords: { clientX: (point.clientX + to.x) / 2, clientY: (point.clientY + to.y) / 2 } },
     { coords: { clientX: to.x, clientY: to.y } },
     { keys: '[/MouseLeft]' },
   ])
@@ -487,8 +487,8 @@ export const SelectsNothingWhileResizing: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const at = getRect(handle)
-    const from = { clientX: at.x + at.width / 2, clientY: at.y + at.height / 2 }
+    const rect = getRect(handle)
+    const from = { clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 }
 
     /** The branch being resized, while the pointer is on its way. */
     const getResizingBranch = () => canvasElement.querySelector('.branch[data-resizing]')
@@ -530,11 +530,11 @@ export const CatchesAPressOnEitherSideOfTheLine: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const at = getRect(handle)
-    const middle = at.y + at.height / 2
+    const rect = getRect(handle)
+    const middle = rect.y + rect.height / 2
 
     for (const away of [-4, 4]) {
-      const x = at.x + at.width / 2 + away
+      const x = rect.x + rect.width / 2 + away
       await expect(document.elementFromPoint(x, middle)).toBe(handle)
     }
   },

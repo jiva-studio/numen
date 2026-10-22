@@ -53,7 +53,7 @@ func getReasoningField(supported []string) string {
 }
 
 // newModel is the model a chat API lists, with the depths of reasoning it names for the model.
-func newModel(name, title string, supported []string, listed *reasoningListing) model {
+func newModel(name, title string, supported []string, listing *reasoningListing) model {
 	one := model{Name: name, Title: title, ReasoningField: getReasoningField(supported)}
 	if listed != nil {
 		names := slices.DeleteFunc(slices.Clone(listed.SupportedEfforts), func(level string) bool { return level == effortNone })
@@ -77,7 +77,7 @@ func newModel(name, title string, supported []string, listed *reasoningListing) 
 
 // newEffort is the depth of reasoning asked of the model: the level if the model lists a field to take
 // it and the level is one it offers, else none.
-func newEffort(listed model, level string) effort {
+func newEffort(m model, level string) effort {
 	if listed.ReasoningField == "" || reasoning.Pick(listed.ReasoningLevels, level) == "" {
 		return effort{}
 	}
@@ -85,7 +85,7 @@ func newEffort(listed model, level string) effort {
 }
 
 // newChatRequest is the request for the next message of a conversation.
-func newChatRequest(model string, asked effort, messages []message, tools []functionTool, isStreamed bool) chatRequest {
+func newChatRequest(model string, reqEffort effort, messages []message, tools []functionTool, isStreamed bool) chatRequest {
 	request := chatRequest{Model: model, Messages: messages, Tools: tools, Stream: isStreamed}
 	switch asked.field {
 	case fieldReasoningEffort:

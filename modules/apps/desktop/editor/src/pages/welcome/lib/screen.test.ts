@@ -39,10 +39,10 @@ const words: Words = {
 }
 
 /** A window showing a vault it has read. */
-const createCurrentVault = (over: Partial<CurrentVault> = {}): CurrentVault => ({
+const createCurrentVault = (overrides: Partial<CurrentVault> = {}): CurrentVault => ({
   vault: 'physics',
   isReady: true,
-  ...over,
+  ...overrides,
 })
 
 const vault = (id: string, name: string, isMissing = false): Vault => ({

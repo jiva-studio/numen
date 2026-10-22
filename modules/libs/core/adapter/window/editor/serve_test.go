@@ -45,16 +45,16 @@ func bindNotes(services *Services, db *container.Index) {
 
 // is being read can be asked without a filesystem or a timer.
 type hand struct {
-	changes chan []string
-	lost    chan struct{}
+	changes  chan []string
+	lostChan chan struct{}
 }
 
 func byHand() *hand {
-	return &hand{changes: make(chan []string), lost: make(chan struct{}, 1)}
+	return &hand{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
 
 func (h *hand) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
-	return h.changes, h.lost, nil
+	return h.changes, h.lostChan, nil
 }
 
 // unwatchable is a watch that will not start, which is what an operating system
@@ -92,24 +92,24 @@ func (w *waiting) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return waits{VaultReader: reader, at: w}, nil
+	return waits{VaultReader: reader, posVal: w}, nil
 }
 
 // waits holds a read open once the bytes are in hand, so a test can change the
 // file the reader is holding a copy of.
 type waits struct {
 	port.VaultReader
-	at *waiting
+	posVal *waiting
 }
 
 func (r waits) Read(ctx context.Context, path string) ([]byte, error) {
 	raw, err := r.VaultReader.Read(ctx, path)
 	select {
-	case r.at.begun <- path:
+	case r.posVal.begun <- path:
 	default:
 	}
 	select {
-	case <-r.at.until:
+	case <-r.posVal.until:
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -158,10 +158,10 @@ func (refuses) WalkFiles(context.Context, func(domain.Fingerprint) error) error 
 // it fills, the first scan, the watch beside it, and what a client listening
 // for changes is told.
 type behind struct {
-	api   *Services
-	vault domain.Vault
-	index *container.Index
-	heard <-chan change
+	api         *Services
+	vault       domain.Vault
+	index       *container.Index
+	recordedVal <-chan change
 }
 
 // opening puts a vault, an index, a scan and a watch together the way Open
@@ -179,7 +179,7 @@ func openingWith(
 	watcher port.VaultWatcher,
 	readers port.VaultReaders,
 	embedder port.Embedder,
-	still time.Duration,
+	idleDuration time.Duration,
 ) *behind {
 	t.Helper()
 
@@ -212,7 +212,7 @@ func openingWith(
 	t.Cleanup(isDone)
 
 	made := newWatched(cfg, db, readers, watcher)
-	worker := newIndexWorker(made, api.state, embedder, still, io.Discard)
+	worker := newIndexWorker(made, api.state, embedder, idleDuration, io.Discard)
 	api.state.NotifyNoteWritten = worker.WakeNotes
 
 	ctx, stop := context.WithCancel(t.Context())
@@ -222,7 +222,7 @@ func openingWith(
 		wait()
 	})
 
-	return &behind{api: api, vault: v, index: db, heard: line}
+	return &behind{api: api, vault: v, index: db, recordedVal: line}
 }
 
 func write(t *testing.T, v domain.Vault, path, body string) {
@@ -313,7 +313,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 	sendChange(t, watcher, "Note.md")
 
-	if got := next(t, f.heard); len(got.paths) != 1 || got.paths[0] != "Note.md" {
+	if got := next(t, f.recordedVal); len(got.paths) != 1 || got.paths[0] != "Note.md" {
 		t.Errorf("the window received %+v", got)
 	}
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Renamed" {
@@ -340,7 +340,7 @@ func TestANoteChangedBelowTheScanIsReadAgain(t *testing.T) {
 
 	write(t, f.vault, "Note.md", "---\ntitle: Two\n---\n\n# Two\n")
 	sendChange(t, watcher, "Note.md")
-	next(t, f.heard)
+	next(t, f.recordedVal)
 
 	// Now the scan writes what it read, and finishes.
 	readers.release()
@@ -368,7 +368,7 @@ func TestANoteDeletedBelowTheScanStaysDeleted(t *testing.T) {
 		t.Fatal(err)
 	}
 	sendChange(t, watcher, "Note.md")
-	next(t, f.heard)
+	next(t, f.recordedVal)
 
 	readers.release()
 	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
@@ -396,7 +396,7 @@ func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 
 	write(t, f.vault, "Later.md", "---\ntitle: Later\n---\n\n# Later\n")
 	sendChange(t, watcher, "Later.md")
-	next(t, f.heard)
+	next(t, f.recordedVal)
 
 	readers.release()
 	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
@@ -420,7 +420,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 	sendChange(t, watcher, "Note.md")
 
-	if got := next(t, f.heard); len(got.paths) != 1 || got.paths[0] != "Note.md" {
+	if got := next(t, f.recordedVal); len(got.paths) != 1 || got.paths[0] != "Note.md" {
 		t.Errorf("the window received %+v", got)
 	}
 }
@@ -466,14 +466,14 @@ func modifySession(api *Services, change func(*vaultSession)) {
 // saying is where the reading behind the window writes what it did, kept for a
 // test to read back. It is written from the pass and read from the test.
 type saying struct {
-	mu   sync.Mutex
-	said strings.Builder
+	mu     sync.Mutex
+	outMsg strings.Builder
 }
 
 func (s *saying) Write(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.said.Write(p)
+	return s.outMsg.Write(p)
 }
 
 // books is what each pass said it took apart, one number to a pass.
@@ -484,7 +484,7 @@ func (s *saying) getBooks(t *testing.T) []int {
 	defer s.mu.Unlock()
 
 	var out []int
-	for _, line := range strings.Split(s.said.String(), "\n") {
+	for _, line := range strings.Split(s.outMsg.String(), "\n") {
 		_, response, found := strings.Cut(line, ": ")
 		if !found {
 			continue
@@ -508,7 +508,7 @@ func (s *saying) getBooks(t *testing.T) []int {
 // thousands is taken apart afresh for one file dropped into it.
 func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	const (
-		target    = "library/A Book.epub"
+		target  = "library/A Book.epub"
 		dropped = "library/Another Book.epub"
 	)
 

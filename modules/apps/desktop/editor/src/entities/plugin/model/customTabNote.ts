@@ -51,13 +51,13 @@ const splitRead = (result: NoteRead): { body?: string; error?: string } => {
 }
 
 /** The body and the error a read answered, put where the tab shows them. */
-const applyRead = (at: string, result: NoteRead, state: NoteReadState): void => {
+const applyRead = (targetPath: string, result: NoteRead, state: NoteReadState): void => {
   const { body, error } = splitRead(result)
   if (body !== undefined) state.note.value = { path: at, body }
   if (error) state.errorMessage.value = error
 }
 
-const finishRead = (at: string, result: NoteRead, state: NoteReadState): void => {
+const finishRead = (targetPath: string, result: NoteRead, state: NoteReadState): void => {
   state.isLoading.value = false
   if (!state.hasEdited()) applyRead(at, result, state)
 }

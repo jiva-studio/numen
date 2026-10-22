@@ -63,17 +63,17 @@ func TestNoProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
 	target := newProofreadable(t)
 
 	for name, one := range map[string]struct {
-		readers port.VaultReaders
-		derived port.DerivedStores
-		by      port.Proofreader
-		want    error
+		readers  port.VaultReaders
+		derived  port.DerivedStores
+		provider port.Proofreader
+		want     error
 	}{
 		"nothing to proofread with": {target.readers, target.derived, nil, run.ErrNothingProofreads},
 		"no vault":                  {nil, target.derived, &corrector{}, run.ErrNoVaultToProofread},
 		"no store":                  {target.readers, nil, &corrector{}, run.ErrNoStoreToProofread},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := NewProofread(one.readers, one.derived, one.by); !errors.Is(err, one.want) {
+			if _, err := NewProofread(one.readers, one.derived, one.provider); !errors.Is(err, one.want) {
 				t.Fatalf("made with %v", err)
 			}
 		})
@@ -181,7 +181,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 	if res.Resumed != 2 {
 		t.Errorf("took up %d pages of the recognition", res.Resumed)
 	}
-	for _, request := range again.asked {
+	for _, request := range again.query {
 		for _, page := range request {
 			if page < 2 {
 				t.Errorf("asked about page %d again", page)
@@ -241,8 +241,8 @@ func TestOneRunToARecognition(t *testing.T) {
 	if !res.IsBusy {
 		t.Error("two runs to one recognition")
 	}
-	if len(delta.asked) != 0 {
-		t.Errorf("asked about %v", delta.asked)
+	if len(delta.query) != 0 {
+		t.Errorf("asked about %v", delta.query)
 	}
 }
 
@@ -299,12 +299,12 @@ func TestABatchThatWasNotSplitIsAskedAboutAgain(t *testing.T) {
 		t.Error("a batch nothing cut was counted")
 	}
 
-	delta.asked = nil
+	delta.query = nil
 	if _, err := placed.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	if len(delta.asked) != 1 || len(delta.asked[0]) != 4 || delta.asked[0][0] != 0 {
-		t.Errorf("the run after it asked about %v", delta.asked)
+	if len(delta.query) != 1 || len(delta.query[0]) != 4 || delta.query[0][0] != 0 {
+		t.Errorf("the run after it asked about %v", delta.query)
 	}
 }
 

@@ -102,7 +102,7 @@ type Vault interface {
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
-	ResolveLinks(ctx context.Context, from string, written []string) (map[string]domain.ResolvedLink, error)
+	ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error)
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 
 	// ReadData reads a file of the plugin's folder in the vault's own store.

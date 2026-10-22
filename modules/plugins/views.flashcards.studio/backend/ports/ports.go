@@ -83,7 +83,7 @@ type LinkQueries interface {
 	GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error)
 	// ResolveLinks says where each address written in a note lands, keyed by what was written. An
 	// address that reaches nothing is absent.
-	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, written []string) (map[string]domain.ResolvedLink, error)
+	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, rawLinks []string) (map[string]domain.ResolvedLink, error)
 }
 
 // ProblemQueries is what parsing a vault's files turned up.

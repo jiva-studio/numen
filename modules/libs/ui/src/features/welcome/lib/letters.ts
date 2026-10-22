@@ -32,8 +32,8 @@ export function getVaultForKey(press: KeyboardEvent, vaults: number): number | n
   if (isTyping(press)) return null
   if (press.key.length !== 1) return null
 
-  const at = VAULT_LETTERS.indexOf(press.key.toUpperCase())
-  return at >= 0 && at < vaults ? at : null
+  const index = VAULT_LETTERS.indexOf(press.key.toUpperCase())
+  return index >= 0 && index < vaults ? index : null
 }
 
 /**
@@ -41,7 +41,7 @@ export function getVaultForKey(press: KeyboardEvent, vaults: number): number | n
  * there, and no screen reads its own keys out of a field.
  */
 export const isTyping = (press: KeyboardEvent): boolean => {
-  const at = press.target as HTMLElement | null
-  if (!at) return false
-  return at.tagName === 'INPUT' || at.tagName === 'TEXTAREA' || at.isContentEditable === true
+  const target = press.target as HTMLElement | null
+  if (!target) return false
+  return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable === true
 }

@@ -66,8 +66,8 @@ const marks = (text: string, word: string): Span[] => {
   const out: Span[] = []
   const haystack = text.toLowerCase()
   const needle = word.toLowerCase()
-  for (let at = haystack.indexOf(needle); at >= 0; at = haystack.indexOf(needle, at + 1)) {
-    out.push({ from: at, to: at + needle.length })
+  for (let pos = haystack.indexOf(needle); pos >= 0; pos = haystack.indexOf(needle, pos + 1)) {
+    out.push({ from: pos, to: pos + needle.length })
   }
   return out
 }
@@ -223,12 +223,12 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const palette = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
-const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
+const activeItem = () => document.body.querySelector<HTMLElement>('[data-here]')
 const options = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
 const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
-const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
+const searchInput = () => document.body.querySelector<HTMLInputElement>('[data-actions="search"]')
 const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
@@ -253,7 +253,7 @@ export const Playground: Story = {}
  */
 export const Choosing: Story = {
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     await userEvent.keyboard('{Enter}')
     await expect(args.onChoose).toHaveBeenCalledWith('entropy', 'travel')
@@ -282,11 +282,11 @@ export const NothingBehindIt: Story = {
     await expect(document.activeElement).toBe(field())
 
     await userEvent.keyboard('{Control>}k{/Control}')
-    await waitFor(() => expect(document.activeElement).toBe(hunt()))
+    await waitFor(() => expect(document.activeElement).toBe(searchInput()))
     await expect(sheet()).toHaveAttribute('aria-modal', 'true')
 
     await userEvent.tab()
-    await expect(document.activeElement).toBe(hunt())
+    await expect(document.activeElement).toBe(searchInput())
   },
 }
 
@@ -314,9 +314,9 @@ export const Lit: Story = {
 export const OpensOnAValue: Story = {
   args: { opensOn: 'gibbs' },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
-    await expect(lit()?.textContent).toContain('Gibbs free energy')
+    await expect(activeItem()?.textContent).toContain('Gibbs free energy')
     await expect(args.onLight).toHaveBeenLastCalledWith('gibbs')
   },
 }
@@ -328,9 +328,9 @@ export const OpensOnAValue: Story = {
 export const OpensOnNothingThere: Story = {
   args: { opensOn: 'nowhere' },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
-    await expect(lit()?.textContent).toContain('Entropy')
+    await expect(activeItem()?.textContent).toContain('Entropy')
     await expect(args.onLight).toHaveBeenLastCalledWith('entropy')
   },
 }
@@ -463,9 +463,9 @@ export const Filling: Story = {
   }),
   play: async () => {
     // The only item there is to begin with is in the second group.
-    await waitFor(() => expect(lit()?.textContent).toContain('Heat engines'))
+    await waitFor(() => expect(activeItem()?.textContent).toContain('Heat engines'))
     await waitFor(() => expect(options().length).toBe(6), { timeout: 3000 })
-    await expect(lit()?.textContent).toContain('Heat engines')
+    await expect(activeItem()?.textContent).toContain('Heat engines')
   },
 }
 
@@ -724,7 +724,7 @@ export const FarTooMany: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     for (let step = 0; step < 59; step += 1) await userEvent.keyboard('{ArrowDown}')
 
@@ -832,10 +832,10 @@ export const NotToBeChosen: Story = {
     ],
   },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     await userEvent.keyboard('{ArrowDown}')
-    await expect(lit()?.textContent).toContain('Gibbs')
+    await expect(activeItem()?.textContent).toContain('Gibbs')
 
     await userEvent.click(within(document.body).getByText(/cannot be read/))
     await expect(args.onChoose).not.toHaveBeenCalled()
@@ -856,13 +856,13 @@ export const SomeCameBackEmpty: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     const viewElement = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map(
       (group) => group.textContent?.trim(),
     )
     await expect(viewElement).toEqual(['Text', 'Meaning', 'Names'])
-    await expect(lit()?.textContent).toContain('Heat engines')
+    await expect(activeItem()?.textContent).toContain('Heat engines')
   },
 }
 
@@ -880,7 +880,7 @@ export const FiveActions: Story = {
     ],
   },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(getText)
     await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
@@ -914,15 +914,15 @@ export const ActionPanel: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     await userEvent.keyboard('{Control>}k{/Control}')
     await waitFor(() => expect(sheet()).not.toBeNull())
 
     await expect(actions()).toHaveLength(EVERYTHING.length)
-    await expect(document.activeElement).toBe(hunt())
+    await expect(document.activeElement).toBe(searchInput())
     await expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
-    await expect(hunt()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
+    await expect(searchInput()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
 
     // Walking back from the first brings the last row into sight.
     await userEvent.keyboard('{ArrowUp}')
@@ -939,7 +939,7 @@ export const ActionPanel: Story = {
     await waitFor(() => expect(actions()).toHaveLength(1))
     await expect(actions()[0]?.textContent).toContain('Rename')
 
-    await userEvent.clear(hunt()!)
+    await userEvent.clear(searchInput()!)
     await waitFor(() => expect(actions()).toHaveLength(EVERYTHING.length))
   },
 }
@@ -996,7 +996,7 @@ export const Steps: Story = {
     `,
   }),
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     // Backspace in an empty field is the gesture for the step before, at every
     // step there is.
@@ -1052,7 +1052,7 @@ export const KeyHints: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     const hints = Array.from(document.body.querySelectorAll('[data-palette="hint"]'))
     await expect(hints.map(getSpokenKey)).toEqual([

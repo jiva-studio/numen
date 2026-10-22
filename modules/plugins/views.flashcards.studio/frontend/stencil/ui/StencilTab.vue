@@ -37,7 +37,7 @@ function onRemoveField(field: string) {
   props.state.removeField(field)
 }
 
-function onMoveField(field: string, at: InsertionPoint) {
+function onMoveField(field: string, target: InsertionPoint) {
   props.state.moveField(field, at)
 }
 
@@ -53,7 +53,7 @@ function onRemoveFace(id: string) {
   props.state.removeFace(id)
 }
 
-function onMoveFace(id: string, at: InsertionPoint) {
+function onMoveFace(id: string, target: InsertionPoint) {
   props.state.moveFace(id, at)
 }
 

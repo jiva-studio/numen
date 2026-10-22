@@ -18,19 +18,19 @@ const defaultProgram = "installed-default"
 
 // programs finds a program per name and records the tasks it was asked to run.
 type programs struct {
-	mu       sync.Mutex
-	asked    []string
-	tasks    []port.Task
-	getErr   error
-	models   []port.AgentModel
-	startErr error
-	answer   func(ctx context.Context, task port.Task) (string, error)
+	mu        sync.Mutex
+	requested []string
+	tasks     []port.Task
+	getErr    error
+	models    []port.AgentModel
+	startErr  error
+	answer    func(ctx context.Context, task port.Task) (string, error)
 }
 
 func (p *programs) GetProgram(_ context.Context, name string) (port.AgentProgram, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.asked = append(p.asked, name)
+	p.requested = append(p.requested, name)
 	if p.getErr != nil {
 		return port.AgentProgram{}, p.getErr
 	}
@@ -78,9 +78,9 @@ func ask(text string) port.Question {
 	return port.Question{Messages: []port.Message{{Role: "user", Text: text}}}
 }
 
-func newRouter(t *testing.T, config completion.Config, chosen choices, fake *programs) *completion.Router {
+func newRouter(t *testing.T, config completion.Config, choice choices, fake *programs) *completion.Router {
 	t.Helper()
-	router, err := completion.NewRouter(func() completion.Config { return config }, chosen, fake)
+	router, err := completion.NewRouter(func() completion.Config { return config }, choice, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,8 +129,8 @@ func TestAnEmptyDefaultPreservesTheAgentAndTheModelToThePrograms(t *testing.T) {
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	if fake.asked[0] != "" || fake.tasks[0].Agent != defaultProgram || fake.tasks[0].Model != "" {
-		t.Errorf("asked %q, ran on %q with model %q", fake.asked[0], fake.tasks[0].Agent, fake.tasks[0].Model)
+	if fake.requested[0] != "" || fake.tasks[0].Agent != defaultProgram || fake.tasks[0].Model != "" {
+		t.Errorf("asked %q, ran on %q with model %q", fake.requested[0], fake.tasks[0].Agent, fake.tasks[0].Model)
 	}
 }
 
@@ -177,7 +177,7 @@ func TestAMissingAgentFailsTheQuestionWithNoOtherAgentAsked(t *testing.T) {
 	if len(fake.tasks) != 0 {
 		t.Errorf("started %v", fake.tasks)
 	}
-	for _, request := range fake.asked {
+	for _, request := range fake.requested {
 		if request != "absent" {
 			t.Errorf("asked for %q", request)
 		}
@@ -254,8 +254,8 @@ func TestAQuestionNoAgentCanAnswerIsRefused(t *testing.T) {
 			t.Errorf("%s: error = %v, want port.ErrInvalidQuestion", name, err)
 		}
 	}
-	if len(fake.asked) != 0 || len(fake.tasks) != 0 {
-		t.Errorf("asked %v, started %v", fake.asked, fake.tasks)
+	if len(fake.requested) != 0 || len(fake.tasks) != 0 {
+		t.Errorf("asked %v, started %v", fake.requested, fake.tasks)
 	}
 }
 

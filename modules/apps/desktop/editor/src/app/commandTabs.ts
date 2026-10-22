@@ -17,7 +17,7 @@ export async function openCommandTab(
   const type = (await vaultCore.fileKinds([path])).get(path)?.type ?? 'note'
   const resolved = await windowTabs.resolveCommand(path, command, type)
   if (resolved === null) {
-    writeMessage(words.notOffered, 'error')
+    writeMessage(words.unavailable, 'error')
   } else if (resolved.ok) {
     await windowTabs.openTabOfKind(resolved.kind, resolved.at)
   } else {

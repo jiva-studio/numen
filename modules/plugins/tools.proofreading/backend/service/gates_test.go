@@ -62,9 +62,9 @@ func TestAFencedReplyIsUnwrapped(t *testing.T) {
 
 func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 	for _, one := range []struct {
-		was, put    string
-		least, most float64
-		isKept      bool
+		was, replacement string
+		least, most      float64
+		isKept           bool
 	}{
 		// A misread word, and diacritics the page prints.
 		{"the Sodërby gardin hcdge.", "the Södërby garden hedge.", 0.05, 0.15, true},
@@ -75,12 +75,12 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 		// A line answered with one word of it.
 		{"The hedge will very soon need cutting back", "hedge", 0.80, 0.95, false},
 	} {
-		apart := EditDistance(one.was, one.put)
+		apart := EditDistance(one.was, one.replacement)
 		if apart < one.least || apart > one.most {
-			t.Errorf("%q -> %q stands %.4f apart, want between %v and %v", one.was, one.put, apart, one.least, one.most)
+			t.Errorf("%q -> %q stands %.4f apart, want between %v and %v", one.was, one.replacement, apart, one.least, one.most)
 		}
 		if isAccepted := apart <= MaxEditDistance; isAccepted != one.isKept {
-			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.put, apart, isAccepted, one.isKept)
+			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.replacement, apart, isAccepted, one.isKept)
 		}
 	}
 }

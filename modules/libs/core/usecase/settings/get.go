@@ -15,14 +15,14 @@ type Current struct {
 
 // Get reads every setting, the models a setting can name, and the limits the
 type Get struct {
-	read                     func() (written, path string, err error)
+	read                     func() (content, path string, err error)
 	models                   func() []Model
 	nestedHeadingLimitBounds Bounds
 	plugins                  func() []PluginInfo
 }
 
 func NewGet(
-	read func() (written, path string, err error),
+	read func() (content, path string, err error),
 	models func() []Model,
 	nestedHeadingLimitBounds Bounds,
 	plugins func() []PluginInfo,

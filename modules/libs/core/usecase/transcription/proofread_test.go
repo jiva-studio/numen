@@ -36,7 +36,7 @@ func (s scripted) ProofreadSpeech(
 // One line to a request and one request to a call, so a call answers about one
 // line.
 func newProofreadTranscript(
-	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
+	t *testing.T, notified map[int]domain.ProofreadCorrection, words ...string,
 ) (Proofread, domain.Vault, *fakeStorage, *corrector, string) {
 	t.Helper()
 	raw := newRecording(words)
@@ -48,7 +48,7 @@ func newProofreadTranscript(
 	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
-	delta := &corrector{says: told, limit: 1}
+	delta := &corrector{says: notified, limit: 1}
 	return newTranscriptProofreading(t, vaults{first.ID: shelved}, fakeStores{shelf}, delta),
 		first, shelf, delta, hash
 }
@@ -90,17 +90,17 @@ func TestNoTranscriptProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) 
 	u, _, _, delta, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing")
 
 	for name, one := range map[string]struct {
-		readers port.VaultReaders
-		derived port.DerivedStores
-		by      port.Proofreader
-		want    error
+		readers  port.VaultReaders
+		derived  port.DerivedStores
+		provider port.Proofreader
+		want     error
 	}{
 		"nothing to proofread with": {u.readers, u.derived, nil, run.ErrNothingProofreads},
 		"no vault":                  {nil, u.derived, delta, run.ErrNoVaultToProofread},
 		"no store":                  {u.readers, nil, delta, run.ErrNoStoreToProofread},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := NewProofread(one.readers, one.derived, one.by); !errors.Is(err, one.want) {
+			if _, err := NewProofread(one.readers, one.derived, one.provider); !errors.Is(err, one.want) {
 				t.Fatalf("made with %v", err)
 			}
 		})
@@ -278,8 +278,8 @@ func TestOneRunToARecordingBeingInsertRight(t *testing.T) {
 	if !res.IsBusy {
 		t.Error("a recording another run holds was put right")
 	}
-	if len(delta.asked) != 0 {
-		t.Errorf("it asked about %v", delta.asked)
+	if len(delta.requestChan) != 0 {
+		t.Errorf("it asked about %v", delta.requestChan)
 	}
 }
 
@@ -288,9 +288,9 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 	own := transcript.Marshal(newCues([]string{"first thing", "what a person typed"}))
 
 	for _, one := range []struct {
-		name  string
-		said  []byte
-		stood putting
+		name       string
+		msg        []byte
+		currentVal putting
 	}{
 		{"a person wrote it in the window", append(own, transcript.GetHandWrittenMark()...), putting{By: "a proofreader", At: getSpan(1).To}},
 		{"nobody here wrote it", own, putting{}},
@@ -298,11 +298,11 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			u, v, shelved, delta, hash := newProofreadTranscript(t, correctionsMap(fixes(1, "second thing")), words...)
-			if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), one.said); err != nil {
+			if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), one.msg); err != nil {
 				t.Fatal(err)
 			}
-			if one.stood.By != "" {
-				status, err := json.Marshal(one.stood)
+			if one.currentVal.By != "" {
+				status, err := json.Marshal(one.currentVal)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -318,10 +318,10 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 			if !res.IsEdited || res.Fixed != 0 {
 				t.Errorf("got %+v", res)
 			}
-			if len(delta.asked) != 0 {
-				t.Errorf("it asked about %v", delta.asked)
+			if len(delta.requestChan) != 0 {
+				t.Errorf("it asked about %v", delta.requestChan)
 			}
-			if now := string(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))); now != string(one.said) {
+			if now := string(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))); now != string(one.msg) {
 				t.Errorf("the transcript now says %q", now)
 			}
 		})
@@ -374,10 +374,10 @@ func TestEveryCallIsGivenTheWholeTranscriptAndTheLineToContinueFrom(t *testing.T
 		{Number: 0, Text: "first thing"}, {Number: 1, Text: "secnd thing"},
 		{Number: 2, Text: "third thing"}, {Number: 3, Text: "forth thing"},
 	}
-	if len(delta.given) != 2 {
-		t.Fatalf("it was called %d times", len(delta.given))
+	if len(delta.input) != 2 {
+		t.Fatalf("it was called %d times", len(delta.input))
 	}
-	for item, provided := range delta.given {
+	for item, provided := range delta.input {
 		if !slices.Equal(provided, want) {
 			t.Errorf("call %d was given %+v", item, provided)
 		}
@@ -402,8 +402,8 @@ func TestAWindowShortOfTheEndIsFollowedByTheNext(t *testing.T) {
 	if len(delta.froms) != 2 || delta.froms[0] != 0 || delta.froms[1] != 2 {
 		t.Fatalf("froms %+v", delta.froms)
 	}
-	if !slices.Equal(delta.given[0], delta.given[1]) {
-		t.Errorf("the calls were given %+v and %+v", delta.given[0], delta.given[1])
+	if !slices.Equal(delta.input[0], delta.input[1]) {
+		t.Errorf("the calls were given %+v and %+v", delta.input[0], delta.input[1])
 	}
 	if res.Fixed != 2 || res.Read != 4 || res.Left != 2 {
 		t.Errorf("got %+v", res)
@@ -481,7 +481,7 @@ func TestAProofreaderWithNothingRoutedEndsTheRunAndWritesNothing(t *testing.T) {
 // the same thing for ever.
 func TestAProofreaderThatMakesNoProgressEndsTheRun(t *testing.T) {
 	u, v, _, _, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing")
-	u.by = scripted{reply: domain.SpeechProofreading{Next: 0}}
+	u.provider = scripted{reply: domain.SpeechProofreading{Next: 0}}
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); !errors.Is(err, errNoProgress) {
 		t.Errorf("got %v", err)
@@ -497,7 +497,7 @@ func TestACorrectionOfALineTheTranscriptDoesNotHaveEndsTheRun(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
-			u.by = scripted{reply: domain.SpeechProofreading{Corrections: corrections, IsDone: true, Next: 2}}
+			u.provider = scripted{reply: domain.SpeechProofreading{Corrections: corrections, IsDone: true, Next: 2}}
 
 			if _, err := u.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionOutside) {
 				t.Fatalf("got %v", err)
@@ -514,7 +514,7 @@ func TestACorrectionOfALineTheTranscriptDoesNotHaveEndsTheRun(t *testing.T) {
 func TestACorrectionOfAnUnaskedLineEndsTheRun(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
 	u, v, shelved, _, hash := newProofreadTranscript(t, nil, words...)
-	u.by = &sequenced{replies: []domain.SpeechProofreading{
+	u.provider = &sequenced{replies: []domain.SpeechProofreading{
 		{Next: 1},
 		{Corrections: []domain.ProofreadCorrection{fixes(0, "past speech")}, Next: 3, IsDone: true},
 	}}

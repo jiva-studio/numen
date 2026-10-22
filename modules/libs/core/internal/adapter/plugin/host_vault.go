@@ -657,7 +657,7 @@ func (e *vaultEndpoint) WatchVault(
 // another vault.
 func followVault(
 	ctx context.Context, vault port.PluginVault, watched domain.Vault,
-	changes <-chan []string, lost <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],
+	changes <-chan []string, lostChan <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],
 ) error {
 	poll := time.NewTicker(vaultWatchPoll)
 	defer poll.Stop()
@@ -665,7 +665,7 @@ func followVault(
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-lost:
+		case <-lostChan:
 			return nil
 		case paths, open := <-changes:
 			if !open {

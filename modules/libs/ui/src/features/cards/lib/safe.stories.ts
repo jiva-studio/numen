@@ -288,8 +288,8 @@ const measureArrangements = (): Tally => {
   const next = numbers(SEED)
   const tally: Tally = { arrangements: 0, drawn: 0, elements: 0 }
 
-  for (let at = 0; at < ARRANGEMENTS; at++) {
-    const content = createArrangement(next, at)
+  for (let i = 0; i < ARRANGEMENTS; i++) {
+    const content = createArrangement(next, i)
     const once = safe(content)
     tally.arrangements += 1
 
@@ -369,8 +369,8 @@ export const NothingRuns: Story = {
     canvasElement.append(element)
 
     const next = numbers(SEED)
-    for (let at = 0; at < ARRANGEMENTS; at++) {
-      element.innerHTML = safe(createArrangement(next, at))
+    for (let i = 0; i < ARRANGEMENTS; i++) {
+      element.innerHTML = safe(createArrangement(next, i))
     }
     await new Promise((settle) => view.requestAnimationFrame(() => view.setTimeout(settle, 0)))
 

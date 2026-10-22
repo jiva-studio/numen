@@ -475,8 +475,8 @@ type textID struct {
 
 // rows is what a source's rows hold, in the shape a fresh cut asks about them.
 type rows struct {
-	candidates map[textID][]int64
-	left       map[int64]bool
+	candidates    map[textID][]int64
+	remainingErrs map[int64]bool
 	// hash is the fingerprint each row holds, so a row that goes says which
 	// text went with it.
 	hash map[int64]string
@@ -489,7 +489,7 @@ func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (*row
 	}
 	defer cursor.Close()
 
-	h := &rows{candidates: map[textID][]int64{}, left: map[int64]bool{}, hash: map[int64]string{}}
+	h := &rows{candidates: map[textID][]int64{}, remainingErrs: map[int64]bool{}, hash: map[int64]string{}}
 	for cursor.Next() {
 		var row int64
 		var key textID
@@ -497,7 +497,7 @@ func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (*row
 			return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
 		}
 		h.candidates[key] = append(h.candidates[key], row)
-		h.left[row] = true
+		h.remainingErrs[row] = true
 		h.hash[row] = key.hash
 	}
 	return h, cursor.Err()
@@ -512,15 +512,15 @@ func (h *rows) takeUnusedRow(key textID) (int64, bool) {
 	}
 	row := rows[0]
 	h.candidates[key] = rows[1:]
-	delete(h.left, row)
+	delete(h.remainingErrs, row)
 	return row, true
 }
 
 // getUnusedRows is the rows of the source no chunk holds, in order, so that
 // a cut writes the same thing twice running.
 func (h *rows) getUnusedRows() []int64 {
-	out := make([]int64, 0, len(h.left))
-	for row := range h.left {
+	out := make([]int64, 0, len(h.remainingErrs))
+	for row := range h.remainingErrs {
 		out = append(out, row)
 	}
 	slices.Sort(out)
@@ -596,8 +596,8 @@ func newNullable(s string) any {
 // getRemovedHashes is the text of the rows no chunk holds: what this source
 // used to hold and does not any more.
 func (h *rows) getRemovedHashes() []string {
-	out := make([]string, 0, len(h.left))
-	for row := range h.left {
+	out := make([]string, 0, len(h.remainingErrs))
+	for row := range h.remainingErrs {
 		if hash := h.hash[row]; hash != "" {
 			out = append(out, hash)
 		}

@@ -110,14 +110,14 @@ describe('letting go', () => {
   it('asks for a link when it lands on another node', async () => {
     const { plex, svg } = mountPlex()
     const child = plex.get('[aria-label$=", child"]')
-    const at = child
+    const coord = child
       .attributes('transform')!
       .match(/-?[\d.]+/g)!
       .map(Number)
 
     await takeHold(plex, 'A node')
-    svg.dispatchEvent(pointer('pointermove', 600 + at[0]!, 400 + at[1]!))
-    svg.dispatchEvent(pointer('pointerup', 600 + at[0]!, 400 + at[1]!))
+    svg.dispatchEvent(pointer('pointermove', 600 + coord[0]!, 400 + coord[1]!))
+    svg.dispatchEvent(pointer('pointerup', 600 + coord[0]!, 400 + coord[1]!))
     await plex.vm.$nextTick()
 
     const [emitted] = plex.emitted('link') as [string, string, string][]
@@ -235,13 +235,13 @@ describe('while a gesture is under way', () => {
   it('marks the node a link would be made to instead', async () => {
     const { plex, svg } = mountPlex()
     const child = plex.get('[aria-label$=", child"]')
-    const at = child
+    const coord = child
       .attributes('transform')!
       .match(/-?[\d.]+/g)!
       .map(Number)
 
     await takeHold(plex, 'A node')
-    svg.dispatchEvent(pointer('pointermove', 600 + at[0]!, 400 + at[1]!))
+    svg.dispatchEvent(pointer('pointermove', 600 + coord[0]!, 400 + coord[1]!))
     await plex.vm.$nextTick()
 
     expect(plex.find('.plex__node--ghost').exists()).toBe(false)

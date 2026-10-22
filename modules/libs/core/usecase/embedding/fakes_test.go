@@ -41,16 +41,16 @@ var (
 // store is the index, in memory, answering every question the way the index
 // answers it. What the two passes do next is read from those answers.
 type store struct {
-	mu      sync.RWMutex
-	sources map[domain.VaultID]map[string]domain.Source // vault, then path
-	chunks  []storedChunk
-	vectors map[domain.ChunkID][]port.Vector // the coarse rows, by chunk, appended, so a second write shows
-	groups  [][]port.Vector                  // every write of vectors, in order
-	written map[string]int                   // extractions per path
-	next    int64
+	mu           sync.RWMutex
+	sources      map[domain.VaultID]map[string]domain.Source // vault, then path
+	chunks       []storedChunk
+	vectors      map[domain.ChunkID][]port.Vector // the coarse rows, per chunk, appended, so a second write shows
+	groups       [][]port.Vector                  // every write of vectors, in order
+	writtenBytes map[string]int                   // extractions per path
+	next         int64
 	// kept is what the index already holds, by recipe and hash. A test seeds it
 	// to stand for vectors bought before the run under test.
-	kept map[string][]byte
+	preserved map[string][]byte
 }
 
 // storedChunk is one row of chunks. `parent` is zero for a large chunk.
@@ -68,9 +68,9 @@ type storedChunk struct {
 
 func newStore() *store {
 	return &store{
-		sources: map[domain.VaultID]map[string]domain.Source{},
-		vectors: map[domain.ChunkID][]port.Vector{},
-		written: map[string]int{},
+		sources:      map[domain.VaultID]map[string]domain.Source{},
+		vectors:      map[domain.ChunkID][]port.Vector{},
+		writtenBytes: map[string]int{},
 	}
 }
 
@@ -80,7 +80,7 @@ func (s *store) SaveSource(_ context.Context, vaultID domain.VaultID, src domain
 }
 
 func (s *store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
-	s.written[e.Source.Fingerprint.Path]++
+	s.writtenBytes[e.Source.Fingerprint.Path]++
 	s.put(vaultID, e.Source)
 	s.clear(vaultID, e.Source.Fingerprint.Path)
 
@@ -111,12 +111,12 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 func (s *store) GetKeptVectors(_ context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	if s.kept == nil {
+	if s.preserved == nil {
 		return nil, nil
 	}
 	out := map[string][]byte{}
 	for _, one := range of {
-		if v, target := s.kept[recipe+"/"+hex.EncodeToString(one)]; target {
+		if v, target := s.preserved[recipe+"/"+hex.EncodeToString(one)]; target {
 			out[hex.EncodeToString(one)] = v
 		}
 	}
@@ -480,9 +480,9 @@ func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
 type embedder struct {
 	dims int
 
-	mu    sync.Mutex
-	calls int
-	seen  []string // every text handed over, in the order it arrived
+	mu        sync.Mutex
+	calls     int
+	seenCount []string // every text handed over, in the order it arrived
 }
 
 func (e *embedder) GetModel() port.EmbeddingModel {
@@ -521,7 +521,7 @@ func (e *embedder) Embed(_ context.Context, texts []string) ([][]float32, error)
 	out := make([][]float32, 0, len(texts))
 	for _, text := range texts {
 		e.mu.Lock()
-		e.seen = append(e.seen, text)
+		e.seenCount = append(e.seenCount, text)
 		e.mu.Unlock()
 		out = append(out, vectorOf(text, e.dims))
 	}

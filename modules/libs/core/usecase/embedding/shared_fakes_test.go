@@ -13,15 +13,15 @@ import (
 
 // fakeStorage is what a recognition is written to, in memory.
 type fakeStorage struct {
-	mu     sync.Mutex
-	files  map[domain.ArtifactName][]byte
-	held   map[domain.ArtifactName]bool
-	opens  int
-	closes int
+	mu         sync.Mutex
+	files      map[domain.ArtifactName][]byte
+	activeItem map[domain.ArtifactName]bool
+	opens      int
+	closes     int
 }
 
 func newShelf() *fakeStorage {
-	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
+	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, activeItem: map[domain.ArtifactName]bool{}}
 }
 
 // Open is one file of the store, which a copy of a video is played from.
@@ -92,21 +92,21 @@ func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
-	delete(s.held, name)
+	delete(s.activeItem, name)
 	return nil
 }
 
 func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.held[name] {
+	if s.activeItem[name] {
 		return nil, port.ErrClaimed
 	}
-	s.held[name] = true
+	s.activeItem[name] = true
 	return func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.held, name)
+		delete(s.activeItem, name)
 		return nil
 	}, nil
 }
@@ -115,7 +115,7 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.held[name] = true
+	s.activeItem[name] = true
 }
 
 const bookPath = "library/book.epub"

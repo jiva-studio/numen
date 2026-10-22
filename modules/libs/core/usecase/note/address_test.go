@@ -117,15 +117,15 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 func TestAPathIsSavedWithoutItsExtension(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
-		path string
-		held named
-		want string
+		path        string
+		targetVault named
+		want        string
 	}{
 		{"a/b.md", named{"b": {"b.md", "a/b.md"}}, "a/b"},
 		{"a/.hidden", named{".hidden": {".hidden", "a/.hidden"}}, "a/.hidden"},
 		{"a/b.c.md", named{"b.c": {"b.c.md", "a/b.c.md"}}, "a/b.c"},
 	} {
-		to, err := note.GetAddress(t.Context(), tc.held, "v", tc.path)
+		to, err := note.GetAddress(t.Context(), tc.targetVault, "v", tc.path)
 		if err != nil {
 			t.Fatalf("%s: %v", tc.path, err)
 		}

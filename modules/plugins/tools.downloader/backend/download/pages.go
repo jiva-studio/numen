@@ -54,26 +54,26 @@ func NewPages() *PageProvider {
 	}}
 }
 
-func (p *PageProvider) CanHandle(at string) bool { return !isVideoSite(at) }
+func (p *PageProvider) CanHandle(target string) bool { return !isVideoSite(target) }
 
 func (p *PageProvider) GetDownloadModel(string) DownloadModel {
 	return DownloadModel{Tool: readerName, Producer: "article"}
 }
 
-func (p *PageProvider) GetMetadata(ctx context.Context, at string) (Metadata, error) {
-	article, err := p.GetText(ctx, at, PreferredCaptions{})
+func (p *PageProvider) GetMetadata(ctx context.Context, target string) (Metadata, error) {
+	article, err := p.GetText(ctx, target, PreferredCaptions{})
 	if err != nil {
 		return Metadata{}, err
 	}
 	return Metadata{Title: article.Title}, nil
 }
 
-func (p *PageProvider) GetText(ctx context.Context, at string, _ PreferredCaptions) (Text, error) {
-	address, err := url.Parse(at)
+func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCaptions) (Text, error) {
+	address, err := url.Parse(target)
 	if err != nil {
 		return Text{}, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, at, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	if err != nil {
 		return Text{}, err
 	}
@@ -85,7 +85,7 @@ func (p *PageProvider) GetText(ctx context.Context, at string, _ PreferredCaptio
 	}
 	defer func() { _ = answer.Body.Close() }()
 	if answer.StatusCode != http.StatusOK {
-		return Text{}, fmt.Errorf("%s answered %s", at, answer.Status)
+		return Text{}, fmt.Errorf("%s answered %s", target, answer.Status)
 	}
 
 	read, err := readability.FromReader(io.LimitReader(answer.Body, maxPageBytes), address)

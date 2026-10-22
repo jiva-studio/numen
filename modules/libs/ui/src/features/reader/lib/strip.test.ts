@@ -121,22 +121,22 @@ describe('which pages are drawn', () => {
 
   it('draws around wherever the row has been scrolled to', () => {
     const stripLayout = row(book(500), VIEWPORT, 1)
-    const at = 300
+    const targetPage = 300
 
-    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[at]!)
+    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[targetPage]!)
 
-    expect(visiblePages).toContain(at)
+    expect(visiblePages).toContain(targetPage)
     expect(visiblePages).not.toContain(0)
     expect(visiblePages.length).toBeLessThan(500)
   })
 
   it('pre-renders previous page for reverse navigation', () => {
     const stripLayout = row(book(500), VIEWPORT, 1)
-    const at = 300
+    const targetPage = 300
 
-    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[at]!)
+    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[targetPage]!)
 
-    expect(visiblePages).toContain(at - 1)
+    expect(visiblePages).toContain(targetPage - 1)
   })
 
   it('draws exactly the pages that touch the reach either side of the viewport', () => {

@@ -91,11 +91,11 @@ export const mapNoteResult = (from: {
 }): NoteResult => {
   const error = findErrorCode(from)
   if (error) return asFailure(error)
-  const at = formatFingerprint(from.at)
+  const fingerprint = formatFingerprint(from.at)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
   return asValue({
     body: from.body ?? '',
-    ...(at === undefined ? {} : { at }),
+    ...(fingerprint === undefined ? {} : { at: fingerprint }),
     ...(link === undefined ? {} : { link }),
   })
 }

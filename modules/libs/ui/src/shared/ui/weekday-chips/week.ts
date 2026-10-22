@@ -37,9 +37,9 @@ export const rotateWeek = <One extends DayName>(
   id: string,
   week: readonly One[],
 ): readonly One[] => {
-  const at = week.findIndex((day) => day.id === id)
-  if (at <= 0) return week
-  return [...week.slice(at), ...week.slice(0, at)]
+  const index = week.findIndex((day) => day.id === id)
+  if (index <= 0) return week
+  return [...week.slice(index), ...week.slice(0, index)]
 }
 
 /**
@@ -62,7 +62,7 @@ export const getOfferedLevels = (
   inForce: number | null,
 ): readonly number[] => {
   if (inForce === null || levels.includes(inForce)) return levels
-  const at = levels.findIndex((one) => one > inForce)
-  if (at < 0) return [...levels, inForce]
-  return [...levels.slice(0, at), inForce, ...levels.slice(at)]
+  const index = levels.findIndex((one) => one > inForce)
+  if (index < 0) return [...levels, inForce]
+  return [...levels.slice(0, index), inForce, ...levels.slice(index)]
 }

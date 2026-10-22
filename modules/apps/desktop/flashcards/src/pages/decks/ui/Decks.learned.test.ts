@@ -66,7 +66,7 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
 })
 
 /** The screen over a vault, and over the presets its decks were read to hold. */
-const mountDecks = (over: VaultCardsDue, presets: readonly Preset[], isScheduled = true) =>
+const mountDecks = (overrides: VaultCardsDue, presets: readonly Preset[], isScheduled = true) =>
   mount(Decks, {
     props: {
       vault: over,

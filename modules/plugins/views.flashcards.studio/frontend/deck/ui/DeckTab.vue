@@ -32,7 +32,7 @@ function onRemoveCard(id: string) {
   props.state.removeCard(id)
 }
 
-function onMoveCard(id: string, at: InsertionPoint) {
+function onMoveCard(id: string, target: InsertionPoint) {
   props.state.moveCard(id, at)
 }
 

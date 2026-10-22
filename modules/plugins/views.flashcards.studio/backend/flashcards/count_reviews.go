@@ -107,9 +107,9 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	run := reviewCounter{
 		was:    u.readRemembered(ctx, v),
 		now:    countCache{V: countedVersion},
-		out:    ReviewCounts{Days: make(map[string]review.Tally)},
-		seen:   make(map[string]bool),
-		coming: u.schedules.by != nil,
+		out:        ReviewCounts{Days: make(map[string]review.Tally)},
+		countedIDs: make(map[string]bool),
+		coming:     u.schedules.scheduler != nil,
 	}
 	for _, file := range files {
 		if err := u.countFile(ctx, log, store, file, &run); err != nil {
@@ -117,13 +117,13 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		}
 	}
 
-	run.held.order = newHistory(run.held.Answers)
+	run.log.order = newHistory(run.log.Answers)
 	u.remember(ctx, v, run.now)
 	run.out.Streak = review.Streak(u.day, run.out.Days, u.now())
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
-	due, retained, err := u.getDueAndRetained(ctx, v, run.held)
+	due, retained, err := u.getDueAndRetained(ctx, v, run.log)
 	if err != nil {
 		return ReviewCounts{}, err
 	}
@@ -142,11 +142,11 @@ type reviewCounter struct {
 	// seen holds every identifier already counted. One identifier is one answer
 	// over the whole log, so a line another run was counted for is not counted
 	// again.
-	seen map[string]bool
+	countedIDs map[string]bool
 	// coming is whether what is still to come is worked out from the whole
 	// history, so that every run is read and the reading is handed on.
 	coming bool
-	held   ReviewLog
+	log   ReviewLog
 }
 
 // countFile adds one run of the log to the counting.
@@ -175,19 +175,19 @@ func (u CountReviews) countFile(
 	}
 	run.now.Runs = append(run.now.Runs, one)
 	if didOpen && !ran.IsGone && !ran.IsUnreadable {
-		run.held.Answers = append(run.held.Answers, ran.Answers...)
-		run.held.Files = append(run.held.Files, ports.Entry{Name: file.Name, Size: ran.Size})
+		run.log.Answers = append(run.log.Answers, ran.Answers...)
+		run.log.Files = append(run.log.Files, ports.Entry{Name: file.Name, Size: ran.Size})
 	}
 
 	days := one.Days
-	if isRepeated(one.IDs, run.seen) {
+	if isRepeated(one.IDs, run.countedIDs) {
 		if !didOpen {
 			ran, err = log.ReadFile(ctx, store, file)
 			if err != nil {
 				return err
 			}
 		}
-		days = review.GetDayTallies(u.day, getUncounted(ran.Answers, run.seen))
+		days = review.GetDayTallies(u.day, getUncounted(ran.Answers, run.countedIDs))
 	}
 	run.addDays(one.IDs, days)
 	return nil
@@ -198,7 +198,7 @@ func (u CountReviews) countFile(
 // the run adds is what no other run has been counted for.
 func (run *reviewCounter) addDays(ids []string, days map[string]review.Tally) {
 	for _, id := range ids {
-		run.seen[id] = true
+		run.countedIDs[id] = true
 	}
 	for day, count := range days {
 		run.out.Days[day] = addTallies(run.out.Days[day], count)
@@ -230,9 +230,9 @@ func collectIdentifiers(answers []review.Answer) []string {
 }
 
 // isRepeated reports whether a run carries a line another run was counted for.
-func isRepeated(ids []string, seen map[string]bool) bool {
+func isRepeated(ids []string, countedIDs map[string]bool) bool {
 	for _, id := range ids {
-		if seen[id] {
+		if countedIDs[id] {
 			return true
 		}
 	}
@@ -240,10 +240,10 @@ func isRepeated(ids []string, seen map[string]bool) bool {
 }
 
 // getUncounted is the lines of a run no other run was counted for.
-func getUncounted(answers []review.Answer, seen map[string]bool) []review.Answer {
+func getUncounted(answers []review.Answer, countedIDs map[string]bool) []review.Answer {
 	out := make([]review.Answer, 0, len(answers))
 	for _, a := range answers {
-		if !seen[a.ID] {
+		if !countedIDs[a.ID] {
 			out = append(out, a)
 		}
 	}
@@ -263,7 +263,7 @@ func (u CountReviews) getDueAndRetained(
 	ctx context.Context, v domain.Vault, target ReviewLog,
 ) (map[string]int, map[string]review.RecallTally, error) {
 	falls := make(map[string]int)
-	if u.schedules.by == nil {
+	if u.schedules.scheduler == nil {
 		return falls, nil, nil
 	}
 
@@ -280,7 +280,7 @@ func (u CountReviews) getDueAndRetained(
 		}
 		falls[u.day.GetName(s.Due)]++
 	}
-	return falls, target.GetHistory().GetRetained(u.schedules.by, u.day), nil
+	return falls, target.GetHistory().GetRetained(u.schedules.scheduler, u.day), nil
 }
 
 // readRemembered is what was counted last time, by the name of the run it was

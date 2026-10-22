@@ -231,10 +231,10 @@ func (h *artifactHandler) fetchCopy(
 	}
 	// A copy is minutes of fetching, so how far it has got is reported as it
 	// arrives.
-	report := func(done, total int64) {
+	report := func(finished, total int64) {
 		h.state.reportTask(run.Task{
 			ID: copying + ref.Path, Title: "Downloading a copy", About: ref.Path,
-			Count: done, Total: total, Unit: run.Bytes, IsUserStarted: true,
+			Count: finished, Total: total, Unit: run.Bytes, IsUserStarted: true,
 		})
 	}
 	got, err := h.imports.Copy(ctx, v, ref.Path, report)

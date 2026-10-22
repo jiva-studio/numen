@@ -35,11 +35,11 @@ const MOVES: Record<TreeKey, Move> = {
  * From no row at all every key lands on the first.
  */
 export function stepTo(visibleRows: readonly ShownRow[], from: RowId | null, key: TreeKey): Step {
-  const at = visibleRows.findIndex((row) => row.id === from)
-  const here = visibleRows[at]
+  const index = visibleRows.findIndex((row) => row.id === from)
+  const here = visibleRows[index]
   if (!here) return stepToFirst(visibleRows)
 
-  return MOVES[key](visibleRows, at, here)
+  return MOVES[key](visibleRows, index, here)
 }
 
 function stepToFirst(visibleRows: readonly ShownRow[]): Step {

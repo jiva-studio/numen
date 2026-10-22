@@ -34,7 +34,7 @@ type Watcher struct {
 func (w Watcher) WatchVault(
 	ctx context.Context,
 	v domain.Vault,
-) (changes <-chan []string, lost <-chan struct{}, err error) {
+) (changes <-chan []string, lostChan <-chan struct{}, err error) {
 	reader, err := Open(v.Path, w.Options)
 	if err != nil {
 		return nil, nil, err
