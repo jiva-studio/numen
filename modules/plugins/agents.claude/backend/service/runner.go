@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/programs"
 )
 
 var claudeSearchPlaces = []string{
@@ -35,7 +35,7 @@ func findClaude() string {
 	if cmd := os.Getenv("CLAUDE_COMMAND"); cmd != "" {
 		return cmd
 	}
-	return agentrun.Locate([]string{"claude"}, claudeSearchPlaces)
+	return programs.Locate([]string{"claude"}, claudeSearchPlaces)
 }
 
 func writeMcpConfig(url, token string) (string, error) {

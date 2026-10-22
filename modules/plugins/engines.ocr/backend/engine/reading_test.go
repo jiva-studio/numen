@@ -391,12 +391,7 @@ func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 
 		runBounded(t.Context(), 10, 1, func(int) {
 			cur := active.Add(1)
-			for {
-				old := maxActive.Load()
-				if cur <= old || maxActive.CompareAndSwap(old, cur) {
-					break
-				}
-			}
+			raiseMax(&maxActive, cur)
 			if cur > 1 {
 				select {
 				case secondEntered <- struct{}{}:
@@ -416,6 +411,16 @@ func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 			t.Errorf("concurrent workers = %d, want 1", got)
 		}
 	})
+}
+
+// raiseMax lifts peak to cur when cur is higher.
+func raiseMax(peak *atomic.Int32, cur int32) {
+	for {
+		old := peak.Load()
+		if cur <= old || peak.CompareAndSwap(old, cur) {
+			return
+		}
+	}
 }
 
 func TestDistinctSelectsHigherScoringRegionOnOverlap(t *testing.T) {

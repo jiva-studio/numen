@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/process"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
@@ -104,7 +104,7 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 	})
 	cmd := exec.CommandContext(ctx, command[0], args...)
 	cmd.Env = buildEnvironment(env)
-	agentrun.Supervise(cmd)
+	process.Supervise(cmd)
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err

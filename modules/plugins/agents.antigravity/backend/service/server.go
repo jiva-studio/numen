@@ -7,13 +7,15 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/models"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/programs"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 type agentServer struct {
 	agentrun.Service
-	models agentrun.ModelCache[antigravityModel]
+	models models.Cache[antigravityModel]
 }
 
 func (s *agentServer) AskAgent(
@@ -56,7 +58,7 @@ func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
-	command := agentrun.ProgramCommand(req.Msg.GetCommands(), "antigravity")
+	command := programs.ProgramCommand(req.Msg.GetCommands(), "antigravity")
 	antigravity := &numenv1.AgentProgram{
 		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || len(command) > 0,
 	}

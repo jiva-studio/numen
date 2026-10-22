@@ -1,8 +1,8 @@
 package service
 
-import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/programs"
 
-var antigravityProgram = agentrun.Program{
+var antigravityProgram = programs.Program{
 	Names: []string{"agy", "antigravity"},
 	Places: []string{
 		"~/.gemini/antigravity-cli/bin/agy",
@@ -14,12 +14,12 @@ var antigravityProgram = agentrun.Program{
 
 // IsAntigravityInstalled checks whether Antigravity CLI is available on this machine.
 func IsAntigravityInstalled() bool {
-	_, ok := agentrun.Discover(antigravityProgram)
+	_, ok := programs.Discover(antigravityProgram)
 	return ok
 }
 
 // FindAntigravity returns the path of the Antigravity CLI, or the bare name where not found.
 func FindAntigravity() string {
-	path, _ := agentrun.Discover(antigravityProgram)
+	path, _ := programs.Discover(antigravityProgram)
 	return path
 }

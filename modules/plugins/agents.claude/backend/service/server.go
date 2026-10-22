@@ -17,6 +17,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/process"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
@@ -192,7 +193,7 @@ func (s *agentServer) launchAgentCmd(
 	cmd.Dir = msg.GetRoot()
 	cmd.Env = buildEnvironment(s.getEnvironment())
 	cmd.Stdin = strings.NewReader(msg.GetPrompt())
-	agentrun.Supervise(cmd)
+	process.Supervise(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {

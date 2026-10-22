@@ -1,8 +1,8 @@
 package service
 
-import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/programs"
 
-var codexProgram = agentrun.Program{
+var codexProgram = programs.Program{
 	Names: []string{"codex"},
 	Places: []string{
 		"~/.codex/bin/codex",
@@ -13,12 +13,12 @@ var codexProgram = agentrun.Program{
 
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
 func IsCodexInstalled() bool {
-	_, ok := agentrun.Discover(codexProgram)
+	_, ok := programs.Discover(codexProgram)
 	return ok
 }
 
 // FindCodex returns the path of the Codex CLI, or the bare name where not found.
 func FindCodex() string {
-	path, _ := agentrun.Discover(codexProgram)
+	path, _ := programs.Discover(codexProgram)
 	return path
 }
