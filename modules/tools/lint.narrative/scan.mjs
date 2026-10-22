@@ -606,10 +606,12 @@ function scanFile(filePath) {
       }
     }
 
+    const lineWithoutStrings = line.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/`[^`]*`/g, '``').replace(/'(?:[^'\\]|\\.)*'/g, "''")
+
     // 2. Participle Identifiers (variables & params)
     if (isCode && !isCommentLine && shouldCheckCategory('participles')) {
       if (isGo) {
-        const m = RE_GO_VAR_PARTICIPLE.exec(line) || RE_GO_PARAM_OR_FIELD_PARTICIPLE.exec(line)
+        const m = RE_GO_VAR_PARTICIPLE.exec(lineWithoutStrings) || RE_GO_PARAM_OR_FIELD_PARTICIPLE.exec(lineWithoutStrings)
         if (m) {
           const word = m[1] || m[2] || m[3] || m[4]
           if (!filterWord || filterWord === word) {
@@ -618,12 +620,12 @@ function scanFile(filePath) {
           }
         }
       } else {
-        const mVar = RE_TS_VAR_PARTICIPLE.exec(line)
+        const mVar = RE_TS_VAR_PARTICIPLE.exec(lineWithoutStrings)
         if (mVar && (!filterWord || filterWord === mVar[1])) {
           findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'ts', word: mVar[1], text: trimmed })
           stats.frontendTotal++
         } else {
-          const mParam = RE_TS_PARAM_PARTICIPLE.exec(line)
+          const mParam = RE_TS_PARAM_PARTICIPLE.exec(lineWithoutStrings)
           if (mParam && (!filterWord || filterWord === mParam[1])) {
             findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'ts', word: mParam[1], text: trimmed })
             stats.frontendTotal++
@@ -635,8 +637,8 @@ function scanFile(filePath) {
     // 3. Prepositions used as bare variables
     if (isCode && !isCommentLine && shouldCheckCategory('prepositions')) {
       const m = isGo
-        ? (RE_GO_VAR_PREPOSITION.exec(line) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(line) || RE_GO_BARE_AT_FIELD.exec(line))
-        : (RE_TS_VAR_PREPOSITION.exec(line) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(line) || RE_TS_BARE_AT_FIELD.exec(line))
+        ? (RE_GO_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(lineWithoutStrings) || RE_GO_BARE_AT_FIELD.exec(lineWithoutStrings))
+        : (RE_TS_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(lineWithoutStrings) || RE_TS_BARE_AT_FIELD.exec(lineWithoutStrings))
       if (m) {
         const word = m[1] || m[2] || m[3]
         if (!filterWord || filterWord === word) {
@@ -676,8 +678,8 @@ function scanFile(filePath) {
     }
 
     // 6. Forbidden domain terminology (Rule 8 & 9)
-    if (shouldCheckCategory('domain')) {
-      const m = RE_DOMAIN_TERM.exec(line)
+    if (isCode && !isCommentLine && shouldCheckCategory('domain')) {
+      const m = RE_DOMAIN_TERM.exec(lineWithoutStrings)
       if (m) {
         const term = m[1]
         if (!filterWord || filterWord === term) {

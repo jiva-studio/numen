@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-const reflowed = "library/reflowed.epub"
+const sampleBook = "library/sampleBook.epub"
 
 // plate is a picture the book carries, and cover is a picture written in a
 // format that is a document.
@@ -110,7 +110,7 @@ func (c *fakeBookClient) getAsked() []domain.Fingerprint {
 // given holds the entries of.
 func readFrom(t *testing.T, client port.Book) (*Services, http.Handler) {
 	t.Helper()
-	vault := testsupport.NewVault(t, map[string]string{reflowed: "the bytes of a book"})
+	vault := testsupport.NewVault(t, map[string]string{sampleBook: "the bytes of a book"})
 	api := newBooksAPI(filesystem.VaultReaders{}, client, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
 	t.Cleanup(api.Document.viewer.close)
@@ -140,11 +140,11 @@ func TestWhatABookIsIsAskedOfThePlugin(t *testing.T) {
 	client := newBookClient()
 	api, _ := readFrom(t, client)
 
-	out, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+	out, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: sampleBook}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.GetTitle() != "A Reflowed Book" || client.book != reflowed {
+	if out.Msg.GetTitle() != "A Reflowed Book" || client.book != sampleBook {
 		t.Errorf("the book is %q, asked for %q", out.Msg.GetTitle(), client.book)
 	}
 	if out.Msg.GetPageCount() != 2 || out.Msg.GetTextBytes() != 11 || out.Msg.GetPageBytes() != 6 {
@@ -159,7 +159,7 @@ func TestWhatABookIsIsAskedOfThePlugin(t *testing.T) {
 	if pages := out.Msg.GetPrintedPages(); len(pages) != 1 || pages[0].GetLabel() != "iv" || pages[0].GetOffset() != 3 {
 		t.Errorf("the printed pages are %v", pages)
 	}
-	if mark := out.Msg.GetFingerprint(); mark.GetPath() != reflowed || mark.GetSize() != 5 || mark.GetMtime() != 7 {
+	if mark := out.Msg.GetFingerprint(); mark.GetPath() != sampleBook || mark.GetSize() != 5 || mark.GetMtime() != 7 {
 		t.Errorf("the fingerprint is %v", mark)
 	}
 }
@@ -177,11 +177,11 @@ func TestAErrorOfTheBookIsCoded(t *testing.T) {
 		client.failure = fmt.Errorf("a book: %w", why)
 		api, _ := readFrom(t, client)
 
-		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: sampleBook}))
 		if got := connect.CodeOf(err); got != want {
 			t.Errorf("the book failed %v for %v, want %v", got, why, want)
 		}
-		_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+		_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: sampleBook}))
 		if got := connect.CodeOf(err); got != want {
 			t.Errorf("the markup failed %v for %v, want %v", got, why, want)
 		}
@@ -193,17 +193,17 @@ func TestOneDocumentOfABookIsAskedOfThePlugin(t *testing.T) {
 	api, _ := readFrom(t, client)
 
 	out, err := api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
-		Path: reflowed, Document: "OEBPS/first.xhtml",
-		Baseline: &v1.Fingerprint{Path: reflowed, Size: 5, Mtime: 7},
+		Path: sampleBook, Document: "OEBPS/first.xhtml",
+		Baseline: &v1.Fingerprint{Path: sampleBook, Size: 5, Mtime: 7},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	request := client.markup
-	if out.Msg.GetMarkup() != "<p>Alpha omega.</p>" || request.path != reflowed || request.section != "OEBPS/first.xhtml" {
+	if out.Msg.GetMarkup() != "<p>Alpha omega.</p>" || request.path != sampleBook || request.section != "OEBPS/first.xhtml" {
 		t.Errorf("the markup is %q, asked for %+v", out.Msg.GetMarkup(), request)
 	}
-	if want := (domain.Fingerprint{Path: reflowed, Size: 5, ModTime: time.Unix(0, 7)}); request.baseline == nil || !request.baseline.ModTime.Equal(want.ModTime) ||
+	if want := (domain.Fingerprint{Path: sampleBook, Size: 5, ModTime: time.Unix(0, 7)}); request.baseline == nil || !request.baseline.ModTime.Equal(want.ModTime) ||
 		request.baseline.Path != want.Path || request.baseline.Size != want.Size {
 		t.Errorf("the baseline is %+v, want %+v", request.baseline, want)
 	}
@@ -214,7 +214,7 @@ func TestAMarkupAskWithNoBaselineNamesNone(t *testing.T) {
 	client := newBookClient()
 	api, _ := readFrom(t, client)
 
-	if _, err := api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed})); err != nil {
+	if _, err := api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: sampleBook})); err != nil {
 		t.Fatal(err)
 	}
 	if client.markup.baseline != nil {
@@ -225,18 +225,18 @@ func TestAMarkupAskWithNoBaselineNamesNone(t *testing.T) {
 // A window with no use case bound for books answers nothing about a book.
 func TestABookIsNotAnsweredWithoutAUseCase(t *testing.T) {
 	api, handler := readFrom(t, newBookClient())
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 	api.Book.getBook, api.Book.readBookMarkup, api.Book.getBookPicture = nil, nil, nil
 
-	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: sampleBook}))
 	if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
 		t.Errorf("a book was answered %v, want unimplemented", code)
 	}
-	_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+	_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: sampleBook}))
 	if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
 		t.Errorf("a document of a book was answered %v, want unimplemented", code)
 	}
-	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotImplemented {
+	if out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotImplemented {
 		t.Errorf("a picture was answered %d, want not implemented", out.Code)
 	}
 }
@@ -256,17 +256,17 @@ func TestAnAbsentBookPluginIsAnsweredAsUnimplemented(t *testing.T) {
 			client := newBookClient()
 			client.failure = why
 			api, handler := readFrom(t, client)
-			mark := printOf(t, api, reflowed)
+			mark := printOf(t, api, sampleBook)
 
-			_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+			_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: sampleBook}))
 			if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
 				t.Errorf("a book was answered %v, want unimplemented", code)
 			}
-			_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+			_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: sampleBook}))
 			if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
 				t.Errorf("a document of a book was answered %v, want unimplemented", code)
 			}
-			if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotImplemented {
+			if out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotImplemented {
 				t.Errorf("a picture was answered %d, want not implemented", out.Code)
 			}
 		})
@@ -276,13 +276,13 @@ func TestAnAbsentBookPluginIsAnsweredAsUnimplemented(t *testing.T) {
 // A window over a build with no book plugin answers every ask as unimplemented.
 func TestABuildWithNoBookPluginAnswersUnimplemented(t *testing.T) {
 	api, handler := readFrom(t, absentBooks{})
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 
-	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: sampleBook}))
 	if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
 		t.Errorf("a book was answered %v, want unimplemented", code)
 	}
-	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotImplemented {
+	if out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotImplemented {
 		t.Errorf("a picture was answered %d, want not implemented", out.Code)
 	}
 }
@@ -301,11 +301,11 @@ func TestAFailureOfTheBookKeepsItsCode(t *testing.T) {
 		client.failure = why
 		api, _ := readFrom(t, client)
 
-		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: sampleBook}))
 		if code := connect.CodeOf(err); code != want {
 			t.Errorf("%v was answered %v, want %v", why, code, want)
 		}
-		_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+		_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: sampleBook}))
 		if code := connect.CodeOf(err); code != want {
 			t.Errorf("%v was answered %v for markup, want %v", why, code, want)
 		}
@@ -317,9 +317,9 @@ func TestAFailureOfTheBookKeepsItsCode(t *testing.T) {
 func TestAPictureTheBookCarries(t *testing.T) {
 	client := newBookClient()
 	api, handler := readFrom(t, client)
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 
-	out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", mark))
+	out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/plate.png", mark))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for a picture and got %d: %s", out.Code, out.Body)
 	}
@@ -332,7 +332,7 @@ func TestAPictureTheBookCarries(t *testing.T) {
 	if out.Body.String() != plate {
 		t.Errorf("the picture is %d bytes", out.Body.Len())
 	}
-	if request := client.getAsked(); len(request) != 1 || request[0].Path != reflowed ||
+	if request := client.getAsked(); len(request) != 1 || request[0].Path != sampleBook ||
 		request[0].Size != mark.Size || stamp(request[0].ModTime) != mark.Mtime {
 		t.Errorf("the plugin was asked at %v, want the bytes the address names", request)
 	}
@@ -343,7 +343,7 @@ func TestAPictureTheBookCarries(t *testing.T) {
 // the book's own claim about it.
 func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 	api, handler := readFrom(t, newBookClient())
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 
 	for _, entry := range []string{
 		"OEBPS/first.xhtml",
@@ -351,7 +351,7 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 		"OEBPS/pictures/gone.png",
 	} {
 		t.Run(entry, func(t *testing.T) {
-			out := ask(handler, pictureOf(reflowed, entry, mark))
+			out := ask(handler, pictureOf(sampleBook, entry, mark))
 			if out.Code == http.StatusOK {
 				t.Errorf("%s was served as %q", entry, out.Header().Get("Content-Type"))
 			}
@@ -361,9 +361,9 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 
 func TestAnEntryTheArchiveLacksIsNotFound(t *testing.T) {
 	api, handler := readFrom(t, newBookClient())
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 
-	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/gone.png", mark)); out.Code != http.StatusNotFound {
+	if out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/gone.png", mark)); out.Code != http.StatusNotFound {
 		t.Errorf("the entry was answered %d, want not found", out.Code)
 	}
 }
@@ -372,9 +372,9 @@ func TestAFileThatIsNoBookIsUnsupported(t *testing.T) {
 	client := newBookClient()
 	client.failure = document.ErrNotADocument
 	api, handler := readFrom(t, client)
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 
-	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusUnsupportedMediaType {
+	if out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusUnsupportedMediaType {
 		t.Errorf("the picture was answered %d, want unsupported media type", out.Code)
 	}
 }
@@ -384,10 +384,10 @@ func TestAFileThatIsNoBookIsUnsupported(t *testing.T) {
 func TestAnAddressIntoABookThatChanged(t *testing.T) {
 	client := newBookClient()
 	api, handler := readFrom(t, client)
-	stalePrint := printOf(t, api, reflowed)
+	stalePrint := printOf(t, api, sampleBook)
 	stalePrint.Size++
 
-	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", stalePrint)); out.Code != http.StatusNotFound {
+	if out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/plate.png", stalePrint)); out.Code != http.StatusNotFound {
 		t.Errorf("the picture was answered %d, want not found", out.Code)
 	}
 	if client.countAsked() != 0 {
@@ -401,9 +401,9 @@ func TestABookThePluginFindsChangedIsNotFound(t *testing.T) {
 	client := newBookClient()
 	client.failure = document.ErrChanged
 	api, handler := readFrom(t, client)
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 
-	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotFound {
+	if out := ask(handler, pictureOf(sampleBook, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotFound {
 		t.Errorf("the picture was answered %d, want not found", out.Code)
 	}
 }
@@ -413,7 +413,7 @@ func TestABookThePluginFindsChangedIsNotFound(t *testing.T) {
 func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 	client := newBookClient()
 	api, handler := readFrom(t, client)
-	mark := printOf(t, api, reflowed)
+	mark := printOf(t, api, sampleBook)
 
 	for _, path := range []string{"../outside.epub", "/etc/passwd", "library/nothing.epub"} {
 		t.Run(path, func(t *testing.T) {
@@ -459,11 +459,11 @@ func TestGetBookAndReadBookMarkupWithoutShownVault(t *testing.T) {
 	api, _ := readFrom(t, client)
 	api.state.setVault(domain.Vault{})
 
-	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: sampleBook}))
 	if code := connect.CodeOf(err); code != connect.CodeFailedPrecondition {
 		t.Errorf("GetBook without vault = %v, want CodeFailedPrecondition", code)
 	}
-	_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+	_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: sampleBook}))
 	if code := connect.CodeOf(err); code != connect.CodeFailedPrecondition {
 		t.Errorf("ReadBookMarkup without vault = %v, want CodeFailedPrecondition", code)
 	}
