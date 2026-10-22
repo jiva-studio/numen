@@ -14,7 +14,7 @@
     "onCommand:transcribe"
   ],
   "permissions": ["vault:read", "network:outbound"],
-  "runtimes": ["onnxruntime"],
+  "dependencies": [{ "id": "onnxruntime", "kind": "runtime" }],
   "lifecycle": {
     "idleTimeoutSeconds": 600,
     "keepAliveWhileVisible": false,
