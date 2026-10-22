@@ -20,6 +20,7 @@ import { runDuplicationCheck } from "./checks/duplication.mjs";
 import { runComplexityCheck } from "./checks/complexity.mjs";
 import { runDeadcodeCheck } from "./checks/deadcode.mjs";
 import { runInterfacesCheck } from "./checks/interfaces.mjs";
+import { runFrontendCheck } from "./checks/frontend.mjs";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../../..");
@@ -45,6 +46,11 @@ const ALL_CHECKS = [
     name: "Interface Segregation / Bloat (interfacebloat)",
     run: (opts) => runInterfacesCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
+  {
+    id: "frontend",
+    name: "Frontend Conventions & Quality (ESLint)",
+    run: (opts) => runFrontendCheck({ repoRoot: REPO_ROOT, ...opts }),
+  },
 ];
 
 function printHelp() {
@@ -52,7 +58,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,complexity,deadcode,interfaces)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,complexity,deadcode,interfaces,frontend)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -121,6 +127,7 @@ function resolveChecks(args, changedOnly) {
       if (id === "complexity") return hasGo;
       if (id === "deadcode") return hasUi || hasGoCore;
       if (id === "interfaces") return hasGo;
+      if (id === "frontend") return hasTsOrVue;
       return true;
     });
   }
