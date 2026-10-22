@@ -22,7 +22,11 @@ const IGNORED_DIRS = new Set([
  * @returns {boolean}
  */
 function isSourceFile(filename) {
-  if (filename.endsWith(".pb.go") || filename.endsWith(".connect.go")) {
+  if (
+    filename.endsWith(".pb.go") ||
+    filename.endsWith(".connect.go") ||
+    filename.endsWith("_pb.ts")
+  ) {
     return false;
   }
   return /\.(go|ts|vue)$/.test(filename);
