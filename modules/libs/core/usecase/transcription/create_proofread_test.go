@@ -5,9 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // replying is a proofreader that is asked nothing: what a run is built with.
@@ -23,7 +25,7 @@ func (r *replying) ProofreadSpeech(
 
 // somewhereToProofread is a vault to read out of and a store to keep the
 // hand over both and watch the proofreader.
-func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
+func somewhereToProofread() (vaultport.VaultReaders, vaultport.DerivedStores) {
 	return vaults{}, fakeStores{newShelf()}
 }
 
@@ -33,7 +35,7 @@ func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	delta := &replying{}
 	config := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func() (port.Proofreader, error) { return delta, nil },
+		By:      func() (recognitionport.Proofreader, error) { return delta, nil },
 	}
 	readers, derived := somewhereToProofread()
 
@@ -41,7 +43,7 @@ func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	if err != nil || !target {
 		t.Fatalf("held %v, %v", target, err)
 	}
-	if right.provider != port.Proofreader(delta) {
+	if right.provider != recognitionport.Proofreader(delta) {
 		t.Error("a transcript is put right by something the installation did not place")
 	}
 }
@@ -53,7 +55,7 @@ func TestNamingNoProofreaderContainsNoneAndIsNoFailure(t *testing.T) {
 	readers, derived := somewhereToProofread()
 	for _, response := range []run.ProofreadingConfig{
 		{},
-		{By: func() (port.Proofreader, error) { return nil, nil }},
+		{By: func() (recognitionport.Proofreader, error) { return nil, nil }},
 	} {
 		right, target, err := CreateProofread(response, readers, derived)
 		if err != nil || target || right.provider != nil {
@@ -68,7 +70,7 @@ func TestAProofreaderThatCannotBeOpenedIsAnError(t *testing.T) {
 	keyless := errors.New("no key is configured")
 	response := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func() (port.Proofreader, error) { return nil, keyless },
+		By:      func() (recognitionport.Proofreader, error) { return nil, keyless },
 	}
 	readers, derived := somewhereToProofread()
 

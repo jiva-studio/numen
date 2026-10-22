@@ -6,19 +6,21 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 // listedPrograms are the programs two plugins list: one installed with models of its own, one installed
 // that lists none, and one that is not installed.
-func listedPrograms() []port.AgentProgram {
-	return []port.AgentProgram{
+func listedPrograms() []agentport.AgentProgram {
+	return []agentport.AgentProgram{
 		{
 			Provider: "p.one", Name: "alpha", Title: "Alpha", IsInstalled: true, IsDefault: true,
-			Models: []port.AgentModel{{Name: "big", Title: "Big"}, {Name: "small"}},
+			Models: []agentport.AgentModel{{Name: "big", Title: "Big"}, {Name: "small"}},
 		},
 		{Provider: "p.two", Name: "beta", Title: "Beta", IsInstalled: true},
-		{Provider: "p.two", Name: "gamma", Title: "Gamma", Models: []port.AgentModel{{Name: "g1"}}},
+		{Provider: "p.two", Name: "gamma", Title: "Gamma", Models: []agentport.AgentModel{{Name: "g1"}}},
 	}
 }
 
@@ -50,10 +52,10 @@ func TestEveryModelReturnsWhereItIsReadAndWhatItWrites(t *testing.T) {
 
 // One setting, one model an installation nobody has configured runs on.
 func TestOneModelToASettingIsTheDefault(t *testing.T) {
-	for name, programs := range map[string][]port.AgentProgram{
+	for name, programs := range map[string][]agentport.AgentProgram{
 		"programs that mark one": listedPrograms(),
 		"programs that mark none": {
-			{Name: "alpha", Title: "Alpha", IsInstalled: true, Models: []port.AgentModel{{Name: "m"}}},
+			{Name: "alpha", Title: "Alpha", IsInstalled: true, Models: []agentport.AgentModel{{Name: "m"}}},
 			{Name: "beta", Title: "Beta", IsInstalled: true},
 		},
 		"no programs": nil,
@@ -82,7 +84,7 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 // The programs the setting can name are the ones the plugins list, with the default one marked, a
 // program that is not installed not fetched, and the choice of none last.
 func TestTheProgramsTheSettingCanNameAreTheOnesThePluginsList(t *testing.T) {
-	var uses []port.Model
+	var uses []settingsport.Model
 	for _, one := range settings.AgentModels("agent", settings.Agent{}, listedPrograms()) {
 		if formatPath(one.Path) == formatPath(agentUseAt) {
 			uses = append(uses, one)
@@ -99,7 +101,7 @@ func TestTheProgramsTheSettingCanNameAreTheOnesThePluginsList(t *testing.T) {
 	if !uses[0].IsDefault || uses[1].IsDefault || uses[2].IsDefault || uses[3].IsDefault {
 		t.Errorf("the default is %v", uses)
 	}
-	if uses[0].Presence != port.Present || uses[2].Presence != port.NotFetched || uses[3].Presence != port.NothingToFetch {
+	if uses[0].Presence != settingsport.Present || uses[2].Presence != settingsport.NotFetched || uses[3].Presence != settingsport.NothingToFetch {
 		t.Errorf("the presence is %v, %v, %v", uses[0].Presence, uses[2].Presence, uses[3].Presence)
 	}
 	if got := uses[1].Writes; len(got) != 1 || formatPath(got[0].Path) != "agent.use" || got[0].JSON != `"beta"` {
@@ -135,16 +137,16 @@ func TestAProgramOffersTheModelsItListsAndTheFirstByDefault(t *testing.T) {
 	if got := target[1].Writes; len(got) != 1 || formatPath(got[0].Path) != "agent.alpha.model" || got[0].JSON != `"small"` {
 		t.Errorf("choosing small writes %+v", got)
 	}
-	if target[0].Presence != port.NothingToFetch {
+	if target[0].Presence != settingsport.NothingToFetch {
 		t.Errorf("the presence is %v", target[0].Presence)
 	}
 }
 
 // The model a program marks as its own is the default where the settings name none.
 func TestTheModelAProgramMarksIsTheDefault(t *testing.T) {
-	programs := []port.AgentProgram{{
+	programs := []agentport.AgentProgram{{
 		Name: "alpha", Title: "Alpha", IsInstalled: true,
-		Models: []port.AgentModel{{Name: "one"}, {Name: "two", IsDefault: true}},
+		Models: []agentport.AgentModel{{Name: "one"}, {Name: "two", IsDefault: true}},
 	}}
 	target := modelsAt(t, settings.Agent{}, programs, agentModelAt)
 	if target[0].IsDefault || !target[1].IsDefault {
@@ -208,9 +210,9 @@ func TestAProgramNotInstalledOffersModelsOnlyWhereTheSettingsNameIt(t *testing.T
 
 // modelsAt are the models one setting can be set to, in the order they are
 // offered.
-func modelsAt(t *testing.T, target settings.Agent, programs []port.AgentProgram, setting []string) []port.Model {
+func modelsAt(t *testing.T, target settings.Agent, programs []agentport.AgentProgram, setting []string) []settingsport.Model {
 	t.Helper()
-	found := []port.Model{}
+	found := []settingsport.Model{}
 	for _, one := range settings.AgentModels("agent", target, programs) {
 		if formatPath(one.Path) == formatPath(setting) {
 			found = append(found, one)
@@ -229,10 +231,10 @@ func formatPath(path []string) string { return strings.Join(path, ".") }
 
 // The levels of reasoning a model lists, and the one it works at unasked, stay on its row.
 func TestAModelKeepsTheLevelsOfReasoningItLists(t *testing.T) {
-	programs := []port.AgentProgram{{
+	programs := []agentport.AgentProgram{{
 		Name: "alpha", Title: "Alpha", IsInstalled: true,
-		Models: []port.AgentModel{
-			{Name: "deep", ReasoningLevels: []port.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}}, DefaultReasoning: "low"},
+		Models: []agentport.AgentModel{
+			{Name: "deep", ReasoningLevels: []agentport.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}}, DefaultReasoning: "low"},
 			{Name: "plain"},
 		},
 	}}

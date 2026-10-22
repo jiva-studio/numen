@@ -11,8 +11,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // diskVault is the vault of a folder on this machine, worked as the host works it for a plugin.
@@ -56,7 +58,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 
 	_, err = access.Write(t.Context(), "decks/A.md", []byte("mine"), pos)
 
-	if !errors.Is(err, port.ErrStale) {
+	if !errors.Is(err, vaultport.ErrStale) {
 		t.Errorf("a write over a file that moved was %v", err)
 	}
 	_, now, err := access.Read(t.Context(), "decks/A.md")
@@ -74,7 +76,7 @@ func TestAFileIsMadeOnlyWhereNoneExistsAndTheWritersAreHeldAndLetGo(t *testing.T
 	if err := access.Create(t.Context(), "decks/B.md", []byte("b")); err != nil {
 		t.Fatal(err)
 	}
-	if err := access.Create(t.Context(), "decks/B.md", []byte("b")); !errors.Is(err, port.ErrOccupied) {
+	if err := access.Create(t.Context(), "decks/B.md", []byte("b")); !errors.Is(err, vaultport.ErrOccupied) {
 		t.Errorf("a file made over one was %v", err)
 	}
 	release, err := access.Lock(t.Context())
@@ -103,7 +105,7 @@ func TestTheDataOfAPluginIsCachedInItsFolderAndNoOther(t *testing.T) {
 	if err != nil || string(content) != "one\ntwo\n" {
 		t.Errorf("read %q (%v)", content, err)
 	}
-	if listErr != nil || !slices.Equal(items, []port.PluginDataFile{{Name: "run.log", Size: 8}}) {
+	if listErr != nil || !slices.Equal(items, []pluginport.PluginDataFile{{Name: "run.log", Size: 8}}) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
 	for _, name := range []string{"", "../run.log", "a/b", ".hidden"} {

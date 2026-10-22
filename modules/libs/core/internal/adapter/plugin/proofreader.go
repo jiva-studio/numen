@@ -10,14 +10,16 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // ProofreaderPluginHost provides plugin resolution and activation for proofreading.
 type ProofreaderPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
+	pluginport.PluginResolver
+	pluginport.PluginActivator
 }
 
 // ProofreaderBridge connects port.Proofreader calls to an out-of-process proofreading plugin via Connect-RPC.
@@ -129,13 +131,13 @@ func readProofreadError(ctx context.Context, err error) error {
 	}
 	var failure *connect.Error
 	if !errors.As(err, &failure) {
-		return fmt.Errorf("%w: %w", port.ErrUnavailable, err)
+		return fmt.Errorf("%w: %w", completionport.ErrUnavailable, err)
 	}
 	switch failure.Code() {
 	case connect.CodeUnavailable, connect.CodeUnimplemented:
-		return fmt.Errorf("%w: %s", port.ErrUnavailable, failure.Message())
+		return fmt.Errorf("%w: %s", completionport.ErrUnavailable, failure.Message())
 	case connect.CodePermissionDenied:
-		return fmt.Errorf("%w: %s", port.ErrNoConsent, failure.Message())
+		return fmt.Errorf("%w: %s", completionport.ErrNoConsent, failure.Message())
 	default:
 		return fmt.Errorf("proofread rpc: %w", err)
 	}
@@ -148,7 +150,7 @@ func readActivationError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
-	return fmt.Errorf("%w: %w", port.ErrUnavailable, err)
+	return fmt.Errorf("%w: %w", completionport.ErrUnavailable, err)
 }
 
 func writeWireLines(lines []domain.ProofreadLine) []*v1.ProofreadLine {

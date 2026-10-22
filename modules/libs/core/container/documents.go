@@ -5,16 +5,18 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // DocumentRenderer is the port that renders pages of documents.
 // It is the same port as PageRenderer.
-func (c Config) DocumentRenderer() port.DocumentRenderer { return c.PageRenderer() }
+func (c Config) DocumentRenderer() sourceport.DocumentRenderer { return c.PageRenderer() }
 
 // TextExtractor takes the text out of a file whose text is laid out on printed pages.
-func (c Config) TextExtractor() port.TextExtractor {
+func (c Config) TextExtractor() sourceport.TextExtractor {
 	if c.Texts != nil {
 		return c.Texts
 	}
@@ -29,7 +31,7 @@ func (c Config) TextExtractor() port.TextExtractor {
 }
 
 // PageRenderer draws such a document's pages.
-func (c Config) PageRenderer() port.PageRenderer {
+func (c Config) PageRenderer() sourceport.PageRenderer {
 	host, err := c.resolvePlugin(plugin.CapabilityDocument)
 	if err != nil {
 		return unavailableDocument{why: err}
@@ -40,7 +42,7 @@ func (c Config) PageRenderer() port.PageRenderer {
 // hostDocumentPort reaches the document and the book plugins, each looked up when it is asked. A
 // document it opens holds its own reference on the plugin.
 type hostDocumentPort struct {
-	host port.PluginManager
+	host pluginport.PluginManager
 }
 
 func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
@@ -70,7 +72,7 @@ func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts 
 	return bridge.GetHighlights(ctx, raw, starts, pages)
 }
 
-func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
 	if err != nil {
 		if file != nil {
@@ -99,14 +101,14 @@ func (u unavailableDocument) ReadBook(_ context.Context, _ []byte) (domain.BookT
 	return domain.BookText{}, u.why
 }
 
-func (u unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+func (u unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	if file != nil {
 		_ = file.Close()
 	}
 	return nil, u.why
 }
 
-func (c Config) Books() port.Book { return hostBookPort{config: c} }
+func (c Config) Books() sourceport.Book { return hostBookPort{config: c} }
 
 // hostBookPort reaches the book plugin, looked up when it is asked. A call made
 type hostBookPort struct {

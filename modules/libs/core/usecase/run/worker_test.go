@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 var somewhere = domain.Vault{ID: "somewhere"}
@@ -53,28 +54,28 @@ func (r *recorder) countTaken() int {
 // waits at, and the wait is what puts the two into the same instant.
 type instant struct {
 	once    sync.Once
-	claimed chan port.StartOutcome
+	claimed chan windowport.StartOutcome
 }
 
-func newInstant() *instant { return &instant{claimed: make(chan port.StartOutcome, 1)} }
+func newInstant() *instant { return &instant{claimed: make(chan windowport.StartOutcome, 1)} }
 
 // nameOnce names the source, once, and leaves the ask standing at the lock
 // before the run that called this carries on.
-func (c *instant) nameOnce(name func() port.StartOutcome) {
+func (c *instant) nameOnce(name func() windowport.StartOutcome) {
 	c.once.Do(func() {
 		go func() { c.claimed <- name() }()
 		time.Sleep(20 * time.Millisecond)
 	})
 }
 
-func (c *instant) getOutcome(t *testing.T) port.StartOutcome {
+func (c *instant) getOutcome(t *testing.T) windowport.StartOutcome {
 	t.Helper()
 	select {
 	case task := <-c.claimed:
 		return task
 	case <-time.After(10 * time.Second):
 		t.Fatal("the ask made as the line emptied was never answered")
-		return port.Queued
+		return windowport.Queued
 	}
 }
 
@@ -129,9 +130,9 @@ func TestASourceNamedAsTheLineEmptiesIsRun(t *testing.T) {
 	}()
 
 	crossed := newInstant()
-	r.idle = func() { crossed.nameOnce(func() port.StartOutcome { return r.Start(somewhere, "b.pdf") }) }
+	r.idle = func() { crossed.nameOnce(func() windowport.StartOutcome { return r.Start(somewhere, "b.pdf") }) }
 
-	if got := r.Start(somewhere, "a.pdf"); got != port.Began {
+	if got := r.Start(somewhere, "a.pdf"); got != windowport.Began {
 		t.Fatalf("the first source was not run: %v", got)
 	}
 	if n := waitForRun(t, r.reached); n != 1 {
@@ -139,7 +140,7 @@ func TestASourceNamedAsTheLineEmptiesIsRun(t *testing.T) {
 	}
 	close(r.first)
 
-	if outcome := crossed.getOutcome(t); outcome != port.Began {
+	if outcome := crossed.getOutcome(t); outcome != windowport.Began {
 		t.Fatalf("the source named as the line emptied received %v", outcome)
 	}
 	if n := waitForRun(t, r.reached); n != 2 {
@@ -147,7 +148,7 @@ func TestASourceNamedAsTheLineEmptiesIsRun(t *testing.T) {
 	}
 
 	r.Release(1)
-	if got := r.Start(somewhere, "c.pdf"); got != port.Queued {
+	if got := r.Start(somewhere, "c.pdf"); got != windowport.Queued {
 		t.Errorf("a source named while one was running received %v", got)
 	}
 

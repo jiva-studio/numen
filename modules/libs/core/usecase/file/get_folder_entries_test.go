@@ -8,14 +8,16 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // typed is the index, answering what each note is from a fixed table.
 type typed struct {
-	port.NoteQueries
+	noteport.NoteQueries
 	types     map[string]domain.NoteType
 	err       error
 	requested [][]string
@@ -79,9 +81,9 @@ func TestAnIndexThatCannotAnswerFailsTheListing(t *testing.T) {
 }
 
 // unopenable is readers that cannot open the vault, for the reason a missing folder gives.
-type unopenable struct{ port.VaultReaders }
+type unopenable struct{ vaultport.VaultReaders }
 
-func (unopenable) Open(domain.Vault) (port.VaultReader, error) {
+func (unopenable) Open(domain.Vault) (vaultport.VaultReader, error) {
 	return nil, fs.ErrNotExist
 }
 

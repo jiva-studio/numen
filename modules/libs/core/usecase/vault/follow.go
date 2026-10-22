@@ -3,8 +3,10 @@ package vault
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // Follow keeps the index level with a vault that is being edited underneath it,
@@ -14,7 +16,7 @@ import (
 // changed is reindexed, and when what changed cannot be worked out the vault is
 // read again. A window and a command line want the same thing to happen.
 type Follow struct {
-	watcher port.VaultWatcher
+	watcher vaultport.VaultWatcher
 	refresh Refresh
 	scan    Scan
 
@@ -24,7 +26,7 @@ type Follow struct {
 	// ErrorHandler, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds. Both, so what is reported is the state of things
 	// now.
-	ErrorHandler port.ErrorHandler
+	ErrorHandler windowport.ErrorHandler
 }
 
 // NewFollow is what keeps the index level with a vault being edited: what says
@@ -32,7 +34,7 @@ type Follow struct {
 // taken when what changed cannot be worked out.
 //
 // The last two are reached from Run, which a caller starts and does not wait on.
-func NewFollow(watcher port.VaultWatcher, refresh Refresh, scan Scan) Follow {
+func NewFollow(watcher vaultport.VaultWatcher, refresh Refresh, scan Scan) Follow {
 	return Follow{watcher: watcher, refresh: refresh, scan: scan}
 }
 

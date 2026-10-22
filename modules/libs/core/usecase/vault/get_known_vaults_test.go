@@ -6,9 +6,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // theList is the vaults an installation holds, held in memory: the rows, which
@@ -37,7 +38,7 @@ func (l *theList) FindVault(string) (domain.Vault, bool, error) { return domain.
 // the way a folder that has gone does.
 type folders map[domain.VaultID]bool
 
-func (f folders) Open(v domain.Vault) (port.VaultReader, error) {
+func (f folders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	if f[v.ID] {
 		return nil, nil
 	}

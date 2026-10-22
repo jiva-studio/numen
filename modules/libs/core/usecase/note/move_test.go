@@ -11,10 +11,13 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // isolate points everything a test could reach by way of the user's home at
@@ -30,7 +33,7 @@ func isolate(t *testing.T) {
 // staleLinks answers as the index does, except where it is told to fail or
 // to say nothing.
 type staleLinks struct {
-	port.LinkQueries
+	noteport.LinkQueries
 	backlinksErr error
 	linksErr     error
 	isLinksEmpty bool
@@ -64,7 +67,7 @@ func (f failingNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]
 // failingWriters writes as the filesystem does, except where it is told to
 // fail: to be held, to be opened for the nth time, or to write a file.
 type failingWriters struct {
-	port.VaultWriters
+	vaultport.VaultWriters
 	holdErr  error
 	openErr  error
 	failOpen int
@@ -79,7 +82,7 @@ func (f failingWriters) Lock(ctx context.Context, v domain.Vault) (func(), error
 	return f.VaultWriters.Lock(ctx, v)
 }
 
-func (f failingWriters) Open(v domain.Vault) (port.VaultWriter, error) {
+func (f failingWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	*f.opened++
 	if f.openErr != nil && *f.opened == f.failOpen {
 		return nil, f.openErr
@@ -92,7 +95,7 @@ func (f failingWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 }
 
 type failingWriter struct {
-	port.VaultWriter
+	vaultport.VaultWriter
 	err error
 }
 
@@ -106,10 +109,10 @@ func (f failingWriter) Write(ctx context.Context, path string, content []byte, f
 // moveParts are the collaborators of a move a test replaces. What is left
 // unset is what a real caller hands it.
 type moveParts struct {
-	links    port.LinkQueries
+	links    noteport.LinkQueries
 	names    note.NameQueries
-	readers  port.VaultReaders
-	writers  port.VaultWriters
+	readers  vaultport.VaultReaders
+	writers  vaultport.VaultWriters
 	index    note.Levels
 	hasIndex bool
 }
@@ -507,13 +510,13 @@ func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
 	sources := sulking{SourceRepository: c.db.Sources()}
 
 	mover := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)
-	if mover.Readers() != port.VaultReaders(readers) {
+	if mover.Readers() != vaultport.VaultReaders(readers) {
 		t.Error("the readers are not the ones set")
 	}
-	if mover.Writers() != port.VaultWriters(writers) {
+	if mover.Writers() != vaultport.VaultWriters(writers) {
 		t.Error("the writers are not the ones set")
 	}
-	if mover.Sources() != port.SourceRepository(sources) {
+	if mover.Sources() != sourceport.SourceRepository(sources) {
 		t.Error("the sources are not the ones set")
 	}
 }

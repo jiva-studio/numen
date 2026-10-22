@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 func TestManifestTreatsAnONNXRuntimeDependencyAsTheRuntimesEntry(t *testing.T) {
@@ -20,7 +20,7 @@ func TestManifestTreatsAnONNXRuntimeDependencyAsTheRuntimesEntry(t *testing.T) {
 	if !slices.Equal(legacy.GetRuntimeIDs(), explicit.GetRuntimeIDs()) {
 		t.Errorf("runtime ids = %v, want %v", explicit.GetRuntimeIDs(), legacy.GetRuntimeIDs())
 	}
-	same := func(a, b port.DependencyRequirement) bool {
+	same := func(a, b pluginport.DependencyRequirement) bool {
 		return a.ID == b.ID && a.Kind == b.Kind && a.SourceURL == b.SourceURL && a.PluginDir == b.PluginDir
 	}
 	if !slices.EqualFunc(legacy.GetDependencyRequirements("/p"), explicit.GetDependencyRequirements("/p"), same) {

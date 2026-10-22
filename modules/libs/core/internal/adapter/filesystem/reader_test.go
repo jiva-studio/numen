@@ -13,9 +13,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 func walkPaths(t *testing.T, root string) []string {
@@ -123,7 +124,7 @@ func TestAFormatNothingReadsIsNotASource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.GetFingerprint(t.Context(), scanned); !errors.Is(err, port.ErrNotANote) {
+	if _, err := src.GetFingerprint(t.Context(), scanned); !errors.Is(err, vaultport.ErrNotANote) {
 		t.Errorf("stat of the image gave %v, want ErrNotANote", err)
 	}
 }
@@ -168,7 +169,7 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.GetFingerprint(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, port.ErrNotANote) {
+	if _, err := src.GetFingerprint(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, vaultport.ErrNotANote) {
 		t.Errorf("stat gave %v, want ErrNotANote", err)
 	}
 }
@@ -373,7 +374,7 @@ func TestANoteOverTheBoundIsNotRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.Read(t.Context(), "huge.md"); !errors.Is(err, port.ErrNotANote) {
+	if _, err := src.Read(t.Context(), "huge.md"); !errors.Is(err, vaultport.ErrNotANote) {
 		t.Errorf("read huge.md: %v, want ErrNotANote", err)
 	}
 	if _, err := src.Read(t.Context(), "small.md"); err != nil {

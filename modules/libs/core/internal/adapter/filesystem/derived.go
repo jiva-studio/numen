@@ -13,8 +13,9 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // The folders a vault's own store keeps what was made from its files in. Each
@@ -127,7 +128,7 @@ type DerivedStores struct {
 	Areas []string
 }
 
-func (d DerivedStores) Open(v domain.Vault) (port.DerivedStore, error) {
+func (d DerivedStores) Open(v domain.Vault) (vaultport.DerivedStore, error) {
 	return OpenDerived(v.Path, d.Options, append([]string{d.Area}, d.Areas...)...)
 }
 

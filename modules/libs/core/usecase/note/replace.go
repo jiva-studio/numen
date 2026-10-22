@@ -7,9 +7,11 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Replace puts one stretch of a note's prose in place of another, and leaves
@@ -18,13 +20,13 @@ import (
 // What is replaced is named by the text standing there, not by at its current position,
 // and the caller presents the fingerprint of the note it read.
 type Replace struct {
-	readers port.VaultReaders
-	writers port.VaultWriters
+	readers vaultport.VaultReaders
+	writers vaultport.VaultWriters
 	index   Levels
 	// Drawing is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
 	Drawing TellEdit
-	now     port.Clock
+	now     machineport.Clock
 }
 
 // NewReplace is what one stretch of a note is put right through: the vault it
@@ -36,7 +38,7 @@ type Replace struct {
 // what it now says, and one short of the clock stamps the note off the
 // machine's.
 func NewReplace(
-	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
 ) Replace {
 	return Replace{readers: readers, writers: writers, index: index, now: now}
 }

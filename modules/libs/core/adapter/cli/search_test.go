@@ -12,9 +12,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // fakeSearchIndex is what the index of a search says: the passages it names for a
@@ -45,7 +46,7 @@ func newVault(folder string) domain.Vault {
 func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(newVault(folder)),
-		Search: func(context.Context, port.ErrorHandler) (cli.Search, error) {
+		Search: func(context.Context, windowport.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
 				Search: search.New(index, filesystem.VaultReaders{}, nil, nil, nil, 0, nil),
 				Words:  words,
@@ -81,7 +82,7 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		},
 		"the search cannot be opened": {
 			Vaults: createVaultList(newVault(folder)),
-			Search: func(context.Context, port.ErrorHandler) (cli.Search, error) { return cli.Search{}, errRefused },
+			Search: func(context.Context, windowport.ErrorHandler) (cli.Search, error) { return cli.Search{}, errRefused },
 		},
 		"the index cannot answer": createSearchDeps(folder, fakeSearchIndex{err: errRefused}, nil),
 	} {
@@ -165,7 +166,7 @@ func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := provided.Search
-	provided.Search = func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
+	provided.Search = func(ctx context.Context, errorHandler windowport.ErrorHandler) (cli.Search, error) {
 		errorHandler(errRefused)
 		return open(ctx, errorHandler)
 	}

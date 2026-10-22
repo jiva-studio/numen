@@ -9,8 +9,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // fakeVault is a vault held in memory, safe to read from several goroutines, whose Read counts every call it gets
@@ -53,7 +54,7 @@ func (f *fakeVault) Read(_ context.Context, path string) ([]byte, error) {
 // fakeVaultReaders opens the one fakeVault given, for whichever vault is asked.
 type fakeVaultReaders struct{ reader *fakeVault }
 
-func (f fakeVaultReaders) Open(domain.Vault) (port.VaultReader, error) { return f.reader, nil }
+func (f fakeVaultReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return f.reader, nil }
 
 // proseOf is a source's prose of the length given, holding the source's own
 // name once per line so a line number pins the line a passage is read back on.

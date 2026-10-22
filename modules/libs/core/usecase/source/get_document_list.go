@@ -5,8 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // Document is a book, paper or scan filed in the vault, and whether a model has read it.
@@ -18,10 +19,10 @@ type Document struct {
 // GetDocumentList lists the documents of a vault and says of each whether a model
 // has read it.
 type GetDocumentList struct {
-	queries port.SourceQueries
+	queries sourceport.SourceQueries
 }
 
-func NewGetDocumentList(queries port.SourceQueries) *GetDocumentList {
+func NewGetDocumentList(queries sourceport.SourceQueries) *GetDocumentList {
 	return &GetDocumentList{queries: queries}
 }
 

@@ -8,11 +8,13 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // A vault made searchable in a terminal and one made searchable in a window are
@@ -170,8 +172,8 @@ const width = 1024
 // pointing answers every text with one direction.
 type pointing struct{}
 
-func (pointing) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (pointing) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -189,8 +191,8 @@ func (pointing) Close() error { return nil }
 // not there looks like from here.
 type unwilling struct{}
 
-func (unwilling) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (unwilling) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (unwilling) Embed(context.Context, []string) ([][]float32, error) {
@@ -228,7 +230,7 @@ func (l *limited) Err() error {
 // timedOut is a set of readers that reach the run's limit and stop there.
 type timedOut struct{ limit *limited }
 
-func (t timedOut) Open(domain.Vault) (port.VaultReader, error) {
+func (t timedOut) Open(domain.Vault) (vaultport.VaultReader, error) {
 	t.limit.reachLimit()
 	return nil, t.limit.Err()
 }
@@ -236,22 +238,22 @@ func (t timedOut) Open(domain.Vault) (port.VaultReader, error) {
 // refusing opens no vault.
 type refusing struct{}
 
-func (refusing) Open(domain.Vault) (port.VaultReader, error) {
+func (refusing) Open(domain.Vault) (vaultport.VaultReader, error) {
 	return nil, errors.New("this vault is not here")
 }
 
 // counting says how many times a vault was opened for reading.
 type counting struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	opened int
 }
 
-func (c *counting) Open(v domain.Vault) (port.VaultReader, error) {
+func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	c.opened++
 	return c.VaultReaders.Open(v)
 }
 
-func newWholeVaultRead(readers port.VaultReaders, db *container.Index) vaults.ReadWholeVault {
+func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) vaults.ReadWholeVault {
 	return vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),

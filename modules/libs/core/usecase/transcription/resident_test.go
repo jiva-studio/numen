@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // counted is a runtime that counts how many times the models were opened and
@@ -23,7 +24,7 @@ type counted struct {
 	openFail error
 }
 
-func (c *counted) open(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+func (c *counted) open(context.Context, func(string, int64, int64)) (transcriptionport.Transcriber, func() error, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.openFail != nil {
@@ -95,7 +96,7 @@ func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
 	listening, models, recognized, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
 
 	granted := make(chan func(), 1)
-	listening.with.Runtime.Open = func(ctx context.Context, tell func(string, int64, int64)) (port.Transcriber, func() error, error) {
+	listening.with.Runtime.Open = func(ctx context.Context, tell func(string, int64, int64)) (transcriptionport.Transcriber, func() error, error) {
 		delta, letGo, err := models.open(ctx, tell)
 		if opened, _ := models.counts(); opened == 1 {
 			// A scan joins the line while the first recording is being heard.
@@ -160,7 +161,7 @@ func TestCancellationReleasesTheModels(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	open := listening.with.Runtime.Open
-	listening.with.Runtime.Open = func(c context.Context, tell func(string, int64, int64)) (port.Transcriber, func() error, error) {
+	listening.with.Runtime.Open = func(c context.Context, tell func(string, int64, int64)) (transcriptionport.Transcriber, func() error, error) {
 		cancel()
 		return open(c, tell)
 	}

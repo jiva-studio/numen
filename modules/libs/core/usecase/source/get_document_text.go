@@ -6,23 +6,25 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // GetDocumentText reads a run of one document's text, in the same text a search chunk is a place in.
 type GetDocumentText struct {
-	readers   port.VaultReaders
-	sources   port.SourceQueries
-	derived   port.DerivedStores
-	documents port.TextExtractor
+	readers   vaultport.VaultReaders
+	sources   sourceport.SourceQueries
+	derived   vaultport.DerivedStores
+	documents sourceport.TextExtractor
 }
 
 func NewGetDocumentText(
-	readers port.VaultReaders,
-	sources port.SourceQueries,
-	derived port.DerivedStores,
-	documents port.TextExtractor,
+	readers vaultport.VaultReaders,
+	sources sourceport.SourceQueries,
+	derived vaultport.DerivedStores,
+	documents sourceport.TextExtractor,
 ) *GetDocumentText {
 	return &GetDocumentText{readers: readers, sources: sources, derived: derived, documents: documents}
 }
@@ -64,7 +66,7 @@ func (u GetDocumentText) Execute(
 	if err != nil {
 		return res, err
 	}
-	var store port.DerivedStore
+	var store vaultport.DerivedStore
 	if u.derived != nil {
 		if store, err = u.derived.Open(v); err != nil {
 			return res, err

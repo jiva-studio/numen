@@ -12,8 +12,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // fifo is a named pipe in a vault, with the extension of a note. Nothing is at
@@ -49,13 +50,13 @@ func TestSpecialFileIsNotANote(t *testing.T) {
 		if err == nil && !slices.Equal(walked, []string{"note.md"}) {
 			t.Errorf("walk found %v, want [note.md]", walked)
 		}
-		if _, err := src.GetFingerprint(t.Context(), "pipe.md"); !errors.Is(err, port.ErrNotANote) {
+		if _, err := src.GetFingerprint(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
 			t.Errorf("stat pipe.md: %v, want ErrNotANote", err)
 		}
-		if _, err := src.Read(t.Context(), "pipe.md"); !errors.Is(err, port.ErrNotANote) {
+		if _, err := src.Read(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
 			t.Errorf("read pipe.md: %v, want ErrNotANote", err)
 		}
-		if f, err := src.Open(t.Context(), "pipe.md"); !errors.Is(err, port.ErrNotANote) {
+		if f, err := src.Open(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
 			if err == nil {
 				f.Close()
 			}

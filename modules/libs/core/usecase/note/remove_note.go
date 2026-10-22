@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrFolder is what removing a path that names a folder says. Notes are removed
@@ -15,10 +16,10 @@ var ErrFolder = errors.New("this is a folder, and this removes notes: name the n
 // RemoveNote removes one note, to the trash or outright, and refuses a folder.
 type RemoveNote struct {
 	remove  Remove
-	readers port.VaultReaders
+	readers vaultport.VaultReaders
 }
 
-func NewRemoveNote(remove Remove, readers port.VaultReaders) RemoveNote {
+func NewRemoveNote(remove Remove, readers vaultport.VaultReaders) RemoveNote {
 	return RemoveNote{remove: remove, readers: readers}
 }
 

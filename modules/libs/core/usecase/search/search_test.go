@@ -14,10 +14,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // dimensions is the width the vector index is built at.
@@ -136,11 +137,11 @@ func precise(v []float32) []byte {
 	return out
 }
 
-func (c corpus) search(embedder port.Embedder) search.Search {
+func (c corpus) search(embedder embeddingport.Embedder) search.Search {
 	return search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil, embedder, 0, nil)
 }
 
-var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
+var model = embeddingport.EmbeddingModel{Name: "test", Dimensions: dimensions}
 
 // newVector is a vector whose every dimension has the sign given.
 func newVector(sign float32) []float32 {
@@ -166,7 +167,7 @@ func newNearVector() []float32 {
 // oneWay is an embedder whose vectors all point the same way.
 type oneWay struct{ direction []float32 }
 
-func (o oneWay) GetModel() port.EmbeddingModel { return model }
+func (o oneWay) GetModel() embeddingport.EmbeddingModel { return model }
 
 func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, 0, len(texts))
@@ -181,7 +182,7 @@ func (oneWay) Close() error { return nil }
 // outOfReach is an embedder on the other side of a network that is not there.
 type outOfReach struct{ why error }
 
-func (outOfReach) GetModel() port.EmbeddingModel { return model }
+func (outOfReach) GetModel() embeddingport.EmbeddingModel { return model }
 
 func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { return nil, o.why }
 
@@ -263,7 +264,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 }
 
-func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder port.Embedder) []domain.Passage {
+func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder embeddingport.Embedder) []domain.Passage {
 	t.Helper()
 	found, err := c.search(embedder).Execute(t.Context(), v, query, search.Parameters{})
 	if err != nil {
@@ -278,7 +279,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
-	for name, embedder := range map[string]port.Embedder{
+	for name, embedder := range map[string]embeddingport.Embedder{
 		"with no embedder at all":        nil,
 		"with an embedder and no vector": oneWay{direction: newVector(+1)},
 	} {
@@ -617,11 +618,11 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 }
 
 type countingEmbedder struct {
-	inner port.Embedder
+	inner embeddingport.Embedder
 	count int
 }
 
-func (e *countingEmbedder) GetModel() port.EmbeddingModel {
+func (e *countingEmbedder) GetModel() embeddingport.EmbeddingModel {
 	return e.inner.GetModel()
 }
 

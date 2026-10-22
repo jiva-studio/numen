@@ -5,10 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 func toEntropy(role domain.LinkRole) domain.Link {
@@ -82,7 +83,7 @@ func TestLinkEditsAreHeldToTheFingerprintTheCallerPresents(t *testing.T) {
 			theirs := linkedHeat + "\nSaved in the meantime.\n"
 			c.overwrite(t, "Heat.md", theirs)
 
-			if err := edit(c, target); !errors.Is(err, port.ErrStale) {
+			if err := edit(c, target); !errors.Is(err, vaultport.ErrStale) {
 				t.Errorf("want ErrStale, got %v", err)
 			}
 			if body := c.read(t, "Heat.md"); body != theirs {

@@ -5,18 +5,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // FocusPassage opens one of the vault's documents in front of the person at a
 // passage, with the words of it lit.
 type FocusPassage struct {
-	readers port.VaultReaders
-	view    port.Window
+	readers vaultport.VaultReaders
+	view    windowport.Window
 }
 
-func NewFocusPassage(readers port.VaultReaders, view port.Window) *FocusPassage {
+func NewFocusPassage(readers vaultport.VaultReaders, view windowport.Window) *FocusPassage {
 	return &FocusPassage{readers: readers, view: view}
 }
 
@@ -33,7 +35,7 @@ func (u *FocusPassage) Execute(ctx context.Context, v domain.Vault, in Passage) 
 		return "", err
 	}
 	ref, err := reader.GetFingerprint(ctx, in.Path)
-	if port.IsNoNote(err) {
+	if vaultport.IsNoNote(err) {
 		return "", fmt.Errorf("this vault holds nothing at %s", in.Path)
 	}
 	if err != nil {

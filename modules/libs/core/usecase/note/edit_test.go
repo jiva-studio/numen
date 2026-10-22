@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 var errDiskGone = errors.New("the disk did not answer")
@@ -27,7 +28,7 @@ type brokenReaders struct {
 	stat error
 }
 
-func (b brokenReaders) Open(v domain.Vault) (port.VaultReader, error) {
+func (b brokenReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	if b.open != nil {
 		return nil, b.open
 	}
@@ -39,7 +40,7 @@ func (b brokenReaders) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type brokenReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	on brokenReaders
 }
 
@@ -60,12 +61,12 @@ func (r brokenReader) GetFingerprint(ctx context.Context, path string) (domain.F
 // brokenWriters is a vault on disk whose writers answer with the errors they
 // are given.
 type brokenWriters struct {
-	port.VaultWriters
+	vaultport.VaultWriters
 	hold error
 	open error
 }
 
-func (b brokenWriters) Open(v domain.Vault) (port.VaultWriter, error) {
+func (b brokenWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	if b.open != nil {
 		return nil, b.open
 	}
@@ -115,8 +116,8 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		name    string
-		readers port.VaultReaders
-		writers port.VaultWriters
+		readers vaultport.VaultReaders
+		writers vaultport.VaultWriters
 	}{
 		{"the write lock fails", filesystem.VaultReaders{}, brokenWriters{VaultWriters: filesystem.VaultWriters{}, hold: errDiskGone}},
 		{"the vault will not open for reading", brokenReaders{open: errDiskGone}, filesystem.VaultWriters{}},
@@ -200,7 +201,7 @@ func TestAnEditThatNamedNoFingerprintIsHeldToWhatItReadJustNow(t *testing.T) {
 
 	_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
-	if !errors.Is(err, port.ErrStale) {
+	if !errors.Is(err, vaultport.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Heat.md"); body != theirs {
@@ -255,7 +256,7 @@ func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	}
 }
 
-func (c changing) editWith(readers port.VaultReaders, writers port.VaultWriters) note.Edit {
+func (c changing) editWith(readers vaultport.VaultReaders, writers vaultport.VaultWriters) note.Edit {
 	return note.NewEdit(readers, writers, c.index, time.Now)
 }
 
@@ -319,7 +320,7 @@ func TestAnEditThatCannotStampAnIdentifierWritesNothing(t *testing.T) {
 // bytesWithNoNote answers every read with bytes and a missing file.
 type bytesWithNoNote struct{ brokenReaders }
 
-func (b bytesWithNoNote) Open(v domain.Vault) (port.VaultReader, error) {
+func (b bytesWithNoNote) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	inner, err := b.brokenReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -327,7 +328,7 @@ func (b bytesWithNoNote) Open(v domain.Vault) (port.VaultReader, error) {
 	return staleBytesReader{VaultReader: inner}, nil
 }
 
-type staleBytesReader struct{ port.VaultReader }
+type staleBytesReader struct{ vaultport.VaultReader }
 
 func (staleBytesReader) Read(context.Context, string) ([]byte, error) {
 	return []byte("Left over, not the person's."), fs.ErrNotExist

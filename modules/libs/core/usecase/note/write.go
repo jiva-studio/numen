@@ -3,10 +3,12 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/edit"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrTooLarge is what a note over MaxBytes gets. Nothing is written. The bound
@@ -44,10 +46,10 @@ var (
 // application does not own survive because nothing here rewrites them. How
 // somebody's YAML is formatted stays theirs.
 type Write struct {
-	readers port.VaultReaders
-	writers port.VaultWriters
+	readers vaultport.VaultReaders
+	writers vaultport.VaultWriters
 	index   Levels
-	now     port.Clock
+	now     machineport.Clock
 	// Bound is the most the file may be, measured as it goes to disk. Zero is
 	// MaxBytes. A caller whose files are read at a bound of their own sets it.
 	Bound int
@@ -60,19 +62,19 @@ type Write struct {
 // vault it is read and written through, what brings it level in the index, and
 // what time it is.
 func NewWrite(
-	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
 ) Write {
 	return Write{readers: readers, writers: writers, index: index, now: now}
 }
 
 // WithReaders replaces the vault readers.
-func (u Write) WithReaders(readers port.VaultReaders) Write {
+func (u Write) WithReaders(readers vaultport.VaultReaders) Write {
 	u.readers = readers
 	return u
 }
 
 // WithWriters replaces the vault writers.
-func (u Write) WithWriters(writers port.VaultWriters) Write {
+func (u Write) WithWriters(writers vaultport.VaultWriters) Write {
 	u.writers = writers
 	return u
 }

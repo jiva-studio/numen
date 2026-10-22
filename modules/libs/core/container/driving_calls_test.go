@@ -44,7 +44,7 @@ func getPortFields(file *ast.File) []string {
 			if !is {
 				continue
 			}
-			if from, is := pos.X.(*ast.Ident); is && from.Name == "port" {
+			if from, is := pos.X.(*ast.Ident); is && isPortName(from.Name) {
 				for _, name := range one.Names {
 					found = append(found, name.Name)
 				}
@@ -147,12 +147,12 @@ func TestWhatTheDrivingCallRuleRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "call.go", `package p
 
 type Notes struct {
-	Queries port.NoteQueries
-	Links   *port.LinkQueries
+	Queries noteport.NoteQueries
+	Links   *noteport.LinkQueries
 	Find    usecase.Find
 }
 
-func read(a *API, queries port.NoteQueries) {
+func read(a *API, queries noteport.NoteQueries) {
 	a.Notes.Queries.GetTypes()
 	a.Notes.Links.Resolve()
 	a.Notes.Find.Execute()

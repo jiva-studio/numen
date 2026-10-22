@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // suffix names the note that says where a trashed folder came from.
@@ -105,7 +105,7 @@ func getVolumeTrashDir(top string, uid int) (string, error) {
 	}
 	mine := filepath.Join(top, ".Trash-"+strconv.Itoa(uid))
 	if err := os.MkdirAll(mine, 0o700); err != nil {
-		return "", fmt.Errorf("%s: %w", top, port.ErrNoTrash)
+		return "", fmt.Errorf("%s: %w", top, machineport.ErrNoTrash)
 	}
 	return mine, nil
 }

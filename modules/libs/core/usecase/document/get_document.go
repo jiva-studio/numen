@@ -4,8 +4,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Document is what GetDocument reads: which bytes it came from, and the size of
@@ -17,11 +18,11 @@ type Document struct {
 
 // GetDocument finds how many pages a document has and how big each of them is.
 type GetDocument struct {
-	readers   port.VaultReaders
+	readers   vaultport.VaultReaders
 	documents Documents
 }
 
-func NewGetDocument(readers port.VaultReaders, documents Documents) GetDocument {
+func NewGetDocument(readers vaultport.VaultReaders, documents Documents) GetDocument {
 	return GetDocument{readers: readers, documents: documents}
 }
 
@@ -49,7 +50,7 @@ func (u GetDocument) Execute(ctx context.Context, v domain.Vault, path string) (
 }
 
 // openFile is the file of a document, opened as it is drawn from.
-func openFile(reader port.VaultReader, path string) func(context.Context) (io.ReadSeekCloser, error) {
+func openFile(reader vaultport.VaultReader, path string) func(context.Context) (io.ReadSeekCloser, error) {
 	return func(ctx context.Context) (io.ReadSeekCloser, error) {
 		return reader.OpenShared(ctx, path)
 	}

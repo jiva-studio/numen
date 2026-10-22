@@ -11,9 +11,11 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // isolateHome points every directory a test could reach through the
@@ -27,11 +29,11 @@ func isolateHome(t *testing.T) {
 
 // unwritable is a set of writers that cannot open any vault.
 type unwritable struct {
-	port.VaultWriters
+	vaultport.VaultWriters
 	err error
 }
 
-func (u unwritable) Open(domain.Vault) (port.VaultWriter, error) { return nil, u.err }
+func (u unwritable) Open(domain.Vault) (vaultport.VaultWriter, error) { return nil, u.err }
 
 // flawed is a machine handing files over, with the failures it is told to have.
 type flawed struct {
@@ -43,17 +45,17 @@ type flawed struct {
 	neither   map[string]bool
 }
 
-func (f flawed) GetImportedFile(ctx context.Context, handle string) (port.ImportedFile, error) {
+func (f flawed) GetImportedFile(ctx context.Context, handle string) (sourceport.ImportedFile, error) {
 	if f.neither[handle] {
-		return port.ImportedFile{Name: f.names[handle], Handle: handle}, nil
+		return sourceport.ImportedFile{Name: f.names[handle], Handle: handle}, nil
 	}
 	if err := f.statFails[handle]; err != nil {
-		return port.ImportedFile{}, err
+		return sourceport.ImportedFile{}, err
 	}
 	return f.handedOver.GetImportedFile(ctx, handle)
 }
 
-func (f flawed) List(ctx context.Context, handle string) ([]port.ImportedFile, error) {
+func (f flawed) List(ctx context.Context, handle string) ([]sourceport.ImportedFile, error) {
 	if f.onList != nil {
 		f.onList()
 	}
@@ -193,7 +195,7 @@ func TestAFolderOntoAFileOfTheSameNameStaysOutside(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Errors) != 1 || !errors.Is(brought.Errors[0].Why, port.ErrOccupied) {
+	if len(brought.Errors) != 1 || !errors.Is(brought.Errors[0].Why, vaultport.ErrOccupied) {
 		t.Fatalf("what stayed outside: %+v", brought.Errors)
 	}
 	if len(brought.Landed) != 0 {
@@ -271,14 +273,14 @@ func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 
 // ignoringContext is a set of writers that finish a copy whatever the context
 // says.
-type ignoringContext struct{ port.VaultWriters }
+type ignoringContext struct{ vaultport.VaultWriters }
 
-func (i ignoringContext) Open(v domain.Vault) (port.VaultWriter, error) {
+func (i ignoringContext) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	w, err := i.VaultWriters.Open(v)
 	return deaf{w}, err
 }
 
-type deaf struct{ port.VaultWriter }
+type deaf struct{ vaultport.VaultWriter }
 
 func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
 	return d.VaultWriter.Import(context.WithoutCancel(ctx), to, r)

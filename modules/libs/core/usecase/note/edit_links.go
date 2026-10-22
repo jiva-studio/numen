@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // EditLinks writes the relationships one note declares.
@@ -20,10 +22,10 @@ import (
 // including ones the application could not read — and come out of a write as
 // the bytes they went in as.
 type EditLinks struct {
-	readers port.VaultReaders
-	writers port.VaultWriters
+	readers vaultport.VaultReaders
+	writers vaultport.VaultWriters
 	index   Levels
-	now     port.Clock
+	now     machineport.Clock
 }
 
 // NewEditLinks is what a note's relationships are written through: the vault it
@@ -34,19 +36,19 @@ type EditLinks struct {
 // and not levelled is a relationship the vault cannot be asked about, and a
 // note stamped off the machine's clock is stamped where nobody said it may be.
 func NewEditLinks(
-	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
 ) EditLinks {
 	return EditLinks{readers: readers, writers: writers, index: index, now: now}
 }
 
 // WithReaders replaces the vault readers.
-func (u EditLinks) WithReaders(readers port.VaultReaders) EditLinks {
+func (u EditLinks) WithReaders(readers vaultport.VaultReaders) EditLinks {
 	u.readers = readers
 	return u
 }
 
 // WithWriters replaces the vault writers.
-func (u EditLinks) WithWriters(writers port.VaultWriters) EditLinks {
+func (u EditLinks) WithWriters(writers vaultport.VaultWriters) EditLinks {
 	u.writers = writers
 	return u
 }

@@ -10,8 +10,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // sourcesPerQuery bounds one answer about what owes its text, so that a library
@@ -24,16 +26,16 @@ const sourcesPerQuery = 100
 // The second takes the text out of every source that owes it and cuts it into
 // chunks, one write per source.
 type Extract struct {
-	readers port.VaultReaders
-	sources port.SourceRepository
-	queries port.SourceQueries
+	readers vaultport.VaultReaders
+	sources sourceport.SourceRepository
+	queries sourceport.SourceQueries
 
 	// Derived is optional. It holds what a recogniser wrote; without one, a
 	// source is read from its own bytes and a recognition is not looked for.
-	Derived port.DerivedStore
+	Derived vaultport.DerivedStore
 	// Documents is optional. It reads a format that needs a library; without
 	// one, a source in that format is unreadable.
-	Documents port.TextExtractor
+	Documents sourceport.TextExtractor
 	// Area is the producer a recognition is kept under. Empty means the default.
 	Area string
 
@@ -68,7 +70,7 @@ type Extract struct {
 // they are read out of, where a source and its chunks are written, and what
 // says which sources the index already holds.
 func NewExtract(
-	readers port.VaultReaders, sources port.SourceRepository, queries port.SourceQueries,
+	readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries,
 ) Extract {
 	return Extract{readers: readers, sources: sources, queries: queries}
 }
@@ -100,7 +102,7 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 	if err != nil {
 		return res, err
 	}
-	var swept []port.SourceText
+	var swept []sourceport.SourceText
 	if err := u.discover(ctx, v, reader, &res, &swept); err != nil {
 		return res, err
 	}
@@ -119,9 +121,9 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 func (u Extract) discover(
 	ctx context.Context,
 	v domain.Vault,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	res *ExtractResult,
-	swept *[]port.SourceText,
+	swept *[]sourceport.SourceText,
 ) error {
 	recognized, err := u.readKnown(ctx, v)
 	if err != nil {
@@ -152,7 +154,7 @@ func (u Extract) readKnown(ctx context.Context, v domain.Vault) (map[domain.Sour
 func (u Extract) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	indexed map[domain.SourceKind]map[string]domain.Fingerprint,
 	res *ExtractResult,
 ) (map[string]bool, error) {
@@ -186,7 +188,7 @@ func (u Extract) removeGone(
 	existing map[domain.SourceKind]map[string]domain.Fingerprint,
 	found map[string]bool,
 	res *ExtractResult,
-	swept *[]port.SourceText,
+	swept *[]sourceport.SourceText,
 ) error {
 	for _, kind := range u.kinds() {
 		removed := make([]string, 0)
@@ -222,7 +224,7 @@ func (u Extract) readSourceTexts(
 	v domain.Vault,
 	kind domain.SourceKind,
 	paths []string,
-) ([]port.SourceText, error) {
+) ([]sourceport.SourceText, error) {
 	if u.Derived == nil {
 		return nil, nil
 	}
@@ -230,11 +232,11 @@ func (u Extract) readSourceTexts(
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	made := make(map[string]port.SourceText, len(target))
+	made := make(map[string]sourceport.SourceText, len(target))
 	for _, r := range target {
 		made[r.Path] = r
 	}
-	out := make([]port.SourceText, 0, len(paths))
+	out := make([]sourceport.SourceText, 0, len(paths))
 	for _, path := range paths {
 		if r, on := made[path]; on && r.Producer != "" {
 			out = append(out, r)
@@ -252,7 +254,7 @@ func (u Extract) readSourceTexts(
 //
 // A walk that failed returns before any of this, so a folder that could not be
 // read takes nothing with it.
-func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceText) error {
+func (u Extract) sweep(ctx context.Context, v domain.Vault, went []sourceport.SourceText) error {
 	if u.Derived == nil || len(went) == 0 {
 		return nil
 	}
@@ -261,7 +263,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 		return err
 	}
 	for _, r := range went {
-		if status[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
+		if status[sourceport.SourceText{Producer: r.Producer, Hash: r.Hash}] {
 			continue
 		}
 		removed := domain.GetArtifactNames(r.Producer, r.Hash)
@@ -279,8 +281,8 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 
 // readReferencedRecognitions returns the recognitions some source relies on and the hashes some
 // source names.
-func (u Extract) readReferencedRecognitions(ctx context.Context, v domain.Vault) (map[port.SourceText]bool, map[string]bool, error) {
-	status := make(map[port.SourceText]bool)
+func (u Extract) readReferencedRecognitions(ctx context.Context, v domain.Vault) (map[sourceport.SourceText]bool, map[string]bool, error) {
+	status := make(map[sourceport.SourceText]bool)
 	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
 		target, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
@@ -288,7 +290,7 @@ func (u Extract) readReferencedRecognitions(ctx context.Context, v domain.Vault)
 			return nil, nil, fmt.Errorf("read index: %w", err)
 		}
 		for _, r := range target {
-			status[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
+			status[sourceport.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
 			named[r.Hash] = true
 		}
 	}
@@ -313,7 +315,7 @@ func (u Extract) removeNames(ctx context.Context, names []domain.ArtifactName) e
 // so, because its recipe is still the one in use: nothing else asks after it.
 // Recording it afresh with no recipe clears which producer made its text, so the
 // next pass cuts it from the document again.
-func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res *ExtractResult) error {
 	if u.Derived == nil {
 		return nil
 	}
@@ -339,8 +341,8 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 func (u Extract) recordIfTextMissing(
 	ctx context.Context,
 	v domain.Vault,
-	reader port.VaultReader,
-	r port.SourceText,
+	reader vaultport.VaultReader,
+	r sourceport.SourceText,
 	res *ExtractResult,
 ) error {
 	if u.hasAny(ctx,
@@ -350,7 +352,7 @@ func (u Extract) recordIfTextMissing(
 		return nil
 	}
 	ref, err := reader.GetFingerprint(ctx, r.Path)
-	if port.IsNoNote(err) {
+	if vaultport.IsNoNote(err) {
 		return nil
 	}
 	if err != nil {
@@ -381,7 +383,7 @@ func (u Extract) hasAny(ctx context.Context, names ...domain.ArtifactName) bool 
 // was cut by another extractor or at other sizes. Each question is asked again
 // until it is empty that has not been tried, so a run that stopped part way
 // is continued by starting another.
-func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+func (u Extract) cut(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res *ExtractResult) error {
 	sizes := u.sizes()
 	recognized := recipes(sizes)
 	tried := map[string]bool{}
@@ -420,7 +422,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 func (u Extract) chunkNewPaths(
 	ctx context.Context,
 	v domain.Vault,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	paths []string,
 	tried map[string]bool,
 	sizes chunking.Sizes,
@@ -467,7 +469,7 @@ func (u Extract) ExtractOne(ctx context.Context, v domain.Vault, path string) (E
 func (u Extract) source(
 	ctx context.Context,
 	v domain.Vault,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	path string,
 	sizes chunking.Sizes,
 	res *ExtractResult,
@@ -476,7 +478,7 @@ func (u Extract) source(
 	u.progress(*res)
 
 	ref, err := reader.GetFingerprint(ctx, path)
-	if port.IsNoNote(err) {
+	if vaultport.IsNoNote(err) {
 		res.Vanished++
 		return nil
 	}

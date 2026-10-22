@@ -6,7 +6,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // folderDialog is the machine's own folder dialog, put up by the toolkit that
@@ -32,10 +32,10 @@ func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string)
 	// holds no settings for it to read, taking the window and whatever a person
 	// had not written down with it.
 	if !hasSchemas() {
-		return "", false, port.ErrNoFolderDialog
+		return "", false, machineport.ErrNoFolderDialog
 	}
 	if !d.tryAcquire() {
-		return "", false, port.ErrChoosing
+		return "", false, machineport.ErrChoosing
 	}
 	defer d.release()
 

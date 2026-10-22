@@ -6,23 +6,25 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Erase is Unregister, and the folder goes to the place this machine keeps what a
 // person deleted. The folder is taken away only while it still carries this
 // vault's identity.
 type Erase struct {
-	identity   port.VaultIdentity
-	trash      port.Trash
+	identity   vaultport.VaultIdentity
+	trash      machineport.Trash
 	unregister Unregister
 }
 
 // NewErase is what takes a vault away: what reads the identity the folder
 // carries, where this machine keeps what a person deleted, and the Unregister it is
 // taken off the list through — the same one everything else unregisters a vault by.
-func NewErase(identity port.VaultIdentity, trash port.Trash, unregister Unregister) Erase {
+func NewErase(identity vaultport.VaultIdentity, trash machineport.Trash, unregister Unregister) Erase {
 	return Erase{identity: identity, trash: trash, unregister: unregister}
 }
 

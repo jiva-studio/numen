@@ -5,8 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 type dialog struct {
@@ -19,7 +20,7 @@ func (d dialog) ChooseFolder(context.Context, string, string) (string, bool, err
 	return d.chose, d.did, d.err
 }
 
-var _ port.FolderDialog = dialog{}
+var _ machineport.FolderDialog = dialog{}
 
 func TestTheFolderThePersonChoosesIsReturned(t *testing.T) {
 	t.Parallel()

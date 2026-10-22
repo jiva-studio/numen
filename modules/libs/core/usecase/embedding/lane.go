@@ -5,7 +5,8 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // getIndexLaneLimit is how many calls the index side may have in flight on a
@@ -21,7 +22,7 @@ func getIndexLaneLimit(passes int) int {
 // held by it.
 type indexLane struct {
 	activeItem *embedding.Embedder
-	waiting    port.Embedder
+	waiting    embeddingport.Embedder
 
 	once  sync.Once
 	slots chan struct{}
@@ -31,7 +32,7 @@ func newIndexLane(target *embedding.Embedder) *indexLane {
 	return &indexLane{activeItem: target, waiting: target.GetWaitingEmbedder()}
 }
 
-func (l *indexLane) GetModel() port.EmbeddingModel { return l.activeItem.GetModel() }
+func (l *indexLane) GetModel() embeddingport.EmbeddingModel { return l.activeItem.GetModel() }
 
 // Close lets go of the model both sides ask.
 func (l *indexLane) Close() error { return l.activeItem.Close() }

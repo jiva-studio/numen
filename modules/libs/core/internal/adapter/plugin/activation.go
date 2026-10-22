@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 var (
@@ -57,7 +57,7 @@ func (s *Supervisor) RecordActivationFailure(now time.Time, policy ActivationPol
 	s.failures++
 	s.failure = cause
 	s.retryAt = now.Add(policy.getBackoff(s.failures))
-	if (policy.MaxFailures > 0 && s.failures >= policy.MaxFailures) || errors.Is(cause, port.ErrUnsupportedProtocol) {
+	if (policy.MaxFailures > 0 && s.failures >= policy.MaxFailures) || errors.Is(cause, pluginport.ErrUnsupportedProtocol) {
 		if !s.failed {
 			s.failedAt = now
 		}
@@ -112,7 +112,7 @@ func (s *Supervisor) GetActivationFailure() (bool, error) {
 // describeFailure is why a plugin failed to start, in words a person reads.
 func describeFailure(cause error) string {
 	switch {
-	case errors.Is(cause, port.ErrUnsupportedProtocol):
+	case errors.Is(cause, pluginport.ErrUnsupportedProtocol):
 		return "The plugin speaks a plugin protocol version this Numen does not support. Update the plugin or Numen."
 	case errors.Is(cause, errHandshakeTimeout):
 		return "The plugin did not finish starting in time."

@@ -10,9 +10,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrJoinedCorrectionNotAllowed marks a correction that joins lines, which a scan does not admit.
@@ -28,9 +30,9 @@ var ErrUnaskedCorrectionLine = errors.New("scan correction line was not asked")
 // corrections go beside it, so a proofreading that went wrong is a file that can
 // be deleted and a person can always ask what the machine read.
 type Proofread struct {
-	readers  port.VaultReaders
-	derived  port.DerivedStores
-	provider port.Proofreader
+	readers  vaultport.VaultReaders
+	derived  vaultport.DerivedStores
+	provider recognitionport.Proofreader
 
 	// Area is the store the recognition is kept in. Empty means the default.
 	Area string
@@ -52,7 +54,7 @@ type Proofread struct {
 // read out of, the store the recognition and its corrections are kept in, and the
 // proofreader that answers about a page.
 func NewProofread(
-	readers port.VaultReaders, derived port.DerivedStores, proofreader port.Proofreader,
+	readers vaultport.VaultReaders, derived vaultport.DerivedStores, proofreader recognitionport.Proofreader,
 ) (Proofread, error) {
 	if err := run.CheckProofread(readers, derived, proofreader); err != nil {
 		return Proofread{}, err
@@ -70,7 +72,7 @@ func NewProofread(
 // Cut and OnProgress are the caller's: what a run says about itself while it
 // goes belongs to whoever asked for it.
 func CreateProofread(
-	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
+	c run.ProofreadingConfig, readers vaultport.VaultReaders, derived vaultport.DerivedStores,
 ) (right Proofread, item bool, err error) {
 	delta, err := run.OpenProofreader(c.By)
 	if err != nil {
@@ -127,7 +129,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	// One run to a recognition. The name is the one the corrections are kept under,
 	// and it is held for as long as the proofreading takes.
 	release, err := store.ClaimArtifact(ctx, corrections)
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
 	}
@@ -173,7 +175,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 // are kept.
 type proofreadRecognitionJob struct {
 	v            domain.Vault
-	store        port.DerivedStore
+	store        vaultport.DerivedStore
 	path         string
 	pages        []domain.ProofreadPage
 	corrections  domain.ArtifactName
@@ -239,7 +241,7 @@ func (u Proofread) writeCorrections(
 // asked about.
 func (u Proofread) lines(
 	ctx context.Context,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	area, hash string,
 ) ([]domain.ProofreadPage, error) {
 	artifact, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash))
@@ -288,7 +290,7 @@ func getCorrectionLines(requested []domain.ProofreadPage, made []domain.Proofrea
 // not this one's, and the recognition is taken up from the first page.
 func (u Proofread) readCheckpoint(
 	ctx context.Context,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	corrections, progressName domain.ArtifactName,
 ) (checkpoint, error) {
 	raw, err := store.ReadArtifact(ctx, progressName)
@@ -312,7 +314,7 @@ func (u Proofread) readCheckpoint(
 // count are the lines from the first of them onwards.
 func dropCorrections(
 	ctx context.Context,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	corrections domain.ArtifactName,
 	pages []domain.ProofreadPage,
 	finished int,
@@ -357,7 +359,7 @@ func opening(pages []domain.ProofreadPage, completed int) (int, bool) {
 // writeCheckpoint writes down who put this recognition right and how far they got.
 // It stands last and is what makes the batch before it count.
 func (u Proofread) writeCheckpoint(
-	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, current checkpoint,
+	ctx context.Context, store vaultport.DerivedStore, progressName domain.ArtifactName, current checkpoint,
 ) error {
 	current.By = u.provider.GetName()
 	raw, err := json.MarshalIndent(current, "", "  ")

@@ -8,14 +8,15 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // repositoryAnswering is a note repository whose writes all answer err.
 type repositoryAnswering struct {
-	port.NoteRepository
+	noteport.NoteRepository
 	err error
 }
 

@@ -11,9 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // scanFile is one entry a scanVault walks: what the walk reports, and what a read
@@ -117,7 +118,7 @@ func (m *scanVault) scan() vaults.Scan {
 // scanReaders is the readers of a scan, answering for the one scanVault.
 type scanReaders struct{ vault *scanVault }
 
-func (r scanReaders) Open(domain.Vault) (port.VaultReader, error) {
+func (r scanReaders) Open(domain.Vault) (vaultport.VaultReader, error) {
 	r.vault.opens++
 	if r.vault.openErr != nil {
 		return nil, r.vault.openErr

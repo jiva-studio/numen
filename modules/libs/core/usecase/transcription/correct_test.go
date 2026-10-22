@@ -11,9 +11,11 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // getTask is what the list of what is being done says about putting a
@@ -29,7 +31,7 @@ func getTask(target *Worker, path string) (handler, failed string) {
 
 // openNoProofreader is a profile that cannot be opened, as a person naming one no
 // settings name is told.
-func openNoProofreader() (port.Proofreader, error) {
+func openNoProofreader() (recognitionport.Proofreader, error) {
 	return nil, errors.New(`no proofreading profile named "nowhere"`)
 }
 
@@ -93,15 +95,15 @@ func cues(words []string) []domain.TranscriptCue {
 // line.
 func newStoppedWorker(
 	t *testing.T,
-	delta port.Proofreader,
+	delta recognitionport.Proofreader,
 	paths int,
 	words ...string,
-) (*Worker, domain.Vault, port.DerivedStore, string) {
+) (*Worker, domain.Vault, vaultport.DerivedStore, string) {
 	t.Helper()
 	target, v := newTranscriptionWorker(t, &deaf{}, recording)
 	target.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func() (port.Proofreader, error) { return delta, nil },
+		By: func() (recognitionport.Proofreader, error) { return delta, nil },
 	}
 
 	reader, err := target.with.Readers.Open(v)
@@ -146,7 +148,7 @@ func newStoppedWorker(
 const recording = "talks/one.mp3"
 
 // readLines is what the transcript on the shelf says, line by line.
-func readLines(t *testing.T, store port.DerivedStore, name domain.ArtifactName) []string {
+func readLines(t *testing.T, store vaultport.DerivedStore, name domain.ArtifactName) []string {
 	t.Helper()
 	raw, err := store.ReadArtifact(t.Context(), name)
 	if err != nil {
@@ -320,7 +322,7 @@ func TestAProofreadingAskedForExistsInTheListBeforeItOpensTheProofreader(t *test
 	delta := &corrector{}
 	target, v, _, _ := newStoppedWorker(t, delta, 0, "first thing", "second thing")
 	reached, stand := make(chan struct{}), make(chan struct{})
-	target.with.Proofreading.By = func() (port.Proofreader, error) {
+	target.with.Proofreading.By = func() (recognitionport.Proofreader, error) {
 		close(reached)
 		<-stand
 		return delta, nil

@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // wild is a document library given a file it cannot survive. A real one is
@@ -28,7 +29,7 @@ func (wild) ReadBook(context.Context, []byte) (domain.BookText, error) {
 	panic("page 3 of 2")
 }
 
-func (wild) Draw(context.Context, io.ReadSeekCloser) (port.OpenDocument, error) {
+func (wild) Draw(context.Context, io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	panic("page 3 of 2")
 }
 

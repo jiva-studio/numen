@@ -12,7 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // isolate points everything the platform keeps per user at folders of the
@@ -70,7 +72,7 @@ func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	if _, responseVal, err := (Config{}).ReadSettingsFile()(); err == nil || responseVal != "" {
 		t.Errorf("the settings file was read from %q: %v", responseVal, err)
 	}
-	err := Config{}.GetSettingsWriter()([]port.Setting{
+	err := Config{}.GetSettingsWriter()([]settingsport.Setting{
 		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err == nil {
@@ -270,7 +272,7 @@ func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
 	baseline := `{"appearance": {"theme": "mine:forest"}}`
 
 	err := cfg.WriteConfiguredFile()(`{"appearance": {"theme": "mine:sand"}}`, &baseline)
-	if !errors.Is(err, port.ErrStale) {
+	if !errors.Is(err, vaultport.ErrStale) {
 		t.Errorf("got %v", err)
 	}
 	if got, _ := os.ReadFile(path); string(got) != standing {
@@ -297,7 +299,7 @@ func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
-	err = Config{}.GetSettingsWriter()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
+	err = Config{}.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -306,8 +308,8 @@ func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := cfg.GetSettingsWriter()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `opus`}})
-	if !errors.Is(err, port.ErrNotASetting) {
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `opus`}})
+	if !errors.Is(err, settingsport.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}
 	var syntax *json.SyntaxError

@@ -3,17 +3,18 @@ package file
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // CreateFolder makes an empty folder with the folders above it.
 // Only the failure to make the folder wraps its cause.
 type CreateFolder struct {
-	writers port.VaultWriters
+	writers vaultport.VaultWriters
 }
 
-func NewCreateFolder(writers port.VaultWriters) *CreateFolder {
+func NewCreateFolder(writers vaultport.VaultWriters) *CreateFolder {
 	return &CreateFolder{writers: writers}
 }
 

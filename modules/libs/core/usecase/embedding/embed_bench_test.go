@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 func BenchmarkEmbedDuplicates(b *testing.B) {
@@ -96,7 +97,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 				}
 			}
 
-			model := port.EmbeddingModel{Name: "fake", Dimensions: dimensions}
+			model := embeddingport.EmbeddingModel{Name: "fake", Dimensions: dimensions}
 			index := newStore()
 			embed := newEmbed(vaults{}, index, index)
 			embed.Embedder = &embedder{dims: dimensions}

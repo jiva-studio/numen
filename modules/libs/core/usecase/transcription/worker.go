@@ -8,9 +8,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // errNothingTranscribes is a run that reached nothing: what transcribes a
@@ -30,7 +35,7 @@ func transcriptionID(path string) string { return "transcription-" + path }
 
 // OpenTranscriber opens what listens to a recording, when there is one to
 // listen to. It is told how far the fetching of what it needs has got.
-type OpenTranscriber func(ctx context.Context, tell func(what string, finished, total int64)) (port.Transcriber, func() error, error)
+type OpenTranscriber func(ctx context.Context, tell func(what string, finished, total int64)) (transcriptionport.Transcriber, func() error, error)
 
 // A Runtime is what a recording is transcribed through on this
 // machine.
@@ -48,9 +53,9 @@ type Runtime struct {
 // transcribes them, what a vault is read and written through, and what puts a
 // transcript right afterwards.
 type Config struct {
-	Readers port.VaultReaders
-	Derived port.DerivedStores
-	Sources port.SourceRepository
+	Readers vaultport.VaultReaders
+	Derived vaultport.DerivedStores
+	Sources sourceport.SourceRepository
 	Tasks   *run.Tasks
 
 	// Runtime is what a recording is transcribed through.
@@ -70,8 +75,8 @@ type Config struct {
 
 	// Wait holds the queue between its rounds, and Delay closes the parked models
 	// once they have been idle.
-	Wait  port.Wait
-	Delay port.Delay
+	Wait  machineport.Wait
+	Delay machineport.Delay
 }
 
 // Worker transcribes recordings behind whoever asked, and behind
@@ -132,7 +137,7 @@ func (t *Worker) Wait() { t.line.Wait() }
 // One at a time: the models hold a worker each. A recording named while one is
 // being transcribed goes to the back of the line and is transcribed as soon as
 // the run before it ends, ahead of everything the vault set itself.
-func (t *Worker) Start(v domain.Vault, path string) port.StartOutcome {
+func (t *Worker) Start(v domain.Vault, path string) windowport.StartOutcome {
 	return t.line.Start(v, path)
 }
 
@@ -156,7 +161,7 @@ func (t *Worker) transcribeNamed(ctx context.Context, v domain.Vault, path strin
 // begins the instant this returns covers the rounds behind it.
 func (t *Worker) Queue(
 	ctx context.Context,
-	queries port.SourceQueries,
+	queries sourceport.SourceQueries,
 	every time.Duration,
 	v domain.Vault,
 ) {
@@ -169,7 +174,7 @@ func (t *Worker) Queue(
 // their text, one after another. It ends early where what stopped a recording
 // was the machine and not the file: the rest of the round would reach the same
 // nothing.
-func (t *Worker) round(ctx context.Context, indexed port.SourceQueries, v domain.Vault) {
+func (t *Worker) round(ctx context.Context, indexed sourceport.SourceQueries, v domain.Vault) {
 	mine, free := t.line.Claim()
 	if !free {
 		// The hand is transcribing something. What this round did not hand over
@@ -199,7 +204,7 @@ func (t *Worker) round(ctx context.Context, indexed port.SourceQueries, v domain
 //
 // The index knows both: every recording it holds, and which of them stand on a
 // text a producer made. What is left of the first by the second is the work.
-func (t *Worker) getUntranscribed(ctx context.Context, existing port.SourceQueries, v domain.Vault) []string {
+func (t *Worker) getUntranscribed(ctx context.Context, existing sourceport.SourceQueries, v domain.Vault) []string {
 	if existing == nil {
 		return nil
 	}
@@ -397,7 +402,7 @@ func (t *Worker) proofreadTranscript(
 // holds is a question the index already answers.
 func (t *Worker) TakeUp(
 	ctx context.Context,
-	sources port.SourceQueries,
+	sources sourceport.SourceQueries,
 	vaults ...domain.Vault,
 ) {
 	if !t.with.Proofreading.IsAutomatic || sources == nil {
@@ -459,7 +464,7 @@ func (t *Worker) acquireModels(
 	ctx context.Context,
 	id, path string,
 	isUserStarted bool,
-) (delta port.Transcriber, finish func(ran error) error, err error) {
+) (delta transcriptionport.Transcriber, finish func(ran error) error, err error) {
 	if retained, ok := t.resident.take(); ok {
 		return retained, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}

@@ -4,8 +4,10 @@ import (
 	"context"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 func configureLocations(cfg container.Config, where cli.Locations) container.Config {
@@ -56,7 +58,7 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 				cfg.SetPluginVaultPath(v.Path)
 				return createProofreadTranscript(ctx, cfg, v)
 			},
-			Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
+			Search: func(ctx context.Context, errorHandler windowport.ErrorHandler) (cli.Search, error) {
 				return createSearch(ctx, cfg, errorHandler)
 			},
 			Problems: func(ctx context.Context) (cli.Problems, error) { return createProblems(ctx, cfg) },
@@ -204,7 +206,7 @@ type indexedCut[C any] struct {
 // closed when the extraction cannot be made.
 func createCut[C any](
 	ctx context.Context, cfg container.Config, v domain.Vault,
-	extract func(port.SourceRepository, port.SourceQueries, domain.Vault) (C, error),
+	extract func(sourceport.SourceRepository, sourceport.SourceQueries, domain.Vault) (C, error),
 ) (indexedCut[C], error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
@@ -268,7 +270,7 @@ func createProofreadTranscript(
 // createSearch is the search over the index. Only the provider that embeds
 // questions is opened, because nothing a search does fills an index.
 func createSearch(
-	ctx context.Context, cfg container.Config, errorHandler port.ErrorHandler,
+	ctx context.Context, cfg container.Config, errorHandler windowport.ErrorHandler,
 ) (cli.Search, error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {

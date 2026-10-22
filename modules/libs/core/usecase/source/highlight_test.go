@@ -9,14 +9,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // layered reads a document with the library and answers where its words sit
 // with what the test put in.
 type layered struct {
-	port.TextExtractor
+	sourceport.TextExtractor
 	where func(raw []byte, pages []int) ([]domain.HighlightBox, error)
 }
 

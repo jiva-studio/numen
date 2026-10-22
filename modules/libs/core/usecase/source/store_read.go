@@ -5,12 +5,13 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // isUnclaimed says whether nobody holds a name, by taking it and letting it go.
-func isUnclaimed(ctx context.Context, store port.DerivedStore, name domain.ArtifactName) bool {
+func isUnclaimed(ctx context.Context, store vaultport.DerivedStore, name domain.ArtifactName) bool {
 	release, err := store.ClaimArtifact(ctx, name)
 	if err != nil {
 		return false
@@ -20,7 +21,7 @@ func isUnclaimed(ctx context.Context, store port.DerivedStore, name domain.Artif
 }
 
 // readFirst is what the store holds under the first of these names, and nothing where it holds none.
-func readFirst(ctx context.Context, store port.DerivedStore, names ...domain.ArtifactName) ([]byte, error) {
+func readFirst(ctx context.Context, store vaultport.DerivedStore, names ...domain.ArtifactName) ([]byte, error) {
 	for _, name := range names {
 		raw, err := store.ReadArtifact(ctx, name)
 		if errors.Is(err, fs.ErrNotExist) {

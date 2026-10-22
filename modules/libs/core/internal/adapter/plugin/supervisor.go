@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 var (
@@ -198,7 +198,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 	defer s.mu.Unlock()
 	norm := make([]string, len(permissions))
 	for i, p := range permissions {
-		norm[i] = port.NormalizePermission(p)
+		norm[i] = pluginport.NormalizePermission(p)
 	}
 	s.permissions = norm
 }
@@ -207,13 +207,13 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 func (s *Supervisor) HasPermission(permission string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return slices.Contains(s.permissions, port.NormalizePermission(permission))
+	return slices.Contains(s.permissions, pluginport.NormalizePermission(permission))
 }
 
 // CheckPermission returns an error if the supervised plugin lacks the requested permission.
 func (s *Supervisor) CheckPermission(permission string) error {
 	if !s.HasPermission(permission) {
-		return port.ErrPermissionDenied
+		return pluginport.ErrPermissionDenied
 	}
 	return nil
 }

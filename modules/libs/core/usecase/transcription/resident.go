@@ -4,7 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // A resident is opened transcription models kept loaded between recordings,
@@ -12,7 +13,7 @@ import (
 // and then the lock.
 type resident struct {
 	mu       sync.Mutex
-	provider port.Transcriber
+	provider transcriptionport.Transcriber
 	letGo    func() error
 	release  func()
 	isParked bool
@@ -23,7 +24,7 @@ type resident struct {
 }
 
 // hold takes the models in use.
-func (r *resident) hold(delta port.Transcriber, letGo func() error, release func()) {
+func (r *resident) hold(delta transcriptionport.Transcriber, letGo func() error, release func()) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.provider, r.letGo, r.release = delta, letGo, release
@@ -31,7 +32,7 @@ func (r *resident) hold(delta port.Transcriber, letGo func() error, release func
 }
 
 // take gives back the parked models for the next recording.
-func (r *resident) take() (port.Transcriber, bool) {
+func (r *resident) take() (transcriptionport.Transcriber, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.provider == nil || !r.isParked {
@@ -46,7 +47,7 @@ func (r *resident) take() (port.Transcriber, bool) {
 }
 
 // park leaves the models loaded and closes them when idle passes with no take.
-func (r *resident) park(delay port.Delay, idle time.Duration) {
+func (r *resident) park(delay machineport.Delay, idle time.Duration) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.isParked = true

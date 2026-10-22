@@ -3,16 +3,17 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // GetHeadings finds what each of the notes at some paths is divided into.
 type GetHeadings struct {
-	queries port.NoteQueries
+	queries noteport.NoteQueries
 }
 
-func NewGetHeadings(queries port.NoteQueries) *GetHeadings {
+func NewGetHeadings(queries noteport.NoteQueries) *GetHeadings {
 	return &GetHeadings{queries: queries}
 }
 

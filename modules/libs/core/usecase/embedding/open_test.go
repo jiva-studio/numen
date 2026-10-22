@@ -8,15 +8,16 @@ import (
 	"time"
 
 	agreement "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // is the identity a provider's vectors are kept under. Nothing here reads a
 // settings file: what a vector is has been settled before any of this is called.
-func is(name string) port.EmbeddingModel {
-	return port.EmbeddingModel{
+func is(name string) embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{
 		Name: name, Dimensions: 3, MaxTokens: 64, Pooling: "mean",
 		From: "service:https://vectors.invalid/v1/" + name,
 	}
@@ -26,7 +27,7 @@ func is(name string) port.EmbeddingModel {
 // given. It counts the times it was asked the text two providers are compared
 // over, and the times it was release.
 type saying struct {
-	model        port.EmbeddingModel
+	model        embeddingport.EmbeddingModel
 	vector       []float32
 	requestCount atomic.Int64
 	closed       atomic.Int64
@@ -36,7 +37,7 @@ func newSaying(name string, vector ...float32) *saying {
 	return &saying{model: is(name), vector: vector}
 }
 
-func (s *saying) GetModel() port.EmbeddingModel { return s.model }
+func (s *saying) GetModel() embeddingport.EmbeddingModel { return s.model }
 
 func (s *saying) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
@@ -55,7 +56,7 @@ func (s *saying) Close() error {
 }
 
 // refuseFetch is a model that is not on this machine and is not to be fetched.
-func refuseFetch(context.Context, func(finished, total int64)) (port.Embedder, error) {
+func refuseFetch(context.Context, func(finished, total int64)) (embeddingport.Embedder, error) {
 	return nil, errors.New("the model is not on this machine")
 }
 
@@ -212,7 +213,7 @@ func TestAProviderReachedAtOnceExistsInNoList(t *testing.T) {
 func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 	progressCh := make(chan func(completed, total int64), 1)
 	stop := make(chan struct{})
-	opening := func(_ context.Context, tell func(processed, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(processed, total int64)) (embeddingport.Embedder, error) {
 		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
@@ -260,7 +261,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 // what is happening, not a record of what happened.
 func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 	target := newSaying("a/model", 1, 0, 0)
-	opening := func(_ context.Context, tell func(finishedVal, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(finishedVal, total int64)) (embeddingport.Embedder, error) {
 		tell(90_000_000, 90_000_000)
 		return target, nil
 	}

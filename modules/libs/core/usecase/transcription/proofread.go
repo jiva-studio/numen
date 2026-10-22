@@ -9,9 +9,11 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Proofread puts a recording's transcript right, where a person
@@ -23,9 +25,9 @@ import (
 //
 // A correction changes words. The proofreader is given line numbers and text,
 type Proofread struct {
-	readers  port.VaultReaders
-	derived  port.DerivedStores
-	provider port.Proofreader
+	readers  vaultport.VaultReaders
+	derived  vaultport.DerivedStores
+	provider recognitionport.Proofreader
 
 	// Area is the store the transcript is kept in. Empty means the default.
 	Area string
@@ -47,7 +49,7 @@ type Proofread struct {
 // the recording is read out of, the store the transcript and the words as they
 // now stand are kept in, and the proofreader that answers about the lines.
 func NewProofread(
-	readers port.VaultReaders, derived port.DerivedStores, proofreader port.Proofreader,
+	readers vaultport.VaultReaders, derived vaultport.DerivedStores, proofreader recognitionport.Proofreader,
 ) (Proofread, error) {
 	if err := run.CheckProofread(readers, derived, proofreader); err != nil {
 		return Proofread{}, err
@@ -60,7 +62,7 @@ func NewProofread(
 //
 // held is false with no error where the installation named no profile.
 func CreateProofread(
-	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
+	c run.ProofreadingConfig, readers vaultport.VaultReaders, derived vaultport.DerivedStores,
 ) (right Proofread, target bool, err error) {
 	delta, err := run.OpenProofreader(c.By)
 	if err != nil {
@@ -135,7 +137,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	// here, so a run listening to a recording and a run putting its transcript
 	// right are never under way at once.
 	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, area, hash))
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
 	}
@@ -196,7 +198,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 // it asks about, and which lines it has asked about and put right so far.
 type transcriptProofreadJob struct {
 	v     domain.Vault
-	store port.DerivedStore
+	store vaultport.DerivedStore
 	path  string
 	// correctionsName is where the corrected words are kept, and progressName where the
 	// count of what has been asked about is kept.
@@ -221,7 +223,7 @@ type transcriptProofreadJob struct {
 // say something, from the first line no run has asked about.
 func newTranscriptJob(
 	v domain.Vault,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	path string,
 	correctionsName, progressName domain.ArtifactName,
 	cues []domain.TranscriptCue,
@@ -391,7 +393,7 @@ func (p *transcriptProofreadJob) joinCues(line, last int) {
 // put right.
 func (u Proofread) current(
 	ctx context.Context,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	area, hash string,
 ) ([]byte, bool, error) {
 	raw, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, area, hash))
@@ -413,7 +415,7 @@ func (u Proofread) current(
 
 // readCheckpoint is who put this transcript right and how far they got.
 func (u Proofread) readCheckpoint(
-	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName,
+	ctx context.Context, store vaultport.DerivedStore, progressName domain.ArtifactName,
 ) (putting, error) {
 	raw, err := store.ReadArtifact(ctx, progressName)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -432,7 +434,7 @@ func (u Proofread) readCheckpoint(
 // writeCheckpoint writes down who is putting this transcript right and how far
 // they have got.
 func (u Proofread) writeCheckpoint(
-	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, checkpoint putting,
+	ctx context.Context, store vaultport.DerivedStore, progressName domain.ArtifactName, checkpoint putting,
 ) error {
 	checkpoint.By = u.provider.GetName()
 	raw, err := json.MarshalIndent(checkpoint, "", "  ")

@@ -1,24 +1,27 @@
 package assembly
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // ScenarioAssembly is what this window asks for scenarios, rendering, extraction, search, and refresh.
 type ScenarioAssembly interface {
 	// GetTextExtractor takes the text out of a document and GetPageRenderer
 	// draws one, and GetClock is what time it is.
-	GetTextExtractor() port.TextExtractor
-	GetPageRenderer() port.PageRenderer
-	GetClock() port.Clock
+	GetTextExtractor() sourceport.TextExtractor
+	GetPageRenderer() sourceport.PageRenderer
+	GetClock() machineport.Clock
 
 	// NewSearch is how the window answers a question about the text the vault
 	// holds. handleError is where a half that could not run is said.
-	NewSearch(asking port.Embedder, handleError func(error)) search.Search
+	NewSearch(asking embeddingport.Embedder, handleError func(error)) search.Search
 
 	// OpenNotes and OpenVaults are this installation's scenarios, built against the cache above. index brings
 	// what a write touched up to date before the write answers.

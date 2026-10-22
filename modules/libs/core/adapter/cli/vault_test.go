@@ -10,8 +10,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // isolate points every directory the machine would offer at one of the test's
@@ -25,7 +27,7 @@ func isolate(t *testing.T) {
 
 // brokenRegistry is the list of a session with one call that fails.
 type brokenRegistry struct {
-	port.VaultRegistry
+	vaultport.VaultRegistry
 	breaks string
 }
 
@@ -253,7 +255,7 @@ func TestAnIndexThatRefusesToForgetKeepsTheListAndTheFolder(t *testing.T) {
 }
 
 // refusingToForget is the rows of an index that cannot take a vault out.
-type refusingToForget struct{ port.VaultRepository }
+type refusingToForget struct{ vaultport.VaultRepository }
 
 func (refusingToForget) Unregister(context.Context, domain.VaultID) error { return errRefused }
 
@@ -296,7 +298,7 @@ func TestAMachineWithNowhereToInsertItReturnsHowToForgetTheVault(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "kept")
 	s.addVault("other")
-	s.trash(port.ErrNoTrash)
+	s.trash(machineport.ErrNoTrash)
 
 	_, err := s.run("vault", "erase", "kept", "--yes")
 	if err == nil || !strings.HasSuffix(err.Error(), " — take it off the list with: numen-cli vault remove kept") {

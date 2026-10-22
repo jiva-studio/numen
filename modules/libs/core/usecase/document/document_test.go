@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 const scanPath = "library/scan.pdf"
@@ -159,7 +160,7 @@ func TestGetBookPictureAnswersWithErrChangedWhereTheArchiveReturnsTheFileChanged
 	t.Parallel()
 	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
 	target := newBook()
-	target.failure = port.ErrBookChanged
+	target.failure = sourceport.ErrBookChanged
 	get := document.NewGetBookPicture(readers, target, http.DetectContentType)
 
 	_, err := get.Execute(t.Context(), v, bookPath, fingerprintOf(t, v), "OEBPS/pictures/plate.png")
@@ -217,8 +218,8 @@ func TestGetBookAnswersTheShapeTheBooksGive(t *testing.T) {
 		t.Errorf("the book is %+v", got)
 	}
 
-	target.failure = port.ErrNoBook
-	if _, err := document.NewGetBook(target).Execute(t.Context(), bookPath); !errors.Is(err, port.ErrNoBook) {
+	target.failure = sourceport.ErrNoBook
+	if _, err := document.NewGetBook(target).Execute(t.Context(), bookPath); !errors.Is(err, sourceport.ErrNoBook) {
 		t.Errorf("a path with no book was answered with %v", err)
 	}
 }

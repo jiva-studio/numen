@@ -6,9 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // A transcript is put right at the profile the settings name for speech. The
@@ -82,9 +83,9 @@ func TestATranscriberThatCannotBeOpenedProducesTheReasonAndNothingElse(t *testin
 
 // A transcription is made with the transcriber it is given.
 func TestATranscriptionUsesTheTranscriberItIsGiven(t *testing.T) {
-	delta := &struct{ port.Transcriber }{}
+	delta := &struct{ transcriptionport.Transcriber }{}
 
-	if got := (Config{}).Transcribe(nil, delta).By(); got != port.Transcriber(delta) {
+	if got := (Config{}).Transcribe(nil, delta).By(); got != transcriptionport.Transcriber(delta) {
 		t.Errorf("the transcriber is %v", got)
 	}
 }

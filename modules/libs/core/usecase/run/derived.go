@@ -5,13 +5,15 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // GetHash is the fingerprint of a source's bytes: known when it is set, read
 // from the vault otherwise.
-func GetHash(ctx context.Context, readers port.VaultReaders, v domain.Vault, path, hash string) (string, error) {
+func GetHash(ctx context.Context, readers vaultport.VaultReaders, v domain.Vault, path, hash string) (string, error) {
 	if hash != "" {
 		return hash, nil
 	}
@@ -40,7 +42,7 @@ func Cut(ctx context.Context, extracted func(context.Context, domain.Vault, stri
 func Stand(
 	ctx context.Context,
 	splitFn func(context.Context, domain.Vault, string) error,
-	sources port.SourceRepository,
+	sources sourceport.SourceRepository,
 	v domain.Vault,
 	ref domain.Fingerprint,
 	hash, from string,

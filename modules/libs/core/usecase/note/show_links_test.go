@@ -9,10 +9,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // newIndexedVault writes a vault of the given notes, scans it, and returns
@@ -400,7 +401,7 @@ func TestANameMatchesWhateverCaseItWasTypedIn(t *testing.T) {
 
 // failingLinks answers one of the two questions with an error.
 type failingLinks struct {
-	port.LinkQueries
+	noteport.LinkQueries
 	links, backlinks error
 }
 

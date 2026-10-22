@@ -6,16 +6,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // carrying is the index as far as this window asks of it: which vaults it holds.
 type carrying struct {
-	port.NoteQueries
+	noteport.NoteQueries
 	targetVault map[domain.VaultID]bool
 }
 

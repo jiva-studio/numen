@@ -5,8 +5,9 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // TranscriptWrite is a transcript that was written; CutError is why it could not be cut again, and nil when it was.
@@ -37,7 +38,7 @@ func (u WriteTranscript) Execute(
 
 	// A run holds the recording it is listening to by the name it appends to.
 	release, err := stored.store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, stored.meta.Producer, stored.meta.Hash))
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		return TranscriptWrite{}, ErrTranscriptBusy
 	}
 	if err != nil {

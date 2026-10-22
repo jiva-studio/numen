@@ -6,8 +6,9 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // A vector is bought once and reclaimed by every vault that holds the same
@@ -27,7 +28,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	}
 
 	// What the index now holds, as a second vault finds it.
-	bought := map[string]port.Vector{}
+	bought := map[string]embeddingport.Vector{}
 	index.preserved = map[string][]byte{}
 	for _, target := range index.vectors {
 		for _, v := range target {
@@ -74,8 +75,8 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 // leans is what the two coarse forms have to agree about.
 type faint struct{ dims int }
 
-func (f *faint) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "faint", Dimensions: f.dims}
+func (f *faint) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "faint", Dimensions: f.dims}
 }
 
 func (*faint) Close() error { return nil }

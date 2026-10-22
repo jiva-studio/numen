@@ -3,10 +3,12 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/edit"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrNoNote is what an operation gets when the vault holds no note at the path
@@ -45,10 +47,10 @@ type Levels = edit.Levels
 // identifier because this is an edit, change the one thing, put it back, and
 // bring the index level.
 type Edit struct {
-	readers port.VaultReaders
-	writers port.VaultWriters
+	readers vaultport.VaultReaders
+	writers vaultport.VaultWriters
 	index   Levels
-	now     port.Clock
+	now     machineport.Clock
 
 	Fingerprint domain.Fingerprint
 	// ShouldOverwrite is a caller writing what is in front of the person: the note
@@ -68,7 +70,7 @@ type Edit struct {
 // caller believes is on disk, and how much of a file it will hold, are set
 // beside it.
 func NewEdit(
-	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
 ) Edit {
 	return Edit{readers: readers, writers: writers, index: index, now: now}
 }
@@ -105,9 +107,9 @@ func (e Edit) openFiles(v domain.Vault) (edit.Files, error) {
 
 // vaultFiles are the files of one vault, read and written through the ports.
 type vaultFiles struct {
-	reader  port.VaultReader
-	writer  port.VaultWriter
-	writers port.VaultWriters
+	reader  vaultport.VaultReader
+	writer  vaultport.VaultWriter
+	writers vaultport.VaultWriters
 	vault   domain.Vault
 }
 

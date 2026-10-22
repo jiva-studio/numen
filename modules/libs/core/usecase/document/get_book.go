@@ -3,16 +3,17 @@ package document
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 type GetBook struct {
-	books port.Book
+	books sourceport.Book
 }
 
 // NewGetBook reads books through books.
-func NewGetBook(books port.Book) GetBook {
+func NewGetBook(books sourceport.Book) GetBook {
 	return GetBook{books: books}
 }
 
@@ -24,11 +25,11 @@ func (u GetBook) Execute(ctx context.Context, path string) (domain.BookShape, er
 }
 
 type ReadBookMarkup struct {
-	books port.Book
+	books sourceport.Book
 }
 
 // NewReadBookMarkup reads books through books.
-func NewReadBookMarkup(books port.Book) ReadBookMarkup {
+func NewReadBookMarkup(books sourceport.Book) ReadBookMarkup {
 	return ReadBookMarkup{books: books}
 }
 

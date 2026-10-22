@@ -13,9 +13,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // hand is a watcher whose events a test writes itself, so that what happens
@@ -45,11 +46,11 @@ func (refuses) WatchVault(context.Context, domain.Vault) (<-chan []string, <-cha
 // permission or a device that went away looks like from here. Told from one
 // goroutine and read in another, so the flag is an atomic one.
 type sometimes struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	refuse atomic.Bool
 }
 
-func (s *sometimes) Open(v domain.Vault) (port.VaultReader, error) {
+func (s *sometimes) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	if s.refuse.Load() {
 		return nil, errors.New("cannot open the vault")
 	}

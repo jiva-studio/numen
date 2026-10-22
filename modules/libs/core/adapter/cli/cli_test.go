@@ -15,8 +15,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // session is one installation: its own registry and index, so a test never
@@ -447,11 +448,11 @@ func TestAMachineWithNowhereToInsertItDeletesNothing(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "kept")
 	s.addVault("other")
-	s.trash(port.ErrNoTrash)
+	s.trash(machineport.ErrNoTrash)
 
 	out, err := s.run("vault", "erase", "kept", "--yes")
-	if !errors.Is(err, port.ErrNoTrash) {
-		t.Fatalf("erasing gave %v, want %v\n%s", err, port.ErrNoTrash, out)
+	if !errors.Is(err, machineport.ErrNoTrash) {
+		t.Fatalf("erasing gave %v, want %v\n%s", err, machineport.ErrNoTrash, out)
 	}
 	if _, err := os.Stat(s.vault); err != nil {
 		t.Errorf("the folder went with nowhere to put it: %v", err)

@@ -7,8 +7,11 @@ import (
 	pathpkg "path"
 	"strconv"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // TrashDir is where a removed note is kept. A name beginning with a dot is not
@@ -22,11 +25,11 @@ const TrashDir = ".trash"
 // from the file, so losing the index costs a scan; the file is the one thing
 // nothing rebuilds.
 type Remove struct {
-	writers port.VaultWriters
-	links   port.LinkQueries
+	writers vaultport.VaultWriters
+	links   noteport.LinkQueries
 	// queries is what the index holds about each file, and is what says which
 	// sources sit under the path being removed.
-	queries port.SourceQueries
+	queries sourceport.SourceQueries
 	index   Levels
 }
 
@@ -34,7 +37,7 @@ type Remove struct {
 // within, the links that pointed at it, what the index holds about the files
 // under it, and what brings the path it left level.
 func NewRemove(
-	writers port.VaultWriters, links port.LinkQueries, queries port.SourceQueries, index Levels,
+	writers vaultport.VaultWriters, links noteport.LinkQueries, queries sourceport.SourceQueries, index Levels,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, index: index}
 }
@@ -126,14 +129,14 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 // moveToTrash moves path under the trash and is where it landed. Keeping the
 // path underneath the trash means two notes of the same name do not land on each
 // other, and that putting one back is obvious.
-func moveToTrash(ctx context.Context, writer port.VaultWriter, path string) (string, error) {
+func moveToTrash(ctx context.Context, writer vaultport.VaultWriter, path string) (string, error) {
 	target := pathpkg.Join(TrashDir, path)
 	for attempt := 2; ; attempt++ {
 		err := writer.Move(ctx, path, target)
 		if err == nil {
 			return target, nil
 		}
-		if !errors.Is(err, port.ErrOccupied) {
+		if !errors.Is(err, vaultport.ErrOccupied) {
 			return "", mapMissingNote(err)
 		}
 		if attempt > 100 {

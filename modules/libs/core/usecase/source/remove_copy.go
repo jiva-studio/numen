@@ -6,15 +6,16 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // RemoveCopy takes the copy of a video off this disk and leaves the note pointing at the address.
 type RemoveCopy struct {
 	texts    sourceTexts
 	location GetCopyLocation
-	writers  port.VaultWriters
+	writers  vaultport.VaultWriters
 }
 
 func (u RemoveCopy) Execute(ctx context.Context, v domain.Vault, path string, targetURL domain.URL) error {

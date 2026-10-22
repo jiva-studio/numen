@@ -12,9 +12,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 const scan = "books/one.pdf"
@@ -42,10 +45,10 @@ func newScanArtifact(lines []string) ([]byte, []byte) {
 // through pages.
 func newHaltedWorker(
 	t *testing.T,
-	delta port.Proofreader,
+	delta recognitionport.Proofreader,
 	paths int,
 	lines ...string,
-) (*watched, domain.Vault, port.DerivedStore, string) {
+) (*watched, domain.Vault, vaultport.DerivedStore, string) {
 	t.Helper()
 	raw := []byte("not a document: " + scan)
 	shelved := newLibrary()
@@ -56,7 +59,7 @@ func newHaltedWorker(
 	w.Worker.with.Readers = vaults{v.ID: shelved}
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func() (port.Proofreader, error) { return delta, nil },
+		By: func() (recognitionport.Proofreader, error) { return delta, nil },
 	}
 
 	hash := text.Fingerprint(raw)
@@ -96,18 +99,18 @@ func newHaltedWorker(
 
 // books is the document one vault holds, as the index answers for it.
 type books struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	hash string
 }
 
 func (b books) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
-) ([]port.SourceText, error) {
+) ([]sourceport.SourceText, error) {
 	h := b.hash
 	if h == "" {
 		h = text.Fingerprint([]byte("not a document: " + scan))
 	}
-	return []port.SourceText{{
+	return []sourceport.SourceText{{
 		Fingerprint: domain.Fingerprint{Path: scan}, Producer: "ocr", Hash: h,
 	}}, nil
 }
@@ -121,7 +124,7 @@ func newReply(pos int, line string) domain.ProofreadCorrection {
 }
 
 // corrections is the lines the shelf holds a correction for.
-func corrections(t *testing.T, store port.DerivedStore, name domain.ArtifactName) []int {
+func corrections(t *testing.T, store vaultport.DerivedStore, name domain.ArtifactName) []int {
 	t.Helper()
 	raw, err := store.ReadArtifact(t.Context(), name)
 	if err != nil {

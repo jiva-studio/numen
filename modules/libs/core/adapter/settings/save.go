@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 // Setting is one field of the file and where in it that field sits:
@@ -63,7 +63,7 @@ func Save(path string, into Document, settings ...Setting) error {
 		}
 
 		if err := writeSettings(raw, settings, into); err != nil {
-			return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
+			return fmt.Errorf("%s: %w: %w", path, settingsport.ErrNotASetting, err)
 		}
 		return writeFileAtomically(path, raw)
 	})

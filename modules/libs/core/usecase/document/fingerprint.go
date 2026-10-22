@@ -5,8 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Fingerprint is which bytes a document is: where it is located in the vault, and
@@ -24,8 +25,8 @@ var ErrChanged = errors.New("the file changed since this address was given out")
 // getFingerprint is what the vault says about the file at a path, with the
 // reader that says it.
 func getFingerprint(
-	ctx context.Context, readers port.VaultReaders, v domain.Vault, path string,
-) (port.VaultReader, Fingerprint, error) {
+	ctx context.Context, readers vaultport.VaultReaders, v domain.Vault, path string,
+) (vaultport.VaultReader, Fingerprint, error) {
 	reader, err := readers.Open(v)
 	if err != nil {
 		return nil, Fingerprint{}, err

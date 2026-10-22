@@ -6,8 +6,9 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // DeleteText throws away the text downloaded from a url's address. The url stands
@@ -25,7 +26,7 @@ func (u ImportURL) DeleteText(ctx context.Context, v domain.Vault, path string) 
 }
 
 // dropDownloads takes away everything ever downloaded for an address.
-func dropDownloads(ctx context.Context, store port.DerivedStore, hash string) error {
+func dropDownloads(ctx context.Context, store vaultport.DerivedStore, hash string) error {
 	for _, name := range domain.GetAddressTextNames(hash) {
 		if err := store.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err

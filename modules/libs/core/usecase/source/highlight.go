@@ -9,8 +9,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Highlight is what runs of a source's text say and where they sit on the pages
@@ -24,14 +26,14 @@ import (
 //
 // A source with no recognition and no layer is lit nowhere, and that is an answer.
 type Highlight struct {
-	readers port.VaultReaders
-	sources port.SourceQueries
-	derived port.DerivedStores
+	readers vaultport.VaultReaders
+	sources sourceport.SourceQueries
+	derived vaultport.DerivedStores
 
 	// Documents is optional. It reads a document that carries its own text
 	// layer; without one such a document is lit nowhere. A vault whose
 	// documents are all recognised needs none.
-	Documents port.TextExtractor
+	Documents sourceport.TextExtractor
 }
 
 // A Run is one run of a source's text: what it says, and where it relies on the
@@ -46,7 +48,7 @@ type Run struct {
 // made the text the runs are places in, and the store that producer's text and
 // coordinates are kept in.
 func NewHighlight(
-	readers port.VaultReaders, sources port.SourceQueries, derived port.DerivedStores,
+	readers vaultport.VaultReaders, sources sourceport.SourceQueries, derived vaultport.DerivedStores,
 ) Highlight {
 	return Highlight{readers: readers, sources: sources, derived: derived}
 }
@@ -83,7 +85,7 @@ func (u Highlight) Execute(
 	if !exists {
 		return getRuns("", nil, runs), nil
 	}
-	var store port.DerivedStore
+	var store vaultport.DerivedStore
 	if u.derived != nil {
 		if store, err = u.derived.Open(v); err != nil {
 			return nil, err
@@ -97,7 +99,7 @@ func (u Highlight) Execute(
 	if sourceText.Producer != "" && ref.IsUnchanged(sourceText.Fingerprint) {
 		boxes, err = u.read(ctx, store, sourceText)
 	} else {
-		sourceText = port.SourceText{}
+		sourceText = sourceport.SourceText{}
 		boxes, err = u.layer(ctx, reader, ref, runs)
 	}
 	if err != nil {
@@ -115,10 +117,10 @@ func (u Highlight) Execute(
 // here reads says nothing, and that is an answer.
 func (u Highlight) prose(
 	ctx context.Context,
-	reader port.VaultReader,
-	store port.DerivedStore,
+	reader vaultport.VaultReader,
+	store vaultport.DerivedStore,
 	path string,
-	sourceText port.SourceText,
+	sourceText sourceport.SourceText,
 ) (string, error) {
 	of := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}
 	doc, err := of.GetDocument(ctx, path, sourceText.Producer, sourceText.Hash)
@@ -151,8 +153,8 @@ func getRuns(prose string, boxes []domain.HighlightBox, runs []domain.ByteSpan) 
 // from.
 func (u Highlight) read(
 	ctx context.Context,
-	store port.DerivedStore,
-	sourceText port.SourceText,
+	store vaultport.DerivedStore,
+	sourceText sourceport.SourceText,
 ) ([]domain.HighlightBox, error) {
 	if store == nil {
 		return nil, nil
@@ -184,7 +186,7 @@ func (u Highlight) read(
 // document says when it is read. A page nothing asked about is not read.
 func (u Highlight) layer(
 	ctx context.Context,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	ref domain.Fingerprint,
 	runs []domain.ByteSpan,
 ) ([]domain.HighlightBox, error) {

@@ -9,8 +9,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Downloading the media a url points at, so a person plays it from this disk.
@@ -55,7 +56,7 @@ func (u ImportURL) Copy(
 	// the store's name whichever disk the copy lands on: it is the address that
 	// is being downloaded, and two urls on one address are one download.
 	release, err := store.ClaimArtifact(ctx, domain.NewCopyName(hash))
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
 	if err != nil {
@@ -135,7 +136,7 @@ func (u ImportURL) landing(copyPath string) string {
 
 // getExistingCopy says whether a copy is already here, and how large.
 func (u ImportURL) getExistingCopy(
-	ctx context.Context, v domain.Vault, store port.DerivedStore, hash, copyPath string,
+	ctx context.Context, v domain.Vault, store vaultport.DerivedStore, hash, copyPath string,
 ) (int64, bool, error) {
 	if u.IsToVault {
 		reader, err := u.Readers.Open(v)
@@ -168,7 +169,7 @@ func (u ImportURL) getExistingCopy(
 // A copy in the vault is the person's file: the application does not replace
 // one that is there, and putting the folders above it right is the writer's.
 func (u ImportURL) writeCopy(
-	ctx context.Context, v domain.Vault, store port.DerivedStore, name domain.ArtifactName, adjacent string, from io.Reader,
+	ctx context.Context, v domain.Vault, store vaultport.DerivedStore, name domain.ArtifactName, adjacent string, from io.Reader,
 ) (int64, error) {
 	if !u.IsToVault {
 		return store.WriteArtifactStream(ctx, name, from)

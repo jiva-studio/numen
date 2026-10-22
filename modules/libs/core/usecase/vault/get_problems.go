@@ -3,9 +3,10 @@ package vault
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault/check"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
 )
 
 // GetProblems lists what a vault contains that could not be acted on and was
@@ -19,7 +20,7 @@ func NewGetProblems(checks check.Checks) *GetProblems {
 }
 
 // NewStandardGetProblems holds the vault to the standard checks, and to none where there are no problem queries.
-func NewStandardGetProblems(problems port.ProblemQueries) *GetProblems {
+func NewStandardGetProblems(problems recognitionport.ProblemQueries) *GetProblems {
 	if problems == nil {
 		return NewGetProblems(check.Checks{})
 	}

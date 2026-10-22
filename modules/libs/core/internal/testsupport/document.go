@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // PDFBook represents a PDF document structure for testing.
@@ -22,7 +23,7 @@ type Documents struct{}
 
 func (Documents) Read(_ context.Context, raw []byte) (domain.TextLayer, error) {
 	if !bytes.HasPrefix(raw, []byte("%PDF-")) {
-		return domain.TextLayer{}, port.ErrNotADocument
+		return domain.TextLayer{}, sourceport.ErrNotADocument
 	}
 	return domain.TextLayer{
 		Text:  "Alpha Beta\nGamma Delta\n",
@@ -66,13 +67,13 @@ func (d dummyOpenDocument) Close() {
 	}
 }
 
-func (Documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+func (Documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	if file != nil {
 		buf := make([]byte, 5)
 		n, _ := io.ReadFull(file, buf)
 		if n < 5 || !bytes.HasPrefix(buf, []byte("%PDF-")) {
 			_ = file.Close()
-			return nil, port.ErrNotADocument
+			return nil, sourceport.ErrNotADocument
 		}
 		_, _ = file.Seek(0, io.SeekStart)
 	}
@@ -92,7 +93,7 @@ func NewBook(words ...string) []byte {
 // begins at each line.
 func (Documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error) {
 	if !bytes.HasPrefix(raw, []byte(bookMark)) {
-		return domain.BookText{}, port.ErrNotADocument
+		return domain.BookText{}, sourceport.ErrNotADocument
 	}
 	text := string(raw[len(bookMark):])
 	out := domain.BookText{Text: text}

@@ -5,8 +5,10 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 // The settings adapter owns the file and the sections about the window; every
@@ -155,7 +157,7 @@ func (c Config) SetSettings(s Settings) Config {
 			if err != nil {
 				return err
 			}
-			return writer([]port.Setting{
+			return writer([]settingsport.Setting{
 				{
 					Path: []string{pluginSettingsPrefix, pluginID, key},
 					JSON: string(raw),
@@ -170,12 +172,12 @@ func (c Config) SetSettings(s Settings) Config {
 
 // Plugins reads, as the window asks, the discovered plugins and their settings
 // schemas.
-func (c Config) Plugins() func() []port.PluginInfo {
-	return func() []port.PluginInfo {
+func (c Config) Plugins() func() []pluginport.PluginInfo {
+	return func() []pluginport.PluginInfo {
 		if c.PluginHost == nil {
 			return nil
 		}
-		var discoverer port.PluginDiscoverer = c.PluginHost
+		var discoverer pluginport.PluginDiscoverer = c.PluginHost
 		return discoverer.GetPluginInfos()
 	}
 }
@@ -186,8 +188,8 @@ func (c Config) Plugins() func() []port.PluginInfo {
 // The settings are read with them, so every row is answered against what is in
 // force; a file that cannot be read is answered against the defaults. The
 // programs and their models are the ones the agent plugins list.
-func (c Config) Models() func() []port.Model {
-	return func() []port.Model {
+func (c Config) Models() func() []settingsport.Model {
+	return func() []settingsport.Model {
 		target := c.getSettingsOrDefaults()
 		return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(target.Agent))
 	}

@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // DiscoveredPlugin is a validated plugin located on disk.
-type DiscoveredPlugin = port.DiscoveredPlugin
+type DiscoveredPlugin = pluginport.DiscoveredPlugin
 
 // DiscoveryProblem describes a plugin directory that could not be registered.
 type DiscoveryProblem struct {

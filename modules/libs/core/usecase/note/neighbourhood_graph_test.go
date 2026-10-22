@@ -6,9 +6,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 const graphVault domain.VaultID = "graph"
@@ -16,7 +17,7 @@ const graphVault domain.VaultID = "graph"
 // graph is the links of a vault written out by hand: what each note points at,
 // and what points at it, in the order they are returned.
 type graph struct {
-	port.LinkQueries
+	noteport.LinkQueries
 	out     map[string][]domain.ResolvedLink
 	in      map[string][]domain.ResolvedLink
 	failOut string

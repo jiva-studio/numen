@@ -3,7 +3,9 @@ package run
 import (
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ProofreadingConfig is what a text is put right with: what answers, and how
@@ -18,7 +20,7 @@ type ProofreadingConfig struct {
 	IsAutomatic bool
 	// By opens what answers about a text. It answers nothing where no profile is
 	// named, and the reason where one cannot be opened.
-	By func() (port.Proofreader, error)
+	By func() (recognitionport.Proofreader, error)
 }
 
 // at all is a value the settings produce and not a caller's slip; the other two
@@ -31,7 +33,7 @@ var (
 
 // CheckProofread says why a proofreading cannot be made out of these, and
 // nothing where it can.
-func CheckProofread(readers port.VaultReaders, derived port.DerivedStores, proofreader port.Proofreader) error {
+func CheckProofread(readers vaultport.VaultReaders, derived vaultport.DerivedStores, proofreader recognitionport.Proofreader) error {
 	switch {
 	case readers == nil:
 		return ErrNoVaultToProofread
@@ -45,7 +47,7 @@ func CheckProofread(readers port.VaultReaders, derived port.DerivedStores, proof
 
 // OpenProofreader is what answers about a text, and nothing where an
 // installation placed nothing to open.
-func OpenProofreader(open func() (port.Proofreader, error)) (port.Proofreader, error) {
+func OpenProofreader(open func() (recognitionport.Proofreader, error)) (recognitionport.Proofreader, error) {
 	if open == nil {
 		return nil, nil
 	}
@@ -61,8 +63,8 @@ func GetProofreadID(path string) string { return "proofreading-" + path }
 // what is being done shows. A proofreader the person has not let ask a model is
 // told by what allows it.
 func GetProofreadError(err error) string {
-	if errors.Is(err, port.ErrNoConsent) {
-		return port.ErrNoConsent.Error()
+	if errors.Is(err, completionport.ErrNoConsent) {
+		return completionport.ErrNoConsent.Error()
 	}
 	return err.Error()
 }

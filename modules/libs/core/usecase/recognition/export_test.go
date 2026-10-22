@@ -1,8 +1,10 @@
 package recognition
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // NewMemoryRecognise is a Recognise over the given vault readers and page
@@ -10,8 +12,8 @@ import (
 // one line a page. onPage is called as each page is shown to the model. The
 // second answer is the hash the source at a path was recorded under.
 func NewMemoryRecognise(
-	readers port.VaultReaders,
-	documents port.PageRenderer,
+	readers vaultport.VaultReaders,
+	documents sourceport.PageRenderer,
 	onPage func(),
 ) (Recognise, func(v domain.VaultID, path string) string) {
 	index := newStore()

@@ -7,7 +7,7 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // A key stored is read back, replaced by the next one stored under its name,
@@ -32,7 +32,7 @@ func TestAKeyIsStoredReplacedAndDeleted(t *testing.T) {
 	if err := store.DeleteKey(ctx, "md.numen.agent/apiKey"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.GetKey(ctx, "md.numen.agent/apiKey"); !errors.Is(err, port.ErrNoKey) {
+	if _, err := store.GetKey(ctx, "md.numen.agent/apiKey"); !errors.Is(err, pluginport.ErrNoKey) {
 		t.Errorf("a deleted key read as %v, want port.ErrNoKey", err)
 	}
 }
@@ -41,10 +41,10 @@ func TestAKeyIsStoredReplacedAndDeleted(t *testing.T) {
 func TestAKeyNeverStoredIsNoKey(t *testing.T) {
 	keyring.MockInit()
 	store := Store{}
-	if _, err := store.GetKey(t.Context(), "absent"); !errors.Is(err, port.ErrNoKey) {
+	if _, err := store.GetKey(t.Context(), "absent"); !errors.Is(err, pluginport.ErrNoKey) {
 		t.Errorf("read: error = %v, want port.ErrNoKey", err)
 	}
-	if err := store.DeleteKey(t.Context(), "absent"); !errors.Is(err, port.ErrNoKey) {
+	if err := store.DeleteKey(t.Context(), "absent"); !errors.Is(err, pluginport.ErrNoKey) {
 		t.Errorf("delete: error = %v, want port.ErrNoKey", err)
 	}
 }
@@ -77,13 +77,13 @@ func TestAMachineWithoutAKeychainFailsWithANamedError(t *testing.T) {
 		"del": func() error { return store.DeleteKey(ctx, "n") },
 	} {
 		err := call()
-		if !errors.Is(err, port.ErrNoKeyStore) || !errors.Is(err, reason) {
+		if !errors.Is(err, pluginport.ErrNoKeyStore) || !errors.Is(err, reason) {
 			t.Errorf("%s: error = %v, want port.ErrNoKeyStore carrying %v", name, err, reason)
 		}
 	}
 
 	keyring.MockInit()
-	if _, err := store.GetKey(ctx, "n"); !errors.Is(err, port.ErrNoKey) {
+	if _, err := store.GetKey(ctx, "n"); !errors.Is(err, pluginport.ErrNoKey) {
 		t.Errorf("a key set while the keychain was down was kept: %v", err)
 	}
 }
@@ -100,7 +100,7 @@ func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 	if err := store.SetKey(ctx, "n", "value"); !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want context.Canceled", err)
 	}
-	if _, err := store.GetKey(t.Context(), "n"); !errors.Is(err, port.ErrNoKey) {
+	if _, err := store.GetKey(t.Context(), "n"); !errors.Is(err, pluginport.ErrNoKey) {
 		t.Errorf("a cancelled set stored a key: %v", err)
 	}
 }

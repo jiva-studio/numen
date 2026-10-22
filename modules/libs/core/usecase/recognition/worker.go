@@ -5,9 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // errLateRuntime is a document left unrecognised because what would recognise
@@ -26,7 +30,7 @@ func recognitionID(path string) string { return "recognition-" + path }
 
 // OpenRecogniser opens what reads a scanned page, when there is one to read.
 // It is told how far the fetching of what it needs has got.
-type OpenRecogniser func(ctx context.Context, tell func(what string, finished, total int64)) (port.Recogniser, func() error, error)
+type OpenRecogniser func(ctx context.Context, tell func(what string, finished, total int64)) (recognitionport.Recogniser, func() error, error)
 
 // A Runtime is what a page is recognised through on this machine.
 type Runtime struct {
@@ -45,10 +49,10 @@ type Runtime struct {
 // recognises a page, what a vault is read and written through, and what puts a
 // recognition right afterwards.
 type Config struct {
-	Readers   port.VaultReaders
-	Derived   port.DerivedStores
-	Documents port.PageRenderer
-	Sources   port.SourceRepository
+	Readers   vaultport.VaultReaders
+	Derived   vaultport.DerivedStores
+	Documents sourceport.PageRenderer
+	Sources   sourceport.SourceRepository
 	Tasks     *run.Tasks
 
 	// Runtime is what a page is recognised through.
@@ -109,7 +113,7 @@ func (r *Worker) IsRunning() bool { return r.line.IsRunning() }
 // One at a time: the models hold a worker each. A document named while one is
 // being recognised goes to the back of the line and is recognised as soon as
 // the run before it ends.
-func (r *Worker) Start(v domain.Vault, path string) port.StartOutcome {
+func (r *Worker) Start(v domain.Vault, path string) windowport.StartOutcome {
 	return r.line.Start(v, path)
 }
 
@@ -301,7 +305,7 @@ func (r *Worker) finishTask(id string) { r.line.Finish(id) }
 // batches is taken up at that page. A recognition no proofreader has been over
 func (r *Worker) TakeUp(
 	ctx context.Context,
-	queries port.SourceQueries,
+	queries sourceport.SourceQueries,
 	vaults ...domain.Vault,
 ) {
 	proofreading := r.with.Proofreading
@@ -323,8 +327,8 @@ func (r *Worker) TakeUp(
 // page.
 func (r *Worker) collect(
 	ctx context.Context,
-	sources port.SourceQueries,
-	delta port.Proofreader,
+	sources sourceport.SourceQueries,
+	delta recognitionport.Proofreader,
 	v domain.Vault,
 ) {
 	recognised, err := sources.GetRecognisedSources(ctx, v.ID, domain.KindBook)

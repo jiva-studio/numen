@@ -5,14 +5,16 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // artifactStore is where the artifacts made from a vault's files are found.
 type artifactStore struct {
-	queries port.SourceQueries
-	derived port.DerivedStores
+	queries sourceport.SourceQueries
+	derived vaultport.DerivedStores
 }
 
 // getHash is the hash everything made from one file is placed under. A url stands
@@ -32,7 +34,7 @@ type artifactFile struct {
 
 // getArtifactFile returns the file of one producer's artifact, or nil when the store holds none.
 func getArtifactFile(
-	ctx context.Context, store port.DerivedStore, producer, hash string,
+	ctx context.Context, store vaultport.DerivedStore, producer, hash string,
 ) (*artifactFile, error) {
 	for _, one := range []domain.ArtifactName{
 		domain.NewArtifactName(domain.ArtifactCorrections, producer, hash),
@@ -56,7 +58,7 @@ func getArtifactFile(
 // hash it was found under.
 type artifactSet struct {
 	Artifacts []Artifact
-	Store     port.DerivedStore
+	Store     vaultport.DerivedStore
 	Hash      string
 }
 
@@ -99,7 +101,7 @@ func (s artifactStore) getArtifacts(ctx context.Context, v domain.Vault, path st
 
 // getArtifactWords is the artifact as it relies on disk. A transcript is the WebVTT it
 // is written in, times and all.
-func getArtifactWords(ctx context.Context, store port.DerivedStore, producer, hash string) (string, error) {
+func getArtifactWords(ctx context.Context, store vaultport.DerivedStore, producer, hash string) (string, error) {
 	found, err := getArtifactFile(ctx, store, producer, hash)
 	if err != nil || found == nil {
 		return "", err

@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // MostArtifactRead is how much of an artifact one read carries.
@@ -26,7 +28,7 @@ type GetArtifactText struct {
 	store artifactStore
 }
 
-func NewGetArtifactText(queries port.SourceQueries, derived port.DerivedStores) *GetArtifactText {
+func NewGetArtifactText(queries sourceport.SourceQueries, derived vaultport.DerivedStores) *GetArtifactText {
 	return &GetArtifactText{store: artifactStore{queries: queries, derived: derived}}
 }
 

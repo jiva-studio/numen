@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // EnvLibrary is the variable that holds the path of the library a plugin loads.
@@ -19,23 +19,23 @@ type ONNXProvisioner struct {
 	inner *Provisioner
 
 	mu    sync.Mutex
-	ready map[string]port.ResolvedDependency
+	ready map[string]pluginport.ResolvedDependency
 }
 
 // NewONNXProvisioner returns an ONNXProvisioner for the configuration.
 func NewONNXProvisioner(cfg Config) *ONNXProvisioner {
-	return &ONNXProvisioner{inner: New(cfg), ready: make(map[string]port.ResolvedDependency)}
+	return &ONNXProvisioner{inner: New(cfg), ready: make(map[string]pluginport.ResolvedDependency)}
 }
 
 // CanProvision reports whether the requirement is the ONNX Runtime.
-func (p *ONNXProvisioner) CanProvision(req port.DependencyRequirement) bool {
-	return req.Kind == port.DependencyKindRuntime && req.ID == port.RuntimeONNX
+func (p *ONNXProvisioner) CanProvision(req pluginport.DependencyRequirement) bool {
+	return req.Kind == pluginport.DependencyKindRuntime && req.ID == pluginport.RuntimeONNX
 }
 
 // Provision finds or fetches the library for the plugin folder of the requirement.
 func (p *ONNXProvisioner) Provision(
-	ctx context.Context, req port.DependencyRequirement, onProgress func(port.DependencyStatus),
-) (port.ResolvedDependency, error) {
+	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
+) (pluginport.ResolvedDependency, error) {
 	var last time.Time
 	report := func(done, total int64) {
 		if onProgress == nil || (done < total && time.Since(last) < progressInterval) {
@@ -46,16 +46,16 @@ func (p *ONNXProvisioner) Provision(
 		if total > 0 {
 			percent = float64(done) * 100 / float64(total)
 		}
-		onProgress(port.DependencyStatus{
-			ID: req.ID, State: port.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
+		onProgress(pluginport.DependencyStatus{
+			ID: req.ID, State: pluginport.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
 			ProgressPercent: percent, Message: "Downloading " + req.ID,
 		})
 	}
 	library, provider, err := p.inner.ProvisionWithProgress(ctx, req.PluginDir, report)
 	if err != nil {
-		return port.ResolvedDependency{}, err
+		return pluginport.ResolvedDependency{}, err
 	}
-	resolved := port.ResolvedDependency{
+	resolved := pluginport.ResolvedDependency{
 		ID: req.ID, PrimaryPath: library,
 		EnvVars:  map[string]string{EnvLibrary: library, EnvProvider: provider},
 		Metadata: map[string]string{"provider": provider},
@@ -68,12 +68,12 @@ func (p *ONNXProvisioner) Provision(
 
 // Status answers ready for a plugin folder the library was provisioned for, and
 // missing otherwise.
-func (p *ONNXProvisioner) Status(_ context.Context, req port.DependencyRequirement) (port.DependencyStatus, error) {
+func (p *ONNXProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
 	p.mu.Lock()
 	resolved, ok := p.ready[req.PluginDir]
 	p.mu.Unlock()
 	if !ok {
-		return port.DependencyStatus{ID: req.ID, State: port.DependencyStateMissing}, nil
+		return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateMissing}, nil
 	}
-	return port.DependencyStatus{ID: req.ID, State: port.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
+	return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
 }

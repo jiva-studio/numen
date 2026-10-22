@@ -18,7 +18,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // protocolLifecycle answers Ping with the protocol it holds.
@@ -51,7 +51,7 @@ func servePing(t *testing.T, protocol int32) int {
 // serveHostPing starts a server answering Ping with the host's protocol and returns its port.
 func serveHostPing(t *testing.T) int {
 	t.Helper()
-	return servePing(t, port.PluginProtocolVersion)
+	return servePing(t, pluginport.PluginProtocolVersion)
 }
 
 // launchAnsweringPing returns a launcher whose process hands over the port of a server answering Ping with protocol.
@@ -75,7 +75,7 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 		protocol int32
 		want     string
 	}{
-		{"a newer protocol", port.PluginProtocolVersion + 1, "speaks protocol 2, its manifest declares 1"},
+		{"a newer protocol", pluginport.PluginProtocolVersion + 1, "speaks protocol 2, its manifest declares 1"},
 		{"no protocol reported", 0, "speaks protocol 0, its manifest declares 1"},
 	}
 	for _, tc := range cases {
@@ -83,17 +83,17 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 			host := newDiscoveredHost(t)
 			var failedID string
 			var reason string
-			host.SetOnPluginFailed(func(failed port.PluginFailure) {
+			host.SetOnPluginFailed(func(failed pluginport.PluginFailure) {
 				failedID, reason = failed.PluginID, failed.Reason
 			})
 			var procs []*os.Process
 			host.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
 
 			_, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
-			if !errors.Is(err, port.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, port.ErrUnsupportedProtocol, tc.want)
+			if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, pluginport.ErrUnsupportedProtocol, tc.want)
 			}
-			if failedID != "md.numen.engines.ocr" || reason != describeFailure(port.ErrUnsupportedProtocol) {
+			if failedID != "md.numen.engines.ocr" || reason != describeFailure(pluginport.ErrUnsupportedProtocol) {
 				t.Fatalf("failure reported for %q with %q, want md.numen.engines.ocr with the protocol reason", failedID, reason)
 			}
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
@@ -112,7 +112,7 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.SetLauncher(launchAnsweringPing(t, port.PluginProtocolVersion, &procs))
+	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
 
 	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
 		t.Fatalf("EnsureActive() = %v, want the plugin active", err)
@@ -124,13 +124,13 @@ func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
 }
 
 func TestCheckPluginProtocolRefusesAProtocolTheHostDoesNotSpeak(t *testing.T) {
-	newer := port.PluginProtocolVersion + 1
+	newer := pluginport.PluginProtocolVersion + 1
 	endpoint := Endpoint{Host: "127.0.0.1", Port: servePing(t, int32(newer)), Token: ""}
 	manifest := Manifest{ID: "md.numen.newer", Protocol: newer}
 
 	err := checkPluginProtocol(t.Context(), manifest, endpoint)
-	if !errors.Is(err, port.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host speaks 1") {
-		t.Fatalf("checkPluginProtocol() = %v, want %v naming the host's protocol", err, port.ErrUnsupportedProtocol)
+	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host speaks 1") {
+		t.Fatalf("checkPluginProtocol() = %v, want %v naming the host's protocol", err, pluginport.ErrUnsupportedProtocol)
 	}
 }
 

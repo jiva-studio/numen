@@ -14,9 +14,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // newRefresh is a vault already scanned once, and the use case that brings named
@@ -230,11 +232,11 @@ func TestARefreshedBookThatWentIsStillMissing(t *testing.T) {
 // unreadableReaders answers one path with a failure that is not "gone" — a
 // permission, a broken link, a device that went away.
 type unreadableReaders struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	refuses string
 }
 
-func (u unreadableReaders) Open(vault domain.Vault) (port.VaultReader, error) {
+func (u unreadableReaders) Open(vault domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := u.VaultReaders.Open(vault)
 	if err != nil {
 		return nil, err
@@ -243,7 +245,7 @@ func (u unreadableReaders) Open(vault domain.Vault) (port.VaultReader, error) {
 }
 
 type unreadableReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	refuses string
 }
 
@@ -375,7 +377,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 
 // savesCounted is the index's note repository, savesCounted the notes saved through it.
 type savesCounted struct {
-	port.NoteRepository
+	noteport.NoteRepository
 	saved atomic.Int32
 }
 

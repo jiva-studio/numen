@@ -14,35 +14,37 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // leaseHost resolves every capability to one stub plugin and counts the references taken and given back.
 type leaseHost struct {
-	endpoint port.Endpoint
+	endpoint pluginport.Endpoint
 	// ensureErr is what activating the plugin fails with.
 	ensureErr error
 	acquired  atomic.Int32
 	released  atomic.Int32
 }
 
-func (h *leaseHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, nil
+func (h *leaseHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
 }
 
-func (h *leaseHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
-func (h *leaseHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{}, false
+func (h *leaseHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
+func (h *leaseHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{}, false
 }
 
-func (h *leaseHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
+func (h *leaseHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, true
 }
 
-func (h *leaseHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
+func (h *leaseHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
 	if h.ensureErr != nil {
-		return port.Endpoint{}, h.ensureErr
+		return pluginport.Endpoint{}, h.ensureErr
 	}
 	h.acquired.Add(1)
 	return h.endpoint, nil
@@ -106,7 +108,7 @@ func newLeaseHost(t *testing.T) *leaseHost {
 	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(stubTranscriptionServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return &leaseHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
+	return &leaseHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
 }
 
 func TestEveryProofreadingProducesItsReferenceBack(t *testing.T) {
@@ -133,7 +135,7 @@ func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
 
 	const runs = 3
 	for range runs {
-		run, err := bridge.StartRun(t.Context(), port.Task{Question: "q"})
+		run, err := bridge.StartRun(t.Context(), agentport.Task{Question: "q"})
 		if err != nil {
 			t.Fatal(err)
 		}

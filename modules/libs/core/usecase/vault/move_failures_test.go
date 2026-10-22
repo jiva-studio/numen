@@ -12,17 +12,20 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // watchedLinks answers as the index does, remembers each note it was asked what
 // points at, and fails where it is told to.
 type watchedLinks struct {
-	port.LinkQueries
+	noteport.LinkQueries
 	requested    []string
 	backlinksErr error
 	linksErr     error
@@ -45,7 +48,7 @@ func (w *watchedLinks) GetLinks(ctx context.Context, id domain.VaultID, from str
 
 // unknowing is an index that cannot say what the vault holds under a path.
 type unknowing struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	err error
 }
 
@@ -55,7 +58,7 @@ func (u unknowing) GetSourcesUnder(context.Context, domain.VaultID, string) ([]d
 
 // unfiling is an index that cannot file a source under another path.
 type unfiling struct {
-	port.SourceRepository
+	sourceport.SourceRepository
 	err error
 }
 
@@ -63,10 +66,10 @@ func (u unfiling) MoveSources(context.Context, domain.VaultID, string, string) e
 
 // wiring is everything a Move relies on that a test may replace.
 type wiring struct {
-	links   port.LinkQueries
-	queries port.SourceQueries
-	sources port.SourceRepository
-	writers port.VaultWriters
+	links   noteport.LinkQueries
+	queries sourceport.SourceQueries
+	sources sourceport.SourceRepository
+	writers vaultport.VaultWriters
 	index   func(context.Context, domain.Vault, []string) error
 }
 

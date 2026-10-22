@@ -8,8 +8,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
 )
 
 // A site that answers with what a test puts in it, and counts what it was asked
@@ -26,48 +27,48 @@ type site struct {
 	refusing    error
 }
 
-func (s *site) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadModel, error) {
+func (s *site) GetDownloadModel(_ context.Context, _ domain.URL) (downloadport.DownloadModel, error) {
 	producer := domain.Captions
 	if len(s.cues) == 0 && s.prose != "" {
 		producer = domain.Article
 	}
-	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}, nil
+	return downloadport.DownloadModel{Tool: "a test", Version: "1", Producer: producer}, nil
 }
 
-func (s *site) GetMetadata(ctx context.Context, pos domain.URL) (port.Metadata, error) {
+func (s *site) GetMetadata(ctx context.Context, pos domain.URL) (downloadport.Metadata, error) {
 	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
 	s.requested = append(s.requested, "metadata "+string(pos))
 	if s.refusing != nil {
-		return port.Metadata{}, s.refusing
+		return downloadport.Metadata{}, s.refusing
 	}
-	return port.Metadata{Title: s.title, Length: s.length}, nil
+	return downloadport.Metadata{Title: s.title, Length: s.length}, nil
 }
 
 func (s *site) GetText(
-	_ context.Context, pos domain.URL, _ port.PreferredCaptions,
-) (port.Text, error) {
+	_ context.Context, pos domain.URL, _ downloadport.PreferredCaptions,
+) (downloadport.Text, error) {
 	s.requested = append(s.requested, "text "+string(pos))
 	if len(s.cues) > 0 {
-		return port.Text{
+		return downloadport.Text{
 			Producer: domain.Captions, Cues: s.cues, Title: s.title, Length: s.length,
 		}, nil
 	}
 	if s.prose != "" {
-		return port.Text{Producer: domain.Article, Prose: s.prose, Title: s.title}, nil
+		return downloadport.Text{Producer: domain.Article, Prose: s.prose, Title: s.title}, nil
 	}
-	return port.Text{}, port.ErrNothingDownloaded
+	return downloadport.Text{}, downloadport.ErrNothingDownloaded
 }
 
-func (s *site) Download(ctx context.Context, pos domain.URL, into io.Writer) (port.Copy, error) {
+func (s *site) Download(ctx context.Context, pos domain.URL, into io.Writer) (downloadport.Copy, error) {
 	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
 	s.requested = append(s.requested, "download "+string(pos))
 	if len(s.bytes) == 0 {
-		return port.Copy{}, port.ErrNothingDownloaded
+		return downloadport.Copy{}, downloadport.ErrNothingDownloaded
 	}
 	if _, err := into.Write(s.bytes); err != nil {
-		return port.Copy{}, err
+		return downloadport.Copy{}, err
 	}
-	return port.Copy{MediaType: domain.CopyType, Extension: domain.CopyExtension}, nil
+	return downloadport.Copy{MediaType: domain.CopyType, Extension: domain.CopyExtension}, nil
 }
 
 const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"

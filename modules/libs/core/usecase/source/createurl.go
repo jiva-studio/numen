@@ -5,8 +5,9 @@ import (
 	pathpkg "path"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // CreateURL makes the file a web address is kept in.
@@ -15,7 +16,7 @@ import (
 // there is a note of their own, pointing at this file. Until a download says what
 // is there, the file is named by its address.
 type CreateURL struct {
-	Writers port.VaultWriters
+	Writers vaultport.VaultWriters
 
 	// Index brings the file into the index, so it is searched and openable as
 	// soon as it is made. A run given none leaves that to the next walk.

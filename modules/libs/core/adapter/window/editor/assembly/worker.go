@@ -3,11 +3,14 @@ package assembly
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // WorkerAssembly is what this window asks for background workers, embedding, downloads, and books.
@@ -21,13 +24,13 @@ type WorkerAssembly interface {
 	// object where the settings name one provider.
 	OpenEmbedders(
 		ctx context.Context, tasks *run.Tasks,
-	) (indexing, asking port.Embedder, closer func() error, why error)
+	) (indexing, asking embeddingport.Embedder, closer func() error, why error)
 
 	// OpenDownloader reaches the address a link note points at, and is nothing
 	// on a machine holding neither of the tools that reach one. OpenImportURL
 	// is one such address fetched into the vault.
-	OpenDownloader(ctx context.Context) port.Downloader
-	OpenImportURL(ctx context.Context, by port.Downloader) source.ImportURL
+	OpenDownloader(ctx context.Context) downloadport.Downloader
+	OpenImportURL(ctx context.Context, by downloadport.Downloader) source.ImportURL
 
 	// OpenRecognitionWorker reads a scanned document and
 	// OpenTranscriptionWorker hears a recording, each for whoever asks. models
@@ -41,5 +44,5 @@ type WorkerAssembly interface {
 	) *transcription.Worker
 
 	// GetBooks is the reader of books that reflow.
-	GetBooks() port.Book
+	GetBooks() sourceport.Book
 }

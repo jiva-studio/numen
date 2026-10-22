@@ -9,15 +9,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // gated is a model that runs passes calls at once. Every call counts itself in,
 // and waits on release for the text "hold"; any other text returns at once.
 type gated struct {
-	model   port.EmbeddingModel
+	model   embeddingport.EmbeddingModel
 	passes  int
 	release chan struct{}
 	running atomic.Int32
@@ -32,9 +33,9 @@ func newGated(passes int) *gated {
 	}
 }
 
-func (g *gated) GetModel() port.EmbeddingModel { return g.model }
-func (g *gated) Concurrency() int              { return g.passes }
-func (g *gated) Close() error                  { return nil }
+func (g *gated) GetModel() embeddingport.EmbeddingModel { return g.model }
+func (g *gated) Concurrency() int                       { return g.passes }
+func (g *gated) Close() error                           { return nil }
 
 func (g *gated) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	now := g.running.Add(1)
@@ -56,7 +57,7 @@ func (g *gated) Embed(ctx context.Context, texts []string) ([][]float32, error) 
 	return [][]float32{{1, 0, 0}}, nil
 }
 
-func openGated(t *testing.T, passes int) (filling, asking port.Embedder, model *gated) {
+func openGated(t *testing.T, passes int) (filling, asking embeddingport.Embedder, model *gated) {
 	t.Helper()
 	model = newGated(passes)
 	filling, asking, closer := embedding.Open(t.Context(), run.NewTasks(), embedding.NewReached(model.model, "gated", model), embedding.Provider{})
@@ -64,7 +65,7 @@ func openGated(t *testing.T, passes int) (filling, asking port.Embedder, model *
 	return filling, asking, model
 }
 
-func holdOnIndexSide(ctx context.Context, filling port.Embedder, calls int) (*sync.WaitGroup, chan error) {
+func holdOnIndexSide(ctx context.Context, filling embeddingport.Embedder, calls int) (*sync.WaitGroup, chan error) {
 	var wg sync.WaitGroup
 	errs := make(chan error, calls)
 	for range calls {
@@ -225,7 +226,7 @@ func TestASeparateQuestionProviderPreservesTheIndexSideUnlimited(t *testing.T) {
 func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
 	model := newGated(4)
 	arrive := make(chan struct{})
-	opening := func(ctx context.Context, _ func(finished, total int64)) (port.Embedder, error) {
+	opening := func(ctx context.Context, _ func(finished, total int64)) (embeddingport.Embedder, error) {
 		select {
 		case <-arrive:
 			return model, nil

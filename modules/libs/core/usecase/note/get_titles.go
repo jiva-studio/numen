@@ -3,8 +3,9 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // Titles is what the notes at some paths are called. Missing is every path that
@@ -16,10 +17,10 @@ type Titles struct {
 
 // GetTitles looks up what the notes at some paths are called.
 type GetTitles struct {
-	queries port.NoteQueries
+	queries noteport.NoteQueries
 }
 
-func NewGetTitles(queries port.NoteQueries) GetTitles {
+func NewGetTitles(queries noteport.NoteQueries) GetTitles {
 	return GetTitles{queries: queries}
 }
 

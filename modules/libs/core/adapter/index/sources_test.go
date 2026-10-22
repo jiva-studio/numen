@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 var (
@@ -75,7 +76,7 @@ func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Pa
 func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.Passage {
 	t.Helper()
 	var visited []domain.Passage
-	cursor := port.ChunkCursor("")
+	cursor := embeddingport.ChunkCursor("")
 	for range 100 {
 		page, next, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, benchModel, cursor, limit)
 		if err != nil {
@@ -155,7 +156,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 	// Every number is past 2^62.
 	const row = "9000000000000000000"
 	for _, item := range []struct {
-		cursor port.ChunkCursor
+		cursor embeddingport.ChunkCursor
 		want   []string
 	}{
 		{row, []string{
@@ -163,7 +164,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 			"library/later.epub", "library/later.epub",
 			"library/far.epub", "library/far.epub",
 		}},
-		{port.ChunkCursor(strconv.FormatInt(farFuture.UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
+		{embeddingport.ChunkCursor(strconv.FormatInt(farFuture.UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
 	} {
 		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), first.ID, benchModel, item.cursor, 10)
 		if err != nil {
@@ -181,7 +182,7 @@ func TestACursorThisIndexDidNotHandOutIsRefused(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
 
-	for _, cursor := range []port.ChunkCursor{"x", "x:1", "1:x", "x:1:2", "1:x:2", "1:2:x", "1:2:3:4"} {
+	for _, cursor := range []embeddingport.ChunkCursor{"x", "x:1", "1:x", "x:1:2", "1:x:2", "1:2:x", "1:2:3:4"} {
 		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), first.ID, benchModel, cursor, 10)
 		if err == nil {
 			t.Errorf("cursor %q was visited from, and gave %d chunks", cursor, len(page))
@@ -260,13 +261,13 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 	if len(owed) != 2 {
 		t.Fatalf("%d chunks owe a vector, want 2", len(owed))
 	}
-	vectors := make([]port.Vector, 0, len(owed))
+	vectors := make([]embeddingport.Vector, 0, len(owed))
 	for _, p := range owed {
 		row, err := strconv.ParseInt(string(p.ChunkID), 10, 64)
 		if err != nil {
 			t.Fatal(err)
 		}
-		vectors = append(vectors, port.Vector{
+		vectors = append(vectors, embeddingport.Vector{
 			ChunkID: p.ChunkID, Hash: hashOf(t, db, row), Model: benchModel,
 			Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f),
 		})
@@ -278,8 +279,8 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 		t.Errorf("%d chunks still owe a vector", len(remaining))
 	}
 
-	stranger := port.Vector{ChunkID: "x", Hash: []byte{1}, Model: benchModel, Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}
-	if err := db.Sources().SaveVectors(ctx, []port.Vector{stranger}); err == nil {
+	stranger := embeddingport.Vector{ChunkID: "x", Hash: []byte{1}, Model: benchModel, Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}
+	if err := db.Sources().SaveVectors(ctx, []embeddingport.Vector{stranger}); err == nil {
 		t.Error("a vector for chunk \"x\" was saved")
 	}
 }
@@ -344,7 +345,7 @@ func TestRemovingSourcesFromAClosedIndexFails(t *testing.T) {
 // the ordering.
 func TestACursorIsReadIntoThePositionItNames(t *testing.T) {
 	for _, c := range []struct {
-		cursor               port.ChunkCursor
+		cursor               embeddingport.ChunkCursor
 		mtime, source, chunk int64
 		wantErr              bool
 	}{

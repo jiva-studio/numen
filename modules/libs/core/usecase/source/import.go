@@ -9,8 +9,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrNotAURL is a path holding something other than a file naming an address.
@@ -25,9 +27,9 @@ var ErrNotAURL = errors.New("this file holds no web address")
 // It is named by the address, so renaming the file leaves it where it is and
 // two urls on one address share it.
 type ImportURL struct {
-	Readers port.VaultReaders
-	Derived port.DerivedStores
-	By      port.Downloader
+	Readers vaultport.VaultReaders
+	Derived vaultport.DerivedStores
+	By      downloadport.Downloader
 
 	// CopyMaxSize is how many bytes a copy may run to. Zero is no limit.
 	CopyMaxSize int64
@@ -36,7 +38,7 @@ type ImportURL struct {
 	// Writers is what puts it there. It is `importing.copies_to_vault`, and a
 	// run without a writer keeps every copy in the application's own folder.
 	IsToVault bool
-	Writers   port.VaultWriters
+	Writers   vaultport.VaultWriters
 
 	// Languages are the languages published words are preferred in, best
 	// first, and Automatic is whether words a machine wrote count where a
@@ -92,7 +94,7 @@ func (u ImportURL) Execute(
 		return res, err
 	}
 	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, delta.Producer, hash))
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
 	if err != nil {
@@ -115,11 +117,11 @@ func (u ImportURL) Execute(
 		return res, nil
 	}
 
-	extracted, err := u.By.GetText(ctx, pos, port.PreferredCaptions{
+	extracted, err := u.By.GetText(ctx, pos, downloadport.PreferredCaptions{
 		Languages: u.Languages, IsAutomatic: u.IsAutomatic,
 	})
 	switch {
-	case errors.Is(err, port.ErrNothingDownloaded):
+	case errors.Is(err, downloadport.ErrNothingDownloaded):
 		// The address publishes none of what was asked for. That is an answer,
 		// and it is written down so the address is not asked again every time
 		// the vault is scanned.
@@ -143,11 +145,11 @@ func (u ImportURL) Execute(
 // downloaded it, and answers how much of it there was.
 func (u ImportURL) writeDownload(
 	ctx context.Context,
-	store port.DerivedStore,
-	delta port.DownloadModel,
+	store vaultport.DerivedStore,
+	delta downloadport.DownloadModel,
 	hash string,
 	pos domain.URL,
-	extracted port.Text,
+	extracted downloadport.Text,
 ) (producer string, bytes int, err error) {
 	content := []byte(extracted.Prose)
 	if len(extracted.Cues) > 0 {
@@ -165,7 +167,7 @@ func (u ImportURL) writeDownload(
 // silent writes down that the address published none of what was asked for, so
 // the address is not asked again every time the vault is scanned.
 func (u ImportURL) silent(
-	ctx context.Context, delta port.DownloadModel, store port.DerivedStore, hash string,
+	ctx context.Context, delta downloadport.DownloadModel, store vaultport.DerivedStore, hash string,
 ) error {
 	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, delta.Producer, hash), []byte(text.Silent+"\n"))
 }
@@ -174,7 +176,7 @@ func (u ImportURL) silent(
 // is downloaded for it is kept in.
 func (u ImportURL) readURLFile(
 	ctx context.Context, v domain.Vault, path string,
-) (domain.URL, domain.Fingerprint, port.DerivedStore, error) {
+) (domain.URL, domain.Fingerprint, vaultport.DerivedStore, error) {
 	none := domain.URL("")
 	reader, err := u.Readers.Open(v)
 	if err != nil {
@@ -244,11 +246,11 @@ func (u ImportURL) renameURL(
 // can be found again.
 func (u ImportURL) record(
 	ctx context.Context,
-	store port.DerivedStore,
-	delta port.DownloadModel,
+	store vaultport.DerivedStore,
+	delta downloadport.DownloadModel,
 	producer, hash string,
 	pos domain.URL,
-	extracted port.Text,
+	extracted downloadport.Text,
 ) error {
 	content, err := json.Marshal(struct {
 		Address    string `json:"address"`

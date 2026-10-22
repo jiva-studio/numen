@@ -9,9 +9,13 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // deaf is a transcriber that hears whatever it was told to hear: a file it
@@ -23,11 +27,11 @@ type deaf struct {
 	opened int
 }
 
-func (d *deaf) GetTranscriptionModel() port.TranscriptionModel {
-	return port.TranscriptionModel{Model: "deaf", Segmenter: "none"}
+func (d *deaf) GetTranscriptionModel() transcriptionport.TranscriptionModel {
+	return transcriptionport.TranscriptionModel{Model: "deaf", Segmenter: "none"}
 }
 
-func (d *deaf) Open(context.Context, []byte) (port.Recording, error) {
+func (d *deaf) Open(context.Context, []byte) (transcriptionport.Recording, error) {
 	d.mu.Lock()
 	d.opened++
 	d.mu.Unlock()
@@ -37,7 +41,7 @@ func (d *deaf) Open(context.Context, []byte) (port.Recording, error) {
 	return quiet{}, nil
 }
 
-func (d *deaf) Transcribe(context.Context, port.Audio) (string, error) { return "", nil }
+func (d *deaf) Transcribe(context.Context, transcriptionport.Audio) (string, error) { return "", nil }
 
 func (d *deaf) Close() error { return nil }
 
@@ -53,7 +57,9 @@ type quiet struct{}
 
 func (quiet) GetDuration() int { return 60_000 }
 
-func (quiet) GetSegments(context.Context, int, int) ([]port.Audio, error) { return nil, nil }
+func (quiet) GetSegments(context.Context, int, int) ([]transcriptionport.Audio, error) {
+	return nil, nil
+}
 
 func (quiet) Close() error { return nil }
 
@@ -76,7 +82,7 @@ func newTranscriptionWorker(t *testing.T, delta *deaf, recordings ...string) (*W
 		Delay:   neverDelay,
 		Runtime: Runtime{
 			Ready: func() bool { return true },
-			Open: func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+			Open: func(context.Context, func(string, int64, int64)) (transcriptionport.Transcriber, func() error, error) {
 				return delta, delta.Close, nil
 			},
 		},
@@ -87,7 +93,7 @@ func newTranscriptionWorker(t *testing.T, delta *deaf, recordings ...string) (*W
 
 // unheard is an index holding recordings, none of which relies on a text.
 type unheard struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	recordings []string
 }
 
@@ -103,7 +109,7 @@ func (h unheard) GetFingerprints(
 
 func (h unheard) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
-) ([]port.SourceText, error) {
+) ([]sourceport.SourceText, error) {
 	return nil, nil
 }
 
@@ -136,7 +142,7 @@ func TestTheModelsAreGotBelowTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 	listening.with.Runtime.Open = func(
 		ctx context.Context,
 		tell func(string, int64, int64),
-	) (port.Transcriber, func() error, error) {
+	) (transcriptionport.Transcriber, func() error, error) {
 		while = listening.with.Tasks.List()
 		return open(ctx, tell)
 	}
@@ -191,8 +197,8 @@ func (h recognised) GetFingerprints(
 
 func (h recognised) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
-) ([]port.SourceText, error) {
-	return []port.SourceText{{
+) ([]sourceport.SourceText, error) {
+	return []sourceport.SourceText{{
 		Fingerprint: domain.Fingerprint{Path: h.path}, Producer: "asr", Hash: text.Fingerprint([]byte("not a recording: " + h.path)),
 	}}, nil
 }
@@ -210,8 +216,8 @@ func (h heard) GetFingerprints(
 
 func (h heard) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
-) ([]port.SourceText, error) {
-	return []port.SourceText{{
+) ([]sourceport.SourceText, error) {
+	return []sourceport.SourceText{{
 		Fingerprint: domain.Fingerprint{Path: h.path}, Producer: "asr", Hash: h.hash,
 	}}, nil
 }
@@ -230,8 +236,8 @@ func (h heard) GetSourcesWithOtherRecipe(
 	return nil, nil
 }
 
-func (h heard) GetSourceText(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
-	return port.SourceText{}, false, nil
+func (h heard) GetSourceText(context.Context, domain.VaultID, string) (sourceport.SourceText, bool, error) {
+	return sourceport.SourceText{}, false, nil
 }
 
 func (h recognised) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
@@ -248,8 +254,8 @@ func (h recognised) GetSourcesWithOtherRecipe(
 	return nil, nil
 }
 
-func (h recognised) GetSourceText(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
-	return port.SourceText{}, false, nil
+func (h recognised) GetSourceText(context.Context, domain.VaultID, string) (sourceport.SourceText, bool, error) {
+	return sourceport.SourceText{}, false, nil
 }
 
 // One at a time: the models hold a worker each. A recording named while one is
@@ -263,7 +269,7 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	first := true
 	listening.with.Runtime.Open = func(
 		context.Context, func(string, int64, int64),
-	) (port.Transcriber, func() error, error) {
+	) (transcriptionport.Transcriber, func() error, error) {
 		if first {
 			first = false
 			hearing <- struct{}{}
@@ -272,16 +278,16 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 		return delta, delta.Close, nil
 	}
 
-	if got := listening.Start(v, "talks/one.mp3"); got != port.Began {
+	if got := listening.Start(v, "talks/one.mp3"); got != windowport.Began {
 		t.Fatalf("the first recording was not heard: %v", got)
 	}
 	// The first recording is out of the line and being heard.
 	<-hearing
 
-	if got := listening.Start(v, "talks/two.mp3"); got != port.Queued {
+	if got := listening.Start(v, "talks/two.mp3"); got != windowport.Queued {
 		t.Errorf("a second recording was heard while one was being heard: %v", got)
 	}
-	if got := listening.Start(v, "talks/two.mp3"); got != port.Queued {
+	if got := listening.Start(v, "talks/two.mp3"); got != windowport.Queued {
 		t.Errorf("the same recording named again: %v", got)
 	}
 	if listening.CountWaiting() != 1 {
@@ -311,7 +317,7 @@ func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 		t.Fatalf("the queue took %v on its own", owed)
 	}
 
-	if got := listening.Start(v, "album.flac"); got != port.Began {
+	if got := listening.Start(v, "album.flac"); got != windowport.Began {
 		t.Fatalf("the recording was not heard: %v", got)
 	}
 	listening.Wait()
@@ -327,7 +333,7 @@ func TestAnInstallationListeningToNothingStillHearsWhatIsAsked(t *testing.T) {
 	delta := &deaf{}
 	listening, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 
-	if got := listening.Start(v, "talks/one.mp3"); got != port.Began {
+	if got := listening.Start(v, "talks/one.mp3"); got != windowport.Began {
 		t.Fatalf("the recording was not heard: %v", got)
 	}
 	listening.Wait()
@@ -397,7 +403,7 @@ func TestARecordingWaitsForTheModelsAScanContains(t *testing.T) {
 
 // sized is an index holding recordings of a given size.
 type sized struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	recordings map[string]int64
 }
 
@@ -413,7 +419,7 @@ func (s sized) GetFingerprints(
 
 func (sized) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
-) ([]port.SourceText, error) {
+) ([]sourceport.SourceText, error) {
 	return nil, nil
 }
 
@@ -447,7 +453,7 @@ func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 	target, v := newTranscriptionWorker(t, delta, "talk.mp3")
 
 	var opened, provided int
-	target.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+	target.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (transcriptionport.Transcriber, func() error, error) {
 		opened++
 		return delta, func() error { provided++; return delta.Close() }, nil
 	}
@@ -487,7 +493,7 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 	corr := &corrector{says: correctionsMap(fixes(0, "FIRST THING"))}
 	target.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func() (port.Proofreader, error) { return corr, nil },
+		By: func() (recognitionport.Proofreader, error) { return corr, nil },
 	}
 	target.with.Readers = brokenReaders{}
 

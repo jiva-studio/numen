@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 var ErrNoVault = errors.New("the host is showing no vault")
@@ -15,22 +20,22 @@ var ErrNoVault = errors.New("the host is showing no vault")
 // Vault is port.PluginVault over the ports of the installation.
 type Vault struct {
 	Current func() (domain.Vault, bool)
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	Notes   port.NoteQueries
-	Links   port.LinkQueries
+	Readers vaultport.VaultReaders
+	Writers vaultport.VaultWriters
+	Notes   noteport.NoteQueries
+	Links   noteport.LinkQueries
 	// Problems answers what parsing turned up. Without it nothing is.
-	Problems port.ProblemQueries
-	Data     port.PluginDataStores
-	Cache    port.PluginCache
-	Watcher  port.VaultWatcher
+	Problems recognitionport.ProblemQueries
+	Data     pluginport.PluginDataStores
+	Cache    pluginport.PluginCache
+	Watcher  vaultport.VaultWatcher
 	// Vaults lists every vault the installation knows, and Find returns the vault of an identity or
 	// fs.ErrNotExist. Without them the installation knows the vault Current names and no other.
 	Vaults func() ([]domain.Vault, error)
 	Find   func(id domain.VaultID) (domain.Vault, error)
 	// IndexState starts reading a vault into the index when it is not there and says where that
 	// stands. Without it every vault is taken to be in the index.
-	IndexState func(ctx context.Context, v domain.Vault) (port.PluginIndexState, error)
+	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
 	// InUse is told that a plugin is working a vault for the person. Without it nothing is done.
 	InUse func(ctx context.Context, v domain.Vault)
 	// Moved tells that something moved in some vault. Without it nothing is told.
@@ -58,7 +63,7 @@ func (a Vault) GetVaults() ([]domain.Vault, error) {
 	return nil, nil
 }
 
-func (a Vault) With(id domain.VaultID) (port.PluginVault, error) {
+func (a Vault) With(id domain.VaultID) (pluginport.PluginVault, error) {
 	var found domain.Vault
 	if a.Find != nil {
 		v, err := a.Find(id)
@@ -76,13 +81,13 @@ func (a Vault) With(id domain.VaultID) (port.PluginVault, error) {
 	return linked, nil
 }
 
-func (a Vault) EnsureIndexed(ctx context.Context) (port.PluginIndexState, error) {
+func (a Vault) EnsureIndexed(ctx context.Context) (pluginport.PluginIndexState, error) {
 	v, err := a.open()
 	if err != nil {
-		return port.PluginIndexState{}, err
+		return pluginport.PluginIndexState{}, err
 	}
 	if a.IndexState == nil {
-		return port.PluginIndexState{Status: port.PluginIndexed}, nil
+		return pluginport.PluginIndexState{Status: pluginport.PluginIndexed}, nil
 	}
 	return a.IndexState(ctx, v)
 }
@@ -100,7 +105,7 @@ func (a Vault) SetInUse(ctx context.Context) error {
 
 func (a Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 	if a.Moved == nil {
-		return nil, fmt.Errorf("watch moves: %w", port.ErrUnavailable)
+		return nil, fmt.Errorf("watch moves: %w", completionport.ErrUnavailable)
 	}
 	return a.Moved(ctx)
 }
@@ -113,7 +118,7 @@ func (a Vault) open() (domain.Vault, error) {
 	return v, nil
 }
 
-func (a Vault) openReader() (port.VaultReader, error) {
+func (a Vault) openReader() (vaultport.VaultReader, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
@@ -121,7 +126,7 @@ func (a Vault) openReader() (port.VaultReader, error) {
 	return a.Readers.Open(v)
 }
 
-func (a Vault) openWriter() (port.VaultWriter, error) {
+func (a Vault) openWriter() (vaultport.VaultWriter, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
@@ -268,7 +273,7 @@ func (a Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, err
 	return a.Problems.GetParseProblems(ctx, v.ID)
 }
 
-func (a Vault) OpenData(folder string) (port.PluginDataStore, error) {
+func (a Vault) OpenData(folder string) (pluginport.PluginDataStore, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
@@ -298,7 +303,7 @@ func (a Vault) Watch(ctx context.Context) (<-chan []string, <-chan struct{}, err
 		return nil, nil, err
 	}
 	if a.Watcher == nil {
-		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, port.ErrUnavailable)
+		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, completionport.ErrUnavailable)
 	}
 	return a.Watcher.WatchVault(ctx, v)
 }

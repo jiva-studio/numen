@@ -1,8 +1,10 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // Notes is what everything that acts on the notes of a vault is called where
@@ -16,10 +18,10 @@ type Notes = note.Scenarios
 // index brings what a write touched up to date before it answers, so a caller
 // that writes a note and searches for it in the next breath finds it.
 func (c Config) Notes(
-	queries port.NoteQueries,
-	links port.LinkQueries,
-	sources port.SourceRepository,
-	indexed port.SourceQueries,
+	queries noteport.NoteQueries,
+	links noteport.LinkQueries,
+	sources sourceport.SourceRepository,
+	indexed sourceport.SourceQueries,
 	index note.Levels,
 ) note.Scenarios {
 	readers := c.VaultReaders()

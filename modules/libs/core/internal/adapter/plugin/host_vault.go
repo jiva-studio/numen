@@ -14,8 +14,10 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // vaultLockHold is the longest a plugin holds the writers of the vault. A plugin that goes without
@@ -43,7 +45,7 @@ func newVaultEndpoint(endpoint *HostEndpoint) *vaultEndpoint {
 var _ numenv1connect.HostVaultServiceHandler = (*vaultEndpoint)(nil)
 
 // begin authorizes a call and returns the plugin that made it and the vault it works. A plugin that
-func (e *vaultEndpoint) begin(header http.Header, permission string) (string, port.PluginVault, error) {
+func (e *vaultEndpoint) begin(header http.Header, permission string) (string, pluginport.PluginVault, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
 		return "", nil, err
@@ -71,15 +73,15 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	switch {
 	case errors.Is(err, ErrNoVault):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, nil
-	case errors.Is(err, port.ErrStale):
+	case errors.Is(err, vaultport.ErrStale):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE, nil
-	case errors.Is(err, port.ErrOccupied):
+	case errors.Is(err, vaultport.ErrOccupied):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED, nil
-	case errors.Is(err, port.ErrHeldByAnother):
+	case errors.Is(err, vaultport.ErrHeldByAnother):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER, nil
-	case errors.Is(err, port.ErrNotANote):
+	case errors.Is(err, vaultport.ErrNotANote):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE, nil
-	case errors.Is(err, port.ErrOutside):
+	case errors.Is(err, vaultport.ErrOutside):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE, nil
 	case errors.Is(err, fs.ErrNotExist):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING, nil
@@ -126,7 +128,7 @@ func writeLinks(links []domain.ResolvedLink) []*v1.HostLink {
 func (e *vaultEndpoint) GetHostVault(
 	ctx context.Context, req *connect.Request[v1.GetHostVaultRequest],
 ) (*connect.Response[v1.GetHostVaultResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +145,7 @@ func (e *vaultEndpoint) GetHostVault(
 func (e *vaultEndpoint) ListHostVaults(
 	_ context.Context, req *connect.Request[v1.ListHostVaultsRequest],
 ) (*connect.Response[v1.ListHostVaultsResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +166,7 @@ func (e *vaultEndpoint) ListHostVaults(
 func (e *vaultEndpoint) EnsureVaultIndexed(
 	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
 ) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -178,11 +180,11 @@ func (e *vaultEndpoint) EnsureVaultIndexed(
 	}
 	out := &v1.EnsureVaultIndexedResponse{Reason: state.Reason}
 	switch state.Status {
-	case port.PluginIndexed:
+	case pluginport.PluginIndexed:
 		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXED
-	case port.PluginIndexing:
+	case pluginport.PluginIndexing:
 		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXING
-	case port.PluginIndexFailed:
+	case pluginport.PluginIndexFailed:
 		out.State = v1.HostIndexState_HOST_INDEX_STATE_FAILED
 	}
 	return connect.NewResponse(out), nil
@@ -191,7 +193,7 @@ func (e *vaultEndpoint) EnsureVaultIndexed(
 func (e *vaultEndpoint) SetVaultInUse(
 	ctx context.Context, req *connect.Request[v1.SetVaultInUseRequest],
 ) (*connect.Response[v1.SetVaultInUseResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +207,7 @@ func (e *vaultEndpoint) SetVaultInUse(
 func (e *vaultEndpoint) WatchMoves(
 	ctx context.Context, req *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse],
 ) error {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return err
 	}
@@ -237,7 +239,7 @@ func (e *vaultEndpoint) WatchMoves(
 func (e *vaultEndpoint) GetFileFingerprint(
 	ctx context.Context, req *connect.Request[v1.GetFileFingerprintRequest],
 ) (*connect.Response[v1.GetFileFingerprintResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +257,7 @@ func (e *vaultEndpoint) GetFileFingerprint(
 func (e *vaultEndpoint) ReadFile(
 	ctx context.Context, req *connect.Request[v1.ReadFileRequest],
 ) (*connect.Response[v1.ReadFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +275,7 @@ func (e *vaultEndpoint) ReadFile(
 func (e *vaultEndpoint) WriteFile(
 	ctx context.Context, req *connect.Request[v1.WriteFileRequest],
 ) (*connect.Response[v1.WriteFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +293,7 @@ func (e *vaultEndpoint) WriteFile(
 func (e *vaultEndpoint) CreateFile(
 	ctx context.Context, req *connect.Request[v1.CreateFileRequest],
 ) (*connect.Response[v1.CreateFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +307,7 @@ func (e *vaultEndpoint) CreateFile(
 func (e *vaultEndpoint) LockVault(
 	ctx context.Context, req *connect.Request[v1.LockVaultRequest],
 ) (*connect.Response[v1.LockVaultResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +342,7 @@ func (e *vaultEndpoint) unlock(id string) {
 func (e *vaultEndpoint) UnlockVault(
 	_ context.Context, req *connect.Request[v1.UnlockVaultRequest],
 ) (*connect.Response[v1.UnlockVaultResponse], error) {
-	if _, _, err := e.begin(req.Header(), port.PermissionVaultWrite); err != nil {
+	if _, _, err := e.begin(req.Header(), pluginport.PermissionVaultWrite); err != nil {
 		return nil, err
 	}
 	e.unlock(req.Msg.GetLock())
@@ -350,7 +352,7 @@ func (e *vaultEndpoint) UnlockVault(
 func (e *vaultEndpoint) ScanFiles(
 	ctx context.Context, req *connect.Request[v1.ScanFilesRequest],
 ) (*connect.Response[v1.ScanFilesResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +366,7 @@ func (e *vaultEndpoint) ScanFiles(
 func (e *vaultEndpoint) GetNoteRefs(
 	ctx context.Context, req *connect.Request[v1.GetNoteRefsRequest],
 ) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +390,7 @@ func (e *vaultEndpoint) GetNoteRefs(
 func (e *vaultEndpoint) GetNoteTypes(
 	ctx context.Context, req *connect.Request[v1.GetNoteTypesRequest],
 ) (*connect.Response[v1.GetNoteTypesResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +412,7 @@ func (e *vaultEndpoint) GetNoteTypes(
 func (e *vaultEndpoint) GetNamedPaths(
 	ctx context.Context, req *connect.Request[v1.GetNamedPathsRequest],
 ) (*connect.Response[v1.GetNamedPathsResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +430,7 @@ func (e *vaultEndpoint) GetNamedPaths(
 func (e *vaultEndpoint) GetPathsOfType(
 	ctx context.Context, req *connect.Request[v1.GetPathsOfTypeRequest],
 ) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +448,7 @@ func (e *vaultEndpoint) GetPathsOfType(
 func (e *vaultEndpoint) GetLinks(
 	ctx context.Context, req *connect.Request[v1.GetLinksRequest],
 ) (*connect.Response[v1.GetLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +466,7 @@ func (e *vaultEndpoint) GetLinks(
 func (e *vaultEndpoint) GetBacklinks(
 	ctx context.Context, req *connect.Request[v1.GetBacklinksRequest],
 ) (*connect.Response[v1.GetBacklinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +484,7 @@ func (e *vaultEndpoint) GetBacklinks(
 func (e *vaultEndpoint) ResolveLinks(
 	ctx context.Context, req *connect.Request[v1.ResolveLinksRequest],
 ) (*connect.Response[v1.ResolveLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -504,7 +506,7 @@ func (e *vaultEndpoint) ResolveLinks(
 func (e *vaultEndpoint) GetParseProblems(
 	ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest],
 ) (*connect.Response[v1.GetParseProblemsResponse], error) {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -524,7 +526,7 @@ func (e *vaultEndpoint) GetParseProblems(
 }
 
 // openData opens the folder the plugin's manifest names in the store of the vault.
-func (e *vaultEndpoint) openData(ctx context.Context, pluginID string, vault port.PluginVault) (port.PluginDataStore, v1.HostVaultErrorCode, error) {
+func (e *vaultEndpoint) openData(ctx context.Context, pluginID string, vault pluginport.PluginVault) (pluginport.PluginDataStore, v1.HostVaultErrorCode, error) {
 	if vault == nil {
 		return nil, noVault, nil
 	}
@@ -543,7 +545,7 @@ func (e *vaultEndpoint) openData(ctx context.Context, pluginID string, vault por
 func (e *vaultEndpoint) ReadData(
 	ctx context.Context, req *connect.Request[v1.ReadDataRequest],
 ) (*connect.Response[v1.ReadDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +564,7 @@ func (e *vaultEndpoint) ReadData(
 func (e *vaultEndpoint) AppendData(
 	ctx context.Context, req *connect.Request[v1.AppendDataRequest],
 ) (*connect.Response[v1.AppendDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
+	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -577,7 +579,7 @@ func (e *vaultEndpoint) AppendData(
 func (e *vaultEndpoint) ListData(
 	ctx context.Context, req *connect.Request[v1.ListDataRequest],
 ) (*connect.Response[v1.ListDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -600,7 +602,7 @@ func (e *vaultEndpoint) ListData(
 func (e *vaultEndpoint) ReadCache(
 	ctx context.Context, req *connect.Request[v1.ReadCacheRequest],
 ) (*connect.Response[v1.ReadCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -618,7 +620,7 @@ func (e *vaultEndpoint) ReadCache(
 func (e *vaultEndpoint) WriteCache(
 	ctx context.Context, req *connect.Request[v1.WriteCacheRequest],
 ) (*connect.Response[v1.WriteCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
+	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -632,7 +634,7 @@ func (e *vaultEndpoint) WriteCache(
 func (e *vaultEndpoint) WatchVault(
 	ctx context.Context, req *connect.Request[v1.WatchVaultRequest], stream *connect.ServerStream[v1.WatchVaultResponse],
 ) error {
-	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return err
 	}
@@ -656,7 +658,7 @@ func (e *vaultEndpoint) WatchVault(
 // followVault sends the changes of the vault until the watch ends, and says when the window moves to
 // another vault.
 func followVault(
-	ctx context.Context, vault port.PluginVault, watched domain.Vault,
+	ctx context.Context, vault pluginport.PluginVault, watched domain.Vault,
 	changes <-chan []string, lostChan <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],
 ) error {
 	poll := time.NewTicker(vaultWatchPoll)

@@ -5,12 +5,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // getFlightKey names the work a requirement asks for: two requirements with the
 // same key are one run.
-func getFlightKey(req port.DependencyRequirement) string {
+func getFlightKey(req pluginport.DependencyRequirement) string {
 	return strings.Join([]string{string(req.Kind), req.ID, req.Version, req.SourceURL, req.ChecksumSHA256, req.PluginDir}, "\x00")
 }
 
@@ -24,11 +24,11 @@ type flightGroup struct {
 type flight struct {
 	cancel      context.CancelFunc
 	done        chan struct{}
-	subscribers map[int]func(port.DependencyStatus)
+	subscribers map[int]func(pluginport.DependencyStatus)
 	next        int
 	refs        int
-	last        *port.DependencyStatus
-	resolved    port.ResolvedDependency
+	last        *pluginport.DependencyStatus
+	resolved    pluginport.ResolvedDependency
 	err         error
 }
 
@@ -44,9 +44,9 @@ func (g *flightGroup) isRunning(key string) bool {
 func (g *flightGroup) do(
 	ctx context.Context,
 	key string,
-	onProgress func(port.DependencyStatus),
-	run func(ctx context.Context, report func(port.DependencyStatus)) (port.ResolvedDependency, error),
-) (port.ResolvedDependency, error) {
+	onProgress func(pluginport.DependencyStatus),
+	run func(ctx context.Context, report func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error),
+) (pluginport.ResolvedDependency, error) {
 	g.mu.Lock()
 	if g.flights == nil {
 		g.flights = make(map[string]*flight)
@@ -54,7 +54,7 @@ func (g *flightGroup) do(
 	current, joined := g.flights[key]
 	if !joined {
 		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-		current = &flight{cancel: cancel, done: make(chan struct{}), subscribers: make(map[int]func(port.DependencyStatus))}
+		current = &flight{cancel: cancel, done: make(chan struct{}), subscribers: make(map[int]func(pluginport.DependencyStatus))}
 		g.flights[key] = current
 		go g.execute(runCtx, key, current, run)
 	}
@@ -77,11 +77,14 @@ func (g *flightGroup) do(
 		delete(current.subscribers, id)
 		current.refs--
 		abandoned := current.refs == 0
+		if abandoned && g.flights[key] == current {
+			delete(g.flights, key)
+		}
 		g.mu.Unlock()
 		if abandoned {
 			current.cancel()
 		}
-		return port.ResolvedDependency{}, ctx.Err()
+		return pluginport.ResolvedDependency{}, ctx.Err()
 	}
 }
 
@@ -89,12 +92,12 @@ func (g *flightGroup) execute(
 	ctx context.Context,
 	key string,
 	current *flight,
-	run func(ctx context.Context, report func(port.DependencyStatus)) (port.ResolvedDependency, error),
+	run func(ctx context.Context, report func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error),
 ) {
-	report := func(status port.DependencyStatus) {
+	report := func(status pluginport.DependencyStatus) {
 		g.mu.Lock()
 		current.last = &status
-		listeners := make([]func(port.DependencyStatus), 0, len(current.subscribers))
+		listeners := make([]func(pluginport.DependencyStatus), 0, len(current.subscribers))
 		for _, listener := range current.subscribers {
 			listeners = append(listeners, listener)
 		}
@@ -106,7 +109,9 @@ func (g *flightGroup) execute(
 	current.resolved, current.err = run(ctx, report)
 	current.cancel()
 	g.mu.Lock()
-	delete(g.flights, key)
+	if g.flights[key] == current {
+		delete(g.flights, key)
+	}
 	g.mu.Unlock()
 	close(current.done)
 }

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // EventHandler handles a dispatched event string.
@@ -49,22 +49,22 @@ type EventBus struct {
 	nextSubID        uint64
 	isClosed         bool
 	inFlight         sync.WaitGroup
-	clock            port.Clock
-	delay            port.Delay
+	clock            machineport.Clock
+	delay            machineport.Delay
 	keyExtractor     KeyExtractor
 	debounceRules    []DebounceRule
 	errorHandler     ErrorHandler
 }
 
 // WithClock sets the clock port used for time measurements.
-func WithClock(clock port.Clock) EventBusOption {
+func WithClock(clock machineport.Clock) EventBusOption {
 	return func(b *EventBus) {
 		b.clock = clock
 	}
 }
 
 // WithDelay sets the delay port used for scheduling timers.
-func WithDelay(delay port.Delay) EventBusOption {
+func WithDelay(delay machineport.Delay) EventBusOption {
 	return func(b *EventBus) {
 		b.delay = delay
 	}
@@ -122,14 +122,14 @@ func NewEventBus(host *Host, debounceDelay, throttleInterval time.Duration, opts
 }
 
 // SetClock sets the clock port used for time measurements.
-func (b *EventBus) SetClock(clock port.Clock) {
+func (b *EventBus) SetClock(clock machineport.Clock) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.clock = clock
 }
 
 // SetDelay sets the delay port used for scheduling timers.
-func (b *EventBus) SetDelay(delay port.Delay) {
+func (b *EventBus) SetDelay(delay machineport.Delay) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.delay = delay

@@ -14,7 +14,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // modulesRoot is the directory the repository's modules sit in, and docsRoot is
@@ -30,7 +31,7 @@ type pluginManifest struct {
 	// Dir is the directory of the plugin.
 	Dir string
 	Raw []byte
-	port.PluginManifest
+	pluginport.PluginManifest
 }
 
 // getPluginManifests reads every manifest the plugins directory holds.
@@ -49,7 +50,7 @@ func getPluginManifests(t *testing.T) []pluginManifest {
 		if err != nil {
 			t.Fatal(err)
 		}
-		parsed, err := port.ReadManifest(strings.NewReader(string(raw)))
+		parsed, err := pluginport.ReadManifest(strings.NewReader(string(raw)))
 		if err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}
@@ -155,12 +156,12 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no permissions: a rule checked against nothing")
 	}
-	valid := append(port.PluginPermissions(), port.PermissionNetworkAlias)
+	valid := append(pluginport.PluginPermissions(), pluginport.PermissionNetworkAlias)
 	for _, difference := range listPermissionDifferences(documented, valid) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (port.PluginManifest{Permissions: []string{name}}).ValidatePermissions(); err != nil {
+		if err := (pluginport.PluginManifest{Permissions: []string{name}}).ValidatePermissions(); err != nil {
 			t.Errorf("the validator refuses %s: %v", name, err)
 		}
 	}
@@ -251,12 +252,12 @@ func TestTheCapabilitiesTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no capabilities: a rule checked against nothing")
 	}
-	valid := port.PluginCapabilities()
+	valid := pluginport.PluginCapabilities()
 	for _, difference := range listDifferences(documented, valid, "capability") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (port.PluginManifest{Capabilities: []string{name}}).ValidateCapabilities(); err != nil {
+		if err := (pluginport.PluginManifest{Capabilities: []string{name}}).ValidateCapabilities(); err != nil {
 			t.Errorf("the validator refuses %s: %v", name, err)
 		}
 	}
@@ -271,12 +272,12 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no activation events: a rule checked against nothing")
 	}
-	valid := port.PluginActivationEvents()
+	valid := pluginport.PluginActivationEvents()
 	for _, difference := range listDifferences(documented, valid, "activation event") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (port.PluginManifest{ActivationEvents: []string{name}}).ValidateActivationEvents(); err != nil {
+		if err := (pluginport.PluginManifest{ActivationEvents: []string{name}}).ValidateActivationEvents(); err != nil {
 			t.Errorf("the validator refuses %s: %v", name, err)
 		}
 	}
@@ -404,10 +405,10 @@ func isNamedIn(source, key string) bool {
 // listUnreadSettings lists the settings a manifest declares that none of the
 // sources name. The setting that chooses an agent is read by the host, which
 // routes by it.
-func listUnreadSettings(manifest port.PluginManifest, sources []string) []string {
+func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
 	var unread []string
 	for _, setting := range manifest.Settings {
-		if setting.Type == port.SettingTypeAgent {
+		if setting.Type == pluginport.SettingTypeAgent {
 			continue
 		}
 		if !slices.ContainsFunc(sources, func(source string) bool { return isNamedIn(source, setting.Key) }) {
@@ -441,8 +442,8 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 }
 
 func TestWhatTheSettingRuleRefuses(t *testing.T) {
-	manifest := port.PluginManifest{Settings: []port.PluginManifestSetting{
-		{Key: "language"}, {Key: "dpi"}, {Key: "agent", Type: port.SettingTypeAgent},
+	manifest := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
+		{Key: "language"}, {Key: "dpi"}, {Key: "agent", Type: pluginport.SettingTypeAgent},
 	}}
 	if got := listUnreadSettings(manifest, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
 		t.Errorf("settings that are read are found unread: %v", got)

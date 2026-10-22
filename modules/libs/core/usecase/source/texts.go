@@ -1,6 +1,9 @@
 package source
 
-import "github.com/jiva-studio/numen/modules/libs/core/port"
+import (
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+)
 
 // Texts is everything that reads or writes the text made from a source.
 type Texts struct {
@@ -17,10 +20,10 @@ type Texts struct {
 }
 
 func NewTexts(
-	readers port.VaultReaders,
-	writers port.VaultWriters,
-	sources port.SourceQueries,
-	derived port.DerivedStores,
+	readers vaultport.VaultReaders,
+	writers vaultport.VaultWriters,
+	sources sourceport.SourceQueries,
+	derived vaultport.DerivedStores,
 ) Texts {
 	shared := sourceTexts{readers: readers, sources: sources, derived: derived}
 	location := GetCopyLocation{texts: shared}

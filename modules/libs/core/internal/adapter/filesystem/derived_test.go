@@ -14,7 +14,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 func store(t *testing.T) (*filesystem.DerivedStore, string) {
@@ -295,7 +296,7 @@ func TestANameIsClaimedByOneCallerAtATime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := derived.ClaimName(t.Context(), "ocr/abc.txt"); !errors.Is(err, port.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "ocr/abc.txt"); !errors.Is(err, vaultport.ErrClaimed) {
 		t.Errorf("claiming a held name gave %v, want port.ErrClaimed", err)
 	}
 
@@ -388,7 +389,7 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 		t.Fatalf("the child never took the claim: %v", response.Err())
 	}
 
-	if _, err := derived.ClaimName(t.Context(), "ocr/held.txt"); !errors.Is(err, port.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "ocr/held.txt"); !errors.Is(err, vaultport.ErrClaimed) {
 		t.Errorf("claiming a name another process holds gave %v, want port.ErrClaimed", err)
 	}
 }

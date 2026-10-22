@@ -1,18 +1,19 @@
 package vault
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // GetVaultToShow returns the vault named, which must be on the list; with none named, the last shown, else the first on the list, else none.
 type GetVaultToShow struct {
-	registry port.VaultRegistry
+	registry vaultport.VaultRegistry
 	find     Find
 	list     List
 }
 
-func NewGetVaultToShow(registry port.VaultRegistry) GetVaultToShow {
+func NewGetVaultToShow(registry vaultport.VaultRegistry) GetVaultToShow {
 	return GetVaultToShow{registry: registry, find: NewFind(registry), list: NewList(registry)}
 }
 

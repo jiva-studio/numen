@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrUnreadable is a path that is not a folder, or a folder this application
@@ -26,15 +28,15 @@ var ErrCopy = errors.New("one vault cannot be in two places")
 // A name another vault has gets a number appended, and the person renames it
 // afterwards.
 type Add struct {
-	identity port.VaultIdentity
-	registry port.VaultRegistry
-	now      port.Clock
+	identity vaultport.VaultIdentity
+	registry vaultport.VaultRegistry
+	now      machineport.Clock
 }
 
 // NewAdd is what turns a folder into a vault: what writes and reads the
 // identity the folder carries, the list this installation keeps, and when this
 // is happening, which the identity carries.
-func NewAdd(identity port.VaultIdentity, registry port.VaultRegistry, now port.Clock) Add {
+func NewAdd(identity vaultport.VaultIdentity, registry vaultport.VaultRegistry, now machineport.Clock) Add {
 	return Add{identity: identity, registry: registry, now: now}
 }
 

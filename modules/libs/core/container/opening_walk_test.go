@@ -8,14 +8,15 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // unopenable is readers on a machine that cannot open any vault.
 type unopenable struct{ err error }
 
-func (u unopenable) Open(domain.Vault) (port.VaultReader, error) { return nil, u.err }
+func (u unopenable) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, u.err }
 
 // The walk answers how many notes the vault holds.
 func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {

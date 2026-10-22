@@ -11,9 +11,11 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // rename is the rename an installation nobody has configured does: a title and
@@ -300,7 +302,7 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "Entropy")
-	if !errors.Is(err, port.ErrOccupied) {
+	if !errors.Is(err, vaultport.ErrOccupied) {
 		t.Fatalf("want ErrOccupied, got %v", err)
 	}
 	if renamed.Path != "Old.md" {
@@ -319,7 +321,7 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 
 // sulking is the index, refusing to be told where a file went.
 type sulking struct {
-	port.SourceRepository
+	sourceport.SourceRepository
 	moveError error
 }
 

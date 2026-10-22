@@ -6,36 +6,37 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // OpenModel is a model on this machine becoming answerable. It is told how far
 // fetching and compiling it has got, counted in the bytes of it that are here.
-type OpenModel func(ctx context.Context, tell func(finished, total int64)) (port.Embedder, error)
+type OpenModel func(ctx context.Context, tell func(finished, total int64)) (embeddingport.Embedder, error)
 
 // Provider is one place vectors are made: the identity what it answers is kept
 // under, the name to call it by while it arrives, and the one way it is opened.
 //
 // The zero Provider is an installation that names no provider for this half.
 type Provider struct {
-	model port.EmbeddingModel
+	model embeddingport.EmbeddingModel
 	name  string
 
 	// One of the two, for a provider that is named at all. A service answers
 	// the moment there is something to ask; a model on this machine answers
 	// once it is here.
-	activeItem port.Embedder
+	activeItem embeddingport.Embedder
 	fetch      OpenModel
 }
 
 // NewReached is a provider that answers at once.
-func NewReached(model port.EmbeddingModel, name string, embedder port.Embedder) Provider {
+func NewReached(model embeddingport.EmbeddingModel, name string, embedder embeddingport.Embedder) Provider {
 	return Provider{model: model, name: name, activeItem: embedder}
 }
 
 // NewFetched is a model on this machine, opened behind whoever asked.
-func NewFetched(model port.EmbeddingModel, name string, open OpenModel) Provider {
+func NewFetched(model embeddingport.EmbeddingModel, name string, open OpenModel) Provider {
 	return Provider{model: model, name: name, fetch: open}
 }
 
@@ -64,7 +65,7 @@ const (
 // nothing to close.
 func Open(
 	ctx context.Context, tasks *run.Tasks, indexing, query Provider,
-) (filling, asking port.Embedder, closer func() error) {
+) (filling, asking embeddingport.Embedder, closer func() error) {
 	if !indexing.isPlaced() {
 		return nil, nil, nil
 	}
@@ -87,7 +88,7 @@ func Open(
 // OpenOne is a single provider opened for a run with nowhere to show that a model
 // is arriving, which waits for it instead. It answers under the identity the
 // index is filled with, whichever half of the work it was named for.
-func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
+func OpenOne(ctx context.Context, from Provider) (embeddingport.Embedder, func() error) {
 	if !from.isPlaced() {
 		return nil, nil
 	}

@@ -12,8 +12,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // fakeStorage is what a recognition is written to, in memory.
@@ -32,7 +34,7 @@ func newShelf() *fakeStorage {
 // fakeStores hands the one store to whatever opens a vault's store.
 type fakeStores struct{ *fakeStorage }
 
-func (s fakeStores) Open(domain.Vault) (port.DerivedStore, error) { return s.fakeStorage, nil }
+func (s fakeStores) Open(domain.Vault) (vaultport.DerivedStore, error) { return s.fakeStorage, nil }
 
 // Open is one file of the store, which a copy of a video is played from.
 func (s *fakeStorage) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
@@ -118,7 +120,7 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.item[name] {
-		return nil, port.ErrClaimed
+		return nil, vaultport.ErrClaimed
 	}
 	s.item[name] = true
 	return func() error {
@@ -159,8 +161,8 @@ type speaker struct {
 	stop  func(int)
 }
 
-func (s *speaker) GetRecognitionModel() port.RecognitionModel {
-	return port.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
+func (s *speaker) GetRecognitionModel() recognitionport.RecognitionModel {
+	return recognitionport.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 
 func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlock, error) {

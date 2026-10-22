@@ -18,8 +18,10 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 var (
@@ -33,7 +35,7 @@ var (
 type Launcher func(ctx context.Context, p DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error)
 
 // PersistHandler persists a changed plugin setting to host configuration.
-type PersistHandler = port.PluginPersistHandler
+type PersistHandler = pluginport.PluginPersistHandler
 
 // PluginStatus describes the enablement and runtime status of a plugin.
 type PluginStatus struct {
@@ -73,27 +75,27 @@ type Host struct {
 	stdins           map[stdinKey]io.Closer
 	processLimits    ProcessLimits
 	activation       ActivationPolicy
-	onPluginFailed   func(port.PluginFailure)
+	onPluginFailed   func(pluginport.PluginFailure)
 	onFailureCleared func(pluginID string)
 	errorHandler     ErrorHandler
 	onDisk           map[string]bool
 	discoverMu       sync.RWMutex
-	failedPlugins    []port.PluginFailure
+	failedPlugins    []pluginport.PluginFailure
 	problems         []DiscoveryProblem
-	completer        port.Completer
-	vault            port.PluginVault
+	completer        completionport.Completer
+	vault            pluginport.PluginVault
 	// consentAsks holds the plugins that asked for a completion the person has
 	// not answered for, since the host started.
 	consentAsks   map[string]bool
 	secretLocksMu sync.Mutex
 	secretLocks   map[string]*sync.Mutex
-	keyStore      port.KeyStore
+	keyStore      pluginport.KeyStore
 	// noKeyStoreOnce reports once that a recorded secret cannot be read on a
 	// machine without a key store.
 	noKeyStoreOnce sync.Once
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
-	dependencies   port.DependencyCatalog
+	dependencies   pluginport.DependencyCatalog
 	builtIns       map[string]builtInPlugin
 }
 
@@ -180,7 +182,7 @@ func (h *Host) reportError(err error) {
 
 // SetOnPluginFailed registers a callback invoked once when a plugin has failed to activate repeatedly,
 // and again when a retry of it fails.
-func (h *Host) SetOnPluginFailed(fn func(port.PluginFailure)) {
+func (h *Host) SetOnPluginFailed(fn func(pluginport.PluginFailure)) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.onPluginFailed = fn
@@ -368,18 +370,18 @@ func (h *Host) ResolveCapability(capability string) (DiscoveredPlugin, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	reason := port.PluginNotInstalled
+	reason := pluginport.PluginNotInstalled
 	for _, p := range h.getPluginsInOrderLocked() {
 		if !p.Manifest.HasCapability(capability) {
 			continue
 		}
 		if h.safeMode || !h.isPluginEnabledLocked(p.Manifest.ID) {
-			reason = port.PluginDisabled
+			reason = pluginport.PluginDisabled
 			continue
 		}
 		return p, nil
 	}
-	missing := &port.UnavailableError{Capability: capability, Reason: reason}
+	missing := &pluginport.UnavailableError{Capability: capability, Reason: reason}
 	if h.safeMode {
 		missing.Err = errSafeModeActive
 	}
@@ -439,7 +441,7 @@ func (h *Host) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile,
 }
 
 // getProfileOf is how the index keeps the notes of a declared type.
-func getProfileOf(declared port.PluginNoteType) domain.NoteProfile {
+func getProfileOf(declared pluginport.PluginNoteType) domain.NoteProfile {
 	return declared.GetProfile()
 }
 
@@ -512,13 +514,13 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 		return DiscoveredPlugin{}, nil, errHostClosed
 	}
 	if h.safeMode {
-		return DiscoveredPlugin{}, nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginDisabled, Err: errSafeModeActive}
+		return DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled, Err: errSafeModeActive}
 	}
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
-		return DiscoveredPlugin{}, nil, &port.UnavailableError{
-			PluginID: pluginID, Reason: port.PluginNotInstalled, Err: errPluginNotFound,
+		return DiscoveredPlugin{}, nil, &pluginport.UnavailableError{
+			PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound,
 		}
 	}
 
@@ -526,7 +528,7 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 	sup := h.supervisors[pluginID]
 
 	if !h.isPluginEnabledLocked(pluginID) {
-		return DiscoveredPlugin{}, nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginDisabled}
+		return DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
 	}
 
 	return p, sup, nil
@@ -590,8 +592,8 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *Supervi
 	h.mu.Unlock()
 }
 
-func (h *Host) newPluginFailureLocked(pluginID string, sup *Supervisor, cause error) port.PluginFailure {
-	return port.PluginFailure{
+func (h *Host) newPluginFailureLocked(pluginID string, sup *Supervisor, cause error) pluginport.PluginFailure {
+	return pluginport.PluginFailure{
 		PluginID: pluginID,
 		Name:     h.plugins[pluginID].Manifest.Name,
 		Reason:   describeFailure(cause),
@@ -1267,8 +1269,8 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 			result[k] = v
 		}
 	}
-	delete(result, port.SettingStoredSecrets)
-	delete(result, port.SettingAIConsent)
+	delete(result, pluginport.SettingStoredSecrets)
+	delete(result, pluginport.SettingAIConsent)
 	if p, ok := h.plugins[pluginID]; ok {
 		for _, name := range p.Manifest.Secrets {
 			delete(result, name)
@@ -1295,8 +1297,8 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 
 // SetPluginSetting persists one setting, then writes it to memory and notifies the plugin.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
-	if key == port.SettingStoredSecrets {
-		return fmt.Errorf("plugin %s: %w: %s", pluginID, port.ErrReservedSettingKey, key)
+	if key == pluginport.SettingStoredSecrets {
+		return fmt.Errorf("plugin %s: %w: %s", pluginID, pluginport.ErrReservedSettingKey, key)
 	}
 	h.mu.RLock()
 	persist := h.persistHandler
@@ -1313,7 +1315,7 @@ func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value
 // The record of the stored secrets is written by the host alone, so a write of it
 // here changes nothing.
 func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error {
-	if key == port.SettingStoredSecrets {
+	if key == pluginport.SettingStoredSecrets {
 		return nil
 	}
 	h.mu.Lock()
@@ -1475,15 +1477,15 @@ func (h *Host) NotifyAllPluginConfigs(ctx context.Context) error {
 
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
 // the order of their ids.
-func (h *Host) GetPluginInfos() []port.PluginInfo {
+func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	result := make([]port.PluginInfo, 0, len(h.plugins))
+	result := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
 
-		settings := make([]port.PluginSetting, 0, len(p.Manifest.Settings))
+		settings := make([]pluginport.PluginSetting, 0, len(p.Manifest.Settings))
 		for _, s := range p.Manifest.Settings {
 			defJSON := ""
 			if s.Default != nil {
@@ -1494,7 +1496,7 @@ func (h *Host) GetPluginInfos() []port.PluginInfo {
 			minVal := s.Min
 			maxVal := s.Max
 			stepVal := s.Step
-			settings = append(settings, port.PluginSetting{
+			settings = append(settings, pluginport.PluginSetting{
 				Key:         s.Key,
 				Type:        s.Type,
 				Title:       s.Title,
@@ -1510,7 +1512,7 @@ func (h *Host) GetPluginInfos() []port.PluginInfo {
 			})
 		}
 
-		result = append(result, port.PluginInfo{
+		result = append(result, pluginport.PluginInfo{
 			ID:            p.Manifest.ID,
 			Name:          p.Manifest.Name,
 			Version:       p.Manifest.Version,
@@ -1623,7 +1625,7 @@ func isEmptyEndpoint(e Endpoint) bool {
 }
 
 // getFailureLocked is why the host suspends a plugin, and nil while it does not.
-func (h *Host) getFailureLocked(pluginID string) *port.PluginFailure {
+func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 	sup, ok := h.supervisors[pluginID]
 	if !ok {
 		return nil
@@ -1654,13 +1656,13 @@ func (h *Host) clearFailure(pluginID string, sup *Supervisor) {
 
 // RetryPlugin forgets the failures of a plugin and starts it once. The failure is set where the plugin fails
 // again, and the host suspends it at once.
-func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*port.PluginFailure, error) {
+func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 	h.mu.RLock()
 	_, recognized := h.plugins[pluginID]
 	sup := h.supervisors[pluginID]
 	h.mu.RUnlock()
 	if !recognized {
-		return nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginNotInstalled, Err: errPluginNotFound}
+		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound}
 	}
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
@@ -1671,7 +1673,7 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*port.PluginFa
 		h.Release(pluginID)
 		return nil, nil
 	}
-	var unavailable *port.UnavailableError
+	var unavailable *pluginport.UnavailableError
 	if errors.As(err, &unavailable) || ctx.Err() != nil {
 		return nil, err
 	}
@@ -1681,7 +1683,7 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*port.PluginFa
 }
 
 // recordActivationFailure records a failed activation as the last one the plugin is allowed, and returns the failure.
-func (h *Host) recordActivationFailure(pluginID string, cause error) *port.PluginFailure {
+func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport.PluginFailure {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	sup, ok := h.supervisors[pluginID]

@@ -20,7 +20,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 type mockTranscriptionServer struct{}
@@ -191,7 +192,7 @@ func TestTranscriberBridge(t *testing.T) {
 		t.Fatalf("unexpected segment timings: %+v", segments[0])
 	}
 
-	text, err := bridge.Transcribe(ctx, port.Audio{
+	text, err := bridge.Transcribe(ctx, transcriptionport.Audio{
 		Samples: segments[0].Samples,
 		From:    segments[0].From,
 		To:      segments[0].To,

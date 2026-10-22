@@ -655,7 +655,7 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var read int
 	for _, item := range []string{"domain", "port"} {
 		dir := getPackageDir(item)
-		target, err := os.ReadDir(dir)
+		target, err := readTree(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -737,7 +737,7 @@ func getClaimedPorts(file *ast.File) []string {
 				continue
 			}
 			if offset, is := named.Type.(*ast.SelectorExpr); is {
-				if from, is := offset.X.(*ast.Ident); is && from.Name == "port" {
+				if from, is := offset.X.(*ast.Ident); is && isPortName(from.Name) {
 					target = append(target, offset.Sel.Name)
 				}
 			}
@@ -752,15 +752,15 @@ func getClaimedPorts(file *ast.File) []string {
 func TestWhatThePortClaimRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "claim.go", `package p
 
-var _ port.VaultReader = (*Reader)(nil)
+var _ vaultport.VaultReader = (*Reader)(nil)
 
-var _, _ port.VaultWriter = (*Writer)(nil), (*Writer)(nil)
+var _, _ vaultport.VaultWriter = (*Writer)(nil), (*Writer)(nil)
 
-var storePort port.DerivedStore
+var storePort vaultport.DerivedStore
 
 func mount() {
-	var _ port.Recording = (*sound)(nil)
-	var agentPort port.Agent
+	var _ transcriptionport.Recording = (*sound)(nil)
+	var agentPort agentport.Agent
 	_, _ = storePort, agentPort
 }
 `, 0)
@@ -925,7 +925,7 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if strings.HasSuffix(path, "_test.go") || filepath.Dir(path) == filepath.Clean(dir) {
+		if strings.HasSuffix(path, "_test.go") || isUnder(filepath.Dir(path), filepath.Clean(dir)) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -958,7 +958,7 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 // keyed as Interface.Method and giving the method's own name. An embedded
 // interface is the other one's declaration and is read there.
 func methodsIn(dir string) (map[string]string, error) {
-	target, err := os.ReadDir(dir)
+	target, err := readTree(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -1020,7 +1020,7 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if getPackage(root, path) == "port" {
+		if isUnder(getPackage(root, path), "port") {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -1032,7 +1032,7 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 			if !is {
 				return true
 			}
-			if from, is := pos.X.(*ast.Ident); is && from.Name == "port" {
+			if from, is := pos.X.(*ast.Ident); is && isPortName(from.Name) {
 				named[pos.Sel.Name] = true
 			}
 			return true
@@ -1059,7 +1059,7 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 // getDeclaredTypes are the exported types a folder's own files declare, each
 // said to be an interface or not.
 func getDeclaredTypes(dir string) (map[string]bool, error) {
-	target, err := os.ReadDir(dir)
+	target, err := readTree(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -1227,7 +1227,7 @@ func isAmong(these []string, pkg string) bool {
 // isAssembled says whether a package is one the composition root puts together:
 // an adapter, a scenario, and the two languages the two are named in.
 func isAssembled(to string) bool {
-	return to == "container" || to == "domain" || to == "port" ||
+	return to == "container" || to == "domain" || isUnder(to, "port") ||
 		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 
@@ -1453,7 +1453,7 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var read int
 	for _, item := range []string{"domain", "port"} {
 		dir := getPackageDir(item)
-		target, err := os.ReadDir(dir)
+		target, err := readTree(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1559,7 +1559,7 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	var wrong []string
 	var read int
 	dir := filepath.Join("..", "port")
-	target, err := os.ReadDir(dir)
+	target, err := readTree(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1699,4 +1699,56 @@ func getPackageDir(pos string) string {
 		return filepath.Join("..", "..", "notes", "domain")
 	}
 	return filepath.Join("..", pos)
+}
+
+// treeEntry is one file of a folder tree, named by its path under the folder.
+type treeEntry struct{ name string }
+
+// Name returns the path of the file under the folder that was read.
+func (e treeEntry) Name() string { return e.name }
+
+// IsDir reports false: a tree entry is a file.
+func (e treeEntry) IsDir() bool { return false }
+
+// readTree reads every file under a folder and the folders beneath it.
+func readTree(dir string) ([]treeEntry, error) {
+	var found []treeEntry
+	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		rel, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		found = append(found, treeEntry{name: filepath.ToSlash(rel)})
+		return nil
+	})
+	return found, err
+}
+
+// isUnder says whether a package is a folder or placed beneath it.
+func isUnder(pkg, folder string) bool {
+	return pkg == folder || strings.HasPrefix(pkg, folder+"/")
+}
+
+// isPortName says whether a name is one a file imports a package of port/
+// under: the folder name each of them is declared as.
+func isPortName(name string) bool {
+	return slices.Contains(getPortNames(), name)
+}
+
+// getPortNames are the names of the packages under port/.
+func getPortNames() []string {
+	entries, err := os.ReadDir(getPackageDir("port"))
+	if err != nil {
+		return nil
+	}
+	var names []string
+	for _, one := range entries {
+		if one.IsDir() {
+			names = append(names, one.Name())
+		}
+	}
+	return names
 }

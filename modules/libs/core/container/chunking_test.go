@@ -13,8 +13,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // The sizes are part of what a chunk is kept under, and the one thing that
@@ -129,8 +130,8 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 // wide is a model of the width given.
 type wide struct{ dimensions int }
 
-func (w wide) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "wide", Dimensions: w.dimensions, MaxTokens: 256, Pooling: "mean"}
+func (w wide) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "wide", Dimensions: w.dimensions, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }

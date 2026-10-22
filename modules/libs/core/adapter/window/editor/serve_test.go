@@ -26,13 +26,17 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	coreSettings "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // bindNotes gives the handlers the questions a window asks of the index in db
@@ -77,7 +81,7 @@ func (unwatchable) WatchVault(context.Context, domain.Vault) (<-chan []string, <
 // finish when it says so, which is what a vault that takes minutes to read
 // looks like from here.
 type waiting struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	// begun carries the path of a read that is under way.
 	begun chan string
 	until chan struct{}
@@ -95,7 +99,7 @@ func newSlowWait() *waiting {
 // release lets every read through, from now on.
 func (w *waiting) release() { w.once.Do(func() { close(w.until) }) }
 
-func (w *waiting) Open(v domain.Vault) (port.VaultReader, error) {
+func (w *waiting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := w.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -106,7 +110,7 @@ func (w *waiting) Open(v domain.Vault) (port.VaultReader, error) {
 // waits holds a read open once the bytes are in hand, so a test can change the
 // file the reader is holding a copy of.
 type waits struct {
-	port.VaultReader
+	vaultport.VaultReader
 	posVal *waiting
 }
 
@@ -127,9 +131,9 @@ func (r waits) Read(ctx context.Context, path string) ([]byte, error) {
 // unwalkable is a set of readers that cannot list the vault, which is what a
 // folder the walk fails looks like from here. A note named outright is
 // still read.
-type unwalkable struct{ port.VaultReaders }
+type unwalkable struct{ vaultport.VaultReaders }
 
-func (u unwalkable) Open(v domain.Vault) (port.VaultReader, error) {
+func (u unwalkable) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := u.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -137,7 +141,7 @@ func (u unwalkable) Open(v domain.Vault) (port.VaultReader, error) {
 	return unlisted{VaultReader: reader}, nil
 }
 
-type unlisted struct{ port.VaultReader }
+type unlisted struct{ vaultport.VaultReader }
 
 func (unlisted) WalkFiles(context.Context, func(domain.Fingerprint) error) error {
 	return errors.New("the vault cannot be listed")
@@ -146,9 +150,9 @@ func (unlisted) WalkFiles(context.Context, func(domain.Fingerprint) error) error
 // unreadable is a set of readers whose walk fails, which is what a device that
 // went away looks like from here. A single file nobody can read is counted and
 // walked past, so it is the walk itself that has to go.
-type unreadable struct{ port.VaultReaders }
+type unreadable struct{ vaultport.VaultReaders }
 
-func (u unreadable) Open(v domain.Vault) (port.VaultReader, error) {
+func (u unreadable) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := u.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -156,7 +160,7 @@ func (u unreadable) Open(v domain.Vault) (port.VaultReader, error) {
 	return refuses{VaultReader: reader}, nil
 }
 
-type refuses struct{ port.VaultReader }
+type refuses struct{ vaultport.VaultReader }
 
 func (refuses) WalkFiles(context.Context, func(domain.Fingerprint) error) error {
 	return errors.New("the vault cannot be read")
@@ -174,7 +178,7 @@ type behind struct {
 
 // opening puts a vault, an index, a scan and a watch together the way Open
 // does, with the pieces a test drives in place of the ones a window gets.
-func opening(t *testing.T, notes map[string]string, watcher port.VaultWatcher, readers port.VaultReaders) *behind {
+func opening(t *testing.T, notes map[string]string, watcher vaultport.VaultWatcher, readers vaultport.VaultReaders) *behind {
 	t.Helper()
 	return openingWith(t, notes, watcher, readers, nil, quietPeriod)
 }
@@ -184,9 +188,9 @@ func opening(t *testing.T, notes map[string]string, watcher port.VaultWatcher, r
 func openingWith(
 	t *testing.T,
 	notes map[string]string,
-	watcher port.VaultWatcher,
-	readers port.VaultReaders,
-	embedder port.Embedder,
+	watcher vaultport.VaultWatcher,
+	readers vaultport.VaultReaders,
+	embedder embeddingport.Embedder,
 	idleDuration time.Duration,
 ) *behind {
 	t.Helper()
@@ -706,11 +710,11 @@ func TestEveryNamingIsSavedFromOne(t *testing.T) {
 }
 
 func TestEveryPresenceIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Presence]port.Presence{
-		v1.Presence_PRESENCE_PRESENT:          port.Present,
-		v1.Presence_PRESENCE_NOT_FETCHED:      port.NotFetched,
-		v1.Presence_PRESENCE_NOTHING_TO_FETCH: port.NothingToFetch,
-	}, func(is port.Presence) v1.Presence { return editorSettings.Presences[is] })
+	testsupport.CheckProduced(t, map[v1.Presence]settingsport.Presence{
+		v1.Presence_PRESENCE_PRESENT:          settingsport.Present,
+		v1.Presence_PRESENCE_NOT_FETCHED:      settingsport.NotFetched,
+		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settingsport.NothingToFetch,
+	}, func(is settingsport.Presence) v1.Presence { return editorSettings.Presences[is] })
 }
 
 func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
@@ -731,7 +735,7 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaults.ErrLastVault,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING:    vaults.ErrShowing,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN:    vaults.ErrUnknown,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   port.ErrNoTrash,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   machineport.ErrNoTrash,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     errAnswerPending,
 	}, func(err error) v1.VaultsErrorCode {
 		reason, _ := vaultsErrorCodeBy(err)

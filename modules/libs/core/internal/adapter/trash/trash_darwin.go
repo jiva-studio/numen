@@ -10,7 +10,7 @@ import (
 	"github.com/ebitengine/purego"
 	"github.com/ebitengine/purego/objc"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // unsupported is the Cocoa error for a volume that keeps nothing a person
@@ -63,7 +63,7 @@ func moveToTrash(path string) error {
 		return nil
 	}
 	if failure != 0 && objc.Send[int](failure, code) == unsupported {
-		return fmt.Errorf("%s: %w", path, port.ErrNoTrash)
+		return fmt.Errorf("%s: %w", path, machineport.ErrNoTrash)
 	}
 	return fmt.Errorf("%s: %s", path, getFailureMessage(failure))
 }

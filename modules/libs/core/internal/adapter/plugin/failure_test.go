@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const failingPluginID = "md.numen.engines.ocr"
@@ -16,7 +16,7 @@ func failLaunching(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.
 	return nil, nil, errors.New("exec format error")
 }
 
-func getFailure(t *testing.T, host *Host, id string) *port.PluginFailure {
+func getFailure(t *testing.T, host *Host, id string) *pluginport.PluginFailure {
 	t.Helper()
 	for _, info := range host.GetPluginInfos() {
 		if info.ID == id {
@@ -30,13 +30,13 @@ func getFailure(t *testing.T, host *Host, id string) *port.PluginFailure {
 func TestAPluginTheHostContainsOffIsListedWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.SetLauncher(launchAnsweringPing(t, port.PluginProtocolVersion+1, &procs))
+	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion+1, &procs))
 
 	if got := getFailure(t, host, failingPluginID); got != nil {
 		t.Fatalf("failure before any start = %+v, want none", got)
 	}
-	if _, err := host.EnsureActive(t.Context(), failingPluginID); !errors.Is(err, port.ErrUnsupportedProtocol) {
-		t.Fatalf("EnsureActive() = %v, want %v", err, port.ErrUnsupportedProtocol)
+	if _, err := host.EnsureActive(t.Context(), failingPluginID); !errors.Is(err, pluginport.ErrUnsupportedProtocol) {
+		t.Fatalf("EnsureActive() = %v, want %v", err, pluginport.ErrUnsupportedProtocol)
 	}
 
 	got := getFailure(t, host, failingPluginID)
@@ -46,7 +46,7 @@ func TestAPluginTheHostContainsOffIsListedWithItsReason(t *testing.T) {
 	if got.PluginID != failingPluginID || got.Name == "" || got.At.IsZero() {
 		t.Fatalf("failure = %+v, want the id, the name and the time", got)
 	}
-	if want := describeFailure(port.ErrUnsupportedProtocol); got.Reason != want {
+	if want := describeFailure(pluginport.ErrUnsupportedProtocol); got.Reason != want {
 		t.Fatalf("reason = %q, want %q", got.Reason, want)
 	}
 }
@@ -54,14 +54,14 @@ func TestAPluginTheHostContainsOffIsListedWithItsReason(t *testing.T) {
 func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.SetLauncher(launchAnsweringPing(t, port.PluginProtocolVersion+1, &procs))
+	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion+1, &procs))
 	var recovered []string
 	host.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 	if _, err := host.EnsureActive(t.Context(), failingPluginID); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
 
-	host.SetLauncher(launchAnsweringPing(t, port.PluginProtocolVersion, &procs))
+	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
 	failure, err := host.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil || failure != nil {
 		t.Fatalf("RetryPlugin() = %+v, %v, want the plugin started", failure, err)
@@ -81,8 +81,8 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 func TestARetryThatFailsAgainContainsThePluginOffAtOnce(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.SetLauncher(failLaunching)
-	var notified []port.PluginFailure
-	host.SetOnPluginFailed(func(failure port.PluginFailure) { notified = append(notified, failure) })
+	var notified []pluginport.PluginFailure
+	host.SetOnPluginFailed(func(failure pluginport.PluginFailure) { notified = append(notified, failure) })
 
 	failure, err := host.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil {
@@ -104,8 +104,8 @@ func TestRetryOfAPluginTheHostDoesNotKnowIsNotInstalled(t *testing.T) {
 
 	_, err := host.RetryPlugin(t.Context(), "md.numen.missing")
 
-	var unavailable *port.UnavailableError
-	if !errors.As(err, &unavailable) || unavailable.Reason != port.PluginNotInstalled {
+	var unavailable *pluginport.UnavailableError
+	if !errors.As(err, &unavailable) || unavailable.Reason != pluginport.PluginNotInstalled {
 		t.Fatalf("RetryPlugin() = %v, want a plugin that is not installed", err)
 	}
 }
@@ -137,7 +137,7 @@ func TestAFailureIsDescribedInWordsAPersonReads(t *testing.T) {
 		cause error
 		want  string
 	}{
-		{"an unsupported protocol", port.ErrUnsupportedProtocol, "The plugin speaks a plugin protocol version this Numen does not support. Update the plugin or Numen."},
+		{"an unsupported protocol", pluginport.ErrUnsupportedProtocol, "The plugin speaks a plugin protocol version this Numen does not support. Update the plugin or Numen."},
 		{"a handshake that never came", errHandshakeTimeout, "The plugin did not finish starting in time."},
 		{"anything else", errors.New("exec format error"), "The plugin could not be started: exec format error"},
 	}

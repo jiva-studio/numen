@@ -19,17 +19,19 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // DocumentPluginHost provides plugin resolution, activation, permissions, and path validation.
 type DocumentPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
-	port.PluginAcquirer
-	port.PluginAuthorizer
-	port.PluginPathValidator
+	pluginport.PluginResolver
+	pluginport.PluginActivator
+	pluginport.PluginAcquirer
+	pluginport.PluginAuthorizer
+	pluginport.PluginPathValidator
 }
 
 // DocumentBridge connects document and text extraction ports to an out-of-process PDF plugin via Connect-RPC.
@@ -216,7 +218,7 @@ func getRectFromQuadPoints(qp []float32) domain.Rect {
 }
 
 // OpenDocument implements port.PageRenderer.
-func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	if file == nil {
 		return nil, errors.New("nil file")
 	}

@@ -3,8 +3,9 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // Scenarios is everything that acts on the notes of a vault. A window and the
@@ -35,7 +36,7 @@ type Scenarios struct {
 // FollowMoves tells a window where each note went, so whoever is showing one at
 // the name it had follows it to the name it now has. Every build with a window
 // binds it.
-func (n Scenarios) FollowMoves(view port.Window) Scenarios {
+func (n Scenarios) FollowMoves(view windowport.Window) Scenarios {
 	mover := n.Move
 	mover.Drawing = func(ctx context.Context, went domain.Move) {
 		_ = view.ShowMove(ctx, went)
@@ -49,7 +50,7 @@ func (n Scenarios) FollowMoves(view port.Window) Scenarios {
 //
 // Only a caller that is not the person binds it. The window's own writes draw
 // nothing, because the person is looking at the text they typed.
-func (n Scenarios) ShowEdits(view port.Window) Scenarios {
+func (n Scenarios) ShowEdits(view windowport.Window) Scenarios {
 	tell := TellEdit(func(ctx context.Context, response domain.Edit) {
 		_ = view.ShowEdit(ctx, response)
 	})

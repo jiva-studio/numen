@@ -12,9 +12,10 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // openFileRead is a vault on disk and the read that works on it.
@@ -195,7 +196,7 @@ func TestAPathThatDoesNotStayInTheVaultIsRefused(t *testing.T) {
 		secret,
 		"/etc/passwd",
 	} {
-		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, port.ErrOutside) {
+		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, vaultport.ErrOutside) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
 	}
@@ -217,7 +218,7 @@ func TestAReadDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	}
 
 	for _, path := range []string{"linked/secret.txt", "secret.txt"} {
-		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, port.ErrOutside) {
+		if _, err := u.Execute(t.Context(), v, path, 0, 0); !errors.Is(err, vaultport.ErrOutside) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
 	}
@@ -301,7 +302,7 @@ type faulty struct {
 	file io.ReadSeekCloser
 }
 
-func (f faulty) Open(v domain.Vault) (port.VaultReader, error) {
+func (f faulty) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	if f.open != nil {
 		return nil, f.open
 	}
@@ -313,7 +314,7 @@ func (f faulty) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type faultyReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	on faulty
 }
 

@@ -17,7 +17,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // callers is a host that knows the plugins it was told of and answers with the completer it was given.
@@ -26,9 +27,9 @@ type callers struct {
 	plugins   map[string]string
 	allowed   map[string]bool
 	consented map[string]bool
-	completer port.Completer
+	completer completionport.Completer
 	checked   []string
-	vault     port.PluginVault
+	vault     pluginport.PluginVault
 	data      map[string]string
 }
 
@@ -42,7 +43,7 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 	c.checked = append(c.checked, pluginID+" "+permission)
 	c.mu.Unlock()
 	if !c.allowed[pluginID] {
-		return port.ErrPermissionDenied
+		return pluginport.ErrPermissionDenied
 	}
 	return nil
 }
@@ -52,32 +53,32 @@ func (c *callers) CheckCompletionConsent(pluginID string) error {
 	defer c.mu.Unlock()
 	c.checked = append(c.checked, pluginID+" consent")
 	if !c.consented[pluginID] {
-		return port.ErrNoConsent
+		return completionport.ErrNoConsent
 	}
 	return nil
 }
 
-func (c *callers) GetCompleter() port.Completer { return c.completer }
+func (c *callers) GetCompleter() completionport.Completer { return c.completer }
 
-func (c *callers) GetPluginVault() port.PluginVault { return c.vault }
+func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 
-func (c *callers) GetPluginData(pluginID string) string    { return c.data[pluginID] }
-func (c *callers) GetDependencies() port.DependencyCatalog { return nil }
+func (c *callers) GetPluginData(pluginID string) string          { return c.data[pluginID] }
+func (c *callers) GetDependencies() pluginport.DependencyCatalog { return nil }
 
-type completerFunc func(ctx context.Context, question port.Question) (string, error)
+type completerFunc func(ctx context.Context, question completionport.Question) (string, error)
 
-func (f completerFunc) Complete(ctx context.Context, _ string, question port.Question) (string, error) {
+func (f completerFunc) Complete(ctx context.Context, _ string, question completionport.Question) (string, error) {
 	return f(ctx, question)
 }
 
 // callerCompleter answers with the id of the plugin it was told asks.
 type callerCompleter struct{}
 
-func (callerCompleter) Complete(_ context.Context, pluginID string, _ port.Question) (string, error) {
+func (callerCompleter) Complete(_ context.Context, pluginID string, _ completionport.Question) (string, error) {
 	return pluginID, nil
 }
 
-func newCallers(completer port.Completer) *callers {
+func newCallers(completer completionport.Completer) *callers {
 	return &callers{
 		plugins:   map[string]string{"token-a": "md.numen.a", "token-b": "md.numen.b", "token-c": "md.numen.c"},
 		allowed:   map[string]bool{"md.numen.a": true, "md.numen.c": true},
@@ -116,8 +117,8 @@ func readCode(t *testing.T, err error) connect.Code {
 // A plugin holding the permission is answered with the text, and the completer
 // is told the question as the plugin put it.
 func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
-	var requestVal port.Question
-	fakeCallers := newCallers(completerFunc(func(_ context.Context, question port.Question) (string, error) {
+	var requestVal completionport.Question
+	fakeCallers := newCallers(completerFunc(func(_ context.Context, question completionport.Question) (string, error) {
 		requestVal = question
 		return "fixed", nil
 	}))
@@ -142,7 +143,7 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 // A plugin without the ai:complete permission fails, and nothing is asked of a model.
 func TestAPluginWithoutThePermissionIsRefused(t *testing.T) {
 	request := false
-	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(context.Context, completionport.Question) (string, error) {
 		request = true
 		return "", nil
 	}))
@@ -165,7 +166,7 @@ func TestACallerWithoutAKnownTokenIsRefused(t *testing.T) {
 		{"unknown", "token-x"},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+			fakeCallers := newCallers(completerFunc(func(context.Context, completionport.Question) (string, error) {
 				t.Error("a model was asked for a caller nobody knows")
 				return "", nil
 			}))
@@ -198,12 +199,12 @@ func TestARefusedCompletionAnswersWithItsCode(t *testing.T) {
 		want   v1.CompletionErrorCode
 		detail string
 	}{
-		{"no route", fmt.Errorf("%w: the program %q is not installed", port.ErrNoRoute, "p"), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, `the program "p" is not installed`},
-		{"unreachable", fmt.Errorf("agent: %w", port.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "agent: unavailable"},
-		{"stopped", fmt.Errorf("%w: the agent stopped: bad model", port.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "the agent stopped: bad model"},
+		{"no route", fmt.Errorf("%w: the program %q is not installed", completionport.ErrNoRoute, "p"), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, `the program "p" is not installed`},
+		{"unreachable", fmt.Errorf("agent: %w", completionport.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "agent: unavailable"},
+		{"stopped", fmt.Errorf("%w: the agent stopped: bad model", completionport.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "the agent stopped: bad model"},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "", one.err }))
+			fakeCallers := newCallers(completerFunc(func(context.Context, completionport.Question) (string, error) { return "", one.err }))
 			res, err := newHostClient(t, fakeCallers, "token-a").Complete(t.Context(), newHostQuestion())
 			if err != nil {
 				t.Fatal(err)
@@ -230,7 +231,7 @@ func TestAHostWithoutACompleterAnswersNoRoute(t *testing.T) {
 }
 
 func TestAFailureOfTheCompleterIsAStatus(t *testing.T) {
-	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(context.Context, completionport.Question) (string, error) {
 		return "", errors.New("the model broke")
 	}))
 	_, err := newHostClient(t, fakeCallers, "token-a").Complete(t.Context(), newHostQuestion())
@@ -243,7 +244,7 @@ func TestAFailureOfTheCompleterIsAStatus(t *testing.T) {
 func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 	started := make(chan struct{})
 	ended := make(chan error, 1)
-	fakeCallers := newCallers(completerFunc(func(ctx context.Context, _ port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(ctx context.Context, _ completionport.Question) (string, error) {
 		close(started)
 		<-ctx.Done()
 		ended <- ctx.Err()
@@ -275,7 +276,7 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 
 // The endpoint listens on the loopback interface and answers for a token.
 func TestTheHostEndpointListensOnLoopbackAndServes(t *testing.T) {
-	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "ok", nil }))
+	fakeCallers := newCallers(completerFunc(func(context.Context, completionport.Question) (string, error) { return "ok", nil }))
 	endpoint, err := OpenHostEndpoint(t.Context(), hostEndpointAddress, fakeCallers)
 	if err != nil {
 		t.Fatal(err)
@@ -338,7 +339,7 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 			t.Errorf("token %q names %q", token, got)
 		}
 	}
-	if err := host.CheckPluginPermission("md.numen.b", PermissionAIComplete); !errors.Is(err, port.ErrPermissionDenied) {
+	if err := host.CheckPluginPermission("md.numen.b", PermissionAIComplete); !errors.Is(err, pluginport.ErrPermissionDenied) {
 		t.Errorf("a plugin without the permission was allowed: %v", err)
 	}
 	if err := host.CheckPluginPermission("md.numen.a", PermissionAIComplete); err != nil {
@@ -354,7 +355,7 @@ func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 		t.Fatalf("without a completer: port %d, %v", got, err)
 	}
 
-	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))
+	host.SetCompleter(completerFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
 	first, err := host.openHostEndpoint(t.Context())
 	if err != nil || first <= 0 {
 		t.Fatalf("with a completer: port %d, %v", first, err)
@@ -390,7 +391,7 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
-	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))
+	host.SetCompleter(completerFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
 
 	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
@@ -407,7 +408,7 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
 	host.hostAddress = "127.0.0.1:-1"
-	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))
+	host.SetCompleter(completerFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
@@ -453,7 +454,7 @@ func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
 // nothing is asked of a model.
 func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
 	request := false
-	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(context.Context, completionport.Question) (string, error) {
 		request = true
 		return "", nil
 	}))
@@ -495,8 +496,8 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 
 // A question nothing can answer is an invalid argument, not an error.
 func TestAQuestionNothingCanAnswerIsAnInvalidArgument(t *testing.T) {
-	target := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
-		return "", fmt.Errorf("%w: no message", port.ErrInvalidQuestion)
+	target := newCallers(completerFunc(func(context.Context, completionport.Question) (string, error) {
+		return "", fmt.Errorf("%w: no message", completionport.ErrInvalidQuestion)
 	}))
 	_, err := newHostClient(t, target, "token-a").Complete(t.Context(), newHostQuestion())
 	if got := readCode(t, err); got != connect.CodeInvalidArgument {

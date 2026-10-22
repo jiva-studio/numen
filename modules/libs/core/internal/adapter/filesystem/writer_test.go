@@ -13,12 +13,13 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // openWriter opens an empty vault for writing.
-func openWriter(t *testing.T) (port.VaultWriter, string) {
+func openWriter(t *testing.T) (vaultport.VaultWriter, string) {
 	t.Helper()
 	root := t.TempDir()
 	w, err := filesystem.VaultWriters{}.Open(domain.Vault{Path: root})
@@ -174,7 +175,7 @@ func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
 	placeFile(t, root, "scan.png")
 	placeFile(t, root, "assets/scan.png")
 
-	if err := w.Move(ctx, "scan.png", "assets/scan.png"); !errors.Is(err, port.ErrOccupied) {
+	if err := w.Move(ctx, "scan.png", "assets/scan.png"); !errors.Is(err, vaultport.ErrOccupied) {
 		t.Errorf("want ErrOccupied, got %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "scan.png")); err != nil {
@@ -219,7 +220,7 @@ func TestAFolderIsMade(t *testing.T) {
 	}
 
 	placeFile(t, root, "science/Entropy.md")
-	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, port.ErrOccupied) {
+	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, vaultport.ErrOccupied) {
 		t.Errorf("a folder over a file: want ErrOccupied, got %v", err)
 	}
 	if err := w.MakeFolder(ctx, "../outside"); !errors.Is(err, filesystem.ErrOutside) {
@@ -282,7 +283,7 @@ func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
 	}
 
 	switch _, err := reader.GetFingerprint(t.Context(), "export.iso"); {
-	case !errors.Is(err, port.ErrNotANote):
+	case !errors.Is(err, vaultport.ErrNotANote):
 		t.Errorf("want ErrNotANote, got %v", err)
 	case errors.Is(err, fs.ErrNotExist):
 		t.Errorf("a file that is there was called missing: %v", err)
@@ -292,7 +293,7 @@ func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
 	switch _, err := reader.GetFingerprint(t.Context(), "Entropy.md"); {
 	case !errors.Is(err, fs.ErrNotExist):
 		t.Errorf("want fs.ErrNotExist, got %v", err)
-	case errors.Is(err, port.ErrNotANote):
+	case errors.Is(err, vaultport.ErrNotANote):
 		t.Errorf("a path with nothing at it was called a file: %v", err)
 	}
 }
@@ -340,8 +341,8 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 		sentinel error
 	}{
 		{"the service folder", ".numen/vault.yml", nil},
-		{"another tool's folder", ".obsidian/workspace.json", port.ErrNotANote},
-		{"a file that is not a note", "attachments/paper.pdf", port.ErrNotANote},
+		{"another tool's folder", ".obsidian/workspace.json", vaultport.ErrNotANote},
+		{"a file that is not a note", "attachments/paper.pdf", vaultport.ErrNotANote},
 	} {
 		t.Run(item.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -389,7 +390,7 @@ func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 	}
 
 	for _, to := range []string{"physics/inner", "physics/inner/deeper", "physics/inner/physics"} {
-		if err := w.Move(ctx, "physics", to); !errors.Is(err, port.ErrOccupied) {
+		if err := w.Move(ctx, "physics", to); !errors.Is(err, vaultport.ErrOccupied) {
 			t.Errorf("moving physics to %s gave %v, want ErrOccupied", to, err)
 		}
 		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(to))); !errors.Is(err, fs.ErrNotExist) {
@@ -418,7 +419,7 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 		t.Errorf("the file arrived as %q", target)
 	}
 
-	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, port.ErrOccupied) {
+	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, vaultport.ErrOccupied) {
 		t.Errorf("a file over a file: want ErrOccupied, got %v", err)
 	}
 	if err := w.Import(ctx, "../outside.png", strings.NewReader("PNG")); !errors.Is(err, filesystem.ErrOutside) {
@@ -650,7 +651,7 @@ func TestANameAnotherFileExistsAtIsRefused(t *testing.T) {
 	if err := w.Create(ctx, "Other.md", []byte("# Other\n")); err != nil {
 		t.Fatal(err)
 	}
-	if err := w.Move(ctx, "Note.md", "Other.md"); !errors.Is(err, port.ErrOccupied) {
+	if err := w.Move(ctx, "Note.md", "Other.md"); !errors.Is(err, vaultport.ErrOccupied) {
 		t.Errorf("want ErrOccupied, got %v", err)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const pingTimeout = 3 * time.Second
@@ -32,11 +32,11 @@ func checkPluginProtocol(ctx context.Context, m Manifest, endpoint Endpoint) err
 	reported := int(resp.Msg.GetProtocol())
 	if declared := m.GetProtocol(); reported != declared {
 		return fmt.Errorf("%w: plugin %s speaks protocol %d, its manifest declares %d",
-			port.ErrUnsupportedProtocol, m.ID, reported, declared)
+			pluginport.ErrUnsupportedProtocol, m.ID, reported, declared)
 	}
-	if reported != port.PluginProtocolVersion {
+	if reported != pluginport.PluginProtocolVersion {
 		return fmt.Errorf("%w: plugin %s speaks protocol %d, this host speaks %d",
-			port.ErrUnsupportedProtocol, m.ID, reported, port.PluginProtocolVersion)
+			pluginport.ErrUnsupportedProtocol, m.ID, reported, pluginport.PluginProtocolVersion)
 	}
 	return nil
 }

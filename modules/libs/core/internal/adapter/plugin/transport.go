@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 var (
@@ -42,7 +42,7 @@ var defaultPluginClient = &http.Client{
 }
 
 // PluginTransport is an in-process or custom transport for a plugin endpoint.
-type PluginTransport = port.PluginTransport
+type PluginTransport = pluginport.PluginTransport
 
 // EndpointClient returns an HTTP client routed to this endpoint.
 func EndpointClient(e Endpoint) *http.Client {
@@ -56,7 +56,7 @@ func EndpointClient(e Endpoint) *http.Client {
 }
 
 // Endpoint holds connection parameters and credentials for an active plugin.
-type Endpoint = port.Endpoint
+type Endpoint = pluginport.Endpoint
 
 // GenerateAuthToken produces a cryptographically secure hex-encoded 32-byte secret token.
 func GenerateAuthToken() (string, error) {

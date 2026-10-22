@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrNoName is a call that names no vault.
@@ -20,12 +21,12 @@ var ErrUnknown = errors.New("this installation holds no such vault")
 // Find resolves what the user typed — a name, a path or an identity — into
 // a vault. It is shared by every use case that works on one.
 type Find struct {
-	registry port.VaultRegistry
+	registry vaultport.VaultRegistry
 }
 
 // NewFind is what a name, a path or an identity is resolved against: the list
 // this installation keeps.
-func NewFind(registry port.VaultRegistry) Find {
+func NewFind(registry vaultport.VaultRegistry) Find {
 	return Find{registry: registry}
 }
 

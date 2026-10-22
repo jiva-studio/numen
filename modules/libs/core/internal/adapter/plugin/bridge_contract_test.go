@@ -11,8 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // bridgeHost is what every bridge is opened on.
@@ -73,7 +76,7 @@ var bridgeContracts = []bridgeContract{
 	{"transcriber", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
 		b, err := OpenTranscriberBridge(ctx, h)
 		return createContract(b, err, func(b *TranscriberBridge, ctx context.Context) (bool, error) {
-			return isZeroResult(b.Transcribe(ctx, port.Audio{}))
+			return isZeroResult(b.Transcribe(ctx, transcriptionport.Audio{}))
 		})
 	}},
 	{"downloader", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
@@ -159,11 +162,11 @@ func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context
 }
 
 // What the rejection of a bridge is judged by.
-func isUnavailable(err error) bool { return errors.Is(err, port.ErrUnavailable) }
+func isUnavailable(err error) bool { return errors.Is(err, completionport.ErrUnavailable) }
 
 func isNotInstalled(err error) bool {
-	var unavailable *port.UnavailableError
-	return errors.As(err, &unavailable) && unavailable.Reason == port.PluginNotInstalled && isUnavailable(err)
+	var unavailable *pluginport.UnavailableError
+	return errors.As(err, &unavailable) && unavailable.Reason == pluginport.PluginNotInstalled && isUnavailable(err)
 }
 
 func TestEveryBridgeAnswersAPluginThatIsDownWithAnErrorAndNoValue(t *testing.T) {
@@ -215,27 +218,27 @@ func TestTheErrorCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
 		want string
 	}{
 		{"an error with no value", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
-			return nil, nil, &port.UnavailableError{Reason: port.PluginNotInstalled}
+			return nil, nil, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 		}, ""},
 		{"a call that fails as it should", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) {
-				return true, &port.UnavailableError{Reason: port.PluginNotInstalled}
+				return true, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 			}, nil
 		}, ""},
 		{"a bridge returned with the error", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
-			return brokenBridge{}, nil, &port.UnavailableError{Reason: port.PluginNotInstalled}
+			return brokenBridge{}, nil, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 		}, "a bridge was returned"},
 		{"a call that succeeds", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) { return false, nil }, nil
 		}, "returned no error"},
 		{"a value with the error", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) {
-				return false, &port.UnavailableError{Reason: port.PluginNotInstalled}
+				return false, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 			}, nil
 		}, "a value was returned"},
 		{"a bridge that fails to close", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return failingBridge{}, func(context.Context) (bool, error) {
-				return true, &port.UnavailableError{Reason: port.PluginNotInstalled}
+				return true, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 			}, nil
 		}, "closing the bridge failed"},
 		{"an error that is not unavailable", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {

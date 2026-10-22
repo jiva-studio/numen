@@ -7,8 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // dimensions is the width of the model the tests embed with. One byte per
@@ -123,7 +124,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	}
 	for _, group := range index.groups {
 		for _, v := range group {
-			if v.Kind != port.QuantisedInt8 {
+			if v.Kind != embeddingport.QuantisedInt8 {
 				t.Errorf("chunk %s was stored as %q", v.ChunkID, v.Kind)
 			}
 			if len(v.Value) != dimensions {

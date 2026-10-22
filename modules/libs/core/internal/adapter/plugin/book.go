@@ -10,15 +10,17 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // BookPluginHost provides plugin resolution and activation for the book bridge.
 type BookPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
-	port.PluginAuthorizer
+	pluginport.PluginResolver
+	pluginport.PluginActivator
+	pluginport.PluginAuthorizer
 }
 
 // BookBridge implements port.Book and reads the text of a book over Connect-RPC, against an out-of-process book reader plugin.
@@ -59,7 +61,7 @@ func (b *BookBridge) GetBook(ctx context.Context, path string) (domain.BookShape
 
 	resp, err := client.GetBook(ctx, connect.NewRequest(&v1.GetBookRequest{Path: path}))
 	if err != nil {
-		return domain.BookShape{}, getBookError(err, port.ErrNoBook)
+		return domain.BookShape{}, getBookError(err, sourceport.ErrNoBook)
 	}
 	return newBookShape(resp.Msg), nil
 }
@@ -127,7 +129,7 @@ func (b *BookBridge) ReadBookMarkup(
 	}
 	resp, err := client.ReadBookMarkup(ctx, connect.NewRequest(req))
 	if err != nil {
-		return "", getBookError(err, port.ErrNoBookEntry)
+		return "", getBookError(err, sourceport.ErrNoBookEntry)
 	}
 	return resp.Msg.GetMarkup(), nil
 }
@@ -151,7 +153,7 @@ func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText,
 
 	resp, err := client.ExtractBookText(ctx, connect.NewRequest(&v1.ExtractBookTextRequest{Data: raw}))
 	if err != nil {
-		return domain.BookText{}, getBookError(err, port.ErrNoBookEntry)
+		return domain.BookText{}, getBookError(err, sourceport.ErrNoBookEntry)
 	}
 	out := domain.BookText{Text: resp.Msg.GetText()}
 	for _, part := range resp.Msg.GetParts() {
@@ -168,13 +170,13 @@ func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText,
 func getBookError(err, missing error) error {
 	switch connect.CodeOf(err) {
 	case connect.CodeInvalidArgument:
-		return fmt.Errorf("%w: %v", port.ErrNotADocument, err)
+		return fmt.Errorf("%w: %v", sourceport.ErrNotADocument, err)
 	case connect.CodeFailedPrecondition:
-		return fmt.Errorf("%w: %v", port.ErrEncrypted, err)
+		return fmt.Errorf("%w: %v", sourceport.ErrEncrypted, err)
 	case connect.CodeNotFound:
 		return fmt.Errorf("%w: %v", missing, err)
 	case connect.CodeAborted:
-		return fmt.Errorf("%w: %v", port.ErrBookChanged, err)
+		return fmt.Errorf("%w: %v", sourceport.ErrBookChanged, err)
 	default:
 		return fmt.Errorf("rpc book: %w", err)
 	}
@@ -198,7 +200,7 @@ func (b *BookBridge) ReadEntry(ctx context.Context, baseline domain.Fingerprint,
 		Baseline: newWireFingerprint(baseline),
 	}))
 	if err != nil {
-		return nil, getBookError(err, port.ErrNoBookEntry)
+		return nil, getBookError(err, sourceport.ErrNoBookEntry)
 	}
 	return resp.Msg.GetBody(), nil
 }

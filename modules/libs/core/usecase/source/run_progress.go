@@ -6,8 +6,9 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 type RunState int
@@ -35,7 +36,7 @@ type RunProgress struct {
 }
 
 // readRunProgress is how far the run keeping its files under a name has got.
-func readRunProgress(ctx context.Context, store port.DerivedStore, producer, hash string) (RunProgress, error) {
+func readRunProgress(ctx context.Context, store vaultport.DerivedStore, producer, hash string) (RunProgress, error) {
 	var progress RunProgress
 	whole, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, producer, hash))
 	switch {

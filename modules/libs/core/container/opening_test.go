@@ -13,8 +13,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // note is one vault of one note.
@@ -196,7 +197,7 @@ func makeStagedReaders() *staged {
 }
 
 type staged struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	read  chan string
 	first chan struct{}
 	walks atomic.Int64
@@ -205,7 +206,7 @@ type staged struct {
 // release lets the first walk go on.
 func (s *staged) release() { close(s.first) }
 
-func (s *staged) Open(v domain.Vault) (port.VaultReader, error) {
+func (s *staged) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := s.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -214,7 +215,7 @@ func (s *staged) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type stagedRead struct {
-	port.VaultReader
+	vaultport.VaultReader
 	targetPath *staged
 	isHolding  bool
 }
@@ -247,7 +248,7 @@ func makeGatedReaders() *gate {
 }
 
 type gate struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	begun chan string
 
 	mu    sync.Mutex
@@ -287,7 +288,7 @@ func (g *gate) getWaiting() chan struct{} {
 	return g.until
 }
 
-func (g *gate) Open(v domain.Vault) (port.VaultReader, error) {
+func (g *gate) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := g.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -296,7 +297,7 @@ func (g *gate) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type gating struct {
-	port.VaultReader
+	vaultport.VaultReader
 	targetPath *gate
 }
 

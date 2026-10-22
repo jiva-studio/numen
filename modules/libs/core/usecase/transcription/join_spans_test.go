@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
 )
 
 // newWholeRun is a run over a transcript asked about in one window.
@@ -113,7 +114,7 @@ func (s *sequenced) ProofreadSpeech(
 func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 	for name, one := range map[string]struct {
 		lines    int
-		provider port.Proofreader
+		provider recognitionport.Proofreader
 	}{
 		"in one call": {4, &corrector{says: correctionsMap(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
 		"in two calls": {2, &sequenced{replies: []domain.SpeechProofreading{
@@ -172,7 +173,7 @@ func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
 // runJoinUntilStopped is a run over four spans, two lines to a call, that puts
 // the first two together and is stopped in its second call. It returns a run
 // taking the transcript up again with the proofreader given.
-func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *fakeStorage, string) {
+func runJoinUntilStopped(t *testing.T, again recognitionport.Proofreader) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
 	u, v, shelved, delta, hash := newProofreadTranscript(t, correctionsMap(joins(0, 1, putTogether)), words...)

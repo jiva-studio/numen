@@ -1,8 +1,9 @@
 package vault
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // FolderCheck answers whether a vault's folder is no longer where the list
@@ -13,12 +14,12 @@ import (
 // is one question with one answer, and every screen that shows the list asks it
 // here.
 type FolderCheck struct {
-	readers port.VaultReaders
+	readers vaultport.VaultReaders
 }
 
 // NewFolderCheck is what the question is asked through: the vault the folder
 // is opened as.
-func NewFolderCheck(readers port.VaultReaders) FolderCheck {
+func NewFolderCheck(readers vaultport.VaultReaders) FolderCheck {
 	return FolderCheck{readers: readers}
 }
 

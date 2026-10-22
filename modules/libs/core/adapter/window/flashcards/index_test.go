@@ -11,9 +11,10 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // unread is a vault the index does not carry.
@@ -30,7 +31,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	})
 
 	state, err := api.EnsureIndexed(t.Context(), unread)
-	if err != nil || state.Status != port.PluginIndexing || state.Reason != "" {
+	if err != nil || state.Status != pluginport.PluginIndexing || state.Reason != "" {
 		t.Fatalf("the vault came back %+v (%v)", state, err)
 	}
 	testsupport.WaitFor(t, func() bool {
@@ -78,7 +79,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 		tried.Add(1)
 		return errors.New("the folder is not there")
 	})
-	ask := func() port.PluginIndexState {
+	ask := func() pluginport.PluginIndexState {
 		state, err := api.EnsureIndexed(t.Context(), unread)
 		if err != nil {
 			t.Fatal(err)
@@ -87,7 +88,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 	}
 
 	testsupport.WaitFor(t, func() bool { return ask().Reason == "the folder is not there" })
-	if state := ask(); state.Status != port.PluginIndexFailed {
+	if state := ask(); state.Status != pluginport.PluginIndexFailed {
 		t.Errorf("a vault that could not be read stands as %+v", state)
 	}
 	if got := tried.Load(); got != 1 {
@@ -106,7 +107,7 @@ func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
 
 	state, err := api.EnsureIndexed(t.Context(), unread)
 
-	if err != nil || state.Status != port.PluginIndexFailed || state.Reason == "" {
+	if err != nil || state.Status != pluginport.PluginIndexFailed || state.Reason == "" {
 		t.Errorf("a vault nothing reads stands as %+v (%v)", state, err)
 	}
 }

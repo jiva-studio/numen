@@ -5,10 +5,12 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Create makes a note.
@@ -17,20 +19,20 @@ import (
 // is shown by its `title`, else by its filename. A title the filename cannot
 // carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
-	writers port.VaultWriters
+	writers vaultport.VaultWriters
 	names   NameQueries
 	// index brings the named notes up to date, so that a caller which creates
 	// a note and searches for it in the next breath finds it.
 	index Levels
 	// now is when this is happening. An identifier carries it.
-	now port.Clock
+	now machineport.Clock
 }
 
 // NewCreate is what a note is made through: the vault it is written into, what
 // is asked which names are taken, what brings the new file level in the index,
 // and what time it is.
 func NewCreate(
-	writers port.VaultWriters, names NameQueries, index Levels, now port.Clock,
+	writers vaultport.VaultWriters, names NameQueries, index Levels, now machineport.Clock,
 ) Create {
 	return Create{writers: writers, names: names, index: index, now: now}
 }

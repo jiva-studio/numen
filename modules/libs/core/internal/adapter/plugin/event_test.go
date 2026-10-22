@@ -21,7 +21,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // eventRecorder serves numen.v1.PluginEventService and keeps every event it is handed. It refuses each
@@ -81,7 +82,7 @@ func newEventHost(t *testing.T, subscriptions map[string][]string, ports map[str
 	t.Helper()
 	host := NewHost("desktop.editor")
 	for id, events := range subscriptions {
-		host.plugins[id] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: id, ActivationEvents: events}}
+		host.plugins[id] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: events}}
 	}
 	var mu sync.Mutex
 	var procs []*os.Process

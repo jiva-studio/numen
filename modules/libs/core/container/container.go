@@ -20,8 +20,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // Config is what the user may point somewhere else. Empty fields mean the
@@ -76,13 +82,13 @@ type Config struct {
 	TranscriptProofreading Proofread
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
-	PluginHost port.PluginManager
+	PluginHost pluginport.PluginManager
 
 	// KeyStore provides credential storage. Defaults to the system keychain if nil.
-	KeyStore port.KeyStore
+	KeyStore pluginport.KeyStore
 
 	// Texts extracts text from documents and books. Defaults to PluginHost plugins if nil.
-	Texts port.TextExtractor
+	Texts sourceport.TextExtractor
 
 	// Agent configures the active assistant model.
 	Agent settings.Agent
@@ -94,10 +100,10 @@ type Config struct {
 	SafeMode bool
 
 	// ErrorHandler receives asynchronous errors.
-	ErrorHandler port.ErrorHandler
+	ErrorHandler windowport.ErrorHandler
 
 	// Now provides current time for timestamping and scheduling. Defaults to time.Now if nil.
-	Now port.Clock
+	Now machineport.Clock
 }
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
@@ -114,7 +120,7 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 
 // Clock is the clock every scenario assembled here is handed.
 
-func (c Config) Clock() port.Clock {
+func (c Config) Clock() machineport.Clock {
 	if c.Now != nil {
 		return c.Now
 	}
@@ -195,13 +201,13 @@ func (Config) NestedHeadingLimitBounds() settings.Bounds {
 }
 
 // GetSettingsWriter patches specific settings paths in the configuration file.
-func (c Config) GetSettingsWriter() func(entries []port.Setting) error {
-	return func(entries []port.Setting) error {
+func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
+	return func(entries []settingsport.Setting) error {
 		target := make([]settings.Setting, 0, len(entries))
 		for _, one := range entries {
 			var value json.RawMessage
 			if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
-				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
+				return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
 			}
 			target = append(target, settings.Setting{At: one.Path, Written: value})
 		}
@@ -220,7 +226,7 @@ func (c Config) GetSettingsWriter() func(entries []port.Setting) error {
 
 const pluginSettingsPrefix = "plugins"
 
-func notifyPluginSettings(host port.PluginConfigurator, entries []port.Setting) {
+func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting) {
 	if host == nil {
 		return
 	}
@@ -255,7 +261,7 @@ func (c Config) getPathBeside(name string) (string, bool) {
 }
 
 // Registry opens the vault registry for this installation.
-func (c Config) Registry() (port.VaultRegistry, error) {
+func (c Config) Registry() (vaultport.VaultRegistry, error) {
 	if c.RegistryPath != "" {
 		return appstate.OpenAt(c.RegistryPath), nil
 	}
@@ -263,32 +269,32 @@ func (c Config) Registry() (port.VaultRegistry, error) {
 }
 
 // VaultReaders opens vaults for reading.
-func (c Config) VaultReaders() port.VaultReaders {
+func (c Config) VaultReaders() vaultport.VaultReaders {
 	return filesystem.VaultReaders{Options: c.vaultOptions()}
 }
 
 // VaultWriters opens vaults for write operations.
-func (c Config) VaultWriters() port.VaultWriters {
+func (c Config) VaultWriters() vaultport.VaultWriters {
 	return filesystem.VaultWriters{Options: c.vaultOptions()}
 }
 
 // GetImportedFiles opens files imported from outside the vault.
-func (c Config) GetImportedFiles() port.ImportedFiles {
+func (c Config) GetImportedFiles() sourceport.ImportedFiles {
 	return filesystem.ImportedFiles{}
 }
 
 // VaultWatcher monitors vaults for external filesystem changes.
-func (c Config) VaultWatcher() port.VaultWatcher {
+func (c Config) VaultWatcher() vaultport.VaultWatcher {
 	return filesystem.Watcher{Options: c.vaultOptions()}
 }
 
 // VaultIdentity provides vault identification.
-func (c Config) VaultIdentity() port.VaultIdentity {
+func (c Config) VaultIdentity() vaultport.VaultIdentity {
 	return filesystem.VaultIdentity{Options: c.vaultOptions()}
 }
 
 // Trash provides trash and recycling operations.
-func (c Config) Trash() port.Trash { return trash.New() }
+func (c Config) Trash() machineport.Trash { return trash.New() }
 
 // vaultOptions returns filesystem configuration for vaults.
 func (c Config) vaultOptions() filesystem.Options {
@@ -299,7 +305,7 @@ func (c Config) vaultOptions() filesystem.Options {
 }
 
 // GetDerivedStores returns storage for generated artifacts (transcripts, OCR, copies).
-func (c Config) GetDerivedStores() port.DerivedStores {
+func (c Config) GetDerivedStores() vaultport.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,

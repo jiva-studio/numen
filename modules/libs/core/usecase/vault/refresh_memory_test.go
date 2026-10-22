@@ -8,9 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 var (
@@ -97,7 +99,7 @@ func (w *memWorld) savedPaths() []string {
 
 type memReaders struct{ w *memWorld }
 
-func (r memReaders) Open(domain.Vault) (port.VaultReader, error) {
+func (r memReaders) Open(domain.Vault) (vaultport.VaultReader, error) {
 	r.w.opens++
 	if r.w.openErr != nil {
 		return nil, r.w.openErr
@@ -106,7 +108,7 @@ func (r memReaders) Open(domain.Vault) (port.VaultReader, error) {
 }
 
 type memReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	w *memWorld
 }
 
@@ -169,7 +171,7 @@ func (n memNotes) Remove(_ context.Context, _ domain.VaultID, paths []string) er
 }
 
 type memQueries struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	w *memWorld
 }
 
@@ -181,7 +183,7 @@ func (q memQueries) GetSourcesUnder(_ context.Context, _ domain.VaultID, path st
 }
 
 type memSources struct {
-	port.SourceRepository
+	sourceport.SourceRepository
 	w *memWorld
 }
 
@@ -272,7 +274,7 @@ func TestEveryNamedPathIsSortedIntoItsOutcome(t *testing.T) {
 	w.addNote("Settled.md", "settled", old)
 	w.index("Settled.md")
 	w.files["Gone.md"] = &memFile{statErr: fs.ErrNotExist}
-	w.files["Foreign.png"] = &memFile{statErr: port.ErrNotANote}
+	w.files["Foreign.png"] = &memFile{statErr: vaultport.ErrNotANote}
 	w.files["Locked.md"] = &memFile{statErr: fs.ErrPermission}
 	w.addNote("Vanish.md", "vanish", old).readErr = fs.ErrNotExist
 	w.addNote("Denied.md", "denied", old).readErr = fs.ErrPermission

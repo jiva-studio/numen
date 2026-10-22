@@ -11,10 +11,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Refresh brings named notes up to date, for when something says which files
@@ -24,17 +28,17 @@ import (
 // The names it is handed come from a watcher, which reports every kind of
 // source. A path that is not a note is said back and left alone.
 type Refresh struct {
-	readers port.VaultReaders
+	readers vaultport.VaultReaders
 	// vaults is where the vault gets the row every note of it points at.
-	vaults port.VaultRepository
-	notes  port.NoteRepository
+	vaults vaultport.VaultRepository
+	notes  noteport.NoteRepository
 	// queries says which kind of source the index holds at a path, and sources
 	// takes those rows out.
-	queries port.SourceQueries
-	sources port.SourceRepository
+	queries sourceport.SourceQueries
+	sources sourceport.SourceRepository
 	// now says which notes were modified recently enough to be edited again under
 	// the same modification time.
-	now port.Clock
+	now machineport.Clock
 
 	// Cut is how the notes named are cut into the chunks the index keeps.
 	Cut note.CutNotes
@@ -138,12 +142,12 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 // the two the rows of a book and a recording are swept through, and the clock
 // that says which notes were modified recently.
 func NewRefresh(
-	readers port.VaultReaders,
-	vaults port.VaultRepository,
-	notes port.NoteRepository,
-	queries port.SourceQueries,
-	sources port.SourceRepository,
-	now port.Clock,
+	readers vaultport.VaultReaders,
+	vaults vaultport.VaultRepository,
+	notes noteport.NoteRepository,
+	queries sourceport.SourceQueries,
+	sources sourceport.SourceRepository,
+	now machineport.Clock,
 ) Refresh {
 	return Refresh{
 		readers: readers, vaults: vaults, notes: notes, queries: queries, sources: sources,
@@ -234,7 +238,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 func (u Refresh) refreshPath(
 	ctx context.Context,
 	v domain.Vault,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	path string,
 	group *grouping,
 	recorded map[string]*ledgerEntry,
@@ -268,7 +272,7 @@ func (u Refresh) refreshPath(
 // file gone since it was looked at is an editor saving through a temporary
 // file, and the save that follows arrives as its own event; any other failure is
 // filed as unreadable.
-func readListedFile(ctx context.Context, reader port.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
+func readListedFile(ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
@@ -284,11 +288,11 @@ func readListedFile(ctx context.Context, reader port.VaultReader, path string, r
 // path that is not one is filed in res under the list that says why, and nothing
 // is lost by it: one file nobody can read costs that file and not the others.
 func (u Refresh) statNote(
-	ctx context.Context, reader port.VaultReader, path string, res *RefreshResult,
+	ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult,
 ) (domain.Fingerprint, bool) {
 	ref, err := reader.GetFingerprint(ctx, path)
 	switch {
-	case errors.Is(err, port.ErrNotANote):
+	case errors.Is(err, vaultport.ErrNotANote):
 		// An attachment, an export or a note renamed out of the vault's sight is
 		// not a note that vanished, and the index holds nothing at its path.
 		res.LeftAlone = append(res.LeftAlone, path)
@@ -345,7 +349,7 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 }
 
 // isCurrent reports whether the index already holds the note as the file is.
-func (u Refresh) isCurrent(ctx context.Context, reader port.VaultReader, v domain.Vault, ref domain.Fingerprint) bool {
+func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v domain.Vault, ref domain.Fingerprint) bool {
 	target, err := u.queries.GetSourcesUnder(ctx, v.ID, ref.Path)
 	if err != nil {
 		return false

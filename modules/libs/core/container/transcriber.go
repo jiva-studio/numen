@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // TranscriberReady says whether a recording could be listened to now without
@@ -16,7 +18,7 @@ func (c Config) TranscriberReady() bool {
 }
 
 // Transcriber is what listens to a recording on this machine, opened now.
-func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, closer func() error, why error) {
+func (c Config) Transcriber(ctx context.Context) (transcriber transcriptionport.Transcriber, closer func() error, why error) {
 	if c.IsMockML {
 		mock := NewMockTranscriber()
 		return mock, mock.Close, nil
@@ -33,14 +35,14 @@ func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, 
 }
 
 // Transcribe is one recording listened to with the transcriber given.
-func (c Config) Transcribe(sources port.SourceRepository, transcriber port.Transcriber) transcription.Transcribe {
+func (c Config) Transcribe(sources sourceport.SourceRepository, transcriber transcriptionport.Transcriber) transcription.Transcribe {
 	return transcription.NewTranscribe(c.VaultReaders(), sources, c.GetDerivedStores(), transcriber)
 }
 
 // OpenTranscriptionWorker is the queue that listens to this installation's recordings.
 func (c Config) OpenTranscriptionWorker(
 	ctx context.Context,
-	sources port.SourceRepository,
+	sources sourceport.SourceRepository,
 	tasks *run.Tasks,
 	models *run.Lock,
 ) *transcription.Worker {
@@ -51,7 +53,7 @@ func (c Config) OpenTranscriptionWorker(
 		Tasks:   tasks,
 		Models:  models,
 		Runtime: transcription.Runtime{
-			Open: func(ctx context.Context, _ func(what string, finished, total int64)) (port.Transcriber, func() error, error) {
+			Open: func(ctx context.Context, _ func(what string, finished, total int64)) (transcriptionport.Transcriber, func() error, error) {
 				return c.Transcriber(ctx)
 			},
 			Ready:   c.TranscriberReady,

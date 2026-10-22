@@ -4,9 +4,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // VaultOpener is how this installation opens a vault: the walk that brings the
@@ -20,11 +23,11 @@ type VaultOpener struct {
 	Told func(VaultChanges)
 	// ErrorHandler, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds.
-	ErrorHandler port.ErrorHandler
+	ErrorHandler windowport.ErrorHandler
 	// ShouldRebuild reads every note again, whatever its fingerprint says.
 	ShouldRebuild bool
 
-	watcher  port.VaultWatcher
+	watcher  vaultport.VaultWatcher
 	scan     vault.Scan
 	buffered *bufferedNoteRepository
 	refresh  vault.Refresh
@@ -57,7 +60,7 @@ func (c Config) VaultOpener(db *Index) *VaultOpener {
 // the vault through, in place of the installation's own. A note brought up to
 // date after the walk is read through the installation's.
 func (c Config) VaultOpenerWith(
-	db *Index, walking port.VaultReaders, watcher port.VaultWatcher,
+	db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *VaultOpener {
 	scan := vault.NewScan(
 		walking,
@@ -80,7 +83,7 @@ func (c Config) VaultOpenerWith(
 
 // makeRefresh brings named notes up to date, cut at this installation's sizes
 // and sharing the installation's ledger.
-func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
+func makeRefresh(c Config, db *Index, notes noteport.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources(), c.Clock())
 	refresh.Cut = c.CutNotes()
 	refresh.Ledger = db.ledger
@@ -192,7 +195,7 @@ func (o *OpenVault) handleError(err error) {
 // bufferedNoteRepository is the index, keeping the paths of the notes written through it while
 // the first walk is still reading the vault.
 type bufferedNoteRepository struct {
-	port.NoteRepository
+	noteport.NoteRepository
 	bufferedWrites
 }
 

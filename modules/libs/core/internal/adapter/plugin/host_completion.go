@@ -1,24 +1,25 @@
 package plugin
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // GetCompletionChoice returns the agent and the model the plugin's setting of
 // type agent holds, as the person stored it. A plugin declaring no such setting,
 // or one never set, holds the empty choice.
-func (h *Host) GetCompletionChoice(pluginID string) port.CompletionChoice {
+func (h *Host) GetCompletionChoice(pluginID string) completionport.CompletionChoice {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	p, ok := h.plugins[pluginID]
 	if !ok {
-		return port.CompletionChoice{}
+		return completionport.CompletionChoice{}
 	}
 	key, ok := p.Manifest.GetAgentSettingKey()
 	if !ok {
-		return port.CompletionChoice{}
+		return completionport.CompletionChoice{}
 	}
-	return port.ReadCompletionChoice(h.settings[pluginID][key])
+	return completionport.ReadCompletionChoice(h.settings[pluginID][key])
 }
 
 // CheckCompletionConsent answers nil for a plugin the person lets ask for model
@@ -27,30 +28,30 @@ func (h *Host) GetCompletionChoice(pluginID string) port.CompletionChoice {
 func (h *Host) CheckCompletionConsent(pluginID string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	allowed, isAnswered := h.settings[pluginID][port.SettingAIConsent].(bool)
+	allowed, isAnswered := h.settings[pluginID][pluginport.SettingAIConsent].(bool)
 	switch {
 	case isAnswered && allowed:
 		return nil
 	case !isAnswered:
 		h.consentAsks[pluginID] = true
 	}
-	return port.ErrNoConsent
+	return completionport.ErrNoConsent
 }
 
 // getCompletionConsentLocked is whether the person lets the plugin ask for model
 // completions, for a caller holding h.mu.
-func (h *Host) getCompletionConsentLocked(manifest port.PluginManifest) port.CompletionConsent {
-	if !manifest.HasPermission(port.PermissionAIComplete) {
-		return port.ConsentNone
+func (h *Host) getCompletionConsentLocked(manifest pluginport.PluginManifest) pluginport.CompletionConsent {
+	if !manifest.HasPermission(pluginport.PermissionAIComplete) {
+		return pluginport.ConsentNone
 	}
-	allowed, isAnswered := h.settings[manifest.ID][port.SettingAIConsent].(bool)
+	allowed, isAnswered := h.settings[manifest.ID][pluginport.SettingAIConsent].(bool)
 	switch {
 	case isAnswered && allowed:
-		return port.ConsentAllowed
+		return pluginport.ConsentAllowed
 	case isAnswered:
-		return port.ConsentRefused
+		return pluginport.ConsentRefused
 	case h.consentAsks[manifest.ID]:
-		return port.ConsentAsked
+		return pluginport.ConsentAsked
 	}
-	return port.ConsentUnanswered
+	return pluginport.ConsentUnanswered
 }

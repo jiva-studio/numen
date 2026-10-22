@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrNameTaken is a name another vault on the list already has.
@@ -16,14 +17,14 @@ var ErrNameTaken = errors.New("another vault is called this")
 // collection and lives in the list this installation keeps; the folder keeps
 // the name the filesystem gives it.
 type Rename struct {
-	registry port.VaultRegistry
-	index    port.VaultRepository
+	registry vaultport.VaultRegistry
+	index    vaultport.VaultRepository
 }
 
 // NewRename is what a vault is called through: the list this installation
 // keeps, which is where the name stands, and the index, which holds the row the
 // vault's other rows point at.
-func NewRename(registry port.VaultRegistry, index port.VaultRepository) Rename {
+func NewRename(registry vaultport.VaultRegistry, index vaultport.VaultRepository) Rename {
 	return Rename{registry: registry, index: index}
 }
 

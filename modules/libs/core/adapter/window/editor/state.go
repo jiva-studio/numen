@@ -18,10 +18,12 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/broadcast"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/indexport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // State is the vault the window is looking at and what every handler of it
@@ -107,7 +109,7 @@ type State struct {
 type IndexState struct {
 	// Progress answers how far cutting and embedding have got. Nil for a vault
 	// nothing is reading for meaning, and the window then says nothing about it.
-	Progress port.IndexProgress
+	Progress indexport.IndexProgress
 	// Model is the identity vectors are being made under, which is what decides
 	// whether a chunk already carries one. Empty for an installation with no
 	// model, and then nothing is going to embed anything. It is named by the
@@ -261,7 +263,7 @@ func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
 
 // GetWindow is this window, for whatever asks for a place to be put in front of
 // the person.
-func (s *State) GetWindow() port.Window { return view{s} }
+func (s *State) GetWindow() windowport.Window { return view{s} }
 
 // view tells the clients and nothing more. What travelling there looks
 // like is theirs, and a place asked for while nobody is drawing is a place

@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -24,6 +23,11 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // Installation is a window put together and running: the questions a client
@@ -45,8 +49,8 @@ type Installation struct {
 	// that has none. Nil for an installation with none, and for Asking also
 	// where the two turned out not to be one model; then a search is answered
 	// by words alone.
-	Embedder port.Embedder
-	Asking   port.Embedder
+	Embedder embeddingport.Embedder
+	Asking   embeddingport.Embedder
 
 	// notes, cards and vaults are this installation's use cases, built once.
 	// Everything else working the same vault is served these, so a dependency
@@ -183,10 +187,10 @@ func (o *Installation) Close() error {
 // The cache this window answers out of, as the ports it hands on. Whatever else
 // works the same vault in the same process asks it here, so the window and the
 // tools an agent calls read one index.
-func (o *Installation) Queries() port.NoteQueries     { return o.made.GetNoteQueries() }
-func (o *Installation) Problems() port.ProblemQueries { return o.made.GetProblemQueries() }
-func (o *Installation) Passages() port.PassageQueries { return o.made.GetPassageQueries() }
-func (o *Installation) SourcesKnown() port.SourceQueries {
+func (o *Installation) Queries() noteport.NoteQueries            { return o.made.GetNoteQueries() }
+func (o *Installation) Problems() recognitionport.ProblemQueries { return o.made.GetProblemQueries() }
+func (o *Installation) Passages() sourceport.PassageQueries      { return o.made.GetPassageQueries() }
+func (o *Installation) SourcesKnown() sourceport.SourceQueries {
 	return o.made.GetSourceQueries()
 }
 
@@ -292,7 +296,7 @@ func (o *Installation) Report(messages []string) {
 // createWindow is the state a window answers from and the handlers that read
 // it, with the pieces that need no vault.
 func createWindow(
-	made Assembly, tasks *run.Tasks, embedder port.Embedder,
+	made Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
 ) (*State, *Services) {
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),

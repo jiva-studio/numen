@@ -3,29 +3,32 @@ package assembly
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // VaultAssembly is what this window asks to locate, read, change, and watch vaults.
 type VaultAssembly interface {
 	// GetRegistry is the list of vaults this installation holds.
-	GetRegistry() port.VaultRegistry
+	GetRegistry() vaultport.VaultRegistry
 
 	// GetVaultReaders open a vault for reading and GetVaultWriters for
 	// changing; GetDerivedStores is the shelf the application keeps its own
 	// files on inside one.
-	GetVaultReaders() port.VaultReaders
-	GetVaultWriters() port.VaultWriters
-	GetDerivedStores() port.DerivedStores
+	GetVaultReaders() vaultport.VaultReaders
+	GetVaultWriters() vaultport.VaultWriters
+	GetDerivedStores() vaultport.DerivedStores
 
-	GetVaultIdentity() port.VaultIdentity
+	GetVaultIdentity() vaultport.VaultIdentity
 
 	// ReadWholeVault is what makes a vault answer: the notes read, the books
 	// read, and the vectors made.
 	ReadWholeVault(
-		ctx context.Context, embedder port.Embedder, v domain.Vault, rebuild bool,
+		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 	) (vaults.ReadWholeVault, error)
 
 	// StartVault opens a vault behind the window: the walk that brings the
@@ -41,7 +44,7 @@ type VaultAssembly interface {
 	StartVault(
 		ctx context.Context, v domain.Vault, rebuild bool,
 		told func(paths, assets []string, reload bool),
-		handleError port.ErrorHandler,
+		handleError windowport.ErrorHandler,
 	) (
 		read func(ctx context.Context, during func()) (notes int, err error),
 		run func(ctx context.Context),

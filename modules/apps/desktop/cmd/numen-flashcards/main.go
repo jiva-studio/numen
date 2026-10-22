@@ -27,8 +27,10 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 func main() {
@@ -143,8 +145,8 @@ func makeWindowAPI(cfg container.Config, notes container.Notes) *window.API {
 // so a plugin names the vault of each call; the host reads a vault into the index when it is asked
 // about one the index does not carry, and tells the plugin when something moved.
 func openPluginVault(
-	cfg container.Config, registry port.VaultRegistry, db *container.Index, api *window.API,
-) (port.PluginVault, error) {
+	cfg container.Config, registry vaultport.VaultRegistry, db *container.Index, api *window.API,
+) (pluginport.PluginVault, error) {
 	return cfg.OpenPluginVault(registry, db,
 		func() (domain.Vault, bool) { return domain.Vault{}, false },
 		container.PluginVaultHooks{

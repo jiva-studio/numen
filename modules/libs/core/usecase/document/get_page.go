@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"image/jpeg"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrNoPage is a page the document does not have.
@@ -21,12 +22,12 @@ const quality = 82
 
 // GetPage draws one page of a document as a JPEG.
 type GetPage struct {
-	readers   port.VaultReaders
+	readers   vaultport.VaultReaders
 	documents Documents
 	pages     Pages
 }
 
-func NewGetPage(readers port.VaultReaders, documents Documents, pages Pages) GetPage {
+func NewGetPage(readers vaultport.VaultReaders, documents Documents, pages Pages) GetPage {
 	return GetPage{readers: readers, documents: documents, pages: pages}
 }
 
@@ -48,7 +49,7 @@ func (u GetPage) Execute(ctx context.Context, v domain.Vault, requested PageKey)
 }
 
 // draw is one page of a document, drawn and encoded.
-func (u GetPage) draw(ctx context.Context, reader port.VaultReader, key PageKey) ([]byte, error) {
+func (u GetPage) draw(ctx context.Context, reader vaultport.VaultReader, key PageKey) ([]byte, error) {
 	var body []byte
 	err := u.documents.UseDocument(ctx, key.Document, openFile(reader, key.Document.Path), func(scan Scan) error {
 		if key.Page >= scan.GetPageCount() {

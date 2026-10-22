@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // ErrOffline is a dependency that is not on this machine while fetching is forbidden.
@@ -54,11 +54,11 @@ func NewFileProvisioner(cfg Config) *FileProvisioner {
 
 // CanProvision reports whether the requirement names a file to fetch, or a
 // program or library the machine may already hold.
-func (p *FileProvisioner) CanProvision(req port.DependencyRequirement) bool {
-	return req.SourceURL != "" || req.Kind == port.DependencyKindBinary || req.Kind == port.DependencyKindRuntime
+func (p *FileProvisioner) CanProvision(req pluginport.DependencyRequirement) bool {
+	return req.SourceURL != "" || req.Kind == pluginport.DependencyKindBinary || req.Kind == pluginport.DependencyKindRuntime
 }
 
-func (p *FileProvisioner) getDir(req port.DependencyRequirement) (string, error) {
+func (p *FileProvisioner) getDir(req pluginport.DependencyRequirement) (string, error) {
 	root := p.cfg.Dir
 	if root == "" {
 		var err error
@@ -70,45 +70,45 @@ func (p *FileProvisioner) getDir(req port.DependencyRequirement) (string, error)
 }
 
 // Status answers whether the machine or the folder holds the dependency.
-func (p *FileProvisioner) Status(_ context.Context, req port.DependencyRequirement) (port.DependencyStatus, error) {
+func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
 	if found := p.cfg.Discovery.find(req); found != "" {
 		return readyStatus(req, filepath.Dir(found), found), nil
 	}
 	dir, err := p.getDir(req)
 	if err != nil {
-		return port.DependencyStatus{}, err
+		return pluginport.DependencyStatus{}, err
 	}
 	if resolved, ok := readCached(req, dir); ok {
-		return port.DependencyStatus{ID: req.ID, State: port.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
+		return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
 	}
-	return port.DependencyStatus{ID: req.ID, State: port.DependencyStateMissing}, nil
+	return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateMissing}, nil
 }
 
 // Provision returns the dependency: the one the machine holds, the one in the
 // folder, or the one it fetches. Processes provisioning the same dependency
 // take turns.
 func (p *FileProvisioner) Provision(
-	ctx context.Context, req port.DependencyRequirement, onProgress func(port.DependencyStatus),
-) (port.ResolvedDependency, error) {
+	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
+) (pluginport.ResolvedDependency, error) {
 	if onProgress == nil {
-		onProgress = func(port.DependencyStatus) {}
+		onProgress = func(pluginport.DependencyStatus) {}
 	}
 	if found := p.cfg.Discovery.find(req); found != "" {
 		return newResolved(req, filepath.Dir(found), found), nil
 	}
 	dir, err := p.getDir(req)
 	if err != nil {
-		return port.ResolvedDependency{}, err
+		return pluginport.ResolvedDependency{}, err
 	}
 	if req.SourceURL == "" {
-		return port.ResolvedDependency{}, fmt.Errorf("%s %s is not on this machine and names no sourceUrl", req.Kind, req.ID)
+		return pluginport.ResolvedDependency{}, fmt.Errorf("%s %s is not on this machine and names no sourceUrl", req.Kind, req.ID)
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return port.ResolvedDependency{}, err
+		return pluginport.ResolvedDependency{}, err
 	}
 	release, err := lockFile(ctx, dir+".lock")
 	if err != nil {
-		return port.ResolvedDependency{}, err
+		return pluginport.ResolvedDependency{}, err
 	}
 	defer func() { _ = release() }()
 
@@ -116,28 +116,28 @@ func (p *FileProvisioner) Provision(
 		return resolved, nil
 	}
 	if p.cfg.Offline {
-		return port.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
+		return pluginport.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
 	}
 	name, err := getFileName(req)
 	if err != nil {
-		return port.ResolvedDependency{}, err
+		return pluginport.ResolvedDependency{}, err
 	}
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.ID
 	err = transfer{
 		client: p.cfg.Client, address: req.SourceURL, dest: primary, sum: req.ChecksumSHA256, backoff: p.cfg.Backoff,
 		onProgress: func(done, total int64) {
-			onProgress(port.DependencyStatus{
-				ID: req.ID, State: port.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
+			onProgress(pluginport.DependencyStatus{
+				ID: req.ID, State: pluginport.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
 				ProgressPercent: getPercent(done, total), Message: title,
 			})
 		},
 	}.fetch(ctx)
 	if err != nil {
-		return port.ResolvedDependency{}, err
+		return pluginport.ResolvedDependency{}, err
 	}
-	if err := writeReady(ctx, dir, name); err != nil {
-		return port.ResolvedDependency{}, err
+	if err := writeReady(ctx, dir, name, req.ChecksumSHA256); err != nil {
+		return pluginport.ResolvedDependency{}, err
 	}
 	return newResolved(req, dir, primary), nil
 }
@@ -150,45 +150,50 @@ func getPercent(done, total int64) float64 {
 }
 
 // getFileName returns what the fetched file is called in the dependency's folder.
-func getFileName(req port.DependencyRequirement) (string, error) {
+func getFileName(req pluginport.DependencyRequirement) (string, error) {
+	name := cleanName(req.ID)
 	if named := req.Metadata["fileName"]; named != "" {
-		return cleanName(named), nil
+		name = cleanName(named)
+	} else {
+		address, err := url.Parse(req.SourceURL)
+		if err != nil {
+			return "", err
+		}
+		if base := path.Base(address.Path); base != "" && base != "." && base != "/" {
+			name = cleanName(base)
+		}
 	}
-	address, err := url.Parse(req.SourceURL)
-	if err != nil {
-		return "", err
+	if isReserved(name) {
+		return "", fmt.Errorf("%s %s: %q is a name the folder keeps for itself", req.Kind, req.ID, name)
 	}
-	base := path.Base(address.Path)
-	if base == "" || base == "." || base == "/" {
-		return cleanName(req.ID), nil
-	}
-	return cleanName(base), nil
+	return name, nil
 }
 
-// readCached returns the dependency a folder with the sentinel holds.
-func readCached(req port.DependencyRequirement, dir string) (port.ResolvedDependency, bool) {
+// readCached returns the dependency a folder with the sentinel holds, when the
+// folder was fetched with the checksum the requirement pins.
+func readCached(req pluginport.DependencyRequirement, dir string) (pluginport.ResolvedDependency, bool) {
 	if !isReady(dir) {
-		return port.ResolvedDependency{}, false
+		return pluginport.ResolvedDependency{}, false
 	}
-	name, err := readReady(dir)
-	if err != nil || name == "" {
-		return port.ResolvedDependency{}, false
+	name, sum, err := readReady(dir)
+	if err != nil || !isPlainName(name) || sum != req.ChecksumSHA256 {
+		return pluginport.ResolvedDependency{}, false
 	}
 	primary := filepath.Join(dir, name)
 	if _, err := os.Stat(primary); err != nil {
-		return port.ResolvedDependency{}, false
+		return pluginport.ResolvedDependency{}, false
 	}
 	return newResolved(req, dir, primary), true
 }
 
-func readyStatus(req port.DependencyRequirement, root, primary string) port.DependencyStatus {
+func readyStatus(req pluginport.DependencyRequirement, root, primary string) pluginport.DependencyStatus {
 	resolved := newResolved(req, root, primary)
-	return port.DependencyStatus{ID: req.ID, State: port.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
+	return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
 }
 
 // newResolved is the dependency at primary, with the variable a process finds it by.
-func newResolved(req port.DependencyRequirement, root, primary string) port.ResolvedDependency {
-	return port.ResolvedDependency{
+func newResolved(req pluginport.DependencyRequirement, root, primary string) pluginport.ResolvedDependency {
+	return pluginport.ResolvedDependency{
 		ID: req.ID, RootPath: root, PrimaryPath: primary,
 		EnvVars:  map[string]string{GetEnvName(req): primary},
 		Metadata: req.Metadata,
@@ -197,7 +202,7 @@ func newResolved(req port.DependencyRequirement, root, primary string) port.Reso
 
 // GetEnvName is the variable that holds the path of the dependency: the
 // requirement's envVar metadata, or NUMEN_DEPENDENCY_<ID>.
-func GetEnvName(req port.DependencyRequirement) string {
+func GetEnvName(req pluginport.DependencyRequirement) string {
 	if named := req.Metadata["envVar"]; named != "" {
 		return named
 	}

@@ -3,19 +3,19 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // mockTranscriber answers recordings with synthetic cues without running inference.
 type mockTranscriber struct{}
 
 // NewMockTranscriber creates a mock transcriber for test runs.
-func NewMockTranscriber() port.Transcriber {
+func NewMockTranscriber() transcriptionport.Transcriber {
 	return &mockTranscriber{}
 }
 
-func (m *mockTranscriber) GetTranscriptionModel() port.TranscriptionModel {
-	return port.TranscriptionModel{
+func (m *mockTranscriber) GetTranscriptionModel() transcriptionport.TranscriptionModel {
+	return transcriptionport.TranscriptionModel{
 		Model:     "mock-asr",
 		Segmenter: "mock-vad",
 		Cutting:   "mock-threshold",
@@ -23,11 +23,11 @@ func (m *mockTranscriber) GetTranscriptionModel() port.TranscriptionModel {
 	}
 }
 
-func (m *mockTranscriber) Open(_ context.Context, _ []byte) (port.Recording, error) {
+func (m *mockTranscriber) Open(_ context.Context, _ []byte) (transcriptionport.Recording, error) {
 	return &mockRecording{duration: 2000, hasServed: false}, nil
 }
 
-func (m *mockTranscriber) Transcribe(_ context.Context, _ port.Audio) (string, error) {
+func (m *mockTranscriber) Transcribe(_ context.Context, _ transcriptionport.Audio) (string, error) {
 	return "Mock transcribed text for automated test.", nil
 }
 
@@ -44,12 +44,12 @@ func (r *mockRecording) GetDuration() int {
 	return r.duration
 }
 
-func (r *mockRecording) GetSegments(_ context.Context, _, _ int) ([]port.Audio, error) {
+func (r *mockRecording) GetSegments(_ context.Context, _, _ int) ([]transcriptionport.Audio, error) {
 	if r.hasServed {
 		return nil, nil
 	}
 	r.hasServed = true
-	return []port.Audio{
+	return []transcriptionport.Audio{
 		{
 			Samples: make([]float32, 16000),
 			From:    0,

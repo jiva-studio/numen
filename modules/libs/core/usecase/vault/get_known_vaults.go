@@ -3,8 +3,9 @@ package vault
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // KnownVault is one vault on the list, with what is true of it now.
@@ -29,13 +30,13 @@ type KnownVault struct {
 // showing the vaults asks both, and asking them together is what keeps one
 // screen from marking a vault another leaves unmarked.
 type GetKnownVaults struct {
-	registry port.VaultRegistry
+	registry vaultport.VaultRegistry
 	folders  FolderCheck
 }
 
 // NewGetKnownVaults is what the list is read out of and what a vault's folder is
 // opened through.
-func NewGetKnownVaults(registry port.VaultRegistry, readers port.VaultReaders) GetKnownVaults {
+func NewGetKnownVaults(registry vaultport.VaultRegistry, readers vaultport.VaultReaders) GetKnownVaults {
 	return GetKnownVaults{registry: registry, folders: NewFolderCheck(readers)}
 }
 

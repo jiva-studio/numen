@@ -13,9 +13,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // for it. The two are one text, and a chunk is cut across neither into the
@@ -29,11 +31,11 @@ const Separator = "\n\n"
 // embedder re-slicing a chunk and an extractor cutting a source all ask it, and
 // three answers that drift are three ways to read the wrong place.
 type Reader struct {
-	Vault   port.VaultReader
-	Derived port.DerivedStore
+	Vault   vaultport.VaultReader
+	Derived vaultport.DerivedStore
 	// Documents reads a format that needs a library. A vault holding none is
 	// read without one.
-	Documents port.TextExtractor
+	Documents sourceport.TextExtractor
 }
 
 // GetDocument is the text a source's chunks are places in.
@@ -135,7 +137,7 @@ func JoinDocuments(prose string, fetched *Document) *Document {
 // Nothing downloaded is no text and no producer, which is a link note nothing
 // has been downloaded for and is its ordinary state until something is.
 func ReadDownloaded(
-	ctx context.Context, store port.DerivedStore, hash string,
+	ctx context.Context, store vaultport.DerivedStore, hash string,
 ) (words, producer string, err error) {
 	if store == nil {
 		return "", "", nil
@@ -170,7 +172,7 @@ func ReadDownloaded(
 // what it was put right to, and from its own bytes where nothing put it right.
 func ReadComposed(
 	ctx context.Context,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	producer, hash string,
 	raw []byte,
 ) (*Document, error) {
@@ -205,7 +207,7 @@ func ReadComposed(
 
 // readOptional is what is kept under a name, and nothing where the store holds
 // nothing.
-func readOptional(ctx context.Context, store port.DerivedStore, name domain.ArtifactName) ([]byte, error) {
+func readOptional(ctx context.Context, store vaultport.DerivedStore, name domain.ArtifactName) ([]byte, error) {
 	raw, err := store.ReadArtifact(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil

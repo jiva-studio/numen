@@ -3,16 +3,17 @@ package vault
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // GetSummary finds how much of a vault the index holds.
 type GetSummary struct {
-	queries port.NoteQueries
+	queries noteport.NoteQueries
 }
 
-func NewGetSummary(queries port.NoteQueries) *GetSummary {
+func NewGetSummary(queries noteport.NoteQueries) *GetSummary {
 	return &GetSummary{queries: queries}
 }
 

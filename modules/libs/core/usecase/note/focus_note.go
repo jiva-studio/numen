@@ -5,17 +5,19 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // FocusNote makes a note the one the person is looking at.
 type FocusNote struct {
-	queries port.NoteQueries
-	view    port.Window
+	queries noteport.NoteQueries
+	view    windowport.Window
 }
 
-func NewFocusNote(queries port.NoteQueries, view port.Window) *FocusNote {
+func NewFocusNote(queries noteport.NoteQueries, view windowport.Window) *FocusNote {
 	return &FocusNote{queries: queries, view: view}
 }
 

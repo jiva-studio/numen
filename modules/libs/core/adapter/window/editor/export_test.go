@@ -6,10 +6,12 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // The use cases a handler holds, for the tests that wrap one in a fake.
@@ -46,14 +48,14 @@ type watched struct {
 
 	cfg     container.Config
 	db      *container.Index
-	readers port.VaultReaders
-	watcher port.VaultWatcher
+	readers vaultport.VaultReaders
+	watcher vaultport.VaultWatcher
 }
 
 // newWatched is that assembly over an index and the pieces a test drives.
 func newWatched(
 	cfg container.Config, db *container.Index,
-	readers port.VaultReaders, watcher port.VaultWatcher,
+	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) watched {
 	return watched{
 		EditorAssembly: container.NewEditorAssembly(cfg, nil, db),
@@ -67,7 +69,7 @@ func newWatched(
 func (w watched) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool,
 	notified func(paths, assets []string, reload bool),
-	handleError port.ErrorHandler,
+	handleError windowport.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
 	run func(ctx context.Context),

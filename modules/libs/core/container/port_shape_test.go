@@ -22,8 +22,8 @@ func getInterfaceProbes(file *ast.File) []string {
 		case *ast.InterfaceType:
 			found = append(found, "interface{...}")
 		case *ast.SelectorExpr:
-			if from, is := targetVal.X.(*ast.Ident); is && from.Name == "port" {
-				found = append(found, "port."+targetVal.Sel.Name)
+			if from, is := targetVal.X.(*ast.Ident); is && isPortName(from.Name) {
+				found = append(found, from.Name+"."+targetVal.Sel.Name)
 			}
 		}
 	}
@@ -90,11 +90,11 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 func TestWhatTheInterfaceProbeRuleRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "probe.go", `package p
 
-func probe(target any, reader port.VaultReader) {
+func probe(target any, reader vaultport.VaultReader) {
 	_, _ = target.(interface{ Concurrency() int })
-	_, _ = reader.(port.SharedOpener)
+	_, _ = reader.(vaultport.SharedOpener)
 	switch target.(type) {
-	case port.Trash:
+	case machineport.Trash:
 	case *os.File:
 	}
 	_, _ = target.(string)
@@ -108,7 +108,7 @@ func probe(target any, reader port.VaultReader) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"interface{...}", "port.SharedOpener", "port.Trash"}
+	want := []string{"interface{...}", "vaultport.SharedOpener", "machineport.Trash"}
 	if got := getInterfaceProbes(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
@@ -147,21 +147,21 @@ func internalTypes(file *ast.File) []string {
 // domain/ or beside the port.
 func TestNoPortNamesATypeFromInternal(t *testing.T) {
 	dir := filepath.Join("..", "port")
-	entries, err := filepath.Glob(filepath.Join(dir, "*.go"))
+	entries, err := readTree(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var read int
 	for _, item := range entries {
-		if strings.HasSuffix(item, "_test.go") {
+		if !strings.HasSuffix(item.name, ".go") || strings.HasSuffix(item.name, "_test.go") {
 			continue
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), item, nil, 0)
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, item.name), nil, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 		read++
-		rel := "port/" + filepath.Base(item)
+		rel := "port/" + item.name
 		for _, one := range internalTypes(file) {
 			t.Errorf("%s names %s: a port speaks in the core's own types", rel, one)
 		}

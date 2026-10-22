@@ -12,10 +12,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 func (c changing) newWrite() note.Write {
@@ -124,7 +125,7 @@ func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 	}
 
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", baseline)
-	if !errors.Is(err, port.ErrStale) {
+	if !errors.Is(err, vaultport.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != theirs {
@@ -631,12 +632,12 @@ func TestARefreshTellsAFileTheVaultPreservesAloneFromANoteThatVanished(t *testin
 // inside the use case doing it, so that what happens in between is the test's
 // to decide.
 type watchedReaders struct {
-	inner port.VaultReaders
+	inner vaultport.VaultReaders
 	read  func(path string)
 	stat  func(path string)
 }
 
-func (w watchedReaders) Open(v domain.Vault) (port.VaultReader, error) {
+func (w watchedReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := w.inner.Open(v)
 	if err != nil {
 		return nil, err
@@ -645,7 +646,7 @@ func (w watchedReaders) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type watchedReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	read func(path string)
 	stat func(path string)
 }
@@ -669,11 +670,11 @@ func (w watchedReader) GetFingerprint(ctx context.Context, path string) (domain.
 // watchedWriters says when the write lock was asked for, before it is waited
 // for.
 type watchedWriters struct {
-	inner port.VaultWriters
+	inner vaultport.VaultWriters
 	hold  func()
 }
 
-func (w watchedWriters) Open(v domain.Vault) (port.VaultWriter, error) {
+func (w watchedWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	return w.inner.Open(v)
 }
 

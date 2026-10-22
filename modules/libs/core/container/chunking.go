@@ -3,12 +3,14 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // CutNotes is how a source's text and a note are cut into the chunks the index
@@ -42,7 +44,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 // from here, so a vault made searchable in a terminal and a vault made
 // searchable in a window are the same vault.
 func (c Config) ReadWholeVault(
-	ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault,
+	ctx context.Context, db *Index, embedder embeddingport.Embedder, v domain.Vault,
 ) (vault.ReadWholeVault, error) {
 	if embedder != nil {
 		if err := c.syncVectorIndex(ctx, db, embedder.GetModel()); err != nil {
@@ -62,7 +64,7 @@ func (c Config) ReadWholeVault(
 
 // syncVectorIndex fits the vector index to the model's width, and on a rebuild
 // drops the vectors of other recipes.
-func (c Config) syncVectorIndex(ctx context.Context, db *Index, model port.EmbeddingModel) error {
+func (c Config) syncVectorIndex(ctx context.Context, db *Index, model embeddingport.EmbeddingModel) error {
 	if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 		return err
 	}
@@ -80,7 +82,7 @@ func (c Config) syncVectorIndex(ctx context.Context, db *Index, model port.Embed
 }
 
 // Embed gives a vault's chunks the vectors they owe.
-func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (embedding.Embed, error) {
+func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault) (embedding.Embed, error) {
 	derived, err := c.GetDerivedStores().Open(v)
 	if err != nil {
 		return embedding.Embed{}, err
@@ -94,7 +96,7 @@ func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (embedd
 
 // Extract cuts a vault's sources into chunks. Every entry point takes it from
 // here, so what a chunk is kept under is one answer.
-func (c Config) Extract(sources port.SourceRepository, queries port.SourceQueries, v domain.Vault) (source.Extract, error) {
+func (c Config) Extract(sources sourceport.SourceRepository, queries sourceport.SourceQueries, v domain.Vault) (source.Extract, error) {
 	derived, err := c.GetDerivedStores().Open(v)
 	if err != nil {
 		return source.Extract{}, err

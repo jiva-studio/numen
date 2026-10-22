@@ -9,4 +9,9 @@
 // a question across many of them, in a shape that is not an aggregate, is a
 // query: matches and counts are read models, and asking a repository for them
 // turns it into a service wearing a repository's name.
+//
+// One sub-package holds one domain's ports: agentport, completionport,
+// settingsport, pluginport, downloadport, transcriptionport, embeddingport,
+// vaultport, noteport, sourceport, recognitionport, indexport, machineport and
+// windowport.
 package port

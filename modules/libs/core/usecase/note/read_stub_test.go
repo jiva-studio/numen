@@ -7,15 +7,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // statedReader is a vault that answers a stat and a read with whatever it was
 // told to.
 type statedReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	ref     domain.Fingerprint
 	statErr error
 	raw     []byte
@@ -32,7 +33,7 @@ func (r statedReader) Read(context.Context, string) ([]byte, error) {
 
 type statedReaders struct{ reader statedReader }
 
-func (r statedReaders) Open(domain.Vault) (port.VaultReader, error) { return r.reader, nil }
+func (r statedReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return r.reader, nil }
 
 func readStated(t *testing.T, reader statedReader) (note.Contents, error) {
 	t.Helper()
@@ -115,7 +116,7 @@ func TestAReadThatFailsAfterAMissingStatIsAnError(t *testing.T) {
 
 type unopenableReaders struct{ err error }
 
-func (r unopenableReaders) Open(domain.Vault) (port.VaultReader, error) { return nil, r.err }
+func (r unopenableReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, r.err }
 
 func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
 	t.Parallel()
@@ -133,7 +134,7 @@ func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
 func TestAPathTheVaultRefusesAsANoteIsNotANote(t *testing.T) {
 	t.Parallel()
 
-	got, err := readStated(t, statedReader{statErr: port.ErrNotANote, raw: []byte("# Entropy\n")})
+	got, err := readStated(t, statedReader{statErr: vaultport.ErrNotANote, raw: []byte("# Entropy\n")})
 	if err != nil {
 		t.Fatal(err)
 	}

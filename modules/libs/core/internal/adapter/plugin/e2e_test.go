@@ -13,8 +13,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 func TestRealPluginProcessE2E(t *testing.T) {
@@ -97,8 +98,8 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 		{Number: 1, Lines: []domain.ProofreadLine{{Number: 0, Text: "This is test sentence."}}},
 	}
 	res, err := bridge.ProofreadScan(ctx, pages)
-	if !errors.Is(err, port.ErrUnavailable) {
-		t.Fatalf("ProofreadScan with real plugin: got %v, want %v", err, port.ErrUnavailable)
+	if !errors.Is(err, completionport.ErrUnavailable) {
+		t.Fatalf("ProofreadScan with real plugin: got %v, want %v", err, completionport.ErrUnavailable)
 	}
 	if len(res.Corrections) != 0 {
 		t.Fatalf("expected no corrections, got %v", res.Corrections)

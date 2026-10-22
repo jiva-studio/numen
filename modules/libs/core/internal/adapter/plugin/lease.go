@@ -7,13 +7,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // pluginLease is the one reference a bridge holds on its plugin, from the moment
 // the plugin is activated until the bridge is closed.
 type pluginLease struct {
-	host     port.PluginActivator
+	host     pluginport.PluginActivator
 	pluginID string
 	once     sync.Once
 }
@@ -32,7 +32,7 @@ func (l *pluginLease) Close() error {
 // it is.
 func openPlugin[C any](
 	ctx context.Context,
-	host port.PluginActivator,
+	host pluginport.PluginActivator,
 	pluginID string,
 	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C,
 ) (C, *pluginLease, error) {
@@ -50,18 +50,18 @@ func openPlugin[C any](
 // context and a *port.UnavailableError are returned unchanged, and anything else
 // is a plugin that failed.
 func convertActivationError(pluginID string, err error) error {
-	var unavailable *port.UnavailableError
+	var unavailable *pluginport.UnavailableError
 	if errors.As(err, &unavailable) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
-	return &port.UnavailableError{PluginID: pluginID, Reason: port.PluginFailed, Err: err}
+	return &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginFailed, Err: err}
 }
 
 // pluginService is one service of a plugin, with a client made for the endpoint
 // the plugin is at when a call is made. A plugin started again on another port
 // is reached there.
 type pluginService[C any] struct {
-	host      port.PluginActivator
+	host      pluginport.PluginActivator
 	pluginID  string
 	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C
 }

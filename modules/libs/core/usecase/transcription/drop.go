@@ -7,8 +7,10 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Drop takes away everything listening to a recording produced.
@@ -18,10 +20,10 @@ import (
 // chunks cut from those words go with them. The recording stands as it did
 // before anything listened to it, and the next run hears it from the start.
 type Drop struct {
-	Readers port.VaultReaders
-	Sources port.SourceRepository
-	Queries port.SourceQueries
-	Derived port.DerivedStores
+	Readers vaultport.VaultReaders
+	Sources sourceport.SourceRepository
+	Queries sourceport.SourceQueries
+	Derived vaultport.DerivedStores
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -64,7 +66,7 @@ func (u Drop) Execute(
 	// the name it appends to. Nothing is taken away underneath it.
 	partial := domain.NewArtifactName(domain.ArtifactPartial, from, hash)
 	release, err := store.ClaimArtifact(ctx, partial)
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
 	}
@@ -112,7 +114,7 @@ func (u Drop) Execute(
 func (u Drop) getProducer(
 	ctx context.Context,
 	v domain.Vault,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	path string,
 ) (from, hash string, current bool, err error) {
 	response, target, err := u.Queries.GetSourceText(ctx, v.ID, path)
@@ -130,7 +132,7 @@ func (u Drop) getProducer(
 }
 
 // hasAnyName says whether the store has something under any of these names.
-func (u Drop) hasAnyName(ctx context.Context, store port.DerivedStore, names []domain.ArtifactName) (bool, error) {
+func (u Drop) hasAnyName(ctx context.Context, store vaultport.DerivedStore, names []domain.ArtifactName) (bool, error) {
 	for _, name := range names {
 		switch _, err := store.ReadArtifact(ctx, name); {
 		case err == nil:
@@ -144,7 +146,7 @@ func (u Drop) hasAnyName(ctx context.Context, store port.DerivedStore, names []d
 
 // removeNamesExcept removes every name from the store but keep, and passes over
 // names that are already absent.
-func removeNamesExcept(ctx context.Context, store port.DerivedStore, names []domain.ArtifactName, keep domain.ArtifactName) error {
+func removeNamesExcept(ctx context.Context, store vaultport.DerivedStore, names []domain.ArtifactName, keep domain.ArtifactName) error {
 	for _, name := range names {
 		if name == keep {
 			continue

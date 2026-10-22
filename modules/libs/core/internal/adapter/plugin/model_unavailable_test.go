@@ -10,31 +10,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // stubModelHost resolves every capability to one plugin listening at the endpoint given.
 type stubModelHost struct {
-	endpoint port.Endpoint
+	endpoint pluginport.Endpoint
 	acquired atomic.Int32
 	released atomic.Int32
 }
 
-func (h *stubModelHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, nil
+func (h *stubModelHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
 }
 
-func (h *stubModelHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
-func (h *stubModelHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{}, false
+func (h *stubModelHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
+func (h *stubModelHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{}, false
 }
 
-func (h *stubModelHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
+func (h *stubModelHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, true
 }
 
-func (h *stubModelHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
+func (h *stubModelHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
@@ -52,7 +54,7 @@ func newDownModelHost(t *testing.T) *stubModelHost {
 	server := httptest.NewServer(http.NotFoundHandler())
 	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
 	server.Close()
-	return &stubModelHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: serverPort}}
+	return &stubModelHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
 // newSilentModelHost is a host whose plugin accepts a request and never answers it.
@@ -62,7 +64,7 @@ func newSilentModelHost(t *testing.T) *stubModelHost {
 		<-r.Context().Done()
 	}))
 	t.Cleanup(server.Close)
-	return &stubModelHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
+	return &stubModelHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
 }
 
 type modelOpener struct {
@@ -138,7 +140,7 @@ func TestADownloaderThatIsDownNamesNoModel(t *testing.T) {
 	if err == nil {
 		t.Fatal("a download model was named by a plugin that is down")
 	}
-	if model != (port.DownloadModel{}) {
+	if model != (downloadport.DownloadModel{}) {
 		t.Fatalf("a model was returned with the error: %+v", model)
 	}
 }

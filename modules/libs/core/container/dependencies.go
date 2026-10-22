@@ -6,8 +6,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/provision"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const dependencyTaskPrefix = "provision:"
@@ -36,12 +37,12 @@ func (c Config) ReportDependencies(tasks *run.Tasks) {
 	if catalog == nil {
 		return
 	}
-	catalog.SetObserver(func(req port.DependencyRequirement, status port.DependencyStatus) {
+	catalog.SetObserver(func(req pluginport.DependencyRequirement, status pluginport.DependencyStatus) {
 		id := dependencyTaskPrefix + req.ID
 		switch status.State {
-		case port.DependencyStateReady:
+		case pluginport.DependencyStateReady:
 			tasks.Remove(id)
-		case port.DependencyStateMissing, port.DependencyStateProvisioning, port.DependencyStateFailed:
+		case pluginport.DependencyStateMissing, pluginport.DependencyStateProvisioning, pluginport.DependencyStateFailed:
 			tasks.Set(run.Task{
 				ID: id, Title: "Downloading " + req.ID, Unit: run.Bytes,
 				Count: status.BytesDownloaded, Total: status.BytesTotal, Error: status.Error, IsUserStarted: false,

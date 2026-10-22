@@ -9,10 +9,11 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	_ "modernc.org/sqlite"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // makeIndex is an index in a folder of its own.
@@ -30,8 +31,8 @@ func makeIndex(t *testing.T) *container.Index {
 // for each text.
 type unit struct{ name string }
 
-func (u unit) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
+func (u unit) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -125,7 +126,7 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 }
 
 // owingTo is how many small chunks of the vault the model has no vector for.
-func owingTo(t *testing.T, db *container.Index, v domain.Vault, model port.Embedder) int {
+func owingTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
 	t.Helper()
 	owing, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
 	if err != nil {

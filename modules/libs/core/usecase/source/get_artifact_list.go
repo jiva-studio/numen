@@ -3,8 +3,10 @@ package source
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // GetArtifactList lists what was made from one file of the vault: the text read
@@ -14,7 +16,7 @@ type GetArtifactList struct {
 	store artifactStore
 }
 
-func NewGetArtifactList(queries port.SourceQueries, derived port.DerivedStores) *GetArtifactList {
+func NewGetArtifactList(queries sourceport.SourceQueries, derived vaultport.DerivedStores) *GetArtifactList {
 	return &GetArtifactList{store: artifactStore{queries: queries, derived: derived}}
 }
 

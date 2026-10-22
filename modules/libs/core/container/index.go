@@ -5,10 +5,16 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/indexport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Index is the cache, seen as the ports the core asks for. The concrete adapter
@@ -89,34 +95,34 @@ func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) 
 // Compact returns the space the index no longer holds.
 func (i *Index) Compact(ctx context.Context) error { return i.db.Compact(ctx) }
 
-func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }
-func (i *Index) Notes() port.NoteRepository   { return i.db.Notes() }
-func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }
+func (i *Index) Vaults() vaultport.VaultRepository { return i.db.Vaults() }
+func (i *Index) Notes() noteport.NoteRepository    { return i.db.Notes() }
+func (i *Index) Queries() noteport.NoteQueries     { return i.db.NoteQueries() }
 
 // Passages is the two indexes a search runs over. They read, so a search answers
 // while a scan is still writing.
-func (i *Index) Passages() port.PassageQueries { return i.db.ChunkQueries() }
+func (i *Index) Passages() sourceport.PassageQueries { return i.db.ChunkQueries() }
 
 // Progress is how far chunking and embedding have got, for a window to say so.
-func (i *Index) Progress() port.IndexProgress { return i.db.ChunkQueries() }
+func (i *Index) Progress() indexport.IndexProgress { return i.db.ChunkQueries() }
 
 // Sources holds what has text and what was made from it. One type answers all
 // four ports: they divide the same tables by what asks, not by where the rows
 // are.
-func (i *Index) Sources() port.SourceRepository    { return i.db.Sources() }
-func (i *Index) SourcesKnown() port.SourceQueries  { return i.db.Sources() }
-func (i *Index) Vectors() port.VectorRepository    { return i.db.Sources() }
-func (i *Index) VectorQueries() port.VectorQueries { return i.db.Sources() }
+func (i *Index) Sources() sourceport.SourceRepository       { return i.db.Sources() }
+func (i *Index) SourcesKnown() sourceport.SourceQueries     { return i.db.Sources() }
+func (i *Index) Vectors() embeddingport.VectorRepository    { return i.db.Sources() }
+func (i *Index) VectorQueries() embeddingport.VectorQueries { return i.db.Sources() }
 
 // Maintenance is how the index is told that it has changed wholesale.
-func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Maintenance() }
+func (i *Index) Maintenance() indexport.IndexMaintenance { return i.db.Maintenance() }
 
 // Path is where the database file is, which a load test needs in order to say
 // how large the index got.
 func (i *Index) Path() string { return i.path }
 
 // Links answers what points where.
-func (i *Index) Links() port.LinkQueries { return i.db.NoteQueries() }
+func (i *Index) Links() noteport.LinkQueries { return i.db.NoteQueries() }
 
 // Problems reports what a scan could not act on.
-func (i *Index) Problems() port.ProblemQueries { return i.db.NoteQueries() }
+func (i *Index) Problems() recognitionport.ProblemQueries { return i.db.NoteQueries() }

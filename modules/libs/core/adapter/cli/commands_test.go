@@ -14,12 +14,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
 )
 
 var errRefused = errors.New("rejected on purpose")
@@ -205,7 +207,7 @@ func (fixedProblemQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]
 	return nil, nil
 }
 
-func problemsDeps(queries port.ProblemQueries) cli.Deps {
+func problemsDeps(queries recognitionport.ProblemQueries) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(notebook),
 		Problems: func(context.Context) (cli.Problems, error) {
@@ -424,8 +426,8 @@ type constantEmbedder struct{}
 
 const width = 1024
 
-func (constantEmbedder) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (constantEmbedder) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (constantEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -442,7 +444,7 @@ func (constantEmbedder) Close() error { return nil }
 // scanFixture is a scan of a vault on a real index, with what the test chooses to
 // put in place of an installation's model.
 type scanFixture struct {
-	embedder   port.Embedder
+	embedder   embeddingport.Embedder
 	unembedded error
 	summary    error
 	rebuilt    bool

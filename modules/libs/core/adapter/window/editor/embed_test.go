@@ -28,9 +28,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // The two vocabularies a note in these tests is written in. A save changes
@@ -67,8 +69,8 @@ type fakeEmbedder struct {
 	visited []string
 }
 
-func (a *fakeEmbedder) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "fake", Dimensions: a.dims}
+func (a *fakeEmbedder) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: a.dims}
 }
 
 func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -158,13 +160,13 @@ func direction(text string, dims int) []float32 {
 // vault before it embeds anything; embedding on its own opens the files the
 // index already holds a chunk of, and walks nothing.
 type walking struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	walks atomic.Int64
 }
 
 func newWalking() *walking { return &walking{VaultReaders: filesystem.VaultReaders{}} }
 
-func (w *walking) Open(v domain.Vault) (port.VaultReader, error) {
+func (w *walking) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := w.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -173,7 +175,7 @@ func (w *walking) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type counts struct {
-	port.VaultReader
+	vaultport.VaultReader
 	posVal *walking
 }
 
@@ -184,7 +186,7 @@ func (r counts) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error
 
 // getVectorProgress is how many of the vault's chunks can carry a vector and how many
 // carry one from the model in use.
-func getVectorProgress(t *testing.T, f *behind, model port.Embedder) (target, embedded int64) {
+func getVectorProgress(t *testing.T, f *behind, model embeddingport.Embedder) (target, embedded int64) {
 	t.Helper()
 	target, embedded, err := f.index.Progress().GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
 	if err != nil {

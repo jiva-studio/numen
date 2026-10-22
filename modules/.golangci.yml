@@ -185,7 +185,7 @@ linters:
       exclude-functions:
         - (*database/sql.Tx).Rollback
         - (*os.Root).Remove
-        - (github.com/jiva-studio/numen/modules/libs/core/port.Run).Stop
+        - (github.com/jiva-studio/numen/modules/libs/core/port/agentport.Run).Stop
 
     gocritic:
       # The default checkers found eight things in 851 files, and five of them
@@ -216,7 +216,7 @@ linters:
       # defaults is filled by its own resolver, and listing it here would ask
       # every caller to fill the blanks a second way.
       include:
-        - .*/core/port\.(EmbeddingModel|RecognitionModel|TranscriptionModel|Vector)$
+        - .*/core/port/(embeddingport\.(EmbeddingModel|Vector)|recognitionport\.RecognitionModel|transcriptionport\.TranscriptionModel)$
         - .*/notes/domain\.Address$
       # A zero value handed back with an error, or declared and filled after, is
       # the absence of an identity and not a half-written one.

@@ -8,15 +8,16 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
-var bge = port.EmbeddingModel{Name: "bge-m3", Dimensions: 2, MaxTokens: 512, Pooling: "head"}
+var bge = embeddingport.EmbeddingModel{Name: "bge-m3", Dimensions: 2, MaxTokens: 512, Pooling: "head"}
 
 // landed is a model that has finished arriving.
 type landed struct{}
 
-func (landed) GetModel() port.EmbeddingModel { return bge }
+func (landed) GetModel() embeddingport.EmbeddingModel { return bge }
 
 func (landed) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
@@ -240,7 +241,7 @@ func TestAnEmbedderClosedAfterTheModelLandedIsNotReady(t *testing.T) {
 }
 
 func TestAskingForVectorsPreservesTheEmbedderFreeToClose(t *testing.T) {
-	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
+	for name, get := range map[string]func(*embedding.Embedder) embeddingport.Embedder{
 		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
 		"impatient": (*embedding.Embedder).GetImpatientEmbedder,
 	} {
@@ -277,7 +278,7 @@ func TestAWaitingEmbedderReturnsWhatStoppedTheModel(t *testing.T) {
 }
 
 func TestEitherEmbedderReturnsWhatClosingTheModelSaid(t *testing.T) {
-	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
+	for name, get := range map[string]func(*embedding.Embedder) embeddingport.Embedder{
 		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
 		"impatient": (*embedding.Embedder).GetImpatientEmbedder,
 	} {

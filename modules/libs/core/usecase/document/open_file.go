@@ -5,16 +5,17 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // OpenFile opens one file of the vault to read a part of.
 type OpenFile struct {
-	readers port.VaultReaders
+	readers vaultport.VaultReaders
 }
 
-func NewOpenFile(readers port.VaultReaders) *OpenFile {
+func NewOpenFile(readers vaultport.VaultReaders) *OpenFile {
 	return &OpenFile{readers: readers}
 }
 

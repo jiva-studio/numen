@@ -8,9 +8,11 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 // defaultProgram is the program the programs name for an empty name.
@@ -20,27 +22,27 @@ const defaultProgram = "installed-default"
 type programs struct {
 	mu        sync.Mutex
 	requested []string
-	tasks     []port.Task
+	tasks     []agentport.Task
 	getErr    error
-	models    []port.AgentModel
+	models    []agentport.AgentModel
 	startErr  error
-	answer    func(ctx context.Context, task port.Task) (string, error)
+	answer    func(ctx context.Context, task agentport.Task) (string, error)
 }
 
-func (p *programs) GetProgram(_ context.Context, name string) (port.AgentProgram, error) {
+func (p *programs) GetProgram(_ context.Context, name string) (agentport.AgentProgram, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.requested = append(p.requested, name)
 	if p.getErr != nil {
-		return port.AgentProgram{}, p.getErr
+		return agentport.AgentProgram{}, p.getErr
 	}
 	if name == "" {
 		name = defaultProgram
 	}
-	return port.AgentProgram{Name: name, IsInstalled: true, Models: p.models}, nil
+	return agentport.AgentProgram{Name: name, IsInstalled: true, Models: p.models}, nil
 }
 
-func (p *programs) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
+func (p *programs) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
 	p.mu.Lock()
 	p.tasks = append(p.tasks, task)
 	p.mu.Unlock()
@@ -54,28 +56,28 @@ func (p *programs) StartRun(ctx context.Context, task port.Task) (port.Run, erro
 			return nil, err
 		}
 	}
-	steps := make(chan port.Step, 2)
-	steps <- port.Step{Kind: domain.StepSay, Text: text}
-	steps <- port.Step{Kind: domain.StepStop}
+	steps := make(chan agentport.Step, 2)
+	steps <- agentport.Step{Kind: domain.StepSay, Text: text}
+	steps <- agentport.Step{Kind: domain.StepStop}
 	close(steps)
 	return &run{steps: steps}, nil
 }
 
-type run struct{ steps chan port.Step }
+type run struct{ steps chan agentport.Step }
 
-func (r *run) GetSteps() <-chan port.Step { return r.steps }
-func (r *run) Stop() error                { return nil }
+func (r *run) GetSteps() <-chan agentport.Step { return r.steps }
+func (r *run) Stop() error                     { return nil }
 
 // choices holds the choice of each plugin's setting.
-type choices map[string]port.CompletionChoice
+type choices map[string]completionport.CompletionChoice
 
-func (c choices) GetCompletionChoice(pluginID string) port.CompletionChoice {
+func (c choices) GetCompletionChoice(pluginID string) completionport.CompletionChoice {
 	return c[pluginID]
 }
 
 // ask is a question with one message, the way a plugin asks it.
-func ask(text string) port.Question {
-	return port.Question{Messages: []port.Message{{Role: "user", Text: text}}}
+func ask(text string) completionport.Question {
+	return completionport.Question{Messages: []completionport.Message{{Role: "user", Text: text}}}
 }
 
 func newRouter(t *testing.T, config completion.Config, choice choices, fake *programs) *completion.Router {
@@ -116,7 +118,7 @@ func TestAPluginNamingNoAgentIsAnsweredByTheDefault(t *testing.T) {
 	}
 	task := fake.tasks[0]
 	if task.Agent != "agent-d" || task.Model != "model-d" || len(task.Tools) != 0 ||
-		len(task.ToolDeclarations) != 0 || task.Conversation != "" || task.Endpoint != (port.ToolEndpoint{}) {
+		len(task.ToolDeclarations) != 0 || task.Conversation != "" || task.Endpoint != (agentport.ToolEndpoint{}) {
 		t.Errorf("the task is %+v, want agent-d with model-d and no tool or conversation", task)
 	}
 }
@@ -165,12 +167,12 @@ func TestAPluginsOwnChoiceExistsOverTheDefault(t *testing.T) {
 // The agent a plugin's setting names fails the question as it fails: the
 // question is not taken to any other agent.
 func TestAMissingAgentFailsTheQuestionWithNoOtherAgentAsked(t *testing.T) {
-	fake := &programs{getErr: port.ErrNoRoute}
+	fake := &programs{getErr: completionport.ErrNoRoute}
 	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}},
 		choices{"plugin.a": {Agent: "absent"}}, fake)
 
 	for range 3 {
-		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); !errors.Is(err, port.ErrNoRoute) {
+		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 			t.Fatalf("error = %v, want port.ErrNoRoute", err)
 		}
 	}
@@ -188,10 +190,10 @@ func TestAMissingAgentFailsTheQuestionWithNoOtherAgentAsked(t *testing.T) {
 func TestAnAgentThatCannotAnswerIsUnavailable(t *testing.T) {
 	for name, fake := range map[string]*programs{
 		"cannot start": {startErr: errors.New("no plugin runs it")},
-		"says nothing": {answer: func(context.Context, port.Task) (string, error) { return " ", nil }},
+		"says nothing": {answer: func(context.Context, agentport.Task) (string, error) { return " ", nil }},
 	} {
 		router := newRouter(t, completion.Config{}, choices{}, fake)
-		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); !errors.Is(err, port.ErrUnavailable) {
+		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); !errors.Is(err, completionport.ErrUnavailable) {
 			t.Errorf("%s: error = %v, want port.ErrUnavailable", name, err)
 		}
 	}
@@ -222,12 +224,12 @@ func TestTheQuestionIsTheTasksPromptAndInstructions(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t, completion.Config{}, choices{}, fake)
 
-	if _, err := router.Complete(t.Context(), "plugin.a", port.Question{Messages: []port.Message{
+	if _, err := router.Complete(t.Context(), "plugin.a", completionport.Question{Messages: []completionport.Message{
 		{Role: "system", Text: "be brief"}, {Role: "system", Text: "be kind"}, {Text: "why?"},
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := router.Complete(t.Context(), "plugin.a", port.Question{Messages: []port.Message{
+	if _, err := router.Complete(t.Context(), "plugin.a", completionport.Question{Messages: []completionport.Message{
 		{Role: "user", Text: "why?"}, {Role: "assistant", Text: "because"}, {Role: "user", Text: "and?"},
 	}}); err != nil {
 		t.Fatal(err)
@@ -245,12 +247,12 @@ func TestAQuestionNoAgentCanAnswerIsRefused(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t, completion.Config{}, choices{}, fake)
 
-	for name, question := range map[string]port.Question{
+	for name, question := range map[string]completionport.Question{
 		"empty":        {},
-		"only system":  {Messages: []port.Message{{Role: "system", Text: "be brief"}}},
-		"unknown role": {Messages: []port.Message{{Role: "tool", Text: "why?"}}},
+		"only system":  {Messages: []completionport.Message{{Role: "system", Text: "be brief"}}},
+		"unknown role": {Messages: []completionport.Message{{Role: "tool", Text: "why?"}}},
 	} {
-		if _, err := router.Complete(t.Context(), "plugin.a", question); !errors.Is(err, port.ErrInvalidQuestion) {
+		if _, err := router.Complete(t.Context(), "plugin.a", question); !errors.Is(err, completionport.ErrInvalidQuestion) {
 			t.Errorf("%s: error = %v, want port.ErrInvalidQuestion", name, err)
 		}
 	}
@@ -275,7 +277,7 @@ func TestAChoiceEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	selected["plugin.a"] = port.CompletionChoice{Agent: "own"}
+	selected["plugin.a"] = completionport.CompletionChoice{Agent: "own"}
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +298,7 @@ func newBlocker() *blocker {
 	return &blocker{release: make(chan struct{}), started: make(chan struct{}, 16)}
 }
 
-func (b *blocker) answer(ctx context.Context, _ port.Task) (string, error) {
+func (b *blocker) answer(ctx context.Context, _ agentport.Task) (string, error) {
 	running := b.now.Add(1)
 	defer b.now.Add(-1)
 	for {
@@ -446,11 +448,11 @@ func TestAChangedLimitAppliesToTheNextQuestions(t *testing.T) {
 // A model the program does not list is replaced by the one it answers with unasked, else by its first.
 func TestAModelTheProgramDoesNotListIsReplaced(t *testing.T) {
 	for name, test := range map[string]struct {
-		models []port.AgentModel
+		models []agentport.AgentModel
 		want   string
 	}{
-		"its own default": {[]port.AgentModel{{Name: "m-1"}, {Name: "m-2", IsDefault: true}}, "m-2"},
-		"its first":       {[]port.AgentModel{{Name: "m-1"}, {Name: "m-2"}}, "m-1"},
+		"its own default": {[]agentport.AgentModel{{Name: "m-1"}, {Name: "m-2", IsDefault: true}}, "m-2"},
+		"its first":       {[]agentport.AgentModel{{Name: "m-1"}, {Name: "m-2"}}, "m-1"},
 	} {
 		fake := &programs{models: test.models}
 		router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
@@ -466,7 +468,7 @@ func TestAModelTheProgramDoesNotListIsReplaced(t *testing.T) {
 
 // A model the program lists, and a program that lists none, leave the chosen model as it is.
 func TestAModelTheProgramListsIsCached(t *testing.T) {
-	for name, models := range map[string][]port.AgentModel{
+	for name, models := range map[string][]agentport.AgentModel{
 		"listed": {{Name: "m-old"}, {Name: "m-2", IsDefault: true}},
 		"none":   nil,
 	} {
@@ -484,12 +486,12 @@ func TestAModelTheProgramListsIsCached(t *testing.T) {
 
 // A failure after a replacement states the model asked and the one asked instead.
 func TestAFailureAfterAReplacementStatesIt(t *testing.T) {
-	fake := &programs{models: []port.AgentModel{{Name: "m-1"}}, startErr: errors.New("the agent stopped: boom")}
+	fake := &programs{models: []agentport.AgentModel{{Name: "m-1"}}, startErr: errors.New("the agent stopped: boom")}
 	router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
 
 	_, err := router.Complete(t.Context(), "plugin.a", ask("why?"))
 
-	if !errors.Is(err, port.ErrUnavailable) {
+	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Fatalf("error = %v, want port.ErrUnavailable", err)
 	}
 	for _, want := range []string{"boom", `"m-old"`, "agent-a", `"m-1"`} {

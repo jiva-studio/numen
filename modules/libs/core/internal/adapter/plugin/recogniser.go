@@ -12,15 +12,17 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
 )
 
 // RecogniserPluginHost provides plugin resolution, activation, and permission checking for OCR.
 type RecogniserPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
-	port.PluginAuthorizer
+	pluginport.PluginResolver
+	pluginport.PluginActivator
+	pluginport.PluginAuthorizer
 }
 
 // RecogniserBridge connects port.Recogniser calls to an out-of-process OCR plugin via Connect-RPC.
@@ -29,7 +31,7 @@ type RecogniserBridge struct {
 	pluginID string
 	service  pluginService[numenv1connect.RecognitionServiceClient]
 	lease    *pluginLease
-	model    port.RecognitionModel
+	model    recognitionport.RecognitionModel
 }
 
 // OpenRecogniserBridge activates or connects to the OCR plugin and returns a port.Recogniser.
@@ -52,7 +54,7 @@ func OpenRecogniserBridge(ctx context.Context, host RecogniserPluginHost) (*Reco
 		return nil, fmt.Errorf("get recognition model %s: %w", plugin.Manifest.ID, err)
 	}
 
-	model := port.RecognitionModel{
+	model := recognitionport.RecognitionModel{
 		Layout:     resp.Msg.GetLayout(),
 		Recogniser: resp.Msg.GetRecogniser(),
 		DPI:        int(resp.Msg.GetDpi()),
@@ -69,7 +71,7 @@ func OpenRecogniserBridge(ctx context.Context, host RecogniserPluginHost) (*Reco
 }
 
 // GetRecognitionModel returns the model the OCR plugin answered with when the bridge was opened.
-func (b *RecogniserBridge) GetRecognitionModel() port.RecognitionModel {
+func (b *RecogniserBridge) GetRecognitionModel() recognitionport.RecognitionModel {
 	return b.model
 }
 

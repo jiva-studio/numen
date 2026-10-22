@@ -1,6 +1,9 @@
 package document
 
-import "github.com/jiva-studio/numen/modules/libs/core/port"
+import (
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+)
 
 // ErrNotADocument is bytes that are not the format at all, ErrEncrypted is a
 // document whose text is locked, ErrNoBook is a path that holds no book, ErrNoEntry
@@ -8,10 +11,10 @@ import "github.com/jiva-studio/numen/modules/libs/core/port"
 // file is no longer the bytes an ask named. ErrUnavailable is a plugin that is
 // not there to answer.
 var (
-	ErrNotADocument = port.ErrNotADocument
-	ErrEncrypted    = port.ErrEncrypted
-	ErrNoBook       = port.ErrNoBook
-	ErrNoEntry      = port.ErrNoBookEntry
-	ErrBookChanged  = port.ErrBookChanged
-	ErrUnavailable  = port.ErrUnavailable
+	ErrNotADocument = sourceport.ErrNotADocument
+	ErrEncrypted    = sourceport.ErrEncrypted
+	ErrNoBook       = sourceport.ErrNoBook
+	ErrNoEntry      = sourceport.ErrNoBookEntry
+	ErrBookChanged  = sourceport.ErrBookChanged
+	ErrUnavailable  = completionport.ErrUnavailable
 )

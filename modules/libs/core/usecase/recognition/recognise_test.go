@@ -11,9 +11,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
 )
 
 // A speaker reads every page as the same thing, or as nothing, and counts how
@@ -29,8 +30,8 @@ type speaker struct {
 	stop  func(int)
 }
 
-func (s *speaker) GetRecognitionModel() port.RecognitionModel {
-	return port.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
+func (s *speaker) GetRecognitionModel() recognitionport.RecognitionModel {
+	return recognitionport.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 
 func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlock, error) {

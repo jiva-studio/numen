@@ -14,9 +14,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Recognise reads a scanned document with a model and writes down what it saw.
@@ -31,13 +34,13 @@ import (
 // again, so it is written into the vault and the source is cut from it
 // afterwards.
 type Recognise struct {
-	readers  port.VaultReaders
-	sources  port.SourceRepository
-	derived  port.DerivedStores
-	provider port.Recogniser
+	readers  vaultport.VaultReaders
+	sources  sourceport.SourceRepository
+	derived  vaultport.DerivedStores
+	provider recognitionport.Recogniser
 
 	// documents draws the pages a model is given.
-	documents port.PageRenderer
+	documents sourceport.PageRenderer
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -60,11 +63,11 @@ type Recognise struct {
 // where what the vault holds is recorded, the store the recognition is written
 // into, what draws a page for the model, and the model itself.
 func NewRecognise(
-	readers port.VaultReaders,
-	sources port.SourceRepository,
-	derived port.DerivedStores,
-	documents port.PageRenderer,
-	recogniser port.Recogniser,
+	readers vaultport.VaultReaders,
+	sources sourceport.SourceRepository,
+	derived vaultport.DerivedStores,
+	documents sourceport.PageRenderer,
+	recogniser recognitionport.Recogniser,
 ) Recognise {
 	return Recognise{
 		readers: readers, sources: sources, derived: derived, documents: documents, provider: recogniser,
@@ -72,7 +75,7 @@ func NewRecognise(
 }
 
 // By returns the recogniser.
-func (u Recognise) By() port.Recogniser { return u.provider }
+func (u Recognise) By() recognitionport.Recogniser { return u.provider }
 
 // RecogniseResult reports what recognition did.
 type RecogniseResult struct {
@@ -119,7 +122,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	release, err := store.ClaimArtifact(ctx, partial)
 	if err != nil {
 		file.Close()
-		if errors.Is(err, port.ErrClaimed) {
+		if errors.Is(err, vaultport.ErrClaimed) {
 			res.IsBusy = true
 			return res, nil
 		}
@@ -152,7 +155,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 
 // openDocument opens a document and returns it rewound, with the fingerprint of
 // its bytes. The file is closed when it returns an error.
-func openDocument(ctx context.Context, reader port.VaultReader, path string) (io.ReadSeekCloser, string, error) {
+func openDocument(ctx context.Context, reader vaultport.VaultReader, path string) (io.ReadSeekCloser, string, error) {
 	file, err := reader.OpenShared(ctx, path)
 	if err != nil {
 		return nil, "", fmt.Errorf("read %s: %w", path, err)
@@ -178,7 +181,7 @@ func openDocument(ctx context.Context, reader port.VaultReader, path string) (io
 type pageWriter struct {
 	u       Recognise
 	v       domain.Vault
-	store   port.DerivedStore
+	store   vaultport.DerivedStore
 	path    string
 	partial domain.ArtifactName
 	boxes   domain.ArtifactName
@@ -216,7 +219,7 @@ func (w *pageWriter) write(ctx context.Context, pages []ocrartifact.Page, read i
 // time.
 func (u Recognise) readPages(
 	ctx context.Context,
-	scan port.OpenDocument,
+	scan sourceport.OpenDocument,
 	out *pageWriter,
 	res *RecogniseResult,
 ) error {
@@ -266,7 +269,7 @@ func (u Recognise) readPages(
 }
 
 // recognisePage draws one page and reads its blocks.
-func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, path string, index int) (ocrartifact.Page, error) {
+func (u Recognise) recognisePage(ctx context.Context, scan sourceport.OpenDocument, path string, index int) (ocrartifact.Page, error) {
 	rendered, err := scan.RenderPage(index, u.provider.GetRecognitionModel().DPI)
 	if err != nil {
 		return ocrartifact.Page{}, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
@@ -283,7 +286,7 @@ func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, pa
 func (u Recognise) saveRecognition(
 	ctx context.Context,
 	v domain.Vault,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	ref domain.Fingerprint,
 	hash, area string,
 	out pageWriter,
@@ -326,7 +329,7 @@ func (u Recognise) forget(
 	v domain.Vault,
 	ref domain.Fingerprint,
 	hash string,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	names ...domain.ArtifactName,
 ) error {
 	for _, name := range names {
@@ -338,7 +341,7 @@ func (u Recognise) forget(
 }
 
 // dropBoxes drops the coordinates of pages no count claims.
-func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.ArtifactName, finished int) error {
+func dropBoxes(ctx context.Context, store vaultport.DerivedStore, name domain.ArtifactName, finished int) error {
 	raw, err := store.ReadArtifact(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
@@ -361,7 +364,7 @@ func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.Artifac
 
 // dropParts drops the parts no count claims: those opening past the prose the
 // pages before the count came to.
-func dropParts(ctx context.Context, store port.DerivedStore, name domain.ArtifactName, prose int) error {
+func dropParts(ctx context.Context, store vaultport.DerivedStore, name domain.ArtifactName, prose int) error {
 	raw, err := store.ReadArtifact(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
@@ -383,7 +386,7 @@ func dropParts(ctx context.Context, store port.DerivedStore, name domain.Artifac
 // that answers a question reads it: it is there so that a person can ask what
 // produced a text, and so that everything a recogniser now known to be bad
 // produced can be found again.
-func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
+func (u Recognise) record(ctx context.Context, store vaultport.DerivedStore, area, hash string) error {
 	named := u.provider.GetRecognitionModel()
 	raw, err := json.MarshalIndent(struct {
 		Layout     string `json:"layout"`
@@ -422,7 +425,7 @@ const resumeMark = ocrartifact.Note + "pages "
 // batch that did not land whole. The two numbers come from the same stretch of
 // the file, which is what makes a coordinate written next land where its words
 // are.
-func readResumePoint(ctx context.Context, store port.DerivedStore, partial domain.ArtifactName) (int, int, error) {
+func readResumePoint(ctx context.Context, store vaultport.DerivedStore, partial domain.ArtifactName) (int, int, error) {
 	raw, err := store.ReadArtifact(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, 0, nil

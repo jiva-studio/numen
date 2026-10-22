@@ -15,9 +15,10 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // newLinkedConfig is a configuration whose plugin host serves every plugin this binary links in,
@@ -81,7 +82,7 @@ func (k heldKeys) GetKey(_ context.Context, name string) (string, error) {
 	if key, ok := k[name]; ok {
 		return key, nil
 	}
-	return "", port.ErrNoKey
+	return "", pluginport.ErrNoKey
 }
 
 func (k heldKeys) SetKey(context.Context, string, string) error { return nil }
@@ -100,7 +101,7 @@ func TestNumenAgentIsConfiguredWithItsBaseURLAndKey(t *testing.T) {
 	host := newLinkedConfig(t).PluginHost
 	host.SetKeyStore(heldKeys{"md.numen.agent/apiKey": "chat-key"})
 	host.SetSettings(map[string]map[string]any{
-		"md.numen.agent": {"baseUrl": chat.URL, port.SettingStoredSecrets: []any{"apiKey"}},
+		"md.numen.agent": {"baseUrl": chat.URL, pluginport.SettingStoredSecrets: []any{"apiKey"}},
 	})
 
 	endpoint, err := host.EnsureActive(t.Context(), "md.numen.agent")

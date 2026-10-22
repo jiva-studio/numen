@@ -15,28 +15,28 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // countingDocumentHost is one document plugin at an endpoint, counting the
 // references taken on it and given back.
 type countingDocumentHost struct {
-	port.PluginManager
-	endpoint port.Endpoint
+	pluginport.PluginManager
+	endpoint pluginport.Endpoint
 	acquired atomic.Int32
 	released atomic.Int32
 }
 
-func (h *countingDocumentHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.pdf"}}, nil
+func (h *countingDocumentHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.pdf"}}, nil
 }
 
-func (h *countingDocumentHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
-func (h *countingDocumentHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{}, false
+func (h *countingDocumentHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
+func (h *countingDocumentHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{}, false
 }
 
-func (h *countingDocumentHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
+func (h *countingDocumentHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
@@ -66,7 +66,7 @@ func TestAnOpenedDocumentProducesBackEveryReference(t *testing.T) {
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(pageCountingServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	host := &countingDocumentHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
+	host := &countingDocumentHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
 	cfg := Config{PluginHost: host}
 
 	doc, err := cfg.PageRenderer().OpenDocument(t.Context(), readSeekNopCloser{strings.NewReader("%PDF")})

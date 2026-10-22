@@ -3,8 +3,9 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // NoteLinks is what one note is joined to: what it points at, and what points
@@ -18,12 +19,12 @@ type NoteLinks struct {
 
 // ShowLinks gathers them for one note.
 type ShowLinks struct {
-	links port.LinkQueries
+	links noteport.LinkQueries
 }
 
 // NewShowLinks is what both halves are asked of: the index that answers what a
 // note points at and what points at it.
-func NewShowLinks(links port.LinkQueries) ShowLinks {
+func NewShowLinks(links noteport.LinkQueries) ShowLinks {
 	return ShowLinks{links: links}
 }
 

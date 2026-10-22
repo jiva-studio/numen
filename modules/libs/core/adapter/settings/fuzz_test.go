@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 // A file naming settings is answered for either with settings this build can be
@@ -160,7 +161,7 @@ func FuzzWrite(f *testing.F) {
 				t.Fatalf("%q was saved and reads back as %v", raw, err)
 			}
 		default:
-			if !errors.Is(err, port.ErrNotASetting) {
+			if !errors.Is(err, settingsport.ErrNotASetting) {
 				t.Fatalf("%q failed as %v, which does not say what is wrong with it", raw, err)
 			}
 			if got := reading(t, path); got != status {

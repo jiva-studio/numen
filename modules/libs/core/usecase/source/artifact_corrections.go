@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrNotCorrectable is a kind whose corrections are not the text itself. A
@@ -41,7 +43,7 @@ type WriteCorrections struct {
 // file's hash and the store the transcripts are kept in. Changed, when it is
 // not nil, is told the path of each file whose transcript was written.
 func NewWriteCorrections(
-	queries port.SourceQueries, derived port.DerivedStores, changed func(path string),
+	queries sourceport.SourceQueries, derived vaultport.DerivedStores, changed func(path string),
 ) *WriteCorrections {
 	return &WriteCorrections{store: artifactStore{queries: queries, derived: derived}, changed: changed}
 }
@@ -71,7 +73,7 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 }
 
 func (u *WriteCorrections) write(
-	ctx context.Context, store port.DerivedStore, in Correction, producer, hash string, placed []domain.TranscriptCue,
+	ctx context.Context, store vaultport.DerivedStore, in Correction, producer, hash string, placed []domain.TranscriptCue,
 ) (int, error) {
 	words, err := getArtifactWords(ctx, store, producer, hash)
 	if err != nil {
@@ -81,7 +83,7 @@ func (u *WriteCorrections) write(
 	// A run appends to what it is writing down, and what is being appended to is
 	// not corrected underneath.
 	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, producer, hash))
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		return 0, ErrTranscriptBusy
 	}
 	if err != nil {

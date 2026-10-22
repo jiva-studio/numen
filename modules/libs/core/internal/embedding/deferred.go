@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // ErrModelNotReady is a model that is not on this machine yet.
@@ -20,7 +20,7 @@ var ErrModelNotReady = errors.New("the model is still arriving")
 // Two ways of waiting. A pass that fills the index waits; a person who has
 // typed a question is answered by the words.
 type Embedder struct {
-	model port.EmbeddingModel
+	model embeddingport.EmbeddingModel
 
 	// ready is closed once there is something to answer with, or a reason there
 	// never will be.
@@ -28,7 +28,7 @@ type Embedder struct {
 	once  sync.Once
 
 	mu     sync.RWMutex
-	item   port.Embedder
+	item   embeddingport.Embedder
 	reason error
 	// isDone is the wait being over: something answered for it, it was let go
 	// of, or it was closed.
@@ -39,21 +39,21 @@ type Embedder struct {
 // a model and preparing it are their own step in the list of what is being
 // done, and a pass that fills an index waits here until that step is over.
 type WaitingEmbedder interface {
-	port.Embedder
+	embeddingport.Embedder
 	// Wait blocks until the model turns up, and says what stopped it.
 	Wait(ctx context.Context) error
 }
 
 // NewDeferredEmbedder is an embedder being loaded somewhere else, under the identity
 // the settings give it.
-func NewDeferredEmbedder(is port.EmbeddingModel) *Embedder {
+func NewDeferredEmbedder(is embeddingport.EmbeddingModel) *Embedder {
 	return &Embedder{model: is, ready: make(chan struct{})}
 }
 
 // SetModel is the model turning up, or the reason it never will. It is the
 // first of these that counts, and a model arriving after the wait is over is
 // release at its current position.
-func (e *Embedder) SetModel(embedder port.Embedder, why error) {
+func (e *Embedder) SetModel(embedder embeddingport.Embedder, why error) {
 	e.mu.Lock()
 	late := e.isDone
 	if !late {
@@ -84,7 +84,7 @@ func (e *Embedder) DiscardModel(why error) error {
 
 // closeIfPresent closes a model that is here, and says what closing it said. There is
 // nothing to close where nothing landed.
-func closeIfPresent(target port.Embedder) error {
+func closeIfPresent(target embeddingport.Embedder) error {
 	if target == nil {
 		return nil
 	}
@@ -92,7 +92,7 @@ func closeIfPresent(target port.Embedder) error {
 }
 
 // GetModel is what the settings say this is, known before the weights are here.
-func (e *Embedder) GetModel() port.EmbeddingModel { return e.model }
+func (e *Embedder) GetModel() embeddingport.EmbeddingModel { return e.model }
 
 // Wait blocks until the model turns up, and says what stopped it.
 func (e *Embedder) Wait(ctx context.Context) error {
@@ -124,11 +124,11 @@ func (e *Embedder) Close() error {
 
 // GetWaitingEmbedder waits for the model. Nothing is owed to anybody watching a
 // pass over a vault.
-func (e *Embedder) GetWaitingEmbedder() port.Embedder { return blockingEmbedder{e} }
+func (e *Embedder) GetWaitingEmbedder() embeddingport.Embedder { return blockingEmbedder{e} }
 
 // GetImpatientEmbedder does not wait. A search short of the half that asks by
 // meaning is a search the words answer.
-func (e *Embedder) GetImpatientEmbedder() port.Embedder { return nonBlockingEmbedder{e} }
+func (e *Embedder) GetImpatientEmbedder() embeddingport.Embedder { return nonBlockingEmbedder{e} }
 
 // embed is what the model answers with, once it is here.
 func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -143,7 +143,7 @@ func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, erro
 
 type blockingEmbedder struct{ e *Embedder }
 
-func (w blockingEmbedder) GetModel() port.EmbeddingModel { return w.e.model }
+func (w blockingEmbedder) GetModel() embeddingport.EmbeddingModel { return w.e.model }
 
 // Wait blocks until the model turns up, and says what stopped it.
 func (w blockingEmbedder) Wait(ctx context.Context) error { return w.e.Wait(ctx) }
@@ -163,7 +163,7 @@ func (w blockingEmbedder) Concurrency() int { return w.e.Concurrency() }
 
 type nonBlockingEmbedder struct{ e *Embedder }
 
-func (i nonBlockingEmbedder) GetModel() port.EmbeddingModel { return i.e.model }
+func (i nonBlockingEmbedder) GetModel() embeddingport.EmbeddingModel { return i.e.model }
 
 func (i nonBlockingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	select {

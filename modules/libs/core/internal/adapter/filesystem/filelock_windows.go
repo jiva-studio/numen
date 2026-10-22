@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // somebody else holding it, and err itself otherwise.
@@ -16,7 +16,7 @@ import (
 func wrapHeldByAnother(err error) error {
 	if errors.Is(err, windows.ERROR_SHARING_VIOLATION) ||
 		errors.Is(err, windows.ERROR_LOCK_VIOLATION) {
-		return fmt.Errorf("%w: %w", port.ErrHeldByAnother, err)
+		return fmt.Errorf("%w: %w", vaultport.ErrHeldByAnother, err)
 	}
 	return err
 }

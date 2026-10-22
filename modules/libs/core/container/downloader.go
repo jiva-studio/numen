@@ -5,13 +5,15 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
-var _ port.Downloader = (*hostDownloaderPort)(nil)
-var _ port.Downloader = (*unavailableDownloader)(nil)
+var _ downloadport.Downloader = (*hostDownloaderPort)(nil)
+var _ downloadport.Downloader = (*unavailableDownloader)(nil)
 
 // DownloaderReady says whether a downloader plugin is enabled.
 func (c Config) DownloaderReady() bool {
@@ -19,7 +21,7 @@ func (c Config) DownloaderReady() bool {
 }
 
 // Downloader is what reaches an address on this machine.
-func (c Config) Downloader(_ context.Context) port.Downloader {
+func (c Config) Downloader(_ context.Context) downloadport.Downloader {
 	host, err := c.resolvePlugin(plugin.CapabilityDownloader)
 	if err != nil {
 		return unavailableDownloader{why: err}
@@ -29,7 +31,7 @@ func (c Config) Downloader(_ context.Context) port.Downloader {
 
 // ImportURL is one link note's address, downloaded into the vault, with the
 // note cut again as soon as what came back is written.
-func (c Config) ImportURL(ctx context.Context, db *Index, downloader port.Downloader) source.ImportURL {
+func (c Config) ImportURL(ctx context.Context, db *Index, downloader downloadport.Downloader) source.ImportURL {
 	level := c.Level(db)
 	notes := c.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), level)
 	return source.ImportURL{
@@ -52,44 +54,44 @@ func (c Config) ImportURL(ctx context.Context, db *Index, downloader port.Downlo
 }
 
 type hostDownloaderPort struct {
-	host port.PluginManager
+	host pluginport.PluginManager
 }
 
 func (h hostDownloaderPort) openBridge(ctx context.Context) (*plugin.DownloaderBridge, error) {
 	return plugin.OpenDownloaderBridge(ctx, h.host)
 }
 
-func (h hostDownloaderPort) GetDownloadModel(ctx context.Context, targetURL domain.URL) (port.DownloadModel, error) {
+func (h hostDownloaderPort) GetDownloadModel(ctx context.Context, targetURL domain.URL) (downloadport.DownloadModel, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
-		return port.DownloadModel{}, err
+		return downloadport.DownloadModel{}, err
 	}
 	defer bridge.Close()
 	return bridge.GetDownloadModel(ctx, targetURL)
 }
 
-func (h hostDownloaderPort) GetMetadata(ctx context.Context, rawURL domain.URL) (port.Metadata, error) {
+func (h hostDownloaderPort) GetMetadata(ctx context.Context, rawURL domain.URL) (downloadport.Metadata, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
-		return port.Metadata{}, err
+		return downloadport.Metadata{}, err
 	}
 	defer bridge.Close()
 	return bridge.GetMetadata(ctx, rawURL)
 }
 
-func (h hostDownloaderPort) GetText(ctx context.Context, pos domain.URL, want port.PreferredCaptions) (port.Text, error) {
+func (h hostDownloaderPort) GetText(ctx context.Context, pos domain.URL, want downloadport.PreferredCaptions) (downloadport.Text, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
-		return port.Text{}, err
+		return downloadport.Text{}, err
 	}
 	defer bridge.Close()
 	return bridge.GetText(ctx, pos, want)
 }
 
-func (h hostDownloaderPort) Download(ctx context.Context, offset domain.URL, into io.Writer) (port.Copy, error) {
+func (h hostDownloaderPort) Download(ctx context.Context, offset domain.URL, into io.Writer) (downloadport.Copy, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
-		return port.Copy{}, err
+		return downloadport.Copy{}, err
 	}
 	defer bridge.Close()
 	return bridge.Download(ctx, offset, into)
@@ -100,18 +102,18 @@ type unavailableDownloader struct {
 	why error
 }
 
-func (u unavailableDownloader) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadModel, error) {
-	return port.DownloadModel{}, u.why
+func (u unavailableDownloader) GetDownloadModel(_ context.Context, _ domain.URL) (downloadport.DownloadModel, error) {
+	return downloadport.DownloadModel{}, u.why
 }
 
-func (u unavailableDownloader) GetMetadata(_ context.Context, _ domain.URL) (port.Metadata, error) {
-	return port.Metadata{}, u.why
+func (u unavailableDownloader) GetMetadata(_ context.Context, _ domain.URL) (downloadport.Metadata, error) {
+	return downloadport.Metadata{}, u.why
 }
 
-func (u unavailableDownloader) GetText(_ context.Context, _ domain.URL, _ port.PreferredCaptions) (port.Text, error) {
-	return port.Text{}, u.why
+func (u unavailableDownloader) GetText(_ context.Context, _ domain.URL, _ downloadport.PreferredCaptions) (downloadport.Text, error) {
+	return downloadport.Text{}, u.why
 }
 
-func (u unavailableDownloader) Download(_ context.Context, _ domain.URL, _ io.Writer) (port.Copy, error) {
-	return port.Copy{}, u.why
+func (u unavailableDownloader) Download(_ context.Context, _ domain.URL, _ io.Writer) (downloadport.Copy, error) {
+	return downloadport.Copy{}, u.why
 }

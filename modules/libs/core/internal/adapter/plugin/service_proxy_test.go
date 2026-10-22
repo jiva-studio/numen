@@ -14,36 +14,36 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // servingHost serves the services it is given from the plugins it runs.
 type servingHost struct {
 	services  map[string]string
-	endpoints map[string]port.Endpoint
+	endpoints map[string]pluginport.Endpoint
 	mu        sync.Mutex
 	released  int
 }
 
-func (h *servingHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
-	return port.DiscoveredPlugin{}, &port.UnavailableError{Reason: port.PluginNotInstalled}
+func (h *servingHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
+	return pluginport.DiscoveredPlugin{}, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 }
 
-func (h *servingHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
+func (h *servingHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
 
-func (h *servingHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{}, false
+func (h *servingHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{}, false
 }
 
-func (h *servingHost) ResolveService(service string) (port.DiscoveredPlugin, bool) {
+func (h *servingHost) ResolveService(service string) (pluginport.DiscoveredPlugin, bool) {
 	id, serves := h.services[service]
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: id}}, serves
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, serves
 }
 
-func (h *servingHost) EnsureActive(_ context.Context, id string) (port.Endpoint, error) {
+func (h *servingHost) EnsureActive(_ context.Context, id string) (pluginport.Endpoint, error) {
 	endpoint, running := h.endpoints[id]
 	if !running {
-		return port.Endpoint{}, errors.New("the plugin is down")
+		return pluginport.Endpoint{}, errors.New("the plugin is down")
 	}
 	return endpoint, nil
 }
@@ -60,7 +60,7 @@ func (h *servingHost) getReleased() int {
 	return h.released
 }
 
-func endpointOf(t *testing.T, server *httptest.Server, token string) port.Endpoint {
+func endpointOf(t *testing.T, server *httptest.Server, token string) pluginport.Endpoint {
 	t.Helper()
 	host, rawPort, err := net.SplitHostPort(server.Listener.Addr().String())
 	if err != nil {
@@ -70,7 +70,7 @@ func endpointOf(t *testing.T, server *httptest.Server, token string) port.Endpoi
 	if err != nil {
 		t.Fatal(err)
 	}
-	return port.Endpoint{Host: host, Port: number, Token: token}
+	return pluginport.Endpoint{Host: host, Port: number, Token: token}
 }
 
 func TestACallReachesThePluginThatServesItsService(t *testing.T) {
@@ -85,7 +85,7 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
 		services:  map[string]string{"numen.v1.CardsService": "md.numen.a"},
-		endpoints: map[string]port.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
+		endpoints: map[string]pluginport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(OpenServiceProxy(host))
 	t.Cleanup(window.Close)
@@ -126,7 +126,7 @@ func TestAStreamReachesTheWindowMessageByMessage(t *testing.T) {
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
 		services:  map[string]string{"numen.v1.FlashcardsService": "md.numen.a"},
-		endpoints: map[string]port.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
+		endpoints: map[string]pluginport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(OpenServiceProxy(host))
 	t.Cleanup(window.Close)

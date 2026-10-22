@@ -4,7 +4,7 @@ import (
 	"math"
 	"unsafe"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // Bits keeps one bit per dimension: the sign, which is the coarse pass's whole
@@ -44,7 +44,7 @@ func Coarse(q []int8) []byte {
 func Bytes(v []float32) []int8 {
 	out := make([]int8, len(v))
 	for i, x := range v {
-		q := math.Round(float64(x) / port.Int8Scale * 127)
+		q := math.Round(float64(x) / embeddingport.Int8Scale * 127)
 		switch {
 		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a rounded q equal to 127 is assigned 127"
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="the mutated value is 126: a rounded q equal to 127 is assigned 127"

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // PluginData opens the folder a plugin keeps its data in, inside the store of a vault.
@@ -15,7 +16,7 @@ type PluginData struct {
 }
 
 // Open opens the store of the vault, answering for the folder named and no other.
-func (p PluginData) Open(v domain.Vault, folder string) (port.PluginDataStore, error) {
+func (p PluginData) Open(v domain.Vault, folder string) (pluginport.PluginDataStore, error) {
 	if folder == "" || strings.ContainsAny(folder, `/\.`) {
 		return nil, fmt.Errorf("%q is not a folder of the store: %w", folder, ErrOutside)
 	}
@@ -55,14 +56,14 @@ func (f pluginFolder) Append(ctx context.Context, name string, content []byte) e
 	return f.store.Append(ctx, key, content)
 }
 
-func (f pluginFolder) List(ctx context.Context) ([]port.PluginDataFile, error) {
+func (f pluginFolder) List(ctx context.Context) ([]pluginport.PluginDataFile, error) {
 	target, err := f.store.List(ctx, f.folder)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.PluginDataFile, 0, len(target))
+	out := make([]pluginport.PluginDataFile, 0, len(target))
 	for _, one := range target {
-		out = append(out, port.PluginDataFile{Name: strings.TrimPrefix(one.Name, f.folder+"/"), Size: one.Size})
+		out = append(out, pluginport.PluginDataFile{Name: strings.TrimPrefix(one.Name, f.folder+"/"), Size: one.Size})
 	}
 	return out, nil
 }

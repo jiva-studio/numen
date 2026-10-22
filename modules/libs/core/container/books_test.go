@@ -13,8 +13,11 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 type bookServer struct {
@@ -41,13 +44,13 @@ func TestBooksAreUnavailableWhereNoPluginReadsThem(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			books := cfg.Books()
-			if _, err := books.GetBook(t.Context(), "a.epub"); !errors.Is(err, port.ErrUnavailable) {
+			if _, err := books.GetBook(t.Context(), "a.epub"); !errors.Is(err, completionport.ErrUnavailable) {
 				t.Errorf("GetBook: err = %v, want unavailable", err)
 			}
-			if _, err := books.ReadBookMarkup(t.Context(), "a.epub", "one.xhtml", nil); !errors.Is(err, port.ErrUnavailable) {
+			if _, err := books.ReadBookMarkup(t.Context(), "a.epub", "one.xhtml", nil); !errors.Is(err, completionport.ErrUnavailable) {
 				t.Errorf("ReadBookMarkup: err = %v, want unavailable", err)
 			}
-			if _, err := books.ReadEntry(t.Context(), domain.Fingerprint{Path: "a.epub"}, "cover.png"); !errors.Is(err, port.ErrUnavailable) {
+			if _, err := books.ReadEntry(t.Context(), domain.Fingerprint{Path: "a.epub"}, "cover.png"); !errors.Is(err, completionport.ErrUnavailable) {
 				t.Errorf("ReadEntry: err = %v, want unavailable", err)
 			}
 		})
@@ -60,14 +63,14 @@ func TestBooksAreReadThroughThePluginAndGiveBackEveryReference(t *testing.T) {
 	mux.Handle(numenv1connect.NewBookServiceHandler(bookServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	host := &countingDocumentHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
+	host := &countingDocumentHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
 	books := Config{PluginHost: host}.Books()
 
 	shape, err := books.GetBook(t.Context(), "a.epub")
 	if err != nil || shape.Title != "A Book" {
 		t.Fatalf("shape = %+v, err = %v", shape, err)
 	}
-	if _, err := books.ReadEntry(t.Context(), domain.Fingerprint{Path: "a.epub"}, "cover.png"); !errors.Is(err, port.ErrNoBookEntry) {
+	if _, err := books.ReadEntry(t.Context(), domain.Fingerprint{Path: "a.epub"}, "cover.png"); !errors.Is(err, sourceport.ErrNoBookEntry) {
 		t.Errorf("ReadEntry: err = %v, want ErrNoBookEntry", err)
 	}
 	if host.acquired.Load() != host.released.Load() {

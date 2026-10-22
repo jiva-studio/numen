@@ -8,12 +8,13 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // step is what one stored byte is worth: the whole scale over the 127 levels a
 // signed byte has on either side of zero.
-const step = port.Int8Scale / 127
+const step = embeddingport.Int8Scale / 127
 
 // widths are the vector widths this application admits: the model it embeds
 // with by default is 384 wide, and the settings take any model a person names,

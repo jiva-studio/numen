@@ -3,7 +3,7 @@ package agent
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 )
 
 // GetInstructions returns what the agent is told about the person it is answering.
@@ -11,7 +11,7 @@ import (
 // A path is how a tool names a note. The person named it by writing a title on
 // it, and that is the name they know it by: a note is "Harmonic oscillator",
 // never `physics/classical/Harmonic oscillator.md`.
-func GetInstructions(task port.Task) string {
+func GetInstructions(task agentport.Task) string {
 	var b strings.Builder
 	b.WriteString("You are answering inside the application the person keeps these notes in, ")
 	b.WriteString("beside the note they are looking at.\n\n")

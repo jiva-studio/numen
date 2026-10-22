@@ -3,18 +3,20 @@ package file
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // GetFolderEntries returns what a folder holds, with the type of each note in it where an index exists.
 // Only the failure to list the folder wraps its cause.
 type GetFolderEntries struct {
-	readers port.VaultReaders
-	queries port.NoteQueries
+	readers vaultport.VaultReaders
+	queries noteport.NoteQueries
 }
 
-func NewGetFolderEntries(readers port.VaultReaders, queries port.NoteQueries) *GetFolderEntries {
+func NewGetFolderEntries(readers vaultport.VaultReaders, queries noteport.NoteQueries) *GetFolderEntries {
 	return &GetFolderEntries{readers: readers, queries: queries}
 }
 

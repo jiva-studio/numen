@@ -11,8 +11,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // A voice is a recording made of spans given in advance, and the model that
@@ -30,15 +31,15 @@ type voice struct {
 }
 
 // a second long with a fifth of a second of silence after it.
-func getSpan(n int) port.Audio {
-	return port.Audio{From: n * 1000, To: n*1000 + 800}
+func getSpan(n int) transcriptionport.Audio {
+	return transcriptionport.Audio{From: n * 1000, To: n*1000 + 800}
 }
 
-func (s *voice) GetTranscriptionModel() port.TranscriptionModel {
-	return port.TranscriptionModel{Model: "ear", Segmenter: "pauses", Cutting: "0.50/500/200/30000/100/2500", From: "a test"}
+func (s *voice) GetTranscriptionModel() transcriptionport.TranscriptionModel {
+	return transcriptionport.TranscriptionModel{Model: "ear", Segmenter: "pauses", Cutting: "0.50/500/200/30000/100/2500", From: "a test"}
 }
 
-func (s *voice) Open(_ context.Context, _ []byte) (port.Recording, error) {
+func (s *voice) Open(_ context.Context, _ []byte) (transcriptionport.Recording, error) {
 	if s.refuse != nil {
 		return nil, s.refuse
 	}
@@ -46,7 +47,7 @@ func (s *voice) Open(_ context.Context, _ []byte) (port.Recording, error) {
 	return played{s}, nil
 }
 
-func (s *voice) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
+func (s *voice) Transcribe(ctx context.Context, audio transcriptionport.Audio) (string, error) {
 	s.spans = append(s.spans, audio.From)
 	if s.stop != nil {
 		s.stop(len(s.spans))
@@ -64,8 +65,8 @@ type played struct{ *voice }
 
 func (p played) GetDuration() int { return len(p.words) * 1000 }
 
-func (p played) GetSegments(_ context.Context, from, count int) ([]port.Audio, error) {
-	var out []port.Audio
+func (p played) GetSegments(_ context.Context, from, count int) ([]transcriptionport.Audio, error) {
+	var out []transcriptionport.Audio
 	for n := range p.words {
 		if pos := getSpan(n); pos.From >= from {
 			out = append(out, pos)

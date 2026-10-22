@@ -4,19 +4,19 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // ErrNoTrash is a machine with nowhere to put what is deleted.
-var ErrNoTrash = port.ErrNoTrash
+var ErrNoTrash = machineport.ErrNoTrash
 
 // ChooseFolder puts this machine's folder dialog in front of the person, under
 // the title and at the folder it is given.
 type ChooseFolder struct {
-	dialog port.FolderDialog
+	dialog machineport.FolderDialog
 }
 
-func NewChooseFolder(dialog port.FolderDialog) ChooseFolder {
+func NewChooseFolder(dialog machineport.FolderDialog) ChooseFolder {
 	return ChooseFolder{dialog: dialog}
 }
 
@@ -39,5 +39,5 @@ func (u ChooseFolder) GetPickFolder() PickFolder {
 // IsFolderDialogUnavailable is whether an error says the dialog cannot be put up
 // now: one is already open, or this machine has none.
 func IsFolderDialogUnavailable(err error) bool {
-	return errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoFolderDialog)
+	return errors.Is(err, machineport.ErrChoosing) || errors.Is(err, machineport.ErrNoFolderDialog)
 }

@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // writeSettingsFile makes a settings file in a folder of this test's own.
@@ -69,7 +71,7 @@ func TestWriteRefusesWhatIsNotJSONAndPreservesTheFileAsItWas(t *testing.T) {
 
 	err := settings.Write(
 		path, []byte("{ \"agent\": { \"use\": \"claude\" } // a comment\n}"), nil, newDocument())
-	if !errors.Is(err, port.ErrNotASetting) {
+	if !errors.Is(err, settingsport.ErrNotASetting) {
 		t.Fatalf("failed with %v, wanted an error", err)
 	}
 	if !strings.Contains(err.Error(), "byte") {
@@ -87,7 +89,7 @@ func TestWriteRefusesAValueOfTheWrongKind(t *testing.T) {
 
 	err := settings.Write(
 		path, []byte(`{"appearance": {"interface_scale": "large"}}`), nil, newDocument())
-	if !errors.Is(err, port.ErrNotASetting) {
+	if !errors.Is(err, settingsport.ErrNotASetting) {
 		t.Fatalf("failed with %v, wanted an error", err)
 	}
 	if !strings.Contains(err.Error(), "byte") {
@@ -103,7 +105,7 @@ func TestWriteRefusesWhatIsNotAnObject(t *testing.T) {
 		path := writeSettingsFile(t, target)
 
 		err := settings.Write(path, []byte(content), nil, newDocument())
-		if !errors.Is(err, port.ErrNotASetting) {
+		if !errors.Is(err, settingsport.ErrNotASetting) {
 			t.Errorf("%s: failed with %v, wanted an error", content, err)
 		}
 
@@ -127,7 +129,7 @@ func TestWriteRefusesANameASectionContainsTwice(t *testing.T) {
 		path := writeSettingsFile(t, target)
 
 		err := settings.Write(path, []byte(content), nil, newDocument())
-		if !errors.Is(err, port.ErrNotASetting) {
+		if !errors.Is(err, settingsport.ErrNotASetting) {
 			t.Errorf("%s: failed with %v, wanted an error", what, err)
 		} else if !strings.Contains(err.Error(), "one of a name") {
 			t.Errorf("%s: said %q, wanted it to name the trouble", what, err)
@@ -176,7 +178,7 @@ func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 
 	err := settings.Write(
 		path, []byte(`{"agent": {"use": "gemini"}}`), newString(read), newDocument())
-	if !errors.Is(err, port.ErrStale) {
+	if !errors.Is(err, vaultport.ErrStale) {
 		t.Fatalf("failed with %v, wanted the file to have moved past what was read", err)
 	}
 

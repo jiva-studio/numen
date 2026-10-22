@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // pluginGracePeriod is how long a plugin has to exit once it is told to stop.
@@ -20,12 +21,12 @@ var errSafeMode = errors.New("numen is running in safe mode")
 // resolvePlugin is the plugin host where an enabled plugin declares the capability. Where none
 // does, the error is a *port.UnavailableError: an installation with no plugin host has none
 // installed, and one in safe mode has every one disabled.
-func (c Config) resolvePlugin(capability string) (port.PluginManager, error) {
+func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, error) {
 	if c.PluginHost == nil {
-		return nil, &port.UnavailableError{Capability: capability, Reason: port.PluginNotInstalled}
+		return nil, &pluginport.UnavailableError{Capability: capability, Reason: pluginport.PluginNotInstalled}
 	}
 	if c.SafeMode {
-		return nil, &port.UnavailableError{Capability: capability, Reason: port.PluginDisabled, Err: errSafeMode}
+		return nil, &pluginport.UnavailableError{Capability: capability, Reason: pluginport.PluginDisabled, Err: errSafeMode}
 	}
 	if _, err := c.PluginHost.ResolveCapability(capability); err != nil {
 		return nil, err
@@ -67,7 +68,7 @@ func (c Config) StopPlugins(ctx context.Context) error {
 // GetPluginTools is the use cases that offer an agent the tools the plugins serve. Where there is
 // no plugin host they offer none.
 func (c Config) GetPluginTools() plugintool.Tools {
-	var tools port.PluginTools
+	var tools pluginport.PluginTools
 	if c.PluginHost != nil {
 		tools = plugin.OpenToolsBridge(c.PluginHost)
 	}

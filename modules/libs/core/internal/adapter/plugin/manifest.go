@@ -4,42 +4,42 @@ package plugin
 import (
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const (
 	// PermissionVaultRead allows reading files from the active vault.
-	PermissionVaultRead = port.PermissionVaultRead
+	PermissionVaultRead = pluginport.PermissionVaultRead
 
 	// PermissionVaultWrite allows modifying files in the active vault.
-	PermissionVaultWrite = port.PermissionVaultWrite
+	PermissionVaultWrite = pluginport.PermissionVaultWrite
 
 	// PermissionNetworkOutbound allows outbound network requests.
-	PermissionNetworkOutbound = port.PermissionNetworkOutbound
+	PermissionNetworkOutbound = pluginport.PermissionNetworkOutbound
 
 	// PermissionAIComplete allows asking the host for a model completion.
-	PermissionAIComplete = port.PermissionAIComplete
+	PermissionAIComplete = pluginport.PermissionAIComplete
 )
 
 // Lifecycle defines how the host activates and evicts a plugin from memory.
-type Lifecycle = port.PluginLifecycle
+type Lifecycle = pluginport.PluginLifecycle
 
 // Backend describes the server-side executable or wasm module of a plugin.
-type Backend = port.PluginBackend
+type Backend = pluginport.PluginBackend
 
 // Frontend describes the client-side bundle and styles of a plugin.
-type Frontend = port.PluginFrontend
+type Frontend = pluginport.PluginFrontend
 
 // SettingOptions is a slice of option values supporting string arrays and object arrays.
-type SettingOptions = port.PluginSettingOptions
+type SettingOptions = pluginport.PluginSettingOptions
 
 // Setting declares one configuration field managed by the core host.
-type Setting = port.PluginManifestSetting
+type Setting = pluginport.PluginManifestSetting
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
-type Manifest = port.PluginManifest
+type Manifest = pluginport.PluginManifest
 
 // ReadManifest decodes and validates a manifest from JSON input.
 func ReadManifest(r io.Reader) (Manifest, error) {
-	return port.ReadManifest(r)
+	return pluginport.ReadManifest(r)
 }

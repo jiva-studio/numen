@@ -10,7 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // dependencyStreamBuffer is how many statuses a streaming caller may lag behind.
@@ -26,7 +26,7 @@ type dependencyEndpoint struct {
 var _ numenv1connect.DependencyServiceHandler = (*dependencyEndpoint)(nil)
 
 // begin authenticates the call and returns what provisions the dependencies.
-func (e *dependencyEndpoint) begin(header http.Header) (port.DependencyCatalog, error) {
+func (e *dependencyEndpoint) begin(header http.Header) (pluginport.DependencyCatalog, error) {
 	if _, err := e.endpoint.authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
 	}
@@ -82,12 +82,12 @@ func (e *dependencyEndpoint) ProvisionDependency(
 		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if !catalog.CanProvision(requirement) {
-		return connect.NewError(connect.CodeNotFound, port.ErrNoProvisioner)
+		return connect.NewError(connect.CodeNotFound, pluginport.ErrNoProvisioner)
 	}
-	updates := make(chan port.DependencyStatus, dependencyStreamBuffer)
+	updates := make(chan pluginport.DependencyStatus, dependencyStreamBuffer)
 	done := make(chan error, 1)
 	go func() {
-		_, err := catalog.Provision(ctx, requirement, func(status port.DependencyStatus) { sendLatest(updates, status) })
+		_, err := catalog.Provision(ctx, requirement, func(status pluginport.DependencyStatus) { sendLatest(updates, status) })
 		done <- err
 	}()
 	for {
@@ -105,9 +105,9 @@ func (e *dependencyEndpoint) ProvisionDependency(
 // finishStream sends what is left of the statuses and, for a run that failed
 // without reporting it, the failure.
 func (e *dependencyEndpoint) finishStream(
-	stream *connect.ServerStream[v1.ProvisionDependencyResponse], updates chan port.DependencyStatus, req port.DependencyRequirement, runErr error,
+	stream *connect.ServerStream[v1.ProvisionDependencyResponse], updates chan pluginport.DependencyStatus, req pluginport.DependencyRequirement, runErr error,
 ) error {
-	var last *port.DependencyStatus
+	var last *pluginport.DependencyStatus
 	for drained := false; !drained; {
 		select {
 		case status := <-updates:
@@ -119,8 +119,8 @@ func (e *dependencyEndpoint) finishStream(
 			drained = true
 		}
 	}
-	if runErr != nil && (last == nil || last.State != port.DependencyStateFailed) {
-		failed := port.DependencyStatus{ID: req.ID, State: port.DependencyStateFailed, Error: runErr.Error()}
+	if runErr != nil && (last == nil || last.State != pluginport.DependencyStateFailed) {
+		failed := pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateFailed, Error: runErr.Error()}
 		return stream.Send(&v1.ProvisionDependencyResponse{Status: writeWireDependencyStatus(failed)})
 	}
 	return nil
@@ -128,7 +128,7 @@ func (e *dependencyEndpoint) finishStream(
 
 // sendLatest puts the status on the channel. A caller that lags is told the newest
 // status and not every one.
-func sendLatest(updates chan port.DependencyStatus, status port.DependencyStatus) {
+func sendLatest(updates chan pluginport.DependencyStatus, status pluginport.DependencyStatus) {
 	for {
 		select {
 		case updates <- status:
@@ -142,34 +142,34 @@ func sendLatest(updates chan port.DependencyStatus, status port.DependencyStatus
 	}
 }
 
-func readWireDependencyRequirement(wire *v1.DependencyRequirement) (port.DependencyRequirement, error) {
+func readWireDependencyRequirement(wire *v1.DependencyRequirement) (pluginport.DependencyRequirement, error) {
 	kind, err := readWireDependencyKind(wire.GetKind())
 	if err != nil {
-		return port.DependencyRequirement{}, err
+		return pluginport.DependencyRequirement{}, err
 	}
-	return port.DependencyRequirement{
+	return pluginport.DependencyRequirement{
 		ID: wire.GetId(), Kind: kind, Version: wire.GetVersion(), SourceURL: wire.GetSourceUrl(),
 		ChecksumSHA256: wire.GetChecksumSha256(), Metadata: wire.GetMetadata(),
 	}, nil
 }
 
-func readWireDependencyKind(wire v1.DependencyKind) (port.DependencyKind, error) {
+func readWireDependencyKind(wire v1.DependencyKind) (pluginport.DependencyKind, error) {
 	switch wire {
 	case v1.DependencyKind_DEPENDENCY_KIND_RUNTIME:
-		return port.DependencyKindRuntime, nil
+		return pluginport.DependencyKindRuntime, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_MODEL:
-		return port.DependencyKindModel, nil
+		return pluginport.DependencyKindModel, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_BINARY:
-		return port.DependencyKindBinary, nil
+		return pluginport.DependencyKindBinary, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_DATASET:
-		return port.DependencyKindDataset, nil
+		return pluginport.DependencyKindDataset, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_UNSPECIFIED:
-		return "", port.ErrInvalidDependency
+		return "", pluginport.ErrInvalidDependency
 	}
-	return "", port.ErrInvalidDependency
+	return "", pluginport.ErrInvalidDependency
 }
 
-func writeWireDependencyStatus(status port.DependencyStatus) *v1.DependencyStatus {
+func writeWireDependencyStatus(status pluginport.DependencyStatus) *v1.DependencyStatus {
 	wire := &v1.DependencyStatus{
 		Id: status.ID, State: writeWireDependencyState(status.State), BytesDownloaded: status.BytesDownloaded,
 		BytesTotal: status.BytesTotal, ProgressPercent: status.ProgressPercent, Message: status.Message, Error: status.Error,
@@ -183,15 +183,15 @@ func writeWireDependencyStatus(status port.DependencyStatus) *v1.DependencyStatu
 	return wire
 }
 
-func writeWireDependencyState(state port.DependencyState) v1.DependencyState {
+func writeWireDependencyState(state pluginport.DependencyState) v1.DependencyState {
 	switch state {
-	case port.DependencyStateMissing:
+	case pluginport.DependencyStateMissing:
 		return v1.DependencyState_DEPENDENCY_STATE_MISSING
-	case port.DependencyStateProvisioning:
+	case pluginport.DependencyStateProvisioning:
 		return v1.DependencyState_DEPENDENCY_STATE_PROVISIONING
-	case port.DependencyStateReady:
+	case pluginport.DependencyStateReady:
 		return v1.DependencyState_DEPENDENCY_STATE_READY
-	case port.DependencyStateFailed:
+	case pluginport.DependencyStateFailed:
 		return v1.DependencyState_DEPENDENCY_STATE_FAILED
 	}
 	return v1.DependencyState_DEPENDENCY_STATE_UNSPECIFIED

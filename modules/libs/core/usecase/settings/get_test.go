@@ -4,8 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 var errRead = errors.New("the file cannot be read")
@@ -14,19 +16,19 @@ func read() (string, string, error) { return `{"v":1}`, "/home/settings.json", n
 
 func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 	t.Parallel()
-	models := []port.Model{{Name: "base"}}
+	models := []settingsport.Model{{Name: "base"}}
 	bounds := settings.Bounds{Least: 1, Most: 6}
-	pluginList := []port.PluginInfo{
+	pluginList := []pluginport.PluginInfo{
 		{
 			ID:   "md.numen.test",
 			Name: "Test Plugin",
-			Settings: []port.PluginSetting{
+			Settings: []pluginport.PluginSetting{
 				{Key: "active", Type: "boolean", Title: "Active"},
 			},
 		},
 	}
 	get := settings.NewGet(
-		read, func() []port.Model { return models }, bounds, func() []port.PluginInfo { return pluginList },
+		read, func() []settingsport.Model { return models }, bounds, func() []pluginport.PluginInfo { return pluginList },
 	)
 
 	got, err := get.Execute()

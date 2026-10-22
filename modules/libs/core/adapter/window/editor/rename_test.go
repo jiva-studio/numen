@@ -18,9 +18,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // The window renames a note and takes one out of the vault. What the vault
@@ -605,9 +607,9 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 }
 
 // when something outside this process wrote the file in the meantime.
-type staleWriters struct{ port.VaultWriters }
+type staleWriters struct{ vaultport.VaultWriters }
 
-func (o staleWriters) Open(v domain.Vault) (port.VaultWriter, error) {
+func (o staleWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	writer, err := o.VaultWriters.Open(v)
 	if err != nil {
 		return nil, err
@@ -615,12 +617,12 @@ func (o staleWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 	return staleWriter{VaultWriter: writer}, nil
 }
 
-type staleWriter struct{ port.VaultWriter }
+type staleWriter struct{ vaultport.VaultWriter }
 
 func (staleWriter) Write(
 	context.Context, string, []byte, domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	return domain.Fingerprint{}, port.ErrStale
+	return domain.Fingerprint{}, vaultport.ErrStale
 }
 
 // TestRenamingANoteWrittenElsewhereIsAQuestion. A note holding prose nobody
@@ -649,7 +651,7 @@ func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
 }
 
 // stuck is an index that will not file a row under the path a file moved to.
-type stuck struct{ port.SourceRepository }
+type stuck struct{ sourceport.SourceRepository }
 
 func (stuck) MoveSources(context.Context, domain.VaultID, string, string) error {
 	return errors.New("the index would not file the row under the new path")

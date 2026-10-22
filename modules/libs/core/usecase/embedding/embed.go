@@ -14,8 +14,11 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // chunksPerQuery bounds one answer about what owes a vector.
@@ -28,23 +31,23 @@ const chunksPerQuery = 200
 // continued by starting another, and a chunk that has one is never asked about
 // again.
 type Embed struct {
-	readers port.VaultReaders
-	chunks  port.VectorQueries
-	vectors port.VectorRepository
+	readers vaultport.VaultReaders
+	chunks  embeddingport.VectorQueries
+	vectors embeddingport.VectorRepository
 
 	// Derived is optional. It holds what a recogniser wrote, and a chunk of a
 	// recognised document is re-sliced out of that and not out of the document;
 	// without one such a chunk is left owing its vector.
-	Derived port.DerivedStore
+	Derived vaultport.DerivedStore
 	// Documents is optional. It reads a format that needs a library, for a
 	// source standing on its own bytes; without one such a chunk is left owing
 	// its vector.
-	Documents port.TextExtractor
+	Documents sourceport.TextExtractor
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
 	// on its words alone, which is a whole search: the vector index fills in
 	// behind, and may never finish.
-	Embedder port.Embedder
+	Embedder embeddingport.Embedder
 
 	// BatchCharacters bounds one request to the model. Zero takes the default.
 	BatchCharacters int
@@ -71,7 +74,7 @@ func (u Embed) inferWorkers() int {
 // text is read out of, what says which chunks owe a vector from the model in
 // use, and where the vectors are written.
 func NewEmbed(
-	readers port.VaultReaders, chunks port.VectorQueries, vectors port.VectorRepository,
+	readers vaultport.VaultReaders, chunks embeddingport.VectorQueries, vectors embeddingport.VectorRepository,
 ) Embed {
 	return Embed{readers: readers, chunks: chunks, vectors: vectors}
 }
@@ -94,10 +97,10 @@ const pipelineBufferSize = 4
 
 // preparedBatch is one batch of chunks whose text was read and whose cached vectors were resolved.
 type preparedBatch struct {
-	model       port.EmbeddingModel
+	model       embeddingport.EmbeddingModel
 	owing       []domain.Passage
 	hashes      [][]byte
-	reused      map[int]port.Vector
+	reused      map[int]embeddingport.Vector
 	reusedCount int
 	asking      []string
 	askingMap   []int
@@ -106,7 +109,7 @@ type preparedBatch struct {
 
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
-	vectors []port.Vector
+	vectors []embeddingport.Vector
 	reused  int
 	source  string
 }
@@ -133,7 +136,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	if err != nil {
 		return res, err
 	}
-	var store port.DerivedStore
+	var store vaultport.DerivedStore
 	if u.Derived != nil {
 		store = u.Derived
 	}
@@ -184,7 +187,7 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 		return func() error { return nil }, false, nil
 	}
 	release, err := u.Derived.ClaimArtifact(ctx, domain.NewIndexClaimName())
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		return nil, true, nil
 	}
 	if err != nil {
@@ -198,13 +201,13 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 func (u Embed) produceBatches(
 	ctx context.Context,
 	v domain.Vault,
-	model port.EmbeddingModel,
+	model embeddingport.EmbeddingModel,
 	source *extracted,
 	res *EmbedResult,
 	mu *sync.Mutex,
 	out chan<- preparedBatch,
 ) error {
-	var after port.ChunkCursor
+	var after embeddingport.ChunkCursor
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -238,7 +241,7 @@ func (u Embed) produceBatches(
 // sendBatches splits the texts into batches by size and sends each one prepared.
 func (u Embed) sendBatches(
 	ctx context.Context,
-	model port.EmbeddingModel,
+	model embeddingport.EmbeddingModel,
 	chunks []domain.Passage,
 	texts []string,
 	out chan<- preparedBatch,
@@ -408,7 +411,7 @@ func (u Embed) read(
 // prepareBatch resolves cached vectors and identifies texts requiring inference.
 func (u Embed) prepareBatch(
 	ctx context.Context,
-	model port.EmbeddingModel,
+	model embeddingport.EmbeddingModel,
 	owing []domain.Passage,
 	texts []string,
 ) (preparedBatch, error) {
@@ -434,7 +437,7 @@ func (u Embed) prepareBatch(
 		model:     model,
 		owing:     owing,
 		hashes:    hashes,
-		reused:    make(map[int]port.Vector),
+		reused:    make(map[int]embeddingport.Vector),
 		asking:    make([]string, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
 		source:    owing[len(owing)-1].Source,
@@ -454,11 +457,11 @@ func (u Embed) prepareBatch(
 			continue
 		}
 		prep.askingMap[i] = -1
-		prep.reused[i] = port.Vector{
+		prep.reused[i] = embeddingport.Vector{
 			ChunkID: owing[i].ChunkID,
 			Hash:    hashes[i],
 			Model:   model,
-			Kind:    port.QuantisedInt8,
+			Kind:    embeddingport.QuantisedInt8,
 			Value:   value,
 			Coarse:  embedding.Coarse(embedding.Dimensions(value)),
 		}
@@ -514,14 +517,14 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 		}
 	}
 
-	out := make([]port.Vector, len(prep.owing))
+	out := make([]embeddingport.Vector, len(prep.owing))
 	for i := range prep.owing {
 		if pos := prep.askingMap[i]; pos >= 0 {
-			out[i] = port.Vector{
+			out[i] = embeddingport.Vector{
 				ChunkID: prep.owing[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Model:   prep.model,
-				Kind:    port.QuantisedInt8,
+				Kind:    embeddingport.QuantisedInt8,
 				Value:   unique[pos].value,
 				Coarse:  unique[pos].coarse,
 			}
@@ -575,7 +578,7 @@ func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string
 
 	doc, err := e.of.GetDocument(ctx, path, from, hash)
 	switch {
-	case port.IsNoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
+	case vaultport.IsNoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)

@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 var errNoCompletionProvider = errors.New("no plugin host runs agent programs")
@@ -45,16 +47,16 @@ func (c Config) setCompleter() {
 // completionPrograms finds the agent programs the plugins list and starts the
 // tasks of single answers on them, under the settings read at every call.
 type completionPrograms struct {
-	provider port.AgentProvider
+	provider agentport.AgentProvider
 	getAgent func() settings.Agent
 }
 
 // GetProgram returns the program named. An empty name is the program the
 // settings name under agent.use, else the default of the plugins.
-func (p *completionPrograms) GetProgram(ctx context.Context, name string) (port.AgentProgram, error) {
+func (p *completionPrograms) GetProgram(ctx context.Context, name string) (agentport.AgentProgram, error) {
 	target := p.getAgent()
 	if name == "" && !target.IsNamed() {
-		return port.AgentProgram{}, fmt.Errorf("%w: the settings name no agent", port.ErrNoRoute)
+		return agentport.AgentProgram{}, fmt.Errorf("%w: the settings name no agent", completionport.ErrNoRoute)
 	}
 	if name == "" {
 		name = target.GetUse()
@@ -65,32 +67,32 @@ func (p *completionPrograms) GetProgram(ctx context.Context, name string) (port.
 	found, isFound := findProgram(programs, name)
 	switch {
 	case !isFound && listErr != nil:
-		return port.AgentProgram{}, fmt.Errorf("%w: %w", port.ErrUnavailable, listErr)
+		return agentport.AgentProgram{}, fmt.Errorf("%w: %w", completionport.ErrUnavailable, listErr)
 	case !isFound:
-		return port.AgentProgram{}, fmt.Errorf("%w: no plugin lists the program %q", port.ErrNoRoute, name)
+		return agentport.AgentProgram{}, fmt.Errorf("%w: no plugin lists the program %q", completionport.ErrNoRoute, name)
 	case !found.IsInstalled:
-		return port.AgentProgram{}, fmt.Errorf("%w: the program %q is not installed", port.ErrNoRoute, found.Name)
+		return agentport.AgentProgram{}, fmt.Errorf("%w: the program %q is not installed", completionport.ErrNoRoute, found.Name)
 	}
 	return found, nil
 }
 
 // findProgram is the program named, or, for an empty name, the default of the
 // plugins.
-func findProgram(programs []port.AgentProgram, name string) (port.AgentProgram, bool) {
+func findProgram(programs []agentport.AgentProgram, name string) (agentport.AgentProgram, bool) {
 	if name == "" {
-		return port.GetDefaultProgram(programs)
+		return agentport.GetDefaultProgram(programs)
 	}
 	for _, one := range programs {
 		if one.Name == name {
 			return one, true
 		}
 	}
-	return port.AgentProgram{}, false
+	return agentport.AgentProgram{}, false
 }
 
 // StartRun starts the task on the program it names, with the command line,
 // the options and, where the task names none, the model the settings give it.
-func (p *completionPrograms) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
+func (p *completionPrograms) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
 	section := p.getAgent().GetProgram(task.Agent)
 	if task.Model == "" {
 		task.Model = section.Model

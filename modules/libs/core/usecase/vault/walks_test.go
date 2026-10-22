@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // heldWalk is a vault whose walk says when it began and then waits to be let
@@ -54,7 +55,7 @@ func (h heldWalk) hasWalkBegun() bool {
 // heldWalks opens that one vault, whichever vault is asked for.
 type heldWalks struct{ reader heldWalk }
 
-func (h heldWalks) Open(domain.Vault) (port.VaultReader, error) { return h.reader, nil }
+func (h heldWalks) Open(domain.Vault) (vaultport.VaultReader, error) { return h.reader, nil }
 
 // One index is walked a vault at a time: a second scan writing into it waits
 // for the first to finish.

@@ -10,13 +10,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // ServicePlugins finds the plugin that serves a service to the windows and activates it.
 type ServicePlugins interface {
-	port.PluginResolver
-	port.PluginActivator
+	pluginport.PluginResolver
+	pluginport.PluginActivator
 }
 
 // ServiceProxy forwards the calls a window receives for the services a plugin serves, with the

@@ -22,9 +22,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // A change reaches everyone drawing the vault the way a note put in front of
@@ -259,11 +260,11 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 // been looked at, which is what a writer outside this process looks like from
 // in here.
 type beaten struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	after func(path string)
 }
 
-func (b beaten) Open(v domain.Vault) (port.VaultReader, error) {
+func (b beaten) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := b.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -272,7 +273,7 @@ func (b beaten) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type beatenReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	after func(path string)
 }
 

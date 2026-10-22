@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 // stoppedDone is the reason an agent gives when it stopped because it was done.
@@ -17,17 +19,17 @@ var errNoAnswer = errors.New("agent returned empty response")
 
 // Starter starts the tasks an agent is given.
 type Starter interface {
-	StartRun(ctx context.Context, task port.Task) (port.Run, error)
+	StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error)
 }
 
 // Answer gives the agent one question and returns what it said. The task is sent with no tool, no
 // tool endpoint and no conversation, so the agent answers on its own and is given nothing of the
 // vault. An agent that cannot be started, stops for a reason of its own or says nothing fails with
 // port.ErrUnavailable. The end of the context stops the run and fails with the context's error.
-func Answer(ctx context.Context, agent Starter, task port.Task) (string, error) {
+func Answer(ctx context.Context, agent Starter, task agentport.Task) (string, error) {
 	task.Tools = nil
 	task.ToolDeclarations = nil
-	task.Endpoint = port.ToolEndpoint{}
+	task.Endpoint = agentport.ToolEndpoint{}
 	task.Conversation = ""
 
 	run, err := agent.StartRun(ctx, task)
@@ -35,14 +37,14 @@ func Answer(ctx context.Context, agent Starter, task port.Task) (string, error) 
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return "", ctxErr
 		}
-		return "", fmt.Errorf("%w: %w", port.ErrUnavailable, err)
+		return "", fmt.Errorf("%w: %w", completionport.ErrUnavailable, err)
 	}
 	defer func() { _ = run.Stop() }()
 	return readAnswer(ctx, run.GetSteps())
 }
 
 // readAnswer is what the agent said in the steps it takes, until they are over or the context ends.
-func readAnswer(ctx context.Context, steps <-chan port.Step) (string, error) {
+func readAnswer(ctx context.Context, steps <-chan agentport.Step) (string, error) {
 	var response strings.Builder
 	for {
 		select {
@@ -69,7 +71,7 @@ func finishAnswer(ctx context.Context, response string) (string, error) {
 		return "", err
 	}
 	if strings.TrimSpace(response) == "" {
-		return "", fmt.Errorf("%w: %w", port.ErrUnavailable, errNoAnswer)
+		return "", fmt.Errorf("%w: %w", completionport.ErrUnavailable, errNoAnswer)
 	}
 	return response, nil
 }
@@ -80,5 +82,5 @@ func failAnswer(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}
-	return fmt.Errorf("%w: %w", port.ErrUnavailable, err)
+	return fmt.Errorf("%w: %w", completionport.ErrUnavailable, err)
 }

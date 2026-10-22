@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 func sumOf(data []byte) string {
@@ -32,66 +32,66 @@ func newTestProvisioner(t *testing.T, offline bool) *FileProvisioner {
 	})
 }
 
-func newModelRequirement(address string, data []byte) port.DependencyRequirement {
-	return port.DependencyRequirement{ID: "whisper", Kind: port.DependencyKindModel, Version: "1", SourceURL: address, ChecksumSHA256: sumOf(data)}
+func newModelRequirement(address string, data []byte) pluginport.DependencyRequirement {
+	return pluginport.DependencyRequirement{ID: "whisper", Kind: pluginport.DependencyKindModel, Version: "1", SourceURL: address, ChecksumSHA256: sumOf(data)}
 }
 
 type fakeProvisioner struct {
 	id    string
-	kind  port.DependencyKind
+	kind  pluginport.DependencyKind
 	calls atomic.Int32
 	gate  chan struct{}
 }
 
-func (f *fakeProvisioner) CanProvision(req port.DependencyRequirement) bool {
+func (f *fakeProvisioner) CanProvision(req pluginport.DependencyRequirement) bool {
 	return req.Kind == f.kind && (f.id == "" || req.ID == f.id)
 }
 
-func (f *fakeProvisioner) Provision(ctx context.Context, req port.DependencyRequirement, onProgress func(port.DependencyStatus)) (port.ResolvedDependency, error) {
+func (f *fakeProvisioner) Provision(ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error) {
 	f.calls.Add(1)
-	onProgress(port.DependencyStatus{BytesDownloaded: 1, BytesTotal: 2})
+	onProgress(pluginport.DependencyStatus{BytesDownloaded: 1, BytesTotal: 2})
 	if f.gate != nil {
 		select {
 		case <-f.gate:
 		case <-ctx.Done():
-			return port.ResolvedDependency{}, ctx.Err()
+			return pluginport.ResolvedDependency{}, ctx.Err()
 		}
 	}
-	onProgress(port.DependencyStatus{BytesDownloaded: 2, BytesTotal: 2})
-	return port.ResolvedDependency{ID: req.ID, PrimaryPath: "/p/" + req.ID}, nil
+	onProgress(pluginport.DependencyStatus{BytesDownloaded: 2, BytesTotal: 2})
+	return pluginport.ResolvedDependency{ID: req.ID, PrimaryPath: "/p/" + req.ID}, nil
 }
 
-func (f *fakeProvisioner) Status(context.Context, port.DependencyRequirement) (port.DependencyStatus, error) {
-	return port.DependencyStatus{State: port.DependencyStateMissing}, nil
+func (f *fakeProvisioner) Status(context.Context, pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
+	return pluginport.DependencyStatus{State: pluginport.DependencyStateMissing}, nil
 }
 
 func TestTheRegistryRoutesARequirementToTheProvisionerThatHandlesIt(t *testing.T) {
-	onnx := &fakeProvisioner{id: "onnxruntime", kind: port.DependencyKindRuntime}
-	models := &fakeProvisioner{kind: port.DependencyKindModel}
+	onnx := &fakeProvisioner{id: "onnxruntime", kind: pluginport.DependencyKindRuntime}
+	models := &fakeProvisioner{kind: pluginport.DependencyKindModel}
 	registry := NewRegistry(onnx, models)
 
-	if _, err := registry.Provision(t.Context(), port.DependencyRequirement{ID: "onnxruntime", Kind: port.DependencyKindRuntime}, nil); err != nil {
+	if _, err := registry.Provision(t.Context(), pluginport.DependencyRequirement{ID: "onnxruntime", Kind: pluginport.DependencyKindRuntime}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := registry.Provision(t.Context(), port.DependencyRequirement{ID: "m", Kind: port.DependencyKindModel}, nil); err != nil {
+	if _, err := registry.Provision(t.Context(), pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel}, nil); err != nil {
 		t.Fatal(err)
 	}
 	if onnx.calls.Load() != 1 || models.calls.Load() != 1 {
 		t.Errorf("onnx ran %d times and models %d, want one each", onnx.calls.Load(), models.calls.Load())
 	}
-	_, err := registry.Provision(t.Context(), port.DependencyRequirement{ID: "d", Kind: port.DependencyKindDataset}, nil)
-	if !errors.Is(err, port.ErrNoProvisioner) {
+	_, err := registry.Provision(t.Context(), pluginport.DependencyRequirement{ID: "d", Kind: pluginport.DependencyKindDataset}, nil)
+	if !errors.Is(err, pluginport.ErrNoProvisioner) {
 		t.Errorf("err = %v, want ErrNoProvisioner", err)
 	}
-	if registry.CanProvision(port.DependencyRequirement{ID: "d", Kind: port.DependencyKindDataset}) {
+	if registry.CanProvision(pluginport.DependencyRequirement{ID: "d", Kind: pluginport.DependencyKindDataset}) {
 		t.Error("the registry claims to provision a dataset nothing handles")
 	}
 }
 
 func TestConcurrentIdenticalRequestsShareOneRunAndAllHearItsProgress(t *testing.T) {
-	provisioner := &fakeProvisioner{kind: port.DependencyKindModel, gate: make(chan struct{})}
+	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
 	registry := NewRegistry(provisioner)
-	req := port.DependencyRequirement{ID: "m", Kind: port.DependencyKindModel, Version: "1"}
+	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel, Version: "1"}
 
 	const callers = 5
 	var heard [callers]atomic.Int32
@@ -102,7 +102,7 @@ func TestConcurrentIdenticalRequestsShareOneRunAndAllHearItsProgress(t *testing.
 		go func() {
 			defer finished.Done()
 			started.Done()
-			_, err := registry.Provision(t.Context(), req, func(port.DependencyStatus) { heard[i].Add(1) })
+			_, err := registry.Provision(t.Context(), req, func(pluginport.DependencyStatus) { heard[i].Add(1) })
 			if err != nil {
 				t.Error(err)
 			}
@@ -127,9 +127,9 @@ func TestConcurrentIdenticalRequestsShareOneRunAndAllHearItsProgress(t *testing.
 }
 
 func TestARunContinuesWhileACallerRemainsAndStopsWhenAllLeave(t *testing.T) {
-	provisioner := &fakeProvisioner{kind: port.DependencyKindModel, gate: make(chan struct{})}
+	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
 	registry := NewRegistry(provisioner)
-	req := port.DependencyRequirement{ID: "m", Kind: port.DependencyKindModel}
+	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel}
 	ctx, cancel := context.WithCancel(t.Context())
 	errs := make(chan error, 1)
 	go func() {
@@ -163,7 +163,7 @@ func TestADownloadIsVerifiedAndPlacedUnderTheCacheLayout(t *testing.T) {
 	req := newModelRequirement(server.URL+"/w.bin", data)
 
 	var progressed atomic.Int32
-	resolved, err := provisioner.Provision(t.Context(), req, func(port.DependencyStatus) { progressed.Add(1) })
+	resolved, err := provisioner.Provision(t.Context(), req, func(pluginport.DependencyStatus) { progressed.Add(1) })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestADownloadIsVerifiedAndPlacedUnderTheCacheLayout(t *testing.T) {
 		t.Errorf("second provision = %+v, %v", again, err)
 	}
 	status, err := provisioner.Status(t.Context(), req)
-	if err != nil || status.State != port.DependencyStateReady {
+	if err != nil || status.State != pluginport.DependencyStateReady {
 		t.Errorf("status = %+v, %v", status, err)
 	}
 }
@@ -255,7 +255,7 @@ func TestADownloadThatFailsTheChecksumLeavesNothingInPlace(t *testing.T) {
 	for _, entry := range entries {
 		t.Errorf("%s was left in the folder", entry.Name())
 	}
-	if status, _ := provisioner.Status(t.Context(), req); status.State != port.DependencyStateMissing {
+	if status, _ := provisioner.Status(t.Context(), req); status.State != pluginport.DependencyStateMissing {
 		t.Errorf("state = %s, want missing", status.State)
 	}
 }
@@ -277,7 +277,7 @@ func TestTheMachineIsSearchedBeforeTheNetwork(t *testing.T) {
 	provisioner := newTestProvisioner(t, true)
 	provisioner.cfg.Discovery = discovery{dirs: []string{bin}}
 
-	resolved, err := provisioner.Provision(t.Context(), port.DependencyRequirement{ID: "ffmpeg", Kind: port.DependencyKindBinary}, nil)
+	resolved, err := provisioner.Provision(t.Context(), pluginport.DependencyRequirement{ID: "ffmpeg", Kind: pluginport.DependencyKindBinary}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

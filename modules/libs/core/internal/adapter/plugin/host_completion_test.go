@@ -6,7 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const (
@@ -43,20 +44,20 @@ func newAskingHost(t *testing.T) *Host {
 // The choice is read from the setting of type agent, as the person stored it.
 func TestTheChoiceIsTheStoredValueOfTheAgentSetting(t *testing.T) {
 	host := newAskingHost(t)
-	if got := host.GetCompletionChoice(askingPluginID); got != (port.CompletionChoice{}) {
+	if got := host.GetCompletionChoice(askingPluginID); got != (completionport.CompletionChoice{}) {
 		t.Errorf("a plugin never set chose %+v", got)
 	}
 	host.SetSettings(map[string]map[string]any{
 		askingPluginID: {"model": map[string]any{"agent": "md.numen.agent-x", "model": "m"}},
 		plainPluginID:  {"model": map[string]any{"agent": "md.numen.agent-x"}},
 	})
-	if want := (port.CompletionChoice{Agent: "md.numen.agent-x", Model: "m"}); host.GetCompletionChoice(askingPluginID) != want {
+	if want := (completionport.CompletionChoice{Agent: "md.numen.agent-x", Model: "m"}); host.GetCompletionChoice(askingPluginID) != want {
 		t.Errorf("chose %+v, want %+v", host.GetCompletionChoice(askingPluginID), want)
 	}
-	if got := host.GetCompletionChoice(plainPluginID); got != (port.CompletionChoice{}) {
+	if got := host.GetCompletionChoice(plainPluginID); got != (completionport.CompletionChoice{}) {
 		t.Errorf("a plugin declaring no agent setting chose %+v", got)
 	}
-	if got := host.GetCompletionChoice("md.numen.unknown"); got != (port.CompletionChoice{}) {
+	if got := host.GetCompletionChoice("md.numen.unknown"); got != (completionport.CompletionChoice{}) {
 		t.Errorf("an unknown plugin chose %+v", got)
 	}
 }
@@ -76,42 +77,42 @@ func TestAChoiceOfAnotherShapeIsEmpty(t *testing.T) {
 // recorded as asking; a rejected one is not asking.
 func TestTheConsentIsThePersonsAnswer(t *testing.T) {
 	host := newAskingHost(t)
-	info := func() port.CompletionConsent {
+	info := func() pluginport.CompletionConsent {
 		for _, one := range host.GetPluginInfos() {
 			if one.ID == askingPluginID {
 				return one.Consent
 			}
 		}
 		t.Fatal("the plugin is not listed")
-		return port.ConsentNone
+		return pluginport.ConsentNone
 	}
-	if info() != port.ConsentUnanswered {
+	if info() != pluginport.ConsentUnanswered {
 		t.Errorf("before asking: %v, want unanswered", info())
 	}
-	if err := host.CheckCompletionConsent(askingPluginID); !errors.Is(err, port.ErrNoConsent) {
+	if err := host.CheckCompletionConsent(askingPluginID); !errors.Is(err, completionport.ErrNoConsent) {
 		t.Fatalf("unanswered: error = %v, want port.ErrNoConsent", err)
 	}
-	if info() != port.ConsentAsked {
+	if info() != pluginport.ConsentAsked {
 		t.Errorf("after asking: %v, want asked", info())
 	}
 
-	if err := host.UpdatePluginSetting(t.Context(), askingPluginID, port.SettingAIConsent, true); err != nil {
+	if err := host.UpdatePluginSetting(t.Context(), askingPluginID, pluginport.SettingAIConsent, true); err != nil {
 		t.Fatal(err)
 	}
 	if err := host.CheckCompletionConsent(askingPluginID); err != nil {
 		t.Errorf("allowed: error = %v", err)
 	}
-	if info() != port.ConsentAllowed {
+	if info() != pluginport.ConsentAllowed {
 		t.Errorf("allowed: %v", info())
 	}
 
-	if err := host.UpdatePluginSetting(t.Context(), askingPluginID, port.SettingAIConsent, false); err != nil {
+	if err := host.UpdatePluginSetting(t.Context(), askingPluginID, pluginport.SettingAIConsent, false); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.CheckCompletionConsent(askingPluginID); !errors.Is(err, port.ErrNoConsent) {
+	if err := host.CheckCompletionConsent(askingPluginID); !errors.Is(err, completionport.ErrNoConsent) {
 		t.Errorf("rejected: error = %v, want port.ErrNoConsent", err)
 	}
-	if info() != port.ConsentRefused {
+	if info() != pluginport.ConsentRefused {
 		t.Errorf("rejected: %v", info())
 	}
 }
@@ -120,7 +121,7 @@ func TestTheConsentIsThePersonsAnswer(t *testing.T) {
 func TestAPluginThatDoesNotAskHasNoConsent(t *testing.T) {
 	host := newAskingHost(t)
 	for _, one := range host.GetPluginInfos() {
-		if one.ID == plainPluginID && one.Consent != port.ConsentNone {
+		if one.ID == plainPluginID && one.Consent != pluginport.ConsentNone {
 			t.Errorf("listed with %v", one.Consent)
 		}
 	}
@@ -129,8 +130,8 @@ func TestAPluginThatDoesNotAskHasNoConsent(t *testing.T) {
 // The consent is the host's record, and the plugin is not handed it.
 func TestTheConsentIsNotInThePluginsSettings(t *testing.T) {
 	host := newAskingHost(t)
-	host.SetSettings(map[string]map[string]any{askingPluginID: {port.SettingAIConsent: true}})
-	if _, found := host.GetPluginSettings(askingPluginID)[port.SettingAIConsent]; found {
+	host.SetSettings(map[string]map[string]any{askingPluginID: {pluginport.SettingAIConsent: true}})
+	if _, found := host.GetPluginSettings(askingPluginID)[pluginport.SettingAIConsent]; found {
 		t.Error("the plugin's settings hold the consent")
 	}
 }

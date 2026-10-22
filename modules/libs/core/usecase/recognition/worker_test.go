@@ -9,16 +9,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // reads nothing, and says it was closed.
 type blank struct{ isClosed bool }
 
-func (blank) GetRecognitionModel() port.RecognitionModel {
-	return port.RecognitionModel{Recogniser: "blank"}
+func (blank) GetRecognitionModel() recognitionport.RecognitionModel {
+	return recognitionport.RecognitionModel{Recogniser: "blank"}
 }
 
 func (blank) Recognise(context.Context, image.Image) ([]domain.OCRBlock, error) { return nil, nil }
@@ -59,7 +62,7 @@ func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 		Tasks:     tasks,
 		Runtime: Runtime{
 			Ready: func() bool { return true },
-			Open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+			Open: func(context.Context, func(string, int64, int64)) (recognitionport.Recogniser, func() error, error) {
 				w.mu.Lock()
 				w.open++
 				w.while = tasks.List()
@@ -125,7 +128,7 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	w := newWatched(t, errors.New("nothing to read with"))
 
 	reading, target := make(chan struct{}, 2), make(chan struct{})
-	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (recognitionport.Recogniser, func() error, error) {
 		w.mu.Lock()
 		w.open++
 		w.mu.Unlock()
@@ -134,16 +137,16 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 		return nil, nil, errors.New("nothing to read with")
 	}
 
-	if got := w.Start(somewhere, "a.pdf"); got != port.Began {
+	if got := w.Start(somewhere, "a.pdf"); got != windowport.Began {
 		t.Fatalf("the first document was not read: %v", got)
 	}
 	// The first document is out of the line and being read.
 	<-reading
 
-	if got := w.Start(somewhere, "b.pdf"); got != port.Queued {
+	if got := w.Start(somewhere, "b.pdf"); got != windowport.Queued {
 		t.Errorf("a second document was read while one was being read: %v", got)
 	}
-	if got := w.Start(somewhere, "b.pdf"); got != port.Queued {
+	if got := w.Start(somewhere, "b.pdf"); got != windowport.Queued {
 		t.Errorf("the same document named again: %v", got)
 	}
 	if w.CountWaiting() != 1 {
@@ -165,7 +168,7 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 func TestARecognitionThatFailedStaysInTheList(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the document was not read")
 	}
 	w.waitUntilDone(t)
@@ -185,7 +188,7 @@ func TestARecognitionThatFailedStaysInTheList(t *testing.T) {
 func TestTheModelsAreGotBelowTheirOwnName(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the document was not read")
 	}
 	w.waitUntilDone(t)
@@ -205,7 +208,7 @@ func TestTheModelsAreGotBelowTheirOwnName(t *testing.T) {
 func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the document was not read")
 	}
 	w.waitUntilDone(t)
@@ -220,11 +223,11 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	lib.hold("a.pdf", domain.KindBook, []byte("pdf"), 1)
 	w.Worker.with.Readers = vaults{somewhere.ID: lib}
 	w.Worker.with.Documents = documents{}
-	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (recognitionport.Recogniser, func() error, error) {
 		return w.activeItem, w.activeItem.Close, nil
 	}
 
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the retry was not started")
 	}
 	w.waitUntilDone(t)
@@ -238,12 +241,12 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 func TestMultipleFailedRecognitionsAreTrackedIndependently(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the first document was not read")
 	}
 	w.waitUntilDone(t)
 
-	if w.Start(somewhere, "b.pdf") != port.Began {
+	if w.Start(somewhere, "b.pdf") != windowport.Began {
 		t.Fatal("the second document was not read")
 	}
 	w.waitUntilDone(t)
@@ -263,12 +266,12 @@ func TestARecognitionStoppedIsNotAFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	w := newWatchedUnder(t, ctx, nil)
-	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (recognitionport.Recogniser, func() error, error) {
 		cancel()
 		return nil, nil, context.Canceled
 	}
 
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the document was not read")
 	}
 	w.waitUntilDone(t)
@@ -287,7 +290,7 @@ func TestARecognitionThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	// reading does.
 	abrupt := make(chan struct{}, 1)
 	abrupt <- struct{}{}
-	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (recognitionport.Recogniser, func() error, error) {
 		select {
 		case <-abrupt:
 			runtime.Goexit()
@@ -296,12 +299,12 @@ func TestARecognitionThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 		return nil, nil, errors.New("nothing to read with")
 	}
 
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the document was not read")
 	}
 	w.waitUntilDone(t)
 
-	if w.Start(somewhere, "b.pdf") != port.Began {
+	if w.Start(somewhere, "b.pdf") != windowport.Began {
 		t.Fatal("nothing was read after a recognition that ended where nothing expected it to")
 	}
 	w.waitUntilDone(t)
@@ -332,11 +335,11 @@ func TestTheApplicationWaitsForARecognitionItStarted(t *testing.T) {
 	w := newWatched(t, nil)
 
 	blockCh := make(chan struct{})
-	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (recognitionport.Recogniser, func() error, error) {
 		<-blockCh
 		return nil, nil, errors.New("nothing to read with")
 	}
-	if w.Start(somewhere, "a.pdf") != port.Began {
+	if w.Start(somewhere, "a.pdf") != windowport.Began {
 		t.Fatal("the document was not read")
 	}
 
@@ -363,7 +366,7 @@ func TestAProofreaderThatFailedToOpenIsSaid(t *testing.T) {
 	w := newWatched(t, nil)
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func() (port.Proofreader, error) {
+		By: func() (recognitionport.Proofreader, error) {
 			return nil, errors.New("proofreading plugin is unavailable")
 		},
 	}
@@ -385,8 +388,8 @@ func TestAProofreadingWithoutConsentReturnsWhereToAllowIt(t *testing.T) {
 	w := newWatched(t, nil)
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func() (port.Proofreader, error) {
-			return nil, errors.Join(errors.New("proofread rpc"), port.ErrNoConsent)
+		By: func() (recognitionport.Proofreader, error) {
+			return nil, errors.Join(errors.New("proofread rpc"), completionport.ErrNoConsent)
 		},
 	}
 

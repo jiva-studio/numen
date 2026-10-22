@@ -19,7 +19,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const (
@@ -50,7 +51,7 @@ func (k *keys) GetKey(_ context.Context, name string) (string, error) {
 	}
 	key, found := k.item[name]
 	if !found {
-		return "", port.ErrNoKey
+		return "", pluginport.ErrNoKey
 	}
 	return key, nil
 }
@@ -73,7 +74,7 @@ func (k *keys) DeleteKey(_ context.Context, name string) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	if _, found := k.item[name]; !found {
-		return port.ErrNoKey
+		return pluginport.ErrNoKey
 	}
 	delete(k.item, name)
 	return nil
@@ -128,7 +129,7 @@ func (c *configured) last(t *testing.T) *v1.ConfigureRequest {
 }
 
 // newSecretHost returns a host with a running agent plugin that declares the apiKey secret.
-func newSecretHost(t *testing.T, store port.KeyStore) (*Host, *configured) {
+func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured) {
 	t.Helper()
 	probe := &configured{}
 	mux := http.NewServeMux()
@@ -138,7 +139,7 @@ func newSecretHost(t *testing.T, store port.KeyStore) (*Host, *configured) {
 
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
-	host.plugins[secretPluginID] = DiscoveredPlugin{Manifest: port.PluginManifest{
+	host.plugins[secretPluginID] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
 		Secrets: []string{"apiKey"},
 		Settings: []Setting{
@@ -295,7 +296,7 @@ func TestAHostWithoutAKeyStoreFailsToStoreASecret(t *testing.T) {
 	if probe.last(t).GetValues()["apiKey"] != "" {
 		t.Error("a key came from nowhere")
 	}
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", "value"); !errors.Is(err, port.ErrNoKeyStore) {
+	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", "value"); !errors.Is(err, pluginport.ErrNoKeyStore) {
 		t.Errorf("set: error = %v, want port.ErrNoKeyStore", err)
 	}
 }
@@ -349,10 +350,10 @@ func TestOnlyADeclaredSecretIsStored(t *testing.T) {
 // A store that fails to keep a key says so, and the plugin is not told it changed.
 func TestAKeyTheStoreCannotKeepIsAnError(t *testing.T) {
 	store := newKeys(map[string]string{})
-	store.failed = port.ErrNoKeyStore
+	store.failed = pluginport.ErrNoKeyStore
 	host, probe := newSecretHost(t, store)
 
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); !errors.Is(err, port.ErrNoKeyStore) {
+	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); !errors.Is(err, pluginport.ErrNoKeyStore) {
 		t.Errorf("error = %v, want port.ErrNoKeyStore", err)
 	}
 	if len(probe.calls) != 0 {
@@ -450,7 +451,7 @@ var errLockedKeychain = errors.New("the keychain is locked")
 // recordStored records the apiKey secret as stored, the way the settings file
 // holds the record.
 func recordStored(host *Host) {
-	host.SetSettings(map[string]map[string]any{secretPluginID: {port.SettingStoredSecrets: []any{declared}}})
+	host.SetSettings(map[string]map[string]any{secretPluginID: {pluginport.SettingStoredSecrets: []any{declared}}})
 }
 
 // untouchable is a key store that fails the test when it is reached.
@@ -458,7 +459,7 @@ type untouchable struct{ t *testing.T }
 
 func (u untouchable) GetKey(context.Context, string) (string, error) {
 	u.t.Error("the key store was read for a secret nobody stored")
-	return "", port.ErrNoKey
+	return "", pluginport.ErrNoKey
 }
 
 func (u untouchable) SetKey(context.Context, string, string) error {
@@ -491,7 +492,7 @@ func TestASecretNobodyStoredPreservesTheKeyStoreAlone(t *testing.T) {
 // change of a setting.
 func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 	store := newKeys(map[string]string{})
-	store.failed = port.ErrNoKeyStore
+	store.failed = pluginport.ErrNoKeyStore
 	host, probe := newSecretHost(t, store)
 	recordStored(host)
 	var reported []error
@@ -510,7 +511,7 @@ func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 	if call.GetValues()["model"] != "opus" {
 		t.Errorf("values = %v, want the setting", call.GetValues())
 	}
-	if len(reported) != 1 || !errors.Is(reported[0], port.ErrNoKeyStore) {
+	if len(reported) != 1 || !errors.Is(reported[0], pluginport.ErrNoKeyStore) {
 		t.Errorf("reported %v, want port.ErrNoKeyStore once", reported)
 	}
 }
@@ -527,7 +528,7 @@ func TestAStoredSecretIsRecordedByName(t *testing.T) {
 		persisted[pluginID+"/"+key] = value
 		return host.UpdatePluginSetting(t.Context(), pluginID, key, []any{"forged"})
 	})
-	record := secretPluginID + "/" + port.SettingStoredSecrets
+	record := secretPluginID + "/" + pluginport.SettingStoredSecrets
 
 	set := make(chan error, 1)
 	go func() { set <- host.SetPluginSecret(t.Context(), secretPluginID, declared, fromKeychain) }()
@@ -542,16 +543,16 @@ func TestAStoredSecretIsRecordedByName(t *testing.T) {
 	if got := host.getStoredSecretsLocked(secretPluginID); !slices.Equal(got, []string{declared}) {
 		t.Errorf("the host holds the record %v, want the name of the secret", got)
 	}
-	if err := host.SetPluginSetting(t.Context(), secretPluginID, port.SettingStoredSecrets, []any{declared}); !errors.Is(err, port.ErrReservedSettingKey) {
+	if err := host.SetPluginSetting(t.Context(), secretPluginID, pluginport.SettingStoredSecrets, []any{declared}); !errors.Is(err, pluginport.ErrReservedSettingKey) {
 		t.Errorf("a window writing the record: error = %v", err)
 	}
 	if got, ok := persisted[record].([]string); !ok || !slices.Equal(got, []string{declared}) {
 		t.Errorf("recorded %#v, want the name of the secret", persisted[record])
 	}
-	if _, observed := host.GetPluginSettings(secretPluginID)[port.SettingStoredSecrets]; observed {
+	if _, observed := host.GetPluginSettings(secretPluginID)[pluginport.SettingStoredSecrets]; observed {
 		t.Error("the window sees the record")
 	}
-	if _, observedVal := probe.last(t).GetValues()[port.SettingStoredSecrets]; observedVal {
+	if _, observedVal := probe.last(t).GetValues()[pluginport.SettingStoredSecrets]; observedVal {
 		t.Error("the plugin sees the record")
 	}
 

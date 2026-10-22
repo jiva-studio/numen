@@ -12,8 +12,9 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // The vocabulary is one. Every window naming an error names it from here, so
@@ -83,11 +84,11 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true,
 		},
 		"a file the vault leaves alone": {
-			fmt.Errorf("Old.png: %w", port.ErrNotANote),
+			fmt.Errorf("Old.png: %w", vaultport.ErrNotANote),
 			v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true,
 		},
 		"a file where the note would go": {
-			fmt.Errorf("Old.md: %w", port.ErrOccupied),
+			fmt.Errorf("Old.md: %w", vaultport.ErrOccupied),
 			v1.ErrorCode_ERROR_CODE_OCCUPIED, true,
 		},
 		"a file where a folder of the path must be": {
@@ -110,7 +111,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 }
 
 func TestWhichCodeAnErrorTheSchemaDoesNotCarryAnswersWith(t *testing.T) {
-	outside := fmt.Errorf("../elsewhere.md: %w", port.ErrOutside)
+	outside := fmt.Errorf("../elsewhere.md: %w", vaultport.ErrOutside)
 	if got := wire.GetCode(outside); got != connect.CodeInvalidArgument {
 		t.Errorf("a path that leaves the vault answers %v", got)
 	}

@@ -11,9 +11,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // paddingSize is a trailing run large enough that a copy of the file shows
@@ -88,8 +89,8 @@ func TestRecognisingAFileOnDiskRefusesWhatIsNotADocument(t *testing.T) {
 			v := newDiskVault(t, raw)
 			u, _ := newDiskRecognise(nil)
 			_, err := u.Execute(t.Context(), v, "scan.pdf")
-			if !errors.Is(err, port.ErrNotADocument) {
-				t.Errorf("recognising it gave %v, want %v", err, port.ErrNotADocument)
+			if !errors.Is(err, sourceport.ErrNotADocument) {
+				t.Errorf("recognising it gave %v, want %v", err, sourceport.ErrNotADocument)
 			}
 		})
 	}

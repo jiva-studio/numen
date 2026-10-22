@@ -25,8 +25,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 // providerServer is an agent plugin that runs the programs it is given.
@@ -204,7 +206,7 @@ func TestAHostWithoutProvidersListsNoPrograms(t *testing.T) {
 	if err != nil || len(programs) != 0 {
 		t.Errorf("listed %v, %v", programs, err)
 	}
-	if _, err := provider.StartRun(t.Context(), port.Task{Agent: "alpha"}); err == nil {
+	if _, err := provider.StartRun(t.Context(), agentport.Task{Agent: "alpha"}); err == nil {
 		t.Error("a task was taken where nothing runs the program")
 	}
 }
@@ -220,12 +222,12 @@ func TestTheProgramsOfEveryProviderAreListedInOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []port.AgentProgram{
+	want := []agentport.AgentProgram{
 		{
 			Provider: providerOne, Name: "alpha", Title: "Alpha", IsInstalled: true, IsDefault: true,
-			Models: []port.AgentModel{{Name: "big", Title: "Big", IsDefault: true}},
+			Models: []agentport.AgentModel{{Name: "big", Title: "Big", IsDefault: true}},
 		},
-		{Provider: providerTwo, Name: "beta", Title: "Beta", Models: []port.AgentModel{}},
+		{Provider: providerTwo, Name: "beta", Title: "Beta", Models: []agentport.AgentModel{}},
 	}
 	if !reflect.DeepEqual(programs, want) {
 		t.Errorf("listed %+v, want %+v", programs, want)
@@ -258,14 +260,14 @@ func TestATaskGoesToThePluginThatRunsItsProgram(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
-	run, err := provider.StartRun(t.Context(), port.Task{
+	run, err := provider.StartRun(t.Context(), agentport.Task{
 		Question: "hello", Agent: "beta", Model: "m", MaxSteps: 3, Root: "/vault",
-		Endpoint: port.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
+		Endpoint: agentport.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	var steps []port.Step
+	var steps []agentport.Step
 	for step := range run.GetSteps() {
 		steps = append(steps, step)
 	}
@@ -289,7 +291,7 @@ func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
 	for _, name := range []string{"", "gamma"} {
-		if _, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: name}); err == nil {
+		if _, err := provider.StartRun(t.Context(), agentport.Task{Question: "q", Agent: name}); err == nil {
 			t.Errorf("a task naming %q was taken", name)
 		}
 	}
@@ -304,7 +306,7 @@ func TestAConversationEndsWhereItWasAsked(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
-	run, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
+	run, err := provider.StartRun(t.Context(), agentport.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,7 +337,7 @@ func TestTheWindowIsOfferedWhatThePluginsList(t *testing.T) {
 
 	models := (container.Config{PluginHost: host, SettingsPath: settings}).Models()()
 
-	byPath := map[string][]port.Model{}
+	byPath := map[string][]settingsport.Model{}
 	for _, one := range models {
 		key := strings.Join(one.Path, ".")
 		byPath[key] = append(byPath[key], one)
@@ -359,7 +361,7 @@ func TestAConversationAskedOnTwoPluginsEndsOnBoth(t *testing.T) {
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
 	for _, program := range []string{"alpha", "beta", "alpha"} {
-		run, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: program, Conversation: "c-1"})
+		run, err := provider.StartRun(t.Context(), agentport.Task{Question: "q", Agent: program, Conversation: "c-1"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -419,14 +421,14 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 		map[string]*providerServer{providerOne: served})
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
-	if _, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "gamma"}); err == nil ||
+	if _, err := provider.StartRun(t.Context(), agentport.Task{Question: "q", Agent: "gamma"}); err == nil ||
 		!strings.Contains(err.Error(), "no agent plugin runs") {
 		t.Fatalf("a program nothing lists was run: %v", err)
 	}
 	if len(served.getAsked()) != 0 {
 		t.Fatal("the plugin was asked for a program it did not list")
 	}
-	run, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "gamma", Command: []string{"/opt/gamma"}})
+	run, err := provider.StartRun(t.Context(), agentport.Task{Question: "q", Agent: "gamma", Command: []string{"/opt/gamma"}})
 	if err != nil {
 		t.Fatal(err)
 	}

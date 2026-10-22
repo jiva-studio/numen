@@ -9,7 +9,7 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // service is the name every key of this application is kept under.
@@ -93,8 +93,8 @@ func readError(name string, err error) error {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case errors.Is(err, keyring.ErrNotFound):
-		return fmt.Errorf("%w: %q", port.ErrNoKey, name)
+		return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
 	default:
-		return fmt.Errorf("%w: %w", port.ErrNoKeyStore, err)
+		return fmt.Errorf("%w: %w", pluginport.ErrNoKeyStore, err)
 	}
 }

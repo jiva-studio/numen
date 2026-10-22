@@ -3,16 +3,17 @@ package file
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // GetFingerprint finds what the vault says about the file at a path: its kind, its size and when it changed.
 type GetFingerprint struct {
-	readers port.VaultReaders
+	readers vaultport.VaultReaders
 }
 
-func NewGetFingerprint(readers port.VaultReaders) *GetFingerprint {
+func NewGetFingerprint(readers vaultport.VaultReaders) *GetFingerprint {
 	return &GetFingerprint{readers: readers}
 }
 

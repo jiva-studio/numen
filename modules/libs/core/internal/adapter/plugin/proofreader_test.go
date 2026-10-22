@@ -23,8 +23,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // mockProofreadingServer answers a request with what its fields hold and keeps
@@ -235,12 +237,12 @@ func TestProofreaderBridgeReadsAPluginWithNothingToAskAsUnavailable(t *testing.T
 	bridge, _ := openTestProofreader(t, mock)
 
 	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
-	if !errors.Is(err, port.ErrUnavailable) {
-		t.Errorf("scan: got %v, want %v", err, port.ErrUnavailable)
+	if !errors.Is(err, completionport.ErrUnavailable) {
+		t.Errorf("scan: got %v, want %v", err, completionport.ErrUnavailable)
 	}
 	_, err = bridge.ProofreadSpeech(t.Context(), nil, 0)
-	if !errors.Is(err, port.ErrUnavailable) {
-		t.Errorf("speech: got %v, want %v", err, port.ErrUnavailable)
+	if !errors.Is(err, completionport.ErrUnavailable) {
+		t.Errorf("speech: got %v, want %v", err, completionport.ErrUnavailable)
 	}
 }
 
@@ -250,7 +252,7 @@ func TestProofreaderBridgeKeepsAnyOtherFailureAsItIs(t *testing.T) {
 
 	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
 
-	if err == nil || errors.Is(err, port.ErrUnavailable) || connect.CodeOf(err) != connect.CodeInternal {
+	if err == nil || errors.Is(err, completionport.ErrUnavailable) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("got %v", err)
 	}
 }
@@ -269,7 +271,7 @@ func TestReadProofreadErrorReadsTheEndOfTheContextAsItsOwn(t *testing.T) {
 func TestReadProofreadErrorReadsAFailureThatIsNotAPluginAnswerAsUnavailable(t *testing.T) {
 	err := readProofreadError(t.Context(), errors.New("connection failed"))
 
-	if !errors.Is(err, port.ErrUnavailable) {
+	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -294,8 +296,8 @@ type inactiveHost struct {
 	failure error
 }
 
-func (h *inactiveHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
-	return port.Endpoint{}, h.failure
+func (h *inactiveHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
+	return pluginport.Endpoint{}, h.failure
 }
 
 func TestProofreaderBridgeReadsAPluginThatCannotStartAsUnavailable(t *testing.T) {
@@ -305,12 +307,12 @@ func TestProofreaderBridgeReadsAPluginThatCannotStartAsUnavailable(t *testing.T)
 	}
 
 	_, err = bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
-	if !errors.Is(err, port.ErrUnavailable) {
-		t.Errorf("scan: got %v, want %v", err, port.ErrUnavailable)
+	if !errors.Is(err, completionport.ErrUnavailable) {
+		t.Errorf("scan: got %v, want %v", err, completionport.ErrUnavailable)
 	}
 	_, err = bridge.ProofreadSpeech(t.Context(), nil, 0)
-	if !errors.Is(err, port.ErrUnavailable) {
-		t.Errorf("speech: got %v, want %v", err, port.ErrUnavailable)
+	if !errors.Is(err, completionport.ErrUnavailable) {
+		t.Errorf("speech: got %v, want %v", err, completionport.ErrUnavailable)
 	}
 }
 
@@ -323,7 +325,7 @@ func TestProofreaderBridgeKeepsTheEndOfAContextWhileStartingAsItIs(t *testing.T)
 			}
 
 			_, err = bridge.ProofreadSpeech(t.Context(), nil, 0)
-			if !errors.Is(err, end) || errors.Is(err, port.ErrUnavailable) {
+			if !errors.Is(err, end) || errors.Is(err, completionport.ErrUnavailable) {
 				t.Errorf("got %v, want %v alone", err, end)
 			}
 		})
@@ -335,8 +337,8 @@ func TestProofreaderBridgeReadsAModelThePersonHasNotAllowedAsNoConsent(t *testin
 	bridge, _ := openTestProofreader(t, mock)
 
 	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
-	if !errors.Is(err, port.ErrNoConsent) {
-		t.Errorf("got %v, want %v", err, port.ErrNoConsent)
+	if !errors.Is(err, completionport.ErrNoConsent) {
+		t.Errorf("got %v, want %v", err, completionport.ErrNoConsent)
 	}
 }
 
@@ -346,8 +348,8 @@ func TestProofreaderBridgeStatesAnUnavailablePluginOnce(t *testing.T) {
 	bridge, _ := openTestProofreader(t, mock)
 
 	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
-	if !errors.Is(err, port.ErrUnavailable) {
-		t.Fatalf("got %v, want %v", err, port.ErrUnavailable)
+	if !errors.Is(err, completionport.ErrUnavailable) {
+		t.Fatalf("got %v, want %v", err, completionport.ErrUnavailable)
 	}
 	if want := "unavailable: ai: routed agent did not answer: boom"; err.Error() != want {
 		t.Errorf("got %q, want %q", err.Error(), want)

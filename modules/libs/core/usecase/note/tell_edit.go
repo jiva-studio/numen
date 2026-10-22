@@ -3,9 +3,10 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // TellEdit is told what a write is doing while it is being made, for whoever is
@@ -16,7 +17,7 @@ type TellEdit func(ctx context.Context, edit domain.Edit)
 //
 // The name is a ULID, so the change the writer is telling about is named on the
 // clock the write itself is stamped from.
-func (tell TellEdit) beginChange(ctx context.Context, now port.Clock, response domain.Edit) func() {
+func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, response domain.Edit) func() {
 	if tell == nil {
 		return func() {}
 	}

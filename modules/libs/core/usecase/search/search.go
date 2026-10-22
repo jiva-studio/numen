@@ -9,8 +9,12 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // defaultLimit is how many results a caller that names no number gets.
@@ -93,13 +97,13 @@ func (p Parameters) fill() Parameters {
 // Every field is asked for by New. An embedder that is left out answers: the
 // words half runs alone, with none of what the vectors hold.
 type Search struct {
-	passages     port.PassageQueries
-	readers      port.VaultReaders
-	embedder     port.Embedder
-	derived      port.DerivedStores
-	documents    port.TextExtractor
+	passages     sourceport.PassageQueries
+	readers      vaultport.VaultReaders
+	embedder     embeddingport.Embedder
+	derived      vaultport.DerivedStores
+	documents    sourceport.TextExtractor
 	floor        float64
-	errorHandler port.ErrorHandler
+	errorHandler windowport.ErrorHandler
 	cache        *QueryCache
 	// extractors is how many sources are extracted at once. Zero is
 	// defaultExtractors.
@@ -118,7 +122,7 @@ type Search struct {
 //
 // `errorHandler` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, errorHandler port.ErrorHandler) Search {
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, derived vaultport.DerivedStores, documents sourceport.TextExtractor, embedder embeddingport.Embedder, floor float64, errorHandler windowport.ErrorHandler) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
@@ -323,7 +327,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	if err != nil {
 		return nil, err
 	}
-	var store port.DerivedStore
+	var store vaultport.DerivedStore
 	if u.derived != nil {
 		if store, err = u.derived.Open(v); err != nil {
 			return nil, err
@@ -385,7 +389,7 @@ func fillSource(
 	}
 	first := found[indices[0]]
 	prose, err := extractText(ctx, of, source, first.Producer, first.SourceHash)
-	if port.IsNoNote(err) || errors.Is(err, errUnreadable) {
+	if vaultport.IsNoNote(err) || errors.Is(err, errUnreadable) {
 		return nil
 	}
 	if err != nil {

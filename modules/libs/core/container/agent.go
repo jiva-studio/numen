@@ -10,7 +10,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // agentProvider is the capability of a plugin that runs agent programs.
@@ -21,7 +23,7 @@ const programsLimit = 8 * time.Second
 
 // AgentProvider runs tasks on the programs the plugins with the agent provider capability run. It
 // is nil where there is no plugin host, or the host is in safe mode.
-func (c Config) AgentProvider() port.AgentProvider {
+func (c Config) AgentProvider() agentport.AgentProvider {
 	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}
@@ -30,7 +32,7 @@ func (c Config) AgentProvider() port.AgentProvider {
 
 // getAgentPrograms are the programs the agent plugins list, asked for with the command lines the
 // settings give. A provider that does not answer in time lists none.
-func (c Config) getAgentPrograms(target settings.Agent) []port.AgentProgram {
+func (c Config) getAgentPrograms(target settings.Agent) []agentport.AgentProgram {
 	provider := c.AgentProvider()
 	if provider == nil {
 		return nil
@@ -46,7 +48,7 @@ func (c Config) getAgentPrograms(target settings.Agent) []port.AgentProgram {
 
 // hostAgentProvider reaches the agent plugins through the plugin host.
 type hostAgentProvider struct {
-	host port.PluginManager
+	host pluginport.PluginManager
 
 	mu sync.Mutex
 	// providers holds the plugin that runs each program, by program.
@@ -72,9 +74,9 @@ func (h *hostAgentProvider) getProviders() []string {
 // programs of the others.
 func (h *hostAgentProvider) GetPrograms(
 	ctx context.Context, commands map[string][]string,
-) ([]port.AgentProgram, error) {
+) ([]agentport.AgentProgram, error) {
 	ids := h.getProviders()
-	items := make([][]port.AgentProgram, len(ids))
+	items := make([][]agentport.AgentProgram, len(ids))
 	failed := make([]error, len(ids))
 
 	var group sync.WaitGroup
@@ -87,7 +89,7 @@ func (h *hostAgentProvider) GetPrograms(
 	}
 	group.Wait()
 
-	var programs []port.AgentProgram
+	var programs []agentport.AgentProgram
 	for _, one := range items {
 		programs = append(programs, one...)
 	}
@@ -98,7 +100,7 @@ func (h *hostAgentProvider) GetPrograms(
 // listPrograms asks one provider for the programs it runs.
 func (h *hostAgentProvider) listPrograms(
 	ctx context.Context, id string, commands map[string][]string,
-) ([]port.AgentProgram, error) {
+) ([]agentport.AgentProgram, error) {
 	bridge, err := plugin.OpenAgentBridgeForPlugin(ctx, h.host, id)
 	if err != nil {
 		return nil, err
@@ -109,7 +111,7 @@ func (h *hostAgentProvider) listPrograms(
 
 // setProviders keeps which plugin runs each program listed. The first plugin to list a program
 // runs it.
-func (h *hostAgentProvider) setProviders(programs []port.AgentProgram) {
+func (h *hostAgentProvider) setProviders(programs []agentport.AgentProgram) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.providers = make(map[string]string, len(programs))
@@ -147,7 +149,7 @@ func (h *hostAgentProvider) getProvider(ctx context.Context, program string, com
 }
 
 // StartRun starts the task on the plugin that runs the program it names.
-func (h *hostAgentProvider) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
+func (h *hostAgentProvider) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
 	id, err := h.getProvider(ctx, task.Agent, task.Command)
 	if err != nil {
 		return nil, err

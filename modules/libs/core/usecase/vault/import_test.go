@@ -8,8 +8,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // createOutsideFolder is a folder on this machine holding those files, and
@@ -126,7 +127,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Cover.png" {
 		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if !errors.Is(brought.Errors[0].Why, port.ErrOccupied) {
+	if !errors.Is(brought.Errors[0].Why, vaultport.ErrOccupied) {
 		t.Errorf("the error: want ErrOccupied, got %v", brought.Errors[0].Why)
 	}
 	if body := readArrived(t, v.Path, "Cover.png"); body != "MINE" {

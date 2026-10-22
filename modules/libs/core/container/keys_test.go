@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // keyJar is a key store held in memory.
@@ -18,7 +18,7 @@ func (j keyJar) GetKey(_ context.Context, name string) (string, error) {
 	if key, found := j[name]; found {
 		return key, nil
 	}
-	return "", port.ErrNoKey
+	return "", pluginport.ErrNoKey
 }
 
 func (j keyJar) SetKey(_ context.Context, name, key string) error {
@@ -28,7 +28,7 @@ func (j keyJar) SetKey(_ context.Context, name, key string) error {
 
 func (j keyJar) DeleteKey(_ context.Context, name string) error {
 	if _, found := j[name]; !found {
-		return port.ErrNoKey
+		return pluginport.ErrNoKey
 	}
 	delete(j, name)
 	return nil

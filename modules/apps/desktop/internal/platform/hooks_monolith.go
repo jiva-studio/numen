@@ -8,7 +8,8 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // builtInPlugin is a plugin linked into this binary: its manifest.json and what makes the handler
@@ -30,7 +31,7 @@ func RegisterPlugin(manifest []byte, serve func(vars map[string]string) (http.Ha
 
 // newPluginHost is the plugin host of this binary, with the plugins linked into it registered. A
 // plugin that cannot be registered is reported and left out.
-func newPluginHost(target string, dirs ...string) port.PluginManager {
+func newPluginHost(target string, dirs ...string) pluginport.PluginManager {
 	host := container.NewPluginHost(target, dirs...)
 	for _, builtIn := range builtInPlugins {
 		if err := host.RegisterBuiltIn(builtIn.manifest, builtIn.serve); err != nil {

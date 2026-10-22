@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // RecogniserReady says whether a document could be read now without waiting for
@@ -16,7 +18,7 @@ func (c Config) RecogniserReady() bool {
 }
 
 // Recogniser is what reads a scanned page on this machine, opened now.
-func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
+func (c Config) Recogniser(ctx context.Context) (recogniser recognitionport.Recogniser, closer func() error, why error) {
 	host, err := c.resolvePlugin(plugin.CapabilityRecognition)
 	if err != nil {
 		return nil, nil, err
@@ -29,14 +31,14 @@ func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, clo
 }
 
 // Recognise is one document read with the recogniser given.
-func (c Config) Recognise(sources port.SourceRepository, recogniser port.Recogniser) recognition.Recognise {
+func (c Config) Recognise(sources sourceport.SourceRepository, recogniser recognitionport.Recogniser) recognition.Recognise {
 	return recognition.NewRecognise(c.VaultReaders(), sources, c.GetDerivedStores(), c.PageRenderer(), recogniser)
 }
 
 // OpenRecognitionWorker is the queue that reads this installation's scanned documents.
 func (c Config) OpenRecognitionWorker(
 	ctx context.Context,
-	sources port.SourceRepository,
+	sources sourceport.SourceRepository,
 	tasks *run.Tasks,
 	models *run.Lock,
 ) *recognition.Worker {
@@ -48,7 +50,7 @@ func (c Config) OpenRecognitionWorker(
 		Tasks:     tasks,
 		Models:    models,
 		Runtime: recognition.Runtime{
-			Open: func(ctx context.Context, _ func(what string, finished, total int64)) (port.Recogniser, func() error, error) {
+			Open: func(ctx context.Context, _ func(what string, finished, total int64)) (recognitionport.Recogniser, func() error, error) {
 				return c.Recogniser(ctx)
 			},
 			Ready:    c.RecogniserReady,

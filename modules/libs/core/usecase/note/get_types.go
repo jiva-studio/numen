@@ -3,16 +3,17 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // GetTypes finds what each of the notes at some paths is.
 type GetTypes struct {
-	queries port.NoteQueries
+	queries noteport.NoteQueries
 }
 
-func NewGetTypes(queries port.NoteQueries) *GetTypes {
+func NewGetTypes(queries noteport.NoteQueries) *GetTypes {
 	return &GetTypes{queries: queries}
 }
 

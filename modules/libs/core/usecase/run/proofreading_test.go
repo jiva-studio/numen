@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 type answering struct{}
@@ -26,20 +29,20 @@ func (answering) ProofreadSpeech(
 
 type readers struct{}
 
-func (readers) Open(domain.Vault) (port.VaultReader, error) { return nil, nil }
+func (readers) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, nil }
 
 type stores struct{}
 
-func (stores) Open(domain.Vault) (port.DerivedStore, error) { return nil, nil }
+func (stores) Open(domain.Vault) (vaultport.DerivedStore, error) { return nil, nil }
 
 // A proofreading is made only out of a vault, a store and a proofreader, and
 // each missing one is a fault of its own.
 func TestAProofreadingNeedsAVaultAStoreAndAProofreader(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
-		readers port.VaultReaders
-		derived port.DerivedStores
-		source  port.Proofreader
+		readers vaultport.VaultReaders
+		derived vaultport.DerivedStores
+		source  recognitionport.Proofreader
 		want    error
 	}{
 		{"no vault", nil, stores{}, answering{}, ErrNoVaultToProofread},
@@ -62,7 +65,7 @@ func TestNothingIsOpenedWhereNothingWasPlaced(t *testing.T) {
 
 // What the installation opens is what answers.
 func TestWhatTheInstallationOpensAnswers(t *testing.T) {
-	delta, err := OpenProofreader(func() (port.Proofreader, error) { return answering{}, nil })
+	delta, err := OpenProofreader(func() (recognitionport.Proofreader, error) { return answering{}, nil })
 	if err != nil || delta == nil {
 		t.Errorf("got %v, %v", delta, err)
 	}
@@ -71,7 +74,7 @@ func TestWhatTheInstallationOpensAnswers(t *testing.T) {
 // A proofreading stopped for want of consent says where to allow it; any other
 // stop says what stopped it.
 func TestAProofreadErrorReturnsWhereToAllowAModel(t *testing.T) {
-	proofErr := fmt.Errorf("batch 1: unavailable: %w", port.ErrNoConsent)
+	proofErr := fmt.Errorf("batch 1: unavailable: %w", completionport.ErrNoConsent)
 	if got := GetProofreadError(proofErr); got != "AI access not allowed — allow it in Settings → AI" {
 		t.Errorf("said %q", got)
 	}

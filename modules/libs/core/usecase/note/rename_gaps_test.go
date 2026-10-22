@@ -5,8 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // A rename that could not be made says nothing of a name the note never took.
@@ -102,13 +104,13 @@ func TestARenamePassesOutTheDependenciesItWasGiven(t *testing.T) {
 
 	renaming := note.NewRename(c.move()).WithSources(sources).WithWriters(writers)
 	renaming.Move = renaming.WithReaders(readers)
-	if renaming.Sources() != port.SourceRepository(sources) {
+	if renaming.Sources() != sourceport.SourceRepository(sources) {
 		t.Error("the source repository is not the one given")
 	}
-	if renaming.Writers() != port.VaultWriters(writers) {
+	if renaming.Writers() != vaultport.VaultWriters(writers) {
 		t.Error("the vault writers are not the ones given")
 	}
-	if renaming.Readers() != port.VaultReaders(readers) {
+	if renaming.Readers() != vaultport.VaultReaders(readers) {
 		t.Error("the vault readers are not the ones given")
 	}
 }

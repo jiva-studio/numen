@@ -20,8 +20,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 type fakeBookServer struct {
@@ -111,8 +113,8 @@ func TestBookBridgeWithoutPlugin(t *testing.T) {
 	ctx := t.Context()
 
 	_, err := OpenBookBridge(ctx, host)
-	var missing *port.UnavailableError
-	if !errors.As(err, &missing) || missing.Reason != port.PluginNotInstalled || missing.Capability != CapabilityBook {
+	var missing *pluginport.UnavailableError
+	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != CapabilityBook {
 		t.Fatalf("got %v, want the book plugin not installed", err)
 	}
 }
@@ -236,10 +238,10 @@ func TestBookBridgeReadBookAnswersTextPartsAndPages(t *testing.T) {
 
 func TestBookBridgeReadBookNamesWhyABookIsRefused(t *testing.T) {
 	bridge := openFakeBookBridge(t, PermissionVaultRead)
-	if _, err := bridge.ReadBook(t.Context(), []byte("junk")); !errors.Is(err, port.ErrNotADocument) {
+	if _, err := bridge.ReadBook(t.Context(), []byte("junk")); !errors.Is(err, sourceport.ErrNotADocument) {
 		t.Errorf("bytes that are no book: err = %v, want ErrNotADocument", err)
 	}
-	if _, err := bridge.ReadBook(t.Context(), []byte("locked")); !errors.Is(err, port.ErrEncrypted) {
+	if _, err := bridge.ReadBook(t.Context(), []byte("locked")); !errors.Is(err, sourceport.ErrEncrypted) {
 		t.Errorf("a locked book: err = %v, want ErrEncrypted", err)
 	}
 }
@@ -258,14 +260,14 @@ func TestBookBridgeReadEntryAsksForTheEntryOfTheFile(t *testing.T) {
 func TestBookBridgeReadEntryNamesWhyAnEntryIsRefused(t *testing.T) {
 	bridge := openFakeBookBridge(t, PermissionVaultRead)
 	named := domain.Fingerprint{Path: "a.epub"}
-	if _, err := bridge.ReadEntry(t.Context(), named, "changed"); !errors.Is(err, port.ErrBookChanged) {
+	if _, err := bridge.ReadEntry(t.Context(), named, "changed"); !errors.Is(err, sourceport.ErrBookChanged) {
 		t.Errorf("a file that changed: err = %v, want ErrBookChanged", err)
 	}
-	if _, err := bridge.ReadEntry(t.Context(), named, "missing"); !errors.Is(err, port.ErrNoBookEntry) {
+	if _, err := bridge.ReadEntry(t.Context(), named, "missing"); !errors.Is(err, sourceport.ErrNoBookEntry) {
 		t.Errorf("an entry the archive lacks: err = %v, want ErrNoBookEntry", err)
 	}
 	_, err := bridge.ReadEntry(t.Context(), named, "boom")
-	if err == nil || errors.Is(err, port.ErrNoBookEntry) || errors.Is(err, port.ErrBookChanged) {
+	if err == nil || errors.Is(err, sourceport.ErrNoBookEntry) || errors.Is(err, sourceport.ErrBookChanged) {
 		t.Errorf("a failed plugin: err = %v, want an error that is none of the book's own", err)
 	}
 }
@@ -303,10 +305,10 @@ func TestBookBridgeGetBookAnswersTheShapeOfTheBook(t *testing.T) {
 
 func TestBookBridgeGetBookNamesWhyABookIsRefused(t *testing.T) {
 	bridge := openFakeBookBridge(t, PermissionVaultRead)
-	if _, err := bridge.GetBook(t.Context(), "nonexistent.epub"); !errors.Is(err, port.ErrNoBook) || errors.Is(err, port.ErrNoBookEntry) {
+	if _, err := bridge.GetBook(t.Context(), "nonexistent.epub"); !errors.Is(err, sourceport.ErrNoBook) || errors.Is(err, sourceport.ErrNoBookEntry) {
 		t.Errorf("a path with no book: err = %v, want ErrNoBook", err)
 	}
-	if _, err := bridge.GetBook(t.Context(), "locked.epub"); !errors.Is(err, port.ErrEncrypted) {
+	if _, err := bridge.GetBook(t.Context(), "locked.epub"); !errors.Is(err, sourceport.ErrEncrypted) {
 		t.Errorf("a locked book: err = %v, want ErrEncrypted", err)
 	}
 }
@@ -326,10 +328,10 @@ func TestBookBridgeReadBookMarkupSendsTheBaselineItIsGiven(t *testing.T) {
 
 func TestBookBridgeReadBookMarkupNamesWhyASectionIsRefused(t *testing.T) {
 	bridge := openFakeBookBridge(t, PermissionVaultRead)
-	if _, err := bridge.ReadBookMarkup(t.Context(), "a.epub", "changed.xhtml", nil); !errors.Is(err, port.ErrBookChanged) {
+	if _, err := bridge.ReadBookMarkup(t.Context(), "a.epub", "changed.xhtml", nil); !errors.Is(err, sourceport.ErrBookChanged) {
 		t.Errorf("a file that changed: err = %v, want ErrBookChanged", err)
 	}
-	if _, err := bridge.ReadBookMarkup(t.Context(), "a.epub", "missing.xhtml", nil); !errors.Is(err, port.ErrNoBookEntry) {
+	if _, err := bridge.ReadBookMarkup(t.Context(), "a.epub", "missing.xhtml", nil); !errors.Is(err, sourceport.ErrNoBookEntry) {
 		t.Errorf("a section the book lacks: err = %v, want ErrNoBookEntry", err)
 	}
 }

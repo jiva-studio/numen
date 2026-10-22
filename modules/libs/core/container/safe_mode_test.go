@@ -8,14 +8,16 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 var (
-	_ port.PluginManager          = (*plugin.Host)(nil)
-	_ port.PluginLifecycleManager = (*plugin.Host)(nil)
-	_ port.PluginRegistryManager  = (*plugin.Host)(nil)
+	_ pluginport.PluginManager          = (*plugin.Host)(nil)
+	_ pluginport.PluginLifecycleManager = (*plugin.Host)(nil)
+	_ pluginport.PluginRegistryManager  = (*plugin.Host)(nil)
 )
 
 func TestContainerSafeModeDegradation(t *testing.T) {
@@ -144,9 +146,9 @@ func (bookReader) ReadBook(context.Context, []byte) (domain.BookText, error) {
 // isDisabledInSafeMode is whether the error says the capability's plugin is
 // disabled by safe mode, and is ErrUnavailable.
 func isDisabledInSafeMode(err error, capability string) bool {
-	var missing *port.UnavailableError
-	return errors.As(err, &missing) && missing.Reason == port.PluginDisabled &&
-		missing.Capability == capability && errors.Is(err, errSafeMode) && errors.Is(err, port.ErrUnavailable)
+	var missing *pluginport.UnavailableError
+	return errors.As(err, &missing) && missing.Reason == pluginport.PluginDisabled &&
+		missing.Capability == capability && errors.Is(err, errSafeMode) && errors.Is(err, completionport.ErrUnavailable)
 }
 
 // An installation without a plugin host has no plugin installed, and its
@@ -154,8 +156,8 @@ func isDisabledInSafeMode(err error, capability string) bool {
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := Config{}
 	_, _, err := cfg.Recogniser(t.Context())
-	var missing *port.UnavailableError
-	if !errors.As(err, &missing) || missing.Reason != port.PluginNotInstalled || missing.Capability != plugin.CapabilityRecognition {
+	var missing *pluginport.UnavailableError
+	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != plugin.CapabilityRecognition {
 		t.Fatalf("Recogniser = %v, want the recognition plugin not installed", err)
 	}
 	cfg.SetPluginVaultPath("vault")

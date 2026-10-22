@@ -5,9 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
@@ -80,7 +81,7 @@ func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
 
 // faultyRegistry is a list that fails when it is read or written.
 type faultyRegistry struct {
-	port.VaultRegistry
+	vaultport.VaultRegistry
 	listErr error
 	saveErr error
 }

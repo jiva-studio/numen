@@ -14,11 +14,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 var before = []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
@@ -73,7 +74,7 @@ func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 }
 
 // getModelWait blocks until the model behind an embedder has turned up.
-func getModelWait(embedder port.Embedder) WaitForModel {
+func getModelWait(embedder embeddingport.Embedder) WaitForModel {
 	if waiting, ok := embedder.(embedding.WaitingEmbedder); ok {
 		return waiting.Wait
 	}
@@ -82,7 +83,7 @@ func getModelWait(embedder port.Embedder) WaitForModel {
 
 // newPass is the indexing of one vault over an embedder, reporting into events.
 func newPass(
-	made container.EditorAssembly, db *container.Index, events Events, embedder port.Embedder, recipe string,
+	made container.EditorAssembly, db *container.Index, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
 ) *pass {
 	worker := NewWorker(Config{
@@ -117,7 +118,7 @@ func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v dom
 }
 
 // fit prepares the index to hold the vectors of a model.
-func fit(t *testing.T, db *container.Index, model port.Embedder) {
+func fit(t *testing.T, db *container.Index, model embeddingport.Embedder) {
 	t.Helper()
 	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
@@ -133,8 +134,8 @@ type fakeEmbedder struct {
 	calls int
 }
 
-func (a *fakeEmbedder) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "fake", Dimensions: a.dims}
+func (a *fakeEmbedder) GetModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: a.dims}
 }
 
 func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -377,7 +378,7 @@ type overheard struct {
 }
 
 // GetModel is asked at the head of every pass, before a source has been opened.
-func (o *overheard) GetModel() port.EmbeddingModel {
+func (o *overheard) GetModel() embeddingport.EmbeddingModel {
 	o.keep()
 	return o.fakeEmbedder.GetModel()
 }

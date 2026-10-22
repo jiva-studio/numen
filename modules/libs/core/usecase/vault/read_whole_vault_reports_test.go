@@ -8,16 +8,19 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // notRemoving is a list of notes that takes every note but cannot take any out.
 type notRemoving struct {
-	port.NoteRepository
+	noteport.NoteRepository
 	err error
 }
 
@@ -26,7 +29,7 @@ func (n notRemoving) Remove(context.Context, domain.VaultID, []string) error { r
 // uncuttable is an index of sources that cannot say which are still to be cut,
 // and runs a function when asked what was cut by another recipe.
 type uncuttable struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	err         error
 	onUnchunked func()
 	onRecipe    func()
@@ -236,7 +239,7 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 // given.
 type unreadable struct{ err error }
 
-func (u unreadable) Open(domain.Vault) (port.VaultReader, error) { return nil, u.err }
+func (u unreadable) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, u.err }
 
 // One source is cut again from its text, and a source that cannot be cut is an
 // error naming it and carrying what stopped it.

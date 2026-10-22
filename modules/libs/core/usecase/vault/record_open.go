@@ -1,15 +1,16 @@
 package vault
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 type RecordOpen struct {
-	registry port.VaultRegistry
+	registry vaultport.VaultRegistry
 }
 
-func NewRecordOpen(registry port.VaultRegistry) RecordOpen {
+func NewRecordOpen(registry vaultport.VaultRegistry) RecordOpen {
 	return RecordOpen{registry: registry}
 }
 

@@ -22,8 +22,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 type mockProofreadService struct {
@@ -65,7 +66,7 @@ func TestAProfileDegradesWhenPluginAbsent(t *testing.T) {
 	if why == nil {
 		t.Fatal("want error when plugin absent, got nil")
 	}
-	if !errors.Is(why, port.ErrUnavailable) {
+	if !errors.Is(why, completionport.ErrUnavailable) {
 		t.Errorf("expected unavailable error, got: %v", why)
 	}
 	if proofreader != nil {
@@ -157,7 +158,7 @@ func TestTheProofreadingOfAKindOfTextCarriesTheSettingsOfItsProfile(t *testing.T
 	if scan.By == nil {
 		t.Fatal("a named profile opens nothing")
 	}
-	if _, why := scan.By(); !errors.Is(why, port.ErrUnavailable) {
+	if _, why := scan.By(); !errors.Is(why, completionport.ErrUnavailable) {
 		t.Errorf("a profile with no plugin opened with %v", why)
 	}
 

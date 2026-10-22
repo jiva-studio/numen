@@ -9,8 +9,9 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/agent"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 )
 
 // ErrNoAgent is a question asked at a window that can reach none. Whether one
@@ -50,7 +51,7 @@ func (a *API) AskAgent(
 		Face: r.Msg.GetFace(),
 	})
 
-	task := port.Task{
+	task := agentport.Task{
 		Question:     r.Msg.GetPrompt(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 func TestVaultPathValidator(t *testing.T) {
@@ -47,7 +47,7 @@ func TestVaultPathValidator(t *testing.T) {
 	t.Run("path traversal escape rejected", func(t *testing.T) {
 		traversalPath := filepath.Join(subDir, "..", "..", "outside.pdf")
 		_, err := validator.ValidatePath(vaultDir, traversalPath)
-		if !errors.Is(err, port.ErrPathTraversal) {
+		if !errors.Is(err, pluginport.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal, got %v", err)
 		}
 	})
@@ -55,7 +55,7 @@ func TestVaultPathValidator(t *testing.T) {
 	t.Run("relative path traversal escape rejected", func(t *testing.T) {
 		traversalPath := "../outside.pdf"
 		_, err := validator.ValidatePath(vaultDir, traversalPath)
-		if !errors.Is(err, port.ErrPathTraversal) {
+		if !errors.Is(err, pluginport.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal, got %v", err)
 		}
 	})
@@ -87,7 +87,7 @@ func TestVaultPathValidator(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err := validator.ValidatePath(vaultDir, "broken_link.pdf")
-		if !errors.Is(err, port.ErrPathTraversal) {
+		if !errors.Is(err, pluginport.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal for broken outside symlink, got %v", err)
 		}
 	})
@@ -103,7 +103,7 @@ func TestVaultPathValidator(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err := validator.ValidatePath(vaultDir, "real_link.pdf")
-		if !errors.Is(err, port.ErrPathTraversal) {
+		if !errors.Is(err, pluginport.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal for outside symlink, got %v", err)
 		}
 	})
@@ -131,11 +131,11 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 		sup := NewSupervisor()
 		sup.SetPermissions([]string{"network:outbound"})
 
-		if err := sup.CheckPermission("vault:read"); !errors.Is(err, port.ErrPermissionDenied) {
+		if err := sup.CheckPermission("vault:read"); !errors.Is(err, pluginport.ErrPermissionDenied) {
 			t.Fatalf("expected ErrPermissionDenied, got %v", err)
 		}
 
-		if _, err := sup.ValidatePath(vaultDir, "doc.pdf"); !errors.Is(err, port.ErrPermissionDenied) {
+		if _, err := sup.ValidatePath(vaultDir, "doc.pdf"); !errors.Is(err, pluginport.ErrPermissionDenied) {
 			t.Fatalf("expected ErrPermissionDenied, got %v", err)
 		}
 	})
@@ -162,7 +162,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 		sup.SetPermissions([]string{"vault:read"})
 
 		_, err := sup.ValidatePath(vaultDir, "../secret.txt")
-		if !errors.Is(err, port.ErrPathTraversal) {
+		if !errors.Is(err, pluginport.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal, got %v", err)
 		}
 	})

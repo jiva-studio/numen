@@ -11,15 +11,17 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // DownloaderPluginHost provides plugin resolution, activation, and permission checking for downloads.
 type DownloaderPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
-	port.PluginAuthorizer
+	pluginport.PluginResolver
+	pluginport.PluginActivator
+	pluginport.PluginAuthorizer
 }
 
 // DownloaderBridge connects port.Downloader calls to an out-of-process downloader plugin via Connect-RPC.
@@ -69,7 +71,7 @@ func (b *DownloaderBridge) CanHandle(ctx context.Context, targetURL domain.URL) 
 }
 
 // GetDownloadModel returns the tool identity and version for a given address.
-func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, rawURL domain.URL) (port.DownloadModel, error) {
+func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, rawURL domain.URL) (downloadport.DownloadModel, error) {
 	ctx, cancel := context.WithTimeout(ctx, modelInfoTimeout)
 	defer cancel()
 	req := connect.NewRequest(&v1.GetDownloadModelRequest{
@@ -77,15 +79,15 @@ func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, rawURL domain.U
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {
-		return port.DownloadModel{}, err
+		return downloadport.DownloadModel{}, err
 	}
 	defer func() { _ = call.Close() }()
 
 	resp, err := client.GetDownloadModel(ctx, req)
 	if err != nil {
-		return port.DownloadModel{}, fmt.Errorf("rpc get download model: %w", err)
+		return downloadport.DownloadModel{}, fmt.Errorf("rpc get download model: %w", err)
 	}
-	return port.DownloadModel{
+	return downloadport.DownloadModel{
 		Tool:     resp.Msg.GetTool(),
 		Version:  resp.Msg.GetVersion(),
 		Producer: resp.Msg.GetProducer(),
@@ -93,10 +95,10 @@ func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, rawURL domain.U
 }
 
 // GetMetadata returns media duration, language, and available caption tracks.
-func (b *DownloaderBridge) GetMetadata(ctx context.Context, u domain.URL) (port.Metadata, error) {
+func (b *DownloaderBridge) GetMetadata(ctx context.Context, u domain.URL) (downloadport.Metadata, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionNetworkOutbound); err != nil {
-			return port.Metadata{}, err
+			return downloadport.Metadata{}, err
 		}
 	}
 
@@ -105,16 +107,16 @@ func (b *DownloaderBridge) GetMetadata(ctx context.Context, u domain.URL) (port.
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {
-		return port.Metadata{}, err
+		return downloadport.Metadata{}, err
 	}
 	defer func() { _ = call.Close() }()
 
 	resp, err := client.GetMetadata(ctx, req)
 	if err != nil {
-		return port.Metadata{}, fmt.Errorf("rpc get metadata: %w", err)
+		return downloadport.Metadata{}, fmt.Errorf("rpc get metadata: %w", err)
 	}
 
-	return port.Metadata{
+	return downloadport.Metadata{
 		Title:       resp.Msg.GetTitle(),
 		Bytes:       resp.Msg.GetBytes(),
 		Length:      int(resp.Msg.GetLength()),
@@ -125,10 +127,10 @@ func (b *DownloaderBridge) GetMetadata(ctx context.Context, u domain.URL) (port.
 }
 
 // GetText extracts transcripts, cues, or prose text from an address.
-func (b *DownloaderBridge) GetText(ctx context.Context, pos domain.URL, want port.PreferredCaptions) (port.Text, error) {
+func (b *DownloaderBridge) GetText(ctx context.Context, pos domain.URL, want downloadport.PreferredCaptions) (downloadport.Text, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionNetworkOutbound); err != nil {
-			return port.Text{}, err
+			return downloadport.Text{}, err
 		}
 	}
 
@@ -141,7 +143,7 @@ func (b *DownloaderBridge) GetText(ctx context.Context, pos domain.URL, want por
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {
-		return port.Text{}, err
+		return downloadport.Text{}, err
 	}
 	defer func() { _ = call.Close() }()
 
@@ -149,9 +151,9 @@ func (b *DownloaderBridge) GetText(ctx context.Context, pos domain.URL, want por
 	if err != nil {
 		var connErr *connect.Error
 		if errors.As(err, &connErr) && connErr.Code() == connect.CodeNotFound {
-			return port.Text{}, port.ErrNothingDownloaded
+			return downloadport.Text{}, downloadport.ErrNothingDownloaded
 		}
-		return port.Text{}, fmt.Errorf("rpc get text: %w", err)
+		return downloadport.Text{}, fmt.Errorf("rpc get text: %w", err)
 	}
 
 	cues := make([]domain.TranscriptCue, len(resp.Msg.GetCues()))
@@ -163,7 +165,7 @@ func (b *DownloaderBridge) GetText(ctx context.Context, pos domain.URL, want por
 		}
 	}
 
-	return port.Text{
+	return downloadport.Text{
 		Producer: resp.Msg.GetProducer(),
 		Cues:     cues,
 		Prose:    resp.Msg.GetProse(),
@@ -173,10 +175,10 @@ func (b *DownloaderBridge) GetText(ctx context.Context, pos domain.URL, want por
 }
 
 // Download streams media or page content from the address into the given destination writer.
-func (b *DownloaderBridge) Download(ctx context.Context, offset domain.URL, into io.Writer) (port.Copy, error) {
+func (b *DownloaderBridge) Download(ctx context.Context, offset domain.URL, into io.Writer) (downloadport.Copy, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionNetworkOutbound); err != nil {
-			return port.Copy{}, err
+			return downloadport.Copy{}, err
 		}
 	}
 
@@ -185,7 +187,7 @@ func (b *DownloaderBridge) Download(ctx context.Context, offset domain.URL, into
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {
-		return port.Copy{}, err
+		return downloadport.Copy{}, err
 	}
 	defer func() { _ = call.Close() }()
 
@@ -193,22 +195,22 @@ func (b *DownloaderBridge) Download(ctx context.Context, offset domain.URL, into
 	if err != nil {
 		var connErr *connect.Error
 		if errors.As(err, &connErr) && connErr.Code() == connect.CodeNotFound {
-			return port.Copy{}, port.ErrNothingDownloaded
+			return downloadport.Copy{}, downloadport.ErrNothingDownloaded
 		}
-		return port.Copy{}, fmt.Errorf("rpc download media: %w", err)
+		return downloadport.Copy{}, fmt.Errorf("rpc download media: %w", err)
 	}
 
 	return consumeMediaStream(stream, into)
 }
 
-func consumeMediaStream(stream *connect.ServerStreamForClient[v1.DownloadMediaResponse], into io.Writer) (port.Copy, error) {
-	var copyInfo port.Copy
+func consumeMediaStream(stream *connect.ServerStreamForClient[v1.DownloadMediaResponse], into io.Writer) (downloadport.Copy, error) {
+	var copyInfo downloadport.Copy
 	for stream.Receive() {
 		msg := stream.Msg()
 		if len(msg.GetChunk()) > 0 {
 			if _, err := into.Write(msg.GetChunk()); err != nil {
 				_ = stream.Close()
-				return port.Copy{}, fmt.Errorf("write media chunk: %w", err)
+				return downloadport.Copy{}, fmt.Errorf("write media chunk: %w", err)
 			}
 		}
 		if msg.GetMediaType() != "" {
@@ -221,9 +223,9 @@ func consumeMediaStream(stream *connect.ServerStreamForClient[v1.DownloadMediaRe
 	if err := stream.Err(); err != nil {
 		var connErr *connect.Error
 		if errors.As(err, &connErr) && connErr.Code() == connect.CodeNotFound {
-			return port.Copy{}, port.ErrNothingDownloaded
+			return downloadport.Copy{}, downloadport.ErrNothingDownloaded
 		}
-		return port.Copy{}, fmt.Errorf("download media stream: %w", err)
+		return downloadport.Copy{}, fmt.Errorf("download media stream: %w", err)
 	}
 
 	return copyInfo, nil

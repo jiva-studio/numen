@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
 )
 
 // ProofreaderReady says whether a proofreading plugin is available and ready.
@@ -19,7 +20,7 @@ func (c Config) ProofreaderReady() bool {
 //
 // Naming no profile is naming no proofreader: nothing comes back and a recognition
 // is used exactly as it was read.
-func (c Config) Proofreader(name string) (port.Proofreader, error) {
+func (c Config) Proofreader(name string) (recognitionport.Proofreader, error) {
 	if name == "" {
 		return nil, nil
 	}
@@ -47,7 +48,7 @@ func (c Config) getProofreading(config Proofread) run.ProofreadingConfig {
 	return run.ProofreadingConfig{
 		IsNamed:     config.Profile != "",
 		IsAutomatic: config.IsAutomatic,
-		By:          func() (port.Proofreader, error) { return c.Proofreader(config.Profile) },
+		By:          func() (recognitionport.Proofreader, error) { return c.Proofreader(config.Profile) },
 	}
 }
 

@@ -3,16 +3,17 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // ResolveLinks finds where addresses written in one note land.
 type ResolveLinks struct {
-	links port.LinkQueries
+	links noteport.LinkQueries
 }
 
-func NewResolveLinks(links port.LinkQueries) *ResolveLinks {
+func NewResolveLinks(links noteport.LinkQueries) *ResolveLinks {
 	return &ResolveLinks{links: links}
 }
 

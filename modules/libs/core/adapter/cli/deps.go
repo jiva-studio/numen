@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -12,6 +11,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // Locations are the places a person may point this installation at, as they
@@ -42,7 +46,7 @@ type Deps struct {
 
 	// Search opens the search a question is answered by. errorHandler is where a
 	// half of it that could not run says so.
-	Search func(ctx context.Context, errorHandler port.ErrorHandler) (Search, error)
+	Search func(ctx context.Context, errorHandler windowport.ErrorHandler) (Search, error)
 
 	// Links opens what a note points at and what points at it.
 	Links func(ctx context.Context) (Links, error)
@@ -74,11 +78,11 @@ type Deps struct {
 // the folders it names, what gives a folder its identity, the place this
 // machine keeps what a person deleted, and what time it is.
 type Vaults struct {
-	Registry port.VaultRegistry
-	Readers  port.VaultReaders
-	Identity port.VaultIdentity
-	Trash    port.Trash
-	Now      port.Clock
+	Registry vaultport.VaultRegistry
+	Readers  vaultport.VaultReaders
+	Identity vaultport.VaultIdentity
+	Trash    machineport.Trash
+	Now      machineport.Clock
 
 	// Rows opens what the index remembers about vaults, which a rename, a
 	// forget and an erasure change together with the list. Listing vaults calls
@@ -98,7 +102,7 @@ func (v Vaults) find(nameOrPath string) (domain.Vault, error) {
 
 // VaultRows is what the index remembers about vaults, open.
 type VaultRows struct {
-	Vaults port.VaultRepository
+	Vaults vaultport.VaultRepository
 	Close  func() error
 }
 
@@ -135,7 +139,7 @@ type Links struct {
 // vault is the core's own vocabulary and no part of an installation, so the
 // terminal takes the standard set and this opens what answers them.
 type Problems struct {
-	Problems port.ProblemQueries
+	Problems recognitionport.ProblemQueries
 	Close    func() error
 }
 

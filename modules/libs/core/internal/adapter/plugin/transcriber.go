@@ -11,16 +11,17 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
 )
 
 // TranscriberPluginHost provides resolution, activation, reference tracking, permissions, and path validation.
 type TranscriberPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
-	port.PluginAcquirer
-	port.PluginAuthorizer
-	port.PluginPathValidator
+	pluginport.PluginResolver
+	pluginport.PluginActivator
+	pluginport.PluginAcquirer
+	pluginport.PluginAuthorizer
+	pluginport.PluginPathValidator
 }
 
 // TranscriberBridge connects port.Transcriber calls to an out-of-process transcription plugin via Connect-RPC.
@@ -29,7 +30,7 @@ type TranscriberBridge struct {
 	pluginID string
 	service  pluginService[numenv1connect.TranscriptionServiceClient]
 	lease    *pluginLease
-	model    port.TranscriptionModel
+	model    transcriptionport.TranscriptionModel
 }
 
 // OpenTranscriberBridge activates or connects to the transcription plugin and returns a port.Transcriber.
@@ -52,7 +53,7 @@ func OpenTranscriberBridge(ctx context.Context, host TranscriberPluginHost) (*Tr
 		return nil, fmt.Errorf("get transcription model %s: %w", plugin.Manifest.ID, err)
 	}
 
-	model := port.TranscriptionModel{
+	model := transcriptionport.TranscriptionModel{
 		Model:     resp.Msg.GetModel(),
 		Segmenter: resp.Msg.GetSegmenter(),
 		Cutting:   resp.Msg.GetCutting(),
@@ -69,22 +70,22 @@ func OpenTranscriberBridge(ctx context.Context, host TranscriberPluginHost) (*Tr
 }
 
 // GetTranscriptionModel returns the model the transcription plugin answered with when the bridge was opened.
-func (b *TranscriberBridge) GetTranscriptionModel() port.TranscriptionModel {
+func (b *TranscriberBridge) GetTranscriptionModel() transcriptionport.TranscriptionModel {
 	return b.model
 }
 
 // Open sends recording raw bytes to the plugin to calculate duration and prepare segmentation.
-func (b *TranscriberBridge) Open(ctx context.Context, raw []byte) (port.Recording, error) {
+func (b *TranscriberBridge) Open(ctx context.Context, raw []byte) (transcriptionport.Recording, error) {
 	return b.OpenSource(ctx, raw)
 }
 
 // OpenPath sends recording file path to the plugin to calculate duration and prepare segmentation.
-func (b *TranscriberBridge) OpenPath(ctx context.Context, path string) (port.Recording, error) {
+func (b *TranscriberBridge) OpenPath(ctx context.Context, path string) (transcriptionport.Recording, error) {
 	return b.OpenSource(ctx, path)
 }
 
 // OpenSource sends recording raw bytes or file path to the plugin to calculate duration and prepare segmentation.
-func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (port.Recording, error) {
+func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (transcriptionport.Recording, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
 			return nil, err
@@ -158,7 +159,7 @@ func (b *TranscriberBridge) resolveNamedPath(rawPath string) (string, error) {
 }
 
 // Transcribe decodes one audio segment into text words.
-func (b *TranscriberBridge) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
+func (b *TranscriberBridge) Transcribe(ctx context.Context, audio transcriptionport.Audio) (string, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
 			return "", err
@@ -193,7 +194,7 @@ type pluginRecording struct {
 	client      numenv1connect.TranscriptionServiceClient
 	recordingID string
 	durationMs  int
-	host        port.PluginActivator
+	host        pluginport.PluginActivator
 	pluginID    string
 }
 
@@ -201,7 +202,7 @@ func (r *pluginRecording) GetDuration() int {
 	return r.durationMs
 }
 
-func (r *pluginRecording) GetSegments(ctx context.Context, from, count int) ([]port.Audio, error) {
+func (r *pluginRecording) GetSegments(ctx context.Context, from, count int) ([]transcriptionport.Audio, error) {
 	req := connect.NewRequest(&v1.GetSegmentsRequest{
 		RecordingId: r.recordingID,
 		FromMs:      int32(from),
@@ -212,9 +213,9 @@ func (r *pluginRecording) GetSegments(ctx context.Context, from, count int) ([]p
 		return nil, fmt.Errorf("rpc get segments: %w", err)
 	}
 
-	segments := make([]port.Audio, 0, len(resp.Msg.GetSegments()))
+	segments := make([]transcriptionport.Audio, 0, len(resp.Msg.GetSegments()))
 	for _, s := range resp.Msg.GetSegments() {
-		segments = append(segments, port.Audio{
+		segments = append(segments, transcriptionport.Audio{
 			Samples: s.GetSamples(),
 			From:    int(s.GetFromMs()),
 			To:      int(s.GetToMs()),

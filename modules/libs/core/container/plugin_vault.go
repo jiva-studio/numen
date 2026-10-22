@@ -9,13 +9,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // SetPluginVault is the vault the plugins work through the host. Without one a plugin that calls for
 // the vault is told the host shows none.
-func (c Config) SetPluginVault(vault port.PluginVault) {
+func (c Config) SetPluginVault(vault pluginport.PluginVault) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVault(vault)
 	}
@@ -23,7 +25,7 @@ func (c Config) SetPluginVault(vault port.PluginVault) {
 
 // OpenPluginCache is where a plugin keeps what it worked out for a vault: the folder the
 // configuration names for schedules, else the platform's cache location.
-func (c Config) OpenPluginCache() (port.PluginCache, error) {
+func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
 	if c.PluginCachePath != "" {
 		return appstate.PluginCachesAt(filepath.Join(c.PluginCachePath, "plugins")), nil
 	}
@@ -40,7 +42,7 @@ type PluginVaultHooks struct {
 	Written func()
 	// IndexState starts reading a vault into the index when it is not there and says where that
 	// stands. Left nil, a vault the index carries is indexed and any other is being indexed.
-	IndexState func(ctx context.Context, v domain.Vault) (port.PluginIndexState, error)
+	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
 	// InUse is told that a plugin is working a vault for the person.
 	InUse func(ctx context.Context, v domain.Vault)
 	// Moved tells that something moved in some vault. Left nil, it is the index file changing.
@@ -51,15 +53,15 @@ type PluginVaultHooks struct {
 // files, the index and the stores of this installation.
 func (e EditorAssembly) OpenPluginVault(
 	current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) (port.PluginVault, error) {
+) (pluginport.PluginVault, error) {
 	return e.cfg.OpenPluginVault(e.registry, e.db, current, hooks)
 }
 
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
 // index that holds them: the one current names, else the one a call names by identity.
 func (c Config) OpenPluginVault(
-	registry port.VaultRegistry, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) (port.PluginVault, error) {
+	registry vaultport.VaultRegistry, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+) (pluginport.PluginVault, error) {
 	cache, err := c.OpenPluginCache()
 	if err != nil {
 		return nil, err
@@ -97,15 +99,15 @@ func (c Config) OpenPluginVault(
 		},
 	}
 	if vaults.IndexState == nil {
-		vaults.IndexState = func(ctx context.Context, v domain.Vault) (port.PluginIndexState, error) {
+		vaults.IndexState = func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error) {
 			has, err := queries.Has(ctx, v.ID)
 			if err != nil {
-				return port.PluginIndexState{}, err
+				return pluginport.PluginIndexState{}, err
 			}
 			if has {
-				return port.PluginIndexState{Status: port.PluginIndexed}, nil
+				return pluginport.PluginIndexState{Status: pluginport.PluginIndexed}, nil
 			}
-			return port.PluginIndexState{Status: port.PluginIndexing}, nil
+			return pluginport.PluginIndexState{Status: pluginport.PluginIndexing}, nil
 		}
 	}
 	if vaults.Moved == nil {

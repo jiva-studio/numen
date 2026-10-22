@@ -7,18 +7,18 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrOutside is the core's sentinel, so a caller that never names this package
 // still recognises it.
-var ErrOutside = port.ErrOutside
+var ErrOutside = vaultport.ErrOutside
 
 // ErrNotANote is what a path inside the vault gets when the vault does not hold
 // it as a note: an attachment, a folder some tool keeps its state in, whatever
 // the vault's own rules say to leave alone. It is the core's sentinel: the same
 // answer reaches a use case whichever vault it came from.
-var ErrNotANote = port.ErrNotANote
+var ErrNotANote = vaultport.ErrNotANote
 
 // getContainedPath turns a path from a vault root into a path on this machine,
 // and refuses one that leaves.

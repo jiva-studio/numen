@@ -7,8 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 var atlas = domain.Fingerprint{Path: "books/atlas.epub", Kind: domain.KindBook}
@@ -58,7 +59,7 @@ func TestABookWithoutAReaderOfBooksIsUnreadable(t *testing.T) {
 }
 
 func TestABookTheReaderRefusesIsUnreadable(t *testing.T) {
-	for _, readErr := range []error{port.ErrNotADocument, port.ErrEncrypted, errors.New("the plugin is gone")} {
+	for _, readErr := range []error{sourceport.ErrNotADocument, sourceport.ErrEncrypted, errors.New("the plugin is gone")} {
 		doc, err := text.Read(t.Context(), failing{err: readErr}, atlas, []byte("PK"))
 		if doc != nil || !errors.Is(err, text.ErrUnreadable) {
 			t.Errorf("%v: answered %+v, %v, want nothing and %v", readErr, doc, err, text.ErrUnreadable)

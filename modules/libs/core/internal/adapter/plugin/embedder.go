@@ -9,22 +9,23 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // EmbedderPluginHost provides plugin resolution and activation for embeddings.
 type EmbedderPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
+	pluginport.PluginResolver
+	pluginport.PluginActivator
 }
 
 // EmbedderBridge connects port.Embedder calls to an out-of-process embedding plugin via Connect-RPC.
 type EmbedderBridge struct {
-	host        port.PluginActivator
+	host        pluginport.PluginActivator
 	pluginID    string
 	service     pluginService[numenv1connect.EmbeddingServiceClient]
 	lease       *pluginLease
-	model       port.EmbeddingModel
+	model       embeddingport.EmbeddingModel
 	concurrency int
 }
 
@@ -52,7 +53,7 @@ func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*Embedder
 		concurrency = int(resp.Msg.GetConcurrency())
 	}
 
-	model := port.EmbeddingModel{
+	model := embeddingport.EmbeddingModel{
 		Name:       resp.Msg.GetName(),
 		Dimensions: int(resp.Msg.GetDimensions()),
 		MaxTokens:  int(resp.Msg.GetMaxTokens()),
@@ -71,7 +72,7 @@ func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*Embedder
 }
 
 // GetModel returns the model the embedding plugin answered with when the bridge was opened.
-func (b *EmbedderBridge) GetModel() port.EmbeddingModel {
+func (b *EmbedderBridge) GetModel() embeddingport.EmbeddingModel {
 	return b.model
 }
 

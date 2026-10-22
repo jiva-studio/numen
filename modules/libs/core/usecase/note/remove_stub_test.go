@@ -8,14 +8,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // trashSources is the index saying which sources sit under a path.
 type trashSources struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	underCtx []domain.Fingerprint
 	err      error
 }
@@ -27,7 +30,7 @@ func (s trashSources) GetSourcesUnder(context.Context, domain.VaultID, string) (
 // trashLinks is the index saying which notes point at a path, and recording
 // which paths it was asked about.
 type trashLinks struct {
-	port.LinkQueries
+	noteport.LinkQueries
 	pointing  map[string][]domain.ResolvedLink
 	err       error
 	requested *[]string
@@ -40,7 +43,7 @@ func (l trashLinks) GetBacklinks(_ context.Context, _ domain.VaultID, to string)
 
 // trashWriter is a vault whose move and remove answer as they were told to.
 type trashWriter struct {
-	port.VaultWriter
+	vaultport.VaultWriter
 	move   func(from, to string) error
 	remove func(path string) error
 }
@@ -50,12 +53,12 @@ func (w trashWriter) Move(_ context.Context, from, to string) error { return w.m
 func (w trashWriter) Remove(_ context.Context, path string) error { return w.remove(path) }
 
 type trashWriters struct {
-	port.VaultWriters
+	vaultport.VaultWriters
 	writer  trashWriter
 	openErr error
 }
 
-func (w trashWriters) Open(domain.Vault) (port.VaultWriter, error) {
+func (w trashWriters) Open(domain.Vault) (vaultport.VaultWriter, error) {
 	return w.writer, w.openErr
 }
 
@@ -181,7 +184,7 @@ func TestTheTrashNumbersACopyFromTwoUpward(t *testing.T) {
 		*tr.moves = append(*tr.moves, to)
 		switch {
 		case len(*tr.moves) < 4:
-			return port.ErrOccupied
+			return vaultport.ErrOccupied
 		case len(*tr.moves) < 150:
 			return nil
 		}
@@ -208,7 +211,7 @@ func TestAFullTrashRefusesTheNoteAfterAHundredNames(t *testing.T) {
 	tr := newTrashing()
 	tr.writers.writer.move = func(_, to string) error {
 		*tr.moves = append(*tr.moves, to)
-		return port.ErrOccupied
+		return vaultport.ErrOccupied
 	}
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")

@@ -20,8 +20,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
 )
 
 type mockDownloadServer struct{}
@@ -183,7 +184,7 @@ func TestDownloaderBridge(t *testing.T) {
 		t.Fatalf("unexpected metadata: %+v", meta)
 	}
 
-	text, err := bridge.GetText(ctx, url, port.PreferredCaptions{
+	text, err := bridge.GetText(ctx, url, downloadport.PreferredCaptions{
 		Languages: []string{"en"},
 	})
 	if err != nil {

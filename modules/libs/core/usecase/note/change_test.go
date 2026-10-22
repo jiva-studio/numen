@@ -12,11 +12,12 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // changing is a vault that can be both asked about and written to, with the
@@ -150,7 +151,7 @@ func TestCreatingRefusesToLandOnAnExistingNote(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
-	if !errors.Is(err, port.ErrOccupied) {
+	if !errors.Is(err, vaultport.ErrOccupied) {
 		t.Fatalf("want ErrOccupied, got %v", err)
 	}
 }
@@ -576,7 +577,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	}
 
 	_, err = writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", stale)
-	if !errors.Is(err, port.ErrStale) {
+	if !errors.Is(err, vaultport.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Theirs.") {

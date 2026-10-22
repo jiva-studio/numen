@@ -5,21 +5,23 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 type offered struct {
 	called string
 }
 
-func (o *offered) ListTools(context.Context) []port.PluginTool {
-	return []port.PluginTool{{PluginID: "md.numen.sample", Name: "sample_read"}}
+func (o *offered) ListTools(context.Context) []pluginport.PluginTool {
+	return []pluginport.PluginTool{{PluginID: "md.numen.sample", Name: "sample_read"}}
 }
 
-func (o *offered) CallTool(_ context.Context, pluginID, name string, arguments []byte, _ map[string]string) (port.PluginToolResult, error) {
+func (o *offered) CallTool(_ context.Context, pluginID, name string, arguments []byte, _ map[string]string) (pluginport.PluginToolResult, error) {
 	o.called = pluginID + " " + name + " " + string(arguments)
-	return port.PluginToolResult{Text: "done"}, nil
+	return pluginport.PluginToolResult{Text: "done"}, nil
 }
 
 func TestTheToolsThePluginsOfferAreListed(t *testing.T) {
@@ -49,7 +51,7 @@ func TestACallIsHandedToThePluginThatListedTheTool(t *testing.T) {
 func TestACallWithNoPluginsToAskIsUnavailable(t *testing.T) {
 	_, err := plugintool.NewCall(nil).Execute(t.Context(), "md.numen.sample", "sample_read", nil, nil)
 
-	if !errors.Is(err, port.ErrUnavailable) {
+	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Errorf("the call was answered with %v", err)
 	}
 }

@@ -19,8 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // The two vaults every test here uses. Their books share no words, so a chunk
@@ -42,9 +45,9 @@ type store struct {
 	mu       sync.RWMutex
 	sources  map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks   []storedChunk
-	vectors  map[domain.ChunkID][]port.Vector // the coarse rows, per chunk, appended, so a second write shows
-	groups   [][]port.Vector                  // every write of vectors, in order
-	outBytes map[string]int                   // extractions per path
+	vectors  map[domain.ChunkID][]embeddingport.Vector // the coarse rows, per chunk, appended, so a second write shows
+	groups   [][]embeddingport.Vector                  // every write of vectors, in order
+	outBytes map[string]int                            // extractions per path
 	next     int64
 	retained map[string][]byte
 }
@@ -65,7 +68,7 @@ type storedChunk struct {
 func newStore() *store {
 	return &store{
 		sources:  map[domain.VaultID]map[string]domain.Source{},
-		vectors:  map[domain.ChunkID][]port.Vector{},
+		vectors:  map[domain.ChunkID][]embeddingport.Vector{},
 		outBytes: map[string]int{},
 	}
 }
@@ -89,7 +92,7 @@ func (s *store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e doma
 	return nil
 }
 
-func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
+func (s *store) SaveVectors(_ context.Context, vectors []embeddingport.Vector) error {
 	if len(vectors) == 0 {
 		return nil
 	}
@@ -143,7 +146,7 @@ func (s *store) GetSourcesWithOtherRecipe(_ context.Context, vaultID domain.Vaul
 	})
 }
 
-func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
+func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, model embeddingport.EmbeddingModel, after embeddingport.ChunkCursor, limit int) ([]domain.Passage, embeddingport.ChunkCursor, error) {
 	if limit <= 0 {
 		return nil, "", fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -179,7 +182,7 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	next := after
 	if len(out) > 0 {
 		src := s.sources[lastChunk.vault][lastChunk.path]
-		next = port.ChunkCursor(strconv.FormatInt(src.Fingerprint.ModTime.UnixNano(), 10) + ":" + strconv.FormatInt(lastChunk.id, 10))
+		next = embeddingport.ChunkCursor(strconv.FormatInt(src.Fingerprint.ModTime.UnixNano(), 10) + ":" + strconv.FormatInt(lastChunk.id, 10))
 	}
 	return out, next, nil
 }
@@ -191,7 +194,7 @@ func chunkID(row int64) domain.ChunkID {
 
 // parseCursor is the point in the ordering a walk carries on after. The empty
 // cursor starts from the beginning.
-func parseCursor(after port.ChunkCursor) (int64, int64, error) {
+func parseCursor(after embeddingport.ChunkCursor) (int64, int64, error) {
 	if after == "" {
 		return math.MaxInt64, 0, nil
 	}
@@ -331,7 +334,7 @@ func (s *store) cut(vaultID domain.VaultID, path string) bool {
 // hasVector says whether a chunk has a coarse row under the model, which is
 // what the store writes once a vector is saved for it. A chunk without one owes,
 // whatever other chunks hold the same text.
-func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
+func (s *store) hasVector(chunk int64, model embeddingport.EmbeddingModel) bool {
 	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
 			return true
@@ -449,7 +452,7 @@ func (documents) GetHighlights(
 	return documentOf(raw).boxes(pages), nil
 }
 
-func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	defer file.Close()
 	raw, err := io.ReadAll(file)
 	if err != nil {
@@ -482,7 +485,7 @@ const (
 type library struct {
 	// The interface is embedded for the listing, which no source scenario asks
 	// for.
-	port.VaultReader
+	vaultport.VaultReader
 	files map[string]*shelved
 	reads map[string]int
 }
@@ -553,7 +556,7 @@ func (l *library) ref(path string) domain.Fingerprint {
 // vaults opens the reader of each vault a test set up.
 type vaults map[domain.VaultID]*library
 
-func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
+func (v vaults) Open(vault domain.Vault) (vaultport.VaultReader, error) {
 	reader, ok := v[vault.ID]
 	if !ok {
 		return nil, fmt.Errorf("no vault %s", vault.ID)
@@ -571,13 +574,13 @@ func words(vocabulary []string, n int) string {
 	return strings.Join(out, " ")
 }
 
-func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
+func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path string) (sourceport.SourceText, bool, error) {
 	src, target := s.sources[vaultID][path]
 	if !target {
-		return port.SourceText{}, false, nil
+		return sourceport.SourceText{}, false, nil
 	}
 	// The row says what the file was when it was read, as the query does.
-	return port.SourceText{
+	return sourceport.SourceText{
 		Fingerprint: domain.Fingerprint{
 			Path: path, Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime,
 		},
@@ -586,18 +589,18 @@ func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path st
 	}, true, nil
 }
 
-func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
-	var out []port.SourceText
+func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]sourceport.SourceText, error) {
+	var out []sourceport.SourceText
 	for path, src := range s.sources[vaultID] {
 		if src.Fingerprint.Kind == kind && src.Producer != "" {
-			out = append(out, port.SourceText{
+			out = append(out, sourceport.SourceText{
 				Fingerprint: domain.Fingerprint{Path: path},
 				Producer:    src.Producer,
 				Hash:        src.Hash,
 			})
 		}
 	}
-	slices.SortFunc(out, func(a, b port.SourceText) int { return cmp.Compare(a.Path, b.Path) })
+	slices.SortFunc(out, func(a, b sourceport.SourceText) int { return cmp.Compare(a.Path, b.Path) })
 	return out, nil
 }
 
@@ -605,13 +608,13 @@ func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, 
 // copy asks of a writer is answered: everything else a use case might write is
 // another scenario's.
 type writing struct {
-	port.VaultWriter
+	vaultport.VaultWriter
 	to *library
 }
 
 func (w writing) Import(_ context.Context, path string, from io.Reader) error {
 	if _, target := w.to.files[path]; target {
-		return port.ErrOccupied
+		return vaultport.ErrOccupied
 	}
 	raw, err := io.ReadAll(from)
 	if err != nil {
@@ -624,7 +627,7 @@ func (w writing) Import(_ context.Context, path string, from io.Reader) error {
 // writers opens the writer of each vault a test set up.
 type writers map[domain.VaultID]*library
 
-func (w writers) Open(vault domain.Vault) (port.VaultWriter, error) {
+func (w writers) Open(vault domain.Vault) (vaultport.VaultWriter, error) {
 	target, ok := w[vault.ID]
 	if !ok {
 		return nil, fmt.Errorf("no vault %s", vault.ID)
@@ -658,7 +661,7 @@ const (
 // and the book names each heading.
 func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error) {
 	if !bytes.HasPrefix(raw, []byte(bookMark)) {
-		return domain.BookText{}, port.ErrNotADocument
+		return domain.BookText{}, sourceport.ErrNotADocument
 	}
 	fields := strings.Split(strings.TrimPrefix(string(raw), bookMark), bookSeparator)
 	var out domain.BookText
@@ -674,7 +677,7 @@ func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error
 
 // newExtract is the cut of a library whose books and documents are read by the
 // stand-in.
-func newExtract(readers port.VaultReaders, sources port.SourceRepository, queries port.SourceQueries) Extract {
+func newExtract(readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries) Extract {
 	extract := NewExtract(readers, sources, queries)
 	extract.Documents = documents{}
 	return extract

@@ -10,9 +10,12 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // scripted is a proofreader answering every call with the same reply.
@@ -56,7 +59,7 @@ func newProofreadTranscript(
 // newTranscriptProofreading is one built the only way there is, asking about a
 // line at a time.
 func newTranscriptProofreading(
-	t *testing.T, readers port.VaultReaders, derived port.DerivedStores, delta port.Proofreader,
+	t *testing.T, readers vaultport.VaultReaders, derived vaultport.DerivedStores, delta recognitionport.Proofreader,
 ) Proofread {
 	t.Helper()
 	made, err := NewProofread(readers, derived, delta)
@@ -90,9 +93,9 @@ func TestNoTranscriptProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) 
 	u, _, _, delta, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing")
 
 	for name, one := range map[string]struct {
-		readers  port.VaultReaders
-		derived  port.DerivedStores
-		provider port.Proofreader
+		readers  vaultport.VaultReaders
+		derived  vaultport.DerivedStores
+		provider recognitionport.Proofreader
 		want     error
 	}{
 		"nothing to proofread with": {u.readers, u.derived, nil, run.ErrNothingProofreads},
@@ -465,11 +468,11 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 // answer is written.
 func TestAProofreaderWithNothingRoutedEndsTheRunAndWritesNothing(t *testing.T) {
 	u, v, shelved, delta, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
-	delta.fail = fmt.Errorf("%w: no route for the purpose", port.ErrUnavailable)
+	delta.fail = fmt.Errorf("%w: no route for the purpose", completionport.ErrUnavailable)
 
 	_, err := u.Execute(t.Context(), v, recordingPath)
 
-	if !errors.Is(err, port.ErrUnavailable) {
+	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Fatalf("got %v", err)
 	}
 	if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {

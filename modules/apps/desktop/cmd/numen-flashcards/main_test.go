@@ -11,8 +11,9 @@ import (
 
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // deck is a vault holding one stencil and one deck.
@@ -159,7 +160,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	if inUse != nil || len(notified) != 1 || notified[0] != target[1].ID {
 		t.Errorf("got window update %v (%v)", notified, inUse)
 	}
-	if stateErr != nil || state.Status != port.PluginIndexFailed {
+	if stateErr != nil || state.Status != pluginport.PluginIndexFailed {
 		t.Errorf("a vault nothing reads into the index stands as %+v (%v)", state, stateErr)
 	}
 }

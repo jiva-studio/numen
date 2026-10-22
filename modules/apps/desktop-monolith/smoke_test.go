@@ -18,9 +18,10 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const (
@@ -108,7 +109,7 @@ func buildPlugin(t *testing.T, folder, name string) {
 }
 
 // newLaunchedHost is a plugin host that launches the plugins as processes, as the modular build does.
-func newLaunchedHost(t *testing.T) port.PluginManager {
+func newLaunchedHost(t *testing.T) pluginport.PluginManager {
 	t.Helper()
 	// The host does not run a binary from the temporary directory, so the plugins are built beside the test.
 	folder, err := os.MkdirTemp(".", "plugins-")
@@ -127,11 +128,11 @@ func newLaunchedHost(t *testing.T) port.PluginManager {
 }
 
 // askBuild puts a chat, a single answer and a document to the plugins of a host.
-func askBuild(t *testing.T, host port.PluginManager, chatURL string) answers {
+func askBuild(t *testing.T, host pluginport.PluginManager, chatURL string) answers {
 	t.Helper()
 	host.SetKeyStore(heldKeys{"md.numen.agent/apiKey": "chat-key"})
 	host.SetSettings(map[string]map[string]any{
-		agentID: {"baseUrl": chatURL, "model": "small-model", port.SettingStoredSecrets: []any{"apiKey"}},
+		agentID: {"baseUrl": chatURL, "model": "small-model", pluginport.SettingStoredSecrets: []any{"apiKey"}},
 	})
 
 	agent, err := host.EnsureActive(t.Context(), agentID)
@@ -192,7 +193,7 @@ func ask(t *testing.T, client numenv1connect.AgentServiceClient, task *numenv1.A
 }
 
 // newClient is the HTTP client that reaches an endpoint, in-process or on a port.
-func newClient(endpoint port.Endpoint) *http.Client {
+func newClient(endpoint pluginport.Endpoint) *http.Client {
 	if transport, ok := endpoint.Transport.(http.RoundTripper); ok {
 		return &http.Client{Transport: transport}
 	}
@@ -267,7 +268,7 @@ var codingAgentIDs = []string{"md.numen.agent-acp", "md.numen.agent-antigravity"
 
 // listCodingAgentPrograms asks each coding agent plugin of a host for the names of its programs. A
 // program is listed whether or not its command is installed on the machine.
-func listCodingAgentPrograms(t *testing.T, host port.PluginManager) map[string][]string {
+func listCodingAgentPrograms(t *testing.T, host pluginport.PluginManager) map[string][]string {
 	t.Helper()
 	// Codex is asked for its models through a command that does not exist, so no installed CLI is started.
 	absentCodex := []*numenv1.AgentProgramCommand{{Program: "codex", Command: []string{filepath.Join(t.TempDir(), "absent")}}}

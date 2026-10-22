@@ -13,11 +13,12 @@ import (
 	"sync/atomic"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 )
 
 // API is what the page may ask of the window itself.
@@ -43,7 +44,7 @@ type API struct {
 
 	// agent is the agent a question about a card goes to. A window without one
 	// answers that it has none, and the rest of it works as it did.
-	agent atomic.Pointer[port.Agent]
+	agent atomic.Pointer[agentport.Agent]
 
 	// currentCard is what the last question was asked about, which the tools
 	// answer with. It is held here, and the question carries none of it: a
@@ -88,7 +89,7 @@ func (a *API) GetAsked() map[string]string {
 
 // GetAgent is the agent a question about a card goes to, and nothing where
 // this window has none.
-func (a *API) GetAgent() port.Agent {
+func (a *API) GetAgent() agentport.Agent {
 	if taking := a.agent.Load(); taking != nil {
 		return *taking
 	}
@@ -97,7 +98,7 @@ func (a *API) GetAgent() port.Agent {
 
 // SetAgent names who takes those questions from now on. Nothing leaves the
 // window with no agent.
-func (a *API) SetAgent(taking port.Agent) {
+func (a *API) SetAgent(taking agentport.Agent) {
 	if taking == nil {
 		a.agent.Store(nil)
 		return

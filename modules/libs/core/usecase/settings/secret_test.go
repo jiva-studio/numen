@@ -5,8 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 func TestWriteSecretPassesTheKeyOn(t *testing.T) {
@@ -14,12 +15,12 @@ func TestWriteSecretPassesTheKeyOn(t *testing.T) {
 	var passed [3]string
 	write := settings.NewWriteSecret(func(_ context.Context, pluginID, name, key string) error {
 		passed = [3]string{pluginID, name, key}
-		return port.ErrNoKeyStore
+		return pluginport.ErrNoKeyStore
 	})
 
 	err := write.Execute(t.Context(), "a.b", "apiKey", "k")
 
-	if !errors.Is(err, port.ErrNoKeyStore) || passed != [3]string{"a.b", "apiKey", "k"} {
+	if !errors.Is(err, pluginport.ErrNoKeyStore) || passed != [3]string{"a.b", "apiKey", "k"} {
 		t.Fatalf("error is %v after passing %v", err, passed)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 func newDiscoveredHost(t *testing.T) *Host {
@@ -102,7 +102,7 @@ func TestAPluginIsReportedFailedAfterTheFailureLimit(t *testing.T) {
 	host.SetActivationPolicy(policy)
 
 	var notified []string
-	host.SetOnPluginFailed(func(failure port.PluginFailure) { notified = append(notified, failure.PluginID) })
+	host.SetOnPluginFailed(func(failure pluginport.PluginFailure) { notified = append(notified, failure.PluginID) })
 	launches := 0
 	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches++

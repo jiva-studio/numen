@@ -17,7 +17,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const (
@@ -176,7 +176,7 @@ func TestABuiltInPluginIsConfiguredWithItsSettingsAndSecrets(t *testing.T) {
 	host := newBuiltInHost(t)
 	host.SetKeyStore(newKeys(map[string]string{firstBuiltInID + "/apiKey": fromKeychain}))
 	host.SetSettings(map[string]map[string]any{
-		firstBuiltInID: {"model": "large-model", port.SettingStoredSecrets: []any{"apiKey"}},
+		firstBuiltInID: {"model": "large-model", pluginport.SettingStoredSecrets: []any{"apiKey"}},
 	})
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
@@ -284,7 +284,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 
 func newFixedCatalog(library, provider string, err error) *fakeCatalog {
 	catalog := newONNXCatalog()
-	catalog.resolved[port.RuntimeONNX] = port.ResolvedDependency{ID: port.RuntimeONNX, EnvVars: map[string]string{EnvONNXRuntimeLib: library, EnvONNXProvider: provider}}
+	catalog.resolved[pluginport.RuntimeONNX] = pluginport.ResolvedDependency{ID: pluginport.RuntimeONNX, EnvVars: map[string]string{EnvONNXRuntimeLib: library, EnvONNXProvider: provider}}
 	catalog.err = err
 	return catalog
 }
@@ -360,7 +360,7 @@ func (newerProtocolLifecycle) Ping(
 	_ context.Context,
 	_ *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: port.PluginProtocolVersion + 1}), nil
+	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: pluginport.PluginProtocolVersion + 1}), nil
 }
 
 func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
@@ -372,8 +372,8 @@ func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
 	})
 
 	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
-	if !errors.Is(err, port.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" speaks protocol 2") {
-		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, port.ErrUnsupportedProtocol)
+	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" speaks protocol 2") {
+		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, pluginport.ErrUnsupportedProtocol)
 	}
 }
 
@@ -519,8 +519,8 @@ func TestAShutdownThatFailsOnAnUnactivatedBuiltInIsReported(t *testing.T) {
 
 	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
 
-	if !errors.Is(err, port.ErrUnsupportedProtocol) {
-		t.Fatalf("EnsureActive() = %v, want %v", err, port.ErrUnsupportedProtocol)
+	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) {
+		t.Fatalf("EnsureActive() = %v, want %v", err, pluginport.ErrUnsupportedProtocol)
 	}
 	select {
 	case got := <-reported:

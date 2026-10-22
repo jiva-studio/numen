@@ -4,8 +4,9 @@ import (
 	"context"
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // ShowNeighbourhood gathers one note and everything joined to it.
@@ -14,7 +15,7 @@ import (
 // found partly in what it points at and partly in what points at it. Siblings
 // are written nowhere: they are the other children of a shared parent.
 type ShowNeighbourhood struct {
-	links port.LinkQueries
+	links noteport.LinkQueries
 	notes RefQueries
 }
 
@@ -31,7 +32,7 @@ type RefQueries interface {
 // links land, and what is needed to show each note they reach.
 //
 // The notes are asked for once, after every link has been followed.
-func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbourhood {
+func NewShowNeighbourhood(links noteport.LinkQueries, notes RefQueries) ShowNeighbourhood {
 	return ShowNeighbourhood{links: links, notes: notes}
 }
 

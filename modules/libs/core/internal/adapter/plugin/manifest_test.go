@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 func TestReadManifest(t *testing.T) {
@@ -240,21 +240,21 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		json string
 		want error
 	}{
-		{"id with a space", `{"id":"bad id","name":"A","version":"1.0.0"}`, port.ErrInvalidID},
-		{"version without patch", `{"id":"a.b","name":"A","version":"1.0"}`, port.ErrInvalidVersion},
-		{"version with leading zero", `{"id":"a.b","name":"A","version":"01.0.0"}`, port.ErrInvalidVersion},
-		{"prerelease with leading zero", `{"id":"a.b","name":"A","version":"1.0.0-01"}`, port.ErrInvalidVersion},
-		{"id of one segment", `{"id":"foo","name":"A","version":"1.0.0"}`, port.ErrInvalidID},
-		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, port.ErrUnsupportedProtocol},
-		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, port.ErrUnsupportedProtocol},
-		{"negative idle timeout", `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-1}}`, port.ErrInvalidLifecycle},
-		{"wasm backend", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, port.ErrInvalidBackend},
-		{"backend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"process"}}`, port.ErrInvalidBackend},
-		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, port.ErrInvalidFrontend},
-		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, port.ErrEmptySettingTitle},
-		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, port.ErrInvalidPermission},
-		{"unknown runtime", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["tensorrt"]}`, port.ErrInvalidRuntime},
-		{"runtime declared twice", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime","onnxruntime"]}`, port.ErrInvalidRuntime},
+		{"id with a space", `{"id":"bad id","name":"A","version":"1.0.0"}`, pluginport.ErrInvalidID},
+		{"version without patch", `{"id":"a.b","name":"A","version":"1.0"}`, pluginport.ErrInvalidVersion},
+		{"version with leading zero", `{"id":"a.b","name":"A","version":"01.0.0"}`, pluginport.ErrInvalidVersion},
+		{"prerelease with leading zero", `{"id":"a.b","name":"A","version":"1.0.0-01"}`, pluginport.ErrInvalidVersion},
+		{"id of one segment", `{"id":"foo","name":"A","version":"1.0.0"}`, pluginport.ErrInvalidID},
+		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, pluginport.ErrUnsupportedProtocol},
+		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, pluginport.ErrUnsupportedProtocol},
+		{"negative idle timeout", `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-1}}`, pluginport.ErrInvalidLifecycle},
+		{"wasm backend", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, pluginport.ErrInvalidBackend},
+		{"backend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"process"}}`, pluginport.ErrInvalidBackend},
+		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, pluginport.ErrInvalidFrontend},
+		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, pluginport.ErrEmptySettingTitle},
+		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, pluginport.ErrInvalidPermission},
+		{"unknown runtime", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["tensorrt"]}`, pluginport.ErrInvalidRuntime},
+		{"runtime declared twice", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime","onnxruntime"]}`, pluginport.ErrInvalidRuntime},
 	}
 
 	for _, tc := range cases {
@@ -287,7 +287,7 @@ func TestManifestListIssuesReportsEveryViolation(t *testing.T) {
 
 	issues := m.ListIssues()
 
-	for _, want := range []error{port.ErrInvalidID, port.ErrEmptyName, port.ErrInvalidVersion, port.ErrInvalidPermission} {
+	for _, want := range []error{pluginport.ErrInvalidID, pluginport.ErrEmptyName, pluginport.ErrInvalidVersion, pluginport.ErrInvalidPermission} {
 		if !slices.ContainsFunc(issues, func(e error) bool { return errors.Is(e, want) }) {
 			t.Errorf("issues %v lack %v", issues, want)
 		}
@@ -295,16 +295,16 @@ func TestManifestListIssuesReportsEveryViolation(t *testing.T) {
 	if len(issues) != 5 {
 		t.Errorf("got %d issues, want 5: %v", len(issues), issues)
 	}
-	if err := m.Validate(); !errors.Is(err, port.ErrInvalidID) || !errors.Is(err, port.ErrEmptyName) {
+	if err := m.Validate(); !errors.Is(err, pluginport.ErrInvalidID) || !errors.Is(err, pluginport.ErrEmptyName) {
 		t.Errorf("Validate must join every issue, got %v", err)
 	}
 }
 
 func TestManifestNetworkAlias(t *testing.T) {
-	if got := port.NormalizePermission("network"); got != PermissionNetworkOutbound {
+	if got := pluginport.NormalizePermission("network"); got != PermissionNetworkOutbound {
 		t.Errorf("got %q, want %q", got, PermissionNetworkOutbound)
 	}
-	if got := port.NormalizePermission(PermissionVaultRead); got != PermissionVaultRead {
+	if got := pluginport.NormalizePermission(PermissionVaultRead); got != PermissionVaultRead {
 		t.Errorf("got %q, want %q", got, PermissionVaultRead)
 	}
 
@@ -325,8 +325,8 @@ func TestManifestAcceptsTheONNXRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !slices.Equal(m.Runtimes, []string{port.RuntimeONNX}) {
-		t.Errorf("runtimes = %v, want [%s]", m.Runtimes, port.RuntimeONNX)
+	if !slices.Equal(m.Runtimes, []string{pluginport.RuntimeONNX}) {
+		t.Errorf("runtimes = %v, want [%s]", m.Runtimes, pluginport.RuntimeONNX)
 	}
 }
 
@@ -362,7 +362,7 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 				text += "," + one.secrets
 			}
 			_, err := ReadManifest(strings.NewReader(text + "}"))
-			if one.wrong != errors.Is(err, port.ErrInvalidSecret) {
+			if one.wrong != errors.Is(err, pluginport.ErrInvalidSecret) {
 				t.Errorf("error = %v, want invalid secret: %v", err, one.wrong)
 			}
 		})
@@ -383,7 +383,7 @@ func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			_, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))
-			if !errors.Is(err, port.ErrReservedSettingKey) {
+			if !errors.Is(err, pluginport.ErrReservedSettingKey) {
 				t.Errorf("error = %v, want port.ErrReservedSettingKey", err)
 			}
 		})
@@ -407,7 +407,7 @@ func TestAManifestDeclaresTheAgentSettingOnceWithoutADefault(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			text := `{"id":"a.b","name":"A","version":"1.0.0",` + one.fields + `}`
 			m, err := ReadManifest(strings.NewReader(text))
-			if one.wrong != errors.Is(err, port.ErrInvalidAgentSetting) {
+			if one.wrong != errors.Is(err, pluginport.ErrInvalidAgentSetting) {
 				t.Fatalf("error = %v, want invalid agent setting: %v", err, one.wrong)
 			}
 			if one.wrong {
@@ -437,7 +437,7 @@ func TestTheFolderAManifestKeepsItsDataInIsAPlainName(t *testing.T) {
 		t.Run(one.folder, func(t *testing.T) {
 			text := `{"id":"a.b","name":"A","version":"1.0.0","data":"` + one.folder + `"}`
 			manifest, err := ReadManifest(strings.NewReader(text))
-			if one.wrong != errors.Is(err, port.ErrInvalidData) {
+			if one.wrong != errors.Is(err, pluginport.ErrInvalidData) {
 				t.Errorf("error = %v, want invalid data folder: %v", err, one.wrong)
 			}
 			if !one.wrong && manifest.Data != one.folder {
@@ -472,9 +472,9 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			text := `{"id":"a.b","name":"A","version":"1.0.0","services":` + one.services + `}`
 
-			manifest, err := port.ReadManifest(strings.NewReader(text))
+			manifest, err := pluginport.ReadManifest(strings.NewReader(text))
 
-			if one.wrong != errors.Is(err, port.ErrInvalidService) {
+			if one.wrong != errors.Is(err, pluginport.ErrInvalidService) {
 				t.Errorf("error = %v, want invalid service: %v", err, one.wrong)
 			}
 			if !one.wrong && !manifest.HasService("numen.v1.CardsService") {
@@ -502,7 +502,7 @@ func TestAManifestDeclaresDependencies(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := m.GetDependencyRequirements("/p")
-	if len(got) != 2 || got[0].Kind != port.DependencyKindRuntime || got[0].ID != port.RuntimeONNX || got[1].ID != "whisper" || got[1].Metadata["fileName"] != "w.bin" || got[1].PluginDir != "/p" {
+	if len(got) != 2 || got[0].Kind != pluginport.DependencyKindRuntime || got[0].ID != pluginport.RuntimeONNX || got[1].ID != "whisper" || got[1].Metadata["fileName"] != "w.bin" || got[1].PluginDir != "/p" {
 		t.Errorf("requirements = %+v", got)
 	}
 }
@@ -516,7 +516,7 @@ func TestAManifestRejectsAnInvalidDependency(t *testing.T) {
 		"checksum no source": `{"id":"x","kind":"model","checksumSha256":"` + strings.Repeat("a", 64) + `"}`,
 	} {
 		_, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[` + dependency + `]}`))
-		if !errors.Is(err, port.ErrInvalidDependency) {
+		if !errors.Is(err, pluginport.ErrInvalidDependency) {
 			t.Errorf("%s: err = %v, want ErrInvalidDependency", name, err)
 		}
 	}

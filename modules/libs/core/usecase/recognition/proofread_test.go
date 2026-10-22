@@ -11,22 +11,25 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // proofreadable is a recognition of the fixture, already written down, and what a
 // Proofread over it is made out of.
 type proofreadable struct {
-	readers port.VaultReaders
-	derived port.DerivedStores
+	readers vaultport.VaultReaders
+	derived vaultport.DerivedStores
 	vault   domain.Vault
 	shelved *fakeStorage
 }
 
 // put is a proofreading of that recognition, by the proofreader given.
-func (p proofreadable) put(t *testing.T, delta port.Proofreader) Proofread {
+func (p proofreadable) put(t *testing.T, delta recognitionport.Proofreader) Proofread {
 	t.Helper()
 	made, err := NewProofread(p.readers, p.derived, delta)
 	if err != nil {
@@ -63,9 +66,9 @@ func TestNoProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
 	target := newProofreadable(t)
 
 	for name, one := range map[string]struct {
-		readers  port.VaultReaders
-		derived  port.DerivedStores
-		provider port.Proofreader
+		readers  vaultport.VaultReaders
+		derived  vaultport.DerivedStores
+		provider recognitionport.Proofreader
 		want     error
 	}{
 		"nothing to proofread with": {target.readers, target.derived, nil, run.ErrNothingProofreads},
@@ -393,11 +396,11 @@ func TestAProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
 // page it did not answer about.
 func TestAProofreaderThatIsUnavailableEndsTheRunAndWritesNothing(t *testing.T) {
 	placed, v, shelved, delta := newProofreadRecognition(t, nil)
-	delta.fail = fmt.Errorf("%w: no route for the purpose", port.ErrUnavailable)
+	delta.fail = fmt.Errorf("%w: no route for the purpose", completionport.ErrUnavailable)
 
 	_, err := placed.Execute(t.Context(), v, documentPath)
 
-	if !errors.Is(err, port.ErrUnavailable) {
+	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Fatalf("got %v, want the proofreader to be unavailable", err)
 	}
 	names := textNames(t, shelved)

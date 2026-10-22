@@ -7,7 +7,8 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Read returns the settings file as its person wrote it: every byte of it,
@@ -39,10 +40,10 @@ func Write(path string, raw []byte, baseline *string, into Document) error {
 		return err
 	}
 	if err := checkNoDuplicateNames(raw); err != nil {
-		return fmt.Errorf("%w: %s", port.ErrNotASetting, describeErrorLocation(err))
+		return fmt.Errorf("%w: %s", settingsport.ErrNotASetting, describeErrorLocation(err))
 	}
 	if err := checkSettings(raw, into); err != nil {
-		return fmt.Errorf("%w: %s", port.ErrNotASetting, describeErrorLocation(err))
+		return fmt.Errorf("%w: %s", settingsport.ErrNotASetting, describeErrorLocation(err))
 	}
 
 	return runOnFile(path, func(path string) error {
@@ -66,7 +67,7 @@ func checkUnchanged(path string, baseline *string) error {
 		return err
 	}
 	if string(target) != *baseline {
-		return port.ErrStale
+		return vaultport.ErrStale
 	}
 	return nil
 }
@@ -78,10 +79,10 @@ func checkUnchanged(path string, baseline *string) error {
 func checkObject(raw []byte) error {
 	var whole map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%w: %s", port.ErrNotASetting, describeErrorLocation(err))
+		return fmt.Errorf("%w: %s", settingsport.ErrNotASetting, describeErrorLocation(err))
 	}
 	if whole == nil {
-		return fmt.Errorf("%w: the settings are the fields of one object", port.ErrNotASetting)
+		return fmt.Errorf("%w: the settings are the fields of one object", settingsport.ErrNotASetting)
 	}
 	return nil
 }

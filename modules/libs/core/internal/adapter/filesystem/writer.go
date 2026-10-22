@@ -12,8 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // VaultWriter changes one vault on disk.
@@ -81,13 +82,13 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 		mode = info.Mode().Perm()
 		if !fingerprint.IsZero() &&
 			(info.Size() != fingerprint.Size || !info.ModTime().Equal(fingerprint.ModTime)) {
-			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
+			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
 		}
 	case errors.Is(err, fs.ErrNotExist):
 		// A note that is not there yet cannot have changed, and a caller that
 		// believed it was there is told so.
 		if !fingerprint.IsZero() {
-			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
+			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
 		}
 	default:
 		return domain.Fingerprint{}, err
@@ -125,7 +126,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	// A folder does not go inside itself: the destination is a place the folder
 	// itself holds.
 	if strings.HasPrefix(target, source+string(filepath.Separator)) {
-		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
+		return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrOccupied)
 	}
 	root, arrives, err := w.openRoot(target)
 	if err != nil {
@@ -147,7 +148,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 			return err
 		}
 		if !os.SameFile(here, there) {
-			return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
+			return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrOccupied)
 		}
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
@@ -174,7 +175,7 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
 	defer root.Close()
 	switch info, err := root.Stat(name); {
 	case err == nil && !info.IsDir():
-		return fmt.Errorf("make %s: %w", path, port.ErrOccupied)
+		return fmt.Errorf("make %s: %w", path, vaultport.ErrOccupied)
 	case err != nil && !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
@@ -349,7 +350,7 @@ func (w *VaultWriter) Root() string { return w.root }
 // VaultWriters opens vaults for writing.
 type VaultWriters struct{ Options Options }
 
-func (w VaultWriters) Open(v domain.Vault) (port.VaultWriter, error) {
+func (w VaultWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	return OpenForWriting(v.Path, w.Options)
 }
 
@@ -376,7 +377,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 
 	file, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, newFileMode)
 	if errors.Is(err, fs.ErrExist) {
-		return fmt.Errorf("create %s: %w", path, port.ErrOccupied)
+		return fmt.Errorf("create %s: %w", path, vaultport.ErrOccupied)
 	}
 	if err != nil {
 		return err
@@ -415,7 +416,7 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 	defer root.Close()
 	switch _, err := root.Lstat(name); {
 	case err == nil:
-		return fmt.Errorf("bring %s: %w", path, port.ErrOccupied)
+		return fmt.Errorf("bring %s: %w", path, vaultport.ErrOccupied)
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
 	}

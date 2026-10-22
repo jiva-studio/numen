@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // CheckRoot refuses a root that is not a folder somebody keeps notes in: a
 // path that is not absolute, a filesystem root, and the person's home directory.
 type CheckRoot struct {
-	identity port.VaultIdentity
-	home     port.HomeFolder
+	identity vaultport.VaultIdentity
+	home     machineport.HomeFolder
 }
 
-func NewCheckRoot(identity port.VaultIdentity, home port.HomeFolder) *CheckRoot {
+func NewCheckRoot(identity vaultport.VaultIdentity, home machineport.HomeFolder) *CheckRoot {
 	return &CheckRoot{identity: identity, home: home}
 }
 

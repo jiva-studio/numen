@@ -5,11 +5,11 @@ import (
 	"image"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // VaultReaders reads the files of a vault.
-type VaultReaders = port.VaultReaders
+type VaultReaders = vaultport.VaultReaders
 
 // Scan represents an open document during a single operation.
 type Scan interface {

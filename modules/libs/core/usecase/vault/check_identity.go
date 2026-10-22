@@ -3,16 +3,17 @@ package vault
 import (
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // CheckIdentity refuses a vault whose folder no longer carries its identity.
 type CheckIdentity struct {
-	identity port.VaultIdentity
+	identity vaultport.VaultIdentity
 }
 
-func NewCheckIdentity(identity port.VaultIdentity) CheckIdentity {
+func NewCheckIdentity(identity vaultport.VaultIdentity) CheckIdentity {
 	return CheckIdentity{identity: identity}
 }
 

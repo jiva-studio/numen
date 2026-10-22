@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // Package bundles the files a plugin ships (manifest.json, bin and dist) into a distributable zip archive.
@@ -34,7 +34,7 @@ func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
 		return "", fmt.Errorf("read manifest: %w", err)
 	}
 
-	var m port.PluginManifest
+	var m pluginport.PluginManifest
 	if err := json.Unmarshal(manifestData, &m); err != nil {
 		return "", fmt.Errorf("decode manifest: %w", err)
 	}

@@ -6,12 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 // What each pass is called in the list of what is being done. One name each, so
@@ -44,7 +45,7 @@ type Events interface {
 
 // OpenReading is the three passes over a vault, for the embedder given.
 type OpenReading func(
-	ctx context.Context, embedder port.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 ) (vault.ReadWholeVault, error)
 
 // ReadNotes is the first walk over a vault. It answers how many notes it read.
@@ -61,7 +62,7 @@ type WaitForModel func(ctx context.Context) error
 // Config is what a worker is made from.
 type Config struct {
 	Reading  OpenReading
-	Embedder port.Embedder
+	Embedder embeddingport.Embedder
 	// Wait is nil for an embedder whose model is always there.
 	Wait WaitForModel
 	// Owed is nil where nothing says how many vectors a vault owes, and then
@@ -82,7 +83,7 @@ type Config struct {
 // and owes only its vectors, and a source a recognition wrote more of.
 type Worker struct {
 	reading  OpenReading
-	embedder port.Embedder
+	embedder embeddingport.Embedder
 	wait     WaitForModel
 	owed     GetOwed
 	events   Events

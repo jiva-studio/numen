@@ -17,8 +17,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // nameMax is how many bytes one component of a path may be. It is 255 on every
@@ -43,7 +44,7 @@ func getTempPattern(name string) string {
 func createParents(root *os.Root, dir, path string) error {
 	err := root.MkdirAll(dir, 0o755)
 	if errors.Is(err, fs.ErrExist) {
-		return fmt.Errorf("make %s: %w", path, port.ErrOccupied)
+		return fmt.Errorf("make %s: %w", path, vaultport.ErrOccupied)
 	}
 	return err
 }

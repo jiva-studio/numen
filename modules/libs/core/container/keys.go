@@ -5,7 +5,8 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/keychain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 var errNoPluginHost = errors.New("this installation has no plugin host to keep a secret for")
@@ -13,7 +14,7 @@ var errNoPluginHost = errors.New("this installation has no plugin host to keep a
 // GetKeyStore is where the keys of services are kept: the one the installation
 // names, else the system keychain. A machine without a keychain fails with
 // port.ErrNoKeyStore and keeps no key anywhere else.
-func (c Config) GetKeyStore() port.KeyStore {
+func (c Config) GetKeyStore() pluginport.KeyStore {
 	if c.KeyStore != nil {
 		return c.KeyStore
 	}

@@ -9,12 +9,13 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 // serveCompletions gives the host the settings written and returns what answers the questions of
 // its plugins.
-func serveCompletions(t *testing.T, host *plugin.Host, output string) (port.Completer, string) {
+func serveCompletions(t *testing.T, host *plugin.Host, output string) (completionport.Completer, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
@@ -33,8 +34,8 @@ func serveCompletions(t *testing.T, host *plugin.Host, output string) (port.Comp
 	return completer, path
 }
 
-func ask(text string) port.Question {
-	return port.Question{Messages: []port.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: text}}}
+func ask(text string) completionport.Question {
+	return completionport.Question{Messages: []completionport.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: text}}}
 }
 
 // A question goes to the program the default names as a task with no tool and no conversation, under
@@ -96,7 +97,7 @@ func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 	}
 
 	none, _ := serveCompletions(t, host, `{"agent": {"use": ""}}`)
-	if _, err := none.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, port.ErrNoRoute) {
+	if _, err := none.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 		t.Errorf("with no agent named, error = %v, want port.ErrNoRoute", err)
 	}
 }
@@ -110,7 +111,7 @@ func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 		`{"ai": {"default": {"agent": "beta"}}}`,
 	} {
 		completer, _ := serveCompletions(t, host, content)
-		if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, port.ErrNoRoute) {
+		if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 			t.Errorf("%s: error = %v, want port.ErrNoRoute", content, err)
 		}
 	}
@@ -120,7 +121,7 @@ func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 
 	empty := hostWith(t, map[string][]string{"md.test.chatty": {"agent"}}, nil)
 	completer, _ := serveCompletions(t, empty, `{}`)
-	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, port.ErrNoRoute) {
+	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 		t.Errorf("without a provider, error = %v, want port.ErrNoRoute", err)
 	}
 }
@@ -131,7 +132,7 @@ func TestAProviderThatCannotBeStartedIsUnavailable(t *testing.T) {
 	host := hostWith(t, map[string][]string{providerOne: {"ai.agent.provider"}}, nil)
 	completer, _ := serveCompletions(t, host, `{"ai": {"default": {"agent": "alpha"}}}`)
 
-	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, port.ErrUnavailable) {
+	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrUnavailable) {
 		t.Errorf("error = %v, want port.ErrUnavailable", err)
 	}
 }
@@ -141,7 +142,7 @@ func TestAProviderThatCannotBeStartedIsUnavailable(t *testing.T) {
 func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, path := serveCompletions(t, host, `{"ai": {"default": {"agent": "ghost"}}}`)
-	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, port.ErrNoRoute) {
+	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 		t.Fatalf("with a default that is not there: error = %v, want port.ErrNoRoute", err)
 	}
 

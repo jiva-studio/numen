@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 // holding is a set of source queries whose first question never answers. It is
 // a round that has begun and not ended.
 type holding struct {
-	port.SourceQueries
+	sourceport.SourceQueries
 	requestChan chan struct{}
 	let         chan struct{}
 }
@@ -35,7 +36,7 @@ func (h *holding) GetFingerprints(
 
 func (h *holding) GetRecognisedSources(
 	ctx context.Context, _ domain.VaultID, _ domain.SourceKind,
-) ([]port.SourceText, error) {
+) ([]sourceport.SourceText, error) {
 	select {
 	case h.requestChan <- struct{}{}:
 	default:

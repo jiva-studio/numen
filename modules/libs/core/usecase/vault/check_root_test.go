@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 type fakeHome struct {
@@ -20,7 +21,7 @@ func (h fakeHome) GetHomeFolder() (string, error) { return h.path, h.err }
 
 // linked names the folders it is given by a different path, as a link would.
 type linked struct {
-	port.VaultIdentity
+	vaultport.VaultIdentity
 	to map[string]string
 }
 

@@ -6,10 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 func TestAMissingSpanReturnsWhatItIs(t *testing.T) {
@@ -77,7 +78,7 @@ func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
 	before := c.read(t, "Aggressor.md")
 
 	_, err = replacing.Execute(t.Context(), c.vault, "Aggressor.md", "three", "THREES", first.Fingerprint)
-	if !errors.Is(err, port.ErrStale) {
+	if !errors.Is(err, vaultport.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); body != before {

@@ -11,9 +11,12 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/transcriptionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Transcribe listens to a recording with a model and writes down what it heard.
@@ -27,10 +30,10 @@ import (
 // another, and a file nothing here can open is a third. All three are written
 // down, and a recording that has answered is not listened to again.
 type Transcribe struct {
-	readers  port.VaultReaders
-	sources  port.SourceRepository
-	derived  port.DerivedStores
-	provider port.Transcriber
+	readers  vaultport.VaultReaders
+	sources  sourceport.SourceRepository
+	derived  vaultport.DerivedStores
+	provider transcriptionport.Transcriber
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -57,16 +60,16 @@ type Transcribe struct {
 // NewTranscribe is what a recording is listened to through: the vault it is
 // read out of, where what the vault holds is recorded, the store the transcript
 func NewTranscribe(
-	readers port.VaultReaders,
-	sources port.SourceRepository,
-	derived port.DerivedStores,
-	transcriber port.Transcriber,
+	readers vaultport.VaultReaders,
+	sources sourceport.SourceRepository,
+	derived vaultport.DerivedStores,
+	transcriber transcriptionport.Transcriber,
 ) Transcribe {
 	return Transcribe{readers: readers, sources: sources, derived: derived, provider: transcriber}
 }
 
 // By returns the transcriber.
-func (u Transcribe) By() port.Transcriber { return u.provider }
+func (u Transcribe) By() transcriptionport.Transcriber { return u.provider }
 
 // TranscribeResult reports what transcribing did.
 type TranscribeResult struct {
@@ -111,7 +114,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// One run to a recording. The name is the hash of its bytes, and it is held
 	// for as long as the listening takes.
 	release, err := store.ClaimArtifact(ctx, partial)
-	if errors.Is(err, port.ErrClaimed) {
+	if errors.Is(err, vaultport.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
 	}
@@ -154,7 +157,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 func (u Transcribe) saveTranscript(
 	ctx context.Context,
 	v domain.Vault,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	ref domain.Fingerprint,
 	hash, area string,
 	res *TranscribeResult,
@@ -186,7 +189,7 @@ func (u Transcribe) saveTranscript(
 
 // removeAllNames removes each name from the store and passes over names that
 // are already absent.
-func removeAllNames(ctx context.Context, store port.DerivedStore, names ...domain.ArtifactName) error {
+func removeAllNames(ctx context.Context, store vaultport.DerivedStore, names ...domain.ArtifactName) error {
 	for _, name := range names {
 		if err := store.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
@@ -205,7 +208,7 @@ func removeAllNames(ctx context.Context, store port.DerivedStore, names ...domai
 func (u Transcribe) recordSource(
 	ctx context.Context,
 	v domain.Vault,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	ref domain.Fingerprint,
 	hash, area string,
 	res *TranscribeResult,
@@ -234,8 +237,8 @@ func (u Transcribe) recordSource(
 func (u Transcribe) transcribeSegments(
 	ctx context.Context,
 	v domain.Vault,
-	store port.DerivedStore,
-	recording port.Recording,
+	store vaultport.DerivedStore,
+	recording transcriptionport.Recording,
 	path string,
 	partial domain.ArtifactName,
 	res *TranscribeResult,
@@ -283,7 +286,7 @@ func (u Transcribe) transcribeSegments(
 // returns no cues and from itself.
 func (u Transcribe) transcribeBatch(
 	ctx context.Context,
-	recording port.Recording,
+	recording transcriptionport.Recording,
 	path string,
 	from int,
 ) ([]domain.TranscriptCue, int, error) {
@@ -311,7 +314,7 @@ func (u Transcribe) answer(
 	v domain.Vault,
 	ref domain.Fingerprint,
 	hash, area string,
-	store port.DerivedStore,
+	store vaultport.DerivedStore,
 	transcript string,
 ) error {
 	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, area, hash), []byte(transcript+"\n")); err != nil {
@@ -329,7 +332,7 @@ func (u Transcribe) answer(
 // any path that answers a question reads it: it is there so that a person can
 // ask what produced a text, and so that everything a transcriber now known to
 // be bad produced can be found again.
-func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
+func (u Transcribe) record(ctx context.Context, store vaultport.DerivedStore, area, hash string) error {
 	named := u.provider.GetTranscriptionModel()
 	raw, err := json.MarshalIndent(struct {
 		Model     string `json:"model"`
@@ -366,7 +369,7 @@ func trimHeader(raw []byte, opened bool) []byte {
 // A note stands after the cues it claims, so what follows the last one is a
 // batch that did not land whole.
 func leftOff(
-	ctx context.Context, store port.DerivedStore, partial domain.ArtifactName,
+	ctx context.Context, store vaultport.DerivedStore, partial domain.ArtifactName,
 ) (transcribed, size int, err error) {
 	raw, err := store.ReadArtifact(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {

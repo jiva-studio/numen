@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -13,6 +12,17 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/indexport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // EditorAssembly is this installation as the window a person writes in asks it:
@@ -23,7 +33,7 @@ import (
 // given it, so nothing of the window's is named here.
 type EditorAssembly struct {
 	cfg      Config
-	registry port.VaultRegistry
+	registry vaultport.VaultRegistry
 	db       *Index
 }
 
@@ -44,7 +54,7 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 
 // NewEditorAssembly is that assembly over a list of vaults and a cache already
 // open, for a caller that opened them itself.
-func NewEditorAssembly(cfg Config, registry port.VaultRegistry, db *Index) EditorAssembly {
+func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
 	return EditorAssembly{cfg: cfg, registry: registry, db: db}
 }
 
@@ -61,31 +71,31 @@ func (e EditorAssembly) GetPluginDir(id string) (string, bool) {
 
 func (e EditorAssembly) EmitEvent(event string) {
 	if e.cfg.PluginHost != nil {
-		var emitter port.PluginEventEmitter = e.cfg.PluginHost
+		var emitter pluginport.PluginEventEmitter = e.cfg.PluginHost
 		emitter.EmitEvent(event)
 	}
 }
 
-func (e EditorAssembly) GetRegistry() port.VaultRegistry { return e.registry }
+func (e EditorAssembly) GetRegistry() vaultport.VaultRegistry { return e.registry }
 
-func (e EditorAssembly) GetVaultReaders() port.VaultReaders   { return e.cfg.VaultReaders() }
-func (e EditorAssembly) GetVaultWriters() port.VaultWriters   { return e.cfg.VaultWriters() }
-func (e EditorAssembly) GetDerivedStores() port.DerivedStores { return e.cfg.GetDerivedStores() }
+func (e EditorAssembly) GetVaultReaders() vaultport.VaultReaders   { return e.cfg.VaultReaders() }
+func (e EditorAssembly) GetVaultWriters() vaultport.VaultWriters   { return e.cfg.VaultWriters() }
+func (e EditorAssembly) GetDerivedStores() vaultport.DerivedStores { return e.cfg.GetDerivedStores() }
 
-func (e EditorAssembly) GetBooks() port.Book                  { return e.cfg.Books() }
-func (e EditorAssembly) GetTextExtractor() port.TextExtractor { return e.cfg.TextExtractor() }
-func (e EditorAssembly) GetPageRenderer() port.PageRenderer   { return e.cfg.PageRenderer() }
-func (e EditorAssembly) GetVaultIdentity() port.VaultIdentity { return e.cfg.VaultIdentity() }
-func (e EditorAssembly) GetClock() port.Clock                 { return e.cfg.Clock() }
+func (e EditorAssembly) GetBooks() sourceport.Book                  { return e.cfg.Books() }
+func (e EditorAssembly) GetTextExtractor() sourceport.TextExtractor { return e.cfg.TextExtractor() }
+func (e EditorAssembly) GetPageRenderer() sourceport.PageRenderer   { return e.cfg.PageRenderer() }
+func (e EditorAssembly) GetVaultIdentity() vaultport.VaultIdentity  { return e.cfg.VaultIdentity() }
+func (e EditorAssembly) GetClock() machineport.Clock                { return e.cfg.Clock() }
 
-func (e EditorAssembly) GetNoteQueries() port.NoteQueries       { return e.db.Queries() }
-func (e EditorAssembly) GetLinkQueries() port.LinkQueries       { return e.db.Links() }
-func (e EditorAssembly) GetProblemQueries() port.ProblemQueries { return e.db.Problems() }
-func (e EditorAssembly) GetIndexProgress() port.IndexProgress   { return e.db.Progress() }
+func (e EditorAssembly) GetNoteQueries() noteport.NoteQueries              { return e.db.Queries() }
+func (e EditorAssembly) GetLinkQueries() noteport.LinkQueries              { return e.db.Links() }
+func (e EditorAssembly) GetProblemQueries() recognitionport.ProblemQueries { return e.db.Problems() }
+func (e EditorAssembly) GetIndexProgress() indexport.IndexProgress         { return e.db.Progress() }
 
-func (e EditorAssembly) GetSourceRepository() port.SourceRepository { return e.db.Sources() }
-func (e EditorAssembly) GetSourceQueries() port.SourceQueries       { return e.db.SourcesKnown() }
-func (e EditorAssembly) GetPassageQueries() port.PassageQueries     { return e.db.Passages() }
+func (e EditorAssembly) GetSourceRepository() sourceport.SourceRepository { return e.db.Sources() }
+func (e EditorAssembly) GetSourceQueries() sourceport.SourceQueries       { return e.db.SourcesKnown() }
+func (e EditorAssembly) GetPassageQueries() sourceport.PassageQueries     { return e.db.Passages() }
 
 func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 
@@ -136,12 +146,12 @@ func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTransc
 
 func (e EditorAssembly) OpenEmbedders(
 	ctx context.Context, tasks *run.Tasks,
-) (indexing, asking port.Embedder, closer func() error, why error) {
+) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
 	return e.cfg.Embedders(ctx, tasks)
 }
 
 func (e EditorAssembly) NewSearch(
-	asking port.Embedder, handleError func(error),
+	asking embeddingport.Embedder, handleError func(error),
 ) search.Search {
 	return e.cfg.NewSearch(e.db, asking, handleError)
 }
@@ -158,12 +168,12 @@ func (e EditorAssembly) OpenSourceTexts() source.Texts {
 	return e.cfg.SourceTexts(e.db.SourcesKnown())
 }
 
-func (e EditorAssembly) OpenDownloader(ctx context.Context) port.Downloader {
+func (e EditorAssembly) OpenDownloader(ctx context.Context) downloadport.Downloader {
 	return e.cfg.Downloader(ctx)
 }
 
 func (e EditorAssembly) OpenImportURL(
-	ctx context.Context, downloader port.Downloader,
+	ctx context.Context, downloader downloadport.Downloader,
 ) source.ImportURL {
 	return e.cfg.ImportURL(ctx, e.db, downloader)
 }
@@ -187,7 +197,7 @@ func (e EditorAssembly) GetRefresh() vault.Refresh {
 // ReadWholeVault reads the vault the one way, with this launch's answer about
 // reading every file again standing for the one pass that was asked for it.
 func (e EditorAssembly) ReadWholeVault(
-	ctx context.Context, embedder port.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 ) (vault.ReadWholeVault, error) {
 	request := e.cfg
 	request.ShouldRebuildIndex = rebuild
@@ -199,7 +209,7 @@ func (e EditorAssembly) ReadWholeVault(
 func (e EditorAssembly) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool,
 	notified func(paths, assets []string, reload bool),
-	handleError port.ErrorHandler,
+	handleError windowport.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
 	run func(ctx context.Context),

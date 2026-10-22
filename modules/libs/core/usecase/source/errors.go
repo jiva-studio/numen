@@ -3,7 +3,8 @@ package source
 import (
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 var (
@@ -17,12 +18,12 @@ var (
 	ErrTranscriptBusy = errors.New("a run is writing this transcript down")
 
 	// ErrOutside is a path that does not stay in the vault.
-	ErrOutside = port.ErrOutside
+	ErrOutside = vaultport.ErrOutside
 
 	// ErrUnavailable is a plugin that is not there to answer: not installed, disabled
 	// or failed to start.
-	ErrUnavailable = port.ErrUnavailable
+	ErrUnavailable = completionport.ErrUnavailable
 )
 
 // IsNoNote reports whether an error says there is no note at the path.
-func IsNoNote(err error) bool { return port.IsNoNote(err) }
+func IsNoNote(err error) bool { return vaultport.IsNoNote(err) }

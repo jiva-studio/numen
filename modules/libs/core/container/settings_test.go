@@ -11,7 +11,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 // writeSettings is a settings file holding that text, and the container reading
@@ -58,7 +59,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
   "something_this_build_knows_nothing_about": 7
 }`)
 
-	err := cfg.GetSettingsWriter()([]port.Setting{
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{
 		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
@@ -90,7 +91,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := cfg.GetSettingsWriter()([]port.Setting{
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{
 		{Path: []string{"agent", "use"}, JSON: `"claude"`},
 		{Path: []string{"agent", "claude", "max_steps"}, JSON: `12`},
 	})

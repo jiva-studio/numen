@@ -6,9 +6,12 @@ import (
 	"io/fs"
 	pathpkg "path"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Move files anything the vault holds somewhere else inside it: one file of any
@@ -20,14 +23,14 @@ import (
 // inside its own folder is called by that name, where a title and a filename
 // are kept as one name.
 type Move struct {
-	writers port.VaultWriters
-	links   port.LinkQueries
+	writers vaultport.VaultWriters
+	links   noteport.LinkQueries
 	// queries is what the index holds about each file, and is what says which
 	// sources sit under the path being moved.
-	queries port.SourceQueries
+	queries sourceport.SourceQueries
 	// sources is where the index files each file. A folder and everything under
 	// it are filed at their new paths in one write.
-	sources port.SourceRepository
+	sources sourceport.SourceRepository
 	// notes is what settles each note that travelled: whoever is drawing it, and
 	// the links written by its old name.
 	notes note.Move
@@ -38,23 +41,23 @@ type Move struct {
 // holds about the files under the path and where it files them, and the one
 // note.Move every note that travelled settles through.
 func NewMove(
-	writers port.VaultWriters,
-	links port.LinkQueries,
-	queries port.SourceQueries,
-	sources port.SourceRepository,
+	writers vaultport.VaultWriters,
+	links noteport.LinkQueries,
+	queries sourceport.SourceQueries,
+	sources sourceport.SourceRepository,
 	notes note.Move,
 ) Move {
 	return Move{writers: writers, links: links, queries: queries, sources: sources, notes: notes}
 }
 
 // WithSources returns a copy of Move with the given SourceRepository.
-func (u Move) WithSources(sources port.SourceRepository) Move {
+func (u Move) WithSources(sources sourceport.SourceRepository) Move {
 	u.sources = sources
 	return u
 }
 
 // Sources returns the SourceRepository Move files through.
-func (u Move) Sources() port.SourceRepository {
+func (u Move) Sources() sourceport.SourceRepository {
 	return u.sources
 }
 

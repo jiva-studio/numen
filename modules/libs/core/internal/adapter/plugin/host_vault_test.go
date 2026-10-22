@@ -17,8 +17,10 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // memoryVault is a vault of files kept in memory that answers as the host does.
@@ -35,7 +37,7 @@ type memoryVault struct {
 	droppedChan chan struct{}
 	// others are the vaults beside the shown one, by identity.
 	others map[domain.VaultID]*memoryVault
-	state  port.PluginIndexState
+	state  pluginport.PluginIndexState
 	inUse  int
 	moves  chan struct{}
 }
@@ -49,16 +51,16 @@ func newMemoryVault(files map[string]string) *memoryVault {
 		changes:     make(chan []string, 4),
 		droppedChan: make(chan struct{}),
 		moves:       make(chan struct{}, 4),
-		state:       port.PluginIndexState{Status: port.PluginIndexed},
+		state:       pluginport.PluginIndexState{Status: pluginport.PluginIndexed},
 	}
 }
 
 var (
-	_ port.PluginVault          = (*memoryVault)(nil)
-	_ port.PluginVaultReader    = (*memoryVault)(nil)
-	_ port.PluginVaultWriter    = (*memoryVault)(nil)
-	_ port.PluginVaultStore     = (*memoryVault)(nil)
-	_ port.PluginVaultLifecycle = (*memoryVault)(nil)
+	_ pluginport.PluginVault          = (*memoryVault)(nil)
+	_ pluginport.PluginVaultReader    = (*memoryVault)(nil)
+	_ pluginport.PluginVaultWriter    = (*memoryVault)(nil)
+	_ pluginport.PluginVaultStore     = (*memoryVault)(nil)
+	_ pluginport.PluginVaultLifecycle = (*memoryVault)(nil)
 )
 
 func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
@@ -73,7 +75,7 @@ func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
 	return out, nil
 }
 
-func (m *memoryVault) With(id domain.VaultID) (port.PluginVault, error) {
+func (m *memoryVault) With(id domain.VaultID) (pluginport.PluginVault, error) {
 	if m.vault != nil && m.vault.ID == id {
 		return m, nil
 	}
@@ -83,7 +85,7 @@ func (m *memoryVault) With(id domain.VaultID) (port.PluginVault, error) {
 	return nil, fs.ErrNotExist
 }
 
-func (m *memoryVault) EnsureIndexed(context.Context) (port.PluginIndexState, error) {
+func (m *memoryVault) EnsureIndexed(context.Context) (pluginport.PluginIndexState, error) {
 	return m.state, nil
 }
 
@@ -139,7 +141,7 @@ func (m *memoryVault) Write(_ context.Context, path string, content []byte, base
 		return domain.Fingerprint{}, err
 	}
 	if !now.ModTime.Equal(baseline.ModTime) {
-		return domain.Fingerprint{}, port.ErrStale
+		return domain.Fingerprint{}, vaultport.ErrStale
 	}
 	m.stamp++
 	m.files[path] = string(content)
@@ -150,7 +152,7 @@ func (m *memoryVault) Create(_ context.Context, path string, content []byte) err
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, there := m.files[path]; there {
-		return port.ErrOccupied
+		return vaultport.ErrOccupied
 	}
 	m.files[path] = string(content)
 	return nil
@@ -263,18 +265,18 @@ func (d memoryData) Append(_ context.Context, name string, content []byte) error
 	return nil
 }
 
-func (d memoryData) List(context.Context) ([]port.PluginDataFile, error) {
+func (d memoryData) List(context.Context) ([]pluginport.PluginDataFile, error) {
 	d.vault.mu.Lock()
 	defer d.vault.mu.Unlock()
-	var out []port.PluginDataFile
+	var out []pluginport.PluginDataFile
 	for name, content := range d.vault.data {
-		out = append(out, port.PluginDataFile{Name: name, Size: len(content)})
+		out = append(out, pluginport.PluginDataFile{Name: name, Size: len(content)})
 	}
-	slices.SortFunc(out, func(a, b port.PluginDataFile) int { return len(a.Name) - len(b.Name) })
+	slices.SortFunc(out, func(a, b pluginport.PluginDataFile) int { return len(a.Name) - len(b.Name) })
 	return out, nil
 }
 
-func (m *memoryVault) OpenData(string) (port.PluginDataStore, error) {
+func (m *memoryVault) OpenData(string) (pluginport.PluginDataStore, error) {
 	return memoryData{vault: m}, nil
 }
 
@@ -589,7 +591,7 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	if got := readCode(t, anonymous); got != connect.CodeUnauthenticated {
 		t.Errorf("a call with no token is %v", got)
 	}
-	if !slices.Contains(hosted.checked, "md.numen.b "+port.PermissionVaultRead) || !slices.Contains(hosted.checked, "md.numen.b "+port.PermissionVaultWrite) {
+	if !slices.Contains(hosted.checked, "md.numen.b "+pluginport.PermissionVaultRead) || !slices.Contains(hosted.checked, "md.numen.b "+pluginport.PermissionVaultWrite) {
 		t.Errorf("the permissions asked were %v", hosted.checked)
 	}
 }
@@ -643,13 +645,13 @@ func TestEveryVaultTheInstallationKnowsIsListed(t *testing.T) {
 
 func TestWhereTheIndexExistsIsSaid(t *testing.T) {
 	client, vault := newVaultFixture(t)
-	cases := map[port.PluginIndexStatus]v1.HostIndexState{
-		port.PluginIndexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
-		port.PluginIndexing:    v1.HostIndexState_HOST_INDEX_STATE_INDEXING,
-		port.PluginIndexFailed: v1.HostIndexState_HOST_INDEX_STATE_FAILED,
+	cases := map[pluginport.PluginIndexStatus]v1.HostIndexState{
+		pluginport.PluginIndexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
+		pluginport.PluginIndexing:    v1.HostIndexState_HOST_INDEX_STATE_INDEXING,
+		pluginport.PluginIndexFailed: v1.HostIndexState_HOST_INDEX_STATE_FAILED,
 	}
 	for status, want := range cases {
-		vault.state = port.PluginIndexState{Status: status, Reason: "why"}
+		vault.state = pluginport.PluginIndexState{Status: status, Reason: "why"}
 
 		res, err := client.EnsureVaultIndexed(t.Context(), connect.NewRequest(&v1.EnsureVaultIndexedRequest{}))
 

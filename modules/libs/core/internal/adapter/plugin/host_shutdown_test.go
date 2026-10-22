@@ -9,7 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // newRunningHost returns a host with the plugin running and the channel its supervisor closes when the process is reaped.
@@ -139,7 +140,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 
 func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 	host := NewHost("desktop.editor")
-	manifest := port.PluginManifest{ID: "md.numen.readers.epub", FileExtensions: []string{".epub"}}
+	manifest := pluginport.PluginManifest{ID: "md.numen.readers.epub", FileExtensions: []string{".epub"}}
 	host.plugins["md.numen.readers.epub"] = DiscoveredPlugin{Manifest: manifest}
 
 	if _, ok := host.FindPluginByFileExtension(".epub"); !ok {
@@ -165,13 +166,13 @@ func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		host.plugins[id] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: id, Capabilities: []string{CapabilityBook}}}
+		host.plugins[id] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{CapabilityBook}}}
 	}
-	getReason := func(capability string) port.UnavailableReason {
+	getReason := func(capability string) pluginport.UnavailableReason {
 		t.Helper()
 		_, err := host.ResolveCapability(capability)
-		var missing *port.UnavailableError
-		if !errors.As(err, &missing) || !errors.Is(err, port.ErrUnavailable) || missing.Capability != capability {
+		var missing *pluginport.UnavailableError
+		if !errors.As(err, &missing) || !errors.Is(err, completionport.ErrUnavailable) || missing.Capability != capability {
 			t.Fatalf("ResolveCapability(%q) = %v, want an UnavailableError for it", capability, err)
 		}
 		return missing.Reason
@@ -180,7 +181,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	if found, err := host.ResolveCapability(CapabilityBook); err != nil || found.Manifest.ID != "md.numen.a" {
 		t.Fatalf("ResolveCapability = %q, %v, want the lowest id", found.Manifest.ID, err)
 	}
-	if got := getReason(CapabilityDocument); got != port.PluginNotInstalled {
+	if got := getReason(CapabilityDocument); got != pluginport.PluginNotInstalled {
 		t.Errorf("a capability nothing declares is %v, want not installed", got)
 	}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
@@ -192,7 +193,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.b", false); err != nil {
 		t.Fatal(err)
 	}
-	if got := getReason(CapabilityBook); got != port.PluginDisabled {
+	if got := getReason(CapabilityBook); got != pluginport.PluginDisabled {
 		t.Errorf("a capability every declaring plugin of is disabled is %v, want disabled", got)
 	}
 	for _, id := range []string{"md.numen.a", "md.numen.b"} {
@@ -201,7 +202,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		}
 	}
 	host.SetSafeMode(true)
-	if got := getReason(CapabilityBook); got != port.PluginDisabled {
+	if got := getReason(CapabilityBook); got != pluginport.PluginDisabled {
 		t.Errorf("a capability in safe mode is %v, want disabled", got)
 	}
 	if _, ok := host.FindPluginByCapability(CapabilityBook); ok {
@@ -213,16 +214,16 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // or is switched off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := NewHost("desktop.editor")
-	host.plugins["md.numen.a"] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.a"}}
+	host.plugins["md.numen.a"] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
-	for id, want := range map[string]port.UnavailableReason{
-		"md.numen.absent": port.PluginNotInstalled,
-		"md.numen.a":      port.PluginDisabled,
+	for id, want := range map[string]pluginport.UnavailableReason{
+		"md.numen.absent": pluginport.PluginNotInstalled,
+		"md.numen.a":      pluginport.PluginDisabled,
 	} {
 		_, err := host.EnsureActive(t.Context(), id)
-		var missing *port.UnavailableError
+		var missing *pluginport.UnavailableError
 		if !errors.As(err, &missing) || missing.Reason != want || missing.PluginID != id {
 			t.Errorf("EnsureActive(%q) = %v, want reason %v", id, err, want)
 		}
@@ -232,7 +233,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		host.plugins[id] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}}}
+		host.plugins[id] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}}}
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)

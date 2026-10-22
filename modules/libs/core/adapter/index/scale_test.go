@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
-var quantising = port.EmbeddingModel{
+var quantising = embeddingport.EmbeddingModel{
 	Name: "test", Dimensions: 1024, MaxTokens: 256, Pooling: "mean",
 	From: "local:library/model.onnx",
 }
@@ -18,10 +19,10 @@ var quantising = port.EmbeddingModel{
 // atScale is the recipe this model had while its bytes sat on another grid. It
 // reads the scale out of the recipe in force, so a recipe that stopped carrying
 // the scale is a failure here and not a test that quietly passes.
-func atScale(t *testing.T, m port.EmbeddingModel, scale float64) string {
+func atScale(t *testing.T, m embeddingport.EmbeddingModel, scale float64) string {
 	t.Helper()
 
-	recipe, target := m.Recipe(), fmt.Sprintf("@%g", port.Int8Scale)
+	recipe, target := m.Recipe(), fmt.Sprintf("@%g", embeddingport.Int8Scale)
 	if !strings.HasSuffix(recipe, target) {
 		t.Fatalf("the recipe says nothing about the scale its bytes sit on: %s", recipe)
 	}

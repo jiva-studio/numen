@@ -17,9 +17,11 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // vaultRows is the index as a vault is written to and taken out of it.
@@ -111,7 +113,7 @@ func (f *folders) getAsked() (string, string) {
 type onTheList struct {
 	client   numenv1connect.VaultsServiceClient
 	api      *Services
-	registry port.VaultRegistry
+	registry vaultport.VaultRegistry
 	rows     *vaultRows
 	bin      *bin
 	dialog   *folders
@@ -496,7 +498,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 // TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing.
 func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	f := onAList(t)
-	f.bin.refuse(port.ErrNoTrash)
+	f.bin.refuse(machineport.ErrNoTrash)
 
 	out, err := f.client.RemoveVault(t.Context(),
 		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), Trash: true}))
@@ -607,7 +609,7 @@ func TestTheFolderThePersonChoseIsAnswered(t *testing.T) {
 // TestASecondFolderDialogIsRefusedWhileOneIsUp. A person answers one at a time.
 func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	f := onAList(t)
-	f.dialog.fails = port.ErrChoosing
+	f.dialog.fails = machineport.ErrChoosing
 
 	_, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if got := connect.CodeOf(err); got != connect.CodeUnavailable {

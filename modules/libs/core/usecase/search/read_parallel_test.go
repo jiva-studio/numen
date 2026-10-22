@@ -10,8 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // concurrentVault is a vault held in memory that is safe to read from several
@@ -251,4 +252,4 @@ func waitForGoroutines(t *testing.T, before int) {
 // concurrentReaders opens the one concurrentVault given.
 type concurrentReaders struct{ reader *concurrentVault }
 
-func (c concurrentReaders) Open(domain.Vault) (port.VaultReader, error) { return c.reader, nil }
+func (c concurrentReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return c.reader, nil }

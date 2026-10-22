@@ -6,19 +6,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/agent"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 // run replays steps and records that it was stopped.
 type run struct {
-	steps   chan port.Step
+	steps   chan agentport.Step
 	stopped int
 }
 
-func newRun(steps ...port.Step) *run {
-	r := &run{steps: make(chan port.Step, len(steps))}
+func newRun(steps ...agentport.Step) *run {
+	r := &run{steps: make(chan agentport.Step, len(steps))}
 	for _, step := range steps {
 		r.steps <- step
 	}
@@ -26,17 +28,17 @@ func newRun(steps ...port.Step) *run {
 	return r
 }
 
-func (r *run) GetSteps() <-chan port.Step { return r.steps }
-func (r *run) Stop() error                { r.stopped++; return nil }
+func (r *run) GetSteps() <-chan agentport.Step { return r.steps }
+func (r *run) Stop() error                     { r.stopped++; return nil }
 
 // starter starts the run it holds and records the task it was given.
 type starter struct {
 	run  *run
 	err  error
-	task port.Task
+	task agentport.Task
 }
 
-func (s *starter) StartRun(_ context.Context, task port.Task) (port.Run, error) {
+func (s *starter) StartRun(_ context.Context, task agentport.Task) (agentport.Run, error) {
 	s.task = task
 	if s.err != nil {
 		return nil, s.err
@@ -44,17 +46,17 @@ func (s *starter) StartRun(_ context.Context, task port.Task) (port.Run, error) 
 	return s.run, nil
 }
 
-func say(text string) port.Step { return port.Step{Kind: domain.StepSay, Text: text} }
-func stop(why string) port.Step { return port.Step{Kind: domain.StepStop, Detail: why} }
+func say(text string) agentport.Step { return agentport.Step{Kind: domain.StepSay, Text: text} }
+func stop(why string) agentport.Step { return agentport.Step{Kind: domain.StepStop, Detail: why} }
 
 // The pieces the agent says are the answer, in the order they arrive, and the run is stopped once
 // it has been read.
 func TestTheAnswerIsWhatTheAgentSaid(t *testing.T) {
 	target := &starter{run: newRun(
-		port.Step{Kind: domain.StepModelStart}, say("The "), say("answer."), stop(""),
+		agentport.Step{Kind: domain.StepModelStart}, say("The "), say("answer."), stop(""),
 	)}
 
-	got, err := agent.Answer(t.Context(), target, port.Task{Question: "why?"})
+	got, err := agent.Answer(t.Context(), target, agentport.Task{Question: "why?"})
 
 	if err != nil || got != "The answer." {
 		t.Fatalf("got %q, %v", got, err)
@@ -66,11 +68,11 @@ func TestTheAnswerIsWhatTheAgentSaid(t *testing.T) {
 
 // An agent that stops with "done", or closes its steps without a stop, has answered.
 func TestAnAgentThatIsCompletedHasAnswered(t *testing.T) {
-	for name, steps := range map[string][]port.Step{
+	for name, steps := range map[string][]agentport.Step{
 		"done":    {say("yes"), stop("done")},
 		"no stop": {say("yes")},
 	} {
-		got, err := agent.Answer(t.Context(), &starter{run: newRun(steps...)}, port.Task{})
+		got, err := agent.Answer(t.Context(), &starter{run: newRun(steps...)}, agentport.Task{})
 		if err != nil || got != "yes" {
 			t.Errorf("%s: got %q, %v", name, got, err)
 		}
@@ -80,25 +82,25 @@ func TestAnAgentThatIsCompletedHasAnswered(t *testing.T) {
 // The task is sent as a single answer: no tool, no endpoint, no conversation, and the rest as given.
 func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
 	target := &starter{run: newRun(say("yes"), stop(""))}
-	task := port.Task{
+	task := agentport.Task{
 		Question:         "why?",
 		Instructions:     "be brief",
 		Agent:            "claude",
 		Model:            "m1",
 		Conversation:     "c-1",
 		Tools:            []string{"note_edit"},
-		ToolDeclarations: []port.ToolDeclaration{{Name: "note_edit"}},
-		Endpoint:         port.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "secret"},
+		ToolDeclarations: []agentport.ToolDeclaration{{Name: "note_edit"}},
+		Endpoint:         agentport.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "secret"},
 	}
 
 	if _, err := agent.Answer(t.Context(), target, task); err != nil {
 		t.Fatal(err)
 	}
 
-	want := port.Task{Question: "why?", Instructions: "be brief", Agent: "claude", Model: "m1"}
+	want := agentport.Task{Question: "why?", Instructions: "be brief", Agent: "claude", Model: "m1"}
 	if got := target.task; got.Question != want.Question || got.Instructions != want.Instructions ||
 		got.Agent != want.Agent || got.Model != want.Model || got.Conversation != "" ||
-		len(got.Tools) != 0 || len(got.ToolDeclarations) != 0 || got.Endpoint != (port.ToolEndpoint{}) {
+		len(got.Tools) != 0 || len(got.ToolDeclarations) != 0 || got.Endpoint != (agentport.ToolEndpoint{}) {
 		t.Errorf("the agent was given %+v", got)
 	}
 }
@@ -106,18 +108,18 @@ func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
 // What the agent says about a tool is not part of the answer.
 func TestOnlyWhatTheAgentReturnsIsTheAnswer(t *testing.T) {
 	target := &starter{run: newRun(
-		port.Step{Kind: domain.StepToolCall, Tool: "note_read", Text: "no"}, say("yes"), stop(""),
+		agentport.Step{Kind: domain.StepToolCall, Tool: "note_read", Text: "no"}, say("yes"), stop(""),
 	)}
 
-	if got, err := agent.Answer(t.Context(), target, port.Task{}); err != nil || got != "yes" {
+	if got, err := agent.Answer(t.Context(), target, agentport.Task{}); err != nil || got != "yes" {
 		t.Errorf("got %q, %v", got, err)
 	}
 }
 
 func TestAnAgentThatCannotBeStartedIsUnavailable(t *testing.T) {
-	_, err := agent.Answer(t.Context(), &starter{err: errors.New("no plugin runs it")}, port.Task{})
+	_, err := agent.Answer(t.Context(), &starter{err: errors.New("no plugin runs it")}, agentport.Task{})
 
-	if !errors.Is(err, port.ErrUnavailable) {
+	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Errorf("got %v, want port.ErrUnavailable", err)
 	}
 }
@@ -125,21 +127,21 @@ func TestAnAgentThatCannotBeStartedIsUnavailable(t *testing.T) {
 func TestAnAgentThatStopsForAReasonIsUnavailableWithThatReason(t *testing.T) {
 	target := &starter{run: newRun(say("partial"), stop("not signed in"))}
 
-	_, err := agent.Answer(t.Context(), target, port.Task{})
+	_, err := agent.Answer(t.Context(), target, agentport.Task{})
 
-	if !errors.Is(err, port.ErrUnavailable) || !strings.Contains(err.Error(), "not signed in") {
+	if !errors.Is(err, completionport.ErrUnavailable) || !strings.Contains(err.Error(), "not signed in") {
 		t.Errorf("got %v, want port.ErrUnavailable naming the reason", err)
 	}
 }
 
 func TestAnAgentThatReturnsNothingIsUnavailable(t *testing.T) {
-	for name, steps := range map[string][]port.Step{
+	for name, steps := range map[string][]agentport.Step{
 		"only a stop": {stop("")},
 		"blank":       {say(" \n"), stop("")},
 		"no steps":    {},
 	} {
-		_, err := agent.Answer(t.Context(), &starter{run: newRun(steps...)}, port.Task{})
-		if !errors.Is(err, port.ErrUnavailable) {
+		_, err := agent.Answer(t.Context(), &starter{run: newRun(steps...)}, agentport.Task{})
+		if !errors.Is(err, completionport.ErrUnavailable) {
 			t.Errorf("%s: got %v, want port.ErrUnavailable", name, err)
 		}
 	}
@@ -155,8 +157,8 @@ func TestTheEndOfTheContextIsNotAnUnavailability(t *testing.T) {
 		"no answer":   {run: newRun()},
 		"stopped":     {run: newRun(stop("canceled"))},
 	} {
-		_, err := agent.Answer(ctx, target, port.Task{})
-		if !errors.Is(err, context.Canceled) || errors.Is(err, port.ErrUnavailable) {
+		_, err := agent.Answer(ctx, target, agentport.Task{})
+		if !errors.Is(err, context.Canceled) || errors.Is(err, completionport.ErrUnavailable) {
 			t.Errorf("%s: got %v, want context.Canceled alone", name, err)
 		}
 	}
@@ -165,10 +167,10 @@ func TestTheEndOfTheContextIsNotAnUnavailability(t *testing.T) {
 // A run that never closes its steps does not hold the answer past the end of the context.
 func TestTheEndOfTheContextEndsTheWaitForSteps(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
-	target := &starter{run: &run{steps: make(chan port.Step)}}
+	target := &starter{run: &run{steps: make(chan agentport.Step)}}
 	isDone := make(chan error, 1)
 	go func() {
-		_, err := agent.Answer(ctx, target, port.Task{})
+		_, err := agent.Answer(ctx, target, agentport.Task{})
 		isDone <- err
 	}()
 

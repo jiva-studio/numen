@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // Validate inspects a plugin manifest and entrypoints on disk.
@@ -22,7 +22,7 @@ func Validate(targetPath string) ([]string, error) {
 		return nil, fmt.Errorf("read manifest at %s: %w", manifestPath, err)
 	}
 
-	var m port.PluginManifest
+	var m pluginport.PluginManifest
 	if err := json.Unmarshal(data, &m); err != nil {
 		return []string{fmt.Sprintf("invalid json in manifest: %v", err)}, nil
 	}
@@ -52,7 +52,7 @@ func resolveManifestPath(targetPath string) (manifestPath, pluginDir string, err
 	return manifestPath, pluginDir, nil
 }
 
-func listBackendFileIssues(b port.PluginBackend, pluginDir string) []string {
+func listBackendFileIssues(b pluginport.PluginBackend, pluginDir string) []string {
 	if strings.TrimSpace(b.Entrypoint) == "" {
 		return nil
 	}
@@ -62,7 +62,7 @@ func listBackendFileIssues(b port.PluginBackend, pluginDir string) []string {
 	return []string{fmt.Sprintf("backend entrypoint %q does not exist and no backend/main.go source found", b.Entrypoint)}
 }
 
-func listFrontendFileIssues(f port.PluginFrontend, pluginDir string) []string {
+func listFrontendFileIssues(f pluginport.PluginFrontend, pluginDir string) []string {
 	if strings.TrimSpace(f.Entrypoint) == "" {
 		return nil
 	}

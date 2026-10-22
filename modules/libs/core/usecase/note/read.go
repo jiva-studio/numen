@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/edit"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // MaxBytes is the most a note may be and still be read here.
@@ -35,12 +36,12 @@ type Contents = edit.Contents
 
 // Read hands over the prose of one note.
 type Read struct {
-	readers port.VaultReaders
+	readers vaultport.VaultReaders
 }
 
 var errNotOpen = errors.New("this vault's files are not open")
 
-func NewRead(readers port.VaultReaders) Read {
+func NewRead(readers vaultport.VaultReaders) Read {
 	return Read{readers: readers}
 }
 

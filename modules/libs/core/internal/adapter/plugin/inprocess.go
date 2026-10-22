@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 var (
@@ -214,7 +214,7 @@ func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint Endpoint) {
 
 // exportRuntimeVars provisions the runtimes an in-process plugin declares, sets their variables in
 // this process, which is the plugin's own, and returns them.
-func (h *Host) exportRuntimeVars(ctx context.Context, requirements []port.DependencyRequirement) ([]string, error) {
+func (h *Host) exportRuntimeVars(ctx context.Context, requirements []pluginport.DependencyRequirement) ([]string, error) {
 	vars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {
 		return nil, err

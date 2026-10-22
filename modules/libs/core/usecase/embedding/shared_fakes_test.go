@@ -7,8 +7,9 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // fakeStorage is what a recognition is written to, in memory.
@@ -100,7 +101,7 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.activeItem[name] {
-		return nil, port.ErrClaimed
+		return nil, vaultport.ErrClaimed
 	}
 	s.activeItem[name] = true
 	return func() error {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -15,6 +14,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/settings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Services is the handlers a window answers through, one for each service of the
@@ -81,7 +83,7 @@ func (s *Services) openPlaying(playing *Loopback) {
 }
 
 // readFiles binds the use cases that read the files of the vaults the readers open.
-func (s *Services) readFiles(readers port.VaultReaders) {
+func (s *Services) readFiles(readers vaultport.VaultReaders) {
 	s.files.getFingerprint = file.NewGetFingerprint(readers)
 	s.server.openFile = document.NewOpenFile(readers)
 }
@@ -121,7 +123,7 @@ func (f *artifactFiles) getArtifactAddress(ctx context.Context, v domain.Vault, 
 
 // SetFolderDialog puts the machine's folder dialog in front of the person when a
 // client asks for one.
-func (s *Services) SetFolderDialog(dialog port.FolderDialog) {
+func (s *Services) SetFolderDialog(dialog machineport.FolderDialog) {
 	choose := vaults.NewChooseFolder(dialog)
 	s.Vaults.chooseFolder = &choose
 }

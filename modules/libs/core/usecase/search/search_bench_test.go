@@ -13,21 +13,23 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
 )
 
 type benchEmbedder struct {
-	model port.EmbeddingModel
+	model embeddingport.EmbeddingModel
 }
 
-func newBenchEmbedder(model port.EmbeddingModel) *benchEmbedder {
+func newBenchEmbedder(model embeddingport.EmbeddingModel) *benchEmbedder {
 	return &benchEmbedder{model: model}
 }
 
-func (e *benchEmbedder) GetModel() port.EmbeddingModel {
+func (e *benchEmbedder) GetModel() embeddingport.EmbeddingModel {
 	return e.model
 }
 
@@ -81,8 +83,8 @@ type benchCorpus struct {
 	vault      domain.Vault
 	db         *container.Index
 	searchMock search.Search
-	mockModel  port.Embedder
-	passages   port.PassageQueries
+	mockModel  embeddingport.Embedder
+	passages   sourceport.PassageQueries
 	candidates []domain.Passage
 	recipe     string
 	queryVec   []float32
@@ -94,7 +96,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	v := testsupport.GenerateVault(b, notes)
 	embedCfg := container.DefaultEmbedding()
-	model := port.EmbeddingModel{
+	model := embeddingport.EmbeddingModel{
 		Name:       embedCfg.Model.Name,
 		Dimensions: embedCfg.Model.Dimensions,
 		MaxTokens:  embedCfg.Model.MaxTokens,

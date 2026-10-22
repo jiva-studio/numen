@@ -14,14 +14,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // The fixture vault is deliberately awkward: a note with no frontmatter, broken
 // YAML, CRLF line endings, text that is not Latin, a PDF, and a hidden folder.
-func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
+func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 	t.Helper()
 	cfg, err := filesystem.ReadConfig(root, filesystem.DefaultServiceDir)
 	if err != nil {
@@ -62,7 +63,7 @@ func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string
 	return out
 }
 
-func scanner(readers port.VaultReaders, db *container.Index) vaults.Scan {
+func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
 	scan := vaults.NewScan(
 		readers,
 		db.Vaults(),
@@ -306,11 +307,11 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 // never looked at one would still stop there. What is left unguarded by anyone
 // else is the pass over what the walk found, which is the whole of a warm scan.
 type cancellingReaders struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	cancel context.CancelFunc
 }
 
-func (c *cancellingReaders) Open(v domain.Vault) (port.VaultReader, error) {
+func (c *cancellingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := c.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -319,7 +320,7 @@ func (c *cancellingReaders) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type cancellingReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	parent *cancellingReaders
 }
 
@@ -331,11 +332,11 @@ func (c *cancellingReader) WalkFiles(ctx context.Context, fn func(domain.Fingerp
 
 // countingReaders records how many files a scan actually opened.
 type countingReaders struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	reads int
 }
 
-func (c *countingReaders) Open(v domain.Vault) (port.VaultReader, error) {
+func (c *countingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := c.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -344,7 +345,7 @@ func (c *countingReaders) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 type countingReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	parent *countingReaders
 }
 
@@ -443,7 +444,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 // vanishingReader reports a file that is gone by the time it is read, which is
 // what happens when the user saves, moves or deletes a note during a scan.
 type vanishingReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	vanishedVal string
 }
 
@@ -455,11 +456,11 @@ func (v vanishingReader) Read(ctx context.Context, path string) ([]byte, error) 
 }
 
 type vanishingReaders struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	vanishedVal string
 }
 
-func (v vanishingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
+func (v vanishingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := v.VaultReaders.Open(vault)
 	if err != nil {
 		return nil, err
@@ -491,7 +492,7 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 }
 
 type refusingReader struct {
-	port.VaultReader
+	vaultport.VaultReader
 	failingPath string
 }
 
@@ -503,11 +504,11 @@ func (r refusingReader) Read(ctx context.Context, path string) ([]byte, error) {
 }
 
 type refusingReaders struct {
-	port.VaultReaders
+	vaultport.VaultReaders
 	failingPath string
 }
 
-func (r refusingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
+func (r refusingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := r.VaultReaders.Open(vault)
 	if err != nil {
 		return nil, err

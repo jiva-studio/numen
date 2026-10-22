@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // GetWait is the wait every scenario assembled here is handed, bound to this
 // machine's timers.
-func (c Config) GetWait() port.Wait {
+func (c Config) GetWait() machineport.Wait {
 	return func(ctx context.Context, d time.Duration) error {
 		if d <= 0 {
 			return ctx.Err()
@@ -27,7 +27,7 @@ func (c Config) GetWait() port.Wait {
 
 // GetDelay is the delayed call every scenario assembled here is handed, bound
 // to this machine's timers.
-func (c Config) GetDelay() port.Delay {
+func (c Config) GetDelay() machineport.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
 	}

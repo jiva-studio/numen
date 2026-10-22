@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // folder is a vault of one note, somewhere of its own.
@@ -154,8 +154,8 @@ func TestAVolumeThatConsumesNoTrash(t *testing.T) {
 	}
 	t.Cleanup(func() { os.Chmod(top, 0o700) })
 
-	if _, err := getVolumeTrashDir(top, os.Getuid()); !errors.Is(err, port.ErrNoTrash) {
-		t.Errorf("a volume root that takes no trash gave %v, want %v", err, port.ErrNoTrash)
+	if _, err := getVolumeTrashDir(top, os.Getuid()); !errors.Is(err, machineport.ErrNoTrash) {
+		t.Errorf("a volume root that takes no trash gave %v, want %v", err, machineport.ErrNoTrash)
 	}
 }
 
@@ -176,8 +176,8 @@ func TestNowhereToInsertIt(t *testing.T) {
 
 	// No trash of this login, so the volume's own is the only one there could
 	// be, and its root refuses one.
-	if err := moveToUserOrVolumeTrash(pos, ""); !errors.Is(err, port.ErrNoTrash) {
-		t.Errorf("trashing %s gave %v, want %v", pos, err, port.ErrNoTrash)
+	if err := moveToUserOrVolumeTrash(pos, ""); !errors.Is(err, machineport.ErrNoTrash) {
+		t.Errorf("trashing %s gave %v, want %v", pos, err, machineport.ErrNoTrash)
 	}
 	if _, err := os.Lstat(filepath.Join(pos, "note.md")); err != nil {
 		t.Errorf("%s did not stay where it was: %v", pos, err)

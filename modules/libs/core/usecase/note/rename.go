@@ -6,9 +6,11 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Rename gives a note a different name.
@@ -24,25 +26,25 @@ type Rename struct{ Move }
 func NewRename(moving Move) Rename { return Rename{Move: moving} }
 
 // WithSources replaces the source repository.
-func (u Rename) WithSources(sources port.SourceRepository) Rename {
+func (u Rename) WithSources(sources sourceport.SourceRepository) Rename {
 	u.Move = u.Move.WithSources(sources)
 	return u
 }
 
 // WithWriters replaces the vault writers.
-func (u Rename) WithWriters(writers port.VaultWriters) Rename {
+func (u Rename) WithWriters(writers vaultport.VaultWriters) Rename {
 	u.Move = u.Move.WithWriters(writers)
 	return u
 }
 
 // Sources returns the source repository.
-func (u Rename) Sources() port.SourceRepository { return u.Move.Sources() }
+func (u Rename) Sources() sourceport.SourceRepository { return u.Move.Sources() }
 
 // Writers returns the vault writers.
-func (u Rename) Writers() port.VaultWriters { return u.Move.Writers() }
+func (u Rename) Writers() vaultport.VaultWriters { return u.Move.Writers() }
 
 // Readers returns the vault readers.
-func (u Rename) Readers() port.VaultReaders { return u.Move.Readers() }
+func (u Rename) Readers() vaultport.VaultReaders { return u.Move.Readers() }
 
 // RenameResult says what the note is called now and what the file did.
 type RenameResult struct {

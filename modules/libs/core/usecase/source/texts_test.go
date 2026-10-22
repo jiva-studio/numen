@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 const (
@@ -20,7 +21,7 @@ type textScene struct {
 	texts   Texts
 	shelf   *fakeStorage
 	index   *store
-	readers port.VaultReaders
+	readers vaultport.VaultReaders
 	vault   domain.Vault
 }
 

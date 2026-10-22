@@ -16,7 +16,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 const (
@@ -39,14 +40,14 @@ type HostCallers interface {
 	GetPluginIDByToken(token string) (string, bool)
 	CheckPluginPermission(pluginID, permission string) error
 	CheckCompletionConsent(pluginID string) error
-	GetCompleter() port.Completer
+	GetCompleter() completionport.Completer
 	// none to offer it returns nil.
-	GetPluginVault() port.PluginVault
+	GetPluginVault() pluginport.PluginVault
 	// GetPluginData is the folder, inside the store of a vault, that the plugin's manifest keeps its
 	// data in. It is empty where the manifest names none.
 	GetPluginData(pluginID string) string
 	// GetDependencies is what provisions the dependencies, or nil.
-	GetDependencies() port.DependencyCatalog
+	GetDependencies() pluginport.DependencyCatalog
 }
 
 // HostEndpoint answers the calls plugins make to the host. It listens on the
@@ -161,7 +162,7 @@ func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostSer
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	if errors.Is(err, port.ErrInvalidQuestion) {
+	if errors.Is(err, completionport.ErrInvalidQuestion) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if code, isRefusal := writeRefusal(err); isRefusal {
@@ -192,13 +193,13 @@ func (h *Host) GetPluginIDByToken(token string) (string, bool) {
 	return pluginID, found
 }
 
-func (h *Host) SetPluginVault(vault port.PluginVault) {
+func (h *Host) SetPluginVault(vault pluginport.PluginVault) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.vault = vault
 }
 
-func (h *Host) GetPluginVault() port.PluginVault {
+func (h *Host) GetPluginVault() pluginport.PluginVault {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.vault
@@ -213,13 +214,13 @@ func (h *Host) GetPluginData(pluginID string) string {
 
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
-func (h *Host) SetCompleter(completer port.Completer) {
+func (h *Host) SetCompleter(completer completionport.Completer) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.completer = completer
 }
 
-func (h *Host) GetCompleter() port.Completer {
+func (h *Host) GetCompleter() completionport.Completer {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.completer
@@ -262,7 +263,7 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 // endpoint that cannot start is reported and leaves the plugin without
 // NUMEN_HOST_PORT; the plugins that never call the host launch all the same. A
 // runtime the plugin declares and the host cannot provision stops the launch.
-func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements []port.DependencyRequirement, processPort int, token string) ([]string, error) {
+func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements []pluginport.DependencyRequirement, processPort int, token string) ([]string, error) {
 	runtimeVars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {
 		return nil, fmt.Errorf("launch plugin %s: %w", pluginID, err)

@@ -7,16 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 )
 
 var errModelGone = errors.New("the model is gone")
 
 // failWith is a model that is not on this machine, and says why.
 func failWith(why error) embedding.OpenModel {
-	return func(context.Context, func(finished, total int64)) (port.Embedder, error) { return nil, why }
+	return func(context.Context, func(finished, total int64)) (embeddingport.Embedder, error) { return nil, why }
 }
 
 // failing is a provider that is reached and fails every text it is asked.
@@ -110,7 +111,7 @@ func TestAProviderLetGoOfReturnsWhatStoppedTheComparison(t *testing.T) {
 // second is release at once.
 func TestASecondProviderIsNotWaitedForOnceTheFirstNeverArrives(t *testing.T) {
 	tasks := run.NewTasks()
-	waitFn := func(ctx context.Context, _ func(completed, total int64)) (port.Embedder, error) {
+	waitFn := func(ctx context.Context, _ func(completed, total int64)) (embeddingport.Embedder, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
@@ -195,7 +196,7 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 	second := newSaying("second", 1, 0, 0)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	waitFn := func(ctx context.Context, _ func(processed, total int64)) (port.Embedder, error) {
+	waitFn := func(ctx context.Context, _ func(processed, total int64)) (embeddingport.Embedder, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
@@ -222,7 +223,7 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 // A run with no list to tell opens a model that arrives, and tells nobody.
 func TestAModelOpenedWithNoListToTellArrives(t *testing.T) {
 	target := newSaying("a/model", 1, 0, 0)
-	opening := func(_ context.Context, tell func(finishedVal, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(finishedVal, total int64)) (embeddingport.Embedder, error) {
 		tell(1, 10)
 		return target, nil
 	}
@@ -241,7 +242,7 @@ func TestAModelOpenedWithNoListToTellArrives(t *testing.T) {
 func TestTheFirstByteOfTheModelIsGeneratedAsAShare(t *testing.T) {
 	progressCh := make(chan func(finishedVal, total int64), 1)
 	stop := make(chan struct{})
-	opening := func(_ context.Context, tell func(finishedVal, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(finishedVal, total int64)) (embeddingport.Embedder, error) {
 		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")

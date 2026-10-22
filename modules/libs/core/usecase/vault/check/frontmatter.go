@@ -3,8 +3,9 @@ package check
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
 )
 
 // frontmatterCheck is a block between the delimiters that is not YAML.
@@ -12,7 +13,9 @@ import (
 // The note is indexed anyway — its text is readable either way — but nothing
 // may write to it: changing a key in a block the application could not read
 // means guessing at the rest of it.
-type frontmatterCheck struct{ queries port.ProblemQueries }
+type frontmatterCheck struct {
+	queries recognitionport.ProblemQueries
+}
 
 func (frontmatterCheck) Name() domain.Check { return domain.CheckFrontmatter }
 func (frontmatterCheck) IsOptIn() bool      { return false }

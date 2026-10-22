@@ -3,16 +3,17 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // GetNamedPaths finds the notes a link's name reaches.
 type GetNamedPaths struct {
-	queries port.NoteQueries
+	queries noteport.NoteQueries
 }
 
-func NewGetNamedPaths(queries port.NoteQueries) *GetNamedPaths {
+func NewGetNamedPaths(queries noteport.NoteQueries) *GetNamedPaths {
 	return &GetNamedPaths{queries: queries}
 }
 

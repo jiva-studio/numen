@@ -7,9 +7,13 @@ import (
 	"io/fs"
 	pathpkg "path"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Move files a note somewhere else, which is also how it is renamed: a note is
@@ -18,20 +22,20 @@ import (
 // The bytes do not change. A note that carried no identifier still carries
 // none afterwards, because moving is not editing.
 type Move struct {
-	readers port.VaultReaders
-	writers port.VaultWriters
-	links   port.LinkQueries
+	readers vaultport.VaultReaders
+	writers vaultport.VaultWriters
+	links   noteport.LinkQueries
 	// names is asked how many notes are filed under a name, which is what says
 	// whether a link repaired to that name reaches this note or another one.
 	names NameQueries
 	// sources is where the index files each file. A move tells it that what was
 	// at one path is at another.
-	sources port.SourceRepository
+	sources sourceport.SourceRepository
 	index   Levels
 	// now is when this is happening. Bringing a note's title into line with its
 	// filename is an edit, and an edit stamps the identifier a note arrived
 	// without.
-	now port.Clock
+	now machineport.Clock
 	// Drawing is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
 	Drawing TellMove
@@ -46,13 +50,13 @@ type Move struct {
 // where the index files it, what brings the notes it repaired level, and what
 // time it is.
 func NewMove(
-	readers port.VaultReaders,
-	writers port.VaultWriters,
-	links port.LinkQueries,
+	readers vaultport.VaultReaders,
+	writers vaultport.VaultWriters,
+	links noteport.LinkQueries,
 	names NameQueries,
-	sources port.SourceRepository,
+	sources sourceport.SourceRepository,
 	index Levels,
-	now port.Clock,
+	now machineport.Clock,
 ) Move {
 	return Move{
 		readers: readers, writers: writers, links: links,
@@ -61,31 +65,31 @@ func NewMove(
 }
 
 // WithSources replaces the source repository.
-func (u Move) WithSources(sources port.SourceRepository) Move {
+func (u Move) WithSources(sources sourceport.SourceRepository) Move {
 	u.sources = sources
 	return u
 }
 
 // WithReaders replaces the vault readers.
-func (u Move) WithReaders(readers port.VaultReaders) Move {
+func (u Move) WithReaders(readers vaultport.VaultReaders) Move {
 	u.readers = readers
 	return u
 }
 
 // WithWriters replaces the vault writers.
-func (u Move) WithWriters(writers port.VaultWriters) Move {
+func (u Move) WithWriters(writers vaultport.VaultWriters) Move {
 	u.writers = writers
 	return u
 }
 
 // Sources returns the source repository.
-func (u Move) Sources() port.SourceRepository { return u.sources }
+func (u Move) Sources() sourceport.SourceRepository { return u.sources }
 
 // Writers returns the vault writers.
-func (u Move) Writers() port.VaultWriters { return u.writers }
+func (u Move) Writers() vaultport.VaultWriters { return u.writers }
 
 // Readers returns the vault readers.
-func (u Move) Readers() port.VaultReaders { return u.readers }
+func (u Move) Readers() vaultport.VaultReaders { return u.readers }
 
 // MoveResult says where the note went and what it did to the links that
 // pointed at it.

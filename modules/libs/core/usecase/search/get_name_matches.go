@@ -3,16 +3,17 @@ package search
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
 )
 
 // GetNameMatches finds the names in a vault that match the words typed: a note's own title and the headings inside notes.
 type GetNameMatches struct {
-	queries port.NoteQueries
+	queries noteport.NoteQueries
 }
 
-func NewGetNameMatches(queries port.NoteQueries) *GetNameMatches {
+func NewGetNameMatches(queries noteport.NoteQueries) *GetNameMatches {
 	return &GetNameMatches{queries: queries}
 }
 

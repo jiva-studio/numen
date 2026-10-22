@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrNotAPicture is an entry of an archive that is not one of the pictures a
@@ -29,13 +31,13 @@ var pictured = map[string]bool{
 
 // GetBookPicture reads one picture out of a book's archive.
 type GetBookPicture struct {
-	readers port.VaultReaders
-	books   port.Book
+	readers vaultport.VaultReaders
+	books   sourceport.Book
 	detect  func([]byte) string
 }
 
 // NewGetBookPicture settles the type of an entry by detect, which reads the bytes.
-func NewGetBookPicture(readers port.VaultReaders, books port.Book, detect func([]byte) string) GetBookPicture {
+func NewGetBookPicture(readers vaultport.VaultReaders, books sourceport.Book, detect func([]byte) string) GetBookPicture {
 	return GetBookPicture{readers: readers, books: books, detect: detect}
 }
 
@@ -53,7 +55,7 @@ func (u GetBookPicture) Execute(
 		return Picture{}, err
 	}
 	body, err := u.books.ReadEntry(ctx, getDomainFingerprint(mark), entry)
-	if errors.Is(err, port.ErrBookChanged) {
+	if errors.Is(err, sourceport.ErrBookChanged) {
 		return Picture{}, ErrChanged
 	}
 	if err != nil {

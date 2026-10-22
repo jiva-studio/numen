@@ -7,7 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
 
 // MigratePluginSettings gives a person's plugin the settings that were theirs before the plugin took
@@ -41,8 +42,8 @@ func (c Config) MigratePluginSettings() error {
 	return c.GetSettingsWriter()(moved)
 }
 
-func collectPluginSettingsMigrations(plugins []port.PluginInfo, file map[string]any) []port.Setting {
-	var moved []port.Setting
+func collectPluginSettingsMigrations(plugins []pluginport.PluginInfo, file map[string]any) []settingsport.Setting {
+	var moved []settingsport.Setting
 	for _, plugin := range plugins {
 		for _, setting := range plugin.Settings {
 			if len(setting.Replaces) == 0 || hasKeys(file, "plugins", plugin.ID, setting.Key) {
@@ -56,7 +57,7 @@ func collectPluginSettingsMigrations(plugins []port.PluginInfo, file map[string]
 	return moved
 }
 
-func migrateOneSetting(pluginID string, setting port.PluginSetting, file map[string]any) (port.Setting, bool) {
+func migrateOneSetting(pluginID string, setting pluginport.PluginSetting, file map[string]any) (settingsport.Setting, bool) {
 	for _, place := range setting.Replaces {
 		value, found := findSettingsKeys(file, strings.Split(place, ".")...)
 		if !found {
@@ -66,11 +67,11 @@ func migrateOneSetting(pluginID string, setting port.PluginSetting, file map[str
 		if err != nil {
 			continue
 		}
-		return port.Setting{
+		return settingsport.Setting{
 			Path: []string{pluginSettingsPrefix, pluginID, setting.Key}, JSON: string(content),
 		}, true
 	}
-	return port.Setting{}, false
+	return settingsport.Setting{}, false
 }
 
 // findSettingsKeys is the value at the keys of a decoded document, and whether the document holds one.

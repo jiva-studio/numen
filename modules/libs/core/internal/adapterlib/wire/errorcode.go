@@ -8,8 +8,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // An outcome or a write's error as the error code the schema carries.
@@ -40,7 +41,7 @@ func ConvertOutcomeToErrorCode(o note.ReadOutcome) (v1.ErrorCode, bool) {
 // all. Anything else is the vault being out of reach.
 func GetErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
-	case errors.Is(err, port.ErrStale):
+	case errors.Is(err, vaultport.ErrStale):
 		return v1.ErrorCode_ERROR_CODE_STALE, true
 	case errors.Is(err, note.ErrNoNote):
 		return v1.ErrorCode_ERROR_CODE_MISSING, true
@@ -55,11 +56,11 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
 	case errors.Is(err, note.ErrBodyUnwritable):
 		return v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true
-	case errors.Is(err, port.ErrNotANote):
+	case errors.Is(err, vaultport.ErrNotANote):
 		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
 	// A file standing where a folder of the path must be is a file in the way,
 	// the same as a file standing where the note itself would go.
-	case errors.Is(err, port.ErrOccupied), errors.Is(err, syscall.ENOTDIR):
+	case errors.Is(err, vaultport.ErrOccupied), errors.Is(err, syscall.ENOTDIR):
 		return v1.ErrorCode_ERROR_CODE_OCCUPIED, true
 	default:
 		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
@@ -70,7 +71,7 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 // with. A path that does not stay in the vault is the client's to correct;
 // anything else is the vault being out of reach.
 func GetCode(err error) connect.Code {
-	if errors.Is(err, port.ErrOutside) {
+	if errors.Is(err, vaultport.ErrOutside) {
 		return connect.CodeInvalidArgument
 	}
 	return connect.CodeInternal

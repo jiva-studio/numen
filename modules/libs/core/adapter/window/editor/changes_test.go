@@ -24,11 +24,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // openVault is a vault with a window's worth of machinery behind it — the index,
@@ -416,12 +417,12 @@ func (h *held) release() { h.once.Do(func() { close(h.until) }) }
 // recording is the vault's writers with the moment of a write kept, and the
 // write held where a test asked for one.
 type recording struct {
-	port.VaultWriters
+	vaultport.VaultWriters
 	order *order
 	hold  *held
 }
 
-func (r recording) Open(v domain.Vault) (port.VaultWriter, error) {
+func (r recording) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	writer, err := r.VaultWriters.Open(v)
 	if err != nil {
 		return nil, err
@@ -430,7 +431,7 @@ func (r recording) Open(v domain.Vault) (port.VaultWriter, error) {
 }
 
 type records struct {
-	port.VaultWriter
+	vaultport.VaultWriter
 	order *order
 	hold  *held
 }

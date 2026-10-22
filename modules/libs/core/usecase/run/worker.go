@@ -5,8 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // Worker runs the sources a person named one at a time, in the order they named
@@ -87,12 +89,12 @@ func (w *Worker) CountWaiting() int {
 
 // Start names one source and says whether its run began now or waits its turn
 // behind the run before it.
-func (w *Worker) Start(v domain.Vault, path string) port.StartOutcome {
+func (w *Worker) Start(v domain.Vault, path string) windowport.StartOutcome {
 	w.mu.Lock()
 	w.queue.add(v, path)
 	if w.isRunning {
 		w.mu.Unlock()
-		return port.Queued
+		return windowport.Queued
 	}
 	w.isRunning = true
 	w.runs++
@@ -103,7 +105,7 @@ func (w *Worker) Start(v domain.Vault, path string) port.StartOutcome {
 		defer w.Release(mine)
 		w.DrainAndRelease(w.Context(), nil)
 	})
-	return port.Began
+	return windowport.Began
 }
 
 // Claim takes the one run this worker has, and says whether it was free.
@@ -173,7 +175,7 @@ func (w *Worker) DrainAndRelease(ctx context.Context, beforeStop func()) {
 
 // RepeatRounds runs round, waits every, and runs it again until the context
 // ends.
-func (w *Worker) RepeatRounds(ctx context.Context, wait port.Wait, every time.Duration, round func()) {
+func (w *Worker) RepeatRounds(ctx context.Context, wait machineport.Wait, every time.Duration, round func()) {
 	for {
 		round()
 		if wait(ctx, every) != nil {

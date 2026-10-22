@@ -13,8 +13,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // MostRead is how much of a file one read carries.
@@ -56,7 +57,7 @@ type ReadResult struct {
 // What the vault passes over is passed over here: the folder belonging to the
 // application, and every name the vault's ignore rules match.
 type Read struct {
-	Readers port.VaultReaders
+	Readers vaultport.VaultReaders
 }
 
 // Execute reads length bytes of the file at path, beginning at start. A length
@@ -152,7 +153,7 @@ func readRange(file io.ReadSeeker, path string, start, length int) (ReadResult, 
 // getReadOutcome is what the vault names at this path among the entries of the
 // folder above it: Ok for a file, AFolder for a folder, LeftAlone for a path it
 // does not report at all.
-func getReadOutcome(ctx context.Context, reader port.VaultReader, path string) (ReadOutcome, error) {
+func getReadOutcome(ctx context.Context, reader vaultport.VaultReader, path string) (ReadOutcome, error) {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	folder := pathpkg.Dir(clean)
 	if folder == "." {

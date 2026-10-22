@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ErrLastVault is the one vault an installation has left. It stays on the list.
@@ -16,13 +17,13 @@ var ErrLastVault = errors.New("an installation keeps a vault")
 // index. The folder stays where it is, with the identity it carries, and adding
 // it again brings back the same vault.
 type Unregister struct {
-	registry port.VaultRegistry
-	index    port.VaultRepository
+	registry vaultport.VaultRegistry
+	index    vaultport.VaultRepository
 }
 
 // NewUnregister is what takes a vault off the list: the list this installation
 // keeps, and the index its rows are taken out of.
-func NewUnregister(registry port.VaultRegistry, index port.VaultRepository) Unregister {
+func NewUnregister(registry vaultport.VaultRegistry, index vaultport.VaultRepository) Unregister {
 	return Unregister{registry: registry, index: index}
 }
 
@@ -40,7 +41,7 @@ func (u Unregister) Execute(ctx context.Context, v domain.Vault) error {
 }
 
 // keepTheLastVault refuses a vault that is all the installation has left.
-func keepTheLastVault(registry port.VaultRegistry, v domain.Vault) error {
+func keepTheLastVault(registry vaultport.VaultRegistry, v domain.Vault) error {
 	recognized, err := registry.List()
 	if err != nil {
 		return err

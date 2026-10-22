@@ -5,8 +5,10 @@ import (
 	"errors"
 	"path"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // ImportFailure is one file that stayed outside the vault, by the name it
@@ -32,16 +34,16 @@ type ImportResult struct {
 // file that arrives comes through here. The bytes are copied: what the person
 // dropped stays where it was.
 type Import struct {
-	writers port.VaultWriters
+	writers vaultport.VaultWriters
 	// files is what the person handed over, read at its current position. Nothing here
 	// reaches the machine itself: what arrives is a path on a desktop and a
 	// content URI on a phone, and this is what tells them apart.
-	files port.ImportedFiles
+	files sourceport.ImportedFiles
 }
 
 // NewImport is what a file a person handed over arrives through: the vault it
 // is copied into, and what reads it at its current position.
-func NewImport(writers port.VaultWriters, files port.ImportedFiles) Import {
+func NewImport(writers vaultport.VaultWriters, files sourceport.ImportedFiles) Import {
 	return Import{writers: writers, files: files}
 }
 
@@ -82,7 +84,7 @@ func (u Import) Execute(
 // bring copies one file or one whole folder to a path in the vault.
 func (u Import) bring(
 	ctx context.Context,
-	writer port.VaultWriter,
+	writer vaultport.VaultWriter,
 	v domain.Vault,
 	from, to string,
 	result *ImportResult,
@@ -109,7 +111,7 @@ func (u Import) bring(
 // leaves the rest to arrive.
 func (u Import) importFolder(
 	ctx context.Context,
-	writer port.VaultWriter,
+	writer vaultport.VaultWriter,
 	v domain.Vault,
 	from, to string,
 	result *ImportResult,
@@ -136,7 +138,7 @@ func (u Import) importFolder(
 
 // importFile copies the file at from to a path in the vault.
 func (u Import) importFile(
-	ctx context.Context, writer port.VaultWriter, from, to string, result *ImportResult,
+	ctx context.Context, writer vaultport.VaultWriter, from, to string, result *ImportResult,
 ) error {
 	file, err := u.files.Open(ctx, from)
 	if err != nil {

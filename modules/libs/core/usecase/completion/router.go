@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/agent"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 )
 
 var (
@@ -21,14 +23,14 @@ var (
 // else with the default of the settings.
 type Router struct {
 	config   func() Config
-	choices  port.CompletionChoices
-	programs port.CompletionPrograms
+	choices  completionport.CompletionChoices
+	programs completionport.CompletionPrograms
 	limits   *limits
 }
 
 // NewRouter returns a router reading the settings and the plugin's choice at
 // every question, so a choice edited in the settings applies to the next one.
-func NewRouter(config func() Config, choices port.CompletionChoices, programs port.CompletionPrograms) (*Router, error) {
+func NewRouter(config func() Config, choices completionport.CompletionChoices, programs completionport.CompletionPrograms) (*Router, error) {
 	if config == nil {
 		return nil, errNoConfig
 	}
@@ -49,7 +51,7 @@ func NewRouter(config func() Config, choices port.CompletionChoices, programs po
 // else its first; a failure then states the replacement. A program that is not there fails with
 // port.ErrNoRoute. The wait for a place under the agent's limit, and the answer, end with the
 // context.
-func (r *Router) Complete(ctx context.Context, pluginID string, question port.Question) (string, error) {
+func (r *Router) Complete(ctx context.Context, pluginID string, question completionport.Question) (string, error) {
 	task, err := newTask(question)
 	if err != nil {
 		return "", err
@@ -82,7 +84,7 @@ func (r *Router) Complete(ctx context.Context, pluginID string, question port.Qu
 // getReplacementModel is the model to ask the program when the model chosen is not among those it lists: the
 // one it answers with unasked, else the first. It reports false where the model is offered, none is
 // chosen, or the program lists none.
-func getReplacementModel(program port.AgentProgram, selected string) (string, bool) {
+func getReplacementModel(program agentport.AgentProgram, selected string) (string, bool) {
 	if selected == "" || len(program.Models) == 0 {
 		return "", false
 	}
@@ -101,7 +103,7 @@ func getReplacementModel(program port.AgentProgram, selected string) (string, bo
 
 // getRoute is the agent and the model of the choice, or the default where the
 // choice names no agent.
-func getRoute(choice port.CompletionChoice, defaults Route) Route {
+func getRoute(choice completionport.CompletionChoice, defaults Route) Route {
 	if choice.Agent == "" {
 		return Route{Agent: defaults.Agent, Model: defaults.Model}
 	}
@@ -111,9 +113,9 @@ func getRoute(choice port.CompletionChoice, defaults Route) Route {
 // newTask is the question as a task: the system messages are the instructions,
 // and the other messages are the prompt, as written when there is one and with
 // their roles when there are several.
-func newTask(question port.Question) (port.Task, error) {
+func newTask(question completionport.Question) (agentport.Task, error) {
 	var system []string
-	var turns []port.Message
+	var turns []completionport.Message
 	for _, message := range question.Messages {
 		switch message.Role {
 		case "system":
@@ -121,16 +123,16 @@ func newTask(question port.Question) (port.Task, error) {
 		case "", "user", "assistant":
 			turns = append(turns, message)
 		default:
-			return port.Task{}, fmt.Errorf("%w: unknown role %q", port.ErrInvalidQuestion, message.Role)
+			return agentport.Task{}, fmt.Errorf("%w: unknown role %q", completionport.ErrInvalidQuestion, message.Role)
 		}
 	}
 	if len(turns) == 0 {
-		return port.Task{}, fmt.Errorf("%w: %w", port.ErrInvalidQuestion, errNoMessage)
+		return agentport.Task{}, fmt.Errorf("%w: %w", completionport.ErrInvalidQuestion, errNoMessage)
 	}
-	return port.Task{Question: writePrompt(turns), Instructions: strings.Join(system, "\n\n")}, nil
+	return agentport.Task{Question: writePrompt(turns), Instructions: strings.Join(system, "\n\n")}, nil
 }
 
-func writePrompt(turns []port.Message) string {
+func writePrompt(turns []completionport.Message) string {
 	if len(turns) == 1 {
 		return turns[0].Text
 	}

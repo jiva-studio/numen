@@ -16,7 +16,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // numenRoot is what every module of this repository is named under.
@@ -452,7 +452,7 @@ func TestNoHostOrContainerSourceAssertsToAnAnonymousInterface(t *testing.T) {
 // getManifestIssues is every rule the manifest in data breaks, by the one
 // validator the host and the plugin command line share.
 func getManifestIssues(data []byte) []error {
-	var manifest port.PluginManifest
+	var manifest pluginport.PluginManifest
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		return []error{err}
 	}

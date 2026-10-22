@@ -9,8 +9,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 )
 
 // StreamAgentTask hands one task to the agent and writes what it does to the stream, for as
@@ -24,8 +25,8 @@ import (
 // client ignores and a write that fails ends the work.
 func StreamAgentTask(
 	ctx context.Context,
-	taking port.Agent,
-	task port.Task,
+	taking agentport.Agent,
+	task agentport.Task,
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
 	work, err := taking.StartRun(ctx, task)
@@ -58,7 +59,7 @@ func StreamAgentTask(
 
 // sendStep writes a step to the stream in the schema's words, and says whether
 // the step was the last of the work.
-func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step port.Step) (bool, error) {
+func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agentport.Step) (bool, error) {
 	for _, out := range convertSteps(step) {
 		if err := stream.Send(out); err != nil {
 			return false, err
@@ -71,7 +72,7 @@ func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step port.Step)
 //
 // Every kind that names a tool is drawn as one, whatever that tool does to the
 // vault, and carries where in the vault it is working.
-func convertSteps(step port.Step) []*v1.AskAgentResponse {
+func convertSteps(step agentport.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case domain.StepToolCall, domain.StepRead, domain.StepEdit,
 		domain.StepRemove, domain.StepMove, domain.StepSearch:

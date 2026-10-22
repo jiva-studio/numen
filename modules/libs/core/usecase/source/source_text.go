@@ -5,21 +5,23 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // sourceTexts finds what was made from a source and where it is kept.
 type sourceTexts struct {
-	readers port.VaultReaders
-	sources port.SourceQueries
-	derived port.DerivedStores
+	readers vaultport.VaultReaders
+	sources sourceport.SourceQueries
+	derived vaultport.DerivedStores
 }
 
 // storedText is what was made from a source, the store holding it, and whether anything was.
 type storedText struct {
-	meta     port.SourceText
-	store    port.DerivedStore
+	meta     sourceport.SourceText
+	store    vaultport.DerivedStore
 	isStored bool
 }
 
@@ -92,7 +94,7 @@ func (s sourceTexts) getFetchedText(
 			return storedText{}, RunProgress{}, err
 		}
 		if progress.State != RunNone {
-			return storedText{meta: port.SourceText{Producer: producer, Hash: hash}, store: store, isStored: true}, progress, nil
+			return storedText{meta: sourceport.SourceText{Producer: producer, Hash: hash}, store: store, isStored: true}, progress, nil
 		}
 	}
 	return storedText{}, RunProgress{}, nil

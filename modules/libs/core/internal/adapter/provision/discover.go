@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // systemDirs are the folders a machine keeps programs and libraries in.
@@ -47,27 +50,56 @@ func readLoaderCache() []byte {
 
 // find returns the path of the program or library the requirement names that
 // this machine holds, or empty. Models and datasets are never on a machine
-// before the host puts them there.
-func (d discovery) find(req port.DependencyRequirement) string {
-	if req.Kind != port.DependencyKindBinary && req.Kind != port.DependencyKindRuntime {
+// before the host puts them there. A requirement that pins a checksum accepts
+// only a file with those bytes.
+func (d discovery) find(req pluginport.DependencyRequirement) string {
+	found := d.locate(req)
+	if found == "" || req.ChecksumSHA256 == "" {
+		return found
+	}
+	if sum, err := hashFile(found); err != nil || sum != req.ChecksumSHA256 {
+		return ""
+	}
+	return found
+}
+
+func (d discovery) locate(req pluginport.DependencyRequirement) string {
+	if req.Kind != pluginport.DependencyKindBinary && req.Kind != pluginport.DependencyKindRuntime {
 		return ""
 	}
 	name := req.ID
 	if named := req.Metadata["binary"]; named != "" {
 		name = named
 	}
+	if !isPlainName(name) {
+		return ""
+	}
 	if found := findFile(d.dirs, getFileNames(name, req.Kind)); found != "" {
 		return found
 	}
-	if req.Kind == port.DependencyKindRuntime && d.ldconfig != nil {
+	if req.Kind == pluginport.DependencyKindRuntime && d.ldconfig != nil {
 		return findInLoaderCache(d.ldconfig(), name)
 	}
 	return ""
 }
 
+// hashFile returns the hex SHA-256 of the file.
+func hashFile(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
 // getFileNames are the file names a dependency goes by on this platform.
-func getFileNames(name string, kind port.DependencyKind) []string {
-	if kind == port.DependencyKindBinary {
+func getFileNames(name string, kind pluginport.DependencyKind) []string {
+	if kind == pluginport.DependencyKindBinary {
 		if runtime.GOOS == "windows" {
 			return []string{name + ".exe", name}
 		}

@@ -10,12 +10,14 @@ import (
 	"time"
 
 	embedmodel "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/windowport"
 )
 
 // quietPeriod is how long the vault has to have been still before the notes
@@ -52,7 +54,7 @@ var errNoProgress = errors.New("nothing says how far the index has got")
 // embedder the installation holds. still is how long the vault has to have been
 // quiet before a note that was written is embedded.
 func newIndexWorker(
-	made Assembly, state *State, embedder port.Embedder, idleDuration time.Duration, out io.Writer,
+	made Assembly, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:  made.ReadWholeVault,
@@ -72,7 +74,7 @@ func newIndexWorker(
 
 // getModelWait is what blocks until the model behind an embedder has turned up,
 // and nothing for an embedder whose model is always there.
-func getModelWait(embedder port.Embedder) indexing.WaitForModel {
+func getModelWait(embedder embeddingport.Embedder) indexing.WaitForModel {
 	if waiting, ok := embedder.(embedmodel.WaitingEmbedder); ok {
 		return waiting.Wait
 	}
@@ -126,7 +128,7 @@ func startIndexing(
 
 // newErrorReporter tells the window what went wrong along the way, and tells it
 // that nothing does once a later attempt succeeds.
-func newErrorReporter(state *State) port.ErrorHandler {
+func newErrorReporter(state *State) windowport.ErrorHandler {
 	return func(err error) {
 		if err == nil {
 			state.Error.Store("")

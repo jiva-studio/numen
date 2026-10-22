@@ -16,7 +16,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // toolPlugin serves PluginToolService with the tools it is given and keeps the calls it was made.
@@ -47,39 +47,39 @@ func (p *toolPlugin) CallTool(
 // permissions its entry names.
 type toolsHost struct {
 	ids       []string
-	endpoints map[string]port.Endpoint
+	endpoints map[string]pluginport.Endpoint
 	holds     map[string][]string
 	acquired  int
 	released  int
 }
 
-func (h *toolsHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
-	return port.DiscoveredPlugin{}, &port.UnavailableError{Reason: port.PluginNotInstalled}
+func (h *toolsHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
+	return pluginport.DiscoveredPlugin{}, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 }
 
-func (h *toolsHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{}, false
+func (h *toolsHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{}, false
 }
 
-func (h *toolsHost) ResolveCapabilities(capability string) []port.DiscoveredPlugin {
+func (h *toolsHost) ResolveCapabilities(capability string) []pluginport.DiscoveredPlugin {
 	if capability != CapabilityTools {
 		return nil
 	}
-	found := make([]port.DiscoveredPlugin, 0, len(h.ids))
+	found := make([]pluginport.DiscoveredPlugin, 0, len(h.ids))
 	for _, id := range h.ids {
-		found = append(found, port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: id}})
+		found = append(found, pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}})
 	}
 	return found
 }
 
-func (h *toolsHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{}, false
+func (h *toolsHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
+	return pluginport.DiscoveredPlugin{}, false
 }
 
-func (h *toolsHost) EnsureActive(_ context.Context, id string) (port.Endpoint, error) {
+func (h *toolsHost) EnsureActive(_ context.Context, id string) (pluginport.Endpoint, error) {
 	endpoint, running := h.endpoints[id]
 	if !running {
-		return port.Endpoint{}, errors.New("the plugin is down")
+		return pluginport.Endpoint{}, errors.New("the plugin is down")
 	}
 	h.acquired++
 	return endpoint, nil
@@ -93,11 +93,11 @@ func (h *toolsHost) CheckPluginPermission(id, permission string) error {
 			return nil
 		}
 	}
-	return port.ErrPermissionDenied
+	return pluginport.ErrPermissionDenied
 }
 
 // serveToolPlugin serves the plugin and returns where it is.
-func serveToolPlugin(t *testing.T, plugin *toolPlugin) port.Endpoint {
+func serveToolPlugin(t *testing.T, plugin *toolPlugin) pluginport.Endpoint {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(plugin))
@@ -111,7 +111,7 @@ func serveToolPlugin(t *testing.T, plugin *toolPlugin) port.Endpoint {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return port.Endpoint{Host: host, Port: number}
+	return pluginport.Endpoint{Host: host, Port: number}
 }
 
 func wireTool(name string, effect v1.ToolEffect) *v1.PluginTool {
@@ -132,13 +132,13 @@ func TestToolsAreListedFromEveryPluginThatOffersThemInTheOrderOfTheirIds(t *test
 	}}}
 	host := &toolsHost{
 		ids: []string{"md.numen.a", "md.numen.b"},
-		endpoints: map[string]port.Endpoint{
+		endpoints: map[string]pluginport.Endpoint{
 			"md.numen.a": serveToolPlugin(t, first),
 			"md.numen.b": serveToolPlugin(t, second),
 		},
 		holds: map[string][]string{
-			"md.numen.a": {port.PermissionVaultRead},
-			"md.numen.b": {port.PermissionVaultRead, port.PermissionVaultWrite},
+			"md.numen.a": {pluginport.PermissionVaultRead},
+			"md.numen.b": {pluginport.PermissionVaultRead, pluginport.PermissionVaultWrite},
 		},
 	}
 
@@ -148,8 +148,8 @@ func TestToolsAreListedFromEveryPluginThatOffersThemInTheOrderOfTheirIds(t *test
 		t.Fatalf("the tools were %+v", tools)
 	}
 	drop := tools[1]
-	if drop.Name != "b_drop" || drop.Effect != port.ToolWrites || drop.Step != port.ToolStepRemove ||
-		len(drop.Servers) != 2 || !drop.IsOn(port.ToolServerReview) || drop.IsOn(port.ToolServerReading) {
+	if drop.Name != "b_drop" || drop.Effect != pluginport.ToolWrites || drop.Step != pluginport.ToolStepRemove ||
+		len(drop.Servers) != 2 || !drop.IsOn(pluginport.ToolServerReview) || drop.IsOn(pluginport.ToolServerReading) {
 		t.Errorf("the second plugin's tool came out as %+v", drop)
 	}
 	if host.acquired != host.released {
@@ -166,8 +166,8 @@ func TestAToolIsNotOfferedByAPluginThatLacksThePermissionItsEffectNeeds(t *testi
 	}}
 	host := &toolsHost{
 		ids:       []string{"md.numen.a"},
-		endpoints: map[string]port.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
-		holds:     map[string][]string{"md.numen.a": {port.PermissionVaultRead}},
+		endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
+		holds:     map[string][]string{"md.numen.a": {pluginport.PermissionVaultRead}},
 	}
 
 	tools := OpenToolsBridge(host).ListTools(t.Context())
@@ -181,8 +181,8 @@ func TestAPluginThatCannotBeStartedIsLeftOutAndTheRestAreListed(t *testing.T) {
 	plugin := &toolPlugin{tools: []*v1.PluginTool{wireTool("reads", v1.ToolEffect_TOOL_EFFECT_READS)}}
 	host := &toolsHost{
 		ids:       []string{"md.numen.a", "md.numen.b"},
-		endpoints: map[string]port.Endpoint{"md.numen.b": serveToolPlugin(t, plugin)},
-		holds:     map[string][]string{"md.numen.b": {port.PermissionVaultRead}},
+		endpoints: map[string]pluginport.Endpoint{"md.numen.b": serveToolPlugin(t, plugin)},
+		holds:     map[string][]string{"md.numen.b": {pluginport.PermissionVaultRead}},
 	}
 
 	tools := OpenToolsBridge(host).ListTools(t.Context())
@@ -199,8 +199,8 @@ func TestACallReachesThePluginThatListedTheToolAndReturnsWhatItAnswered(t *testi
 	}
 	host := &toolsHost{
 		ids:       []string{"md.numen.a"},
-		endpoints: map[string]port.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
-		holds:     map[string][]string{"md.numen.a": {port.PermissionVaultRead}},
+		endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
+		holds:     map[string][]string{"md.numen.a": {pluginport.PermissionVaultRead}},
 	}
 	bridge := OpenToolsBridge(host)
 	bridge.ListTools(t.Context())
@@ -223,8 +223,8 @@ func TestACallForAToolNoPluginListedIsRefusedWithoutReachingAPlugin(t *testing.T
 	plugin := &toolPlugin{tools: []*v1.PluginTool{wireTool("reads", v1.ToolEffect_TOOL_EFFECT_READS)}}
 	host := &toolsHost{
 		ids:       []string{"md.numen.a"},
-		endpoints: map[string]port.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
-		holds:     map[string][]string{"md.numen.a": {port.PermissionVaultRead}},
+		endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
+		holds:     map[string][]string{"md.numen.a": {pluginport.PermissionVaultRead}},
 	}
 	bridge := OpenToolsBridge(host)
 
@@ -247,8 +247,8 @@ func TestACallIsRefusedOnceThePluginNoLongerContainsThePermission(t *testing.T) 
 	plugin := &toolPlugin{tools: []*v1.PluginTool{wireTool("writes", v1.ToolEffect_TOOL_EFFECT_WRITES)}}
 	host := &toolsHost{
 		ids:       []string{"md.numen.a"},
-		endpoints: map[string]port.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
-		holds:     map[string][]string{"md.numen.a": {port.PermissionVaultWrite}},
+		endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
+		holds:     map[string][]string{"md.numen.a": {pluginport.PermissionVaultWrite}},
 	}
 	bridge := OpenToolsBridge(host)
 	bridge.ListTools(t.Context())
@@ -256,7 +256,7 @@ func TestACallIsRefusedOnceThePluginNoLongerContainsThePermission(t *testing.T) 
 
 	_, err := bridge.CallTool(t.Context(), "md.numen.a", "writes", nil, nil)
 
-	if !errors.Is(err, port.ErrPermissionDenied) {
+	if !errors.Is(err, pluginport.ErrPermissionDenied) {
 		t.Errorf("the call was answered with %v", err)
 	}
 	if len(plugin.called) != 0 {
@@ -275,8 +275,8 @@ func TestACallTheToolRefusesAsMalformedOrUnknownIsAnErrorOfTheBridge(t *testing.
 		}
 		host := &toolsHost{
 			ids:       []string{"md.numen.a"},
-			endpoints: map[string]port.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
-			holds:     map[string][]string{"md.numen.a": {port.PermissionVaultRead}},
+			endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveToolPlugin(t, plugin)},
+			holds:     map[string][]string{"md.numen.a": {pluginport.PermissionVaultRead}},
 		}
 		bridge := OpenToolsBridge(host)
 		bridge.ListTools(t.Context())

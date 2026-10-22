@@ -3,7 +3,7 @@ package vault
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 )
 
 // PickedFolder is the folder to add. IsChosen is false when the person closed
@@ -15,10 +15,10 @@ type PickedFolder struct {
 
 // PickFolder puts this machine's folder dialog in front of the person.
 type PickFolder struct {
-	dialog port.FolderDialog
+	dialog machineport.FolderDialog
 }
 
-func NewPickFolder(dialog port.FolderDialog) PickFolder {
+func NewPickFolder(dialog machineport.FolderDialog) PickFolder {
 	return PickFolder{dialog: dialog}
 }
 

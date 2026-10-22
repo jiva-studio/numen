@@ -9,8 +9,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // fakeStorage is what a recognition is written to, in memory.
@@ -29,7 +30,7 @@ func newShelf() *fakeStorage {
 // fakeStores hands the one store to whatever opens a vault's store.
 type fakeStores struct{ *fakeStorage }
 
-func (s fakeStores) Open(domain.Vault) (port.DerivedStore, error) { return s.fakeStorage, nil }
+func (s fakeStores) Open(domain.Vault) (vaultport.DerivedStore, error) { return s.fakeStorage, nil }
 
 // Open is one file of the store, which a copy of a video is played from.
 func (s *fakeStorage) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
@@ -107,7 +108,7 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.activeItem[name] {
-		return nil, port.ErrClaimed
+		return nil, vaultport.ErrClaimed
 	}
 	s.activeItem[name] = true
 	return func() error {
@@ -264,6 +265,6 @@ func readShelf(t *testing.T, shelved *fakeStorage, name domain.ArtifactName) []b
 // brokenReaders fails any attempt to open a vault reader.
 type brokenReaders struct{}
 
-func (brokenReaders) Open(domain.Vault) (port.VaultReader, error) {
+func (brokenReaders) Open(domain.Vault) (vaultport.VaultReader, error) {
 	return nil, errors.New("broken reader: must not be opened")
 }

@@ -7,20 +7,23 @@ import (
 	"io/fs"
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/indexport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Scan brings the index up to date with one vault. The vault is
 // authoritative: whatever the scan finds is what the index says afterwards.
 type Scan struct {
-	readers     port.VaultReaders
-	vaults      port.VaultRepository
-	notes       port.NoteRepository
+	readers     vaultport.VaultReaders
+	vaults      vaultport.VaultRepository
+	notes       noteport.NoteRepository
 	indexedVal  FingerprintQueries
-	maintenance port.IndexMaintenance
+	maintenance indexport.IndexMaintenance
 
 	// Cut is how the notes found are cut into the chunks the index keeps.
 	Cut note.CutNotes
@@ -51,11 +54,11 @@ type Scan struct {
 //
 // The upkeep is reached only where the walk found something.
 func NewScan(
-	readers port.VaultReaders,
-	vaults port.VaultRepository,
-	notes port.NoteRepository,
+	readers vaultport.VaultReaders,
+	vaults vaultport.VaultRepository,
+	notes noteport.NoteRepository,
 	queries FingerprintQueries,
-	maintenance port.IndexMaintenance,
+	maintenance indexport.IndexMaintenance,
 ) Scan {
 	return Scan{
 		readers: readers, vaults: vaults, notes: notes,
@@ -151,7 +154,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 // walkVault is every file of the vault, the most recently modified first. The walk
 // is collected before anything is read so that the order can be chosen: notes
 // touched recently are what the person is looking for while the scan runs.
-func walkVault(ctx context.Context, reader port.VaultReader) ([]domain.Fingerprint, error) {
+func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.Fingerprint, error) {
 	var found []domain.Fingerprint
 	if err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
 		found = append(found, ref)
@@ -184,7 +187,7 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 // index's, and is the paths of the notes the walk found.
 func (u Scan) indexChanged(
 	ctx context.Context,
-	reader port.VaultReader,
+	reader vaultport.VaultReader,
 	found []domain.Fingerprint,
 	indexed map[string]domain.Fingerprint,
 	group *grouping,
@@ -222,7 +225,7 @@ func (u Scan) indexChanged(
 // readNoteBytes is the bytes of the note at path and whether they were read. A
 // note that cannot be read is counted in res and the scan goes on, and its path
 // stays among those seen: the row is still about the file.
-func readNoteBytes(ctx context.Context, reader port.VaultReader, path string, res *ScanResult) ([]byte, bool) {
+func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *ScanResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):

@@ -23,9 +23,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/csp"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // mine is a theme of the person's, carrying a colour nothing else has and
@@ -361,7 +362,7 @@ func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 }
 
 type blockingVaults struct {
-	port.VaultRegistry
+	vaultport.VaultRegistry
 	begun chan struct{}
 	until chan struct{}
 }

@@ -13,22 +13,23 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 )
 
 // asking keeps the task it was given and takes the steps a test told it to
 // take. What is asked of it is the hop: what the page sends arrives as a task,
 // and what the agent does arrives back as steps.
 type asking struct {
-	took     chan port.Task
-	takes    []port.Step
+	took     chan agentport.Task
+	takes    []agentport.Step
 	overChan chan string
 }
 
-func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
+func (a *asking) StartRun(_ context.Context, task agentport.Task) (agentport.Run, error) {
 	a.took <- task
-	steps := make(chan port.Step, len(a.takes))
+	steps := make(chan agentport.Step, len(a.takes))
 	for _, step := range a.takes {
 		steps <- step
 	}
@@ -42,10 +43,10 @@ func (a *asking) EndConversation(_ context.Context, conversation string) error {
 }
 
 // answering is work that has already been done.
-type answering struct{ steps chan port.Step }
+type answering struct{ steps chan agentport.Step }
 
-func (a answering) GetSteps() <-chan port.Step { return a.steps }
-func (a answering) Stop() error                { return nil }
+func (a answering) GetSteps() <-chan agentport.Step { return a.steps }
+func (a answering) Stop() error                     { return nil }
 
 // newAgentClient is this window's agent and a client talking to it the way the
 // page does.
@@ -68,7 +69,7 @@ func newAgentClient(t *testing.T, api *API) numenv1connect.AgentServiceClient {
 // agent: what was written, the deck in front of the person, and which
 // conversation they asked it in.
 func TestWhatIsAskedAboutACardReachesTheAgent(t *testing.T) {
-	agent := &asking{took: make(chan port.Task, 1)}
+	agent := &asking{took: make(chan agentport.Task, 1)}
 	api := &API{}
 	api.SetAgent(agent)
 
@@ -101,7 +102,7 @@ func TestWhatIsAskedAboutACardReachesTheAgent(t *testing.T) {
 // instruction. The card is held for `card_current` to answer with instead,
 // which is a tool's answer and so data.
 func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
-	agent := &asking{took: make(chan port.Task, 1)}
+	agent := &asking{took: make(chan agentport.Task, 1)}
 	api := &API{}
 	api.SetAgent(agent)
 
@@ -134,7 +135,7 @@ func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
 // Every kind of step the agent takes reaches the page as itself, in the order
 // it was taken.
 func TestEveryStepReachesThePageAsItself(t *testing.T) {
-	agent := &asking{took: make(chan port.Task, 1), takes: []port.Step{
+	agent := &asking{took: make(chan agentport.Task, 1), takes: []agentport.Step{
 		{Kind: domain.StepModelStart},
 		{Kind: domain.StepSearch, Tool: "note_search", About: "leaf mould", Count: 11,
 			Place: domain.Place{Path: "decks/Words.md", Spans: []domain.ByteSpan{{From: 4, To: 13}}}},
@@ -302,7 +303,7 @@ func TestTheAgentIsServedAdjacentTheCards(t *testing.T) {
 }
 
 // refusingAgent is an agent that cannot end a conversation.
-type refusingAgent struct{ port.Agent }
+type refusingAgent struct{ agentport.Agent }
 
 func (refusingAgent) EndConversation(context.Context, string) error {
 	return errors.New("the agent went away")
