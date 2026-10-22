@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -111,12 +112,17 @@ func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cm
 
 const stopGrace = 5 * time.Second
 
-func resolveProgram(named Tool, tool string) program {
+// resolveProgram picks the program a setting names, then the path the host
+// injects in envVar, then the tool on PATH.
+func resolveProgram(named Tool, tool, envVar string) program {
 	if len(named.Command) > 0 {
 		return program{
 			command: append(append([]string(nil), named.Command...), named.Arguments...),
 			env:     named.getEnvironment(),
 		}
+	}
+	if injected := os.Getenv(envVar); injected != "" {
+		return program{command: append([]string{injected}, named.Arguments...), env: named.getEnvironment()}
 	}
 	found, err := exec.LookPath(tool)
 	if err != nil {

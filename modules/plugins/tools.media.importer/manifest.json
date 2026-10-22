@@ -22,6 +22,18 @@
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"
   },
+  "dependencies": [
+    {
+      "id": "yt-dlp",
+      "kind": "binary",
+      "metadata": { "binary": "yt-dlp", "envVar": "NUMEN_DEPENDENCY_YT_DLP" }
+    },
+    {
+      "id": "ffmpeg",
+      "kind": "binary",
+      "metadata": { "binary": "ffmpeg", "envVar": "NUMEN_DEPENDENCY_FFMPEG" }
+    }
+  ],
   "settings": [
     {
       "key": "yt_dlp",
