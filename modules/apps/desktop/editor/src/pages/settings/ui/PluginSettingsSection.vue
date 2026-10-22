@@ -190,7 +190,7 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
           :choices="getProgramChoices(plugin, setting)"
           :name="setting.title"
           :aria-labelledby="labelledBy"
-          searchable
+          is-searchable
           :search-name="words.searchModels"
           class="settings__choice"
           @update:model-value="(val) => onSettingChange(plugin.id, setting.key, val)"

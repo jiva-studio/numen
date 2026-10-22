@@ -127,7 +127,7 @@ vi.mock('@plugins/views.flashcards.studio/frontend/cards', async (original) => (
   ...cardsSaid,
 }))
 
-vi.mock('@/app/agentPort', () => ({
+vi.mock('@/app/plugins/agentPort', () => ({
   agentPort: { ask: pendingStream, finish: () => Promise.resolve() },
 }))
 

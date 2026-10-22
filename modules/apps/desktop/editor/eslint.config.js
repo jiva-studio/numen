@@ -56,7 +56,7 @@ export default tseslint.config(
       'boundaries/files': [
         { category: 'crossImport', pattern: 'src/*/*/@x/*' },
         { category: 'entry', pattern: 'src/main.ts' },
-        { category: 'composition', pattern: 'src/app/pluginCatalog.ts' },
+        { category: 'composition', pattern: 'src/app/plugins/pluginCatalog.ts' },
         { category: 'test', pattern: 'src/**/*.test.ts' },
         { category: 'story', pattern: 'src/**/*.stories.ts' },
       ],
@@ -78,7 +78,7 @@ export default tseslint.config(
       'src/testing/**',
       // The ports' own defaults, which is where the browser is allowed in.
       'src/entities/note/model/notes.ts',
-      'src/app/useWindowKinds.ts',
+      'src/app/window/useWindowKinds.ts',
     ],
     rules: {
       'no-restricted-globals': [

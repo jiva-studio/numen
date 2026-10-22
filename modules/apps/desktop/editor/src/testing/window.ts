@@ -23,8 +23,8 @@ import {
 } from './answers'
 import { book, editor, reader } from './stubs'
 
-const App = (await import('@/app/App.vue')).default
-const { pluginCatalog } = await import('@/app/pluginCatalog')
+const App = (await import('@/app/shell/App.vue')).default
+const { pluginCatalog } = await import('@/app/plugins/pluginCatalog')
 
 /**
  * Every plugin frontend, imported before a window is drawn. A window activates its

@@ -5,11 +5,11 @@ import type { MessageLog } from '@/shared/notices/messages'
 import type { NotePort } from '@/app/ports/notes'
 import type { FilePort } from '@/app/ports/files'
 import type { TabLinksState } from '@/features/tab-linking'
-import type { createTabSync } from '../useTabSync'
-import type { createNoteEditors } from '../useNoteEditors'
-import type { useSettings } from '../useSettings'
-import type { useVaults } from '../useVaults'
-import type { useWindowDisplay } from '../useWindowDisplay'
+import type { createTabSync } from '../tabs/useTabSync'
+import type { createNoteEditors } from '../tabs/useNoteEditors'
+import type { useSettings } from '../window/useSettings'
+import type { useVaults } from '../window/useVaults'
+import type { useWindowDisplay } from '../window/useWindowDisplay'
 
 export interface WindowKindsDeps {
   core: NotePort & FilePort & Pick<SearchDeps, 'names'>

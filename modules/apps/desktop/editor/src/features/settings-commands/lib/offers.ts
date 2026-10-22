@@ -102,7 +102,7 @@ export const getModeGroups = (
       title: words[one],
       ...(detail ? { detail } : {}),
       ...(one === mode ? { isCurrent: true } : {}),
-      ...(isPinned ? { disabled: true } : {}),
+      ...(isPinned ? { isDisabled: true } : {}),
     }
   }
   return [{ id: 'half', title: words.half, items: MODES.map(row) }]

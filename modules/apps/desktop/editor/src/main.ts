@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { interceptExternalLinks } from '@numen/ui'
-import App from './app/App.vue'
+import App from './app/shell/App.vue'
 
 // The window draws its own menus. The one the webview draws carries a browser's
 // idea of what is here — inspect, reload, view source — and refusing it

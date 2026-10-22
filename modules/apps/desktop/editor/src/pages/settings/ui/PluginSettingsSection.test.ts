@@ -272,7 +272,7 @@ describe('a string setting offered the models of a program', () => {
   it('is a searchable choice among the models the program lists', () => {
     const { wrapper } = createSection({}, [MODEL_PLUGIN], LISTING)
     const select = wrapper.findComponent({ name: 'Select' })
-    expect(select.props('searchable')).toBe(true)
+    expect(select.props('isSearchable')).toBe(true)
     expect(select.props('modelValue')).toBe('v/default')
     expect(select.props('choices').map((one: { id: string }) => one.id)).toStrictEqual([
       'v/default',
