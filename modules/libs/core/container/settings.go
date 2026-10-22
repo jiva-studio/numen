@@ -161,7 +161,7 @@ func (c Config) SetSettings(said Settings) Config {
 			}
 			return writer([]port.Setting{
 				{
-					Path: []string{"plugins", pluginID, key},
+					Path: []string{pluginSettingsPrefix, pluginID, key},
 					JSON: string(raw),
 				},
 			})

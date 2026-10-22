@@ -112,6 +112,8 @@ func (c Config) readAppearance(scales *scales) (theme.Appearance, error) {
 	return aged, nil
 }
 
+const appearancePrefix = "appearance"
+
 // writeAppearance writes a choice into the file. Both sizes are checked before any of it
 // is written, so a number outside what its setting goes to leaves the file as
 // it stands.
@@ -121,8 +123,8 @@ func (c Config) writeAppearance(chosen theme.Appearance, scales *scales) error {
 		return err
 	}
 	writing := []settings.Setting{
-		{At: []string{"appearance", "theme"}, Written: chosen.ThemeName},
-		{At: []string{"appearance", "mode"}, Written: settings.GetModeName(chosen.Mode)},
+		{At: []string{appearancePrefix, "theme"}, Written: chosen.ThemeName},
+		{At: []string{appearancePrefix, "mode"}, Written: settings.GetModeName(chosen.Mode)},
 	}
 	if chosen.InterfaceScale > 0 {
 		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)
@@ -130,14 +132,14 @@ func (c Config) writeAppearance(chosen theme.Appearance, scales *scales) error {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{"appearance", "interface_scale"}, Written: chosen.InterfaceScale})
+			settings.Setting{At: []string{appearancePrefix, "interface_scale"}, Written: chosen.InterfaceScale})
 	}
 	if chosen.TextScale > 0 {
 		if err := settings.TextScaleBounds.Check("appearance.text_scale", chosen.TextScale); err != nil {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{"appearance", "text_scale"}, Written: chosen.TextScale})
+			settings.Setting{At: []string{appearancePrefix, "text_scale"}, Written: chosen.TextScale})
 	}
 	into := DefaultSettings()
 	if err := settings.Save(path, &into, writing...); err != nil {

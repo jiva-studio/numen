@@ -254,12 +254,14 @@ func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 	}
 }
 
+const pluginSettingsPrefix = "plugins"
+
 func notifyPluginSettings(host port.PluginConfigurator, written []port.Setting) {
 	if host == nil {
 		return
 	}
 	for _, one := range written {
-		if len(one.Path) < 3 || one.Path[0] != "plugins" {
+		if len(one.Path) < 3 || one.Path[0] != pluginSettingsPrefix {
 			continue
 		}
 		var val any

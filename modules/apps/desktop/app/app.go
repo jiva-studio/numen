@@ -27,6 +27,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
+const appName = "numen"
+
 // Options holds command-line options for running the desktop application.
 type Options struct {
 	IndexPath      string
@@ -59,7 +61,7 @@ func Run(opts ...*Options) error {
 	}
 
 	if opt.ShowVersion {
-		fmt.Fprintln(os.Stdout, version.GetVersionLine("numen"))
+		fmt.Fprintln(os.Stdout, version.GetVersionLine(appName))
 		return nil
 	}
 
@@ -145,7 +147,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	if err := debugOpts.ensureVault(cfg, vault); err != nil {
 		return err
 	}
-	defer shutdown.Report("numen", os.Stderr, "plugins", func() error {
+	defer shutdown.Report(appName, os.Stderr, "plugins", func() error {
 		return cfg.StopPlugins(context.Background())
 	})()
 	if err := scaleFlags.validate(); err != nil {
@@ -181,8 +183,8 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(
 		reachable.Stop,
-		shutdown.Report("numen", os.Stderr, "", installation.Close),
-		shutdown.Report("numen", os.Stderr, "plugins", func() error {
+		shutdown.Report(appName, os.Stderr, "", installation.Close),
+		shutdown.Report(appName, os.Stderr, "plugins", func() error {
 			return cfg.StopPlugins(context.Background())
 		}),
 		stop,
@@ -274,7 +276,7 @@ func makeApplication(
 	going *vaultFlush, seen visibility,
 ) *application.App {
 	return application.New(application.Options{
-		Name: "numen",
+		Name: appName,
 		Assets: application.AssetOptions{
 			Handler: opened.Services.NewHandler(pages),
 		},
@@ -381,7 +383,7 @@ func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
 		return "numen — " + path.Base(front.Path)
 	}
 	if v.Name == "" {
-		return "numen"
+		return appName
 	}
 	return "numen — " + v.Name
 }

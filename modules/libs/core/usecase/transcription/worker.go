@@ -18,6 +18,11 @@ import (
 // file, so a queue leaves the work where it is and comes back to it.
 var errNothingTranscribes = errors.New("nothing to transcribe with")
 
+const (
+	taskTranscribingRecording  = "Transcribing a recording"
+	taskProofreadingTranscript = "Proofreading a transcript"
+)
+
 // transcriptionID is what one recording's transcription is called, wherever it
 // is shown. One recording is one line, and it replaces itself as the words are
 // written down.
@@ -241,7 +246,7 @@ func (t *Worker) closeResident() { _ = t.resident.close() }
 // bytes somebody else holds mean come back later.
 func (t *Worker) transcribeOne(ctx context.Context, v domain.Vault, path string, isUserStarted bool) error {
 	id := transcriptionID(path)
-	t.reportTask(run.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
+	t.reportTask(run.Task{ID: id, Title: taskTranscribingRecording, About: path}, isUserStarted)
 
 	res, err := t.transcribe(ctx, v, id, path, isUserStarted)
 	switch {
@@ -253,7 +258,7 @@ func (t *Worker) transcribeOne(ctx context.Context, v domain.Vault, path string,
 		// The recording is left where the next round finds it. A store that
 		// would not write and an index that would not answer are the machine,
 		// and the recording has said nothing about itself.
-		t.reportTask(run.Task{ID: id, Title: "Transcribing a recording", About: path, Error: err.Error()}, isUserStarted)
+		t.reportTask(run.Task{ID: id, Title: taskTranscribingRecording, About: path, Error: err.Error()}, isUserStarted)
 	case res.IsBusy:
 		t.finishTask(id)
 	default:
@@ -337,11 +342,11 @@ func (t *Worker) proofreadTranscript(
 	id := run.GetProofreadID(path)
 	fail := func(err error) {
 		t.reportTask(run.Task{
-			ID: id, Title: "Proofreading a transcript", About: path, Error: run.GetProofreadError(err),
+			ID: id, Title: taskProofreadingTranscript, About: path, Error: run.GetProofreadError(err),
 		}, isUserStarted)
 	}
 	if isUserStarted {
-		t.reportTask(run.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserStarted)
+		t.reportTask(run.Task{ID: id, Title: taskProofreadingTranscript, About: path}, isUserStarted)
 	}
 
 	right, target, err := CreateProofread(proofreading, t.with.Readers, t.with.Derived)
@@ -367,7 +372,7 @@ func (t *Worker) proofreadTranscript(
 		})
 		t.reportTask(run.Task{
 			ID:    id,
-			Title: "Proofreading a transcript",
+			Title: taskProofreadingTranscript,
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Lines),
@@ -432,13 +437,13 @@ func (t *Worker) transcribe(
 	}
 	defer func() { err = errors.Join(err, finish(err)) }()
 
-	t.reportTask(run.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
+	t.reportTask(run.Task{ID: id, Title: taskTranscribingRecording, About: path}, isUserStarted)
 	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
 	listen.Cut = t.Cut
 	listen.OnProgress = func(res TranscribeResult) {
 		t.reportTask(run.Task{
 			ID:    id,
-			Title: "Transcribing a recording",
+			Title: taskTranscribingRecording,
 			About: path,
 			Count: int64(res.Heard / 1000),
 			Total: int64(res.Length / 1000),

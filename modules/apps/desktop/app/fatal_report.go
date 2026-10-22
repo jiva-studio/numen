@@ -29,7 +29,7 @@ func failWithDialog(cfg container.Config, why error) {
 	}
 
 	app := application.New(application.Options{
-		Name: "numen",
+		Name: appName,
 		Assets: application.AssetOptions{
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -44,7 +44,7 @@ func failWithDialog(cfg container.Config, why error) {
 		PostShutdown: func() { os.Exit(1) },
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  "numen",
+		Title:  appName,
 		Width:  720,
 		Height: 520,
 		URL:    "/",
@@ -70,6 +70,8 @@ const (
 	readingTheSettings = "numen cannot read its settings"
 	startingAtAll      = "numen cannot start"
 )
+
+const factSettings = "settings"
 
 // page is the rejection as one document. Everything it needs is inside it: a
 // build that could not open its own index cannot serve its own interface
@@ -116,7 +118,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		return fatalReport{
 			Heading:  readingTheSettings,
 			Sentence: "This settings file is not JSON, so numen cannot tell what it was asked for.",
-			Facts:    []detail{{"settings", getSettingsPath(cfg)}, {"what was read", why.Error()}},
+			Facts:    []detail{{factSettings, getSettingsPath(cfg)}, {"what was read", why.Error()}},
 			Remedy: "Put the file right, or move it aside: " +
 				"numen writes a new one holding what it is doing.",
 		}
@@ -125,7 +127,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 	return fatalReport{
 		Heading:  startingAtAll,
 		Sentence: why.Error(),
-		Facts:    []detail{{"index", getIndexPath(cfg)}, {"settings", getSettingsPath(cfg)}},
+		Facts:    []detail{{"index", getIndexPath(cfg)}, {factSettings, getSettingsPath(cfg)}},
 		Remedy:   "Start numen again, and report what this window says if it stops here every time.",
 	}
 }
@@ -152,7 +154,7 @@ func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) f
 		Heading:  readingTheSettings,
 		Sentence: fmt.Sprintf("%s is a number the size does not take.", outside.At),
 		Facts: []detail{
-			{"settings", getSettingsPath(cfg)},
+			{factSettings, getSettingsPath(cfg)},
 			{"field", outside.At},
 			{"written", content},
 			{"as far as the size goes", far},

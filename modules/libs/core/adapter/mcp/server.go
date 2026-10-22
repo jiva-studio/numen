@@ -25,6 +25,11 @@ import (
 // Version is what an agent is told it is talking to.
 const Version = "0.1.0"
 
+const (
+	serverName        = "numen"
+	serverDescription = "Notes with typed links and spaced repetition."
+)
+
 // Core is everything the tools work through, in the four things a vault is
 // worked as. Every field of every group is a use case or a query the rest of
 // the application already has: nothing about a vault is decided here.
@@ -143,9 +148,9 @@ func New(core Core) *sdk.Server {
 func newFull(ctx context.Context, core Core) *sdk.Server {
 	server := sdk.NewServer(
 		&sdk.Implementation{
-			Name:        "numen",
-			Title:       "numen",
-			Description: "Notes with typed links and spaced repetition.",
+			Name:        serverName,
+			Title:       serverName,
+			Description: serverDescription,
 			Version:     Version,
 		},
 		&sdk.ServerOptions{Instructions: instructions(core)},
@@ -175,9 +180,9 @@ func NewReading(core Core) *sdk.Server {
 func newReading(ctx context.Context, core Core) *sdk.Server {
 	server := sdk.NewServer(
 		&sdk.Implementation{
-			Name:        "numen",
-			Title:       "numen",
-			Description: "Notes with typed links and spaced repetition.",
+			Name:        serverName,
+			Title:       serverName,
+			Description: serverDescription,
 			Version:     Version,
 		},
 		&sdk.ServerOptions{Instructions: readingInstructions(core)},
@@ -203,9 +208,9 @@ func NewReviewServer(core Core) *sdk.Server {
 func newReview(ctx context.Context, core Core) *sdk.Server {
 	server := sdk.NewServer(
 		&sdk.Implementation{
-			Name:        "numen",
-			Title:       "numen",
-			Description: "Notes with typed links and spaced repetition.",
+			Name:        serverName,
+			Title:       serverName,
+			Description: serverDescription,
 			Version:     Version,
 		},
 		&sdk.ServerOptions{Instructions: getReviewInstructions(core)},

@@ -97,7 +97,7 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error
 	if _, err := server.Connect(ctx, here, nil); err != nil {
 		return nil, err
 	}
-	client := sdk.NewClient(&sdk.Implementation{Name: "numen", Version: Version}, nil)
+	client := sdk.NewClient(&sdk.Implementation{Name: serverName, Version: Version}, nil)
 	session, err := client.Connect(ctx, there, nil)
 	if err != nil {
 		return nil, err

@@ -22,6 +22,8 @@ const (
 	MakingVectors   = "making the vectors"
 )
 
+const taskExtractingBooks = "Extracting books"
+
 // QuietPeriod is how long the vault has to have been still before the notes
 // written into it are embedded.
 const QuietPeriod = 8 * time.Second
@@ -252,12 +254,12 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 	events := p.worker.events
 	making, err := p.worker.reading(ctx, p.worker.embedder, p.v, rebuild)
 	if err != nil {
-		events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books", Error: err.Error()})
+		events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks, Error: err.Error()})
 		return
 	}
 	making.OnBooksProgress = func(res source.ExtractResult) {
 		events.ReportTask(run.Task{
-			ID: ExtractingBooks, Title: "Extracting books", About: res.CurrentSource,
+			ID: ExtractingBooks, Title: taskExtractingBooks, About: res.CurrentSource,
 			// Every book the walk found leaves this pass one of four ways, and all
 			// four count as done.
 			Count: int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
@@ -265,7 +267,7 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 		})
 	}
 
-	events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books"})
+	events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks})
 	res, read := making.ReadBooks(ctx, p.v)
 	switch {
 	case read == nil:
@@ -278,7 +280,7 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 		events.FinishTask(ExtractingBooks)
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it out.
-		events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books", Error: read.Error()})
+		events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks, Error: read.Error()})
 	}
 
 	p.embed(ctx)
@@ -289,7 +291,7 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books", About: path, Error: err.Error()})
+		events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks, About: path, Error: err.Error()})
 	}
 
 	making, err := p.worker.reading(ctx, p.worker.embedder, v, false)
