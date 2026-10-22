@@ -11,9 +11,8 @@ import (
 	"testing"
 )
 
-// tools is the endpoint an agent calls. It is a driving adapter of the core,
-// compiled into a window, and the terminal is not one.
-const tools = core + "adapter/mcp"
+// tools is the endpoint an agent calls. It is compiled into a window, and the terminal is not one.
+const tools = apps + "desktop/internal/agents"
 
 // terminal is the binary the command line is served through.
 const terminal = apps + "desktop/cmd/numen-cli"

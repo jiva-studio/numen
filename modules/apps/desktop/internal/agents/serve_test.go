@@ -9,10 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // makeInstallation is an installation whose own state is this test's alone.
@@ -21,12 +19,6 @@ func makeInstallation(t *testing.T) container.Config {
 	return container.Config{
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 	}
-}
-
-// vault is a Core answering about one vault and holding nothing.
-func vault(t *testing.T) mcp.Core {
-	t.Helper()
-	return mcp.Core{Showing: mcp.ShowOneVault(domain.Vault{ID: "one", Name: "one"}, t.TempDir())}
 }
 
 // authority is the host and port an endpoint is reached at.
@@ -107,7 +99,7 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	cfg.Agent = settings.Agent{Use: settings.UseProgram(""), ShouldServeTools: true}
 
 	served, err := Serve(t.Context(), Options{
-		Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard,
+		Config: cfg, Token: "secret", Out: io.Discard,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -132,7 +124,7 @@ func TestWindowWithoutDiscoveryWritesNoFile(t *testing.T) {
 	state := filepath.Dir(cfg.RegistryPath)
 
 	served, err := Serve(t.Context(), Options{
-		Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard,
+		Config: cfg, Token: "secret", Out: io.Discard,
 	})
 	if err != nil {
 		t.Fatal(err)

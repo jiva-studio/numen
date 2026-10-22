@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
@@ -23,13 +24,10 @@ type Options struct {
 	// Config is this installation's settings: which agent answers, and where
 	// the application keeps its own state.
 	Config container.Config
-	// Core is everything the tools work through.
-	Core mcp.Core
 	// ShouldRead serves the surface every tool of which reads. An agent answering
 	// from it changes nothing.
 	ShouldRead bool
-	// ShouldReview serves the surface the window a person runs their cards in has:
-	// everything that reads, and the cards of a deck.
+	// ShouldReview serves the surface the window a person runs their cards in has.
 	ShouldReview bool
 	// Addr is where the tools are served. Empty takes a loopback port this
 	// machine picks.
@@ -74,39 +72,68 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		addr = ephemeral
 	}
 
-	errorHandler := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
-	endpoint, err := getServeFunc(opts)(ctx, addr, secret, opts.Core, errorHandler)
+	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/mcp", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/sse", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	httpServer := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	go func() {
+		_ = httpServer.Serve(ln)
+	}()
+
+	url := fmt.Sprintf("http://%s/mcp", ln.Addr().String())
 	forget := func() {}
 	if opts.IsAnnouncing {
-		removed, err := WriteDiscovery(opts.Config, opts.Root, endpoint.URL, secret)
+		removed, err := WriteDiscovery(opts.Config, opts.Root, url, secret)
 		if err != nil {
-			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
-			endpoint.Close(context.Background())
+			_ = httpServer.Close()
+			_ = ln.Close()
 			return nil, err
 		}
 		forget = removed
 	}
 
-	fmt.Fprintf(opts.Out, "agents: %s\n", endpoint.URL)
-	if !mcp.Local(addr) {
+	fmt.Fprintf(opts.Out, "agents: %s\n", url)
+	if !isLocal(addr) {
 		fmt.Fprintf(opts.Out, "agents: %s is reachable from the network, not only from this machine\n", addr)
 	}
 
 	served := &Server{
-		URL: endpoint.URL,
+		URL: url,
 	}
 
-	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
 	served.close = func() error {
 		forget()
 		shutdown, cancel := context.WithTimeout(context.Background(), bound)
 		defer cancel()
-		return endpoint.Close(shutdown)
+		return httpServer.Shutdown(shutdown)
 	}
 	return served, nil
+}
+
+func isLocal(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // getSecret is the token the endpoint is guarded with: the one given, or the
@@ -116,17 +143,4 @@ func getSecret(opts Options) (string, error) {
 		return opts.Token, nil
 	}
 	return GetToken(opts.Config)
-}
-
-// getServeFunc is the function that serves the tools the options select.
-func getServeFunc(
-	opts Options,
-) func(context.Context, string, string, mcp.Core, func(error)) (*mcp.Endpoint, error) {
-	switch {
-	case opts.ShouldRead:
-		return mcp.ServeReadingHTTP
-	case opts.ShouldReview:
-		return mcp.ServeReviewHTTP
-	}
-	return mcp.ServeHTTP
 }

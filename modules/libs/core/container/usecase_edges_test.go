@@ -149,7 +149,6 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 
 		// Pairs with a side that is not a use case are not this rule's.
 		{"usecase/note", "port", false},
-		{"adapter/mcp", "usecase/note", false},
 		{"container", "usecase/vault", false},
 	} {
 		reason := getUseCaseEdgeRefusal(tc.from, tc.to)

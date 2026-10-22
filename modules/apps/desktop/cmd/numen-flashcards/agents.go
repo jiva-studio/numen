@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -113,7 +112,6 @@ func serveAgentsTracker(
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:       cfg,
-				Core:         makeReviewCore(cfg, db, notes, api, v, root, out),
 				ShouldReview: true,
 				Token:        secret,
 				Root:         root,
@@ -141,46 +139,5 @@ func serveAgentsTracker(
 	return target, func() error {
 		target.endpoint.Stop()
 		return nil
-	}
-}
-
-// reviewing is the tools this window serves: everything that reads, and what the plugins offer here.
-//
-// Nothing embeds behind this window, so a search answers by the words the vault
-// holds. Nothing scans either: a card the agent writes is levelled in the index
-// by the paths it touched.
-func makeReviewCore(
-	cfg container.Config,
-	db *container.Index,
-	notes container.Notes,
-	api *window.API,
-	v domain.Vault,
-	root string,
-	out io.Writer,
-) mcp.Core {
-	return mcp.Core{
-		Showing:     mcp.ShowOneVault(v, root),
-		GetProblems: cfg.GetProblems(db.Problems()),
-		GetSummary:  cfg.GetSummary(db.Queries()),
-		Read:        cfg.Read(),
-		Plugins:     cfg.GetPluginTools(),
-		// What the person is looking at is data the plugins are told with each call and never part of the
-		// question, so a deck named by whoever synced it is data and not instruction.
-		GetAsked: api.GetAsked,
-
-		Notes: mcp.Notes{
-			GetNamedPaths: cfg.GetNamedPaths(db.Queries()),
-			Neighbourhood: notes.Neighbourhood,
-			Links:         notes.Links,
-			Read:          notes.Read,
-			GetTitles:     notes.GetTitles,
-			Search: cfg.NewSearchOver(db.Passages(), nil,
-				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
-		},
-
-		Sources: mcp.Sources{
-			GetDocumentList: cfg.GetDocumentList(db.SourcesKnown()),
-			GetDocumentText: cfg.GetDocumentText(db.SourcesKnown()),
-		},
 	}
 }

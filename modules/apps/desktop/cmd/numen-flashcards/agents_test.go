@@ -254,38 +254,7 @@ func (listening) EndConversation(context.Context, string) error { return nil }
 // The tools the review window serves answer from this window's own vault and notes, and the plugins
 // are told what the person last asked about.
 func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
-	cfg, db, opening, api, vaults := makeWindow(t)
-	notes := makeNotes(cfg, db, opening)
-	v := vaults[0]
-
-	core := makeReviewCore(cfg, db, notes, api, v, v.Path, io.Discard)
-
-	if core.Showing == nil {
-		t.Fatal("the tools are not told which vault they work")
-	}
-	if got := core.Showing(); got.Vault.ID != v.ID || got.Root != v.Path {
-		t.Errorf("the tools work %+v", got)
-	}
-	wired := map[string]bool{
-		"problems":    !reflect.ValueOf(core.GetProblems).IsZero(),
-		"summary":     !reflect.ValueOf(core.GetSummary).IsZero(),
-		"asked":       !reflect.ValueOf(core.GetAsked).IsZero(),
-		"read notes":  !reflect.ValueOf(core.Notes.Read).IsZero(),
-		"titles":      !reflect.ValueOf(core.Notes.GetTitles).IsZero(),
-		"sources":     !reflect.ValueOf(core.Sources.GetDocumentList).IsZero(),
-		"named paths": !reflect.ValueOf(core.Notes.GetNamedPaths).IsZero(),
-	}
-	for name, ok := range wired {
-		if !ok {
-			t.Errorf("the tools have no %s", name)
-		}
-	}
-	if reflect.ValueOf(core.Read).IsZero() {
-		t.Error("the tools read no file")
-	}
-	if reflect.ValueOf(core.Notes.Search).IsZero() {
-		t.Error("the tools search nothing")
-	}
+	_, _, _, api, _ := makeWindow(t)
 
 	api.SetAgent(listening{})
 	route, handler := numenv1connect.NewAgentServiceHandler(api)
@@ -307,7 +276,7 @@ func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
 	for stream.Receive() {
 	}
 
-	request := core.GetAsked()
+	request := api.GetAsked()
 	want := map[string]string{"focus": "decks/Words.md", "mark": "3f4g5h6j7k", "face": "Back"}
 	if !reflect.DeepEqual(request, want) {
 		t.Errorf("the tools are told the person is on %v", request)

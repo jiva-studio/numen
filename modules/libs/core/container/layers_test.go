@@ -20,7 +20,6 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 // driving lists driving adapters that expose external interfaces and call use cases.
 var driving = map[string]bool{
 	"adapter/cli":               true,
-	"adapter/mcp":               true,
 	"adapter/window/editor":     true,
 	"adapter/window/flashcards": true,
 	"internal/adapter/plugin":   true,
@@ -1289,7 +1288,7 @@ func getAdaptersIn(dir, pos string) ([]string, error) {
 // public are the adapters an application names for itself: the four it serves
 // something through, and the two it composes or configures.
 var public = []string{
-	"cli", "index", "mcp", "settings",
+	"cli", "index", "settings",
 	"window/editor", "window/flashcards",
 }
 
@@ -1349,10 +1348,6 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		from, to  string
 		isRefused bool
 	}{
-		// An adapter under internal/ is not the adapter it is named after.
-		{"internal/adapter/mcp", "usecase/note", true},
-		{"adapter/mcp", "usecase/note", false},
-
 		// The window is given what it needs and assembles nothing, and one
 		// settings file is the union of sections each adapter owns.
 		{"adapter/window/editor", "container", true},
