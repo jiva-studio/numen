@@ -99,7 +99,7 @@ interface DismissalContext {
   readonly dismiss: (id: string) => void
 }
 
-function useNoticeDismissal(context: DismissalContext) {
+function createNoticeDismissal(context: DismissalContext) {
   const cards = new Map<string, CardHandle>()
 
   const holdCard = (id: string, card: unknown): void => {
@@ -223,14 +223,14 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   watchNoticeTicker(sample, shownNotices, { getNotices: options.getNotices, away })
 
-  const { holdCard, dismissByHand } = useNoticeDismissal({
+  const { holdCard, dismissByHand } = createNoticeDismissal({
     folds,
     away,
     forgotten: cleared,
     dismiss: options.dismiss,
   })
 
-  return {
+  const state = {
     notices: shownNotices,
     folds,
     isOpened,
@@ -242,4 +242,5 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     onFocusIn,
     onFocusOut,
   }
+  return state
 }

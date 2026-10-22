@@ -213,7 +213,7 @@ describe('searching the choices', () => {
   })
 
   it('leaves the choices that name the words typed, and returns the one chosen', async () => {
-    const control = mountSelect({ searchable: true })
+    const control = mountSelect({ isSearchable: true })
     await openSelect(control)
     const search = getSearch()!
     search.value = 'lar'

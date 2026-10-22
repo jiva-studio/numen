@@ -15,6 +15,7 @@ import { useOpenBox } from '../../model/expansion'
 import { useNodePress } from '../../model/press'
 import { createAriaLabel, type Position } from '../../lib/node'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
   wide: null,
@@ -22,24 +23,15 @@ const props = withDefaults(defineProps<PlexNodeProps>(), {
   behaviour: () => DEFAULT_BEHAVIOUR,
 })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<PlexNodeEvents>()
 
 defineSlots<PlexDrawnSlots>()
 
+/* --------------------------------- State ---------------------------------- */
 const group = useTemplateRef<SVGGElement>('group')
 
-/** The keyboard put back on this node by whoever took it away. */
-defineExpose({ focus: () => group.value?.focus() })
-
 const hoverFocus = useHoverFocus()
-
-/** The middle of the node, for a press, which carries no point of its own. */
-const getMiddle = (): Position | null => {
-  const element = group.value
-  if (!element) return null
-  const box = element.getBoundingClientRect()
-  return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
-}
 
 const press = useNodePress(props, getMiddle, {
   activate: () => emit('activate'),
@@ -87,18 +79,31 @@ const { open, box, handle } = useOpenBox({
   clock: props.behaviour.clock,
 })
 
-// A box that has begun to open is already over its neighbours.
-watch(
-  () => open.value > 0,
-  (now) => emit('settle', now),
-)
-
 /**
  * One hue per relation, from a token named after it.
  */
 const hue = computed(() => ({
   '--numen-relation-hue': `var(--numen-relation-${props.node.relation})`,
 }))
+
+/* --------------------------------- Hooks ---------------------------------- */
+// A box that has begun to open is already over its neighbours.
+watch(
+  () => open.value > 0,
+  (now) => emit('settle', now),
+)
+
+/* -------------------------------- Helpers --------------------------------- */
+/** The middle of the node, for a press, which carries no point of its own. */
+function getMiddle(): Position | null {
+  const element = group.value
+  if (!element) return null
+  const rect = element.getBoundingClientRect()
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+}
+
+/** The keyboard put back on this node by whoever took it away. */
+defineExpose({ focus: () => group.value?.focus() })
 </script>
 
 <template>

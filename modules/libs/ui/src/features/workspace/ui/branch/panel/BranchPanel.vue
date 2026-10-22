@@ -7,47 +7,42 @@
  * drawn with what the branch above handed down, which is the branch itself: a
  * panel knows a node has children and nothing else about a branch.
  */
-import { inject, type Component, type Ref } from 'vue'
+import { computed, inject, useSlots, type Ref } from 'vue'
 import { SplitterPanel } from 'reka-ui'
 import { BranchHandle } from '../handle'
 import { WorkspacePane } from '../../pane'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../../model/context'
-import type { Orientation, TabId, WorkspaceNode } from '../../../lib/node'
+import type { TabId } from '../../../lib/node'
+import type { BranchPanelProps } from './BranchPanel.types'
 
-defineProps<{
-  node: WorkspaceNode
-  /** Where the child stands among its siblings; the first is given no handle. */
-  index: number
-  /** The share of the branch the panel opens at, in percent. */
-  share: number
-  /** The smallest share a handle may leave it, in percent. */
-  floor: number
-  axis: Orientation
-  depth: number
-  /** Which way the branch divides its length. */
-  direction: Orientation
-  /** What a child with children of its own is drawn with. */
-  branchView: Component
-}>()
+/* --------------------------------- Props ---------------------------------- */
+defineProps<BranchPanelProps>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   /** The handle before this panel taken up, and put down again. */
   (event: 'hold', now: boolean): void
 }>()
 
-const slots = defineSlots<{
+defineSlots<{
   tab(props: { id: TabId }): unknown
   icon(props: { id: TabId }): unknown
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 /** What every branch and pane of one workspace is told once, at the top. */
 const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
-/** Every slot handed down, under the name it arrived under. */
-const passed = Object.keys(slots) as (keyof typeof slots)[]
+type BranchSlotName = 'tab' | 'icon' | 'mark' | 'silence'
 
+const slots = useSlots()
+
+/** Every slot handed down, under the name it arrived under. */
+const passed = computed(() => Object.keys(slots) as BranchSlotName[])
+
+/* --------------------------------- Helpers -------------------------------- */
 /** What a slot was given, handed on as it came. */
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 </script>

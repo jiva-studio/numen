@@ -1,47 +1,25 @@
 <script setup lang="ts">
-/* --------------------------------- Props ---------------------------------- */
 import { computed, useTemplateRef, watch } from 'vue'
 import { useWholeViewport } from '@/shared/lib/viewport'
 import { Thread } from '@/features/thread'
-import {
-  MessageComposer,
-  type AgentModelOption,
-  type ReasoningLevelOption,
-} from '@/features/message-composer'
+import { MessageComposer, type AgentModelOption } from '@/features/message-composer'
 import type { Turn } from '@/features/thread'
+import type { AgentProps } from './Agent.types'
 
-withDefaults(
-  defineProps<{
-    turns: readonly Turn[]
-    /** An answer is on its way. */
-    isWorking?: boolean
-    placeholder?: string
-    isDisabled?: boolean
-    /** What the disc at the end of the field is called while it sends. */
-    sendLabel?: string
-    /** What it is called while it stops the answer on its way. */
-    stopLabel?: string
-    options?: readonly AgentModelOption[]
-    selectedAgentId?: string
-    selectedModelId?: string
-    reasoningLevels?: readonly ReasoningLevelOption[]
-    selectedReasoningId?: string
-    reasoningName?: string
-  }>(),
-  {
-    isWorking: false,
-    placeholder: 'Write a message',
-    isDisabled: false,
-    sendLabel: 'Send',
-    stopLabel: 'Stop',
-    options: () => [],
-    selectedAgentId: '',
-    selectedModelId: '',
-    reasoningLevels: () => [],
-    selectedReasoningId: '',
-    reasoningName: 'Reasoning',
-  },
-)
+/* --------------------------------- Props ---------------------------------- */
+withDefaults(defineProps<AgentProps>(), {
+  isWorking: false,
+  placeholder: 'Write a message',
+  isDisabled: false,
+  sendLabel: 'Send',
+  stopLabel: 'Stop',
+  options: () => [],
+  selectedAgentId: '',
+  selectedModelId: '',
+  reasoningLevels: () => [],
+  selectedReasoningId: '',
+  reasoningName: 'Reasoning',
+})
 
 const text = defineModel<string>({ default: '' })
 

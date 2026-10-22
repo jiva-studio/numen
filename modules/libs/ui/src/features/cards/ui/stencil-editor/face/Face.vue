@@ -22,6 +22,7 @@ import {
 } from '../../../lib/stencil'
 import { insert } from '../../../lib/fill'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** The face, laid out against the fields the stencil declares. */
@@ -34,6 +35,7 @@ const props = withDefaults(
   { wrong: () => [], words: () => STENCIL_WORDS },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'rename', name: string): void
   (event: 'remove'): void
@@ -46,6 +48,7 @@ const emit = defineEmits<{
   (event: 'write', half: Half, text: string): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 /**
  * The half last typed in, and nothing while neither has been. A box nothing has
  * been typed in holds no caret, so what half the caret is in is one thing and
@@ -59,23 +62,17 @@ const focusedHalf = computed<Half>(() => aim.value ?? 'front')
 const front = shallowRef<InstanceType<typeof FacePane> | null>(null)
 const back = shallowRef<InstanceType<typeof FacePane> | null>(null)
 
-const getBox = (half: Half): HTMLTextAreaElement | null =>
-  (half === 'front' ? front.value : back.value)?.box ?? null
+/** The four parts this face's window is divided into. */
+const divided = computed<readonly Pane[]>(() => getPanes(props.face, props.words))
 
+/* -------------------------------- Handlers -------------------------------- */
 /** A part was drawn, or taken away. The part a half is written in holds its box. */
-const setBox = (pane: Pane, element: Element | ComponentPublicInstance | null): void => {
+const onSetBox = (pane: Pane, element: Element | ComponentPublicInstance | null): void => {
   if (pane.mode !== 'written') return
   const box = element as InstanceType<typeof FacePane> | null
   if (pane.half === 'front') front.value = box
   else back.value = box
 }
-
-/** The four parts this face's window is divided into. */
-const divided = computed<readonly Pane[]>(() => getPanes(props.face, props.words))
-
-/** The part a field would be written into. */
-const isFocused = (pane: Pane): boolean =>
-  pane.mode === 'written' && focusedHalf.value === pane.half
 
 /**
  * A field written into the half the caret is in, where the caret stands, the caret
@@ -95,6 +92,14 @@ const onPut = async (field: string): Promise<void> => {
   again?.focus()
   again?.setSelectionRange(insertResult.caret, insertResult.caret)
 }
+
+/* --------------------------------- Helpers -------------------------------- */
+const getBox = (half: Half): HTMLTextAreaElement | null =>
+  (half === 'front' ? front.value : back.value)?.box ?? null
+
+/** The part a field would be written into. */
+const isFocused = (pane: Pane): boolean =>
+  pane.mode === 'written' && focusedHalf.value === pane.half
 </script>
 
 <template>
@@ -124,7 +129,7 @@ const onPut = async (field: string): Promise<void> => {
       <FacePane
         v-for="pane in divided"
         :key="`${pane.half}-${pane.mode}`"
-        :ref="(el) => setBox(pane, el)"
+        :ref="(el) => onSetBox(pane, el)"
         :pane="pane"
         :is-focused="isFocused(pane)"
         :words="words"

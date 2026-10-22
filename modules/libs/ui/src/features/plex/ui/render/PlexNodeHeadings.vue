@@ -10,6 +10,7 @@ import { PlexHeading } from './plex-heading'
 import type { NodeHeadings } from '../../lib/inside'
 import { getOpenHeadings, scrollBy, type Arrow } from '../../lib/open'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   /** The headings and the room they are given. */
   hung: NodeHeadings
@@ -17,11 +18,13 @@ const props = defineProps<{
   open: number
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A heading was chosen. The identifier is the caller's. */
   (event: 'enter', heading: string): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** How far the window on the headings has been scrolled down, counted in headings. */
 const scrollOffset = ref(0)
 
@@ -34,6 +37,7 @@ const groundX = computed(() => props.hung.offset - props.hung.width / 2)
 /** What a wheel moved that came to no whole heading, held for the next one. */
 let carried = 0
 
+/* --------------------------------- Hooks ---------------------------------- */
 // The window opens at the top each time the attention settles afresh, and is
 // left at its current position while the attention leaves.
 watch(
@@ -45,12 +49,13 @@ watch(
   },
 )
 
+/* -------------------------------- Handlers -------------------------------- */
 /**
  * Scrolling the window over the headings. A wheel with nowhere to go is left to
  * whatever else wants it, and what it moved that came to no whole heading is
  * carried into the next one.
  */
-const scrollHeadings = (event: WheelEvent) => {
+const onWheel = (event: WheelEvent) => {
   const visibleHeadings = openHeadings.value
   if (!visibleHeadings) return
 
@@ -73,6 +78,7 @@ const scrollHeadings = (event: WheelEvent) => {
   scrollOffset.value = visibleHeadings.first + by
 }
 
+/* -------------------------------- Helpers --------------------------------- */
 /** The line an arrow at an edge is drawn along. */
 const arrowLine = (arrow: Arrow) =>
   arrow.points.map((pt, index) => `${index === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ')
@@ -81,7 +87,7 @@ const arrowLine = (arrow: Arrow) =>
 <template>
   <!-- The headings are for the hand; the same headings are reached by name in the
        palette. -->
-  <g v-if="openHeadings" class="plex__inside" aria-hidden="true" @wheel="scrollHeadings">
+  <g v-if="openHeadings" class="plex__inside" aria-hidden="true" @wheel="onWheel">
     <!-- One ground under all of them, as deep as they have come. -->
     <rect
       class="plex__ground"

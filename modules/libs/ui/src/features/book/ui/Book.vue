@@ -10,7 +10,7 @@
 import { useTemplateRef } from 'vue'
 
 import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
-import { useBookHand } from '../model/hand'
+import { createBookHand } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'
 import { BOOK_WORDS } from '../lib/words'
@@ -65,7 +65,7 @@ const layout = useBookLayout({
 })
 const { isMeasured, isStood, setting, spreadCount, front, leftInChapter } = layout
 
-const hand = useBookHand({
+const hand = createBookHand({
   area,
   paper,
   turn: layout.turn,
@@ -73,13 +73,13 @@ const hand = useBookHand({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-const follow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
+const onFollow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
 
 /**
  * A key the tab caught. Turning belongs to whatever holds the book, so the
  * page it turns is answered for and the key is not listened for here.
  */
-const handleKey = (event: KeyboardEvent): boolean => {
+const onKey = (event: KeyboardEvent): boolean => {
   const way = getPageNavigationAction(event.key)
   if (!way) return false
   layout.turn(way)
@@ -94,7 +94,7 @@ defineExpose({
    */
   measure: () => layout.settle(layout.getKeptOffset()),
   /** A key the tab caught: true where it turned the page. */
-  handleKey,
+  handleKey: onKey,
 })
 </script>
 
@@ -120,8 +120,8 @@ defineExpose({
           class="book__paper prose prose-sm prose-numen max-w-none"
           :class="{ 'book__paper--unset': !isStood }"
           :style="setting"
-          @click="follow"
-          @auxclick="follow"
+          @click="onFollow"
+          @auxclick="onFollow"
           v-html="markup"
         />
       </div>

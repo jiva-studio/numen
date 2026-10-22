@@ -48,7 +48,7 @@ const onKey = (event: KeyboardEvent) => {
     orientation="horizontal"
     :model-value="model"
     :disabled="isDisabled"
-    :loop="true"
+    loop
     :class="
       cn(
         // One row tall, which every control standing on a row is drawn at.

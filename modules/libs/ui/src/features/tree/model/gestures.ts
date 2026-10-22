@@ -50,7 +50,7 @@ export interface TreeGesturesState {
   readonly onKeyDown: (event: KeyboardEvent) => void
 }
 
-function useTreeRenaming(
+function createTreeRenaming(
   renamingPath: Ref<RowId | null>,
   rows: DrawnRowsState,
   tell: TreeGesturesTell,
@@ -78,7 +78,7 @@ interface TreeKeyboardHelpers {
   readonly requestMenu: (row: ShownRow | null, pos: Position) => void
 }
 
-function useTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelpers) {
+function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelpers) {
   const { getShownRows, getSelected, rows, selection, tell } = options
 
   function takeSelectionKey(event: KeyboardEvent): void {
@@ -132,7 +132,7 @@ function useTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelp
   return { onKeyDown }
 }
 
-export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
+export function createTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
   const { getSelected, renamingPath, rows, selection, drag, tell } = options
 
   function toggleRow(row: ShownRow): void {
@@ -186,8 +186,8 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     activateRow(row)
   }
 
-  const { onRename, onAbandon, onFieldBlur } = useTreeRenaming(renamingPath, rows, tell)
-  const { onKeyDown } = useTreeKeyboard(options, { activateRow, requestMenu })
+  const { onRename, onAbandon, onFieldBlur } = createTreeRenaming(renamingPath, rows, tell)
+  const { onKeyDown } = createTreeKeyboard(options, { activateRow, requestMenu })
 
   return {
     onContextMenu,

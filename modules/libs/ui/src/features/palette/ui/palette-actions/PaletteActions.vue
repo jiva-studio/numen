@@ -15,6 +15,7 @@ import { findKeptAction, placeActions, type ActionWords } from '../../lib/action
 import { getSteppedIndex, type PaletteAction } from '../../lib/item'
 import { isActionsChord } from '../../lib/keys'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   /** What the lit item offers, in the order it offers them. */
   actions: readonly PaletteAction[]
@@ -23,14 +24,15 @@ const props = defineProps<{
 
 const open = defineModel<boolean>('open', { default: false })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** An action was chosen. The identifier is the caller's, handed back as given. */
   (event: 'choose', action: string): void
 }>()
 
-const uid = useId()
-const actionName = (pos: number): string => `${uid}-action-${pos}`
+/* --------------------------------- State ---------------------------------- */
 
+const uid = useId()
 const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
 
 /** What is typed here, which narrows the actions and nothing else. */
@@ -46,27 +48,11 @@ const here = computed(() =>
   actions.value.findIndex((one) => one.action.id === activeActionId.value),
 )
 
-const goTo = (to: number) => {
-  activeActionId.value = actions.value[to]?.action.id ?? ''
-}
-
 /**
  * Where the pointer was. Only a pointer that has actually moved lights what it
  * is over: a list scrolling under a pointer standing still reports a move too.
  */
 let pointerPosition = { x: -1, y: -1 }
-
-const onRowPointerMove = (to: number, event: PointerEvent) => {
-  if (event.clientX === pointerPosition.x && event.clientY === pointerPosition.y) return
-  pointerPosition = { x: event.clientX, y: event.clientY }
-  goTo(to)
-}
-
-/** What is lit is brought into sight. Only a key does this. */
-const reveal = async () => {
-  await nextTick()
-  actionRows.get(activeActionId.value)?.element?.scrollIntoView?.({ block: 'nearest' })
-}
 
 /** A row standing now, which carries the element it is drawn as. */
 interface RowHandle {
@@ -76,18 +62,7 @@ interface RowHandle {
 /** The rows as they are drawn, each under the action it stands for. */
 const actionRows = new Map<string, RowHandle>()
 
-const hold = (action: string, row: unknown): void => {
-  if (row) actionRows.set(action, row as RowHandle)
-  else actionRows.delete(action)
-}
-
-const run = (to: number) => {
-  const selectedAction = actions.value[to]
-  if (!selectedAction) return
-  emit('choose', selectedAction.action.id)
-  open.value = false
-}
-
+/* --------------------------------- Hooks ---------------------------------- */
 /** A fresh list keeps the action the panel was on, wherever the words put it. */
 watch(actions, (now) => {
   if (open.value) goTo(findKeptAction(now, activeActionId.value))
@@ -110,8 +85,22 @@ watch(
   { immediate: true },
 )
 
+/* -------------------------------- Handlers -------------------------------- */
+const onRowPointerMove = (to: number, event: PointerEvent) => {
+  if (event.clientX === pointerPosition.x && event.clientY === pointerPosition.y) return
+  pointerPosition = { x: event.clientX, y: event.clientY }
+  goTo(to)
+}
+
+const onChooseAction = (to: number) => {
+  const selectedAction = actions.value[to]
+  if (!selectedAction) return
+  emit('choose', selectedAction.action.id)
+  open.value = false
+}
+
 const onKey = (event: KeyboardEvent) => {
-  const step = (delta: number, from = here.value) => {
+  const onStep = (delta: number, from = here.value) => {
     event.preventDefault()
     goTo(getSteppedIndex(actions.value.length, from, delta))
     void reveal()
@@ -119,16 +108,36 @@ const onKey = (event: KeyboardEvent) => {
   if (isActionsChord(event) || event.key === 'Escape') {
     event.preventDefault()
     open.value = false
-  } else if (event.key === 'ArrowDown') step(1)
-  else if (event.key === 'ArrowUp') step(-1)
-  else if (event.key === 'Home') step(1, -1)
-  else if (event.key === 'End') step(-1, 0)
+  } else if (event.key === 'ArrowDown') onStep(1)
+  else if (event.key === 'ArrowUp') onStep(-1)
+  else if (event.key === 'Home') onStep(1, -1)
+  else if (event.key === 'End') onStep(-1, 0)
   else if (event.key === 'Enter') {
     event.preventDefault()
-    run(here.value)
+    onChooseAction(here.value)
   }
   // The keyboard stays in this field for as long as the panel stands.
   else if (event.key === 'Tab') event.preventDefault()
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function actionName(pos: number): string {
+  return `${uid}-action-${pos}`
+}
+
+function goTo(to: number): void {
+  activeActionId.value = actions.value[to]?.action.id ?? ''
+}
+
+/** What is lit is brought into sight. Only a key does this. */
+async function reveal(): Promise<void> {
+  await nextTick()
+  actionRows.get(activeActionId.value)?.element?.scrollIntoView?.({ block: 'nearest' })
+}
+
+function hold(action: string, row: unknown): void {
+  if (row) actionRows.set(action, row as RowHandle)
+  else actionRows.delete(action)
 }
 </script>
 
@@ -158,7 +167,7 @@ const onKey = (event: KeyboardEvent) => {
         :is-current="row.at === here"
         @pointermove="onRowPointerMove(row.at, $event)"
         @pointerdown.prevent
-        @click="run(row.at)"
+        @click="onChooseAction(row.at)"
       />
     </div>
 

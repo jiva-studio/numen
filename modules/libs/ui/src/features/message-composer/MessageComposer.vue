@@ -1,45 +1,26 @@
 <script setup lang="ts">
-/* --------------------------------- Props ---------------------------------- */
 import { computed, useTemplateRef } from 'vue'
 import { Textarea } from '@/shared/ui/textarea'
 import { Disc } from './disc'
 import { AgentModelSelector, type AgentModelOption } from './model-selector'
-import { ReasoningSelector, type ReasoningLevelOption } from './reasoning-selector'
+import { ReasoningSelector } from './reasoning-selector'
 import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
+import type { MessageComposerProps } from './MessageComposer.types'
 
-const props = withDefaults(
-  defineProps<{
-    placeholder?: string
-    /** An answer is being written; the disc stops it. */
-    isWorking?: boolean
-    isDisabled?: boolean
-    /** What the disc is called while it sends. */
-    sendLabel?: string
-    /** What it is called while it stops. */
-    stopLabel?: string
-    options?: readonly AgentModelOption[]
-    selectedAgentId?: string
-    selectedModelId?: string
-    /** The depths of reasoning the chosen model offers. The selector shows only where there are some. */
-    reasoningLevels?: readonly ReasoningLevelOption[]
-    selectedReasoningId?: string
-    /** What the reasoning selector is called. */
-    reasoningName?: string
-  }>(),
-  {
-    placeholder: 'Write a message',
-    isWorking: false,
-    isDisabled: false,
-    sendLabel: 'Send',
-    stopLabel: 'Stop',
-    options: () => [],
-    selectedAgentId: '',
-    selectedModelId: '',
-    reasoningLevels: () => [],
-    selectedReasoningId: '',
-    reasoningName: 'Reasoning',
-  },
-)
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<MessageComposerProps>(), {
+  placeholder: 'Write a message',
+  isWorking: false,
+  isDisabled: false,
+  sendLabel: 'Send',
+  stopLabel: 'Stop',
+  options: () => [],
+  selectedAgentId: '',
+  selectedModelId: '',
+  reasoningLevels: () => [],
+  selectedReasoningId: '',
+  reasoningName: 'Reasoning',
+})
 
 const text = defineModel<string>({ default: '' })
 
@@ -64,8 +45,10 @@ const descriptor = computed(() => COMPOSER_STATES[state.value])
 /** Nothing to say, or turned off. */
 const barred = computed(() => props.isDisabled || !descriptor.value.canAct)
 
+defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
+
 /* -------------------------------- Handlers -------------------------------- */
-function act() {
+function onAct() {
   if (barred.value) return
   if (descriptor.value.action === 'stop') emit('stop')
   else emit('submit', getMessage(text.value))
@@ -75,7 +58,7 @@ function act() {
 function onKeydown(event: KeyboardEvent) {
   if (keyIntent(event) !== 'submit') return
   event.preventDefault()
-  if (descriptor.value.action === 'send') act()
+  if (descriptor.value.action === 'send') onAct()
 }
 
 function onSelectModel(option: AgentModelOption) {
@@ -85,8 +68,6 @@ function onSelectModel(option: AgentModelOption) {
 function onSelectReasoning(id: string) {
   emit('select-reasoning', id)
 }
-
-defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 </script>
 
 <template>
@@ -136,7 +117,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
         :is-disabled="barred"
         :send-label="sendLabel"
         :stop-label="stopLabel"
-        @press="act"
+        @press="onAct"
       />
     </div>
   </div>

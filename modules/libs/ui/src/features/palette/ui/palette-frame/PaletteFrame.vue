@@ -7,6 +7,8 @@
  *
  * `data-palette` names each part: `ground` and `panel`.
  */
+defineOptions({ inheritAttrs: false })
+
 defineProps<{
   /** What the panel is announced as. */
   name: string
@@ -25,9 +27,6 @@ defineSlots<{
   /** What the panel holds. */
   default(): unknown
 }>()
-
-// what is handed down is put on the ground itself.
-defineOptions({ inheritAttrs: false })
 </script>
 
 <template>

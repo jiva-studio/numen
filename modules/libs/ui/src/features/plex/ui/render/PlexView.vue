@@ -7,7 +7,7 @@
  * two things about it that only the whole picture knows.
  */
 import { computed, ref, useId, useTemplateRef } from 'vue'
-import { useRefRegistry } from '@/shared/lib/refs'
+import { createRefRegistry } from '@/shared/lib/refs'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
@@ -44,7 +44,7 @@ const svg = useTemplateRef<SVGSVGElement>('svg')
 
 /** The boxes as they are drawn, so the keyboard can be put back on one. */
 const views = new Map<string, { focus: () => void }>()
-const { getRef: holdNode } = useRefRegistry<string>((id, view) => {
+const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
   if (view) views.set(id, view as { focus: () => void })
   else views.delete(id)
 })

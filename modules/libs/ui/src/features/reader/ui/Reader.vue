@@ -11,7 +11,7 @@ import { ReaderToolbar } from './reader-toolbar'
 import { Sheet } from './sheet'
 import { usePageWidth } from '../model/width'
 import { useViewport } from '@/shared/lib/viewport'
-import { onNextFrame, type Paint } from '@/shared/lib/clock'
+import { onNextFrame } from '@/shared/lib/clock'
 import { useHandScroll } from '../model/scroll'
 import {
   GAP,
@@ -21,42 +21,22 @@ import {
   row,
   getScrollTarget,
   getTurnTarget,
-  type Rect,
-  type ReaderWords,
-  type Page,
 } from '../lib/strip'
+import type { ReaderProps } from './Reader.types'
 
-const props = withDefaults(
-  defineProps<{
-    /** How big each page is, in its own units. */
-    pages?: readonly Page[]
-    /** Which page is in front, counted from the first. */
-    at?: number
-    /** Where one page is drawn, as an address to point a picture at. */
-    picture?: (page: number) => string
-    /** What is highlighted on one page, in fractions of it. */
-    highlights?: (page: number) => readonly Rect[]
-    /** The other places named on one page, apart from the one opened at. */
-    otherHighlights?: (page: number) => readonly Rect[]
-    /** The words it is read with. */
-    words?: ReaderWords
-    /** What is said where a page would not come. */
-    undrawn?: string
-    /** When the row is put on the screen again. The next frame by default. */
-    paint?: Paint
-  }>(),
-  {
-    pages: () => [],
-    at: 0,
-    picture: () => '',
-    highlights: () => [],
-    otherHighlights: () => [],
-    words: () => READER_WORDS,
-    undrawn: 'This page would not come.',
-    paint: onNextFrame,
-  },
-)
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<ReaderProps>(), {
+  pages: () => [],
+  at: 0,
+  picture: () => '',
+  highlights: () => [],
+  otherHighlights: () => [],
+  words: () => READER_WORDS,
+  undrawn: 'This page would not come.',
+  paint: onNextFrame,
+})
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The page to turn to, counted from the first. */
   (event: 'go', page: number): void
@@ -64,6 +44,7 @@ const emit = defineEmits<{
   (event: 'measure', pixels: number): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 /** How close a page is drawn. What that may be is `strip.ts`. */
 const zoom = ref(1)
 
@@ -97,25 +78,23 @@ const { drawnWidth } = usePageWidth(
   (pixels) => emit('measure', pixels),
 )
 
-/** Where one page is drawn, once a width has been settled on. */
-const getPictureUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
+const rowStyle = computed(() => ({
+  inlineSize: `${pageLayout.value.length}px`,
+  blockSize: `${pageLayout.value.height + 2 * GAP}px`,
+}))
 
-/**
- * The row moved, so the page in front is whichever is under the viewport now. A
- * row still on its way to where it was sent says nothing: the pages it passes
- * over are pages nobody turned to.
- */
-const onScroll = () => {
-  if (!isStill()) return
-  if (middle.value !== props.at) emit('go', middle.value)
-}
+defineExpose({
+  /**
+   * Take the viewport again. A reader drawn out of sight has none, and the
+   * caller says when it is on screen.
+   */
+  measure,
+  handleKey: (event: KeyboardEvent) => onKey(event),
+  /** The pages take the keyboard, so that a key struck reaches them. */
+  focusPages: () => area.value?.focus(),
+})
 
-/** The row put where a page stands, with that page against the left edge. */
-const stand = (page: number, how: ScrollBehavior) => {
-  const to = getScrollTarget(pageLayout.value, viewport.value, page)
-  if (to !== undefined) send(to, how)
-}
-
+/* ---------------------------------- Hooks --------------------------------- */
 // A page asked for from outside is scrolled to. One reached by the hand is
 // already there.
 watch(
@@ -134,39 +113,44 @@ watch(
   },
 )
 
-/** One page's box in the row. */
-const getBoxStyle = (page: number) => ({
-  insetInlineStart: `${pageLayout.value.starts[page] ?? 0}px`,
-  insetBlockStart: `${GAP}px`,
-  inlineSize: `${pageLayout.value.widths[page] ?? 0}px`,
-  blockSize: `${pageLayout.value.height}px`,
-})
-
-const rowStyle = computed(() => ({
-  inlineSize: `${pageLayout.value.length}px`,
-  blockSize: `${pageLayout.value.height + 2 * GAP}px`,
-}))
+/* -------------------------------- Handlers -------------------------------- */
+/**
+ * The row moved, so the page in front is whichever is under the viewport now. A
+ * row still on its way to where it was sent says nothing: the pages it passes
+ * over are pages nobody turned to.
+ */
+const onScroll = () => {
+  if (!isStill()) return
+  if (middle.value !== props.at) emit('go', middle.value)
+}
 
 /**
  * A key the tab caught: true where it turned the page. The page asked for is
  * emitted, so whoever holds `at` is the one that moves it.
  */
-const handleKey = (event: KeyboardEvent): boolean => {
+const onKey = (event: KeyboardEvent): boolean => {
   const to = getTurnTarget(event.key, props.at, props.pages.length)
   if (to === undefined) return false
   emit('go', to)
   return true
 }
 
-defineExpose({
-  /**
-   * Take the viewport again. A reader drawn out of sight has none, and the
-   * caller says when it is on screen.
-   */
-  measure,
-  handleKey,
-  /** The pages take the keyboard, so that a key struck reaches them. */
-  focusPages: () => area.value?.focus(),
+/* --------------------------------- Helpers -------------------------------- */
+/** Where one page is drawn, once a width has been settled on. */
+const getPictureUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
+
+/** The row put where a page stands, with that page against the left edge. */
+const stand = (page: number, how: ScrollBehavior) => {
+  const to = getScrollTarget(pageLayout.value, viewport.value, page)
+  if (to !== undefined) send(to, how)
+}
+
+/** One page's box in the row. */
+const getBoxStyle = (page: number) => ({
+  insetInlineStart: `${pageLayout.value.starts[page] ?? 0}px`,
+  insetBlockStart: `${GAP}px`,
+  inlineSize: `${pageLayout.value.widths[page] ?? 0}px`,
+  blockSize: `${pageLayout.value.height}px`,
 })
 </script>
 

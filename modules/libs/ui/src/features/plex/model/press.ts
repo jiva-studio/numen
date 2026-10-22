@@ -68,7 +68,7 @@ export function useNodePress(
     }),
   )
 
-  return {
+  const state = {
     isGhost,
     canReach,
     canStop,
@@ -99,6 +99,7 @@ export function useNodePress(
       })
     },
   }
+  return state
 }
 
 interface KeyPressContext {

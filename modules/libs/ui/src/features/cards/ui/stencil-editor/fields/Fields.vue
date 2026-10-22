@@ -24,6 +24,7 @@ import {
 } from '../../../lib/order'
 import { fieldRows, STENCIL_WORDS, type StencilWords } from '../../../lib/stencil'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** The fields a card is asked for, each named once, in the order they stand. */
@@ -36,6 +37,7 @@ const props = withDefaults(
   { wrong: null, words: () => STENCIL_WORDS },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'add', name: string): void
   (event: 'rename', field: string, name: string): void
@@ -44,12 +46,9 @@ const emit = defineEmits<{
   (event: 'move', field: string, target: InsertionPoint): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 /** What these objections are named by, which is this list's alone. */
 const uid = useId()
-
-/** What is wrong with a name, where what it is wrong about says so. */
-const objectionsId = (targetId: string): string =>
-  `${uid}-${encodeURIComponent(targetId)}-objections`
 
 /**
  * A name typed over the one a field carries. A field is named by its own name,
@@ -84,12 +83,18 @@ const {
 
 const rows = computed(() => fieldRows(props.fields, dragged.value))
 
-/** What is wrong with one field, and nothing where nothing is. */
-const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) ?? []
-
-const add = (): void => {
+/* -------------------------------- Handlers -------------------------------- */
+const onAdd = (): void => {
   emit('add', getFreeName(props.fields, props.words.fieldStem))
 }
+
+/* --------------------------------- Helpers -------------------------------- */
+/** What is wrong with a name, where what it is wrong about says so. */
+const objectionsId = (targetId: string): string =>
+  `${uid}-${encodeURIComponent(targetId)}-objections`
+
+/** What is wrong with one field, and nothing where nothing is. */
+const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) ?? []
 </script>
 
 <template>
@@ -128,7 +133,7 @@ const add = (): void => {
     </p>
 
     <Divider>
-      <Button variant="ghost" size="small" @click="add">
+      <Button variant="ghost" size="small" @click="onAdd">
         <Icon name="plus" />
         {{ words.addField }}
       </Button>

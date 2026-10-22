@@ -12,6 +12,7 @@ import { getAdjacentPlace, type Box } from '@/shared/lib/place'
 import type { Size } from '@/shared/lib/geometry'
 import { browserViewport, useRoom, type Viewport } from '@/shared/lib/viewport'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** The thing it is about, in pixels from the top left of the window. */
@@ -26,10 +27,14 @@ const props = withDefaults(
   { viewport: () => browserViewport, margin: 8, gap: 8 },
 )
 
+/* ---------------------------------- State --------------------------------- */
 const root = useTemplateRef<HTMLElement>('root')
 
 /** Its own size, which only the drawing knows. Placement is worked out from it. */
 const size = ref<Size>({ width: 0, height: 0 })
+
+/** The area to stay inside, measured again whenever it changes. */
+const { room } = useRoom(props.viewport, measure)
 
 /**
  * Across, it stands beside the thing it is about. Down, it begins where that
@@ -59,18 +64,17 @@ const tooltipStyle = computed(() => ({
   insetBlockStart: `${tooltipPosition.value.y}px`,
 }))
 
-const measure = () => {
-  const box = root.value?.getBoundingClientRect()
-  if (box) size.value = { width: box.width, height: box.height }
-}
-
+/* ---------------------------------- Hooks --------------------------------- */
 onMounted(measure)
-
-/** The area to stay inside, measured again whenever it changes. */
-const { room } = useRoom(props.viewport, measure)
 
 // Measured again once the drawing has caught up with the thing it is about.
 watch(() => props.at, measure, { flush: 'post' })
+
+/* --------------------------------- Helpers -------------------------------- */
+function measure(): void {
+  const box = root.value?.getBoundingClientRect()
+  if (box) size.value = { width: box.width, height: box.height }
+}
 </script>
 
 <template>

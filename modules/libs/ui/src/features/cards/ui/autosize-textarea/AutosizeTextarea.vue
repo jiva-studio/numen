@@ -9,6 +9,8 @@
  */
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 
+defineOptions({ inheritAttrs: false })
+
 defineProps<{
   /** What the box holds, as it now reads. */
   text: string
@@ -20,8 +22,6 @@ const emit = defineEmits<{
   /** The text as it now reads, after something was typed into the box. */
   (event: 'write', text: string): void
 }>()
-
-defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 

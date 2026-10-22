@@ -132,7 +132,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     options.tellChoice(item.id, action)
   }
 
-  return {
+  const state = {
     placed: placedPalette,
     places,
     announcement: response,
@@ -144,4 +144,5 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     lightAt,
     chooseAt,
   }
+  return state
 }

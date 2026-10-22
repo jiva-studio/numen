@@ -10,7 +10,9 @@ export interface RefRegistry<K> {
   readonly getRef: (key: K) => (element: unknown) => void
 }
 
-export const useRefRegistry = <K>(onChange: (key: K, element: unknown) => void): RefRegistry<K> => {
+export const createRefRegistry = <K>(
+  onChange: (key: K, element: unknown) => void,
+): RefRegistry<K> => {
   const refs = new Map<K, (element: unknown) => void>()
 
   const getRef = (key: K): ((element: unknown) => void) => {

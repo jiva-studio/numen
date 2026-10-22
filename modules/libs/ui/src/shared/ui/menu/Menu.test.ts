@@ -434,20 +434,20 @@ describe('searching the items', () => {
   })
 
   it('puts the keyboard on the search line as it opens', async () => {
-    mountMenu({ searchable: true })
+    mountMenu({ isSearchable: true })
     await settle()
     expect(document.activeElement).toBe(getSearch())
   })
 
   it('leaves the items that name every word typed', async () => {
-    mountMenu({ searchable: true })
+    mountMenu({ isSearchable: true })
     await settle()
     await type('new child')
     expect(texts()).toStrictEqual(['New child note'])
   })
 
   it('says so where the words name no item', async () => {
-    mountMenu({ searchable: true })
+    mountMenu({ isSearchable: true })
     await settle()
     await type('zzz')
     expect(choices()).toHaveLength(0)
@@ -455,7 +455,7 @@ describe('searching the items', () => {
   })
 
   it('chooses the first item left on Enter', async () => {
-    const menu = mountMenu({ searchable: true })
+    const menu = mountMenu({ isSearchable: true })
     await settle()
     await type('copy')
     getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
@@ -463,21 +463,21 @@ describe('searching the items', () => {
   })
 
   it('does not take letters for a jump to an item while they are typed in the line', async () => {
-    mountMenu({ searchable: true })
+    mountMenu({ isSearchable: true })
     await settle()
     getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }))
     expect(document.activeElement).toBe(getSearch())
   })
 
   it('steps from the search line into the items on the arrow down', async () => {
-    mountMenu({ searchable: true })
+    mountMenu({ isSearchable: true })
     await settle()
     getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
     expect(document.activeElement).toBe(choices()[0])
   })
 
   it('shows every item again after it is opened once more', async () => {
-    const menu = mountMenu({ searchable: true })
+    const menu = mountMenu({ isSearchable: true })
     await settle()
     await type('copy')
     await menu.setProps({ isOpen: false })
@@ -514,7 +514,7 @@ describe('the search line and the items', () => {
   const getBar = () => document.body.querySelector<HTMLElement>('.menu__bar')
 
   it('draws the search line in a bar of its own, before every item', async () => {
-    mountMenu({ searchable: true })
+    mountMenu({ isSearchable: true })
     await settle()
     const bar = getBar()!
     expect(bar.contains(document.body.querySelector('.menu__search'))).toBe(true)
@@ -532,7 +532,7 @@ describe('the search line and the items', () => {
 
   it('draws the names of groups after the bar', async () => {
     mountMenu({
-      searchable: true,
+      isSearchable: true,
       hasGroups: true,
       items: [
         { id: 'a', text: 'A', group: 'First' },

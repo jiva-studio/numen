@@ -7,90 +7,37 @@
  * and which are selected are the caller's to hold: the tree works out what a
  * press with a modifier means and says the selection it came to.
  */
-import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
-import { flatten, getMarkOf, type Row, type RowMarker, type RowId } from '../lib/row'
-import type { RowDropTarget } from '../lib/drop'
+import { computed, useTemplateRef } from 'vue'
+import { flatten, getMarkOf, type RowId } from '../lib/row'
 import { useRowDrag } from '../model/drag'
-import { useTreeGestures } from '../model/gestures'
+import { createTreeGestures } from '../model/gestures'
+import { useTreeLayout } from '../model/layout'
 import { useDrawnRows } from '../model/rows'
 import { useRowSelection } from '../model/selection'
-import { useVirtualTree } from '../model/virtual'
-import type { Position } from '@/shared/lib/geometry'
-import { browserClock, type Clock } from '@/shared/lib/clock'
-import { useRefRegistry } from '@/shared/lib/refs'
+import { browserClock } from '@/shared/lib/clock'
+import { createRefRegistry } from '@/shared/lib/refs'
 import { DragPreview } from '@/shared/ui/drag-preview'
 import TreeRow from './TreeRow.vue'
+import type { TreeEvents, TreeProps, TreeSlots } from './Tree.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(
-  defineProps<{
-    /** What is drawn, nested. */
-    rows: readonly Row[]
-    /** The rows whose contents are drawn. */
-    open?: readonly RowId[]
-    /** The rows the selection relies on. */
-    selected?: readonly RowId[]
-    /** How far the pointer travels before a press becomes a drag. */
-    threshold?: number
-    /** What the tree is announced as. */
-    name?: string
-    /** How many rows are being dragged, said at the pointer. */
-    counted?: (rows: number) => string
-    /**
-     * An attribute written onto the rows and onto the tree, for something
-     * outside to find them by. Both the name and the values are the caller's,
-     * and a row answered with nothing is left unmarked; the tree itself is
-     * asked about as no row at all.
-     */
-    marking?: RowMarker | undefined
-    /** The clock. Browser by default; a test hands in its own. */
-    clock?: Clock
-  }>(),
-  {
-    open: () => [],
-    selected: () => [],
-    threshold: 4,
-    name: 'Tree',
-    counted: (rows: number) => `${rows} rows`,
-    marking: undefined,
-    clock: () => browserClock,
-  },
-)
+const props = withDefaults(defineProps<TreeProps>(), {
+  open: () => [],
+  selected: () => [],
+  threshold: 4,
+  name: 'Tree',
+  counted: (rows: number) => `${rows} rows`,
+  marking: undefined,
+  clock: () => browserClock,
+})
 
 /** The row whose name is in a field. */
 const renamingPath = defineModel<RowId | null>('renamingPath', { default: null })
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{
-  (event: 'open', row: RowId): void
-  (event: 'close', row: RowId): void
-  /** The rows the selection now relies on. */
-  (event: 'select', rows: readonly RowId[]): void
-  /** A row acted on: a double press, or Enter. A row that holds turns as well. */
-  (event: 'activate', row: RowId): void
-  /** A name typed and committed. */
-  (event: 'rename', row: RowId, name: string): void
-  /** The rows let go somewhere, all of them drop target in the one place. */
-  (event: 'move', rows: readonly RowId[], target: RowDropTarget): void
-  /**
-   * The rows lifted clear of the tree, on their way across whatever is drawn
-   * beside it. Where they end up there is not the tree's to say.
-   */
-  (event: 'drag', rows: readonly RowId[]): void
-  /** The rows release, wherever the pointer had got to. */
-  (event: 'drop'): void
-  /** The selection asked to go. */
-  (event: 'remove', rows: readonly RowId[]): void
-  /** A menu asked for, and where the pointer was. Nothing for a press off every row. */
-  (event: 'menu', row: RowId | null, pos: Position): void
-}>()
+const emit = defineEmits<TreeEvents>()
 
-defineSlots<{
-  /** What is drawn between a row's disclosure and its name. */
-  icon(props: { id: RowId; hasChildren: boolean; isOpen: boolean }): unknown
-  /** What is said when there is nothing to draw. */
-  silence(): unknown
-}>()
+defineSlots<TreeSlots>()
 
 /* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
@@ -100,17 +47,12 @@ const box = useTemplateRef<HTMLElement>('box')
 
 const visibleRows = computed(() => flatten(props.rows, new Set(props.open)))
 
-const virtual = useVirtualTree(box, () => visibleRows.value.length, getRowHeight)
-
-const virtualRows = computed(() =>
-  visibleRows.value.slice(virtual.window.value.startIndex, virtual.window.value.endIndex),
-)
-
-const rowsStyle = computed(() => ({
-  blockSize: `${virtual.window.value.totalHeight}px`,
-  paddingBlockStart: `${virtual.window.value.offsetY}px`,
-  boxSizing: 'border-box' as const,
-}))
+const { virtual, virtualRows, rowsStyle } = useTreeLayout({
+  box,
+  list,
+  visibleRows,
+  getRowHeight,
+})
 
 const rows = useDrawnRows(
   () => visibleRows.value,
@@ -118,7 +60,7 @@ const rows = useDrawnRows(
   (index) => virtual.scrollToRow(index),
 )
 const { tabbed, setRowElement } = rows
-const { getRef: getRowRef } = useRefRegistry<RowId>(setRowElement)
+const { getRef: getRowRef } = createRefRegistry<RowId>(setRowElement)
 
 const selection = useRowSelection(
   () => visibleRows.value,
@@ -156,7 +98,7 @@ const {
   onAbandon,
   onFieldBlur,
   onKeyDown,
-} = useTreeGestures({
+} = createTreeGestures({
   getShownRows: () => visibleRows.value,
   getSelected: () => props.selected,
   renamingPath,
@@ -168,23 +110,6 @@ const {
     return targetBox ? { x: targetBox.left, y: targetBox.bottom } : null
   },
   tell: emit,
-})
-
-let observer: ResizeObserver | null = null
-
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  virtual.measureViewport()
-  if (typeof ResizeObserver !== 'undefined' && box.value) {
-    observer = new ResizeObserver(() => {
-      virtual.measureViewport()
-    })
-    observer.observe(box.value)
-  }
-})
-
-onBeforeUnmount(() => {
-  observer?.disconnect()
 })
 
 /* -------------------------------- Helpers --------------------------------- */

@@ -209,7 +209,7 @@ describe('what it will not be typed into', () => {
   })
 
   it('is neither editable nor writable when it is read only', () => {
-    const { view } = editor({ modelValue: 'one', readonly: true })
+    const { view } = editor({ modelValue: 'one', isReadonly: true })
     expect(view.state.readOnly).toBe(true)
     expect(view.state.facet(EditorView.editable)).toBe(false)
   })
@@ -217,17 +217,17 @@ describe('what it will not be typed into', () => {
   it('is closed and opened again while active', async () => {
     const { wrapper, view } = editor({ modelValue: 'one' })
 
-    await wrapper.setProps({ readonly: true })
+    await wrapper.setProps({ isReadonly: true })
     expect(view.state.readOnly).toBe(true)
     expect(view.state.facet(EditorView.editable)).toBe(false)
 
-    await wrapper.setProps({ readonly: false })
+    await wrapper.setProps({ isReadonly: false })
     expect(view.state.readOnly).toBe(false)
     expect(view.state.facet(EditorView.editable)).toBe(true)
   })
 
   it('holds the text it was given while it is read only', async () => {
-    const { wrapper, view } = editor({ modelValue: 'first', readonly: true })
+    const { wrapper, view } = editor({ modelValue: 'first', isReadonly: true })
     await wrapper.setProps({ modelValue: 'second' })
     expect(view.state.doc.toString()).toBe('second')
   })
@@ -372,7 +372,7 @@ describe('the chord that keeps the text', () => {
   })
 
   it('is heard while the text will not be typed into', () => {
-    const { wrapper, view } = editor({ modelValue: 'one', readonly: true })
+    const { wrapper, view } = editor({ modelValue: 'one', isReadonly: true })
     chord(view.contentDOM)
     expect(wrapper.emitted('save')).toEqual([[]])
   })

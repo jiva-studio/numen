@@ -13,6 +13,7 @@ import { getPanelName, getTabName } from '../names'
 import { WORKSPACE_CONTEXT } from '../../../model/context'
 import type { Pane, TabId } from '../../../lib/node'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     pane: Pane
@@ -22,6 +23,7 @@ const props = withDefaults(
   { isFocused: false },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
@@ -34,28 +36,16 @@ defineSlots<{
   mark(props: { id: TabId; mark: string }): unknown
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 const workspace = inject(WORKSPACE_CONTEXT)
-
-/** What a tab is called. A tab with no title is shown by its identity. */
-const getTitle = (tab: TabId): string => workspace?.value.findTab(tab)?.title ?? tab
-
-/** What a tab is carrying, and nothing for a tab carrying nothing. */
-const getMarkOf = (tab: TabId): string | undefined => workspace?.value.findTab(tab)?.mark
-
-const tabName = (pos: number): string => getTabName(props.pane.id, pos)
-const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 
 /** The tabs as they are drawn, each under the tab it stands for. */
 const drawnTabs = new Map<TabId, { focus: () => void }>()
 
-const holdTab = (tab: TabId, element: unknown): void => {
+/* -------------------------------- Handlers -------------------------------- */
+const onHoldTab = (tab: TabId, element: unknown): void => {
   if (element) drawnTabs.set(tab, element as { focus: () => void })
   else drawnTabs.delete(tab)
-}
-
-/** The keyboard put on one tab of the strip. */
-function reach(tab: TabId): void {
-  drawnTabs.get(tab)?.focus()
 }
 
 /**
@@ -72,6 +62,21 @@ function onStripKey(pos: number, event: KeyboardEvent): void {
   reach(tab)
 }
 
+/* --------------------------------- Helpers -------------------------------- */
+/** What a tab is called. A tab with no title is shown by its identity. */
+const getTitle = (tab: TabId): string => workspace?.value.findTab(tab)?.title ?? tab
+
+/** What a tab is carrying, and nothing for a tab carrying nothing. */
+const getMarkOf = (tab: TabId): string | undefined => workspace?.value.findTab(tab)?.mark
+
+const tabName = (pos: number): string => getTabName(props.pane.id, pos)
+const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
+
+/** The keyboard put on one tab of the strip. */
+function reach(tab: TabId): void {
+  drawnTabs.get(tab)?.focus()
+}
+
 defineExpose({ reach })
 </script>
 
@@ -84,13 +89,13 @@ defineExpose({ reach })
     <WorkspaceTab
       v-for="(tab, index) in pane.tabs"
       :id="tabName(index)"
-      :ref="(element) => holdTab(tab, element)"
+      :ref="(element) => onHoldTab(tab, element)"
       :key="tab"
       :aria-controls="panelName(index)"
       :tab="tab"
       :title="getTitle(tab)"
       :mark="getMarkOf(tab)"
-      :showing="tab === pane.active"
+      :is-showing="tab === pane.active"
       :is-focused="tab === pane.active && isFocused"
       @lift="emit('lift', tab, $event)"
       @close="emit('close', tab)"

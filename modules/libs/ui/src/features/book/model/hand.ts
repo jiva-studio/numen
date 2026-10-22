@@ -19,7 +19,7 @@ export interface BookHandOptions {
  * `turn` is what the reader does with the way the hand asked for, and `getEdge`
  * is the near edge of the reading area, which a press is measured from.
  */
-export function useBookHand(options: BookHandOptions) {
+export function createBookHand(options: BookHandOptions) {
   /** Where the hand went down, while it is down. */
   let hand: number | undefined
 

@@ -24,10 +24,20 @@ interface Run {
 /** The runs the corpus carries, in the order it writes them. */
 const getRuns = (): readonly Run[] => {
   const target = new DOMParser().parseFromString(spine, 'text/html')
-  return [...target.body.querySelectorAll('[data-offset]')].map((one) => ({
+  const raw = [...target.body.querySelectorAll('[data-offset]')].map((one) => ({
     at: Number(one.getAttribute('data-offset')),
     text: one.textContent ?? '',
   }))
+  return raw.map((run, i) => {
+    const next = raw[i + 1]
+    if (!next) return run
+    const expectedBytes = next.at - run.at
+    const actualBytes = countBytes(run.text)
+    if (actualBytes < expectedBytes) {
+      return { at: run.at, text: run.text + ' '.repeat(expectedBytes - actualBytes) }
+    }
+    return run
+  })
 }
 
 const span = () => {

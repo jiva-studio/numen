@@ -71,8 +71,8 @@ describe('an answer', () => {
     await conversation.ask('what is here?', '')
 
     expect(conversation.turns.value.map((turn) => [turn.voice, turn.text])).toEqual([
-      ['asked', 'what is here?'],
-      ['answered', 'Two notes.'],
+      ['prompt', 'what is here?'],
+      ['response', 'Two notes.'],
     ])
     expect(conversation.turns.value.at(-1)?.state).toBeUndefined()
   })
@@ -119,8 +119,8 @@ describe('an answer', () => {
     await conversation.ask('what is here?', '')
 
     expect(conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])).toEqual([
-      ['asked', 'what is here?', undefined],
-      ['answered', 'Your credit balance is too low to use Claude Code.', 'failed'],
+      ['prompt', 'what is here?', undefined],
+      ['response', 'Your credit balance is too low to use Claude Code.', 'failed'],
     ])
   })
 })
@@ -144,7 +144,7 @@ describe('the line about work', () => {
     )
     await conversation.ask('what is here?', '')
 
-    expect(observed).toEqual(['asked:what is here?', 'doing:Search notes'])
+    expect(observed).toEqual(['prompt:what is here?', 'doing:Search notes'])
   })
 
   it('arrives down when the answer begins', async () => {
@@ -156,7 +156,7 @@ describe('the line about work', () => {
     )
     await conversation.ask('what is here?', '')
 
-    expect(conversation.turns.value.map((turn) => turn.voice)).toEqual(['asked', 'answered'])
+    expect(conversation.turns.value.map((turn) => turn.voice)).toEqual(['prompt', 'response'])
   })
 
   it('is one line however many tools are used', async () => {
@@ -463,8 +463,8 @@ describe('where the line about work remains', () => {
     // A tool answering says nothing about the answer being written over it, and
     // a line put back here is placed under the answer for the rest of the conversation.
     expect(getDrawnTurns(conversation)).toEqual([
-      'asked: tell me about him',
-      'answered: Bram Doyle was the chair.',
+      'prompt: tell me about him',
+      'response: Bram Doyle was the chair.',
     ])
 
     release()
@@ -489,8 +489,8 @@ describe('where the line about work remains', () => {
     await flushPromises()
 
     expect(getDrawnTurns(conversation)).toEqual([
-      'asked: tell me about him',
-      'answered: One moment. ',
+      'prompt: tell me about him',
+      'response: One moment. ',
       'doing: Read a note',
     ])
 
@@ -515,7 +515,7 @@ describe('where the line about work remains', () => {
     // An answer with nothing in it is drawn as a turn with no words and a gap
     // above and below it.
     expect(getDrawnTurns(conversation)).toEqual([
-      'asked: tell me about him',
+      'prompt: tell me about him',
       `doing: ${words.thinking}`,
     ])
 
@@ -637,8 +637,8 @@ describe('a window nobody is looking at', () => {
 
     // The question with nothing under it is the failure this guards against.
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
-      'asked: what is here?',
-      'answered: Two notes.',
+      'prompt: what is here?',
+      'response: Two notes.',
     ])
 
     release()
@@ -752,7 +752,7 @@ describe('words with none in them', () => {
     await flushPromises()
 
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
-      'asked: what is here?',
+      'prompt: what is here?',
       `doing: ${words.thinking}`,
     ])
 
@@ -802,8 +802,8 @@ describe('an error the answer already carries', () => {
       await conversation.ask('what is here?', '')
 
       expect(getDrawn(conversation)).toEqual([
-        ['asked', 'what is here?', undefined],
-        ['answered', displayed, 'failed'],
+        ['prompt', 'what is here?', undefined],
+        ['response', displayed, 'failed'],
       ])
     },
   )
@@ -818,9 +818,9 @@ describe('an error the answer already carries', () => {
     await conversation.ask('what is here?', '')
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'what is here?', undefined],
-      ['answered', 'Two notes.', undefined],
-      ['answered', 'went wrong', 'failed'],
+      ['prompt', 'what is here?', undefined],
+      ['response', 'Two notes.', undefined],
+      ['response', 'went wrong', 'failed'],
     ])
   })
 
@@ -829,8 +829,8 @@ describe('an error the answer already carries', () => {
     await conversation.ask('what is here?', '')
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'what is here?', undefined],
-      ['answered', '  ', 'failed'],
+      ['prompt', 'what is here?', undefined],
+      ['response', '  ', 'failed'],
     ])
   })
 })
@@ -846,8 +846,8 @@ describe('an exchange that ends without saying why', () => {
     await conversation.ask('what is here?', '')
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'what is here?', undefined],
-      ['answered', 'Two notes.', undefined],
+      ['prompt', 'what is here?', undefined],
+      ['response', 'Two notes.', undefined],
     ])
   })
 
@@ -856,8 +856,8 @@ describe('an exchange that ends without saying why', () => {
     await conversation.ask('what is here?', '')
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'what is here?', undefined],
-      ['answered', words.nothing, undefined],
+      ['prompt', 'what is here?', undefined],
+      ['response', words.nothing, undefined],
     ])
   })
 
@@ -867,10 +867,10 @@ describe('an exchange that ends without saying why', () => {
     await conversation.ask('second?', '')
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'first?', undefined],
-      ['answered', words.nothing, undefined],
-      ['asked', 'second?', undefined],
-      ['answered', words.nothing, undefined],
+      ['prompt', 'first?', undefined],
+      ['response', words.nothing, undefined],
+      ['prompt', 'second?', undefined],
+      ['response', words.nothing, undefined],
     ])
   })
 })
@@ -1048,8 +1048,8 @@ describe('the line about work and the answer beginning', () => {
     await flushPromises()
 
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
-      'asked: q',
-      'answered: Hi',
+      'prompt: q',
+      'response: Hi',
     ])
 
     release()
@@ -1068,8 +1068,8 @@ describe('the line about work and the answer beginning', () => {
     await flushPromises()
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'q', undefined],
-      ['answered', 'One. ', undefined],
+      ['prompt', 'q', undefined],
+      ['response', 'One. ', undefined],
       ['doing', 'Read a note', 'arriving'],
     ])
 
@@ -1147,8 +1147,8 @@ describe('giving up on an answer in the middle', () => {
     await askPromise
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'q', undefined],
-      ['answered', 'Two ', undefined],
+      ['prompt', 'q', undefined],
+      ['response', 'Two ', undefined],
     ])
   })
 
@@ -1161,7 +1161,7 @@ describe('giving up on an answer in the middle', () => {
     release()
     await askPromise
 
-    expect(getDrawn(conversation)).toEqual([['asked', 'q', undefined]])
+    expect(getDrawn(conversation)).toEqual([['prompt', 'q', undefined]])
   })
 
   it('does not say the agent could not be reached when it fails afterwards', async () => {
@@ -1184,7 +1184,7 @@ describe('giving up on an answer in the middle', () => {
     release()
     await askPromise
 
-    expect(getDrawn(conversation)).toEqual([['asked', 'q', undefined]])
+    expect(getDrawn(conversation)).toEqual([['prompt', 'q', undefined]])
   })
 
   it('leaves a newer question working when the one given up on ends', async () => {
@@ -1233,9 +1233,9 @@ describe('an agent that cannot be reached', () => {
     await conversation.ask('q', '')
 
     expect(getDrawn(conversation)).toEqual([
-      ['asked', 'q', undefined],
-      ['answered', 'Two ', undefined],
-      ['answered', words.unreachable, 'failed'],
+      ['prompt', 'q', undefined],
+      ['response', 'Two ', undefined],
+      ['response', words.unreachable, 'failed'],
     ])
   })
 })

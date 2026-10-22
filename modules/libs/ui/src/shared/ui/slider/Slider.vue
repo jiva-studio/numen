@@ -12,6 +12,9 @@ import { cn } from '@/shared/lib/classes'
 import { clamp, type Bounds } from '@/shared/lib/bounds'
 import { isWalkingKey, stepForKey } from './track'
 
+defineOptions({ inheritAttrs: false })
+
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** How far the track runs, and what one step of it moves. */
@@ -24,6 +27,7 @@ const props = withDefaults(
   { min: 0, max: 100, step: 1, isDisabled: false },
 )
 
+/* --------------------------------- Events --------------------------------- */
 /** Where the handle stands. */
 const model = defineModel<number>({ default: 0 })
 
@@ -32,8 +36,7 @@ const emit = defineEmits<{
   commit: [value: number]
 }>()
 
-defineOptions({ inheritAttrs: false })
-
+/* ---------------------------------- State --------------------------------- */
 /**
  * The last value handed on, so a value that arrives twice — once as the handle
  * moving and once as it coming to rest — is handed on once.
@@ -57,14 +60,15 @@ const inForce = computed(() => clamp(model.value, bounds.value))
 
 watch(inForce, setValue, { immediate: true })
 
+/** Whether a key is down, and where the handle stood when it went down. */
+let walking = false
+let began = 0
+
+/* -------------------------------- Handlers -------------------------------- */
 const onMove = (value: number[] | undefined) => {
   const next = value?.[0]
   if (typeof next === 'number') setValue(next)
 }
-
-/** Whether a key is down, and where the handle stood when it went down. */
-let walking = false
-let began = 0
 
 /**
  * The handle taken hold of by the keys, and moved to where the key leaves it. A

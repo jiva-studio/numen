@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { useRefRegistry } from './refs'
+import { createRefRegistry } from './refs'
 
 describe('the refs of a loop', () => {
   it('passes a key the same function until its element goes', () => {
-    const { getRef } = useRefRegistry<string>(() => {})
+    const { getRef } = createRefRegistry<string>(() => {})
     const first = getRef('a')
 
     expect(getRef('a')).toBe(first)
@@ -16,7 +16,7 @@ describe('the refs of a loop', () => {
 
   it('notifies of an element as it is set, and of null as it goes', () => {
     const calls: [string, unknown][] = []
-    const { getRef } = useRefRegistry<string>((key, element) => calls.push([key, element]))
+    const { getRef } = createRefRegistry<string>((key, element) => calls.push([key, element]))
     const element = {}
 
     getRef('a')(element)
@@ -29,7 +29,7 @@ describe('the refs of a loop', () => {
   })
 
   it('keeps the function of a key whose element is set again', () => {
-    const { getRef } = useRefRegistry<string>(() => {})
+    const { getRef } = createRefRegistry<string>(() => {})
     const first = getRef('a')
 
     first({})

@@ -13,46 +13,29 @@ import { LiveRegions } from './live-regions'
 import NoticeCard from './NoticeCard.vue'
 import { CARD_DELAY } from '../lib/duration'
 import { ROOM } from '../lib/fold'
-import { type Notice } from '../lib/notice'
 import { useAnnouncer } from '../model/announcer'
 import { useNoticeCards } from '../model/cards'
+import type { NoticesProps } from './Notices.types'
 
-const props = withDefaults(
-  defineProps<{
-    /** What the window has to say, in the order it is drawn. */
-    notices?: readonly Notice[]
-    /** What the corner is announced as. */
-    name?: string
-    /** What the way to dismiss one is called. */
-    dismiss?: string
-    /** What the ones folded away behind the rest are counted as. */
-    more?: string
-    /** How long work runs before it is worth a card. */
-    wait?: number
-    /** How many cards stand at once. */
-    room?: number
-    /** What the moment is. The window's clock by default. */
-    clock?: () => number
-    /** Whether nobody is looking. The window's own answer by default. */
-    hidden?: () => boolean
-  }>(),
-  {
-    notices: () => [],
-    name: 'Background work',
-    dismiss: 'Put away',
-    more: 'more',
-    wait: CARD_DELAY,
-    room: ROOM,
-    clock: () => Date.now(),
-    hidden: () => document.hidden,
-  },
-)
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<NoticesProps>(), {
+  notices: () => [],
+  name: 'Background work',
+  dismiss: 'Put away',
+  more: 'more',
+  wait: CARD_DELAY,
+  room: ROOM,
+  clock: () => Date.now(),
+  hidden: () => document.hidden,
+})
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A card is finished with: read long enough, or put away. */
   (event: 'dismiss', id: string): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 const stack = useTemplateRef<HTMLElement>('stack')
 
 const {

@@ -41,8 +41,8 @@ describe('what is drawn', () => {
 
   it('says which voice each turn is in', () => {
     const turns = thread([createAsked('1'), createAnswered('2')]).findAll('.thread__turn')
-    expect(turns[0]?.attributes('data-voice')).toBe('asked')
-    expect(turns[1]?.attributes('data-voice')).toBe('answered')
+    expect(turns[0]?.attributes('data-voice')).toBe('prompt')
+    expect(turns[1]?.attributes('data-voice')).toBe('response')
   })
 
   it('draws a turn with no text at all', () => {

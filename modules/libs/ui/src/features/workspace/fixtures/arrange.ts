@@ -16,6 +16,12 @@ export interface ArrangeOptions {
 
 export const DEFAULT_ARRANGE: ArrangeOptions = { gap: 0 }
 
+interface PlaceContext {
+  workspace: Workspace
+  gap: number
+  into: Map<NodeId, Rect>
+}
+
 export function arrangeWorkspace(
   workspace: Workspace,
   box: Rect,
@@ -23,24 +29,17 @@ export function arrangeWorkspace(
 ): ReadonlyMap<NodeId, Rect> {
   const { gap } = { ...DEFAULT_ARRANGE, ...options }
   const boxes = new Map<NodeId, Rect>()
-  place(workspace.root, box, workspace, 0, gap, boxes)
+  place(workspace.root, box, 0, { workspace, gap, into: boxes })
   return boxes
 }
 
-function place(
-  node: WorkspaceNode,
-  box: Rect,
-  workspace: Workspace,
-  depth: number,
-  gap: number,
-  into: Map<NodeId, Rect>,
-): void {
-  into.set(node.id, box)
+function place(node: WorkspaceNode, box: Rect, depth: number, context: PlaceContext): void {
+  context.into.set(node.id, box)
   if (!isBranch(node)) return
 
-  const isAcross = getOrientation(workspace.axis, depth) === 'horizontal'
+  const isAcross = getOrientation(context.workspace.axis, depth) === 'horizontal'
   const length = isAcross ? box.width : box.height
-  const free = Math.max(length - gap * Math.max(node.children.length - 1, 0), 0)
+  const free = Math.max(length - context.gap * Math.max(node.children.length - 1, 0), 0)
   const sizes = fit(node.sizes, node.children.length)
 
   let alongCoord = isAcross ? box.x : box.y
@@ -50,7 +49,7 @@ function place(
       ? { x: alongCoord, y: box.y, width: acquiredItem, height: box.height }
       : { x: box.x, y: alongCoord, width: box.width, height: acquiredItem }
     // Stryker disable next-line ArithmeticOperator: depth - 1 has the parity of depth + 1, and only parity is read.
-    place(child, childBox, workspace, depth + 1, gap, into)
-    alongCoord += acquiredItem + gap
+    place(child, childBox, depth + 1, context)
+    alongCoord += acquiredItem + context.gap
   })
 }

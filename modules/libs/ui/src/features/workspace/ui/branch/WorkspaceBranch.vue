@@ -15,6 +15,9 @@ import { atLeast, fit } from '../../lib/shares'
 import { useViewport } from '@/shared/lib/viewport'
 import { useBranchResize } from '../../model/resize'
 
+defineOptions({ name: 'WorkspaceBranch' })
+
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   node: Branch
   axis: Orientation
@@ -28,8 +31,7 @@ const slots = defineSlots<{
   silence(): unknown
 }>()
 
-defineOptions({ name: 'WorkspaceBranch' })
-
+/* ---------------------------------- State --------------------------------- */
 /** A branch inside a branch is drawn by this same component, under its own name. */
 const branchView = resolveComponent('WorkspaceBranch') as Component
 
@@ -38,9 +40,6 @@ const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
 /** Every slot handed down, under the name it arrived under. */
 const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
-
-/** What a slot was given, handed on as it came. */
-const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const direction = computed(() => getOrientation(props.axis, props.depth))
 
@@ -69,12 +68,17 @@ const floor = computed(
 /** Which children there are, so that a change of shape starts the pane afresh. */
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
 
+/* -------------------------------- Handlers -------------------------------- */
 const { onLayout, onHold: onSplitterHold } = useBranchResize({
   getBranchId: () => props.node.id,
   getShares: () => sizes.value,
   getFrame: () => frameElement.value ?? undefined,
   resize: (id, shares) => workspace.value.resize(id, shares),
 })
+
+/* --------------------------------- Helpers -------------------------------- */
+/** What a slot was given, handed on as it came. */
+const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 </script>
 
 <template>

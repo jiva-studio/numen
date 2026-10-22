@@ -11,6 +11,7 @@ import { computed, ref, watch } from 'vue'
 import { Spinner } from '@/shared/ui/spinner'
 import type { Rect } from '../../lib/strip'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** Which page of the document this is, counted from the first. */
@@ -39,6 +40,7 @@ const props = withDefaults(
   },
 )
 
+/* ---------------------------------- State --------------------------------- */
 /** How many times a page that did not come is asked for again. */
 const ATTEMPTS = 3
 
@@ -56,6 +58,7 @@ const pictureUrl = computed(() => {
   return `${props.picture}${props.picture.includes('?') ? '&' : '?'}again=${tries.value}`
 })
 
+/* ---------------------------------- Hooks --------------------------------- */
 // Another address is another question, and it is asked afresh. What would not
 // come is what would not come at that width.
 watch(
@@ -66,6 +69,7 @@ watch(
   },
 )
 
+/* --------------------------------- Helpers -------------------------------- */
 /** One rectangle, as a share of the page it is drawn over. */
 const getBoxStyle = (one: Rect) => ({
   insetInlineStart: `${one.minX * 100}%`,

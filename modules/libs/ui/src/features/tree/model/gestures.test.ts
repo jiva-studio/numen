@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { flatten, type Row } from '../lib/row'
 import type { RowDragState } from './drag'
-import { useTreeGestures, type TreeGesturesTell } from './gestures'
+import { createTreeGestures, type TreeGesturesTell } from './gestures'
 import { useDrawnRows } from './rows'
 import { useRowSelection } from './selection'
 import type { Position } from '@/shared/lib/geometry'
@@ -39,7 +39,7 @@ const create = (
     at: computed(() => null),
     lift: () => {},
   }
-  const gestures = useTreeGestures({
+  const gestures = createTreeGestures({
     getShownRows: () => visibleRows,
     getSelected: () => [],
     renamingPath,

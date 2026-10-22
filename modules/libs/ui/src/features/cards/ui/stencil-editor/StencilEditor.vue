@@ -28,6 +28,7 @@ import { sampleValues } from '../../lib/fill'
  * beside that face's name and a field's under that field's row, so nothing is
  * said in a place that leaves a person guessing what it is about.
  */
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** The fields, in the order a person is asked for them. The first names the card. */
@@ -48,6 +49,7 @@ const props = withDefaults(
   },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'add-field', name: string): void
   (event: 'rename-field', field: string, name: string): void
@@ -67,6 +69,7 @@ const emit = defineEmits<{
   (event: 'write', id: string, half: Half, text: string): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 /** The fields a card is asked for, a name declared twice naming one field. */
 const declaredFields = computed(() => getDeclaredFields(props.fields))
 
@@ -95,10 +98,8 @@ const sample = computed(() => sampleValues(declaredFields.value))
 /** The faces as they are drawn. */
 const renderedFaces = computed(() => faceRows(props.faces, declaredFields.value, sample.value))
 
-/** What is wrong with one face, and nothing where nothing is. */
-const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
-
-const addFace = (): void => {
+/* -------------------------------- Handlers -------------------------------- */
+const onAddFace = (): void => {
   emit(
     'add-face',
     getFreeName(
@@ -107,6 +108,10 @@ const addFace = (): void => {
     ),
   )
 }
+
+/* --------------------------------- Helpers -------------------------------- */
+/** What is wrong with one face, and nothing where nothing is. */
+const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
 </script>
 
 <template>
@@ -159,7 +164,7 @@ const addFace = (): void => {
         @write="(half, text) => emit('write', one.id, half, text)"
       />
 
-      <AddFace :label="words.addFace" @press="addFace" />
+      <AddFace :label="words.addFace" @press="onAddFace" />
     </section>
   </div>
 </template>

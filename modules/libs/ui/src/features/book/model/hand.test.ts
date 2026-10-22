@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 
 import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
-import { useBookHand } from './hand'
+import { createBookHand } from './hand'
 
 const WIDTH = 1000
 
@@ -23,7 +23,7 @@ const setUp = (edge = 0) => {
   const turn = vi.fn<(way: PageNavigationAction) => void>()
   const areaRef = shallowRef<HTMLElement | null>(area)
   const paperRef = shallowRef<HTMLElement | null>(paper)
-  const hand = useBookHand({
+  const hand = createBookHand({
     area: areaRef,
     paper: paperRef,
     turn,

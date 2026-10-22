@@ -7,67 +7,25 @@
  * from the caret it is drawn as it reads, and where the caret stands the
  * marks come back.
  */
-import { onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
-import { EditorState, type Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
-import type { EditorChange } from '../lib/change'
-import {
-  extensionsCompartment,
-  code,
-  previewCompartment,
-  createEditable,
-  editableCompartment,
-  preview,
-  prose,
-  setup,
-  showChange,
-  changeCompartment,
-  languageCompartment,
-} from '../lib/setup'
-import { loadLanguage } from '../config/languages'
-import { addressOpener, addressResolver, saveHandler } from '../lib/outside'
-import { replace } from '../lib/replace'
+import { useId, useTemplateRef } from 'vue'
+import { useEditor } from '../model/editor'
+import type { EditorProps } from './Editor.types'
 
-const props = withDefaults(
-  defineProps<{
-    /** Marks are drawn as what they mean. Off, the text is shown as written. */
-    isLive?: boolean
-    /**
-     * What the whole document is written in, by the name a fence would use. A
-     * document naming none is markdown, and one naming a language is set in the
-     * face code is set in.
-     */
-    language?: string
-    readonly?: boolean
-    placeholder?: string
-    /** What it is announced as. What has been typed here is no name for it. */
-    name?: string
-    /**
-     * How to leave, read out on arrival. Tab is the editor's while a person is
-     * writing, so the way back out has to be said or nobody finds it.
-     */
-    keys?: string
-    /** A change being made to this text by something other than the reader. */
-    change?: EditorChange | null
-    /** What an address in the text becomes before the window loads it. */
-    resolve?: (address: string) => string
-    /** More the caller draws into this editor. */
-    extensions?: Extension
-  }>(),
-  {
-    isLive: true,
-    language: '',
-    readonly: false,
-    placeholder: 'Write',
-    name: 'Editor',
-    keys: 'Tab indents. Press Escape, then Tab, to leave the editor.',
-    change: null,
-    extensions: () => [],
-  },
-)
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<EditorProps>(), {
+  isLive: true,
+  language: '',
+  isReadonly: false,
+  placeholder: 'Write',
+  name: 'Editor',
+  keys: 'Tab indents. Press Escape, then Tab, to leave the editor.',
+  change: null,
+  extensions: () => [],
+})
 
 const text = defineModel<string>({ default: '' })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A drawn link was followed. */
   (event: 'open', address: string): void
@@ -75,122 +33,35 @@ const emit = defineEmits<{
   (event: 'save'): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 const host = useTemplateRef<HTMLElement>('host')
-let view: EditorView | null = null
-let lastEmitted: string | null = null
 
 /** What the words about the keyboard are addressed by, this editor's alone. */
 const keysId = `${useId()}-keys`
 
-onMounted(() => {
-  if (!host.value) return
-  view = new EditorView({
-    parent: host.value,
-    state: EditorState.create({
-      doc: text.value,
-      extensions: [
-        setup({
-          isLivePreview: props.isLive,
-          readonly: props.readonly,
-          placeholder: props.placeholder,
-          name: props.name,
-          describedBy: keysId,
-          change: props.change,
-          extensions: props.extensions,
-        }),
-        addressResolver.of((address) => props.resolve?.(address) ?? address),
-        addressOpener.of((address) => emit('open', address)),
-        saveHandler.of(() => emit('save')),
-        EditorView.updateListener.of((update) => {
-          if (!update.docChanged) return
-          lastEmitted = update.state.doc.toString()
-          text.value = lastEmitted
-        }),
-      ],
-    }),
-  })
-  if (props.language) void applyLanguage(props.language)
+const { focus, measure, reveal } = useEditor({
+  host,
+  props,
+  text,
+  keysId,
+  emit,
 })
 
-onBeforeUnmount(() => {
-  view?.destroy()
-  view = null
-})
-
-// Text put in from outside replaces what is there; text that came from here
-// is already in. The caret, the selection and the scroll offset stay where
-// they were, and the replacement is no step to undo. The string this editor
-// last emitted is the document currently.
-watch(text, (newText) => {
-  if (!view || newText === lastEmitted || view.state.doc.toString() === newText) return
-  view.dispatch(replace(view.state, newText))
-})
-
-watch(
-  () => props.isLive,
-  (on) => view?.dispatch({ effects: previewCompartment.reconfigure(preview(on)) }),
-)
-
-/**
- * The language is loaded when it is first wanted, so the editor is drawn before
- * it arrives and is reconfigured once it is here. A document whose language
- * changed while one was loading keeps the one it asked for last.
- */
-const applyLanguage = async (name: string) => {
-  const support = name ? await loadLanguage(name) : null
-  if (!view || name !== props.language) return
-  view.dispatch({ effects: languageCompartment.reconfigure(support ? code(support) : prose()) })
-}
-
-watch(() => props.language, applyLanguage)
-
-watch(
-  () => props.readonly,
-  (off) => view?.dispatch({ effects: editableCompartment.reconfigure(createEditable(!off)) }),
-)
-
-watch(
-  () => props.change,
-  (change) => view?.dispatch({ effects: changeCompartment.reconfigure(showChange(change)) }),
-)
-
-watch(
-  () => props.extensions,
-  (more) => view?.dispatch({ effects: extensionsCompartment.reconfigure(more) }),
-)
-
+/* --------------------------------- Helpers -------------------------------- */
 defineExpose({
   /** Take the keyboard. False while there is no editor yet to take it. */
-  focus: () => {
-    if (!view) return false
-    view.focus()
-    return true
-  },
+  focus,
   /**
    * Take the editor's measurements again. An editor drawn while it is hidden
    * has none to take. The caller says when it is on screen.
    */
-  measure: () => view?.requestMeasure(),
+  measure,
   /**
    * Put the caret on one line of the prose and bring it into sight. Lines are
    * counted from the first line of the prose, and one past the end lands on the
    * last line there is.
-   *
-   * An editor holding no text holds no lines, and says so. Text can arrive
-   * after the editor is drawn, and a caret asked for a line then relies on
-   * that line.
    */
-  reveal: (line: number) => {
-    if (!view || view.state.doc.length === 0) return false
-    const lineNumber = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
-    const { from } = view.state.doc.line(lineNumber)
-    view.dispatch({
-      selection: { anchor: from },
-      effects: EditorView.scrollIntoView(from, { y: 'start' }),
-    })
-    view.focus()
-    return true
-  },
+  reveal,
 })
 </script>
 

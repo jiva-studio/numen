@@ -127,8 +127,8 @@ function onDismiss() {
       :at="menuPosition"
       :current="currentKey"
       :from="trigger"
-      :has-groups="true"
-      :searchable="isSearchable"
+      has-groups
+      :is-searchable="isSearchable"
       search-name="Search models"
       name="Model"
       @choose="onChoose"

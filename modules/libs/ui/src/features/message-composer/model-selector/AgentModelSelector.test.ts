@@ -117,7 +117,7 @@ describe('AgentModelSelector', () => {
       attachTo: document.body,
     })
     await wrapper.find('button').trigger('click')
-    expect(wrapper.findComponent({ name: 'Menu' }).props('searchable')).toBe(false)
+    expect(wrapper.findComponent({ name: 'Menu' }).props('isSearchable')).toBe(false)
     wrapper.unmount()
   })
 
@@ -138,7 +138,7 @@ describe('AgentModelSelector', () => {
       attachTo: document.body,
     })
     await wrapper.find('button').trigger('click')
-    expect(wrapper.findComponent({ name: 'Menu' }).props('searchable')).toBe(true)
+    expect(wrapper.findComponent({ name: 'Menu' }).props('isSearchable')).toBe(true)
     wrapper.unmount()
   })
 })

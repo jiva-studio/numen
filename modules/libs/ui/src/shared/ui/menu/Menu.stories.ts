@@ -32,7 +32,7 @@ interface Knobs {
   hasGroups: boolean
   margin: number
   name: string
-  searchable?: boolean
+  isSearchable?: boolean
   onChoose: (id: string) => void
   onDismiss: () => void
 }
@@ -90,7 +90,7 @@ const renderMenu = (args: Knobs) => ({
         :has-groups="args.hasGroups"
         :margin="args.margin"
         :name="args.name"
-        :searchable="args.searchable"
+        :is-searchable="args.isSearchable"
         @choose="args.onChoose"
         @dismiss="open = false; args.onDismiss()"
       >
@@ -344,7 +344,7 @@ export const FarTooMany: Story = {
 /** The search line is a row of its own: the items scroll under it and never into it. */
 export const SearchStaysAboveTheList: Story = {
   args: {
-    searchable: true,
+    isSearchable: true,
     hasGroups: true,
     items: Array.from({ length: 60 }, (_, index) => ({
       id: `item-${index}`,

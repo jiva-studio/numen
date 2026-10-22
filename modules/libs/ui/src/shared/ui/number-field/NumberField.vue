@@ -6,42 +6,31 @@
  * What was typed stands as it was typed, and the number is written out only
  * once the field is left. Bounds that move under the number bring it in.
  */
-import { computed, useId, useTemplateRef, type HTMLAttributes } from 'vue'
+import { computed, useId, useTemplateRef } from 'vue'
 import { cn } from '@/shared/lib/classes'
 import { DEFAULT_BOUNDS, useNumberEntry } from './number'
+import type { NumberFieldProps } from './NumberField.types'
 
-const props = withDefaults(
-  defineProps<{
-    /** What a `<label for>` names the field by. Left empty, the field makes up its own. */
-    id?: string
-    /** How far the number may go. */
-    min?: number
-    max?: number
-    /** What an arrow key moves it by. */
-    step?: number
-    isDisabled?: boolean
-    /** The words standing in for a number nobody has typed. */
-    placeholder?: string
-    class?: HTMLAttributes['class']
-  }>(),
-  {
-    min: DEFAULT_BOUNDS.min,
-    max: DEFAULT_BOUNDS.max,
-    step: DEFAULT_BOUNDS.step,
-    isDisabled: false,
-    id: '',
-    placeholder: '',
-  },
-)
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<NumberFieldProps>(), {
+  min: DEFAULT_BOUNDS.min,
+  max: DEFAULT_BOUNDS.max,
+  step: DEFAULT_BOUNDS.step,
+  isDisabled: false,
+  id: '',
+  placeholder: '',
+})
 
 /** The number in force. An empty field holds none. */
 const model = defineModel<number | null>({ default: null })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The field come to rest at a number other than the one it was resting at. */
   commit: [value: number | null]
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
 
 const { typed, isInvalid, speechText, setText, commit, applyKey } = useNumberEntry(
@@ -54,6 +43,13 @@ const ownId = useId()
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
+defineExpose({
+  /** The element itself, for a caller that has to reach past these props. */
+  element,
+  focus: (how?: FocusOptions) => element.value?.focus(how),
+})
+
+/* -------------------------------- Handlers -------------------------------- */
 const onInput = (event: Event) => setText((event.target as HTMLInputElement).value)
 
 /**
@@ -67,12 +63,6 @@ const onKeyDown = (event: KeyboardEvent) => {
   }
   if (applyKey(event.key, props.isDisabled)) event.preventDefault()
 }
-
-defineExpose({
-  /** The element itself, for a caller that has to reach past these props. */
-  element,
-  focus: (how?: FocusOptions) => element.value?.focus(how),
-})
 </script>
 
 <template>

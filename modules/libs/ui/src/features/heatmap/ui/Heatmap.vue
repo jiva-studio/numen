@@ -20,6 +20,7 @@ import type { Day, Tally } from '../lib/heatmap'
 import { useWidth } from '../model/width'
 import type { Words } from '../lib/words'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** What was answered on each day, by the day it was answered on. */
@@ -37,6 +38,7 @@ const props = withDefaults(
   { due: () => new Map(), now: () => new Date(), cell: 11, gap: 3 },
 )
 
+/* ---------------------------------- State --------------------------------- */
 const root = useTemplateRef<HTMLElement>('root')
 const room = useWidth(root)
 
@@ -52,7 +54,8 @@ const cells = computed(() => getCells(grid.value, visibleDays.value))
 /** The day a person is pointing at, and the cell on the page it is drawn in. */
 const pointed = ref<{ day: Day; at: Box } | null>(null)
 
-const setPointed = (day: Day, press: MouseEvent) => {
+/* -------------------------------- Handlers -------------------------------- */
+const onSetPointed = (day: Day, press: MouseEvent) => {
   const cell = (press.target as SVGRectElement).getBoundingClientRect()
   pointed.value = {
     day,
@@ -86,7 +89,7 @@ const setPointed = (day: Day, press: MouseEvent) => {
         :data-weight="cell.day.weight"
         :data-ahead="cell.day.isAhead ? 'yes' : undefined"
         :data-today="cell.day.isToday ? 'yes' : undefined"
-        @mouseenter="setPointed(cell.day, $event)"
+        @mouseenter="onSetPointed(cell.day, $event)"
         @mouseleave="pointed = null"
       />
     </svg>

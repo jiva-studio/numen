@@ -80,6 +80,66 @@ function watchBookLayout(
   })
 }
 
+export interface BookSettlingOptions {
+  readonly area: Readonly<ShallowRef<HTMLElement | null>>
+  readonly paper: Readonly<ShallowRef<HTMLElement | null>>
+  readonly props: SettledBookProps
+  readonly onMove: (pos: number) => void
+  readonly takeLed: () => BookLink | undefined
+  readonly column: {
+    readonly measure: () => void
+    readonly isMeasured: { readonly value: boolean }
+    readonly readColumns: (box: HTMLElement, text: HTMLElement) => void
+    readonly findFragmentOffset: (frag: string) => number | undefined
+    readonly markRuns: () => void
+    readonly isStood: { value: boolean }
+  }
+  readonly turns: {
+    readonly stand: (spread: number, how: 'smooth' | 'auto') => void
+    readonly getKeptOffset: () => number
+    readonly getSpreadOf: (pos: number) => number
+    readonly standing: { value: number }
+  }
+  readonly signals: {
+    readonly viewport: ShallowRef<{ width: number; height: number }>
+    readonly textSize: { value: number }
+  }
+}
+
+/** Handles re-settling and watching dimensions / links in book layout. */
+export function createBookSettling(options: BookSettlingOptions) {
+  const settle = (keep: number, led?: BookLink) => {
+    options.column.measure()
+    if (!options.column.isMeasured.value) return
+    onNextFrame(() => {
+      const box = options.area.value
+      const text = options.paper.value
+      if (!box || !text) return
+      options.column.readColumns(box, text)
+      const landed =
+        led && (led.path === '' || led.path === options.props.path)
+          ? options.column.findFragmentOffset(led.fragment)
+          : undefined
+      options.turns.stand(options.turns.getSpreadOf(landed ?? keep), 'auto')
+      if (landed !== undefined) options.onMove(landed)
+      options.column.markRuns()
+      options.column.isStood.value = true
+    })
+  }
+
+  watchBookLayout(options.props, options.signals, {
+    settle,
+    getKeptOffset: options.turns.getKeptOffset,
+    takeLed: options.takeLed,
+    standing: options.turns.standing,
+    getSpreadOf: options.turns.getSpreadOf,
+    stand: options.turns.stand,
+    isStood: options.column.isStood,
+  })
+
+  return { settle }
+}
+
 /**
  * The room one document of a book is read in, and everything measured from it.
  * `onMove` is what the reader says when the offset in front changes, and
@@ -98,40 +158,25 @@ export function useBookLayout(options: BookLayoutOptions) {
     onMove: options.onMove,
   })
 
-  const settle = (keep: number, led?: BookLink) => {
-    column.measure()
-    if (!isMeasured.value) return
-    onNextFrame(() => {
-      const box = options.area.value
-      const text = options.paper.value
-      if (!box || !text) return
-      column.readColumns(box, text)
-      const landed =
-        led && (led.path === '' || led.path === options.props.path)
-          ? column.findFragmentOffset(led.fragment)
-          : undefined
-      stand(getSpreadOf(landed ?? keep), 'auto')
-      if (landed !== undefined) options.onMove(landed)
-      column.markRuns()
-      column.isStood.value = true
-    })
-  }
-
-  watchBookLayout(
-    options.props,
-    { viewport, textSize },
-    {
-      settle,
-      getKeptOffset,
-      takeLed: options.takeLed,
-      standing,
-      getSpreadOf,
-      stand,
+  const { settle } = createBookSettling({
+    area: options.area,
+    paper: options.paper,
+    props: options.props,
+    onMove: options.onMove,
+    takeLed: options.takeLed,
+    column: {
+      measure: column.measure,
+      isMeasured,
+      readColumns: column.readColumns,
+      findFragmentOffset: column.findFragmentOffset,
+      markRuns: column.markRuns,
       isStood: column.isStood,
     },
-  )
+    turns: { stand, getKeptOffset, getSpreadOf, standing },
+    signals: { viewport, textSize },
+  })
 
-  return {
+  const state = {
     textSize,
     isMeasured,
     isStood: column.isStood,
@@ -145,4 +190,5 @@ export function useBookLayout(options: BookLayoutOptions) {
     findFragmentOffset: column.findFragmentOffset,
     turn,
   }
+  return state
 }

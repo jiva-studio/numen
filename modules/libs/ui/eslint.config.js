@@ -48,6 +48,16 @@ const domainImports = [
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname),
 
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ['eslint.config.js'],
+        },
+      },
+    },
+  },
+
   // UI layer boundaries and domain isolation
   {
     files: ['src/**/*.{ts,vue}'],

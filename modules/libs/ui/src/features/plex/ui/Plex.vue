@@ -18,6 +18,7 @@ import { formatCount, getRelationName, type PlexRelation } from '../lib/relation
 import { usePlexDrag } from '../model/drag'
 import { usePlexGesture } from '../model/gesture'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {
   showEdgeLabels: true,
   duration: 420,
@@ -34,10 +35,12 @@ const props = withDefaults(defineProps<PlexProps>(), {
   dropName: getRelationName,
 })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<PlexEvents>()
 
 defineSlots<PlexSlots>()
 
+/* --------------------------------- State ---------------------------------- */
 const frameElement = useTemplateRef<HTMLElement>('frame')
 /** The drawing, which a drag crossing the plex is measured against. */
 const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
@@ -111,6 +114,7 @@ const dragging = usePlexDrag({
   commit: (dragged, relation) => emit('bring', dragged, relation),
 })
 
+/* --------------------------------- Hooks ---------------------------------- */
 /**
  * A neighbourhood is drawn from the node it is seen from, so every node walks
  * to a new relation when another one arrives. A menu is anchored where one of them

@@ -8,31 +8,16 @@ import { Card } from './card'
 import { CutChoice } from './stencil-choice'
 import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
-import { DECK_WORDS, createRunEnd, type DeckWords, type DeckProblems } from '../../lib/deck'
+import { DECK_WORDS, createRunEnd } from '../../lib/deck'
 import type { Run } from '../../lib/grid'
 import { createSealedMap, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
+import type { DeckRunProps } from './DeckRun.types'
 
-const props = withDefaults(
-  defineProps<{
-    /** The run, as the grid lays it out. */
-    run: Run
-    /** The stencils a card may be cut by. */
-    stencils: readonly Stencil[]
-    /** How many stand in the grid, every plus among them. */
-    of: number
-    /** What the caller found wrong with the cards it handed in. */
-    wrong: DeckProblems
-    /** Where letting go would put the card being dragged. */
-    at: InsertionPoint | undefined
-    /** Its plus is showing which stencils a new card may be cut by. */
-    isAsking: boolean
-    /** The words it is drawn with. */
-    words?: DeckWords
-  }>(),
-  { words: () => DECK_WORDS },
-)
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<DeckRunProps>(), { words: () => DECK_WORDS })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A card is dragged over a place that would take it. */
   (event: 'drag-over', target: InsertionPoint | undefined, press: DragEvent): void
@@ -48,23 +33,26 @@ const emit = defineEmits<{
   (event: 'add', stencil: Stencil): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 /** A card nothing is wrong with any value of. */
 const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
 
-/** Where a card let go past the last of this run lands. */
-const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
-
+/* -------------------------------- Handlers -------------------------------- */
 /** The section this run is placed under, under a new name. */
-const renameSection = (name: string): void => {
+const onRenameSection = (name: string): void => {
   const section = props.run.section
   if (section) emit('rename-section', section.id, name)
 }
 
 /** The section this run is placed under, gone. */
-const removeSection = (): void => {
+const onRemoveSection = (): void => {
   const section = props.run.section
   if (section) emit('remove-section', section.id)
 }
+
+/* --------------------------------- Helpers -------------------------------- */
+/** Where a card let go past the last of this run lands. */
+const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 </script>
 
 <template>
@@ -80,8 +68,8 @@ const removeSection = (): void => {
     <SectionHeading
       :section="run.section"
       :words="words"
-      @rename="renameSection"
-      @remove="removeSection"
+      @rename="onRenameSection"
+      @remove="onRemoveSection"
     />
   </div>
 

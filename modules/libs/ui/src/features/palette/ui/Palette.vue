@@ -17,69 +17,32 @@ import { PaletteActions } from './palette-actions'
 import { PaletteField } from './palette-field'
 import { PaletteFrame } from './palette-frame'
 import { PaletteResults } from './palette-results'
-import { ACTION_WORDS, type ActionWords } from '../lib/actions'
-import { type PaletteGroup, type PaletteItemId } from '../lib/item'
+import { ACTION_WORDS } from '../lib/actions'
+import { type PaletteItemId } from '../lib/item'
 import { commandKeyChord, getShortcuts } from '../lib/keys'
 import { usePaletteKeys } from '../model/keys'
 import { useActionPanel } from '../model/panel'
 import { usePalettePlaces } from '../model/places'
-import type { PaletteKeys } from '@/shared/ui/key-cap'
+import type { PaletteProps } from './Palette.types'
 
-const props = withDefaults(
-  defineProps<{
-    /**
-     * The groups, in the order they are offered. A group holding nothing is
-     * is working or has something to say in place of items.
-     */
-    groups?: readonly PaletteGroup[]
-    /** Whether it is drawn at all. */
-    isOpen?: boolean
-    /** The words standing in for what has not been typed. */
-    placeholder?: string
-    /**
-     * Which step of a flow the field is on, in a few words, drawn beside it.
-     * Nothing is drawn without it.
-     */
-    crumb?: string
-    /**
-     * Which step the caller is on. The identifier is opaque; changing it hands
-     * the keyboard back to the field with what stands there selected.
-     */
-    step?: string
-    /**
-     * The item the keyboard relies on as a step opens: for a list of values,
-     * the value in force. A list of no value, and a value with no item to
-     * stand on, open on the first item there is.
-     */
-    opensOn?: string
-    /** Where the keyboard goes back to once it closes. */
-    from?: HTMLElement | null
-    /** Where it is drawn. The end of the document by default. */
-    to?: string | HTMLElement
-    /** What it is announced as. */
-    name?: string
-    /** The words the action panel is drawn with. */
-    actionWords?: ActionWords
-    /** The keystroke that opens the action panel, as this machine reports it. */
-    actionKey?: PaletteKeys
-  }>(),
-  {
-    groups: () => [],
-    isOpen: false,
-    placeholder: 'Search',
-    crumb: '',
-    step: '',
-    opensOn: '',
-    from: null,
-    to: 'body',
-    name: 'Palette',
-    actionWords: () => ACTION_WORDS,
-    actionKey: () => commandKeyChord(navigator.userAgent),
-  },
-)
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<PaletteProps>(), {
+  groups: () => [],
+  isOpen: false,
+  placeholder: 'Search',
+  crumb: '',
+  step: '',
+  opensOn: '',
+  from: null,
+  to: 'body',
+  name: 'Palette',
+  actionWords: () => ACTION_WORDS,
+  actionKey: () => commandKeyChord(navigator.userAgent),
+})
 
 const searchQuery = defineModel<string>({ default: '' })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /**
    * An item was chosen, and what was asked of it. Both identifiers are the
@@ -111,6 +74,7 @@ defineSlots<{
   silence(): unknown
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 const uid = useId()
 
 const field = useTemplateRef<InstanceType<typeof PaletteField>>('field')
@@ -128,9 +92,6 @@ const { placed, announcement, here, activeItem, actions, selectedId, chooseAt } 
 
 /** The actions a key reaches, which is what the foot of the palette says. */
 const hinted = computed(() => getShortcuts(activeItem.value))
-
-/** What is lit is brought into sight. */
-const reveal = (): void => void results.value?.reveal(selectedId.value)
 
 const {
   open: isPanelOpen,
@@ -159,10 +120,17 @@ const { onKey } = usePaletteKeys({
   dismiss: () => emit('dismiss'),
 })
 
+/* -------------------------------- Handlers -------------------------------- */
 // The action panel is about the item that was lit when it opened, and stays
 // about it while a pointer crosses the list.
 const onOver = (pos: number, event: PointerEvent) => {
   if (!isPanelOpen.value) places.lightAt(pos, event)
+}
+
+/* --------------------------------- Helpers -------------------------------- */
+/** What is lit is brought into sight. */
+function reveal(): void {
+  void results.value?.reveal(selectedId.value)
 }
 </script>
 

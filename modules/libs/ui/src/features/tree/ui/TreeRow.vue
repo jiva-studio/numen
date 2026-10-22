@@ -5,29 +5,11 @@
  * are the tree's.
  */
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
-import type { ShownRow } from '../lib/row'
+import type { TreeRowProps } from './TreeRow.types'
 import { TreeField } from './tree-field'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  row: ShownRow
-  /** What the tree is announced as. */
-  name: string
-  /** The selection relies on it. */
-  isSelected: boolean
-  /** It is among the rows being dragged. */
-  isLifted: boolean
-  /** A drop would land inside it. */
-  isDropInside: boolean
-  /** A drop would land above it. */
-  isDropAbove: boolean
-  /** The one row the tab key reaches. */
-  isTabStop: boolean
-  /** Its name is in a field. */
-  isRenaming: boolean
-  /** What the row is marked with, written onto it currently. */
-  mark: Record<string, string>
-}>()
+const props = defineProps<TreeRowProps>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{

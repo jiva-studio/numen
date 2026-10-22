@@ -41,20 +41,20 @@ export const languageCompartment = new Compartment()
 
 export interface Settings {
   /** Marks are drawn as what they mean, away from the caret. */
-  readonly isLivePreview?: boolean
-  readonly readonly?: boolean
-  readonly placeholder?: string
+  readonly isLivePreview?: boolean | undefined
+  readonly readonly?: boolean | undefined
+  readonly placeholder?: string | undefined
   /**
    * What the editor is announced as. A box typed into is not named by what has
    * been typed in it, so the placeholder is no name and this is the only one.
    */
-  readonly name?: string
+  readonly name?: string | undefined
   /** What the editor is described by: where the words are written is the caller's. */
-  readonly describedBy?: string
+  readonly describedBy?: string | undefined
   /** A change being made to the text by something other than the reader. */
-  readonly change?: EditorChange | null
+  readonly change?: EditorChange | null | undefined
   /** What whoever put the editor on the screen draws into it. */
-  readonly extensions?: Extension
+  readonly extensions?: Extension | undefined
 }
 
 export const preview = (isOn: boolean): Extension => (isOn ? [wholeLines, live, follow] : [])

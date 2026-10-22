@@ -12,6 +12,9 @@ import { Menu } from '../menu'
 import type { Position } from '@/shared/lib/geometry'
 import { getFill, getFillPercent, getOfferedLevels, type Day } from './week'
 
+defineOptions({ inheritAttrs: false })
+
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     days: readonly Day[]
@@ -23,15 +26,13 @@ const props = withDefaults(
   { isDisabled: false },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A day put at a level, which is the day as it was given and the level chosen. */
   choose: [day: string, level: number]
 }>()
 
-// The row and the levels it offers are two things drawn, so what a caller
-// names the row by is put on the row itself.
-defineOptions({ inheritAttrs: false })
-
+/* ---------------------------------- State --------------------------------- */
 const popoverAnchor = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(
   null,
 )
@@ -48,7 +49,8 @@ const current = computed(() =>
   popoverAnchor.value === null ? null : `${popoverAnchor.value.level}`,
 )
 
-const openLevels = (day: Day, event: Event) => {
+/* -------------------------------- Handlers -------------------------------- */
+const onOpenLevels = (day: Day, event: Event) => {
   if (props.isDisabled) return
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
@@ -68,6 +70,7 @@ const onChoose = (id: string) => {
   emit('choose', day, level)
 }
 
+/* --------------------------------- Helpers -------------------------------- */
 /**
  * How strongly a day is filled: the whole of the accent at a day standing at
  * the whole of it, and no colour at all at a day standing at nothing.
@@ -87,7 +90,7 @@ const getFillStyle = (level: number) => {
     role="toolbar"
     orientation="horizontal"
     v-bind="$attrs"
-    :loop="true"
+    loop
     :class="cn('inline-flex items-center gap-1', props.class)"
   >
     <RovingFocusItem v-for="day in days" :key="day.id" as-child>
@@ -107,7 +110,7 @@ const getFillStyle = (level: number) => {
             'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
           )
         "
-        @click="openLevels(day, $event)"
+        @click="onOpenLevels(day, $event)"
       >
         {{ day.short }}
       </button>

@@ -10,6 +10,7 @@ import { PaneBody } from './body'
 import { PaneStrip } from './strip'
 import type { Pane, TabId } from '../../lib/node'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     pane: Pane
@@ -19,6 +20,7 @@ const props = withDefaults(
   { isFocused: false },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
@@ -38,18 +40,10 @@ defineSlots<{
   silence(): unknown
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 const strip = useTemplateRef<InstanceType<typeof PaneStrip>>('strip')
 
-/** A pane is claimed under the primary button and under no other. */
-function claim(event: PointerEvent): void {
-  if (event.button === 0) emit('claim')
-}
-
-/** A panel release puts the keyboard back on the tab it is held under. */
-function onLeave(tab: TabId): void {
-  strip.value?.reach(tab)
-}
-
+/* ---------------------------------- Hooks --------------------------------- */
 /**
  * A tab held out of sight is drawn with no size, so what is showing is said
  * once it is on screen and can be measured. It is said for the tab this pane
@@ -66,6 +60,17 @@ watch(
   },
   { flush: 'post' },
 )
+
+/* -------------------------------- Handlers -------------------------------- */
+/** A pane is claimed under the primary button and under no other. */
+function onClaim(event: PointerEvent): void {
+  if (event.button === 0) emit('claim')
+}
+
+/** A panel release puts the keyboard back on the tab it is held under. */
+function onLeave(tab: TabId): void {
+  strip.value?.reach(tab)
+}
 </script>
 
 <template>
@@ -73,7 +78,7 @@ watch(
     class="pane numen bg-surface text-ink flex min-h-0 min-w-0 flex-col"
     :data-workspace-pane="pane.id"
     :data-focused="isFocused || undefined"
-    @pointerdown="claim"
+    @pointerdown="onClaim"
   >
     <!-- The strip is the list of tabs. A pane holding no tabs has none. -->
     <PaneStrip

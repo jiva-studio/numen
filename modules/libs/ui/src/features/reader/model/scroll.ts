@@ -54,7 +54,7 @@ function applyWheelScroll(area: HTMLElement, event: WheelEvent): boolean {
   return true
 }
 
-function usePointerDrag(
+function createPointerDrag(
   area: Readonly<ShallowRef<HTMLElement | null>>,
   isDragging: Ref<boolean>,
   onInterrupted: () => void,
@@ -117,7 +117,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     return true
   }
 
-  const { onPointerDown, onPointerMove, letGo } = usePointerDrag(area, isDragging, () => {
+  const { onPointerDown, onPointerMove, letGo } = createPointerDrag(area, isDragging, () => {
     heading = undefined
   })
 
@@ -126,7 +126,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     if (applyWheelScroll(area.value, event)) heading = undefined
   }
 
-  return {
+  const state: HandScroll = {
     along: alongOffset,
     isDragging,
     getScrollOffset,
@@ -137,4 +137,5 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     letGo,
     onWheel,
   }
+  return state
 }

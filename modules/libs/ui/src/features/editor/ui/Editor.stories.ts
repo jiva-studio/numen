@@ -55,7 +55,7 @@ export const Playground: Story = { render: renderEditor(MARKED_UP) }
 export const AsWritten: Story = { render: renderEditor(MARKED_UP, { isLive: false }) }
 
 /** Nothing to type into. */
-export const ReadOnly: Story = { render: renderEditor(MARKED_UP, { readonly: true }) }
+export const ReadOnly: Story = { render: renderEditor(MARKED_UP, { isReadonly: true }) }
 
 /* One line of every construct whose marks are concealed, each with a blank
    line after it, and a line at the end to park the caret on. */

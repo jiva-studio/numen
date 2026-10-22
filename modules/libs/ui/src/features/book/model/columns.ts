@@ -52,16 +52,56 @@ export interface BookColumnsOptions {
   readonly getEdge: (of: HTMLElement) => number
 }
 
+export interface BookFlowState {
+  readonly textSize: import('vue').ComputedRef<number>
+  readonly viewport: ShallowRef<{ width: number; height: number }>
+  readonly isMeasured: import('vue').ComputedRef<boolean>
+  readonly flow: import('vue').ComputedRef<Flow>
+  readonly spreadCount: import('vue').ComputedRef<number>
+  readonly setting: import('vue').ComputedRef<Record<string, string>>
+  readonly measure: () => void
+}
+
+/** The flow and sizing of the book reading area. */
+export function useBookFlow(
+  area: Readonly<ShallowRef<HTMLElement | null>>,
+  props: SettledBookProps,
+  contentWidth: ShallowRef<number> | import('vue').Ref<number>,
+): BookFlowState {
+  const textSize = computed(() => clamp(props.textSize, { min: SMALLEST, max: LARGEST }))
+  const { viewport, measure } = useViewport(area)
+  const isMeasured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
+  const columns = computed(() => countColumns(viewport.value.width, textSize.value))
+  const flow = computed<Flow>(() => ({
+    contentWidth: contentWidth.value,
+    width: viewport.value.width,
+    gap: GAP,
+    columns: columns.value,
+  }))
+  const spreadCount = computed(() => countSpreads(flow.value))
+  const setting = computed(() =>
+    createBookSetting(flow.value, viewport.value.height, textSize.value),
+  )
+
+  return {
+    textSize,
+    viewport,
+    isMeasured,
+    flow,
+    spreadCount,
+    setting,
+    measure,
+  }
+}
+
 /** `getEdge` is handed on to the marks, which is what reads it. */
 export function useBookColumns(options: BookColumnsOptions) {
-  /** How large the text is set, held inside what a book may be read at. */
-  const textSize = computed(() => clamp(options.props.textSize, { min: SMALLEST, max: LARGEST }))
-
-  /** The reading area, taken again whenever it changes. */
-  const { viewport, measure } = useViewport(options.area)
-
-  /** Rendered columns content width in CSS pixels. */
   const contentWidth = ref(0)
+  const { textSize, viewport, isMeasured, flow, spreadCount, setting, measure } = useBookFlow(
+    options.area,
+    options.props,
+    contentWidth,
+  )
 
   const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(
     options.paper,
@@ -69,30 +109,8 @@ export function useBookColumns(options: BookColumnsOptions) {
     options.getEdge,
   )
 
-  /**
-   * Whether the reading area has been measured. A book is turned and never
-   * scrolled, so its text is drawn only against an area of a known size.
-   */
-  const isMeasured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
-
   /** Whether the spread in front of the drawn document has been stood. */
   const isStood = ref(false)
-
-  const columns = computed(() => countColumns(viewport.value.width, textSize.value))
-
-  const flow = computed<Flow>(() => ({
-    contentWidth: contentWidth.value,
-    width: viewport.value.width,
-    gap: GAP,
-    columns: columns.value,
-  }))
-
-  /** How many spreads the document is read in. */
-  const spreadCount = computed(() => countSpreads(flow.value))
-
-  const setting = computed(() =>
-    createBookSetting(flow.value, viewport.value.height, textSize.value),
-  )
 
   /**
    * The columns as the browser has just laid them out: how tall a column may be,
@@ -107,7 +125,7 @@ export function useBookColumns(options: BookColumnsOptions) {
     gather()
   }
 
-  return {
+  const state = {
     textSize,
     viewport,
     isMeasured,
@@ -121,4 +139,5 @@ export function useBookColumns(options: BookColumnsOptions) {
     findFragmentOffset,
     markRuns,
   }
+  return state
 }

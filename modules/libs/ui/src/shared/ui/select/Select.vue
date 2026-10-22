@@ -6,36 +6,28 @@
  * A value in force that is none of the choices is written on the line as it
  * stands, and the caller is told nothing until a choice is made.
  */
-import { computed, ref, useTemplateRef, type HTMLAttributes } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
 import { cn } from '@/shared/lib/classes'
 import { Menu, type MenuItem } from '../menu'
 import type { Position } from '@/shared/lib/geometry'
-import type { SelectChoice } from '.'
+import type { SelectProps } from './Select.types'
 
-const props = withDefaults(
-  defineProps<{
-    /** The choices, in the order they are offered. */
-    choices: readonly SelectChoice[]
-    /** What relies on the line while nothing is in force. */
-    placeholder?: string
-    /** What the list of choices is announced as. */
-    name?: string
-    isDisabled?: boolean
-    /** Whether the choices carry a line to search them by. */
-    searchable?: boolean
-    /** What the search line is announced as. */
-    searchName?: string
-    class?: HTMLAttributes['class']
-  }>(),
-  { placeholder: '', name: 'Choices', isDisabled: false, searchable: false, searchName: 'Search' },
-)
+defineOptions({ inheritAttrs: false })
+
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(defineProps<SelectProps>(), {
+  placeholder: '',
+  name: 'Choices',
+  isDisabled: false,
+  isSearchable: false,
+  searchName: 'Search',
+})
 
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
 
-defineOptions({ inheritAttrs: false })
-
+/* ---------------------------------- State --------------------------------- */
 const items = computed<readonly MenuItem[]>(() =>
   props.choices.map((one) => ({
     id: one.id,
@@ -59,11 +51,18 @@ const element = useTemplateRef<HTMLButtonElement>('element')
  */
 const menuAnchor = ref<{ at: Position; wide: number } | null>(null)
 
+defineExpose({
+  /** The element itself, for a caller that has to reach past these props. */
+  element,
+  focus: (how?: FocusOptions) => element.value?.focus(how),
+})
+
+/* -------------------------------- Handlers -------------------------------- */
 /**
  * The line opens the choices under itself, along its own leading edge and no
  * narrower than itself.
  */
-const openChoices = () => {
+const onOpenChoices = () => {
   const line = element.value
   if (!line || props.isDisabled) return
   const box = line.getBoundingClientRect()
@@ -78,14 +77,8 @@ const onChoose = (id: string) => {
 const onKey = (event: KeyboardEvent) => {
   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
   event.preventDefault()
-  openChoices()
+  onOpenChoices()
 }
-
-defineExpose({
-  /** The element itself, for a caller that has to reach past these props. */
-  element,
-  focus: (how?: FocusOptions) => element.value?.focus(how),
-})
 </script>
 
 <template>
@@ -109,7 +102,7 @@ defineExpose({
         props.class,
       )
     "
-    @click="openChoices"
+    @click="onOpenChoices"
     @keydown="onKey"
   >
     <span
@@ -131,7 +124,7 @@ defineExpose({
     :current="model"
     :name="name"
     has-groups
-    :searchable="searchable"
+    :is-searchable="isSearchable"
     :search-name="searchName"
     is-open
     trigger="keyboard"

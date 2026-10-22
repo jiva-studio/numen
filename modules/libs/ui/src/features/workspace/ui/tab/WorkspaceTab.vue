@@ -9,6 +9,7 @@
  */
 import { useTemplateRef } from 'vue'
 import type { TabId } from '../../lib/node'
+/* --------------------------------- Props ---------------------------------- */
 withDefaults(
   defineProps<{
     /** Its identity, carried on the element for a drag to find it by. */
@@ -17,13 +18,14 @@ withDefaults(
     /** What the tab is carrying besides its title, in a word. */
     mark?: string | undefined
     /** The one its pane is showing. */
-    showing?: boolean
+    isShowing?: boolean
     /** Showing, in the pane a tab would open into. */
     isFocused?: boolean
   }>(),
-  { mark: undefined, showing: false, isFocused: false },
+  { mark: undefined, isShowing: false, isFocused: false },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'lift', pointer: PointerEvent): void
   (event: 'close'): void
@@ -38,10 +40,10 @@ defineSlots<{
   mark(props: { mark: string }): unknown
 }>()
 
+/* ---------------------------------- State --------------------------------- */
 const root = useTemplateRef<HTMLElement>('root')
 
-defineExpose({ focus: () => root.value?.focus() })
-
+/* -------------------------------- Handlers -------------------------------- */
 /**
  * A tab is lifted under the primary button and under no other. The press
  * selects no text as it travels, and takes the keyboard itself.
@@ -56,6 +58,9 @@ const onPointerDown = (event: PointerEvent) => {
 function onContextMenu(event: MouseEvent): void {
   emit('menu', { x: event.clientX, y: event.clientY })
 }
+
+/* --------------------------------- Helpers -------------------------------- */
+defineExpose({ focus: () => root.value?.focus() })
 </script>
 
 <template>
@@ -63,10 +68,10 @@ function onContextMenu(event: MouseEvent): void {
     ref="root"
     class="tab numen text-small text-hushed flex min-w-0 shrink items-center font-sans"
     role="tab"
-    :aria-selected="showing"
-    :tabindex="showing ? 0 : -1"
+    :aria-selected="isShowing"
+    :tabindex="isShowing ? 0 : -1"
     :data-workspace-tab="tab"
-    :data-showing="showing || undefined"
+    :data-showing="isShowing || undefined"
     :data-focused="isFocused || undefined"
     @pointerdown="onPointerDown"
     @contextmenu.prevent="onContextMenu"
@@ -87,7 +92,7 @@ function onContextMenu(event: MouseEvent): void {
     <button
       class="tab__close rounded-pill shrink-0"
       type="button"
-      :tabindex="showing ? 0 : -1"
+      :tabindex="isShowing ? 0 : -1"
       :aria-label="`Close ${title}`"
       @pointerdown.stop
       @click.stop="emit('close')"

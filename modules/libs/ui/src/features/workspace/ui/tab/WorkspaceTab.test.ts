@@ -55,15 +55,15 @@ describe('what a tab carries', () => {
 
 describe('what a tab is to a keyboard', () => {
   it('is a tab in a strip, and says whether it is the one showing', () => {
-    const tab = mountTab({ showing: true })
+    const tab = mountTab({ isShowing: true })
 
     expect(tab.attributes('role')).toBe('tab')
     expect(tab.attributes('aria-selected')).toBe('true')
   })
 
   it('is stopped at only where it is the one showing', () => {
-    expect(mountTab({ showing: true }).attributes('tabindex')).toBe('0')
-    expect(mountTab({ showing: false }).attributes('tabindex')).toBe('-1')
+    expect(mountTab({ isShowing: true }).attributes('tabindex')).toBe('0')
+    expect(mountTab({ isShowing: false }).attributes('tabindex')).toBe('-1')
   })
 })
 
