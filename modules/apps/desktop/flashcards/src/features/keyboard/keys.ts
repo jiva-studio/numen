@@ -105,7 +105,7 @@ export const shouldConsumeKey = (intent: SessionKeyIntent | null): boolean =>
 export type PickerKeyIntent = { does: 'all' } | { does: 'deck'; at: number } | { does: 'back' }
 
 /** The letters the decks are picked by, in the order they are listed. */
-export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
 
 /**
  * The letter one deck of a list is picked by, and nothing past the alphabet: a

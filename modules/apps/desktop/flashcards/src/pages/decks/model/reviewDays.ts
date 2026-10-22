@@ -25,7 +25,7 @@ const CELL = 11
 const GAP = 3
 
 /** One day, and what was answered on it. */
-export interface Day {
+interface Day {
   day: string
   answered: number
   again: number

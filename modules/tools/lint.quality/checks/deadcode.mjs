@@ -79,17 +79,19 @@ function checkKnip(repoRoot, relDir, pkgName) {
       output += d.toString();
     });
 
-    child.on("close", () => {
-      const unusedExportsMatch = output.match(/Unused exports \((\d+)\)/);
-      const unusedTypesMatch = output.match(/Unused exported types \((\d+)\)/);
+    child.on("close", (code) => {
+      const unusedFilesMatch = output.match(/Unused files \((\d+)\)/);
+      const filesCount = unusedFilesMatch ? Number(unusedFilesMatch[1]) : 0;
 
-      const exportCount = unusedExportsMatch ? Number(unusedExportsMatch[1]) : 0;
-      const typeCount = unusedTypesMatch ? Number(unusedTypesMatch[1]) : 0;
-
-      if (exportCount > 0 || typeCount > 0) {
-        resolve([
-          `[TS knip: ${pkgName}] ${exportCount} unused exports, ${typeCount} unused exported types`,
-        ]);
+      if (code !== 0 || filesCount > 0) {
+        const issues = [];
+        if (filesCount > 0) {
+          issues.push(`[TS knip: ${pkgName}] ${filesCount} unused files`);
+        }
+        if (code !== 0 && issues.length === 0) {
+          issues.push(`[TS knip: ${pkgName}] knip check failed with exit code ${code}`);
+        }
+        resolve(issues);
       } else {
         resolve([]);
       }
