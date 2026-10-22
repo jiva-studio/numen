@@ -1,9 +1,17 @@
-package editor
+package assembly
 
 import (
+	"net/http"
+
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
+
+// PluginServices is where this window forwards the calls it receives for the services plugins serve.
+type PluginServices = interface {
+	Serves(string) bool
+	ServeHTTP(http.ResponseWriter, *http.Request)
+}
 
 // PluginAssembly is what this window asks to manage, reach, and report plugins.
 type PluginAssembly interface {

@@ -20,6 +20,30 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
+var errComingUp = errors.New("the vault is still coming up")
+
+// errTooManyPaths is a filter naming more paths than are answered at once.
+var errTooManyPaths = errors.New("that is more paths than are answered at once")
+
+const mostAsked = 200
+
+// eachOnce is the paths a client asked about, each named once.
+func eachOnce(paths []string) ([]string, error) {
+	observed := make(map[string]bool, len(paths))
+	out := make([]string, 0, len(paths))
+	for _, path := range paths {
+		if observed[path] {
+			continue
+		}
+		observed[path] = true
+		out = append(out, path)
+	}
+	if len(out) > mostAsked {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyPaths)
+	}
+	return out, nil
+}
+
 // fileHandler answers what the vault holds and what a person does to it: its tree,
 // its folders and its links to the web.
 type fileHandler struct {

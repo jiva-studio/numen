@@ -1,4 +1,4 @@
-package editor
+package assembly
 
 import (
 	"context"

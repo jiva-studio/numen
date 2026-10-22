@@ -32,11 +32,6 @@ func newShelf() *fakeStorage {
 // fakeStores hands the one store to whatever opens a vault's store.
 type fakeStores struct{ *fakeStorage }
 
-type (
-	shelf   = fakeStorage
-	shelves = fakeStores
-)
-
 func (s fakeStores) Open(domain.Vault) (port.DerivedStore, error) { return s.fakeStorage, nil }
 
 // Open is one file of the store, which a copy of a video is played from.

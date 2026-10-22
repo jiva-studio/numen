@@ -24,18 +24,6 @@ type vaultSession struct {
 	recognitionWorker   *recognition.Worker
 	transcriptionWorker *transcription.Worker
 
-	// recognitionRunner reads a scanned document, transcriptionRunner hears a recording,
-	// proofreads puts a transcript right, and proofreadsRecognition puts a recognition
-	// right, each for whoever asks.
-	recognitionRunner     Runner
-	transcriptionRunner   Runner
-	transcriptProofreader Proofreader
-	proofreadsRecognition RecognitionProofreader
-	// rechunk asks for a source to be cut again from what its text now says, and
-	// forgets takes a recording out of what the queue has had an answer about.
-	rechunk         func(context.Context, domain.Vault, string) error
-	forgetRecording func(domain.Vault, string)
-
 	// ctx is what every pass behind this vault runs under, and what work
 	// nobody is waiting for is started under. cancel ends them, and wait waits
 	// for them.
@@ -176,24 +164,9 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		refresh:             refresh,
 		recognitionWorker:   recognising,
 		transcriptionWorker: transcribing,
-		// The window asks for a scan to be read through the same job an agent
-		// asks through.
-		recognitionRunner:   recognising,
-		transcriptionRunner: transcribing,
-		// A transcript is put right by the same proofreading that runs on its
-		// own, so a person asking for one is shown the run everything else is
-		// shown in.
-		transcriptProofreader: transcribing,
-		proofreadsRecognition: recognising,
-		// A transcript the window put right is cut where every other cut
-		// happens.
-		rechunk: recognising.Cut,
-		// A recording whose answer was dropped is one the queue has had no
-		// answer about.
-		forgetRecording: transcribing.ClearAnswer,
-		ctx:             watching,
-		cancel:          stop,
-		wait:            ended,
+		ctx:                 watching,
+		cancel:              stop,
+		wait:                ended,
 	}, nil
 }
 
@@ -210,10 +183,6 @@ func (o *Installation) stopVault() {
 	// anything reads what they wrote.
 	on.recognitionWorker.Wait()
 	on.transcriptionWorker.Wait()
-	// it was holding.
-	if o.viewer != nil {
-		o.viewer.reset()
-	}
 }
 
 // about indexing it, and the entries its passes left in the list of what is

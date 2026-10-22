@@ -1,4 +1,5 @@
-package editor
+// Package settings provides settings RPC handlers for the editor window.
+package settings
 
 import (
 	"context"
@@ -8,64 +9,66 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
+	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
-// settingsHandler answers every setting read and written, the settings file
+// Handler answers every setting read and written, the settings file
 // read and replaced whole, and the keys of the secrets plugins declare, stored
 // and removed.
-type settingsHandler struct {
-	get          *settings.Get
-	write        *settings.Write
-	getFile      *settings.GetFile
-	writeFile    *settings.WriteFile
-	writeSecret  *settings.WriteSecret
-	deleteSecret *settings.DeleteSecret
-	retryPlugin  *settings.RetryPlugin
+type Handler struct {
+	Get          *setting.Get
+	Write        *setting.Write
+	GetFile      *setting.GetFile
+	WriteFile    *setting.WriteFile
+	WriteSecret  *setting.WriteSecret
+	DeleteSecret *setting.DeleteSecret
+	PluginRetry  *setting.RetryPlugin
 }
+
+func NewHandler() *Handler { return &Handler{} }
 
 // errNoSettings is what a build that serves no settings answers.
 var errNoSettings = errors.New("this build serves no settings")
 
 // GetSettings is every setting of the file a person configures this
 // installation in, and the models the settings that name one can be set to.
-func (h *settingsHandler) GetSettings(
+func (h *Handler) GetSettings(
 	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
-	if h.get == nil {
+	if h.Get == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	got, err := h.get.Execute()
+	got, err := h.Get.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.GetSettingsResponse{
 		Written: got.Written,
 		Path:    got.Path,
-		Models:  newWireModels(got.Models),
+		Models:  NewWireModels(got.Models),
 		NestedHeadingLimitBounds: &v1.Bounds{
 			Least: got.NestedHeadingLimitBounds.Least,
 			Most:  got.NestedHeadingLimitBounds.Most,
 		},
-		Plugins: newWirePluginInfos(got.Plugins),
+		Plugins: NewWirePluginInfos(got.Plugins),
 	}), nil
 }
 
 // WriteSettings writes settings into that file. A value the settings could not
 // be read out of again is the client's to correct, and the file is left as it
 // was.
-func (h *settingsHandler) WriteSettings(
+func (h *Handler) WriteSettings(
 	_ context.Context, r *connect.Request[v1.WriteSettingsRequest],
 ) (*connect.Response[v1.WriteSettingsResponse], error) {
-	if h.write == nil {
+	if h.Write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	content := make([]settings.Setting, 0, len(r.Msg.GetSettings()))
+	content := make([]setting.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
-		content = append(content, settings.Setting{Path: one.GetAt(), JSON: one.GetValue()})
+		content = append(content, setting.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	if err := h.write.Execute(content); err != nil {
-		if errors.Is(err, settings.ErrNotASetting) {
+	if err := h.Write.Execute(content); err != nil {
+		if errors.Is(err, setting.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -74,13 +77,13 @@ func (h *settingsHandler) WriteSettings(
 }
 
 // ReadSettingsFile is that file as its person wrote it, byte for byte.
-func (h *settingsHandler) ReadSettingsFile(
+func (h *Handler) ReadSettingsFile(
 	_ context.Context, _ *connect.Request[v1.ReadSettingsFileRequest],
 ) (*connect.Response[v1.ReadSettingsFileResponse], error) {
-	if h.getFile == nil {
+	if h.GetFile == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	got, err := h.getFile.Execute()
+	got, err := h.GetFile.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -92,18 +95,18 @@ func (h *settingsHandler) ReadSettingsFile(
 //
 // The client presents the file it last read. A file holding bytes it has not
 // their text.
-func (h *settingsHandler) WriteSettingsFile(
+func (h *Handler) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	if h.writeFile == nil {
+	if h.WriteFile == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := h.writeFile.Execute(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
-		if errors.Is(err, settings.ErrStale) {
+	if err := h.WriteFile.Execute(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
+		if errors.Is(err, setting.ErrStale) {
 			staleCode := v1.ErrorCode_ERROR_CODE_STALE
 			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &staleCode}), nil
 		}
-		if errors.Is(err, settings.ErrNotASetting) {
+		if errors.Is(err, setting.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -111,8 +114,8 @@ func (h *settingsHandler) WriteSettingsFile(
 	return connect.NewResponse(&v1.WriteSettingsFileResponse{}), nil
 }
 
-// newWireModels is the models as the wire carries them.
-func newWireModels(target []settings.Model) []*v1.Model {
+// NewWireModels is the models as the wire carries them.
+func NewWireModels(target []setting.Model) []*v1.Model {
 	models := make([]*v1.Model, 0, len(target))
 	for _, one := range target {
 		models = append(models, &v1.Model{
@@ -122,7 +125,7 @@ func newWireModels(target []settings.Model) []*v1.Model {
 			Group:            one.Group,
 			IsDefault:        one.IsDefault,
 			Writes:           newWireSettings(one.Writes),
-			Presence:         presences[one.Presence],
+			Presence:         Presences[one.Presence],
 			ReasoningLevels:  newWireReasoningLevels(one.ReasoningLevels),
 			DefaultReasoning: one.DefaultReasoning,
 		})
@@ -130,16 +133,16 @@ func newWireModels(target []settings.Model) []*v1.Model {
 	return models
 }
 
-// presences is what a model's files are on this machine, as the wire carries
+// Presences is what a model's files are on this machine, as the wire carries
 // it.
-var presences = map[settings.Presence]v1.Presence{
-	settings.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
-	settings.Present:        v1.Presence_PRESENCE_PRESENT,
-	settings.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
+var Presences = map[setting.Presence]v1.Presence{
+	setting.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
+	setting.Present:        v1.Presence_PRESENCE_PRESENT,
+	setting.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
 }
 
 // newWireSettings is what choosing a model writes, as the wire carries it.
-func newWireSettings(target []settings.Setting) []*v1.Setting {
+func newWireSettings(target []setting.Setting) []*v1.Setting {
 	content := make([]*v1.Setting, 0, len(target))
 	for _, one := range target {
 		content = append(content, &v1.Setting{At: one.Path, Value: one.JSON})
@@ -147,8 +150,8 @@ func newWireSettings(target []settings.Setting) []*v1.Setting {
 	return content
 }
 
-// newWirePluginInfos is the discovered plugins and their declarative settings, as the wire carries it.
-func newWirePluginInfos(target []settings.PluginInfo) []*v1.PluginInfo {
+// NewWirePluginInfos is the discovered plugins and their declarative settings, as the wire carries it.
+func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
 	for _, one := range target {
 		pluginSettings := make([]*v1.PluginSetting, 0, len(one.Settings))
@@ -179,52 +182,52 @@ func newWirePluginInfos(target []settings.PluginInfo) []*v1.PluginInfo {
 			Secrets:      one.Secrets,
 			// The names of the stored secrets travel, and a key never does.
 			StoredSecrets:     one.StoredSecrets,
-			CompletionConsent: consents[one.Consent],
+			CompletionConsent: Consents[one.Consent],
 			Failure:           newWirePluginFailure(one.Failure),
 		})
 	}
 	return infos
 }
 
-// consents is whether the person lets a plugin ask a model, as the wire carries it.
-var consents = map[settings.Consent]v1.CompletionConsent{
-	settings.ConsentNone:       v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
-	settings.ConsentUnanswered: v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED,
-	settings.ConsentAsked:      v1.CompletionConsent_COMPLETION_CONSENT_ASKED,
-	settings.ConsentAllowed:    v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
-	settings.ConsentRefused:    v1.CompletionConsent_COMPLETION_CONSENT_REFUSED,
+// Consents is whether the person lets a plugin ask a model, as the wire carries it.
+var Consents = map[setting.Consent]v1.CompletionConsent{
+	setting.ConsentNone:       v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
+	setting.ConsentUnanswered: v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED,
+	setting.ConsentAsked:      v1.CompletionConsent_COMPLETION_CONSENT_ASKED,
+	setting.ConsentAllowed:    v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
+	setting.ConsentRefused:    v1.CompletionConsent_COMPLETION_CONSENT_REFUSED,
 }
 
 // WritePluginSecret stores the key of a secret a plugin declares. A secret the
 // plugin does not declare, and a machine without a key store, are the client's
 // to be told of.
-func (h *settingsHandler) WritePluginSecret(
+func (h *Handler) WritePluginSecret(
 	ctx context.Context, r *connect.Request[v1.WritePluginSecretRequest],
 ) (*connect.Response[v1.WritePluginSecretResponse], error) {
-	if h.writeSecret == nil {
+	if h.WriteSecret == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := h.writeSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName(), r.Msg.GetKey()); err != nil {
+	if err := h.WriteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName(), r.Msg.GetKey()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	return connect.NewResponse(&v1.WritePluginSecretResponse{}), nil
 }
 
 // DeletePluginSecret removes the key, if any, of a secret a plugin declares.
-func (h *settingsHandler) DeletePluginSecret(
+func (h *Handler) DeletePluginSecret(
 	ctx context.Context, r *connect.Request[v1.DeletePluginSecretRequest],
 ) (*connect.Response[v1.DeletePluginSecretResponse], error) {
-	if h.deleteSecret == nil {
+	if h.DeleteSecret == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := h.deleteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName()); err != nil {
+	if err := h.DeleteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }
 
 // newWirePluginFailure is why the host suspends a plugin, as the wire carries it, and nil for a plugin it does not.
-func newWirePluginFailure(failure *settings.PluginFailure) *v1.PluginFailure {
+func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	if failure == nil {
 		return nil
 	}
@@ -233,16 +236,16 @@ func newWirePluginFailure(failure *settings.PluginFailure) *v1.PluginFailure {
 
 // RetryPlugin starts a plugin the host suspends once more. A plugin that fails
 // again is answered with its reason, and one the host does not know is not found.
-func (h *settingsHandler) RetryPlugin(
+func (h *Handler) RetryPlugin(
 	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
 ) (*connect.Response[v1.RetryPluginResponse], error) {
-	if h.retryPlugin == nil {
+	if h.PluginRetry == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	failure, err := h.retryPlugin.Execute(ctx, r.Msg.GetPluginId())
+	failure, err := h.PluginRetry.Execute(ctx, r.Msg.GetPluginId())
 	if err != nil {
-		var unavailable *settings.UnavailableError
-		if errors.As(err, &unavailable) && unavailable.Reason == settings.PluginNotInstalled {
+		var unavailable *setting.UnavailableError
+		if errors.As(err, &unavailable) && unavailable.Reason == setting.PluginNotInstalled {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -255,7 +258,7 @@ func (h *settingsHandler) RetryPlugin(
 }
 
 // newWireReasoningLevels is the levels of reasoning as the wire carries them.
-func newWireReasoningLevels(target []settings.ReasoningLevel) []*v1.ReasoningLevel {
+func newWireReasoningLevels(target []setting.ReasoningLevel) []*v1.ReasoningLevel {
 	if len(target) == 0 {
 		return nil
 	}

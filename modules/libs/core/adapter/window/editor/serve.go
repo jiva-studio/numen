@@ -5,7 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	pathpkg "path"
+	"strings"
+	"sync"
+	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
@@ -32,7 +37,7 @@ type Installation struct {
 	State    *State
 	Services *Services
 
-	viewer *viewer
+	importURL *source.ImportURL
 
 	// Embedder fills the index, and Asking turns a query into a vector. They
 	// are one object where the settings name one provider, and two providers
@@ -103,8 +108,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		closeEmbedder = func() error { return nil }
 	}
 
-	//nolint:contextcheck // a document stays open for the window, not for the request that opened it
-	state, services, viewer := createWindow(made, tasks, embedder)
+	state, services := createWindow(made, tasks, embedder)
 	indexer := newIndexWorker(made, state, embedder, quietPeriod, out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
@@ -116,12 +120,11 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	finds := made.NewSearch(asking, func(err error) {
 		state.reportTask(run.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
 	})
-	services.Search.finds = &finds
+	services.Search.Finds = &finds
 
 	pool := &Installation{
 		State:         state,
 		Services:      services,
-		viewer:        viewer,
 		Embedder:      embedder,
 		Asking:        asking,
 		made:          made,
@@ -165,9 +168,6 @@ func (o *Installation) Close() error {
 	// and the index closes here. This stands until the last of them is off it.
 	o.State.Close()
 	o.stopVault()
-	if o.viewer != nil {
-		o.viewer.close()
-	}
 	// The socket a recording was played over answers with the vault's files, so
 	// it stops before the vault does.
 	_ = o.Services.Playing.Close()
@@ -290,38 +290,28 @@ func (o *Installation) Report(messages []string) {
 }
 
 // createWindow is the state a window answers from and the handlers that read
-// it, with the pieces that need no vault. The viewer is given back for the
-// installation to close.
+// it, with the pieces that need no vault.
 func createWindow(
 	made Assembly, tasks *run.Tasks, embedder port.Embedder,
-) (*State, *Services, *viewer) {
-	// highlight resolves passage spans and text locations from indexed sources.
-	highlight := source.NewHighlight(
-		made.GetVaultReaders(), made.GetSourceQueries(), made.GetDerivedStores())
-	highlight.Documents = made.GetTextExtractor()
-
+) (*State, *Services) {
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
-	viewer := newCachingViewer(made.GetPageRenderer())
 	services := createServices(state)
 	services.getPluginDir = made.GetPluginDir
 	state.EmitEvent = made.EmitEvent
 	readers := made.GetVaultReaders()
 	services.readFiles(readers)
-	services.readDocuments(readers, made.GetBooks(), viewer)
-	services.readTexts(made.OpenSourceTexts())
-	services.Ocr.highlight = &highlight
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
 	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
 	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())
 	services.Note.resolveLinks = note.NewResolveLinks(made.GetLinkQueries())
-	services.Search.getNameMatches = search.NewGetNameMatches(made.GetNoteQueries())
-	services.Search.getTitles = note.NewGetTitles(made.GetNoteQueries())
-	services.Search.getTypes = services.Note.getTypes
+	services.Search.GetNameMatches = search.NewGetNameMatches(made.GetNoteQueries())
+	services.Search.GetTitles = note.NewGetTitles(made.GetNoteQueries())
+	services.Search.GetTypes = services.Note.getTypes
 	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
 	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
 	services.File.createFolder = file.NewCreateFolder(made.GetVaultWriters())
@@ -337,7 +327,7 @@ func createWindow(
 		state.Indexing.Model.Store(model.String())
 		state.Indexing.Recipe.Store(model.Recipe())
 	}
-	return state, services, viewer
+	return state, services
 }
 
 // wireUseCases builds the use cases the window and everything else working its
@@ -365,14 +355,14 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	services.Note.getLinkAddress = notes.GetLinkAddress
 	services.File.remove = &notes.Remove
 
-	services.Settings.get = made.OpenGetSettings()
+	services.Settings.Get = made.OpenGetSettings()
 	services.PluginServices = made.GetPluginServices()
-	services.Settings.write = made.OpenWriteSettings()
-	services.Settings.getFile = made.OpenGetSettingsFile()
-	services.Settings.writeFile = made.OpenWriteSettingsFile()
-	services.Settings.writeSecret = made.OpenWritePluginSecret()
-	services.Settings.deleteSecret = made.OpenDeletePluginSecret()
-	services.Settings.retryPlugin = made.OpenRetryPlugin()
+	services.Settings.Write = made.OpenWriteSettings()
+	services.Settings.GetFile = made.OpenGetSettingsFile()
+	services.Settings.WriteFile = made.OpenWriteSettingsFile()
+	services.Settings.WriteSecret = made.OpenWritePluginSecret()
+	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
+	services.Settings.PluginRetry = made.OpenRetryPlugin()
 
 	target := &o.vaults
 	services.File.move = &target.Move
@@ -385,18 +375,11 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	services.Vaults.remove = &target.Remove
 	services.server.find = &target.Find
 
-	services.Artifact.drops = &transcription.Drop{
-		Readers: made.GetVaultReaders(),
-		Sources: made.GetSourceRepository(),
-		Queries: made.GetSourceQueries(),
-		Derived: made.GetDerivedStores(),
-	}
-
 	// A machine holding neither of the tools an address is reached with binds
 	// no downloader, and the window is answered that this build cannot do it.
 	if delta := made.OpenDownloader(ctx); delta != nil {
 		fetching := made.OpenImportURL(ctx, delta)
-		services.readImports(&fetching)
+		o.importURL = &fetching
 	}
 }
 
@@ -410,7 +393,182 @@ func (o *Installation) GetCreateURL() *source.CreateURL { return o.Services.File
 
 // GetImportURL is what fetches the text at an address, or nil where this build
 // holds neither of the tools that reach one.
-func (o *Installation) GetImportURL() *source.ImportURL { return o.Services.Artifact.imports }
+func (o *Installation) GetImportURL() *source.ImportURL { return o.importURL }
 
 // GetSearch is the search the window offers.
-func (o *Installation) GetSearch() *search.Search { return o.Services.Search.finds }
+func (o *Installation) GetSearch() *search.Search { return o.Services.Search.Finds }
+
+// shutdownState is whether a flush of pending writes is running and whether the
+// window has closed. Vault swaps and window close both flush, one at a time.
+//
+// A window that has closed shows no other vault.
+type shutdownState struct {
+	mu        sync.Mutex
+	isBusy    bool
+	isClosing bool
+}
+
+// tryBegin starts a flush, or returns the reason one cannot start.
+func (s *shutdownState) tryBegin() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch {
+	case s.isClosing:
+		return errWindowClosing
+	case s.isBusy:
+		return errShutdownInProgress
+	}
+	s.isBusy = true
+	return nil
+}
+
+// endKeepOpen ends the flush and leaves the window open.
+func (s *shutdownState) endKeepOpen() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.isBusy = false
+}
+
+// end ends the flush. closed is whether the window is now closed.
+func (s *shutdownState) end(closed bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.isBusy = false
+	s.isClosing = closed
+}
+
+// errWindowClosing is the error for a vault requested in a closed window.
+var errWindowClosing = errors.New("this window is closing")
+
+// errShutdownInProgress is the error for a vault requested while a flush is
+// running.
+var errShutdownInProgress = errors.New("the window is flushing pending writes")
+
+// FlushPending has every page write what only it holds, then waits for the
+// writes already taken. It is called while the window is still showing, and
+// calling it again returns true at once. It returns false where a page holds
+// work a person has to answer for, and then nothing has been taken away.
+//
+// A vault swap flushes too. A close that arrives while a flush runs returns
+// false: the window stays, and the next close flushes again.
+func (o *Installation) FlushPending(ctx context.Context) bool {
+	switch err := o.shutdown.tryBegin(); {
+	case errors.Is(err, errWindowClosing):
+		return true
+	case err != nil:
+		return false
+	}
+
+	flushed := flushPending(ctx, o.State.Window, &o.State.Writing)
+	o.shutdown.end(flushed)
+	return flushed
+}
+
+// WaitForFlush waits for every page to write its pending data. The wait is on
+// ctx ended or the vault was requested again.
+func (o *Installation) WaitForFlush(ctx context.Context) bool {
+	return o.State.Window.WaitForFlush(ctx)
+}
+
+// flushPending has every client write what only it holds, then waits for the
+// writes already taken. It returns whether the flush completed.
+//
+// A silent client is bounded by ctx. A client raising a question ends the
+// flush with false: the vault stays open and the wait is on a person. The
+// writes themselves have no bound.
+func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) bool {
+	if !pages.RequestFlush(ctx) {
+		return false
+	}
+	<-writes.seal()
+	return true
+}
+
+// FlushTimeout is how long a page has to write what only it holds when the
+// vault goes. A page raising a question has answered, and the wait from there
+// is on a person.
+const FlushTimeout = 3 * time.Second
+
+type Assembly = assembly.Assembly
+type VaultAssembly = assembly.VaultAssembly
+type IndexAssembly = assembly.IndexAssembly
+type PluginAssembly = assembly.PluginAssembly
+type SettingsAssembly = assembly.SettingsAssembly
+type WorkerAssembly = assembly.WorkerAssembly
+type ScenarioAssembly = assembly.ScenarioAssembly
+
+// importingFiles is what a drop is called in the list of what is being done.
+const importingFiles = "importing files"
+
+// namedInAnError is how many of the files that stayed outside are named before
+// the rest are counted.
+const namedInAnError = 3
+
+// Imports copies files a person release over the window into a folder of the
+// vault, the root being the empty path.
+//
+// It runs where the drop reached the application, which is off the thread the
+// page is served on, and it answers nothing: what arrived is said to everyone
+//
+// The watcher reports a picture or an archive to nobody, so what arrived is
+// named to the listeners here.
+func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
+	state := o.State
+	if len(paths) == 0 {
+		return
+	}
+	showing := state.GetCurrentVault()
+	if showing.ID == "" {
+		return
+	}
+	if !state.Writing.begin() {
+		return
+	}
+	defer state.Writing.finish()
+
+	pos := run.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
+	state.reportTask(pos)
+
+	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
+	if direct := getDirectChildren(into, imported.Landed); len(direct) > 0 {
+		state.ChangeEvents.publish(change{paths: direct})
+	}
+	if err != nil {
+		pos.Error = err.Error()
+		state.reportTask(pos)
+		return
+	}
+	if failureText := describeImportFailures(imported.Errors); failureText != "" {
+		pos.Error = failureText
+		state.reportTask(pos)
+		return
+	}
+	state.finishTask(pos.ID)
+}
+
+// getDirectChildren returns items in the target folder.
+func getDirectChildren(into string, landed []string) []string {
+	children := make([]string, 0, len(landed))
+	for _, path := range landed {
+		if pathpkg.Dir(path) == into || (into == "" && !strings.Contains(path, "/")) {
+			children = append(children, path)
+		}
+	}
+	return children
+}
+
+// describeImportFailures formats import failures into a single descriptive message.
+func describeImportFailures(errs []vaults.ImportFailure) string {
+	if len(errs) == 0 {
+		return ""
+	}
+	messages := make([]string, 0, namedInAnError)
+	for _, one := range errs[:min(len(errs), namedInAnError)] {
+		messages = append(messages, fmt.Sprintf("%s: %v", one.Name, one.Why))
+	}
+	if rest := len(errs) - len(messages); rest > 0 {
+		messages = append(messages, fmt.Sprintf("and %d more", rest))
+	}
+	return strings.Join(messages, "; ")
+}

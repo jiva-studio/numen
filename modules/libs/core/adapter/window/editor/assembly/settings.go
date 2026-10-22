@@ -1,4 +1,4 @@
-package editor
+package assembly
 
 import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"

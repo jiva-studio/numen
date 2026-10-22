@@ -19,15 +19,10 @@ import (
 // a use case.
 var wiring = []string{
 	"adapter/cli/deps.go",
-	"adapter/window/editor/agent.go",
 	"adapter/window/editor/state.go",
-	"adapter/window/editor/assembly.go",
 	"adapter/window/editor/services.go",
-	"adapter/window/editor/focus.go",
 	"adapter/window/editor/index.go",
-	"adapter/window/editor/pool/documents.go",
 	"adapter/window/editor/serve.go",
-	"adapter/window/editor/viewer.go",
 	"adapter/window/flashcards/agent.go",
 	"adapter/window/flashcards/api.go",
 }

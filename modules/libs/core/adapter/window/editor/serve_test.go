@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,7 +17,11 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	adapterSettings "github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	editorSearch "github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/search"
+	editorSettings "github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
@@ -24,6 +30,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	coreSettings "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -38,9 +46,9 @@ func bindNotes(services *Services, db *container.Index) {
 	services.Note.resolveLinks = note.NewResolveLinks(links)
 	services.Note.showNeighbourhood = &neighbourhood
 	services.Note.getLinkAddress = note.NewGetLinkAddress(queries)
-	services.Search.getNameMatches = search.NewGetNameMatches(queries)
-	services.Search.getTitles = note.NewGetTitles(queries)
-	services.Search.getTypes = services.Note.getTypes
+	services.Search.GetNameMatches = search.NewGetNameMatches(queries)
+	services.Search.GetTitles = note.NewGetTitles(queries)
+	services.Search.GetTypes = services.Note.getTypes
 }
 
 // is being read can be asked without a filesystem or a timer.
@@ -452,17 +460,6 @@ func TestAWatchThatStopsReturnsSo(t *testing.T) {
 	})
 }
 
-// modifySession publishes the passes a request is answered through, the way a
-// vault arriving in the window does.
-func modifySession(api *Services, change func(*vaultSession)) {
-	on := vaultSession{}
-	if target := api.state.session.Load(); target != nil {
-		on = *target
-	}
-	change(&on)
-	api.state.setSession(&on)
-}
-
 // saying is where the reading behind the window writes what it did, kept for a
 // test to read back. It is written from the pass and read from the test.
 type saying struct {
@@ -562,5 +559,397 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	if took := out.getBooks(t); took[1] != 1 {
 		t.Errorf("the second pass took %d books apart for the one file dropped in", took[1])
+	}
+}
+
+// newBareServices is the handlers of a window standing on nothing, with no use
+// case bound.
+func newBareServices() *Services { return createServices(&State{}) }
+
+// newThemedServices is that window, dressed in these themes.
+func newThemedServices(themes numenv1connect.ThemeServiceHandler) *Services {
+	services := newBareServices()
+	services.Themes = themes
+	return services
+}
+
+// TestAStreamWhoseClientWentAwayEnds. The window roots every request at the
+// process, so a handler is never told the page it was opened from is gone: the
+// editor reloads on a vault swap and leaves one of each stream behind. A write
+// that fails is the one report there is, so each stream makes one.
+func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
+	streams := map[string]func(context.Context, connect.HTTPClient, string) error{
+		"changes": func(ctx context.Context, http connect.HTTPClient, pos string) error {
+			_, err := numenv1connect.NewVaultServiceClient(http, pos).
+				WatchVaultChanges(ctx, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
+			return err
+		},
+		"editing": func(ctx context.Context, http connect.HTTPClient, offset string) error {
+			_, err := numenv1connect.NewNoteServiceClient(http, offset).
+				WatchEdits(ctx, connect.NewRequest(&v1.WatchEditsRequest{}))
+			return err
+		},
+		"focus": func(ctx context.Context, http connect.HTTPClient, index string) error {
+			_, err := numenv1connect.NewWorkspaceServiceClient(http, index).
+				WatchFocus(ctx, connect.NewRequest(&v1.WatchFocusRequest{}))
+			return err
+		},
+		"quitting": func(ctx context.Context, http connect.HTTPClient, targetPath string) error {
+			_, err := numenv1connect.NewWindowServiceClient(http, targetPath).
+				WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+			return err
+		},
+		"tasks": func(ctx context.Context, http connect.HTTPClient, targetOffset string) error {
+			_, err := numenv1connect.NewWindowServiceClient(http, targetOffset).
+				WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+			return err
+		},
+	}
+
+	for name, open := range streams {
+		t.Run(name, func(t *testing.T) {
+			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+			services := createServices(state)
+
+			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
+			mux := http.NewServeMux()
+			vault, vaults := numenv1connect.NewVaultServiceHandler(services.Vault)
+			mux.Handle(vault, testsupport.NewRootedHandler(vaults, entered, returned))
+			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(services.Workspace)
+			mux.Handle(standing, testsupport.NewRootedHandler(workspace, entered, returned))
+			filed, notes := numenv1connect.NewNoteServiceHandler(services.Note)
+			mux.Handle(filed, testsupport.NewRootedHandler(notes, entered, returned))
+			rendered, itself := numenv1connect.NewWindowServiceHandler(state.Window)
+			mux.Handle(rendered, testsupport.NewRootedHandler(itself, entered, returned))
+			server := httptest.NewServer(mux)
+			t.Cleanup(server.Close)
+
+			if err := open(t.Context(), server.Client(), server.URL); err != nil {
+				t.Fatal(err)
+			}
+
+			select {
+			case <-entered:
+			case <-time.After(testsupport.Patience):
+				t.Fatal("the stream never reached the handler")
+			}
+
+			// The page is gone: the editor reloaded, and nothing cancelled the
+			// context the handler holds.
+			server.CloseClientConnections()
+
+			select {
+			case <-returned:
+			case <-time.After(testsupport.Patience):
+				t.Fatal("the client went away and the stream is still standing")
+			}
+		})
+	}
+}
+
+func TestEverySearchModeIsRead(t *testing.T) {
+	testsupport.CheckHandled(t, func(mode v1.SearchMode) bool {
+		_, named := editorSearch.ConvertSearchModeFromWire(mode)
+		return named
+	})
+}
+
+func TestEveryRoleIsRead(t *testing.T) {
+	testsupport.CheckHandled(t, func(role v1.Role) bool {
+		_, named := convertRoleFromWire(role)
+		return named
+	})
+}
+
+func TestEveryRelationIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.Relation]domain.Relation{
+		v1.Relation_RELATION_PARENT:  domain.RelationParent,
+		v1.Relation_RELATION_CHILD:   domain.RelationChild,
+		v1.Relation_RELATION_JUMP:    domain.RelationJump,
+		v1.Relation_RELATION_SIBLING: domain.RelationSibling,
+	}, convertRelationToWire)
+}
+
+func TestANoteTypeIsSavedAsTheWordItContainsAndAnOrdinaryNoteAsNone(t *testing.T) {
+	for typed, want := range map[domain.NoteType]string{
+		domain.TypeNote: "",
+		"deck":          "deck",
+		"sheet":         "sheet",
+	} {
+		if got := convertNoteTypeToWire(typed); got != want {
+			t.Errorf("%q is written as %q, want %q", typed, got, want)
+		}
+	}
+}
+
+func TestEverySourceKindIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.SourceKind]domain.SourceKind{
+		v1.SourceKind_SOURCE_KIND_NOTE:      domain.KindNote,
+		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
+		v1.SourceKind_SOURCE_KIND_RECORDING: domain.KindRecording,
+		v1.SourceKind_SOURCE_KIND_URL:       domain.KindURL,
+	}, convertSourceKindToWire)
+}
+
+func TestEveryBookFormatIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.BookFormat]string{
+		v1.BookFormat_BOOK_FORMAT_EPUB: "library/a.epub",
+		v1.BookFormat_BOOK_FORMAT_PDF:  "library/a.pdf",
+	}, func(path string) v1.BookFormat { return convertBookFormatToWire(path, domain.KindBook) })
+}
+
+func TestEveryNamingIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.NameSource]note.NameSource{
+		v1.NameSource_NAME_SOURCE_FRONTMATTER: note.ByFrontmatter,
+		v1.NameSource_NAME_SOURCE_FILENAME:    note.ByFilename,
+	}, newWireNameSource)
+}
+
+func TestEveryPresenceIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.Presence]port.Presence{
+		v1.Presence_PRESENCE_PRESENT:          port.Present,
+		v1.Presence_PRESENCE_NOT_FETCHED:      port.NotFetched,
+		v1.Presence_PRESENCE_NOTHING_TO_FETCH: port.NothingToFetch,
+	}, func(is port.Presence) v1.Presence { return editorSettings.Presences[is] })
+}
+
+func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.CompletionConsent]coreSettings.Consent{
+		v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED: coreSettings.ConsentUnanswered,
+		v1.CompletionConsent_COMPLETION_CONSENT_ASKED:      coreSettings.ConsentAsked,
+		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:    coreSettings.ConsentAllowed,
+		v1.CompletionConsent_COMPLETION_CONSENT_REFUSED:    coreSettings.ConsentRefused,
+	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.Consents[is] })
+}
+
+func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.VaultsErrorCode]error{
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: vaults.ErrUnreadable,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       vaults.ErrCopy,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   domain.ErrOverlaps,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: vaults.ErrNameTaken,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaults.ErrLastVault,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING:    vaults.ErrShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN:    vaults.ErrUnknown,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   port.ErrNoTrash,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     errAnswerPending,
+	}, func(err error) v1.VaultsErrorCode {
+		reason, _ := vaultsErrorCodeBy(err)
+		return reason
+	})
+}
+
+// Which extensions are books and which reader cuts each of them are two lists,
+// and a book the vault names with no reader behind it opens in the reader made
+// picture reader.
+func TestEveryBookTheVaultNamesOpensInAReader(t *testing.T) {
+	for _, extension := range filesystem.DefaultBookExtensions {
+		path := "library/a" + extension
+		if got := convertBookFormatToWire(path, domain.KindBook); got == v1.BookFormat_BOOK_FORMAT_UNSPECIFIED {
+			t.Errorf("%s is a book of the vault and opens in no reader", extension)
+		}
+	}
+}
+
+// newThemeClient is a window's themes as a client reaches them: through the handler
+// that answers everything else the window asks.
+func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
+	t.Helper()
+
+	themes, err := cfg.Themes(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(newThemedServices(themes).NewHandler(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+
+	return numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
+}
+
+// newConfig is a configuration whose files are all in one folder of a test's
+// own, which is what pointing the registry somewhere does.
+func newConfig(t *testing.T) container.Config {
+	t.Helper()
+	return container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
+}
+
+func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
+	client := newThemeClient(t, newConfig(t))
+
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetApplied() != adapterSettings.DefaultTheme {
+		t.Errorf("wears %q", answer.Msg.GetApplied())
+	}
+	if len(answer.Msg.GetThemes()) == 0 {
+		t.Error("nothing to wear")
+	}
+
+	text, err := client.ReadTheme(t.Context(),
+		connect.NewRequest(&v1.ReadThemeRequest{Name: answer.Msg.GetApplied()}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if text.Msg.GetCss() == "" {
+		t.Error("the theme it wears has no text")
+	}
+}
+
+// The choice lands in the settings file, and the keys a person typed into it
+// are still there afterwards.
+func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
+	cfg := newConfig(t)
+	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
+	if err := os.WriteFile(file, []byte(
+		`{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-the-persons-own"}}}}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	client := newThemeClient(t, cfg)
+	selected, err := client.WriteAppearance(t.Context(),
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason := selected.Msg.GetError(); reason != "" {
+		t.Fatalf("failed: %s", reason)
+	}
+
+	response := container.DefaultSettings()
+	if err := adapterSettings.OpenAt(file, &response); err != nil {
+		t.Fatal(err)
+	}
+	if response.Appearance.Theme != "preset:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
+		t.Errorf("the file says %+v", response.Appearance)
+	}
+	// through a provider. What it is still doing there is what the file says.
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), "sk-the-persons-own") {
+		t.Errorf("the file came back as %s", raw)
+	}
+
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetApplied() != "preset:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
+		t.Errorf("wears %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
+	}
+}
+
+// The two sizes land in the settings file, and each is written on its own.
+func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
+	cfg := newConfig(t)
+	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
+	client := newThemeClient(t, cfg)
+
+	zoomLevel := 1.5
+	selected, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+		Name:           adapterSettings.DefaultTheme,
+		Mode:           v1.Mode_MODE_LIGHT,
+		InterfaceScale: &zoomLevel,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason := selected.Msg.GetError(); reason != "" {
+		t.Fatalf("failed: %s", reason)
+	}
+
+	response := container.DefaultSettings()
+	if err := adapterSettings.OpenAt(file, &response); err != nil {
+		t.Fatal(err)
+	}
+	if response.Appearance.InterfaceScale != 1.5 || response.Appearance.TextScale != 1 {
+		t.Errorf("the file says %+v", response.Appearance)
+	}
+
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetInterfaceScale() != 1.5 || answer.Msg.GetTextScale() != 1 {
+		t.Errorf("drawn at %v and set at %v", answer.Msg.GetInterfaceScale(), answer.Msg.GetTextScale())
+	}
+}
+
+// A window can be made hard to read only as far as the bounds go, and the file
+// is left currently.
+func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
+	cfg := newConfig(t)
+	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
+	if err := os.WriteFile(file, []byte(`{"appearance":{"theme":"preset:nord"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	client := newThemeClient(t, cfg)
+	set := 4.0
+	selected, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+		Name:      adapterSettings.DefaultTheme,
+		Mode:      v1.Mode_MODE_LIGHT,
+		TextScale: &set,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
+		t.Errorf("failed with %q", reason)
+	}
+
+	target, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(target) != `{"appearance":{"theme":"preset:nord"}}` {
+		t.Errorf("the file now reads %s", target)
+	}
+}
+
+// size for themselves is what it is release for.
+func TestASizeSaidForOneLaunchExistsUntilAPersonChoosesOne(t *testing.T) {
+	cfg := newConfig(t)
+	cfg.InterfaceScale = 1.25
+	client := newThemeClient(t, cfg)
+
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetInterfaceScale() != 1.25 {
+		t.Errorf("drawn at %v", answer.Msg.GetInterfaceScale())
+	}
+
+	zoomLevel := 1.5
+	if _, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+		Name:           adapterSettings.DefaultTheme,
+		Mode:           v1.Mode_MODE_LIGHT,
+		InterfaceScale: &zoomLevel,
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	answer, err = client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetInterfaceScale() != 1.5 {
+		t.Errorf("drawn at %v", answer.Msg.GetInterfaceScale())
+	}
+}
+
+// A build put together without a catalogue answers that it has none, and the
+// rest of the window is as it was.
+func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
+	server := httptest.NewServer(newBareServices().NewHandler(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+
+	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
+	if _, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{})); err == nil {
+		t.Error("a build with no catalogue listed themes")
 	}
 }

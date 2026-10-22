@@ -6,15 +6,32 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
+
+const (
+	talk  = "talks/lecture.mp3"
+	sound = "the bytes of a recording, long enough to ask for a piece of"
+)
+
+func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
+	t.Helper()
+	vault := testsupport.NewVault(t, map[string]string{talk: sound})
+	api := newBareServices()
+	api.readFiles(filesystem.VaultReaders{})
+	api.state.setVault(vault)
+	return api, api.NewHandler(http.NotFoundHandler())
+}
 
 // heldVaults is the vaults an installation holds, for an address naming one the
 // window is not showing.
@@ -48,6 +65,12 @@ func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	}
 	t.Cleanup(func() { back.Close() })
 	return back, back.getHandler()
+}
+
+func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
+	out := httptest.NewRecorder()
+	handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, url, nil))
+	return out
 }
 
 // statOf is what the vault says about the file at a path, which is what an
@@ -242,5 +265,131 @@ func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	}
 	if strings.Contains(response, "img-src 'self' "+back.address) {
 		t.Error("naming where a recording plays from widened where a picture comes from")
+	}
+}
+
+const pointsAtAVideo = "https://youtu.be/dQw4w9WgXcQ"
+
+func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
+	back, handler := openLoopback(t, newBareServices())
+	pos := parseURL(t, pointsAtAVideo)
+
+	address := back.Embed(pos)
+	if !strings.HasPrefix(address, back.address+"/") {
+		t.Fatalf("the player is framed from %q, want this run's socket", address)
+	}
+
+	answer := httptest.NewRecorder()
+	handler.ServeHTTP(answer, httptest.NewRequest(http.MethodGet, address, nil))
+	if answer.Code != http.StatusOK {
+		t.Fatalf("the page answered %d: %s", answer.Code, answer.Body.String())
+	}
+	page := answer.Body.String()
+	if !strings.Contains(page, "origin="+url.QueryEscape(back.address)) {
+		t.Errorf("the host is told nothing about who frames it: %s", page)
+	}
+	if !strings.Contains(page, getPlayerURL(pos)) {
+		t.Errorf("the page frames %q, want the player of %q", page, string(pos))
+	}
+}
+
+func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
+	back, _ := openLoopback(t, newBareServices())
+	pos := parseURL(t, pointsAtAVideo)
+
+	address := back.Embed(pos)
+
+	if !strings.Contains(address, url.PathEscape(string(pos))) {
+		t.Errorf("the route reads %q, want the address it points at", address)
+	}
+	if strings.Contains(address, "/dQw4w9WgXcQ") {
+		t.Errorf("the route names one host's identifier: %q", address)
+	}
+}
+
+func TestThePageContainingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
+	back, handler := openLoopback(t, newBareServices())
+
+	answer := httptest.NewRecorder()
+	handler.ServeHTTP(answer,
+		httptest.NewRequest(http.MethodGet, back.Embed(parseURL(t, pointsAtAVideo)), nil))
+
+	response := answer.Header().Get("Content-Security-Policy")
+	if !strings.Contains(response, "default-src 'none'") {
+		t.Errorf("the page may reach anywhere: %q", response)
+	}
+	if !strings.Contains(response, "frame-src "+embedHosts[0]) {
+		t.Errorf("the page frames %q", response)
+	}
+}
+
+func TestAnEmbedAddressNothingPlays(t *testing.T) {
+	back, handler := openLoopback(t, newBareServices())
+
+	for _, raw := range []string{
+		url.PathEscape("https://example.com/entropy"),
+		url.PathEscape("file:///etc/passwd"),
+		"not-an-address",
+	} {
+		answer := httptest.NewRecorder()
+		handler.ServeHTTP(answer, httptest.NewRequest(http.MethodGet,
+			back.address+"/"+back.token+"/"+embedRoute+"/"+raw, nil))
+
+		if answer.Code != http.StatusBadRequest {
+			t.Errorf("%s answered %d: %s", raw, answer.Code, answer.Body.String())
+		}
+	}
+}
+
+func parseURL(t *testing.T, output string) domain.URL {
+	t.Helper()
+	pos, err := domain.ParseURL(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pos
+}
+
+func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
+	pos := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
+	const nanos = 1788433445123456789
+
+	ref := domain.Fingerprint{Path: "library/Compost.pdf", Size: 12, ModTime: pos}
+	if target := convertFingerprintToWire(ref).GetMtime(); target != nanos {
+		t.Errorf("the schema carries mtime %d, want %d", target, nanos)
+	}
+
+	back := &Loopback{address: "http://127.0.0.1:1", token: "given-out"}
+	want := "?size=12&mtime=1788433445123456789"
+	if targetVal := back.Address(domain.Vault{ID: "01VAULT"}, ref); !strings.HasSuffix(targetVal, want) {
+		t.Errorf("the address is %q, and it should end %q", targetVal, want)
+	}
+}
+
+func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
+	ref := domain.Fingerprint{Path: "recordings/Compost.mp3", Size: 3, ModTime: time.Now()}
+	if back := convertFingerprintFromWire(convertFingerprintToWire(ref)); !back.IsUnchanged(ref) {
+		t.Errorf("the message carried the file back as %+v, and it is %+v", back, ref)
+	}
+}
+
+func TestTheWindowsFingerprintIsAKeyOfPlainNumbers(t *testing.T) {
+	target := reflect.TypeOf(document.Fingerprint{})
+	if !target.Comparable() {
+		t.Fatal("the window's fingerprint cannot be a map key at all")
+	}
+	for item := range target.NumField() {
+		if field := target.Field(item); field.Type == reflect.TypeOf(time.Time{}) {
+			t.Errorf("%s is a time.Time, and this struct is a map key", field.Name)
+		}
+	}
+}
+
+func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
+	if back := convertFingerprintFromWire(convertFingerprintToWire(domain.Fingerprint{})); !back.IsZero() {
+		t.Errorf("nothing said about a file came back as %+v", back)
+	}
+	if target := stamp(time.Time{}); target != 0 {
+		t.Errorf("no stamp goes on the wire as %d", target)
 	}
 }

@@ -1,4 +1,4 @@
-package editor
+package search
 
 import (
 	"slices"

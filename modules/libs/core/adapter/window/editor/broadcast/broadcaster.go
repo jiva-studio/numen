@@ -1,28 +1,29 @@
-package editor
+// Package broadcast provides broadcaster and inflight synchronization primitives.
+package broadcast
 
 import "sync"
 
-// broadcaster delivers one kind of message to its subscribers.
+// Broadcaster delivers one kind of message to its subscribers.
 //
 // A subscriber that is not keeping up is not waited for: one slow subscriber does
-// not hold up the vault. What it is given when it falls behind is `fallback`'s
-// answer, and how much it may be owed before it is behind is `capacity`.
-type broadcaster[T any] struct {
-	// fallback makes the message for a subscriber that has not read the last one.
-	fallback func(latest T) T
-	// isLatest hands a subscriber what has just happened in place of what it has
+// not hold up the vault. What it is given when it falls behind is Fallback's
+// answer, and how much it may be owed before it is behind is Capacity.
+type Broadcaster[T any] struct {
+	// Fallback makes the message for a subscriber that has not read the last one.
+	Fallback func(latest T) T
+	// IsLatest hands a subscriber what has just happened in place of what it has
 	// not read yet about the same thing.
-	isLatest bool
-	// getTopic says what a message is about. Two messages about one thing are that
+	IsLatest bool
+	// GetTopic says what a message is about. Two messages about one thing are that
 	// thing said twice, and only the newer is worth reading; messages about
 	// different things each wait their turn. Nil makes every message about the
 	// same thing.
-	getTopic func(T) string
-	// isRequired says a message is one a subscriber has to be given. A message waiting
+	GetTopic func(T) string
+	// IsRequired says a message is one a subscriber has to be given. A message waiting
 	// under it stays where it is, and what replaces it waits.
-	isRequired func(T) bool
-	// capacity is how many messages a subscriber may be owed before it is behind.
-	capacity int
+	IsRequired func(T) bool
+	// Capacity is how many messages a subscriber may be owed before it is behind.
+	Capacity int
 
 	mu          sync.Mutex
 	next        int
@@ -31,13 +32,6 @@ type broadcaster[T any] struct {
 
 // subscriber is one of the broadcaster's subscribers, and whether it is owed a message it never
 // received.
-//
-// What it has not been handed is a slice, read and written only under the
-// broadcaster's lock. out is the channel subscribe returned, and is written only by
-// deliver: a subscriber's own goroutine, carrying the slice to out one message
-// at a time. frontSeq counts how many times the first entry has been
-// replaced, so deliver can tell whether the one it is offering is still the
-// one at the front or has since been overtaken.
 type subscriber[T any] struct {
 	out       chan T
 	isLagging bool
@@ -48,10 +42,10 @@ type subscriber[T any] struct {
 	doneChan chan struct{}
 }
 
-// getCapacity is how many messages one subscriber may have waiting.
-func (a *broadcaster[T]) getCapacity() int { return max(a.capacity, 1) }
+// GetCapacity is how many messages one subscriber may have waiting.
+func (a *Broadcaster[T]) GetCapacity() int { return max(a.Capacity, 1) }
 
-func (a *broadcaster[T]) subscribe() (<-chan T, func()) {
+func (a *Broadcaster[T]) Subscribe() (<-chan T, func()) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -78,14 +72,14 @@ func (a *broadcaster[T]) subscribe() (<-chan T, func()) {
 	}
 }
 
-func (a *broadcaster[T]) publish(what T) {
+func (a *Broadcaster[T]) Publish(what T) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	for _, l := range a.subscribers {
 		message := what
-		if l.isLagging && a.fallback != nil {
-			message = a.fallback(what)
+		if l.isLagging && a.Fallback != nil {
+			message = a.Fallback(what)
 		}
 		l.isLagging = !a.queue(l, message)
 	}
@@ -93,11 +87,7 @@ func (a *broadcaster[T]) publish(what T) {
 
 // queue puts a message where a subscriber will read it, and says whether there
 // was anywhere for it to go.
-//
-// What the subscriber has not read is taken out of the slice and looked at: the
-// message takes the place of one waiting about the same thing, and otherwise
-// joins the end of the line. A line with no room left keeps what it holds.
-func (a *broadcaster[T]) queue(l *subscriber[T], message T) bool {
+func (a *Broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	wasEmpty := len(l.waiting) == 0
 
 	fitted := false
@@ -108,7 +98,7 @@ func (a *broadcaster[T]) queue(l *subscriber[T], message T) bool {
 		if pos == 0 {
 			l.frontSeq++
 		}
-	case len(l.waiting) < a.getCapacity():
+	case len(l.waiting) < a.GetCapacity():
 		l.waiting = append(l.waiting, message)
 		fitted = true
 		if wasEmpty {
@@ -127,15 +117,15 @@ func (a *broadcaster[T]) queue(l *subscriber[T], message T) bool {
 
 // findSupersededIndex is where in the line a message stands that this one says again, or
 // -1 when this message replaces nothing.
-func (a *broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
-	if !a.isLatest {
+func (a *Broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
+	if !a.IsLatest {
 		return -1
 	}
 	for item, target := range waiting {
-		if a.isRequired != nil && a.isRequired(target) {
+		if a.IsRequired != nil && a.IsRequired(target) {
 			continue
 		}
-		if a.getTopic == nil || a.getTopic(target) == a.getTopic(message) {
+		if a.GetTopic == nil || a.GetTopic(target) == a.GetTopic(message) {
 			return item
 		}
 	}
@@ -144,12 +134,7 @@ func (a *broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 
 // deliver carries what queue puts on the slice to the channel listen handed
 // out, one message at a time, in the order queue put them there.
-//
-// It only takes a message out of the slice once that exact message has been
-// handed to out: a replacement that lands on the front while one is offered
-// there is picked up in its place, and what was offered before it is dropped
-// from the slice only once nothing has overtaken it.
-func (a *broadcaster[T]) deliver(l *subscriber[T]) {
+func (a *Broadcaster[T]) deliver(l *subscriber[T]) {
 	defer close(l.out)
 
 	for {
@@ -168,7 +153,7 @@ type front[T any] struct {
 }
 
 // getFront reads the head of the line, and reports whether the line holds one.
-func (a *broadcaster[T]) getFront(l *subscriber[T]) (front[T], bool) {
+func (a *Broadcaster[T]) getFront(l *subscriber[T]) (front[T], bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if len(l.waiting) == 0 {
@@ -179,7 +164,7 @@ func (a *broadcaster[T]) getFront(l *subscriber[T]) (front[T], bool) {
 
 // waitForFront blocks until the line holds a message, and reports false once
 // the subscriber is done.
-func (a *broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
+func (a *Broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
 	for {
 		if head, ok := a.getFront(l); ok {
 			return head, true
@@ -193,9 +178,8 @@ func (a *broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
 }
 
 // offer hands the head to out until it is taken, and takes it off the line when
-// nothing has overtaken it. A replacement landing on the head is offered in its
-// place. It reports false once the subscriber is done.
-func (a *broadcaster[T]) offer(l *subscriber[T], head front[T]) bool {
+// nothing has overtaken it.
+func (a *Broadcaster[T]) offer(l *subscriber[T], head front[T]) bool {
 	for {
 		select {
 		case l.out <- head.message:

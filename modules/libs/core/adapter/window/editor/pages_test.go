@@ -1,8 +1,6 @@
 package editor
 
 import (
-	"context"
-	"io"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -25,9 +23,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/csp"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -102,7 +99,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	}.Policy()
 
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
-	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetURL("a.pdf")} {
+	for _, path := range []string{"", "/", "/index.html", "/built/index.css"} {
 		if response := getResponse(handler, path).Header().Get("Content-Security-Policy"); response != target {
 			t.Errorf("%q is bound to %q", path, response)
 		}
@@ -170,7 +167,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	services := newBareServices()
 	handler := services.NewHandler(http.NotFoundHandler())
 	questions, _ := numenv1connect.NewVaultServiceHandler(services.Vault)
-	request := []string{"", "/", "/index.html", assetURL("a.pdf"), questions + "Find"}
+	request := []string{"", "/", "/index.html", questions + "Find"}
 
 	for _, path := range request {
 		if code := getResponse(handler, path).Code; code == http.StatusServiceUnavailable {
@@ -363,64 +360,53 @@ func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 	}
 }
 
-// holdingOpen is a set of readers whose every look at a file waits until a test
-// lets it through, which is what a question still inside its answer looks like
-// from here.
-type holdingOpen struct {
-	port.VaultReaders
+type blockingVaults struct {
+	port.VaultRegistry
 	begun chan struct{}
 	until chan struct{}
 }
 
-func (h holdingOpen) Open(v domain.Vault) (port.VaultReader, error) {
-	reader, err := h.VaultReaders.Open(v)
-	if err != nil {
-		return nil, err
-	}
-	return holdsOpen{VaultReader: reader, posVal: h}, nil
-}
-
-type holdsOpen struct {
-	port.VaultReader
-	posVal holdingOpen
-}
-
-func (h holdsOpen) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (b blockingVaults) List() ([]domain.Vault, error) {
 	select {
-	case h.posVal.begun <- struct{}{}:
+	case b.begun <- struct{}{}:
 	default:
 	}
-	<-h.posVal.until
-	return h.VaultReader.GetFingerprint(ctx, path)
+	<-b.until
+	return nil, nil
 }
 
-// TestTheDoorShutsBehindTheQuestionsAlreadyTaken. A search, a note and a link
+func (blockingVaults) FindVault(string) (domain.Vault, bool, error) {
+	return domain.Vault{}, false, nil
+}
+func (blockingVaults) GetLastVault() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
+func (blockingVaults) Save(domain.Vault) error                   { return nil }
+func (blockingVaults) Remove(domain.VaultID) error               { return nil }
+func (blockingVaults) RecordOpened(domain.VaultID) error         { return nil }
+
+// TestTheDoorShutsPriorTheQuestionsAlreadyTaken. A search, a note and a link
 // are answered straight from the index, and one that passed the door a moment
 // before it shut is still on the index when everything an answer reaches into
 // is taken away.
 func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
-	readers := holdingOpen{
-		VaultReaders: filesystem.VaultReaders{},
-		begun:        make(chan struct{}, 1),
-		until:        make(chan struct{}),
-	}
-	// A page is the one thing left under this route, and drawing one looks the
-	// file up before anything else. That look is where the door stands.
-	api := newViewingAPI(readers, newViewer(nil))
-	api.Document.viewer.open = func(file io.ReadSeekCloser) (port.OpenDocument, error) {
-		file.Close()
-		return nil, document.ErrNoPage
-	}
-	api.state.setVault(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
+	begun := make(chan struct{}, 1)
+	until := make(chan struct{})
+	b := blockingVaults{begun: begun, until: until}
+	list := vaults.NewList(b)
+	check := vaults.NewFolderCheck(filesystem.VaultReaders{})
+	api := newBareServices()
+	api.Vaults.list = &list
+	api.Vaults.folderCheck = &check
 	handler := api.NewHandler(http.NotFoundHandler())
 
 	reply := make(chan struct{})
 	go func() {
 		defer close(reply)
-		pos := pageURL("Note.pdf", 0, 800, document.Fingerprint{})
-		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, pos, nil))
+		path, _ := numenv1connect.NewVaultsServiceHandler(api.Vaults)
+		req := httptest.NewRequest(http.MethodPost, path+"ListVaults", strings.NewReader("{}"))
+		req.Header.Set("Content-Type", "application/json")
+		handler.ServeHTTP(httptest.NewRecorder(), req)
 	}()
-	<-readers.begun
+	<-begun
 
 	shutCh := make(chan struct{})
 	go func() {
@@ -434,7 +420,7 @@ func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 	}
 
-	close(readers.until)
+	close(until)
 	select {
 	case <-shutCh:
 	case <-time.After(10 * time.Second):

@@ -16,6 +16,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/broadcast"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -53,12 +54,6 @@ type State struct {
 	// is swapped, and the agents are started again against the one that
 	// arrived. It is bound by every build that serves the list of vaults.
 	OpenVault func(context.Context, domain.Vault) error
-
-	// agent is the agent the panel's tasks go to. A vault without one answers
-	// that it has none, and the rest of the window works as it did. It is
-	// replaced while requests are being served, so it is taken through
-	// GetAgent.
-	agent atomic.Pointer[port.Agent]
 
 	// NotifyNoteWritten is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
@@ -139,60 +134,6 @@ func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
 // on. They arrive together, after the vault they belong to.
 func (s *State) setSession(on *vaultSession) { s.session.Store(on) }
 
-// getRecogniser reads a scanned document and getTranscriber hears a recording,
-// each for whoever asks. They are the jobs an agent asks through too, so what a
-// person started in the window is shown to both. Nothing where the window has
-// no vault, and where this build does no such run.
-func (s *State) getRecogniser() Runner {
-	if on := s.session.Load(); on != nil {
-		return on.recognitionRunner
-	}
-	return nil
-}
-
-func (s *State) getTranscriber() Runner {
-	if on := s.session.Load(); on != nil {
-		return on.transcriptionRunner
-	}
-	return nil
-}
-
-// getProofreader puts a recording's transcript right, for whoever asks.
-func (s *State) getProofreader() Proofreader {
-	if on := s.session.Load(); on != nil {
-		return on.transcriptProofreader
-	}
-	return nil
-}
-
-// getRecognitionProofreader puts a document's recognition right, for whoever asks.
-func (s *State) getRecognitionProofreader() RecognitionProofreader {
-	if on := s.session.Load(); on != nil {
-		return on.proofreadsRecognition
-	}
-	return nil
-}
-
-// getRechunker asks for a source to be cut again from whatever its text now says. A
-// window that put a transcript right calls it, so search answers with the words
-// as they now read. Nothing while the window has no vault, and then a
-// correction is baseline in the tab alone.
-func (s *State) getRechunker() func(context.Context, domain.Vault, string) error {
-	if on := s.session.Load(); on != nil {
-		return on.rechunk
-	}
-	return nil
-}
-
-// getRecordingForgetter takes a recording out of what the queue behind the vault has
-// already had an answer about, so one that gave no words is offered again.
-func (s *State) getRecordingForgetter() func(domain.Vault, string) {
-	if on := s.session.Load(); on != nil {
-		return on.forgetRecording
-	}
-	return nil
-}
-
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a build that keeps one.
 func (s *State) reportTask(pos run.Task) { s.Window.AddTask(pos) }
@@ -236,44 +177,9 @@ func (s *State) getCurrentVault() (domain.Vault, error) {
 	return v, nil
 }
 
-// GetAgent is the agent the panel's tasks go to, and nothing where the vault
-// has none.
-func (s *State) GetAgent() port.Agent {
-	if taking := s.agent.Load(); taking != nil {
-		return *taking
-	}
-	return nil
-}
-
-// SetAgent names who takes the panel's tasks from now on. Nil leaves the vault
-// with no agent.
-func (s *State) SetAgent(taking port.Agent) {
-	s.agent.Store(&taking)
-}
-
 func text(v *atomic.Value) string {
 	s, _ := v.Load().(string)
 	return s
-}
-
-// getShownVault is the vault a document is read from. A window standing on
-// nothing holds no file to say anything about.
-func (s *State) getShownVault() (domain.Vault, error) {
-	showing := s.GetCurrentVault()
-	if showing.ID == "" {
-		return domain.Vault{}, errNoVault
-	}
-	return showing, nil
-}
-
-// getBackgroundContext is what a drawing nobody asked for runs under: the
-// context the passes behind the vault in the window run under. The vault going
-// turned to. A window standing on no vault has no passes, and nothing to end.
-func (s *State) getBackgroundContext() context.Context {
-	if on := s.session.Load(); on != nil {
-		return on.ctx
-	}
-	return context.Background()
 }
 
 // vaultHandler answers what the vault in the window is doing: whether it has
@@ -351,4 +257,87 @@ func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
 		renamedMoves = append(renamedMoves, &v1.Move{From: went.From, To: went.To})
 	}
 	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves}
+}
+
+// GetWindow is this window, for whatever asks for a place to be put in front of
+// the person.
+func (s *State) GetWindow() port.Window { return view{s} }
+
+// view tells the clients and nothing more. What travelling there looks
+// like is theirs, and a place asked for while nobody is drawing is a place
+// nobody sees.
+type view struct{ *State }
+
+func (v view) FocusPlace(_ context.Context, pos domain.Place) error {
+	v.Places.publish(pos)
+	return nil
+}
+
+func (v view) ShowMove(_ context.Context, went domain.Move) error {
+	v.ChangeEvents.publish(change{renamed: []domain.Move{went}})
+	return nil
+}
+
+func (v view) ShowEdit(_ context.Context, edit domain.Edit) error {
+	v.Edits.publish(edit)
+	return nil
+}
+
+type broadcaster[T any] struct {
+	broadcast.Broadcaster[T]
+}
+
+func (a *broadcaster[T]) subscribe() (<-chan T, func()) { return a.Broadcaster.Subscribe() }
+func (a *broadcaster[T]) publish(what T)                { a.Broadcaster.Publish(what) }
+
+type inflight struct {
+	broadcast.Inflight
+}
+
+func (w *inflight) begin() bool           { return w.Inflight.Begin() }
+func (w *inflight) finish()               { w.Inflight.Finish() }
+func (w *inflight) seal() <-chan struct{} { return w.Inflight.Seal() }
+func (w *inflight) open()                 { w.Inflight.Open() }
+
+var errClosing = broadcast.ErrClosing
+
+// change is what a client is told: the files that are different now, notes
+// and assets alike, or that the vault has to be read again.
+type change struct {
+	paths        []string
+	shouldReload bool
+	// renamed is the notes that are no longer where they were, each by where it
+	// was and where it now is.
+	renamed []domain.Move
+}
+
+// newChangeBroadcaster delivers what moved to its subscribers.
+func newChangeBroadcaster() broadcaster[change] {
+	return broadcaster[change]{
+		Broadcaster: broadcast.Broadcaster[change]{
+			Fallback: func(change) change { return change{shouldReload: true} },
+			Capacity: 8,
+		},
+	}
+}
+
+// newPlaceBroadcaster delivers to every subscriber, for the places something asks to be
+// put in front of the person.
+func newPlaceBroadcaster() broadcaster[domain.Place] {
+	return broadcaster[domain.Place]{
+		Broadcaster: broadcast.Broadcaster[domain.Place]{IsLatest: true, Capacity: 1},
+	}
+}
+
+// newEditBroadcaster delivers to every subscriber, for a change to a note being made
+// while they are showing it.
+func newEditBroadcaster() broadcaster[domain.Edit] {
+	return broadcaster[domain.Edit]{
+		Broadcaster: broadcast.Broadcaster[domain.Edit]{
+			IsLatest:   true,
+			GetTopic:   func(response domain.Edit) string { return response.Change },
+			IsRequired: func(reply domain.Edit) bool { return reply.IsDone },
+			Capacity:   8,
+		},
+	}
 }

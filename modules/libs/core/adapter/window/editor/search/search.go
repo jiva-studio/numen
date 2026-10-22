@@ -1,4 +1,5 @@
-package editor
+// Package search provides search services for the editor window.
+package search
 
 import (
 	"context"
@@ -8,17 +9,34 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
+type VaultProvider interface {
+	GetCurrentVault() domain.Vault
+}
+
+type Handler struct {
+	numenv1connect.UnimplementedSearchServiceHandler
+
+	Vaults         VaultProvider
+	GetNameMatches *search.GetNameMatches
+	Finds          *search.Search
+	GetTitles      note.GetTitles
+	GetTypes       *note.GetTypes
+}
+
+func NewHandler(vaults VaultProvider) *Handler {
+	return &Handler{Vaults: vaults}
+}
+
 // errNoMode is a search that named no mode to ask it in.
 var errNoMode = errors.New("a search says how it is asked")
-
-// errTooManyPaths is a filter naming more paths than are answered at once. The
-var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
 // How many answers a client gets when it names no number, and the most it may
 // ask for. A window draws a list a person reads; a number past that is a
@@ -31,14 +49,14 @@ const (
 // SearchNames hands the client the names in the vault that match what was
 // typed: a note's own title, and the headings inside notes. A window standing
 // on nothing holds no names.
-func (h *searchHandler) SearchNames(
+func (h *Handler) SearchNames(
 	ctx context.Context, r *connect.Request[v1.SearchNamesRequest],
 ) (*connect.Response[v1.SearchNamesResponse], error) {
-	showing := h.state.GetCurrentVault()
+	showing := h.Vaults.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
-	found, err := h.getNameMatches.Execute(ctx, showing, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	found, err := h.GetNameMatches.Execute(ctx, showing, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -65,21 +83,21 @@ func (h *searchHandler) SearchNames(
 // from what it means asks twice and each answer fills its own list.
 //
 // A window standing on nothing holds no text.
-func (h *searchHandler) SearchPassages(
+func (h *Handler) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
 ) (*connect.Response[v1.SearchPassagesResponse], error) {
 	query := r.Msg.GetQuery()
-	showing := h.state.GetCurrentVault()
+	showing := h.Vaults.GetCurrentVault()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
 		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}
 
-	mode, named := convertSearchModeFromWire(r.Msg.GetMode())
+	mode, named := ConvertSearchModeFromWire(r.Msg.GetMode())
 	if !named {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
 
-	found, err := h.finds.Execute(ctx, showing,
+	found, err := h.Finds.Execute(ctx, showing,
 		query, search.GetTypingParameters(mode, atMost(r.Msg.GetLimit())))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -89,7 +107,7 @@ func (h *searchHandler) SearchPassages(
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
 	sources := getPassageSources(found)
-	noted, err := h.getTitles.Execute(ctx, showing, sources)
+	noted, err := h.GetTitles.Execute(ctx, showing, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -99,7 +117,7 @@ func (h *searchHandler) SearchPassages(
 	}
 	// Which of four each of those notes is, so a passage is drawn with the mark
 	// of the note it was read out of.
-	types, err := h.getTypes.Execute(ctx, showing, sources)
+	types, err := h.GetTypes.Execute(ctx, showing, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -120,8 +138,8 @@ func (h *searchHandler) SearchPassages(
 			Line:     int32(p.Line),
 			Kind:     convertSourceKindToWire(p.Kind),
 		}
-		if note, target := titles[p.Source]; target {
-			passage.Note = convertNoteToWire(note)
+		if noteRef, target := titles[p.Source]; target {
+			passage.Note = convertNoteToWire(noteRef)
 			passage.Type = convertNoteTypeToWire(types[p.Source])
 		}
 		out.Found = append(out.Found, passage)
@@ -129,9 +147,35 @@ func (h *searchHandler) SearchPassages(
 	return connect.NewResponse(out), nil
 }
 
-// convertSearchModeFromWire is the mode the client named, as the use case names it, and whether it
+func convertNoteTypeToWire(noteType domain.NoteType) string {
+	if noteType == domain.TypeNote {
+		return ""
+	}
+	return string(noteType)
+}
+
+func convertSourceKindToWire(kind domain.SourceKind) v1.SourceKind {
+	switch kind {
+	case domain.KindNote:
+		return v1.SourceKind_SOURCE_KIND_NOTE
+	case domain.KindBook:
+		return v1.SourceKind_SOURCE_KIND_BOOK
+	case domain.KindRecording:
+		return v1.SourceKind_SOURCE_KIND_RECORDING
+	case domain.KindURL:
+		return v1.SourceKind_SOURCE_KIND_URL
+	default:
+		return v1.SourceKind_SOURCE_KIND_UNSPECIFIED
+	}
+}
+
+func convertNoteToWire(n domain.NoteRef) *v1.Note {
+	return &v1.Note{Path: n.Path, Title: n.Title}
+}
+
+// ConvertSearchModeFromWire is the mode the client named, as the use case names it, and whether it
 // named one at all.
-func convertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
+func ConvertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
 	switch mode {
 	case v1.SearchMode_SEARCH_MODE_WORDS:
 		return search.Lexical, true
@@ -154,24 +198,6 @@ func atMost(limit int32) int {
 	return min(int(limit), mostAsked)
 }
 
-// eachOnce is the paths a client asked about, each named once. A filter past
-// answer cut to fit says nothing about which paths were left out.
-func eachOnce(paths []string) ([]string, error) {
-	observed := make(map[string]bool, len(paths))
-	out := make([]string, 0, len(paths))
-	for _, path := range paths {
-		if observed[path] {
-			continue
-		}
-		observed[path] = true
-		out = append(out, path)
-	}
-	if len(out) > mostAsked {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyPaths)
-	}
-	return out, nil
-}
-
 // getPassageSources is every file the passages came out of, each named once.
 func getPassageSources(found []domain.Passage) []string {
 	observed := make(map[string]bool, len(found))
@@ -182,17 +208,6 @@ func getPassageSources(found []domain.Passage) []string {
 		}
 		observed[p.Source] = true
 		out = append(out, p.Source)
-	}
-	return out
-}
-
-// convertByteSpansToWire and convertUnitSpansToWire both write runs onto the
-// wire. They are two functions because the runs are counted in two different
-// things, and the field the answer carries them in says which.
-func convertByteSpansToWire(pos []domain.ByteSpan) []*v1.Span {
-	out := make([]*v1.Span, 0, len(pos))
-	for _, span := range pos {
-		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})
 	}
 	return out
 }

@@ -1,4 +1,4 @@
-package editor
+package settings
 
 import (
 	"context"
@@ -13,13 +13,13 @@ import (
 	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
-func newRetryHandler(t *testing.T, retry func(context.Context, string) (*setting.PluginFailure, error)) *settingsHandler {
+func newRetryHandler(t *testing.T, retry func(context.Context, string) (*setting.PluginFailure, error)) *Handler {
 	t.Helper()
 	useCase, err := setting.NewRetryPlugin(retry)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &settingsHandler{retryPlugin: useCase}
+	return &Handler{PluginRetry: useCase}
 }
 
 // A plugin that starts again is answered with no failure.
@@ -58,7 +58,7 @@ func TestARetryOfAPluginThatIsNotInstalledIsNotFound(t *testing.T) {
 		return nil, errors.New("the host is closed")
 	})
 
-	_, err := missing.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.none"}))
+	_, err := missing.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a missing plugin answered %v", err)
 	}
@@ -70,7 +70,7 @@ func TestARetryOfAPluginThatIsNotInstalledIsNotFound(t *testing.T) {
 
 // A build that serves no settings answers that it serves none.
 func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
-	_, err := (&settingsHandler{}).RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{}))
+	_, err := (&Handler{}).RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("retry answered %v", err)
 	}
@@ -79,7 +79,7 @@ func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
 // The failure of a plugin travels to the window with its reason and its time, and a plugin that has not failed travels with none.
 func TestAFailedPluginTravelsWithItsReasonAndTime(t *testing.T) {
 	pos := time.UnixMilli(1_700_000_000_123)
-	infos := newWirePluginInfos([]setting.PluginInfo{
+	infos := NewWirePluginInfos([]setting.PluginInfo{
 		{ID: "md.numen.sample", Failure: &setting.PluginFailure{Reason: "The plugin did not finish starting in time.", At: pos}},
 		{ID: "md.numen.other"},
 	})

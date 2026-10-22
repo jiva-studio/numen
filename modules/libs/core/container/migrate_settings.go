@@ -30,8 +30,8 @@ func (c Config) MigratePluginSettings() error {
 		return err
 	}
 	var file map[string]any
-	if err := json.Unmarshal(raw, &file); err != nil {
-		return nil
+	if json.Unmarshal(raw, &file) != nil {
+		return nil //nolint:nilerr // corrupt settings file is skipped
 	}
 
 	moved := collectPluginSettingsMigrations(c.PluginHost.GetPluginInfos(), file)

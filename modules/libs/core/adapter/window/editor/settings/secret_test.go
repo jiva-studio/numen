@@ -1,4 +1,4 @@
-package editor
+package settings
 
 import (
 	"context"
@@ -17,12 +17,12 @@ var errNoKeychain = errors.New("no keychain on this machine")
 // The key the window sends is handed on with the plugin and the secret, and a
 func TestAKeyIsHandedOnAndAErrorIsSaid(t *testing.T) {
 	var got [3]string
-	handler := &settingsHandler{
-		writeSecret: setting.NewWriteSecret(func(_ context.Context, pluginID, name, key string) error {
+	handler := &Handler{
+		WriteSecret: setting.NewWriteSecret(func(_ context.Context, pluginID, name, key string) error {
 			got = [3]string{pluginID, name, key}
 			return nil
 		}),
-		deleteSecret: setting.NewDeleteSecret(func(context.Context, string, string) error { return errNoKeychain }),
+		DeleteSecret: setting.NewDeleteSecret(func(context.Context, string, string) error { return errNoKeychain }),
 	}
 	_, err := handler.WritePluginSecret(t.Context(), connect.NewRequest(&v1.WritePluginSecretRequest{
 		PluginId: "md.numen.sample", Name: "apiKey", Key: "made-up-key",
@@ -40,7 +40,7 @@ func TestAKeyIsHandedOnAndAErrorIsSaid(t *testing.T) {
 
 // A build that keeps no keys answers that it serves none.
 func TestABuildWithoutKeysServesNone(t *testing.T) {
-	handler := &settingsHandler{}
+	handler := &Handler{}
 	if _, err := handler.WritePluginSecret(t.Context(), connect.NewRequest(&v1.WritePluginSecretRequest{})); connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("write answered %v", err)
 	}
@@ -51,7 +51,7 @@ func TestABuildWithoutKeysServesNone(t *testing.T) {
 
 // The consent of a plugin travels to the window; a key never does.
 func TestAPluginTravelsWithItsConsent(t *testing.T) {
-	infos := newWirePluginInfos([]setting.PluginInfo{{
+	infos := NewWirePluginInfos([]setting.PluginInfo{{
 		ID: "md.numen.sample", Secrets: []string{"apiKey"}, StoredSecrets: []string{"apiKey"},
 		Consent: setting.ConsentAsked,
 	}})
@@ -63,7 +63,7 @@ func TestAPluginTravelsWithItsConsent(t *testing.T) {
 	for _, consent := range []setting.Consent{
 		setting.ConsentNone, setting.ConsentUnanswered, setting.ConsentAsked, setting.ConsentAllowed, setting.ConsentRefused,
 	} {
-		if _, found := consents[consent]; !found {
+		if _, found := Consents[consent]; !found {
 			t.Errorf("consent %v has no wire value", consent)
 		}
 	}

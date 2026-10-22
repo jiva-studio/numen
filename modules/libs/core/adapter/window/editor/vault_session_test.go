@@ -2,12 +2,14 @@ package editor_test
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"slices"
-	"sync"
+	"strings"
 	"testing"
 	"time"
 
@@ -569,41 +571,625 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	}
 }
 
-// TestARunReachesTheVaultTheWindowIsShowing. The passes behind a vault are
-// taken down and built again while requests are being served, so a handler that
-// reads one reads it where the swap publishes it. A request that arrives in the
-func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
-	f := openTwoVaults(t)
+// Two processes write the index, so a write that reached the vault may find the
+// the index is behind: the file is on disk and search does not hold what it now
+// says.
 
-	asking, stop := context.WithCancel(t.Context())
-	var request sync.WaitGroup
-	for _, of := range []v1.ArtifactKind{
-		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
-		v1.ArtifactKind_ARTIFACT_KIND_OCR,
-		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
-	} {
-		request.Add(1)
-		go func() {
-			defer request.Done()
-			for asking.Err() == nil {
-				f.installation.Services.Artifact.CreateArtifact(asking, connect.NewRequest(&v1.CreateArtifactRequest{
-					Path: entropy, Kind: of,
-				}))
+// refuseToLevel is an index that will not come level with what was written.
+func refuseToLevel(context.Context, domain.Vault, []string) error {
+	return errors.New("the index is held open elsewhere")
+}
+
+// unwritten is a vault with those notes in it and an index that will not come level with anything
+// written to it, asked the way the editor's window does.
+func unwritten(t *testing.T, notes map[string]string) *going {
+	t.Helper()
+
+	f := openWindow(t, nil, notes)
+	waitForScan(t, f)
+	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(refuseToLevel)
+	return f
+}
+
+func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
+	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+
+	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+		Path: "Note.md",
+		Body: "what the person typed\n",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("saving answered %+v", answer.Msg)
+	}
+	// Without it the next save has nothing to present and is answered as a note
+	// somebody else touched.
+	if answer.Msg.GetAt() == nil {
+		t.Error("the save landed and the client was handed no fingerprint")
+	}
+	if !answer.Msg.GetIsUnlevelled() {
+		t.Error("the save is answered as findable and search does not hold it")
+	}
+	if target := onDisk(t, f.root, "Note.md"); !strings.Contains(target, "what the person typed") {
+		t.Errorf("the note on disk is %q", target)
+	}
+}
+
+// TestASaveTheIndexCameLevelWithSaysNothingIsBehind is the control. A flag
+// every save carries says nothing, and a client shown a warning after every
+// save learns to ignore it.
+func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	waitForScan(t, f)
+
+	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+		Path: "Note.md",
+		Body: "what the person typed\n",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetIsUnlevelled() {
+		t.Error("a save the index came level with is answered as behind")
+	}
+	if pos := findLevellingTask(t, f); pos != nil {
+		t.Errorf("a save that went through is in the list as %+v", pos)
+	}
+}
+
+// TestASaveTheIndexWouldNotComeLevelWithStandsInTheList. A person saving a
+// second note has no reason to look at what the first one answered, and the
+// list of what is being done is where they are.
+func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
+	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+
+	save := func() {
+		t.Helper()
+		if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+			Path: "Note.md",
+			Body: "what the person typed\n",
+		})); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	save()
+	pos := findLevellingTask(t, f)
+	if pos == nil || pos.GetError() == "" {
+		t.Fatalf("what a person is shown after a save search cannot see is %+v", pos)
+	}
+
+	// The index is behind until something puts it right, and the save that does
+	// is what says so. A list nothing leaves is a list nobody reads.
+	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
+	save()
+	if offset := findLevellingTask(t, f); offset != nil {
+		t.Errorf("the index came level and a person is still shown %+v", offset)
+	}
+}
+
+// findLevellingTask is what the list of what is being done says about the index, asked
+// for the way the window asks for it. The first message of the stream is the
+// list currently, so nothing here waits on anything.
+func findLevellingTask(t *testing.T, f *going) *v1.Task {
+	t.Helper()
+
+	listening, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
+		Window: wire.Editor,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tasks.Close()
+	if !tasks.Receive() {
+		t.Fatalf("the tasks stream never opened: %v", tasks.Err())
+	}
+	for _, item := range tasks.Msg().GetTasks() {
+		if item.GetId() == "levelling the index" {
+			return item
+		}
+	}
+	return nil
+}
+
+// TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered. A note is made through
+// its own use case, and it says the same thing a stencil does.
+func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
+	f := openWindow(t, nil, nil)
+	waitForScan(t, f)
+	*f.installation.Services.NoteCreate() = f.installation.Services.NoteCreate().WithIndex(refuseToLevel)
+
+	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
+		Title: "Entropy",
+	}))
+	if err != nil {
+		t.Fatalf("the note is on disk and the client received %v", err)
+	}
+	if path := answer.Msg.GetPath(); path != "Entropy.md" {
+		t.Fatalf("the note is filed at %q", path)
+	}
+	if !answer.Msg.GetIsUnlevelled() {
+		t.Error("the note is answered as findable and search does not hold it")
+	}
+}
+
+// TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered. The file is in the
+// trash and search still answers about it, and what its links now reach is
+// reported all the same.
+func TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
+	f := openWindow(t, nil, map[string]string{
+		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
+		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Ontology\n    role: parent\n---\n\n" +
+			"# Entropy\n",
+	})
+	waitForScan(t, f)
+	*f.installation.Services.FileRemove() = f.installation.Services.FileRemove().WithIndex(refuseToLevel)
+
+	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
+		Path: "Ontology.md",
+	}))
+	if err != nil {
+		t.Fatalf("the note is in the trash and the client received %v", err)
+	}
+	if answer.Msg.GetTrashed() == "" {
+		t.Error("the note went to the trash and the client received nothing of where")
+	}
+	if !answer.Msg.GetIsUnlevelled() {
+		t.Error("the removal is answered as followed and search still holds the note")
+	}
+	if len(answer.Msg.GetDangling()) != 1 {
+		t.Errorf("the links now reaching nothing are %q", answer.Msg.GetDangling())
+	}
+}
+
+// openInstallation is a window put together the way a person's window is:
+// through the composition root, on a vault of this test's own.
+func openInstallation(t *testing.T) *editor.Installation {
+	t.Helper()
+
+	cfg := container.Config{
+		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+	}
+	registry, err := cfg.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	add := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now)
+	if _, err := add.Execute(root, "one"); err != nil {
+		t.Fatal(err)
+	}
+
+	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "one", io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = installation.Close() })
+	return installation
+}
+
+// A note saved through the window is in the index when the save is answered.
+func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
+	installation := openInstallation(t)
+
+	const body = "tetragrammaton is a word nothing else in this vault holds"
+	content, err := installation.Services.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+		Path: "Kept.md",
+		Body: body,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rejected := content.Msg.GetError(); rejected != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the save failed: %v", rejected)
+	}
+
+	found, err := installation.Passages().FindLexical(
+		t.Context(), installation.GetCurrentVault().ID, "tetragrammaton",
+		[]domain.SourceKind{domain.KindNote}, 10, false,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) == 0 {
+		t.Error("the note saved through the window is not found")
+	}
+	for _, p := range found {
+		if p.Source != "Kept.md" {
+			t.Errorf("the search answered with %s, and only Kept.md holds the word", p.Source)
+		}
+	}
+}
+
+// nothing is an installation holding no vault, the window it opens, and a
+// client asking about it the way the window does.
+type nothing struct {
+	installation *editor.Installation
+	vault        questions
+	canvas       numenv1connect.WindowServiceClient
+	holds        numenv1connect.VaultsServiceClient
+	server       *httptest.Server
+	cfg          container.Config
+	elsewhere    string
+}
+
+// openEmptyWindow opens a window on an installation that has added nothing.
+//
+// Both the folder this system keeps documents in and the home it would fall
+// back on are somewhere a test owns, so anything made for a person to write in
+// is made where this can see it.
+func openEmptyWindow(t *testing.T) *nothing {
+	t.Helper()
+
+	elsewhere := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_DOCUMENTS_DIR", elsewhere)
+
+	cfg := container.Config{
+		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+	}
+	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
+	if err != nil {
+		t.Fatalf("an installation holding no vault would not open: %v", err)
+	}
+	t.Cleanup(func() { installation.Close() })
+
+	// The welcome screen's way into a vault: the list opens one in this window.
+	installation.State.OpenVault = installation.Show
+
+	server := httptest.NewUnstartedServer(installation.Services.NewHandler(http.NotFoundHandler()))
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	t.Cleanup(server.CloseClientConnections)
+	t.Cleanup(server.Close)
+
+	return &nothing{
+		installation: installation,
+		vault:        newQuestionsClient(server.Client(), server.URL),
+		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
+		holds:        numenv1connect.NewVaultsServiceClient(server.Client(), server.URL),
+		server:       server,
+		cfg:          cfg,
+		elsewhere:    elsewhere,
+	}
+}
+
+// TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing, and makes
+// nothing to stand on. A folder appearing in a person's documents is a folder
+// they did not ask for.
+func TestAnInstallationContainingNoVaultOpensAWindowActiveOnNothing(t *testing.T) {
+	f := openEmptyWindow(t)
+
+	if got := f.installation.GetCurrentVault(); got != (domain.Vault{}) {
+		t.Errorf("the window opened on %+v, want no vault", got)
+	}
+
+	target, err := os.ReadDir(f.elsewhere)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(target) != 0 {
+		t.Errorf("%d things were made where this person keeps documents: %v", len(target), target)
+	}
+	if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), "Documents")); err == nil {
+		t.Error("a documents folder was made in this person's home")
+	}
+
+	registry, err := f.cfg.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	switch last, found, err := registry.GetLastVault(); {
+	case err != nil:
+		t.Fatal(err)
+	case found:
+		t.Errorf("the list says a vault was opened: %+v", last)
+	}
+}
+
+// TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens. These run before a
+// person can do anything, and one of them refusing is a window that never comes
+// up.
+func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
+	f := openEmptyWindow(t)
+
+	state, err := f.vault.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
+	if err != nil {
+		t.Fatalf("the window cannot say what it is showing: %v", err)
+	}
+	if got := state.Msg; got.GetName() != "" || got.GetPath() != "" {
+		t.Errorf("the window says it is showing %q at %q", got.GetName(), got.GetPath())
+	}
+	if !state.Msg.GetScan().GetIsReady() {
+		t.Error("the window says it is still being read, and nothing is reading")
+	}
+	if reason := state.Msg.GetScan().GetError(); reason != "" {
+		t.Errorf("the window says it could not be read: %s", reason)
+	}
+	if state.Msg.GetCoverage().GetChunkCount() != 0 || state.Msg.GetCoverage().GetEmbeddedCount() != 0 {
+		t.Errorf("the window counted %d chunks and %d of them embedded",
+			state.Msg.GetCoverage().GetChunkCount(), state.Msg.GetCoverage().GetEmbeddedCount())
+	}
+
+	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
+	if err != nil {
+		t.Fatalf("the window cannot say which note it opens on: %v", err)
+	}
+	if note := opening.Msg.GetNote(); note != nil {
+		t.Errorf("the window opens on %q, and holds no vault to hold it", note.GetPath())
+	}
+
+	displayed, err := f.canvas.GetCurrentVault(t.Context(),
+		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Editor}))
+	if err != nil {
+		t.Fatalf("the window cannot say which vault it is showing: %v", err)
+	}
+	if got := displayed.Msg.GetVault(); got != "" {
+		t.Errorf("the window says it is showing %q", got)
+	}
+
+	items, err := f.holds.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
+	if err != nil {
+		t.Fatalf("the window cannot list the vaults this installation holds: %v", err)
+	}
+	if got := items.Msg.GetVaults(); len(got) != 0 {
+		t.Errorf("the list holds %d vaults, and none were added", len(got))
+	}
+}
+
+// TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs. The window listens
+// to four streams as it opens and draws nothing until each has said its first
+// word.
+func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
+	f := openEmptyWindow(t)
+
+	listening, hangUp := context.WithCancel(t.Context())
+	defer hangUp()
+
+	changes, err := f.vault.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer changes.Close()
+	if !changes.Receive() {
+		t.Fatalf("the changes stream never opened: %v", changes.Err())
+	}
+
+	editing, err := f.vault.WatchEdits(listening, connect.NewRequest(&v1.WatchEditsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer editing.Close()
+	if !editing.Receive() {
+		t.Fatalf("the editing stream never opened: %v", editing.Err())
+	}
+
+	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tasks.Close()
+	if !tasks.Receive() {
+		t.Fatalf("the tasks stream never opened: %v", tasks.Err())
+	}
+	if executing := tasks.Msg().GetTasks(); len(executing) != 0 {
+		t.Errorf("a window standing on nothing is doing %+v", executing)
+	}
+
+	// Focus opens on the first place asked for, and a place reaches only a
+	// stream already listening. So it is asked for over and over while the
+	// stream opens, and the asking stops with the place that arrived.
+	asking, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	go func() {
+		for {
+			select {
+			case <-asking.Done():
+				return
+			case <-time.After(20 * time.Millisecond):
+				_ = f.installation.State.GetWindow().FocusPlace(asking, domain.Place{Path: "Somewhere.md"})
 			}
-		}()
+		}
+	}()
+
+	waiting, elapsed := context.WithTimeout(listening, 5*time.Second)
+	defer elapsed()
+
+	focus, err := f.vault.WatchFocus(waiting, connect.NewRequest(&v1.WatchFocusRequest{}))
+	if err != nil {
+		t.Fatalf("the focus stream never opened: %v", err)
+	}
+	defer focus.Close()
+	if !focus.Receive() {
+		t.Fatalf("the focus stream said nothing: %v", focus.Err())
+	}
+	if pos := focus.Msg().GetPath(); pos != "Somewhere.md" {
+		t.Errorf("the window was sent to %q", pos)
+	}
+}
+
+// TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault.
+//
+// A vault with no identity is every vault at once in one database, and a vault
+// with no path is whichever folder this process happens to be standing in.
+func TestAWindowActiveOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
+	f := openEmptyWindow(t)
+
+	request := map[string]func() error{
+		"list a folder of the vault": func() error {
+			_, err := f.vault.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{}))
+			return err
+		},
+		"read a note": func() error {
+			_, err := f.vault.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: "One.md"}))
+			return err
+		},
+		"write a note": func() error {
+			_, err := f.vault.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+				Path: "One.md", Body: "what nobody asked to keep\n",
+			}))
+			return err
+		},
+		"make a note": func() error {
+			_, err := f.vault.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{Title: "One"}))
+			return err
+		},
+		"join a note to another": func() error {
+			_, err := f.vault.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
+				Path: "One.md",
+				Link: &v1.Link{To: "Two.md", Role: v1.Role_ROLE_JUMP},
+			}))
+			return err
+		},
+		"rename a note": func() error {
+			_, err := f.vault.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
+				Path: "One.md", Title: "Two",
+			}))
+			return err
+		},
+		"move a file": func() error {
+			_, err := f.vault.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
+				From: "One.md", To: "Two.md",
+			}))
+			return err
+		},
+		"remove a file": func() error {
+			_, err := f.vault.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{Path: "One.md"}))
+			return err
+		},
+		"make a folder": func() error {
+			_, err := f.vault.CreateFolder(t.Context(), connect.NewRequest(&v1.CreateFolderRequest{
+				Path: "somewhere",
+			}))
+			return err
+		},
+		"show what a note is joined to": func() error {
+			_, err := f.vault.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
+				Path: "One.md",
+			}))
+			return err
+		},
 	}
 
-	for range 4 {
-		if err := f.installation.Show(t.Context(), f.second); err != nil {
-			t.Errorf("the second vault would not open: %v", err)
-			break
-		}
-		if err := f.installation.Show(t.Context(), f.first); err != nil {
-			t.Errorf("the first vault would not open again: %v", err)
-			break
-		}
+	for what, ask := range request {
+		t.Run(what, func(t *testing.T) {
+			err := ask()
+			if err == nil {
+				t.Fatal("the window answered, and it has no vault to answer about")
+			}
+			if got := connect.CodeOf(err); got != connect.CodeFailedPrecondition {
+				t.Errorf("the error is %v: %v", got, err)
+			}
+			if !strings.Contains(err.Error(), "no vault") {
+				t.Errorf("the rejection does not say why: %v", err)
+			}
+		})
+	}
+}
+
+// TestAWindowStandingOnNothingSearchesNothing. The palette is a keystroke away
+// from a person who has added no vault, and typing in it turns up nothing.
+func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
+	f := openEmptyWindow(t)
+
+	named, err := f.vault.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "one"}))
+	if err != nil {
+		t.Fatalf("the palette cannot be typed in: %v", err)
+	}
+	if found := named.Msg.GetFound(); len(found) != 0 {
+		t.Errorf("a window standing on nothing knows the names %+v", found)
 	}
 
-	stop()
-	request.Wait()
+	found, err := f.vault.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+		Query: "one", Mode: v1.SearchMode_SEARCH_MODE_HYBRID,
+	}))
+	if err != nil {
+		t.Fatalf("the vault cannot be searched: %v", err)
+	}
+	if passages := found.Msg.GetFound(); len(passages) != 0 {
+		t.Errorf("a window standing on nothing holds the text %+v", passages)
+	}
+}
+
+// TestAVaultAddedToAWindowStandingOnNothingIsShown, which is where the welcome
+// screen's two ways in both end.
+func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
+	f := openEmptyWindow(t)
+
+	root := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(root, "Entropy.md"), []byte(noteNamed("Entropy")), 0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	added, err := f.holds.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
+		Path: root, Name: "the first one",
+	}))
+	if err != nil {
+		t.Fatalf("a folder could not be added: %v", err)
+	}
+	if rejected := added.Msg.Error; rejected != nil {
+		t.Fatalf("the folder failed: %v", *rejected)
+	}
+
+	if _, err := f.holds.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{
+		Id: added.Msg.GetVault().GetId(),
+	})); err != nil {
+		t.Fatalf("the vault just added would not open: %v", err)
+	}
+
+	if got := string(f.installation.GetCurrentVault().ID); got != added.Msg.GetVault().GetId() {
+		t.Fatalf("the window is showing %q, want the vault just added", got)
+	}
+
+	// The vault is read, and answers about the note it holds.
+	for range 400 {
+		state, err := f.vault.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if reason := state.Msg.GetScan().GetError(); reason != "" {
+			t.Fatalf("the vault could not be read: %s", reason)
+		}
+		if state.Msg.GetScan().GetIsReady() {
+			if got := state.Msg.GetName(); got != "the first one" {
+				t.Errorf("the window says it is showing %q", got)
+			}
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	named, err := f.vault.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "Entropy"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named.Msg.GetFound()) == 0 {
+		t.Error("the vault that arrived does not answer for the note it holds")
+	}
+
+	// The next window opens on it.
+	registry, err := f.cfg.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	switch last, found, err := registry.GetLastVault(); {
+	case err != nil:
+		t.Fatal(err)
+	case !found || string(last.ID) != added.Msg.GetVault().GetId():
+		t.Errorf("the list says the vault opened last is %+v", last)
+	}
 }

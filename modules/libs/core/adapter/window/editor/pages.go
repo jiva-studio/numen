@@ -57,11 +57,6 @@ func mount(pos string, to http.Handler) served { return served{posVal: pos, to: 
 func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
 	routes := s.newRoutes(named)
 
-	// A page of a document, the markup of a book and a picture the book carries
-	// are what a browser's own elements speak, and each is the thing itself, so
-	// they are served where that thing is answered about and nowhere else.
-	hasAssets := isServed(named, numenv1connect.DocumentServiceName) || isServed(named, numenv1connect.BookServiceName)
-
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for. What a link note
 	// points at is played in a frame, from the hosts named here and no other.
@@ -92,7 +87,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 			s.PluginServices.ServeHTTP(w, r)
 			return
 		}
-		s.serveBeside(w, r, hasAssets, files)
+		s.serveBeside(w, r, files)
 	})
 }
 
@@ -145,9 +140,6 @@ func (s *Services) newServices() []service {
 		{numenv1connect.SearchServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewSearchServiceHandler(s.Search, c)
 		}},
-		{numenv1connect.AgentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewAgentServiceHandler(s.Agent, c)
-		}},
 		{numenv1connect.VaultsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewVaultsServiceHandler(s.Vaults, c)
 		}},
@@ -156,27 +148,6 @@ func (s *Services) newServices() []service {
 		}},
 		{numenv1connect.WindowServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewWindowServiceHandler(s.state.Window, c)
-		}},
-		{numenv1connect.ArtifactServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewArtifactServiceHandler(s.Artifact, c)
-		}},
-		{numenv1connect.TranscriptServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewTranscriptServiceHandler(s.Transcript, c)
-		}},
-		{numenv1connect.ArticleServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewArticleServiceHandler(s.Article, c)
-		}},
-		{numenv1connect.OcrServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewOcrServiceHandler(s.Ocr, c)
-		}},
-		{numenv1connect.DocumentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewDocumentServiceHandler(s.Document, c)
-		}},
-		{numenv1connect.RecordingServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewRecordingServiceHandler(s.Recording, c)
-		}},
-		{numenv1connect.BookServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewBookServiceHandler(s.Book, c)
 		}},
 		{numenv1connect.PluginServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			if s.Plugin == nil {
@@ -198,7 +169,7 @@ const updateEndpoint = "https://dl.numen.md/latest/latest.json"
 
 // serveBeside answers what no service does: the bytes of a file, the page the
 // interface opens at, and every other file the interface is made of.
-func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets bool, files http.Handler) {
+func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, files http.Handler) {
 	switch {
 	case r.URL.Path == updateRoute:
 		s.serveUpdate(w, r)
@@ -209,13 +180,6 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets
 		}
 		defer s.state.questions.finish()
 		s.servePluginAsset(w, r)
-	case hasAssets && strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
-		if !s.state.questions.begin() {
-			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
-			return
-		}
-		defer s.state.questions.finish()
-		s.Asset.Asset(w, r)
 	case slices.Contains(wire.OpenedAt, r.URL.Path):
 		wire.WritePage(w, r, pages, s.Themes, files)
 	default:

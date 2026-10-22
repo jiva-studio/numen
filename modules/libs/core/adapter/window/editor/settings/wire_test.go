@@ -1,15 +1,15 @@
-package editor
+package settings
 
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
+	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
 func TestTheProgramWhoseModelsASettingIsOfferedReachesTheWire(t *testing.T) {
-	wire := newWirePluginInfos([]settings.PluginInfo{{
+	wire := NewWirePluginInfos([]setting.PluginInfo{{
 		ID: "a.b",
-		Settings: []settings.PluginSetting{
+		Settings: []setting.PluginSetting{
 			{Key: "model", Type: "string", ModelsOf: "prog"},
 			{Key: "other", Type: "string"},
 		},

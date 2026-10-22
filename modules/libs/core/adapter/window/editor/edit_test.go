@@ -1,13 +1,28 @@
 package editor
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"io/fs"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
+	"sync"
 	"testing"
+	"time"
+
+	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -132,5 +147,401 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 				t.Errorf("want %v, got %v", c.want, reason)
 			}
 		})
+	}
+}
+
+// levelNothing brings nothing level: what is asked in these tests is what the
+// schema carries, and there is no index behind them to find it in.
+func levelNothing(context.Context, domain.Vault, []string) error { return nil }
+
+// openEditor is a vault with a read and a save on it and nothing behind them.
+func openEditor(t *testing.T, notes map[string]string) *Services {
+	t.Helper()
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
+	read := note.NewRead(filesystem.VaultReaders{})
+	api := newBareServices()
+	api.Note.read, api.Note.write = &read, &writing
+	api.state.setVault(testsupport.NewVault(t, notes))
+	return api
+}
+
+func readNote(t *testing.T, api *Services, path string) *v1.ReadBaseline {
+	t.Helper()
+	out, err := api.Note.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Msg.GetAt() == nil {
+		t.Fatalf("the read of %s carried no fingerprint", path)
+	}
+	return &v1.ReadBaseline{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
+}
+
+// A note holding prose the client has not read is its own answer.
+func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
+	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	baseline := readNote(t, api, "Entropy.md")
+
+	theirs := "# Entropy\n\nTheirs.\n"
+	on := filepath.Join(api.state.GetCurrentVault().Path, "Entropy.md")
+	if err := os.WriteFile(on, []byte(theirs), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+		Path:     "Entropy.md",
+		Body:     "# Entropy\n\nMine.\n",
+		Baseline: baseline,
+	}))
+	if err != nil {
+		t.Fatalf("a note that changed came back as an error: %v", err)
+	}
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+		t.Errorf("a note that changed was answered %v", code)
+	}
+	if out.Msg.GetAt() != nil {
+		t.Error("a write that wrote nothing answered with a fingerprint")
+	}
+
+	raw, err := os.ReadFile(on)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != theirs {
+		t.Errorf("a write that was stopped wrote anyway:\n%s", raw)
+	}
+}
+
+// The fingerprint a write answers with is what the client presents at its next
+// write, and it is what lets a session hold more than one save.
+func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
+	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	baseline := readNote(t, api, "Entropy.md")
+
+	first, err := api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+		Path:     "Entropy.md",
+		Body:     "# Entropy\n\nOne.\n",
+		Baseline: baseline,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
+		t.Fatal("the first write said the note changed")
+	}
+	if first.Msg.GetAt() == nil {
+		t.Fatal("the write answered with no fingerprint")
+	}
+
+	second, err := api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+		Path:     "Entropy.md",
+		Body:     "# Entropy\n\nTwo.\n",
+		Baseline: &v1.ReadBaseline{Prose: baseline.GetProse(), At: first.Msg.GetAt()},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
+		t.Error("the write after a write said the note changed")
+	}
+
+	raw, err := os.ReadFile(filepath.Join(api.state.GetCurrentVault().Path, "Entropy.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != "# Entropy\n\nTwo.\n" {
+		t.Errorf("the second write did not land:\n%s", raw)
+	}
+}
+
+// beaten is a vault's readers with something writing the note the moment it has
+// been looked at, which is what a writer outside this process looks like from
+// in here.
+type beaten struct {
+	port.VaultReaders
+	after func(path string)
+}
+
+func (b beaten) Open(v domain.Vault) (port.VaultReader, error) {
+	reader, err := b.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return beatenReader{VaultReader: reader, after: b.after}, nil
+}
+
+type beatenReader struct {
+	port.VaultReader
+	after func(path string)
+}
+
+func (b beatenReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+	ref, err := b.VaultReader.GetFingerprint(ctx, path)
+	b.after(path)
+	return ref, err
+}
+
+// A join reads a note, splices its frontmatter and puts it back.
+func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
+	api := openEditor(t, map[string]string{
+		"Entropy.md": "# Entropy\n",
+		"Heat.md":    "# Heat\n",
+	})
+	on := filepath.Join(api.state.GetCurrentVault().Path, "Heat.md")
+
+	var once sync.Once
+	linking := note.NewEditLinks(
+		beaten{VaultReaders: filesystem.VaultReaders{}, after: func(path string) {
+			if path != "Heat.md" {
+				return
+			}
+			once.Do(func() {
+				if err := os.WriteFile(on, []byte("# Heat\n\nSomebody else's, longer.\n"), 0o644); err != nil {
+					t.Error(err)
+				}
+			})
+		}},
+		filesystem.VaultWriters{},
+		levelNothing,
+		time.Now,
+	)
+	api.Note.editLinks = &linking
+
+	out, err := api.Note.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
+		Path: "Heat.md",
+		Link: &v1.Link{To: "Entropy.md", Role: v1.Role_ROLE_PARENT},
+	}))
+	if err != nil {
+		t.Fatalf("a note that changed came back as an error: %v", err)
+	}
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+		t.Errorf("a note that changed was answered %v", code)
+	}
+
+	raw, err := os.ReadFile(on)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "to: Entropy") {
+		t.Errorf("a join that was stopped wrote anyway:\n%s", raw)
+	}
+}
+
+// TestEditLoad measures the load path.
+func TestEditLoad(t *testing.T) {
+	if os.Getenv("NUMEN_LOAD") == "" {
+		t.Skip("set NUMEN_LOAD=1 to run the load test")
+	}
+	notes := 100_000
+	if s := os.Getenv("NUMEN_LOAD_NOTES"); s != "" {
+		n, err := strconv.Atoi(s)
+		if err != nil {
+			t.Fatalf("NUMEN_LOAD_NOTES: %v", err)
+		}
+		notes = n
+	}
+
+	v := testsupport.GenerateVault(t, notes)
+	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
+	read := note.NewRead(filesystem.VaultReaders{})
+	api := createServices(&State{
+		ChangeEvents: newChangeBroadcaster(),
+		Places:       newPlaceBroadcaster(),
+	})
+	bindNotes(api, db)
+	api.Note.read, api.Note.write = &read, &writing
+	api.state.Indexing.Progress = db.Progress()
+	api.state.setVault(v)
+
+	startTime := time.Now()
+	made := container.NewEditorAssembly(cfg, nil, db)
+	worker := newIndexWorker(made, api.state, nil, time.Hour, io.Discard)
+	_, wait := startIndexing(t.Context(), v, made, api.state, false, worker, worker.NewSession(), io.Discard)
+	t.Cleanup(wait)
+	for !api.state.Ready.Load() && api.state.Error.Why() == "" {
+		time.Sleep(50 * time.Millisecond)
+	}
+	if why := api.state.Error.Why(); why != "" {
+		t.Fatalf("the vault could not be read: %s", why)
+	}
+	t.Logf("read %d notes in %s", notes, time.Since(startTime).Round(time.Millisecond))
+
+	line, isDone := api.state.ChangeEvents.subscribe()
+	t.Cleanup(isDone)
+
+	const path = "01/note-000001.md"
+	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(time.Now().UnixNano(), 10) + ".\n"
+
+	saving := time.Now()
+	if _, err := api.Note.write.Save(t.Context(), v, path, body, nil); err != nil {
+		t.Fatal(err)
+	}
+	wrote := time.Since(saving)
+
+	durationCh := make(chan time.Duration, 1)
+	go func() {
+		for what := range line {
+			for _, p := range what.paths {
+				if p == path {
+					durationCh <- time.Since(saving)
+					return
+				}
+			}
+			if what.shouldReload {
+				durationCh <- time.Since(saving)
+				return
+			}
+		}
+	}()
+
+	select {
+	case reached := <-durationCh:
+		t.Logf("save %s, the window told after %s",
+			wrote.Round(time.Millisecond), reached.Round(time.Millisecond))
+	case <-time.After(2 * time.Minute):
+		t.Fatalf("the change never reached a client; the save itself took %s", wrote)
+	}
+}
+
+// The window says what currently open, and whoever answers on their behalf
+// reads the last of it.
+
+func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
+	state := &State{}
+	api := &workspaceHandler{state: state}
+
+	if open := state.GetOpenTabs(); len(open.Tabs) != 0 || open.FrontID != "" {
+		t.Fatalf("a window that has said nothing has %+v open", open)
+	}
+
+	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
+		Front: "two",
+		Tabs: []*v1.Tab{
+			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
+			{Id: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
+				Recording: &v1.RecordingProgress{TranscribedDurationMs: 1000, DurationMs: 4000}},
+			{Id: "three", Kind: "book", Path: "Adi.epub", Title: "The Adi Parva",
+				Book: &v1.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := domain.OpenTabs{
+		FrontID: "two",
+		Tabs: []domain.Tab{
+			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
+			{ID: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
+				Recording: &domain.RecordingProgress{TranscribedDuration: 1000, Duration: 4000}},
+			{ID: "three", Kind: domain.TabBook, Path: "Adi.epub", Title: "The Adi Parva",
+				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
+		},
+	}
+	if got := state.GetOpenTabs(); !reflect.DeepEqual(got, want) {
+		t.Errorf("the window has %+v open", got)
+	}
+}
+
+func TestAttendingTellsWhoeverIsListening(t *testing.T) {
+	var received []domain.OpenTabs
+	state := &State{NotifyOpenTabs: func(open domain.OpenTabs) { received = append(received, open) }}
+	api := &workspaceHandler{state: state}
+
+	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
+		Front: "one",
+		Tabs:  []*v1.Tab{{Id: "one", Kind: "note", Path: "Entropy.md", Title: "Entropy"}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(received) != 1 {
+		t.Fatalf("what the window has open was said %d times", len(received))
+	}
+	front, target := received[0].GetFrontTab()
+	if !target || front.Path != "Entropy.md" {
+		t.Errorf("the tab in front is %+v", front)
+	}
+}
+
+func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
+	for name, c := range map[string]struct {
+		open domain.OpenTabs
+		want string
+	}{
+		"a tab in front": {
+			open: domain.OpenTabs{
+				FrontID: "two",
+				Tabs:    []domain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
+			},
+			want: "Talk.mp3",
+		},
+		"nothing open":     {open: domain.OpenTabs{}},
+		"a tab it lets go": {open: domain.OpenTabs{FrontID: "three", Tabs: []domain.Tab{{ID: "one"}}}},
+		"a tab with no identity": {
+			open: domain.OpenTabs{Tabs: []domain.Tab{{Path: "Entropy.md"}}},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			front, target := c.open.GetFrontTab()
+			if target != (c.want != "") {
+				t.Fatalf("a tab in front is %v", target)
+			}
+			if front.Path != c.want {
+				t.Errorf("the tab in front holds %q", front.Path)
+			}
+		})
+	}
+}
+
+func TestDetachTabInvokesState(t *testing.T) {
+	var calledTab string
+	var calledX, calledY int
+	state := &State{
+		DetachTab: func(_ context.Context, tab string, x, y int) error {
+			calledTab = tab
+			calledX = x
+			calledY = y
+			return nil
+		},
+	}
+	api := &workspaceHandler{state: state}
+
+	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
+		TabId: "tab-123",
+		X:     150,
+		Y:     250,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if calledTab != "tab-123" || calledX != 150 || calledY != 250 {
+		t.Errorf("detached tab: got (%q, %d, %d), want (%q, 150, 250)", calledTab, calledX, calledY, "tab-123")
+	}
+}
+
+func TestDetachTabFailsWhenUnimplemented(t *testing.T) {
+	state := &State{}
+	api := &workspaceHandler{state: state}
+
+	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
+		TabId: "tab-123",
+	}))
+	if err == nil {
+		t.Fatal("expected error when DetachTab is nil, got nil")
+	}
+	if connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Errorf("got code %v, want %v", connect.CodeOf(err), connect.CodeUnavailable)
 	}
 }
