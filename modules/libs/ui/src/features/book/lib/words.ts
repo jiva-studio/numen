@@ -3,7 +3,6 @@
 
 /** The words a book is read with. */
 export interface BookWords {
-  /** What the columns the text stands in are called. */
   readonly pages: string
   /** Where in the book the page in front stands. */
   readonly of: (page: number, pages: number) => string

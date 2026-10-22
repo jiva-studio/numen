@@ -175,10 +175,6 @@ const hue = computed(() => ({
   cursor: default;
 }
 
-/* While the plex is moving, the fill is a relation's colour too: the focused node
-   is painted from its own pair, and follows the move as the outline does.
-   The node stands between: a `:deep` with nothing of this component's in front
-   of it hangs the scope on the ancestor, which is the frame's and not ours. */
 [data-moving] .plex__node :deep(.plex__box) {
   transition:
     fill var(--numen-plex-move, var(--numen-motion)) var(--numen-easing),
@@ -229,9 +225,6 @@ const hue = computed(() => ({
   color: var(--numen-accent-ink);
 }
 
-/* The focused node is painted from its own pair, and its relation's hue is the
-   ground it stands on. What it is drawn before its title takes the ink the
-   title is set in. */
 .plex__node--focus :deep(.plex__icon) {
   color: inherit;
 }

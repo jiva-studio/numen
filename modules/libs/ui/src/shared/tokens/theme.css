@@ -66,7 +66,6 @@
   transition-duration: var(--numen-motion-hover);
 }
 
-/* Nothing is drawn around what the keyboard stands on. */
 @utility ring-numen {
   @apply focus-visible:outline-none;
 }
@@ -76,8 +75,6 @@
   @apply rounded-panel border-panel-rule bg-panel shadow-panel backdrop-blur-panel border;
 }
 
-/* The way a few words are set in capitals: tracked wider than a sentence, so
-   they read as a label over what they name. */
 @utility caps-numen {
   letter-spacing: var(--numen-caps-tracking);
   text-transform: uppercase;
@@ -133,7 +130,6 @@
   text-decoration-style: dashed;
 }
 
-/* A table wider than the measure scrolls inside itself, carrying its own scrollbar. */
 .prose-numen :where(table) {
   display: block;
   overflow-x: auto;

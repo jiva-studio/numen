@@ -32,7 +32,6 @@ const NOTED: ReadonlyMap<string, string> = new Map(
   getNoteCommands(createCommands(words)).map((one) => [one.id, one.text]),
 )
 
-/** One command over a note, in the group it stands in. */
 const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
   return [{ id, text: NOTED.get(id) ?? id, group }]
 }

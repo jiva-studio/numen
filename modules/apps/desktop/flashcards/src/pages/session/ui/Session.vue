@@ -133,9 +133,6 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
   min-block-size: 0;
 }
 
-/* Where the card stands, said once and quietly: a person answering is reading
-   the card, not the line above it. Text and marks are centred against each
-   other, because a button has no baseline to put a word on. */
 .session__where {
   display: flex;
   align-items: center;
@@ -168,8 +165,6 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
   gap: var(--numen-inset);
 }
 
-/* An answer is a target a person hits without looking, so it takes the whole
-   width it can and stands taller than a button in a row of controls. */
 .session__answer {
   flex: 1;
   block-size: auto;

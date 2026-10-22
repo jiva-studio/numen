@@ -15,7 +15,6 @@ export interface Tile {
   readonly goal: string
   /** What is wrong with the preset, and empty where nothing is. */
   readonly wrong: string
-  /** What stands at the right of the tile: the figure, or words in its place. */
   readonly says: string
   /**
    * What starting a session on it would ask, or why it would ask nothing. A preset

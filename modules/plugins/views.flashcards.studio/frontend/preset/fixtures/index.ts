@@ -58,7 +58,6 @@ afterEach(() => {
 const rows = (tab: ReturnType<typeof mount>): readonly string[] =>
   tab.findAll('[data-preset-row] [data-preset="name"]').map((one) => one.text())
 
-/** The heights a drawn path stands at, in the picture's own units. */
 const heights = (d: string): readonly number[] =>
   d
     .split(/[ML]/)

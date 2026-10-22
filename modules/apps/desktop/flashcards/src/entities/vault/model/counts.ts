@@ -13,7 +13,6 @@ import type { StopReason } from '@numen/protocol'
 
 import type { VaultCardsDue } from '../types'
 
-/** What the front door of the application answers. */
 export interface CardsDueClient {
   watchCardsDue(
     req: Record<string, never>,

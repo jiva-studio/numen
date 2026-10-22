@@ -61,7 +61,6 @@ const CARDS: readonly VaultCard[] = [
   },
 ]
 
-/** The one section the deck stands in, which every card of it is under. */
 const SECTIONS = [{ name: 'Roots', preamble: '' }]
 
 /** A window with one deck open, drawn. */

@@ -66,7 +66,6 @@ describe('what a goal of a date draws', () => {
 })
 
 describe('the plot of what remains overdue', () => {
-  /** A curve whose place the knob stands at carries a backlog that climbs. */
   const createClimbingTab = (backlog: readonly number[] = [16, 21, 55, 66, 65, 78]) =>
     mountPresetTab({
       at: [point(), point(), point({ reviews: 80, backlog }), point()],

@@ -29,7 +29,6 @@ export interface WindowKeysDeps {
   readonly getPresetsByDeck: () => ReadonlyMap<string, Preset>
   /** Whether the answer is already showing. */
   readonly isShown: () => boolean
-  /** Which of the card and the two panels beside it the window is showing. */
   readonly getShowing: () => 'reading' | 'here' | 'asking'
   /** Into a vault. */
   readonly choose: (vault: string) => void

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 /**
- * The front door: every vault the installation holds, and what each owes today.
  *
  * It is the screen the editor opens on, drawn from the same component. The
  * there from here.

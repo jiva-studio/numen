@@ -42,7 +42,7 @@ func TestATranscriptIsInsertRightOnlyWhereItWasAskedFor(t *testing.T) {
 	target.proofread(t.Context(), v, "talks/one.mp3", "", false)
 
 	if executing, _ := getTask(target, "talks/one.mp3"); executing != "" {
-		t.Errorf("a transcript nobody asked about is %q", executing)
+		t.Errorf("a transcript unrequested about is %q", executing)
 	}
 }
 

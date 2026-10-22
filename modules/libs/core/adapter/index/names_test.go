@@ -82,10 +82,10 @@ func TestANoteIsFoundByAHeadingInsideIt(t *testing.T) {
 		t.Fatalf("found %d names, want 1: %+v", len(found), found)
 	}
 	if found[0].Title != "The Carnot cycle" {
-		t.Errorf("the note is called %q, want the note the heading stands in", found[0].Title)
+		t.Errorf("got note %q, want heading parent note", found[0].Title)
 	}
 	if found[0].Line != 0 {
-		t.Errorf("the heading stands on line %d, want 0", found[0].Line)
+		t.Errorf("got heading line %d, want 0", found[0].Line)
 	}
 	if got := describeMatch(found[0]); got != "[Entropy] over one cycle" {
 		t.Errorf("marked %q, want the run inside the heading", got)

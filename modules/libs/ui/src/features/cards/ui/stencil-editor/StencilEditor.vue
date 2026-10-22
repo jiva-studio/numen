@@ -90,7 +90,6 @@ const {
   move: (held, lands) => emit('move-face', held, lands),
 })
 
-/** What a preview stands in the slots, which is each field under its own name. */
 const sample = computed(() => sampleValues(declaredFields.value))
 
 /** The faces as they are drawn. */
@@ -169,7 +168,6 @@ const addFace = (): void => {
   /* The room between one part and the next, and between the rows of a part. */
   --part-gap: 1.5rem;
   --row-gap: 0.5rem;
-  /* The caret stands in the middle of the room between two rows. */
   --caret-out: calc(-1 * var(--row-gap) / 2);
 
   display: flex;

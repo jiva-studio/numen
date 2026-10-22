@@ -17,11 +17,9 @@ export type Source = 'note' | 'book' | 'recording' | 'url' | 'other'
  */
 export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 
-/** Which sort of document or book stands at a path. */
 export type DocumentFormat = 'pdf'
 export type BookFormat = 'epub'
 
-/** What stands at a path: which source it is, and which kind of note it is. */
 export interface FileKind {
   readonly kind: Source
   readonly type: NoteType
@@ -29,7 +27,6 @@ export interface FileKind {
   readonly format?: DocumentFormat | BookFormat
 }
 
-/** One file or folder, as a listing of the folder it sits in reports it. */
 export interface Entry {
   /** What the vault calls it, relative to the root, with forward slashes. */
   readonly path: string

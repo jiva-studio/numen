@@ -29,9 +29,7 @@ export const WORDS = {
   tooLarge: (linked: number) => `This deck is over ${linked} bytes, so none of it was read.`,
   /** The line at the top of a deck, which says which preset schedules it. */
   scheduledBy: 'Scheduled by',
-  /** The choice a deck naming no preset stands at. */
   defaults: 'The defaults',
-  /** A preset the note carries no name for, drawn by the file it stands in. */
   unnamed: (path: string) => getFileName(path),
   /** A deck the vault would not put on the preset chosen. */
   notScheduled: 'This deck was not put on that preset.',

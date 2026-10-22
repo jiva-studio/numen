@@ -104,8 +104,6 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   color: var(--numen-relation-hue, var(--numen-ink));
 }
 
-/* One line, then an ellipsis. A box stands at the height the arrangement gave
-   it, whatever its title runs to. */
 .plex__title-text {
   min-inline-size: 0;
   overflow: hidden;

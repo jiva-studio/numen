@@ -139,8 +139,6 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
   overflow-wrap: anywhere;
 }
 
-/* The strip runs the whole width, and the body keeps the clearance. The body
-   takes the rest of the tile, so what stands in place of values has the room. */
 .card__body {
   flex: 1;
   gap: var(--numen-inset);
@@ -151,8 +149,6 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
   opacity: 0.5;
 }
 
-/* What cut the card stands in the middle of the strip itself, and keeps clear
-   of the button at its end. */
 .card__cut {
   position: absolute;
   inset-inline: 2rem;
@@ -163,7 +159,6 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
   pointer-events: none;
 }
 
-/* What is wrong with the card stands over the same edge as its values. */
 .card__objections {
   margin: 0;
   padding-inline: var(--box-pad-inline);

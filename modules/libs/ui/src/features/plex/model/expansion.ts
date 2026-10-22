@@ -19,7 +19,6 @@ export const EXPANSION_DELAY = 500
  */
 export const EXPANSION_DURATION = 280
 
-/** A box drawn wider than it was placed. */
 export interface WideBox {
   readonly width: number
   /** How far its middle stands from where the node is placed. */

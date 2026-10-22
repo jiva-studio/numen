@@ -64,9 +64,6 @@ defineSlots<{
 </template>
 
 <style scoped>
-/* The column sits in the middle of whatever room there is. It is centred by its
-   own margins, so a column taller than the room keeps its head inside it and
-   the whole of it is scrolled to. */
 .welcome-page__column {
   display: flex;
   flex-direction: column;

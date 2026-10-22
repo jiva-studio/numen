@@ -829,7 +829,6 @@ export const TitledLines: Story = {
   },
 }
 
-/** What two things on the screen are held apart by. */
 interface Edges {
   left: number
   right: number

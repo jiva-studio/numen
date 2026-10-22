@@ -25,7 +25,6 @@ const vault = (stands: Record<string, FileKind> = {}) => {
   return { core, asked: request }
 }
 
-/** A note of one of three, as the vault answers what stands at its path. */
 const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
 
 /**

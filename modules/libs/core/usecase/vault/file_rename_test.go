@@ -196,7 +196,7 @@ func TestAMoveThatLandedIsSettled(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(*f.went) != 1 || (*f.went)[0].To != "Note #.md" {
-		t.Errorf("whoever is drawing it was told %+v", *f.went)
+		t.Errorf("whoever is drawing it received %+v", *f.went)
 	}
 }
 

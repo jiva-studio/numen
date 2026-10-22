@@ -24,7 +24,6 @@ import {
 import { BOUNDS } from '../fixtures'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 
-/** The review day the window is told, which is the day holding one in the morning. */
 const DAY = '2026-09-04'
 
 /** The day the preset aims at, eight days from the one holding now. */

@@ -106,7 +106,7 @@ func FuzzWriteArtifact(f *testing.F) {
 					part.Start, part.Length, len(text))
 			}
 			if got := text[part.Start : part.Start+part.Length]; got != heading {
-				t.Fatalf("a part of %q stands at %q", heading, got)
+				t.Fatalf("a part of %q is at %q", heading, got)
 			}
 		}
 		for _, box := range boxes {
@@ -115,7 +115,7 @@ func FuzzWriteArtifact(f *testing.F) {
 					box.From, box.To, len(text))
 			}
 			if got := text[box.From:box.To]; got != first {
-				t.Fatalf("a box over %q stands at %q", first, got)
+				t.Fatalf("a box over %q is at %q", first, got)
 			}
 		}
 	})

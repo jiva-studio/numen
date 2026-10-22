@@ -13,7 +13,6 @@ import {
   reconcileSettings,
 } from './settings'
 
-/** The review day the window is told. */
 const today = '2026-08-30'
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })

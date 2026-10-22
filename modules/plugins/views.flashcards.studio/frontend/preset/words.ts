@@ -92,7 +92,6 @@ export const WORDS = {
     if (goal === 'retention') return 'most kept'
     return goal === 'date' ? 'first day it fits' : 'time enough'
   },
-  /** The value the control stands at, in the units of its goal. */
   value: (goal: Goal, value: number, day: string) => {
     if (goal === 'retention') return `${percent(value)} remembered`
     if (goal === 'date') return `${many(value, 'day')} to ${day}`

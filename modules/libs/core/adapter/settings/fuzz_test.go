@@ -155,7 +155,7 @@ func FuzzWrite(f *testing.F) {
 		switch err := settings.Write(path, []byte(raw), nil, newDocument()); {
 		case err == nil:
 			if got := reading(t, path); got != raw {
-				t.Fatalf("%q was saved and %q stands in the file", raw, got)
+				t.Fatalf("saved %q, found %q in file", raw, got)
 			}
 			if _, err := openAt(path); err != nil {
 				t.Fatalf("%q was saved and reads back as %v", raw, err)

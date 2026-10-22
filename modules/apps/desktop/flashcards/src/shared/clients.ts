@@ -1,5 +1,4 @@
 /**
- * The front doors of the application, and the window every question about a
  * window names.
  */
 import { createClient } from '@connectrpc/connect'

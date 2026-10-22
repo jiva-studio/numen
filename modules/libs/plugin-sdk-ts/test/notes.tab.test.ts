@@ -123,7 +123,7 @@ describe('a read answers with a body', () => {
     expect(next.effects).toEqual([])
   })
 
-  it('is discarded when it is older than the newest read issued', () => {
+  it('discards response when superseded by newer read request', () => {
     const initialTab = tab({ reading: 3 })
     const next = transitionTab(initialTab, {
       kind: 'read',

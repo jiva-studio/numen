@@ -96,9 +96,6 @@ const share = computed(() => {
 </template>
 
 <style scoped>
-/* A row of the list is a button the width of the list, taller than one in a row
-   of controls and reading from its start. What it is painted, how it answers a
-   hover and what it looks like with the keyboard on it are the button's own. */
 .decks__deck {
   inline-size: 100%;
   block-size: auto;
@@ -120,8 +117,6 @@ const share = computed(() => {
   font-size: var(--numen-text-1);
 }
 
-/* The share stands to the left of what the deck owes, in the screen's quiet
-   voice: it is read on the way to the counts and never instead of them. */
 .decks__learned {
   flex: none;
   color: var(--numen-hushed);

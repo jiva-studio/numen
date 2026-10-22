@@ -127,7 +127,6 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	}
 }
 
-// The front door ends with the write's error when the page can no longer be
 // written to, whichever message finds it out.
 func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	for name, fails := range map[string]func(n int, msg any) bool{

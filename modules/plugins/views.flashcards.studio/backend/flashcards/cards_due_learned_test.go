@@ -52,7 +52,7 @@ func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
 	}
 	for _, one := range owing.Decks {
 		if one.Learned != want[one.Deck].Learned || one.Faces != want[one.Deck].Faces {
-			t.Errorf("%s stands at %d learned of %d, want %d of %d",
+			t.Errorf("%s has %d learned of %d, want %d of %d",
 				one.Deck, one.Learned, one.Faces,
 				want[one.Deck].Learned, want[one.Deck].Faces)
 		}
@@ -74,7 +74,7 @@ func TestADeckNobodyHasAnsweredExistsAtNothingLearned(t *testing.T) {
 
 	for _, one := range owing.Decks {
 		if one.Learned != 0 {
-			t.Errorf("%s stands at %d learned before anything was answered",
+			t.Errorf("%s has %d learned before review",
 				one.Deck, one.Learned)
 		}
 	}
@@ -117,7 +117,7 @@ func TestADecksUnbegunFacesAreCounted(t *testing.T) {
 	}
 	for _, one := range before.Decks {
 		if one.Unbegun != one.Faces {
-			t.Errorf("%s stands at %d unbegun of %d, want all of them",
+			t.Errorf("%s has %d unbegun of %d, want all",
 				one.Deck, one.Unbegun, one.Faces)
 		}
 	}
@@ -133,7 +133,7 @@ func TestADecksUnbegunFacesAreCounted(t *testing.T) {
 	want := map[string]int{"decks/One.md": 2, "decks/Two.md": 2, "decks/Three.md": 2}
 	for _, one := range after.Decks {
 		if one.Unbegun != want[one.Deck] {
-			t.Errorf("%s stands at %d unbegun, want %d", one.Deck, one.Unbegun, want[one.Deck])
+			t.Errorf("%s has %d unbegun, want %d", one.Deck, one.Unbegun, want[one.Deck])
 		}
 	}
 }

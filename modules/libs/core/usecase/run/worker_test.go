@@ -140,7 +140,7 @@ func TestASourceNamedAsTheLineEmptiesIsRun(t *testing.T) {
 	close(r.first)
 
 	if outcome := crossed.getOutcome(t); outcome != port.Began {
-		t.Fatalf("the source named as the line emptied was told %v", outcome)
+		t.Fatalf("the source named as the line emptied received %v", outcome)
 	}
 	if n := waitForRun(t, r.reached); n != 2 {
 		t.Fatalf("the source named as the line emptied is the %dth", n)
@@ -148,7 +148,7 @@ func TestASourceNamedAsTheLineEmptiesIsRun(t *testing.T) {
 
 	r.Release(1)
 	if got := r.Start(somewhere, "c.pdf"); got != port.Queued {
-		t.Errorf("a source named while one was running was told %v", got)
+		t.Errorf("a source named while one was running received %v", got)
 	}
 
 	releaseRest()

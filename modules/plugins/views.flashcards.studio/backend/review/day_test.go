@@ -17,7 +17,6 @@ func london(t *testing.T) *time.Location {
 	return in
 }
 
-// An hour after midnight belongs to the day before: a person answering cards at
 // one in the morning is finishing that day, not starting the next.
 func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	in := london(t)
@@ -34,7 +33,6 @@ func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	}
 }
 
-// The boundary is an hour of the clock on the wall, so the day an hour is taken
 // out of ends at the hour a person reads.
 func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	in := london(t)
@@ -154,7 +152,6 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 	}
 }
 
-// The hour a day of review begins at is read as hours and minutes of the clock on the wall.
 func TestTheHourADayBeginsAtIsReadAsTheClockOnTheWall(t *testing.T) {
 	for content, want := range map[string]time.Duration{
 		"":      review.DayStartTime,

@@ -71,7 +71,7 @@ describe('what remains at a setting', () => {
     expect(retainedState.path.value).toBe('')
   })
 
-  it('is nothing where the vault answers with what is not JSON, and is returned', async () => {
+  it('returns empty when response is not valid JSON', async () => {
     const { kept, notify } = createStore('not JSON at all')
     await kept.start()
     expect(kept.getSetting(['agent'])).toBeUndefined()

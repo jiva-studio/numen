@@ -83,7 +83,7 @@ func TestDroppingATranscriptPreservesTheRecordingAsItWas(t *testing.T) {
 
 	src := index.sources[v.ID][recordingPath]
 	if src.Producer != "" || src.Hash != "" || src.Recipe != "" {
-		t.Errorf("the source still stands on a recognition: %+v", src)
+		t.Errorf("the source still is on a recognition: %+v", src)
 	}
 	if src.Fingerprint.Path != recordingPath || src.Fingerprint.Kind != domain.KindRecording {
 		t.Errorf("the recording is no longer a source of the vault: %+v", src.Fingerprint)
@@ -233,10 +233,10 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.IsNone {
-		t.Error("a recording the index stands on came back as nothing to drop")
+		t.Error("a recording the index is on came back as nothing to drop")
 	}
 	if src := index.sources[v.ID][recordingPath]; src.Producer != "" || src.Hash != "" {
-		t.Errorf("the source still stands on a recognition: %+v", src)
+		t.Errorf("the source still is on a recognition: %+v", src)
 	}
 	if chunks := cutFrom(index, v, recordingPath); len(chunks) != 0 {
 		t.Errorf("the index still holds %d chunks of words nothing holds", len(chunks))
@@ -257,7 +257,7 @@ func TestDroppingAnAnswerInsertsTheRecordingBackInReach(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !slices.Equal(cleared, []string{recordingPath}) {
-		t.Errorf("the queue was told about %v", cleared)
+		t.Errorf("the queue received about %v", cleared)
 	}
 }
 

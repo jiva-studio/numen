@@ -18,7 +18,6 @@ export interface Wheel {
   readonly y: number
 }
 
-/** How far the hand travels before it is dragging and not pressing. */
 export const DRAG_THRESHOLD = 3
 
 /**

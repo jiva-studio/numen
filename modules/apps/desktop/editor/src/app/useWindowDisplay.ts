@@ -41,7 +41,6 @@ export interface DisplayOptions {
 function createDisplayState() {
   return {
     name: ref(''),
-    /** The folder the vault the window is showing sat in when the page was drawn. */
     at: ref(''),
     isIndexing: ref(true),
     /** The core could not be reached: nothing else in the window is true. */

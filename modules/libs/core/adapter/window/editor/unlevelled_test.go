@@ -78,7 +78,7 @@ func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 		t.Error("a save the index came level with is answered as behind")
 	}
 	if at := findLevellingTask(t, f); at != nil {
-		t.Errorf("a save that went through stands in the list as %+v", at)
+		t.Errorf("a save that went through is in the list as %+v", at)
 	}
 }
 

@@ -257,7 +257,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	select {
 	case <-signalCh:
 	case <-time.After(5 * time.Second):
-		t.Error("no page was told that what it holds is from another vault")
+		t.Error("no page received that what it holds is from another vault")
 	}
 
 	// The next window opens on it.

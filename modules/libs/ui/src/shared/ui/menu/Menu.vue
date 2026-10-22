@@ -268,8 +268,6 @@ const menuStyle = computed(() => ({
 
   position: fixed;
   z-index: var(--lift, 99999);
-  /* As wide as the longest thing it offers, within these two widths — or as
-     wide as what asked for it, where that is wider than either. */
   inline-size: max-content;
   min-inline-size: max(var(--narrowest), var(--asking));
   max-inline-size: max(var(--widest), var(--asking));

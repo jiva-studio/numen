@@ -273,7 +273,6 @@ function getRowHeight(): number {
 .tree[data-into] {
 }
 
-/* What is said in place of the rows stands in the middle of the tree. */
 .tree__silence {
   display: flex;
   flex: 1;

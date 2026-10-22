@@ -146,7 +146,7 @@ func TestEditingTellsTheWindowWhereItIsChangingTheNote(t *testing.T) {
 	})
 
 	if len(looking.drawn) != 2 {
-		t.Fatalf("the window was told %d times, wanted two", len(looking.drawn))
+		t.Fatalf("got %d notifications, want 2", len(looking.drawn))
 	}
 	began, ended := looking.drawn[0], looking.drawn[1]
 	if began.Path != "Aggressor.md" || began.From != 0 || began.To != 10 {
@@ -198,7 +198,7 @@ func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
 	})
 
 	if len(looking.drawn) == 0 {
-		t.Fatal("the window was told nothing")
+		t.Fatal("expected window notification")
 	}
 	began := looking.drawn[0]
 	if began.Text != "An axe" {

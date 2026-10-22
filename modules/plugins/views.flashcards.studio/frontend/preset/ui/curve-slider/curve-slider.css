@@ -62,11 +62,6 @@
   min-inline-size: 0;
 }
 
-/*
- * The room a plot is drawn in. It stands at the plot's own proportion whatever
- * is inside it, so the box is one size while the answer is worked out, once it
- * has landed, and where there is nothing to draw.
- */
 .curve-slider__room {
   inline-size: 100%;
 }
@@ -85,11 +80,6 @@
   stroke-width: 1;
 }
 
-/*
- * A number read off the picture: the ends of the extent against the lines they
- * are the height of, and the value the knob stands at under it. The halo keeps
- * it legible where the line runs behind it.
- */
 .curve-slider__number {
   position: absolute;
   padding-inline: var(--numen-edge-label-halo);

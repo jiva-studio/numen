@@ -95,7 +95,7 @@ func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 			t.Errorf("the socket stopping was said as %v", res)
 		}
 	case <-time.After(5 * time.Second):
-		t.Fatal("the socket stopped answering and nobody was told")
+		t.Fatal("the socket stopped answering and nobody received")
 	}
 	if at := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)); at != "" {
 		t.Errorf("a socket that answers nothing gave out %s", at)

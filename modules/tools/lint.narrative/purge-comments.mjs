@@ -18,7 +18,7 @@ const IGNORED_DIRS = new Set([
   'testdata',
 ])
 
-const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto'])
+const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto', '.css'])
 
 const ANGLISH_IDIOMS = [
   'hands back', 'comes to', 'puts up', 'beside what', 'stands on', 'stands under',
@@ -55,7 +55,19 @@ const ANGLISH_IDIOMS = [
   'where the position remains in no link'
 ]
 
-const RE_ANGLISH_LINE = new RegExp(`(?:${ANGLISH_IDIOMS.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'i')
+const DOMESTIC_METAPHORS = [
+  'front door', 'clock on the wall', 'the heat a pixel', 'heat a pixel',
+  'air a row keeps', 'model that hears', 'what listened',
+  'two questions are asked as a person types', 'latest question wins',
+  'a person owes', 'a person answering', 'a person who asked', 'the person is told',
+  'whoever answers for the person', 'measures how long the card stood there'
+]
+
+const ALL_BANNED_COMMENT_PATTERNS = [...ANGLISH_IDIOMS, ...DOMESTIC_METAPHORS]
+const RE_COMMENT_VIOLATION = new RegExp(
+  `(?:${ALL_BANNED_COMMENT_PATTERNS.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
+  'i'
+)
 
 let totalCleanedLines = 0
 let totalModifiedFiles = 0
@@ -73,34 +85,87 @@ function cleanFile(filePath) {
   let modified = false
   let fileCleanedCount = 0
 
+  let inBlockComment = false
+  let blockCommentLines = []
+  let blockHasViolation = false
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const trimmed = line.trim()
 
-    // Single-line // comment that contains Anglish idioms
-    if (trimmed.startsWith('//')) {
-      if (RE_ANGLISH_LINE.test(trimmed)) {
-        modified = true
-        fileCleanedCount++
-        continue
+    // Check if we are inside a multi-line /* ... */ block comment
+    if (inBlockComment) {
+      blockCommentLines.push(line)
+      if (RE_COMMENT_VIOLATION.test(line)) {
+        blockHasViolation = true
       }
+      if (trimmed.includes('*/')) {
+        inBlockComment = false
+        if (blockHasViolation) {
+          modified = true
+          fileCleanedCount += blockCommentLines.length
+          blockCommentLines = []
+          blockHasViolation = false
+        } else {
+          newLines.push(...blockCommentLines)
+          blockCommentLines = []
+        }
+      }
+      continue
     }
 
-    // Docblock line * ... that contains Anglish idioms
-    if (trimmed.startsWith('*') && !trimmed.startsWith('*/') && !trimmed.startsWith('/**')) {
-      if (RE_ANGLISH_LINE.test(trimmed)) {
+    // Single-line // comment that contains violations
+    if (trimmed.startsWith('//')) {
+      if (RE_COMMENT_VIOLATION.test(trimmed)) {
         modified = true
         fileCleanedCount++
         continue
       }
+      newLines.push(line)
+      continue
+    }
+
+    // HTML/Vue single-line comment <!-- ... -->
+    if (trimmed.startsWith('<!--') && trimmed.endsWith('-->')) {
+      if (RE_COMMENT_VIOLATION.test(trimmed)) {
+        modified = true
+        fileCleanedCount++
+        continue
+      }
+      newLines.push(line)
+      continue
+    }
+
+    // Single-line /* ... */ or /** ... */ comment
+    if (trimmed.startsWith('/*') && trimmed.includes('*/')) {
+      if (RE_COMMENT_VIOLATION.test(trimmed)) {
+        modified = true
+        fileCleanedCount++
+        continue
+      }
+      newLines.push(line)
+      continue
+    }
+
+    // Start of a multi-line /* or /** comment
+    if (trimmed.startsWith('/*')) {
+      inBlockComment = true
+      blockCommentLines = [line]
+      blockHasViolation = RE_COMMENT_VIOLATION.test(line)
+      continue
     }
 
     newLines.push(line)
   }
 
-  // Clean empty docblock blocks /** */
+  if (inBlockComment && !blockHasViolation) {
+    newLines.push(...blockCommentLines)
+  }
+
+  // Clean empty docblock blocks /** */ and /* */ and empty lines between comments
   let newContent = newLines.join('\n')
-  newContent = newContent.replace(/\/\*\*\s*\*\/\n?/g, '')
+  newContent = newContent.replace(/\/\*\*?\s*\*\/\n?/g, '')
+  newContent = newContent.replace(/<!--\s*-->\n?/g, '')
 
   if (modified || newContent !== content) {
     totalModifiedFiles++

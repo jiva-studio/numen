@@ -29,7 +29,6 @@ const RUSSIAN: readonly DayName[] = [
 const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
 
 interface Knobs {
-  /** The level each day stands at, by its identifier. A day not named is full. */
   levelOf: Readonly<Record<string, number>>
   /** Which day the week is turned to start on. */
   startsOn: string
@@ -250,7 +249,6 @@ export const DisabledOffersNothing: Story = {
   },
 }
 
-/** Each chip says its whole name and the level that day stands at. */
 export const EachChipSaysWhereItStands: Story = {
   play: async ({ canvasElement }) => {
     expect(chips(canvasElement)).toHaveLength(7)

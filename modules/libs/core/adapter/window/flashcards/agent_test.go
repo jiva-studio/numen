@@ -256,7 +256,7 @@ func TestAWindowAskedBeforeASessionIsNotSaidToHaveNoAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 	if why := response.Msg.GetUnreachable(); why != "" {
-		t.Errorf("before anybody sat down the page was told %q", why)
+		t.Errorf("before anybody sat down got error message %q", why)
 	}
 }
 
@@ -271,7 +271,7 @@ func TestWhyTheAgentCouldNotBeServedReachesThePage(t *testing.T) {
 		t.Fatal(err)
 	}
 	if why := response.Msg.GetUnreachable(); why != "claude is not on this machine" {
-		t.Errorf("the page was told %q", why)
+		t.Errorf("got error message %q", why)
 	}
 }
 

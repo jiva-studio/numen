@@ -10,7 +10,6 @@ export interface Rect {
   readonly height: number
 }
 
-/** Where a place sits inside a box, with the box's corner as the origin. */
 export const getPlaceInBox = (at: Position, box: Rect): Position => ({
   x: at.x - box.x,
   y: at.y - box.y,

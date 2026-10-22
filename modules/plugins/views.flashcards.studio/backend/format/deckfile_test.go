@@ -312,7 +312,7 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 		t.Errorf("cards = %+v, want the cards left where they were", read.Cards)
 	}
 	if read.Cards[0].Section != format.NoSection {
-		t.Errorf("the card stands under section %d", read.Cards[0].Section)
+		t.Errorf("card is under section %d", read.Cards[0].Section)
 	}
 }
 

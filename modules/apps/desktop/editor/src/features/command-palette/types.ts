@@ -68,7 +68,6 @@ export interface CommandTarget {
   readonly made: ArtifactStates
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
-  /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: VaultRef
   /**
    * Whether the vault can be asked to do anything. A vault still being read
@@ -92,7 +91,6 @@ export interface Command {
   readonly group: CommandGroup
   /** Whether it is offered at all over what is in front, in this window. */
   isOffered(at: CommandTarget, runs: RunSupport): boolean
-  /** What stands in the field when its step opens, for the person to replace. */
   getFieldText?(at: CommandTarget): string
   /** What its step says, where that step confirms or asks for the name back. */
   readonly answers?: ConfirmWords
@@ -196,9 +194,7 @@ export interface RunSupport {
 export interface Notes {
   /** The identity of the tab standing at a file, and nothing where none does. */
   getTabAt(path: string): string | null
-  /** The file a note stands at now, under the identity it opened under. */
   getPath(id: string): string
-  /** Whether the note owes the person an answer about what its file now holds. */
   asking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
   flushPending(id: string): Promise<void>
@@ -224,11 +220,9 @@ export interface Notes {
 export interface Store {
   /** Whether this store holds a file open under that identity. */
   has(id: string): boolean
-  /** The file one of them stands at now, under the identity it opened under. */
   getPath(id: string): string
   /** What it is called, under the identity it opened under. */
   getTitle(id: string): string
-  /** Whether it owes the person an answer about what its file now holds. */
   asking(id: string): boolean
   /** Answers once nothing of it is on its way to the file. */
   flushPending(id: string): Promise<void>

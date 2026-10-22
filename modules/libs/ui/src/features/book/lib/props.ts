@@ -14,7 +14,6 @@ export interface BookProps {
   markup?: string
   /** The document being drawn, as the book's archive names it. */
   path?: string
-  /** Where this document stands in the book, in bytes of the book's text. */
   span?: Span
   /** Where the book itself runs between, in bytes. */
   book?: Span
@@ -32,7 +31,6 @@ export interface BookProps {
   words?: BookWords
 }
 
-/** What the reader works with, once what it was told stands at its defaults. */
 export interface SettledBookProps {
   readonly markup: string
   readonly path: string

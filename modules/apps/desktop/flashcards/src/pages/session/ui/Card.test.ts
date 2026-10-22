@@ -81,7 +81,7 @@ describe('a card', () => {
   })
 
   // card is not turned over on the way.
-  it('is not turned over by a hand that took it across', async () => {
+  it('does not flip card on swipe gesture across threshold', async () => {
     const face = mountCard('<p>Leaf mould</p>')
     await dragCard(face, -120)
     expect(face.emitted('show')).toBeUndefined()

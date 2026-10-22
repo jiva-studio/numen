@@ -190,7 +190,7 @@ func TestOnePageIsLitAndTheRestAreNot(t *testing.T) {
 	from, to := book.Pages[2].Offset, book.Pages[3].Offset
 	for _, box := range boxes {
 		if box.Page != 2 {
-			t.Errorf("page %d was lit and nobody asked about it", box.Page)
+			t.Errorf("unexpected highlight on page %d", box.Page)
 		}
 		if box.From < from || box.From >= to {
 			t.Errorf("a box begins at %d, outside the page's %d..%d", box.From, from, to)

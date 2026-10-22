@@ -24,7 +24,7 @@ func TestPiecesJoinIntoWords(t *testing.T) {
 		t.Errorf("an unknown token said %q", got)
 	}
 	if p.getIndex("<blk>") != 6 || p.getIndex("nothing") != -1 {
-		t.Errorf("the blank stands at %d", p.getIndex("<blk>"))
+		t.Errorf("blank token is at %d", p.getIndex("<blk>"))
 	}
 }
 

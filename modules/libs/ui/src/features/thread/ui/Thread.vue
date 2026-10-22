@@ -20,7 +20,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** A turn the person pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
-  /** A link inside a turn was pressed, with the turn it stands in. */
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
 

@@ -4,10 +4,6 @@
  * A value only one component uses stays in that component.
  */
 
-/*
- * The band a tab says something in. It carries a filesystem path, and a long
- * one breaks where it stands.
- */
 .caution {
   margin: 0;
   padding: 0.4rem 1rem;
@@ -18,7 +14,6 @@
   overflow-wrap: break-word;
 }
 
-/* The answers ride on the line the sentence is on, so the band stands one line high. */
 .caution--conflict {
   display: flex;
   flex-wrap: wrap;

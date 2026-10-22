@@ -299,7 +299,7 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 	}
 	fedBack := requests[1].Messages[len(requests[1].Messages)-1]
 	if fedBack.Role != "tool" || fedBack.ToolCallID != "call-1" || *fedBack.Content != "Plan: water the garden." {
-		t.Errorf("the model was told %+v", fedBack)
+		t.Errorf("the model received %+v", fedBack)
 	}
 }
 
@@ -483,7 +483,7 @@ func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 
 	messages := model.getRequests()[1].Messages
 	if args := messages[len(messages)-2].ToolCalls[0].Function.Arguments; args != "{}" {
-		t.Errorf("the call was told back with %q", args)
+		t.Errorf("call returned with %q", args)
 	}
 	if calls := vault.getCalls(); len(calls) != 1 || calls[0] != "{}" {
 		t.Errorf("the vault was called with %v", calls)

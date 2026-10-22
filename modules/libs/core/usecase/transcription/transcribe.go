@@ -56,7 +56,6 @@ type Transcribe struct {
 
 // NewTranscribe is what a recording is listened to through: the vault it is
 // read out of, where what the vault holds is recorded, the store the transcript
-// is written into, and the model that hears it.
 func NewTranscribe(
 	readers port.VaultReaders,
 	sources port.SourceRepository,
@@ -327,7 +326,6 @@ func (u Transcribe) answer(
 	return run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
 }
 
-// record keeps what listened to the recording along with what it heard. Nothing on
 // any path that answers a question reads it: it is there so that a person can
 // ask what produced a text, and so that everything a transcriber now known to
 // be bad produced can be found again.

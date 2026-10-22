@@ -2,7 +2,6 @@
  * What a deck and a stencil are both written in: the slots a stencil names,
  */
 
-/** One named slot and what stands in it. */
 export interface FieldValue {
   readonly field: string
   readonly text: string

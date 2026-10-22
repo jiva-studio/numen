@@ -65,7 +65,7 @@ func TestAHeadingIsFoundWithTheLineItExistsOn(t *testing.T) {
 		t.Errorf("the answer is heading %q", heading.GetText())
 	}
 	if heading.GetLine() < 0 {
-		t.Errorf("the heading stands on line %d, which is no line", heading.GetLine())
+		t.Errorf("the heading is on line %d, which is no line", heading.GetLine())
 	}
 }
 
@@ -211,7 +211,7 @@ func TestAPassageReturnsWhichNoteItCameOutOf(t *testing.T) {
 		t.Error("the passage says nothing about where it came from")
 	}
 	if len(first.GetSpans()) == 0 {
-		t.Error("the passage says nothing about where the word typed stands in it")
+		t.Error("the passage says nothing about where the word typed is in it")
 	}
 }
 
@@ -236,7 +236,7 @@ func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 	first := found[0]
 	at := first.GetSpan()
 	if at.GetTo() <= at.GetFrom() {
-		t.Errorf("the passage stands over no text: %d to %d", at.GetFrom(), at.GetTo())
+		t.Errorf("the passage is over no text: %d to %d", at.GetFrom(), at.GetTo())
 	}
 	if at.GetFrom() < 0 {
 		t.Errorf("the passage begins at %d", at.GetFrom())

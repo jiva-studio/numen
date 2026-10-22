@@ -187,8 +187,6 @@ const onKey = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-/* It stands over the foot of the palette, at the corner the keys are read
-   from. */
 .actions {
   /* How wide the panel is and how much of the palette its list takes. */
   --panel-width: 17.5rem;
@@ -198,7 +196,6 @@ const onKey = (event: KeyboardEvent) => {
   inset-block-end: var(--numen-inset);
   inset-inline-end: var(--numen-inset);
   inline-size: var(--panel-width);
-  /* Never past the corners of the palette it stands over. */
   max-inline-size: calc(100% - 2 * var(--numen-inset));
   max-block-size: calc(100% - 2 * var(--numen-inset));
 }

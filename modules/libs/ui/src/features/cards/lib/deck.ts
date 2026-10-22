@@ -58,7 +58,6 @@ export interface CardWords {
   readonly remove: string
   readonly drag: string
   readonly cut: string
-  /** What a card is announced by, before the place it stands in the deck. */
   readonly cardStem: string
   /** What is said of a card holding no value at all. */
   readonly nothing: string

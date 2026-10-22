@@ -7,7 +7,6 @@ import type { Conversation } from '@numen/ui'
 import type { AgentModel } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 
-/** A conversation with nothing said in it. */
 const createConversation = (): Conversation => ({
   turns: ref([]),
   isWorking: ref(false),
@@ -17,10 +16,8 @@ const createConversation = (): Conversation => ({
   finish: () => {},
 })
 
-/** A model the window lists, found at the place given. */
 type Model = AgentModel & { readonly namedAt: readonly string[] }
 
-/** A setting the window lists, found at the place given. */
 const model = (
   namedAt: readonly string[],
   name: string,

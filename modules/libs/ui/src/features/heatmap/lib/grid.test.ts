@@ -33,7 +33,7 @@ describe('the stretch a grid asks about', () => {
 
   // nobody asked about, and they come back empty. The caller passes the room
   // the page has, which is what bounds the grid.
-  it('leaves days out where the grid is drawn wider than it was requested for', () => {
+  it('omits extra days when rendered width exceeds requested span', () => {
     const request = getStretch({ width: 640, cell: 11, gap: 3 }, now)
     const { columns } = measureGrid({ width: 1600, cell: 11, gap: 3 })
     const outside = getDays(columns, now, new Map()).filter(

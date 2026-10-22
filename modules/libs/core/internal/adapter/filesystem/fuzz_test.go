@@ -186,7 +186,7 @@ func FuzzReadConfig(f *testing.F) {
 			t.Fatalf("a vault was read as carrying %q, which no vault carries", target.ID)
 		}
 		if errors.Is(err, ErrNotAVault) {
-			t.Fatalf("%q stands in the folder and it was read as never having been added", raw)
+			t.Fatalf("%q is in the folder and it was read as never having been added", raw)
 		}
 
 		made, adding := Initialize(root, DefaultServiceDir, time.Unix(1, 0))

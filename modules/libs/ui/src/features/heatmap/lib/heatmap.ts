@@ -121,7 +121,6 @@ function getFirstDay(
   return at > now ? now : at
 }
 
-/** The Monday of the week a day stands in, which is the column it opens. */
 function monday(at: Date): Date {
   const out = new Date(at)
   out.setDate(out.getDate() - (weekday(out) - 1))
@@ -150,7 +149,6 @@ export function getWeight(did: number): Day['weight'] {
 /** How round the corner of a cell is drawn, in the grid's own units. */
 const RADIUS = 2
 
-/** Where one day stands in the grid, and how it is drawn there. */
 export interface Cell {
   readonly day: Day
   readonly x: number

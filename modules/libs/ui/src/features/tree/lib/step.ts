@@ -18,7 +18,6 @@ export interface Step {
   readonly turn: { readonly row: RowId; readonly isOpen: boolean } | null
 }
 
-/** What one key does, told the rows, where the keyboard stands in them, and the row it relies on. */
 type Move = (visibleRows: readonly ShownRow[], at: number, here: ShownRow) => Step
 
 const MOVES: Record<TreeKey, Move> = {

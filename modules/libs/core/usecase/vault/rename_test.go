@@ -31,7 +31,7 @@ func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
 		t.Errorf("the list calls it %q", onTheList.Name)
 	}
 	if len(index.saved) != 1 || index.saved[0] != got.ID {
-		t.Errorf("the index was told about %v, want %s", index.saved, got.ID)
+		t.Errorf("the index received about %v, want %s", index.saved, got.ID)
 	}
 	if _, err := os.Stat(renamed.Path); err != nil {
 		t.Errorf("the folder was renamed with the vault: %v", err)
@@ -57,7 +57,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 		t.Errorf("the list calls it %q, want %q", onTheList.Name, renamed.Name)
 	}
 	if len(index.saved) != 0 {
-		t.Errorf("the index was told %v", index.saved)
+		t.Errorf("the index received %v", index.saved)
 	}
 }
 
@@ -117,7 +117,7 @@ func TestAVaultIsNotRenamedToNothing(t *testing.T) {
 		t.Errorf("the list calls it %q, want %q", onTheList.Name, v.Name)
 	}
 	if len(index.saved) != 0 {
-		t.Errorf("the index was told %v", index.saved)
+		t.Errorf("the index received %v", index.saved)
 	}
 }
 
@@ -132,7 +132,7 @@ func TestARenameFailsWhenTheListCannotBeRead(t *testing.T) {
 		t.Fatalf("got %v, want %v", err, errBroken)
 	}
 	if len(index.saved) != 0 {
-		t.Errorf("the index was told %v", index.saved)
+		t.Errorf("the index received %v", index.saved)
 	}
 }
 
@@ -147,7 +147,7 @@ func TestARenameFailsWhenTheListCannotBeSaved(t *testing.T) {
 		t.Fatalf("got %v, want %v", err, errBroken)
 	}
 	if len(index.saved) != 0 {
-		t.Errorf("the index was told %v", index.saved)
+		t.Errorf("the index received %v", index.saved)
 	}
 }
 

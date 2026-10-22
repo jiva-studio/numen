@@ -594,7 +594,7 @@ describe('what the palette says about itself', () => {
   })
 })
 
-describe('an item offering more than two actions', () => {
+describe('item with multiple actions', () => {
   it('says at the foot only what a key reaches, and where the rest are', async () => {
     mountPalette({ groups: OFFERING })
     await settle()
@@ -788,7 +788,7 @@ describe('the action panel', () => {
     expect(actions()).toHaveLength(5)
   })
 
-  it('goes when the item it is about stops offering anything', async () => {
+  it('dismisses when target item has no actions', async () => {
     const palette = await open()
 
     await palette.setProps({ groups: [{ id: 'names', title: 'Names', items: [] }] })

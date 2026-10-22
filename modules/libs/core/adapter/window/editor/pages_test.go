@@ -105,7 +105,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetURL("a.pdf")} {
 		if response := getResponse(handler, path).Header().Get("Content-Security-Policy"); response != target {
-			t.Errorf("%q is held to %q", path, response)
+			t.Errorf("%q is bound to %q", path, response)
 		}
 	}
 }

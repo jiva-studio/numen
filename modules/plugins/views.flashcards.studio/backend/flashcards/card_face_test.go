@@ -11,7 +11,6 @@ import (
 )
 
 // A vault the index has never read is not a vault holding no cards. The
-// difference matters at the front door: one owes nothing, the other is not
 func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)

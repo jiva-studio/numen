@@ -29,7 +29,6 @@ func newDeckVault(t testing.TB, front string, decks ...int) vaulted {
 	return openVault(t, files)
 }
 
-// rows is what the front door says each deck holds at this instant.
 func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	t.Helper()
 	out, err := s.newCountCardsDueAt(today, func() time.Time { return now }).Execute(t.Context(), s.vault)
@@ -172,7 +171,6 @@ func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
 	}
 }
 
-// What the front door says of a deck is what pressing that deck hands over.
 func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
 	t.Parallel()
 	for _, shape := range []struct {
@@ -195,7 +193,7 @@ func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
 			for at := range shape.decks {
 				deck := deckAt(at)
 				if pressed := s.pressDeck(t, when, deck); pressed != got[deck] {
-					t.Errorf("%s stands at %d on the front door and hands over %d when pressed",
+					t.Errorf("%s is at %d on the front door and hands over %d when pressed",
 						deck, got[deck], pressed)
 				}
 			}

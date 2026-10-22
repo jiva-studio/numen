@@ -199,7 +199,6 @@ export const WORDS = {
   stale: 'that note changed on disk while this was asked, so nothing was written',
   /** A file landed where something of its name is filed, and stayed where it was. */
   occupied: 'something of that name is filed there, so the file stayed where it was',
-  /** This build cannot do the run at all, and stops offering it. */
   unrunnable: 'this installation of numen cannot do that at all',
   /** What the action panel of the palette is called. */
   actions: 'Actions',

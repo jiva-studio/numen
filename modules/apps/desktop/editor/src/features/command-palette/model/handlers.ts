@@ -142,7 +142,6 @@ export async function runInvocation(
   }
 }
 
-/** What an artifact stands at when the ask did not come off, which is said as an error. */
 const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
 
 /**

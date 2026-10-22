@@ -84,7 +84,6 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   return { from: getDayName(behindDate), to: getDayName(ahead) }
 }
 
-/** The Monday of the week a day stands in, which is the column it opens. */
 function monday(at: Date): Date {
   const out = new Date(at)
   out.setDate(out.getDate() - (weekday(out) - 1))

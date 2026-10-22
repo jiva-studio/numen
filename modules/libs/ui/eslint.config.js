@@ -36,7 +36,7 @@ const testdataReaders = [
 ]
 
 /** The files that stand outside the layers. */
-const outsideLayers = ['src/**/*.stories.ts', 'src/**/fixtures/**', ...testdataReaders]
+const outsideLayers = ['src*.stories.ts', 'srcfixtures/**', ...testdataReaders]
 
 const domainImports = [
   {
@@ -188,8 +188,8 @@ export default tseslint.config(
 
   // Limits on complexity and file length for handwritten sources. A test, a spec
   {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
+    files: ['src*.{ts,vue}'],
+    ignores: ['src*.test.ts', 'src*.spec.ts', 'src*.stories.ts', 'srcfixtures/**'],
     rules: {
       'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
@@ -205,8 +205,8 @@ export default tseslint.config(
   // fixture taken from the domain is how the dependency comes back in through
   // the door marked "tests", so the rule covers every file the module holds.
   {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
+    files: ['src*.{ts,vue}'],
+    ignores: ['src*.test.ts', 'src*.spec.ts', 'src*.stories.ts', 'srcfixtures/**'],
     rules: {
       'no-restricted-imports': ['error', { patterns: domainImports }],
     },
@@ -214,8 +214,8 @@ export default tseslint.config(
 
   // A slice reaches its own files by relative path, and no other slice at all.
   {
-    files: ['src/features/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
+    files: ['src/features*.{ts,vue}'],
+    ignores: ['src*.test.ts', 'src*.spec.ts', ...outsideLayers],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -232,8 +232,8 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/screens/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
+    files: ['src/screens*.{ts,vue}'],
+    ignores: ['src*.test.ts', 'src*.spec.ts', ...outsideLayers],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -257,7 +257,7 @@ export default tseslint.config(
   // Stories and fixtures stand outside the layers, and so do the tests that read
   // `libs/protocol/testdata`. A file under `src` that no element claims fails.
   {
-    files: ['src/**/*.{ts,vue}'],
+    files: ['src*.{ts,vue}'],
     ignores: outsideLayers,
     plugins: { boundaries },
     settings: {
@@ -281,11 +281,11 @@ export default tseslint.config(
   // browser — and neither are the stories and the fixtures, which stand
   // outside a component on purpose.
   {
-    files: ['src/**/*.ts'],
+    files: ['src*.ts'],
     ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
-      'src/**/fixtures/**',
+      'src*.test.ts',
+      'src*.stories.ts',
+      'srcfixtures/**',
       // The port itself, and the one function that turns an element into the
       // rectangle the pure core reasons about.
       'src/shared/lib/clock.ts',

@@ -18,7 +18,6 @@ import {
   getKnobValue,
 } from './curve'
 
-/** The review day the window is told, which is what a date is counted from. */
 const today = '2026-08-30'
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
@@ -39,7 +38,7 @@ const point = (over: Partial<Point> = {}): Point => ({
 })
 
 describe('where a value relies on a grid', () => {
-  it('is the nearest place, whether the value sits on one or between two', () => {
+  it('snaps to nearest point', () => {
     expect(findNearest([0, 10, 20, 30], 21)).toBe(2)
     expect(findNearest([0, 10, 20, 30], 30)).toBe(3)
     expect(findNearest([0, 10, 20, 30], -5)).toBe(0)

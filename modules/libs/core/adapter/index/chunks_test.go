@@ -900,13 +900,13 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 		}
 		if got := countRows(t, db,
 			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`, p.Chunk); got != target {
-			t.Errorf("chunk %d is held %d times and stands in %d rows of the coarse index",
+			t.Errorf("chunk %d has count %d in %d coarse index rows",
 				p.Chunk, target, got)
 		}
 		if got := countRows(t, db, `SELECT count(*) FROM chunks c
 		                            JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
 		                            WHERE c.id = ?`, testRecipe, p.Chunk); got != target {
-			t.Errorf("chunk %d is held %d times and stands in %d rows of vectors",
+			t.Errorf("chunk %d has count %d in %d vector rows",
 				p.Chunk, target, got)
 		}
 	}

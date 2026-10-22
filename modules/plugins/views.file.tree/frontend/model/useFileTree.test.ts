@@ -14,7 +14,6 @@ import {
   useFileTree,
 } from './useFileTree'
 
-/** One row of a listing, under the folder it sits in. */
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
@@ -57,7 +56,7 @@ const vault = (
 const paths = (rows: readonly ListingRow[]): readonly string[] =>
   rows.flatMap((one) => [one.entry.path, ...paths(one.rows)])
 
-describe('the folder a path sits in', () => {
+describe('parent directory resolution', () => {
   it('is the root for a path at the top of the vault', () => {
     expect(getFolderPath('Cover.png')).toBe(ROOT)
   })
@@ -199,7 +198,7 @@ describe('a folder closed', () => {
 })
 
 describe('a change the vault reports', () => {
-  it('reads the folder the path it names sits in', async () => {
+  it('reads parent directory of target path', async () => {
     const { core, requests } = vault()
     const list = useFileTree(core)
     await list.openFolder(ROOT)

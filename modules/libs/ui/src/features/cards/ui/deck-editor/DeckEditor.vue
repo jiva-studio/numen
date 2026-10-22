@@ -178,7 +178,6 @@ function onAddSection(): void {
 .deck {
   --tile: 20rem;
   --gap: 0.75rem;
-  /* The caret stands in the middle of the room between two tiles. */
   --caret-out: calc(-1 * var(--gap) / 2);
 
   display: flex;

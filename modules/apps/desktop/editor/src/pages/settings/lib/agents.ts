@@ -7,7 +7,6 @@
 import type { CompletionChoice, Model, PluginInfo, SettingSource } from '@/entities/settings'
 import type { SelectChoice } from '@numen/ui'
 
-/** Where the program that answers stands in the settings file, and where each program's model does. */
 const USE_AT = ['agent', 'use'] as const
 export const getProgramModelsAt = (program: string): readonly string[] => [
   'agent',

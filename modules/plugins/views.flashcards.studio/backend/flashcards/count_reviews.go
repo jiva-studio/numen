@@ -38,7 +38,6 @@ type ReviewCounts struct {
 	Days map[string]review.Tally
 	// Due is how many card faces fall on each day still to come, by the same
 	// names. A card owed today or owed and late is not in it: what is behind is
-	// what the front door counts, and this is what is ahead.
 	Due map[string]int
 	// Retained is how much of what came round in days came back on each day. A
 	// card face the scheduler is still putting into memory is not in it.
@@ -258,7 +257,6 @@ func getUncounted(answers []review.Answer, seen map[string]bool) []review.Answer
 // opened once for the screen.
 //
 // A card owed today, or owed and late, is not in what is to come: what a person
-// owes now is what the front door counts, and this says what is coming after
 // it. Where a card falls is worked out from the answers like everything else,
 // so the day it shows is the day it would be asked on.
 func (u CountReviews) getDueAndRetained(

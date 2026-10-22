@@ -10,7 +10,6 @@ import type { Conversation, Turn } from '@numen/ui'
 import type { AgentModel, Span } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 
-/** A model the window lists, found at the place given. */
 type Model = AgentModel & { readonly namedAt: readonly string[] }
 
 /** A conversation that records what it was asked, and where its lines point. */
@@ -52,7 +51,6 @@ const tab = (
   return { state, opened: openedCalls, beside: besideItems, ...fake }
 }
 
-/** A setting the window lists, found at the place given. */
 const items = (namedAt: readonly string[], name: string, presence: Model['presence']): Model => ({
   namedAt,
   name,

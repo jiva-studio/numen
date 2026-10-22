@@ -148,8 +148,6 @@ const CORPORA = {
     ],
   },
   'far too many': { cuts: [ANIMAL, ASKED], cards: many(300) },
-  /* A value with no newline in it that is far wider than the box, so what the
-     box stands at can only be worked out from where the text wraps. */
   'a value that wraps': {
     cuts: [ASKED],
     cards: [

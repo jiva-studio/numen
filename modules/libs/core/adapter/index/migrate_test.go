@@ -138,7 +138,7 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 		t.Fatal(err)
 	}
 	if tables != 0 {
-		t.Error("the first half of a failed migration was left behind")
+		t.Error("failed migration partially applied")
 	}
 }
 
@@ -550,7 +550,7 @@ func TestRememberPreservesTheOriginalTableWhenRenamingFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	if next != 0 {
-		t.Error("schema_migrations_next was left behind by the rollback")
+		t.Error("schema_migrations_next table retained after rollback")
 	}
 }
 

@@ -14,7 +14,6 @@ import { getFill, getFillPercent, getOfferedLevels, type Day } from './week'
 
 const props = withDefaults(
   defineProps<{
-    /** The days, in the order they are drawn, each at the level it stands at. */
     days: readonly Day[]
     /** The levels offered, in the order they are offered. */
     levels: readonly number[]
@@ -33,7 +32,6 @@ const emit = defineEmits<{
 // names the row by is put on the row itself.
 defineOptions({ inheritAttrs: false })
 
-/** Which day is being given a level, what it stands at, and where its chip is. */
 const popoverAnchor = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)
 
 const availableLevels = computed(() =>

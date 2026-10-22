@@ -16,7 +16,6 @@ export interface NameMatch {
   /** Where that heading stands, counted from the first line of the prose. */
   line: number
   at: readonly Span[]
-  /** Which of four the note is. A heading carries the type of the note it stands in. */
   type: NoteType
 }
 
@@ -40,7 +39,6 @@ export interface Passage {
    */
   start: number
   length: number
-  /** Where the hit stands in the prose, counted from its first line. */
   line: number
   at: readonly Span[]
 }
@@ -78,7 +76,6 @@ export interface SearchHit {
   start: number
   length: number
   offers: readonly string[]
-  /** Which of four the note it stands in is, and nothing at its current position in none. */
   type: NoteType | null
   /** What the vault holds at its current position. */
   kind: Source

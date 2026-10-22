@@ -1,14 +1,3 @@
-/*
- * The page's whole styling contract.
- *
- * The page is built as a plex: one hairline spine runs its length, and every
- * band hangs off it at a node. Colour means direction and appears only where
- * direction is meant — in the drawing and in the list beside it. Everything
- * else is ink on paper.
- *
- * The ground and the three directions are the application's own values, so a
- * picture of the window sits on a page painted the same.
- */
 
 :root {
   color-scheme: light dark;
@@ -262,13 +251,11 @@ svg {
   box-shadow: 0 18px 44px light-dark(rgb(25 27 30 / 0.1), rgb(0 0 0 / 0.38));
 }
 
-/* A window that is not a wide one is drawn no wider than it stands. */
 .stage--narrow {
   max-inline-size: 34rem;
   margin-inline: auto;
 }
 
-/* Every shot stands in the same place; the chosen one is the one lit. */
 .shots {
   display: grid;
 }
@@ -710,7 +697,6 @@ svg {
   background: color-mix(in oklab, var(--ink) 7%, transparent);
 }
 
-/* A build the shelf does not hold stands on no line of its own. */
 .take[hidden] {
   display: none;
 }
@@ -763,7 +749,6 @@ svg {
   margin-block-start: 1.1rem;
 }
 
-/* Narrow: the machine stands over what it can be taken as. */
 @media (max-width: 40rem) {
   .shelf__row {
     grid-template-columns: minmax(0, 1fr);

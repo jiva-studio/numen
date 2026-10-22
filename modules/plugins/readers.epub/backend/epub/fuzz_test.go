@@ -166,7 +166,7 @@ func FuzzRead(f *testing.F) {
 			}
 			at = part.Offset
 			if part.Level < 0 {
-				t.Fatalf("%q stands at depth %d", part.Title, part.Level)
+				t.Fatalf("part %q is at depth %d", part.Title, part.Level)
 			}
 			if !oneLine(part.Title) {
 				t.Fatalf("a part is named %q, which is not one line of a name", part.Title)

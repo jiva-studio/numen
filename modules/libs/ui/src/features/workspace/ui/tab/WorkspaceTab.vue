@@ -40,7 +40,6 @@ defineSlots<{
 
 const root = useTemplateRef<HTMLElement>('root')
 
-/** The keyboard put on this tab by the strip it stands in. */
 defineExpose({ focus: () => root.value?.focus() })
 
 /**

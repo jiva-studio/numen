@@ -63,8 +63,6 @@ const label = computed(() => {
   white-space: nowrap;
 }
 
-/* On a filled button the ground is the button's own, lightened by the text that
-   stands on it, so the pill follows whatever the button is painted. */
 .due-count--over {
   background: color-mix(in srgb, currentcolor 18%, transparent);
   color: inherit;

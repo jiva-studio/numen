@@ -42,7 +42,7 @@ func TestAFaultTheSchemaDoesNotNameIsLeftOut(t *testing.T) {
 		t.Fatalf("got %v", got)
 	}
 	if got[0].Card == nil || *got[0].Card != 3 || got[0].Face != nil {
-		t.Errorf("the problem stands at card %v, face %v", got[0].Card, got[0].Face)
+		t.Errorf("problem targets card %v, face %v", got[0].Card, got[0].Face)
 	}
 }
 

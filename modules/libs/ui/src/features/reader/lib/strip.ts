@@ -8,7 +8,6 @@
 import type { Size } from '@/shared/lib/geometry'
 import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
 
-/** Where something sits on a page, in fractions of it. */
 export interface Rect {
   readonly minX: number
   readonly minY: number
@@ -45,7 +44,6 @@ export interface Page {
   readonly height: number
 }
 
-/** What stands between two pages, and around the row, in CSS pixels. */
 export const GAP = 16
 
 /**

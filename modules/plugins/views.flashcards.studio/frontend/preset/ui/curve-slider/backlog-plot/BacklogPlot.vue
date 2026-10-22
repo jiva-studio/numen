@@ -26,7 +26,6 @@ import '../curve-slider.css'
 // --- Props & Emits ---
 const props = defineProps<{
   curve: Curve
-  /** The place of the grid the knob stands at. */
   place: number
   /** Whether the curve on screen is an answer, and not the waiting for one. */
   isHonest: boolean

@@ -202,7 +202,6 @@ func (r *Worker) recognise(ctx context.Context, v domain.Vault, id, path string)
 // recognition right with. A person is offered the run where it has.
 func (r *Worker) ProofreaderReady() bool { return r.with.Proofreading.IsNamed }
 
-// Proofread puts one recognition right for a person who asked for it and says
 // what came of asking: the run began, or the recognition needed nothing of it.
 func (r *Worker) Proofread(
 	ctx context.Context,

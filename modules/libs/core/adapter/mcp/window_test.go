@@ -55,7 +55,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 		t.Fatalf("answered with %+v", out.Tabs)
 	}
 	if out.Tabs[1].Where != "12:34 of its 58:14 written down" {
-		t.Errorf("the recording stands at %q", out.Tabs[1].Where)
+		t.Errorf("got recording path %q", out.Tabs[1].Where)
 	}
 	want := `the recording "730707BG.LON.mp3" at 730707BG.LON.mp3 is in front of them, ` +
 		`with 12:34 of its 58:14 written down`

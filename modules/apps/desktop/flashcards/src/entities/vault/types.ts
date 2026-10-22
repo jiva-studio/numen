@@ -24,7 +24,6 @@ export interface DeckCardsDue {
 
 /** One preset of a vault, and what the day evaluates to under it. */
 export interface PresetCardsDue {
-  /** The note it stands in, and empty for the decks naming no preset. */
   readonly preset: string
   /** What it is called, and empty where nothing names the note. */
   readonly title: string

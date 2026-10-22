@@ -127,7 +127,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 		out := httptest.NewRecorder()
 		handler.ServeHTTP(out, r)
 		if response := out.Header().Get("Content-Security-Policy"); response != target {
-			t.Errorf("%q is held to %q", path, response)
+			t.Errorf("%q is bound to %q", path, response)
 		}
 	}
 }

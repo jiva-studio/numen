@@ -373,7 +373,6 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 }
 
 // TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound. A webview whose
-// script has stopped answers never, and a person who asked for the window to
 // go gets it.
 func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})

@@ -129,7 +129,7 @@ describe('where a gesture can begin', () => {
     expect(gesture.from.value).toBeNull()
   })
 
-  it('does not begin on a target that sits in no drawing', () => {
+  it('ignores target outside canvas bounds', () => {
     const { gesture } = setUp()
     const event = { target: { ownerSVGElement: null }, clientX: 0, clientY: 0, pointerId: 1 }
 

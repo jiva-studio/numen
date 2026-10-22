@@ -34,7 +34,6 @@ const MANY = 500
  */
 const ITS_OWN_PACE = 10_000
 
-/** Where something sits on a page, in fractions of it. */
 interface Rect {
   readonly minX: number
   readonly minY: number

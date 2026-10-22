@@ -491,7 +491,7 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := res.Msg.GetAnswer().GetText(); got != "md.numen.a" {
-		t.Errorf("the completer was told the caller is %q, want md.numen.a", got)
+		t.Errorf("the completer received the caller is %q, want md.numen.a", got)
 	}
 }
 

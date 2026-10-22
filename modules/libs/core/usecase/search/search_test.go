@@ -460,7 +460,7 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 		t.Fatalf("want the one note holding the word: %v", sources(found))
 	}
 	if found[0].Line != 6 {
-		t.Errorf("the passage stands on line %d, and the words are on the seventh line of the prose",
+		t.Errorf("the passage is on line %d, and the words are on the seventh line of the prose",
 			found[0].Line)
 	}
 }

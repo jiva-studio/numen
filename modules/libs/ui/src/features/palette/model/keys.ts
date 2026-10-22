@@ -23,7 +23,6 @@ export interface PaletteKeysOptions {
   /** What is lit brought into sight. Only a key does this. */
   readonly reveal: () => void
   readonly places: PalettePlacesState
-  /** Whether the action panel stands over the palette. */
   readonly isPanelOpen: Ref<boolean>
   readonly getOfferedActions: () => readonly PaletteAction[]
   readonly typed: Ref<string>
@@ -148,7 +147,6 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
     else leave()
   })
 
-  /** A step of its own: its own question, and what stands in the field selected. */
   watch(options.getStep, () => {
     if (options.isOpen()) void enter()
   })

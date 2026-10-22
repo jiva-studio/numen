@@ -130,7 +130,6 @@ const removeSection = (): void => {
       @dragover.stop="emit('drag-over', getRunEnd(run), $event)"
       @drop.stop="emit('drop')"
     >
-      <!-- The plus stands in the middle. -->
       <Button
         v-if="!isAsking"
         variant="ghost"
@@ -194,8 +193,6 @@ const removeSection = (): void => {
   min-inline-size: 0;
 }
 
-/* The plus is an outline until it is pressed: it holds nothing yet. What it
-   holds stands in the middle, which is where it was pressed. */
 .deck__plus {
   --plus: 2.5rem;
 

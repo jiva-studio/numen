@@ -190,7 +190,7 @@ func quiet(t *testing.T, watching <-chan []Task, why string) {
 	t.Helper()
 	select {
 	case list := <-watching:
-		t.Errorf("%s: a listener was told %+v", why, list)
+		t.Errorf("%s: a listener received %+v", why, list)
 	default:
 	}
 }
@@ -294,6 +294,6 @@ func TestAListenerThatEndedDoesNotStopTheOthersBeingReported(t *testing.T) {
 	// Telling the ended listener would send on a closed channel.
 	tasks.Set(Task{ID: "a"})
 	if list := next(t, staying); len(list) != 1 {
-		t.Errorf("the listener that stayed was told %+v", list)
+		t.Errorf("the listener that stayed received %+v", list)
 	}
 }

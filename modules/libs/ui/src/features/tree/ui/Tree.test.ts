@@ -627,7 +627,6 @@ describe('the attribute rows are marked with', () => {
 
   const getMark = (wrapper: Tree, row: string) => getRow(wrapper, row).attributes(ATTRIBUTE)
 
-  /** The place a row stands for, or the place it sits in. */
   const getAttributeValue = (row: string | null): string => {
     if (row === null) return ''
     if (row === 'work' || row === 'plans' || row === 'empty') return row

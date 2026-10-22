@@ -27,7 +27,6 @@ export interface MenuItem {
 
 /** One item as it is drawn: what it says, and the rule standing above it. */
 export interface GroupedItem extends MenuItem {
-  /** It begins a group, and a rule stands between it and what is above. */
   readonly isRule: boolean
 }
 

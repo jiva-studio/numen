@@ -616,7 +616,6 @@ const renderWithIcons = (args: Knobs) => ({
   `,
 })
 
-/** What an icon stands in, and what it draws, as the drawn rows report it. */
 const getIcon = (row: Element | null | undefined): string =>
   /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(
     row?.querySelector('svg')?.getAttribute('class') ?? '',
@@ -867,7 +866,6 @@ export const SomeCameBackEmpty: Story = {
   },
 }
 
-/** One item offering five things, where two of them have a key. */
 export const FiveActions: Story = {
   args: {
     groups: [

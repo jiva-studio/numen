@@ -113,7 +113,6 @@ function scrollPage(back = false) {
   background: var(--numen-raised);
 }
 
-/* Read down, while the strip it stands in is taken across. */
 .reading__column {
   flex: 1;
   min-inline-size: 0;

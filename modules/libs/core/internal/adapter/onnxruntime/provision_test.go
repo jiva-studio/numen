@@ -334,7 +334,7 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 	waiter, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, _, err := provisioner.Provision(waiter, t.TempDir()); err == nil {
-		t.Error("a caller whose context ended was held to the provisioning of another")
+		t.Error("a caller whose context ended was bound to the provisioning of another")
 	}
 	close(release)
 	if err := <-isDone; err != nil {
@@ -456,7 +456,7 @@ func assertNoFile(t *testing.T, dir string) {
 	t.Helper()
 	_ = filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
 		if err == nil && !entry.IsDir() {
-			t.Errorf("%s was left behind", path)
+			t.Errorf("%s was retained", path)
 		}
 		return nil
 	})

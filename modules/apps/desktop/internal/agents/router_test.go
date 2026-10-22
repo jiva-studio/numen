@@ -327,7 +327,7 @@ func TestDraftRendered_NotStep(t *testing.T) {
 		{Change: "c-1", IsDone: true},
 	}
 	if !slices.Equal(observed.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
+		t.Errorf("the window received %+v, want %+v", observed.edits, want)
 	}
 	if !slices.Equal(observed.located, []string{"a.md:old"}) {
 		t.Errorf("the stretch was looked for as %q, and once is enough", observed.located)
@@ -497,7 +497,7 @@ func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 		{Change: "c-1", IsDone: true},
 	}
 	if !slices.Equal(observed.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
+		t.Errorf("the window received %+v, want %+v", observed.edits, want)
 	}
 }
 

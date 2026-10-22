@@ -14,7 +14,6 @@ const theCeiling = 20 * time.Minute
 
 // A goal is a ceiling over every deck the preset schedules.
 //
-// Decks are added and taken away; the goal stands. A person who asked for
 // twenty minutes gets twenty minutes, whether one deck names the preset or
 // five do.
 func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {

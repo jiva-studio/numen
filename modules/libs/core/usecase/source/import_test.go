@@ -123,7 +123,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	hash := text.Fingerprint([]byte(address))
 	raw, err := retained.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash))
 	if err != nil {
-		t.Fatalf("nothing stands under the address: %v", err)
+		t.Fatalf("nothing is under the address: %v", err)
 	}
 	if got := getWords(t, raw); len(got) != 2 || got[0] != "what was said" {
 		t.Errorf("the words read %v", got)
@@ -186,7 +186,7 @@ func TestThePagePointedAt(t *testing.T) {
 	hash := text.Fingerprint([]byte("https://example.com/entropy"))
 	raw, err := retained.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Article, hash))
 	if err != nil {
-		t.Fatalf("nothing stands under the address: %v", err)
+		t.Fatalf("nothing is under the address: %v", err)
 	}
 	if string(raw) != "A measure of disorder." {
 		t.Errorf("the prose reads %q", raw)

@@ -36,7 +36,7 @@ func TestASmallChunkIsSplitBelowTheLimitGiven(t *testing.T) {
 		}
 		for _, small := range chunks[0].Small {
 			if target := utf8.RuneCountInString(small.Text); target > limit {
-				t.Errorf("a chunk holds %d characters, told to hold %d", target, limit)
+				t.Errorf("a chunk holds %d characters, instructed to hold %d", target, limit)
 			}
 		}
 	}

@@ -146,7 +146,6 @@ defineExpose({
 /* One line, then an ellipsis. A model is named by a word and addressed by a
    line too long to read, and the name is what the line carries. */
 .select__reading {
-  /* The line box is taller than the text, so overflow clips no descender. */
   padding-block: 0.125rem;
   line-height: 1.4;
   overflow: hidden;

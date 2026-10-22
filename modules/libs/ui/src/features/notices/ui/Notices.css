@@ -13,7 +13,6 @@
   gap: var(--gap);
 }
 
-/* One width whatever it says, and never wider than a narrow window. */
 .notice {
   --room: 24rem;
 
@@ -33,7 +32,6 @@
   text-align: start;
 }
 
-/* A card a person has to read stands on a ground of its own. */
 .notice[data-tone='caution'] {
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
@@ -46,8 +44,6 @@
   border-color: color-mix(in oklab, currentColor 25%, transparent);
 }
 
-/* What stands behind the rest is counted on a card of its own, and pressing it
-   brings them out. */
 .notice__folded {
   margin: 0;
   opacity: 0.7;

@@ -93,7 +93,7 @@ describe('how long work runs before it is worth a card', () => {
     expect([...getArrivalTimes(later, [], 9000)]).toEqual([])
   })
 
-  it('draws nothing while the work is younger than the wait', () => {
+  it('suppresses display until debounce delay expires', () => {
     const arrivalTimes = getArrivalTimes(new Map(), embedding, 1000)
     expect(getShownNotices(embedding, 10_999, { firstSeen: arrivalTimes, wait: 10_000 })).toEqual([])
   })

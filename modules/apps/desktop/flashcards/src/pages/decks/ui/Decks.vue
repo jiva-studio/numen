@@ -34,7 +34,6 @@ const props = defineProps<{
 /* --------------------------------- Events --------------------------------- */
 defineEmits<{
   (event: 'start', deck: string): void
-  /** Sit down to every deck one preset schedules, by the note it stands in. */
   (event: 'start-preset', preset: string): void
   (event: 'back'): void
 }>()
@@ -100,7 +99,6 @@ const allDue = computed(() => props.vault.due + props.vault.new)
   font-weight: 600;
 }
 
-/* What is done stands at the foot of the screen, whatever is above it. */
 .decks__actions {
   display: flex;
   flex: none;

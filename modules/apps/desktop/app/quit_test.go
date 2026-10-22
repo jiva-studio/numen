@@ -148,7 +148,7 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 		select {
 		case answer := <-answers:
 			if !answer {
-				t.Error("a waiter was told the vault had not settled")
+				t.Error("unexpected unsettled notification")
 			}
 		case <-time.After(5 * time.Second):
 			t.Fatal("a waiter was never answered")

@@ -64,7 +64,6 @@ export interface ArtifactCorrector {
   correctArtifact(path: string): Promise<Outcome>
 }
 
-/** Asks for what stands at the address a note points at. */
 export interface ArtifactFetcher {
   fetchArtifact(path: string): Promise<Outcome>
 }

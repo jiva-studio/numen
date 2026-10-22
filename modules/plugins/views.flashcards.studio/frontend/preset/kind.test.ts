@@ -531,7 +531,7 @@ describe('a curve nobody answers', () => {
     expect(state.errorMessage.value).not.toBe('')
   })
 
-  it('is waited on again where the goal is moved to one nobody has answered', async () => {
+  it('reschedules review when target goal has no reviews', async () => {
     const { state } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
     state.chooseGoal('retention')
     await flushPromises()
@@ -926,7 +926,6 @@ describe('a control dragged across its range', () => {
   })
 })
 
-/** A read answering a preset that stands at these settings, under this title. */
 const createPresetRead = (settings: Settings, title = 'Steady'): ReadOver => ({
   preset: {
     path: 'Steady.md',

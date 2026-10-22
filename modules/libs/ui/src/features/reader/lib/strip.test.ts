@@ -15,7 +15,6 @@ import {
 } from './strip'
 import type { Size } from '@/shared/lib/geometry'
 
-/** A viewport a page stands in whole: tall enough for a page, and a few wide. */
 const VIEWPORT: Size = { width: 900, height: 800 }
 
 /** Every page the same shape, the way a book is. */
@@ -131,7 +130,7 @@ describe('which pages are drawn', () => {
     expect(visiblePages.length).toBeLessThan(500)
   })
 
-  it('draws a page just left behind, in case the hand arrives back', () => {
+  it('pre-renders previous page for reverse navigation', () => {
     const stripLayout = row(book(500), VIEWPORT, 1)
     const at = 300
 

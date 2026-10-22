@@ -27,7 +27,6 @@ const PARTS = 9
 const PARTED =
   'input[type="time"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"]'
 
-/** The roles whose name never comes from what stands inside them. */
 const HELD = new Set(['textbox', 'combobox', 'searchbox', 'spinbutton', 'slider'])
 
 /** What a screen reader would call this, as far as the DOM alone can say. */
@@ -105,7 +104,6 @@ const elsewhere = (from: Element): boolean =>
       displayed(one),
   )
 
-/** A dialog holds the keyboard for as long as it stands, which is what modal means. */
 const modal = (element: Element): boolean => element.closest('[aria-modal="true"]') !== null
 
 /**

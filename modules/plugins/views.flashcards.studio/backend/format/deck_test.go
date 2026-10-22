@@ -288,7 +288,7 @@ func TestACardNamesNoStencil(t *testing.T) {
 				t.Errorf("the value was not read: %q", got)
 			}
 			if head != "" && !strings.Contains(card.Preamble, strings.SplitN(head, "\n", 2)[0]) {
-				t.Errorf("lead = %q, want what stands under the heading", card.Preamble)
+				t.Errorf("lead = %q, want content under heading", card.Preamble)
 			}
 		})
 	}

@@ -58,7 +58,6 @@ export interface Appearance {
 /** What the window asks about how it is drawn. */
 export interface Themes {
   getAppearance(): Promise<Appearance>
-  /** The text of one theme's file, as the file stands when it is asked for. */
   readTheme(name: string): Promise<string>
   /**
    * The theme, the mode and the two sizes written into the settings, and why

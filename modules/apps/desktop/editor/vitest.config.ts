@@ -46,7 +46,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'jsdom',
-          include: ['src/**/*.test.ts'],
+          include: ['src*.test.ts'],
           setupFiles: ['./src/testing/noLayout.ts'],
           testTimeout: 30_000,
         },

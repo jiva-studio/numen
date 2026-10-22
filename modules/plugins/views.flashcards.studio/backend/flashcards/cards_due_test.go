@@ -133,7 +133,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 		t.Fatalf("the preset nothing points at is not in the count: %+v", owing.Presets)
 	}
 	if *target != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
-		t.Errorf("it came to %+v, want a preset nothing stands under", *target)
+		t.Errorf("it came to %+v, want a preset nothing is under", *target)
 	}
 }
 
@@ -159,7 +159,7 @@ func TestADayContainsWhatWasAnsweredInIt(t *testing.T) {
 	}
 	for _, one := range owing.Presets {
 		if one.Answered != 0 || one.Took != 0 {
-			t.Errorf("%q came to %+v, want a day nothing stands on", one.Preset, one)
+			t.Errorf("%q came to %+v, want a day nothing is on", one.Preset, one)
 		}
 	}
 }
@@ -193,7 +193,6 @@ func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 	}
 }
 
-// The front door counts out of the cache it filled.
 //
 // It is asked for every vault a person holds, and again whenever the window
 // opens, a session ends or a vault moves, so a count over answers nothing has

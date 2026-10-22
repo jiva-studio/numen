@@ -14,7 +14,6 @@ import { mountPresetTab, point, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('a preset that schedules nothing', () => {
-  /** Those verdicts a person is told something about. */
   const STOPPING = STOP_REASONS.filter((one) => one !== StopReason.NOTHING)
 
   /** The tab drawn for a preset stopped for that reason. */

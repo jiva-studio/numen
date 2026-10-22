@@ -157,8 +157,8 @@ export default tseslint.config(
 
   // Limits on complexity and file length for handwritten sources. A test, a spec
   {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts'],
+    files: ['src*.{ts,vue}'],
+    ignores: ['src*.test.ts', 'src*.spec.ts', 'src*.stories.ts'],
     rules: {
       'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
@@ -172,8 +172,8 @@ export default tseslint.config(
 
   // Package boundaries: no reaching out of the module via relative paths
   {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts'],
+    files: ['src*.{ts,vue}'],
+    ignores: ['src*.test.ts', 'src*.spec.ts', 'src*.stories.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -198,7 +198,7 @@ export default tseslint.config(
   //
   // A file under `src` that no element claims fails.
   {
-    files: ['src/**/*.{ts,vue}'],
+    files: ['src*.{ts,vue}'],
     plugins: { boundaries },
     settings: {
       'import/resolver': { typescript: { alwaysTryTypes: true } },
@@ -221,10 +221,10 @@ export default tseslint.config(
   // browser — and neither are the stories and the tests, which stand outside a
   // screen on purpose.
   {
-    files: ['src/**/*.ts'],
+    files: ['src*.ts'],
     ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
+      'src*.test.ts',
+      'src*.stories.ts',
       // A port's own default, which is where the browser is allowed in.
       'src/pages/session/model/session.ts',
       'src/pages/decks/model/reviewDays.ts',

@@ -262,7 +262,7 @@ func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
 		t.Errorf("noticed %d recognitions gone, want 1", res.Forgotten)
 	}
 	if got := index.sources[v.ID][documentPath].Producer; got != "" {
-		t.Errorf("the source still stands on %q", got)
+		t.Errorf("the source still is on %q", got)
 	}
 }
 

@@ -14,7 +14,6 @@ const TAB_CODES: ReadonlySet<string> = new Set<NoteErrorCode>([
   'unreachable',
 ])
 
-/** The codes a vault answers with that a tab holds as another. */
 const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {
   deckTooLarge: 'tooLarge',
   notAStencil: 'notANote',

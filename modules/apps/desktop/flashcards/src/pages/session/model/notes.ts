@@ -17,7 +17,6 @@ import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 
 /** What the panel asks of the window it is drawn in. */
 export interface NotesPanelDeps {
-  /** Whether the panel is what the window is showing. */
   readonly open: () => boolean
   /**
    * The panel asked for, or put away. The window can only be showing one thing,
@@ -26,7 +25,6 @@ export interface NotesPanelDeps {
   readonly showPanel: (open: boolean) => void
   /** The vault the session is on. */
   readonly vault: () => string
-  /** The deck the card in front of the person stands in, empty between cards. */
   readonly deck: () => string
   /** What the deck is joined to. */
   readonly getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>

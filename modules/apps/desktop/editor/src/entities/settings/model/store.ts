@@ -32,7 +32,6 @@ export interface SettingsStoreDeps {
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
 
-/** What stands at a path through a tree of settings, and nothing where none does. */
 export const getSettingAt = (settings: unknown, at: readonly string[]): unknown => {
   let value = settings
   for (const step of at) {
@@ -85,7 +84,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     plugins.value = answer.plugins ?? []
   }
 
-  /** What stands at a setting, and fallback plugin default where unset. */
   const getSetting = (path: readonly string[]): unknown => {
     const value = pending.getPending(path)?.value ?? getSettingAt(target.value, path)
     return value !== undefined ? value : getPluginDefault(plugins.value, path)

@@ -402,7 +402,6 @@ const createItem = (id: string, title: string): PaletteItem => ({
   actions: [TRAVEL, READ],
 })
 
-/** A heading that carries them: the heading, and the note it stands in. */
 const heading = (id: string, title: string, note: string): PaletteItem => ({
   id,
   title,
@@ -595,7 +594,6 @@ const AGENT_OPTIONS: readonly AgentModelOption[] = [
 interface Screen {
   /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
-  /** What stands over it: the search, the commands, or nothing. */
   readonly panel?: 'search' | 'commands' | null
   /** What the map is looking at, which follows the room it is drawn in. */
   readonly neighbourhood?: PlexNeighbourhood
@@ -904,7 +902,6 @@ export const Nesting: Story = {
   },
 }
 
-/** A note being written, with the map it stands in beside it. */
 export const Writing: Story = {
   parameters: WRITING,
   render: () =>

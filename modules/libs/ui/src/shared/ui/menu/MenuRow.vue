@@ -124,8 +124,6 @@ defineExpose({ focus })
   white-space: nowrap;
 }
 
-/* What an item is beside its words: the address a model is fetched from, the
-   place a file stands. */
 .menu__detail {
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);

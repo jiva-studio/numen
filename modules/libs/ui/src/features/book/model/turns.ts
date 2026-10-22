@@ -73,7 +73,6 @@ export function useBookTurns(options: BookTurnsOptions) {
     translatePaper(options.paper.value, to, how)
   }
 
-  /** What stands in front now, said once, and nothing while nothing does. */
   const announce = () => {
     const now = inFront(options.marks.value, options.flow.value, activeSpread.value)
     if (now !== undefined && now !== options.props.at) options.onMove(now)

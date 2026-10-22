@@ -475,7 +475,7 @@ describe('a stencil tab as the window lists it', () => {
     expect(staleSession.stencils.kind.getMark?.(staleSession.tab)).toBe('stale')
   })
 
-  it('is closed by the stencil itself, and the window is told to leave it be', async () => {
+  it('closes stencil and suppresses window prompt', async () => {
     const { stencils, tab } = await open()
 
     expect(stencils.kind.onClose?.(tab, 'no such tab')).toBe(false)

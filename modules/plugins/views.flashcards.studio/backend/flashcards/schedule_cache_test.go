@@ -15,7 +15,6 @@ const (
 	loadPerDay = 20
 )
 
-// The front door consults the cache and does not rewrite it: the answers are
 // replayed once, and every request after that is told what the replay came to.
 func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
 	t.Parallel()
@@ -36,7 +35,6 @@ func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
 	}
 }
 
-// Starting a session is answered from the cache like the front door, so a
 // person starting one waits for a listing and not for the whole history.
 func TestStartingASessionConsultsTheScheduleCache(t *testing.T) {
 	t.Parallel()
@@ -99,7 +97,7 @@ func TestTheCacheAnswersWhatAReplayAnswers(t *testing.T) {
 	}
 	for face, was := range replayed {
 		if now := remembered[face]; !now.Due.Equal(was.Due) || now.Reps != was.Reps {
-			t.Errorf("%+v stands at %+v, and the replay left it at %+v", face, now, was)
+			t.Errorf("%+v is at %+v, and the replay left it at %+v", face, now, was)
 		}
 	}
 }

@@ -54,7 +54,7 @@ func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 		s.Last = time.Time{}
 		at := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
 		if p.IsLearned(s, at) {
-			t.Fatalf("a card face nobody has answered counts learned under %+v "+
+			t.Fatalf("a card face unanswered counts learned under %+v "+
 				"at %v, standing at %+v", p, at, s)
 		}
 	})

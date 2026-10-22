@@ -149,8 +149,8 @@ export default tseslint.config(
   // Two hundred and fifty lines in a handwritten file, and a function whose
   // branches a reader cannot hold at once is two functions. A test is shaped by
   {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts'],
+    files: ['src*.{ts,vue}'],
+    ignores: ['src*.test.ts'],
     rules: {
       'max-lines': ['error', { max: 250, skipBlankLines: false, skipComments: false }],
       complexity: ['error', 10],
@@ -164,8 +164,8 @@ export default tseslint.config(
   //
   // browser — and neither are the tests, which stand outside a page on purpose.
   {
-    files: ['src/**/*.ts'],
-    ignores: ['src/**/*.test.ts'],
+    files: ['src*.ts'],
+    ignores: ['src*.test.ts'],
     rules: {
       'no-restricted-globals': [
         'error',

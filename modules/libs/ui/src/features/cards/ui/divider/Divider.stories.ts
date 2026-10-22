@@ -84,7 +84,6 @@ export const NoTextAtAll: Story = { args: { said: '' } }
 /** A window too narrow for the word and the line both. */
 export const Narrow: Story = { args: { width: '10rem' } }
 
-/** The line runs either side of what stands in the middle, and under neither. */
 export const TheLineGivesWayToWhatItHolds: Story = {
   args: { width: '40rem' },
   play: async ({ canvasElement }) => {

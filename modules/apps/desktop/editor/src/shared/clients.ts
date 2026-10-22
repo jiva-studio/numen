@@ -29,7 +29,6 @@ export const vault = createClient(VaultService, transport)
 /** Whether an agent can be reached, which is the installation's and not a vault's. */
 export const agentService = createClient(AgentService, transport)
 
-/** Where the person stands in the vault: what they have open, and where they are sent. */
 export const workspace = createClient(WorkspaceService, transport)
 
 /** The tree the vault is filed in: what stands where, and moving it about. */

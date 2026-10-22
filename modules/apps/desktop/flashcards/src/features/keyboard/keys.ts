@@ -19,7 +19,6 @@ export type SessionKeyIntent =
   | { does: 'scroll'; back: boolean }
   | { does: 'shut' }
 
-/** What the window is showing when the key is pressed. */
 export interface ScreenState {
   /** Whether the answer is already showing. */
   isShown: boolean

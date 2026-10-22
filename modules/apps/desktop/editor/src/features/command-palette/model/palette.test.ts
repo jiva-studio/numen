@@ -132,7 +132,6 @@ const createPalette = (
 /** A moment for the list of vaults to come back. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** Every item drawn, group by group, under the group it stands in. */
 const getItemIds = (groups: ReturnType<typeof createPalette>['commands']['groups']) =>
   Object.fromEntries(groups.value.map((group) => [group.id, group.items.map((item) => item.id)]))
 
@@ -1044,7 +1043,7 @@ describe('a command requested for from outside the palette', () => {
 
 describe('the commands over the vaults an installation holds', () => {
   /** Only renaming is over the vault in front. The rest ask for one first. */
-  it('leave out the rename where the window is showing no vault', () => {
+  it('omits rename command when no vault is active', () => {
     const { commands } = createPalette({ vault: { id: '', name: '' } })
 
     expect(getItemIds(commands.groups).vault).toStrictEqual([
@@ -1090,7 +1089,7 @@ describe('a command that asks for a vault', () => {
    * the list takes. It is drawn with the reason beside it, and choosing it
    * does nothing.
    */
-  it('marks the vault the window is showing, and will not take it', async () => {
+  it('marks active vault and ignores duplicate selection', async () => {
     const { commands } = createPalette({}, [], {}, two())
     commands.startCommand('openVault', front())
     await settle()
@@ -1108,7 +1107,7 @@ describe('a command that asks for a vault', () => {
     expect(commands.groups.value[0]?.items[1]?.actions?.[0]?.text).toBe(words.removeVault)
   })
 
-  it('carries the vault that was picked, not the one the window is showing', async () => {
+  it('uses selected vault over active vault', async () => {
     const { commands } = createPalette({}, [], {}, two())
     commands.startCommand('openVault', front())
     await settle()
@@ -1163,7 +1162,7 @@ describe('renaming the vault in front', () => {
     expect(commands.typed.value).toBe('Physics')
   })
 
-  it('carries the name to the vault the window is showing', () => {
+  it('passes name to active vault', () => {
     const { commands } = createPalette()
     commands.startCommand('renameVault', front())
     void commands.setTyped('Heat')
@@ -1249,7 +1248,7 @@ describe('a vault taken off the list', () => {
     })
   })
 
-  it('is not reached by the name of the vault the window is showing', async () => {
+  it('ignores active vault name', async () => {
     const commands = await chooseVault('eraseVault')
 
     void commands.setTyped('Physics')

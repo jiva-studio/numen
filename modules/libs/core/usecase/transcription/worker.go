@@ -270,7 +270,6 @@ func (t *Worker) transcribeOne(ctx context.Context, v domain.Vault, path string,
 // transcript right with. A person is offered the run where it has.
 func (t *Worker) ProofreaderReady() bool { return t.with.Proofreading.IsNamed }
 
-// Proofread puts one transcript right for a person who asked for it and says
 // what came of asking: the run began, or the transcript needed nothing of it.
 //
 // The asking waits only for what a run settles before it puts a question to the

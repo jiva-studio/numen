@@ -10,7 +10,6 @@ export interface VaultPort {
     id: string
     /** What the person calls the vault. */
     name: string
-    /** The folder the vault sits in, absolute on this machine. */
     path: string
     /** How far indexing the vault has got. */
     scan: {

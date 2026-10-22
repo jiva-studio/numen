@@ -650,9 +650,6 @@ describe('a deck read again under the window', () => {
     expect(one.tab.drawn.value.at(-1)?.id).toBe(createdItem)
   })
 
-  /* A section carries no mark, so every reading mints one. The grid draws a run
-     under the identity its section stands at, so a reading that mints fresh
-     ones takes down every run and every card standing in it. */
   it('keeps the identity of a section the file still holds', async () => {
     const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
     const status = one.tab.deck.value.sections[0]?.id ?? ''

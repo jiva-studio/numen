@@ -79,7 +79,7 @@ describe('the keys of the vaults screen', () => {
 })
 
 describe('the keys of the decks screen', () => {
-  it('sits down to a vault that owes only new cards, and keeps the key from the page', () => {
+  it('opens vault with only new cards and consumes key event', () => {
     const { onKeyDown, deps } = createKeys('decks', createVault({ due: 0, new: 3 }))
     const press = createPress('Enter')
 

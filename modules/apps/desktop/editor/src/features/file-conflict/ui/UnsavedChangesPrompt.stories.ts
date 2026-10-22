@@ -39,7 +39,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** What stands in the way of the window going, if anything does. */
 const notice = (canvas: HTMLElement) => within(canvas).queryByRole('alertdialog')
 
 /** The rows, one per note still unwritten. */
@@ -85,7 +84,6 @@ export const AnsweredForOneNote: Story = {
   },
 }
 
-/** A name far longer than the row it stands in. */
 export const AnUnbrokenName: Story = {
   args: { conflicts: [conflict(UNBROKEN)] },
   play: async ({ canvasElement }) => {

@@ -52,8 +52,6 @@ const skeletonStyle = computed(() => ({
   border-radius: var(--numen-radius-isPill);
 }
 
-/* Between a fill and half of one, and no faster than a person reading the row
-   it stands in. */
 @keyframes skeleton-breathe {
   50% {
     opacity: 0.5;

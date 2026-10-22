@@ -143,7 +143,7 @@ func TestACorrectionReplacesTheCuesBeginningInsideItsSpan(t *testing.T) {
 		t.Error("the corrections are not marked as written by hand")
 	}
 	if len(changed) != 1 || changed[0] != recordingPath {
-		t.Errorf("the change was told as %v", changed)
+		t.Errorf("the change received as %v", changed)
 	}
 }
 

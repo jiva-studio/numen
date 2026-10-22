@@ -82,10 +82,10 @@ func TestATranscriptDroppedConsumesEverythingListeningProduced(t *testing.T) {
 	}
 	wrote := index.written[0]
 	if wrote.Source.Fingerprint.Path != talk {
-		t.Errorf("the index was told about %q", wrote.Source.Fingerprint.Path)
+		t.Errorf("indexed %q", wrote.Source.Fingerprint.Path)
 	}
 	if wrote.Source.Producer != "" || wrote.Source.Hash != "" || wrote.Source.Recipe != "" {
-		t.Errorf("the source still stands on a reading: %+v", wrote.Source)
+		t.Errorf("the source still is on a reading: %+v", wrote.Source)
 	}
 	if len(wrote.Chunks) != 0 {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))

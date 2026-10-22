@@ -26,7 +26,7 @@ func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 			continue
 		}
 		if key := field.Tag.Get("json"); key != one.at {
-			t.Errorf("%T.%s stands at %q and is read under %q", one.in, one.field, key, one.at)
+			t.Errorf("%T.%s is at %q and is read under %q", one.in, one.field, key, one.at)
 		}
 	}
 }

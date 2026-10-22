@@ -41,11 +41,11 @@ func FuzzParse(f *testing.F) {
 		at := -1
 		for _, cue := range cues {
 			if cue.Offset < 0 || cue.Offset+len(cue.Text) > len(response) {
-				t.Fatalf("a cue of %d bytes stands at %d in %d bytes of words",
+				t.Fatalf("a cue of %d bytes is at %d in %d bytes of words",
 					len(cue.Text), cue.Offset, len(response))
 			}
 			if got := response[cue.Offset : cue.Offset+len(cue.Text)]; got != cue.Text {
-				t.Fatalf("a cue reading %q stands at %q", cue.Text, got)
+				t.Fatalf("a cue reading %q is at %q", cue.Text, got)
 			}
 			if cue.Offset <= at {
 				t.Fatalf("a cue at %d follows one at %d", cue.Offset, at)

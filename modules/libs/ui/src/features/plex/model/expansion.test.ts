@@ -50,7 +50,7 @@ describe('a box with more of its title to show', () => {
     expect(getSpan(node, wideBox)).toStrictEqual({ from: 284, to: 584 })
   })
 
-  it('grows no wider than the window, the margin kept clear', () => {
+  it('constrains width to window minus margins', () => {
     const node = createNode({ x: 500 })
     const wideBox = getWideBox(node, 2000, BOUNDS)!
     expect(wideBox.width).toBe(WINDOW.width - 2 * MARGIN)
@@ -67,7 +67,7 @@ describe('a box with nothing more to show', () => {
     expect(getWideBox(createNode(), 120, BOUNDS)).toBeNull()
   })
 
-  it('stays as it was placed when the window is no wider than it is', () => {
+  it('preserves layout when window width is constrained', () => {
     expect(
       getWideBox(createNode(), 300, { viewport: { width: 160, height: 800 }, margin: MARGIN }),
     ).toBeNull()

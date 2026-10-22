@@ -340,7 +340,7 @@ describe('the actions the panel draws', () => {
     ])
   })
 
-  it('draws nothing for an item offering nothing', () => {
+  it('renders nothing when item has no actions', () => {
     expect(placeActions()).toEqual([])
     expect(placeActions([], 'open')).toEqual([])
   })

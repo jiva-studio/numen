@@ -86,7 +86,6 @@ interface FrontTab {
 /** The tab in front, as the window's tabs hand it out. */
 const front = ref<FrontTab | null>(null)
 
-/** A kind that says what its tab stands over. */
 const createKind = (on: unknown) => ({ name: 'kind', getTarget: vi.fn(() => on) })
 
 beforeEach(() => {

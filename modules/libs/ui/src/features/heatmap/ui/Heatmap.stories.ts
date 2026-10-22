@@ -143,7 +143,6 @@ export const Dark: Story = {
   },
 }
 
-/** A vault nobody has answered: every day drawn, none of them filled. */
 export const Nothing: Story = {
   args: { did: new Map<string, Tally>(), now, words },
   render: (args) => ({

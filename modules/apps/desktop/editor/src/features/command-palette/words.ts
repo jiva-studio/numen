@@ -46,9 +46,7 @@ export interface AnswerWords {
   readonly stale: string
   /** A name at the destination is taken, and the file stayed where it was. */
   readonly occupied: string
-  /** This build cannot do the run at all, and stops offering it. */
   readonly unrunnable: string
-  /** What an artifact of a file now stands at, in words a person reads. */
   readonly made: Record<Artifact, Record<ArtifactState, string>>
   /** What a run over the address a note points at came to. */
   readonly fetched: Record<ArtifactState, string>
@@ -56,10 +54,8 @@ export interface AnswerWords {
 
 /** The words the step that asks for the name typed back is drawn in. */
 export interface RetypeWords {
-  /** What it does, and what it leaves behind. */
   readonly action: string
   readonly detail: string
-  /** What stands in the field: the name of the thing, typed back. */
   readonly back: string
 }
 
@@ -161,7 +157,6 @@ export interface Words extends EmptyWords {
   /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   readonly noVault: string
   readonly noNote: string
-  /** The list of commands: the chip beside the field, and what stands in it. */
   readonly command: string
   readonly typeCommand: string
   /** A name asked for, and the one item it offers. */

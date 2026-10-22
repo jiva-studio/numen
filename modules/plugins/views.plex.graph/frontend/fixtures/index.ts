@@ -11,7 +11,6 @@ import type { PlexEditor, PlexView, Neighbourhood, NoteType } from '../types'
 /** A moment for whatever a gesture asked the vault for to come back. */
 export const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** Which of three each note of a neighbourhood is, by the path it stands at. */
 export type Types = Record<string, NoteType>
 
 export interface RelatedNeighbourSpec {

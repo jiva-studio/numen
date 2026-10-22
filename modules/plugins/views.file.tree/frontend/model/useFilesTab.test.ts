@@ -745,7 +745,7 @@ describe('rows release, in more detail', () => {
     ])
   })
 
-  it('say every name left behind, parted by commas', async () => {
+  it('formats remaining names as comma-separated list', async () => {
     const { recorded, one } = tab(false, {
       notes: [file('notes/Entropy.md'), file('notes/Heat.pdf')],
     })

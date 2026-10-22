@@ -32,7 +32,6 @@ const props = withDefaults(
     now?: Date
     /** How large one cell is drawn, at most, in pixels. */
     cell?: number
-    /** How much room stands between two cells, at least. */
     gap?: number
   }>(),
   { due: () => new Map(), now: () => new Date(), cell: 11, gap: 3 },
@@ -138,9 +137,6 @@ const setPointed = (day: Day, press: MouseEvent) => {
   stroke: none;
 }
 
-/* A day still to come is said quietly: what is done stands at full strength,
-   and what is coming is the same weight drawn dim. It carries its weight, so a
-   heavy week ahead reads as a heavy week. */
 .heatmap__day[data-ahead][data-weight='1'] {
   fill: color-mix(in oklab, var(--numen-accent) 8%, var(--numen-raised));
   stroke: none;

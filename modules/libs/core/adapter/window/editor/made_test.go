@@ -22,7 +22,7 @@ func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 		Title: "Entropy",
 	}))
 	if err != nil {
-		t.Fatalf("the note is on disk and the client was told %v", err)
+		t.Fatalf("the note is on disk and the client received %v", err)
 	}
 	if path := answer.Msg.GetPath(); path != "Entropy.md" {
 		t.Fatalf("the note is filed at %q", path)
@@ -48,10 +48,10 @@ func TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 		Path: "Ontology.md",
 	}))
 	if err != nil {
-		t.Fatalf("the note is in the trash and the client was told %v", err)
+		t.Fatalf("the note is in the trash and the client received %v", err)
 	}
 	if answer.Msg.GetTrashed() == "" {
-		t.Error("the note went to the trash and the client was told nothing of where")
+		t.Error("the note went to the trash and the client received nothing of where")
 	}
 	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the removal is answered as followed and search still holds the note")

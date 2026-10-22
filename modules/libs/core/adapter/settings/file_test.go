@@ -151,7 +151,7 @@ func TestWhatIsSaidDoesNotRepeatWhatExistsInTheFile(t *testing.T) {
 		t.Fatal("wanted an error")
 	}
 	if strings.Contains(err.Error(), secret) {
-		t.Errorf("said %q, which repeats what stands in the file", err)
+		t.Errorf("got error %q repeating file content", err)
 	}
 }
 

@@ -28,7 +28,6 @@ export interface AgentPanelDeps {
   readonly card: () => CardFace | null
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: () => string
-  /** Whether the panel is what the window is showing. */
   readonly open: () => boolean
   /**
    * The panel asked for, or put away. The window can only be showing one thing,
@@ -50,7 +49,6 @@ function createCardConversation(
 }
 
 export function useAgentPanel(deps: AgentPanelDeps) {
-  /** Whether the panel is what the window is showing, which the window holds. */
   const open = computed(() => deps.open())
 
   const content = ref('')

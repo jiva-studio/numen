@@ -54,7 +54,6 @@ const createRenameResult = (over: Partial<RenamedNote> = {}): RenameResult =>
     ...over,
   })
 
-/** What an artifact now stands at, as the application answers it. */
 const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
   able: true,
   of,

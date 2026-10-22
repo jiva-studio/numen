@@ -14,7 +14,6 @@ import { estimateCurve } from './sketch'
  */
 import corpus from '../../../../../libs/protocol/testdata/presets.json'
 
-/** The review day the window is told, which is what a date is counted from. */
 const today = '2026-08-30'
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })

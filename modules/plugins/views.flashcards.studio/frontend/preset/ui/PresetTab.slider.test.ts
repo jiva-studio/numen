@@ -97,7 +97,7 @@ describe('the one slider', () => {
   })
 
   // calls it. Overdue keeps its own word, which is a distinction of its own.
-  it('calls a card nobody has answered new', () => {
+  it('classifies unreviewed card as new', () => {
     const saidText = words
       .material({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
       .map((one) => one.name)

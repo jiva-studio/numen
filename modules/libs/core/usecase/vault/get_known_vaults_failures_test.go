@@ -63,6 +63,6 @@ func TestNoVaultIsCurrentWhereNoneIsNamedAndNoneWasOpened(t *testing.T) {
 		t.Fatalf("%d vaults of a list of one", len(recognized))
 	}
 	if recognized[0].IsCurrent {
-		t.Error("a vault was called current when nobody named one")
+		t.Error("a vault was called current when unnamed one")
 	}
 }

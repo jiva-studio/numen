@@ -255,7 +255,7 @@ describe('what a column asks of the rows', () => {
     expect(limits.child.perLine).toBe(6)
   })
 
-  it('gives a box wider than the window a row of one', () => {
+  it('assigns single row when box exceeds window width', () => {
     const limits = getLimits(
       {
         ...DEFAULT_OPTIONS,
@@ -267,7 +267,7 @@ describe('what a column asks of the rows', () => {
     expect(limits.child.perLine).toBe(1)
   })
 
-  it('gives a focus wider than the window a row of one', () => {
+  it('assigns single row when focus exceeds window width', () => {
     const limits = getLimits(
       {
         ...DEFAULT_OPTIONS,

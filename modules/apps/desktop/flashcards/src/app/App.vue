@@ -3,7 +3,6 @@
  * The flashcards window: the vaults and what each owes, and the cards
  * themselves.
  *
- * It opens on what a person owes today and nothing else. They need not know an
  * editor exists.
  *
  * What the window is made of is `window.ts`. What is here is what a person

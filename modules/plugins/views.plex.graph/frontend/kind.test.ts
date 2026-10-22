@@ -208,7 +208,7 @@ describe('a plex tab the person has closed', () => {
   })
 })
 
-describe('what the window is told about a plex tab', () => {
+describe('plex tab notifications', () => {
   it('is the note it relies on as what a command is over, under the name the picture gives it', async () => {
     const one = window()
     const { state } = await one.openTab('physics/Ontology.md')

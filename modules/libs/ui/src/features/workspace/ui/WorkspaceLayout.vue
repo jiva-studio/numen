@@ -185,7 +185,6 @@ provide(
   overflow: hidden;
 }
 
-/* The tab being dragged stands over the panes and the overlay both. */
 .workspace__dragged {
   z-index: var(--numen-lift-tooltip);
 }

@@ -392,7 +392,7 @@ describe('a session sat down to', () => {
     expect(sessionWindow.notices.value).toHaveLength(0)
   })
 
-  it('sits down to every deck of a preset, and says what it could not act on', async () => {
+  it('reviews all preset decks and reports errors', async () => {
     wire.opened = { unwritten: ['decks/Suffixes.md'], skipped: 0 }
     const sessionWindow = await openWindow()
     sessionWindow.vaults.choose('roots')

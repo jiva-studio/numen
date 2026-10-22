@@ -110,7 +110,6 @@ defineExpose({ reach })
 </template>
 
 <style scoped>
-/* Sits on the same surface as what it stands over, told apart by one line. */
 .pane__strip {
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }

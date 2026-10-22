@@ -69,7 +69,6 @@ export const InsideAStretchOfTheDay: Story = {
   },
 }
 
-/** An hour that is no hour of the day: the field stands at none. */
 export const NoHourAtAll: Story = {
   args: { hour: 'noon' },
   play: async ({ canvasElement }) => {

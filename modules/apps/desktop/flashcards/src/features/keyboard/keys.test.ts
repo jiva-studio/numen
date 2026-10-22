@@ -218,13 +218,13 @@ describe('the keys a session is done with', () => {
 
 describe('the keys a deck is chosen with', () => {
   // The whole vault is the daily act, so it is the key under the hand.
-  it('sits down to the whole vault on enter', () => {
+  it('opens review for all decks on enter', () => {
     expect(getPickerKeyIntent(createPress('Enter'), 5)).toEqual({ does: 'all' })
     expect(getPickerKeyIntent(createPress(' '), 5)).toEqual({ does: 'all' })
   })
 
   // A person reads down the list and presses what they see.
-  it('sits down to the deck a letter remains at', () => {
+  it('opens review for matched deck key', () => {
     expect(getPickerKeyIntent(createPress('a'), 5)).toEqual({ does: 'deck', at: 0 })
     expect(getPickerKeyIntent(createPress('c'), 5)).toEqual({ does: 'deck', at: 2 })
     expect(getPickerKeyIntent(createPress('e'), 5)).toEqual({ does: 'deck', at: 4 })

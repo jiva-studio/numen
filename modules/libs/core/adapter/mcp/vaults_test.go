@@ -367,7 +367,7 @@ func TestTheVaultTheWindowIsShowingIsNotForgotten(t *testing.T) {
 		t.Errorf("the vault in front failed with %q", why)
 	}
 	if len(f.rows.getForgotten()) != 0 {
-		t.Errorf("the index was told to forget %v", f.rows.getForgotten())
+		t.Errorf("forgot %v", f.rows.getForgotten())
 	}
 }
 
@@ -388,7 +388,7 @@ func TestForgettingPreservesTheFolderWhereItIs(t *testing.T) {
 		t.Errorf("the folder went with the vault: %v", err)
 	}
 	if got := f.rows.getForgotten(); len(got) != 1 || got[0] != f.second.ID {
-		t.Errorf("the index was told to forget %v", got)
+		t.Errorf("forgot %v", got)
 	}
 	if _, found, err := f.registry.FindVault(string(f.second.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v", err)

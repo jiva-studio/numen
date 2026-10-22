@@ -1,7 +1,4 @@
 // @vitest-environment jsdom
-/**
- * The front door while it is still working, and once it has an answer.
- */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { Skeleton, Spinner } from '@numen/ui'

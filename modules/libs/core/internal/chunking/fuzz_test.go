@@ -67,14 +67,14 @@ func FuzzCut(f *testing.F) {
 				assertChunkInText(t, text, target, cuts, "a small chunk")
 				if middle := target.Start + target.Length/2; middle < one.Start ||
 					middle >= one.Start+max(one.Length, 1) {
-					t.Fatalf("a small chunk at %d+%d stands under a large one at %d+%d",
+					t.Fatalf("a small chunk at %d+%d is under a large one at %d+%d",
 						target.Start, target.Length, one.Start, one.Length)
 				}
 				if target.Length == 0 {
 					continue
 				}
 				if target.Location != one.Location && one.Location != "" {
-					t.Fatalf("a small chunk of %q stands under a large chunk of %q",
+					t.Fatalf("a small chunk of %q is under a large chunk of %q",
 						target.Location, one.Location)
 				}
 			}

@@ -88,7 +88,7 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 		t.Error("nothing came back from the address")
 	}
 	if !strings.HasSuffix(out.Path, ".url") {
-		t.Errorf("it stands at %q", out.Path)
+		t.Errorf("got path %q", out.Path)
 	}
 }
 

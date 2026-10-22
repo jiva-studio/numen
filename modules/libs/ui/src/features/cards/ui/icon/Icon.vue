@@ -18,8 +18,6 @@ defineProps<{ name: Icon }>()
 </template>
 
 <style scoped>
-/* An icon stands at about the height of the letter beside it, in its ink. It is
-   drawn for the eye, so a press on it lands on whatever it stands in. */
 .icon {
   flex: none;
   pointer-events: none;

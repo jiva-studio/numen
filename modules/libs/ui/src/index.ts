@@ -33,7 +33,6 @@ export { SegmentedControl } from './shared/ui/segmented'
 export { Select } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
-/** The days of the week, each drawn at the level it stands at. */
 export { WeekdayChips } from './shared/ui/weekday-chips'
 export { WEEK } from './shared/ui/weekday-chips'
 export type { Day } from './shared/ui/weekday-chips'

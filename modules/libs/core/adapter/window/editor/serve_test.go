@@ -314,7 +314,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	sendChange(t, watcher, "Note.md")
 
 	if got := next(t, f.heard); len(got.paths) != 1 || got.paths[0] != "Note.md" {
-		t.Errorf("the window was told %+v", got)
+		t.Errorf("the window received %+v", got)
 	}
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Renamed" {
 		t.Errorf("the index says %q", title)
@@ -421,7 +421,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	sendChange(t, watcher, "Note.md")
 
 	if got := next(t, f.heard); len(got.paths) != 1 || got.paths[0] != "Note.md" {
-		t.Errorf("the window was told %+v", got)
+		t.Errorf("the window received %+v", got)
 	}
 }
 

@@ -207,7 +207,7 @@ describe('the handle', () => {
     expect(node.find('.plex__handle').exists()).toBe(true)
   })
 
-  it('starts a gesture and not choosing the node it sits on', async () => {
+  it('initiates drag gesture without selecting node', async () => {
     const node = await hover(mountNode())
     await node.get('.plex__handle').trigger('pointerdown')
     expect(node.emitted('reach')).toHaveLength(1)
@@ -220,7 +220,7 @@ describe('the handle', () => {
     expect(node.emitted('show')).toBeUndefined()
   })
 
-  it('sits on the trailing edge, halfway down', async () => {
+  it('positions at trailing edge vertical center', async () => {
     const at = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
     expect(at.attributes('transform')).toBe('translate(72 0)')
   })

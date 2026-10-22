@@ -201,7 +201,7 @@ func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node,
 				doc.Path, node.Offset, to, doc.Offset, doc.Length)
 		}
 		if got := getNodeText([]epub.Node{node}); got != text[node.Offset:to] {
-			t.Fatalf("a %q of %s says %q and stands over %q",
+			t.Fatalf("a %q of %s says %q and spans %q",
 				node.Name, doc.Path, got, text[node.Offset:to])
 		}
 		checkSpans(t, text, doc, node.Children, to)

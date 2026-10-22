@@ -9,7 +9,6 @@ import (
 
 // DayStartTime is how long past midnight a day of review begins by default.
 //
-// A person answering cards at one in the morning is finishing the day before,
 // not starting the next one, and a boundary at midnight splits one session in
 // two and calls half of it late.
 const DayStartTime = 4 * time.Hour
@@ -78,7 +77,6 @@ func (d Day) GetDate(at time.Time) time.Time {
 }
 
 // getStartTime is the instant the day of this date began. The boundary is an hour of
-// the clock on the wall, so the day an hour was put into or taken out of begins
 // and ends at the hour a person reads.
 func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
 	h, minute := d.boundary()

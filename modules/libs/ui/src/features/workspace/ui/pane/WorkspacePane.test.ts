@@ -10,7 +10,6 @@ const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 
 const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }
 
-/** The workspace a pane stands in, as far as a pane on its own asks about it. */
 const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceContext => ({
   findTab: (id): Tab | undefined =>
     TITLES[id] === undefined

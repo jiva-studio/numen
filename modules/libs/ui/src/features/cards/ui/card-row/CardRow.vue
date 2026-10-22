@@ -24,8 +24,6 @@ withDefaults(
 <style scoped>
 .card-row {
   --card-row-gap: 0.25rem;
-  /* The air a row keeps at its ends: the same before the first thing in it as
-     after the last, and enough for a ring to be drawn inside the row. */
   --card-row-pad-block: 0.125rem;
   --card-row-pad-inline: 0.375rem;
 

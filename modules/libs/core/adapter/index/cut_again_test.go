@@ -153,7 +153,7 @@ func TestSplittingASourceAgainKeepsTheRowsOfTheTextItStillContains(t *testing.T)
 
 		// The source relies on exactly the chunks this cut asked for.
 		if want := countChunks(now); !maps.Equal(countByText(after), want) {
-			t.Fatalf("%v cut again as %v stands on %v, want %v",
+			t.Fatalf("previous %v cut again as %v: got %v, want %v",
 				was, now, countByText(after), want)
 		}
 

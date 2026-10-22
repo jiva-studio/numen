@@ -77,7 +77,6 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 }
 
 // WaitForFlush waits for every page to write its pending data. The wait is on
-// a person answering a question and has no time bound. It returns false where
 // ctx ended or the vault was requested again.
 func (o *Installation) WaitForFlush(ctx context.Context) bool {
 	return o.State.Window.WaitForFlush(ctx)

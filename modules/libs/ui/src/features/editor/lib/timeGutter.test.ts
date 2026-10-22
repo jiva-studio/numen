@@ -33,7 +33,6 @@ const drawGutter = (times: { extension: Extension }) => {
 /** Everything queued as an editor attached has run. */
 const waitTick = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** What stands in the gutter, line by line. */
 const gutter = (view: EditorView): string[] =>
   [...view.dom.querySelectorAll('.cm-times .cm-gutterElement')].map((one) => one.textContent ?? '')
 

@@ -31,7 +31,6 @@ const emit = defineEmits<{
   commit: [value: string]
 }>()
 
-/** What stands in the field, which is an hour of the day or nothing at all. */
 const inForce = computed(() => (isClockTime(model.value) ? model.value : ''))
 
 const ownId = useId()

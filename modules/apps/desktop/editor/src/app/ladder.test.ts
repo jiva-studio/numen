@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 
 /** The window's source, as text. A story draws a length on purpose. */
-const SOURCE = import.meta.glob<string>('./**/*.{vue,css,ts}', {
+const SOURCE = import.meta.glob<string>('.*.{vue,css,ts}', {
   query: '?raw',
   import: 'default',
   eager: true,

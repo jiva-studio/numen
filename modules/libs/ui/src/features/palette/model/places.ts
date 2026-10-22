@@ -54,7 +54,6 @@ export interface PalettePlacesOptions {
 
 export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesState {
   const { groups, typed } = options
-  /** What is drawn, and in what order: a group holding nothing stands at the foot. */
   const visibleGroups = computed(() => orderGroups(groups()))
 
   const places = computed(() => flatten(visibleGroups.value))

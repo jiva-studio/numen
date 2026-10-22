@@ -23,11 +23,11 @@ describe('the address under a position in the text', () => {
     expect(getLinkAddressIn('under [[note://01J8]] it sits', 'note://')).toBe('note://01J8')
   })
 
-  it('is nothing where the position remains in no link', () => {
+  it('returns null when position is not within a link', () => {
     expect(getLinkAddressIn('under nothing at all', 'nothing')).toBeNull()
   })
 
-  it('is nothing inside code, where a link is an example of one', () => {
+  it('returns null for links inside code blocks', () => {
     expect(getLinkAddressIn('```\n[[Thermodynamics]]\n```', 'Thermo')).toBeNull()
     expect(getLinkAddressIn('write `[[Thermodynamics]]` for it', 'Thermo')).toBeNull()
   })

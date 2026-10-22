@@ -144,7 +144,7 @@ describe('the width a page is drawn at', () => {
     expect(readItem.picture.value).toBe('Book.pdf 0 1600')
   })
 
-  it('is never wider than a page is drawn', async () => {
+  it('constrains width to page boundary', async () => {
     const { documents } = book()
     const readItem = useDocumentReader(documents, 'Book.pdf')
     await readItem.goToPage(0)

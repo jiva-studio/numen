@@ -18,7 +18,6 @@ interface Corpus {
   readonly cut: Stencil | null
   /** What the vault reading the file found wrong with this card. */
   readonly wrong?: readonly string[]
-  /** What it found wrong with one of its values, by the field it stands in. */
   readonly wrongUnder?: Readonly<Record<string, readonly string[]>>
 }
 
@@ -40,8 +39,6 @@ const CORPORA = {
       ],
     },
   },
-  /* A value with no newline in it that is far wider than the box, so what the
-     box stands at can only be worked out from where the text wraps. */
   'a value that wraps': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {

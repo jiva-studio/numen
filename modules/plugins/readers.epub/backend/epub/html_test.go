@@ -133,7 +133,7 @@ func offsets(t *testing.T, root *html.Node) []run {
 			if response := getAttribute(c, epub.OffsetAttribute); response != "" {
 				at, err := strconv.Atoi(response)
 				if err != nil {
-					t.Fatalf("a run says it stands at %q", response)
+					t.Fatalf("a run says got path %q", response)
 				}
 				out = append(out, run{at: at, said: text(c)})
 				continue

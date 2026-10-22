@@ -19,7 +19,6 @@ export const PLOT_RIGHT = PLOT_WIDTH - 12
 export const PLOT_TOP = 16
 export const PLOT_BOTTOM = PLOT_HEIGHT - 16
 
-/** The height a plot's line is drawn between, and the picture it stands in. */
 export interface Plot {
   readonly high: number
   readonly top: number
@@ -155,7 +154,6 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
 const getDayLimit = (curve: Curve, place: number): number =>
   curve.goal === 'date' ? Math.max(Math.round(curve.grid[place] ?? 0), 0) : -1
 
-/** What stands overdue day by day at one place, cut at that place's own day. */
 export const getBacklogRun = (curve: Curve, place: number): readonly number[] => {
   const run = curve.at[place]?.backlog ?? []
   const days = getDayLimit(curve, place)

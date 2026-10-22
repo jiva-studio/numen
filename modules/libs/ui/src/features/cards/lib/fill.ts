@@ -94,6 +94,5 @@ export function renameField(template: string, from: string, to: string): string 
   )
 }
 
-/** What a preview stands in the slots: each field under its own name. */
 export const sampleValues = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: field }))

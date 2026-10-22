@@ -27,7 +27,6 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
     return place
   }
 
-  /** `findFragmentOffset` is the offset a place named inside the drawn document stands at. */
   const follow = (
     press: MouseEvent,
     findFragmentOffset: (fragment: string) => number | undefined,

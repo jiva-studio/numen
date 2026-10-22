@@ -39,7 +39,6 @@ export function useBookMarks(
     marks.value = createMarks(runs, getEdge(text))
   }
 
-  /** The offset a place named inside the drawn document stands at. */
   const findFragmentOffset = (fragment: string): number | undefined => {
     const text = paper.value
     return text ? findOffset(text, runs, fragment) : undefined

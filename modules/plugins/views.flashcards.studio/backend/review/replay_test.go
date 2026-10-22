@@ -130,7 +130,7 @@ func TestALineTakingAnAnswerBackTwiceConsumesItBackOnce(t *testing.T) {
 
 	remaining := review.OrderAnswers([]review.Answer{provided, back, provided, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
 	if _, target := remaining[cardFace]; target {
-		t.Errorf("the answer was taken back and the card stands at %+v", remaining[cardFace])
+		t.Errorf("the answer was taken back and the card is at %+v", remaining[cardFace])
 	}
 }
 
@@ -141,6 +141,6 @@ func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
 		t.Errorf("no answers left %d schedules", len(remaining))
 	}
 	if !(review.Schedule{}).IsNew() {
-		t.Error("a schedule nobody has answered says it is not new")
+		t.Error("unanswered schedule marked as not new")
 	}
 }

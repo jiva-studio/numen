@@ -368,7 +368,7 @@ func TestARecognitionAtItsLastPageReportsNoProgress(t *testing.T) {
 		t.Fatalf("got %+v", res)
 	}
 	if notifyCount != 0 {
-		t.Errorf("a recognition with nothing left to put right was told about %d times", notifyCount)
+		t.Errorf("a recognition with nothing left to put right received about %d times", notifyCount)
 	}
 }
 

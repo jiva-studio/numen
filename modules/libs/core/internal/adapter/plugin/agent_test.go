@@ -357,7 +357,7 @@ func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 	}
 	if len(served.asked) != 1 || served.asked[0].GetProgram() != "one" ||
 		!slices.Equal(served.asked[0].GetCommand(), []string{"/bin/one", "--x"}) {
-		t.Errorf("the plugin was told %v", served.asked)
+		t.Errorf("the plugin received %v", served.asked)
 	}
 }
 
@@ -427,7 +427,7 @@ func TestAnEffectIsReportedAndReadInTheSameWord(t *testing.T) {
 		domain.StepRead, domain.StepEdit, domain.StepRemove, domain.StepMove, domain.StepSearch, domain.StepToolCall,
 	} {
 		if got := getStepKind(getKindWord(effect)); got != effect {
-			t.Errorf("%v was told as %q and read as %v", effect, getKindWord(effect), got)
+			t.Errorf("%v received as %q and read as %v", effect, getKindWord(effect), got)
 		}
 	}
 }

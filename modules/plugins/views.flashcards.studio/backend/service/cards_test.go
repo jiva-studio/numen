@@ -123,7 +123,7 @@ func TestAProblemExistsAgainstTheCardItIsAbout(t *testing.T) {
 		t.Fatal("a problem about a card came back standing against none")
 	}
 	if name := getFieldValue(target[at], "Name"); name != "Alpaca" {
-		t.Errorf("the problem stands against card %d, which is %q", at, name)
+		t.Errorf("problem targets card %d (%q)", at, name)
 	}
 }
 
@@ -200,7 +200,7 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 			t.Errorf("the problem against card %d is %v", at, fault)
 		}
 		if problem.Card == nil || problem.GetCard() != int32(at) {
-			t.Errorf("the problem for card %d stands against %+v", at, problem.Card)
+			t.Errorf("the problem for card %d targets %+v", at, problem.Card)
 		}
 	}
 }

@@ -57,8 +57,6 @@ const onClick = (press: MouseEvent) => {
   white-space: normal;
 }
 
-/* A table wider than the measure scrolls inside itself, carrying its own
-   scrollbar. */
 .prose :deep(table) {
   display: block;
   overflow-x: auto;

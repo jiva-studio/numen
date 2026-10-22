@@ -42,7 +42,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A talk with nothing said in it: the composer waits for the first question. */
 export const Empty: Story = {
   render: () => ({ components: { Tab: createTab([]) }, template: '<Tab />' }),
   play: async ({ canvasElement }) => {

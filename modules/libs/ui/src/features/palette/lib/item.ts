@@ -22,7 +22,6 @@ export interface PaletteItem {
   readonly detail?: string
   /** Where the words stand in that line. */
   readonly detailAt?: readonly Span[]
-  /** What can be done to it. An item offering none is drawn and not chosen. */
   readonly actions?: readonly PaletteAction[]
   /**
    * The keystroke that reaches this item away from the palette, as the caller

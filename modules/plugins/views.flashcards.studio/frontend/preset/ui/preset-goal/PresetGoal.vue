@@ -31,10 +31,8 @@ const emptyGoalExplanation = computed(() => {
 /** The three goals, as the switch above the curve offers them. */
 const goals = computed(() => GOALS.map((one) => ({ id: one, text: words.goalName(one) })))
 
-/** The day the knob stands at, under the goal that steers one. */
 const day = computed(() => curve.value.days[place.value] ?? settings.value.byDate)
 
-/** The value the control stands at, in the units of its goal. */
 const targetValueText = computed(() =>
   words.value(curve.value.goal, getKnobValue(curve.value, place.value), day.value),
 )

@@ -58,7 +58,6 @@ export interface TabKind<TabState, K extends string = string> {
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
   getTarget?(state: TabState): TabTarget
-  /** What one of its tabs holds, as whoever answers for the person is told it. */
   getOpenTab?(state: TabState): OpenTab<K>
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
@@ -77,7 +76,6 @@ export interface TabKind<TabState, K extends string = string> {
   navigate?(state: TabState, path: string, title: string): void | Promise<void>
   /** Its tabs stand beside files: a file opened on a path never closes one of them. */
   readonly isTool?: boolean
-  /** Whether the tab owes the person an answer about what its file now holds. */
   isAsking?(state: TabState): boolean
   /** Writes what the tab holds out to its file; answers once nothing is on its way. */
   flushPending?(state: TabState): Promise<void>

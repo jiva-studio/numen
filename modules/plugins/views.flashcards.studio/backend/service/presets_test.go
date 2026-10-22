@@ -299,7 +299,7 @@ func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
 		}
 	}
 	if value := curve.GetNow().GetValue(); value != 20 {
-		t.Errorf("the preset keeps 20 minutes a day and stands at %v", value)
+		t.Errorf("preset retention limit is %v", value)
 	}
 }
 
@@ -365,7 +365,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		t.Fatalf("the preset just made failed with %v", code)
 	}
 	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
-		t.Errorf("the preset just made stands against %v", problems)
+		t.Errorf("new preset validation errors: %v", problems)
 	}
 	if stops := read.Msg.GetPreset().GetStops(); stops != v1.StopReason_STOP_REASON_NOTHING {
 		t.Errorf("the preset just made schedules nothing, and says %v", stops)

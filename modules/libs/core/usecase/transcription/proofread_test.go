@@ -427,7 +427,7 @@ func TestTheCheckpointExistsWhereTheNextWindowBegins(t *testing.T) {
 				t.Error(err)
 			}
 			if status.At != getSpan(0).To {
-				t.Errorf("the checkpoint stands at %d, want %d", status.At, getSpan(0).To)
+				t.Errorf("the checkpoint is at %d, want %d", status.At, getSpan(0).To)
 			}
 		}
 	}
@@ -458,7 +458,7 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 		t.Fatalf("got %+v", res)
 	}
 	if notifyCount != 0 || len(response.froms) != 0 {
-		t.Errorf("a transcript with nothing left to put right was told about %d times and asked %d", notifyCount, len(response.froms))
+		t.Errorf("a transcript with nothing left to put right received about %d times and asked %d", notifyCount, len(response.froms))
 	}
 }
 

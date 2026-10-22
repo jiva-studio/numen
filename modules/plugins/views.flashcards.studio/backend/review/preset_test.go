@@ -91,7 +91,7 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 		}
 	}
 	if p.IsLearned(review.Schedule{}, now) {
-		t.Error("a card face nobody has answered is learned")
+		t.Error("unanswered card face marked as learned")
 	}
 
 	p.Rule = review.RuleRetention
@@ -105,7 +105,7 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 		t.Error("a card answered today is not recalled nine times in ten")
 	}
 	if p.IsLearned(review.Schedule{}, now) {
-		t.Error("a card face nobody has answered is learned")
+		t.Error("unanswered card face marked as learned")
 	}
 }
 

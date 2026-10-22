@@ -19,7 +19,6 @@ import { createBufferHost } from './bufferHost'
 
 export type { WindowKindsDeps } from './kinds/deps'
 
-/** A date as `YYYY-MM-DD` on the clock on the wall. */
 function formatLocalDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')

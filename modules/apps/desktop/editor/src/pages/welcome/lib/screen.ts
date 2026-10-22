@@ -11,7 +11,6 @@ import { WORDS as own } from '../words'
 
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
-  /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: string
   /** Whether that vault has been read and can be asked to do anything. */
   readonly isReady: boolean

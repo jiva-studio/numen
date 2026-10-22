@@ -15,7 +15,6 @@ export interface Bounds extends Ends {
   readonly step: number
 }
 
-/** The value brought inside the ends; a value past both ends stands at the ceiling. */
 export const clamp = (value: number, ends: Ends): number =>
   Math.min(ends.max, Math.max(ends.min, value))
 

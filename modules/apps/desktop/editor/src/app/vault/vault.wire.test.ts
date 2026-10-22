@@ -22,7 +22,7 @@ const answerWith = (answer: unknown) =>
 
 const { core } = await import('./index')
 
-describe('a name the vault answers with', () => {
+describe('vault name responses', () => {
   it('is an ordinary note where the answer carries no kind at all', async () => {
     answerWith({ found: [{ note: { path: 'Entropy.md', title: 'Entropy' }, at: [] }] })
 
@@ -54,7 +54,7 @@ describe('a name the vault answers with', () => {
   })
 })
 
-describe('a passage the vault answers with', () => {
+describe('vault passage responses', () => {
   it('carries the kind of the note it was read out of', async () => {
     answerWith({
       found: [
@@ -112,7 +112,7 @@ describe('a passage the vault answers with', () => {
   })
 })
 
-describe('a neighbourhood the vault answers with', () => {
+describe('vault neighbourhood responses', () => {
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
     answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },

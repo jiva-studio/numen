@@ -30,7 +30,6 @@ const getRuns = (): readonly Run[] => {
   }))
 }
 
-/** Where the document stands in the book's text, read off its own runs. */
 const span = () => {
   const all = getRuns()
   const first = all[0]!

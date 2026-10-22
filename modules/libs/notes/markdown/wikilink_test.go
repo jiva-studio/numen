@@ -49,7 +49,7 @@ func TestAWikilinkReturnsWhereItExistsAndWhatIsInsideIt(t *testing.T) {
 		t.Fatalf("got %d wikilinks", len(found))
 	}
 	if found[0].At != 6 || found[0].To != 31 {
-		t.Errorf("stands at %d..%d", found[0].At, found[0].To)
+		t.Errorf("is at %d..%d", found[0].At, found[0].To)
 	}
 	if found[0].Inside != "Entropy|the other way" {
 		t.Errorf("holds %q", found[0].Inside)

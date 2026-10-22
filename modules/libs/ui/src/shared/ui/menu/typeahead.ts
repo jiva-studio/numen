@@ -19,7 +19,6 @@ export interface Typeahead {
 /** Nothing typed yet, which is where a menu opens. */
 export const NOTHING_TYPED: Typeahead = { word: '', struck: 0 }
 
-/** Where a letter left the keyboard, and the word it left behind. */
 export interface Jump {
   readonly typed: Typeahead
   /** The item to stand on, and nothing where no item begins with the word. */

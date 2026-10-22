@@ -210,7 +210,7 @@ func TestRenamingANoteReturnsWhereItWent(t *testing.T) {
 	}](t, s, "note_rename", map[string]any{"path": "Entropy.md", "title": "Order"})
 
 	if len(looking.went) != 1 {
-		t.Fatalf("the window was told %d times, wanted once", len(looking.went))
+		t.Fatalf("got %d notifications, want 1", len(looking.went))
 	}
 	if looking.went[0].From != "Entropy.md" || looking.went[0].To == "" {
 		t.Errorf("the note went %+v", looking.went[0])

@@ -32,7 +32,7 @@ func TestANameRemovedPreservesNoClaimPriorIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range remaining {
-		t.Errorf("%s was left behind", one.Name())
+		t.Errorf("%s was retained", one.Name())
 	}
 }
 
@@ -62,7 +62,7 @@ func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range remaining {
-		t.Errorf("%s was left behind", one.Name())
+		t.Errorf("%s was retained", one.Name())
 	}
 }
 

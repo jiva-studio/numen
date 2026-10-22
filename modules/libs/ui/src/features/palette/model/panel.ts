@@ -7,7 +7,6 @@ import { ref, watch, type Ref } from 'vue'
 import type { PaletteAction } from '../lib/item'
 
 export interface ActionPanelState {
-  /** Whether the panel stands over the palette. */
   readonly open: Ref<boolean>
   /** An action chosen in the panel, on the item it was opened about. */
   readonly chooseAction: (action: string) => void

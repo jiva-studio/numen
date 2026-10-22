@@ -610,8 +610,6 @@ describe('DeckEditor', () => {
     })
 
     describe('the cards before the first section', () => {
-      /* A deck whose every card stands in a section, so the place before the
-         first of them holds none. */
       const INSIDE: readonly DeckCard[] = [
         { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
         { id: 'yak', section: 'leaves', stencil: 'Animal', filled: [] },

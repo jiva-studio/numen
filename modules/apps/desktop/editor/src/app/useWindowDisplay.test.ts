@@ -271,7 +271,6 @@ describe('another vault under this window', () => {
     })
 
   it('draws the page again where the reload remains at another folder', async () => {
-    /** The folder the vault stands at, which the swap moves between reads. */
     const folders = ['/vaults/Physics', '/vaults/Heat']
     const one = createWindow(
       createReloadingCore(async () => ({ ...resolved, path: folders.shift() ?? '' })),
@@ -292,7 +291,6 @@ describe('another vault under this window', () => {
    * the page was drawn on is what the reload is measured against.
    */
   it('draws the page again where the vault that arrived was read first', async () => {
-    /** The folder the vault stands at: the first read is the page's own. */
     const folders = ['/vaults/Physics']
     const one = createWindow(
       createReloadingCore(

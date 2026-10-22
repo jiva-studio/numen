@@ -665,7 +665,7 @@ func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 	vault.moves <- struct{}{}
 
 	if !stream.Receive() {
-		t.Errorf("nothing was told of the move: %v", stream.Err())
+		t.Errorf("nothing received of the move: %v", stream.Err())
 	}
 }
 

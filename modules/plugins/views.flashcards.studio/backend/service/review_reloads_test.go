@@ -41,10 +41,10 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 			t.Fatalf("the stream ended: %v", stream.Err())
 		}
 		if !stream.Msg().GetReload() {
-			t.Error("the page was not told to ask again")
+			t.Error("did not receive refresh signal")
 		}
 	case <-time.After(5 * time.Second):
-		t.Fatal("something moved and the page was never told")
+		t.Fatal("missing update notification for moved item")
 	}
 }
 
@@ -88,7 +88,7 @@ func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
 	}
 	installation.Host.Move()
 	if !stream.Receive() || !stream.Msg().GetReload() {
-		t.Fatalf("the page was not told to ask again: %v", stream.Err())
+		t.Fatalf("did not receive refresh signal: %v", stream.Err())
 	}
 	fresh, err := faces.Execute(t.Context(), v)
 	if err != nil || !isFront(fresh[0], "Mould leaf") {

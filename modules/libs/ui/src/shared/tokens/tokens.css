@@ -1,12 +1,3 @@
-/*
- * The whole styling contract. Everything a component paints with is named
- * here, and no component reaches past a token for a value.
- *
- * Every token stands on the root alone, so a component inherits what it paints
- * with and a stylesheet redeclaring one at the root reaches every component. A
- * theme is such a stylesheet: what it sets is the first part below, and every
- * token it does not name keeps the value here.
- */
 
 /* Which half of every pair below is taken. On the root alone, so everything
    the page contains inherits the page's answer; a theme published in one half
@@ -15,12 +6,6 @@
   color-scheme: light dark;
 }
 
-/*
- * What a theme sets.
- *
- * Each pair is one colour in light and in dark. Where a token carries a length
- * as well, it says so where it stands.
- */
 :where(:root) {
   --numen-surface: light-dark(#faf4e8, #1e1916);
   --numen-raised: light-dark(#fffbf2, #27221d);
@@ -44,8 +29,6 @@
 
   --numen-edge: light-dark(#d8ccb8, #423a31);
 
-  /* Text said quietly beside what it is about: a caption, a count, a month over
-     a grid. It is read second, after the thing it belongs to. */
   --numen-hushed: light-dark(#8a7f70, #a1968a);
   /* The name written along an edge of a plex is said in that voice. */
   --numen-edge-label: var(--numen-hushed);
@@ -56,7 +39,6 @@
   --numen-selection-away: light-dark(#b45f161f, #e9a23b24);
   --numen-selection-match: light-dark(#b45f161a, #e9a23b1f);
   --numen-alarm: light-dark(#a8382c, #e5776a);
-  /* The ground a card carrying an alarm stands on. */
   --numen-alarm-bg: light-dark(#f9e6e0, #422821);
   /* The band something is said in that a person should read but need not act
      on at once. */
@@ -100,16 +82,11 @@
      the two apart names this one as well. */
   --numen-field-border: var(--numen-rule);
 
-  /* What was said is a bubble; what came back is text on the surface. */
   --numen-bubble-bg: light-dark(#f0e6d4, #2e2822);
   --numen-bubble-fg: light-dark(#3a322a, #ece0cd);
   --numen-answer-fg: light-dark(#3a322a, #ece0cd);
 }
 
-/*
- * What a theme leaves alone: the type, the measures and the timings. They are
- * the same under every palette, and each stands under what it follows.
- */
 
 /*
  * What follows the interface: the chrome, the type it is set in, and every
@@ -142,7 +119,6 @@
   --numen-title-size: var(--numen-text-3);
   --numen-display-size: var(--numen-text-4);
   --numen-line-height: 1.35;
-  /* Set wider than a sentence, for the few words that are set in capitals. */
   --numen-caps-tracking: 0.08em;
 
   /* Inside a node: the clearance around its label, and between an icon and it. */
@@ -155,7 +131,6 @@
      a conversation are read at the same measure, so they keep the same one. */
   --numen-gutter: 1.25rem;
 
-  /* The clearance a line of small print keeps from the corner it sits in. */
   --numen-inset: 0.5rem;
   --numen-inset-wide: 0.75rem;
 
@@ -184,11 +159,9 @@
   --numen-lift-notice: 40;
   --numen-lift-menu: 60;
   --numen-lift-palette: 70;
-  /* Said beside the pointer, so it stands over whatever the pointer is over. */
   --numen-lift-tooltip: 75;
   --numen-lift-unsaved: 80;
 
-  /* Wider than any box it rounds. */
   --numen-radius-pill: 999px;
   /* A field at rest is one row tall. The row is what the button is drawn at
      and what one line of typing is set to fill, so the two share a middle

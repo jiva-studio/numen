@@ -96,7 +96,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 
 	// The index still holds the deck as it was scanned, so it names no preset.
 	if before := getDeckPreset(t, api, v, "decks/Words.md"); before.GetPath() != "" {
-		t.Fatalf("the deck already stands under %+v", before)
+		t.Fatalf("the deck already is under %+v", before)
 	}
 
 	startSession(t, api, v)
@@ -111,7 +111,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 
 	after := getDeckPreset(t, api, v, "decks/Words.md")
 	if after.GetPath() != "Sanskrit.md" || after.GetTitle() != "Sanskrit" {
-		t.Errorf("the deck stands under %+v", after)
+		t.Errorf("the deck is under %+v", after)
 	}
 }
 

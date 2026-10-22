@@ -66,7 +66,6 @@ export const mockVaultState = {
   }) as FieldRenameResult,
 }
 
-/** The vaults this installation holds, and the one the window is showing. */
 export const mockVaultList = {
   vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }],
   showing: 'physics',

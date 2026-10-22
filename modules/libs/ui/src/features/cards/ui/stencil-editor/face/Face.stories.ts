@@ -19,7 +19,6 @@ interface Corpus {
   readonly face: StencilFace
   /** The fields the stencil declares, which are what may be written into a half. */
   readonly fields: readonly string[]
-  /** What the preview stands in the slots. Each field under its own name by default. */
   readonly sample?: readonly FieldValue[]
   /** The names the other faces carry. */
   readonly taken?: readonly string[]

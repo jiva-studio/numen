@@ -134,12 +134,10 @@ export const ShortAndWideWithManyVaults: Story = {
   args: { wide: 1120, high: 460, vaults: MANY },
 }
 
-/** Shorter, where the mark gives way first and stands at half its height. */
 export const TheMarkGivesWay: Story = {
   args: { wide: 1120, high: 340, vaults: MANY },
 }
 
-/** Shorter still: the mark has gone and the name stands over the ways in alone. */
 export const TheMarkHasGone: Story = {
   args: { wide: 1120, high: 300, vaults: MANY },
 }

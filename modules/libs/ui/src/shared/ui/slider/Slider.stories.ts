@@ -183,7 +183,6 @@ export const TheKeyboardMovesIt: Story = {
   },
 }
 
-/** The figure beside it follows the handle, and the slider itself draws none. */
 export const TheFigureIsReadOutBesideIt: Story = {
   play: async ({ canvasElement }) => {
     expect(handle(canvasElement).textContent).toBe('')

@@ -232,7 +232,7 @@ func TestTheProgramsOfEveryProviderAreListedInOrder(t *testing.T) {
 	}
 	if commands := one.getCommands(); len(commands) != 1 || commands[0].GetProgram() != "alpha" ||
 		!slices.Equal(commands[0].GetCommand(), []string{"/bin/alpha", "--x"}) {
-		t.Errorf("the provider was told %v", commands)
+		t.Errorf("the provider received %v", commands)
 	}
 }
 
@@ -396,7 +396,7 @@ func TestAPluginThatCannotListItsProgramsIsReportedToTheErrorHandler(t *testing.
 	models := cfg.Models()()
 
 	if len(notified) != 1 || !strings.Contains(notified[0].Error(), providerOne) {
-		t.Errorf("the error handler was told %v", notified)
+		t.Errorf("the error handler received %v", notified)
 	}
 	var names []string
 	for _, one := range models {

@@ -237,7 +237,7 @@ func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 		}
 		return
 	}
-	t.Error("the card was not among what stands in the vault")
+	t.Error("card not found in vault")
 }
 
 // handwritten is a deck of one card that carries no mark, which is what a deck
@@ -490,7 +490,7 @@ func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 	}
 	for _, deck := range owing.Decks {
 		if deck.Deck == "decks/Mammals.md" && (deck.New != 3 || deck.Due != 0) {
-			t.Errorf("the deck it stands in comes to %+v", deck)
+			t.Errorf("the deck it is in comes to %+v", deck)
 		}
 	}
 
@@ -647,7 +647,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 		}
 		for _, after := range request[i:] {
 			if !after.Schedule.IsNew() {
-				t.Errorf("a card nobody reached stands at %d, in front of one that was", i)
+				t.Errorf("unreached card at %d precedes reached card", i)
 				break
 			}
 		}

@@ -691,7 +691,6 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
   const picture = () => state.picture.value
   /** What the picture calls the note shown by this title. */
   const node = (title: string) => getNode(state, title)
-  /** Every node of the picture, as the relation it sits in and what it is called. */
   const nodes = () => (picture()?.nodes ?? []).map((one) => `${one.relation} ${one.id}`)
   /** Every edge of the picture, as the two nodes it runs between. */
   const edges = () => (picture()?.edges ?? []).map((one) => `${one.from} -> ${one.to}`)

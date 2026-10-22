@@ -182,8 +182,8 @@ export default tseslint.config(
 
   // Limits on complexity and file length for handwritten sources. A test, a spec
   {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/testing/**'],
+    files: ['src*.{ts,vue}'],
+    ignores: ['src*.test.ts', 'src*.spec.ts', 'src*.stories.ts', 'src/testing/**'],
     rules: {
       'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
@@ -199,11 +199,11 @@ export default tseslint.config(
   // finds them by their manifests; the tests and stories that draw the composed
   // window are the files that name one.
   {
-    files: ['src/**/*.{ts,vue}'],
+    files: ['src*.{ts,vue}'],
     ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-      'src/**/*.stories.ts',
+      'src*.test.ts',
+      'src*.spec.ts',
+      'src*.stories.ts',
       'src/testing/**',
       'src/app/pluginCatalog.ts',
     ],
@@ -238,7 +238,7 @@ export default tseslint.config(
   //
   // A file under `src` that no element claims fails.
   {
-    files: ['src/**/*.{ts,vue}'],
+    files: ['src*.{ts,vue}'],
     plugins: { boundaries },
     settings: {
       'import/resolver': { typescript: { alwaysTryTypes: true } },
@@ -247,8 +247,8 @@ export default tseslint.config(
         { category: 'crossImport', pattern: 'src/*/*/@x/*' },
         { category: 'entry', pattern: 'src/main.ts' },
         { category: 'composition', pattern: 'src/app/pluginCatalog.ts' },
-        { category: 'test', pattern: 'src/**/*.test.ts' },
-        { category: 'story', pattern: 'src/**/*.stories.ts' },
+        { category: 'test', pattern: 'src*.test.ts' },
+        { category: 'story', pattern: 'src*.stories.ts' },
       ],
     },
     rules: {
@@ -264,10 +264,10 @@ export default tseslint.config(
   // browser — and neither are the stories, the tests and the fixtures, which
   // stand outside a tab on purpose.
   {
-    files: ['src/**/*.ts'],
+    files: ['src*.ts'],
     ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
+      'src*.test.ts',
+      'src*.stories.ts',
       'src/testing/**',
       // The ports' own defaults, which is where the browser is allowed in.
       'src/entities/note/model/notes.ts',

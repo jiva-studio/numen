@@ -39,13 +39,13 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 		To:   "notes/Entropy.md",
 	}))
 	if err != nil {
-		t.Fatalf("the file is at its new path and the client was told %v", err)
+		t.Fatalf("file moved to new path but client received error: %v", err)
 	}
 	if to := answer.Msg.GetMoved().GetTo(); to != "notes/Entropy.md" {
 		t.Errorf("the file the vault holds at notes/Entropy.md is answered for as %q", to)
 	}
 	if target := onDisk(t, f.root, "notes/Entropy.md"); target == "" {
-		t.Error("the file the client was told about holds nothing")
+		t.Error("the file the client received about holds nothing")
 	}
 }
 
@@ -61,7 +61,7 @@ func TestARenameThatCameApartAfterTheFileLandedReturnsWhatTheNoteIsCalled(t *tes
 		Title: "Enthalpy",
 	}))
 	if err != nil {
-		t.Fatalf("the note was written and the client was told %v", err)
+		t.Fatalf("the note was written and the client received %v", err)
 	}
 	if title := answer.Msg.GetTitle(); title != "Enthalpy" {
 		t.Errorf("the note is called %q", title)

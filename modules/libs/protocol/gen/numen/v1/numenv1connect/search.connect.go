@@ -4,7 +4,6 @@
 
 // What a client may ask of a vault by typing into it.
 //
-// Two questions are asked as a person types, and they answer with different
 // things: SearchNames answers with names, and SearchPassages with the passages
 // of text a vault holds. A client drawing them apart asks each of them.
 package numenv1connect

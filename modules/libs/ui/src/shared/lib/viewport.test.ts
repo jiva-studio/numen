@@ -19,7 +19,6 @@ interface Watcher {
   disconnected: boolean
 }
 
-/** Stands in for the browser's observer; every one made is kept. */
 const stubResizeObserver = (): Watcher[] => {
   const watchers: Watcher[] = []
   vi.stubGlobal(

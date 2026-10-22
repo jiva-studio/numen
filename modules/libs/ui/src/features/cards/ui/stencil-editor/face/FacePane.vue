@@ -92,8 +92,6 @@ defineExpose({
   background: var(--numen-field-bg);
 }
 
-/* What is written relies on the ground a box relies on; what it evaluates to
-   stands on the ground the face is read on. */
 .face__pane[data-mode='preview'] {
   background: var(--numen-raised);
 }
@@ -104,8 +102,6 @@ defineExpose({
   grid-area: 1 / 1;
 }
 
-/* What is wrong stands in the foot of the part and over what is written there,
-   taking no room from it. A press meant for what is underneath reaches it. */
 .face__amiss {
   position: absolute;
   z-index: 1;
@@ -132,8 +128,6 @@ defineExpose({
   --autosize-lines: var(--pane-lines);
 }
 
-/* What an empty part is called stands in the middle of it, and is passed
-   through to whatever is underneath. */
 .face__ghost {
   place-self: center;
   margin: 0;

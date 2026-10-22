@@ -229,7 +229,7 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 	select {
 	case <-moves:
 	case <-time.After(testsupport.Patience):
-		t.Fatal("nobody was told the vault was read")
+		t.Fatal("nobody received the vault was read")
 	}
 }
 

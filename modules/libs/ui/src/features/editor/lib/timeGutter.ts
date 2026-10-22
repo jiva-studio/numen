@@ -10,7 +10,6 @@ import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codem
 
 /** What the editor shows against its lines. */
 export interface TimeGutterState {
-  /** What stands in the gutter, one for each line from the first. */
   readonly times: readonly string[]
   /** The line being said, counted from zero. None is -1. */
   readonly current: number
@@ -109,8 +108,6 @@ const timeGutterTheme = EditorView.theme({
     fontVariantNumeric: 'tabular-nums',
     fontSize: '0.85em',
   },
-  /* A line taller than one line of words is a heading, and its time stands
-     against the words. */
   '.cm-times .cm-gutterElement': {
     display: 'flex',
     alignItems: 'flex-end',

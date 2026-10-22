@@ -182,13 +182,11 @@ export type PaneMode = 'written' | 'preview'
 export interface Pane {
   readonly half: Half
   readonly mode: PaneMode
-  /** What the part is called while nothing stands in it. */
   readonly said: string
   /** What the part is announced as. */
   readonly named: string
   /** The markup as it is written, or the sample standing in its braces. */
   readonly text: string
-  /** Nothing but space stands in it. */
   readonly isBlank: boolean
   /** The slots the half names that the fields do not, said under the markup. */
   readonly stray: readonly string[]

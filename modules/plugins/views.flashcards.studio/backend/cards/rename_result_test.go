@@ -21,7 +21,7 @@ func TestARenameWhoseDecksCannotBeNamedReturnsWhatTheStencilExistsAt(t *testing.
 		t.Fatalf("rename = %v, want the index's error", err)
 	}
 	if got.Stencil.Path != "Animal.md" || got.Stencil.Size == 0 {
-		t.Errorf("stencil = %+v, want what the stencil stands at", got.Stencil)
+		t.Errorf("stencil = %+v, want current stencil state", got.Stencil)
 	}
 }
 
@@ -43,6 +43,6 @@ func TestARenameWhoseContextEndsReturnsWhatTheStencilExistsAt(t *testing.T) {
 		t.Fatalf("rename = %v, want the caller's end", err)
 	}
 	if got.Stencil.Path != "Animal.md" || got.Stencil.Size == 0 {
-		t.Errorf("stencil = %+v, want what the stencil stands at", got.Stencil)
+		t.Errorf("stencil = %+v, want current stencil state", got.Stencil)
 	}
 }

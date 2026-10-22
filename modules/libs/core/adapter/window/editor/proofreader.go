@@ -13,7 +13,6 @@ import (
 // corrections that stand beside the recording. The work carries on behind the
 // answer, and the answer says what those corrections now are.
 
-// Proofreader puts the transcript of a recording right, for a person who asked
 // for it.
 type Proofreader interface {
 	// ProofreaderReady says whether this installation has anything to put a
@@ -24,7 +23,6 @@ type Proofreader interface {
 	Proofread(ctx context.Context, v domain.Vault, path string) (transcription.ProofreadResult, error)
 }
 
-// RecognitionProofreader puts a document's recognition right, for a person who asked
 // for it.
 type RecognitionProofreader interface {
 	// ProofreaderReady says whether this installation has anything to put a

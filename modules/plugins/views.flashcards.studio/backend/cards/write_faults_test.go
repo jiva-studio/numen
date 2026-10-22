@@ -99,7 +99,7 @@ func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 		t.Fatalf("write = %v, want the file written and the index not level", err)
 	}
 	if got.Fingerprint.Path != "decks/Wrens.md" || got.Fingerprint.Size == 0 {
-		t.Errorf("fingerprint = %+v, want what the file stands at", got.Fingerprint)
+		t.Errorf("fingerprint = %+v, want current file state", got.Fingerprint)
 	}
 	if len(got.Given) != 1 {
 		t.Errorf("given = %+v, want the mark of the one card", got.Given)

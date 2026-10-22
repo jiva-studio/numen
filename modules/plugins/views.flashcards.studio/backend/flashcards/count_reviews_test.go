@@ -236,7 +236,6 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	}
 }
 
-// what the front door counts, and this says what is after it.
 func TestACardNobodyAnsweredIsNotStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)

@@ -79,7 +79,6 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 }
 
 // Why a preset schedules nothing is the core's verdict, and every preset the
-// front door counts carries it. A preset no deck points at carries it too:
 // nothing else in the answer would tell a window that it is stopped.
 func TestEachPresetOnTheFrontDoorReturnsWhyItSchedulesNothing(t *testing.T) {
 	// The marks are the ones the application writes, so the cards stand without
