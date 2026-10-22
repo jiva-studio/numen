@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/flashcards"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/hostports"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/note"
@@ -60,9 +61,10 @@ type Backend struct {
 // Scenarios is everything the backend does to the cards of a vault, built against the settings in
 // force.
 type Scenarios struct {
-	cards cards.Scenarios
-	flash flashcards.Scenarios
-	day   review.Day
+	cards    cards.Scenarios
+	deckedit deckedit.Scenarios
+	flash    flashcards.Scenarios
+	day      review.Day
 	// neighbourhood is what a deck is joined to, with the text of each.
 	neighbourhood flashcards.ShowNeighbourhood
 }
@@ -110,16 +112,8 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 		RenameField: cards.NewRenameField(wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now, cards.UnboundedDecks),
 		BoundedRenameField: cards.NewRenameField(
 			wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now, cards.MaxDecksPerRename),
-
-		GetCardPage:     cards.NewGetCardPage(read),
-		AddCard:         cards.NewAddCard(read, write),
-		EditCard:        cards.NewEditCard(read, write),
-		RemoveCardValue: cards.NewRemoveCardValue(read, write),
-		RemoveCard:      cards.NewRemoveCard(read, write),
-		AddSection:      cards.NewAddSection(read, write),
-		RenameSection:   cards.NewRenameSection(read, write),
-		RemoveSection:   cards.NewRemoveSection(read, write),
 	}
+	deckEdits := deckedit.NewScenarios(read, write)
 
 	running := flashcards.NewScenarios(flashcards.Config{
 		Readers:   wired.Readers,
@@ -137,7 +131,7 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 		Scheduler: cfg.Scheduler,
 	})
 	return &Scenarios{
-		cards: set, flash: running, day: running.Day,
+		cards: set, deckedit: deckEdits, flash: running, day: running.Day,
 		neighbourhood: flashcards.NewShowNeighbourhood(note.NewShowLinks(wired.Links), wired.Notes, note.NewRead(wired.Readers)),
 	}
 }

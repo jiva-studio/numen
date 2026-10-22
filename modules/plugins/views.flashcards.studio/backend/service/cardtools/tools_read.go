@@ -1,4 +1,4 @@
-package service
+package cardtools
 
 import (
 	"context"
@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/tools"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/note"
 )
 
 // addCardCurrent adds the tool that returns the card the person is looking at.
-func (b *Backend) addCardCurrent(registry *tools.Registry) error {
+func (t *Tools) addCardCurrent(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_current",
 		Title: "Show the card in front",
@@ -40,7 +40,7 @@ type stencilListOutput struct {
 	Total    int       `json:"total" jsonschema:"how many stencils the vault holds, which stands above the list when the ceiling was reached"`
 }
 
-func (b *Backend) addCardStencilList(registry *tools.Registry) error {
+func (t *Tools) addCardStencilList(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_stencil_list",
 		Title: "List stencils",
@@ -51,10 +51,10 @@ func (b *Backend) addCardStencilList(registry *tools.Registry) error {
 			"how many the vault holds, so a list shorter than that was cut by the " +
 			"ceiling. A stencil with no fields listed is one that could not be read.",
 		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
-	}, b.listCardStencils)
+	}, t.listCardStencils)
 }
 
-func (b *Backend) listCardStencils(ctx context.Context, in stencilListInput) (stencilListOutput, error) {
+func (t *Tools) listCardStencils(ctx context.Context, in stencilListInput) (stencilListOutput, error) {
 	if in.Limit > maxStencils {
 		return stencilListOutput{}, fmt.Errorf("ask for at most %d stencils at a time", maxStencils)
 	}
@@ -62,11 +62,11 @@ func (b *Backend) listCardStencils(ctx context.Context, in stencilListInput) (st
 	if in.Limit > 0 {
 		limit = in.Limit
 	}
-	v, err := b.getToolVault(ctx)
+	v, err := t.getToolVault(ctx)
 	if err != nil {
 		return stencilListOutput{}, err
 	}
-	stencils, count, err := b.scenarios().cards.List.Execute(ctx, v, limit)
+	stencils, count, err := t.cards.List.Execute(ctx, v, limit)
 	if err != nil {
 		return stencilListOutput{}, err
 	}
@@ -91,7 +91,7 @@ type stencilReadOutput struct {
 	Fingerprint string   `json:"fingerprint" jsonschema:"hand this to card_stencil_edit to refuse a write over an edit you did not see"`
 }
 
-func (b *Backend) addCardStencilRead(registry *tools.Registry) error {
+func (t *Tools) addCardStencilRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_stencil_read",
 		Title: "Read a stencil",
@@ -99,15 +99,15 @@ func (b *Backend) addCardStencilRead(registry *tools.Registry) error {
 			"fields a card cut by it is asked for, and the ways a card is shown through " +
 			"it. Hand the fingerprint back to `card_stencil_edit` to edit the stencil in place.",
 		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
-	}, b.readCardStencil)
+	}, t.readCardStencil)
 }
 
-func (b *Backend) readCardStencil(ctx context.Context, in stencilReadInput) (stencilReadOutput, error) {
-	v, err := b.getToolVault(ctx)
+func (t *Tools) readCardStencil(ctx context.Context, in stencilReadInput) (stencilReadOutput, error) {
+	v, err := t.getToolVault(ctx)
 	if err != nil {
 		return stencilReadOutput{}, err
 	}
-	s, err := b.scenarios().cards.Read.Stencil(ctx, v, in.Path)
+	s, err := t.cards.Read.Stencil(ctx, v, in.Path)
 	if err != nil {
 		return stencilReadOutput{}, err
 	}
@@ -153,7 +153,7 @@ type cardReadOutput struct {
 	Fingerprint string   `json:"fingerprint" jsonschema:"hand this to a writing tool to refuse a write over an edit you did not see"`
 }
 
-func (b *Backend) addCardRead(registry *tools.Registry) error {
+func (t *Tools) addCardRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_read",
 		Title: "Read cards",
@@ -167,10 +167,10 @@ func (b *Backend) addCardRead(registry *tools.Registry) error {
 			"hand it back and a write fails if the person changed the deck in the " +
 			"meantime.",
 		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
-	}, b.readCards)
+	}, t.readCards)
 }
 
-func (b *Backend) readCards(ctx context.Context, in cardReadInput) (cardReadOutput, error) {
+func (t *Tools) readCards(ctx context.Context, in cardReadInput) (cardReadOutput, error) {
 	// The limit applies to the number of cards one call reads.
 	if in.Mark == "" && in.Limit > maxCards {
 		return cardReadOutput{}, fmt.Errorf("read at most %d cards at a time", maxCards)
@@ -179,11 +179,11 @@ func (b *Backend) readCards(ctx context.Context, in cardReadInput) (cardReadOutp
 	if limit <= 0 {
 		limit = maxCards
 	}
-	v, err := b.getToolVault(ctx)
+	v, err := t.getToolVault(ctx)
 	if err != nil {
 		return cardReadOutput{}, err
 	}
-	read, err := b.scenarios().cards.GetCardPage.Execute(ctx, v, cards.Query{
+	read, err := t.deckedit.GetCardPage.Execute(ctx, v, deckedit.Query{
 		Path: in.Path, From: in.From, Limit: limit, Mark: in.Mark, Fields: in.Fields,
 	})
 	if err != nil {

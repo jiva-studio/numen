@@ -1,7 +1,13 @@
 package review_test
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -80,42 +86,6 @@ func TestHowLoadedADayOfReviewIs(t *testing.T) {
 	}
 }
 
-// An even load moves reviews to the quieter days around them, so the busiest
-// day of a week stands nearer its quietest.
-func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
-	delta := review.NewFSRS()
-	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	pos := makeLearnedFaces(delta, now, 600)
-	// No budget binds, so a day carries what falls on it and what is compared is
-	// where the reviews fall.
-	run := review.Simulation{By: delta, Day: ahead, Cost: review.DefaultCost, Days: 60}
-	p := review.Preset{Goal: review.GoalRetention, ReviewsADay: 9999}
-
-	lumpy := runProjection(t, run, now, p, pos, 0)
-	p.IsEvenLoad = true
-	even := runProjection(t, run, now, p, pos, 0)
-
-	// The first week pays the backlog, which stands where the answers already
-	// given left it.
-	if got := getWidestWeek(lumpy.Load[7:]); got != 120 {
-		t.Errorf("a load left alone spread its widest week over %d answers, want 120", got)
-	}
-	if got := getWidestWeek(even.Load[7:]); got != 30 {
-		t.Errorf("an even load spread its widest week over %d answers, want 30", got)
-	}
-}
-
-// getWidestWeek is the most a week's busiest day stands above its quietest, over every
-// week of a projection.
-func getWidestWeek(load []int) int {
-	out := 0
-	for i := 0; i+7 <= len(load); i++ {
-		week := load[i : i+7]
-		out = max(out, slices.Max(week)-slices.Min(week))
-	}
-	return out
-}
-
 // A session works out the day from a local now, and a replay from the stamp its
 // log carries, which is read back in UTC. One card and one answer, over the
 // night the clock goes back: both land on one moment, and not merely on one
@@ -173,4 +143,168 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 		t.Errorf("the button said %v and the replay put the card on %v",
 			button.In(in), replayed.In(in))
 	}
+}
+
+// scheduling is every arithmetic that places a card's day: the session that hands
+// the cards out, and the projection drawn beside a control. Both go through
+// AssignDueDay, and that is the whole of the list.
+//
+// A function is one arithmetic however many times its body asks — the
+// projection places a card it has begun and a card it has answered again, and
+// they are one step. A third function here is a third arithmetic, kept in step
+// with these two by tests and drifting the day one of them is touched.
+var scheduling = []string{"History.Replay", "Simulation.step"}
+
+// A day is chosen in one function, and a caller wanting one evaluates to it. The
+// walk is over this package's own files, because AssignDueDay is where a day is
+// decided and the deciding is all here.
+func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
+	var calls []string
+	read, declared := 0, 0
+	for _, dir := range []string{".", "projection"} {
+		target, err := os.ReadDir(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, one := range target {
+			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
+				strings.HasSuffix(one.Name(), "_test.go") {
+				continue
+			}
+			path := filepath.Join(dir, one.Name())
+			file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			read++
+			declared += countDeclarations(file, "AssignDueDay")
+			calls = append(calls, getCallers(file, "AssignDueDay")...)
+		}
+	}
+
+	// A walk that read none of the package, or one that did not find the
+	// function the rule is about, is a rule checked against nothing.
+	if read < 10 {
+		t.Fatalf("%d files of this package read: the walk is not reading it", read)
+	}
+	if declared != 1 {
+		t.Fatalf("%d functions named AssignDueDay are declared here: the walk is reading something else", declared)
+	}
+
+	slices.Sort(calls)
+	calls = slices.Compact(calls)
+	for _, one := range calls {
+		if !slices.Contains(scheduling, one) {
+			t.Errorf("%s places a card's day: one function places it and everything else comes to that one", one)
+		}
+	}
+	for _, one := range scheduling {
+		if !slices.Contains(calls, one) {
+			t.Errorf("%s is named here as an arithmetic scheduling a day and places none", one)
+		}
+	}
+}
+
+// Put over sources written for it, the rule has to name the function a call
+func TestWhatThePlacingRuleRefuses(t *testing.T) {
+	for _, one := range []struct {
+		why, src string
+		calls    []string
+	}{{
+		why:   "a method calling it is named by its receiver's type",
+		src:   "package review\nfunc (s Simulation) step() { p.AssignDueDay(on, at, due) }\n",
+		calls: []string{"Simulation.step"},
+	}, {
+		why:   "a function calling it is named on its own",
+		src:   "package review\nfunc drawn() { p.AssignDueDay(on, at, due) }\n",
+		calls: []string{"drawn"},
+	}, {
+		why:   "a body asking twice is one arithmetic",
+		src:   "package review\nfunc (s Simulation) step() { p.AssignDueDay(a, b, c); p.AssignDueDay(d, e, f) }\n",
+		calls: []string{"Simulation.step"},
+	}, {
+		why:   "a call inside a literal is the function holding the literal",
+		src:   "package review\nfunc (h History) Replay() { each(func() { one.Preset.AssignDueDay(on, at, due) }) }\n",
+		calls: []string{"History.Replay"},
+	}, {
+		why:   "a pointer receiver is named by the type it is of",
+		src:   "package review\nfunc (s *Simulation) step() { p.AssignDueDay(on, at, due) }\n",
+		calls: []string{"Simulation.step"},
+	}, {
+		why: "the declaration of AssignDueDay is not a call of it",
+		src: "package review\nfunc (p Preset) AssignDueDay(s *DueByDay) { p.computeDueDay(s) }\n",
+	}, {
+		why: "a comment naming it is not a call",
+		src: "package review\n// AssignDueDay is where the day is chosen.\nfunc drawn() { p.computeDueDay(on) }\n",
+	}, {
+		why: "another name is another function",
+		src: "package review\nfunc drawn() { p.Placed(on, at, due) }\n",
+	}, {
+		why: "naming it without calling it is not a call",
+		src: "package review\nfunc drawn() { each(p.AssignDueDay) }\n",
+	}} {
+		file, err := parser.ParseFile(token.NewFileSet(), "one.go", one.src, 0)
+		if err != nil {
+			t.Fatalf("%s: %v", one.why, err)
+		}
+		if got := getCallers(file, "AssignDueDay"); !slices.Equal(got, one.calls) {
+			t.Errorf("%s: %v, and the rule reads %v", one.why, one.calls, got)
+		}
+	}
+}
+
+// getCallers is every function of a file whose body calls this one, named by
+// the type it is a method of and by its own name. A function calling it more
+// than once is named once: what the rule counts is arithmetics and not call
+// sites.
+func getCallers(file *ast.File, name string) []string {
+	var out []string
+	for _, decl := range file.Decls {
+		pos, is := decl.(*ast.FuncDecl)
+		if !is || pos.Body == nil {
+			continue
+		}
+		var calls bool
+		ast.Inspect(pos.Body, func(node ast.Node) bool {
+			call, is := node.(*ast.CallExpr)
+			if !is {
+				return true
+			}
+			if to, is := call.Fun.(*ast.SelectorExpr); is && to.Sel.Name == name {
+				calls = true
+			}
+			return true
+		})
+		if calls {
+			out = append(out, getFuncName(pos))
+		}
+	}
+	return out
+}
+
+// countDeclarations is how many functions of a file are declared under this
+// name.
+func countDeclarations(file *ast.File, name string) int {
+	out := 0
+	for _, decl := range file.Decls {
+		if pos, is := decl.(*ast.FuncDecl); is && pos.Name.Name == name {
+			out++
+		}
+	}
+	return out
+}
+
+// getFuncName is what a function is called, a method by the type it is of.
+func getFuncName(pos *ast.FuncDecl) string {
+	if pos.Recv == nil || len(pos.Recv.List) == 0 {
+		return pos.Name.Name
+	}
+	of := pos.Recv.List[0].Type
+	if star, is := of.(*ast.StarExpr); is {
+		of = star.X
+	}
+	if target, is := of.(*ast.Ident); is {
+		return target.Name + "." + pos.Name.Name
+	}
+	return pos.Name.Name
 }

@@ -1218,3 +1218,335 @@ func TestRenamingTheLastSectionKeepsTheFinalNewline(t *testing.T) {
 		})
 	}
 }
+
+const twoFieldCard = "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\n1.8 m\n"
+
+// A value set to nothing leaves its heading with the blank line a heading is
+// followed by, and the fields after it keep their places.
+func TestSetValueToNothingKeepsTheFieldsAfterIt(t *testing.T) {
+	f := format.OpenDeckBody(twoFieldCard)
+	if err := f.SetValue("k7m2xq9fzp", "Name", ""); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+	want := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\n### Height\n\n1.8 m\n"
+	if got := f.Body(); got != want {
+		t.Errorf("body\n want %q\n  got %q", want, got)
+	}
+}
+
+// The last field of the file set to nothing ends the file on its heading.
+func TestSetTheLastValueToNothingEndsTheFileOnItsHeading(t *testing.T) {
+	f := format.OpenDeckBody(twoFieldCard)
+	if err := f.SetValue("k7m2xq9fzp", "Height", ""); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+	want := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n"
+	if got := f.Body(); got != want {
+		t.Errorf("body\n want %q\n  got %q", want, got)
+	}
+}
+
+// A card written after text that does not end its line stands two breaks below
+// it.
+func TestAddCardAfterTextWithoutALineBreak(t *testing.T) {
+	f := format.OpenDeckBody("Notes on animals")
+	if err := f.AddCard(format.Card{Heading: "Alpaca"}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	want := "Notes on animals\n\n## Alpaca\n"
+	if got := f.Body(); got != want {
+		t.Errorf("body\n want %q\n  got %q", want, got)
+	}
+}
+
+// What a section's lead holds belongs to the section, so a deck that ends on
+// that lead has only the break that ends the file.
+func TestADeckEndingOnASectionLeadHasOnlyTheFinalBreakAsTail(t *testing.T) {
+	deck := format.ReadDeck(note(t, "# Pets\n\nSome lead.\n"))
+	if len(deck.Sections) != 1 || deck.Sections[0].Preamble != "Some lead." {
+		t.Fatalf("sections = %+v", deck.Sections)
+	}
+	if deck.Tail != "\n" {
+		t.Errorf("tail = %q, want the final break", deck.Tail)
+	}
+}
+
+// A line that closes no pair of brackets after a link that does is not a link,
+// and the link before it still holds the cut off.
+func TestProjectKeepsALinkWhenALaterPairIsNeverClosed(t *testing.T) {
+	head := strings.Repeat("a", format.HeadingRunes-3)
+	got := format.Project(head + " [[xy]] [[never closed and more")
+	if got != head {
+		t.Errorf("project = %q, want %q", got, head)
+	}
+}
+
+// A file that carries an identifier is left as it is, and one that carries none
+// is given it.
+func TestWriteIdentifier(t *testing.T) {
+	t.Run("a file carrying none", func(t *testing.T) {
+		f, err := format.OpenDeck([]byte("---\ntitle: Animals\n---\n" + twoFieldCard))
+		if err != nil {
+			t.Fatalf("open: %v", err)
+		}
+		wrote, err := f.WriteIdentifier("abc123")
+		if err != nil || !wrote {
+			t.Fatalf("write = %v, %v, want true, nil", wrote, err)
+		}
+		doc, err := markdown.Open(f.Bytes())
+		if err != nil {
+			t.Fatalf("reopen: %v", err)
+		}
+		if id, ok := doc.Identifier(); !ok || id != "abc123" {
+			t.Errorf("identifier = %q, %v", id, ok)
+		}
+	})
+
+	t.Run("a file carrying one", func(t *testing.T) {
+		raw := "---\nid: first\n---\n" + twoFieldCard
+		f, err := format.OpenDeck([]byte(raw))
+		if err != nil {
+			t.Fatalf("open: %v", err)
+		}
+		wrote, err := f.WriteIdentifier("second")
+		if err != nil || wrote {
+			t.Fatalf("write = %v, %v, want false, nil", wrote, err)
+		}
+		if got := string(f.Bytes()); got != raw {
+			t.Errorf("file changed: %q", got)
+		}
+	})
+
+	t.Run("a frontmatter that cannot be written", func(t *testing.T) {
+		f, err := format.OpenDeck([]byte("---\n{title: Animals}\n---\n" + twoFieldCard))
+		if err != nil {
+			t.Fatalf("open: %v", err)
+		}
+		if _, err := f.WriteIdentifier("abc123"); !errors.Is(err, markdown.ErrInline) {
+			t.Errorf("err = %v, want ErrInline", err)
+		}
+	})
+}
+
+// proseStencil is the awkward one the round trip is tested against: a key
+// nobody owns, prose above the first face and prose under a face's heading.
+const proseStencil = "---\n" +
+	"id: 01J8F3K2M9QRSTVWXYZ012\n" +
+	"type: stencil\n" +
+	"mine: keep me verbatim\n" +
+	"fields:\n" +
+	"  - Name\n" +
+	"  - Height\n" +
+	"---\n" +
+	"How I show these.\n" +
+	"\n" +
+	"## Recognise\n" +
+	"\n" +
+	"The one to start with.\n" +
+	"\n" +
+	"### Front\n" +
+	"\n" +
+	"{{Name}}\n" +
+	"\n" +
+	"### Back\n" +
+	"\n" +
+	"{{Height}}\n"
+
+// A stencil read and written straight back comes out as the body it went in
+// as. Anything less is a diff the person did not ask for, on every save,
+// forever.
+func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
+	for name, raw := range map[string]string{
+		"the stencil": proseStencil,
+		"crlf":        strings.ReplaceAll(proseStencil, "\n", "\r\n"),
+		"no frontmatter": "Above them all.\n\n## Recognise\n\nThe one to start with.\n\n" +
+			"### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+		"no trailing break": "---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
+		"no trailing break under a face's heading": "---\ntype: stencil\n---\n" +
+			"## Recognise",
+		"no faces": "---\ntype: stencil\n---\n",
+		"bom":      "\xef\xbb\xbf---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+		"comments and order": "---\n# a note to myself\nzebra: 1\n\ntype: stencil\n---\n" +
+			"## Recognise\n\n### Front\n\none\n\n\ntwo\n\n### Back\n\n{{Height}}\n",
+		"a heading of another name": "---\ntype: stencil\n---\n" +
+			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Notes\n\nThe one to start with.\n\n" +
+			"### Back\n\n{{Height}}\n\n### Afterwards\n\nAnd this.\n",
+		"a side written twice": "---\ntype: stencil\n---\n" +
+			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Front\n\nthe second one\n\n### Back\n\n{{Height}}\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			doc, err := markdown.Open([]byte(raw))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
+			body, err := format.StencilBody(read.Preamble, read.Faces, read.Tail)
+			if err != nil {
+				t.Fatalf("stencil body: %v", err)
+			}
+			if want := markdown.Normalise(doc.Body()); body != want {
+				t.Errorf("the round trip changed the stencil\n want %q\n  got %q", want, body)
+			}
+		})
+	}
+}
+
+// vault is where the fixtures a person can open in the application stand.
+const vault = "../../../../tests/vault/cards"
+
+// Every deck and stencil of the fixture vault, read and written straight back,
+// comes out as the body it went in as. These are the files a person is shown,
+// awkward on purpose, and a save that touched nothing is a save that changed
+// nothing.
+func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
+	entries, err := os.ReadDir(vault)
+	if err != nil {
+		t.Fatalf("read the vault: %v", err)
+	}
+	for _, entry := range entries {
+		t.Run(entry.Name(), func(t *testing.T) {
+			path := filepath.Join(vault, entry.Name())
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read: %v", err)
+			}
+			doc, err := markdown.Open(raw)
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			n := markdown.Parse(domain.Fingerprint{Path: path}, raw)
+
+			var body string
+			switch n.Type {
+			case format.TypeDeck:
+				body, err = format.DeckBody(format.ReadDeck(n))
+			case format.TypeStencil:
+				read := format.ReadStencil(n)
+				body, err = format.StencilBody(read.Preamble, read.Faces, read.Tail)
+			default:
+				t.Fatalf("type = %q, want a deck or a stencil", n.Type)
+			}
+			if err != nil {
+				t.Fatalf("body: %v", err)
+			}
+			if want := markdown.Normalise(doc.Body()); body != want {
+				t.Errorf("the round trip changed the file\n want %q\n  got %q", want, body)
+			}
+		})
+	}
+}
+
+// A write that reaches one face reaches nothing else: the prose above the first
+// face and the prose under every other face's heading come out as the bytes
+// they went in as.
+func TestWritingOneFacePreservesTheRestOfTheStencilAlone(t *testing.T) {
+	raw := "---\ntype: stencil\n---\n" +
+		"How I show these.\n\n" +
+		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
+		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
+
+	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
+	target := append([]format.FaceTemplate(nil), read.Faces...)
+	target[0].Back = "**{{Height}}**"
+
+	body, err := format.StencilBody(read.Preamble, target, read.Tail)
+	if err != nil {
+		t.Fatalf("stencil body: %v", err)
+	}
+
+	doc, err := markdown.Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	want := strings.Replace(markdown.Normalise(doc.Body()), "{{Height}}\n\n## Name it",
+		"**{{Height}}**\n\n## Name it", 1)
+	if body != want {
+		t.Errorf("the write reached further than the face\n want %q\n  got %q", want, body)
+	}
+}
+
+// A stencil shows a card once through each face it carries, and a face is not
+// addressed by its name here. Two faces of one name are two faces, and what
+// each holds is in the file.
+func TestAStencilKeepsEveryFaceItIsGiven(t *testing.T) {
+	body, err := format.StencilBody("", []format.FaceTemplate{
+		{Name: "Recognise", Front: "{{Name}}", Back: "{{Height}}"},
+		{Name: "Recognise", Front: "{{Height}}", Back: "{{Name}}"},
+	}, "")
+	if err != nil {
+		t.Fatalf("stencil body: %v", err)
+	}
+
+	read := format.ReadStencil(domain.Note{Body: body})
+	if len(read.Faces) != 2 {
+		t.Fatalf("faces = %+v, want both of them", read.Faces)
+	}
+	if read.Faces[0].Front != "{{Name}}" || read.Faces[0].Back != "{{Height}}" {
+		t.Errorf("the first face = %+v", read.Faces[0])
+	}
+	if read.Faces[1].Front != "{{Height}}" || read.Faces[1].Back != "{{Name}}" {
+		t.Errorf("the second face = %+v", read.Faces[1])
+	}
+}
+
+func wholeAnimals() map[string]format.Stencil {
+	return map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}}
+}
+
+func createWholeID() cardid.ID { return "zpqrstvwxy" }
+
+// A heading that has fallen out of step with the card's first field is written
+// again from the first line of that field, with the mark the card carries.
+func TestWholeWritesTheHeadingFromTheFirstField(t *testing.T) {
+	body := "\n## Old ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\nthe woolly one\n"
+
+	got, provided := format.Whole(body, wholeAnimals(), createWholeID)
+
+	want := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\nthe woolly one\n"
+	if got != want {
+		t.Errorf("body\n want %q\n  got %q", want, got)
+	}
+	if len(provided) != 0 {
+		t.Errorf("given = %+v, want no mark given", provided)
+	}
+}
+
+// A card of a stencil nobody holds keeps the heading it has, and is given its
+// mark all the same.
+func TestWholeKeepsTheHeadingOfACardWhoseStencilIsUnknown(t *testing.T) {
+	body := "\n## Old\n\n[[Plant]]\n\n### Name\n\nFern\n"
+
+	got, _ := format.Whole(body, wholeAnimals(), createWholeID)
+
+	want := "\n## Old ^zpqrstvwxy\n\n[[Plant]]\n\n### Name\n\nFern\n"
+	if got != want {
+		t.Errorf("body\n want %q\n  got %q", want, got)
+	}
+}
+
+// A heading already in step is not written again: the spacing around it stays
+// as the person typed it.
+func TestWholePreservesAHeadingInStepAsItExists(t *testing.T) {
+	body := "\n##   Llama ^k7m2xq9fzp  \n\n[[Animal]]\n\n### Name\n\nLlama\n"
+
+	got, provided := format.Whole(body, wholeAnimals(), createWholeID)
+
+	if got != body {
+		t.Errorf("body\n want %q\n  got %q", body, got)
+	}
+	if len(provided) != 0 {
+		t.Errorf("given = %+v", provided)
+	}
+}
+
+// A heading that ends the body is written without a line break after it.
+func TestWholeWritesTheLastHeadingWithoutAnEnding(t *testing.T) {
+	got, provided := format.Whole("## Llama", nil, createWholeID)
+
+	if want := "## Llama ^zpqrstvwxy"; got != want {
+		t.Errorf("body = %q, want %q", got, want)
+	}
+	if len(provided) != 1 {
+		t.Errorf("given = %+v", provided)
+	}
+}

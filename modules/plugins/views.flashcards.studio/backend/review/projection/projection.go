@@ -1,4 +1,4 @@
-package review
+package projection
 
 import (
 	"cmp"
@@ -101,19 +101,6 @@ func (r *RetentionByDay) add(day int, share float64) {
 	}
 	r.on[day] = share
 }
-
-// NeverClears is a pace that leaves something overdue on every day projected.
-const NeverClears = -1
-
-// NeverLearns is a day further off than what was looked at: a projection whose
-// horizon ends with a card face still to learn, and a rule a card face begun
-// now does not reach in the years GetDaysToLearn looks over.
-const NeverLearns = -1
-
-// LearnsUnasked is a projection with no day on which the whole material stands
-// learned: one counting by a chance of recall, which is a level and not a
-// milestone, and one aiming at a date, which is that day.
-const LearnsUnasked = -2
 
 // CountAdmitted is how many of the days projected the preset admitted.
 func (p Projection) CountAdmitted() int {
@@ -225,7 +212,7 @@ type learnedCount struct {
 // newLearnedCount opens the count over the card faces a run begins with, at the
 // instant it opens on.
 func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
-	rule, _, retention := p.getLearnedRule()
+	rule, _, retention := p.GetLearnedRule()
 	out := &learnedCount{preset: p, isCarried: rule == RuleInterval, target: retention}
 	if out.isCarried {
 		out.learned = make([]bool, len(cards))

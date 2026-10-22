@@ -8,7 +8,25 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/ports"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review/projection"
 )
+
+// Curve is the simulated progression of a preset across its target range.
+type Curve = projection.Curve
+type CurvePoint = projection.CurvePoint
+type Point = projection.Point
+
+// Points is how many places a curve is worked out at.
+const Points = projection.Points
+
+// Ahead is how many days a projection runs when it is not told.
+const Ahead = projection.Ahead
+
+// MostAhead is how far ahead a goal of a date is projected.
+const MostAhead = projection.MostAhead
+
+// OutsideGrid indicates a point falling outside the grid.
+var OutsideGrid = projection.OutsideGrid
 
 // ProjectCurve is the simulator behind the one control of a preset.
 //
@@ -70,33 +88,33 @@ func checkGoal(p review.Preset) error {
 // none.
 func (u ProjectCurve) Execute(
 	ctx context.Context, v domain.Vault, path string, p review.Preset,
-) (review.Curve, error) {
+) (Curve, error) {
 	// The value the goal steers is written into the grid, and a grid runs only
 	// between the bounds of it.
 	if err := checkGoal(p); err != nil {
-		return review.Curve{}, err
+		return Curve{}, err
 	}
 	scheduled, err := u.getScheduledDecks(ctx, v, path)
 	if err != nil {
-		return review.Curve{}, err
+		return Curve{}, err
 	}
 	faces := u.cardFaces.GetFaces(ctx, v, scheduled)
 	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
-		return review.Curve{}, err
+		return Curve{}, err
 	}
 	// A deck is asked once which preset schedules it, however many card faces
 	// it holds, and a preset note is opened once however many decks name it.
 	reads := u.presets.OpenReads()
 	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
 	if err != nil {
-		return review.Curve{}, err
+		return Curve{}, err
 	}
 	schedules := u.schedules.getSchedules(target, asks)
 
 	mine, err := u.readScheduledFaces(ctx, v, reads, path, faces, schedules)
 	if err != nil {
-		return review.Curve{}, err
+		return Curve{}, err
 	}
 	decks, pos, presets, unbegunCount := mine.decks, mine.schedules, mine.presetMap, mine.unreviewed
 
@@ -104,7 +122,7 @@ func (u ProjectCurve) Execute(
 	// name it: a deck of no cards points at its preset like any other.
 	pointing, err := u.countPointingDecks(ctx, v, reads, path, scheduled, decks)
 	if err != nil {
-		return review.Curve{}, err
+		return Curve{}, err
 	}
 
 	cost, costed := review.GetCostUnder(u.schedules.scheduler, target.Answers, presets)[path]
@@ -115,19 +133,19 @@ func (u ProjectCurve) Execute(
 	// The projection is run by the scheduler this preset asks for, which is the
 	// one its cards are scheduled by, and it opens on the day a person is
 	// already partway through.
-	run := review.Simulation{
+	run := projection.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
 		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
 	out, err := run.Curve(ctx, now, p, pos, unbegunCount, u.getScheduler, u.computePlaces)
 	if err != nil {
-		return review.Curve{}, err
+		return Curve{}, err
 	}
 	out.Stops = p.GetOverallStopReason(u.day, now)
 	out.Decks = pointing
 	out.Cards = len(presets)
-	out.Overdue = review.CountOverdue(u.day, pos, now)
+	out.Overdue = projection.CountOverdue(u.day, pos, now)
 	out.Unbegun = unbegunCount
 	return out, nil
 }

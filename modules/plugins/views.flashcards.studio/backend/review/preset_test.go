@@ -1,9 +1,16 @@
 package review_test
 
 import (
+	"encoding/json"
 	"maps"
+	"os"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v3"
+	"pgregory.net/rapid"
 
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
 )
@@ -386,4 +393,416 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	if got := p.GetStopReason(day, pos); got != review.StoppedNoLoad {
 		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
+}
+
+// front is a preset's frontmatter, as the parser hands it over.
+func front(t *testing.T, output string) map[string]any {
+	t.Helper()
+	var out map[string]any
+	if err := yaml.Unmarshal([]byte(output), &out); err != nil {
+		t.Fatalf("frontmatter: %v", err)
+	}
+	return out
+}
+
+// A preset says how the decks pointing at it are scheduled.
+func TestWhatAPresetReturns(t *testing.T) {
+	p, problems := review.ReadPreset(front(t, `
+goal: minutes_a_day
+minutes_a_day: 20
+new_a_day: 8
+reviews_a_day: 45
+retention: 0.87
+load: {sat: 50, sun: 0}
+even_load: true
+`))
+
+	if len(problems) != 0 {
+		t.Fatalf("problems = %v", problems)
+	}
+	if p.Goal != review.GoalMinutes {
+		t.Errorf("goal = %q", p.Goal)
+	}
+	if p.MinutesADay != 20 || p.NewADay != 8 || p.ReviewsADay != 45 {
+		t.Errorf("limits = %d minutes, %d new, %d reviews", p.MinutesADay, p.NewADay, p.ReviewsADay)
+	}
+	if p.Retention != 0.87 {
+		t.Errorf("retention = %g", p.Retention)
+	}
+	if p.GetShare(time.Saturday) != 0.5 || p.GetShare(time.Sunday) != 0 ||
+		p.GetShare(time.Monday) != 1 {
+		t.Errorf("load = %v", p.Load)
+	}
+	if !p.IsEvenLoad {
+		t.Error("even load was asked for")
+	}
+}
+
+// What a day's budget is spent on is read from the file, and a preset saying
+// nothing spends it on cards.
+func TestWhatABudgetIsSpentOn(t *testing.T) {
+	for content, want := range map[string]review.BudgetUnit{
+		"":                review.BudgetUnitCards,
+		"counts: cards\n": review.BudgetUnitCards,
+		"counts: shows\n": review.BudgetUnitShows,
+	} {
+		p, problems := review.ReadPreset(front(t, content))
+		if len(problems) != 0 {
+			t.Fatalf("%q: problems = %v", content, problems)
+		}
+		if p.Counts != want {
+			t.Errorf("%q: counts = %q, want %q", content, p.Counts, want)
+		}
+	}
+}
+
+func TestWhatAPresetPreservesUnsaid(t *testing.T) {
+	p, problems := review.ReadPreset(front(t, "goal: retention\nretention: 0.95\n"))
+
+	if len(problems) != 0 {
+		t.Fatalf("problems = %v", problems)
+	}
+	if p.NewADay != review.Defaults().NewADay || p.ReviewsADay != review.Defaults().ReviewsADay {
+		t.Errorf("limits = %d new, %d reviews", p.NewADay, p.ReviewsADay)
+	}
+	if p.Retention != 0.95 {
+		t.Errorf("retention = %g", p.Retention)
+	}
+}
+
+// A key that cannot be read is a problem against the note and keeps its
+// default.
+func TestAKeyThatCannotBeRead(t *testing.T) {
+	for content, says := range map[string]string{
+		"goal: sideways\n":        "goal",
+		"new_a_day: many\n":       "new_a_day",
+		"new_a_day: 2.5\n":        "whole numbers",
+		"reviews_a_day: 100000\n": "outside",
+		"retention: 0.2\n":        "outside",
+		"even_load: perhaps\n":    "even_load",
+		"load: sat\n":             "load is a day of the week",
+		"load: {caturday: 50}\n":  "day of the week",
+		"load: {sat: 120}\n":      "outside",
+		"load: {sat: 12.5}\n":     "whole per cent",
+		"load: {sat: half}\n":     "not a number",
+		"goal: by_date\n":         "which day",
+		"by_date: 30 September\n": "by_date",
+		"counts: minutes\n":       "counts",
+		"learned: sideways\n":     "learned",
+		"interval: 400\n":         "outside",
+	} {
+		p, problems := review.ReadPreset(front(t, content))
+		if len(problems) != 1 || !strings.Contains(problems[0], says) {
+			t.Errorf("%q: problems = %v", content, problems)
+		}
+		if content == "new_a_day: many\n" && p.NewADay != review.Defaults().NewADay {
+			t.Errorf("%q: new a day = %d", content, p.NewADay)
+		}
+	}
+}
+
+// A day it aims at is read whether the file quotes it or not.
+func TestTheDayItAimsAt(t *testing.T) {
+	for _, content := range []string{
+		"goal: by_date\nby_date: 2026-09-30\n",
+		"goal: by_date\nby_date: \"2026-09-30\"\n",
+	} {
+		p, problems := review.ReadPreset(front(t, content))
+		if len(problems) != 0 {
+			t.Fatalf("%q: problems = %v", content, problems)
+		}
+		if p.By.Format(review.DayLayout) != "2026-09-30" {
+			t.Errorf("%q: by = %v", content, p.By)
+		}
+	}
+}
+
+// The share of a day that goes to the debt is read like the other whole
+// outside its bounds.
+func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
+	if got := review.Defaults().Backlog; got != review.AllBacklog {
+		t.Errorf("a preset naming nothing gives the debt %d of its day", got)
+	}
+
+	p, problems := review.ReadPreset(front(t, "backlog: 40\n"))
+	if len(problems) != 0 {
+		t.Fatalf("problems = %v", problems)
+	}
+	if p.Backlog != 40 {
+		t.Errorf("backlog = %d, want 40", p.Backlog)
+	}
+
+	p, problems = review.ReadPreset(front(t, "backlog: 140\n"))
+	if len(problems) != 1 {
+		t.Fatalf("a share outside its bounds turned up %v", problems)
+	}
+	if p.Backlog != review.AllBacklog {
+		t.Errorf("a share outside its bounds left %d standing", p.Backlog)
+	}
+}
+
+// What counts as learned is read from the file, and a preset saying nothing
+// learns a card face by the interval it is sent away for.
+func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
+	for content, want := range map[string]review.LearnedRule{
+		"":                     review.RuleInterval,
+		"learned: interval\n":  review.RuleInterval,
+		"learned: retention\n": review.RuleRetention,
+	} {
+		p, problems := review.ReadPreset(front(t, content))
+		if len(problems) != 0 {
+			t.Fatalf("%q: problems = %v", content, problems)
+		}
+		if p.Rule != want {
+			t.Errorf("%q: learned = %q, want %q", content, p.Rule, want)
+		}
+	}
+
+	p, problems := review.ReadPreset(front(t, "interval: 45\n"))
+	if len(problems) != 0 {
+		t.Fatalf("problems = %v", problems)
+	}
+	if p.Interval != 45 {
+		t.Errorf("interval = %d, want 45", p.Interval)
+	}
+}
+
+// The defaults are written once and read twice: here, and in the window, where
+// a person making a preset is shown the numbers it is scheduled by. Both read
+// this one corpus, and neither owns it.
+const presetCorpus = "../../../../libs/protocol/testdata/presets.json"
+
+// defaultPreset is a preset naming nothing, in the words a preset file writes
+// its values in.
+type defaultPreset struct {
+	Goal        string         `json:"goal"`
+	ByDate      string         `json:"byDate"`
+	MinutesADay int            `json:"minutesADay"`
+	NewADay     int            `json:"newADay"`
+	ReviewsADay int            `json:"reviewsADay"`
+	Retention   float64        `json:"retention"`
+	Counts      string         `json:"counts"`
+	Backlog     int            `json:"backlog"`
+	Load        map[string]int `json:"load"`
+	IsEvenLoad  bool           `json:"hasEvenLoad"`
+	Learned     string         `json:"learned"`
+	Interval    int            `json:"interval"`
+}
+
+// presetBounds is how far one setting goes, at each end.
+type presetBounds struct {
+	Least float64 `json:"least"`
+	Most  float64 `json:"most"`
+}
+
+// presetCorpusFile is what the corpus holds.
+type presetCorpusFile struct {
+	Defaults        defaultPreset `json:"defaults"`
+	FullLoad        int           `json:"fullLoad"`
+	RetentionBounds presetBounds  `json:"retentionBounds"`
+}
+
+func readPresetCorpus(t *testing.T) presetCorpusFile {
+	t.Helper()
+	raw, err := os.ReadFile(presetCorpus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out presetCorpusFile
+	if err := json.Unmarshal(raw, &out); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func TestAPresetNamingNothingIsScheduledByWhatTheCorpusReturns(t *testing.T) {
+	want := readPresetCorpus(t).Defaults
+
+	d := review.Defaults()
+	byDate := ""
+	if !d.By.IsZero() {
+		byDate = d.By.Format(review.DayLayout)
+	}
+	load := map[string]int{}
+	for day, share := range d.Load {
+		load[review.DayName(day)] = share
+	}
+	got := defaultPreset{
+		Goal:        string(d.Goal),
+		ByDate:      byDate,
+		MinutesADay: d.MinutesADay,
+		NewADay:     d.NewADay,
+		ReviewsADay: d.ReviewsADay,
+		Retention:   d.Retention,
+		Counts:      string(d.Counts),
+		Backlog:     d.Backlog,
+		Load:        load,
+		IsEvenLoad:  d.IsEvenLoad,
+		Learned:     string(d.Rule),
+		Interval:    d.Interval,
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("the defaults are %+v, want %+v", got, want)
+	}
+}
+
+func TestAWholeDaysLoadIsWhatTheCorpusReturns(t *testing.T) {
+	want := readPresetCorpus(t).FullLoad
+
+	if review.FullLoad != want {
+		t.Errorf("a whole day's load is %d, want %d", review.FullLoad, want)
+	}
+	if review.LoadBounds.Most != float64(want) {
+		t.Errorf("a day is loaded up to %g, want %d", review.LoadBounds.Most, want)
+	}
+}
+
+func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
+	want := readPresetCorpus(t).RetentionBounds
+
+	if review.RetentionBounds.Least != want.Least || review.RetentionBounds.Most != want.Most {
+		t.Errorf("retention runs %g to %g, want %g to %g",
+			review.RetentionBounds.Least, review.RetentionBounds.Most, want.Least, want.Most)
+	}
+}
+
+// lastAnswer is the instant the schedules below were last answered at.
+var lastAnswer = time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
+
+// whereItStands generates where the answers so far have left one card face: how
+// long it is sent away for, and how long the scheduler expects it to stay
+// and carries a day it is wanted on like any other: what says nobody has
+// answered it is that it was never answered, and not that nothing is set on it.
+func whereItStands(t *rapid.T) review.Schedule {
+	// Whole days as often as the minutes between them: an interval is counted in
+	// days, so the day it falls exactly on is the case that decides the rule.
+	away := time.Duration(rapid.IntRange(0, 400).Draw(t, "away"))*24*time.Hour +
+		time.Duration(rapid.SampledFrom([]int{0, 0, 0, 1, 59, 1439}).Draw(t, "minutes"))*time.Minute
+	out := review.Schedule{
+		Due:       lastAnswer.Add(away),
+		Stability: float64(rapid.IntRange(0, 500).Draw(t, "stability")),
+	}
+	if rapid.Bool().Draw(t, "seen") {
+		out.Last = lastAnswer
+	}
+	return out
+}
+
+// ruleNamed generates a preset's three settings for the rule, over the whole of
+// what each may be and past both ends of it: a value a rule cannot hold is what
+// a preset written by hand carries.
+func ruleNamed(t *rapid.T) review.Preset {
+	return review.Preset{
+		Rule: review.LearnedRule(rapid.SampledFrom([]string{
+			string(review.RuleInterval), string(review.RuleRetention), "", "sometimes",
+		}).Draw(t, "rule")),
+		Interval:  rapid.IntRange(-5, 400).Draw(t, "interval"),
+		Retention: float64(rapid.IntRange(0, 100).Draw(t, "retention")) / 100,
+	}
+}
+
+// preset says and whenever it is asked.
+func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		p := ruleNamed(t)
+		s := whereItStands(t)
+		s.Last = time.Time{}
+		pos := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
+		if p.IsLearned(s, pos) {
+			t.Fatalf("a card face unanswered counts learned under %+v "+
+				"at %v, standing at %+v", p, pos, s)
+		}
+	})
+}
+
+// A preset naming a rule it does not have, or a value the rule cannot hold,
+// counts by the default rule at its default value. A key nobody wrote leaves
+// the default in force, and never a threshold every card passes.
+//
+// A preset that names no rule counts by the default rule at its default value.
+func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		p := ruleNamed(t)
+		s := whereItStands(t)
+		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
+
+		standard := review.Defaults()
+		if review.IsKnownRule(p.Rule) {
+			standard.Rule = p.Rule
+		}
+		if review.IntervalBounds.Contains(float64(p.Interval)) {
+			standard.Interval = p.Interval
+		}
+		if review.RetentionBounds.Contains(p.Retention) {
+			standard.Retention = p.Retention
+		}
+		if got, want := p.IsLearned(s, pos), standard.IsLearned(s, pos); got != want {
+			t.Fatalf("%+v counts %+v learned as %v at %v, where the rule in "+
+				"force is %+v and counts it %v", p, s, got, pos, standard, want)
+		}
+	})
+}
+
+// Under a rule of an interval a card face is learned once it is sent away for
+// the preset's interval or longer, so the further away it is sent the more
+// presets count it learned: a card learned under one interval is learned under
+// every shorter one.
+//
+// Under learned: interval a card is learned once the interval it is sent away
+// for reaches the preset's interval.
+func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		s := whereItStands(t)
+		short := rapid.IntRange(1, 365).Draw(t, "shorter")
+		long := rapid.IntRange(short, 365).Draw(t, "longer")
+		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
+
+		delta := func(days int) review.Preset {
+			return review.Preset{Rule: review.RuleInterval, Interval: days}
+		}
+		if delta(long).IsLearned(s, pos) && !delta(short).IsLearned(s, pos) {
+			t.Fatalf("a card face sent away %v counts learned at an interval of "+
+				"%d days and not at one of %d", s.Due.Sub(s.Last), long, short)
+		}
+	})
+}
+
+// Under a rule of retention, learned is where the card face stands now and not
+// a milestone it passed: the chance of recalling it only falls as the days go
+// by, so a card counted learned on a later day was counted learned on every
+// earlier one, and a lapse that collapses its stability takes it out of that
+// standing.
+//
+// Learned is a state and not a milestone, asked of where the card stands now.
+func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		s := whereItStands(t)
+		if s.IsNew() {
+			return
+		}
+		p := review.Preset{
+			Rule:      review.RuleRetention,
+			Retention: float64(rapid.IntRange(70, 99).Draw(t, "retention")) / 100,
+		}
+		soon := rapid.IntRange(0, 1000).Draw(t, "sooner")
+		late := rapid.IntRange(soon, 1000).Draw(t, "later")
+		day := func(days int) time.Time {
+			return lastAnswer.Add(time.Duration(days) * 24 * time.Hour)
+		}
+		if p.IsLearned(s, day(late)) && !p.IsLearned(s, day(soon)) {
+			t.Fatalf("a card face at a stability of %v counts learned %d days "+
+				"out and not %d days out", s.Stability, late, soon)
+		}
+
+		lapsed := s
+		lapsed.Stability = 0
+		if p.IsLearned(lapsed, day(soon)) {
+			t.Fatalf("a card face nothing is known about counts learned at %v", p.Retention)
+		}
+	})
 }

@@ -1,4 +1,4 @@
-package service
+package cardtools
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type deckCreateInput struct {
 	Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 }
 
-func (b *Backend) addCardDeckCreate(registry *tools.Registry) error {
+func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_deck_create",
 		Title: "Create a deck",
@@ -24,11 +24,11 @@ func (b *Backend) addCardDeckCreate(registry *tools.Registry) error {
 			"`card_add` writes into a deck alone. The deck is named after its title.",
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
 	}, func(ctx context.Context, in deckCreateInput) (cards.CreateNoteResult, error) {
-		v, err := b.getToolVault(ctx)
+		v, err := t.getToolVault(ctx)
 		if err != nil {
 			return cards.CreateNoteResult{}, err
 		}
-		return b.scenarios().cards.Create.Deck(ctx, v, cards.New{Title: in.Title, Path: in.Folder})
+		return t.cards.Create.Deck(ctx, v, cards.New{Title: in.Title, Path: in.Folder})
 	})
 }
 
@@ -39,7 +39,7 @@ type stencilCreateInput struct {
 	Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 }
 
-func (b *Backend) addCardStencilCreate(registry *tools.Registry) error {
+func (t *Tools) addCardStencilCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_stencil_create",
 		Title: "Create a stencil",
@@ -53,11 +53,11 @@ func (b *Backend) addCardStencilCreate(registry *tools.Registry) error {
 			"gives under `name`.",
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
 	}, func(ctx context.Context, in stencilCreateInput) (cards.CreateNoteResult, error) {
-		v, err := b.getToolVault(ctx)
+		v, err := t.getToolVault(ctx)
 		if err != nil {
 			return cards.CreateNoteResult{}, err
 		}
-		return b.scenarios().cards.Create.Stencil(ctx, v, cards.New{
+		return t.cards.Create.Stencil(ctx, v, cards.New{
 			Title: in.Title, Path: in.Folder, Fields: in.Fields, Faces: newFaceTemplates(in.Faces),
 		})
 	})
@@ -75,7 +75,7 @@ type fieldRenameOutput struct {
 	NotWritten []string `json:"notWritten,omitempty" jsonschema:"the decks the rename could not be written to, which keep the old heading"`
 }
 
-func (b *Backend) addCardFieldRename(registry *tools.Registry) error {
+func (t *Tools) addCardFieldRename(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_field_rename",
 		Title: "Rename a field",
@@ -91,15 +91,15 @@ func (b *Backend) addCardFieldRename(registry *tools.Registry) error {
 			"more than " + fmt.Sprint(cards.MaxDecksPerRename) + " of them fails whole and the " +
 			"person renames the field in the window.",
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full}, Step: tools.Move,
-	}, b.renameCardField)
+	}, t.renameCardField)
 }
 
-func (b *Backend) renameCardField(ctx context.Context, in fieldRenameInput) (fieldRenameOutput, error) {
-	v, err := b.getToolVault(ctx)
+func (t *Tools) renameCardField(ctx context.Context, in fieldRenameInput) (fieldRenameOutput, error) {
+	v, err := t.getToolVault(ctx)
 	if err != nil {
 		return fieldRenameOutput{}, err
 	}
-	renamed, err := b.scenarios().cards.BoundedRenameField.Execute(ctx, v, cards.Rename{Stencil: in.Path, From: in.From, To: in.To})
+	renamed, err := t.cards.BoundedRenameField.Execute(ctx, v, cards.Rename{Stencil: in.Path, From: in.From, To: in.To})
 	if err != nil {
 		return fieldRenameOutput{}, err
 	}

@@ -67,7 +67,7 @@ var closers = []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews
 func (c BudgetNames) Has(one BudgetName) bool { return slices.Contains(c, one) }
 
 // add is this closing and one budget more, named once and in the order closers
-func (c BudgetNames) add(one BudgetName) BudgetNames {
+func (c BudgetNames) Add(one BudgetName) BudgetNames {
 	if !slices.Contains(closers, one) || c.Has(one) {
 		return c
 	}

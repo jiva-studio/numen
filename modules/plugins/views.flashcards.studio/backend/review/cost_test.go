@@ -2,8 +2,12 @@ package review_test
 
 import (
 	"fmt"
+	"math"
+	"slices"
 	"testing"
 	"time"
+
+	"pgregory.net/rapid"
 
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
 )
@@ -174,4 +178,153 @@ func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost 
 		return cost
 	}
 	return review.DefaultCost
+}
+
+// drawDivision generates what a preset's decks owe of one of its budgets, and
+// the budget there is to divide between them. A budget larger than the whole of
+// what is owed and one smaller than any single share both fall inside the
+// range, so both ends of the division are generated as often as the middle.
+func drawDivision(t *rapid.T) (int, []int) {
+	owes := rapid.SliceOfN(rapid.IntRange(0, 400), 0, 8).Draw(t, "owes")
+	return rapid.IntRange(0, 1200).Draw(t, "budget"), owes
+}
+
+// getTotalOwed is what a set of decks owes altogether.
+func getTotalOwed(owes []int) int {
+	out := 0
+	for _, one := range owes {
+		out += one
+	}
+	return out
+}
+
+// A day is handed out whole: what the decks take between them is the budget
+// where the budget is the smaller, and everything owed where it is not. What no
+// deck could use is not left on the day.
+//
+// A preset's day is divided over the decks it schedules.
+func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, owes := drawDivision(t)
+		got := getTotalOwed(review.DivideBudget(budget, owes))
+		want := min(budget, getTotalOwed(owes))
+		if got != want {
+			t.Fatalf("a budget of %v over %v handed out %v, want %v",
+				budget, owes, got, want)
+		}
+	})
+}
+
+// No deck takes more of the day than it owes of it, and a deck owing nothing
+// takes nothing: a share is what a deck owes, so there is nothing to hand a
+// deck that owes nothing.
+//
+// The shares are proportional to what the decks owe.
+func TestNoDeckConsumesMoreOfTheDayThanItOwes(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, owes := drawDivision(t)
+		for item, share := range review.DivideBudget(budget, owes) {
+			if share < 0 || share > owes[item] {
+				t.Fatalf("a deck owing %v took %v of a budget of %v over %v",
+					owes[item], share, budget, owes)
+			}
+		}
+	})
+}
+
+// the other: three decks owing the same take a third each, and a deck owing
+// nine times another's takes nine times the share. What the proportions leave
+// over is under one card a deck, so no share is a whole card away from the
+// proportion it is drawn from.
+//
+// The shares are proportional, and what they leave over goes by the largest
+// fraction.
+func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, owes := drawDivision(t)
+		total := getTotalOwed(owes)
+		if total <= 0 || budget >= total {
+			return
+		}
+		for item, share := range review.DivideBudget(budget, owes) {
+			exact := float64(budget) * float64(owes[item]) / float64(total)
+			if float64(share) < math.Floor(exact) || float64(share) > math.Ceil(exact) {
+				t.Fatalf("a deck owing %v of %v took %v of a budget of %v, "+
+					"where its proportion of it is %v",
+					owes[item], total, share, budget, exact)
+			}
+		}
+	})
+}
+
+// A deck owing more of the day never takes less of it than a deck owing less,
+// and decks owing the same take what is left over in the order they are given.
+//
+// A deck owing nine times another's takes nine times the share, and where the
+// fractions stand equal the deck owing more takes the remainder.
+func TestADeckOwingMoreNeverConsumesLess(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, owes := drawDivision(t)
+		out := review.DivideBudget(budget, owes)
+		for i := range owes {
+			for j := range owes {
+				ahead := owes[i] > owes[j] || (owes[i] == owes[j] && i < j)
+				if ahead && out[i] < out[j] {
+					t.Fatalf("a deck owing %v took %v where one owing %v took %v, "+
+						"out of a budget of %v over %v",
+						owes[i], out[i], owes[j], out[j], budget, owes)
+				}
+			}
+		}
+	})
+}
+
+// The decks take the same shares between them whatever order they are given in.
+// A share is worked out from what its deck owes and from nothing else, so
+// renaming a deck's file moves no card from one deck to another.
+//
+// The shares are proportional to what the decks owe, and where the fractions
+// stand equal the deck owing more takes the remainder.
+func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, owes := drawDivision(t)
+		places := make([]int, len(owes))
+		for item := range places {
+			places[item] = item
+		}
+		otherwise := make([]int, len(owes))
+		for entry, one := range rapid.Permutation(places).Draw(t, "order") {
+			otherwise[entry] = owes[one]
+		}
+
+		was, now := review.DivideBudget(budget, owes), review.DivideBudget(budget, otherwise)
+		slices.Sort(was)
+		slices.Sort(now)
+		if !slices.Equal(was, now) {
+			t.Fatalf("a budget of %v over %v was handed out as %v, and as %v "+
+				"with the decks given in another order", budget, owes, was, now)
+		}
+	})
+}
+
+// Decks owing quite different amounts stand at the same fraction: half a day
+// leaves a deck owing an odd number half a card over, whatever that number is,
+// so a deck owing one and a deck owing seven are level. The two cards over go to
+// the two decks owing most of those standing level, and not to the decks owing
+// one card each.
+//
+// Where the fractions stand equal the deck owing more takes the remainder.
+func TestDecksLevelOnTheFractionAreSplitByWhatTheyOwe(t *testing.T) {
+	t.Parallel()
+	owes := []int{0, 1, 1, 7, 239, 400}
+	want := []int{0, 0, 0, 4, 120, 200}
+	if got := review.DivideBudget(324, owes); !slices.Equal(got, want) {
+		t.Fatalf("half a day over %v was handed out as %v, want %v",
+			owes, got, want)
+	}
 }

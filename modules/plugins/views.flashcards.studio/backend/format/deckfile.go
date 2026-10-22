@@ -64,6 +64,14 @@ func (f *DeckFile) WriteIdentifier(identifier string) (bool, error) {
 	return writeIdentifier(f.doc, identifier)
 }
 
+// writeIdentifier writes an identifier into a file that carries none.
+func writeIdentifier(doc *markdown.Document, identifier string) (bool, error) {
+	if _, carried := doc.Identifier(); carried {
+		return false, nil
+	}
+	return true, doc.SetIdentifier(identifier)
+}
+
 // Deck is what the file now says.
 func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 	deck, _ := readDeck(ref, []byte(f.doc.Body()))

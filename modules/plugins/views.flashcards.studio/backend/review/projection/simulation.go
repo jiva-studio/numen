@@ -1,4 +1,4 @@
-package review
+package projection
 
 import (
 	"context"
@@ -258,7 +258,7 @@ func createFalls(cards []Schedule, days int, on *DueByDay, base int) [][]int {
 	falls := make([][]int, days)
 	for i, c := range cards {
 		on.Add(c.Due)
-		if day := max(0, on.number(c.Due)-base); day < days {
+		if day := max(0, on.GetDayNumber(c.Due)-base); day < days {
 			falls[day] = append(falls[day], i)
 		}
 	}
@@ -290,7 +290,7 @@ func getSortedCards(schedules map[CardFaceID]Schedule) []Schedule {
 func (s Simulation) createProjection(
 	days int, schedules map[CardFaceID]Schedule, unreviewed int, now time.Time, p Preset,
 ) Projection {
-	rule, _, _ := p.getLearnedRule()
+	rule, _, _ := p.GetLearnedRule()
 	learns := NeverLearns
 	if rule != RuleInterval || p.Goal == GoalDate {
 		learns = LearnsUnasked
@@ -373,7 +373,7 @@ func (d *simulationDay) startDay(today int) {
 	}
 	d.admits = d.preset.GetAllowance(d.sim.Day, d.open, removed, d.remaining, d.daysToLearn)
 	if d.admits.IsPaused() {
-		d.closed = d.closed.add(ClosedPaused)
+		d.closed = d.closed.Add(ClosedPaused)
 	}
 	d.isDebtDone = d.admits.IsPaused()
 	d.isRepeatDone = d.admits.IsPaused()
@@ -446,7 +446,7 @@ func (d *simulationDay) queueNextShowing(c Schedule, pos int) {
 		d.again = append(d.again, pos)
 		return
 	}
-	if day := max(d.today+1, d.on.number(c.Due)-d.base); day < d.days {
+	if day := max(d.today+1, d.on.GetDayNumber(c.Due)-d.base); day < d.days {
 		d.falls[day] = append(d.falls[day], pos)
 	}
 }
@@ -457,12 +457,12 @@ func (d *simulationDay) stepDebt() {
 	pos := d.getCardIndex(repeat)
 	counted := d.preset.Counts.IsCharged(d.showings[pos] > 0)
 	if counted && d.admits.Limits.Reviews != ClosedNothing && d.charged >= d.admits.Reviews {
-		d.closed = d.closed.add(d.admits.Limits.Reviews)
+		d.closed = d.closed.Add(d.admits.Limits.Reviews)
 		d.stopDebt(repeat)
 		return
 	}
 	if d.admits.Limits.Minutes != ClosedNothing && d.used+d.sim.Cost.Review > d.admits.Minutes {
-		d.closed = d.closed.add(d.admits.Limits.Minutes)
+		d.closed = d.closed.Add(d.admits.Limits.Minutes)
 		d.stopDebt(repeat)
 		return
 	}
@@ -489,12 +489,12 @@ func (d *simulationDay) stepDebt() {
 // stepNew introduces one unseen card into the session.
 func (d *simulationDay) stepNew() {
 	if d.admits.Limits.New != ClosedNothing && d.begun >= d.admits.New {
-		d.closed = d.closed.add(d.admits.Limits.New)
+		d.closed = d.closed.Add(d.admits.Limits.New)
 		d.isNewDone = true
 		return
 	}
 	if d.admits.Limits.Minutes != ClosedNothing && d.used+d.sim.Cost.New > d.admits.Minutes {
-		d.closed = d.closed.add(d.admits.Limits.Minutes)
+		d.closed = d.closed.Add(d.admits.Limits.Minutes)
 		d.isNewDone = true
 		return
 	}
@@ -591,7 +591,7 @@ func (s Simulation) Run(
 	out := s.createProjection(days, schedules, unreviewed, now, p)
 	open := s.Day.GetStart(now)
 	on := NewDueByDay(s.Day)
-	base := on.number(open)
+	base := on.GetDayNumber(open)
 	falls := createFalls(cards, days, on, base)
 
 	reckoned := s.initLearned(p, cards, &out, open)
@@ -612,4 +612,3 @@ func (s Simulation) Run(
 	s.finalizeProjection(&out, elapsed, d.cards, d.open)
 	return out, nil
 }
-

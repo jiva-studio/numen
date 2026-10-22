@@ -417,3 +417,196 @@ func TestAVaultNobodyReviewedContainsNoRuns(t *testing.T) {
 		t.Errorf("read %+v", target)
 	}
 }
+
+// A loaded log works its order out once, however many callers ask for it.
+func TestALoadedLogIsInsertInOrderOnce(t *testing.T) {
+	t.Parallel()
+	l := load(t, loadCards, loadDays, loadPerDay)
+
+	target, err := l.logRead(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, again := target.GetHistory(), target.GetHistory()
+	if len(first) != loadDays*loadPerDay {
+		t.Fatalf("the log came to %d answers where the vault holds %d",
+			len(first), loadDays*loadPerDay)
+	}
+	if &first[0] != &again[0] {
+		t.Error("the log was put in order twice")
+	}
+}
+
+// An answer belongs to one card through one face. A line naming neither stands
+// is written and not left in the log for every later reading to skip.
+func TestAnAnswerReturnsWhichCardAndThroughWhichFace(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, vault)
+	record := s.run(t, time.Now())
+
+	for _, on := range []review.CardFaceID{
+		{Card: "", Face: "Recognise"},
+		{Card: "k7m2xq9fzp", Face: ""},
+		{},
+	} {
+		if _, err := record.Answer(t.Context(), on, review.Good, 0); err == nil {
+			t.Errorf("an answer on %+v was written", on)
+		}
+	}
+
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(target.Answers) != 0 {
+		t.Errorf("the vault holds %d answers, want none", len(target.Answers))
+	}
+}
+
+// A Record built with no clock refuses an answer and does not panic.
+func TestARecordWithNoClockRefusesAnAnswer(t *testing.T) {
+	t.Parallel()
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+
+	if _, err := (flashcards.Record{}).Answer(t.Context(), nil, on, review.Good, 0); err == nil {
+		t.Error("an answer stamped by no clock was written")
+	}
+	if _, err := (flashcards.Record{}).TakeBack(t.Context(), nil, "a"); err == nil {
+		t.Error("a taking back stamped by no clock was written")
+	}
+}
+
+// Taking back an answer names the one it takes back. Nothing here guesses which
+// of a session's answers a person meant.
+func TestTakingBackNamesTheAnswerItConsumesBack(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, vault)
+
+	if _, err := s.run(t, time.Now()).TakeBack(t.Context(), ""); !errors.Is(err, flashcards.ErrNoAnswer) {
+		t.Errorf("an answer taken back without naming one came back with %v", err)
+	}
+}
+
+// A run is known by the file it writes, which is what the counting is kept
+// against: a run of the same name and length holds the same answers.
+func TestARunIsKnownByTheFileItWrites(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, vault)
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+
+	now := time.Now()
+	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := newSitting(run, func() time.Time { return now })
+	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	name := run.GetName()
+	target := getRunFiles(t, s)
+	if len(target) != 1 || target[0] != name+".jsonl" {
+		t.Errorf("the run is known as %q and the vault holds %v", name, target)
+	}
+}
+
+// The history screen opens each run file once. The days behind and the days
+// ahead are two questions of one read.
+func TestTheHistoryOpensEachRunFileOnce(t *testing.T) {
+	t.Parallel()
+	l := load(t, loadCards, loadDays, loadPerDay)
+	ctx := t.Context()
+
+	firstLoad := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
+	if firstLoad.Opened != loadDays {
+		t.Errorf("opened %d run files where the vault holds %d", firstLoad.Opened, loadDays)
+	}
+	if firstLoad.Listed != 1 {
+		t.Errorf("listed the log %d times", firstLoad.Listed)
+	}
+
+	secondLoad := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
+	if secondLoad.Opened != loadDays {
+		t.Errorf("a warm request opened %d run files where the vault holds %d",
+			secondLoad.Opened, loadDays)
+	}
+}
+
+// What the screen shows is what it showed: the days, the streak, the answers,
+// what is still to come and how much came back.
+func TestTheHistoryShowsWhatItShowed(t *testing.T) {
+	t.Parallel()
+	l := load(t, loadCards, loadDays, loadPerDay)
+	ctx := t.Context()
+
+	first, err := l.review.Execute(ctx, l.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := l.review.Execute(ctx, l.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if first.Answered != loadDays*loadPerDay {
+		t.Errorf("counted %d answers where the vault holds %d",
+			first.Answered, loadDays*loadPerDay)
+	}
+	if len(first.Days) != loadDays {
+		t.Errorf("counted %d days where the vault was answered on %d",
+			len(first.Days), loadDays)
+	}
+	if first.Answered != again.Answered || first.Streak != again.Streak {
+		t.Errorf("%d answers over a streak of %d, then %d over %d",
+			first.Answered, first.Streak, again.Answered, again.Streak)
+	}
+	if len(first.Due) != len(again.Due) || len(first.Retained) != len(again.Retained) {
+		t.Errorf("%d days ahead and %d behind, then %d and %d",
+			len(first.Due), len(first.Retained), len(again.Due), len(again.Retained))
+	}
+	for day, was := range first.Days {
+		if now := again.Days[day]; now != was {
+			t.Errorf("%s came to %+v, and was %+v", day, now, was)
+		}
+	}
+	for day, was := range first.Retained {
+		if now := again.Retained[day]; now != was {
+			t.Errorf("%s kept %+v, and was %+v", day, now, was)
+		}
+	}
+}
+
+// The history counts one day of review for each day the vault was answered on,
+// whatever the hour it is read at.
+func TestTheHistoryCountsTheSameDaysAtAnyHour(t *testing.T) {
+	t.Parallel()
+	for _, item := range []time.Time{
+		time.Date(2026, time.October, 17, 23, 59, 0, 0, time.UTC),
+		time.Date(2026, time.October, 18, 0, 1, 0, 0, time.UTC),
+		time.Date(2026, time.October, 18, 3, 45, 0, 0, time.UTC),
+		time.Date(2026, time.October, 18, 4, 1, 0, 0, time.UTC),
+	} {
+		t.Run(item.Format("15:04"), func(t *testing.T) {
+			t.Parallel()
+			l := loadAt(t, func() time.Time { return item }, loadCards, loadDays, loadPerDay)
+
+			got, err := l.review.Execute(t.Context(), l.vault)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(got.Days) != loadDays {
+				t.Errorf("counted %d days where the vault was answered on %d",
+					len(got.Days), loadDays)
+			}
+			if got.Streak != loadDays {
+				t.Errorf("a streak of %d where the vault was answered on the %d days before",
+					got.Streak, loadDays)
+			}
+			if got.Answered != loadDays*loadPerDay {
+				t.Errorf("counted %d answers where the vault holds %d",
+					got.Answered, loadDays*loadPerDay)
+			}
+		})
+	}
+}

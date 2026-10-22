@@ -1,4 +1,4 @@
-package cards
+package deckedit
 
 import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"

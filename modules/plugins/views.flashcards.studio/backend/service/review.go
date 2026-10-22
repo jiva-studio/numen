@@ -1,9 +1,11 @@
 package service
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -382,4 +384,169 @@ func (a *reviewHandler) TakeBackAnswer(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.TakeBackAnswerResponse{}), nil
+}
+
+// GetVaultDeckPreset is the preset a deck of the named vault is scheduled by. A
+// deck naming none is answered with the defaults under no path.
+func (a *reviewHandler) GetVaultDeckPreset(
+	ctx context.Context, r *connect.Request[v1.GetVaultDeckPresetRequest],
+) (*connect.Response[v1.GetVaultDeckPresetResponse], error) {
+	v, err := a.getVault(ctx, r.Msg.GetVault())
+	if err != nil {
+		return nil, err
+	}
+	found, err := a.scenarios().flash.Presets.GetForDeck(ctx, v, r.Msg.GetDeck())
+	if err != nil {
+		return nil, connect.NewError(getCode(err), err)
+	}
+
+	out := &v1.GetVaultDeckPresetResponse{}
+	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
+		out.Error = &reason
+		return connect.NewResponse(out), nil
+	}
+	out.Preset = presetwire.ConvertPresetToWire(found, a.getTitle(ctx, v, found.Path))
+	return connect.NewResponse(out), nil
+}
+
+// ListReviewDays is how much of a vault was answered on each day it was
+// reviewed.
+//
+// The days come back in order, oldest first, because what draws them draws them
+// along a line of time. A caller naming a stretch is answered that stretch; the
+// streak and the count are over the whole of the vault either way.
+func (a *reviewHandler) ListReviewDays(
+	ctx context.Context, r *connect.Request[v1.ListReviewDaysRequest],
+) (*connect.Response[v1.ListReviewDaysResponse], error) {
+	v, err := a.getVault(ctx, r.Msg.GetVault())
+	if err != nil {
+		return nil, err
+	}
+	response, err := a.scenarios().flash.GetReviewDays.Execute(ctx, v, r.Msg.GetFrom(), r.Msg.GetTo())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	days := make([]*v1.ReviewDay, 0, len(response.Days))
+	for day, one := range response.Days {
+		came := response.Retained[day]
+		days = append(days, &v1.ReviewDay{
+			Day:      day,
+			Answered: int32(one.Answered),
+			Again:    int32(one.Again),
+			Hard:     int32(one.Hard),
+			Good:     int32(one.Good),
+			Easy:     int32(one.Easy),
+			Asked:    int32(came.Asked),
+			Recalled: int32(came.Recalled),
+		})
+	}
+	due := make([]*v1.ReviewDay, 0, len(response.Due))
+	for day, falls := range response.Due {
+		due = append(due, &v1.ReviewDay{Day: day, Answered: int32(falls)})
+	}
+
+	return connect.NewResponse(&v1.ListReviewDaysResponse{
+		Days:     sortReviewDays(days),
+		Due:      sortReviewDays(due),
+		Streak:   int32(response.Streak),
+		Answered: int32(response.Answered),
+	}), nil
+}
+
+// sortReviewDays puts the days oldest first.
+func sortReviewDays(days []*v1.ReviewDay) []*v1.ReviewDay {
+	slices.SortFunc(days, func(one, other *v1.ReviewDay) int {
+		return cmp.Compare(one.GetDay(), other.GetDay())
+	})
+	return days
+}
+
+// GetDeckNeighbourhood hands over what the deck being sat to is joined to.
+//
+// Nothing here writes and no run is named: a person may read around a deck
+// before they have started on it, and reading is not part of a session.
+func (a *reviewHandler) GetDeckNeighbourhood(
+	ctx context.Context, r *connect.Request[v1.GetDeckNeighbourhoodRequest],
+) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {
+	v, err := a.getVault(ctx, r.Msg.GetVault())
+	if err != nil {
+		return nil, err
+	}
+	joined, err := a.scenarios().neighbourhood.Execute(ctx, v, r.Msg.GetDeck())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	out := &v1.GetDeckNeighbourhoodResponse{
+		Notes:  make([]*v1.DeckNeighbour, 0, len(joined.Notes)),
+		Unread: int32(joined.Unread),
+	}
+	for _, one := range joined.Notes {
+		next := &v1.DeckNeighbour{
+			Written:     one.Written,
+			Path:        one.Path,
+			Title:       one.Title,
+			Body:        one.Body,
+			Label:       one.Label,
+			IsPointedAt: !one.IsBacklink,
+			IsAmbiguous: one.IsAmbiguous,
+		}
+		if reason, ok := convertOutcomeToErrorCode(one.Outcome); ok {
+			next.Error = &reason
+		}
+		out.Notes = append(out.Notes, next)
+	}
+	return connect.NewResponse(out), nil
+}
+
+// again is how often a stream that has seen nothing move says so, so that a page can tell a
+// stream that is open from one that is not.
+const again = time.Second
+
+// WatchReloads says something moved, for as long as the caller listens.
+//
+// What moved is not carried: what this window shows is counts and the cards behind them, and they are
+// asked for again whatever changed.
+func (a *reviewHandler) WatchReloads(
+	ctx context.Context,
+	_ *connect.Request[v1.WatchReloadsRequest],
+	out *connect.ServerStream[v1.WatchReloadsResponse],
+) error {
+	ctx, stop := context.WithCancel(ctx)
+	defer stop()
+	moved, err := a.vault.WatchMoves(ctx)
+	if err != nil {
+		return connect.NewError(connect.CodeUnavailable, err)
+	}
+
+	// Named as listening before anything has moved. A stream that says nothing until a file changes
+	// cannot be told from one that never opened.
+	if err := out.Send(&v1.WatchReloadsResponse{}); err != nil {
+		return err
+	}
+
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-repeat.C:
+			// Nothing moved, which is what the opening message says too. A page that has gone fails the
+			// write.
+			if err := out.Send(&v1.WatchReloadsResponse{}); err != nil {
+				return err
+			}
+		case _, open := <-moved:
+			if !open {
+				return nil
+			}
+			a.scenarios().flash.CardFaces.InvalidateAll()
+			if err := out.Send(&v1.WatchReloadsResponse{Reload: true}); err != nil {
+				return err
+			}
+		}
+	}
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -166,5 +167,153 @@ func TestAPresetThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	}
 	if out.Msg.GetPreset() != nil {
 		t.Errorf("a rejected preset came with %+v", out.Msg.GetPreset())
+	}
+}
+
+// newWordDeck is a deck of as many cards naming this preset. A deck naming none
+// is written with an empty name.
+func newWordDeck(pos string, cards int, from int) string {
+	out := "---\ntype: deck\n"
+	if pos != "" {
+		out += "links:\n  - to: " + pos + "\n    role: ref\n    type: preset\n"
+	}
+	out += "---\n"
+	for i := range cards {
+		out += fmt.Sprintf(
+			"\n## Card %d ^word%06d\n\n[[Term]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n",
+			from+i, from+i, from+i, from+i)
+	}
+	return out
+}
+
+// presetted is one vault of two presets a deck each, and a third nothing points
+// at. Each preset holds two cards a day.
+var presetted = map[string]string{
+	"Term.md": deck["Term.md"],
+	"Steady.md": "---\ntype: preset\ngoal: retention\n" +
+		"new_a_day: 2\nreviews_a_day: 0\n---\n\n# Steady\n",
+	"Other.md": "---\ntype: preset\ngoal: retention\n" +
+		"new_a_day: 2\nreviews_a_day: 0\n---\n\n# Other\n",
+	"Lonely.md": "---\ntype: preset\ngoal: retention\n" +
+		"new_a_day: 2\nreviews_a_day: 0\n---\n\n# Lonely\n",
+	"decks/Birds.md":  newWordDeck("Steady", 4, 0),
+	"decks/Rivers.md": newWordDeck("Other", 4, 100),
+}
+
+// newPresetName is the preset a request names, as the window sends it.
+func newPresetName(preset string) *string { return &preset }
+
+// The window draws a tile per preset, and pressing one opens a session over the
+func TestASessionIsOpenedOverOnePreset(t *testing.T) {
+	api, target := newAPI(t, presetted)
+	v := target[0]
+
+	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+		Vault: string(v.ID), Preset: newPresetName("Steady.md"),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := out.Msg.GetCards()
+	if len(request) != 2 {
+		t.Fatalf("a preset of two cards a day offered %d", len(request))
+	}
+	for _, one := range request {
+		if one.GetDeck() != "decks/Birds.md" {
+			t.Errorf("the session asked %s, which another preset schedules", one.GetDeck())
+		}
+	}
+}
+
+// Which cards were meant is a question, and the window is asked it again.
+func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
+	api, target := newAPI(t, presetted)
+	v := target[0]
+
+	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: newPresetName("Steady.md"),
+	}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("a deck and a preset together were answered with %v", err)
+	}
+}
+
+// Why a preset schedules nothing is the core's verdict, and every preset the
+// nothing else in the answer would tell a window that it is stopped.
+func TestEachPresetOnTheFrontDoorReturnsWhyItSchedulesNothing(t *testing.T) {
+	// The marks are the ones the application writes, so the cards stand without
+	// the vault being sat down to.
+	marked := func(pos string, mark string) string {
+		return "---\ntype: deck\nlinks:\n  - to: " + pos + "\n    role: ref\n    type: preset\n" +
+			"---\n\n## Card ^" + mark + "\n\n[[Term]]\n\n### Word\n\nw\n\n### Meaning\n\nm\n"
+	}
+	stoppedPresetFiles := map[string]string{
+		"Term.md": deck["Term.md"],
+		"Steady.md": "---\ntype: preset\ngoal: retention\n" +
+			"new_a_day: 2\nreviews_a_day: 2\n---\n\n# Steady\n",
+		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\n" +
+			"minutes_a_day: 0\n---\n\n# Quiet\n",
+		"Lonely.md": "---\ntype: preset\ngoal: retention\n" +
+			"new_a_day: 0\nreviews_a_day: 0\n---\n\n# Lonely\n",
+		"decks/Birds.md":  marked("Steady", "3f4g5h6j7k"),
+		"decks/Rivers.md": marked("Quiet", "zpqrstvwxy"),
+	}
+	api, _ := newAPI(t, stoppedPresetFiles)
+
+	got := make(map[string]v1.StopReason)
+	for _, one := range front(t, api).GetVaults()[0].GetPresets() {
+		got[one.GetPreset()] = one.GetStopsOn()
+	}
+	want := map[string]v1.StopReason{
+		"Steady.md": v1.StopReason_STOP_REASON_NOTHING,
+		"Quiet.md":  v1.StopReason_STOP_REASON_NO_MINUTES,
+		"Lonely.md": v1.StopReason_STOP_REASON_NO_CARDS,
+	}
+	for path, why := range want {
+		if got[path] != why {
+			t.Errorf("%s schedules nothing for %v, want %v", path, got[path], why)
+		}
+	}
+}
+
+// The preset a deck is scheduled by carries the same verdict, which is what a
+// window has before any curve exists.
+func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
+	api, target := newAPI(t, map[string]string{
+		"Term.md": deck["Term.md"],
+		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\n" +
+			"minutes_a_day: 0\n---\n\n# Quiet\n",
+		"decks/Birds.md": newWordDeck("Quiet", 2, 0),
+	})
+
+	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
+		&v1.GetVaultDeckPresetRequest{
+			Vault: string(target[0].ID), Deck: "decks/Birds.md",
+		}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	one := out.Msg.GetPreset()
+	if got := one.GetStops(); got != v1.StopReason_STOP_REASON_NO_MINUTES {
+		t.Errorf("the preset schedules nothing for %v", got)
+	}
+	if got := one.GetStopsOn(); got != v1.StopReason_STOP_REASON_NO_MINUTES {
+		t.Errorf("the day schedules nothing for %v", got)
+	}
+}
+
+// window shows in place of an empty session.
+func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
+	api, target := newAPI(t, presetted)
+	v := target[0]
+
+	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+		Vault: string(v.ID), Preset: newPresetName("Lonely.md"),
+	}))
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("a preset nothing points at was answered with %v", err)
+	}
+	if !strings.Contains(err.Error(), "no deck") {
+		t.Errorf("the reason shown is %q", err)
 	}
 }

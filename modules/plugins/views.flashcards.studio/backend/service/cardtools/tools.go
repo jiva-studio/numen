@@ -1,4 +1,4 @@
-package service
+package cardtools
 
 import (
 	"context"
@@ -7,7 +7,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards/deckedit"
 )
+
+var errNoVault = errors.New("no vault is open")
 
 // The keys of what the host tells a tool about the window the agent was started from.
 const (
@@ -17,26 +21,37 @@ const (
 	askedFace  = "face"
 )
 
-// Tools is the tools the plugin offers an agent: reading the stencils and the decks of the vault, and
-// writing them.
-func (b *Backend) Tools() (*tools.Registry, error) {
+// Tools provides MCP tools for interacting with flashcards.
+type Tools struct {
+	vault    host.Vault
+	cards    cards.Scenarios
+	deckedit deckedit.Scenarios
+}
+
+// New creates a Tools instance.
+func New(vault host.Vault, cards cards.Scenarios, deckedit deckedit.Scenarios) *Tools {
+	return &Tools{vault: vault, cards: cards, deckedit: deckedit}
+}
+
+// Registry builds the tools registry.
+func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
 	for _, add := range []func(*tools.Registry) error{
-		b.addCardCurrent,
-		b.addCardStencilList,
-		b.addCardStencilRead,
-		b.addCardRead,
-		b.addCardAdd,
-		b.addCardEdit,
-		b.addCardValueRemove,
-		b.addCardRemove,
-		b.addCardSectionAdd,
-		b.addCardSectionRename,
-		b.addCardSectionRemove,
-		b.addCardDeckCreate,
-		b.addCardStencilCreate,
-		b.addCardStencilEdit,
-		b.addCardFieldRename,
+		t.addCardCurrent,
+		t.addCardStencilList,
+		t.addCardStencilRead,
+		t.addCardRead,
+		t.addCardAdd,
+		t.addCardEdit,
+		t.addCardValueRemove,
+		t.addCardRemove,
+		t.addCardSectionAdd,
+		t.addCardSectionRename,
+		t.addCardSectionRemove,
+		t.addCardDeckCreate,
+		t.addCardStencilCreate,
+		t.addCardStencilEdit,
+		t.addCardFieldRename,
 	} {
 		if err := add(registry); err != nil {
 			return nil, err
@@ -47,15 +62,15 @@ func (b *Backend) Tools() (*tools.Registry, error) {
 
 // getToolVault is the vault a tool works: the one the host says the agent works, else the one the
 // window shows.
-func (b *Backend) getToolVault(ctx context.Context) (domain.Vault, error) {
+func (t *Tools) getToolVault(ctx context.Context) (domain.Vault, error) {
 	if id := tools.Asked(ctx)[askedVault]; id != "" {
-		v, err := b.vault.With(domain.VaultID(id)).GetVault(ctx)
+		v, err := t.vault.With(domain.VaultID(id)).GetVault(ctx)
 		if errors.Is(err, host.ErrUnknownVault) {
 			return domain.Vault{}, errors.New("the vault the agent works is not one this installation knows")
 		}
 		return v, err
 	}
-	v, err := b.vault.GetVault(ctx)
+	v, err := t.vault.GetVault(ctx)
 	if errors.Is(err, host.ErrNoVault) {
 		return domain.Vault{}, errNoVault
 	}

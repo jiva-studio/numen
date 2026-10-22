@@ -30,7 +30,7 @@ func NewDueByDay(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]in
 // Add counts one card face against the day its schedule falls in.
 func (s *DueByDay) Add(due time.Time) {
 	if s != nil {
-		s.on[s.number(due)]++
+		s.on[s.GetDayNumber(due)]++
 	}
 }
 
@@ -39,13 +39,13 @@ func (s *DueByDay) CountOn(target time.Time) int {
 	if s == nil {
 		return 0
 	}
-	return s.on[s.number(target)]
+	return s.on[s.GetDayNumber(target)]
 }
 
 // number is the day of review holding an instant, as a whole number counted
 // from the day the clock is counted from. The same answers name the same days
 // in every process.
-func (s *DueByDay) number(pos time.Time) int {
+func (s *DueByDay) GetDayNumber(pos time.Time) int {
 	return int(s.day.GetDate(pos).Unix() / int64(24*time.Hour/time.Second))
 }
 
@@ -104,8 +104,8 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	in := s.day.zone()
 	counted := pos.In(in)
 
-	dueDay := s.number(due)
-	from, to := s.number(counted.AddDate(0, 0, first)), s.number(counted.AddDate(0, 0, last))
+	dueDay := s.GetDayNumber(due)
+	from, to := s.GetDayNumber(counted.AddDate(0, 0, first)), s.GetDayNumber(counted.AddDate(0, 0, last))
 	on, heaviest := dueDay, -1.0
 	if dueDay >= from && dueDay <= to {
 		heaviest = p.getWeight(s, dueDay)

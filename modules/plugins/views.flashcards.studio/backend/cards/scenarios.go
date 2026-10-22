@@ -11,13 +11,4 @@ type Scenarios struct {
 	RenameField RenameField
 	// BoundedRenameField refuses a vault holding more than MaxDecksPerRename decks.
 	BoundedRenameField RenameField
-
-	GetCardPage     GetCardPage
-	AddCard         AddCard
-	EditCard        EditCard
-	RemoveCardValue RemoveCardValue
-	RemoveCard      RemoveCard
-	AddSection      AddSection
-	RenameSection   RenameSection
-	RemoveSection   RemoveSection
 }

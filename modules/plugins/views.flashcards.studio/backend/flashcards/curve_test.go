@@ -1,16 +1,22 @@
 package flashcards_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"reflect"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/flashcards"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/ports"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review/projection"
 )
 
 // newStudiedNotes is a vault of one preset, one deck of as many cards pointing
@@ -93,7 +99,7 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != review.Points || len(got.Points) != review.Points {
+	if len(got.Grid) != flashcards.Points || len(got.Points) != flashcards.Points {
 		t.Fatalf("the curve has %d places and %d values", len(got.Grid), len(got.Points))
 	}
 	for i := 1; i < len(got.Grid); i++ {
@@ -128,10 +134,10 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := review.OutsideGrid
+	want := flashcards.OutsideGrid
 	for i, one := range got.Points {
 		if len(one.Closed) == 0 {
-			want = review.CurvePoint{Index: i, Value: got.Grid[i]}
+			want = flashcards.CurvePoint{Index: i, Value: got.Grid[i]}
 			break
 		}
 	}
@@ -161,7 +167,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != review.Points {
+	if len(got.Grid) != flashcards.Points {
 		t.Fatalf("the curve has %d places", len(got.Grid))
 	}
 	if got.Grid[0] != review.RetentionBounds.Least ||
@@ -176,7 +182,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	}
 	inRange(t, got, "now")
 
-	if got.Suggested != review.OutsideGrid {
+	if got.Suggested != flashcards.OutsideGrid {
 		t.Errorf("a target of %v is suggested, and this goal points at none",
 			got.Suggested.Value)
 	}
@@ -317,7 +323,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 		t.Errorf("currentPoint: got Share=%v, IsEnough=%v, Short=%d; want Share>=1, IsEnough=true, Short=0",
 			currentPoint.Share, currentPoint.IsEnough, currentPoint.Short)
 	}
-	if got.Suggested == review.OutsideGrid {
+	if got.Suggested == flashcards.OutsideGrid {
 		t.Error("no day is suggested, and the day it aims at is through the material")
 	}
 }
@@ -336,7 +342,7 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != 0 || got.Now != review.OutsideGrid || got.Suggested != review.OutsideGrid {
+	if len(got.Grid) != 0 || got.Now != flashcards.OutsideGrid || got.Suggested != flashcards.OutsideGrid {
 		t.Errorf("curve = %+v, want nothing", got)
 	}
 }
@@ -454,16 +460,16 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 }
 
 // inRange verifies that points fall within valid grid indices.
-func inRange(t *testing.T, c review.Curve, names ...string) {
+func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 	t.Helper()
-	marks := map[string]review.CurvePoint{"now": c.Now, "suggested": c.Suggested}
+	marks := map[string]flashcards.CurvePoint{"now": c.Now, "suggested": c.Suggested}
 	for _, name := range names {
-		if marks[name] == review.OutsideGrid {
+		if marks[name] == flashcards.OutsideGrid {
 			t.Errorf("point %s: got OutsideGrid, want valid index in grid of len %d", name, len(c.Grid))
 		}
 	}
 	for name, mark := range marks {
-		if mark == review.OutsideGrid {
+		if mark == flashcards.OutsideGrid {
 			continue
 		}
 		if mark.Index < 0 || mark.Index >= len(c.Grid) {
@@ -533,9 +539,9 @@ func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 		t.Fatalf("the curve begins %v days off", got.Grid[0])
 	}
 	for i, one := range got.Points {
-		if len(one.Backlog) < review.Ahead {
+		if len(one.Backlog) < flashcards.Ahead {
 			t.Errorf("%v days off carries %d days of backlog, and a clearing is asked "+
-				"over %d", got.Grid[i], len(one.Backlog), review.Ahead)
+				"over %d", got.Grid[i], len(one.Backlog), flashcards.Ahead)
 		}
 	}
 }
@@ -921,7 +927,7 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Suggested == review.OutsideGrid {
+	if got.Suggested == flashcards.OutsideGrid {
 		t.Fatal("got.Suggested == OutsideGrid, want valid suggested point")
 	}
 	suggestedPoint := got.Points[got.Suggested.Index]
@@ -980,8 +986,8 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	if len(got.Grid) == 0 {
 		t.Fatal("a day twenty years off draws no range at all, as a day already past does")
 	}
-	if got.Now != review.OutsideGrid {
-		t.Errorf("got.Now = %+v, want %+v", got.Now, review.OutsideGrid)
+	if got.Now != flashcards.OutsideGrid {
+		t.Errorf("got.Now = %+v, want %+v", got.Now, flashcards.OutsideGrid)
 	}
 }
 
@@ -1181,4 +1187,389 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	if _, err := u.Execute(t.Context(), s.vault, "Sanskrit.md", p); !errors.Is(err, flashcards.ErrNotCarried) {
 		t.Errorf("a build with no index answered %v", err)
 	}
+}
+
+// A curve works every place of its grid out alongside the others, and the curve
+// it evaluates to is the same curve every time it is asked for.
+//
+// Run under the race detector this is what holds the places to sharing nothing:
+// each run reads the schedules it is given and writes only what it returns.
+// Read without it, what it holds is that the answer does not depend on the order
+// the places happen to finish in, which is the order of the cores the machine
+// has.
+func TestACurveIsTheSameCurveEveryTimeItIsAsked(t *testing.T) {
+	t.Parallel()
+	s := newAnsweredVault(t, 200)
+	curves := s.curves(noon)
+	for _, one := range atOnceGoals() {
+		t.Run(one.name, func(t *testing.T) {
+			first, err := curves.Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := describeCurve(first)
+			for again := range 8 {
+				got, err := curves.Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if describeCurve(got) != want {
+					t.Fatalf("asking %d times over gives\n%s\nand the first asking gave\n%s",
+						again+2, describeCurve(got), want)
+				}
+			}
+		})
+	}
+}
+
+// atOnceGoals is one preset under each goal, so that all three of the loops
+// that work a grid out are asked the question.
+func atOnceGoals() []struct {
+	name   string
+	preset review.Preset
+} {
+	return []struct {
+		name   string
+		preset review.Preset
+	}{
+		{"minutes", review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			Retention: 0.87, Rule: review.RuleInterval, Interval: 21,
+			Counts: review.BudgetUnitCards, Backlog: 100, IsEvenLoad: true,
+		}},
+		{"retention", review.Preset{
+			Goal: review.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
+			Retention: 0.9, Rule: review.RuleInterval, Interval: 21,
+			Counts: review.BudgetUnitCards, Backlog: 60, IsEvenLoad: true,
+		}},
+		{"a date", review.Preset{
+			Goal: review.GoalDate, By: noon.AddDate(0, 0, 45),
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
+			Counts: review.BudgetUnitCards, IsEvenLoad: true,
+		}},
+	}
+}
+
+// describeCurve is a whole curve written out, every scalar and every series of
+// it, so that two of them are compared by what they say and not by what they
+// point at.
+func describeCurve(c projection.Curve) string {
+	return fmt.Sprintf("%v", c)
+}
+
+// curveLoad is the vault the window's requests are measured on, with its decks
+// pointing at two presets: one deck points at the first and the other nineteen
+// at the second.
+func curveLoad(cards int) map[string]string {
+	const settings = "goal: minutes_a_day\nminutes_a_day: 20\nnew_a_day: 8\n" +
+		"reviews_a_day: 45\nretention: 0.87\n"
+	out := loadDeck(cards)
+	out["Small.md"] = "---\ntype: preset\n" + settings + "---\n"
+	out["Large.md"] = "---\ntype: preset\n" + settings + "---\n"
+	for item := range 20 {
+		to := "Large"
+		if item == 0 {
+			to = "Small"
+		}
+		path := fmt.Sprintf("decks/Deck%02d.md", item)
+		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
+			"---\ntype: deck\n"+createPresetLink(to), 1)
+	}
+	return out
+}
+
+// curveWhole is the vault of twenty decks with every one of them pointing at
+// one preset, so the curve of that preset is drawn over the whole of it.
+func curveWhole(cards int) map[string]string {
+	out := loadDeck(cards)
+	out["Whole.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+		"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\n---\n"
+	for item := range 20 {
+		path := fmt.Sprintf("decks/Deck%02d.md", item)
+		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
+			"---\ntype: deck\n"+createPresetLink("Whole"), 1)
+	}
+	return out
+}
+
+// The curve of a preset holding the whole vault, at four sizes of it.
+//
+// What the projection costs relies on the card faces the preset holds, and
+// these four rows are what says how it grows with them. The log grows with the
+// vault too, at the same half an answer a card face the row above is built on.
+//
+// The schedule cache is filled before the clock starts, which is what opening
+// the window and then a preset tab costs.
+func BenchmarkCurveCards(b *testing.B) {
+	for _, cards := range []int{500, 5000, 20000, 50000} {
+		b.Run(fmt.Sprint(cards), func(b *testing.B) {
+			s := openVault(b, curveWhole(cards))
+			loadAnswers(b, s, time.Now(), cards, 180, max(1, cards*150/50000))
+
+			ctx := b.Context()
+			if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
+				b.Fatal(err)
+			}
+			p := review.Preset{
+				Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			}
+			curves := s.curves(time.Now())
+			if _, err := curves.Execute(ctx, s.vault, "Whole.md", p); err != nil {
+				b.Fatal(err)
+			}
+			for b.Loop() {
+				if _, err := curves.Execute(ctx, s.vault, "Whole.md", p); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+// The curve of one preset, over fifty thousand card faces in twenty decks
+// answered a hundred and fifty times a day for six months.
+//
+// One preset holds a deck of the vault and the other holds the rest of it, so
+// what the two rows are read against each other for is what a curve pays for
+// the decks it does not schedule.
+//
+// The schedule cache is filled before the clock starts, which is what opening
+// the window and then a preset tab costs.
+func BenchmarkPresetCurve(b *testing.B) {
+	const cards = 50000
+	s := openVault(b, curveLoad(cards))
+	loadAnswers(b, s, time.Now(), cards, 180, 150)
+
+	ctx := b.Context()
+	if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
+		b.Fatal(err)
+	}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	curves := s.curves(time.Now())
+
+	for _, path := range []string{"Small.md", "Large.md"} {
+		if _, err := curves.Execute(ctx, s.vault, path, p); err != nil {
+			b.Fatal(err)
+		}
+		b.Run(strings.TrimSuffix(path, ".md"), func(b *testing.B) {
+			for b.Loop() {
+				if _, err := curves.Execute(ctx, s.vault, path, p); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+// closing is the vault's files with the request cancelled at the first one
+// read, which is a person shutting the window while its decks are being read.
+type closing struct {
+	inner  ports.VaultReaders
+	cancel context.CancelFunc
+}
+
+func (r closing) Open(v domain.Vault) (ports.VaultReader, error) {
+	one, err := r.inner.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return closingReader{VaultReader: one, cancel: r.cancel}, nil
+}
+
+type closingReader struct {
+	ports.VaultReader
+	cancel context.CancelFunc
+}
+
+func (r closingReader) Read(ctx context.Context, path string) ([]byte, error) {
+	r.cancel()
+	return r.VaultReader.Read(ctx, path)
+}
+
+// A deck that could not be read contributes no card face, and a request that
+// was cancelled read none of them. A curve over no cards is not the answer to
+// what the preset holds.
+func TestACurveRefusesARequestThatIsMissing(t *testing.T) {
+	t.Parallel()
+	s := newAnsweredVault(t, 30)
+	ctx, cancel := context.WithCancel(t.Context())
+
+	customFaces := flashcards.NewListCardFaces(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
+	curves := flashcards.NewProjectCurve(customFaces, s.schedules, s.presets, today, func() time.Time { return noon })
+
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("a curve drawn after the request was cancelled gave %+v, %v", got, err)
+	}
+}
+
+// sanskrit is the identifier the preset of that name carries, so that a deck
+// can name it the auxiliary way.
+const sanskrit = "01M02ACGM0FYMSXNDP29C90JNR"
+
+// newPointedNotes is a vault of three presets and five decks. Three decks name
+// one preset — one of them by its identifier and two by its name — one deck
+// names another preset, one names none, and the third preset is named by
+// nothing.
+func newPointedNotes() map[string]string {
+	return map[string]string{
+		"Term.md": vault["Term.md"],
+		"Sanskrit.md": "---\ntype: preset\nid: " + sanskrit + "\ngoal: minutes_a_day\n" +
+			"minutes_a_day: 20\nnew_a_day: 8\nreviews_a_day: 45\nretention: 0.87\n---\n\n# Sanskrit\n",
+		"Grammar.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 15\n" +
+			"new_a_day: 5\nreviews_a_day: 30\nretention: 0.9\n---\n\n# Grammar\n",
+		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
+			"new_a_day: 4\nreviews_a_day: 20\nretention: 0.85\n---\n\n# Quiet\n",
+		"decks/Roots.md":  newPointingDeck(createPresetLink("Sanskrit"), 0, 8),
+		"decks/Verbs.md":  newPointingDeck(createPresetLink("Sanskrit"), 8, 8),
+		"decks/Chants.md": newPointingDeck(createPresetLink("note://"+sanskrit), 16, 8),
+		"decks/Cases.md":  newPointingDeck(createPresetLink("Grammar"), 24, 8),
+		"decks/Other.md":  newPointingDeck("", 32, 8),
+	}
+}
+
+// createPresetLink is the `links:` block of a deck naming its preset.
+func createPresetLink(to string) string {
+	return "links:\n  - to: " + to + "\n    role: ref\n    type: preset\n"
+}
+
+// newPointingDeck is a deck of cards cards, the first of them numbered from.
+func newPointingDeck(links string, from, cards int) string {
+	out := "---\ntype: deck\n" + links + "---\n"
+	for i := from; i < from+cards; i++ {
+		out += fmt.Sprintf(
+			"\n## Word %d ^%s\n\n[[Term]]\n\n### Word\n\nWord %d\n\n### Meaning\n\nMeaning %d\n",
+			i, mark(i), i, i)
+	}
+	return out
+}
+
+// recordHistoryAnswers writes the same history into a vault: two cards of every deck
+// answered three times each in the months before the day the curves are drawn
+// on, with the times answers have — a middle of a few seconds and a tail of
+// interruptions.
+//
+// Two vaults given this hold one history, so a curve over either is drawn from
+// the same answers.
+func recordHistoryAnswers(t *testing.T, s vaulted) {
+	t.Helper()
+	for _, days := range []int{150, 120, 90} {
+		record := s.run(t, noon.AddDate(0, 0, -days))
+		for card := 0; card < 40; card += 8 {
+			answer(t, record, mark(card), 4*time.Second)
+			answer(t, record, mark(card+1), 50*time.Second)
+		}
+	}
+}
+
+// The decks a curve is worked out over are the decks pointing at the preset,
+// and how many of them there are is counted the same way.
+func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces int) {
+	t.Helper()
+	target, err := s.standings.GetDeckPaths(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, deck := range target {
+		p, err := s.presets.GetForDeck(t.Context(), s.vault, deck)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if p.Path == path {
+			decks = append(decks, deck)
+		}
+	}
+	return decks, len(s.standings.GetFaces(t.Context(), s.vault, decks))
+}
+
+// A curve reads the decks pointing at its preset and leaves the rest of the
+// vault unread, and what it evaluates to is what reading the whole vault evaluates to:
+// the same range, the same value at every place of it, the same marks, and the
+// same decks and card faces behind them.
+//
+// The vault it is asked of holds decks of other presets and decks of none, and
+// the one it is read against holds only the decks the preset schedules. Both
+// hold one history, so what the two answers differ by is the reading.
+func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
+	t.Parallel()
+	shapes := []struct {
+		name string
+		path string
+	}{
+		{"a preset several decks point at", "Sanskrit.md"},
+		{"a preset one deck points at", "Grammar.md"},
+		{"a preset nothing points at", "Quiet.md"},
+	}
+	goals := []struct {
+		name string
+		p    review.Preset
+	}{
+		{"minutes", review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		}},
+		{"retention", review.Preset{
+			Goal: review.GoalRetention, Retention: 0.87,
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		}},
+		{"a date", review.Preset{
+			Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
+		}},
+	}
+
+	for _, shape := range shapes {
+		t.Run(shape.name, func(t *testing.T) {
+			whole := openVault(t, newPointedNotes())
+			recordHistoryAnswers(t, whole)
+			decks, faces := countScheduled(t, whole, shape.path)
+
+			// The same vault with every deck the preset does not schedule taken
+			// out of it, where there is nothing to narrow.
+			notes := maps.Clone(newPointedNotes())
+			for path := range notes {
+				if strings.HasPrefix(path, "decks/") && !slices.Contains(decks, path) {
+					delete(notes, path)
+				}
+			}
+			alone := openVault(t, notes)
+			recordHistoryAnswers(t, alone)
+
+			for _, goal := range goals {
+				t.Run(goal.name, func(t *testing.T) {
+					got, err := whole.curves(noon).
+						Execute(t.Context(), whole.vault, shape.path, goal.p)
+					if err != nil {
+						t.Fatal(err)
+					}
+					want, err := alone.curves(noon).
+						Execute(t.Context(), alone.vault, shape.path, goal.p)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					for _, one := range []projection.Curve{got, want} {
+						if one.Decks != len(decks) || one.Cards != faces {
+							t.Errorf("the curve carries %d decks and %d card faces, and %d decks "+
+								"point at %s with %d card faces in them",
+								one.Decks, one.Cards, len(decks), shape.path, faces)
+						}
+					}
+					if !reflect.DeepEqual(got, want) {
+						t.Errorf("over the whole vault:\n%s\nover its decks alone:\n%s",
+							curveOf(got), curveOf(want))
+					}
+				})
+			}
+		})
+	}
+}
+
+// curveOf is a curve in one line of a failure.
+func curveOf(c projection.Curve) string {
+	return fmt.Sprintf("%d decks, %d card faces, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
+		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
+		c.Now, c.Suggested, c.Points)
 }

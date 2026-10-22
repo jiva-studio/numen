@@ -1,14 +1,16 @@
-package service
+package cardtools
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/edit"
-	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 )
 
@@ -21,6 +23,14 @@ const (
 	// maxBytes is how much one call may put in a deck.
 	maxBytes = edit.MaxBytes
 )
+
+func stamp(t time.Time) int64 {
+	return t.UnixNano()
+}
+
+func instant(nanos int64) time.Time {
+	return time.Unix(0, nanos)
+}
 
 // Stencil is a stencil as the list of them names it.
 type Stencil struct {
@@ -74,7 +84,7 @@ type WriteOutcome struct {
 	Mark        string `json:"mark,omitempty" jsonschema:"the mark the card just written is addressed by, for as long as it exists"`
 }
 
-func newWriteOutcome(path string, edited cards.EditResult) WriteOutcome {
+func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
 	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.Fingerprint), Cards: edited.Cards}
 }
 
@@ -158,4 +168,55 @@ func parseFingerprint(s string) (domain.Fingerprint, error) {
 	}
 	ref.ModTime = instant(nanos)
 	return ref, nil
+}
+
+func convertOutcomeToErrorCode(o edit.ReadOutcome) (v1.ErrorCode, bool) {
+	switch o {
+	case edit.Missing:
+		return v1.ErrorCode_ERROR_CODE_MISSING, true
+	case edit.NotANote:
+		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
+	case edit.NotText:
+		return v1.ErrorCode_ERROR_CODE_NOT_TEXT, true
+	case edit.TooLarge:
+		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
+	case edit.Unreadable:
+		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
+	case edit.Ok:
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+	}
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+}
+
+func describeCode(reason v1.ErrorCode) string {
+	switch reason {
+	case v1.ErrorCode_ERROR_CODE_MISSING:
+		return "the vault holds no note at this path"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
+		return "this is not a note the vault holds"
+	case v1.ErrorCode_ERROR_CODE_NOT_TEXT:
+		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
+	case v1.ErrorCode_ERROR_CODE_TOO_LARGE:
+		return fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes)
+	case v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
+		return "this text opens with a frontmatter delimiter, so it cannot be written into a note"
+	case v1.ErrorCode_ERROR_CODE_UNREADABLE:
+		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
+	case v1.ErrorCode_ERROR_CODE_OCCUPIED:
+		return "a file is already where this note would go"
+	case v1.ErrorCode_ERROR_CODE_UNNAMEABLE:
+		return "a note cannot be called this"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL:
+		return "this note is not a stencil"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_DECK:
+		return "this note is not a deck"
+	case v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE:
+		return "this deck is larger than a deck is read at"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_PRESET:
+		return "this note is not a preset"
+	case v1.ErrorCode_ERROR_CODE_STALE:
+		return "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now"
+	default:
+		return reason.String()
+	}
 }

@@ -1,9 +1,13 @@
 package format_test
 
 import (
+	"errors"
 	"slices"
+	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cardid"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 )
 
@@ -253,5 +257,265 @@ fields:
 	}
 	if got := faceNames(s); !slices.Equal(got, []string{"Вспомнить"}) {
 		t.Errorf("faces = %v", got)
+	}
+}
+
+const stencilHead = "---\ntype: stencil\nfields:\n  - Name\n---\n"
+
+func TestAStencilWhoseFrontmatterCannotBeReadIsNotOpened(t *testing.T) {
+	f, err := format.OpenStencil([]byte("---\nfields: [Name\n---\n\n## Recognise\n"))
+
+	if !errors.Is(err, markdown.ErrUnreadable) {
+		t.Fatalf("open = %v, want the frontmatter rejected", err)
+	}
+	if f != nil {
+		t.Errorf("a stencil was opened over frontmatter nobody can read")
+	}
+}
+
+func TestRenamingAFieldOfAStencilSavedOnOneLineIsRefused(t *testing.T) {
+	raw := "---\n{type: stencil, fields: [Name, Height]}\n---\n\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
+	f, err := format.OpenStencil([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+
+	if err := f.RenameField("Height", "Shoulder height"); !errors.Is(err, markdown.ErrInline) {
+		t.Fatalf("rename = %v, want it rejected", err)
+	}
+	if got := string(f.Bytes()); got != raw {
+		t.Errorf("the file was written: %q", got)
+	}
+}
+
+// A heading deeper than a side's is text the side lays out.
+func TestADeeperHeadingInASideIsText(t *testing.T) {
+	s := format.ReadStencil(note(t, stencilHead+
+		"\n## Recognise\n\n### Front\n\n{{Name}}\n\n#### Detail\n\nmore\n\n### Back\n\nanswer\n"))
+
+	if len(s.Faces) != 1 {
+		t.Fatalf("faces = %+v", s.Faces)
+	}
+	if want := "{{Name}}\n\n#### Detail\n\nmore"; s.Faces[0].Front != want {
+		t.Errorf("front = %q, want %q", s.Faces[0].Front, want)
+	}
+	if s.Faces[0].Back != "answer" {
+		t.Errorf("back = %q", s.Faces[0].Back)
+	}
+	for _, p := range s.Problems {
+		if p.Fault == format.FaultFaceSide {
+			t.Errorf("a side went missing: %+v", p)
+		}
+	}
+}
+
+// A side is opened by the first heading of its name; a heading of another name
+// and a second heading of the same name stand under the side above them.
+func TestSideHeadingsThatOpenNothingStandBelowTheSideAboveThem(t *testing.T) {
+	for name, tc := range map[string]struct{ body, front string }{
+		"another name": {
+			"### Front\n\n{{Name}}\n\n### Notes\n\nn\n\n### Back\n\nanswer\n",
+			"{{Name}}\n\n### Notes\n\nn",
+		},
+		"a second front": {
+			"### Front\n\na\n\n### Front\n\nb\n\n### Back\n\nanswer\n",
+			"a\n\n### Front\n\nb",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := format.ReadStencil(note(t, stencilHead+"\n## Recognise\n\n"+tc.body))
+
+			if len(s.Faces) != 1 {
+				t.Fatalf("faces = %+v", s.Faces)
+			}
+			if s.Faces[0].Front != tc.front {
+				t.Errorf("front = %q, want %q", s.Faces[0].Front, tc.front)
+			}
+			if s.Faces[0].Back != "answer" {
+				t.Errorf("back = %q, want the side after the stray heading", s.Faces[0].Back)
+			}
+		})
+	}
+}
+
+// The tail starts where the last thing the stencil read ends.
+func TestTheTailOfAStencilStartsWhereTheLastFaceEnds(t *testing.T) {
+	for name, tc := range map[string]struct{ body, tail string }{
+		"a lead and no sides": {"## Recognise\n\nLead text.\n\n\n", "\n\n\n"},
+		"a face and nothing":  {"## Recognise\n\n\n", "\n\n\n"},
+		"an empty back":       {"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n\n", "\n\n\n"},
+		"a filled back":       {"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\nanswer\n\n\n", "\n\n\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := format.ReadStencil(note(t, stencilHead+"\n"+tc.body))
+
+			if s.Tail != tc.tail {
+				t.Errorf("tail = %q, want %q", s.Tail, tc.tail)
+			}
+		})
+	}
+}
+
+func TestAFaceMissingASideNamesTheSideItMisses(t *testing.T) {
+	for name, tc := range map[string]struct{ sides, detail string }{
+		"no back":  {"### Front\n\n{{Name}}\n", "this face has no Back, and lays out nothing"},
+		"no front": {"### Back\n\n{{Name}}\n", "this face has no Front, and lays out nothing"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := format.ReadStencil(note(t, stencilHead+"\n## Broken\n\n"+tc.sides))
+
+			if got := getProblem(t, s.Problems, format.FaultFaceSide).Detail; got != tc.detail {
+				t.Errorf("detail = %q, want %q", got, tc.detail)
+			}
+		})
+	}
+}
+
+func TestAStencilWithNoFacesHasNoTail(t *testing.T) {
+	s := format.ReadStencil(note(t, stencilHead+"\nJust prose.\n"))
+
+	if s.Tail != "" {
+		t.Errorf("tail = %q, want none", s.Tail)
+	}
+	if s.Preamble != "\nJust prose.\n" {
+		t.Errorf("preamble = %q", s.Preamble)
+	}
+}
+
+func TestAFieldThatIsNotAWordIsSkippedAndTheFieldsAfterItStand(t *testing.T) {
+	s := format.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - 5\n  - \"\"\n  - Name\n  - Height\n---\n"))
+
+	if !slices.Equal(s.Fields, []string{"Name", "Height"}) {
+		t.Errorf("fields = %v", s.Fields)
+	}
+}
+
+// A mark stands last, one space after the heading's text, and is a mark only at
+// that length and in that alphabet. Anything else at the end of a heading is
+// heading text.
+func TestReadHeading(t *testing.T) {
+	for name, one := range map[string]struct {
+		heading, text string
+		mark          cardid.ID
+	}{
+		"a text and a mark": {
+			"Compost, what is it made of ^k7m2xq9fzp", "Compost, what is it made of", "k7m2xq9fzp",
+		},
+		"a mark and nothing else": {"^k7m2xq9fzp", "", "k7m2xq9fzp"},
+		"nothing at all":          {"", "", ""},
+		"no mark":                 {"Compost, what is it made of", "Compost, what is it made of", ""},
+		"too few characters":      {"Compost ^k7m2xq9fz", "Compost ^k7m2xq9fz", ""},
+		"too many characters":     {"Compost ^k7m2xq9fzpp", "Compost ^k7m2xq9fzpp", ""},
+		"outside the alphabet":    {"Compost ^K7M2XQ9FZP", "Compost ^K7M2XQ9FZP", ""},
+		"no caret":                {"Compost k7m2xq9fzp", "Compost k7m2xq9fzp", ""},
+		"no space in front":       {"Compost^k7m2xq9fzp", "Compost^k7m2xq9fzp", ""},
+		"not last on the line":    {"Compost ^k7m2xq9fzp is a heap", "Compost ^k7m2xq9fzp is a heap", ""},
+		"a caret and nothing":     {"Compost ^", "Compost ^", ""},
+		"a text of one space":     {"Compost  ^k7m2xq9fzp", "Compost ", "k7m2xq9fzp"},
+		"a text that is a mark":   {"^k7m2xq9fzp ^zpqrstvwxy", "^k7m2xq9fzp", "zpqrstvwxy"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			text, mark := format.ReadHeading(one.heading)
+			if text != one.text || mark != one.mark {
+				t.Errorf("read %q = %q, %q, want %q, %q", one.heading, text, mark, one.text, one.mark)
+			}
+			if got := format.WriteHeading(text, mark); got != one.heading {
+				t.Errorf("written back = %q, want %q", got, one.heading)
+			}
+		})
+	}
+}
+
+// A card whose first field is empty is placed under a heading of its mark alone,
+// and a heading is the text alone until the card is written.
+func TestWriteHeading(t *testing.T) {
+	for name, one := range map[string]struct {
+		text string
+		mark cardid.ID
+		want string
+	}{
+		"both":         {"Compost", "k7m2xq9fzp", "Compost ^k7m2xq9fzp"},
+		"no text":      {"", "k7m2xq9fzp", "^k7m2xq9fzp"},
+		"no mark":      {"Compost", "", "Compost"},
+		"neither":      {"", "", ""},
+		"beyond latin": {"компост", "k7m2xq9fzp", "компост ^k7m2xq9fzp"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := format.WriteHeading(one.text, one.mark); got != one.want {
+				t.Errorf("write = %q, want %q", got, one.want)
+			}
+		})
+	}
+}
+
+// The heading is the first line of the first field, cut to fit one line: it
+// stops at the first break and at format.HeadingRunes characters.
+func TestProject(t *testing.T) {
+	long := strings.Repeat("a", format.HeadingRunes+40)
+	upTo := func(n int) string { return strings.Repeat("a", n) }
+
+	for name, one := range map[string]struct{ value, want string }{
+		"one line":            {"Compost, what is it made of", "Compost, what is it made of"},
+		"beyond latin":        {"компост, из чего он", "компост, из чего он"},
+		"two lines":           {"Compost, what is it made of\nand what it is for", "Compost, what is it made of"},
+		"carriage returns":    {"Compost\r\nand more", "Compost"},
+		"a lone carriage":     {"Compost\rand more", "Compost"},
+		"nothing":             {"", ""},
+		"spaces alone":        {"   ", ""},
+		"spaces around":       {"  Compost  ", "Compost"},
+		"a blank first line":  {"\nCompost", ""},
+		"too long":            {long, upTo(format.HeadingRunes)},
+		"a break before then": {upTo(10) + "\n" + long, upTo(10)},
+
+		// The cut never falls inside one of these: it falls before the whole of
+		// whichever it lands in.
+		"inside a wikilink": {
+			upTo(format.HeadingRunes-5) + " [[Compost heap]] and on", upTo(format.HeadingRunes - 5),
+		},
+		"inside an embed": {
+			upTo(format.HeadingRunes-5) + " ![[llama.png]] and on", upTo(format.HeadingRunes - 5),
+		},
+		"inside a run of emphasis": {
+			upTo(format.HeadingRunes-5) + " **very heavy** and on", upTo(format.HeadingRunes - 5),
+		},
+		"inside emphasis of one star": {
+			upTo(format.HeadingRunes-5) + " *very heavy* and on", upTo(format.HeadingRunes - 5),
+		},
+		"inside emphasis of an underscore": {
+			upTo(format.HeadingRunes-5) + " __very heavy__ and on", upTo(format.HeadingRunes - 5),
+		},
+		// A wikilink the cut falls after is text like any other.
+		"after a wikilink": {
+			upTo(format.HeadingRunes-20) + " [[Compost heap]] " + long,
+			upTo(format.HeadingRunes-20) + " [[Compost heap]] " + upTo(2),
+		},
+		// A star with no partner opens no run of emphasis.
+		"a lone star": {
+			upTo(format.HeadingRunes-5) + " *very heavy and on", upTo(format.HeadingRunes-5) + " *ver",
+		},
+
+		// A link inside a run of emphasis is the link's, and the run around it
+		// is one run.
+		"inside emphasis holding a link": {
+			upTo(100) + " *see [[a very long target]] now*", upTo(100),
+		},
+		"inside emphasis holding an embed": {
+			upTo(100) + " **the [[compost]] one made of leaves**", upTo(100),
+		},
+		// A link's brackets hold whatever a person wrote, brackets included, and
+		// the link closes at its own last one.
+		"inside a wikilink holding an embed": {
+			upTo(100) + " [[a ![[img.png]] b]] tail", upTo(100),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			got := format.Project(one.value)
+			if got != one.want {
+				t.Errorf("project %q\n want %q\n  got %q", one.value, one.want, got)
+			}
+			if n := len([]rune(got)); n > format.HeadingRunes {
+				t.Errorf("the heading is %d characters, and %d is the most one is", n, format.HeadingRunes)
+			}
+		})
 	}
 }

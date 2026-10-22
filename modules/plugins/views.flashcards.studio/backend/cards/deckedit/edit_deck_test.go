@@ -1,30 +1,90 @@
-package cards_test
+package deckedit_test
 
 import (
+	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/hostports"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/ports"
 )
 
 const mammals = "decks/Mammals.md"
 
+var animals = map[string]string{
+	"Animal.md": "---\n" +
+		"type: stencil\n" +
+		"mine: keep me verbatim\n" +
+		"fields:\n" +
+		"  - Name\n" +
+		"  - Height\n" +
+		"  - Life span\n" +
+		"---\n" +
+		"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Height\n---\n" +
+		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
+	"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +
+		"\nCards I am learning.\n" +
+		"\n# The ones with fur\n" +
+		"\nThe section says something of its own.\n" +
+		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+		"\n### Height\n\nabout 45\"\n" +
+		"\n### Life span\n\nabout 20 years\n" +
+		"\n## Gloss ^zpqrstvwxy\n\n[[Term]]\n\n### Height\n\nnot a length at all\n" +
+		"\n### Word\n\nGloss\n",
+	"decks/Birds.md": "---\ntype: deck\n---\n" +
+		"\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n",
+	"Weather.md": "# Weather\n\nNo card in here.\n",
+}
+
+type vaulted struct {
+	first   domain.Vault
+	hosts   map[domain.VaultID]*hosttest.Vault
+	ports   hostports.Ports
+	queries vaulttest.Queries
+}
+
+func newVaults(t *testing.T) vaulted {
+	t.Helper()
+	first := vaulttest.New(t, animals)
+	return vaulted{
+		first: first.Vault, ports: first.Ports, queries: first.Queries,
+		hosts: map[domain.VaultID]*hosttest.Vault{first.Vault.ID: first.Host},
+	}
+}
+
+func indexNothing(context.Context, domain.Vault, []string) error { return nil }
+
+func read(t *testing.T, v domain.Vault, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
+}
+
 type editing struct {
 	vs            vaulted
 	read          cards.Read
-	addCard       cards.AddCard
-	editCard      cards.EditCard
-	removeValue   cards.RemoveCardValue
-	removeCard    cards.RemoveCard
-	addSection    cards.AddSection
-	renameSection cards.RenameSection
-	removeSection cards.RemoveSection
-	page          cards.GetCardPage
+	addCard       deckedit.AddCard
+	editCard      deckedit.EditCard
+	removeValue   deckedit.RemoveCardValue
+	removeCard    deckedit.RemoveCard
+	addSection    deckedit.AddSection
+	renameSection deckedit.RenameSection
+	removeSection deckedit.RemoveSection
+	page          deckedit.GetCardPage
 }
 
 func newEditing(t *testing.T) editing {
@@ -33,25 +93,32 @@ func newEditing(t *testing.T) editing {
 	read := cards.NewRead(vs.ports.Readers, vs.queries)
 	write := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
-	return editing{vs: vs, read: read, addCard: cards.NewAddCard(read, write), editCard: cards.NewEditCard(read, write),
-		removeValue: cards.NewRemoveCardValue(read, write), removeCard: cards.NewRemoveCard(read, write),
-		addSection: cards.NewAddSection(read, write), renameSection: cards.NewRenameSection(read, write),
-		removeSection: cards.NewRemoveSection(read, write), page: cards.NewGetCardPage(read)}
+	return editing{
+		vs: vs, read: read,
+		addCard:       deckedit.NewAddCard(read, write),
+		editCard:      deckedit.NewEditCard(read, write),
+		removeValue:   deckedit.NewRemoveCardValue(read, write),
+		removeCard:    deckedit.NewRemoveCard(read, write),
+		addSection:    deckedit.NewAddSection(read, write),
+		renameSection: deckedit.NewRenameSection(read, write),
+		removeSection: deckedit.NewRemoveSection(read, write),
+		page:          deckedit.NewGetCardPage(read),
+	}
 }
 
-func (e editing) version(t *testing.T) cards.DeckVersion {
+func (e editing) version(t *testing.T) deckedit.DeckVersion {
 	t.Helper()
 	got, err := e.read.Deck(t.Context(), e.vs.first, mammals)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return cards.DeckVersion{Path: mammals, Fingerprint: got.Fingerprint}
+	return deckedit.DeckVersion{Path: mammals, Fingerprint: got.Fingerprint}
 }
 
 func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 	e := newEditing(t)
 
-	whole, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{Path: mammals, Limit: 50})
+	whole, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{Path: mammals, Limit: 50})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +129,7 @@ func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 		t.Error("fingerprint mismatch for deck")
 	}
 
-	run, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{Path: mammals, From: 1, Limit: 1})
+	run, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{Path: mammals, From: 1, Limit: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +137,7 @@ func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 		t.Errorf("a run of one from the second read as %+v", run)
 	}
 
-	one, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{
+	one, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{
 		Path: mammals, Mark: "k7m2xq9fzp", From: 1, Fields: []string{"Name"},
 	})
 	if err != nil {
@@ -80,7 +147,7 @@ func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 		t.Errorf("one card with one field read as %+v", one.Cards)
 	}
 
-	if _, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{
+	if _, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{
 		Path: mammals, Mark: "nothing",
 	}); !errors.Is(err, format.ErrNoSuchCard) {
 		t.Errorf("a mark no card carries read as %v", err)
@@ -95,7 +162,7 @@ func TestReadingAFileThatIsNoDeckIsRefusedByPath(t *testing.T) {
 		"Animal.md":  "this note is not a deck",
 		"gone.md":    "there is no note at this path",
 	} {
-		_, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{Path: path, Limit: 50})
+		_, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{Path: path, Limit: 50})
 		if err == nil || err.Error() != path+": "+why {
 			t.Errorf("%s failed as %v, want %q", path, err, why)
 		}
@@ -142,7 +209,7 @@ func TestADeckEditOverAnEditNobodySawIsRefused(t *testing.T) {
 	before := read(t, e.vs.first, mammals)
 
 	_, err := e.addSection.Execute(t.Context(), e.vs.first,
-		cards.DeckVersion{Path: mammals, Fingerprint: domain.Fingerprint{Size: 1}}, "New")
+		deckedit.DeckVersion{Path: mammals, Fingerprint: domain.Fingerprint{Size: 1}}, "New")
 	if !errors.Is(err, ports.ErrStale) {
 		t.Errorf("a write over a deck that changed since was %v", err)
 	}

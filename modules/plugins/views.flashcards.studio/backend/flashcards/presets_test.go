@@ -3,6 +3,7 @@ package flashcards_test
 import (
 	"errors"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -10,8 +11,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/flashcards"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/note"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/ports"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review/projection"
 )
 
 // A vault where one deck names a preset, one names an ordinary note, and one
@@ -631,7 +635,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	}
 
 	// And the counts the window draws off the projection say the same.
-	run := review.Simulation{
+	run := projection.Simulation{
 		By: review.NewFSRSAt(p.Retention), Day: today, Cost: review.DefaultCost, Days: 1,
 	}
 	ran, err := run.Run(t.Context(), now, p, pos, 0)
@@ -814,4 +818,505 @@ func TestADayNamedTwiceIsSavedWhereTheReadConsumesIt(t *testing.T) {
 		t.Errorf("monday came back at %d, and the save put it at 80\n%s",
 			got, read(t, s.vault, "Sanskrit.md"))
 	}
+}
+
+// note is left as the person wrote it.
+//
+// A client that named none of goal, learned or counts sends a value that is not
+// one of them, and a day the goal names has to be there for the goal to read.
+func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
+	t.Parallel()
+	for _, one := range []struct {
+		what   string
+		of     func(review.Preset) review.Preset
+		reason string
+	}{{
+		what:   "a goal the application does not know",
+		of:     func(p review.Preset) review.Preset { p.Goal = ""; return p },
+		reason: "goal",
+	}, {
+		what:   "a rule the application does not know",
+		of:     func(p review.Preset) review.Preset { p.Rule = ""; return p },
+		reason: "learned",
+	}, {
+		what:   "a goal of a date naming no day",
+		of:     func(p review.Preset) review.Preset { p.Goal, p.By = review.GoalDate, time.Time{}; return p },
+		reason: "day",
+	}, {
+		what: "a share of a day outside its bounds",
+		of: func(p review.Preset) review.Preset {
+			p.Load = map[time.Weekday]int{time.Saturday: 140}
+			return p
+		},
+		reason: "the load of sat",
+	}} {
+		t.Run(one.what, func(t *testing.T) {
+			s := openVault(t, settled)
+			was := read(t, s.vault, "Sanskrit.md")
+
+			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.Fingerprint{})
+			if !errors.Is(err, flashcards.ErrOutOfBounds) {
+				t.Fatalf("saving %s said %v", one.what, err)
+			}
+			if !strings.Contains(err.Error(), one.reason) {
+				t.Errorf("the rejection of %s says %q, and names nothing of %q", one.what, err, one.reason)
+			}
+			if target := read(t, s.vault, "Sanskrit.md"); target != was {
+				t.Errorf("the note was written:\n%s", target)
+			}
+		})
+	}
+}
+
+// A vault of two presets and three decks: one on a preset, one on none, and one
+// on a note that is not a preset.
+var choosing = map[string]string{
+	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
+	"presets/Slow.md": "---\ntype: preset\ntitle: Slow going\ngoal: retention\n" +
+		"retention: 0.8\n---\n\n# Slow going\n",
+	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
+	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
+	"decks/Terms.md": "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n",
+	"decks/Verses.md": "---\ntype: deck\nlinks:\n" +
+		"  - to: Grammar\n    role: ref\n    type: preset\n---\n\n## Verse ^zpqrstvwxy\n",
+}
+
+// Every preset the vault holds is listed, by path and by what it is called.
+func TestThePresetsOfAVaultAreListed(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	target, err := s.presets.List(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(target) != 2 {
+		t.Fatalf("listed %+v", target)
+	}
+	if target[0].Path != "Sanskrit.md" || target[0].Title != "Sanskrit" {
+		t.Errorf("the first is %+v", target[0])
+	}
+	if target[1].Path != "presets/Slow.md" || target[1].Title != "Slow going" {
+		t.Errorf("the second is %+v", target[1])
+	}
+}
+
+// A vault holding no preset lists none. Every deck in it is scheduled by the
+// defaults, which are no note.
+func TestAVaultOfNoPresetsListsNone(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, vault)
+
+	target, err := s.presets.List(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(target) != 0 {
+		t.Errorf("listed %+v", target)
+	}
+}
+
+// A build that cannot ask which notes are presets says so. A vault holding none
+// answers with an empty list, and only that is a fact about the vault.
+func TestABuildThatCannotReachThePresetsRefusesToListThem(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	blind := flashcards.NewPresets(
+		s.env.Ports.Readers, s.env.Ports.Writers,
+		s.links, nil, s.scan, review.Day{}, time.Now,
+	)
+	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, flashcards.ErrNoPresets) {
+		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)
+	}
+}
+
+// A deck that named no preset names one, and is scheduled by it afterwards.
+func TestADeckIsInsertOnAPreset(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, s.vault, "decks/Terms.md")
+	if !strings.Contains(got, "to: Sanskrit\n") || !strings.Contains(got, "type: preset\n") {
+		t.Errorf("the deck does not name the preset:\n%s", got)
+	}
+	if !strings.Contains(got, "## Term ^3f4g5h6j7k\n") {
+		t.Errorf("the card was not left alone:\n%s", got)
+	}
+
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target.Path != "Sanskrit.md" || target.Settings.MinutesADay != 20 {
+		t.Errorf("the deck is scheduled by %q at %+v", target.Path, target.Settings)
+	}
+}
+
+// A deck already on a preset is put on another, and names one preset
+// afterwards.
+func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, s.vault, "decks/Roots.md")
+	if strings.Contains(got, "to: Sanskrit") {
+		t.Errorf("the deck still names the preset it was moved off:\n%s", got)
+	}
+	if strings.Count(got, "type: preset") != 1 {
+		t.Errorf("the deck names more than one preset:\n%s", got)
+	}
+
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target.Path != "presets/Slow.md" {
+		t.Errorf("the deck is scheduled by %q", target.Path)
+	}
+	if len(target.Problems) != 0 {
+		t.Errorf("problems = %v", target.Problems)
+	}
+}
+
+// A deck is taken off its preset, and is scheduled by the defaults again. The
+// `links:` block goes with the entry it held.
+func TestADeckIsTakenOffItsPreset(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, s.vault, "decks/Roots.md")
+	if strings.Contains(got, "links:") || strings.Contains(got, "preset") {
+		t.Errorf("the deck still names a preset:\n%s", got)
+	}
+
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target.Path != "" {
+		t.Errorf("the deck is scheduled by %q", target.Path)
+	}
+}
+
+// Everything the deck's frontmatter holds beside the one entry comes out of the
+// write as the bytes it went in as.
+func TestPointingADeckPreservesTheRestOfTheFrontmatter(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Sanskrit.md": choosing["Sanskrit.md"],
+		"decks/Roots.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n" +
+			"tags: [grammar, roots]\n# the ones I keep coming back to\n" +
+			"links:\n  - to: Grammar\n    role: parent\n    note: where these come from\n" +
+			"---\n\n## Root ^k7m2xq9fzp\n",
+	})
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, s.vault, "decks/Roots.md")
+	for _, fragment := range []string{
+		"id: 01J8F3K2M9QRSTVWXYZ012\n", "tags: [grammar, roots]\n",
+		"# the ones I keep coming back to\n",
+		"  - to: Grammar\n    role: parent\n    note: where these come from\n",
+	} {
+		if !strings.Contains(got, fragment) {
+			t.Errorf("%q was written over in\n%s", fragment, got)
+		}
+	}
+	if !strings.Contains(got, "type: preset\n") {
+		t.Errorf("the preset was not written to\n%s", got)
+	}
+}
+
+// What the person wrote on the entry stays on it when the deck is moved to
+// another preset.
+func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Sanskrit.md":     choosing["Sanskrit.md"],
+		"presets/Slow.md": choosing["presets/Slow.md"],
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n" +
+			"    type: preset\n    note: twenty minutes is as much as I have\n---\n\n## Root ^k7m2xq9fzp\n",
+	})
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, s.vault, "decks/Roots.md")
+	if !strings.Contains(got, "note: twenty minutes is as much as I have") {
+		t.Errorf("the person's words are gone from\n%s", got)
+	}
+	if !strings.Contains(got, "to: Slow") {
+		t.Errorf("the deck does not name the preset it was moved to:\n%s", got)
+	}
+}
+
+// A note that is not a preset schedules nothing, so a deck is not pointed at
+// one and the file is left currently.
+func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+	was := read(t, s.vault, "decks/Terms.md")
+
+	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.Fingerprint{})
+	if !errors.Is(err, flashcards.ErrNotAPreset) {
+		t.Fatalf("err = %v", err)
+	}
+	if got := read(t, s.vault, "decks/Terms.md"); got != was {
+		t.Errorf("the deck was written\n was %q\n got %q", was, got)
+	}
+}
+
+func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+	was := read(t, s.vault, "decks/Terms.md")
+
+	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Pali.md", domain.Fingerprint{})
+	if !errors.Is(err, note.ErrNoNote) {
+		t.Fatalf("err = %v", err)
+	}
+	if got := read(t, s.vault, "decks/Terms.md"); got != was {
+		t.Errorf("the deck was written\n was %q\n got %q", was, got)
+	}
+}
+
+// A deck the person has edited since the caller read it is left alone.
+func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	pos, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	was := read(t, s.vault, "decks/Terms.md")
+
+	staleFingerprint := pos
+	staleFingerprint.Size += 3
+	_, err = s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", staleFingerprint)
+	if !errors.Is(err, ports.ErrStale) {
+		t.Fatalf("err = %v", err)
+	}
+	if got := read(t, s.vault, "decks/Terms.md"); got != was {
+		t.Errorf("the deck was written\n was %q\n got %q", was, got)
+	}
+}
+
+func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	pos, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", pos); err != nil {
+		t.Fatal(err)
+	}
+
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target.Path != "presets/Slow.md" {
+		t.Errorf("the deck is scheduled by %q", target.Path)
+	}
+}
+
+// The whole frontmatter comes back as it went in but for the one entry: the
+// identity, the keys the application does not own, the comments beside them,
+// the block's own indentation and the order of the entries.
+func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
+	t.Parallel()
+	deck := "---\n" +
+		"id: 01J8F3K2M9QRSTVWXYZ012\n" +
+		"type: deck\n" +
+		"# the ones I keep coming back to\n" +
+		"tags: [grammar, roots]   # mine\n" +
+		"links:\n" +
+		"    - to: Grammar\n" +
+		"      role: parent\n" +
+		"    - to: Sanskrit\n" +
+		"      role: ref\n" +
+		"      type: preset\n" +
+		"    - to: Verses\n" +
+		"      role: jump\n" +
+		"---\n\n## Root ^k7m2xq9fzp\n"
+	for name, one := range map[string]struct{ preset, want string }{
+		"moved to another preset": {"presets/Slow.md", "    - to: Slow\n      role: ref\n      type: preset\n"},
+		"taken off its preset":    {"", ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := openVault(t, map[string]string{
+				"Sanskrit.md":     choosing["Sanskrit.md"],
+				"presets/Slow.md": choosing["presets/Slow.md"],
+				"decks/Roots.md":  deck,
+			})
+
+			if _, err := s.presets.Point(
+				t.Context(), s.vault, "decks/Roots.md", one.preset, domain.Fingerprint{}); err != nil {
+				t.Fatal(err)
+			}
+
+			want := strings.Replace(deck,
+				"    - to: Sanskrit\n      role: ref\n      type: preset\n", one.want, 1)
+			if got := read(t, s.vault, "decks/Roots.md"); got != want {
+				t.Errorf("the deck was written\n want %q\n  got %q", want, got)
+			}
+		})
+	}
+}
+
+// A `links:` block left with nothing in it is taken out with the entry, and the
+// note is read back as the deck it is.
+func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, choosing)
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, s.vault, "decks/Roots.md")
+	if strings.Contains(got, "links:") {
+		t.Errorf("the block was left standing with nothing in it:\n%s", got)
+	}
+	if _, err := markdown.Open([]byte(got)); err != nil {
+		t.Fatalf("the note cannot be read back: %v\n%s", err, got)
+	}
+	n := markdown.Parse(domain.Fingerprint{Path: "decks/Roots.md"}, []byte(got))
+	if n.Type != format.TypeDeck {
+		t.Errorf("the note reads as a %s", n.Type)
+	}
+}
+
+// A block holding other entries keeps them when the preset entry goes.
+func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Sanskrit.md": choosing["Sanskrit.md"],
+		"Grammar.md":  choosing["Grammar.md"],
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Grammar\n    role: parent\n" +
+			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
+	})
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, s.vault, "decks/Roots.md")
+	if !strings.Contains(got, "  - to: Grammar\n    role: parent\n") {
+		t.Errorf("the other link went with it:\n%s", got)
+	}
+	if strings.Contains(got, "type: preset") {
+		t.Errorf("the deck still names a preset:\n%s", got)
+	}
+}
+
+// A deck that already names two presets is a problem against it. Choosing one
+// leaves it naming one, which is what settles the problem.
+func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Sanskrit.md":     choosing["Sanskrit.md"],
+		"presets/Slow.md": choosing["presets/Slow.md"],
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n" +
+			"  - to: Slow\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
+	})
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := read(t, s.vault, "decks/Roots.md"); strings.Count(got, "type: preset") != 1 {
+		t.Errorf("the deck still names more than one preset:\n%s", got)
+	}
+	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target.Path != "presets/Slow.md" || len(target.Problems) != 0 {
+		t.Errorf("the deck is scheduled by %q with %v", target.Path, target.Problems)
+	}
+}
+
+// The entry a choice writes is a link the index resolves, so what points at a
+// preset is answered by asking for its backlinks. A deck that named its preset
+// by identifier is answered the same way after it is moved.
+func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Sanskrit.md":     "---\nid: 01M02ACGM0FYMSXNDP29C90JNR\ntype: preset\ngoal: minutes_a_day\n---\n\n# Sanskrit\n",
+		"presets/Slow.md": choosing["presets/Slow.md"],
+		"decks/Terms.md":  choosing["decks/Terms.md"],
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: \"note://01M02ACGM0FYMSXNDP29C90JNR\"\n" +
+			"    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
+	})
+
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := getPointingDecks(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Roots.md", "decks/Terms.md"}) {
+		t.Errorf("what points at the preset is %v", got)
+	}
+
+	// The deck that named it by identifier is moved, and the entry is written
+	// in the form a link is written in.
+	if _, err := s.presets.Point(
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := getPointingDecks(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Terms.md"}) {
+		t.Errorf("what points at the preset is %v", got)
+	}
+	if got := getPointingDecks(t, s, "presets/Slow.md"); !slices.Equal(got, []string{"decks/Roots.md"}) {
+		t.Errorf("what points at the other preset is %v", got)
+	}
+}
+
+// getPointingDecks is the decks whose preset link reaches the note at path, in
+// the order they are filed under.
+func getPointingDecks(t *testing.T, s vaulted, path string) []string {
+	t.Helper()
+	found, err := s.links.GetBacklinks(t.Context(), s.vault.ID, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	for _, one := range found {
+		if one.Type == flashcards.LinkType {
+			out = append(out, one.From)
+		}
+	}
+	slices.Sort(out)
+	return out
 }

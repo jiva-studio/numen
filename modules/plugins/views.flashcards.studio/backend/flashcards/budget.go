@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review/projection"
 )
 
 // budgets tracks daily allowances, card face assignments, and deck review progress per preset.
@@ -71,7 +72,7 @@ func getBudgets(
 		// Target date goals scale daily review allowances by learning duration.
 		learn := 0
 		if p.Goal == review.GoalDate {
-			learn = review.GetDaysToLearn(pos(p.Retention), day, p, now)
+			learn = projection.GetDaysToLearn(pos(p.Retention), day, p, now)
 		}
 		out.allowances[path] = &allowance{
 			admits:     p.GetAllowance(day, now, elapsed[path], survey.unstarted[path], learn),

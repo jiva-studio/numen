@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/modules/libs/protocol/schematest"
 )
 
 // deck is one vault of one stencil and one deck, whose single card stands
@@ -1178,4 +1179,11 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	if slices.Equal(bands[100], bands[0]) {
 		t.Error("bands[100] and bands[0] are equal, want different")
 	}
+}
+
+// TestEveryRatingIsRead. A rating the reading does not name comes through as
+// zero, which the use case refuses; a person who pressed a button would be told
+// the answer was not one.
+func TestEveryRatingIsRead(t *testing.T) {
+	schematest.CheckHandled(t, func(r v1.Rating) bool { return parseRating(r) != 0 })
 }

@@ -1,7 +1,9 @@
 package flashcards_test
 
 import (
+	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -9,6 +11,401 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/flashcards"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
 )
+
+// under each of the four is the moment that scheduler brings the card back.
+func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
+	t.Parallel()
+	// The share of the cards each deck's preset asks to come back, by the deck.
+	shares := map[string]float64{"decks/Roots.md": 0.99, "decks/Terms.md": 0.9}
+	s := openVault(t, map[string]string{
+		"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
+		"Tight.md": "---\ntype: preset\ngoal: retention\nretention: 0.99\n---\n\n# Tight\n",
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Tight\n    role: ref\n    type: preset\n---\n" +
+			"\n## Root ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n",
+		"decks/Terms.md": "---\ntype: deck\n---\n" +
+			"\n## Term ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nsandhi\n\n### Meaning\n\njoining\n",
+	})
+
+	// Both cards are put into review, so each stands where its own scheduler
+	// left it and the four are asked of a schedule and not of a blank.
+	pos := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
+	record := s.run(t, pos.AddDate(0, 0, -200))
+	for _, card := range []string{"k7m2xq9fzp", "3f4g5h6j7k"} {
+		on := review.CardFaceID{Card: card, Face: "Say it"}
+		if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	session := flashcards.NewSession(
+		s.marking, s.standings, s.schedules,
+		s.presets, today, func() time.Time { return pos },
+	)
+	target, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(target.Queue) != 2 {
+		t.Fatalf("%d cards were asked", len(target.Queue))
+	}
+
+	observed := map[float64]time.Duration{}
+	for _, one := range target.Queue {
+		share, named := shares[one.Deck]
+		if !named {
+			t.Fatalf("a card of %s was asked", one.Deck)
+		}
+		want := review.NewFSRSAt(share).Next(one.Schedule, pos, review.Good).Due.Sub(pos)
+		if one.Ahead[review.Good] != want {
+			t.Errorf("%s comes back in %v at a share of %g, and the window says %v",
+				one.Deck, want, share, one.Ahead[review.Good])
+		}
+		observed[share] = want
+	}
+	if observed[0.99] == observed[0.9] {
+		t.Fatal("the two presets leave the card in the same place, and this test says nothing")
+	}
+}
+
+// The window under a button is the day the card comes back on.
+//
+// A card's day is chosen in one function: the scheduler works out an interval
+// and the preset chooses a day inside the tolerance around it. The button goes
+// through the same one, so a preset evening its load names the day it moved the
+// card to.
+func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
+	t.Parallel()
+	for _, one := range []struct {
+		what   string
+		isEven bool
+	}{{"an even load", true}, {"no even load", false}} {
+		s := openVault(t, map[string]string{
+			"Term.md": term,
+			"On.md": preset(fmt.Sprintf("goal: minutes_a_day\nminutes_a_day: 1440\n"+
+				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.isEven)),
+			"decks/On.md": deckOf("On", 60, 0),
+		})
+		// Every card face put into review long ago, so each comes back in days
+		// and the placement has a window to move it in.
+		for _, days := range []int{40, 25} {
+			run := s.run(t, saturday.AddDate(0, 0, -days))
+			for i := range 60 {
+				answer(t, run, mark(i), 4*time.Second)
+			}
+		}
+
+		// One card answered at a time, each a second after the last, so the day
+		// stays the one day and nothing but the placement can move a card off
+		// the day the scheduler named. What a button names is a day, so the day
+		// is what is compared.
+		request, differ, worst := 0, 0, time.Duration(0)
+		for step := range 60 {
+			pos := saturday.Add(time.Duration(step) * time.Second)
+			sat := s.sessionAt(t, today, pos)
+			if len(sat.Queue) == 0 {
+				break
+			}
+			card := sat.Queue[0]
+			response, named := card.Ahead[review.Good]
+			if !named {
+				t.Fatalf("under %s a card was asked with no window under its buttons", one.what)
+			}
+			if _, err := s.run(t, pos).Answer(
+				t.Context(), card.ID, review.Good, 0,
+			); err != nil {
+				t.Fatal(err)
+			}
+			schedules, err := s.schedules.Execute(t.Context(), s.vault)
+			if err != nil {
+				t.Fatal(err)
+			}
+			request++
+			came, names := schedules[card.ID].Due, pos.Add(response)
+			if today.GetName(came) != today.GetName(names) {
+				differ++
+				if off := came.Sub(names); off > worst || -off > worst {
+					worst = max(off, -off)
+				}
+			}
+		}
+		if request == 0 {
+			t.Fatalf("under %s no card was asked, and this test says nothing", one.what)
+		}
+		if differ != 0 {
+			t.Errorf("under %s %d of %d cards came back somewhere else than their button said, "+
+				"the worst by %v", one.what, differ, request, worst)
+		}
+	}
+}
+
+// faces is the card faces a session asks, in the order it asks them.
+func faces(sat flashcards.SessionResult) []review.CardFaceID {
+	out := make([]review.CardFaceID, 0, len(sat.Queue))
+	for _, one := range sat.Queue {
+		out = append(out, one.ID)
+	}
+	return out
+}
+
+// getCardFace is a card face of the one stencil these vaults are cut by.
+func getCardFace(pos int) review.CardFaceID {
+	return review.CardFaceID{Card: mark(pos), Face: "Say it"}
+}
+
+// The debt is paid oldest first, whatever order the cards stand in their deck.
+//
+// A day that cannot pay all of it answers the card faces waiting longest and
+// leaves the rest of the pile standing.
+func TestTheDebtIsPaidOldestFirst(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":       term,
+		"Two.md":        preset("new_a_day: 0\nreviews_a_day: 2\nminutes_a_day: 0\n"),
+		"decks/Five.md": deckOf("Two", 5, 0),
+	})
+	// The cards stand in their deck in the reverse of the order they came round
+	// in: the last of them was answered longest ago.
+	for i := range 5 {
+		answer(t, s.run(t, saturday.AddDate(0, 0, -10+i)), mark(4-i), 6*time.Second)
+	}
+
+	got := faces(s.openSessionByPreset(t, today, saturday, "Two.md"))
+	want := []review.CardFaceID{getCardFace(4), getCardFace(3)}
+	if !slices.Equal(got, want) {
+		t.Errorf("a day of two reviews asked %v, want %v", got, want)
+	}
+	for _, one := range []int{2, 1, 0} {
+		if slices.Contains(got, getCardFace(one)) {
+			t.Errorf("%s was asked, and the day had room for the two older", mark(one))
+		}
+	}
+}
+
+// A session over several presets is one session however many times it is asked
+// for: the same request over the same vault is the same cards in the same
+// order, card face by card face.
+func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":    term,
+		"One.md":     preset("new_a_day: 2\nreviews_a_day: 2\nminutes_a_day: 0\n"),
+		"Two.md":     preset("new_a_day: 3\nreviews_a_day: 2\nminutes_a_day: 0\n"),
+		"Three.md":   preset("new_a_day: 1\nreviews_a_day: 2\nminutes_a_day: 0\n"),
+		"decks/A.md": deckOf("One", 6, 0),
+		"decks/B.md": deckOf("Two", 6, 100),
+		"decks/C.md": deckOf("Three", 6, 200),
+		"decks/D.md": deckOf("One", 6, 300),
+	})
+	// A debt under each preset, so every one of them has both sides of its day
+	// to spend and none of them is handed its cards in one lump.
+	for _, days := range []int{-9, -8} {
+		record := s.run(t, saturday.AddDate(0, 0, days))
+		for _, from := range []int{0, 100, 200, 300} {
+			for i := range 2 {
+				answer(t, record, mark(from+i), 6*time.Second)
+			}
+		}
+	}
+
+	first := faces(s.sessionAt(t, today, saturday))
+	if len(first) == 0 {
+		t.Fatal("the session asked nothing")
+	}
+	for range 5 {
+		if again := faces(s.sessionAt(t, today, saturday)); !slices.Equal(first, again) {
+			t.Fatalf("the session asked %v, and the same request asked %v", first, again)
+		}
+	}
+}
+
+// openSession is what the vault asks at this instant when the session is opened
+// over this deck or this preset.
+func (s vaulted) openSession(
+	t *testing.T, day review.Day, now time.Time, pos flashcards.Scope,
+) (flashcards.SessionResult, error) {
+	t.Helper()
+	return flashcards.NewSession(
+		s.marking, s.standings, s.schedules,
+		s.presets, day, func() time.Time { return now },
+	).Execute(t.Context(), s.vault, pos)
+}
+
+// openSessionByPreset is the session over one preset, and a fatal error where
+func (s vaulted) openSessionByPreset(
+	t *testing.T, day review.Day, now time.Time, preset string,
+) flashcards.SessionResult {
+	t.Helper()
+	sat, err := s.openSession(t, day, now, flashcards.Scope{Preset: preset, IsNamed: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return sat
+}
+
+// Pressing a preset sits to the cards of every deck pointing at it, and to no
+// card of another preset.
+func TestASessionOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":         term,
+		"Steady.md":       preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"Other.md":        preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Birds.md":  deckOf("Steady", 3, 0),
+		"decks/Trees.md":  deckOf("Steady", 4, 100),
+		"decks/Rivers.md": deckOf("Other", 5, 200),
+	})
+
+	got := byDeck(s.openSessionByPreset(t, today, saturday, "Steady.md"))
+	want := map[string]int{"decks/Birds.md": 3, "decks/Trees.md": 4}
+	for deck, cards := range want {
+		if got[deck] != cards {
+			t.Errorf("%s was asked %d cards, want %d", deck, got[deck], cards)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("the session held %v, want %v", got, want)
+	}
+}
+
+// The decks naming no preset are a preset of their own, and the session over it
+// is opened by naming no note.
+func TestASessionOverThePresetOfTheDecksNamingNone(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":        term,
+		"Steady.md":      preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Loose.md": deckOf("", 3, 0),
+		"decks/Birds.md": deckOf("Steady", 4, 100),
+	})
+
+	got := byDeck(s.openSessionByPreset(t, today, saturday, ""))
+	if len(got) != 1 || got["decks/Loose.md"] != 3 {
+		t.Errorf("the session held %v, want three cards of decks/Loose.md", got)
+	}
+}
+
+// The cards a preset offers are what its own allowance admits for the day, and
+// the decks under it share that one budget.
+func TestASessionOverAPresetIsHeldToItsBudget(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":        term,
+		"Five.md":        preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Birds.md": deckOf("Five", 10, 0),
+		"decks/Trees.md": deckOf("Five", 10, 100),
+	})
+
+	if got := countQueue(s.openSessionByPreset(t, today, saturday, "Five.md")); got != 5 {
+		t.Errorf("a preset of five new cards a day offered %d", got)
+	}
+}
+
+// A second session over the same preset takes up where the first left off: what
+// the day has spent is off the allowance the tile was drawn from.
+func TestASecondSessionOverAPresetConsumesUpWhereTheFirstLeftOff(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":       term,
+		"Five.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Five.md": deckOf("Five", 20, 0),
+	})
+	if got := unseen(s.openSessionByPreset(t, today, saturday, "Five.md")); got != 5 {
+		t.Fatalf("the morning was asked %d new cards, want 5", got)
+	}
+
+	morning := s.run(t, saturday)
+	for i := range 3 {
+		answer(t, morning, mark(i), 6*time.Second)
+	}
+
+	if got := unseen(s.openSessionByPreset(t, today, saturday.Add(2*time.Hour), "Five.md")); got != 2 {
+		t.Errorf("the evening was asked %d new cards, want 2", got)
+	}
+}
+
+// A deck and a preset are two answers to which cards were meant, and the
+// session puts the question back.
+func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":        term,
+		"Steady.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Birds.md": deckOf("Steady", 3, 0),
+	})
+
+	_, err := s.openSession(t, today, saturday, flashcards.Scope{
+		Deck: "decks/Birds.md", Preset: "Steady.md", IsNamed: true,
+	})
+	if !errors.Is(err, flashcards.ErrBothNamed) {
+		t.Fatalf("a deck and a preset together were answered with %v", err)
+	}
+}
+
+// A preset no deck points at has nothing to sit to, and says so.
+func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":        term,
+		"Steady.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"Lonely.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Birds.md": deckOf("Steady", 3, 0),
+	})
+
+	_, err := s.openSession(t, today, saturday, flashcards.Scope{Preset: "Lonely.md", IsNamed: true})
+	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
+		t.Fatalf("a preset nothing points at was answered with %v", err)
+	}
+	if !strings.Contains(err.Error(), "no deck") {
+		t.Errorf("the reason shown is %q", err)
+	}
+}
+
+func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md":         term,
+		"Paused.md":       preset("new_a_day: 0\nreviews_a_day: 0\n"),
+		"decks/Paused.md": deckOf("Paused", 6, 0),
+	})
+
+	_, err := s.openSession(t, today, saturday, flashcards.Scope{Preset: "Paused.md", IsNamed: true})
+	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
+		t.Fatalf("a paused preset was answered with %v", err)
+	}
+	if !strings.Contains(err.Error(), "paused") {
+		t.Errorf("the reason shown is %q", err)
+	}
+}
+
+// whole of the allowance, and the second is told why there is nothing left.
+func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, map[string]string{
+		"Term.md": term,
+		"Two.md": preset(
+			"new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\ncounts: shows\n"),
+		"decks/Two.md":  deckOf("Two", 6, 0),
+		"decks/Rest.md": deckOf("", 6, 100),
+	})
+	if got := unseen(s.openSessionByPreset(t, today, saturday, "Two.md")); got != 2 {
+		t.Fatalf("the morning was asked %d new cards, want 2", got)
+	}
+
+	morning := s.run(t, saturday)
+	for i := range 2 {
+		answer(t, morning, mark(i), 6*time.Second)
+	}
+
+	_, err := s.openSession(t, today, saturday.Add(2*time.Hour), flashcards.Scope{Preset: "Two.md", IsNamed: true})
+	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
+		t.Fatalf("a spent day was answered with %v", err)
+	}
+	if !strings.Contains(err.Error(), "spent") {
+		t.Errorf("the reason shown is %q", err)
+	}
+}
 
 // term is the one stencil the budgeted vaults are cut by: one face, so a card
 // is a card face.
@@ -1322,4 +1719,395 @@ func (s vaulted) countDayFaces(t *testing.T, day review.Day, now time.Time) int 
 	}
 	t.Fatal("the day went on asking and never ran out")
 	return 0
+}
+
+// theCeiling is the minutes_a_day the presets below ask for.
+const theCeiling = 20 * time.Minute
+
+// A goal is a ceiling over every deck the preset schedules.
+//
+// twenty minutes gets twenty minutes, whether one deck names the preset or
+// five do.
+func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
+	t.Parallel()
+	for _, decks := range []int{1, 2, 5} {
+		files := map[string]string{
+			"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+				"new_a_day: 9999\nreviews_a_day: 9999\n---\n\n# Sanskrit\n",
+		}
+		for d := range decks {
+			deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
+			for i := range 60 {
+				deck += fmt.Sprintf(
+					"\n## Word %d.%d ^c%02d%06d\n\n[[Term]]\n\n### Word\n\nW\n\n### Meaning\n\nM\n",
+					d, i, d, i)
+			}
+			files[fmt.Sprintf("decks/D%d.md", d)] = deck
+		}
+		files["Term.md"] = vault["Term.md"]
+
+		s := openVault(t, files)
+		now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
+		if took := s.minutes(t, today, now); took != theCeiling {
+			t.Errorf("%d decks: the day ran %v, and the goal asks for %v", decks, took, theCeiling)
+		}
+	}
+}
+
+// minutes is how long the whole day of review took, driven the way a person
+// drives it.
+func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Duration {
+	t.Helper()
+	var out time.Duration
+	for range 200 {
+		sat, err := flashcards.NewSession(
+			s.marking, s.standings, s.schedules,
+			s.presets, day, func() time.Time { return now },
+		).Execute(t.Context(), s.vault, flashcards.Scope{})
+		if err != nil || len(sat.Queue) == 0 {
+			return out
+		}
+		record := s.run(t, now)
+		for _, one := range sat.Queue {
+			cost := review.DefaultCost.Review
+			if one.Schedule.IsNew() {
+				cost = review.DefaultCost.New
+			}
+			out += cost
+			answer(t, record, one.ID.Card, cost)
+		}
+	}
+	t.Fatal("the day never ran out")
+	return 0
+}
+
+// And the same ceiling holds when a person sits to one deck at a time.
+func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+			"new_a_day: 9999\nreviews_a_day: 9999\n---\n\n# Sanskrit\n",
+		"Term.md": vault["Term.md"],
+	}
+	for d := range 3 {
+		deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
+		for i := range 60 {
+			deck += fmt.Sprintf(
+				"\n## Word %d.%d ^c%02d%06d\n\n[[Term]]\n\n### Word\n\nW\n\n### Meaning\n\nM\n",
+				d, i, d, i)
+		}
+		files[fmt.Sprintf("decks/D%d.md", d)] = deck
+	}
+
+	s := openVault(t, files)
+	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
+	var out time.Duration
+	for d := range 3 {
+		cardScope := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
+		for range 200 {
+			sat, err := flashcards.NewSession(
+				s.marking, s.standings, s.schedules,
+				s.presets, today, func() time.Time { return now },
+			).Execute(t.Context(), s.vault, cardScope)
+			if err != nil || len(sat.Queue) == 0 {
+				break
+			}
+			record := s.run(t, now)
+			for _, one := range sat.Queue {
+				cost := review.DefaultCost.Review
+				if one.Schedule.IsNew() {
+					cost = review.DefaultCost.New
+				}
+				out += cost
+				answer(t, record, one.ID.Card, cost)
+			}
+		}
+		if out > theCeiling {
+			t.Fatalf("after deck %d the day has run %v, and the goal asks for %v",
+				d, out, theCeiling)
+		}
+	}
+	if out != theCeiling {
+		t.Errorf("deck by deck the day ran %v, and the goal asks for %v", out, theCeiling)
+	}
+}
+
+// One deck is handed no more than the whole day is.
+//
+// A preset is the scope of its own budget, and entering one of its decks does
+// not open a budget of that deck's own.
+func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"Sanskrit.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 30\n" +
+			"reviews_a_day: 30\nretention: 0.9\n---\n\n# Sanskrit\n",
+		"Term.md": vault["Term.md"],
+	}
+	for d := range 3 {
+		deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
+		for i := range 40 {
+			deck += fmt.Sprintf(
+				"\n## Word %d.%d ^c%02d%06d\n\n[[Term]]\n\n### Word\n\nW\n\n### Meaning\n\nM\n",
+				d, i, d, i)
+		}
+		files[fmt.Sprintf("decks/D%d.md", d)] = deck
+	}
+
+	s := openVault(t, files)
+	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
+	runSession := func(scope flashcards.Scope) flashcards.SessionResult {
+		sat, err := flashcards.NewSession(
+			s.marking, s.standings, s.schedules,
+			s.presets, today, func() time.Time { return now },
+		).Execute(t.Context(), s.vault, scope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return sat
+	}
+
+	whole := 0
+	for _, target := range byDeck(runSession(flashcards.Scope{})) {
+		whole += target
+	}
+	if whole != 30 {
+		t.Errorf("the whole vault hands over %d card faces, and the day holds 30", whole)
+	}
+	for d := range 3 {
+		deck := fmt.Sprintf("decks/D%d.md", d)
+		if got := len(runSession(flashcards.Scope{Deck: deck}).Queue); got > 30 {
+			t.Errorf("%s alone hands over %d card faces, and the day holds 30", deck, got)
+		}
+	}
+}
+
+// when is the instant the divided days below are worked out at.
+var when = time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
+
+// counts is a preset whose day is closed by a count of cards nobody has begun.
+const counts = "goal: retention\nnew_a_day: 30\nreviews_a_day: 0\n"
+
+// deckAt is the path of the deck standing at this place.
+func deckAt(pos int) string { return fmt.Sprintf("decks/D%d.md", pos) }
+
+// newDeckVault is a vault of one preset and as many decks, each holding the
+// cards it is given and none of them answered.
+func newDeckVault(t testing.TB, front string, decks ...int) vaulted {
+	t.Helper()
+	files := map[string]string{"Term.md": term, "Steady.md": preset(front)}
+	for item, cards := range decks {
+		files[deckAt(item)] = deckOf("Steady", cards, item*1000)
+	}
+	return openVault(t, files)
+}
+
+func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
+	t.Helper()
+	out, err := s.newCountCardsDueAt(today, func() time.Time { return now }).Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := make(map[string]int, len(out.Decks))
+	for _, one := range out.Decks {
+		target[one.Deck] = one.Due + one.New
+	}
+	return target
+}
+
+// pressDeck is how many card faces pressing one deck hands over.
+func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
+	t.Helper()
+	sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(sat.Queue)
+}
+
+// reviewDeckSession answers everything one deck hands over, session again until it hands
+// over nothing, and says how many card faces went through. A card the day comes
+// back to is the one card.
+func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int {
+	t.Helper()
+	faces := make(map[review.CardFaceID]bool)
+	for range 100 {
+		sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(sat.Queue) == 0 {
+			return len(faces)
+		}
+		record := s.run(t, now)
+		for _, one := range sat.Queue {
+			took := review.DefaultCost.Review
+			if one.Schedule.IsNew() {
+				took = review.DefaultCost.New
+			}
+			faces[one.ID] = true
+			answer(t, record, one.ID.Card, took)
+		}
+	}
+	t.Fatal("the deck went on asking and never ran out")
+	return 0
+}
+
+// Decks owing the same take the day in equal parts.
+//
+// Adding a deck does not add to the day's work; it spreads the same work over
+// more decks.
+func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
+	t.Parallel()
+	s := newDeckVault(t, counts, 40, 40, 40)
+	got := s.rows(t, when)
+	for item := range 3 {
+		if got[deckAt(item)] != 10 {
+			t.Errorf("%s holds %d of a day of 30 over three equal decks, and a third is 10",
+				deckAt(item), got[deckAt(item)])
+		}
+	}
+}
+
+// A deck owing nine times another's takes nine times the share.
+func TestADeckOwingMoreConsumesTheLargerShare(t *testing.T) {
+	t.Parallel()
+	s := newDeckVault(t, counts, 90, 10)
+	got := s.rows(t, when)
+	if got[deckAt(0)] != 27 || got[deckAt(1)] != 3 {
+		t.Errorf("a deck owing 90 beside one owing 10 holds %d and %d of a day of 30, and nine times the share is 27 and 3",
+			got[deckAt(0)], got[deckAt(1)])
+	}
+}
+
+// A deck that cannot use a whole share leaves the rest to the others, and the
+// day still spends what it holds.
+//
+// Twenty minutes buys sixty cards nobody has begun. The deck of one card holds
+// too small a share to buy even that card, and what the shares leave over buys
+// the cards the other two could not afford out of their own.
+func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
+	t.Parallel()
+	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
+		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 1)
+	got := s.rows(t, when)
+	if got[deckAt(2)] != 0 {
+		t.Errorf("%s holds %d out of a share that buys no card", deckAt(2), got[deckAt(2)])
+	}
+	for item := range 2 {
+		if got[deckAt(item)] < 29 {
+			t.Errorf("%s holds %d of the sixty the two of them divide", deckAt(item), got[deckAt(item)])
+		}
+	}
+	whole := got[deckAt(0)] + got[deckAt(1)] + got[deckAt(2)]
+	if whole != 60 {
+		t.Errorf("the day hands over %d and twenty minutes buys 60", whole)
+	}
+}
+
+// A deck holding nothing takes no share of the day.
+func TestADeckContainingNothingConsumesNoShare(t *testing.T) {
+	t.Parallel()
+	s := newDeckVault(t, counts, 0, 40, 40)
+	got := s.rows(t, when)
+	if got[deckAt(0)] != 0 {
+		t.Errorf("a deck of no cards holds %d", got[deckAt(0)])
+	}
+	if got[deckAt(1)] != 15 || got[deckAt(2)] != 15 {
+		t.Errorf("two decks beside an empty one hold %d and %d of a day of 30, and half is 15",
+			got[deckAt(1)], got[deckAt(2)])
+	}
+}
+
+// One deck takes the whole day, which is what it did before any of it was
+// divided.
+func TestOneDeckConsumesTheWholeDay(t *testing.T) {
+	t.Parallel()
+	s := newDeckVault(t, counts, 40)
+	if got := s.rows(t, when)[deckAt(0)]; got != 30 {
+		t.Errorf("the one deck of the vault holds %d of a day of 30", got)
+	}
+}
+
+// The minutes are divided the same way the counts are.
+func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
+	t.Parallel()
+	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
+		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 60)
+	got := s.rows(t, when)
+	// A third of twenty minutes buys twenty cards nobody has begun.
+	for item := range 3 {
+		if got[deckAt(item)] != 20 {
+			t.Errorf("%s holds %d of twenty minutes over three equal decks, and a third buys 20 cards",
+				deckAt(item), got[deckAt(item)])
+		}
+	}
+}
+
+func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
+	t.Parallel()
+	for _, shape := range []struct {
+		front string
+		decks []int
+	}{
+		{counts, []int{40, 40, 40}},
+		{counts, []int{90, 10}},
+		{counts, []int{2, 40, 40}},
+		{counts, []int{0, 40, 40}},
+		{counts, []int{40}},
+		{counts, []int{5, 5, 5, 5, 5}},
+		{"goal: minutes_a_day\nminutes_a_day: 20\nnew_a_day: 9999\nreviews_a_day: 9999\n",
+			[]int{60, 12, 3}},
+		{"goal: by_date\nby_date: 2026-06-01\nlearned: retention\n", []int{30, 10, 10}},
+	} {
+		t.Run(fmt.Sprint(shape.decks), func(t *testing.T) {
+			s := newDeckVault(t, shape.front, shape.decks...)
+			got := s.rows(t, when)
+			for item := range shape.decks {
+				deck := deckAt(item)
+				if pressed := s.pressDeck(t, when, deck); pressed != got[deck] {
+					t.Errorf("%s is at %d on the overview and yields %d when pressed",
+						deck, got[deck], pressed)
+				}
+			}
+		})
+	}
+}
+
+// Session deck by deck spends the same day whichever deck is sat first, and no
+// deck's own share grows because another was sat before it.
+func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
+	t.Parallel()
+	for _, order := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}} {
+		t.Run(fmt.Sprint(order), func(t *testing.T) {
+			s := newDeckVault(t, counts, 40, 40, 40)
+			whole, each := 0, make(map[string]int)
+			for _, item := range order {
+				took := s.reviewDeckSession(t, when, deckAt(item))
+				each[deckAt(item)] = took
+				whole += took
+			}
+			if whole != 30 {
+				t.Errorf("session the decks in the order %v spends %d of a day of 30", order, whole)
+			}
+			for entry := range 3 {
+				if each[deckAt(entry)] != 10 {
+					t.Errorf("%s spent %d of a day of 30 over three equal decks, and a third is 10",
+						deckAt(entry), each[deckAt(entry)])
+				}
+			}
+		})
+	}
+}
+
+// The division turns on what each deck owes and not on where the deck stands,
+// so the same vault divides the same day whatever order its files are walked
+// in.
+func TestTheDivisionDoesNotTurnOnWhereADeckExists(t *testing.T) {
+	t.Parallel()
+	first := newDeckVault(t, counts, 90, 10).rows(t, when)
+	second := newDeckVault(t, counts, 10, 90).rows(t, when)
+	if first[deckAt(0)] != second[deckAt(1)] || first[deckAt(1)] != second[deckAt(0)] {
+		t.Errorf("a deck of 90 beside one of 10 holds %d and %d, and the other way round %d and %d",
+			first[deckAt(0)], first[deckAt(1)], second[deckAt(0)], second[deckAt(1)])
+	}
 }

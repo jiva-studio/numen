@@ -132,7 +132,7 @@ func ConvertSettingsFromWire(s *v1.Settings) (review.Preset, error) {
 }
 
 // ConvertCurveToWire is a curve as the schema carries it.
-func ConvertCurveToWire(c review.Curve) *v1.Curve {
+func ConvertCurveToWire(c flashcards.Curve) *v1.Curve {
 	out := &v1.Curve{
 		Goal:      ConvertGoalToWire(c.Goal),
 		Grid:      c.Grid,
@@ -195,7 +195,7 @@ func ConvertBudgetToWire(name review.BudgetName) v1.BudgetName {
 	return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
 }
 
-func convertCurvePoint(p review.CurvePoint) *v1.CurvePoint {
+func convertCurvePoint(p flashcards.CurvePoint) *v1.CurvePoint {
 	return &v1.CurvePoint{At: int32(p.Index), Value: p.Value, Day: p.Day}
 }
 

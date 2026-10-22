@@ -8,6 +8,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review/projection"
 )
 
 // Settings that name no rule count by the default rule at its default value.
@@ -48,15 +49,15 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 // A place with no day to name carries none, and a place whose horizon ended
 // first carries the day it never reached.
 func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
-	got := ConvertCurveToWire(review.Curve{
+	got := ConvertCurveToWire(projection.Curve{
 		Goal: review.GoalRetention,
 		Grid: []float64{0.9},
-		Points: []review.Point{
+		Points: []projection.Point{
 			{Learns: review.LearnsUnasked},
 			{Learns: review.NeverLearns},
 			{Learns: 12},
 		},
-		Now: review.OutsideGrid, Suggested: review.OutsideGrid,
+		Now: projection.OutsideGrid, Suggested: projection.OutsideGrid,
 	})
 
 	if pos := got.GetAt()[0]; pos.Learns != nil {

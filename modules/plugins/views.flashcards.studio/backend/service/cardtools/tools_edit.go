@@ -1,4 +1,4 @@
-package service
+package cardtools
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/tools"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards"
+	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/note"
 )
@@ -22,18 +22,18 @@ func checkCardSize(vs []FieldValue) error {
 }
 
 // writeDeck presents the fingerprint the caller read to one edit of the deck at path.
-func (b *Backend) writeDeck(
-	ctx context.Context, path, fingerprint string, edit func(v domain.Vault, version cards.DeckVersion) (cards.EditResult, error),
+func (t *Tools) writeDeck(
+	ctx context.Context, path, fingerprint string, edit func(v domain.Vault, version deckedit.DeckVersion) (deckedit.EditResult, error),
 ) (WriteOutcome, error) {
 	read, err := parseFingerprint(fingerprint)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	v, err := b.getToolVault(ctx)
+	v, err := t.getToolVault(ctx)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	edited, err := edit(v, cards.DeckVersion{Path: path, Fingerprint: read})
+	edited, err := edit(v, deckedit.DeckVersion{Path: path, Fingerprint: read})
 	if err != nil {
 		return WriteOutcome{}, err
 	}
@@ -48,7 +48,7 @@ type cardAddInput struct {
 	Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardAdd(registry *tools.Registry) error {
+func (t *Tools) addCardAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review},
 		Name:  "card_add",
@@ -62,17 +62,17 @@ func (b *Backend) addCardAdd(registry *tools.Registry) error {
 			"heading is written from its first field, and the mark it is addressed by " +
 			"comes back under `mark`. The fingerprint from `card_read` is required, and a " +
 			"write lands only on the deck that fingerprint names.",
-	}, b.writeCardAdd)
+	}, t.writeCardAdd)
 }
 
-func (b *Backend) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutcome, error) {
+func (t *Tools) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutcome, error) {
 	if err := checkCardSize(in.Values); err != nil {
 		return WriteOutcome{}, err
 	}
-	var added cards.AddedCard
-	content, err := b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
+	var added deckedit.AddedCard
+	content, err := t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 		var err error
-		added, err = b.scenarios().cards.AddCard.Execute(ctx, v, pos, in.Stencil, values(in.Values), in.Section)
+		added, err = t.deckedit.AddCard.Execute(ctx, v, pos, in.Stencil, values(in.Values), in.Section)
 		return added.EditResult, err
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ type cardEditInput struct {
 	Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardEdit(registry *tools.Registry) error {
+func (t *Tools) addCardEdit(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review},
 		Name:  "card_edit",
@@ -105,15 +105,15 @@ func (b *Backend) addCardEdit(registry *tools.Registry) error {
 			"attached to it stays attached. The first field is written like every " +
 			"other, and the card's heading follows it. The fingerprint from `card_read` is " +
 			"required, and a write lands only on the deck that fingerprint names.",
-	}, b.writeCardEdit)
+	}, t.writeCardEdit)
 }
 
-func (b *Backend) writeCardEdit(ctx context.Context, in cardEditInput) (WriteOutcome, error) {
+func (t *Tools) writeCardEdit(ctx context.Context, in cardEditInput) (WriteOutcome, error) {
 	if err := checkCardSize(in.Values); err != nil {
 		return WriteOutcome{}, err
 	}
-	return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
-		return b.scenarios().cards.EditCard.Execute(ctx, v, pos, in.Mark, in.Stencil, values(in.Values))
+	return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
+		return t.deckedit.EditCard.Execute(ctx, v, pos, in.Mark, in.Stencil, values(in.Values))
 	})
 }
 
@@ -124,7 +124,7 @@ type cardValueRemoveInput struct {
 	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardValueRemove(registry *tools.Registry) error {
+func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Remove,
 		Name:  "card_value_remove",
@@ -139,8 +139,8 @@ func (b *Backend) addCardValueRemove(registry *tools.Registry) error {
 			"mark `card_read` gives it, the fingerprint from `card_read` is required, and " +
 			"a write lands only on the deck that fingerprint names.",
 	}, func(ctx context.Context, in cardValueRemoveInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RemoveCardValue.Execute(ctx, v, pos, in.Mark, in.Field)
+		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
+			return t.deckedit.RemoveCardValue.Execute(ctx, v, pos, in.Mark, in.Field)
 		})
 	})
 }
@@ -151,7 +151,7 @@ type cardRemoveInput struct {
 	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardRemove(registry *tools.Registry) error {
+func (t *Tools) addCardRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Remove,
 		Name:  "card_remove",
@@ -165,8 +165,8 @@ func (b *Backend) addCardRemove(registry *tools.Registry) error {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, in cardRemoveInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RemoveCard.Execute(ctx, v, pos, in.Mark)
+		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
+			return t.deckedit.RemoveCard.Execute(ctx, v, pos, in.Mark)
 		})
 	})
 }
@@ -177,7 +177,7 @@ type cardSectionAddInput struct {
 	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardSectionAdd(registry *tools.Registry) error {
+func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review},
 		Name:  "card_section_add",
@@ -189,8 +189,8 @@ func (b *Backend) addCardSectionAdd(registry *tools.Registry) error {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, in cardSectionAddInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.AddSection.Execute(ctx, v, pos, in.Name)
+		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
+			return t.deckedit.AddSection.Execute(ctx, v, pos, in.Name)
 		})
 	})
 }
@@ -202,7 +202,7 @@ type cardSectionRenameInput struct {
 	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardSectionRename(registry *tools.Registry) error {
+func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Move,
 		Name:  "card_section_rename",
@@ -215,8 +215,8 @@ func (b *Backend) addCardSectionRename(registry *tools.Registry) error {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, in cardSectionRenameInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RenameSection.Execute(ctx, v, pos, in.Section, in.Name)
+		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
+			return t.deckedit.RenameSection.Execute(ctx, v, pos, in.Section, in.Name)
 		})
 	})
 }
@@ -227,7 +227,7 @@ type cardSectionRemoveInput struct {
 	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardSectionRemove(registry *tools.Registry) error {
+func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Remove,
 		Name:  "card_section_remove",
@@ -241,8 +241,8 @@ func (b *Backend) addCardSectionRemove(registry *tools.Registry) error {
 			"`sections`. The fingerprint from `card_read` is required, and a write lands " +
 			"only on the deck that fingerprint names.",
 	}, func(ctx context.Context, in cardSectionRemoveInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RemoveSection.Execute(ctx, v, pos, in.Section)
+		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
+			return t.deckedit.RemoveSection.Execute(ctx, v, pos, in.Section)
 		})
 	})
 }
@@ -254,7 +254,7 @@ type stencilEditInput struct {
 	Fingerprint string   `json:"fingerprint" jsonschema:"what card_stencil_read said the stencil was, which refuses a write over somebody else's edit"`
 }
 
-func (b *Backend) addCardStencilEdit(registry *tools.Registry) error {
+func (t *Tools) addCardStencilEdit(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
 		Name:  "card_stencil_edit",
@@ -262,19 +262,19 @@ func (b *Backend) addCardStencilEdit(registry *tools.Registry) error {
 		Description: "Change a stencil in place: its fields and the faces a card cut by " +
 			"it is shown through. Hand back the fingerprint from `card_stencil_read` so " +
 			"the write fails if the stencil has changed in the meantime.",
-	}, b.writeCardStencilEdit)
+	}, t.writeCardStencilEdit)
 }
 
-func (b *Backend) writeCardStencilEdit(ctx context.Context, in stencilEditInput) (WriteOutcome, error) {
+func (t *Tools) writeCardStencilEdit(ctx context.Context, in stencilEditInput) (WriteOutcome, error) {
 	fp, err := parseFingerprint(in.Fingerprint)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	v, err := b.getToolVault(ctx)
+	v, err := t.getToolVault(ctx)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	current, err := b.scenarios().cards.Read.Stencil(ctx, v, in.Path)
+	current, err := t.cards.Read.Stencil(ctx, v, in.Path)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
@@ -291,7 +291,7 @@ func (b *Backend) writeCardStencilEdit(ctx context.Context, in stencilEditInput)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	newFp, err := b.scenarios().cards.Write.Stencil(ctx, v, in.Path, body, in.Fields, fp)
+	newFp, err := t.cards.Write.Stencil(ctx, v, in.Path, body, in.Fields, fp)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
