@@ -6,26 +6,15 @@
 // component knows nothing about the domain, anything with a lifetime is a port,
 // and a component finding its own children takes a template ref.
 
-import js from '@eslint/js'
-import globals from 'globals'
-import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
-import prettier from 'eslint-config-prettier'
 import boundaries from 'eslint-plugin-boundaries'
+import { createBaseConfig, lifetimes } from '../../tools/lint.layers/base-eslint.mjs'
 import { createLayerElements, createLayerPolicies } from '../../tools/lint.layers/layers.mjs'
-
-/** The globals a pure core is not allowed to reach for, and the port for each. */
-const lifetimes = [
-  { name: 'requestAnimationFrame', port: 'the schedule a Clock carries' },
-  { name: 'cancelAnimationFrame', port: 'the cancel a Clock carries' },
-  { name: 'matchMedia', port: 'a prop, or CSS where the browser already knows' },
-]
 
 const layerOrder = ['shared', 'features', 'screens']
 const sliceLayers = ['features']
 
 const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
-
 const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
 
 /** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
@@ -57,164 +46,28 @@ const domainImports = [
 ]
 
 export default tseslint.config(
-  {
-    ignores: ['dist/**', 'storybook-static/**', 'coverage/**', 'node_modules/**'],
-  },
+  ...createBaseConfig(import.meta.dirname),
 
-  js.configs.recommended,
-  tseslint.configs.recommended,
-  pluginVue.configs['flat/essential'],
-
-  {
-    languageOptions: {
-      globals: globals.browser,
-      parserOptions: {
-        // This file is the one the build's tsconfig does not name.
-        projectService: { allowDefaultProject: ['eslint.config.js'] },
-        tsconfigRootDir: import.meta.dirname,
-        extraFileExtensions: ['.vue'],
-      },
-    },
-    rules: {
-      // Nothing here logs. What a person can act on is said in the window, on
-      // the task list, or on the stream whoever started the process reads. A
-      // message that exists only on the console is one the window decided not
-      // to say.
-      'no-console': 'error',
-
-      // A promise nobody waits for finishes somewhere nobody is looking.
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/await-thenable': 'error',
-
-      // A parameter named and unused is a signature to honour; a leading
-      // underscore says it is there on purpose.
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
-      ],
-
-      // Button, Card and Menu are what the field calls these, and a single-file
-      // component is addressed in PascalCase, so it meets no HTML element. What
-      // a name here must not do is take a word the barrel already exports as a
-      // type: that is the collision, and no rule refuses it.
-      'vue/multi-word-component-names': 'off',
-
-      // The one place it fires is the regular expression that strips control
-      // characters out of a URL, where they are the subject.
-      'no-control-regex': 'off',
-    },
-  },
-
-  // A single-file component is read by the Vue parser, which hands the script
-  // on; without this the type-aware rules have no types for a .vue.
-  {
-    files: ['**/*.vue'],
-    languageOptions: {
-      parserOptions: {
-        parser: tseslint.parser,
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-        extraFileExtensions: ['.vue'],
-      },
-    },
-  },
-
-  // A component's props are a contract with another module.
-  {
-    files: ['**/*.vue'],
-    rules: {
-      'vue/define-props-declaration': ['error', 'type-based'],
-      'vue/require-explicit-emits': 'error',
-      'vue/no-undef-components': 'error',
-      'vue/attribute-hyphenation': ['error', 'always'],
-      'vue/custom-event-name-casing': ['error', 'kebab-case'],
-      'vue/no-unused-refs': 'error',
-    },
-  },
-
-  // A component draws one thing, and its size is where that is checked. A
-  // template past a hundred lines or four elements deep holds a second
-  // component nobody has named; a script past three hundred holds work that
-  // belongs in a `.ts` beside it, where a test reaches it without mounting
-  // anything.
-  //
-  // The order of the blocks and of the macros is the one every component here
-  // is already written in.
-  {
-    files: ['**/*.vue'],
-    rules: {
-      'vue/max-lines-per-block': [
-        'error',
-        { template: 120, script: 300, style: 80, skipBlankLines: true },
-      ],
-      'vue/max-template-depth': ['error', { maxDepth: 4 }],
-      'vue/block-order': ['error', { order: ['script', 'template', 'style'] }],
-      'vue/define-macros-order': [
-        'error',
-        { order: ['defineProps', 'defineModel', 'defineEmits', 'defineSlots'] },
-      ],
-
-      // A template says what is drawn. Every decision behind it is made in a
-      // computed or in a named handler, which a test can call.
-      'vue/no-restricted-syntax': [
-        'error',
-        {
-          selector: 'VElement ConditionalExpression ConditionalExpression',
-          message: 'a choice between three things is a computed',
-        },
-        {
-          selector: 'VOnExpression LogicalExpression',
-          message: 'a handler is a named function, and the guard goes inside it',
-        },
-        {
-          selector:
-            'VAttribute[directive=true][key.name.name="bind"][key.argument.name="style"] ObjectExpression',
-          message:
-            'an inline style object is a computed in <script>, not an object literal in the template',
-        },
-      ],
-
-      // A computed is a projection of what the component was given.
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            'CallExpression[callee.name="computed"] :matches(ForStatement, ForOfStatement, ForInStatement, WhileStatement)',
-          message: 'a loop over the domain is a pure function in a .ts, with a test of its own',
-        },
-      ],
-    },
-  },
-
-  // Limits on complexity and file length for handwritten sources. A test, a spec
-  // and a story are shaped by what they are describing and are not held to either.
+  // UI layer boundaries and domain isolation
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
-    rules: {
-      'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
-      complexity: ['error', 10],
-      'max-depth': ['error', 3],
-      'max-params': ['error', 3],
-      'no-nested-ternary': 'error',
+    ignores: outsideLayers,
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': { typescript: { alwaysTryTypes: true } },
+      'boundaries/elements': layerElements,
+      'boundaries/files': [
+        { category: 'public', pattern: 'src/features/*/index.ts' },
+        { category: 'entry', pattern: 'src/index.ts' },
+      ],
     },
-  },
-
-  // Nothing in this module imports anything that knows what a vault
-  // is — not in the components, not in the stories, not in the fixtures. A
-  // fixture taken from the domain is how the dependency comes back in through
-  // the door marked "tests", so the rule covers every file the module holds.
-  {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
     rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
       'no-restricted-imports': ['error', { patterns: domainImports }],
     },
   },
 
-  // A slice reaches its own files by relative path, and no other slice at all.
   {
     files: ['src/features/**/*.{ts,vue}'],
     ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
@@ -233,6 +86,7 @@ export default tseslint.config(
       ],
     },
   },
+
   {
     files: ['src/screens/**/*.{ts,vue}'],
     ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
@@ -252,38 +106,9 @@ export default tseslint.config(
     },
   },
 
-  // The layers: shared, features, screens, each reaching only what stands below
-  // it, and a feature reached from above through its `index.ts`. Every import is
-  // resolved to the file it names, so `../../features/x` is held to the same
-  // rule as `@/features/x`.
-  //
-  // Stories and fixtures stand outside the layers, and so do the tests that read
-  // `libs/protocol/testdata`. A file under `src` that no element claims fails.
-  {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: outsideLayers,
-    plugins: { boundaries },
-    settings: {
-      'import/resolver': { typescript: { alwaysTryTypes: true } },
-      'boundaries/elements': layerElements,
-      'boundaries/files': [
-        { category: 'public', pattern: 'src/features/*/index.ts' },
-        { category: 'entry', pattern: 'src/index.ts' },
-      ],
-    },
-    rules: {
-      'boundaries/no-unknown-files': 'error',
-      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
-    },
-  },
-
   // Anything with a lifetime a test must hold still is a port. The
   // pure core computes what is drawn from its props alone, so it may not ask
   // the machine what time it is, what the window measures, or what comes next.
-  //
-  // The humble view is not held to this — it is the half that talks to the
-  // browser — and neither are the stories and the fixtures, which stand
-  // outside a component on purpose.
   {
     files: ['src/**/*.ts'],
     ignores: [
@@ -329,52 +154,16 @@ export default tseslint.config(
     },
   },
 
-  // A component finding its own children takes a template ref. A
-  // story stands outside the component and is allowed to reach in.
   {
-    files: ['**/*.vue'],
-    rules: {
-      'no-restricted-properties': [
-        'error',
-        {
-          object: 'document',
-          property: 'querySelector',
-          message: 'a component finding its own children takes a template ref',
-        },
-        {
-          object: 'document',
-          property: 'querySelectorAll',
-          message: 'a component finding its own children takes a template ref',
-        },
-        {
-          object: 'document',
-          property: 'getElementById',
-          message: 'a component finding its own children takes a template ref',
-        },
-      ],
-    },
-  },
-
-  // A test and a story are code that ships to nobody, and both reach for the
-  // browser on purpose.
-  //
-  // The promise rules are off: a play function is written as a run of
-  // interactions and does not await what it starts. In the components the same
-  // rules are on and the tree is clean.
-  {
-    files: ['**/*.test.ts', '**/*.stories.ts', 'vitest.setup.ts', '.storybook/**'],
+    files: ['vitest.setup.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/await-thenable': 'off',
-      // A story standing alone may print what it measured.
       'no-console': 'off',
-      // A test double for a stream that fails before it yields anything.
       'require-yield': 'off',
     },
   },
-
-  prettier,
 )
