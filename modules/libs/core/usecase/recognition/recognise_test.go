@@ -60,7 +60,6 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlo
 
 func (s *speaker) Close() error { return nil }
 
-// documentPath is where the document sits in the vault under test.
 const documentPath = "library/scan.pdf"
 
 // recogniser is a Recognise over one vault holding one document.
@@ -274,7 +273,6 @@ func documentHash() string { return text.Fingerprint(printPages(outline)) }
 // prose the artifact holds.
 //
 // The offsets rise, because the prose of every page written before this one
-// stands in front of it.
 func assertBoxesRead(t *testing.T, prose string, boxes []domain.HighlightBox, says string) {
 	t.Helper()
 	at := -1

@@ -158,7 +158,6 @@ func (h History) GetFaced(d Day, day string) map[CardFaceID]bool {
 
 // Streak is how many days up to now were reviewed without a gap.
 //
-// It counts back from the day holding now, and a day that nobody has answered
 // on yet does not end a streak: a person who has not sat down this morning has
 // not broken anything, and their streak is what they had last night. A day they
 // did answer on counts from itself.

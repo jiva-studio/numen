@@ -22,7 +22,6 @@ const OpensAt = "index.html"
 // parses to none of them empty, and a window is asked for under all three.
 var OpenedAt = []string{"", "/", "/" + OpensAt}
 
-// GetInterface is the interface as it sits inside a binary. A binary built
 // without one says so, in the words of the person who has to fix it.
 func GetInterface(pages fs.FS) (fs.FS, error) {
 	missing := fmt.Errorf("no interface in this binary — run: make interface")

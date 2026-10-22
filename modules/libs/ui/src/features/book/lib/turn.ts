@@ -3,7 +3,6 @@
  * lands. Which key turns which way is settled for every reader in
  * `shared/lib/turn.ts`.
  *
- * Apart from the component the way `spread.ts` is: what a hand put down and
  * lifted again means is a decision, and a test asks it without a browser.
  */
 import type { Span } from '@/shared/lib/span'
@@ -22,23 +21,11 @@ export function swipeTurn(by: number): PageNavigationAction | undefined {
 /** Edge margin ratio of the reading area that triggers a page turn tap. */
 export const EDGE = 0.15
 
-/**
- * What a hand put down and lifted again does: a swipe turns the way it went, a
- * press near either edge turns that way, and a hand that took words up did
- * neither. Taking words up and swiping are one gesture until the hand lifts,
- * and a run worth quoting is wider than a swipe.
- */
 export interface HandTurnOptions {
   readonly wide: number
   readonly hasSelection: boolean
 }
 
-/**
- * What a hand put down and lifted again does: a swipe turns the way it went, a
- * press near either edge turns that way, and a hand that took words up did
- * neither. Taking words up and swiping are one gesture until the hand lifts,
- * and a run worth quoting is wider than a swipe.
- */
 export function handTurn(from: number, to: number, options: HandTurnOptions): PageNavigationAction | undefined {
   if (options.hasSelection) return undefined
   return swipeTurn(to - from) ?? pressTurn(to, options.wide)

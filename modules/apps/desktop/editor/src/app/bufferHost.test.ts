@@ -1,6 +1,3 @@
-/**
- * The files held open by a plugin's tabs, written out when the window quits.
- */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { openNotes, type FileBuffers } from '@numen/plugin-sdk'

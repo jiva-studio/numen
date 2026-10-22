@@ -270,7 +270,6 @@ func stripServerPrefix(tool string) string {
 	return tool
 }
 
-// buildCallStep is a tool call as the person is told about it.
 func (p *streamParser) buildCallStep(callID, tool, args string) *numenv1.AskAgentResponse {
 	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
 	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_ToolCall{ToolCall: call}}

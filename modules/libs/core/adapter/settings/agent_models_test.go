@@ -222,7 +222,6 @@ func modelsAt(t *testing.T, held settings.Agent, programs []port.AgentProgram, s
 	return found
 }
 
-// modelAt is where the model of a program stands in the file.
 func modelAt(program string) []string { return []string{"agent", program, "model"} }
 
 // formatPath is a path through the file, as one word.

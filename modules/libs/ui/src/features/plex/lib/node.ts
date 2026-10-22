@@ -56,7 +56,6 @@ export const isReachable = (node: PlacedNode): boolean =>
 /**
  * Whether the keyboard stops on a node.
  *
- * Wider than being choosable: the focus is stopped on although it cannot be
  * chosen, because a menu is asked for from wherever the keyboard is.
  */
 export const isStop = (node: PlacedNode): boolean => node.opacity >= 1

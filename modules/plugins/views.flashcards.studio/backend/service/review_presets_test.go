@@ -17,8 +17,6 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/flashcards"
 )
 
-// elsewhere is a second vault whose deck stands at the path the first's deck
-// stands at, and is scheduled by a preset of its own. A claim about the vault a
 // request names is worth nothing when the path alone tells the two apart.
 var elsewhere = map[string]string{
 	"Term.md": deck["Term.md"],

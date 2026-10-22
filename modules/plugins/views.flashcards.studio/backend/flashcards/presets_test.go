@@ -128,7 +128,6 @@ func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 	}
 }
 
-// A deck naming two presets is held to the budget of the first, which is the
 // preset it is scheduled by.
 func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
 	t.Parallel()
@@ -668,7 +667,6 @@ func TestASaveRefusesANoteOverTheBound(t *testing.T) {
 	}
 }
 
-// A setting the read could not make out stands in the file exactly as it was
 // written. The read names it as a problem and the default takes its place while
 // the file is read; the file itself is never repaired, and a save that put the
 // default down would write a value the person never chose.

@@ -202,7 +202,6 @@ func (w *window) ShowMove(_ context.Context, went domain.Move) error {
 
 // A person reading a note that is renamed under them is reading a name with no
 // file behind it, and every change made afterwards is made somewhere they are
-// not looking. So the window is told where the note went.
 func TestRenamingANoteReturnsWhereItWent(t *testing.T) {
 	s, looking := newSessionWithWindow(t, map[string]string{"Entropy.md": "# Entropy\n"})
 

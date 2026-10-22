@@ -10,7 +10,6 @@ package numen.v1;
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // VaultsService answers about the vaults this installation holds, and changes
-// which of them a window is showing.
 service VaultsService {
   // ListVaults is every vault the installation holds. Which of them a window is
   // showing is asked of that window.
@@ -64,7 +63,6 @@ enum VaultsErrorCode {
   // It is the only vault this installation has.
   VAULTS_ERROR_CODE_LAST_VAULT = 5;
 
-  // It is the vault this window is showing.
   VAULTS_ERROR_CODE_SHOWING = 6;
 
   // No vault of that identity is on the list.
@@ -100,7 +98,6 @@ message Vault {
 message ListVaultsRequest {}
 
 // ListVaultsResponse is the list itself, which is the same for every window.
-// Which vault a window is showing is asked of that window.
 message ListVaultsResponse {
   // Every vault the installation holds.
   repeated Vault vaults = 1;
@@ -180,6 +177,5 @@ message OpenVaultRequest {
 }
 
 message OpenVaultResponse {
-  // Set when the window is showing what it was, and why.
   optional VaultsErrorCode error = 1;
 }

@@ -1,5 +1,4 @@
 /**
- * The shape a value will take, held open while the value is worked out.
  *
  * The stories are a list filling row by row, because that is where the claim
  * lives: a shape the size of what replaces it leaves the rows where they are.

@@ -29,7 +29,6 @@ const props = withDefaults(
   defineProps<{
     /**
      * The groups, in the order they are offered. A group holding nothing is
-     * drawn at the foot, whatever order it was offered in, and only while it
      * is working or has something to say in place of items.
      */
     groups?: readonly PaletteGroup[]

@@ -10,7 +10,6 @@ const DefaultAgentSteps = 100
 //
 // A program's section is kept whether it is the one in use or not: a person trying another agent
 // for an afternoon comes back to what they had. The programs are the ones the plugins that provide
-// agents list, and each stands in the file under the name it is listed by.
 type Agent struct {
 	// Use names the program that answers. Absent, the program the providers mark as the default
 	// answers. Empty answers with none, and the panel says so.

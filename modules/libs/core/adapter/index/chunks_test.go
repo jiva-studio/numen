@@ -1373,7 +1373,6 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 
 func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 	// A chunk's number is handed to the next chunk that wants one, so a name
-	// left behind by a source that is gone answers for whatever takes it.
 	ctx := t.Context()
 	db := openDB(t)
 	chunks := db.Chunks()

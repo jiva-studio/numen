@@ -66,7 +66,6 @@ func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 	}
 }
 
-// The model the route names stands over the one the program's section names, and an empty default
 // is the program the plugins mark as the default.
 func TestTheRouteModelExistsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)

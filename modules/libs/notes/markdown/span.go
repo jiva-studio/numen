@@ -14,7 +14,6 @@ type Span struct {
 	To   int
 }
 
-// FindSpans returns every place `wanted` stands in `text`.
 //
 // Three readings are tried and the first that finds anything answers: the text
 // currently, then punctuation and spacing read as the marks they stand for,
@@ -51,7 +50,6 @@ func FindSpans(text, wanted string) (at []Span, isApproximate bool) {
 	return nil, false
 }
 
-// occurrences is every place `wanted` stands in `text`. A place found is
 // stepped over, so two reported spans never overlap.
 func occurrences(text, wanted string) []Span {
 	var at []Span

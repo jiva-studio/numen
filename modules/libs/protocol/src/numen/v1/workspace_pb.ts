@@ -2,7 +2,6 @@
 // @generated from file numen/v1/workspace.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about where the person stands in the vault a window is
 // showing.
 //
 // The tabs the window has open and the places something else asks to be put in

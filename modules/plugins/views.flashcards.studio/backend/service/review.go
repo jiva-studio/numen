@@ -62,7 +62,6 @@ func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWri
 	return run, nil
 }
 
-// openRun starts a run and remembers it under its own name. The host is told which vault the
 // person's session is on.
 func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
 	run, err := h.scenarios().flash.Log.Open(ctx, v, h.now())
@@ -349,7 +348,6 @@ func (a *reviewHandler) AnswerCard(
 	return connect.NewResponse(&v1.AnswerCardResponse{Answer: provided.ID}), nil
 }
 
-// parseRating is the four a person may say. Anything else is refused by the use
 // case, which is where the rule is.
 func parseRating(r v1.Rating) review.Rating {
 	switch r {

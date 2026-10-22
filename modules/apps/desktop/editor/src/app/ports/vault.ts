@@ -28,7 +28,6 @@ export interface VaultPort {
   /**
    * Why an agent cannot be reached, and nothing where one can. Which agent
    * answers is the installation's, so it is asked of the agent and not of the
-   * vault the window is showing.
    */
   agentUnreachable(): Promise<string>
   watchVaultChanges(signal: AbortSignal): AsyncIterable<{

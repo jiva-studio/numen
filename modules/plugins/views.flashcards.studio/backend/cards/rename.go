@@ -32,7 +32,6 @@ type UnwrittenDeck struct {
 
 // RenameResult says what a rename reached and what it did not.
 type RenameResult struct {
-	// Stencil is the fingerprint the stencil now stands at, which is what the
 	// caller presents at its next write.
 	Stencil domain.Fingerprint
 	// Decks is every deck a heading was rewritten in, and Cards is how many
@@ -273,7 +272,6 @@ type deckWriter struct {
 // A card is cut by the stencil its own wikilink lands on, which is what reading
 // the deck against its stencils holds to.
 //
-// This is the application writing the file, so the deck it leaves behind is
 // whole: it is given an identifier where it carried none, and every card
 // of it is given its mark and its heading.
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {

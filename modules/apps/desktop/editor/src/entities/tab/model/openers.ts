@@ -1,7 +1,6 @@
 /**
  * What a file of the vault is put in front of the person with.
  *
- * Every road to a file comes through here, holding a path and no choice: what
  * the vault says it holds there decides between the editors, the reader and the
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */

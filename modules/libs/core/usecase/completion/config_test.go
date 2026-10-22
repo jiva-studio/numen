@@ -38,7 +38,6 @@ func TestAnOlderFileKeepsItsDefaultRoute(t *testing.T) {
 	}
 }
 
-// The default of the new shape stands over the routes of the older one.
 func TestTheDefaultExistsOverTheOlderRoutes(t *testing.T) {
 	var config completion.Config
 	both := `{"default": {"agent": "new"}, "routes": {"default": {"agent": "old"}}}`

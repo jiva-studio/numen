@@ -148,7 +148,6 @@ const moving = (): boolean =>
 const STILLNESS = 3
 
 /**
- * The page as it comes to rest, and whether it got there. A swap runs its two
  * halves one after the other and holds nothing moving between them, so several
  * still frames running are asked for and one proves nothing.
  */

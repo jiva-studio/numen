@@ -23,7 +23,6 @@ export const NOTE = 'note'
 const SCHEMED = /^([A-Za-z0-9+\-.]+):\/\/([\s\S]*)$/
 
 /**
- * Reads what stands between the brackets.
  *
  * An alias after `|` is how the link is read in the sentence and a fragment
  * after `#` names a place inside the note. Neither is part of the address.

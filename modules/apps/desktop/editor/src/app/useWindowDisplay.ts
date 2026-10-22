@@ -1,6 +1,3 @@
-/**
- * What the window is showing, and the rules for changing it.
- */
 import { ref, shallowRef } from 'vue'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'

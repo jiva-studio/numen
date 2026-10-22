@@ -14,7 +14,6 @@ var lastAnswer = time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 
 // whereItStands generates where the answers so far have left one card face: how
 // long it is sent away for, and how long the scheduler expects it to stay
-// recalled. A face nobody has answered is drawn as often as one that has been,
 // and carries a day it is wanted on like any other: what says nobody has
 // answered it is that it was never answered, and not that nothing is set on it.
 func whereItStands(t *rapid.T) review.Schedule {
@@ -45,10 +44,8 @@ func ruleNamed(t *rapid.T) review.Preset {
 	}
 }
 
-// A card face nobody has answered is learned by neither rule, whatever the
 // preset says and whenever it is asked.
 //
-// A card face nobody has answered is learned by neither rule.
 func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

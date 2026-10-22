@@ -134,7 +134,6 @@ func corrections(t *testing.T, store port.DerivedStore, name domain.ArtifactName
 	return out
 }
 
-// A proofreading that ended among the batches stands at the page it reached,
 // and the pages after it are asked about when the application opens.
 func TestARecognitionLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T) {
 	lines := []string{"the words one", "the words two", "the words three"}

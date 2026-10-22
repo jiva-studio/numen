@@ -362,7 +362,6 @@ func TestAnElementOnASpaceTakenBackExistsAtTheLineEnd(t *testing.T) {
 	}
 }
 
-// A run written in a table stands in the cell that follows it, and in the table
 // itself when no cell follows. A run written after a table is not in it.
 func TestRunsInATable(t *testing.T) {
 	for _, c := range []struct {

@@ -1,5 +1,4 @@
 /**
- * What a divider draws around what stands in its middle.
  *
  * The negatives are here: it is announced as nothing, it draws no line of its
  * own as an element, and it takes no name away from what it holds.

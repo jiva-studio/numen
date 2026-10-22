@@ -51,7 +51,6 @@ func New(cfg Config) *Provisioner {
 }
 
 // Provision returns the path of the library and the name of the execution
-// provider for the plugin that stands in pluginDir.
 //
 // The library is, in order: the one a person names in the environment, used as
 // given; the first one this machine holds that opens (beside the plugin or the

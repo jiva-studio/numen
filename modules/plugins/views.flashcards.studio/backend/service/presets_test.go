@@ -330,7 +330,6 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 
 // TestAPresetMadeIsAPresetToRead. A preset is made where there was no file, and
 // it says it is a preset from the moment it exists. It names none of its
-// settings, so the read that follows stands at the defaults.
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 

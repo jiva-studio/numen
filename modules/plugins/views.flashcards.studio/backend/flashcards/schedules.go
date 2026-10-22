@@ -258,7 +258,6 @@ func (u Schedules) GetFromLog(
 // worked is where a log a caller has already read leaves the card faces of one
 // assignment.
 //
-// The cache is filed under the assignment a whole vault stands at, and the
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.

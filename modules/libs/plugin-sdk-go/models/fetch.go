@@ -98,7 +98,6 @@ func VerifyFile(name, sum string) error {
 type Request struct {
 	// Dir is the folder the file is kept in.
 	Dir string
-	// Section is the settings block a person is told to change.
 	Section string
 	// Address is the https address the file is fetched from.
 	Address string

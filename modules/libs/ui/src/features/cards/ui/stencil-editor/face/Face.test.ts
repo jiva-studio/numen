@@ -2,7 +2,6 @@
  * What one face of a stencil draws from what it was handed, and what it emits.
  *
  * The negatives are here: a preview draws no braces, a part of the window
- * carries no outline of its own, a part something stands in says nothing about
  * being empty, one row of fields serves both halves, a name that objects
  * does not rename, and a name abandoned does not rename.
  */

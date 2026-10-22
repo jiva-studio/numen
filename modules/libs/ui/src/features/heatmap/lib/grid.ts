@@ -63,7 +63,6 @@ export function measureGrid(metrics: HeatmapMetrics): {
  *
  * A caller asks the application for the days before it knows the room it will
  * have, so it asks about the widest grid the room could hold. Every day any
- * narrower grid draws stands inside the answer.
  */
 export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; to: string } {
   const { columns } = measureGrid(metrics)

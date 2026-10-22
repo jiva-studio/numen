@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// A RunState is what a source stands at; one holds at a time.
 type RunState int
 
 const (

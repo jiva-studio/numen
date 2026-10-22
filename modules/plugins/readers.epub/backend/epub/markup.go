@@ -14,7 +14,6 @@ import (
 )
 
 // A Markup is one spine document as the elements a book is drawn from, with
-// every run of text at the offset it stands at in the book's Text. Reading a
 // document and reading its text are one walk, so an offset here is the offset a
 // chunk of that text carries.
 type Markup struct {
@@ -111,7 +110,6 @@ func (b *Book) findSVGImage(base string, raw []byte) (string, bool) {
 // the text is not taken from — head, script, style and title — are dropped whole
 // by the walk that reads both.
 type builder struct {
-	// base is the directory the document sits in, which its own hrefs are
 	// written against.
 	base string
 	// stack is the elements standing open, the first being the document itself.
@@ -156,7 +154,6 @@ func (b *builder) close() {
 // markup or to end a line. What it says is filled in when the document has been
 // read, so a space taken back by the line that follows is taken back here too.
 //
-// A run written in a table stands inside a cell of it: a browser foster-parents
 // one standing between the cells out in front of the table.
 func (b *builder) run(offset int) {
 	if b == nil {
@@ -200,7 +197,6 @@ func (b *builder) appendChild(n Node) {
 	top.Children = append(top.Children, n)
 }
 
-// finish fills every run with the text it stands over and answers with the
 // document.
 //
 // A run reaches to where the next one begins, so every byte of the document is
@@ -219,7 +215,6 @@ func (b *builder) finish(text string, end int) []Node {
 
 	var last *Node
 	for _, node := range found {
-		// gomutants:disable-next-line BRANCH_IF reason="an element stands at the offset of the run that follows it, so reading it as a run assigns the same text"
 		if node.Name != "" {
 			continue
 		}

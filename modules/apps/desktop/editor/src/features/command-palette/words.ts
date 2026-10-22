@@ -1,6 +1,5 @@
 /**
  * The words the palette is drawn in: every command as it is offered, every
- * group it stands in, what each step says while it asks, and what a command
  * that has been carried out answers in.
  *
  * Nothing here is a decision. `types.ts` says what a command is and
@@ -170,7 +169,6 @@ export interface Words extends EmptyWords {
   readonly typeName: string
   readonly callIt: string
   /**
-   * An address asked for: the field, what stands in it, what Enter does, and
    * what is said of words that are no address.
    */
   readonly url: string

@@ -77,7 +77,6 @@ export const EveryControlAtTheOneEdge: Story = {
     await expect(switches[0]).toHaveAccessibleName('Nest headings under notes')
     await expect(list).toHaveAccessibleName('Put a transcript right')
 
-    // A switch and a list far wider than it end at the same edge.
     const switchRect = switches[0]!.getBoundingClientRect()
     const listRect = list.getBoundingClientRect()
     await expect(Math.round(listRect.right)).toBe(Math.round(switchRect.right))

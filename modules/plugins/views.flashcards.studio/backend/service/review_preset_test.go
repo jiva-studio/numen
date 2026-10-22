@@ -44,7 +44,6 @@ var presetted = map[string]string{
 func newPresetName(preset string) *string { return &preset }
 
 // The window draws a tile per preset, and pressing one opens a session over the
-// cards of every deck pointing at it, held to that preset's budget.
 func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 	api, target := newAPI(t, presetted)
 	v := target[0]

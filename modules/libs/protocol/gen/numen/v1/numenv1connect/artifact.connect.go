@@ -67,7 +67,6 @@ type ArtifactServiceClient interface {
 	// stands. A file a person named is never turned away for want of a turn: it
 	// waits in line and is taken up before anything the vault set itself.
 	CreateArtifact(context.Context, *connect.Request[v1.CreateArtifactRequest]) (*connect.Response[v1.CreateArtifactResponse], error)
-	// DeleteArtifact takes one away, with everything cut from it. The file stands
 	// as it did before anything was made from it, and it is offered again.
 	DeleteArtifact(context.Context, *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error)
 }
@@ -143,7 +142,6 @@ type ArtifactServiceHandler interface {
 	// stands. A file a person named is never turned away for want of a turn: it
 	// waits in line and is taken up before anything the vault set itself.
 	CreateArtifact(context.Context, *connect.Request[v1.CreateArtifactRequest]) (*connect.Response[v1.CreateArtifactResponse], error)
-	// DeleteArtifact takes one away, with everything cut from it. The file stands
 	// as it did before anything was made from it, and it is offered again.
 	DeleteArtifact(context.Context, *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error)
 }

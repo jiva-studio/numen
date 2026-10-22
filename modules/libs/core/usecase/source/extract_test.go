@@ -60,7 +60,6 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			}
 
 			// A chunk keeps a place in the extracted text and not the text
-			// itself, so what it says has to be what stands at that place.
 			book, err := documents{}.ReadBook(ctx, raw)
 			if err != nil {
 				t.Fatal(err)

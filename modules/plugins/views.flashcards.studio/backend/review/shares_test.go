@@ -64,7 +64,6 @@ func TestNoDeckConsumesMoreOfTheDayThanItOwes(t *testing.T) {
 	})
 }
 
-// A share stands at the proportion of the day its deck owes, rounded one way or
 // the other: three decks owing the same take a third each, and a deck owing
 // nine times another's takes nine times the share. What the proportions leave
 // over is under one card a deck, so no share is a whole card away from the

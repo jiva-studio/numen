@@ -222,7 +222,6 @@ func (s Simulation) getRecallProbability(c Schedule, at time.Time) float64 {
 // Run projects the card faces forward from now.
 //
 // The map is where the answers have left every card face the preset schedules,
-// and unseen is how many of its card faces nobody has answered. A day's answers
 // are all given at the hour the day opens, and the day asks a card face again
 // while its answer leaves it falling due before the day closes.
 //
@@ -312,7 +311,6 @@ func (s Simulation) Run(
 		var used time.Duration
 
 		// What the day admits is the one answer, and it is the answer the
-		// session of that day will be held to.
 		// The first day of a run is the day holding now, which a person may be
 		// halfway through. Every day after it opens unspent.
 		removed := Spent{}

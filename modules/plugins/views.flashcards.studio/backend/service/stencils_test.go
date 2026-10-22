@@ -153,7 +153,6 @@ func TestWritingAStencilWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 }
 
 // TestAStencilMadeOnANameAlreadyTakenIsRefused. Nothing is written over: the
-// person is told the name is taken and picks another.
 func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
@@ -236,8 +235,6 @@ func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
 	}
 }
 
-// TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn. A file stands where the
-// folder would be, so nothing goes in it and the person is told the name is
 // taken.
 func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	f := newCutting(t, map[string]string{"Entropy.md": "# Entropy\n"})

@@ -64,7 +64,6 @@ func FuzzExpression(f *testing.F) {
 	f.Fuzz(func(t *testing.T, typed string, growing bool) {
 		// A NUL ends a string on its way into SQLite, so what the driver would
 		// ask is not what was written. Nothing types one; the escaping is still
-		// held to the round trip below.
 		//
 		// FTS5 costs more than linearly in the number of words asked for — ten
 		// thousand of them take a third of a second — so what is put to the

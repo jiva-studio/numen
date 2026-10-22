@@ -229,7 +229,6 @@ func registerVault(cfg container.Config, root string) (string, error) {
 	return added.Path, nil
 }
 
-// Seeded is the note a vault this package filled opens on. It stands in every
 // relation at once: a parent above it, two children below, a sibling beside and a
 // jump across.
 const Seeded = "Physics.md"
@@ -275,14 +274,12 @@ func seedVault(root string) error {
 // loopback, so the page is asking across origins and says so.
 const Page = "http://localhost"
 
-// allowOrigin lets the page the platform serves ask this server, which sits on
 // another origin than the one the webview loaded.
 //
 // It names that one origin. The socket is on the loopback and every process on
 // the phone reaches it, so a page in the person's own browser could ask it as
 // well; naming the origin is what makes a browser refuse to send that ask and
 // refuse to hand back what came of it. Nothing here is authentication: a
-// program that speaks for itself sends no origin and is not held to one.
 func allowOrigin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		head := w.Header()

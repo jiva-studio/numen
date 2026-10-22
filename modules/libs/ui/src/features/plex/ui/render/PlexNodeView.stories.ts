@@ -215,7 +215,6 @@ export const EveryRelation: Story = {
 /**
  * The handle: absent until the node has a hand or the keyboard on it.
  *
- * The thing about it that is easy to get wrong is that it sits inside a node
  * which navigates when pressed, so pressing the handle must start a gesture
  * and must not also choose the node underneath.
  *

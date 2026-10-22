@@ -30,7 +30,6 @@ var titleNamespaces = map[string]bool{
 // A packageDoc is the package document, read down to what a reader needs.
 type packageDoc struct {
 	title string
-	// base is the directory the package document sits in. Every href in it is
 	// relative to that.
 	base string
 	// spine is the documents of the spine, in reading order.
@@ -283,7 +282,6 @@ func decodeXML(raw []byte, into any) error {
 }
 
 // resolve turns an href into an archive path, relative to the directory the
-// document holding it sits in.
 func resolve(base, href string) string {
 	if href == "" {
 		return ""

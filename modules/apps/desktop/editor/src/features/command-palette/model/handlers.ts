@@ -146,8 +146,6 @@ export async function runInvocation(
 const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
 
 /**
- * An artifact asked for over a file. What it now stands at is one message,
- * which is what the person is told; a run under way shows what it is doing in
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */

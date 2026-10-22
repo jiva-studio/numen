@@ -12,7 +12,6 @@ import (
 // Day is where one day of review gives way to the next.
 type Day = review.Day
 
-// Scenarios is everything that runs a vault's cards: what stands in it, what it
 // owes, what to ask next, and what an answer is written to.
 type Scenarios struct {
 	CardFaces ListCardFaces

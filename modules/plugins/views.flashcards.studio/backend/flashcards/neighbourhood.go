@@ -117,7 +117,6 @@ func (u ShowNeighbourhood) Execute(
 
 // getNeighbours is what the links of a deck lead to: what it points at first,
 // then what points at it. A deck naming itself, and a card naming the deck it
-// stands in, are not somewhere else to read.
 func getNeighbours(v domain.Vault, deck string, linked note.NoteLinks) []Neighbour {
 	observed := map[string]bool{deck: true}
 	var found []Neighbour

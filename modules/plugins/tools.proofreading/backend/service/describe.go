@@ -99,7 +99,6 @@ func isName(word string) bool {
 	return utf8.RuneCountInString(head) > 1 || utf8.RuneCountInString(tail) > 2
 }
 
-// isSentenceEnd says whether a word ends the sentence it stands in. A closing bracket
 // or quotation mark after the stop belongs to the sentence it closes.
 func isSentenceEnd(word string) bool {
 	word = strings.TrimRightFunc(word, func(r rune) bool {

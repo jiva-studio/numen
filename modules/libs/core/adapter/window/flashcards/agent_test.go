@@ -246,7 +246,6 @@ func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 }
 
 // The page asks once, as it opens, and no session is open then. An agent that
-// is started when a person sits down to a vault has not started yet, and the
 // page is not told this window can ask nothing.
 func TestAWindowAskedBeforeASessionIsNotSaidToHaveNoAgent(t *testing.T) {
 	api := &API{}

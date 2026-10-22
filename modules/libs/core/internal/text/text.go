@@ -86,7 +86,6 @@ func (d *Document) GetNamesAt(offset int) []string {
 
 // page is what a page of a file is called: at its current position in it.
 //
-// A person is told the number a viewer opens at, so there is one number and it
 // is the one on the screen. What the paper printed is a second number for the
 // same page, and a person shown both has to work out which is being talked
 // about.

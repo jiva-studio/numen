@@ -128,7 +128,6 @@ func TestTheCurrentVaultReachesFirst(t *testing.T) {
 }
 
 // A caller sitting in front of a vault says which, and what the list remembers
-// is not asked: the window is showing one vault whatever was opened last.
 func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()

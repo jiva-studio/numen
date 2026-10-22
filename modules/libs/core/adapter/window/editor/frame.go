@@ -80,7 +80,6 @@ func (l *Loopback) serveFrame(w http.ResponseWriter, r *http.Request, raw string
 	w.Header().Set("Content-Security-Policy",
 		"default-src 'none'; frame-src "+host+"; script-src 'unsafe-inline'; style-src 'unsafe-inline'")
 	// A host checks who is framing its player and is told by the address this
-	// page stands at. The policy is written here so that whatever frames this
 	// page cannot take that address away: a page that hands a host nothing plays
 	// nothing.
 	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -97,9 +96,7 @@ func (l *Loopback) serveFrame(w http.ResponseWriter, r *http.Request, raw string
 }
 
 // getFrameOrigin is the origin a player is played from, and whether the window may
-// frame it at all. A player composed for a host nobody named is played nowhere:
 // the list and what composes an address are one decision, and this is where the
-// two are held to each other.
 func getFrameOrigin(played string) (string, bool) {
 	address, err := url.Parse(played)
 	if err != nil {

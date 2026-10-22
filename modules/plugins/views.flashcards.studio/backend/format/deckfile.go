@@ -29,7 +29,6 @@ var ErrNoSuchSection = errors.New("section not found in deck")
 // the person wrote.
 var ErrNoSuchValue = errors.New("this card writes no value under that field")
 
-// DeckFile is a deck held open so that one value can be changed and every other
 // byte of the file left as it arrived. A change is a splice: the run one value
 // occupies is replaced, and nothing else in the file is written.
 type DeckFile struct {
@@ -143,7 +142,6 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 	return fmt.Errorf("%w: %s", ErrNoSuchValue, field)
 }
 
-// SetStencil writes the wikilink naming the stencil a card is cut by. A card
 // that named none is given the paragraph under its heading, and the values it
 // already holds stay where they stand.
 func (f *DeckFile) SetStencil(card cardid.ID, name string) error {

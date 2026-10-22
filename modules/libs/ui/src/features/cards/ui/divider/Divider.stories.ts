@@ -2,7 +2,6 @@
  * Every situation a rule has to survive. Also the test corpus: each story is
  * run in a browser by `@storybook/addon-vitest`.
  *
- * What the rule holds here is the action a list is added to by. It stands in
  * the middle, or leads the rule where the rule is asked for that, which is how
  * a card heads the box one of its values is typed in.
  */
@@ -96,7 +95,6 @@ export const TheLineGivesWayToWhatItHolds: Story = {
     expect(before).toBeGreaterThan(0)
     expect(after).toBeGreaterThan(0)
 
-    // Both sides come to the same width, so what it holds stands in the middle.
     expect(before).toBeCloseTo(after ?? 0, 0)
 
     const at = button.getBoundingClientRect()
@@ -126,7 +124,6 @@ export const LeadingWithWhatItHolds: Story = {
     expect(before).toBeCloseTo(gap, 0)
     expect(after).toBeGreaterThan(before ?? 0)
 
-    // What it holds stands at the start, and the two sides and it take the
     // whole width between them.
     const at = button.getBoundingClientRect()
     const box = divider.getBoundingClientRect()

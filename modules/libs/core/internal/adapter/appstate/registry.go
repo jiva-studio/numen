@@ -165,7 +165,6 @@ func (r *VaultRegistry) Remove(id domain.VaultID) error {
 	return r.save(f)
 }
 
-// RecordOpened records the vault a window is showing. Recording the vault
 // already recorded writes nothing.
 func (r *VaultRegistry) RecordOpened(id domain.VaultID) error {
 	r.mu.Lock()

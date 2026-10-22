@@ -55,7 +55,6 @@ func (g *Lock) Acquire(ctx context.Context, asked bool, waiting func()) (func(),
 }
 
 // release hands the lock to whoever has waited longest at the first priority
-// anybody stands at, and lets it go where nobody does.
 func (g *Lock) release() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -70,7 +69,6 @@ func (g *Lock) release() {
 	g.isHeld = false
 }
 
-// leave takes a run out of the line it stands in. One already handed the lock
 // holds it, and hands it on.
 func (g *Lock) leave(at int, stand chan struct{}) {
 	g.mu.Lock()
@@ -86,7 +84,6 @@ func (g *Lock) leave(at int, stand chan struct{}) {
 	g.release()
 }
 
-// HasWaiting says whether any run stands in line for the lock.
 func (g *Lock) HasWaiting() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()

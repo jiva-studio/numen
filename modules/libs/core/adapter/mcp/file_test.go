@@ -67,7 +67,6 @@ func TestFileReadReturnsWhenThereIsNoFileAtThePath(t *testing.T) {
 }
 
 // What the vault passes over is passed over here, so an agent on this endpoint
-// reaches no further into the folder than the application itself does.
 func TestFileReadPassesOverWhatTheVaultDoes(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
 		".env":              "SECRET=1\n",

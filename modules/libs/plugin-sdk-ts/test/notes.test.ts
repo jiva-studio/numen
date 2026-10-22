@@ -350,7 +350,6 @@ describe('where a note remains', () => {
   })
 
   /**
-   * A note stands at the name of its identity while the window has none open
    * under it, so whether the window has one at all is asked apart.
    */
   it('is answered for only while the window holds the note', async () => {

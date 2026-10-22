@@ -3,7 +3,6 @@
  * A book made for a screen, read: its text set in columns and turned a page at
  * a time.
  *
- * One column stands in a narrow reading area and two in a wide one, and a
  * spread of two turns as one. Where a person is reading is a byte offset into
  * the book's text: setting the text larger sets the columns again, and the
  * offset stays where it was.

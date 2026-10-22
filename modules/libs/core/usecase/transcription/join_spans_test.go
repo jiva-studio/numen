@@ -79,7 +79,6 @@ func newOverlappingRun(
 	return u, v, retained, hash
 }
 
-// The joined sentence, and the transcript it leaves behind it.
 const (
 	putTogether = "Krishna is Radha, Krishna is connected with Radhika."
 	onItsOwn    = "connected with Radhika."
@@ -195,7 +194,6 @@ func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domai
 }
 
 // A transcript whose lines were put together is taken up again at the moment
-// the count stands at, which putting them together did not move. The numbers
 // the lines are known by are not the same ones the run before it saw.
 func TestARunConsumesUpATranscriptWhoseLinesWereInsertTogether(t *testing.T) {
 	again, v, shelved, hash := runJoinUntilStopped(t, &corrector{})

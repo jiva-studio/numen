@@ -37,7 +37,6 @@ const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the 
 
 /**
  * The panel, with the session around it standing in for the window. What the
- * window is showing is the window's, one thing for all of the panels, so the
  * test holds it the way the window does.
  */
 const panel = (

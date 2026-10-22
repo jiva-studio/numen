@@ -134,7 +134,6 @@ func TestALineTakingAnAnswerBackTwiceConsumesItBackOnce(t *testing.T) {
 	}
 }
 
-// A card face nobody has answered has no schedule, and that is what a person
 // means by a new card.
 func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
 	remaining := review.OrderAnswers(nil).Replay(ahead, review.ScheduleBy(review.NewFSRS()))

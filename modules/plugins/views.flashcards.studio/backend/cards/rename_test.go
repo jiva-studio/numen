@@ -207,7 +207,6 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	}
 }
 
-// A rename is the application writing a deck, so the deck it leaves behind is
 // whole: a card carrying no mark is given one, and a heading standing out of
 // step with its first field is written again from it.
 func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
@@ -599,7 +598,6 @@ func TestARenameWhoseContextEndsWritesNoFurtherDeck(t *testing.T) {
 }
 
 // A deck the rename cannot reach keeps what it holds and is reported, whatever
-// stands in the way: the vault, the index, its own frontmatter, or the stencil
 // of another of its cards.
 func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 	for _, c := range []struct {

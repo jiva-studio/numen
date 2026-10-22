@@ -201,7 +201,6 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 
 // The panel's child is told which tools it may call, one by one, and where to reach them. The
 // endpoint in front of it serves the whole surface for an agent a person configured themselves,
-// and a name absent from the allowance is refused under the mode this runs in.
 func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	cfg := makeInstallation(t)
 	provider := &fakeProvider{}

@@ -155,7 +155,6 @@ func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	}
 }
 
-// What a missing span says about itself: how much of its opening stands in the
 // note, and what stands there from that point.
 func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 	t.Parallel()

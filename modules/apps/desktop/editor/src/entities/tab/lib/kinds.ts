@@ -18,7 +18,6 @@ export interface TabTarget {
 
 /**
  * What one tab holds, as whoever answers on the person's behalf is told it: the
- * file it stands at, and the document, the book or the recording it stands in.
  */
 export type OpenTab<K extends string = string> = { readonly path: string } & ProgressOf<K>
 

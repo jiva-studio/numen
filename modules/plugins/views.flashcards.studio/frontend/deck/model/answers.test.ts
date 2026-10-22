@@ -1,6 +1,5 @@
 /**
  * What the vault last said about each deck file: filed under a path, carried
- * when the file moves, let go when no tab stands at it.
  */
 import { describe, expect, it } from 'vitest'
 import { WORDS, type DeckProblem } from '../../cards'

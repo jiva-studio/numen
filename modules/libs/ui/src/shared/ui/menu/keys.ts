@@ -3,7 +3,6 @@
  * does with it.
  *
  * Tab moves within the items and wraps, which is what keeps the keyboard
- * inside a menu that stands over the page. A letter jumps to the item it
  * names.
  */
 import { ref, type Ref, type ShallowRef } from 'vue'

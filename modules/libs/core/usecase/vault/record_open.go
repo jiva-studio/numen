@@ -5,7 +5,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// RecordOpen records the vault a window is showing, so the next window opens on it.
 type RecordOpen struct {
 	registry port.VaultRegistry
 }

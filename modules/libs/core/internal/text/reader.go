@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
-// Separator is what stands between a link note's own prose and what was fetched
 // for it. The two are one text, and a chunk is cut across neither into the
 // other.
 const Separator = "\n\n"
@@ -113,7 +112,6 @@ func (r Reader) readLinkNote(ctx context.Context, path, producer, hash string) (
 // text.
 //
 // What the fetch named — the moment a stretch of speech was said, the parts of
-// an article — is moved out by as much as the prose and what stands between
 // them, so a place in the fetched half is the place it was.
 func JoinDocuments(prose string, fetched *Document) *Document {
 	at := len(prose) + len(Separator)

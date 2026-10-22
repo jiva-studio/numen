@@ -70,7 +70,6 @@ func TestAHeadingIsFoundWithTheLineItExistsOn(t *testing.T) {
 }
 
 // TestANameSaysWhichOfFourTheNoteIs. The palette draws a deck and a stencil as
-// what they are, and a heading is drawn as the note it stands in.
 func TestANameReturnsWhichOfFourTheNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",

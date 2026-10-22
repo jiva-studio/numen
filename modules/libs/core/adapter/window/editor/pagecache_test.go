@@ -131,7 +131,6 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 		t.Fatalf("the folder holds %d drawings, want 4", n)
 	}
 
-	// Older than the rest, the way a page nobody has turned back to is.
 	first := cache.GetPath(document.PageKey{Document: getFingerprint(t, api), Page: 0, Width: 400})
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(first, old, old); err != nil {

@@ -183,7 +183,6 @@ export const Steady: Story = {
         })
       }
 
-      // Either side of what stands in place of a mark there is somewhere for
       // the caret to be drawn, and a click there lands on that line.
       await setCaret(PARKED, 0)
       for (const [text, column] of [
@@ -208,7 +207,6 @@ export const Steady: Story = {
         }).toEqual({ face, text, column, drawn: true, lands: true })
       }
 
-      // The task's box stands inside the line it marks.
       const box = canvasElement.querySelector('.cm-box') as HTMLElement
       const element = box.getBoundingClientRect()
       const aroundRect = (box.closest('.cm-line') as HTMLElement).getBoundingClientRect()

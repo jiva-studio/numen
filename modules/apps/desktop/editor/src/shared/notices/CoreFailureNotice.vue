@@ -2,7 +2,6 @@
 /**
  * What the window says when it cannot reach the core.
  *
- * Nothing else the window is showing is true while this stands, and a person
  * cannot put it away.
  */
 // --- Props & Emits ---

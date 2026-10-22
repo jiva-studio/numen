@@ -223,7 +223,6 @@ func removeDuplicates(paths []string) []string {
 	return out
 }
 
-// isFile reports whether a regular file stands at the path.
 func isFile(at string) bool {
 	info, err := os.Stat(at)
 	return err == nil && info.Mode().IsRegular()

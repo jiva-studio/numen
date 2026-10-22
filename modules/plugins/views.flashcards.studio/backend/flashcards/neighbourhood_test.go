@@ -405,7 +405,6 @@ func TestADeckJoinedToNothingIsAnEmptyAnswer(t *testing.T) {
 func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 	t.Parallel()
 	// Both vaults file their deck at the same path, so a query that forgets its
-	// vault answers with the other one's notes and not with nothing.
 	u, add := reading(t)
 	feathers := add(map[string]string{
 		"decks/Deck.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",

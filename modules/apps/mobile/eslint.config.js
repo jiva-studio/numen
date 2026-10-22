@@ -148,7 +148,6 @@ export default tseslint.config(
 
   // Two hundred and fifty lines in a handwritten file, and a function whose
   // branches a reader cannot hold at once is two functions. A test is shaped by
-  // what it is describing and is not held to either.
   {
     files: ['src/**/*.{ts,vue}'],
     ignores: ['src/**/*.test.ts'],
@@ -163,7 +162,6 @@ export default tseslint.config(
   // computes what is drawn from what it is given, so it may not ask the machine
   // what time it is, what the window measures, or what comes next.
   //
-  // The humble view is not held to this — it is the half that talks to the
   // browser — and neither are the tests, which stand outside a page on purpose.
   {
     files: ['src/**/*.ts'],

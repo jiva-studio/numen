@@ -151,7 +151,6 @@ func describeTheme(origin Origin, filename, text string) Theme {
 	}
 }
 
-// Text is one theme's file, as the file stands when it is asked for.
 func (c Catalogue) Text(name string) (string, error) {
 	origin, title, err := splitName(name)
 	if err != nil {

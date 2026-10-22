@@ -187,7 +187,6 @@ export default tseslint.config(
   },
 
   // Limits on complexity and file length for handwritten sources. A test, a spec
-  // and a story are shaped by what they are describing and are not held to either.
   {
     files: ['src/**/*.{ts,vue}'],
     ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
@@ -253,7 +252,6 @@ export default tseslint.config(
 
   // The layers: shared, features, screens, each reaching only what stands below
   // it, and a feature reached from above through its `index.ts`. Every import is
-  // resolved to the file it names, so `../../features/x` is held to the same
   // rule as `@/features/x`.
   //
   // Stories and fixtures stand outside the layers, and so do the tests that read
@@ -280,7 +278,6 @@ export default tseslint.config(
   // pure core computes what is drawn from its props alone, so it may not ask
   // the machine what time it is, what the window measures, or what comes next.
   //
-  // The humble view is not held to this — it is the half that talks to the
   // browser — and neither are the stories and the fixtures, which stand
   // outside a component on purpose.
   {

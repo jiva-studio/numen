@@ -30,7 +30,6 @@ service ArtifactService {
   // waits in line and is taken up before anything the vault set itself.
   rpc CreateArtifact(CreateArtifactRequest) returns (CreateArtifactResponse);
 
-  // DeleteArtifact takes one away, with everything cut from it. The file stands
   // as it did before anything was made from it, and it is offered again.
   rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
 }
@@ -64,7 +63,6 @@ message Artifact {
 enum ArtifactKind {
   ARTIFACT_KIND_UNSPECIFIED = 0;
 
-  // Text with the place on the page each word stands at, read off a scan and
   // kept under `ocr`.
   ARTIFACT_KIND_OCR = 1;
 

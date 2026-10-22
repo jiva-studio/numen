@@ -2,7 +2,6 @@
  * What the mocked application answers, and what a test sets before the window
  * draws.
  *
- * `said` is what the vault says about itself and what stands in it, `listed`
  * the vaults this installation holds, and `folders` what each folder holds.
  */
 import { asValue } from '@numen/wire'

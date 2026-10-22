@@ -256,7 +256,6 @@ type speechRun struct {
 }
 
 // score runs the model once over the window in its input, and gives how sure
-// it is. The state it leaves behind is copied into state.
 func (r *speechRun) score(state []float32) (float32, error) {
 	r.outputs = [2]uintptr{}
 	status := r.calls.run(
@@ -286,7 +285,6 @@ func (r *speechRun) score(state []float32) (float32, error) {
 	return *(*float32)(scorePtr), nil
 }
 
-// scoreWindow is one window: how sure the model is, and the state it leaves behind.
 func (t *Transcriber) scoreWindow(inputs map[string]*ort.Value, dst []float32) (float32, error) {
 	out, err := t.segmenter.Run(inputs)
 	if err != nil {

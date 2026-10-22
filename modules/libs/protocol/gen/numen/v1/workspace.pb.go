@@ -4,7 +4,6 @@
 // 	protoc        (unknown)
 // source: numen/v1/workspace.proto
 
-// What a client may ask about where the person stands in the vault a window is
 // showing.
 //
 // The tabs the window has open and the places something else asks to be put in

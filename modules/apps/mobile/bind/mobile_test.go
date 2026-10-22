@@ -66,7 +66,6 @@ func TestStartAnswers(t *testing.T) {
 		t.Fatal("the vault it seeded lists nothing")
 	}
 
-	// The note it opens on stands in every relation at once, which is what makes a
 	// picture worth drawing. The vault is read behind the caller, so the relations
 	// arrive and not being there.
 	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
@@ -167,7 +166,6 @@ func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
 
 // The files of the vault and what is made from them are not served here. Every
 // process on the phone reaches this socket and a program speaking for itself is
-// held to no origin, so a caller that reached it must not be able to read a book
 // off the disk or set a model running over one.
 func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 	port, err := bind.Start(t.TempDir())

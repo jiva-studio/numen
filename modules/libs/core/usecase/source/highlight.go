@@ -54,7 +54,6 @@ func NewHighlight(
 // Execute is what the runs of one source's text say and where each of them
 // sits: the boxes covering it, each on the page it was read from.
 //
-// The answer stands in the order the runs were asked about, so a caller that
 // asked about a passage and the places around it knows which is which. The text
 // and the coordinates are read once however many runs are asked about.
 func (u Highlight) Execute(

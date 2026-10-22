@@ -89,7 +89,6 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 }
 
 // write puts a file into the vault and brings the index level with it, which is
-// what a person editing their own note in another window leaves behind.
 func write(t *testing.T, s vaulted, path, body string) {
 	t.Helper()
 	at := filepath.Join(s.vault.Path, filepath.FromSlash(path))
@@ -454,7 +453,6 @@ func TestACardPreservingAFieldEmptyIsStillAsked(t *testing.T) {
 	}
 }
 
-// A vault nobody has answered owes everything it holds, as cards nobody has
 // reached.
 func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
 	t.Parallel()
@@ -673,7 +671,6 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 }
 
 // A cache read back says what a replay says, to the last number it carries. It
-// stands in for reading the answers, so a cache that answered differently would
 // be a card sent away on a day nobody worked out.
 func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()

@@ -17,7 +17,6 @@ import (
 // CardFace is one card face as the vault holds it: a card, shown through one
 // face of the stencil that cuts it, and where both of them are written.
 type CardFace struct {
-	// Deck is the path of the file the card stands in, and Section the name of
 	// the section it is placed under. A card standing before the first section has
 	// none.
 	Deck    string
@@ -83,7 +82,6 @@ func (u ListCardFaces) WithReaders(readers ports.VaultReaders) ListCardFaces {
 // to read that vault, and a window holding one reads it.
 var ErrNotCarried = errors.New("the index does not carry this vault yet")
 
-// Execute reads every deck the vault holds and says what stands in it. A vault
 // the index does not carry gets ErrNotCarried.
 func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace, error) {
 	paths, err := u.GetDeckPaths(ctx, v)
@@ -113,7 +111,6 @@ func (u ListCardFaces) GetDeckPaths(ctx context.Context, v domain.Vault) ([]stri
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
-// GetFaces reads the decks named and says what stands in them. A caller after the
 // cards of one preset hands it the decks pointing there, and the rest of the
 // vault is left unread.
 //

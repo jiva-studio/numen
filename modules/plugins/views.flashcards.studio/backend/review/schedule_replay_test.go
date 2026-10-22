@@ -15,7 +15,6 @@ import (
 // weeks, some of them in the same millisecond, each answer under an identifier
 // of its own.
 //
-// The identifiers are what a history is held together by, so they are minted
 // here as they are minted anywhere: one to an answer, and no two alike.
 func session(t *rapid.T) []review.Answer {
 	cards := rapid.SliceOfNDistinct(

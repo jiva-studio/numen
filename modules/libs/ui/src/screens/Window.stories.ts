@@ -183,7 +183,6 @@ const WIDE = createNeighbourhood([
 ])
 
 /**
- * The headings of the notes on the map, by the node each stands in. More of
  * them than stand at once, so the mark saying there is more to wind to is
  * drawn as well.
  */
@@ -867,7 +866,6 @@ export const Mapping: Story = {
 }
 
 /**
- * The map with a hand left on a node, which hangs the headings of its note
  * under the box.
  */
 export const Nesting: Story = {
@@ -886,7 +884,6 @@ export const Nesting: Story = {
     const canvas = within(canvasElement)
     const focus = await waitFor(() => canvas.getByLabelText(/, focus$/))
 
-    // A hand left on the node hangs the headings of its note under the box.
     // They come in one after another, so the picture is let settle first.
     const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
     const suspended = () => titles.filter((words) => canvas.queryByText(words))
@@ -1069,7 +1066,6 @@ export const Filing: Story = {
           [
             pane('main', [FILES]),
             // A branch inside a horizontal one is drawn the other way, so the
-            // map stands over the note it is about.
             branch('middle', [pane('map', [PLEX]), pane('note', [NOTE, BOOK], NOTE)], [0.52, 0.48]),
             pane('aside', [AGENT]),
           ],

@@ -67,7 +67,6 @@ describe('the markup a spine document arrives as', () => {
   })
 
   it('runs on from one offset to the next, by the bytes each run says', () => {
-    // Every byte of the document stands in one run, so a run reaches exactly to
     // where the next begins. An escaping the two sides read differently parts
     // these numbers on the first paragraph that carries an ampersand.
     const all = getRuns()

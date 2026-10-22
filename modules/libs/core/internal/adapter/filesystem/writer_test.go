@@ -473,7 +473,6 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The link is written the way a sync tool writes one, relative to the
-	// folder it stands in.
 	if err := os.Symlink(filesystem.DefaultServiceDir, filepath.Join(root, "link")); err != nil {
 		t.Fatal(err)
 	}
@@ -640,7 +639,6 @@ func sameFile(t *testing.T, one, other string) bool {
 	return os.SameFile(first, second)
 }
 
-// A name another file stands at is taken, whatever the filesystem does with
 // case.
 func TestANameAnotherFileExistsAtIsRefused(t *testing.T) {
 	w, _ := openWriter(t)

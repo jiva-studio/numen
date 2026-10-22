@@ -1,5 +1,4 @@
 /**
- * A tab and the panel it stands over name each other, so the names are unique
  * to the document and not only to one pane.
  */
 import type { NodeId } from '../../lib/node'

@@ -213,7 +213,6 @@ func applySetting(raw []byte, setting Setting) ([]byte, error) {
 // replaceValueAt replaces the value at a path through an object, and returns the
 // object's bytes with that one span changed.
 //
-// outer is the indentation of the line the object's own name sits on, which is
 // what a section made here is laid out against.
 func replaceValueAt(object []byte, at []string, value []byte, outer string) ([]byte, error) {
 	target, err := parseObjectShape(object)
@@ -239,7 +238,6 @@ func replaceValueAt(object []byte, at []string, value []byte, outer string) ([]b
 }
 
 // member is one member of an object: its name, where that name is written, and
-// where its value sits in the bytes the object was read from.
 type member struct {
 	key string
 	// nameFrom and nameTo are the name as the file has it, quotes and all. Both
@@ -371,7 +369,6 @@ func wrapInSections(at []string, value []byte, indent string) []byte {
 }
 
 // getIndent is the whitespace an object's members are laid out with, taken from
-// the line the first one sits on.
 func getIndent(object []byte, first int) string {
 	head := object[:first]
 	line := bytes.LastIndexByte(head, '\n')
@@ -413,7 +410,6 @@ func resolvePath(path string) string {
 }
 
 // runOnFile hands the work the file the path leads to, with the folder that
-// file sits in made. Everything that writes the settings goes through it, so a
 // link is followed once and the rest of the way is the file itself.
 func runOnFile(path string, work func(path string) error) error {
 	resolved := resolvePath(path)

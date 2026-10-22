@@ -21,7 +21,6 @@ import (
 
 // GetSettingsBounds is how far each setting of a preset goes, as the schema
 // carries it. They are the domain's own, so a client draws the field a person
-// types into from what the write is held to.
 func GetSettingsBounds() *v1.SettingsBounds {
 	return &v1.SettingsBounds{
 		MinutesADay: getBounds(review.MinutesADayBounds),
@@ -215,7 +214,6 @@ func ConvertGoalToWire(g review.Goal) v1.Goal {
 	}
 }
 
-// ConvertGoalFromWire is the goal a client named, in the words the core holds it in. A goal
 // the schema does not name is refused where the settings are weighed.
 func ConvertGoalFromWire(g v1.Goal) review.Goal {
 	switch g {
@@ -242,7 +240,6 @@ func ConvertRuleToWire(r review.LearnedRule) v1.Rule {
 	}
 }
 
-// ConvertRuleFromWire is the rule a client named, in the words the core holds it in. A rule
 // the schema does not name is refused where the settings are weighed.
 func ConvertRuleFromWire(r v1.Rule) review.LearnedRule {
 	switch r {

@@ -187,9 +187,7 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 	}
 }
 
-// checkSpans holds every node to the run of text it stands over. A node reaches
 // to where the next one begins, and what it and everything under it says is that
-// run of the book's text, byte for byte: a word that slipped out of the element
 // it was written in is a word a reader draws in the wrong place.
 func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node, limit int) {
 	t.Helper()

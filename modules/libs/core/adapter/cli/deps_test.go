@@ -158,7 +158,6 @@ func (fixedLinkQueries) ResolveLinks(
 
 // A command runs on what the terminal is handed, and a test that hands it
 // values reaches no disk, no database and no model. The openers are what make
-// that possible: what stands behind one is the caller's to choose.
 func TestACommandRunsOnValuesAlone(t *testing.T) {
 	t.Parallel()
 	target := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}

@@ -99,7 +99,6 @@ type GetBookResponse struct {
 	// page wherever it is counted.
 	TextBytes int32 `protobuf:"varint,6,opt,name=text_bytes,json=textBytes,proto3" json:"text_bytes,omitempty"`
 	PageBytes int32 `protobuf:"varint,7,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`
-	// Which bytes the book was read from. It stands in the ask for the markup of
 	// a document and in the address the bytes of a picture are answered at, so
 	// both name one reading of one file.
 	Fingerprint   *Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
@@ -522,7 +521,6 @@ func (x *ReadBookEntryResponse) GetBody() []byte {
 	return nil
 }
 
-// SpineDocument is one document of the book, and where its text stands in the
 // book's text.
 type SpineDocument struct {
 	state protoimpl.MessageState `protogen:"open.v1"`

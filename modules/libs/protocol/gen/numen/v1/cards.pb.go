@@ -617,7 +617,6 @@ type Card struct {
 	// the ten characters alone, without the caret a heading writes them behind,
 	// and it is empty for a card the application has not written yet.
 	Mark string `protobuf:"bytes,1,opt,name=mark,proto3" json:"mark,omitempty"`
-	// Where the section this card is placed under stands in the deck's own, counted
 	// from the first. Absent for a card standing before the first section.
 	//
 	// A write naming a section the deck does not hold is refused. Nothing is

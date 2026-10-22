@@ -24,7 +24,6 @@ export const DRAG_THRESHOLD = 3
 /**
  * How far a wheel moves the row.
  *
- * A row at rest has one axis: a whole page stands in the room, so nothing is
  * above or below it and a wheel turned down means the next page. Drawn closer
  * the room has both, and then a wheel turned down means down — the way it does
  * everywhere else — and sideways is what a wheel says sideways.
@@ -65,7 +64,6 @@ export class Hand {
    * Where the row stands now that the hand is here, and nothing while the hand
    * is not holding it.
    *
-   * The row follows the hand, so it moves against the way the hand went: a hand
    * pulled left brings the pages after this one into the room.
    */
   to(at: Offset): Offset | undefined {

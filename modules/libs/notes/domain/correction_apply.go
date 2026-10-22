@@ -168,7 +168,6 @@ func GetCorrectedProse(prose string, marks []OCRPageStart, boxes []HighlightBox,
 	return out.String(), pages, named
 }
 
-// clampOffset is offset o held to the run [low, high].
 func clampOffset(o, low, high int) int {
 	if o < low {
 		return low

@@ -50,7 +50,6 @@ func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 	}
 }
 
-// A vault nobody has answered has no days and no streak, which is an answer and
 // not a failure.
 func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
 	t.Parallel()
@@ -237,7 +236,6 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	}
 }
 
-// A card nobody has answered is not still to come: what a person owes now is
 // what the front door counts, and this says what is after it.
 func TestACardNobodyAnsweredIsNotStillToCome(t *testing.T) {
 	t.Parallel()

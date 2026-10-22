@@ -57,7 +57,6 @@ type ThemeServiceClient interface {
 	// the ones in the person's themes folder — which of them is applied, and the
 	// two sizes the window is drawn at.
 	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
-	// ReadTheme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
@@ -144,7 +143,6 @@ type ThemeServiceHandler interface {
 	// the ones in the person's themes folder — which of them is applied, and the
 	// two sizes the window is drawn at.
 	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
-	// ReadTheme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)

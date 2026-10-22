@@ -1,5 +1,4 @@
 /**
- * Every road to a file, and what the window tells whoever answers for the
  * person about what they have open.
  *
  * A road holds a path and no choice, so the same file reached by the palette,

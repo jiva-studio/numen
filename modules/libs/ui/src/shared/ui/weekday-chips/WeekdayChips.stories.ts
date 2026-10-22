@@ -125,7 +125,6 @@ export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 /**
  * Levels the offer does not name, one of them past anything a chip can be
  * filled with. A chip says the level it is drawn at, and the levels it offers
- * hold the one the day stands at.
  */
 export const ALevelNotOnOffer: Story = {
   args: { levelOf: { sat: 0.37, sun: 4 } },
@@ -173,7 +172,6 @@ export const NoLevelsAtAll: Story = {
   args: { levels: [], levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[0] as HTMLElement)
-    // The level the day stands at is on offer wherever it is asked for, so a
     // day is never asked to choose without its own among the choices.
     await waitFor(() => expect(getOfferedLabels()).toEqual(['100%']))
   },
@@ -295,7 +293,6 @@ export const OneStopForTheWholeRow: Story = {
 }
 
 /**
- * The keyboard opens the levels on the one the day stands at, and comes back to
  * the chip it was on — whether a level was chosen or nothing was.
  */
 export const TheKeyboardComesBack: Story = {
@@ -308,7 +305,6 @@ export const TheKeyboardComesBack: Story = {
     await userEvent.keyboard(' ')
     const onOffer = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
     await waitFor(() => expect(onOffer()).toHaveLength(7))
-    // Open on the level the day stands at, said on the item itself.
     expect(document.activeElement).toBe(onOffer()[3])
     expect(onOffer()[3]?.getAttribute('aria-checked')).toBe('true')
 
@@ -342,7 +338,6 @@ export const Dark: Story = {
     const all = chips(canvasElement)
     expect(all).toHaveLength(7)
 
-    // Saturday stands at nothing, so its chip is the plain ground the rest are
     // blended from: Friday, Thursday, Wednesday, Tuesday and Monday, in that
     // order, each one further from it.
     const ground = (chip: HTMLElement) => lightness(getComputedStyle(chip).backgroundColor)

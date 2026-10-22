@@ -6,7 +6,6 @@
 // in.
 //
 // The settings belong to the installation and not to a vault: the same file
-// answers whichever vault a window is showing, and every window reads it.
 //
 // They travel as the file's own text. Their sections belong to whichever
 // adapters an installation is composed of, so the core does not know the whole

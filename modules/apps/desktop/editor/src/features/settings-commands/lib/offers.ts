@@ -30,11 +30,9 @@ const once = (rows: readonly StepRow[]): readonly StepRow[] => {
 
 /**
  * The themes of one origin, the one the settings name first. Where a theme comes
- * from is said by the group it stands in.
  */
 /**
  * The themes of one origin, the one the settings name first. Where a theme comes
- * from is said by the group it stands in.
  */
 const getThemesOfOrigin = (
   themes: readonly Theme[],

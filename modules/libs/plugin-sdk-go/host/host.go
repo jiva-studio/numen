@@ -41,7 +41,6 @@ type DataFile struct {
 	Size int64
 }
 
-// IndexStatus is where a vault stands in the index.
 type IndexStatus int
 
 const (
@@ -53,7 +52,6 @@ const (
 	IndexFailed
 )
 
-// IndexState is where a vault stands in the index, and why it failed when it did.
 type IndexState struct {
 	Status IndexStatus
 	Reason string

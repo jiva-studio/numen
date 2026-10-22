@@ -67,7 +67,6 @@ func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
 
 // What is still to come is counted by the day it falls on, so the grid draws a
 // week ahead as well as the weeks behind. A card answered easily is sent days
-// away, and the day it is sent to is a day nobody has answered on.
 func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]

@@ -44,7 +44,6 @@ func FuzzCut(f *testing.F) {
 			LargeOverlap: largeOverlap, SmallOverlap: smallOverlap,
 			Limit: limit,
 		}
-		// A part begins where its title was found in the text, so it stands at a
 		// character. A part offset inside one is not a text a caller can hand
 		// over, and the chunks cut from it begin inside a character too.
 		var parts []domain.PartStart

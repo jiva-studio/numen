@@ -81,7 +81,6 @@ type Host struct {
 	failedPlugins    []port.PluginFailure
 	problems         []DiscoveryProblem
 	completer        port.Completer
-	// vault is the vault the window is showing, as plugins work it through the host endpoint.
 	vault port.PluginVault
 	// consentAsks holds the plugins that asked for a completion the person has
 	// not answered for, since the host started.
@@ -591,7 +590,6 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *Supervi
 	h.mu.Unlock()
 }
 
-// newPluginFailureLocked is the failure a person is told of for a plugin the host has given up.
 func (h *Host) newPluginFailureLocked(pluginID string, sup *Supervisor, cause error) port.PluginFailure {
 	return port.PluginFailure{
 		PluginID: pluginID,

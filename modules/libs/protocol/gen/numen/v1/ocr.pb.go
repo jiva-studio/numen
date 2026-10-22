@@ -187,7 +187,6 @@ type Box struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Which bytes of the document's text this covers.
 	Span *Span `protobuf:"bytes,1,opt,name=span,proto3" json:"span,omitempty"`
-	// Where the page stands in the document, counted from the first.
 	Page          int32 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
 	Rect          *Rect `protobuf:"bytes,3,opt,name=rect,proto3" json:"rect,omitempty"`
 	unknownFields protoimpl.UnknownFields

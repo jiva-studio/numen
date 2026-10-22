@@ -170,7 +170,6 @@ describe('a read answers missing', () => {
   })
 
   it('leaves a tab standing on a live file alone where the read was stale', () => {
-    // The note moved, the tab followed it and asked again. The read left behind
     // answers about the name the tab has left, and the file it is on is there.
     const initialTab = tab({ reading: 3 })
     const next = transitionTab(initialTab, {

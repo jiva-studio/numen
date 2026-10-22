@@ -61,7 +61,6 @@ export interface PalettePlace {
 }
 
 /**
- * The groups in the order they are drawn: as they were offered, and the ones
  * holding nothing after the ones holding something.
  *
  * A group holding nothing is drawn while it is still working, and where it has

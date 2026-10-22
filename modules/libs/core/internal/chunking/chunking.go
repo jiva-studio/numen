@@ -92,7 +92,6 @@ type Legibility struct {
 	Dirty float64
 }
 
-// A Chunk is one cut of the text. Location is where the chunk sits in the terms
 // the source's own numbering uses, and is empty where the text named none.
 //
 // Small are the chunks inside this one. A Chunk with none of its own is a large

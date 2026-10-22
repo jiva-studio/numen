@@ -1,7 +1,5 @@
 /**
- * The plot of what stands overdue, drawn under the picture over the days ahead.
  *
- * It is read off the place the knob stands at and never dragged, so it is no
  * stop on the way round the screen. Nothing overdue is the floor it is read up
  * from, and the room it is drawn in is the same box in every state it has.
  */
@@ -47,7 +45,6 @@ describe('what a goal of a date draws', () => {
   })
 
   // A shorter run must not make the picture jump, so every place is drawn
-  // against the one extent: the most any of them ever stands at.
   it('keeps one height for the backlog, whatever place the knob relies on', async () => {
     const { tab } = createDatedTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
@@ -184,7 +181,6 @@ describe('the plot of what remains overdue', () => {
     expect(response).toContain(words.formatBacklogCards(0))
   })
 
-  // The backlog is read off the place the knob stands at, so walking the grid
   // walks the backlog with it.
   it('follows the knob, since each place of the grid keeps its own', async () => {
     const { tab } = mountPresetTab({

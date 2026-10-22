@@ -180,7 +180,6 @@ func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 
 	select {
 	case paths := <-changes:
-		// Both changes stand in the one batch, and each path stands in it once.
 		// A batch may name more than was changed: a watch just opened on a vault
 		// is told about files that were already there, and one of those cannot
 		// be told from a file that has just arrived.

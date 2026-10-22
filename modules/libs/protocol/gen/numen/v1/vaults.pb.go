@@ -46,7 +46,6 @@ const (
 	VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN VaultsErrorCode = 4
 	// It is the only vault this installation has.
 	VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT VaultsErrorCode = 5
-	// It is the vault this window is showing.
 	VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING VaultsErrorCode = 6
 	// No vault of that identity is on the list.
 	VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN VaultsErrorCode = 7
@@ -226,7 +225,6 @@ func (*ListVaultsRequest) Descriptor() ([]byte, []int) {
 }
 
 // ListVaultsResponse is the list itself, which is the same for every window.
-// Which vault a window is showing is asked of that window.
 type ListVaultsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every vault the installation holds.
@@ -749,7 +747,6 @@ func (x *OpenVaultRequest) GetId() string {
 
 type OpenVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when the window is showing what it was, and why.
 	Error         *VaultsErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

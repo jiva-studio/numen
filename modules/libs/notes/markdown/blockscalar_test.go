@@ -8,7 +8,6 @@ import (
 )
 
 // A line opening with `#` inside a block scalar is what the person wrote there.
-// Changing the entry it stands in writes it once, in the value it belongs to.
 func TestAHashLineInsideABlockScalarIsTheValue(t *testing.T) {
 	for name, raw := range map[string]string{
 		"entry last in the block": "---\n" +

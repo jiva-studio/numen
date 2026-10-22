@@ -2,8 +2,6 @@
  * What the chips are announced as, and that pressing one offers the levels a
  * day can stand at.
  *
- * Each day is handed in at the level it stands at, and what comes back is one
- * day and one level: what a level means, and what a day nobody named stands at,
  * are the caller's.
  */
 import { mount } from '@vue/test-utils'
@@ -75,7 +73,6 @@ describe('what is drawn', () => {
     expect(mountChips().get('button').attributes('aria-haspopup')).toBe('menu')
   })
 
-  // A chip stands at a level and offers a menu. It holds nothing down, so it
   // announces no state of its own beyond the level it is labelled with.
   it('is a row of buttons offering menus, and not a set of toggles', () => {
     const row = mountChips()

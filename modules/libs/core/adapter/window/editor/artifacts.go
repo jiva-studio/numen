@@ -101,7 +101,6 @@ func getWireArtifactKind(of domain.ArtifactKind) v1.ArtifactKind {
 	}
 }
 
-// getArtifactFile is the vault the window is showing and the file at a path, where
 // that file carries the artifact asked about. A file carrying none of that kind
 // holds nothing to read.
 func (f *artifactFiles) getArtifactFile(
@@ -455,7 +454,6 @@ func getStartState(started source.StartOutcome) v1.State {
 }
 
 // runner is what reads a scan or hears a recording. Nothing while the passes
-// behind the vault the window is showing are still coming up.
 func (h *artifactHandler) runner(of v1.ArtifactKind) Runner {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR {
 		return h.state.getRecogniser()
@@ -664,7 +662,6 @@ func newRunArtifact(of v1.ArtifactKind, progress source.RunProgress) *v1.Artifac
 	return out
 }
 
-// newArtifact is a state a run stands at and the bytes written so far, as the artifact a client reads.
 func newArtifact(of v1.ArtifactKind, state source.RunState, size int) *v1.Artifact {
 	out := &v1.Artifact{Kind: of, Bytes: int64(size)}
 	switch state {
@@ -720,7 +717,6 @@ func getTextKind(produces string) v1.ArtifactKind {
 	return v1.ArtifactKind_ARTIFACT_KIND_ARTICLE
 }
 
-// recording is the vault the window is showing and the recording it holds at a
 // path. A file that is not one carries no transcript.
 func (f *artifactFiles) recording(
 	ctx context.Context,
@@ -742,7 +738,6 @@ func (f *artifactFiles) recording(
 	return showing, ref, nil
 }
 
-// getShownFile is the vault the window is showing and what it holds at a path. It is
 // the one read of the vault a request gets, and everything the request goes
 // on to do is done to that vault.
 //

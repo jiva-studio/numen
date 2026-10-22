@@ -55,7 +55,6 @@ func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 	}
 }
 
-// A frame the joiner covers with nothing is still left behind, and a recording
 // of them ends.
 func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	const blank, steps = 3, 3
@@ -80,7 +79,6 @@ func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	}
 }
 
-// A joiner answering with fewer scores than the blank stands at is not the
 // joiner these tokens came from, and is refused.
 func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	_, err := transducer{

@@ -2,7 +2,6 @@
  * What the words turned up, in the order it is drawn, and which of it the
  * keyboard is standing on.
  *
- * A group holding nothing stands at the foot, whatever order it was offered in.
  * Nothing here draws anything.
  */
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'

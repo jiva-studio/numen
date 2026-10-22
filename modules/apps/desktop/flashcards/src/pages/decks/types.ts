@@ -36,7 +36,6 @@ export interface Preset {
   readonly faces: number
   /**
    * What starting a session on it would ask, as the count gives it: the cards its
-   * decks owe today, already held to the budgets that close the day.
    */
   readonly cards: number
   /** What the day holds under it, which is what today is weighed against. */

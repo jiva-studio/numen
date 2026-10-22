@@ -81,7 +81,6 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Errorf("%d vectors of the recipe nobody asks for are still here", len(under))
 	}
 
-	// A recipe nobody named takes nothing out: the store is not emptied by a
 	// run that has no model to say what it is holding vectors for.
 	if removedVal, err := db.DeleteOtherRecipeVectors(ctx, ""); err != nil || removedVal != 0 {
 		t.Errorf("forgetting under no recipe took %d vectors out: %v", removedVal, err)

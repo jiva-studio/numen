@@ -59,7 +59,6 @@ const EVERYTHING = [
 ]
 
 /**
- * Where a word stands in a line, every time it stands there. This is the
  * fixture's own arithmetic: the palette is told where the runs are.
  */
 const marks = (text: string, word: string): Span[] => {
@@ -847,7 +846,6 @@ export const NotToBeChosen: Story = {
 /**
  * One group answered, another is still filling, and a third could not be asked.
  *
- * The one with something to say is still drawn, and it stands at the foot, out
  * of the way of what a person is actually reading.
  */
 export const SomeCameBackEmpty: Story = {
@@ -953,7 +951,6 @@ export const ActionPanel: Story = {
  * the caller keeps the stack and swaps the groups, the words in the field and
  * the chip that says which step this is.
  *
- * On the second step the current name stands in the field and is selected, so
  * typing replaces it.
  */
 export const Steps: Story = {

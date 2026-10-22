@@ -132,7 +132,6 @@ const (
 	// balancedBatchMBPerItem and maximumBatchMBPerItem are the free megabytes that earn one more passage in an embedding batch.
 	balancedBatchMBPerItem = 256
 	maximumBatchMBPerItem  = 128
-	// The bounds an embedding batch is held to, per profile.
 	balancedBatchMin = 16
 	balancedBatchMax = 64
 	maximumBatchMin  = 32
@@ -147,7 +146,6 @@ const (
 	balancedLlmConcurrency = 2
 	maximumLlmConcurrency  = 4
 
-	// The bounds a custom profile is held to.
 	customBatchDefault = 32
 	customBatchMax     = 512
 	customThreadsMax   = 64

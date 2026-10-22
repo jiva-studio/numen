@@ -5,7 +5,6 @@
 // What a client may ask about the tree a vault is filed in.
 //
 // A path is what the vault calls a file or a folder, and what is here is the
-// tree as a person works it: what a folder holds, what stands at a path, and
 // moving one, removing one, making one. What is inside a note is note.proto,
 // and the bytes a file of the person's own holds are asset.proto.
 package numenv1connect

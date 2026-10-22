@@ -273,7 +273,6 @@ func TestEndingAConversationIsHandedToThePlugins(t *testing.T) {
 	}
 }
 
-// drawn records the changes the window is told of, and the stretches looked for.
 type drawn struct {
 	mu      sync.Mutex
 	edits   []domain.Edit

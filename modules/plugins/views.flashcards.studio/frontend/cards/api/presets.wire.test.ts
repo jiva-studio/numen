@@ -2,7 +2,6 @@
  * The presets of a vault, read by the client the schema generates.
  *
  * A preset names only the settings a person moved, so what is proved here is
- * what the window makes of the rest: a key the file does not carry stands at
  * the default, and a bound the application said nothing about is absent.
  */
 import { describe, expect, it, vi } from 'vitest'

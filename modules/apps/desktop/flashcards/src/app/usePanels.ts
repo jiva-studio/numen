@@ -30,7 +30,6 @@ export interface PanelsDeps {
 
 export const usePanels = (deps: PanelsDeps) => {
   /**
-   * Which of the card and the two panels beside it the window is showing. One
    * thing is in the window at a time, so one thing says which, and a panel coming
    * in is the other one going out.
    */

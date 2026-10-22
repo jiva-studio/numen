@@ -96,7 +96,6 @@ func TestARecordingAnsweredIsFoundWhereTheIndexContainsNothing(t *testing.T) {
 	}
 }
 
-// What a run finished stands over what it once answered.
 func TestASourceCompletedIsCompletedEvenWhereAnAnswerExists(t *testing.T) {
 	talks := willRun()
 	api, _ := openRunWindow(t,
@@ -113,7 +112,6 @@ func TestASourceCompletedIsCompletedEvenWhereAnAnswerExists(t *testing.T) {
 	}
 }
 
-// A finished transcript stands over an answer where the index names no producer
 // either.
 func TestARecordingCompletedIsCompletedWhereTheIndexNamesNoProducer(t *testing.T) {
 	const received = "what the model heard"

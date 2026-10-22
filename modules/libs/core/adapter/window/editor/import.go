@@ -22,7 +22,6 @@ const namedInAnError = 3
 //
 // It runs where the drop reached the application, which is off the thread the
 // page is served on, and it answers nothing: what arrived is said to everyone
-// drawing the vault, and what did not stands in the list of what is being done.
 //
 // The watcher reports a picture or an archive to nobody, so what arrived is
 // named to the listeners here.

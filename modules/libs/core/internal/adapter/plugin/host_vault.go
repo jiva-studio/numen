@@ -22,7 +22,6 @@ import (
 // letting them go must not stop the vault being written.
 const vaultLockHold = 2 * time.Minute
 
-// vaultWatchPoll is how often a watch looks at which vault the window is showing.
 const vaultWatchPoll = time.Second
 
 // vaultHeader is the header of a call that names the vault it works, by identity.

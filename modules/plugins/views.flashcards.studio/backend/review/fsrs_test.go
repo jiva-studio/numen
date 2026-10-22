@@ -80,7 +80,6 @@ func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 	by := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 
-	// A spread of card faces: one nobody has answered, ones the scheduler is
 	// still putting into memory, and ones it has put into review.
 	cards := []review.Schedule{{}}
 	for _, r := range []review.Rating{review.Again, review.Good, review.Easy} {

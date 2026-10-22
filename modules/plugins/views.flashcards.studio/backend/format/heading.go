@@ -74,7 +74,6 @@ func Project(value string) string {
 		return line
 	}
 	// The cut never falls inside one of these: it falls in front of the whole
-	// of whichever it lands in. One of them stands inside another, so the cut is
 	// moved until it stops moving.
 	spans := getUnsplittableRanges(line)
 	for moved := true; moved; {
@@ -159,7 +158,6 @@ func links(line string) [][]int {
 }
 
 // oneLine is what a name a caller composed a heading from stands as. A heading
-// is one line, so it holds what stands in front of the first break in it.
 func oneLine(name string) string {
 	line := markdown.Normalise(name)
 	if at := strings.IndexByte(line, '\n'); at >= 0 {

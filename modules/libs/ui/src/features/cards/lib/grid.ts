@@ -68,7 +68,6 @@ export interface Run {
    */
   readonly isDropTarget: boolean
   /**
-   * Where this run's plus stands in the grid, counting from one, and nothing
    * where the run draws none. A card is made at the end of a run, so a run
    * cards may be put in has one: every section, and the cards before the first
    * section wherever any of them stands there.

@@ -28,7 +28,6 @@ export function usePlexView(core: Neighbours) {
 
   /**
    * Whether the first neighbourhood is still on its way. An empty plex and one
-   * nobody has answered for yet are drawn the same way.
    */
   const isLoading = ref(true)
 

@@ -1309,7 +1309,6 @@ export const HostVaultErrorCodeSchema: GenEnum<HostVaultErrorCode> = /*@__PURE__
   enumDesc(file_numen_v1_hostvault, 0);
 
 /**
- * HostIndexState is where a vault stands in the index.
  *
  * @generated from enum numen.v1.HostIndexState
  */
@@ -1349,12 +1348,10 @@ export const HostIndexStateSchema: GenEnum<HostIndexState> = /*@__PURE__*/
 
 /**
  * HostVaultService is what the host answers for a plugin that works the vault
- * the window is showing. The host knows the caller by its token and holds each
  * call to a permission: a call that reads needs vault:read and one that changes
  * anything needs vault:write. Every path is relative to the vault root and
  * written with forward slashes.
  *
- * A call works the vault the window is showing. A call that carries the header
  * Numen-Vault works the vault of that identity instead, which is how a window
  * that shows no vault of its own, or a plugin counting every vault, reaches them.
  *

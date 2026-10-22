@@ -363,7 +363,6 @@ export const ThemeService: GenService<{
     output: typeof ListThemesResponseSchema;
   },
   /**
-   * ReadTheme is the text of one theme's file, as the file stands when it is
    * asked for. It is asked once for each theme that is tried on, and again
    * when that theme's file changes.
    *

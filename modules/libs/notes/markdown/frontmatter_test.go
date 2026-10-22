@@ -454,7 +454,6 @@ func TestANoteWithAnUnclosedBlockRejectsAFrontmatterWrite(t *testing.T) {
 	}
 }
 
-// The whole of such a file stands as its body, so writing the prose writes over
 // the half-written block, and pointing the prose's links at a new name reaches
 // the links inside it.
 func TestANoteWithAnUnclosedBlockRejectsABodyWrite(t *testing.T) {
@@ -630,7 +629,6 @@ func TestARenamePreservesTheNotationItFound(t *testing.T) {
 }
 
 // A note names another in one role, so a role written where one already
-// stands is the role it stands in from then on.
 func TestALinkSavedAgainInAnotherRoleIsRelatedAgain(t *testing.T) {
 	raw := "---\n" +
 		"links:\n" +

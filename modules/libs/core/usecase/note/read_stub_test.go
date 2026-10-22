@@ -86,7 +86,6 @@ func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
 }
 
 // A file that appears between the question and the read is answered by its
-// bytes, and the vault is not held to its earlier answer.
 func TestAFileThatAppearsAfterItWasAskedAboutIsNotANote(t *testing.T) {
 	t.Parallel()
 

@@ -118,5 +118,4 @@ func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.held[name] = true
 }
 
-// bookPath is where the book sits in the vault under test.
 const bookPath = "library/book.epub"

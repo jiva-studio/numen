@@ -60,7 +60,6 @@ type ReplaceResult struct {
 // agreeing with what is there.
 type MissingSpan struct {
 	// Matched is the longest opening of what was asked for that does stand in
-	// the note, and Instead is what stands in the note from there.
 	Matched string
 	Instead string
 }
@@ -88,7 +87,6 @@ func (e AmbiguousSpan) Error() string {
 // original that is gone, which is the write having landed already.
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 
-// Execute puts `becomes` where `stood` stands in the note at path.
 //
 // Fingerprint is what the caller believes is on disk. A note that has changed
 // since it was read is left alone and port.ErrStale comes back.
@@ -148,7 +146,6 @@ func (u Replace) Execute(
 }
 
 // newMissingSpan is what to say about a span that is not in the note: how much of
-// its opening does stand there, and what stands in its place.
 //
 // The opening is found by halving over the ends of its runes, which the text being
 // present for every shorter opening allows.

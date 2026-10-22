@@ -37,7 +37,6 @@ const isAddress = (value: string): boolean => value.includes('/')
 
 /**
  * What a model's files are on this machine, in a word. A model reached over
- * the network is fetched from nowhere, and stands with nothing said about it.
  */
 const getPresenceWord = (presence: Presence, words: Words): string => {
   if (presence === 'present') return words.present

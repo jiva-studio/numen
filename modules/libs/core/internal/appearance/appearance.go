@@ -45,7 +45,6 @@ type Settings struct {
 	Theme string
 	// InterfaceScale is how large the interface is drawn and TextScale how
 	// large the text a person reads is set, one being as designed. A size
-	// nobody named is zero and is left to `tokens.css` as well.
 	InterfaceScale float64
 	TextScale      float64
 }

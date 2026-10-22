@@ -15,7 +15,6 @@ import (
 
 // A recording is a file opened for listening. Its length is read out of the
 // header, and its samples are decoded when somebody asks where the speech is:
-// a person is told how long a recording is while it is still being taken apart.
 type recording struct {
 	owner  *Transcriber
 	raw    []byte
@@ -191,7 +190,6 @@ const (
 // parseWav reads a parseWav file's header and finds its samples.
 //
 // A file is a run of chunks, and only two of them are wanted, so the rest are
-// stepped over by their length. Each chunk sits on an even byte.
 func parseWav(raw []byte) (riffWave, error) {
 	var out riffWave
 	var observed bool

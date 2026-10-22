@@ -107,7 +107,6 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 	}
 }
 
-// Every preset the vault holds stands in the count. A person who wrote one and
 // pointed nothing at it can still see it, and it says nothing of a day.
 func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	t.Parallel()

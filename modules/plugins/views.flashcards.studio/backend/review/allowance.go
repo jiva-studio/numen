@@ -46,7 +46,6 @@ const (
 	// ClosedDate is a day paced by the day the preset aims at.
 	ClosedDate BudgetName = "by_date"
 	// ClosedBacklog is the share of a day that goes to the debt. It closes
-	// nothing, and stands in this vocabulary because it is a key of a preset
 	// that a goal either reads or leaves idle.
 	ClosedBacklog BudgetName = "backlog"
 	// ClosedPaused is a preset scheduling nothing at all.
@@ -68,7 +67,6 @@ var closers = []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews
 func (c BudgetNames) Has(one BudgetName) bool { return slices.Contains(c, one) }
 
 // add is this closing and one budget more, named once and in the order closers
-// stands in.
 func (c BudgetNames) add(one BudgetName) BudgetNames {
 	if !slices.Contains(closers, one) || c.Has(one) {
 		return c
@@ -94,7 +92,6 @@ func (c BudgetNames) GetName() string {
 // Limits is which key caps each budget under the goal in force, each written as
 // the preset writes the key, and empty where it takes no part.
 //
-// A setting taking no part stands in the file where the person left it and is
 // in force again the moment its goal is chosen.
 type Limits struct {
 	// New, Reviews and Minutes are the budgets. The goal names the one that
@@ -127,7 +124,6 @@ type Allowance struct {
 	Limits Limits
 	// Backlog is how much of the day goes to the debt before anything unbegun
 	// is offered, as a share in hundredths. A goal whose day is not one pot
-	// spent between the two stands at the whole of it, and the debt is paid
 	// first.
 	Backlog int
 	// Stops is why this day schedules nothing, and empty where it schedules
@@ -198,7 +194,6 @@ func (a Allowance) IsNextCardDebt(debt, begun int, owed, fresh bool) bool {
 //
 // The share of the day that goes to the debt is read where one pot is spent
 // between the two. A goal of retention keeps a count for each side, so each is
-// held to its own and the share decides nothing.
 func (p Preset) getLimits() Limits {
 	switch p.Goal {
 	case GoalRetention:

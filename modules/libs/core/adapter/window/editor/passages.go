@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// spans is where each word typed stands in a passage, counted the way a client
 // counts text: in UTF-16 code units. The spans come in order and do not
 // overlap.
 //
@@ -217,7 +216,6 @@ func getClosingRune(units []int, at int) int {
 const reach = 8 * glancing
 
 // nearby is the part of a passage the window is cut from, and where the hit
-// stands inside it.
 //
 // A passage is the whole of the window enclosing its hit, which for a section
 // of a book is the whole section. What is read is what a window can be cut

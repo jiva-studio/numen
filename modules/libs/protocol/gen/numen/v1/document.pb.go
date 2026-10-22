@@ -76,10 +76,8 @@ func (x *GetDocumentRequest) GetPath() string {
 type GetDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every page of the document in order, each as its size. How many there are
-	// is how many stand here. A page whose size could not be read stands at
 	// nothing, and the page after it is still where it was.
 	Pages []*Page `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
-	// Which bytes these pages were read from. It stands in the address a page is
 	// drawn at, so an address names one drawing of one document and answers the
 	// same picture for as long as it answers at all.
 	Fingerprint   *Fingerprint `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`

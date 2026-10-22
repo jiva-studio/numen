@@ -39,7 +39,6 @@ type going struct {
 	installation *editor.Installation
 	root         string
 	// settings is the vault list this window keeps, which is the folder its
-	// settings file sits in.
 	settings string
 	// order is what happened, in the order it happened.
 	order *order

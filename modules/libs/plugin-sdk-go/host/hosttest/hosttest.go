@@ -161,7 +161,6 @@ func (v *Vault) Beside(other *Vault) {
 	}
 }
 
-// SetIndexState sets where the vault stands in the index.
 func (v *Vault) SetIndexState(state host.IndexState) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()

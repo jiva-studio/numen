@@ -11,7 +11,6 @@ import (
 )
 
 // questions is everything a window asks about the vault it is showing: what the
-// vault is, where the person stands in it, its files, its notes and its text.
 // One window asks every service that answers them, so a test holds one of these
 // and calls a question by its own name.
 type questions struct {

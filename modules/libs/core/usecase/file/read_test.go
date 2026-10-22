@@ -131,7 +131,6 @@ func TestARangeIsSplitAtWholeCharacters(t *testing.T) {
 		t.Errorf("a range closing inside a character came back as %+v", closed)
 	}
 
-	// The four-byte character stands at byte 9, and is closed inside at each of
 	// the three places it can be.
 	for _, length := range []int{10, 11, 12} {
 		got := read(t, u, v, "lecture.txt", 0, length)

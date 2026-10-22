@@ -232,7 +232,6 @@ describe('the stream of changes', () => {
 /**
  * A vault is swapped from outside this window, and the reload that says so
  * looks exactly like the one that says the whole vault changed on disk. The
- * folder it stands at is what tells them apart.
  */
 describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */

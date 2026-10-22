@@ -11,7 +11,6 @@ import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 //
 // A box reaching past the prose was written for other bytes, and the
 // recognition is refused whole. So is a box on a page the recognition has
-// already left behind: a page is asked about and answered for as one, and two
 // pages under one number would write one page's corrections onto the other's
 // lines.
 func getProofreadPages(prose string, boxes []domain.HighlightBox) []domain.ProofreadPage {

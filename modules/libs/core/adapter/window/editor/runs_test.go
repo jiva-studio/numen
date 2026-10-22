@@ -22,7 +22,6 @@ const (
 	scanned = "7c3a91f4"
 )
 
-// A note stands in the vault beside the scan and the recording, as a file
 // neither run is for.
 const idea = "notes/idea.md"
 

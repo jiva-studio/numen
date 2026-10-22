@@ -1,6 +1,5 @@
 <script setup lang="ts">
 /**
- * The conversation. the transcript sits in a bubble; what came back is prose on
  * the surface; what the agent reached for is a quiet line between them.
  *
  * Scrolls on its own, and follows the foot: a turn that arrives is brought

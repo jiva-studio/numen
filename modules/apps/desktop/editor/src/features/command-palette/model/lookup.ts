@@ -36,7 +36,6 @@ export interface Passage {
   kind: Source
   text: string
   /**
-   * Where the hit stands in the source's own text, counted in bytes, which is
    * what the document it came out of is opened at.
    */
   start: number
@@ -69,7 +68,6 @@ export const NOTE = 'note'
 export const DOCUMENT = 'document'
 
 /**
- * Where one item stands in the vault, and what it can be asked. A line of -1 is
  * no line at all.
  */
 export interface SearchHit {

@@ -295,7 +295,6 @@ func TestClosingEndsEveryRunStillAnswering(t *testing.T) {
 	}
 }
 
-// The stream opens, and the person is told the wait has begun, before the program has written
 // anything.
 func TestAskAgent_StreamInitialization(t *testing.T) {
 	script := writeScript(t, "silent", "sleep 120\n")

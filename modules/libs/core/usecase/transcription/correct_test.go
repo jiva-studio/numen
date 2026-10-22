@@ -160,7 +160,6 @@ func readLines(t *testing.T, store port.DerivedStore, name domain.ArtifactName) 
 	return out
 }
 
-// A proofreading that ended among the batches stands at the line it reached,
 // and the lines after it are asked about when the application opens.
 func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T) {
 	by := &corrector{says: says(fixes(1, "SECOND THING"), fixes(2, "THIRD THING"))}
@@ -315,7 +314,6 @@ func (w *waits) ProofreadSpeech(
 	return domain.SpeechProofreading{IsDone: true}, nil
 }
 
-// A run a person asked for stands in the list from the moment they asked, and
 // not from the moment it has something to count. Opening the proofreader is the
 // first thing it does, and the list already says so there.
 func TestAProofreadingAskedForExistsInTheListBeforeItOpensTheProofreader(t *testing.T) {

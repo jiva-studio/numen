@@ -13,11 +13,9 @@ import (
 // link is read in the sentence and a fragment after `#` names a place inside
 // the note; both survive.
 //
-// What stands inside a code fence is an example of a link, not one, and is left
 // as it was written.
 //
 // A note whose frontmatter block is never closed holds no prose of its own —
-// the whole file stands as its body, links in the block included — so this is
 // ErrUnterminated and the file is left as it is.
 func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 	if d.isUnterminated {

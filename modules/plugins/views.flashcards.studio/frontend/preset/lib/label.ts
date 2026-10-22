@@ -70,7 +70,6 @@ export const isAxisLabelClear = (
 
 /**
  * Where a name over a mark is set: above it, pulled back inside the picture at
- * either end so the whole word stands over it.
  */
 export const getMarkNameStyle = (at: Position): CSSProperties => {
   let back = '-50%'

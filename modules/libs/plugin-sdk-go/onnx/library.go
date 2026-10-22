@@ -10,7 +10,6 @@ import (
 	"strings"
 )
 
-// FindLibrary returns the path of the ONNX Runtime library that stands in dir,
 // or empty when dir is empty or holds none.
 func FindLibrary(dir string) string {
 	if dir == "" {

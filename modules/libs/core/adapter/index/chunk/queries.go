@@ -23,7 +23,6 @@ func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
 // Passage is one chunk, and where its text is read from.
 //
-// `Parent` is the large chunk this one sits inside, and is zero for a large
 // chunk.
 type Passage struct {
 	Chunk    int64
@@ -276,7 +275,6 @@ func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []fl
 	return near, rows.Err()
 }
 
-// getEnclosingPassages is the large chunk each chunk sits inside, in the order
 // given.
 //
 // The nearest-neighbour question is asked of the vector index alone: it takes

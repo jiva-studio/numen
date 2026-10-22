@@ -398,7 +398,6 @@ func TestForgettingPreservesTheFolderWhereItIs(t *testing.T) {
 // An installation keeps a vault.
 func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	f := onTheList(t)
-	// The window is showing neither, so what is left fails for being the
 	// last one and not for being in front of anybody.
 	f.core.Showing = mcp.ShowOneVault(domain.Vault{ID: "elsewhere"}, "")
 	session := newSessionOver(t, f.core)

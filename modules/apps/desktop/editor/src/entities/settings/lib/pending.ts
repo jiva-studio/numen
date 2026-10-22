@@ -1,7 +1,6 @@
 /**
  * The values being written, by path, and the reads of the file in order.
  *
- * A setting stands at its latest write in flight until that write and the read
  * after it are done; a read that answers after a newer one is not taken.
  */
 import { shallowRef } from 'vue'

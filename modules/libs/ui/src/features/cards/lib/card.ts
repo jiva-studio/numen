@@ -1,6 +1,5 @@
 /**
  * What a deck and a stencil are both written in: the slots a stencil names,
- * and what a card stands in them.
  */
 
 /** One named slot and what stands in it. */

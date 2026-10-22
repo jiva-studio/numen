@@ -66,7 +66,6 @@ describe('the choices a setting offers', () => {
 
   it('name a model by its last segment where the build gives it an address for a name', () => {
     const own = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
-    // What the vault answers with for a value standing in the settings: the
     // address in the place a name would be.
     const [one] = createChoices([model({ name: own, title: own })], own, WORDS)
 

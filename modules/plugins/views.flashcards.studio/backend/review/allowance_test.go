@@ -11,7 +11,6 @@ import (
 // between the two, and the goal says so where it says which budget closes its
 // day.
 //
-// A goal of retention keeps a count for each side, so each is held to its own
 // and the share decides nothing. A goal of a date carries the whole material by
 // its own reckoning.
 func TestWhichSettingsAGoalReads(t *testing.T) {

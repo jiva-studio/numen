@@ -116,9 +116,7 @@ export const Opening: Story = {
     const page = found(canvasElement, '.welcome-page')
     const mark = found(canvasElement, '.welcome-page__glyph')
 
-    // The mark carries no size of its own: it stands at the length the page
     // declares. A page that stops declaring one draws the whole file, which is
-    // taller than the window it stands in.
     expect(getComputedStyle(page).getPropertyValue('--glyph').trim()).not.toBe('')
     expect(mark.getBoundingClientRect().height).toBeLessThan(
       page.getBoundingClientRect().height / 2,

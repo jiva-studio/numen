@@ -282,7 +282,6 @@ export const ProofreadKindSchema: GenEnum<ProofreadKind> = /*@__PURE__*/
 export const ProofreadingService: GenService<{
   /**
    * ProofreadText proofreads numbered lines of one kind of text and returns the
-   * corrections the proofreader stands behind. It fails with code unavailable
    * where nothing is routed to answer for the proofreading.
    *
    * @generated from rpc numen.v1.ProofreadingService.ProofreadText

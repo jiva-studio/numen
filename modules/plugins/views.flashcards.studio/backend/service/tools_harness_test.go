@@ -74,7 +74,6 @@ func call[T any](t *testing.T, s *session, name string, args any) T {
 	return out
 }
 
-// getToolError is why a tool refused a call.
 func getToolError(t *testing.T, s *session, name string, args any) string {
 	t.Helper()
 	res := s.invoke(t, name, args).GetResult()

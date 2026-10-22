@@ -5,7 +5,6 @@
  * arithmetic is done in here: two written days are counted apart on the
  * calendar itself, where an hour put into or taken out of a clock is not a
  * length of time at all. A day is read off an instant in the zone the machine
- * stands in, which is the calendar the person is looking at.
  */
 
 /** How long a day of the calendar is, where no clock changes under it. */

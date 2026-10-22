@@ -49,7 +49,6 @@ var named = []string{
 // readSources is every hand-written Go file of the applications, parsed.
 //
 // A test file is left out: a test stands outside the package it exercises and
-// builds what stands in for the real thing.
 func readSources(t *testing.T) []standing {
 	t.Helper()
 

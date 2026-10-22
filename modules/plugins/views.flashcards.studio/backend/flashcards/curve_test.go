@@ -14,7 +14,6 @@ import (
 )
 
 // newStudiedNotes is a vault of one preset, one deck of as many cards pointing
-// at it, and a second deck pointing nowhere. Nobody has answered any of it,
 // which is what a person meets the first time they open one of these controls.
 func newStudiedNotes(cards int) map[string]string {
 	deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"

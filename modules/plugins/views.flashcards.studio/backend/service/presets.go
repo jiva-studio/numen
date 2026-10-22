@@ -67,7 +67,6 @@ func (h *presetsHandler) ListPresets(
 }
 
 // CreatePreset puts a preset naming none of its settings in the vault. A key
-// the file does not carry stands at the default.
 func (h *presetsHandler) CreatePreset(
 	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
 ) (*connect.Response[v1.CreatePresetResponse], error) {

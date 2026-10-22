@@ -34,7 +34,6 @@ export interface Installation {
   readonly headingsBounds: Readonly<Ref<Bounds>>
   chooseHeadings(count: number): void
   /**
-   * The rest of the file: what stands at a setting, the models a setting that
    * names one can be set to, and settings written where they stand.
    */
   getSetting(at: readonly string[]): unknown

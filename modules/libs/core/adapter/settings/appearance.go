@@ -25,7 +25,6 @@ type Appearance struct {
 	// this nothing to choose.
 	Mode string `json:"mode"`
 
-	// Theme is the stylesheet the window wears, named by its origin
 	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
 	// person's file.
 	Theme string `json:"theme"`
@@ -41,7 +40,6 @@ type Appearance struct {
 	NestedHeadingLimit int `json:"nested_heading_limit"`
 }
 
-// HasNestedHeadings is whether a node hangs the headings of its note under it. A section
 // naming nothing hangs them.
 func (a Appearance) HasNestedHeadings() bool {
 	return a.NestHeadingsUnderNotes == nil || *a.NestHeadingsUnderNotes

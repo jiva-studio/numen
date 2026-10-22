@@ -70,7 +70,6 @@ func TestARunIsSplitOnWholeCharacters(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The second byte stands inside Ж, and the run is asked for from there.
 	res, err := u.Execute(t.Context(), first, documentPath, 1, 5)
 	if err != nil {
 		t.Fatal(err)

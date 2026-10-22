@@ -322,7 +322,6 @@ func (t *Worker) proofread(ctx context.Context, v domain.Vault, path, hash strin
 // speech.
 //
 // A transcript whose proofreading failed is the transcript as it was
-// transcribed, and the failure stands in the list of what is being done until
 // somebody reads it. Work a person asked for is in that list from the moment
 // they asked.
 func (t *Worker) proofreadTranscript(
@@ -390,9 +389,7 @@ func (t *Worker) proofreadTranscript(
 // TakeUp puts right the transcripts of these vaults that stand short of their
 // last line, once, behind the caller.
 //
-// A proofreading stands at the line it reached, so a run that ended among the
 // batches is taken up at that line. A transcript no proofreader has been over
-// stands at its first line and is put right whole. Which transcripts a vault
 // holds is a question the index already answers.
 func (t *Worker) TakeUp(
 	ctx context.Context,

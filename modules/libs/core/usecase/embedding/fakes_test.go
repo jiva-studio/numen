@@ -188,7 +188,6 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	return out, next, nil
 }
 
-// chunkID is how this store spells the row a chunk sits on, as an index does.
 func chunkID(row int64) domain.ChunkID {
 	return domain.ChunkID(strconv.FormatInt(row, 10))
 }

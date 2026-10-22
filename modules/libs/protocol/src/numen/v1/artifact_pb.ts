@@ -210,7 +210,6 @@ export enum ArtifactKind {
   UNSPECIFIED = 0,
 
   /**
-   * Text with the place on the page each word stands at, read off a scan and
    * kept under `ocr`.
    *
    * @generated from enum value: ARTIFACT_KIND_OCR = 1;
@@ -379,7 +378,6 @@ export const ArtifactService: GenService<{
     output: typeof CreateArtifactResponseSchema;
   },
   /**
-   * DeleteArtifact takes one away, with everything cut from it. The file stands
    * as it did before anything was made from it, and it is offered again.
    *
    * @generated from rpc numen.v1.ArtifactService.DeleteArtifact

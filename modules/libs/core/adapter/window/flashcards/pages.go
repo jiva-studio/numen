@@ -17,7 +17,6 @@ var pages embed.FS
 // policy is what this window may load.
 //
 // A card is HTML, and a deck may have come from another person, so the page
-// draws it through the allowlist the library keeps and this line stands behind
 // that. A picture written into a card is a `data:` URI, which is the card's own
 // bytes and no request at all.
 var policy = csp.Sources{Images: []string{"data:"}}.Policy()

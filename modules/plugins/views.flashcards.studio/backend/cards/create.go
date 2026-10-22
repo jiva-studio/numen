@@ -101,7 +101,6 @@ func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNote
 }
 
 // Preset makes a preset naming none of its settings. A key the file does not
-// carry stands at the default, so the decks pointing here are scheduled by
 // them until the person moves one.
 func (u Create) Preset(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	in.Fields = nil

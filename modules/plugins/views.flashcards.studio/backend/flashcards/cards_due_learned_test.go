@@ -62,8 +62,6 @@ func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
 	}
 }
 
-// A card nobody has answered is learned under neither rule, so a vault nobody
-// has sat down to stands at nothing learned.
 func TestADeckNobodyHasAnsweredExistsAtNothingLearned(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)

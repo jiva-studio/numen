@@ -33,7 +33,6 @@ export function useBookMarks(
     const text = paper.value
     if (!text) return
 
-    // Where a run stands is read against the columns it stands in and not against
     // the area they are carried across: a turn under way carries both, and the
     // one measured against the other is where the run will come to rest.
     runs = getRuns(text)

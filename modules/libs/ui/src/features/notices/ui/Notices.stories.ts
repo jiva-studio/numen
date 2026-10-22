@@ -1,6 +1,5 @@
 /**
  * Every state the corner has to survive. Also the test corpus: each story is
- * run in a browser, which is the only place a card that grows taller than its
  * words, or one whose text pushes the window wider, can fail.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -321,7 +320,6 @@ export const PutOneAway: Story = {
  *
  * A card with a count keeps to two rows: what is happening, and what it is
  * happening to. A card carrying only words is carrying a path or a reason, and
- * gives them three rows. Neither pushes the window wider than itself.
  *
  * A row is the type and the clearance around it, both of which the interface
  * multiplier moves, so the short card is what every size measures against.

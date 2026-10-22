@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest'
 import { dayAfter, parseDay, daysBetween, getDayName, isDay } from './day'
 
 /**
- * The zone the machine stands in, as vitest moves it. A test that moves it puts
  * it back, since every other test here reads it.
  */
 const inZone = (zone: string, run: () => void) => {

@@ -38,7 +38,6 @@ func TestTheSpineIsTheReadingOrder(t *testing.T) {
 		t.Errorf("documents = %v, want %v", got, want)
 	}
 
-	// The archive is written in another order on purpose: where a file sits in
 	// the zip says nothing about where it is read.
 	if archived := archiveOrder(t, raw); slices.Equal(intersect(archived, want), want) {
 		t.Fatalf("the fixture archives the documents in reading order (%v), so this test cannot fail", archived)

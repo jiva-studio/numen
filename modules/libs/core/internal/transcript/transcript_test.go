@@ -185,7 +185,6 @@ func TestClockIsAMomentAsAPlayerWritesOne(t *testing.T) {
 	}
 }
 
-// A note stands at the top of its own block, so the same words spoken inside a
 // cue say nothing about how far a run got.
 func TestANoteInsideALineIsNotANote(t *testing.T) {
 	whole := transcript.Marshal([]domain.TranscriptCue{

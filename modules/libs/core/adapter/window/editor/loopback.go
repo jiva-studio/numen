@@ -42,7 +42,6 @@ type Loopback struct {
 	server  *http.Server
 	files   *fileServer
 	address string
-	// token stands in the address and in no setting. Every process on this
 	// machine can reach a loopback socket, and a vault is the person's own
 	// writing; the address is what tells this window's own asking from anybody
 	// else's. It is made afresh for each run and outlives none of them.

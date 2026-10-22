@@ -491,7 +491,6 @@ func TestRenamingAFieldReachesTheDecksThatStencilSplits(t *testing.T) {
 	}
 }
 
-// TestRenamingAFieldWritesTheFacesOfThatStencil. A field's name stands in
 // `fields` and in the braces of every face that places it, and both are the one
 // file, so one write carries both and the stencil declares what its faces place.
 func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {

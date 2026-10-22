@@ -349,7 +349,6 @@ func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 		t.Errorf("the file is now %s", raw)
 	}
 
-	// The one thing a person is told, and the only thing here they can do
 	// something about: the field, the setting it would be read as, and how far
 	// that setting goes.
 	if len(cfg.Notices) != 1 {
@@ -407,7 +406,6 @@ func TestWhatIsSavedBackNamesTheSettingThisBuildReads(t *testing.T) {
 	if strings.Contains(string(raw), `"zoom"`) || !strings.Contains(string(raw), `"interface_scale":1.5`) {
 		t.Errorf("written back as %s", raw)
 	}
-	// What a person is told is about the file and is not a field of it.
 	if strings.Contains(string(raw), "appearance.zoom") {
 		t.Errorf("written back as %s", raw)
 	}
@@ -752,7 +750,6 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 	}
 }
 
-// A node hangs the headings of its note where the file says nothing, read
 // through a pointer the way the naming is: leaving the section out, leaving the
 // field out and writing false are three different things a person can write,
 // and the last of them is the only one that turns it off.

@@ -340,7 +340,6 @@ type PluginTool struct {
 	Effect ToolEffect `protobuf:"varint,6,opt,name=effect,proto3,enum=numen.v1.ToolEffect" json:"effect,omitempty"`
 	// The agent servers the tool is offered on. None is the full server alone.
 	Servers []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
-	// How a person is told of a call to the tool. None says what the effect says.
 	Step          ToolStep `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -20,12 +20,10 @@ import (
 // The folders a vault's own store keeps what was made from its files in. Each
 // is a kind: what the files in it are.
 //
-// What made them is another question, and it stands in the file's own name
 // where a kind has more than one producer. A transcript is a transcript whether
 // a model here heard it or a site published it with a video, and one folder
 // holds both.
 const (
-	// OCRDir is text with the place on the page each word stands at.
 	OCRDir = domain.OCR
 	// TranscriptDir is text with the times each stretch of it was said at.
 	TranscriptDir = "transcript"
@@ -310,7 +308,6 @@ func newShortAppendError(name string, written, wanted int, why error) error {
 	return fmt.Errorf("%s: %d of %d bytes: %w", name, written, wanted, why)
 }
 
-// closeAndTruncate removes the bytes an append left behind and closes the file. What it
 // wrote ends where the offset now stands, so the truncation is that offset less what
 // landed, and a write that landed nothing leaves the file as it found it.
 //

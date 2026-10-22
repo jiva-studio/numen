@@ -539,7 +539,6 @@ func TestANoteIsSavedNoLargerThanItCanBeRead(t *testing.T) {
 }
 
 // A deck is a note file read at a bound of its own, and the writer it goes to
-// disk through carries that bound. One that carries none is held to MaxBytes.
 func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
@@ -562,8 +561,6 @@ func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 	}
 }
 
-// An agent writes through Execute, and is held to the bound the person's own
-// save is held to.
 func TestWritingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -578,7 +575,6 @@ func TestWritingMoreTextThanANoteContains(t *testing.T) {
 	}
 }
 
-// Create writes a whole note in one go, and is held to the same bound.
 func TestCreatingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)

@@ -39,7 +39,6 @@ describe('the front door before it knows which vaults there are', () => {
     expect(one.findComponent(Spinner).exists()).toBe(true)
   })
 
-  // A person is told what is happening, and the turning mark is for the eye.
   it('announces it, and draws no row while it has none', () => {
     const one = mountVaults(true)
 

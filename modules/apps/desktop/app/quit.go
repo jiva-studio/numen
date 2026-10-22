@@ -115,7 +115,6 @@ func handleWindowClosing(
 // and the settling happens off it, and the quit is asked for again once it is
 // over. A settling that ended with a question standing puts the window back and
 // asks for nothing: the person is answering it, and that is the whole of what
-// the goroutine left behind may do.
 func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 	if g.isFlushed() {
 		return true

@@ -163,7 +163,6 @@ var configSeeds = []string{
 // identity it returns is one that could have been made here.
 //
 // Bytes nobody can read out are rejected as unreadable, and Initialize leaves
-// them where they are. The file sits in a folder a person keeps in their own
 // sync, so the bytes are a stranger's.
 func FuzzReadConfig(f *testing.F) {
 	for _, seed := range configSeeds {

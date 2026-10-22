@@ -37,7 +37,6 @@ func (p *passing) Read(into []byte) (int, error) {
 var errTooLarge = errors.New("over the size a copy may be")
 
 // limitReader is what comes down, stopped at the size the settings name. A site
-// that declares no size is held to it all the same, and a limit of nothing lets
 // everything through.
 func limitReader(from io.Reader, under int64) io.Reader {
 	if under <= 0 {

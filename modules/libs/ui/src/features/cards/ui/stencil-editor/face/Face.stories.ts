@@ -272,7 +272,6 @@ export const AFace: Story = {
     expect(answer.getBoundingClientRect().height).toBeCloseTo(tall * 3, 0)
 
     // A field to write into a half is a small quiet chip with a ground of its
-    // own at rest, markedly smaller than the heading whose strip it stands in.
     const chip = found(canvasElement, '[data-insert="Height"]')
     const title = found(canvasElement, '.face__title')
     expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
@@ -348,7 +347,6 @@ export const AStraySlot: Story = {
     ).toBe('Not a field: Weight')
     expect(canvasElement.querySelector('header .face__objections')).toBeNull()
 
-    // It stands in the foot of the part, over what is written there: the box
     // still fills the part, and a press meant for the box reaches it.
     const pane = getPane(canvasElement, 'front-written').getBoundingClientRect()
     const box = getBox(canvasElement, 'front').getBoundingClientRect()

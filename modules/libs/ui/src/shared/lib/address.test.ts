@@ -14,7 +14,6 @@ import corpus from '../../../../protocol/testdata/addresses.json'
 
 /**
  * The brackets are read here and again in the core, which finds the links a
- * note carries and the stencil a card is cut by. Both read this one corpus,
  * and neither owns it.
  */
 import brackets from '../../../../protocol/testdata/wikilinks.json'

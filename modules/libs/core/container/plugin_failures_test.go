@@ -40,7 +40,6 @@ func newFailingConfig(t *testing.T) Config {
 	return Config{PluginHost: host}
 }
 
-// A plugin the host suspends stands in the task list with its reason until the host stops suspending it.
 func TestAPluginHeldOffExistsInTheTaskListUntilItRecovers(t *testing.T) {
 	cfg := newFailingConfig(t)
 	tasks := run.NewTasks()

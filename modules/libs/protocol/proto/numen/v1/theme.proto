@@ -20,7 +20,6 @@ service ThemeService {
   // two sizes the window is drawn at.
   rpc ListThemes(ListThemesRequest) returns (ListThemesResponse);
 
-  // ReadTheme is the text of one theme's file, as the file stands when it is
   // asked for. It is asked once for each theme that is tried on, and again
   // when that theme's file changes.
   rpc ReadTheme(ReadThemeRequest) returns (ReadThemeResponse);

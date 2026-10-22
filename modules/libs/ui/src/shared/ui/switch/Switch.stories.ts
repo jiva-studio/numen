@@ -85,7 +85,6 @@ export const NoTextAtAll: Story = { args: { label: '' }, parameters: { reach: fa
 
 /**
  * The switch on the dark set of tokens. Which way it stands is told by the
- * colour of the track, so the two are held apart there as well.
  */
 export const Dark: Story = {
   globals: DARK,

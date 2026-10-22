@@ -91,7 +91,6 @@ func where(t *testing.T, doc *testsupport.PDFBook, word string) *v1.Span {
 }
 
 // readRuns is what the runs of a source's text say and where they sit, as the
-// window is told it.
 func readRuns(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
 	out, err := api.Ocr.ReadOcr(context.Background(), connect.NewRequest(&v1.ReadOcrRequest{
 		Path: path, Spans: at,

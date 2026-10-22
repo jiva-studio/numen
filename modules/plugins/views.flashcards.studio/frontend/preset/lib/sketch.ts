@@ -68,7 +68,6 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
 
 /**
  * The whole range of a goal, at the places the line is drawn at. A target is
- * held to the span the application answered with, and a span it has said
  * nothing about is no range at all: the sketch draws no places, and the answer
  * brings the honest ones.
  */

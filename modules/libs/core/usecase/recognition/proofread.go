@@ -311,7 +311,6 @@ func (u Proofread) readCheckpoint(
 }
 
 // dropCorrections drops the corrections of pages no count claims. A line is
-// numbered by where its run stands in the recognition, so the pages beyond the
 // count are the lines from the first of them onwards.
 func dropCorrections(
 	ctx context.Context,

@@ -32,7 +32,6 @@ func (e *CopyError) Error() string { return e.Err.Error() }
 func (e *CopyError) Unwrap() error { return e.Err }
 
 // Execute returns an error when the file could not be made or the address could not
-// be fetched; the file stands either way, and its path comes back with the error. A
 // copy that fails comes back as a *CopyError beside the import it followed.
 func (u *CreateAndImportURL) Execute(
 	ctx context.Context, v domain.Vault, in NewURL, shouldCopy bool,

@@ -421,7 +421,6 @@ func dayFrom(from, at time.Time) int {
 
 // A preset keeping no even load leaves a card where the scheduler puts it, so a
 // card falls on a day carrying none of the load. Nothing is shown there: the
-// card stands overdue, and the next day picks it up.
 func TestACardFallingOnADayAtNoneOfTheLoadExistsOver(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)

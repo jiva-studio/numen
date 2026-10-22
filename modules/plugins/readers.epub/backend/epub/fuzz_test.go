@@ -22,7 +22,6 @@ const mostPerBook = 256 << 20
 const mostFuzzed = 1 << 20
 
 // A book read without complaint is one the rest of the application can hold:
-// every spine document, every named part and every printed page stands at an
 // offset inside the text that was read, in the order they are read in, and each
 // carries a name on one line. The tier the book says its parts came from is the
 // tier that produced them.
@@ -41,7 +40,6 @@ func FuzzRead(f *testing.F) {
 	f.Add(whole[:len(whole)/2])
 	f.Add(flipByte(whole, len(whole)/3))
 	// The central directory says one thing and the entry says another: the two
-	// names disagree, which is what a shop's re-zipper leaves behind.
 	f.Add(renameEntry(whole))
 	// An entry whose header claims a size it has not got.
 	f.Add(overstateEntrySize(whole))
@@ -290,7 +288,6 @@ func overstateEntrySize(raw []byte) []byte {
 // The markup of a document is the text of that document: the same walk writes
 // both, and a reader takes its offsets off the markup and counts none itself. So
 // whatever the file, the words of the markup are the words of the text, in
-// order, and every element stands inside the document it was read from.
 //
 // A document the book was read from is always answered; nothing else is.
 func FuzzMarkup(f *testing.F) {

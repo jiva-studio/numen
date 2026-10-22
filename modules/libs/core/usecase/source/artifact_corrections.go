@@ -105,7 +105,6 @@ func (u *WriteCorrections) write(
 // were, and the ones sent in place of every cue beginning inside it.
 func spliceCues(stood, put []domain.TranscriptCue, start, length int) []domain.TranscriptCue {
 	// The cues sent are what they cover: a call naming no span replaces what
-	// stands between the first of them and the last, and never the whole of it.
 	if length <= 0 {
 		start, length = put[0].From, put[len(put)-1].To-put[0].From
 	}

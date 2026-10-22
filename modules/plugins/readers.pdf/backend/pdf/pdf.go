@@ -169,7 +169,6 @@ type Location struct {
 	Part string
 	// PartOffset is where that part begins.
 	PartOffset int
-	// Page is where the page the offset falls on stands in the file, counted from
 	// the first. It is known for every page, and it is the one thing a page is
 	// called.
 	Page int

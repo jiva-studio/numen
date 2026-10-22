@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
 )
 
-// A card is scheduled by the preset of the deck it stands in, so the window
 // under each of the four is the moment that scheduler brings the card back.
 func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	t.Parallel()

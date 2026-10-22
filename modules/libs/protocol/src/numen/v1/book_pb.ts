@@ -103,7 +103,6 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
   pageBytes: number;
 
   /**
-   * Which bytes the book was read from. It stands in the ask for the markup of
    * a document and in the address the bytes of a picture are answered at, so
    * both name one reading of one file.
    *
@@ -281,7 +280,6 @@ export const ReadBookEntryResponseSchema: GenMessage<ReadBookEntryResponse> = /*
   messageDesc(file_numen_v1_book, 7);
 
 /**
- * SpineDocument is one document of the book, and where its text stands in the
  * book's text.
  *
  * @generated from message numen.v1.SpineDocument

@@ -98,7 +98,6 @@ func (HostVaultErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{0}
 }
 
-// HostIndexState is where a vault stands in the index.
 type HostIndexState int32
 
 const (

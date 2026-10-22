@@ -11,7 +11,6 @@ import (
 // order and prose grows within a page, so they come out sorted by where the run
 // begins and need no index of their own.
 //
-// A record holds where the run begins and how long it is. Files written by
 // every version stand, and the span is made from the two on the way in.
 const record = 28
 

@@ -315,7 +315,6 @@ describe('the keyboard', () => {
     expect(target.emitted('select')).toStrictEqual([[['work']]])
   })
 
-  // A space the tree lets by is a space the pane it stands in scrolls under.
   it('keeps the space to itself', () => {
     const target = mountTree({ selected: ['work'] })
     const press = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })

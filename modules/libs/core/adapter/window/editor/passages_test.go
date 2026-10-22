@@ -93,7 +93,6 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 		{
 			// Han characters either side of a match are letters by
 			// unicode.IsLetter, but Chinese holds no whitespace between words,
-			// so the character before the match is not what stands in its way.
 			name:  "a Chinese word with no space around it",
 			text:  "这是一个测试",
 			query: "测试",

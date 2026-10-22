@@ -1,6 +1,5 @@
 /**
  * Every state the status bar has to survive. Also the test corpus: each story
- * is run in a browser, which is where a label that pushes the bar wider than
  * its row, or a popover that stays open after a press elsewhere, can fail.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'

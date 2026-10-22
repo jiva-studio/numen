@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// CopyLocation is where a copy stands: VaultPath is its path when it sits in the vault beside its note, empty when it sits in the store.
 type CopyLocation struct {
 	VaultPath string
 	Size      int64

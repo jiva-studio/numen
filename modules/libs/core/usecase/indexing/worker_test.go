@@ -184,7 +184,6 @@ func (*sulking) Embed(context.Context, []string) ([][]float32, error) {
 func (*sulking) Concurrency() int { return 1 }
 
 // A model that is there and not answering leaves the pass in the list under the
-// reason, where a person is told.
 func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	model := &sulking{asked: &asked{dims: 64}}
 	made, db := reading(t)

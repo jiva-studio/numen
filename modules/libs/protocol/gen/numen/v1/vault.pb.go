@@ -4,12 +4,10 @@
 // 	protoc        (unknown)
 // source: numen/v1/vault.proto
 
-// What a client may ask about the vault a window is showing, taken whole.
 //
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
 // file.proto, its notes note.proto and its text search.proto, and where the
-// person stands in it is workspace.proto.
 
 package numenv1
 
@@ -64,7 +62,6 @@ func (*GetVaultStateRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{0}
 }
 
-// GetVaultStateResponse is what the vault the window is showing IS. What is
 // being done behind that window is Tasks.
 type GetVaultStateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -216,8 +213,6 @@ func (x *Scan) GetWatchError() string {
 // IndexCoverage is how far searching a vault by meaning has got.
 //
 // A search by meaning is asked of the vectors, and a vault holding none answers
-// nothing however it is asked. Which of three states it stands in is what the
-// person is told, so all three travel: no model at all, a model with nothing
 // embedded yet, and a vault that answers.
 type IndexCoverage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`

@@ -37,7 +37,6 @@ type DeckContents struct {
 	// one card splices. It is empty for any outcome but Ok.
 	Raw string
 	// Stencils is where the wikilink under each card's heading lands, keyed by
-	// what stands in the brackets. A name that reaches no note is absent.
 	Stencils map[string]string
 	// Fingerprint is what the file was when it was asked about, which is before
 	// its bytes were read.
@@ -111,7 +110,6 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 }
 
 // GetCardStencils is the stencil each card of a deck is cut by, keyed by what
-// stands in the card's brackets. A name that reaches no note, or reaches a note
 // that is not a stencil, carries a stencil of nothing.
 //
 // The two files are read against each other here, which is what says which of a
@@ -127,7 +125,6 @@ func (u Read) GetCardStencils(
 	return by, err
 }
 
-// getStencilPaths is where each card's wikilink lands, keyed by what stands in
 // the brackets. The link is written in the deck, so it resolves against the
 // deck's own folder the way every name in that file does.
 func getStencilPaths(
@@ -160,7 +157,6 @@ func getStencilPaths(
 // in the brackets. Each file is opened once however many cards name it.
 //
 // A name landing on a note that is not a stencil is left out of the stencils
-// and stands in ordinary, so the cards written under it are marked.
 func (u Read) readStencils(
 	ctx context.Context, v domain.Vault, at map[string]string,
 ) (by map[string]format.Stencil, ordinary map[string]bool, err error) {

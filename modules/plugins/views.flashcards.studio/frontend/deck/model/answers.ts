@@ -2,8 +2,6 @@
  * What the vault last said about each deck file the window holds: what is
  * wrong with it, what a read or a write was refused for, and what it is called.
  *
- * It is filed under the path the file stands at, so a file that moved carries
- * it along and a file no tab stands at any longer lets it go.
  */
 import type { ErrorCode } from '@numen/wire'
 import { type DeckProblem, WORDS as words } from '../../cards'

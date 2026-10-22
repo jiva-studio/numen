@@ -116,7 +116,6 @@ func (u Import) importFolder(
 	from, to string,
 	result *ImportResult,
 ) error {
-	// A folder the vault sits inside does not come in: the vault is where it
 	// would be copied to.
 	if u.files.HasHandle(from, v.Path) {
 		return errHoldsTheVault

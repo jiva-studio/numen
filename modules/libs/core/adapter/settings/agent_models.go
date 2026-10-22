@@ -14,7 +14,6 @@ const (
 )
 
 // AgentModels are the rows the agent section offers a person: the programs the setting can name, and
-// the models of each installed program and of the one the settings name. The section stands in the
 // file under the key given.
 func AgentModels(at string, held Agent, programs []port.AgentProgram) []port.Model {
 	useAt := []string{at, "use"}

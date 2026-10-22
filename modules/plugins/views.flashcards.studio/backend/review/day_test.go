@@ -47,7 +47,6 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	}
 }
 
-// A card due later today is owed now: a person sits down when they sit down,
 // and a card owed today is owed for the whole of it.
 func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	in := london(t)
@@ -73,7 +72,6 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	}
 }
 
-// A card nobody has answered is owed the first time it is asked about.
 func TestACardNobodyAnsweredIsOwed(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
 	if !day.IsOwed(review.Schedule{}, time.Now()) {

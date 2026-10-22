@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
 )
 
-// The budgets are a closed vocabulary the schema carries, so a window is told
 // which budget closed a day and never reads the words a preset file writes.
 // This is the whole of it: a value added to the schema is answered here before
 // it can travel, and the window's own table is keyed by the schema, so it is

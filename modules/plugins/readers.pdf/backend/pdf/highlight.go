@@ -31,7 +31,6 @@ type HighlightBox struct {
 const (
 	// sameLine is how much of their height two characters of one line share.
 	sameLine = 0.5
-	// wordGap is the distance a space stands in, as a fraction of that height.
 	wordGap = 0.25
 )
 

@@ -233,7 +233,6 @@ func TestASettingsFileThatWouldNotTakeTheChoiceReturnsSo(t *testing.T) {
 }
 
 // A theme deleted out of the folder does not leave the window undressed, and the
-// name it was under is what the person is told.
 func TestAThemeTheSettingsNameThatIsMissingIsSaidAndTheDefaultWorn(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
 	answer := aged.themes(t)

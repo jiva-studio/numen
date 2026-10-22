@@ -40,7 +40,6 @@ type HostCallers interface {
 	CheckPluginPermission(pluginID, permission string) error
 	CheckCompletionConsent(pluginID string) error
 	GetCompleter() port.Completer
-	// GetPluginVault is the vault the window is showing, as a plugin works it. Where the host has
 	// none to offer it returns nil.
 	GetPluginVault() port.PluginVault
 	// GetPluginData is the folder, inside the store of a vault, that the plugin's manifest keeps its
@@ -182,14 +181,12 @@ func (h *Host) GetPluginIDByToken(token string) (string, bool) {
 	return pluginID, found
 }
 
-// SetPluginVault sets the vault the window is showing, as plugins work it through the host.
 func (h *Host) SetPluginVault(vault port.PluginVault) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.vault = vault
 }
 
-// GetPluginVault is the vault the window is showing, and nil where none was set.
 func (h *Host) GetPluginVault() port.PluginVault {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

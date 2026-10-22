@@ -76,7 +76,6 @@ func TestEditLoad(t *testing.T) {
 	t.Cleanup(isDone)
 
 	// One save, the way a quiet interval makes it, and then the wait until the
-	// index answers with what was written and the window is told.
 	const path = "01/note-000001.md"
 	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(time.Now().UnixNano(), 10) + ".\n"
 

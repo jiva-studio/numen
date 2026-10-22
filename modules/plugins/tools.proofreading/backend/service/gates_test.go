@@ -177,7 +177,6 @@ func TestGetFixedLines_SeparatorPrefixIgnored(t *testing.T) {
 	}
 }
 
-// The same line, corrected as well as fronted, is a correction: what stands in
 // front of it is not all that changed.
 func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
 	fixed, _, reply := GetFixedLines(batch(), "10|— the Södërby garden hedge.", MaxEditDistance)

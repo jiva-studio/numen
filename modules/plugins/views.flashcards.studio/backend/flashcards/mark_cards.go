@@ -18,7 +18,6 @@ import (
 // holding one is written, which mints a mark for every card in it.
 //
 // This is the one thing flashcards writes into a vault, and it is done when a
-// person sits down to that vault — not to every vault the installation holds,
 // and not for the counting of what is owed.
 type MarkCards struct {
 	readers ports.VaultReaders
@@ -68,7 +67,6 @@ type MarkCardsResult struct {
 // A deck that could not be written is left as it is and is not an error: the
 // editor may be saving it, and the vault's write lock lives in one process. Its
 // cards are left out of this session and marked at the next, and it is named in
-// what comes back so that a person is told which deck that was.
 func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult, error) {
 	if u.notes == nil {
 		return MarkCardsResult{}, nil

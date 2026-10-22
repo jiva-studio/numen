@@ -613,7 +613,6 @@ func (u Extract) progress(res ExtractResult) {
 
 // text is what a source says, and which producer made it.
 //
-// A recognition of these bytes stands in for the file's own text layer: it is
 // what a person asked for, and a document whose layer is unusable is why they
 // asked. A recognition still being written is the text of the pages read so far.
 // Where there is none, the file speaks for itself and no producer is named.

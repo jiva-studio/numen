@@ -2,7 +2,6 @@
 /**
  * One vault's decks, and what each owes today.
  *
- * The whole vault is the ordinary way to sit down to this, so it stands at the
  * top as one button. A deck below it is for the person who came for that deck.
  */
 import { computed } from 'vue'

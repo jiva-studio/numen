@@ -82,7 +82,6 @@ func Vocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 }
 
 // ReadingVocabulary is the same, for a window served the tools that read. A
-// window is told about the tools it serves and no others.
 func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, newReading(ctx, core))
 }

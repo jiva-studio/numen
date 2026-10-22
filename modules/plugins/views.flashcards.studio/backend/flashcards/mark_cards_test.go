@@ -12,13 +12,11 @@ import (
 )
 
 // busy is an index that cannot be brought level, which is what a second writer
-// holding it leaves behind.
 func busy(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is busy")
 }
 
 // A deck that could not be written is named and left currently. The editor
-// may be holding it, and a person is told which deck their cards are missing
 // from and not left to wonder.
 func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	t.Parallel()

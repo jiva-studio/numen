@@ -96,7 +96,6 @@ describe('the one slider', () => {
     expect(tab.findAll('[data-control="material"] [data-control="tile"]')).toHaveLength(2)
   })
 
-  // A card nobody has answered is new, which is what the rest of the product
   // calls it. Overdue keeps its own word, which is a distinction of its own.
   it('calls a card nobody has answered new', () => {
     const saidText = words
@@ -237,7 +236,6 @@ describe('the one slider', () => {
   it('remains over the knob, and under it where over would leave the picture', async () => {
     const { tab } = mountPresetTab()
     // Which way the bubble is lifted off its anchor, which is the anchor the
-    // tail sits on.
     const lift = () =>
       /translate:[^;]*\s([^\s;]+);?/.exec(
         tab.get('[data-control="callout"]').attributes('style') ?? '',
@@ -284,7 +282,6 @@ describe('the one slider', () => {
   })
 
   // The mark keeps its short name on the picture, and the paragraph says the
-  // value it stands at and what that figure means. Nothing is captioned.
   it('draws and says nothing where the curve answers no suggestion', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       const { tab } = mountPresetTab({ goal, suggested: NO_CURVE_POINT }, { goal })

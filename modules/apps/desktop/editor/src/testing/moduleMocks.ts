@@ -63,7 +63,6 @@ vi.mock('@/entities/artifact', async (original) => ({
 const cardsSaid = {
   cards: {
     // A card is named by the first field of the stencil it is cut by, so the
-    // window is told of one.
     stencils: async () => ({
       stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name'] }],
       held: 1,

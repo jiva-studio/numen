@@ -68,8 +68,6 @@ export const getExtent = (curve: Curve): Extent => {
 
 /**
  * The extent a backlog is drawn against: nothing overdue at the foot, and the
- * most this pace ever stands at over the top. It is scaled to the one place
- * the knob stands at, so a day too short to carry what falls due is drawn
  * climbing over the height it has.
  */
 export const getBacklogExtent = (backlog: readonly number[]): Extent => ({
@@ -175,9 +173,7 @@ export const getKeyPlace = (key: string, place: number, places: number): number 
 }
 
 /**
- * The place a pointer stands over, from at its current position across the picture in
  * the picture's own units. A pointer outside the room the line is drawn in
- * stands at the nearer end.
  */
 export const getPlaceAtX = (x: number, places: number): number => {
   const inside = (x - PLOT_LEFT) / (PLOT_RIGHT - PLOT_LEFT)

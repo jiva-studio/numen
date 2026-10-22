@@ -311,7 +311,6 @@ const PointsDPI = 72
 // width asked for and the page's own size, rounded up. The size is the
 // document's own answer, and is asked once.
 //
-// It comes back a pixel or two wider than was asked for, and goes as it is. The
 // window lays the page out at the width it asked for, so the browser takes those
 // pixels off; resampling them off here is a pass over every pixel of the page to
 // change nothing anybody sees.

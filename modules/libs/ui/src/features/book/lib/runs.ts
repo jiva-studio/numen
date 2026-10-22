@@ -31,7 +31,6 @@ export function getRuns(paper: HTMLElement): Run[] {
 }
 
 /**
- * Where each run stands, measured from the near edge of the columns. The first
  * of a run's rectangles is the one that counts: a run broken over a column edge
  * has one in each column, and it begins in the first.
  */
@@ -55,7 +54,6 @@ export function findRun(runs: readonly Run[], at: number): Run | undefined {
 }
 
 /**
- * The offset a place named inside the document stands at: the run the named
  * element falls in, or the first run after a name standing between runs.
  */
 export function findOffset(
@@ -89,7 +87,6 @@ export function findOffset(
 }
 
 /**
- * Where an offset stands inside a run: the text node it falls in, and how far
  * into that node it reaches. The distance from the run's own offset is a number
  * of bytes, and only `getUnitOffset` turns one of those into a place in a string.
  */

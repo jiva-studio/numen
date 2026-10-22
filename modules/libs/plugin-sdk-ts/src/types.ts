@@ -106,7 +106,6 @@ export interface TabKindRegistration<State = unknown> {
   isTool?: boolean
   // The one word its tabs carry beside their title, and nothing where a tab carries none.
   getMark?(state: State): string | undefined
-  // Whether the tab owes the person an answer about what its file now holds.
   isAsking?(state: State): boolean
   // Writes what the tab holds out to its file, and answers once nothing is on its way.
   flushPending?(state: State): Promise<void>

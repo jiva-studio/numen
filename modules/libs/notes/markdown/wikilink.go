@@ -10,7 +10,6 @@ import (
 type Wikilink struct {
 	// At is the byte the brackets open at, and To the byte after they close.
 	At, To int
-	// Inside is what stands between them, as it was written.
 	Inside string
 	// Target is where it points.
 	Target domain.Address
@@ -20,8 +19,6 @@ type Wikilink struct {
 // Brackets holding nothing point nowhere, so they are the text they are
 // written as.
 //
-// A link in prose, the stencil a card is cut by and what a rename moves all
-// come through here, so the brackets answer one question and not three.
 func WikilinksIn(line string) []Wikilink {
 	var out []Wikilink
 	pos := 0

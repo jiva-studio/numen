@@ -364,7 +364,6 @@ func getRangeUnder(folder string) (first, past string) {
 //
 // The rows in the three virtual tables go first, by the chunk's own number.
 // Nothing cascades into a virtual table, and a chunk's number is handed to the
-// next chunk that wants one, so a row left behind answers for that one.
 func Clear(ctx context.Context, tx *sqlwrite.Transaction, source int64) error {
 	for _, name := range []string{"clear_fts", "clear_vec", "clear_sections"} {
 		if err := exec(ctx, tx, name, source); err != nil {
@@ -468,7 +467,6 @@ func writeSectionNames(ctx context.Context, tx *sqlwrite.Transaction, row int64,
 }
 
 // textID is what a chunk has to hold to be held on a row: the same text, cut at
-// the same size. A vector belongs to a chunk that sits inside another, so the
 // two sizes are separate populations.
 type textID struct {
 	hash    string

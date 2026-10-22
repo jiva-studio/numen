@@ -2,7 +2,6 @@
  * What counts as an hour of the day.
  *
  * The awkward ones are the ends: midnight is an hour, twenty-four is not, and
- * a field standing at nothing stands at no hour.
  */
 import { describe, expect, it } from 'vitest'
 import { isClockTime } from './clock'

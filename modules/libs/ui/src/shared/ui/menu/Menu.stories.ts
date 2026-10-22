@@ -269,7 +269,6 @@ export const NotClipped: Story = {
     const box = menu.getBoundingClientRect()
     const clipping = canvasElement.querySelector('[data-clipping]')!
 
-    // Taller than the box it was asked from, and not standing inside it.
     await expect(box.height).toBeGreaterThan(clipping.getBoundingClientRect().height)
     await expect(clipping.contains(menu)).toBe(false)
 
@@ -413,7 +412,6 @@ export const AskedForAtTheEdge: Story = {
       // Nothing is cut short: what the line holds fits the room it has.
       expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
     }
-    // And it stands inside the page it was asked for from.
     const box = menu!.getBoundingClientRect()
     expect(box.right).toBeLessThanOrEqual(canvasElement.ownerDocument.documentElement.clientWidth)
     expect(box.left).toBeGreaterThanOrEqual(0)
@@ -481,7 +479,6 @@ export const Grouped: Story = {
   },
   play: async () => {
     const menu = within(menuElement()!)
-    // A rule stands at each of the three joins, and above none of the items
     // that carry on a group.
     await expect(menu.getAllByRole('separator')).toHaveLength(3)
     // The keyboard passes over the rules: they are drawn, not chosen.

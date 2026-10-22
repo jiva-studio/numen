@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
  * The goal a preset is scheduled by, the switch that chooses it, and the curve
- * that goal draws. Where the goal has nothing to work on, a line stands in the
  * curve's place and says why.
  */
 import { computed } from 'vue'

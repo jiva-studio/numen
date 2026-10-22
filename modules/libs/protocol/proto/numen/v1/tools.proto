@@ -50,7 +50,6 @@ message PluginTool {
   // The agent servers the tool is offered on. None is the full server alone.
   repeated ToolServer servers = 7;
 
-  // How a person is told of a call to the tool. None says what the effect says.
   ToolStep step = 8;
 }
 

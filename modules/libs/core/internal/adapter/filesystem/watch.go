@@ -18,7 +18,6 @@ import (
 const Backlog = 65536
 
 // handover is how many events the channel the watcher writes into can hold. A
-// reader that does nothing else empties it, so what stands in it is a moment of
 // scheduling; the bound that decides anything is Backlog.
 const handover = 1024
 

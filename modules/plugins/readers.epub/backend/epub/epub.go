@@ -10,7 +10,6 @@
 // heading, a printed page — is an offset into that stream.
 //
 // One document is read a second time as the elements it is drawn from, carrying
-// the offsets its text already stands at.
 //
 // A book that is empty is still read. An error here means the file is not a
 // book at all.

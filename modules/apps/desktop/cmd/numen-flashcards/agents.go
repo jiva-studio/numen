@@ -80,7 +80,6 @@ func serveAgents(
 	}
 
 	// The page asks whether a card can be asked about as it opens, and the agent
-	// is started when a person sits down to a vault. What is said here is that
 	// this window can reach one.
 	api.Unreachable.Store("")
 

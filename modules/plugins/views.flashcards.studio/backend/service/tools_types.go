@@ -53,7 +53,6 @@ type Fault struct {
 }
 
 // CurrentCard is the card in front of the person, as an agent is told about it. The deck is the file
-// it stands in and the mark is what every card tool addresses it by.
 type CurrentCard struct {
 	Deck string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
 	Card string `json:"card,omitempty" jsonschema:"the card's mark, as card_read gives it"`

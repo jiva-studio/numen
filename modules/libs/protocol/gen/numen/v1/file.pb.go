@@ -7,7 +7,6 @@
 // What a client may ask about the tree a vault is filed in.
 //
 // A path is what the vault calls a file or a folder, and what is here is the
-// tree as a person works it: what a folder holds, what stands at a path, and
 // moving one, removing one, making one. What is inside a note is note.proto,
 // and the bytes a file of the person's own holds are asset.proto.
 
@@ -87,7 +86,6 @@ func (SourceKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{0}
 }
 
-// BookFormat is which sort of book stands at a path, so a client opens it in
 // the reader made for it: one is drawn as pictures a page at a time, the other
 // reflows. It is decided from the file's name, as SourceKind is, and a file
 // that is no book is unspecified.
@@ -231,7 +229,6 @@ func (x *ListFilesResponse) GetEntries() []*Entry {
 	return nil
 }
 
-// Entry is one file or folder, as a listing of the folder it sits in reports
 // it.
 type Entry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -734,7 +731,6 @@ func (x *RemoveFileRequest) GetDestroy() bool {
 
 type RemoveFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Where the file or folder sits in the trash. Empty when it was destroyed,
 	// and when nothing was removed.
 	Trashed string `protobuf:"bytes,1,opt,name=trashed,proto3" json:"trashed,omitempty"`
 	// The notes whose links pointed at what was removed and now reach nothing.

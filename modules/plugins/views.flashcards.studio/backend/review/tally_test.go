@@ -254,7 +254,6 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 	}
 }
 
-// A day nobody has answered on yet does not end a streak. A person who has not
 // sat down this morning has not broken anything.
 func TestADayNotAnsweredOnYetDoesNotEndAStreak(t *testing.T) {
 	days := makeTallies(map[string]int{"2026-08-27": 2, "2026-08-28": 9})

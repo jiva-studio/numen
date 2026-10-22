@@ -80,7 +80,6 @@ describe('a card', () => {
     expect(wrapper.emitted('show')).toBeUndefined()
   })
 
-  // A hand that took the card across was moving the panel into view, and the
   // card is not turned over on the way.
   it('is not turned over by a hand that took it across', async () => {
     const face = mountCard('<p>Leaf mould</p>')

@@ -145,7 +145,6 @@ func TestWhatTheApplicationDoesNotOwnIsCachedVerbatim(t *testing.T) {
 }
 
 // checkForeignKeysKept fails unless every line of every key the application
-// does not own still stands in the note's frontmatter, unchanged and in the
 // order it stood in.
 func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote string) {
 	t.Helper()
@@ -153,7 +152,6 @@ func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote strin
 		return
 	}
 	// The endings are the note's own, and the identity property is where they
-	// are held to. Here it is the lines and their order.
 	note = strings.ReplaceAll(strings.TrimPrefix(note, byteOrderMark), "\r\n", "\n")
 	front, _, found := strings.Cut(strings.TrimPrefix(note, "---\n"), "\n---\n")
 	if !found {

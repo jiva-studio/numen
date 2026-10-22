@@ -26,8 +26,6 @@ export type Field =
 export const FIELDS: readonly Field[] = [
   'newADay',
   'reviewsADay',
-  // The rule for what is learned stands over the value it reads, and one of
-  // those values is the target, so the rule stands over that too.
   'learned',
   'interval',
   'retention',

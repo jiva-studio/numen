@@ -74,7 +74,6 @@ func getExposedDependencies(file *ast.File) []exposed {
 	return found
 }
 
-// getUseCases are every use case of the core, under the file it stands in.
 func getUseCases(t *testing.T) []string {
 	t.Helper()
 	var findings []string

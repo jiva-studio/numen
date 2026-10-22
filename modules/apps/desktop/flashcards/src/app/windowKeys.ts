@@ -2,7 +2,6 @@
  * What a keystroke asks of the window, screen by screen.
  *
  * Each screen reads its own keys: the vaults screen opens the vault a letter
- * stands at, the decks screen picks what to sit down to, and the session screen
  * turns cards over and answers them. What a key means is the keyboard's answer;
  * what is done about it is the window's.
  */

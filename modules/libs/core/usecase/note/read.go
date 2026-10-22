@@ -43,7 +43,6 @@ type Read struct {
 
 var errNotOpen = errors.New("this vault's files are not open")
 
-// NewRead is what a note is read out of: the vault it stands in.
 func NewRead(readers port.VaultReaders) Read {
 	return Read{readers: readers}
 }

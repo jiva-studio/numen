@@ -3,7 +3,6 @@
  * One value along a track, moved by a handle, with the track filled behind it.
  * It draws no number of its own.
  *
- * It stands inside the ends: a value past one of them, or one the ends move
  * under, is brought in and handed on. Moving the handle and letting it go are
  * two things said, and a walk with the keys is over when the key is.
  */

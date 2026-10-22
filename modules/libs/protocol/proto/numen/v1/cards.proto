@@ -248,7 +248,6 @@ message Card {
   // and it is empty for a card the application has not written yet.
   string mark = 1;
 
-  // Where the section this card is placed under stands in the deck's own, counted
   // from the first. Absent for a card standing before the first section.
   //
   // A write naming a section the deck does not hold is refused. Nothing is

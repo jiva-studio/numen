@@ -24,7 +24,6 @@ type Agent interface {
 // and which conversation they asked it in.
 type Task struct {
 	Question string
-	// Focus is the note the window is showing, empty when it shows none.
 	Focus string
 	// Conversation is which conversation thread this question belongs to, named by
 	// the caller. Questions carrying one name are answered in one conversation

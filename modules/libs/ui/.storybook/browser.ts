@@ -17,7 +17,6 @@ interface Position {
 
 /**
  * The pointer put down at one place, carried to another and lifted, by the
- * browser itself. What a drag leaves behind — a selection, a capture — is then
  * the browser's own.
  */
 const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, from, to) => {

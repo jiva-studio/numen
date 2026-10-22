@@ -89,7 +89,6 @@ func TestAStaleWritePassesBackNothing(t *testing.T) {
 }
 
 // A deck written to disk whose index could not be brought level is an error
-// beside the result of the write: what the file stands at and the marks given.
 func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck).

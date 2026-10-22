@@ -82,7 +82,6 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 }
 
 // One installation holds every vault in one index, so a query that forgets its
-// vault answers with another vault's notes and nothing fails. Two vaults whose
 // prose shares no words, asked in both directions, is what says so.
 func TestTheReadingToolsAnswerAboutOneVaultOnly(t *testing.T) {
 	cfg, db := openIndex(t)

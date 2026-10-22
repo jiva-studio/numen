@@ -14,7 +14,6 @@ import (
 
 // The window asks for every setting and writes one of them back.
 
-// getSetting is what stands at a path through the settings, read off the whole of
 // them. What the file leaves out stands there at its default.
 func getSetting(t *testing.T, f *going, at ...string) any {
 	t.Helper()

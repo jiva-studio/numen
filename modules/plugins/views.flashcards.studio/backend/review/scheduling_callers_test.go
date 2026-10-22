@@ -68,7 +68,6 @@ func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 }
 
 // Put over sources written for it, the rule has to name the function a call
-// stands in and pass over everything that only looks like one.
 func TestWhatThePlacingRuleRefuses(t *testing.T) {
 	for _, one := range []struct {
 		why, src string

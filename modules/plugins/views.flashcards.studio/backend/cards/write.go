@@ -50,7 +50,6 @@ func (u Write) WithIndex(index note.Levels) Write {
 	return u
 }
 
-// WriteResult is what a write of a deck left behind: what the file now stands at,
 // which is what the caller presents at its next write, and the mark every card
 // that carried none was given.
 type WriteResult struct {
@@ -77,7 +76,6 @@ func (u Write) Deck(
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return WriteResult{}, err
 	}
-	// The file is on disk, so what it now stands at comes back beside a
 	// levelling that failed, and the caller can tell the two apart.
 	return WriteResult{Fingerprint: at, Given: provided}, err
 }
@@ -131,7 +129,6 @@ func (u Write) Stencil(
 	})
 }
 
-// createNoteWriter returns the writer a deck goes to disk through, held to the size a deck is
 // read at.
 func (u Write) createNoteWriter() note.Write {
 	writing := note.NewWrite(u.readers, u.writers, u.index, u.now)

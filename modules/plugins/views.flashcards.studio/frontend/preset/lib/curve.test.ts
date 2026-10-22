@@ -1,6 +1,5 @@
 /**
  * What the curve of a preset evaluates to, and where the knob relies on it: where a
- * value sits on the grid, the value a place reads out, and what a place of the
  * curve produces.
  */
 import { describe, expect, it } from 'vitest'

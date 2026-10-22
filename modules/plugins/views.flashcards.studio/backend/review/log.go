@@ -18,7 +18,6 @@ const TimestampLayout = "2006-01-02T15:04:05.000Z"
 
 // ParseTimestamp reads an instant as a line carries it, offset and all. The file is
 // text in a person's own folder and travels between machines, so what is read
-// back is not held to the one shape this build writes.
 func ParseTimestamp(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
 // line is one line of a log, currently in the file.

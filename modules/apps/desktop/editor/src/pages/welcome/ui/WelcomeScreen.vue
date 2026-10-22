@@ -3,7 +3,6 @@
  * The screen a window holding nothing shows: the vaults this installation
  * holds, and the ways into the one it is showing.
  *
- * The screen draws what it is given, so what stands in front of each way is
  * chosen here, where the window's own icons are. A letter alone opens the vault
  * standing at it, which is the letter drawn on that row.
  */

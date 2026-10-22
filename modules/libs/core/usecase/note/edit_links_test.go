@@ -56,7 +56,6 @@ func TestCheckingALinkNamesWhatItLacks(t *testing.T) {
 	}
 }
 
-// What the caller presents is what the write is held to.
 func TestLinkEditsAreHeldToTheFingerprintTheCallerPresents(t *testing.T) {
 	t.Parallel()
 	edits := map[string]func(c changing, held domain.Fingerprint) error{

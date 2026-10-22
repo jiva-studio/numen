@@ -1,6 +1,5 @@
 <script setup lang="ts">
 /**
- * What the place the knob stands at buys, said beside it, with the tail that
  * points from the words back to the knob.
  */
 import type { CurveSliderState } from '../../useCurveSlider'

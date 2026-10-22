@@ -90,7 +90,6 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 	return out
 }
 
-// The policy the window is held to. What each directive says is `appearance`'s
 // to say and is asserted there; what this window widens is asserted here.
 //
 // A build that opened no socket plays from nowhere, so it widens nothing. A
@@ -116,7 +115,6 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 // reaches that host's own machines, and nothing else about the policy moves.
 //
 // The window frames this run's own socket and no host at all. The page that
-// socket serves is what frames the host, and it is held to a policy of its own.
 func TestTheHostsAWindowMayFrame(t *testing.T) {
 	if got := embedHosts; !slices.Equal(got, []string{"https://www.youtube-nocookie.com"}) {
 		t.Errorf("the window may frame %q", got)
@@ -139,7 +137,6 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 }
 
 // TestEveryServiceTheVaultIsAskedAboutIsMounted. Four services answer about the
-// vault a window is showing, and every one of them has to be behind the one
 // handler the application hands over. A route nothing is mounted at falls
 // through to the pages and is answered not found; a route a service holds
 // answers a GET as a method that call does not take.

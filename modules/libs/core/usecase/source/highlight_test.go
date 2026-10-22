@@ -260,7 +260,6 @@ func TestARunBeginningBeforeTheStartOfTheTextReadsFromTheStart(t *testing.T) {
 }
 
 // A run of negative length reads nothing, even where the byte it would
-// otherwise land on stands inside one of a run of multi-byte characters.
 func TestARunOfNegativeLengthReadsNothing(t *testing.T) {
 	// Four copies of a four-byte character, so landing inside one and
 	// walking forward to the next whole character crosses into the next

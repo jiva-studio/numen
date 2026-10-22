@@ -118,7 +118,6 @@ describe('a goal with nothing to work on', () => {
 describe('the settings the chosen goal schedules by', () => {
   /** What each row of the receipt is called, which is what the goal draws. */
   // A goal names one budget. The budgets of the other two are not drawn, so
-  // nothing on the screen offers to close a day by a measure nobody named.
   it('draws the minutes alone under a goal of minutes', () => {
     const { tab } = mountPresetTab()
     expect(rows(tab)).toStrictEqual([

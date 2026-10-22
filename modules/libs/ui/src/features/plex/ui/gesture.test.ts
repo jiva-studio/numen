@@ -74,7 +74,6 @@ describe('the handle', () => {
   })
 
   it('does not navigate when it is used', async () => {
-    // The handle sits inside a node, and a node navigates when clicked. The
     // click has to stop there or reaching out would also walk away.
     const { plex } = mountPlex()
     const node = plex.get(`[aria-label^="${A_CHILD}"]`)

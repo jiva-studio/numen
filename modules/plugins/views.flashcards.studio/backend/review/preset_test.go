@@ -90,7 +90,6 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 				days-1, days)
 		}
 	}
-	// Nobody has answered it, so neither rule has anything to read.
 	if p.IsLearned(review.Schedule{}, now) {
 		t.Error("a card face nobody has answered is learned")
 	}
@@ -178,7 +177,6 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 				what, got)
 		}
 	}
-	// And every day of the week stands in it on its own.
 	for day := time.Sunday; day <= time.Saturday; day++ {
 		one := stands
 		one.Load = maps.Clone(stands.Load)

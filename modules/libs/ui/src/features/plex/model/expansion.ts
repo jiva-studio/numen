@@ -37,7 +37,6 @@ export interface WideBoxBounds {
  * where the middle leaves it no room to grow.
  *
  * Nothing where the box already holds the title, and nothing where the window
- * is no wider than the box.
  */
 export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds): WideBox | null {
   const { viewport, margin } = bounds
@@ -139,7 +138,6 @@ export interface OpenBoxOptions {
 }
 
 /**
- * One node's box as it is drawn, and where its handle sits in it. What the
  * handle is made of is all sizes, and so all tokens.
  *
  * `on` names what the attention is on, and nothing when it is on none.

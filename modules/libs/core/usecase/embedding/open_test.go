@@ -192,7 +192,6 @@ func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
 	}
 }
 
-// A provider reached at once is nothing a person waits for, so it stands in no
 // list.
 func TestAProviderReachedAtOnceExistsInNoList(t *testing.T) {
 	target := newSaying("reached-at-once", 1, 0, 0)
@@ -297,7 +296,6 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 }
 
 // waitForComparison is the two providers having been asked the one text they
-// are held to answering alike. The comparison runs behind the caller, so what
 // it settles is waited for and not assumed.
 func waitForComparison(t *testing.T, first, second *saying) {
 	t.Helper()

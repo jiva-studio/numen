@@ -3,7 +3,6 @@
  * How many cards are due, as one figure and the word for what it counts.
  *
  * A figure not worked out yet is drawn as the shape it will be, in the same
- * box, so the row it stands in does not move when it lands.
  */
 import { computed } from 'vue'
 import { Skeleton } from '@/shared/ui/skeleton'

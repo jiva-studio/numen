@@ -100,7 +100,6 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
   servers: ToolServer[];
 
   /**
-   * How a person is told of a call to the tool. None says what the effect says.
    *
    * @generated from field: numen.v1.ToolStep step = 8;
    */

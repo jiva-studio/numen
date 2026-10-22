@@ -63,7 +63,6 @@ const onFollow = (href: string, press: MouseEvent) => {
 /** The card is turned over by pressing it, a press spent on a link aside. */
 const onClick = (press: MouseEvent) => {
   if (press.defaultPrevented) return
-  // A hand that took the card across was moving the panel into view, and a
   // press that went nowhere is a person asking for the answer.
   const distanceX = from.value === null ? 0 : Math.abs(press.clientX - from.value)
   from.value = null

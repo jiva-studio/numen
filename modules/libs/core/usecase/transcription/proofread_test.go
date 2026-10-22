@@ -415,7 +415,6 @@ func TestAWindowShortOfTheEndIsFollowedByTheNext(t *testing.T) {
 	}
 }
 
-// The checkpoint stands at the end of the last line before the one to continue
 // from, so a run taking up asks about that line first.
 func TestTheCheckpointExistsWhereTheNextWindowBegins(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}

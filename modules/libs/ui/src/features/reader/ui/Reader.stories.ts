@@ -2,7 +2,6 @@
  * A document read, in one piece: its pages side by side, what is highlighted
  * over them, and the controls floating over the page.
  *
- * Where the drawing is judged: whether a whole page stands in the room, whether
  * the width asked for is the width of the screen and not of the layout, whether
  * a rectangle given as a fraction lands where it belongs and stays there when
  * the page is drawn larger, and whether a book of five hundred pages draws five
@@ -140,7 +139,6 @@ export const Playground: Story = {
 }
 
 /**
- * A whole page stands in the room, drawn to the width of the screen and not of
  * the layout. A page cut off at the foot is a person scrolling two ways to read
  * one page.
  */
@@ -210,7 +208,6 @@ export const Turning: Story = {
 }
 
 /**
- * The strip scrolled by hand: the page in front follows the hand, so what the
  * controls say and what is on the screen are one thing.
  */
 export const Scrolling: Story = {

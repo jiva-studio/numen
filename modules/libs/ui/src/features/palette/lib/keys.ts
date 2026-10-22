@@ -49,7 +49,6 @@ export const overlayIcon = (agent: string): PaletteIcon =>
 
 /**
  * A keystroke of one letter and the key beside the space bar, as it is drawn.
- * Shift stands between that key and the letter.
  */
 export const keyChord = (letter: string, agent: string, shift = false): PaletteKeys => ({
   icons: shift ? [overlayIcon(agent), 'shift'] : [overlayIcon(agent)],

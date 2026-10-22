@@ -22,7 +22,6 @@ var ErrNoAgent = errors.New("no agent is set up for this window")
 // the way in is offered.
 //
 // It answers what this window can reach and not what it has reached: the page
-// asks as it opens, and the agent is started when a person sits down to a
 // vault.
 func (a *API) GetAgentState(
 	_ context.Context, _ *connect.Request[v1.GetAgentStateRequest],

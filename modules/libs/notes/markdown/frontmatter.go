@@ -225,7 +225,6 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 }
 
 // endLine is the last line of the frontmatter one node relies on. A value
-// continuing past its first line stands indented past the column of the key or
 // the dash it hangs from, which is the column given here.
 func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 	if node == nil || node.Line < 1 {

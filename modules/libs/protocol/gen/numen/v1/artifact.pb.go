@@ -38,7 +38,6 @@ type ArtifactKind int32
 
 const (
 	ArtifactKind_ARTIFACT_KIND_UNSPECIFIED ArtifactKind = 0
-	// Text with the place on the page each word stands at, read off a scan and
 	// kept under `ocr`.
 	ArtifactKind_ARTIFACT_KIND_OCR ArtifactKind = 1
 	// That recognised text put right by a person, under `.corrected` beside it.

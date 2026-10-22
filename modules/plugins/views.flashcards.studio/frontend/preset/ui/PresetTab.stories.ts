@@ -307,7 +307,6 @@ export const TheBubbleStandsOverTheKnob: Story = {
 }
 
 /**
- * The plot of what stands overdue, under the picture, drawn both ways: the tab
  * with an answer on it above, and the same tab still waiting for one below.
  *
  * The plot keeps its room whether or not there is a backlog to draw, so nothing

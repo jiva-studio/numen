@@ -82,7 +82,6 @@ func TestWindowTabsReturnsWhereInADocumentThePersonIs(t *testing.T) {
 	}
 }
 
-// A book that reflows has no pages of its own, so where the person stands in
 // one is an offset into its text, and the page is how far through that offset
 // is.
 func TestWindowTabsReturnsWhereInABookThePersonIs(t *testing.T) {

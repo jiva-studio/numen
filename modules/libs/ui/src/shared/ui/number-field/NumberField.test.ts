@@ -336,7 +336,6 @@ describe('a number set from outside', () => {
  * A field whose caller holds the value and may refuse one.
  *
  * Passing the value and the listener both leaves the value the caller's: what
- * the field hands on is a request, and what stands in the field is whatever the
  * caller holds after it.
  */
 describe('a field the caller holds the value of', () => {

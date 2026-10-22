@@ -244,7 +244,6 @@ func newTranscriptJob(
 	}
 }
 
-// hasLinesFrom says whether any line that says something stands at or after the
 // number.
 func (p *transcriptProofreadJob) hasLinesFrom(number int) bool {
 	return len(p.lines) > 0 && p.lines[len(p.lines)-1].Number >= number

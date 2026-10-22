@@ -291,7 +291,6 @@ export const TwoColumns: Story = {
     const column = getColumnWidth(canvasElement)
     await expect(column).toBeCloseTo(area.width / 2 - GAP, -1)
 
-    // The run that stands in the second column of the first spread stands in
     // the first column of nothing after one turn: the whole spread has gone.
     const before = getRunsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
     await userEvent.keyboard('{ArrowRight}')
@@ -308,7 +307,6 @@ export const TwoColumns: Story = {
 }
 
 /**
- * A picture taller than the column is set inside it. One left at its own height
  * is cut in half by the column edge, and half of it is on a page nobody turns
  * to.
  */
@@ -357,7 +355,6 @@ export const AWordWithNothingToBreakAt: Story = {
 }
 
 /**
- * A table wider than the column is set to the column and carries its own
  * scrollbar. One left at its own width pushes the columns apart.
  */
 export const ATableThatWillNotBreak: Story = {
@@ -418,7 +415,6 @@ export const WordsCanBeTakenUp: Story = {
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    // The room this story stands in forbids it, as the window does.
     await expect(getComputedStyle(canvasElement.firstElementChild!).userSelect).toBe('none')
 
     await expect(getComputedStyle(getPaper(canvasElement)).userSelect).not.toBe('none')

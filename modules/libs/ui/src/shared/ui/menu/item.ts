@@ -61,7 +61,6 @@ export interface MenuPlacement {
  * coordinates the point arrived in.
  *
  * The point is a span of no width, touching the menu: the menu runs on from it
- * and folds back over it at an edge. Wider than the area it is placed in, it
  * sits at the near edge and scrolls.
  */
 export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Position => ({

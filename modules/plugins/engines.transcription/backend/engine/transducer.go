@@ -21,7 +21,6 @@ type transducer struct {
 // tokens they carry.
 //
 // The joiner names a token and how many frames it covers. A token that is not
-// the blank is said and moves the predictor on; the frame is left behind either
 // way, so that a stretch is always read to its end.
 func (d transducer) decode(ctx context.Context) ([]int, error) {
 	// The predictor opens on the blank: nothing has been said yet.

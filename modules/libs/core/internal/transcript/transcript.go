@@ -141,7 +141,6 @@ func parseBlock(lines [][]byte, outBuf []byte, cues []domain.TranscriptCue, cueL
 	return outBuf, cues, cueLens
 }
 
-// findTiming is where the arrow stands in a block, and the timings it connects.
 func findTiming(lines [][]byte) (at int, from, to int, ok bool) {
 	for i, line := range lines {
 		before, after, found := bytes.Cut(line, []byte(arrow))
@@ -417,7 +416,6 @@ func IsWrittenByHand(raw []byte) bool {
 // about it ends. A file carrying none is a recording nothing has transcribed.
 func ReadReached(raw []byte) (ms, end int) {
 	note := []byte(progressNote)
-	// Each note is looked at once, and only what stands between it and the one
 	// after it is read.
 	for end := len(raw); ; {
 		at := bytes.LastIndex(raw[:end], note)
@@ -439,7 +437,6 @@ func ReadReached(raw []byte) (ms, end int) {
 }
 
 // isBlockStart says whether a byte is where a block of the file starts: the top
-// of it, or the line after a blank one. A note stands at the top of its own
 // block.
 func isBlockStart(raw []byte, at int) bool {
 	if at == 0 {

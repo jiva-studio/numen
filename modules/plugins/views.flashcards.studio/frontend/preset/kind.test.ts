@@ -540,7 +540,6 @@ describe('a curve nobody answers', () => {
 })
 
 // A setting typed is written when the control is release, so at any moment
-// the last of it stands in the tab and nowhere else. The tab answers for it
 // where it is asked to go, and where the window is.
 describe('what a tab still owes the file', () => {
   it('is written before the tab goes', async () => {
@@ -783,7 +782,6 @@ const createRangedCurve = (settings: Settings): Curve => {
 // steers least of all: it is what the picture is scaled to.
 describe('a field the goal does not getGoalField, typed', () => {
   // A curve asked for under a new share of the day comes back over a range of
-  // its own, and a place of the old grid stands at another value on it. The
   // knob goes back to where the preset stands, so the picture and the file say
   // one thing and the next touch of the knob writes what the file already says.
   it('leaves the knob standing where the preset remains, whatever range arrives back', async () => {

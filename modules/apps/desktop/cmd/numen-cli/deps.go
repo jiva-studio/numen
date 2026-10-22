@@ -138,7 +138,6 @@ func closeIfOpen(closeFn func() error) {
 }
 
 // createRecognition is the reading of scans with the models on this machine. The
-// person is told through fetching when the models have to be downloaded first.
 func createRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Recognise, error) {
@@ -167,7 +166,6 @@ func createRecognition(
 }
 
 // createTranscription is the transcription of recordings with the models on this
-// machine. The person is told through fetching when the models have to be
 // downloaded first.
 func createTranscription(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),

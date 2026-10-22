@@ -31,7 +31,6 @@ type ProjectCurve struct {
 }
 
 // NewProjectCurve is what a preset's one control is projected through: what
-// stands in the vault, where the answers have left each card face, which preset
 // each deck is scheduled by, where one day of review gives way to the next, and
 // what time it is.
 func NewProjectCurve(
@@ -44,7 +43,6 @@ func NewProjectCurve(
 }
 
 // checkGoal is what is wrong with the value the goal moves, and is nil where
-// the value stands inside its bounds. A goal of a date names a day and no
 // number.
 func checkGoal(p review.Preset) error {
 	var value float64
@@ -68,7 +66,6 @@ func checkGoal(p review.Preset) error {
 // Execute is the curve of the goal this preset steers.
 //
 // The preset is the settings the curve is drawn under, and need not be what its
-// note holds. Path is the note the preset stands in and names the decks it
 // schedules, and a preset standing in no note schedules the decks that name
 // none.
 func (u ProjectCurve) Execute(

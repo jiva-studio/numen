@@ -140,7 +140,6 @@ func (h *noteHandler) WriteLink(
 	}
 	defer h.state.Writing.finish()
 
-	// The request names no fingerprint, so the write is held to what the note is
 	// at the moment it is made.
 	if _, err := h.editLinks.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,

@@ -68,7 +68,6 @@ describe('being open and being closed', () => {
     await menu.setProps({ isOpen: false })
     expect(getDrawnMenu()).toBeNull()
 
-    // Nothing left behind answering for a menu nobody has open.
     window.dispatchEvent(new Event('resize'))
     expect(menu.emitted('dismiss')).toBeUndefined()
   })

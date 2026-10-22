@@ -32,7 +32,6 @@ var ErrAnotherWindow = errors.New("that is another window")
 // whatever found out and read by whoever draws the window.
 //
 // The empty reason is nothing being the matter. It is a reason and not a flag:
-// a window is told what went wrong, not that something did.
 type Reason struct{ why atomic.Value }
 
 // Store says why, or the empty string once nothing is the matter.

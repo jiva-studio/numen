@@ -1,6 +1,5 @@
 /**
  * The keys of the secrets plugins declare, stored and removed through the
- * vault. A key goes one way: the window is told only which secrets have one.
  */
 import { formatErrorMessage } from '@numen/wire'
 import type { MessageWriter } from '@/shared/notices/messages'

@@ -37,7 +37,6 @@ type BookText struct {
 	Pages []BookPage
 }
 
-// A BookSection is one document of a book's spine, and where its text stands in
 // the book's text.
 type BookSection struct {
 	// Path is the section's name inside the archive.

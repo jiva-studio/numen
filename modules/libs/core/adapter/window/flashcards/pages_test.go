@@ -109,7 +109,6 @@ func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
 	}
 }
 
-// The policy the window is held to. What each directive says is `appearance`'s to say and is asserted
 // there; what this window widens is asserted here.
 //
 // A card is HTML from the person's own vault and carries its own pictures. A `data:` URI is no

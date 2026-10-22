@@ -10,7 +10,6 @@ import (
 )
 
 // A document read without complaint is one the rest of the application can
-// hold: every page and every named part stands at an offset in the text that
 // was read, in the order they are paginated, and each part carries a name on
 // one line. A document whose outline named nothing says so.
 //

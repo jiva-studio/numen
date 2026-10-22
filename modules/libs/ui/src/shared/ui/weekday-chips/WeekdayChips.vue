@@ -3,7 +3,6 @@
  * The days of the week as seven chips, each standing at a level. Pressing a day
  * offers the levels, and the day it was chosen for is handed back with it.
  *
- * A chip is filled in step with the level it stands at. A row nobody may turn
  * keeps the keyboard, says so, and offers nothing.
  */
 import { computed, ref, type HTMLAttributes } from 'vue'

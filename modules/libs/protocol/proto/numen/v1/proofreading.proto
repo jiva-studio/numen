@@ -9,7 +9,6 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // the caller owns the lines and what is done with the corrections.
 service ProofreadingService {
   // ProofreadText proofreads numbered lines of one kind of text and returns the
-  // corrections the proofreader stands behind. It fails with code unavailable
   // where nothing is routed to answer for the proofreading.
   rpc ProofreadText(ProofreadTextRequest) returns (ProofreadTextResponse);
 }

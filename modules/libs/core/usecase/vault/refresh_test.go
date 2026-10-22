@@ -166,7 +166,6 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 }
 
 // TestABookThatWentLeavesTheIndex. A book is filed by kind and carries chunks
-// of its own, and a row left behind goes on answering searches with a passage
 // that opens nothing.
 func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	t.Parallel()

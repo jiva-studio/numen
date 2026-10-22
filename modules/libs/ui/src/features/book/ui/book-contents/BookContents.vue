@@ -2,7 +2,6 @@
 /**
  * What a book divides into, as a list to reach any of it by.
  *
- * Every line stands at a byte offset into the book's text, and choosing one
  * asks for that offset. The line the person is reading is marked, and the list
  * is brought to it as the reading moves.
  */

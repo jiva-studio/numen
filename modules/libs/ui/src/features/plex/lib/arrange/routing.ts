@@ -150,7 +150,6 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 
 /**
  * The words a curve carries. A title is set about the middle of its line and an
- * arrowhead sits on one end, so a line carrying one has room for fewer words.
  */
 function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
   if (edge.label === undefined || !routing.labelWidth) return edge.label

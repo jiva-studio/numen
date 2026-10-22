@@ -15,7 +15,6 @@ import (
 )
 
 // Two processes write the index, so a write that reached the vault may find the
-// index held open by the other one. The write is answered, and the answer says
 // the index is behind: the file is on disk and search does not hold what it now
 // says.
 

@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
 
-// Where the section each adapter is configured by stands in the settings file.
 // The settings adapter owns the file and the sections about the window; every
 // other section belongs to the adapter it configures, and is put beside them
 // here, where every adapter is bound.
@@ -44,7 +43,6 @@ type Settings struct {
 	// Importing is how an address a link note points at is reached.
 	Importing download.Config `json:"importing"`
 
-	// Titles is how a note's title and the name of its file are held together.
 	Titles settings.Titles `json:"naming"`
 
 	// Performance is the workload and resource calibration profile.
@@ -74,7 +72,6 @@ func (s *Settings) AddNotice(said string) { s.Notices = append(s.Notices, said) 
 // Sync is whether a note's title and its filename are kept as one name.
 func (s Settings) Sync() bool { return s.Titles.Sync() }
 
-// HasNestedHeadings is whether a node hangs the headings of its note under it, and GetNestedHeadingLimit is
 // how many of those headings stand under it at once.
 func (s Settings) HasNestedHeadings() bool    { return s.Appearance.HasNestedHeadings() }
 func (s Settings) GetNestedHeadingLimit() int { return s.Appearance.NestedHeadingLimit }
@@ -134,7 +131,6 @@ func (c Config) getSettingsOrDefaults() Settings {
 // SetSettings is this configuration carrying what a settings file says.
 //
 // Every section of it is carried here, in one place both entry points use. A
-// section an entry point leaves behind is a part of the application that does
 // nothing and says nothing, since naming no model is how a person turns one
 // off.
 func (c Config) SetSettings(said Settings) Config {

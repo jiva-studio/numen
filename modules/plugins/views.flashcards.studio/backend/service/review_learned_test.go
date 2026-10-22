@@ -59,7 +59,6 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 	}
 }
 
-// A vault nobody has answered carries no learned face on the wire, and the
 // screen has a nought to draw.
 func TestAVaultNobodyHasAnsweredCarriesNothingLearned(t *testing.T) {
 	api, target := newAPI(t, learnedDecks)

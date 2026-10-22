@@ -47,7 +47,6 @@ func getReachingRuns(batch Batch, reply string) []int {
 //
 // Where two batches answer about one line, the correction is the one from the
 // batch in which the line stands further from the end; where they stand equally
-// far, it is the one from the later batch. A run of lines is held to this on
 // every line it covers, and a correction that takes a line from a kept run
 // takes the whole run out. No two corrections cover one line. A line no
 // accepted reply covers is not in the result.

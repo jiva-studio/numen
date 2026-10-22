@@ -1,5 +1,4 @@
 /**
- * What making a file from nothing is: a deck, a stencil, a preset or a note
  * pointing at an address, made in a folder under the name it is given, and put
  * in front of the person in a tab of its own.
  */
@@ -51,7 +50,6 @@ export interface FileCreatorsOptions {
  * A deck, a stencil, a preset or a note pointing at an address made in a
  * folder under the name it is given. The vault names the file after it and
  * answers at its current position. A vault that answers nothing at all is said here,
- * because the roads that ask for one carry no word of their own.
  */
 export function createFileCreators(
   vault: VaultCreator,

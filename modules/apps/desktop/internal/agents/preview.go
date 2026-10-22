@@ -13,7 +13,6 @@ import (
 type EditPreview struct {
 	// Emit is told each time more of the change has arrived.
 	Emit func(ctx context.Context, said domain.Edit)
-	// Locate says where a stretch stands in a note, and whether it stands in exactly one place. A
 	// stretch that stands nowhere or twice is not drawn.
 	Locate func(ctx context.Context, path, stood string) (from, to int, unique bool)
 }

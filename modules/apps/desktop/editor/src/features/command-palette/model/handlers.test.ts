@@ -2,7 +2,6 @@
  * Carrying a command out, asked without a window.
  *
  * Two things are asked here: that a note's pending write is flushed before its
- * file is renamed or removed, and that what a remove leaves behind is put to
  * the person.
  */
 import { describe, expect, it } from 'vitest'
@@ -73,7 +72,6 @@ const createRemoveResult = (over: Partial<RemovedNote> = {}): RemoveResult =>
 /**
  * A window that writes down everything a command asked of it, in order.
  *
- * The note the window holds stands at a file the test can move, so an invocation made
  * before it moved can be carried out after.
  */
 const window = (
@@ -400,7 +398,6 @@ describe('a note made', () => {
 })
 
 /**
- * What the window says an artifact of a file now stands at, as a report. Work
  * that came off is one of these: only what did not is an error.
  */
 const REPORTED: readonly ArtifactState[] = ['queued', 'running', 'done']
@@ -431,7 +428,6 @@ describe('an artifact requested for over a file', () => {
     expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
   })
 
-  // Every state carries a sentence, so the person is told one whatever
   // happened.
   it('says what it now remains at, in the window’s own words', async () => {
     for (const createdItem of REACHED) {

@@ -362,7 +362,6 @@ func parsePageQuery(where string, query url.Values) (at, width int, named docume
 }
 
 // getDrawCode is the code a question about a document that could not be
-// answered is refused under.
 //
 // A document another reader holds is unavailable and not a failure: the caller
 // asks again. Everything else a caller can act on says which of its own doing
@@ -387,7 +386,6 @@ func getDrawCode(err error) connect.Code {
 func refuse(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, pool.ErrBusy):
-		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	case errors.Is(err, errNoDocuments), errors.Is(err, port.ErrUnavailable):

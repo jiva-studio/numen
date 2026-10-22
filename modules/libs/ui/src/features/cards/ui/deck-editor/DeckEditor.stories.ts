@@ -510,7 +510,6 @@ export const InSections: Story = {
     )
 
     // The bin takes no room until the name is reached for, so the line runs
-    // unbroken up to it. Once it is drawn it stands inside the rule, which
     // keeps nothing that hangs past it.
     const actions = found(canvasElement, '[data-section-head="roots"] .section-heading__actions')
     expect(actions.getBoundingClientRect().width).toBe(0)
@@ -590,7 +589,6 @@ export const NothingAtAll: Story = {
     expect(middle(button.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
 
     // It is a tile like the cards are: a dashed outline, drawn no smaller than
-    // a card, and as wide as the column it stands in.
     const renderedElement = getComputedStyle(plus)
     expect(renderedElement.borderTopStyle).toBe('dashed')
     expect(Number.parseFloat(renderedElement.borderTopWidth)).toBeGreaterThan(0)
@@ -670,7 +668,6 @@ const measure = (canvasElement: HTMLElement, least = 3): void => {
 
 /**
  * A window too narrow for two columns: one column, and no sideways scrolling.
- * A value with no newline in it wraps to several lines, and its box stands at
  * what the wrapping evaluates to, which is worked out by the ground behind it.
  */
 export const Narrow: Story = {

@@ -21,8 +21,6 @@ func fixture(t *testing.T, name string) []byte {
 
 // A page's text and the characters it is made of are one text.
 //
-// Where a word sits on the page is asked for character by character, and where a
-// chunk sits in the document is an offset into the page's text. The two are the
 // same walk, and a rectangle put against the wrong offset lands on the wrong
 // word with nothing saying so.
 func TestTheCharactersOfAPageAreItsText(t *testing.T) {

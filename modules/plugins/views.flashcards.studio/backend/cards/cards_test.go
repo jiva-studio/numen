@@ -357,7 +357,6 @@ func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 }
 
 // A preset is made with the key that says what it is and with none of its
-// settings, and every key it does not carry stands at the default.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)

@@ -46,7 +46,6 @@ export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> = /*@__PUR
 export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
   /**
    * Every page of the document in order, each as its size. How many there are
-   * is how many stand here. A page whose size could not be read stands at
    * nothing, and the page after it is still where it was.
    *
    * @generated from field: repeated numen.v1.Page pages = 1;
@@ -54,7 +53,6 @@ export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
   pages: Page[];
 
   /**
-   * Which bytes these pages were read from. It stands in the address a page is
    * drawn at, so an address names one drawing of one document and answers the
    * same picture for as long as it answers at all.
    *

@@ -81,7 +81,6 @@ export interface Row {
 
 /**
  * The row a document makes in a viewport, drawn `zoom` times the size at which
- * a whole page stands in that viewport.
  *
  * A page whose size is not known takes the first page's, and a document that
  * has said nothing takes an upright page. Laying the row out on nothing would
@@ -184,7 +183,6 @@ export function getTurnTarget(key: string, at: number, pageCount: number): numbe
 /**
  * How close a page may be drawn. One is a whole page in the viewport it is read
  * in, which is the getFurthest there is: a page smaller than the viewport it
- * stands in is room going to waste.
  */
 export const FURTHEST = 1
 export const CLOSEST = 6
@@ -194,7 +192,6 @@ export const NEARER = 1.25
 
 /**
  * The widths a page is asked for, in device pixels. Dragging the edge of a pane
- * crosses a few of them, and a page drawn wider than its box is drawn down into
  * it.
  */
 export const WIDTH_STEP = 128

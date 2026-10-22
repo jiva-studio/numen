@@ -189,7 +189,6 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 	}
 }
 
-// A caller that named no fingerprint is held to the file as it stood before it
 // was read, so a save that lands in between is not written over.
 func TestAnEditThatNamedNoFingerprintIsHeldToWhatItReadJustNow(t *testing.T) {
 	t.Parallel()

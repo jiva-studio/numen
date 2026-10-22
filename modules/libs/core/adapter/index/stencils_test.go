@@ -35,7 +35,6 @@ func TestANoteWhoseFileReturnsNothingIsANote(t *testing.T) {
 	}
 }
 
-// One database holds every vault, so a question that forgets its vault answers with another vault's
 // notes of a type and reports nothing wrong.
 //
 // The two vaults share no word, and both directions are asserted: a leak in either is a note whose

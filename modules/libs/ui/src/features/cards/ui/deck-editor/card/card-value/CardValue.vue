@@ -1,6 +1,5 @@
 <script setup lang="ts">
 /**
- * One value of a card: the name of the field it stands in, the box it is typed
  * in, and what is wrong with it said underneath.
  */
 import { inject } from 'vue'

@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// groupedWrites stands in for the index and remembers how it was called: not
 // what was stored, but in how many pieces.
 type groupedWrites struct {
 	groups [][]string

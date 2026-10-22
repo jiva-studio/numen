@@ -16,7 +16,6 @@ import (
 var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
 
 // owned is every key an entry of the `links:` block may carry. Anything else
-// in there is the person's, and the entry it sits in is left alone.
 var owned = map[string]bool{
 	"to": true, "role": true, "type": true, "note": true, "label": true,
 }

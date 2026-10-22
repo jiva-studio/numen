@@ -39,7 +39,6 @@ export const Playground: Story = {
 
 /**
  * Two panes of different heights, waiting side by side. The ring and the word
- * are the same size in both: neither takes its size from the room it stands in.
  */
 export const OneSizeInEveryRoom: Story = {
   render: () => ({

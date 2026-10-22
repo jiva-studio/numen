@@ -10,12 +10,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// ErrNoVault is a call for the vault the window is showing when it shows none.
 var ErrNoVault = errors.New("the host is showing no vault")
 
 // Vault is port.PluginVault over the ports of the installation.
 type Vault struct {
-	// Current is the vault the window is showing.
 	Current func() (domain.Vault, bool)
 	Readers port.VaultReaders
 	Writers port.VaultWriters

@@ -9,7 +9,6 @@ import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../type
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '@numen/ui'
 
 /**
- * Which of three each note on a neighbourhood is, by the path it stands at. A
  * plex draws a deck and a stencil as what they are.
  */
 export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
@@ -35,7 +34,6 @@ function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | un
  * parent. Which parent that is comes from the vault, and this file names it.
  *
  * A relationship both notes named is drawn with an arrow at the end away from
- * the focus, the words along the line being the ones the note in focus wrote.
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,

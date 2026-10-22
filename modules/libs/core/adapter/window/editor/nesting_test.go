@@ -12,10 +12,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// The window asks whether a node hangs the headings of its note, and turns the
 // setting from the palette.
 
-// isHanging is whether a node hangs the headings of its note under it, and
 // getHeadingLimit how many of them stand there at once, as the settings hold the two.
 func isHanging(t *testing.T, f *going) bool {
 	t.Helper()

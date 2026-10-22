@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
  * One part of the window a face is edited in: a half written, or what that half
- * evaluates to. What is wrong with the half stands in its foot.
  */
 import { computed, useTemplateRef } from 'vue'
 import { ErrorMessage } from '../../error-message'

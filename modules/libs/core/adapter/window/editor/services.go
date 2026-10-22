@@ -179,7 +179,6 @@ type searchHandler struct {
 }
 
 // artifactFiles finds the file a question about an artifact is about, in the
-// vault the window is showing.
 type artifactFiles struct {
 	state          *State
 	getFingerprint *file.GetFingerprint

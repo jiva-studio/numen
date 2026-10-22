@@ -1,5 +1,4 @@
 /**
- * What stands in the panes, so that what is asked of the window is the window
  * and not the editor it draws.
  */
 import { defineComponent, h } from 'vue'

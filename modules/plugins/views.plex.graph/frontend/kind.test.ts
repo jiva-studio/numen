@@ -1,6 +1,5 @@
 /**
  * The plex tabs of a window: where each one stands, which one a new plex opens
- * beside, and what the window is told about one.
  */
 import { describe, expect, it } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'

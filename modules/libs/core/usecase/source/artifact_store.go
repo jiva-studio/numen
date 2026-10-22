@@ -25,7 +25,6 @@ func (s artifactStore) getHash(ctx context.Context, v domain.Vault, path string)
 	return response.Hash, nil
 }
 
-// artifactFile is the file one producer's artifact stands in, and its size.
 type artifactFile struct {
 	Name domain.ArtifactName
 	Size int64

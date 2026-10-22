@@ -156,7 +156,6 @@ export default tseslint.config(
   },
 
   // Limits on complexity and file length for handwritten sources. A test, a spec
-  // and a story are shaped by what they are describing and are not held to either.
   {
     files: ['src/**/*.{ts,vue}'],
     ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts'],
@@ -194,10 +193,8 @@ export default tseslint.config(
   // The layers of modules/apps/desktop/AGENTS.md: shared, entities, features,
   // widgets, pages, app, each reaching only what stands below it. A slice
   // reaches a sibling of its own layer only through the sibling's `@x`. Every
-  // import is resolved to the file it names, so `../../pages/x` is held to the
   // same rule as `@/pages/x`.
   //
-  // Tests and stories sit in their layer and are held to the rule.
   //
   // A file under `src` that no element claims fails.
   {
@@ -221,7 +218,6 @@ export default tseslint.config(
   // computes what is drawn from what it is given, so it may not ask the machine
   // what time it is, what the window measures, or what comes next.
   //
-  // The humble view is not held to this — it is the half that talks to the
   // browser — and neither are the stories and the tests, which stand outside a
   // screen on purpose.
   {

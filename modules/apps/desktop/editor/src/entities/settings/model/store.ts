@@ -1,9 +1,7 @@
 /**
- * The settings the window reads out of the file whole: what stands at a path
  * through it, the models a setting that names one can be set to, and one
  * setting written at its current position.
  *
- * What the vault answers with holds the defaults under everything the file
  * leaves out.
  */
 import { ref, shallowRef } from 'vue'
@@ -100,7 +98,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   /**
    * Settings written into the file, together or not at all. A write that was
    * refused is said, and the window reads the file again either way, so what is
-   * drawn is what the settings hold. Until then a setting stands at the value
    * last written to it, and a read that answers late does not move it.
    */
   const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {

@@ -1,4 +1,3 @@
-// A note held open: how it is opened, how a new one is made, the bytes it now
 // stands as, and its prose.
 
 package markdown
@@ -32,7 +31,6 @@ func IsFrontmatterStart(text string) bool {
 	return strings.HasPrefix(opening, "---\n") || strings.HasPrefix(opening, "---\r\n")
 }
 
-// Document is a note held open so that one part of it can be changed and every
 // other part left as the bytes it arrived as.
 //
 // The frontmatter is shared with the person: their key order, their comments,
@@ -131,7 +129,6 @@ func (d *Document) Body() string { return string(d.body) }
 // written with the file's own line ending, and ends with one.
 //
 // A note whose frontmatter block is never closed holds no prose to replace —
-// the whole file stands as its body — so this is ErrUnterminated and the file
 // is left as it is.
 func (d *Document) SetBody(body string) error {
 	if d.isUnterminated {

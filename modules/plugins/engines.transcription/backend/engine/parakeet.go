@@ -408,7 +408,6 @@ func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, jo
 }
 
 // predict is one position of the predictor: the token that was said and the
-// state it leaves behind.
 func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []float32) ([]float32, error) {
 	out, err := t.decoder.Run(inputs)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/csp"
 )
 
-// Every window is held to one policy. A theme is an ordinary stylesheet a
 // person may have downloaded, and this is the whole of what stops one reaching
 // the network.
 func TestAWindowIsHeldToOnePolicy(t *testing.T) {

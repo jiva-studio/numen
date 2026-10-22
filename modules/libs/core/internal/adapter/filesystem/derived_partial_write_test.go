@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 )
 
-// fileCap is the length every file this process writes is held to while the
 // torn append is made. It stands above anything else the run has open.
 const fileCap = 1 << 20
 

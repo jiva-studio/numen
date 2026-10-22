@@ -12,7 +12,6 @@ func oneLine(text string) Batch {
 	return Batch{Number: 1, Lines: []Line{{Number: 7, Text: text}}}
 }
 
-// Held to no distance, a correction stands however far from the line it puts
 // right.
 func TestACorrectionHeldToNoDistanceExistsHoweverFar(t *testing.T) {
 	if apart := EditDistance(asHeard, asSaid); apart <= MaxEditDistance {

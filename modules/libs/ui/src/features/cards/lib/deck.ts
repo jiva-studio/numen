@@ -111,7 +111,6 @@ export interface DeckProblems {
   readonly at: Problems
   /**
    * What is wrong with one value of a card, under that card's identity and then
-   * the field the value stands in.
    */
   readonly under: ReadonlyMap<string, Problems>
 }

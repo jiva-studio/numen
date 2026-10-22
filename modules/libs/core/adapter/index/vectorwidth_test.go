@@ -54,7 +54,6 @@ func TestAFitThatFailsPreservesTheVectorIndexAsItWas(t *testing.T) {
 		t.Run(step.name, func(t *testing.T) {
 			ctx := t.Context()
 			db := openBreakingDB(t)
-			// Vectors of 384 dimensions are held, and the index stands at 1024.
 			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}

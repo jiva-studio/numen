@@ -129,7 +129,6 @@ const getBookRuns = (
 /**
  * What a url offers: everything a file offers, and the runs over what is at the
  * address. A build that cannot reach one offers none of them, which is how a
- * person is told this build does not do it.
  */
 const urls = (canRun: RunGuard): readonly PathItem[] =>
   getFileMenu(

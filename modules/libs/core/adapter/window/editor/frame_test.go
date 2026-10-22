@@ -32,7 +32,6 @@ func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 		t.Fatalf("the page answered %d: %s", answer.Code, answer.Body.String())
 	}
 	page := answer.Body.String()
-	// What the host is told is where the page holding it stands.
 	if !strings.Contains(page, "origin="+url.QueryEscape(back.address)) {
 		t.Errorf("the host is told nothing about who frames it: %s", page)
 	}

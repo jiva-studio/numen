@@ -95,7 +95,6 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	}
 
 	// The composition root is the one package answering for what it names, and
-	// everything else is held to the whole of what it is compiled from.
 	if _, named := getRefusedImports(module + "container"); !named {
 		t.Error("the composition root answers for everything it is built from")
 	}
@@ -116,7 +115,6 @@ var shipped = []struct{ goos, goarch string }{
 
 // Imports point inward. What the build resolved is what is read, so a package
 // the core reaches through another answers for it too, and answering says how
-// far each package is held to that.
 //
 // A test file is left out: a test stands outside the package it exercises and
 // builds the adapters that stand in for the real ones.

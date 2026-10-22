@@ -53,7 +53,6 @@ export const getFill = (level: number): number => Math.min(Math.max(level, 0), 1
 export const getFillPercent = (level: number): string => `${Math.round(getFill(level) * 100)}%`
 
 /**
- * The levels on offer, holding the one a day stands at. A level the offer does
  * not name is added at its current position among them, so a day is never asked to
  * choose without its own level among the choices. No level in force leaves the
  * offer as it is.

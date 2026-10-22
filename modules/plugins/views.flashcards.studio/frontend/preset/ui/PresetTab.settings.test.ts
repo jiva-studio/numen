@@ -64,7 +64,6 @@ describe('the settings under the control', () => {
     expect(recorded).toStrictEqual(['type backlog 69', 'flushPending'])
   })
 
-  // The rule stands over the one value it reads, and the value the other rule
   // reads is not drawn at all — the same rule a goal follows for its budgets.
   it('offers the two rules for the learned, and draws the value the chosen one reads', async () => {
     const byInterval = mountPresetTab({}, { learned: 'interval', interval: 21 })
@@ -125,7 +124,6 @@ describe('the settings under the control', () => {
   })
 
   // A tab draws its rows before the first read lands. Until the application
-  // has said how far a field goes, the field stands at the ends it draws
   // itself with.
   it('leaves a field the application has returned nothing about at its own ends', () => {
     const one = createTab({}, { learned: 'interval', interval: 21 })

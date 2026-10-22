@@ -405,7 +405,6 @@ func (p *pass) makeVectors(ctx, under context.Context, owing int64) {
 		events.FinishTask(MakingVectors)
 	default:
 		// A vault short of the vectors it owes is searched by its words alone, and
-		// the reason stands in the list.
 		failed(err)
 	}
 }

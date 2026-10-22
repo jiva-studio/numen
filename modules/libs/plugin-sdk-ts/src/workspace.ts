@@ -54,7 +54,6 @@ export interface VaultNotes {
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.
   createUntitledNote(): Promise<string>
-  // A note made in a relation of another. The person is told why where none was made.
   createInRelation(from: string, relation: NoteRelation): Promise<NoteRef | null>
   createWithTitle(title: string, from: string, relation: NoteRelation): Promise<NoteRef | null>
   // Whether the link was written.
@@ -126,7 +125,6 @@ export interface WorkspaceHost {
 // FileSource is what the vault holds at a path. A file it holds no source for is other.
 export type FileSource = 'note' | 'book' | 'recording' | 'url' | 'other'
 
-// VaultEntry is one file or folder, as a listing of the folder it sits in reports it.
 export interface VaultEntry {
   readonly path: string
   readonly name: string

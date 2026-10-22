@@ -312,7 +312,6 @@ export const ACard: Story = {
     expect(tile.querySelector('[aria-expanded]')).toBeNull()
     expect(header.querySelectorAll('button')).toHaveLength(1)
 
-    // It stands in the middle of the strip, and is said more quietly than what
     // the card holds.
     const cutElement = found(canvasElement, '[data-cut-of]')
     const middle = (each: Element): number => {
@@ -343,7 +342,6 @@ export const ACard: Story = {
 
 /**
  * A first field written over several lines, which is what no heading could
- * hold. It stands in a box like any other field, and the box grows to it.
  */
 export const AFirstFieldOfManyLines: Story = {
   args: { corpus: 'a first field of many lines' },
@@ -356,7 +354,6 @@ export const AFirstFieldOfManyLines: Story = {
 }
 
 /**
- * A value with no newline in it that wraps to several lines. Its box stands at
  * what the wrapping evaluates to, which is worked out by the ground behind it.
  */
 export const AValueThatWraps: Story = {
@@ -387,7 +384,6 @@ export const NoStencil: Story = {
     expect(tile.textContent).toContain('No stencil called Gone')
     expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
-    // What is wrong with it stands over the edge a value would: the clearance
     // the body keeps, in from the tile's own stroke.
     const body = found(canvasElement, '.card__body')
     const clearance = Number.parseFloat(getComputedStyle(body).paddingInlineStart)
@@ -397,7 +393,6 @@ export const NoStencil: Story = {
       Math.round(tile.getBoundingClientRect().left + stroke + clearance),
     )
 
-    // What it says of holding nothing stands in the middle of the room left
     // over.
     const silence = found(canvasElement, '.card__silence').getBoundingClientRect()
     const middle = (box: DOMRect): number => Math.round(box.left + box.width / 2)
@@ -430,7 +425,6 @@ export const CutByNothing: Story = {
     expect(response[0]?.textContent).toContain('not a lone wikilink')
     expect(getComputedStyle(cutElement).color).not.toBe(getComputedStyle(response[0] as Element).color)
 
-    // No heading stands over a body that holds something.
     expect(tile.querySelector('.card__silence')).toBeNull()
 
     // What the card wrote is read, breaks and all, and typed into nothing.
@@ -439,7 +433,6 @@ export const CutByNothing: Story = {
     expect(wrote.map((each) => each.getAttribute('data-wrote'))).toEqual(['Question', 'Answer'])
     expect(wrote[1]?.textContent).toContain('\n')
 
-    // A value stands over the edge the name it is written under relies on.
     const edge = (each: Element): number => {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + Number.parseFloat(getComputedStyle(each).paddingInlineStart))

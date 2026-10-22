@@ -93,7 +93,6 @@ func TestASpineDocumentCrossesAsTheCorpusReturnsItDoes(t *testing.T) {
 	}
 }
 
-// Every offset the corpus carries is where that run stands in the book's text,
 // so the window reading them off it is reading the book's own numbers.
 func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 	book := read(t, seamBook(t))

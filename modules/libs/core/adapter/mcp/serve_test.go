@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 )
 
-// The port is open on this machine, so what stands in front of it is the whole
 // of who may reach somebody's notes.
 func TestNothingReachesTheVaultWithoutTheToken(t *testing.T) {
 	_, core := newCore(t)

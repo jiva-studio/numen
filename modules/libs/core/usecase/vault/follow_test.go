@@ -185,7 +185,6 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	if len(got.Paths) != 0 || len(got.Assets) != 0 {
 		t.Errorf("reported %+v, and what changed cannot be known", got)
 	}
-	// The scan ran, so a note nobody named is in the index anyway.
 	if got := titles(t, f.index, f.vault, "entropy"); !slices.Contains(got, "Later") {
 		t.Errorf("the index holds %v", got)
 	}

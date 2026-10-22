@@ -274,7 +274,6 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	}
 }
 
-// The fingerprint a write answers with is the one the next write is held to.
 func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)

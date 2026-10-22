@@ -226,7 +226,6 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	}
 }
 
-// A page is held to loading nothing but what its own handler serves, and the
 // socket a recording is played from is the one thing named beside it.
 func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)

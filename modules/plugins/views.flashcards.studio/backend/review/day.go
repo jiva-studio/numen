@@ -26,7 +26,6 @@ func Clock(starts time.Duration) string {
 // Day is where one day of review gives way to the next.
 //
 // A card owed today is owed for the whole of it, whatever hour its schedule
-// falls at, because a person sits down when they sit down.
 type Day struct {
 	// Starts is how long past midnight a day begins.
 	Starts time.Duration

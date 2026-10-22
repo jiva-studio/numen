@@ -71,7 +71,6 @@ func TestWhatABudgetIsSpentOn(t *testing.T) {
 	}
 }
 
-// A key the file does not carry stands at the default.
 func TestWhatAPresetPreservesUnsaid(t *testing.T) {
 	p, problems := review.ReadPreset(front(t, "goal: retention\nretention: 0.95\n"))
 
@@ -134,7 +133,6 @@ func TestTheDayItAimsAt(t *testing.T) {
 }
 
 // The share of a day that goes to the debt is read like the other whole
-// numbers, stands at all of it where the file names none, and is refused
 // outside its bounds.
 func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
 	if got := review.Defaults().Backlog; got != review.AllBacklog {

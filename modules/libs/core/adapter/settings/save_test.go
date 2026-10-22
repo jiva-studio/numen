@@ -324,7 +324,6 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		t.Errorf("the file is %v", info.Mode().Perm())
 	}
-	// The temporary file it was written through is not left behind.
 	entries, err := os.ReadDir(filepath.Dir(path))
 	if err != nil {
 		t.Fatal(err)

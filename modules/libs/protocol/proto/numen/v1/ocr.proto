@@ -49,7 +49,6 @@ message Box {
   // Which bytes of the document's text this covers.
   Span span = 1;
 
-  // Where the page stands in the document, counted from the first.
   int32 page = 2;
 
   Rect rect = 3;

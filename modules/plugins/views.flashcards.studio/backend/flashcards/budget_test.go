@@ -55,7 +55,6 @@ func deckNaming(at []string, cards int, from int) string {
 	return out
 }
 
-// sessionAt is what the vault asks at this instant, held to the day's budgets.
 func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcards.SessionResult {
 	t.Helper()
 	sat, err := flashcards.NewSession(
@@ -77,7 +76,6 @@ func byDeck(sat flashcards.SessionResult) map[string]int {
 	return out
 }
 
-// unseen is how many of a session's cards nobody has answered yet.
 func unseen(sat flashcards.SessionResult) int {
 	out := 0
 	for _, one := range sat.Queue {
@@ -609,7 +607,6 @@ func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 	}
 }
 
-// A deck pointed at another preset between sessions is held to the budget of
 // the preset it now names.
 func TestADeckRepointedBetweenSessionsIsHeldToItsNewPreset(t *testing.T) {
 	t.Parallel()
@@ -768,7 +765,6 @@ func TestADayMovedPriorUsStopsThePresetAtOnce(t *testing.T) {
 	}
 }
 
-// A goal moved off a day starts the preset again: the day stands in the file
 // and is read only while the goal names it.
 func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
 	t.Parallel()
@@ -1197,7 +1193,6 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 }
 
 // A goal of a date carries the whole material by its own reckoning, so the
-// share takes no part and the value stands in the file untouched.
 func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 	t.Parallel()
 	for _, share := range []string{"backlog: 0\n", "backlog: 100\n"} {

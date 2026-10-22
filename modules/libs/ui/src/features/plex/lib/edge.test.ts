@@ -59,7 +59,6 @@ describe('the reading direction of a curve with no sideways run', () => {
 
 describe('the arrowhead of a curve shorter than the head', () => {
   // A head has no piece of such a curve to be aimed along, so the tangent at
-  // the end it sits on aims it. The tangents here are (9, 6) at both ends.
   const short: EdgeCurve = {
     fromPoint: { x: 0, y: 1 },
     control1: { x: 3, y: 3 },

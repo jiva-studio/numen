@@ -255,7 +255,6 @@ const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
  * A field's row is one block: the line and the ground are the row's, and the
  * handle, the box and the way to remove it stand inside it carrying neither.
  * The first field names every card, so it keeps the shape the others have with
- * what it may not do turned off. What the list is added to by stands in the
  * middle of a rule as wide as the list.
  */
 export const AStencil: Story = {
@@ -267,7 +266,6 @@ export const AStencil: Story = {
     const away = row.querySelector('button')
     if (!box || !grip || !away) throw new Error('a row missing part of itself')
 
-    // The row carries the line and the ground, and what stands inside carries
     // neither.
     const renderedStyle = getComputedStyle(row)
     expect(Number.parseFloat(renderedStyle.borderTopWidth)).toBeGreaterThan(0)
@@ -307,7 +305,6 @@ export const AStencil: Story = {
     })
     expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 
-    // What the list is added to by stands in the middle of a divider as wide as
     // the list, and the line gives way to it either side.
     const divider = found(canvasElement, '.stencil__part .divider')
     const list = found(canvasElement, '.stencil__fields')

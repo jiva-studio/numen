@@ -133,8 +133,6 @@ func (u Presets) save(
 		return domain.Fingerprint{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
 			note.ErrTooLarge, path, on.Size, note.MaxBytes)
 	}
-	// A caller that said what it believed the note was is held to that; one that
-	// said nothing is held to what stands there now.
 	expectedFp := fingerprint
 	if expectedFp.IsZero() {
 		expectedFp = on

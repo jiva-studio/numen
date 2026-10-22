@@ -198,7 +198,6 @@ about 30"
 	}
 }
 
-// A heading is closed by a run of hashes only where whitespace stands in front
 // of them, so a name ending in one keeps it and is the whole of what the card
 // is called.
 func TestAHeadingEndingInAHash(t *testing.T) {
@@ -434,7 +433,6 @@ func TestADeckOfSectionsAndNoCards(t *testing.T) {
 }
 
 // The format spends two heading levels and no more, so a heading below them is
-// part of the value it stands in.
 func TestAValueContainsADeeperHeading(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
 type: deck

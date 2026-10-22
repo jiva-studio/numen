@@ -47,7 +47,6 @@ type Projection struct {
 	// It is answered where that day is a day. An interval is passed once and
 	// stays passed, so the day the last card face passes it is one. A chance of
 	// recall falls as a card fades and rises when it is answered, so a material
-	// counted that way stands at a level and reaches no such day; and a preset
 	// aiming at a date is answered by its date. Both are LearnsUnasked.
 	Learns int
 	// Short is how many card faces cannot be learned by the day the preset aims
@@ -176,7 +175,6 @@ func (p Projection) Session() (int, bool) {
 // and were not answered on it.
 //
 // A card falling due later in the day holding at is not overdue: its day is
-// this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
 func CountOverdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 	startTime := d.GetStart(now)

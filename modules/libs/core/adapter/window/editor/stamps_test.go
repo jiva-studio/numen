@@ -54,7 +54,6 @@ func TestTheWindowsFingerprintIsAKeyOfPlainNumbers(t *testing.T) {
 }
 
 // Nothing said about a file is not the epoch: a client presenting an empty
-// fingerprint is saying it does not know, and a write is not held to 1970.
 func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
 	if back := convertFingerprintFromWire(convertFingerprintToWire(domain.Fingerprint{})); !back.IsZero() {
 		t.Errorf("nothing said about a file came back as %+v", back)

@@ -29,7 +29,6 @@ export const clearBacklog = (backlog: readonly number[]): number | null => {
 
 /**
  * A number held inside the bounds of the setting it is. A setting the
- * application has said no bound for is held to none.
  */
 export const clamp = (value: number, within: Bounds | undefined): number =>
   within === undefined ? value : Math.min(Math.max(value, within.least), within.most)
@@ -45,7 +44,6 @@ export const findNearest = (grid: readonly number[], value: number): number => {
 }
 
 /**
- * The value the knob stands at. A preset's own value need not sit on the grid,
  * and the place it opens at is the one nearest it, so while the knob has not
  * been moved off that place the preset's own value is what is said. A knob
  * walked anywhere else relies on a place, and the place is exact.

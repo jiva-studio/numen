@@ -37,7 +37,6 @@ type PluginCache interface {
 	Write(ctx context.Context, pluginID string, vaultID domain.VaultID, name string, content []byte) error
 }
 
-// PluginIndexStatus is where a vault stands in the index.
 type PluginIndexStatus int
 
 const (
@@ -49,17 +48,14 @@ const (
 	PluginIndexFailed
 )
 
-// PluginIndexState is where a vault stands in the index, and why it failed when it did.
 type PluginIndexState struct {
 	Status PluginIndexStatus
 	Reason string
 }
 
-// PluginVault is the vault the window is showing, as the host works it for a plugin: its files,
 // what the index says of its notes and links, the folder of its store a plugin keeps data in, and
 // the cache the installation keeps for a plugin.
 type PluginVault interface {
-	// GetVault is the vault the window is showing, and false while it shows none.
 	GetVault() (domain.Vault, bool)
 	// GetVaults lists every vault the installation knows.
 	GetVaults() ([]domain.Vault, error)

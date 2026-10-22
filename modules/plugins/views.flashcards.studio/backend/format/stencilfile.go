@@ -18,7 +18,6 @@ var ErrNoSuchField = errors.New("this stencil declares no field of that name")
 // face and every card, and the values under the other are held by nothing.
 var ErrFieldTaken = errors.New("this stencil already declares a field of that name")
 
-// StencilFile is a stencil held open, and what holds for a deck holds here: a
 // face is changed by replacing the run it occupies.
 type StencilFile struct {
 	doc *markdown.Document
@@ -56,7 +55,6 @@ func (f *StencilFile) SetFields(names []string) error {
 }
 
 // RenameField gives one declared field a different name and leaves it where it
-// stands in the order. ErrNoSuchField when the stencil declares no such field,
 // and ErrFieldTaken when it already declares one of the name asked for.
 //
 // A field's name is written twice in this file: where `fields` declares it, and
@@ -133,7 +131,6 @@ func formatFace(face FaceTemplate) string {
 // format itself, and the tail verbatim below the last side.
 //
 // The faces are written into a stencil of no faces, one after another, so every
-// face a caller gave stands in the file and two of one name are two faces.
 func StencilBody(preamble string, faces []FaceTemplate, tail string) (string, error) {
 	scratch, err := OpenStencil(markdown.Create("", preamble))
 	if err != nil {

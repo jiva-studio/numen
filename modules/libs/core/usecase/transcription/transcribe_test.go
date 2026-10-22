@@ -80,7 +80,6 @@ func (p played) GetSegments(_ context.Context, from, count int) ([]port.Audio, e
 
 func (p played) Close() error { return nil }
 
-// recordingPath is where the recording sits in the vault under test.
 const recordingPath = "library/talk.mp3"
 
 // newRecording is the bytes of the file the words were spoken into. Nothing

@@ -94,7 +94,6 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		fails func(n int, msg any) bool
 		moved bool
 	}{
-		// The window is told the stream is open before it waits for anything.
 		"opening": {cancelled, func(n int, _ any) bool { return n == 1 }, false},
 		// Nothing moved, and the window says so again until the page is found
 		// gone.

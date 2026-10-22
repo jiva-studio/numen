@@ -2,7 +2,6 @@
 /**
  * A menu: a list of things that can be chosen, put where it was asked for.
  *
- * It is drawn at the end of the document, so nothing it stands inside can clip
  * it, and it is placed against the area it is drawn into. It takes items and a
  * point and says which item was chosen; what the items are and what choosing
  * one does are the caller's.

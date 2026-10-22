@@ -57,7 +57,6 @@ export const TwoNotes: Story = {
     await expect(notes(canvasElement)).toHaveLength(2)
     await expect(getAnswers(canvasElement)).toHaveLength(6)
 
-    // An answer is a word in the sentence it stands in, with a line under it.
     const answer = getComputedStyle(getAnswers(canvasElement)[0]!)
     await expect(answer.textDecorationLine).toBe('underline')
     await expect(answer.backgroundColor).toBe('rgba(0, 0, 0, 0)')

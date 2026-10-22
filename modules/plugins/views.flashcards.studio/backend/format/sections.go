@@ -71,7 +71,6 @@ func heading(line []byte, first, last int) (level int, name string, ok bool) {
 		return 0, "", false
 	}
 	cleaned := bytes.TrimSpace(rest)
-	// A run of hashes at the end closes the heading where whitespace stands in
 	// front of it, and a name ending in one keeps it.
 	if closed := bytes.TrimRight(cleaned, "#"); len(closed) != len(cleaned) {
 		if t := bytes.TrimRight(closed, " \t"); len(closed) == 0 || len(t) != len(closed) {

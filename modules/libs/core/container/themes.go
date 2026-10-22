@@ -12,7 +12,6 @@ import (
 //
 // An error here is the themes folder — a machine that names no configuration
 // folder, a folder that could not be made — and what the binary ships is
-// offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.getCatalogue()
 	return &theme.Service{

@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// spanOf is where one top-level key's value stands in the frontmatter, and the
 // bytes it occupies.
 func spanOf(t *testing.T, front, key string) (int, string, bool) {
 	t.Helper()

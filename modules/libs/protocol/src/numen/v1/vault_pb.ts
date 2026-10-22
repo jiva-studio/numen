@@ -2,12 +2,10 @@
 // @generated from file numen/v1/vault.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about the vault a window is showing, taken whole.
 //
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
 // file.proto, its notes note.proto and its text search.proto, and where the
-// person stands in it is workspace.proto.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -33,7 +31,6 @@ export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> = /*@_
   messageDesc(file_numen_v1_vault, 0);
 
 /**
- * GetVaultStateResponse is what the vault the window is showing IS. What is
  * being done behind that window is Tasks.
  *
  * @generated from message numen.v1.GetVaultStateResponse
@@ -122,8 +119,6 @@ export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/
  * IndexCoverage is how far searching a vault by meaning has got.
  *
  * A search by meaning is asked of the vectors, and a vault holding none answers
- * nothing however it is asked. Which of three states it stands in is what the
- * person is told, so all three travel: no model at all, a model with nothing
  * embedded yet, and a vault that answers.
  *
  * @generated from message numen.v1.IndexCoverage

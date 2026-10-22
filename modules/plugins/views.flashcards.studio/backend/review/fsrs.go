@@ -130,7 +130,6 @@ func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
 type atAnswer struct {
 	phase fsrs.State
 	// away is how many whole days the card face stood away, and is none for one
-	// nobody has answered.
 	away float64
 	// last is where the card face stood before the answer, and out is where the
 	// answer leaves it but for what the rating decides.

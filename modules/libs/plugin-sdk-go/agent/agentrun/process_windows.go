@@ -28,7 +28,6 @@ func kill(cmd *exec.Cmd) error {
 	return ended
 }
 
-// taskkill is the program that ends a tree of processes, by the path it stands at in the system
 // folder.
 func taskkill() string {
 	return filepath.Join(os.Getenv("SystemRoot"), "System32", "taskkill.exe")

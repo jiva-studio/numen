@@ -16,7 +16,6 @@ export interface DeckCardsDue {
    */
   readonly learned: number
   /**
-   * How many of its card faces nobody has answered at all. A deck every face of
    * which is one of these has nothing that can come round until something
    * begins them.
    */
@@ -34,7 +33,6 @@ export interface PresetCardsDue {
   /** How many card faces stand in those decks. A deck holding none still points here. */
   readonly cards: number
   /**
-   * What the day leaves under it, already held to the budgets that close it.
    * It is what a session over this preset asks, and is printed currently.
    */
   readonly owed: number
@@ -80,7 +78,6 @@ export interface VaultCardsDue {
   readonly name: string
   readonly path: string
   /**
-   * Whether this vault has been counted. Everything below stands at nothing
    * until it has, and nothing under it is read as a vault owing nothing.
    */
   readonly isCounted: boolean

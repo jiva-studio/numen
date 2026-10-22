@@ -58,7 +58,6 @@ func line(lines []string, i int) string {
 	return lines[i]
 }
 
-// goldenDay is the day of review the projections are counted in. It stands in
 // UTC so that the file reads the same on every machine.
 var goldenDay = review.Day{Starts: review.DayStartTime, In: time.UTC}
 

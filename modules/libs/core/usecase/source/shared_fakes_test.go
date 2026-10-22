@@ -195,7 +195,6 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlo
 
 func (s *speaker) Close() error { return nil }
 
-// documentPath is where the document sits in the vault under test.
 const documentPath = "library/scan.pdf"
 
 // names are what one recognition of the fixture is kept under.
@@ -226,7 +225,6 @@ func textNames(t *testing.T, shelved *fakeStorage) names {
 	return names{}
 }
 
-// recordingPath is where the recording sits in the vault under test.
 const recordingPath = "library/talk.mp3"
 
 // newRecording is the bytes of the file the words were spoken into. Nothing

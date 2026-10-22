@@ -115,7 +115,6 @@ export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
 export const getLetter = (at: number): string => LETTERS[at] ?? ''
 
 /**
- * The keys the decks are chosen with: enter sits down to the whole vault, a
  * letter to the deck standing at it, and escape goes back to the vaults.
  *
  * The whole vault is the daily act, so it is the key under the hand. A deck is

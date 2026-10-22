@@ -43,7 +43,6 @@ func bindNotes(services *Services, db *container.Index) {
 	services.Search.getTypes = services.Note.getTypes
 }
 
-// hand is a watch a test drives itself, so what a window is told while a vault
 // is being read can be asked without a filesystem or a timer.
 type hand struct {
 	changes chan []string
@@ -408,7 +407,6 @@ func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 }
 
 // TestAVaultWhoseScanFailedIsStillFollowed. A vault that could not be read is
-// still a vault being edited, and the window is told what changes in it.
 func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	watcher := byHand()
 	f := opening(t, map[string]string{

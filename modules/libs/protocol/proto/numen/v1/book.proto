@@ -70,7 +70,6 @@ message GetBookResponse {
   int32 text_bytes = 6;
   int32 page_bytes = 7;
 
-  // Which bytes the book was read from. It stands in the ask for the markup of
   // a document and in the address the bytes of a picture are answered at, so
   // both name one reading of one file.
   Fingerprint fingerprint = 8;
@@ -129,7 +128,6 @@ message ReadBookEntryResponse {
   bytes body = 1;
 }
 
-// SpineDocument is one document of the book, and where its text stands in the
 // book's text.
 message SpineDocument {
   // Path is the document's name inside the archive, which the markup of it is

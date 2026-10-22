@@ -10,7 +10,6 @@ export interface PalettePart {
 
 /**
  * A line split into the runs that are why the item is here and the runs that
- * are not. A line nothing stands in is one run.
  *
  * The spans are counted in UTF-16 code units, which is how the text arrives and
  * how a string is sliced. A boundary landing inside a character is moved off it,

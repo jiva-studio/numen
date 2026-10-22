@@ -27,7 +27,6 @@ var vttSeeds = []string{
 	"\x00\xff\xfe not a transcript at all",
 }
 
-// Every cue a transcript is read as stands at its own words: the offset it
 // carries is where its text is to be found in the words the transcript reads
 // as, and the cues are in the order they were spoken.
 //

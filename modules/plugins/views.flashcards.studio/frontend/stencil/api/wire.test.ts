@@ -2,7 +2,6 @@
  * What the window remembers about a stencil file between the vault's answers.
  *
  * What is proved here is the remembering: a file the vault has said nothing
- * about yet stands at nothing, the message shown for a fault is the one the
  * last read or write earned, and a file that moved keeps the transcript of it.
  */
 import { describe, expect, it, vi } from 'vitest'

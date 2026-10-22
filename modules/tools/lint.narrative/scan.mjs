@@ -462,6 +462,8 @@ function shouldCheckCategory(cat) {
   return !filterCategories || filterCategories.has(cat)
 }
 
+let totalScannedFiles = 0
+
 function scanFile(filePath) {
   const relBase = fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
   const relPath = path.relative(relBase, filePath) || path.basename(filePath)
@@ -473,6 +475,7 @@ function scanFile(filePath) {
   const isCode = isGo || isTs
   if (filterLang === 'ts' && isGo) return
   if (filterLang === 'go' && !isGo) return
+  totalScannedFiles++
 
   const baseName = path.basename(filePath)
   if (shouldCheckCategory('conversational') && (baseName === 'questions.ts' || (baseName === 'answers.ts' && !relPath.includes('wire/errorCode')))) {
@@ -1086,6 +1089,7 @@ console.log('-------------------------------------------------------------------
 console.log(`FRONTEND VIOLATIONS (TypeScript / Vue)                    : ${stats.frontendTotal}`)
 console.log(`BACKEND VIOLATIONS (Go)                                   : ${stats.backendTotal}`)
 console.log(`TOTAL DETECTED ISSUES                                     : ${totalIssues}`)
+console.log(`OFFENDING FILES COUNT                                     : ${sortedFiles.length} (out of ${totalScannedFiles} total scanned files)`)
 console.log('======================================================================\n')
 
 if (sortedParticiples.length > 0) {

@@ -86,7 +86,6 @@ func save(t *testing.T, db *DB, vault domain.Vault, n domain.Note) {
 	}
 }
 
-// embedder stands in for the model: it answers what a vault owes, writes a
 // vector for each, and says how many it was asked for. That number is what a
 // save costs.
 type embedder struct{ seed byte }

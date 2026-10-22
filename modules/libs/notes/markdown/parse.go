@@ -213,7 +213,6 @@ func title(n domain.Note, notePath string) string {
 
 // Fence is where a walk down the body stands: within a code fence, or outside
 // one. A block opened with backticks is closed by backticks and one opened with
-// tildes by tildes, so the other mark stands inside it as text.
 type Fence struct{ mark byte }
 
 // IsCrossedBy follows one line, and reports whether that line opens or closes the

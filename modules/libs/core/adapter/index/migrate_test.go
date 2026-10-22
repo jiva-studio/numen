@@ -181,7 +181,6 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	}
 	defer raw.Close()
 
-	// It stands at the schema this build carries, and nothing of the reading
 	// the later build left is in it.
 	var at int
 	if err := raw.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&at); err != nil {

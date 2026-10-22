@@ -283,7 +283,6 @@ func (r *PresetReads) read(ctx context.Context, v domain.Vault, path string) (Pr
 // Read reads the preset at path.
 //
 // An error is the vault being out of reach. What is wrong with the note itself
-// is an outcome or a problem, and the preset stands at the defaults.
 func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	out, err := u.readPreset(ctx, v, path)
 	if err != nil {

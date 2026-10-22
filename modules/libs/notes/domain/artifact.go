@@ -77,7 +77,6 @@ func NewReviewLogName(id string) ArtifactName {
 func IsTimedProducer(producer string) bool { return producer == ASR || producer == Captions }
 
 // GetAddressProducers are the producers that bring back what is at an address,
-// in the order one of them is read: what a model here heard stands over what a
 // site published.
 func GetAddressProducers() []string { return []string{ASR, Captions, Article} }
 
