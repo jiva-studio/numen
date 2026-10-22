@@ -79,16 +79,27 @@ function scanDirectory(dir, repoRoot) {
  * @param {{ repoRoot: string, warnOnly?: boolean, targetDirs?: string[] }} options
  * @returns {Promise<{ id: string, name: string, pass: boolean, summary: string, details?: string, durationMs: number }>}
  */
-export async function runStructureCheck({ repoRoot, warnOnly = false, targetDirs = null }) {
+export async function runStructureCheck({
+  repoRoot,
+  warnOnly = false,
+  targetDirs = null,
+  changedFiles = null,
+  changedOnly = false,
+}) {
   const start = Date.now();
   const rootModules = path.join(repoRoot, "modules");
 
   const allOvercrowded = scanDirectory(rootModules, repoRoot);
 
+  let activeTargetDirs = targetDirs;
+  if (changedOnly && changedFiles && changedFiles.length > 0 && !activeTargetDirs) {
+    activeTargetDirs = [...new Set(changedFiles.map((f) => path.dirname(f)))];
+  }
+
   let evaluated = allOvercrowded;
-  if (targetDirs && targetDirs.length > 0) {
+  if (activeTargetDirs && activeTargetDirs.length > 0) {
     evaluated = allOvercrowded.filter((item) =>
-      targetDirs.some((t) => item.relDir === t || item.relDir.startsWith(t + "/"))
+      activeTargetDirs.some((t) => item.relDir === t || item.relDir.startsWith(t + "/"))
     );
   }
 
