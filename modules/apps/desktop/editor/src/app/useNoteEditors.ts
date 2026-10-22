@@ -2,7 +2,7 @@
  * Editing, conflict handling, and flushing for open notes.
  */
 import { openNotes, createNoteWriter } from '@/entities/note'
-import { raiseConflicts, useFileFlush } from '@/features/file-conflict'
+import { raiseConflicts, createFileFlush } from '@/features/file-conflict'
 import { createNotes, type SearchDeps, type Store } from '@/features/command-palette'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
@@ -54,13 +54,13 @@ function createNotedStore(notes: ReturnType<typeof openNotes>): Store {
   }
 }
 
-export function useNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEditorsDeps) {
+export function createNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEditorsDeps) {
   const changes = createNullChanges()
   const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
   const noted = createNoted(windowTabs)
 
-  const fileFlush = useFileFlush(core)
+  const fileFlush = createFileFlush(core)
   fileFlush.addHandler(notes.flush)
 
   raiseConflicts(notes, fileFlush)
@@ -75,7 +75,7 @@ export function useNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEditor
     fileFlush.close()
   }
 
-  return {
+  const api = {
     changes,
     notes,
     making,
@@ -86,4 +86,5 @@ export function useNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEditor
     getTitle,
     close,
   }
+  return api
 }

@@ -6,7 +6,7 @@
  * The two share a field, and which of them is open decides what is drawn in it
  * and what a keystroke in it means. Two chords put each up and take it down.
  */
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
 import { Palette, type ActionWords } from '@numen/ui'
 import { isCommandPrefixTyped } from '../lib/commands'
 import type { CommandDeps } from '../model/deps'
@@ -15,15 +15,13 @@ import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from '../lib/
 import type { Commands } from '../model/palette'
 import { runInvocation } from '../model/handlers'
 import type { SearchState } from '../model/search'
-import { findSourceIcon } from '@/entities/file'
-import { getNoteIcon } from '@/entities/note'
-import { findIcon } from '@/shared/icons'
-import { isChord } from '../lib/chords'
+import { usePaletteShortcuts } from '../model/shortcuts'
+import { findRowIcon } from '../lib/rowIcons'
 import { openDestination, type DestinationDeps } from '../model/destination'
 import { ANSWER_WORDS } from '../words'
 import { WORDS as words } from '@/shared/words'
 
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   commands: Commands
   search: SearchState
@@ -34,12 +32,14 @@ const props = defineProps<{
   places: DestinationDeps
 }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const actionWords: ActionWords = {
   name: words.actions,
   placeholder: words.findAction,
   silence: words.noAction,
 }
+
+usePaletteShortcuts(props.search, props.commands)
 
 /** What the palette draws: the commands while they are open, the search under. */
 const field = computed(() =>
@@ -68,7 +68,7 @@ const field = computed(() =>
       },
 )
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onTyping(text: string) {
   if (props.commands.open.value) return void props.commands.setTyped(text)
   if (!isCommandPrefixTyped(props.search.typed.value, text)) return void props.search.setTyped(text)
@@ -114,38 +114,9 @@ function onBack() {
   }
 }
 
-function onKeyDown(event: KeyboardEvent) {
-  if (event.defaultPrevented || !isChord(event) || event.shiftKey) return
-  const key = event.key.toLowerCase()
-  const setSearchOpen = props.search.setOpen
-  const setCommandsOpen = props.commands.setOpen
-  if (key === 'k') {
-    event.preventDefault()
-    setCommandsOpen(false)
-    setSearchOpen(!props.search.open.value)
-    return
-  }
-  if (key === 'p') {
-    event.preventDefault()
-    setSearchOpen(false)
-    setCommandsOpen(!props.commands.open.value)
-  }
-}
-
-onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
-onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
-
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function getRowIcon(id: string) {
-  if (props.commands.open.value) {
-    const picked = props.commands.findNoteType(id)
-    return picked ? getNoteIcon(picked) : findIcon(id)
-  }
-  if (id === CREATE_NOTE_ID) return findIcon('note')
-  const type = props.search.findNoteType(id)
-  if (type) return getNoteIcon(type)
-  const kind = props.search.findHitSource(id)
-  return kind ? findSourceIcon(kind) : null
+  return findRowIcon(id, props.commands, props.search)
 }
 </script>
 

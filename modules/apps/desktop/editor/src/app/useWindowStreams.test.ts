@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
-import { useWindowStreams, type WindowStreamsDeps } from './useWindowStreams'
+import { createWindowStreams, type WindowStreamsDeps } from './useWindowStreams'
 import type { Task } from '@/shared/notices/task'
 
 /** A stream that yields the given items and then ends. */
@@ -59,7 +59,7 @@ describe('following the vault', () => {
       },
     })
 
-    await useWindowStreams(deps).follow()
+    await createWindowStreams(deps).follow()
 
     expect(deps.onVaultChanged).not.toHaveBeenCalled()
     expect(deps.ask).not.toHaveBeenCalled()
@@ -74,7 +74,7 @@ describe('following the vault', () => {
       core: { ...setup().core, watchVaultChanges: () => yielding(change) },
     })
 
-    await useWindowStreams(deps).follow()
+    await createWindowStreams(deps).follow()
 
     expect(deps.onVaultChanged).toHaveBeenCalledTimes(1)
     expect(deps.ask).toHaveBeenCalledTimes(1)
@@ -91,7 +91,7 @@ describe('following the vault', () => {
       }),
     })
 
-    await useWindowStreams(deps).follow()
+    await createWindowStreams(deps).follow()
 
     expect(deps.ask).toHaveBeenCalledTimes(1)
     expect(deps.setLost).not.toHaveBeenCalledWith(expect.stringContaining('lost'))
@@ -112,7 +112,7 @@ describe('following the vault', () => {
           }),
       },
     })
-    await useWindowStreams(renamedOpening).follow()
+    await createWindowStreams(renamedOpening).follow()
     expect(renamedOpening.readInitialNote).toHaveBeenCalledTimes(1)
 
     const renamedOther = setup({
@@ -131,7 +131,7 @@ describe('following the vault', () => {
       },
     })
     renamedOther.opening.value = 'Elsewhere.md'
-    await useWindowStreams(renamedOther).follow()
+    await createWindowStreams(renamedOther).follow()
     expect(renamedOther.readInitialNote).not.toHaveBeenCalled()
   })
 
@@ -154,7 +154,7 @@ describe('following the vault', () => {
       }),
     })
 
-    await useWindowStreams(deps).follow()
+    await createWindowStreams(deps).follow()
 
     expect(deps.readInitialNote).toHaveBeenCalledTimes(1)
     expect(deps.ask).toHaveBeenCalledTimes(1)
@@ -169,7 +169,7 @@ describe('following the vault', () => {
       isVaultSwapped: vi.fn(async () => true),
     })
 
-    await useWindowStreams(deps).follow()
+    await createWindowStreams(deps).follow()
 
     expect(deps.reload).toHaveBeenCalledTimes(1)
     expect(deps.onVaultChanged).not.toHaveBeenCalled()
@@ -185,7 +185,7 @@ describe('following the edits', () => {
       } as unknown as WindowStreamsDeps['core'],
     })
 
-    await useWindowStreams(deps).draw()
+    await createWindowStreams(deps).draw()
 
     expect(deps.reportChange).toHaveBeenCalledTimes(1)
     expect(deps.reportChange).toHaveBeenCalledWith({ path: 'a.md' })
@@ -198,7 +198,7 @@ describe('following the focus', () => {
       core: { ...setup().core, watchFocus: () => yielding({ path: '', spans: [] }) },
     })
 
-    await useWindowStreams(deps).watch()
+    await createWindowStreams(deps).watch()
 
     expect(deps.travelTo).not.toHaveBeenCalled()
     expect(deps.openFileAt).not.toHaveBeenCalled()
@@ -217,7 +217,7 @@ describe('following the focus', () => {
       },
     })
 
-    await useWindowStreams(deps).watch()
+    await createWindowStreams(deps).watch()
 
     expect(deps.travelTo).toHaveBeenCalledTimes(2)
     expect(deps.travelTo).toHaveBeenNthCalledWith(1, 'a.md')
@@ -233,7 +233,7 @@ describe('following the tasks', () => {
       core: { ...setup().core, watchTasks: () => yielding([]) },
     })
 
-    await useWindowStreams(deps).followTasks()
+    await createWindowStreams(deps).followTasks()
 
     expect(deps.ask).not.toHaveBeenCalled()
   })
@@ -246,7 +246,7 @@ describe('following the tasks', () => {
       },
     })
 
-    await useWindowStreams(deps).followTasks()
+    await createWindowStreams(deps).followTasks()
 
     expect(deps.tasks.value).toEqual([])
     expect(deps.ask).toHaveBeenCalledTimes(1)
@@ -257,7 +257,7 @@ describe('following the tasks', () => {
       core: { ...setup().core, watchTasks: () => yielding([task('a')], [task('b')]) },
     })
 
-    await useWindowStreams(deps).followTasks()
+    await createWindowStreams(deps).followTasks()
 
     expect(deps.tasks.value).toEqual([task('b')])
     expect(deps.ask).not.toHaveBeenCalled()
@@ -271,7 +271,7 @@ describe('following the tasks', () => {
       }),
     })
 
-    await useWindowStreams(deps).followTasks()
+    await createWindowStreams(deps).followTasks()
 
     expect(deps.ask).toHaveBeenCalledTimes(1)
   })

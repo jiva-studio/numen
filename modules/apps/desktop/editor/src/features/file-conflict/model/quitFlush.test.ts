@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 
 import { openNotes, type Notes } from '@/entities/note'
-import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
+import { createFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
 import type { NoteResult } from '@/entities/note'
 
 /** What the application sends over the quit stream during tests. */
@@ -116,7 +116,7 @@ describe('a page requested to write what it owes', () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const notes = openNotes(fakeCore.core)
-    const going = useFileFlush(fakeCore.core)
+    const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     void going.start()
 
@@ -140,7 +140,7 @@ describe('a page requested to write what it owes', () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const notes = openNotes(fakeCore.core)
-    const going = useFileFlush(fakeCore.core)
+    const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     void going.start()
 
@@ -165,7 +165,7 @@ describe('a page requested to write what it owes', () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const notes = openNotes(fakeCore.core)
-    const going = useFileFlush(fakeCore.core)
+    const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     void going.start()
 
@@ -184,7 +184,7 @@ describe('a page requested to write what it owes', () => {
   it('answers for a window with nothing open', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core)
+    const going = createFileFlush(fakeCore.core)
     going.addHandler(openNotes(fakeCore.core).flush)
     void going.start()
 
@@ -199,7 +199,7 @@ describe('a page holding text the file changed under', () => {
   it('says there are conflicts outstanding, and does not say it has written', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core)
+    const going = createFileFlush(fakeCore.core)
     const note = createConflict('Note.md')
     note.raise(going.raise)
     void going.start()
@@ -215,7 +215,7 @@ describe('a page holding text the file changed under', () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const notes = openNotes(fakeCore.core)
-    const going = useFileFlush(fakeCore.core)
+    const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     const note = createConflict('Held.md')
     note.raise(going.raise)
@@ -243,7 +243,7 @@ describe('a page holding text the file changed under', () => {
   it('says it has written once every conflict is settled', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core)
+    const going = createFileFlush(fakeCore.core)
     const first = createConflict('One.md')
     const second = createConflict('Two.md')
     first.raise(going.raise)
@@ -274,7 +274,7 @@ describe('a page holding text the file changed under', () => {
   it('leaves a conflict the person put off standing, and stops drawing it', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     createConflict('Later.md').raise(going.raise)
     void going.start()
 
@@ -300,7 +300,7 @@ describe('a page holding text the file changed under', () => {
   it('says nothing under a token the stream took with it', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     const note = createConflict('Note.md')
     note.raise(going.raise)
     void going.start()
@@ -327,7 +327,7 @@ describe('a page holding text the file changed under', () => {
   it('raises what remains again under the token it is requested under next', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     createConflict('Note.md').raise(going.raise)
     void going.start()
 
@@ -347,13 +347,13 @@ describe('a page holding text the file changed under', () => {
 })
 
 describe('the conflicts a person put off', () => {
-  const getNotes = (going: ReturnType<typeof useFileFlush>) =>
+  const getNotes = (going: ReturnType<typeof createFileFlush>) =>
     going.conflicts.value.map((one) => one.note)
 
   it('are drawn again when the application asks again on the same stream', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     createConflict('Later.md').raise(going.raise)
     void going.start()
     mockStream.send({ token: '1', flush: true })
@@ -370,7 +370,7 @@ describe('the conflicts a person put off', () => {
   it('stay off the screen while other conflicts are raised, and the others stay drawn', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     createConflict('A.md').raise(going.raise)
     createConflict('B.md').raise(going.raise)
     void going.start()
@@ -392,7 +392,7 @@ describe('a conflict put off and settled', () => {
   it('is drawn again when the same note raises another', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     const first = createConflict('Again.md')
     first.raise(going.raise)
     void going.start()
@@ -412,7 +412,7 @@ describe('the handlers of a page', () => {
   it('are no longer waited for once removed', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     let calls = 0
     const remove = going.addHandler(async () => void (calls += 1))
     void going.start()
@@ -429,7 +429,7 @@ describe('writes owed at an earlier ask', () => {
   it('do not answer for the ask that came after them', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const going = useFileFlush(fakeCore.core, async () => {})
+    const going = createFileFlush(fakeCore.core, async () => {})
     const gates: (() => void)[] = []
     going.addHandler(() => new Promise<void>((isDone) => gates.push(isDone)))
     void going.start()
@@ -467,7 +467,7 @@ describe('a page that is closed', () => {
 
   it('lets go of the stream it listens on', async () => {
     const { signals, core } = createListening()
-    const going = useFileFlush(core, async () => {})
+    const going = createFileFlush(core, async () => {})
     void going.start()
     await settle()
 
@@ -478,7 +478,7 @@ describe('a page that is closed', () => {
 
   it('does not listen again once the stream has ended', async () => {
     const { mockStream, signals, core } = createListening()
-    const going = useFileFlush(core, async () => {})
+    const going = createFileFlush(core, async () => {})
     void going.start()
     await settle()
 
@@ -503,7 +503,7 @@ describe('a quit stream that ended', () => {
       },
       reportFlush: async () => {},
     }
-    const going = useFileFlush(core)
+    const going = createFileFlush(core)
     void going.start()
     await vi.advanceTimersByTimeAsync(0)
     expect(listens).toBe(1)

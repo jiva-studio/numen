@@ -69,7 +69,7 @@ async function handleFocusChange(
   openFileAt(request.path, spans)
 }
 
-export function useWindowStreams(deps: WindowStreamsDeps) {
+export function createWindowStreams(deps: WindowStreamsDeps) {
   const { core, listening, isOpen, setLost, wait, tasks, reportChange, travelTo, openFileAt } = deps
 
   /** Every stream is read the same way, and taken up again the same way. */

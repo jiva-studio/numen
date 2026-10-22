@@ -36,20 +36,6 @@ const onPointerDown = (press: PointerEvent) => {
 }
 
 /**
- * A name written into an href is escaped, and a card comes from whoever wrote
- * it: one escaped wrongly is taken as the characters it already is.
- */
-const decodeHref = (href: string) => {
-  try {
-    return decodeURIComponent(href)
-  } catch {
-    // Nothing is wrong with the card; only with an escape in it, and the
-    // characters as written are the closest thing to what was meant.
-    return href
-  }
-}
-
-/**
  * A link inside a card is never followed — this window has one page — but a
  * link into the vault opens the reading beside the card on the note it names.
  */
@@ -67,6 +53,21 @@ const onClick = (press: MouseEvent) => {
   const distanceX = from.value === null ? 0 : Math.abs(press.clientX - from.value)
   from.value = null
   if (distanceX <= MAX_TAP_DISTANCE && !props.isShown) emit('show')
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+/**
+ * A name written into an href is escaped, and a card comes from whoever wrote
+ * it: one escaped wrongly is taken as the characters it already is.
+ */
+function decodeHref(href: string): string {
+  try {
+    return decodeURIComponent(href)
+  } catch {
+    // Nothing is wrong with the card; only with an escape in it, and the
+    // characters as written are the closest thing to what was meant.
+    return href
+  }
 }
 </script>
 

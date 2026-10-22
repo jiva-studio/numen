@@ -2,7 +2,7 @@
  * The editors of a window: what each is made with, what is flushed, what raises conflicts.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useNoteEditors } from './useNoteEditors'
+import { createNoteEditors } from './useNoteEditors'
 
 interface MockParts {
   changes?: { reportNoteChange: unknown; close: unknown }
@@ -43,7 +43,7 @@ vi.mock('@/entities/note', () => ({
   },
 }))
 vi.mock('@/features/file-conflict', () => ({
-  useFileFlush: (...args: unknown[]) => {
+  createFileFlush: (...args: unknown[]) => {
     h.calls.flush = args
     return h.parts.fileFlush
   },
@@ -90,8 +90,8 @@ const create = () => {
   const core = { name: 'core' }
   const tabOpeners = { name: 'openers' }
   const windowTabs = { tabs: { value: [] }, getTab: vi.fn() }
-  const editors = useNoteEditors({ core, log, tabOpeners, windowTabs } as unknown as Parameters<
-    typeof useNoteEditors
+  const editors = createNoteEditors({ core, log, tabOpeners, windowTabs } as unknown as Parameters<
+    typeof createNoteEditors
   >[0])
   return { editors, writers, core, tabOpeners, windowTabs }
 }

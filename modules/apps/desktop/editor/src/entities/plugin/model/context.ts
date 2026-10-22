@@ -192,7 +192,9 @@ function guardService<K extends keyof Services, S>(
   service: S | undefined,
   guard: (service: S) => NonNullable<Services[K]>,
 ): Pick<Services, K> | Record<never, never> {
-  return service === undefined ? {} : ({ [key]: guard(service) } as Pick<Services, K>)
+  if (service === undefined) return {}
+  const out: Partial<Record<K, NonNullable<Services[K]>>> = { [key]: guard(service) }
+  return out as Pick<Services, K>
 }
 
 function guardServices(

@@ -28,9 +28,9 @@ vi.mock('@/entities/tab', () => ({
   },
   useWindowTabs: () => h.f.windowTabs,
 }))
-vi.mock('./useTabSync', () => ({ useTabSync: () => ({ name: 'tabSync' }) }))
+vi.mock('./useTabSync', () => ({ createTabSync: () => ({ name: 'tabSync' }) }))
 vi.mock('./useNoteEditors', () => ({
-  useNoteEditors: (args: unknown) => {
+  createNoteEditors: (args: unknown) => {
     h.args.editing = args
     return h.f.editing
   },

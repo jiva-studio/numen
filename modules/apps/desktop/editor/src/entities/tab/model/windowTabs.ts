@@ -71,7 +71,7 @@ export function useWindowTabs() {
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)
 
-  return {
+  const api = {
     layout,
     tabs,
     handle,
@@ -98,6 +98,7 @@ export function useWindowTabs() {
     reconcileTab: closers.reconcileTab,
     close: closers.close,
   }
+  return api
 }
 
 /** Registry of tab kinds supported by the window. */

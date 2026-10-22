@@ -90,7 +90,7 @@ function useCarouselDrag(deps: {
   return { taking, onPointerDown, onPointerMove, letGo }
 }
 
-function useCarouselMover(
+function createCarouselMover(
   window_: Ref<HTMLElement | null>,
   getStops: () => Record<PanelPlace, number>,
 ) {
@@ -149,7 +149,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const middle = deps.middle
   const displayedItems = deps.activeSlide
   const { getStops, findNearest } = createCarouselStops(window_, middle)
-  const mover = useCarouselMover(window_, getStops)
+  const mover = createCarouselMover(window_, getStops)
 
   const { taking, onPointerDown, onPointerMove, letGo } = useCarouselDrag({
     window_,

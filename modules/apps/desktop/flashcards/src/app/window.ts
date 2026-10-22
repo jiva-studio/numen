@@ -50,7 +50,7 @@ interface WindowActionDeps {
   showNotice: (text: string, tone: Tone) => void
 }
 
-function useWindowActions(deps: WindowActionDeps) {
+function createWindowActions(deps: WindowActionDeps) {
   const choose = (id: string) => {
     deps.stop()
     deps.vault.value = id
@@ -107,7 +107,7 @@ function createWindowKeyboard(deps: {
   schedules: ReturnType<typeof useVaultPresets>
   state: ReturnType<typeof useReviewSession>
   showing: Ref<'reading' | 'here' | 'asking'>
-  actions: ReturnType<typeof useWindowActions>
+  actions: ReturnType<typeof createWindowActions>
   toggleAgent: () => void
   toggleNotes: () => void
   page: Readonly<Ref<InstanceType<typeof NotesPanel> | null>>
@@ -175,7 +175,7 @@ function useWindowState() {
 function createWindowView(deps: {
   on: Ref<WindowScreen>
   notices: ReturnType<typeof useNotices>
-  actions: ReturnType<typeof useWindowActions>
+  actions: ReturnType<typeof createWindowActions>
   counter: ReturnType<typeof useReviewCounter>
   reviewDays: ReturnType<typeof useReviewDays>
   schedules: ReturnType<typeof useVaultPresets>
@@ -222,7 +222,7 @@ function useWindowListeners(deps: {
   schedules: ReturnType<typeof useVaultPresets>
   state: ReturnType<typeof useReviewSession>
   panels: ReturnType<typeof usePanels>
-  actions: ReturnType<typeof useWindowActions>
+  actions: ReturnType<typeof createWindowActions>
   page: Readonly<Ref<InstanceType<typeof NotesPanel> | null>>
   notices: ReturnType<typeof useNotices>
   unreachable: Ref<string>
@@ -275,7 +275,7 @@ export const useWindow = () => {
     () => counter.vaults.value.find((one) => one.vault === vault.value) ?? null,
   )
 
-  const actions = useWindowActions({
+  const actions = createWindowActions({
     vault,
     chosen: selected,
     today: counter.day,

@@ -4,13 +4,13 @@ import type { CommandTarget } from '@/features/command-palette'
 import type { PathRename } from '@/shared/paths'
 import type { Span } from '@/shared/span'
 import type { useCommands } from './useCommands'
-import type { useNoteEditors } from './useNoteEditors'
+import type { createNoteEditors } from './useNoteEditors'
 import type { useVaults } from './useVaults'
 import type { useWindowDisplay } from './useWindowDisplay'
 import type { useWindowKinds } from './useWindowKinds'
 
 export interface DisplayWiring {
-  editing: ReturnType<typeof useNoteEditors>
+  editing: ReturnType<typeof createNoteEditors>
   getCommands: () => ReturnType<typeof useCommands>
   getKinds: () => ReturnType<typeof useWindowKinds>
   tabOpeners: ReturnType<typeof fileOpeners>

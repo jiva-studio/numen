@@ -4,23 +4,12 @@
  * with, each on a row of its own. Choosing another agent leaves the model to it.
  */
 import { Select } from '@numen/ui'
-import type { SelectChoice } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import type { CompletionChoice } from '@/entities/settings'
+import type { AgentChoiceProps } from './agentChoice.types'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{
-  /** What the two rows are about, which their names are addressed by. */
-  at: string
-  agentName: string
-  agentDetail: string
-  modelName: string
-  modelDetail: string
-  agents: readonly SelectChoice[]
-  /** The models of the agent in force. None hides the row. */
-  models: readonly SelectChoice[] | null
-  choice: CompletionChoice
-}>()
+const props = defineProps<AgentChoiceProps>()
 
 const emit = defineEmits<{
   choose: [choice: CompletionChoice]

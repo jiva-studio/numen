@@ -11,7 +11,7 @@ export interface TabSyncDeps {
   onError: (error: unknown) => void
 }
 
-export function useTabSync({ windowTabs, tabLinks, onError }: TabSyncDeps) {
+export function createTabSync({ windowTabs, tabLinks, onError }: TabSyncDeps) {
   let isSyncing = false
 
   /** Every tab linked to the source moves to the path, through its kind's navigate. */

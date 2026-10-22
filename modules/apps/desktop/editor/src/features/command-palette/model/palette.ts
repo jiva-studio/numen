@@ -377,7 +377,7 @@ export function useCommandPalette(
 
   const presentation = createPalettePresentation(deps, state, { steps, on, invocation })
 
-  return {
+  const api = {
     open: state.open,
     typed: state.typed,
     groups: presentation.groups,
@@ -396,6 +396,7 @@ export function useCommandPalette(
     goBack: steps.goBack,
     findNoteType: presentation.findNoteType,
   }
+  return api
 }
 
 export type Commands = ReturnType<typeof useCommandPalette>

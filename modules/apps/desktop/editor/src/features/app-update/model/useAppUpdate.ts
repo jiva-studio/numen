@@ -95,7 +95,7 @@ export function useAppUpdate(options: UpdateOptions = {}) {
     if (timerId !== null) clearInterval(timerId)
   })
 
-  return {
+  const api = {
     isChecking,
     isDismissed,
     hasUpdate,
@@ -106,4 +106,5 @@ export function useAppUpdate(options: UpdateOptions = {}) {
     openDownload,
     openReleaseNotes,
   }
+  return api
 }

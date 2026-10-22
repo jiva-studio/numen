@@ -137,7 +137,7 @@ function createFlushReporter(
   return { answer, report, reset }
 }
 
-export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
+export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
   const handlers = new Set<FlushHandler>()
   let open = true
   const abortController = new AbortController()

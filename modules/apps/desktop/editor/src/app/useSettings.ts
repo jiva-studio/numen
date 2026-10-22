@@ -300,7 +300,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     appearance.close()
   }
 
-  return {
+  const api = {
     nesting,
     appearance,
     sync,
@@ -313,4 +313,5 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     start,
     close,
   }
+  return api
 }

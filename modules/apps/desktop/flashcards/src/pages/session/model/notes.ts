@@ -106,7 +106,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     deps.showPanel(false)
   }
 
-  return {
+  const api = {
     notes,
     unread,
     isWorking,
@@ -117,6 +117,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     read: readItem,
     endSession,
   }
+  return api
 }
 
 /** What one panel holds. */

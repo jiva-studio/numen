@@ -62,5 +62,16 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
     close()
   }
 
-  return { tabId, at: coords, eligibleTabs, linkedTargetTitle, isLinked, open, close, link, unlink }
+  const api = {
+    tabId,
+    at: coords,
+    eligibleTabs,
+    linkedTargetTitle,
+    isLinked,
+    open,
+    close,
+    link,
+    unlink,
+  }
+  return api
 }

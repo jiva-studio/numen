@@ -69,7 +69,7 @@ const panel = (
     // for a frame.
     paint: (draw) => draw(),
   })
-  return { held: target, asked, requests: asked, overflow: over, notices, on, showing, about }
+  return { held: target, asked, requests: asked, overflow, notices, on, showing, about }
 }
 
 describe('the panel coming in', () => {

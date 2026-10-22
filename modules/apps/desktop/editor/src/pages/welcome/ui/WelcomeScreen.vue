@@ -8,39 +8,23 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { getVaultForKey, WelcomePage } from '@numen/ui'
-import type { Tab } from '@numen/ui'
 import {
   runInvocation,
   createInvocation,
   createRowKeys,
   ANSWER_WORDS,
-  type CommandDeps,
-  type Commands,
-  type CommandTarget,
-  type SearchState,
   type VaultRef,
 } from '@/features/command-palette'
-import type { VaultList } from '@/entities/vault'
 import { findIcon } from '@/shared/icons'
 import { VERSION } from '../lib/version'
 import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
 import { WORDS as words } from '@/shared/words'
+import type { WelcomeScreenProps } from './welcomeScreen.types'
 
-// --- Props & Emits ---
-const props = defineProps<{
-  /** Every vault the installation holds, as the list last answered. */
-  vaultList: VaultList
-  /** Every tab the window holds, which is none while this screen is what shows. */
-  tabs: readonly Tab[]
-  commands: Commands
-  search: SearchState
-  doing: CommandDeps
-  getTarget: () => CommandTarget
-  /** A command asked for, which is what every way in but the commands evaluates to. */
-  runCommand: (id: string, target: CommandTarget) => void
-}>()
+/* --------------------------------- Props ---------------------------------- */
+const props = defineProps<WelcomeScreenProps>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const adding = computed(() => {
   const icon = findIcon('newVault')
   return {
@@ -70,7 +54,11 @@ const welcoming = computed(
   () => props.tabs.length === 0 && !props.search.open.value && !props.commands.open.value,
 )
 
-// --- Handlers ---
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
+onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
+
+/* -------------------------------- Handlers -------------------------------- */
 function onRun(id: string) {
   if (id !== COMMANDS) return props.runCommand(id, props.getTarget())
   props.search.setOpen(false)
@@ -96,9 +84,6 @@ function onKeyDown(event: KeyboardEvent) {
   event.preventDefault()
   onOpen(one.id)
 }
-
-onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
-onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
 </script>
 
 <template>

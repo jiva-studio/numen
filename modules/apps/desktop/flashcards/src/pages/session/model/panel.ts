@@ -112,7 +112,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     deps.showPanel(false)
   }
 
-  return {
+  const api = {
     open,
     written: content,
     about,
@@ -126,6 +126,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     endConversation,
     unreachable: deps.unreachable,
   }
+  return api
 }
 
 /** What one panel holds. */

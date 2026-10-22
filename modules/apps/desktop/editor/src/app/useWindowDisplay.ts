@@ -6,7 +6,7 @@ import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
 import type { Span } from '@/shared/span'
 import { formatErrorMessage } from '@numen/wire'
-import { useWindowStreams } from './useWindowStreams'
+import { createWindowStreams } from './useWindowStreams'
 
 /**
  * The vault as the whole window reads it, and what it says when the vault
@@ -38,8 +38,8 @@ export interface DisplayOptions {
   reload?(): void
 }
 
-function createDisplayState() {
-  return {
+function useDisplayState() {
+  const state = {
     name: ref(''),
     at: ref(''),
     isIndexing: ref(true),
@@ -60,16 +60,17 @@ function createDisplayState() {
     isEmbedding: ref(false),
     tasks: shallowRef<readonly Task[]>([]),
   }
+  return state
 }
 
-type DisplayState = ReturnType<typeof createDisplayState>
+type DisplayState = ReturnType<typeof useDisplayState>
 
 interface StartDisplayDeps {
   state: DisplayState
   ask: () => Promise<unknown>
   readInitialNote: () => Promise<string>
   onVaultChanged: (paths: readonly string[], renames: readonly PathRename[]) => Promise<void> | void
-  streams: ReturnType<typeof useWindowStreams>
+  streams: ReturnType<typeof createWindowStreams>
   wait: (ms: number) => Promise<unknown>
   isOpen: () => boolean
 }
@@ -143,7 +144,7 @@ export function useWindowDisplay(
   const wait = how.wait ?? sleep
   const onVaultChanged = how.onVaultChanged ?? (() => {})
   const reload = how.reload ?? (() => {})
-  const display = createDisplayState()
+  const display = useDisplayState()
   let open = true
   const abortController = new AbortController()
 
@@ -151,7 +152,7 @@ export function useWindowDisplay(
   const readInitialNote = () => readInitialNotePath(core, display)
   const isVaultSwapped = () => checkVaultSwapped(core, display)
 
-  const streams = useWindowStreams({
+  const streams = createWindowStreams({
     core,
     listening: abortController,
     isOpen: () => open,

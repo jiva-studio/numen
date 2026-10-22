@@ -8,22 +8,20 @@ import { asValue } from '@numen/wire'
 import type { Entry } from '@/entities/file'
 import type { FieldRenameResult } from '@plugins/views.flashcards.studio/frontend/cards'
 
-/** What the mocked vault answers about itself, set before the window draws. */
-export const mockVaultState = {
-  isReady: true,
-  error: '',
-  detachError: '',
-  opening: 'Root.md' as string | null,
-  names: [] as {
+interface MockVaultState {
+  isReady: boolean
+  error: string
+  detachError: string
+  opening: string | null
+  names: {
     path: string
     title: string
     heading: string
     line: number
     at: []
     type: 'note' | 'deck' | 'stencil'
-  }[],
-  /** The passages the search answers with. */
-  passages: [] as {
+  }[]
+  passages: {
     path: string
     title: string
     isNote: boolean
@@ -34,12 +32,40 @@ export const mockVaultState = {
     at: []
     type: 'note' | 'deck' | 'stencil'
     kind: 'note' | 'book' | 'recording' | 'other'
-  }[],
+  }[]
+  types: Record<string, 'note' | 'deck' | 'stencil'>
+  embedded: number
+  listable: boolean
+  writeError: string
+  applied: string
+  mode: 'system' | 'light' | 'dark'
+  sizes: { interfaceScale: number; textScale: number }
+  carries: Record<string, Record<string, string>>
+  carrying: boolean
+  renaming: FieldRenameResult
+}
+
+const initialRenamedField = {
+  decks: [] as string[],
+  cards: 0,
+  notWritten: [] as { path: string; text: string }[],
+  at: 'a2',
+}
+
+/** What the mocked vault answers about itself, set before the window draws. */
+export const mockVaultState: MockVaultState = {
+  isReady: true,
+  error: '',
+  detachError: '',
+  opening: 'Root.md',
+  names: [],
+  /** The passages the search answers with. */
+  passages: [],
   /**
    * Which of three the note at each path is, as the vault answers it. A path
    * it says nothing about is the ordinary note the window reads it as.
    */
-  types: {} as Record<string, 'note' | 'deck' | 'stencil'>,
+  types: {},
   /** How many of the spans the index holds carry a vector. */
   embedded: 0,
   /** Whether the list of vaults answers at all. */
@@ -48,22 +74,17 @@ export const mockVaultState = {
   writeError: '',
   /** What the settings say the window is drawn as, which a test may set. */
   applied: 'preset:numen',
-  mode: 'system' as 'system' | 'light' | 'dark',
+  mode: 'system',
   sizes: { interfaceScale: 1, textScale: 1 },
   /**
    * What the file at each path carries, as the application answers it. A path
    * it says nothing about carries nothing.
    */
-  carries: {} as Record<string, Record<string, string>>,
+  carries: {},
   /** Whether the application answers what a file carries at all. */
   carrying: true,
   /** What renaming a field of a stencil comes back with. */
-  renaming: asValue({
-    decks: [] as string[],
-    cards: 0,
-    notWritten: [] as { path: string; text: string }[],
-    at: 'a2',
-  }) as FieldRenameResult,
+  renaming: asValue(initialRenamedField),
 }
 
 export const mockVaultList = {

@@ -12,10 +12,10 @@ import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
-import { useTabSync } from './useTabSync'
+import { createTabSync } from './useTabSync'
 import { useCrossWindowTabs } from './useCrossWindowTabs'
 
-import { useNoteEditors } from './useNoteEditors'
+import { createNoteEditors } from './useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
 import { useOpenTabs } from './useOpenTabs'
@@ -33,6 +33,11 @@ import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOp
 import type { PluginServices } from './pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
 
+interface WindowKindsWithCommands extends ReturnType<typeof useWindowKinds> {
+  recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+  pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+}
+
 interface WindowCommandsOptions {
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
@@ -40,8 +45,8 @@ interface WindowCommandsOptions {
   settings: ReturnType<typeof useSettings>
   runs: ReturnType<typeof runSupport>
   vaultsModule: ReturnType<typeof useVaults>
-  editing: ReturnType<typeof useNoteEditors>
-  kinds: ReturnType<typeof useWindowKinds>
+  editing: ReturnType<typeof createNoteEditors>
+  kinds: WindowKindsWithCommands
   window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
@@ -50,10 +55,6 @@ interface WindowCommandsOptions {
 
 function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
-  const rec = kinds as unknown as {
-    recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-    pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  }
   return useCommands({
     core,
     words,
@@ -76,8 +77,8 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     oneName: settings.oneName,
     nesting: settings.nesting,
     rest: settings.rest,
-    recorded: rec.recorded ?? {},
-    pointed: rec.pointed ?? {},
+    recorded: kinds.recorded ?? {},
+    pointed: kinds.pointed ?? {},
     files: () => kinds.files,
     travel: (path) => kinds.travel(path),
     leavePath: (from, to) => kinds.leavePath(from, to),
@@ -93,7 +94,7 @@ interface AppLifecycleDeps {
   windowTabs: ReturnType<typeof useWindowTabs>
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
-  editing: ReturnType<typeof useNoteEditors>
+  editing: ReturnType<typeof createNoteEditors>
   pluginLoader?: import('@/features/plugin-loader').PluginLoader
   writeMessage: MessageWriter
 }
@@ -180,9 +181,9 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
 type WindowCore = ReturnType<typeof initWindowCore>
 
 interface WindowContext {
-  commands: ReturnType<typeof useCommands>
-  kinds: ReturnType<typeof useWindowKinds>
-  vaults: ReturnType<typeof useVaults>
+  commands?: ReturnType<typeof useCommands>
+  kinds?: WindowKindsWithCommands
+  vaults?: ReturnType<typeof useVaults>
 }
 
 function initWindowServices(
@@ -190,14 +191,14 @@ function initWindowServices(
   ctx: WindowContext,
   settingsHolder: { current?: ReturnType<typeof useSettings> },
 ) {
-  const editing = useNoteEditors({
+  const editing = createNoteEditors({
     core,
     log: base.log,
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,
   })
 
-  const tabSync = useTabSync({
+  const tabSync = createTabSync({
     windowTabs: base.windowTabs,
     tabLinks: base.tabLinks,
     onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
@@ -303,13 +304,13 @@ function isSecondaryWindow(): boolean {
 export const useWindow = () => {
   const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
   const base = initWindowCore(settingsHolder)
-  const ctx = {} as WindowContext
+  const ctx: WindowContext = {}
   const services = initWindowServices(base, ctx, settingsHolder)
   const { getTarget, runCommand } = initWindowKindsAndCommands(base, ctx, services)
   const { editing, window, settings } = services
   watchPluginSettings(settings, base.pluginLoader)
 
-  const notices = useWindowNotices({ log: base.log, window, settings, vaults: ctx.vaults })
+  const notices = useWindowNotices({ log: base.log, window, settings, vaults: ctx.vaults! })
   const statusBar = useWindowStatusBar({ tasks: window.tasks })
   const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs })
 
@@ -318,13 +319,13 @@ export const useWindow = () => {
     if (!base.windowTabs.releaseTab(id)) hold?.()
   }
 
-  useAppHotkeys(ctx.commands.onKeyDown)
+  useAppHotkeys(ctx.commands!.onKeyDown)
   const crossWindowTabs = useCrossWindowTabs({
     windowTabs: base.windowTabs,
     closeWindowIfEmpty: isSecondaryWindow() ? () => window.close() : undefined,
   })
   initAppLifecycle({
-    vaultsModule: ctx.vaults,
+    vaultsModule: ctx.vaults!,
     windowTabs: base.windowTabs,
     settings,
     window,
@@ -333,20 +334,20 @@ export const useWindow = () => {
     writeMessage: base.writeMessage,
   })
 
-  return {
+  const api = {
     runCommand,
-    commands: ctx.commands.commands,
-    commandDeps: ctx.commands.commandDeps,
+    commands: ctx.commands!.commands,
+    commandDeps: ctx.commands!.commandDeps,
     failure: window.failure,
     fileFlush: editing.fileFlush,
     windowTabs: base.windowTabs,
     layout: base.windowTabs.layout,
-    vaultList: ctx.vaults.vaultList,
+    vaultList: ctx.vaults!.vaultList,
     log: base.log,
     notices,
     statusBar,
-    palette: ctx.commands.palette,
-    destinations: ctx.kinds.destinations,
+    palette: ctx.commands!.palette,
+    destinations: ctx.kinds!.destinations,
     closeTab,
     getTabIcon: openTabs.getTabIcon,
     getTitle: editing.getTitle,
@@ -355,4 +356,5 @@ export const useWindow = () => {
     detachTab: core.detachTab,
     dockToOtherWindow: crossWindowTabs.dockToOtherWindow,
   }
+  return api
 }

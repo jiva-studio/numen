@@ -75,7 +75,7 @@ function onShowTab(id: string) {
   windowTabs.onTabShown(id)
 }
 
-function dismissNotice(id: string) {
+function onDismissNotice(id: string) {
   log.dismiss(id)
 }
 
@@ -157,7 +157,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :name="words.isWorking"
       :dismiss="words.dismiss"
       :more="words.more"
-      @dismiss="dismissNotice"
+      @dismiss="onDismissNotice"
     />
 
     <UnsavedChangesPrompt

@@ -82,7 +82,7 @@ function useSessionCards() {
     answers.value = []
   }
 
-  return {
+  const api = {
     cardList: request,
     cardIndex,
     isAnswerShown,
@@ -93,6 +93,7 @@ function useSessionCards() {
     completedCount: isDone,
     reset,
   }
+  return api
 }
 
 async function openSession(deps: {
@@ -160,7 +161,7 @@ async function revertAnswer(deps: {
   }
 }
 
-function useAnswerActions(deps: {
+function createAnswerActions(deps: {
   cardsClient: SessionClient
   reportError: (why: unknown) => void
   now: () => number
@@ -221,7 +222,7 @@ function useAnswerActions(deps: {
   return { answer, takeBack }
 }
 
-function useSessionOpener(deps: {
+function createSessionOpener(deps: {
   cardsClient: SessionClient
   reportError: (why: unknown) => void
   now: () => number
@@ -270,7 +271,7 @@ export function useReviewSession(deps: SessionDeps) {
   let displayedAt = now()
   const cards = useSessionCards()
 
-  const { start, forget } = useSessionOpener({
+  const { start, forget } = createSessionOpener({
     cardsClient: deps.cards,
     reportError: deps.reportError,
     now,
@@ -282,7 +283,7 @@ export function useReviewSession(deps: SessionDeps) {
     },
   })
 
-  const { answer, takeBack } = useAnswerActions({
+  const { answer, takeBack } = createAnswerActions({
     cardsClient: deps.cards,
     reportError: deps.reportError,
     now,
@@ -296,7 +297,7 @@ export function useReviewSession(deps: SessionDeps) {
     },
   })
 
-  return {
+  const api = {
     vault: vault as Ref<string>,
     run,
     asked: cards.cardList,
@@ -316,6 +317,7 @@ export function useReviewSession(deps: SessionDeps) {
     takeBack,
     forget,
   }
+  return api
 }
 
 /** One card as the window holds it: the seconds come across as numbers. */
