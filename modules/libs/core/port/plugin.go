@@ -186,17 +186,10 @@ type PluginEventEmitter interface {
 	EmitEvent(event string)
 }
 
-// PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
-type PluginManager interface {
-	PluginDiscoverer
-	CompletionChoices
-	PluginResolver
+// PluginLifecycleManager coordinates process lifecycle, failure handling, and teardown for plugins.
+type PluginLifecycleManager interface {
 	PluginActivator
 	PluginAcquirer
-	PluginConfigurator
-	PluginEventEmitter
-	PluginAuthorizer
-	PluginPathValidator
 	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
 	SetSafeMode(enabled bool)
 	// SetPluginVault is the vault the window is showing, as plugins work it through the host.
@@ -213,4 +206,21 @@ type PluginManager interface {
 	RetryPlugin(ctx context.Context, pluginID string) (*PluginFailure, error)
 	// TeardownAll stops every plugin, giving each the grace period to exit.
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
+}
+
+// PluginRegistryManager coordinates discovery, configuration, resolution, and capabilities for plugins.
+type PluginRegistryManager interface {
+	PluginDiscoverer
+	CompletionChoices
+	PluginResolver
+	PluginConfigurator
+	PluginEventEmitter
+	PluginAuthorizer
+	PluginPathValidator
+}
+
+// PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
+type PluginManager interface {
+	PluginLifecycleManager
+	PluginRegistryManager
 }

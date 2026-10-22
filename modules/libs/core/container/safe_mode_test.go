@@ -12,7 +12,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-var _ port.PluginManager = (*plugin.Host)(nil)
+var (
+	_ port.PluginManager          = (*plugin.Host)(nil)
+	_ port.PluginLifecycleManager = (*plugin.Host)(nil)
+	_ port.PluginRegistryManager  = (*plugin.Host)(nil)
+)
 
 func TestContainerSafeModeDegradation(t *testing.T) {
 	tmp := t.TempDir()

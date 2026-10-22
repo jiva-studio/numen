@@ -53,6 +53,14 @@ func newMemoryVault(files map[string]string) *memoryVault {
 	}
 }
 
+var (
+	_ port.PluginVault          = (*memoryVault)(nil)
+	_ port.PluginVaultReader    = (*memoryVault)(nil)
+	_ port.PluginVaultWriter    = (*memoryVault)(nil)
+	_ port.PluginVaultStore     = (*memoryVault)(nil)
+	_ port.PluginVaultLifecycle = (*memoryVault)(nil)
+)
+
 func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
 	out := []domain.Vault{}
 	if m.vault != nil {
