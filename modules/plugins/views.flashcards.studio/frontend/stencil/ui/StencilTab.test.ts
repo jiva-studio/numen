@@ -12,7 +12,7 @@ import { asFailure, asValue } from '@numen/wire'
 import type { Cards, VaultFace, DeckProblem } from '../../cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import StencilTab from './StencilTab.vue'
-import { STENCIL, useStencilTabs, type StencilTabState } from '../kind'
+import { STENCIL, createStencilTabs, type StencilTabState } from '../kind'
 import { WORDS as words } from '../../cards'
 
 /** A moment for whatever the tab asked the vault for to come back. */
@@ -60,7 +60,7 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
   }
 
   const windowTabs = createMockTabWindow()
-  const stencils = useStencilTabs(core, {
+  const stencils = createStencilTabs(core, {
     buffers: createMockBufferHost(),
     closeTab: windowTabs.finishClose,
   })

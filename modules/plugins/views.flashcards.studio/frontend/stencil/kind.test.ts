@@ -8,7 +8,7 @@ import type { ErrorCode } from '@numen/wire'
 import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '../cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import { ERRORS } from '@numen/wire'
-import { STENCIL, useStencilTabs, type StencilTabState } from './kind'
+import { STENCIL, createStencilTabs, type StencilTabState } from './kind'
 import { WORDS as words } from '../cards'
 
 /** A moment for whatever the tab asked the vault for to come back. */
@@ -106,7 +106,7 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const buffers = createMockBufferHost()
   /** Everything the window was given to say about this stencil. */
   const messages: string[] = []
-  const stencils = useStencilTabs(one.core, {
+  const stencils = createStencilTabs(one.core, {
     buffers,
     closeTab: windowTabs.finishClose,
     writeMessage: (text) => void messages.push(text),

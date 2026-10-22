@@ -17,33 +17,19 @@ import { WORDS as words } from '../../../../words'
 import type { CurveSliderState } from '../../useCurveSlider'
 import '../../curve-slider.css'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   state: CurveSliderState
   valueText: string
 }>()
 
-// --- State ---
-const {
-  line,
-  short,
-  knob,
-  suggested,
-  isDated,
-  least,
-  most,
-  value,
-  setPicture,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onKeyDown,
-  onKeyUp,
-} = props.state
-
-// --- Handlers ---
-
-// --- Helpers ---
+/* --------------------------------- State ---------------------------------- */
+const { plot, interactions, annotations } = props.state
+const { line, short, knob, suggested } = plot
+const { isDated, bounds, knob: knobAnnotation } = annotations
+const { least, most } = bounds
+const { value } = knobAnnotation
+const { setPicture, onPointerDown, onPointerMove, onPointerUp, onKeyDown, onKeyUp } = interactions
 </script>
 
 <template>

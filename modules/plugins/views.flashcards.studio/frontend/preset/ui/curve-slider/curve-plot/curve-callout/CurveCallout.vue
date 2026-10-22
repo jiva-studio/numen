@@ -5,15 +5,12 @@
 import type { CurveSliderState } from '../../useCurveSlider'
 import '../../curve-slider.css'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: CurveSliderState }>()
 
-// --- State ---
-const { callout } = props.state
-
-// --- Handlers ---
-
-// --- Helpers ---
+/* --------------------------------- State ---------------------------------- */
+const { labels } = props.state.annotations
+const { callout } = labels
 </script>
 
 <template>

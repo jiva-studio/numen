@@ -30,7 +30,7 @@ import * as create from './create'
 
 export type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest }
 
-function useFileCreation(
+function createFileCreation(
   list: FileTree,
   deps: FilesTabDeps,
   renamingPath: ReturnType<typeof ref<string | null>>,
@@ -53,7 +53,7 @@ function useFileCreation(
   return { createFolder, createNote, createOne }
 }
 
-function useFileMoves(list: FileTree, deps: FilesTabDeps) {
+function createFileMoves(list: FileTree, deps: FilesTabDeps) {
   const move = async (paths: readonly string[], target: DropPosition) => {
     if (paths.length === 0) return
 
@@ -85,7 +85,7 @@ interface FileMenuDeps {
   list: FileTree
   deps: FilesTabDeps
   renamingPath: ReturnType<typeof ref<string | null>>
-  creators: ReturnType<typeof useFileCreation>
+  creators: ReturnType<typeof createFileCreation>
   getNameOf: (path: string) => string
   getSourceOf: (path: string) => Source
 }
@@ -195,8 +195,8 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   }
 
   const actions = createFileActions(list, deps)
-  const creators = useFileCreation(list, deps, renamingPath)
-  const { move } = useFileMoves(list, deps)
+  const creators = createFileCreation(list, deps, renamingPath)
+  const { move } = createFileMoves(list, deps)
   const fileMenu = useFileMenu({
     list,
     deps,

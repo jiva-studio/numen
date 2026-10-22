@@ -44,7 +44,7 @@ export function useDeckScheduleSync(
     }
     if (store.getOpenIds().length === 0) return
     void listStencils()
-    void scheduled.listPresets()
+    void scheduled.listing.listPresets()
     for (const one of store.getOpenIds()) void scheduled.refreshDeckPreset(store.getPath(one))
   }
 

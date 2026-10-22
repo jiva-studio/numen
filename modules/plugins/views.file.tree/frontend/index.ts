@@ -14,7 +14,7 @@ export {
   NEW_STENCIL,
   RENAME,
 } from './lib/menu'
-export { ROOT, useFileTree } from './model/useFileTree'
+export { ROOT, createFileTree, useFileTree } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'
 export * from './words'

@@ -33,27 +33,8 @@ export function useCurveSlider(
   const annotations = useCurveAnnotations(props, plot)
 
   return {
-    ...interactions,
-    line: plot.line,
-    short: plot.short,
-    places: plot.places,
-    knob: plot.knob,
-    suggested: plot.suggested,
-    heldValue: plot.heldValue,
-    isDated: annotations.isDated,
-    isHonest: annotations.isHonest,
-    marks: annotations.marks,
-    callout: annotations.callout,
-    named: annotations.named,
-    heights: annotations.heights,
-    reading: annotations.reading,
-    atKnob: annotations.atKnob,
-    counts: annotations.counts,
-    learning: annotations.learning,
-    atLeast: annotations.atLeast,
-    atMost: annotations.atMost,
-    least: annotations.least,
-    most: annotations.most,
-    value: annotations.value,
+    plot,
+    interactions,
+    annotations,
   }
 }

@@ -86,7 +86,7 @@ describe('the presets listed again', () => {
   it('are not requested for before any listing failed', () => {
     const { schedule, state } = open()
 
-    schedule.listPresetsAgain()
+    schedule.listing.listPresetsAgain()
 
     expect(state.listings).toBe(0)
   })
@@ -94,9 +94,9 @@ describe('the presets listed again', () => {
   it('are requested for once a listing failed', async () => {
     const { schedule, state } = open()
     state.isListingDown = true
-    await schedule.listPresets()
+    await schedule.listing.listPresets()
 
-    schedule.listPresetsAgain()
+    schedule.listing.listPresetsAgain()
 
     expect(state.listings).toBe(2)
   })
@@ -104,11 +104,11 @@ describe('the presets listed again', () => {
   it('are not requested for once a listing answered after the failure', async () => {
     const { schedule, state } = open()
     state.isListingDown = true
-    await schedule.listPresets()
+    await schedule.listing.listPresets()
     state.isListingDown = false
-    await schedule.listPresets()
+    await schedule.listing.listPresets()
 
-    schedule.listPresetsAgain()
+    schedule.listing.listPresetsAgain()
 
     expect(state.listings).toBe(2)
   })
@@ -205,9 +205,9 @@ describe('the presets a deck may be put on', () => {
       { path: 'presets/Fast.md', title: '' },
     ]
 
-    await schedule.listPresets()
+    await schedule.listing.listPresets()
 
-    expect(schedule.choices.value).toStrictEqual([
+    expect(schedule.listing.choices.value).toStrictEqual([
       { path: '', name: WORDS.defaults },
       { path: 'Slow.md', name: 'Slow' },
       { path: 'presets/Fast.md', name: WORDS.unnamed('presets/Fast.md') },

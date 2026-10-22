@@ -2,7 +2,7 @@
 /**
  * Displays the graph neighborhood of notes and handles graph interaction gestures.
  */
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize, Waiting } from '@numen/ui'
 import type { MenuTrigger, PlexRelation, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
@@ -12,80 +12,33 @@ import { ITEMS, NONE } from './lib/menu'
 import { findIcon, getNoteIcon } from './lib/icons'
 import type { DirectionalLinkItem, PlexTabState } from './types'
 import { WORDS as words } from './words'
+import { usePlexCanvas } from './model/usePlexCanvas'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 defineOptions({ name: 'PlexTab' })
 const props = defineProps<{ state: PlexTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-// The tab's state outlives this component, so what it holds is bound once here
-// and the template unwraps it.
-const {
-  dragged,
-  empty,
-  menu,
-  quickLink,
-  linkInspector,
-  maxHeadings,
-  picture: neighbourhood,
-} = props.state
+const { dragged, menu, quickLink, linkInspector, maxHeadings, picture: neighbourhood } = props.state
 
-/**
- * How large the picture is drawn, and how many headings a node hangs at once. A
- * node's label is set in the window's type, so the boxes and the clearances
- * between them are handed in to hold it.
- */
 const type = useTypeSize()
 const options = computed(() => ({
   ...optionsForType(type.value),
   maxHeadings: maxHeadings.value,
-  // Cast icon function to match PlexOptions if needed
-  icon: getNodeIcon as unknown as (node: string) => LucideIcon | null,
 }))
 
-/** What the menu offers: on a node, or off every node. */
 const items = computed(() => (menu.value?.node === null ? NONE : ITEMS))
 
-const lastPointer = ref<{ x: number; y: number }>({ x: 300, y: 300 })
+const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
+  usePlexCanvas({ state: props.state })
 
-const rootElement = useTemplateRef<HTMLElement>('rootElement')
-const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
-
-/** The node a quick link leaves and the point it is drawn to. */
 const pending = computed(() =>
   quickLink.value ? { from: quickLink.value.from, at: quickLink.value.at } : null,
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-/**
- * A menu asked for over a tab drawing no picture, which is a vault holding no
- * note to draw one around. A tab drawing one leaves the picture to answer, and
- * so does a vault that has notes and has not been read yet.
- */
-function onContextMenu(event: MouseEvent) {
-  if (!empty.value) return
-  event.preventDefault()
-  props.state.openMenu({
-    node: null,
-    at: { x: event.clientX, y: event.clientY },
-    opening: 'pointer',
-  })
-}
-
 function onActivateNode(node: string) {
   props.state.activate(node)
-}
-
-function onPointerUp(event: PointerEvent) {
-  const rect = rootElement.value?.getBoundingClientRect()
-  if (rect) {
-    lastPointer.value = {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    }
-  } else {
-    lastPointer.value = { x: event.clientX, y: event.clientY }
-  }
 }
 
 function onCreateNode(from: string, relation: PlexRelation, at?: { x: number; y: number }) {
@@ -136,17 +89,6 @@ function onDismissQuickLink() {
   props.state.dismissQuickLink()
 }
 
-function onEdgeMenu(pair: string, position: { x: number; y: number }) {
-  const rect = rootElement.value?.getBoundingClientRect()
-  if (rect) {
-    const localX = position.x - rect.left
-    const localY = position.y - rect.top
-    props.state.openLinkInspector(pair, { x: localX, y: localY })
-  } else {
-    props.state.openLinkInspector(pair, position)
-  }
-}
-
 function onSaveLinkInspector(rows: readonly DirectionalLinkItem[]) {
   void props.state.saveLinkInspector(rows)
 }
@@ -156,21 +98,9 @@ function onDismissLinkInspector() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/**
- * What a node is drawn before its title, and nothing for an ordinary note. A
- * deck, a stencil and a preset carry the icon the tree draws them under.
- */
 function getNodeIcon(node: string): LucideIcon | null {
   const type = props.state.getType(node)
   return type === 'note' ? null : getNoteIcon(type)
-}
-
-/** A menu put away, and the keyboard back on the node it was asked from. */
-function closeMenu(id?: string) {
-  const node = menu.value?.node ?? null
-  if (id === undefined) props.state.dismiss()
-  else props.state.chooseMenuItem(id)
-  if (node !== null) picture.value?.focusNode(node)
 }
 </script>
 

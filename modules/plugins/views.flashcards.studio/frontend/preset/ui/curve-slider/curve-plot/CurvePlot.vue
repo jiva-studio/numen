@@ -12,7 +12,7 @@ import { CurvePicture } from './curve-picture'
 import { CurveWaiting } from './curve-waiting'
 import '../curve-slider.css'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   state: CurveSliderState
   /** What the curve is scheduled by, which names both axes. */
@@ -22,13 +22,10 @@ const props = defineProps<{
   valueText: string
 }>()
 
-// --- State ---
-const { isHonest, named, heights } = props.state
+/* --------------------------------- State ---------------------------------- */
+const { isHonest, labels } = props.state.annotations
+const { named, heights } = labels
 const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${PLOT_HEIGHT}` }
-
-// --- Handlers ---
-
-// --- Helpers ---
 </script>
 
 <template>

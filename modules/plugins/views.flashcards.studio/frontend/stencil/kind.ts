@@ -112,7 +112,7 @@ function createStencilKindDefinition(deps: {
   }
 }
 
-export function useStencilTabs(cards: Cards, options: StencilTabsOptions) {
+export function createStencilTabs(cards: Cards, options: StencilTabsOptions) {
   const { buffers, closeTab, writeMessage = () => {} } = options
   const wire = createStencilWire(cards, writeMessage)
   const store = openNotes({ read: wire.read, write: wire.write })
@@ -140,3 +140,5 @@ export function useStencilTabs(cards: Cards, options: StencilTabsOptions) {
     store,
   }
 }
+
+export const useStencilTabs = createStencilTabs

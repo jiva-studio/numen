@@ -94,7 +94,7 @@ function usePlexPicture(
   return { picture, empty, dragged, types, getType, drawn: activePaths }
 }
 
-function usePlexNodeActions(options: {
+function createPlexNodeActions(options: {
   view: PlexView
   tabDeps: PlexTabDeps
   map: ReturnType<typeof createNodeIdMap>
@@ -201,7 +201,7 @@ function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path
   return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }
 
-export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
+export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
   const {
     picture,
@@ -217,7 +217,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
   const linkInspectorModel = useLinkInspector(view, deps.editor, map, getName)
 
-  const nodeActions = usePlexNodeActions({
+  const nodeActions = createPlexNodeActions({
     view,
     tabDeps: deps,
     map,
@@ -231,7 +231,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     createNote: nodeActions.createNote,
   })
 
-  return {
+  const tabState: PlexTabState = {
     view,
     picture,
     empty,
@@ -258,4 +258,8 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     ...linkInspectorModel,
     ...nodeActions,
   }
+
+  return tabState
 }
+
+export const usePlexTab = createPlexTab

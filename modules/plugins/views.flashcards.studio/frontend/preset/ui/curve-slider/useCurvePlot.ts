@@ -9,7 +9,7 @@ import {
   type Extent,
 } from '../../lib/plot'
 
-export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
+export function useCurveScale(getCurve: () => Curve) {
   const scale = shallowRef<{ goal: string; extent: Extent } | null>(null)
 
   watch(
@@ -27,6 +27,11 @@ export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
   )
 
   const extent = computed<Extent>(() => scale.value?.extent ?? getExtent(getCurve()))
+  return { scale, extent }
+}
+
+export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
+  const { extent } = useCurveScale(getCurve)
   const positions = computed(() => createPositions(getCurve(), extent.value))
   const line = computed(() => createLinePath(positions.value))
   const short = computed(() => getShortPath(getCurve(), positions.value))
@@ -37,7 +42,6 @@ export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
   const target = computed(() => getKnobValue(getCurve(), getPlace()))
 
   return {
-    scale,
     extent,
     positions,
     line,

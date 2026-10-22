@@ -51,9 +51,9 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     vaultAnswers,
     createDeck: cards.createDeck,
     listStencils: wiring.listStencils,
-    listPresets: wiring.scheduled.listPresets,
+    listPresets: wiring.scheduled.listing.listPresets,
     listStencilsAgain: wiring.listStencilsAgain,
-    listPresetsAgain: wiring.scheduled.listPresetsAgain,
+    listPresetsAgain: wiring.scheduled.listing.listPresetsAgain,
     refreshDeckPreset: wiring.scheduled.refreshDeckPreset,
     createDeckTabState,
   })
@@ -141,7 +141,8 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
   const { store, read, vaultAnswers, wiring, closeTab } = deps
   const { getDeck, getMarks } = read
   const { offers, stencils, scheduled } = wiring
-  const { choices, scheduleDeck, getDeckPreset } = scheduled
+  const { listing, scheduleDeck, getDeckPreset } = scheduled
+  const { choices } = listing
 
   const updateDeckState = (id: string, deck: BufferDeck): void => {
     const body = serializeBufferDeckToString(deck)

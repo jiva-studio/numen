@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue'
 import type { PlexRelation } from '@numen/ui'
-import type { PlexEditor, PlexView, Neighbourhood, NoteType } from '../types'
+import type { PlexEditor, PlexView, Neighbourhood, NoteType, PathRename } from '../types'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
 export const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
@@ -56,8 +56,8 @@ export const viewOn = (
   types: Types = {},
 ) => {
   const went: string[] = []
-  const view = {
-    neighbourhood: ref(createNeighbourhood(initialPath, neighbours, types)),
+  const view: PlexView = {
+    neighbourhood: ref<Neighbourhood | null>(createNeighbourhood(initialPath, neighbours, types)),
     here: ref(initialPath),
     error: ref(''),
     isLoading: ref(false),
@@ -70,13 +70,13 @@ export const viewOn = (
         types,
       )
     },
-    followMoves: (renamed: readonly { from: string; to: string }[]) => {
-      const one = renamed.find((went) => went.from === view.here.value)
+    followMoves: (renamed: readonly PathRename[]) => {
+      const one = renamed.find((item) => item.from === view.here.value)
       if (one) view.here.value = one.to
     },
     close: () => {},
   }
-  return { view: view as unknown as PlexView, went }
+  return { view, went }
 }
 
 /** A vault that takes every note it is asked to make, and records the asking. */

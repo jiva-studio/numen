@@ -42,7 +42,7 @@ const readDeckPreset = (answer: PresetReadResult): DeckPreset => {
   return { path: readItem.path, name: readItem.title || words.unnamed(readItem.path), errorMessage }
 }
 
-function usePresetListing(presets: Presets) {
+export function usePresetListing(presets: Presets) {
   const listedPresets = shallowRef<readonly PresetChoice[]>([])
   let presetsWereListed = true
 
@@ -132,9 +132,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   return {
-    choices: listing.choices,
-    listPresets: listing.listPresets,
-    listPresetsAgain: listing.listPresetsAgain,
+    listing,
     refreshDeckPreset,
     scheduleDeck,
     getDeckPreset,

@@ -221,7 +221,7 @@ function createTreeQueries(
   return { getEntriesInFolder, isFolderOpen, rows, openRows, getEntryAt }
 }
 
-export function useFileTree(core: Folders): FileTree {
+export function createFileTree(core: Folders): FileTree {
   const state = initTreeState()
   let isAlive = true
 
@@ -273,3 +273,5 @@ export function useFileTree(core: Folders): FileTree {
     close,
   }
 }
+
+export const useFileTree = createFileTree

@@ -1,7 +1,7 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
-import { useStencilTabs } from './stencil/kind'
+import { createStencilTabs } from './stencil/kind'
 import { usePresetTab } from './preset/kind'
 
 export { DECK } from './deck/kind'
@@ -11,7 +11,7 @@ export { default as DeckTab } from './deck/ui/DeckTab.vue'
 export { default as StencilTab } from './stencil/ui/StencilTab.vue'
 export { default as PresetTab } from './preset/ui/PresetTab.vue'
 export { useDeckTabs } from './deck/model/useDeckTabs'
-export { useStencilTabs } from './stencil/kind'
+export { createStencilTabs, createStencilTabs as useStencilTabs } from './stencil/kind'
 export { usePresetTab } from './preset/kind'
 export type { DeckTabState } from './deck/types'
 export type { StencilTabState } from './stencil/types'
@@ -24,7 +24,7 @@ export function activate(context: PluginContext): void {
   }
   const closeTab = (id: string): void => context.closeTab?.(id)
   const decks = useDeckTabs(cards, presets, { buffers, closeTab })
-  const stencils = useStencilTabs(cards, {
+  const stencils = createStencilTabs(cards, {
     buffers,
     closeTab,
     writeMessage: workspace.getMessageWriter('stencil'),

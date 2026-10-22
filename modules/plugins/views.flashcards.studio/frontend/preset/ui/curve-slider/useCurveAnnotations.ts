@@ -119,15 +119,9 @@ export function useCurveAnnotations(
   return {
     isDated,
     isHonest,
-    marks,
-    callout,
-    named,
-    heights,
-    reading: knobStyle,
-    atKnob,
-    counts,
-    learning,
-    ...bounds,
-    value: computed(() => plot.heldValue.value),
+    labels: { marks, named, heights, callout },
+    knob: { reading: knobStyle, atKnob, value: computed(() => plot.heldValue.value) },
+    tiles: { counts, learning },
+    bounds,
   }
 }

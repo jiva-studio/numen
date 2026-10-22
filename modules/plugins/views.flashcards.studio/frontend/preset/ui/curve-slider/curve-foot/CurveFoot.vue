@@ -8,19 +8,17 @@ import { WORDS as words } from '../../../words'
 import type { CurveSliderState } from '../useCurveSlider'
 import '../curve-slider.css'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   state: CurveSliderState
   /** What the curve is scheduled by, which names the axis. */
   goal: Goal
 }>()
 
-// --- State ---
-const { isHonest, reading, atKnob, atLeast, atMost } = props.state
-
-// --- Handlers ---
-
-// --- Helpers ---
+/* --------------------------------- State ---------------------------------- */
+const { isHonest, knob, bounds } = props.state.annotations
+const { reading, atKnob } = knob
+const { atLeast, atMost } = bounds
 </script>
 
 <template>

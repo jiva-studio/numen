@@ -11,7 +11,7 @@ import { CurvePlot } from './curve-plot'
 import { useCurveSlider } from './useCurveSlider'
 import './curve-slider.css'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   curve: Curve
   material: PresetCounts | null
@@ -25,13 +25,10 @@ const emit = defineEmits<{
   (event: 'commit'): void
 }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const state = useCurveSlider(props, emit)
-const { isHonest, counts, learning } = state
-
-// --- Handlers ---
-
-// --- Helpers ---
+const { isHonest, tiles } = state.annotations
+const { counts, learning } = tiles
 </script>
 
 <template>
