@@ -73,6 +73,8 @@ const IGNORED_DIRS = new Set([
   'node_modules',
   '.git',
   'dist',
+  'built',
+  'build',
   '.direnv',
   '.claude',
   'test-results',
