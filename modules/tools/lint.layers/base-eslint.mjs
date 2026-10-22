@@ -14,6 +14,26 @@ export const lifetimes = [
 /**
  * Custom rule: Enforce extracting large props interfaces into a separate *.types.ts file.
  */
+const SECTION_ORDER = {
+  props: 1,
+  'props & emits': 1,
+  'props and emits': 1,
+  events: 2,
+  emits: 2,
+  state: 3,
+  hooks: 4,
+  lifecycle: 4,
+  handlers: 5,
+  helpers: 6,
+}
+const bannerRegex = /^-{3,}\s*([A-Za-z &]+?)\s*-{3,}$/
+
+/**
+ * Custom rules for Numen project conventions:
+ * 1. max-inline-props: Enforce extracting large props interfaces (> 6 fields) into *.types.ts.
+ * 2. vue-script-sections: Enforce section banners and canonical order (AGENTS.md rule 4).
+ * 3. max-script-lines: Enforce max lines of executable code in <script> (ignoring comments/banners).
+ */
 const numenPlugin = {
   rules: {
     'max-inline-props': {
@@ -52,6 +72,158 @@ const numenPlugin = {
                 node,
                 messageId: 'tooManyProps',
                 data: { count, max },
+              })
+            }
+          },
+        }
+      },
+    },
+
+    'vue-script-sections': {
+      meta: {
+        type: 'layout',
+        docs: {
+          description: 'Enforce section structure and canonical order in Vue SFC script block',
+        },
+        messages: {
+          missingSections:
+            'Script has {{count}} lines of code but no section banners. Group script into sections: Props -> Events -> State -> Hooks -> Handlers -> Helpers.',
+          unknownSection:
+            'Unknown section banner "{{name}}". Canonical sections: Props, Events, Props & Emits, State, Hooks, Handlers, Helpers.',
+          outOfOrder:
+            'Section "{{name}}" should not appear after "{{prevName}}". Canonical order: Props -> Events -> State -> Hooks -> Handlers -> Helpers.',
+        },
+        schema: [
+          {
+            type: 'object',
+            properties: {
+              minCodeLines: { type: 'integer', minimum: 1 },
+            },
+            additionalProperties: false,
+          },
+        ],
+      },
+      create(context) {
+        const minCodeLines = context.options[0]?.minCodeLines ?? 35
+        return {
+          Program() {
+            const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
+            const script = docFrag?.children?.find(
+              (c) => c.type === 'VElement' && c.name === 'script',
+            )
+            if (!script) return
+
+            const scriptStart = script.loc.start.line
+            const scriptEnd = script.loc.end.line
+
+            const comments = context.sourceCode
+              .getAllComments()
+              .filter((c) => c.loc.start.line >= scriptStart && c.loc.end.line <= scriptEnd)
+
+            const scriptText = context.sourceCode.getText(script)
+            const stripped = scriptText
+              .replace(/<script[\s\S]*?>/, '')
+              .replace(/<\/script>/, '')
+              .replace(/\/\*[\s\S]*?\*\//g, '')
+            const codeLines = stripped.split('\n').filter((l) => {
+              const t = l.trim()
+              return t.length > 0 && !t.startsWith('//')
+            }).length
+
+            const banners = []
+            for (const comment of comments) {
+              const text = comment.value.trim()
+              const match = text.match(bannerRegex)
+              if (match) {
+                banners.push({
+                  node: comment,
+                  name: match[1].trim(),
+                  line: comment.loc.start.line,
+                })
+              }
+            }
+
+            if (codeLines > minCodeLines && banners.length === 0) {
+              context.report({
+                node: script,
+                messageId: 'missingSections',
+                data: { count: codeLines },
+              })
+            }
+
+            let lastRank = 0
+            let lastName = ''
+            for (const b of banners) {
+              const rank = SECTION_ORDER[b.name.toLowerCase()]
+              if (!rank) {
+                context.report({
+                  node: b.node,
+                  messageId: 'unknownSection',
+                  data: { name: b.name },
+                })
+                continue
+              }
+              if (rank < lastRank) {
+                context.report({
+                  node: b.node,
+                  messageId: 'outOfOrder',
+                  data: { name: b.name, prevName: lastName },
+                })
+              }
+              lastRank = rank
+              lastName = b.name
+            }
+          },
+        }
+      },
+    },
+
+    'max-script-lines': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Enforce maximum lines of executable code in <script> (excluding comments and blanks)',
+        },
+        messages: {
+          tooManyLines:
+            'Script has {{count}} executable code lines (max: {{max}}). Decompose into composables or sub-components.',
+        },
+        schema: [
+          {
+            type: 'object',
+            properties: {
+              max: { type: 'integer', minimum: 1 },
+            },
+            additionalProperties: false,
+          },
+        ],
+      },
+      create(context) {
+        const max = context.options[0]?.max ?? 100
+        return {
+          Program() {
+            const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
+            const script = docFrag?.children?.find(
+              (c) => c.type === 'VElement' && c.name === 'script',
+            )
+            if (!script) return
+
+            const scriptText = context.sourceCode.getText(script)
+            const stripped = scriptText
+              .replace(/<script[\s\S]*?>/, '')
+              .replace(/<\/script>/, '')
+              .replace(/\/\*[\s\S]*?\*\//g, '')
+            const codeLines = stripped.split('\n').filter((l) => {
+              const t = l.trim()
+              return t.length > 0 && !t.startsWith('//')
+            }).length
+
+            if (codeLines > max) {
+              context.report({
+                node: script,
+                messageId: 'tooManyLines',
+                data: { count: codeLines, max },
               })
             }
           },
@@ -130,10 +302,11 @@ export function createBaseConfig(dirname, options = {}) {
       },
       rules: {
         'numen/max-inline-props': ['error', { max: 6 }],
+        'numen/vue-script-sections': ['error', { minCodeLines: 35 }],
+        'numen/max-script-lines': ['error', { max: 100 }],
         'vue/max-lines-per-block': [
           'error',
           {
-            script: 120,
             template: 140,
             skipBlankLines: true,
           },
@@ -210,6 +383,8 @@ export function createBaseConfig(dirname, options = {}) {
         'require-yield': 'off',
         'vue/max-template-depth': 'off',
         'vue/max-lines-per-block': 'off',
+        'numen/max-script-lines': 'off',
+        'numen/vue-script-sections': 'off',
       },
     },
 
