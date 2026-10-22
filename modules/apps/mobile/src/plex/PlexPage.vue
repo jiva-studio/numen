@@ -22,6 +22,7 @@ import { watchVault } from './watchVault'
 import { convertNeighbourhood } from './picture'
 import { CREATABLE_RELATIONS, isCreatable, ROLE_BY_RELATION, SEED_NOTE_PATH } from './relations'
 
+/* --------------------------------- State ---------------------------------- */
 const core = ref<Core | null>(null)
 const picture = ref<PlexNeighbourhood | null>(null)
 const focusPath = ref(SEED_NOTE_PATH)
@@ -36,6 +37,25 @@ const showing = byDoubleTap()
 /** The note being written, and nothing while none is. */
 const editingPath = ref<string | null>(null)
 
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(async () => {
+  try {
+    core.value = await startCore()
+    await loadPicture(SEED_NOTE_PATH)
+    // The vault is still being read; the picture is drawn again as it lands.
+    watchVault(core.value, () => void loadPicture(focusPath.value))
+  } catch (why) {
+    errorMessage.value = formatErrorMessage(why)
+  }
+})
+
+/* -------------------------------- Handlers -------------------------------- */
+function onClose() {
+  editingPath.value = null
+  void loadPicture(focusPath.value)
+}
+
+/* -------------------------------- Helpers --------------------------------- */
 async function loadPicture(path: string) {
   if (!core.value) return
   const answer = await core.value.notes.getNeighbourhood({ path })
@@ -70,27 +90,11 @@ async function linkNotes(from: string, to: string, relation: PlexRelation) {
   }
   await loadPicture(focusPath.value)
 }
-
-function onClose() {
-  editingPath.value = null
-  void loadPicture(focusPath.value)
-}
-
-onMounted(async () => {
-  try {
-    core.value = await startCore()
-    await loadPicture(SEED_NOTE_PATH)
-    // The vault is still being read; the picture is drawn again as it lands.
-    watchVault(core.value, () => void loadPicture(focusPath.value))
-  } catch (why) {
-    errorMessage.value = formatErrorMessage(why)
-  }
-})
 </script>
 
 <template>
   <IonPage>
-    <IonContent :fullscreen="true" :scroll-y="false">
+    <IonContent fullscreen :scroll-y="false">
       <IonProgressBar v-if="!picture && !errorMessage" type="indeterminate" />
       <Plex
         v-if="picture"

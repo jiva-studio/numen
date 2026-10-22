@@ -12,7 +12,7 @@ import { createBaseConfig, lifetimes } from '../../tools/lint.layers/base-eslint
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
     extraIgnores: ['android/**'],
-    allowDefaultProject: ['capacitor.config.ts'],
+    allowDefaultProject: ['capacitor.config.ts', 'vite.config.ts'],
   }),
 
   // Limits on complexity and file length for handwritten sources.

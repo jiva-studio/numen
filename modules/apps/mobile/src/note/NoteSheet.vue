@@ -6,17 +6,22 @@ import { NoteBar } from './note-bar'
 import type { ReadNoteResponse } from '@numen/protocol'
 import type { Core } from '../core'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ core: Core; path: string }>()
+
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'close'): void
   (event: 'error', message: string): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 const prose = ref('')
 const loadedNote = ref<{ prose: string; at: NonNullable<ReadNoteResponse['at']> } | null>(null)
 const isReading = ref(true)
 const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 
+/* --------------------------------- Hooks ---------------------------------- */
 onMounted(async () => {
   try {
     const answer = await props.core.notes.readNote({ path: props.path })
@@ -33,7 +38,8 @@ onMounted(async () => {
   editor.value?.focus()
 })
 
-async function keep() {
+/* -------------------------------- Handlers -------------------------------- */
+async function onKeep() {
   const answer = await props.core.notes.writeNote({
     path: props.path,
     body: prose.value,
@@ -49,7 +55,7 @@ async function keep() {
 
 <template>
   <div class="note">
-    <NoteBar :path="path" :reading="isReading" @close="emit('close')" @keep="keep" />
+    <NoteBar :path="path" :is-reading="isReading" @close="emit('close')" @keep="onKeep" />
     <div class="note__prose">
       <Editor ref="editor" v-model="prose" data-testid="editor" />
     </div>
