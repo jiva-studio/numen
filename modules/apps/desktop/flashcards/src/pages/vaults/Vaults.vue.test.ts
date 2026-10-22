@@ -28,7 +28,7 @@ const createUncountedVault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDu
 const mountVaults = (isCounting: boolean, vaults: readonly VaultCardsDue[] = []) =>
   mount(Vaults, { props: { vaults, isCounting, version: '0.1.0' } })
 
-describe('the front door before it knows which vaults there are', () => {
+describe('vault overview before loading vaults', () => {
   it('says what it is doing, with the mark that says it is working', () => {
     const one = mountVaults(true)
 
@@ -49,7 +49,7 @@ describe('the front door before it knows which vaults there are', () => {
   })
 })
 
-describe('the front door while the vaults are being counted', () => {
+describe('vault overview while loading counts', () => {
   // The list is what the window opens on, and counting a vault runs behind it.
   it('draws every vault before any of them has a count', () => {
     const one = mountVaults(true, [
@@ -109,7 +109,7 @@ describe('the front door while the vaults are being counted', () => {
   })
 })
 
-describe('the front door once the counts are in', () => {
+describe('vault overview once counts are loaded', () => {
   it('says nothing of the sort once the count is in', () => {
     const one = mountVaults(false, [vault()])
 

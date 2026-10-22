@@ -361,7 +361,7 @@ func TestWhatListenedIsCachedAdjacentWhatItHeard(t *testing.T) {
 	}
 	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProducer, "asr", hash))
 	if err != nil {
-		t.Fatalf("nothing says what listened: %v", err)
+		t.Fatalf("transcriber returned error: %v", err)
 	}
 	if !bytes.Contains(raw, []byte(model.GetTranscriptionModel().Recipe())) {
 		t.Errorf("what is kept beside the artifact says %q", raw)

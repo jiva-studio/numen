@@ -94,7 +94,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
     </PanelCarousel>
 
     <footer class="session__answers">
-      <!-- The key first and the word after it: a person answering with the
+      <!-- The key first and the word after it: user review input with the
            keyboard reads down the row of keys, and one answering with the mouse
            reads the words either way. -->
       <template v-if="isShown">

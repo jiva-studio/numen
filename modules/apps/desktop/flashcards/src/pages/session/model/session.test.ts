@@ -449,7 +449,7 @@ describe('a session keeping its own time', () => {
     vi.useRealTimers()
   })
 
-  it('measures how long the card stood there by the clock on the wall', async () => {
+  it('measures card review duration using timer', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-01T09:00:00Z'))
     const response: { tookMs: bigint }[] = []

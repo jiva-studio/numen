@@ -21,7 +21,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	}
 	t.Cleanup(func() { stream.Close() })
 	if !stream.Receive() {
-		t.Fatalf("the front door said nothing: %v", stream.Err())
+		t.Fatalf("overview stream empty: %v", stream.Err())
 	}
 
 	first := stream.Msg()
@@ -32,7 +32,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 		t.Errorf("a count stands beside the vaults: %+v", first.GetCounted())
 	}
 	if len(first.GetVaults()) != len(target) {
-		t.Fatalf("the front door opens on %d of %d vaults", len(first.GetVaults()), len(target))
+		t.Fatalf("overview returned %d of %d vaults", len(first.GetVaults()), len(target))
 	}
 	for item, one := range first.GetVaults() {
 		if one.GetId() != string(target[item].ID) || one.GetName() == "" || one.GetPath() == "" {
@@ -61,7 +61,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	}
 	t.Cleanup(func() { stream.Close() })
 	if !stream.Receive() {
-		t.Fatalf("the front door said nothing: %v", stream.Err())
+		t.Fatalf("overview stream empty: %v", stream.Err())
 	}
 
 	counts := make(map[string]int, len(target))

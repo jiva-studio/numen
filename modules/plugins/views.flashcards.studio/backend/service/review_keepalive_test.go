@@ -83,10 +83,10 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	defer stream.Close()
 
 	if !stream.Receive() {
-		t.Fatalf("the front door never opened: %v", stream.Err())
+		t.Fatalf("overview stream never opened: %v", stream.Err())
 	}
 	if len(stream.Msg().GetVaults()) != 1 {
-		t.Fatalf("the front door opened on %+v", stream.Msg().GetVaults())
+		t.Fatalf("overview stream received %+v", stream.Msg().GetVaults())
 	}
 
 	// Nothing has been counted and nothing will be, so what arrives next is the

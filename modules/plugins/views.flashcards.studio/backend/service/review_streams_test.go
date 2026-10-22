@@ -220,7 +220,7 @@ func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
 	}
 	t.Cleanup(func() { stream.Close() })
 	if !stream.Receive() {
-		t.Fatalf("the front door never opened: %v", stream.Err())
+		t.Fatalf("overview stream never opened: %v", stream.Err())
 	}
 
 	// The first count lands half way to the list being said again, and the

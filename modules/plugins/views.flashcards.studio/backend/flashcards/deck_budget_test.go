@@ -193,7 +193,7 @@ func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
 			for item := range shape.decks {
 				deck := deckAt(item)
 				if pressed := s.pressDeck(t, when, deck); pressed != got[deck] {
-					t.Errorf("%s is at %d on the front door and hands over %d when pressed",
+					t.Errorf("%s is at %d on the overview and yields %d when pressed",
 						deck, got[deck], pressed)
 				}
 			}
