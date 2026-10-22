@@ -59,22 +59,34 @@ func isReady(dir string) bool {
 }
 
 // writeReady marks the folder as holding a whole dependency. The sentinel names
-// the primary file.
-func writeReady(ctx context.Context, dir, primary string) error {
+// the primary file and the checksum the folder was fetched with.
+func writeReady(ctx context.Context, dir, primary, sum string) error {
 	tmp := filepath.Join(dir, readyName+".tmp")
-	if err := os.WriteFile(tmp, []byte(primary), 0o644); err != nil {
+	if err := os.WriteFile(tmp, []byte(primary+"\n"+sum+"\n"), 0o644); err != nil {
 		return err
 	}
 	return renameWithRetry(ctx, tmp, filepath.Join(dir, readyName), defaultBackoff)
 }
 
-// readReady returns the primary file the sentinel names.
-func readReady(dir string) (string, error) {
+// readReady returns the primary file the sentinel names and the checksum the
+// folder was fetched with.
+func readReady(dir string) (name, sum string, err error) {
 	raw, err := os.ReadFile(filepath.Join(dir, readyName))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return strings.TrimSpace(string(raw)), nil
+	name, sum, _ = strings.Cut(strings.TrimSpace(string(raw)), "\n")
+	return strings.TrimSpace(name), strings.TrimSpace(sum), nil
+}
+
+// isPlainName reports whether the name is one file name: no folder, no pattern.
+func isPlainName(name string) bool {
+	return name != "" && name != "." && name != ".." && !strings.ContainsAny(name, "/\\*?[\x00")
+}
+
+// isReserved reports whether the folder keeps a file of this name for itself.
+func isReserved(name string) bool {
+	return strings.HasPrefix(name, readyName) || strings.HasPrefix(name, tempPrefix)
 }
 
 // backoff is the waits between the attempts at one operation.
