@@ -1,4 +1,4 @@
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 import type { BookWords } from './words'
 
 /** What one document of a book reaches the reader as. */

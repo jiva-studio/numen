@@ -2,7 +2,7 @@
 /* --------------------------------- Props ---------------------------------- */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, type MenuItem } from '@/shared/ui/menu'
-import type { Position } from '@/shared/lib/geometry'
+import type { Position } from '@/shared/lib/math/geometry'
 
 export interface ReasoningLevelOption {
   readonly id: string

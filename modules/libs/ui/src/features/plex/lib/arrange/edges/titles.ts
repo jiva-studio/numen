@@ -7,9 +7,9 @@
  * place while it is not, cut to the longest clear stretch where the whole of the
  * words stand nowhere, and dropped where that stretch holds less than half.
  */
-import { getHeading, getLength, type PlacedEdge } from '../edge'
-import type { PlacedNode } from '../node'
-import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from './boxes'
+import { getHeading, getLength, type PlacedEdge } from '../../edge'
+import type { PlacedNode } from '../../node'
+import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from '../layout/boxes'
 import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** A run of one line, as fractions of its length. */

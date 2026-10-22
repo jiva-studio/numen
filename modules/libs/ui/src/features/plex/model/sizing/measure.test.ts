@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
 import { useTitleWidths } from './measure'
-import type { PlexNode } from '../lib/node'
+import type { PlexNode } from '../../lib/node'
 
 const node = (title: string): PlexNode => ({ id: title, title, relation: 'child' })
 

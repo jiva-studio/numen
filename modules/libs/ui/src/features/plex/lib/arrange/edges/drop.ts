@@ -1,7 +1,7 @@
-import type { PlexFrame } from '../frame'
-import type { PlacedNode, Position } from '../node'
-import { RELATION_NAMES, type PlexRelation } from '../relation'
-import type { Direction, PlexOptions, Size } from './options'
+import type { PlexFrame } from '../../frame'
+import type { PlacedNode, Position } from '../../node'
+import { RELATION_NAMES, type PlexRelation } from '../../relation'
+import type { Direction, PlexOptions, Size } from '../options'
 
 /**
  * What dragging away from a node and letting go evaluates to.

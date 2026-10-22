@@ -5,8 +5,8 @@
  * pages are in the viewport and which one is in front are arithmetic, and a test
  * asks them without a browser.
  */
-import type { Size } from '@/shared/lib/geometry'
-import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
+import type { Size } from '@/shared/lib/math/geometry'
+import { getPageNavigationAction } from '@/shared/lib/dom/pageNavigation'
 
 export interface Rect {
   readonly minX: number

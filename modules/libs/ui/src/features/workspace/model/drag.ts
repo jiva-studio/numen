@@ -6,9 +6,9 @@
  * frame the workspace is drawn in.
  */
 import { computed, type ComputedRef, type Ref, type ShallowRef } from 'vue'
-import type { Clock } from '@/shared/lib/clock'
+import type { Clock } from '@/shared/lib/time/clock'
 import { usePressDrag } from '@/shared/ui/drag-preview'
-import type { Position } from '@/shared/lib/geometry'
+import type { Position } from '@/shared/lib/math/geometry'
 import {
   getCaretRect,
   findEdgeSide,

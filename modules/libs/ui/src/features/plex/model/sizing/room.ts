@@ -9,10 +9,10 @@
 import { computed, onMounted, onScopeDispose, ref, type ShallowRef } from 'vue'
 import { getWideBox } from './expansion'
 import { useTitleWidths } from './measure'
-import { getNodeHeadings, type PlexHeading } from '../lib/inside'
-import { resolveOptions, type PlexOptionsInput, type Size } from '../lib/arrange'
-import type { PlacedNode } from '../lib/node'
-import type { Viewport } from '@/shared/lib/viewport'
+import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
+import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arrange'
+import type { PlacedNode } from '../../lib/node'
+import type { Viewport } from '@/shared/lib/dom/viewport'
 
 /** What the room is taken to be until it has been measured. */
 const FALLBACK = { width: 1200, height: 800 }

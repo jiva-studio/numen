@@ -3,7 +3,7 @@ import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EXPANSION_DURATION, useExpansion, getWideBox } from './expansion'
 import { stubClock } from '@/shared/fixtures/clock'
-import type { PlacedNode } from '../lib/node'
+import type { PlacedNode } from '../../lib/node'
 
 const WINDOW = { width: 1200, height: 800 }
 const MARGIN = 16

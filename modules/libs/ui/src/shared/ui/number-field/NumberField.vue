@@ -7,7 +7,7 @@
  * once the field is left. Bounds that move under the number bring it in.
  */
 import { computed, useId, useTemplateRef } from 'vue'
-import { cn } from '@/shared/lib/classes'
+import { cn } from '@/shared/lib/dom/classes'
 import { DEFAULT_BOUNDS, useNumberEntry } from './number'
 import type { NumberFieldProps } from './NumberField.types'
 

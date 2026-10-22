@@ -4,8 +4,8 @@
  * Where a line runs is settled in `routing.ts`; this is only how that is
  * written down.
  */
-import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../edge'
-import type { Position } from '@/shared/lib/geometry'
+import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../../edge'
+import type { Position } from '@/shared/lib/math/geometry'
 
 /** The curve, from where it leaves to where it arrives. */
 export const createPath = (edge: EdgeCurve): string =>

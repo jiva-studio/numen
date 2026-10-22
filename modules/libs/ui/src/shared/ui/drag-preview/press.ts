@@ -5,8 +5,8 @@
  * letting go evaluates to are the caller's.
  */
 import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
-import type { Position } from '@/shared/lib/geometry'
-import type { Clock } from '@/shared/lib/clock'
+import type { Position } from '@/shared/lib/math/geometry'
+import type { Clock } from '@/shared/lib/time/clock'
 
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
 export interface Drag<Item> {

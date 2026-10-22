@@ -1,5 +1,5 @@
 import type { Extension } from '@codemirror/state'
-import type { EditorChange } from '../lib/change'
+import type { EditorChange } from '../lib/change/change'
 
 export interface EditorProps {
   /** Marks are drawn as what they mean. Off, the text is shown as written. */

@@ -19,7 +19,7 @@ const fake = vi.hoisted(() => ({
   turns: {} as Record<string, unknown>,
 }))
 
-vi.mock('@/shared/lib/clock', () => ({
+vi.mock('@/shared/lib/time/clock', () => ({
   onNextFrame: (run: () => void) => {
     fake.frames.push(run)
   },

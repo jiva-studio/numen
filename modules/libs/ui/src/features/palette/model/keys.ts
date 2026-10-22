@@ -7,7 +7,7 @@
  * is typing.
  */
 import { nextTick, onBeforeUnmount, onMounted, watch, type Ref, type ShallowRef } from 'vue'
-import { stepTo } from '@/shared/lib/roving'
+import { stepTo } from '@/shared/lib/dom/roving'
 import { canLandOn, findKeptPlace, type PaletteAction } from '../lib/item'
 import { isActionsChord } from '../lib/keys'
 import type { PalettePlacesState } from './places'

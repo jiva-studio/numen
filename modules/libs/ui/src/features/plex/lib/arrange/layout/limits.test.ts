@@ -1,11 +1,11 @@
 /** Wrapping the arrangement into the window it is drawn in. */
 import { describe, expect, it } from 'vitest'
-import { arrangePlex } from './arrange'
+import { arrangePlex } from '../arrange'
 import { getLimits } from './limits'
-import { DEFAULT_OPTIONS } from './options'
-import { neighbourhoods } from '../../fixtures/neighbourhoods'
-import { build } from '../../fixtures/build'
-import type { PlexFrame } from '../frame'
+import { DEFAULT_OPTIONS } from '../options'
+import { neighbourhoods } from '../../../fixtures/neighbourhoods'
+import { build } from '../../../fixtures/build'
+import type { PlexFrame } from '../../frame'
 
 /**
  * Anything that reaches past what the window leaves it.

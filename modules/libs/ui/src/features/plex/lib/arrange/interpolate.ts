@@ -10,7 +10,7 @@ import type { PlexFrame } from '../frame'
 import type { PlacedNode, Position } from '../node'
 import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
-import { routeEdges, createRouting, type Routing } from './routing'
+import { routeEdges, createRouting, type Routing } from './edges/routing'
 
 /** What a settled arrangement says about the title an edge carries. */
 type Title = Pick<PlacedEdge, 'heading' | 'words' | 'wordsAt'>

@@ -7,7 +7,7 @@
  * hands identities back.
  */
 import { computed, provide, useTemplateRef } from 'vue'
-import { browserClock, type Clock } from '@/shared/lib/clock'
+import { browserClock, type Clock } from '@/shared/lib/time/clock'
 import { DragPreview } from '@/shared/ui/drag-preview'
 import { WorkspaceBranch } from './branch'
 import { WorkspacePane } from './pane'

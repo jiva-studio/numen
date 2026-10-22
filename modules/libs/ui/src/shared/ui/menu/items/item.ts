@@ -1,9 +1,9 @@
 /**
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
-import { getAdjacentPlace } from '@/shared/lib/place'
-import { stepTo } from '@/shared/lib/roving'
-import type { Position, Size } from '@/shared/lib/geometry'
+import { getAdjacentPlace } from '@/shared/lib/dom/place'
+import { stepTo } from '@/shared/lib/dom/roving'
+import type { Position, Size } from '@/shared/lib/math/geometry'
 
 /**
  * One thing that can be chosen. The identifier is opaque: the menu has no way

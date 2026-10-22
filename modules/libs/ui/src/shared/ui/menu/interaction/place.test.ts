@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useMenuPlacement } from './place'
-import type { Size } from '@/shared/lib/geometry'
+import type { Size } from '@/shared/lib/math/geometry'
 
 const ROOM: Size = { width: 1000, height: 800 }
 

@@ -3,7 +3,7 @@
  * Persistent bottom status bar displaying background task activity and details popover.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@/shared/ui/menu/menuDismissal'
+import { useMenuDismissal } from '@/shared/ui/menu/interaction/menuDismissal'
 import type { StatusBarTask } from '../model/types'
 import { calculateAggregate } from '../lib/aggregate'
 import CircularProgress from './CircularProgress.vue'

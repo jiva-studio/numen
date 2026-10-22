@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 
-import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
+import type { PageNavigationAction } from '@/shared/lib/dom/pageNavigation'
 import { createBookHand } from './hand'
 
 const WIDTH = 1000

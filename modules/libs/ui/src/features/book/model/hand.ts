@@ -5,7 +5,7 @@
  */
 import type { ShallowRef } from 'vue'
 
-import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
+import type { PageNavigationAction } from '@/shared/lib/dom/pageNavigation'
 import { dragPage } from '../lib/pageStep'
 
 export interface BookHandOptions {

@@ -9,7 +9,7 @@ import {
   type Text,
   type TransactionSpec,
 } from '@codemirror/state'
-import { isLeading, isTrailing } from '@/shared/lib/surrogate'
+import { isLeading, isTrailing } from '@/shared/lib/text/surrogate'
 
 /** Line and column position in document text. */
 interface Place {

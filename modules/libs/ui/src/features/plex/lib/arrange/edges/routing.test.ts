@@ -1,13 +1,13 @@
 /** How a line is drawn between two boxes. */
 import { describe, expect, it } from 'vitest'
-import { arrangePlex } from './arrange'
-import { DEFAULT_OPTIONS } from './options'
+import { arrangePlex } from '../arrange'
+import { DEFAULT_OPTIONS } from '../options'
 import { cutToFit, routeEdge, routeEdges, createRouting } from './routing'
-import { neighbourhoods } from '../../fixtures/neighbourhoods'
-import { ARROW_LENGTH, getArrow, getLength, createPointOnCurve, type EdgeArrow } from '../edge'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlacedNode } from '../node'
-import type { PlexNodeRelation } from '../relation'
+import { neighbourhoods } from '../../../fixtures/neighbourhoods'
+import { ARROW_LENGTH, getArrow, getLength, createPointOnCurve, type EdgeArrow } from '../../edge'
+import type { PlexNeighbourhood } from '../../neighbourhood'
+import type { PlacedNode } from '../../node'
+import type { PlexNodeRelation } from '../../relation'
 
 const getNodesByRelation = (frame: { nodes: readonly PlacedNode[] }, relation: PlexNodeRelation) =>
   frame.nodes.filter((node) => node.relation === relation)

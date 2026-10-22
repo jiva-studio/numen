@@ -8,7 +8,7 @@
  */
 import type { HTMLAttributes } from 'vue'
 import { SwitchRoot, SwitchThumb } from 'reka-ui'
-import { cn } from '@/shared/lib/classes'
+import { cn } from '@/shared/lib/dom/classes'
 
 const props = withDefaults(
   defineProps<{

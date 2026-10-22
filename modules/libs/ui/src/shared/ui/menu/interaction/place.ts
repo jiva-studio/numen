@@ -5,8 +5,8 @@
  * placement is worked out from it.
  */
 import { computed, ref, type ComputedRef } from 'vue'
-import { placeMenu } from './item'
-import type { Position, Size } from '@/shared/lib/geometry'
+import { placeMenu } from '../items/item'
+import type { Position, Size } from '@/shared/lib/math/geometry'
 
 export interface MenuPlacementOptions {
   /** Where it was asked for, in the coordinates of the area it is drawn into. */

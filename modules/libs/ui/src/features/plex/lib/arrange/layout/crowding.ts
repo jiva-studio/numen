@@ -1,7 +1,7 @@
-import { RELATION_NAMES, type PlexRelation } from '../relation'
+import { RELATION_NAMES, type PlexRelation } from '../../relation'
 import { getLimits } from './limits'
-import { lerp } from './math'
-import type { PlexOptions } from './options'
+import { lerp } from '../math'
+import type { PlexOptions } from '../options'
 
 /** How many of each relation arrived. */
 export type RelationCounts = Readonly<Record<PlexRelation, number>>

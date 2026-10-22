@@ -8,9 +8,9 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
-import { cn } from '@/shared/lib/classes'
+import { cn } from '@/shared/lib/dom/classes'
 import { Menu, type MenuItem } from '../menu'
-import type { Position } from '@/shared/lib/geometry'
+import type { Position } from '@/shared/lib/math/geometry'
 import type { SelectProps } from './Select.types'
 
 defineOptions({ inheritAttrs: false })

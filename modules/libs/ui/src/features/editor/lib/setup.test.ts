@@ -3,7 +3,7 @@ import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { LANGUAGES } from '../config/languages'
-import { live } from './live'
+import { live } from './live/live'
 import { tabKeyBinding, escapeKeyBinding, preview, prose, setup, type Settings } from './setup'
 
 // Nothing here has a size, and the editor measures anyway.

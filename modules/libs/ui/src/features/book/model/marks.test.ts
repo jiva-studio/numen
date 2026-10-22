@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, reactive, shallowRef } from 'vue'
 
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 import type { SettledBookProps } from '../lib/props'
 import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
 import { useBookMarks } from './marks'

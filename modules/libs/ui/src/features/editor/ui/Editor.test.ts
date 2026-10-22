@@ -10,7 +10,7 @@ import { undo } from '@codemirror/commands'
 import { EditorSelection, StateField, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
-import { changeMarks, type EditorChange } from '../lib/change'
+import { changeMarks, type EditorChange } from '../lib/change/change'
 import { addressOpener, addressResolver } from '../lib/outside'
 
 type Props = InstanceType<typeof Editor>['$props']

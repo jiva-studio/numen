@@ -13,7 +13,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Book from './Book.vue'
 import { GAP } from '../lib/spread'
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 import { countBytes } from '../lib/bytes'
 import { PROSE, VERSE, VERSES, createChapter, type Chapter } from '../fixtures/book'
 

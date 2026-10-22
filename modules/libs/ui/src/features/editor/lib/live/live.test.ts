@@ -7,7 +7,7 @@ import { GFM, type MarkdownConfig } from '@lezer/markdown'
 import { live, wholeLines } from './live'
 import { blockMarks, getMarks } from './marks'
 import { Box, Bullet, Picture, Rule } from './widgets'
-import { createState } from '../fixtures/state'
+import { createState } from '../../fixtures/state'
 
 // Nothing here has a size, and the editor measures anyway.
 Range.prototype.getClientRects = () =>

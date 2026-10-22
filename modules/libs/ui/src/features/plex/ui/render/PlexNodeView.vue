@@ -9,10 +9,10 @@ import PlexNodeBox from './PlexNodeBox.vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeHeadings from './PlexNodeHeadings.vue'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
-import { useHoverFocus } from '../../model/hoverFocus'
+import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
-import { useOpenBox } from '../../model/expansion'
-import { useNodePress } from '../../model/press'
+import { useOpenBox } from '../../model/sizing/expansion'
+import { useNodePress } from '../../model/interaction/press'
 import { createAriaLabel, type Position } from '../../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */

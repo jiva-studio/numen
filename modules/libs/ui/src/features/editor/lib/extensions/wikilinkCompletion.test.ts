@@ -7,7 +7,7 @@ import {
   createWikilinkSource,
   type WikilinkOption,
 } from './wikilinkCompletion'
-import { createState } from '../fixtures/state'
+import { createState } from '../../fixtures/state'
 
 describe('wikilink completion source', () => {
   const createTestContext = (doc: string, caret?: number) => {

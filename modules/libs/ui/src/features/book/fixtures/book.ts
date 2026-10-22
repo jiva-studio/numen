@@ -8,7 +8,7 @@
  * furniture; it ships to nobody.
  */
 import { countBytes } from '../lib/bytes'
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 
 /** One run of a document. */
 export interface Run {

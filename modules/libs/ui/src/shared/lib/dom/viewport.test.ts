@@ -5,7 +5,7 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, shallowRef } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { Size } from './geometry'
+import type { Size } from '../math/geometry'
 import { browserViewport, useRoom, useViewport, useWholeViewport } from './viewport'
 
 afterEach(() => {

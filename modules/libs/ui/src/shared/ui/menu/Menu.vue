@@ -8,12 +8,12 @@
  */
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import MenuRow from './MenuRow.vue'
-import { getInitialIndex, groupItems, type MenuItem } from './item'
-import { useMenuDismissal } from './menuDismissal'
-import { useMenuKeys } from './keys'
-import { useMenuOpen } from './open'
-import { useMenuPlacement } from './place'
-import { useMenuSearch } from './search'
+import { getInitialIndex, groupItems, type MenuItem } from './items/item'
+import { useMenuDismissal } from './interaction/menuDismissal'
+import { useMenuKeys } from './interaction/keys'
+import { useMenuOpen } from './interaction/open'
+import { useMenuPlacement } from './interaction/place'
+import { useMenuSearch } from './items/search'
 import type { MenuEvents, MenuProps, MenuSlots } from './Menu.types'
 
 /* --------------------------------- Props ---------------------------------- */

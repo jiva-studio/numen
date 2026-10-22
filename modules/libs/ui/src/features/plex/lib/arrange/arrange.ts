@@ -9,13 +9,18 @@ import { getExtent, type PlexFrame } from '../frame'
 import { assertNeighbourhood, type PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'
 import { RELATION_NAMES, type PlexRelation } from '../relation'
-import { measureCrowding } from './crowding'
-import { getLimits, type Limits } from './limits'
+import { measureCrowding } from './layout/crowding'
+import { getLimits, type Limits } from './layout/limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
-import { rowsAndColumns, type Placement, type NodesByRelation, type Widths } from './placement'
-import { routeEdges, createRouting } from './routing'
-import { findSpacing, type Spacing } from './spacing'
-import { separateTitles } from './titles'
+import {
+  rowsAndColumns,
+  type Placement,
+  type NodesByRelation,
+  type Widths,
+} from './layout/placement'
+import { routeEdges, createRouting } from './edges/routing'
+import { findSpacing, type Spacing } from './layout/spacing'
+import { separateTitles } from './edges/titles'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined

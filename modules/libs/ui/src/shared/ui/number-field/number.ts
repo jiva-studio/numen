@@ -6,7 +6,7 @@
  * field hands on can be named without drawing it.
  */
 import { computed, nextTick, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { clamp, getDecimalPlaces, roundToPlaces, type Bounds } from '@/shared/lib/bounds'
+import { clamp, getDecimalPlaces, roundToPlaces, type Bounds } from '@/shared/lib/math/bounds'
 
 export const DEFAULT_BOUNDS: Bounds = { min: 0, max: 999, step: 1 }
 

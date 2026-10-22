@@ -21,8 +21,8 @@ import {
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
 import { EDGE, SWIPE, goToPage, dragPage, pressPage, swipePage } from './pageStep'
-import type { Span } from '@/shared/lib/span'
-import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
+import type { Span } from '@/shared/lib/text/span'
+import type { PageNavigationAction } from '@/shared/lib/dom/pageNavigation'
 
 /** A wide reading area, which takes two columns, and a narrow one, which takes one. */
 const WIDE = 800

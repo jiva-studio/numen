@@ -1,8 +1,8 @@
 /**
  * What a palette is, as plain values. No DOM, no measurement, no clock.
  */
-import { stepTo } from '@/shared/lib/roving'
-import type { Span } from '@/shared/lib/span'
+import { stepTo } from '@/shared/lib/dom/roving'
+import type { Span } from '@/shared/lib/text/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 import type { PaletteAction } from '../types'
 

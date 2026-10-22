@@ -1,10 +1,10 @@
 /** Opening the gaps into the room the window leaves. */
 import { describe, expect, it } from 'vitest'
-import { arrangePlex } from './arrange'
-import { DEFAULT_OPTIONS } from './options'
+import { arrangePlex } from '../arrange'
+import { DEFAULT_OPTIONS } from '../options'
 import { spacingAsSet, findSpacing, type Spacing } from './spacing'
-import { build } from '../../fixtures/build'
-import type { PlexFrame } from '../frame'
+import { build } from '../../../fixtures/build'
+import type { PlexFrame } from '../../frame'
 
 const { nodeSize, focusSize, gap, focusGap, margin, spread } = DEFAULT_OPTIONS
 

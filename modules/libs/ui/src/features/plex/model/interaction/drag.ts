@@ -4,11 +4,11 @@
  * in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { getDropRelation, type PlexOptions, type Size } from '../lib/arrange'
+import { getDropRelation, type PlexOptions, type Size } from '../../lib/arrange'
 import { getPosition } from './gesture'
-import type { PlexFrame } from '../lib/frame'
-import type { Position } from '../lib/node'
-import type { PlexRelation } from '../lib/relation'
+import type { PlexFrame } from '../../lib/frame'
+import type { Position } from '../../lib/node'
+import type { PlexRelation } from '../../lib/relation'
 
 const CAPTURE = { capture: true } as const
 

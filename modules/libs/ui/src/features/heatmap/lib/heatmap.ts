@@ -5,7 +5,7 @@
  * how dark it is drawn are arithmetic, and arithmetic inside a component is
  * arithmetic nobody can check without a screen.
  */
-import { parseDay, getDayName } from '@/shared/lib/day'
+import { parseDay, getDayName } from '@/shared/lib/time/day'
 
 import { AHEAD, ROWS } from './grid'
 

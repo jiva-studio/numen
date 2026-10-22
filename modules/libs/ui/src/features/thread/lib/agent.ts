@@ -4,7 +4,7 @@
  * does it. What answers sits behind this port.
  */
 
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 
 /**
  * Where a call was working: a source, and the run of that source's text it

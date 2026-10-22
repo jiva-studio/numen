@@ -1,5 +1,5 @@
-import type { Clock } from '@/shared/lib/clock'
-import type { Position } from '@/shared/lib/geometry'
+import type { Clock } from '@/shared/lib/time/clock'
+import type { Position } from '@/shared/lib/math/geometry'
 import type { RowDropTarget } from '../lib/drop'
 import type { Row, RowId, RowMarker } from '../lib/row'
 

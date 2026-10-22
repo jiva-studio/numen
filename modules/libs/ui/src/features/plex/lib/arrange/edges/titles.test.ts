@@ -1,14 +1,14 @@
 /** Where along its line a title evaluates to rest. */
 import { describe, expect, it } from 'vitest'
-import { arrangePlex } from './arrange'
-import { DEFAULT_OPTIONS } from './options'
+import { arrangePlex } from '../arrange'
+import { DEFAULT_OPTIONS } from '../options'
 import { MIDDLE, routeEdges, createRouting } from './routing'
 import { separateTitles } from './titles'
-import { build } from '../../fixtures/build'
-import { neighbourhoods } from '../../fixtures/neighbourhoods'
-import { getHeading, getLength, createPointOnCurve, type PlacedEdge } from '../edge'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlacedNode, Position } from '../node'
+import { build } from '../../../fixtures/build'
+import { neighbourhoods } from '../../../fixtures/neighbourhoods'
+import { getHeading, getLength, createPointOnCurve, type PlacedEdge } from '../../edge'
+import type { PlexNeighbourhood } from '../../neighbourhood'
+import type { PlacedNode, Position } from '../../node'
 
 /** A letter of a fixed width, so what a title needs is a matter of counting. */
 const perLetter = (width: number) => (label: string) => width * [...label].length

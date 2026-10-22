@@ -12,7 +12,7 @@ import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { getOrientation, type Branch, type Orientation, type TabId } from '../../lib/node'
 import { atLeast, fit } from '../../lib/shares'
-import { useViewport } from '@/shared/lib/viewport'
+import { useViewport } from '@/shared/lib/dom/viewport'
 import { useBranchResize } from '../../model/resize'
 
 defineOptions({ name: 'WorkspaceBranch' })

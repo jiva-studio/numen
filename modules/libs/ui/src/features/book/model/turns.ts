@@ -16,7 +16,7 @@ import {
   type Flow,
   type Mark,
 } from '../lib/spread'
-import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
+import type { PageNavigationAction } from '@/shared/lib/dom/pageNavigation'
 import { goToPage } from '../lib/pageStep'
 import type { SettledBookProps } from '../lib/props'
 

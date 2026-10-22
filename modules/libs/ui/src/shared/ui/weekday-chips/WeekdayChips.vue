@@ -7,9 +7,9 @@
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
-import { cn } from '@/shared/lib/classes'
+import { cn } from '@/shared/lib/dom/classes'
 import { Menu } from '../menu'
-import type { Position } from '@/shared/lib/geometry'
+import type { Position } from '@/shared/lib/math/geometry'
 import { getFill, getFillPercent, getOfferedLevels, type Day } from './week'
 
 defineOptions({ inheritAttrs: false })

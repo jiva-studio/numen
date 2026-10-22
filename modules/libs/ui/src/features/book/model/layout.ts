@@ -9,7 +9,7 @@
 import { onMounted, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import { onNextFrame } from '@/shared/lib/clock'
+import { onNextFrame } from '@/shared/lib/time/clock'
 import { useBookColumns } from './columns'
 import { useBookTurns } from './turns'
 import type { BookLink } from '../lib/link'

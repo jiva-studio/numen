@@ -1,5 +1,5 @@
-import type { Position, Size } from '@/shared/lib/geometry'
-import type { MenuItem, MenuTrigger } from './item'
+import type { Position, Size } from '@/shared/lib/math/geometry'
+import type { MenuItem, MenuTrigger } from './items/item'
 
 export interface MenuProps {
   /** What can be chosen, in the order it is drawn. */

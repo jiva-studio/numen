@@ -3,7 +3,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 
-import type { Size } from './geometry'
+import type { Size } from '../math/geometry'
 
 export interface Viewport {
   /**

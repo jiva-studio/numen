@@ -1,8 +1,8 @@
 /** The boxes a node and a run of a line take, worked out without drawing them. */
 import { describe, expect, it } from 'vitest'
 import { getBox, getTitleBoxes, isOverlapping, runBoxes, type Box } from './boxes'
-import type { PlacedEdge } from '../edge'
-import type { PlacedNode } from '../node'
+import type { PlacedEdge } from '../../edge'
+import type { PlacedNode } from '../../node'
 
 const square: Box = { minX: 0, minY: 0, maxX: 10, maxY: 10 }
 

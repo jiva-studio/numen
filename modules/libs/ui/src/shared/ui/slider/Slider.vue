@@ -8,8 +8,8 @@
  */
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
-import { cn } from '@/shared/lib/classes'
-import { clamp, type Bounds } from '@/shared/lib/bounds'
+import { cn } from '@/shared/lib/dom/classes'
+import { clamp, type Bounds } from '@/shared/lib/math/bounds'
 import { isWalkingKey, stepForKey } from './track'
 
 defineOptions({ inheritAttrs: false })

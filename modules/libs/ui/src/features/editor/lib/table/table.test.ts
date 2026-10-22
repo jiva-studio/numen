@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { emptyRow, readCell, readTable, getRows, getWidth, withColumn, writeCell } from './table'
-import { createState } from '../fixtures/state'
+import { createState } from '../../fixtures/state'
 
 const getTable = (state: EditorState) => {
   const node = syntaxTree(state).topNode.getChild('Table')

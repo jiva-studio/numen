@@ -1,12 +1,12 @@
 /** Packing the picture closer, before anything is given up. */
 import { describe, expect, it } from 'vitest'
-import { arrangePlex } from './arrange'
+import { arrangePlex } from '../arrange'
 import { measureCrowding, packOptions } from './crowding'
 import { getLimits } from './limits'
-import { DEFAULT_OPTIONS } from './options'
-import { build } from '../../fixtures/build'
-import type { PlexFrame } from '../frame'
-import { RELATION_NAMES } from '../relation'
+import { DEFAULT_OPTIONS } from '../options'
+import { build } from '../../../fixtures/build'
+import type { PlexFrame } from '../../frame'
+import { RELATION_NAMES } from '../../relation'
 
 const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS
 

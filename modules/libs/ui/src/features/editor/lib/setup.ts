@@ -23,11 +23,11 @@ import {
   placeholder,
   rectangularSelection,
 } from '@codemirror/view'
-import { follow } from './address'
-import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from './change'
+import { follow } from './extensions/address'
+import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from './change/change'
 import { highlighting } from '../config/highlight'
 import { LANGUAGES } from '../config/languages'
-import { live, wholeLines } from './live'
+import { live, wholeLines } from './live/live'
 import { GFM } from '@lezer/markdown'
 import { saveHandler } from './outside'
 import { monospaced, theme } from '../config/theme'

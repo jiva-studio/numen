@@ -8,9 +8,9 @@
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { getAdjacentPlace, type Box } from '@/shared/lib/place'
-import type { Size } from '@/shared/lib/geometry'
-import { browserViewport, useRoom, type Viewport } from '@/shared/lib/viewport'
+import { getAdjacentPlace, type Box } from '@/shared/lib/dom/place'
+import type { Size } from '@/shared/lib/math/geometry'
+import { browserViewport, useRoom, type Viewport } from '@/shared/lib/dom/viewport'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

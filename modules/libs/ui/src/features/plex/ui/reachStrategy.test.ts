@@ -8,9 +8,9 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import { byHandle, byLongPress } from '../model/reachStrategy'
-import { APART, byDoubleClick, byDoubleTap, TAP } from '../model/destination'
-import { LONG_PRESS_DELAY } from '../model/longPress'
+import { byHandle, byLongPress } from '../model/interaction/reachStrategy'
+import { APART, byDoubleClick, byDoubleTap, TAP } from '../model/interaction/destination'
+import { LONG_PRESS_DELAY } from '../model/interaction/longPress'
 import { build } from '../fixtures/build'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })

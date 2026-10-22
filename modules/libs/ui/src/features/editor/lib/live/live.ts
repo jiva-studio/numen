@@ -20,7 +20,7 @@ import {
   type ViewUpdate,
   type WidgetType,
 } from '@codemirror/view'
-import { moveBlock } from './grid'
+import { moveBlock } from '../table/grid'
 import { type BlockNode, blockMarks, findBlocks, getMarks } from './marks'
 
 /**

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import { EditorView } from '@codemirror/view'
-import { createState } from '../fixtures/state'
+import { createState } from '../../fixtures/state'
 import { getGrid } from './grid'
 
 const TABLE = '| a | b |\n|---|---|\n| c | d |\n'

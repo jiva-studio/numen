@@ -1,6 +1,6 @@
 /** A line of a row split into the runs the words stand in, as plain values. */
-import { isLeading, isTrailing } from '@/shared/lib/surrogate'
-import type { Span } from '@/shared/lib/span'
+import { isLeading, isTrailing } from '@/shared/lib/text/surrogate'
+import type { Span } from '@/shared/lib/text/span'
 
 /** One run of a line, and whether it is why the item is here. */
 export interface PalettePart {

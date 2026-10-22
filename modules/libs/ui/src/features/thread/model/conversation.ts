@@ -8,7 +8,7 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
-import { onNextFrame, type Paint } from '@/shared/lib/clock'
+import { onNextFrame, type Paint } from '@/shared/lib/time/clock'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
 import type { Turn } from '../lib/turn'

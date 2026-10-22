@@ -1,11 +1,11 @@
 /** What a drag away from a node evaluates to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
-import { arrangePlex } from './arrange'
+import { arrangePlex } from '../arrange'
 import { getDropRelation, findNode, resolveDrop, getRelationTowards } from './drop'
-import { DEFAULT_OPTIONS, resolveOptions } from './options'
-import { build } from '../../fixtures/build'
-import type { PlexFrame } from '../frame'
-import type { PlexRelation } from '../relation'
+import { DEFAULT_OPTIONS, resolveOptions } from '../options'
+import { build } from '../../../fixtures/build'
+import type { PlexFrame } from '../../frame'
+import type { PlexRelation } from '../../relation'
 
 const ALLOWED: readonly PlexRelation[] = ['parent', 'child', 'jump']
 

@@ -9,7 +9,7 @@
  * one beginning at or before it.
  */
 import { countBytes, getUnitOffset } from './bytes'
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 import type { Mark } from './spread'
 
 /** Single contiguous text run in rendered book. */

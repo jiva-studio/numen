@@ -7,9 +7,9 @@
 import { effectScope, type EffectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getPosition, usePlexGesture } from './gesture'
-import { arrangePlex, DEFAULT_OPTIONS, type Drop } from '../lib/arrange'
-import { build } from '../fixtures/build'
-import type { PlexRelation } from '../lib/relation'
+import { arrangePlex, DEFAULT_OPTIONS, type Drop } from '../../lib/arrange'
+import { build } from '../../fixtures/build'
+import type { PlexRelation } from '../../lib/relation'
 
 const frame = arrangePlex(build('A node', { parent: 1, child: 2, jump: 1 }))
 const RELATIONS_OFFERED: readonly PlexRelation[] = ['parent', 'child', 'jump']

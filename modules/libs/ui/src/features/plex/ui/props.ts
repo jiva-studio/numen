@@ -2,15 +2,15 @@
  * What the plex is told, and what it says back.
  */
 import type { MenuTrigger } from '@/shared/ui/menu'
-import type { Viewport } from '@/shared/lib/viewport'
+import type { Viewport } from '@/shared/lib/dom/viewport'
 import type { Placement, PlexOptionsInput } from '../lib/arrange'
 import type { PlexHeading } from '../lib/inside'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode, Position } from '../lib/node'
 import type { PlexRelation } from '../lib/relation'
 import type { PlexPending } from './render/props'
-import type { ReachStrategy } from '../model/reachStrategy'
-import type { PlexDestination, ShowStrategy } from '../model/destination'
+import type { ReachStrategy } from '../model/interaction/reachStrategy'
+import type { PlexDestination, ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 
 export interface PlexProps {

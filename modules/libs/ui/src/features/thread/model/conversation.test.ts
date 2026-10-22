@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { useConversation as baseUseConversation, type ConversationStrings } from './conversation'
 import type { AgentPort, AgentStep, SourceLocation } from '../lib/agent'
-import type { Paint } from '@/shared/lib/clock'
+import type { Paint } from '@/shared/lib/time/clock'
 
 const words: ConversationStrings = {
   thinking: 'Thinking',

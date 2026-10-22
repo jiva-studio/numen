@@ -1,5 +1,5 @@
 import { RELATIONS, type PlexRelation } from '../relation'
-import type { Size } from '@/shared/lib/geometry'
+import type { Size } from '@/shared/lib/math/geometry'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
 

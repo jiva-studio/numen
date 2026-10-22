@@ -13,7 +13,7 @@ import {
   getTurnTarget,
   type Page,
 } from './strip'
-import type { Size } from '@/shared/lib/geometry'
+import type { Size } from '@/shared/lib/math/geometry'
 
 const VIEWPORT: Size = { width: 900, height: 800 }
 

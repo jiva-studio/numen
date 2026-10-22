@@ -3,7 +3,7 @@
  * answer touches a track.
  */
 import { describe, expect, it } from 'vitest'
-import type { Bounds } from '@/shared/lib/bounds'
+import type { Bounds } from '@/shared/lib/math/bounds'
 import { isWalkingKey, stepForKey } from './track'
 
 const bounds = (overrides: Partial<Bounds> = {}): Bounds => ({

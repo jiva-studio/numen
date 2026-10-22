@@ -7,7 +7,7 @@
  * at half an hour, or at nothing, hands nothing on and is left at its current position.
  */
 import { computed, useId, useTemplateRef, type HTMLAttributes } from 'vue'
-import { cn } from '@/shared/lib/classes'
+import { cn } from '@/shared/lib/dom/classes'
 import { isClockTime } from './clock'
 
 const props = withDefaults(

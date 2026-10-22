@@ -1,6 +1,6 @@
 /** The rows a press takes with it, and what follows the pointer while they are on their way. */
 
-import type { Position } from '@/shared/lib/geometry'
+import type { Position } from '@/shared/lib/math/geometry'
 import type { RowId, ShownRow } from './row'
 
 /**

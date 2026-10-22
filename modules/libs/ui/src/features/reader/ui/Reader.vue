@@ -10,8 +10,8 @@ import { computed, useTemplateRef, ref, watch } from 'vue'
 import { ReaderToolbar } from './reader-toolbar'
 import { Sheet } from './sheet'
 import { usePageWidth } from '../model/width'
-import { useViewport } from '@/shared/lib/viewport'
-import { onNextFrame } from '@/shared/lib/clock'
+import { useViewport } from '@/shared/lib/dom/viewport'
+import { onNextFrame } from '@/shared/lib/time/clock'
 import { useHandScroll } from '../model/scroll'
 import {
   GAP,

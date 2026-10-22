@@ -3,7 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
-import type { MenuItem } from './item'
+import type { MenuItem } from '../items/item'
 import { useMenuKeys } from './keys'
 
 const ITEMS: MenuItem[] = [

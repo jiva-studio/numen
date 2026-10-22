@@ -8,8 +8,8 @@
 import { computed, ref } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import { clamp } from '@/shared/lib/bounds'
-import { useViewport } from '@/shared/lib/viewport'
+import { clamp } from '@/shared/lib/math/bounds'
+import { useViewport } from '@/shared/lib/dom/viewport'
 import { useBookMarks } from './marks'
 import {
   GAP,

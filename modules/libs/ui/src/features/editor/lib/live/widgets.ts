@@ -6,7 +6,7 @@
  * writes in the right place.
  */
 import { EditorView, WidgetType } from '@codemirror/view'
-import { addressResolver } from './outside'
+import { addressResolver } from '../outside'
 
 /** The disc a bullet list is marked by. */
 export class Bullet extends WidgetType {

@@ -1,6 +1,6 @@
-import { clamp } from '@/shared/lib/bounds'
-import { RELATION_NAMES, type PlexRelation } from '../relation'
-import { isVertical, type PlexOptions } from './options'
+import { clamp } from '@/shared/lib/math/bounds'
+import { RELATION_NAMES, type PlexRelation } from '../../relation'
+import { isVertical, type PlexOptions } from '../options'
 
 /** How one relation wraps: how many along a line, and how many lines. */
 export interface RoleLimits {

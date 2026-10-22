@@ -19,7 +19,7 @@ const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, inde
 
 /** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
 const testdataReaders = [
-  'src/shared/lib/address.test.ts',
+  'src/shared/lib/text/address.test.ts',
   'src/features/book/ui/spine.test.ts',
   'src/features/cards/lib/fill.test.ts',
 ]
@@ -127,7 +127,7 @@ export default tseslint.config(
       'src/**/fixtures/**',
       // The port itself, and the one function that turns an element into the
       // rectangle the pure core reasons about.
-      'src/shared/lib/clock.ts',
+      'src/shared/lib/time/clock.ts',
       'src/features/workspace/lib/drop.ts',
     ],
     rules: {

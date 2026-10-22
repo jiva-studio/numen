@@ -7,7 +7,7 @@
  * row says whether it is the one.
  */
 import { useTemplateRef } from 'vue'
-import type { GroupedItem } from './item'
+import type { GroupedItem } from './items/item'
 
 defineProps<{
   item: GroupedItem

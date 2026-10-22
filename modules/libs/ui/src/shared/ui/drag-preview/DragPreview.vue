@@ -4,7 +4,7 @@
  * line, then an ellipsis.
  */
 import { computed } from 'vue'
-import type { Position } from '@/shared/lib/geometry'
+import type { Position } from '@/shared/lib/math/geometry'
 
 const props = defineProps<{
   /** Where the pointer is, in pixels from the top left of the window. */

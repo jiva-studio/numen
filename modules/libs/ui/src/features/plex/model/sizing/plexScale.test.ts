@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
 import { DESIGNED_TYPE, optionsForType, scaleOptions, useTypeSize } from './plexScale'
-import { arrangePlex, DEFAULT_OPTIONS, type PlexOptions } from '../lib/arrange'
-import { build } from '../fixtures/build'
+import { arrangePlex, DEFAULT_OPTIONS, type PlexOptions } from '../../lib/arrange'
+import { build } from '../../fixtures/build'
 
 const HALF_AGAIN = 1.5
 

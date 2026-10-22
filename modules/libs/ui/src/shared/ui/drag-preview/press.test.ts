@@ -5,8 +5,8 @@
 import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { usePressDrag } from './press'
-import type { Position } from '@/shared/lib/geometry'
-import type { Clock } from '@/shared/lib/clock'
+import type { Position } from '@/shared/lib/math/geometry'
+import type { Clock } from '@/shared/lib/time/clock'
 
 const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, bubbles: true })

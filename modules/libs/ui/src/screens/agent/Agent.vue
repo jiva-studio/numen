@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, watch } from 'vue'
-import { useWholeViewport } from '@/shared/lib/viewport'
+import { useWholeViewport } from '@/shared/lib/dom/viewport'
 import { Thread } from '@/features/thread'
 import { MessageComposer, type AgentModelOption } from '@/features/message-composer'
 import type { Turn } from '@/features/thread'

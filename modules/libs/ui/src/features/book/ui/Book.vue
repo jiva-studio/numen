@@ -9,7 +9,7 @@
  */
 import { useTemplateRef } from 'vue'
 
-import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
+import { getPageNavigationAction } from '@/shared/lib/dom/pageNavigation'
 import { createBookHand } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'

@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Menu from './Menu.vue'
-import type { MenuItem } from './item'
+import type { MenuItem } from './items/item'
 
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },

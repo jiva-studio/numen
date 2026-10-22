@@ -1,4 +1,4 @@
-import type { Paint } from '@/shared/lib/clock'
+import type { Paint } from '@/shared/lib/time/clock'
 import type { Page, ReaderWords, Rect } from '../lib/strip'
 
 export interface ReaderProps {

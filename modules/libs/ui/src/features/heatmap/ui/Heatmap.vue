@@ -12,7 +12,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 
 import { Tooltip } from './tooltip'
-import type { Box } from '@/shared/lib/place'
+import type { Box } from '@/shared/lib/dom/place'
 import { DaySummary } from './day-summary'
 import { measureGrid } from '../lib/grid'
 import { getCells, getDays, getGridHeight } from '../lib/heatmap'

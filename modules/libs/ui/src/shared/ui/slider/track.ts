@@ -3,7 +3,7 @@
  *
  * Pure: the same value gives the same answer wherever it is read, so what the
  */
-import { stepBy, type Bounds } from '@/shared/lib/bounds'
+import { stepBy, type Bounds } from '@/shared/lib/math/bounds'
 
 /** The keys that walk the handle along the track. */
 const WALKING: readonly string[] = [

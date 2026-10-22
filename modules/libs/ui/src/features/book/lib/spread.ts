@@ -6,7 +6,7 @@
  * of text falls in and how far into a run a byte offset reaches are arithmetic,
  * and a test asks them without a browser.
  */
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 
 /** Where one run of the text stands, once the document is laid out. */
 export interface Mark {

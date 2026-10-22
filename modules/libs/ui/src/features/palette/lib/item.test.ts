@@ -8,7 +8,7 @@
  * it.
  */
 import { describe, expect, it } from 'vitest'
-import { stepTo } from '@/shared/lib/roving'
+import { stepTo } from '@/shared/lib/dom/roving'
 import { findKeptAction, placeActions } from './actions'
 import {
   canChoose,

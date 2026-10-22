@@ -1,10 +1,10 @@
 /** Where the nodes go: parents above, children below, jumps left, siblings right. */
 import { describe, expect, it } from 'vitest'
 import { rowsAndColumns, type NodesByRelation, type Widths } from './placement'
-import { DEFAULT_OPTIONS, type PlexOptions } from './options'
+import { DEFAULT_OPTIONS, type PlexOptions } from '../options'
 import type { Limits, RoleLimits } from './limits'
-import type { PlacedNode, PlexNode } from '../node'
-import { RELATION_NAMES, type PlexRelation } from '../relation'
+import type { PlacedNode, PlexNode } from '../../node'
+import { RELATION_NAMES, type PlexRelation } from '../../relation'
 
 const { nodeSize, focusSize, gap, lineGap, focusGap } = DEFAULT_OPTIONS
 

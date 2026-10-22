@@ -1,4 +1,4 @@
-import type { PlexOptions, Size } from './options'
+import type { PlexOptions, Size } from '../options'
 
 /** The gaps an arrangement is laid out with. */
 export interface Spacing {

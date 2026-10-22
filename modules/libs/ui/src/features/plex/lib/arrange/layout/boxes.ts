@@ -1,6 +1,6 @@
 /** Upright boxes in the plex's own coordinates: the room a node takes, and the room a run of a line takes. */
-import { createPointOnCurve, type PlacedEdge } from '../edge'
-import type { PlacedNode, Position } from '../node'
+import { createPointOnCurve, type PlacedEdge } from '../../edge'
+import type { PlacedNode, Position } from '../../node'
 
 /** An upright box in the plex's own coordinates. */
 export interface Box {

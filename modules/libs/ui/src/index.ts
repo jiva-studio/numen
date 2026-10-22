@@ -43,7 +43,7 @@ export { Heatmap } from './features/heatmap'
 export { dayName as heatmapDayName } from './features/heatmap'
 export type { Words as HeatmapWords } from './features/heatmap'
 /** A day of the calendar, written down, read back and counted against another. */
-export { dayAfter, parseDay, daysBetween, getDayName, isDay } from './shared/lib/day'
+export { dayAfter, parseDay, daysBetween, getDayName, isDay } from './shared/lib/time/day'
 export type { Tally as HeatmapTally } from './features/heatmap'
 export { getStretch as getHeatmapStretch } from './features/heatmap'
 export { WelcomePage } from './features/welcome'
@@ -68,10 +68,10 @@ export type { WikilinkOption, WikilinkCompletionOptions, Extension } from './fea
 
 /** The controls a recording is played by. What plays is somewhere else. */
 export { Player } from './features/player'
-export { clock } from './shared/lib/duration'
+export { clock } from './shared/lib/time/duration'
 
 /** A stream taken up again for as long as a window is open. */
-export { createFollower } from './shared/lib/stream'
+export { createFollower } from './shared/lib/async/stream'
 
 export { Spinner } from './shared/ui/spinner'
 export { LoadingOverlay, Waiting } from './shared/ui/waiting'
@@ -83,13 +83,13 @@ export type { Conversation } from './features/thread'
 export type { AgentPort, AgentQuery, AgentStep } from './features/thread'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
-export { isNoteAddress, getWikilinks } from './shared/lib/address'
+export { isNoteAddress, getWikilinks } from './shared/lib/text/address'
 
 /** A link that leads out of the application, and the window held against it. */
-export { interceptExternalLinks, isExternalLink } from './shared/lib/externalLink'
+export { interceptExternalLinks, isExternalLink } from './shared/lib/text/externalLink'
 
 /** Numbers as they are read out, which both windows read the same way. */
-export { many, percent, plural } from './shared/lib/digits'
+export { many, percent, plural } from './shared/lib/format/digits'
 
 export { Prose } from './shared/ui/prose'
 
@@ -108,7 +108,7 @@ export { Book } from './features/book'
 /** What a book divides into, as a list to reach any of it by. */
 export { BookContents } from './features/book'
 export type { ContentsEntry } from './features/book'
-export type { Span } from './shared/lib/span'
+export type { Span } from './shared/lib/text/span'
 
 export { WorkspaceLayout } from './features/workspace'
 export { closeTab, openTab, openTabBeside, type OpenBesidePlacement } from './features/workspace'

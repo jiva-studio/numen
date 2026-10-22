@@ -7,7 +7,7 @@
  */
 import MarkdownIt, { type Token } from 'markdown-it'
 import { h, type VNode } from 'vue'
-import { wikilinks } from '@/shared/lib/marks'
+import { wikilinks } from '@/shared/lib/text/marks'
 
 const marks = new MarkdownIt({ html: false, linkify: true }).use(wikilinks)
 

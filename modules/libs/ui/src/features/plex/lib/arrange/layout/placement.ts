@@ -1,7 +1,7 @@
-import type { PlacedNode, PlexNode } from '../node'
-import type { PlexRelation } from '../relation'
+import type { PlacedNode, PlexNode } from '../../node'
+import type { PlexRelation } from '../../relation'
 import type { Limits, RoleLimits } from './limits'
-import { isVertical, type Direction, type PlexOptions } from './options'
+import { isVertical, type Direction, type PlexOptions } from '../options'
 
 /** The nodes admitted to the picture, grouped by the relation they take. */
 export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly PlexNode[]>>>

@@ -6,7 +6,7 @@
  * business of the thing around it, which knows how tall it is allowed to get.
  */
 import { useId, useTemplateRef, type HTMLAttributes } from 'vue'
-import { cn } from '@/shared/lib/classes'
+import { cn } from '@/shared/lib/dom/classes'
 
 const props = defineProps<{
   /** What a `<label for>` names the field by. Without one the field makes up its own. */

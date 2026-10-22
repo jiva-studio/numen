@@ -15,8 +15,8 @@ import {
   setReveal,
   type EditorChange,
 } from './change'
-import type { Clock } from '@/shared/lib/clock'
-import { createState } from '../fixtures/state'
+import type { Clock } from '@/shared/lib/time/clock'
+import { createState } from '../../fixtures/state'
 import { RUSSIAN } from '@/shared/fixtures/prose'
 
 // Nothing here has a size, and the editor measures anyway.

@@ -5,7 +5,7 @@
  * Nothing here draws anything.
  */
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { stepTo } from '@/shared/lib/roving'
+import { stepTo } from '@/shared/lib/dom/roving'
 import {
   canChoose,
   canLandOn,

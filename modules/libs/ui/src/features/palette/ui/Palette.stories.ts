@@ -12,7 +12,7 @@ import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@
 import Palette from './Palette.vue'
 import { keyChord } from '../lib/keys'
 import type { PaletteGroup } from '../lib/item'
-import type { Span } from '@/shared/lib/span'
+import type { Span } from '@/shared/lib/text/span'
 import {
   ARABIC,
   DEVANAGARI,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
 import { computed } from 'vue'
-import { isNoteAddress } from '@/shared/lib/address'
+import { isNoteAddress } from '@/shared/lib/text/address'
 import { render } from './render'
 
 const props = withDefaults(

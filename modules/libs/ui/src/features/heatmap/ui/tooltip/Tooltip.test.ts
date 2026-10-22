@@ -7,11 +7,11 @@
  * that size and the room it is given.
  */
 import { mount } from '@vue/test-utils'
-import { browserViewport, type Viewport } from '@/shared/lib/viewport'
+import { browserViewport, type Viewport } from '@/shared/lib/dom/viewport'
 import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tooltip from './Tooltip.vue'
-import type { Box } from '@/shared/lib/place'
+import type { Box } from '@/shared/lib/dom/place'
 
 /** How large the tooltip turned out to be, once it was drawn. */
 const WIDE = 120

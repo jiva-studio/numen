@@ -3,10 +3,10 @@
  * attention rests before a box widens, how a node offers to be reached out of,
  * how it is asked for on its own, and the clock a box opens on.
  */
-import { EXPANSION_DELAY } from './expansion'
-import { byHandle, type ReachStrategy } from './reachStrategy'
-import { byDoubleClick, type ShowStrategy } from './destination'
-import { browserClock, type Clock } from '@/shared/lib/clock'
+import { EXPANSION_DELAY } from './sizing/expansion'
+import { byHandle, type ReachStrategy } from './interaction/reachStrategy'
+import { byDoubleClick, type ShowStrategy } from './interaction/destination'
+import { browserClock, type Clock } from '@/shared/lib/time/clock'
 
 export interface PlexBehaviour {
   /** How long the attention rests on a box before it widens. Milliseconds. */

@@ -8,7 +8,7 @@ import type { RowDragState } from './drag'
 import { createTreeGestures, type TreeGesturesTell } from './gestures'
 import { useDrawnRows } from './rows'
 import { useRowSelection } from './selection'
-import type { Position } from '@/shared/lib/geometry'
+import type { Position } from '@/shared/lib/math/geometry'
 
 const ROWS: readonly Row[] = [{ id: 'notes', name: 'Notes', hasChildren: false }]
 

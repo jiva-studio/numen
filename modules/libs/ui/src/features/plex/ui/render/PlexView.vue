@@ -7,7 +7,7 @@
  * two things about it that only the whole picture knows.
  */
 import { computed, ref, useId, useTemplateRef } from 'vue'
-import { createRefRegistry } from '@/shared/lib/refs'
+import { createRefRegistry } from '@/shared/lib/dom/refs'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'

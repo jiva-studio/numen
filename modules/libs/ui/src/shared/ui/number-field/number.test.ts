@@ -17,7 +17,7 @@ import {
   formatNumber,
   useNumberEntry,
 } from './number'
-import type { Bounds } from '@/shared/lib/bounds'
+import type { Bounds } from '@/shared/lib/math/bounds'
 
 const BOUNDS: Bounds = { min: 0, max: 240, step: 5 }
 

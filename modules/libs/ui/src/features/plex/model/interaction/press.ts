@@ -4,10 +4,16 @@
  * answers, and a node not there yet answers none of them.
  */
 import { computed } from 'vue'
-import { isMenuKey, isPress, isShowKey } from '../lib/keys'
-import { isReachable, isStop, type GestureRole, type PlacedNode, type Position } from '../lib/node'
+import { isMenuKey, isPress, isShowKey } from '../../lib/keys'
+import {
+  isReachable,
+  isStop,
+  type GestureRole,
+  type PlacedNode,
+  type Position,
+} from '../../lib/node'
 import type { MenuTrigger } from '@/shared/ui/menu'
-import type { PlexBehaviour } from './behaviour'
+import type { PlexBehaviour } from '../behaviour'
 import { getDestination, mergeListeners, type PlexDestination } from './destination'
 
 /** What the node says when a press evaluates to something. */

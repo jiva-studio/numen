@@ -3,7 +3,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState, type ChangeSpec } from '@codemirror/state'
 import { GFM } from '@lezer/markdown'
-import { LANGUAGES } from '../config/languages'
+import { LANGUAGES } from '../../config/languages'
 import { wholeLines } from './live'
 import { blockMarks } from './marks'
 

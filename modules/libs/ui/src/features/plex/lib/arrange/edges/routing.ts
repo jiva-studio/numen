@@ -5,10 +5,10 @@ import {
   type EdgeCurve,
   type PlacedEdge,
   type PlexEdge,
-} from '../edge'
-import type { PlacedNode, Position } from '../node'
-import type { PlexNodeRelation } from '../relation'
-import { isVertical, type PlexOptions, type RoutingOptions } from './options'
+} from '../../edge'
+import type { PlacedNode, Position } from '../../node'
+import type { PlexNodeRelation } from '../../relation'
+import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
 
 /** `auto` means take the axis from the geometry. */
 export type Axis = 'vertical' | 'horizontal' | 'auto'

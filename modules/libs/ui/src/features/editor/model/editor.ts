@@ -19,7 +19,7 @@ import {
 } from '../lib/setup'
 import { loadLanguage } from '../config/languages'
 import { addressOpener, addressResolver, saveHandler } from '../lib/outside'
-import { replace } from '../lib/replace'
+import { replace } from '../lib/change/replace'
 import type { EditorProps } from '../ui/Editor.types'
 
 export interface EditorEmit {

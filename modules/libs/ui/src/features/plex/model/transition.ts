@@ -4,7 +4,7 @@ import { arrangePlex, easeOut, interpolatePlex } from '../lib/arrange'
 import type { ArrangeInput } from '../lib/arrange'
 import type { PlexFrame } from '../lib/frame'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import { browserClock, type Clock } from '@/shared/lib/clock'
+import { browserClock, type Clock } from '@/shared/lib/time/clock'
 
 export { browserClock, type Clock }
 

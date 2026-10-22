@@ -11,12 +11,12 @@ import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
 import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
-import { useRoom } from '../model/room'
+import { useRoom } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
-import { browserViewport } from '@/shared/lib/viewport'
+import { browserViewport } from '@/shared/lib/dom/viewport'
 import { formatCount, getRelationName, type PlexRelation } from '../lib/relation'
-import { usePlexDrag } from '../model/drag'
-import { usePlexGesture } from '../model/gesture'
+import { usePlexDrag } from '../model/interaction/drag'
+import { usePlexGesture } from '../model/interaction/gesture'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {

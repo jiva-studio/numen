@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { getLinkAddressAt, follow } from './address'
-import { addressOpener } from './outside'
-import { createState } from '../fixtures/state'
+import { addressOpener } from '../outside'
+import { createState } from '../../fixtures/state'
 
 describe('the address under a position in the text', () => {
   const getLinkAddressIn = (doc: string, text: string) =>

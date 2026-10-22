@@ -6,9 +6,9 @@
  * names.
  */
 import { ref, type Ref, type ShallowRef } from 'vue'
-import { stepTo } from '@/shared/lib/roving'
-import { canLandOn, type MenuItem } from './item'
-import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
+import { stepTo } from '@/shared/lib/dom/roving'
+import { canLandOn, type MenuItem } from '../items/item'
+import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from '../items/typeahead'
 
 /** A row standing now, which takes the keyboard when it is asked to. */
 interface RowHandle {

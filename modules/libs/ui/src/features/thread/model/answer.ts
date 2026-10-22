@@ -3,7 +3,7 @@
  * time, and settled when it ends. An answer with nothing in it leaves no turn.
  */
 import type { Turn } from '../lib/turn'
-import type { Paint } from '@/shared/lib/clock'
+import type { Paint } from '@/shared/lib/time/clock'
 
 export interface Answer {
   /** More words of the answer. */

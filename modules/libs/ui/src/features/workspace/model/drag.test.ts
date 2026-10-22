@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { useTabDrag, type TabDragState } from './drag'
 import { getPanes } from '../lib/tree'
 import type { Tab, Workspace } from '../lib/node'
-import type { Clock } from '@/shared/lib/clock'
+import type { Clock } from '@/shared/lib/time/clock'
 import { createIdFactory, withSpare } from '../fixtures/build'
 
 const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }

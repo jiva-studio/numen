@@ -1,5 +1,5 @@
 /** A clock that only moves when a test says so. */
-import type { Clock } from '@/shared/lib/clock'
+import type { Clock } from '@/shared/lib/time/clock'
 
 export function stubClock() {
   let current = 0

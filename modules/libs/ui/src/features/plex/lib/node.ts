@@ -1,5 +1,5 @@
 import type { PlexNodeRelation } from './relation'
-import type { Position, Size } from '@/shared/lib/geometry'
+import type { Position, Size } from '@/shared/lib/math/geometry'
 
 export type { Position }
 

@@ -2,7 +2,7 @@
  * What a thread is made of, as plain values.
  */
 
-import { groupDigits } from '@/shared/lib/digits'
+import { groupDigits } from '@/shared/lib/format/digits'
 
 export interface VoiceDescriptor {
   /** Drawn in a bubble of its own, or as text on the surface. */

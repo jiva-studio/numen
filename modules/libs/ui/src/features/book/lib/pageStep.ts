@@ -5,8 +5,8 @@
  *
  * lifted again means is a decision, and a test asks it without a browser.
  */
-import type { Span } from '@/shared/lib/span'
-import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
+import type { Span } from '@/shared/lib/text/span'
+import type { PageNavigationAction } from '@/shared/lib/dom/pageNavigation'
 
 /** Minimum horizontal distance in CSS pixels for a swipe gesture. */
 export const SWIPE = 40

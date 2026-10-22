@@ -8,9 +8,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, shallowRef, type ShallowRef } from 'vue'
 import { useRoom, type PlexRoomProps } from './room'
 import type { PlexMetrics } from './measure'
-import type { PlacedNode } from '../lib/node'
-import type { Size } from '../lib/arrange'
-import type { Viewport } from '@/shared/lib/viewport'
+import type { PlacedNode } from '../../lib/node'
+import type { Size } from '../../lib/arrange'
+import type { Viewport } from '@/shared/lib/dom/viewport'
 
 const stand = vi.hoisted(() => ({
   icon: undefined as (() => number) | undefined,

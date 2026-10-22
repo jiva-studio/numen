@@ -7,7 +7,7 @@ import type { PlexFrame } from '../frame'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'
 import type { PlexRelation, PlexNodeRelation } from '../relation'
-import { rowsAndColumns, type Placement } from './placement'
+import { rowsAndColumns, type Placement } from './layout/placement'
 import { build } from '../../fixtures/build'
 
 const every = Object.entries(neighbourhoods)

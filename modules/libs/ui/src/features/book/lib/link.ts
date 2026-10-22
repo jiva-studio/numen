@@ -6,7 +6,7 @@
  * it. Both are relative to the window's own address, and the reader turns one
  * into a move within the book.
  */
-import { isExternalLink } from '@/shared/lib/externalLink'
+import { isExternalLink } from '@/shared/lib/text/externalLink'
 
 /** Where a link inside a book points. */
 export interface BookLink {

@@ -9,7 +9,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { nextTick, onMounted, ref, type Component } from 'vue'
 import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
-import { MENU_TRIGGERS_ALL, type MenuItem, type MenuTrigger } from './item'
+import { MENU_TRIGGERS_ALL, type MenuItem, type MenuTrigger } from './items/item'
 import {
   ARABIC,
   DEVANAGARI,
