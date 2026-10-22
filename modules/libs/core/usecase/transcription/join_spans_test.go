@@ -25,7 +25,7 @@ func newWholeRun(
 func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure."}
 	u, v, shelved, hash := newWholeRun(t,
-		says(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
+		correctionsMap(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -53,7 +53,7 @@ func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 func TestJoiningPreservesWhatWasHeardWhereItIs(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila."}
 	u, v, shelved, hash := newWholeRun(t,
-		says(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
+		correctionsMap(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -115,7 +115,7 @@ func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 		lines int
 		by    port.Proofreader
 	}{
-		"in one call": {4, &corrector{says: says(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
+		"in one call": {4, &corrector{says: correctionsMap(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
 		"in two calls": {2, &sequenced{replies: []domain.SpeechProofreading{
 			{Corrections: []domain.ProofreadCorrection{joins(0, 1, putTogether)}, Next: 1},
 			{Corrections: []domain.ProofreadCorrection{fixes(1, onItsOwn)}, Next: 4, IsDone: true},
@@ -146,7 +146,7 @@ func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 // Two corrections of runs over the same lines: the run standing first puts them
 // together, and the one reaching into it is dropped.
 func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
-	u, v, shelved, hash := newOverlappingRun(t, 4, says(
+	u, v, shelved, hash := newOverlappingRun(t, 4, correctionsMap(
 		joins(0, 1, putTogether),
 		joins(1, 2, "Connected with Radhika. Sure."),
 	))
@@ -175,7 +175,7 @@ func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
 func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
-	u, v, shelved, delta, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
+	u, v, shelved, delta, hash := newProofreadTranscript(t, correctionsMap(joins(0, 1, putTogether)), words...)
 	delta.limit = 2
 
 	ctx, stop := context.WithCancel(t.Context())

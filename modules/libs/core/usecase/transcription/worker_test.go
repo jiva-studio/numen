@@ -484,7 +484,7 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 		t.Fatal(err)
 	}
 
-	corr := &corrector{says: says(fixes(0, "FIRST THING"))}
+	corr := &corrector{says: correctionsMap(fixes(0, "FIRST THING"))}
 	target.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
 		By: func() (port.Proofreader, error) { return corr, nil },

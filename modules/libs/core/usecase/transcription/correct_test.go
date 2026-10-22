@@ -162,7 +162,7 @@ func readLines(t *testing.T, store port.DerivedStore, name domain.ArtifactName) 
 
 // and the lines after it are asked about when the application opens.
 func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T) {
-	delta := &corrector{says: says(fixes(1, "SECOND THING"), fixes(2, "THIRD THING"))}
+	delta := &corrector{says: correctionsMap(fixes(1, "SECOND THING"), fixes(2, "THIRD THING"))}
 	target, v, store, hash := newStoppedWorker(t, delta, 1, "first thing", "second thing", "third thing")
 
 	target.TakeUp(t.Context(), recognised{recording}, v)
@@ -200,7 +200,7 @@ func TestATranscriptAlreadyInsertRightIsAskedAboutNothing(t *testing.T) {
 // An installation that did not ask for its transcripts to be put right takes up
 // nothing.
 func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
-	delta := &corrector{says: says(fixes(1, "SECOND THING"))}
+	delta := &corrector{says: correctionsMap(fixes(1, "SECOND THING"))}
 	target, v, _, _ := newStoppedWorker(t, delta, 1, "first thing", "second thing")
 	target.with.Proofreading.IsAutomatic = false
 
@@ -339,7 +339,7 @@ func TestAProofreadingAskedForExistsInTheListBeforeItOpensTheProofreader(t *test
 
 // A run that ends leaves nothing behind in the list.
 func TestAProofreadingThatEndsPreservesTheListEmpty(t *testing.T) {
-	delta := &corrector{says: says(fixes(0, "FIRST THING"))}
+	delta := &corrector{says: correctionsMap(fixes(0, "FIRST THING"))}
 	target, v, _, _ := newStoppedWorker(t, delta, 0, "first thing")
 
 	_, _ = target.Proofread(t.Context(), v, recording)

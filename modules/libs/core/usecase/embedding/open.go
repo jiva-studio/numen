@@ -152,7 +152,7 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 		return unchecked(err)
 	}
 	if len(response) != 1 || len(back) != 1 || !embedding.IsAgreed(response[0], back[0]) {
-		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
+		return fmt.Errorf("%s and %s are not one model: query vector incompatible with indexed vectors",
 			first.GetModel(), second.GetModel())
 	}
 	return nil

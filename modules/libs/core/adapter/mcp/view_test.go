@@ -105,7 +105,7 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 
 func TestFocusReturnsSoWhenTheWindowWouldNot(t *testing.T) {
 	_, core, queries := newCoreWithQueries(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	observeView(&core, queries, &window{fails: errors.New("nobody is looking")})
+	observeView(&core, queries, &window{fails: errors.New("no active view")})
 	session := newSessionOver(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{

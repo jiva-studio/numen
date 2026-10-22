@@ -56,7 +56,7 @@ func TestFocusingNothingOrANoteThatIsNotThereMovesNobody(t *testing.T) {
 		t.Errorf("the person was moved to %+v", view.asked)
 	}
 
-	view.fails = errors.New("nobody is looking")
+	view.fails = errors.New("no active view")
 	if _, err := focus.Execute(t.Context(), c.vault, "Heat.md"); !errors.Is(err, view.fails) {
 		t.Errorf("a window that failed answered %v", err)
 	}

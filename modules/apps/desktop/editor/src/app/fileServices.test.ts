@@ -221,7 +221,7 @@ describe('the window’s commands over a row', () => {
 
     const ids = host.getPathCommands({ entry: entry('Lecture.mp3', 'recording'), isSeveral: false })
 
-    expect(ids.map((one) => [one.id, one.disabled])).toStrictEqual([
+    expect(ids.map((one) => [one.id, one.isDisabled])).toStrictEqual([
       ['copy', undefined],
       ['proofread', false],
       ['remove', undefined],

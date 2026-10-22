@@ -244,7 +244,7 @@ func joins(pos, through int, text string) domain.ProofreadCorrection {
 }
 
 // says is the corrections as a corrector is told them.
-func says(corrections ...domain.ProofreadCorrection) map[int]domain.ProofreadCorrection {
+func correctionsMap(corrections ...domain.ProofreadCorrection) map[int]domain.ProofreadCorrection {
 	out := map[int]domain.ProofreadCorrection{}
 	for _, one := range corrections {
 		out[one.Number] = one

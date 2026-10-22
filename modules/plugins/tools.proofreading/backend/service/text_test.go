@@ -24,7 +24,7 @@ func (m *model) ask(_ context.Context, instruction, prompt string) (string, erro
 }
 
 // says is a model answering every prompt with the same reply.
-func says(reply string) *model {
+func newReplyModel(reply string) *model {
 	return &model{script: func(string) string { return reply }}
 }
 
@@ -60,7 +60,7 @@ func TestAScanIsAskedPageByPageAndCorrectionsComeBackInLineOrder(t *testing.T) {
 }
 
 func TestAScanPageWhoseReplyIsRefusedIsCountedUncorrected(t *testing.T) {
-	got, err := proofreadScan(t.Context(), says("999|invented").ask, twoPages(), 0)
+	got, err := proofreadScan(t.Context(), newReplyModel("999|invented").ask, twoPages(), 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestAScanFailureEndsTheRun(t *testing.T) {
 
 func TestTheEditLimitOfARequestIsHeld(t *testing.T) {
 	pages := []Batch{{Number: 1, Lines: []Line{{Number: 1, Text: "abcdefghij"}}}}
-	reply := says("1|abcdeXYZ")
+	reply := newReplyModel("1|abcdeXYZ")
 
 	got, _ := proofreadScan(t.Context(), reply.ask, pages, 0)
 	if len(got.corrections) != 0 {
@@ -101,7 +101,7 @@ func speech(count int) []Line {
 }
 
 func TestSpeechIsAskedBelowTheSpeechInstructionWithWhatTheRecordingContains(t *testing.T) {
-	m := says("")
+	m := newReplyModel("")
 	got, err := proofreadSpeech(t.Context(), m.ask, speech(3), 10, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -118,7 +118,7 @@ func TestSpeechIsAskedBelowTheSpeechInstructionWithWhatTheRecordingContains(t *t
 }
 
 func TestSpeechIsAnsweredAWindowAtATimeAndReturnsWhereToContinue(t *testing.T) {
-	m := says("")
+	m := newReplyModel("")
 	got, err := proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 0, 8)
 	if err != nil {
 		t.Fatal(err)
@@ -145,7 +145,7 @@ func TestSpeechIsAnsweredAWindowAtATimeAndReturnsWhereToContinue(t *testing.T) {
 }
 
 func TestSpeechPastTheEndIsCompleted(t *testing.T) {
-	got, err := proofreadSpeech(t.Context(), says("").ask, speech(3), 4, 1, 9, 8)
+	got, err := proofreadSpeech(t.Context(), newReplyModel("").ask, speech(3), 4, 1, 9, 8)
 	if err != nil || !got.isDone || got.next != 9 {
 		t.Errorf("result %+v, %v", got, err)
 	}
@@ -188,7 +188,7 @@ func TestARunReachingPastTheWindowIsAskedAgainFromWhereItBegins(t *testing.T) {
 
 func TestSpeechCorrectionsComeBackInLineOrderAndAJoinedRunKeepsItsLast(t *testing.T) {
 	lines := []Line{{Number: 0, Text: "we should go. And then"}, {Number: 1, Text: "the next day he left."}, {Number: 2, Text: "the end"}}
-	m := says("0-1|We should go. And then the next day he left.\n2|The end")
+	m := newReplyModel("0-1|We should go. And then the next day he left.\n2|The end")
 	got, err := proofreadSpeech(t.Context(), m.ask, lines, 10, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -203,7 +203,7 @@ func TestSpeechCorrectionsComeBackInLineOrderAndAJoinedRunKeepsItsLast(t *testin
 }
 
 func TestASpeechReplyTheGatesRefuseIsCountedUncorrected(t *testing.T) {
-	got, err := proofreadSpeech(t.Context(), says("999|invented").ask, speech(3), 10, 0, 0, 0)
+	got, err := proofreadSpeech(t.Context(), newReplyModel("999|invented").ask, speech(3), 10, 0, 0, 0)
 	if err != nil || got.uncorrected != 1 || len(got.corrections) != 0 {
 		t.Errorf("result %+v, %v", got, err)
 	}
