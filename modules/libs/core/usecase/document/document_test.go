@@ -17,9 +17,9 @@ const scanPath = "library/scan.pdf"
 func TestGetDocumentAnswersTheShapeOfEachPage(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	held := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}, {unmeasured: true}, {wide: 300, high: 400}}}}
+	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}, {unmeasured: true}, {wide: 300, high: 400}}}}
 
-	got, err := document.NewGetDocument(readers, held).Execute(t.Context(), v, scanPath)
+	got, err := document.NewGetDocument(readers, target).Execute(t.Context(), v, scanPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,21 +52,21 @@ func TestGetDocumentRefusesAFileTheVaultDoesNotHold(t *testing.T) {
 func TestGetPageDrawsAJPEGOnceHoweverOftenItIsAsked(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	held := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
+	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
 	pages := &drawn{}
-	get := document.NewGetPage(readers, held, pages)
-	asked := document.PageKey{
+	get := document.NewGetPage(readers, target, pages)
+	request := document.PageKey{
 		Document: document.Fingerprint{Path: scanPath, Size: int64(len("the bytes of a scan"))},
 		Width:    64,
 	}
-	first, err := document.NewGetDocument(readers, held).Execute(t.Context(), v, scanPath)
+	first, err := document.NewGetDocument(readers, target).Execute(t.Context(), v, scanPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked.Document.Mtime = first.Fingerprint.Mtime
+	request.Document.Mtime = first.Fingerprint.Mtime
 
 	for range 3 {
-		body, err := get.Execute(t.Context(), v, asked)
+		body, err := get.Execute(t.Context(), v, request)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -83,31 +83,31 @@ func TestGetPageDrawsAJPEGOnceHoweverOftenItIsAsked(t *testing.T) {
 func TestGetPageRefusesAFileThatChangedSinceTheAddressWasGivenOut(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	held := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
+	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
 	pages := &drawn{}
-	stale := document.PageKey{Document: document.Fingerprint{Path: scanPath, Size: 1, Mtime: 2}, Width: 64}
+	staleKey := document.PageKey{Document: document.Fingerprint{Path: scanPath, Size: 1, Mtime: 2}, Width: 64}
 
-	_, err := document.NewGetPage(readers, held, pages).Execute(t.Context(), v, stale)
+	_, err := document.NewGetPage(readers, target, pages).Execute(t.Context(), v, staleKey)
 
 	if !errors.Is(err, document.ErrChanged) {
 		t.Fatalf("error is %v, want ErrChanged", err)
 	}
-	if held.opened != 0 || pages.count != 0 {
-		t.Errorf("a stale address opened %d documents and drew %d pages", held.opened, pages.count)
+	if target.opened != 0 || pages.count != 0 {
+		t.Errorf("a stale address opened %d documents and drew %d pages", target.opened, pages.count)
 	}
 }
 
 func TestGetPageRefusesAPageTheDocumentDoesNotHave(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{scanPath: "the bytes of a scan"})
-	held := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
-	found, err := document.NewGetDocument(readers, held).Execute(t.Context(), v, scanPath)
+	target := &shelf{scan: scan{leaves: []leaf{{wide: 600, high: 800}}}}
+	found, err := document.NewGetDocument(readers, target).Execute(t.Context(), v, scanPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	past := document.PageKey{Document: found.Fingerprint, Page: 1, Width: 64}
 
-	_, err = document.NewGetPage(readers, held, &drawn{}).Execute(t.Context(), v, past)
+	_, err = document.NewGetPage(readers, target, &drawn{}).Execute(t.Context(), v, past)
 
 	if !errors.Is(err, document.ErrNoPage) {
 		t.Fatalf("error is %v, want ErrNoPage", err)
@@ -119,8 +119,8 @@ const bookPath = "library/book.epub"
 func TestGetBookPictureSettlesTheTypeByTheBytes(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
-	held := newBook()
-	get := document.NewGetBookPicture(readers, held, http.DetectContentType)
+	target := newBook()
+	get := document.NewGetBookPicture(readers, target, http.DetectContentType)
 	named := fingerprintOf(t, v)
 
 	got, err := get.Execute(t.Context(), v, bookPath, named, "OEBPS/pictures/plate.png")
@@ -130,9 +130,9 @@ func TestGetBookPictureSettlesTheTypeByTheBytes(t *testing.T) {
 	if got.Type != "image/png" || string(got.Body) != plate {
 		t.Errorf("the picture is %q of %d bytes", got.Type, len(got.Body))
 	}
-	if len(held.asked) != 1 || held.asked[0].Path != named.Path || held.asked[0].Size != named.Size ||
-		held.asked[0].ModTime.UnixNano() != named.Mtime {
-		t.Errorf("the archive was asked at %+v, want once at %+v", held.asked, named)
+	if len(target.asked) != 1 || target.asked[0].Path != named.Path || target.asked[0].Size != named.Size ||
+		target.asked[0].ModTime.UnixNano() != named.Mtime {
+		t.Errorf("the archive was asked at %+v, want once at %+v", target.asked, named)
 	}
 
 	if _, err := get.Execute(t.Context(), v, bookPath, named, "OEBPS/pictures/cover.svg"); !errors.Is(err, document.ErrNotAPicture) {
@@ -143,24 +143,24 @@ func TestGetBookPictureSettlesTheTypeByTheBytes(t *testing.T) {
 func TestGetBookPictureRefusesAFileThatIsNotTheBytesNamed(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
-	held := newBook()
-	get := document.NewGetBookPicture(readers, held, http.DetectContentType)
+	target := newBook()
+	get := document.NewGetBookPicture(readers, target, http.DetectContentType)
 
-	stale := document.Fingerprint{Path: bookPath, Size: 1, Mtime: 2}
-	if _, err := get.Execute(t.Context(), v, bookPath, stale, "OEBPS/pictures/plate.png"); !errors.Is(err, document.ErrChanged) {
+	staleFp := document.Fingerprint{Path: bookPath, Size: 1, Mtime: 2}
+	if _, err := get.Execute(t.Context(), v, bookPath, staleFp, "OEBPS/pictures/plate.png"); !errors.Is(err, document.ErrChanged) {
 		t.Errorf("a stale fingerprint was answered with %v", err)
 	}
-	if len(held.asked) != 0 {
-		t.Errorf("the archive was asked %d times for a file that is not the one named", len(held.asked))
+	if len(target.asked) != 0 {
+		t.Errorf("the archive was asked %d times for a file that is not the one named", len(target.asked))
 	}
 }
 
-func TestGetBookPictureAnswersWithErrChangedWhereTheArchiveSaysTheFileChanged(t *testing.T) {
+func TestGetBookPictureAnswersWithErrChangedWhereTheArchiveReturnsTheFileChanged(t *testing.T) {
 	t.Parallel()
 	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
-	held := newBook()
-	held.failure = port.ErrBookChanged
-	get := document.NewGetBookPicture(readers, held, http.DetectContentType)
+	target := newBook()
+	target.failure = port.ErrBookChanged
+	get := document.NewGetBookPicture(readers, target, http.DetectContentType)
 
 	_, err := get.Execute(t.Context(), v, bookPath, fingerprintOf(t, v), "OEBPS/pictures/plate.png")
 	if !errors.Is(err, document.ErrChanged) {
@@ -207,9 +207,9 @@ func fingerprintOf(t *testing.T, v domain.Vault) document.Fingerprint {
 
 func TestGetBookAnswersTheShapeTheBooksGive(t *testing.T) {
 	t.Parallel()
-	held := newBook()
+	target := newBook()
 
-	got, err := document.NewGetBook(held).Execute(t.Context(), bookPath)
+	got, err := document.NewGetBook(target).Execute(t.Context(), bookPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,25 +217,25 @@ func TestGetBookAnswersTheShapeTheBooksGive(t *testing.T) {
 		t.Errorf("the book is %+v", got)
 	}
 
-	held.failure = port.ErrNoBook
-	if _, err := document.NewGetBook(held).Execute(t.Context(), bookPath); !errors.Is(err, port.ErrNoBook) {
+	target.failure = port.ErrNoBook
+	if _, err := document.NewGetBook(target).Execute(t.Context(), bookPath); !errors.Is(err, port.ErrNoBook) {
 		t.Errorf("a path with no book was answered with %v", err)
 	}
 }
 
-func TestReadBookMarkupAsksWithTheBaselineAndPassesTheRefusalOn(t *testing.T) {
+func TestReadBookMarkupAsksWithTheBaselineAndPassesTheErrorOn(t *testing.T) {
 	t.Parallel()
-	held := newBook()
-	held.entries["OEBPS/first.xhtml"] = []byte("<p>Alpha</p>")
-	read := document.NewReadBookMarkup(held)
+	target := newBook()
+	target.entries["OEBPS/first.xhtml"] = []byte("<p>Alpha</p>")
+	read := document.NewReadBookMarkup(target)
 	baseline := &domain.Fingerprint{Path: bookPath, Size: 7}
 
 	got, err := read.Execute(t.Context(), bookPath, "OEBPS/first.xhtml", baseline)
 	if err != nil || got != "<p>Alpha</p>" {
 		t.Fatalf("the markup is %q, err = %v", got, err)
 	}
-	if len(held.asked) != 1 || held.asked[0] != *baseline {
-		t.Errorf("the book was asked at %+v, want once at %+v", held.asked, *baseline)
+	if len(target.asked) != 1 || target.asked[0] != *baseline {
+		t.Errorf("the book was asked at %+v, want once at %+v", target.asked, *baseline)
 	}
 	if _, err := read.Execute(t.Context(), bookPath, "OEBPS/gone.xhtml", nil); !errors.Is(err, document.ErrNoEntry) {
 		t.Errorf("a section the book lacks was answered with %v", err)

@@ -27,7 +27,7 @@ const createToolbar = (zoom = FURTHEST) => {
     button,
     /** Every zoom it has handed on, in the order it handed them on. */
     handed: (): readonly unknown[] =>
-      (controls.emitted('update:zoom') ?? []).map((said) => (said as unknown[])[0]),
+      (controls.emitted('update:zoom') ?? []).map((response) => (response as unknown[])[0]),
     press: async (label: string) => {
       await button(label).trigger('click')
       const last = controls.emitted('update:zoom')?.at(-1)
@@ -36,7 +36,7 @@ const createToolbar = (zoom = FURTHEST) => {
   }
 }
 
-describe('the page asked for', () => {
+describe('the page requested for', () => {
   it('is the page typed, counted from one', async () => {
     const controls = mountToolbar()
     const field = controls.get('input[type="number"]')
@@ -49,7 +49,7 @@ describe('the page asked for', () => {
 
   // A key and the change it made are two events on one field, and the page
   // stands for the second of them.
-  it('is asked for once when one page is typed', async () => {
+  it('is requested for once when one page is typed', async () => {
     const controls = mountToolbar()
     const field = controls.get('input[type="number"]')
 
@@ -93,7 +93,7 @@ describe('how close the page is drawn', () => {
 
   // The step is a multiplier, so the last one before an end overshoots it. What
   // is handed on is the end, never what the multiplication came to.
-  it('goes no closer in than the closest, whatever the step comes to', async () => {
+  it('goes no closer in than the closest, whatever the step evaluates to', async () => {
     const one = createToolbar(CLOSEST / NEARER + 0.5)
 
     await one.press(READER_WORDS.closer)
@@ -109,7 +109,7 @@ describe('how close the page is drawn', () => {
     expect(one.handed()).toEqual([FURTHEST])
   })
 
-  it('offers no press at the end it already stands at', () => {
+  it('offers no press at the end it already remains at', () => {
     const out = createToolbar(FURTHEST)
     expect(out.button(READER_WORDS.further).attributes('disabled')).toBeDefined()
     expect(out.button(READER_WORDS.closer).attributes('disabled')).toBeUndefined()

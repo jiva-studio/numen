@@ -442,7 +442,7 @@ type CallToolRequest struct {
 	// that window names it: focus, mark and face for the window cards are reviewed
 	// in. It is data about the call and no part of the arguments, and it is empty
 	// for a call made from a window that shows the person nothing in particular.
-	Asked         map[string]string `protobuf:"bytes,3,rep,name=asked,proto3" json:"asked,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Context       map[string]string `protobuf:"bytes,3,rep,name=context,proto3" json:"context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -491,9 +491,9 @@ func (x *CallToolRequest) GetArguments() []byte {
 	return nil
 }
 
-func (x *CallToolRequest) GetAsked() map[string]string {
+func (x *CallToolRequest) GetContext() map[string]string {
 	if x != nil {
-		return x.Asked
+		return x.Context
 	}
 	return nil
 }
@@ -635,13 +635,12 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\routput_schema\x18\x05 \x01(\fR\foutputSchema\x12,\n" +
 	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12.\n" +
 	"\aservers\x18\a \x03(\x0e2\x14.numen.v1.ToolServerR\aservers\x12&\n" +
-	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"\xb9\x01\n" +
+	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"\xc1\x01\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
-	"\targuments\x18\x02 \x01(\fR\targuments\x12:\n" +
-	"\x05asked\x18\x03 \x03(\v2$.numen.v1.CallToolRequest.AskedEntryR\x05asked\x1a8\n" +
-	"\n" +
-	"AskedEntry\x12\x10\n" +
+	"\targuments\x18\x02 \x01(\fR\targuments\x12@\n" +
+	"\acontext\x18\x03 \x03(\v2&.numen.v1.CallToolRequest.ContextEntryR\acontext\x1a:\n" +
+	"\fContextEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"o\n" +
 	"\x10CallToolResponse\x12-\n" +
@@ -704,14 +703,14 @@ var file_numen_v1_tools_proto_goTypes = []any{
 	(*CallToolRequest)(nil),   // 7: numen.v1.CallToolRequest
 	(*CallToolResponse)(nil),  // 8: numen.v1.CallToolResponse
 	(*ToolResult)(nil),        // 9: numen.v1.ToolResult
-	nil,                       // 10: numen.v1.CallToolRequest.AskedEntry
+	nil,                       // 10: numen.v1.CallToolRequest.ContextEntry
 }
 var file_numen_v1_tools_proto_depIdxs = []int32{
 	6,  // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
 	0,  // 1: numen.v1.PluginTool.effect:type_name -> numen.v1.ToolEffect
 	2,  // 2: numen.v1.PluginTool.servers:type_name -> numen.v1.ToolServer
 	1,  // 3: numen.v1.PluginTool.step:type_name -> numen.v1.ToolStep
-	10, // 4: numen.v1.CallToolRequest.asked:type_name -> numen.v1.CallToolRequest.AskedEntry
+	10, // 4: numen.v1.CallToolRequest.context:type_name -> numen.v1.CallToolRequest.ContextEntry
 	3,  // 5: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
 	9,  // 6: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
 	4,  // 7: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest

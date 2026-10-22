@@ -548,7 +548,7 @@ func (x *RenameVaultRequest) GetName() string {
 type RenameVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault under its new name. Absent when it was not renamed. The name a
-	// vault already has is not a change and answers with the vault as it stands.
+	// vault already has is not a change and answers with the vault currently.
 	Vault *Vault `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
 	// Set when the vault was not renamed, and why.
 	Error         *VaultsErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`

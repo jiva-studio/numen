@@ -30,13 +30,13 @@ const sizes = (text: string): string[] =>
 
 describe('the type ladder', () => {
   it('is what every size text is set at is named by', () => {
-    const written: string[] = []
+    const content: string[] = []
     for (const [path, text] of Object.entries(SOURCE)) {
       if (path.includes('/tokens/') || specimen(path)) continue
       for (const size of sizes(text)) {
-        if (!LADDER.test(size)) written.push(`${path}: ${size}`)
+        if (!LADDER.test(size)) content.push(`${path}: ${size}`)
       }
     }
-    expect(written).toEqual([])
+    expect(content).toEqual([])
   })
 })

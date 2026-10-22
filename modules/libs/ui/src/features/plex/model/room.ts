@@ -81,7 +81,7 @@ export function useRoom(
    * The headings each node hangs under its box. The sizes are the ones the whole
    * picture is drawn to, so a plex set larger hangs them larger.
    */
-  const hung = computed(() => {
+  const suspended = computed(() => {
     const getHeadings = props.headings
     if (!getHeadings) return undefined
 
@@ -91,5 +91,5 @@ export function useRoom(
       getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
   })
 
-  return { room, options, measures, widen, hung }
+  return { room, options, measures, widen, hung: suspended }
 }

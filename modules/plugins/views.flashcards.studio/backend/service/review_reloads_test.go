@@ -33,10 +33,10 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 
 	installation.Host.Move()
 
-	said := make(chan bool, 1)
-	go func() { said <- stream.Receive() }()
+	response := make(chan bool, 1)
+	go func() { response <- stream.Receive() }()
 	select {
-	case got := <-said:
+	case got := <-response:
 		if !got {
 			t.Fatalf("the stream ended: %v", stream.Err())
 		}
@@ -51,8 +51,8 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 // A deck edited in place keeps its size and its stamp, and the window keeps no
 // face of it past a report that something moved.
 func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
-	api, held, installation := newAPIOn(t, deck)
-	v := held[0]
+	api, target, installation := newAPIOn(t, deck)
+	v := target[0]
 	faces := api.scenarios().flash.CardsDue.CardFaces()
 
 	before, err := faces.Execute(t.Context(), v)

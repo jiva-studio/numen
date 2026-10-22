@@ -281,7 +281,7 @@ func TestAKeyStoreThatCannotBeReadFailsLoudly(t *testing.T) {
 	if probe.last(t).GetValues()["model"] != "sonnet" {
 		t.Error("the other settings were not passed on")
 	}
-	if _, sent := probe.last(t).GetValues()["apiKey"]; sent {
+	if _, dispatched := probe.last(t).GetValues()["apiKey"]; dispatched {
 		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
 	}
 }
@@ -371,9 +371,9 @@ func TestAPluginThatCannotBeConfiguredHasNotBeenHandedItsKey(t *testing.T) {
 		t.Error("a key the plugin never received was reported as delivered")
 	}
 
-	plain := host.plugins[secretPluginID]
-	plain.Manifest.Secrets = nil
-	host.plugins[secretPluginID] = plain
+	plainPlugin := host.plugins[secretPluginID]
+	plainPlugin.Manifest.Secrets = nil
+	host.plugins[secretPluginID] = plainPlugin
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Errorf("a plugin without secrets that does not answer Configure: %v", err)
 	}
@@ -426,10 +426,10 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain) }()
 	<-store.entered
 
-	notified := make(chan error, 1)
-	go func() { notified <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
+	errCh := make(chan error, 1)
+	go func() { errCh <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
 	select {
-	case err := <-notified:
+	case err := <-errCh:
 		t.Fatalf("a Configure ran during a secret change: %v", err)
 	case <-time.After(100 * time.Millisecond):
 	}
@@ -438,7 +438,7 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 	if err := <-setDone; err != nil {
 		t.Fatal(err)
 	}
-	if err := <-notified; err != nil {
+	if err := <-errCh; err != nil {
 		t.Fatal(err)
 	}
 	if probe.last(t).GetValues()["apiKey"] != fromKeychain {
@@ -474,7 +474,7 @@ func (u untouchable) DeleteKey(context.Context, string) error {
 
 // A secret nobody stored is handed over empty with no access to the key store,
 // at the start of the plugin and on every change of a setting.
-func TestASecretNobodyStoredLeavesTheKeyStoreAlone(t *testing.T) {
+func TestASecretNobodyStoredPreservesTheKeyStoreAlone(t *testing.T) {
 	host, probe := newSecretHost(t, untouchable{t})
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
@@ -505,7 +505,7 @@ func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 		t.Errorf("a change of a setting: %v", err)
 	}
 	call := probe.last(t)
-	if _, sent := call.GetValues()["apiKey"]; sent {
+	if _, dispatched := call.GetValues()["apiKey"]; dispatched {
 		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
 	}
 	if call.GetValues()["model"] != "opus" {
@@ -549,10 +549,10 @@ func TestAStoredSecretIsRecordedByName(t *testing.T) {
 	if got, ok := persisted[record].([]string); !ok || !slices.Equal(got, []string{declared}) {
 		t.Errorf("recorded %#v, want the name of the secret", persisted[record])
 	}
-	if _, seen := host.GetPluginSettings(secretPluginID)[port.SettingStoredSecrets]; seen {
+	if _, observed := host.GetPluginSettings(secretPluginID)[port.SettingStoredSecrets]; observed {
 		t.Error("the window sees the record")
 	}
-	if _, seen := probe.last(t).GetValues()[port.SettingStoredSecrets]; seen {
+	if _, observedVal := probe.last(t).GetValues()[port.SettingStoredSecrets]; observedVal {
 		t.Error("the plugin sees the record")
 	}
 

@@ -56,13 +56,13 @@ var walked = map[protoreflect.FullName]string{
 // value can be added, generated, carried and read without anything anywhere
 // acting on it.
 func TestEveryEnumOfTheSchemaIsWalked(t *testing.T) {
-	held := map[protoreflect.FullName]bool{}
+	target := map[protoreflect.FullName]bool{}
 	protoregistry.GlobalFiles.RangeFiles(func(file protoreflect.FileDescriptor) bool {
 		if file.Package() != "numen.v1" {
 			return true
 		}
 		for _, name := range enumsOf(file) {
-			held[name] = true
+			target[name] = true
 			if _, ok := walked[name]; !ok {
 				t.Errorf("%s is in the schema and nothing walks its values", name)
 			}
@@ -70,7 +70,7 @@ func TestEveryEnumOfTheSchemaIsWalked(t *testing.T) {
 		return true
 	})
 	for name := range walked {
-		if !held[name] {
+		if !target[name] {
 			t.Errorf("%s is walked here and is not in the schema", name)
 		}
 	}

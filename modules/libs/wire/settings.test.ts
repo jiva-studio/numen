@@ -42,7 +42,7 @@ describe('the settings of a preset', () => {
     expect(parseSettings(undefined)).toBe(DEFAULT_SETTINGS)
   })
 
-  it('take the default for a value the message names nothing for', () => {
+  it('take the default for a value the message is empty for', () => {
     const read = parseSettings(
       message({
         goal: Goals.UNSPECIFIED,

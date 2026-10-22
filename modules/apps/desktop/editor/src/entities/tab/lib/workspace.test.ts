@@ -82,12 +82,12 @@ describe('the layout the window opens with', () => {
     ])
   })
 
-  it('stands the agent in front of the two the trailing pane holds', () => {
+  it('remains the agent in front of the two the trailing pane holds', () => {
     const layout = createLayout()
     expect(getPanes(layout.root).find((one) => one.id === 'aside')?.active).toBe('agent:one')
   })
 
-  it('gives the plex the room, and the pane beside it the rest', () => {
+  it('gives the plex the room, and the pane alongside it the rest', () => {
     const layout = createLayout()
     const sizes = layout.root.kind === 'branch' ? layout.root.sizes : []
 
@@ -114,7 +114,7 @@ describe('the layout the window opens with', () => {
 })
 
 describe('the layout of a window with one side empty', () => {
-  it('is the main tabs alone where nothing stands aside', () => {
+  it('is the main tabs alone where nothing remains aside', () => {
     const layout = createWorkspace(['plex:one'], [])
     expect(getPanes(layout.root).map((one) => [one.id, one.tabs])).toStrictEqual([
       ['main', ['plex:one']],
@@ -122,7 +122,7 @@ describe('the layout of a window with one side empty', () => {
     expect(layout.focus).toBe('main')
   })
 
-  it('is the aside tabs, as the whole window, where nothing stands in the main pane', () => {
+  it('is the aside tabs, as the whole window, where nothing remains in the main pane', () => {
     const layout = createWorkspace([], ['agent:one', 'files:tree'])
     expect(getPanes(layout.root).map((one) => [one.id, one.tabs, one.active])).toStrictEqual([
       ['main', ['agent:one', 'files:tree'], 'agent:one'],

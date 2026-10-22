@@ -73,7 +73,7 @@ type GetVaultStateResponse struct {
 	// itself with. The list says both of a vault the same way.
 	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Where the vault stands on this disk.
+	// Where the vault relies on this disk.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// How far indexing the vault has got.
 	Scan *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
@@ -326,7 +326,7 @@ type WatchVaultChangesResponse struct {
 	// Paths of the files that changed, notes and assets alike. One that was
 	// removed is named here too: what changed about it is that it is gone.
 	Paths []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
-	// Set when the vault has to be read again rather than followed — more
+	// Set when the vault has to be read again and not followed — more
 	// changed at once than could be reported.
 	Reload bool `protobuf:"varint,2,opt,name=reload,proto3" json:"reload,omitempty"`
 	// The notes that were renamed by this application, each by where it was and

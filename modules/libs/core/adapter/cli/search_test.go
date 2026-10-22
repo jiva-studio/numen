@@ -75,7 +75,7 @@ func TestSearchNeedsAVaultAndAQuery(t *testing.T) {
 func TestSearchReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
 	folder := t.TempDir()
-	for name, given := range map[string]cli.Deps{
+	for name, provided := range map[string]cli.Deps{
 		"the list of vaults cannot be opened": {
 			Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
 		},
@@ -85,7 +85,7 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		},
 		"the index cannot answer": createSearchDeps(folder, fakeSearchIndex{err: errRefused}, nil),
 	} {
-		out, err := runWithDeps(given, "search", "shelf", "bees")
+		out, err := runWithDeps(provided, "search", "shelf", "bees")
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%s: search answered %v", name, err)
 		}
@@ -95,7 +95,7 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 	}
 }
 
-func TestASearchByWordsAloneSaysWhy(t *testing.T) {
+func TestASearchByWordsAloneReturnsWhy(t *testing.T) {
 	t.Parallel()
 	folder := t.TempDir()
 
@@ -106,7 +106,7 @@ func TestASearchByWordsAloneSaysWhy(t *testing.T) {
 	if out != "nothing found\n" {
 		t.Errorf("search said %q", out)
 	}
-	if beside != "searching by words alone: refused on purpose\n" {
+	if beside != "searching by words alone: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", beside)
 	}
 
@@ -161,20 +161,20 @@ func TestAnExcerptIsOneLineOfAtMostOneHundredSixtyCharacters(t *testing.T) {
 	}
 }
 
-func TestAHalfThatCannotRunIsHeardAboutBesideTheAnswer(t *testing.T) {
+func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
 	t.Parallel()
-	given := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
-	open := given.Search
-	given.Search = func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
+	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
+	open := provided.Search
+	provided.Search = func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
 		errorHandler(errRefused)
 		return open(ctx, errorHandler)
 	}
 
-	_, beside, err := runWithStderr(t, given, "search", "shelf", "bees")
+	_, beside, err := runWithStderr(t, provided, "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if beside != "answering by words alone: refused on purpose\n" {
+	if beside != "answering by words alone: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", beside)
 	}
 }

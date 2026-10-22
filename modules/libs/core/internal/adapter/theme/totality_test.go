@@ -11,7 +11,7 @@ import (
 // TestEveryOriginIsWrittenFromOne. An origin the schema names and nothing is put
 // on reaches a window as the unspecified value, and the window draws the theme
 // under neither heading.
-func TestEveryOriginIsWrittenFromOne(t *testing.T) {
+func TestEveryOriginIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Origin]Origin{
 		v1.Origin_ORIGIN_PRESET: Preset,
 		v1.Origin_ORIGIN_MINE:   Mine,

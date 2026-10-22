@@ -57,12 +57,12 @@ func TestANameAnotherVaultHasGetsANumber(t *testing.T) {
 		}
 	}
 
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 3 {
-		t.Errorf("the list holds %d vaults, want 3", len(known))
+	if len(recognized) != 3 {
+		t.Errorf("the list holds %d vaults, want 3", len(recognized))
 	}
 }
 
@@ -98,11 +98,11 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 		t.Errorf("a folder inside a vault was answered %v", err)
 	}
 	if _, carriesOne, err := (filesystem.VaultIdentity{}).GetVaultID(inner); err != nil || carriesOne {
-		t.Errorf("the refused folder was given an identity: %v %v", carriesOne, err)
+		t.Errorf("the rejected folder was given an identity: %v %v", carriesOne, err)
 	}
 }
 
-func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
+func TestAVaultContainingAnotherIsRefused(t *testing.T) {
 	t.Parallel()
 	add, _ := newAdd(t)
 	outer := folder(t, "outer")
@@ -146,12 +146,12 @@ func TestAFolderReachedThroughASymlinkIsTheFolderItself(t *testing.T) {
 		t.Errorf("one folder carries two identities: %s and %s", first.ID, second.ID)
 	}
 
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 {
-		t.Errorf("the list holds %v, want one vault", known)
+	if len(recognized) != 1 {
+		t.Errorf("the list holds %v, want one vault", recognized)
 	}
 }
 
@@ -162,12 +162,12 @@ func TestAPathThatIsNotAbsoluteIsRefused(t *testing.T) {
 	if _, err := add.Execute(".", ""); err == nil {
 		t.Fatal("a relative path was taken for a vault")
 	}
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 0 {
-		t.Errorf("the list holds %v", known)
+	if len(recognized) != 0 {
+		t.Errorf("the list holds %v", recognized)
 	}
 }
 
@@ -179,8 +179,8 @@ func TestAFolderThatIsNotThereIsUnreadable(t *testing.T) {
 	if !errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("want ErrUnreadable, got %v", err)
 	}
-	if known, _ := registry.List(); len(known) != 0 {
-		t.Errorf("the list holds %v", known)
+	if recognized, _ := registry.List(); len(recognized) != 0 {
+		t.Errorf("the list holds %v", recognized)
 	}
 }
 
@@ -212,10 +212,10 @@ func TestAVaultTheMachineCannotBeAskedAboutIsNotAdded(t *testing.T) {
 
 			_, err := add.Execute(root, "")
 			if !errors.Is(err, errRefused) {
-				t.Fatalf("want the refusal back, got %v", err)
+				t.Fatalf("want the rejection back, got %v", err)
 			}
-			if known, _ := inner.List(); len(known) != 0 {
-				t.Errorf("the list holds %v", known)
+			if recognized, _ := inner.List(); len(recognized) != 0 {
+				t.Errorf("the list holds %v", recognized)
 			}
 		})
 	}
@@ -239,8 +239,8 @@ func TestACopyOfAVaultIsRefusedAndAMoveIsFollowed(t *testing.T) {
 	if _, err := add.Execute(copied, ""); !errors.Is(err, vaults.ErrCopy) {
 		t.Fatalf("want ErrCopy, got %v", err)
 	}
-	if known, _ := registry.List(); len(known) != 1 || known[0].Path != first.Path {
-		t.Errorf("the list holds %v, want the original only", known)
+	if recognized, _ := registry.List(); len(recognized) != 1 || recognized[0].Path != first.Path {
+		t.Errorf("the list holds %v, want the original only", recognized)
 	}
 
 	moved := filepath.Join(t.TempDir(), "moved")
@@ -275,7 +275,7 @@ func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 
 	_, err = vaults.NewAdd(identity, registry, time.Now).Execute(folder(t, "moved"), "")
 	if !errors.Is(err, errRefused) {
-		t.Fatalf("want the refusal back, got %v", err)
+		t.Fatalf("want the rejection back, got %v", err)
 	}
 }
 

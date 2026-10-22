@@ -29,7 +29,7 @@ func stencil(t *testing.T, f *cutting, path string) *v1.ReadStencilResponse {
 // TestAStencilIsWrittenWithItsFacesAndItsFields. The faces are the body and the
 // fields are one key of the frontmatter, and both are the one file, so what
 // comes back is the file holding both.
-func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
+func TestAStencilIsSavedWithItsFacesAndItsFields(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read := stencil(t, f, "cards/Animal.md")
@@ -51,23 +51,23 @@ func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
-	held := onDisk(t, f.root, "cards/Animal.md")
-	if !strings.Contains(held, "{{Height}} at the shoulder") {
-		t.Errorf("the face is not the one written: %q", held)
+	target := onDisk(t, f.root, "cards/Animal.md")
+	if !strings.Contains(target, "{{Height}} at the shoulder") {
+		t.Errorf("the face is not the one written: %q", target)
 	}
-	if !strings.Contains(held, "fields:\n  - Name\n  - Height\n") {
-		t.Errorf("the stencil declares something else: %q", held)
+	if !strings.Contains(target, "fields:\n  - Name\n  - Height\n") {
+		t.Errorf("the stencil declares something else: %q", target)
 	}
 	// The fingerprint that comes back is the file on disk, so the write that
 	// follows this one lands.
-	if answer.Msg.GetAt().GetSize() != int64(len(held)) {
+	if answer.Msg.GetAt().GetSize() != int64(len(target)) {
 		t.Errorf("the fingerprint is not the file: %+v", answer.Msg.GetAt())
 	}
 }
 
 // TestAStencilIsWrittenWithTheFieldsItNowDeclares. A person adding a field
 // writes the stencil's frontmatter and its faces in the one act.
-func TestAStencilIsWrittenWithTheFieldsItNowDeclares(t *testing.T) {
+func TestAStencilIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read := stencil(t, f, "cards/Animal.md")
@@ -127,14 +127,14 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatalf("a write over a stencil the person had edited answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {
-		t.Errorf("the stencil on disk is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
+		t.Errorf("the stencil on disk is now %q", target)
 	}
 }
 
 // TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused. A write puts fields and
 // faces into a stencil that is there, and a stencil is put in the vault by name.
-func TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused(t *testing.T) {
+func TestWritingAStencilWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&v1.WriteStencilRequest{
@@ -148,7 +148,7 @@ func TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused(t *testing.T) {
 		t.Errorf("writing a stencil where the vault holds no note answered %v", code)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, "cards", "Nowhere.md")); err == nil {
-		t.Error("a file was made where the write was refused")
+		t.Error("a file was made where the write failed")
 	}
 }
 
@@ -166,8 +166,8 @@ func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a stencil on a name already taken answered %v", code)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
-		t.Errorf("the stencil that was there is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
+		t.Errorf("the stencil that was there is now %q", target)
 	}
 }
 
@@ -185,15 +185,15 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a deck on a name already taken answered %v", code)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
-		t.Errorf("the file that was there is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
+		t.Errorf("the file that was there is now %q", target)
 	}
 }
 
 // TestAPathThatLeavesTheVaultIsTheClientsToCorrect. Nothing escapes the vault
 // either way; what is being said is whose mistake it was, and a path the client
 // built is the client's.
-func TestAPathThatLeavesTheVaultIsTheClientsToCorrect(t *testing.T) {
+func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	_, err := f.client.ReadDeck(t.Context(), connect.NewRequest(&v1.ReadDeckRequest{
@@ -231,8 +231,8 @@ func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
 		t.Errorf("renaming a field onto a declared name answered %v (%v)", got, err)
 	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
-		t.Errorf("the stencil is now %q", held)
+	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
+		t.Errorf("the stencil is now %q", target)
 	}
 }
 
@@ -251,7 +251,7 @@ func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a deck under a file answered %v", code)
 	}
-	if held := onDisk(t, f.root, "Entropy.md"); held != "# Entropy\n" {
-		t.Errorf("the file in the way is now %q", held)
+	if target := onDisk(t, f.root, "Entropy.md"); target != "# Entropy\n" {
+		t.Errorf("the file in the way is now %q", target)
 	}
 }

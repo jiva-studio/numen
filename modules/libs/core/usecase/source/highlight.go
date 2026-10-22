@@ -34,14 +34,14 @@ type Highlight struct {
 	Documents port.TextExtractor
 }
 
-// A Run is one run of a source's text: what it says, and where it stands on the
+// A Run is one run of a source's text: what it says, and where it relies on the
 // pages it was read from.
 type Run struct {
 	Text  string
 	Boxes []domain.HighlightBox
 }
 
-// NewHighlight is what a run of text says and where it stands on the pages it
+// NewHighlight is what a run of text says and where it relies on the pages it
 // was read from: the vault the document is read out of, what says which producer
 // made the text the runs are places in, and the store that producer's text and
 // coordinates are kept in.
@@ -133,7 +133,7 @@ func (u Highlight) prose(
 	return doc.Text, nil
 }
 
-// getRuns is what each run says and where it sits, in the order the runs were
+// getRuns is what each run says and where it is located, in the order the runs were
 // asked about. A run standing nowhere is lit nowhere and keeps its place in the
 // answer.
 func getRuns(prose string, boxes []domain.HighlightBox, runs []domain.ByteSpan) []Run {
@@ -216,14 +216,14 @@ func (u Highlight) layer(
 // getPagesOfRuns is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
 func getPagesOfRuns(book domain.TextLayer, runs []domain.ByteSpan) []int {
-	held := map[int]bool{}
+	target := map[int]bool{}
 	var out []int
 	for _, one := range runs {
 		for _, page := range getPages(book, one.From, one.To) {
-			if held[page] {
+			if target[page] {
 				continue
 			}
-			held[page] = true
+			target[page] = true
 			out = append(out, page)
 		}
 	}

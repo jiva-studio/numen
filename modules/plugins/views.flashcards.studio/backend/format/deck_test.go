@@ -36,7 +36,7 @@ func getProblem(t *testing.T, problems []format.Problem, fault format.Fault) for
 	return found[0]
 }
 
-func names(deck format.Deck) []string {
+func cardHeadings(deck format.Deck) []string {
 	var out []string
 	for _, c := range deck.Cards {
 		out = append(out, c.Heading)
@@ -83,7 +83,7 @@ about 20 years
 	if deck.Preamble != "\nCards I am learning.\n\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "компост"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "компост"}) {
 		t.Fatalf("cards = %v", got)
 	}
 	if len(deck.Problems) != 0 {
@@ -133,7 +133,7 @@ about 45"
 about 46"
 `))
 
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "Llama"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "Llama"}) {
 		t.Fatalf("cards = %v, both are read", got)
 	}
 	if len(deck.Problems) != 0 {
@@ -143,8 +143,8 @@ about 46"
 	if err != nil {
 		t.Fatalf("the second card is not addressed by its mark: %v", err)
 	}
-	if held, _ := got.Value("Height"); held != `about 46"` {
-		t.Errorf("the mark reached the wrong card: %q", held)
+	if target, _ := got.Value("Height"); target != `about 46"` {
+		t.Errorf("the mark reached the wrong card: %q", target)
 	}
 }
 
@@ -190,7 +190,7 @@ about 30"
 	if !slices.Equal(against, []int{0, 1}) {
 		t.Errorf("problems = %+v, want one against each of the two", deck.Problems)
 	}
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "Alpaca", "Vicuña"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "Alpaca", "Vicuña"}) {
 		t.Errorf("cards = %v, want all of them read", got)
 	}
 	if got, _ := deck.Cards[1].Value("Height"); got != `about 35"` {
@@ -223,7 +223,7 @@ type: deck
 1972
 `))
 
-	if got := names(deck); !slices.Equal(got, []string{"C#", "C"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"C#", "C"}) {
 		t.Fatalf("cards = %v", got)
 	}
 	if len(deck.Problems) != 0 {
@@ -385,12 +385,12 @@ The ones I began with.
 		t.Errorf("preamble = %q, want what stands above the first of them", deck.Preamble)
 	}
 	// Two sections may carry one name, and an empty section is kept.
-	var held []string
+	var target []string
 	for _, s := range deck.Sections {
-		held = append(held, s.Name)
+		target = append(target, s.Name)
 	}
-	if !slices.Equal(held, []string{"Roots", "Roots", "Empty"}) {
-		t.Fatalf("sections = %v", held)
+	if !slices.Equal(target, []string{"Roots", "Roots", "Empty"}) {
+		t.Fatalf("sections = %v", target)
 	}
 	// Text between a section's heading and its first card is the section's.
 	if deck.Sections[0].Preamble != "The ones I began with." {
@@ -400,7 +400,7 @@ The ones I began with.
 		t.Errorf("sections = %+v, want no text under either", deck.Sections[1:])
 	}
 
-	// A card may stand before the first section, and stands under none.
+	// A card may stand before the first section, and is placed under none.
 	var under []int
 	for _, c := range deck.Cards {
 		under = append(under, c.Section)
@@ -435,7 +435,7 @@ func TestADeckOfSectionsAndNoCards(t *testing.T) {
 
 // The format spends two heading levels and no more, so a heading below them is
 // part of the value it stands in.
-func TestAValueHoldsADeeperHeading(t *testing.T) {
+func TestAValueContainsADeeperHeading(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
@@ -475,7 +475,7 @@ about 20 years
 func TestAFencedHeadingOpensNothing(t *testing.T) {
 	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n\n### Height\n\n```markdown\n## Alpaca\n\n### Weight\n```\n"))
 
-	if got := names(deck); !slices.Equal(got, []string{"Llama"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama"}) {
 		t.Errorf("cards = %v", got)
 	}
 	if got := fieldsOf(deck.Cards[0]); !slices.Equal(got, []string{"Height"}) {
@@ -485,13 +485,13 @@ func TestAFencedHeadingOpensNothing(t *testing.T) {
 
 // A block opened with tildes is closed by tildes, so the backticks inside it
 // are part of the example and a heading standing among them opens nothing.
-func TestATildeFencedExampleHoldsBackticks(t *testing.T) {
+func TestATildeFencedExampleContainsBackticks(t *testing.T) {
 	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n"+
 		"## Llama\n\n[[Animal]]\n\n### Height\n\n"+
 		"~~~markdown\n```\n## Alpaca\n```\n### Weight\n~~~\n\n"+
 		"## Vicuña\n\n[[Animal]]\n\n### Height\n\nabout 36\"\n"))
 
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "Vicuña"}) {
+	if got := cardHeadings(deck); !slices.Equal(got, []string{"Llama", "Vicuña"}) {
 		t.Errorf("cards = %v", got)
 	}
 	if got := fieldsOf(deck.Cards[0]); !slices.Equal(got, []string{"Height"}) {
@@ -555,7 +555,7 @@ func TestADeckOfNoCardsIsAllPreamble(t *testing.T) {
 }
 
 // The tail follows the last thing that was read, whatever that was.
-func TestTheTailOfACardThatHasNothingUnderIt(t *testing.T) {
+func TestTheTailOfACardThatHasNothingBelowIt(t *testing.T) {
 	for name, want := range map[string]string{
 		"## Llama\n\n[[Animal]]\n\n":               "\n\n",
 		"## Llama\n\n[[Animal]]\n\nA lead.\n\n":    "\n\n",

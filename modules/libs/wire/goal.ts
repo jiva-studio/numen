@@ -7,7 +7,7 @@
  */
 import { Goal as Goals } from '@numen/protocol'
 
-import { getNames } from './naming'
+import { getNames } from './enumNames'
 
 /** Which value the one control of a preset steers. */
 export type Goal = 'minutes' | 'retention' | 'date'

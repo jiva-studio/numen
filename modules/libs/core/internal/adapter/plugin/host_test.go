@@ -304,7 +304,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	}
 }
 
-func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
+func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 	tmp := t.TempDir()
 	pingPort := serveHostPing(t)
 	createTestPluginTree(t, tmp)
@@ -1108,9 +1108,9 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 
 	time.Sleep(1050 * time.Millisecond)
 
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(isDone)
 		_ = host.EvictIdle(ctx, 0, 1*time.Second)
 	}()
 
@@ -1122,7 +1122,7 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	host.mu.Unlock()
 
 	close(releaseShutdown)
-	<-done
+	<-isDone
 }
 
 func killProcess(t *testing.T, p *os.Process) {
@@ -1309,10 +1309,10 @@ func TestTheExitOfAnOldProcessKeepsTheEndpointOfItsReplacement(t *testing.T) {
 	sup.ActivateInProcess(time.Now())
 	host.dropEndpointOfStoppedPlugin("p", sup)
 	host.mu.RLock()
-	kept := host.endpoints["p"]
+	endpoint := host.endpoints["p"]
 	host.mu.RUnlock()
-	if kept != replacement {
-		t.Fatalf("the endpoint of a running replacement was dropped: %+v", kept)
+	if endpoint != replacement {
+		t.Fatalf("the endpoint of a running replacement was dropped: %+v", endpoint)
 	}
 
 	sup.SetDormant(nil)
@@ -1390,7 +1390,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	}
 }
 
-func TestClosingTheStdinOfAnEvictedProcessLeavesTheNextProcessStdinOpen(t *testing.T) {
+func TestClosingTheStdinOfAnEvictedProcessPreservesTheNextProcessStdinOpen(t *testing.T) {
 	host := NewHost("desktop.editor")
 	oldPipe, newPipe := &testCloser{}, &testCloser{}
 	host.stdinsMu.Lock()
@@ -1437,14 +1437,14 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 		endpoint Endpoint
 		err      error
 	}
-	answered := make(chan result, 1)
+	reply := make(chan result, 1)
 	go func() {
 		endpoint, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
-		answered <- result{endpoint: endpoint, err: err}
+		reply <- result{endpoint: endpoint, err: err}
 	}()
 
 	select {
-	case got := <-answered:
+	case got := <-reply:
 		t.Fatalf("EnsureActive answered while the plugin was deactivating: %+v", got)
 	case <-time.After(50 * time.Millisecond):
 	}
@@ -1452,7 +1452,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	if err := sup.Teardown(t.Context(), 50*time.Millisecond, nil); err != nil {
 		t.Fatalf("Teardown failed: %v", err)
 	}
-	got := <-answered
+	got := <-reply
 	if got.err != nil {
 		t.Fatalf("EnsureActive failed: %v", got.err)
 	}
@@ -1509,9 +1509,9 @@ func TestTheHostListsPluginsInIDOrder(t *testing.T) {
 	host := newHostOfProviders(t)
 	want := []string{"md.numen.provider-a", "md.numen.provider-b", "md.numen.provider-c"}
 	for range 20 {
-		var listed, infos, statuses []string
+		var items, infos, statuses []string
 		for _, p := range host.GetPlugins() {
-			listed = append(listed, p.Manifest.ID)
+			items = append(items, p.Manifest.ID)
 		}
 		for _, info := range host.GetPluginInfos() {
 			infos = append(infos, info.ID)
@@ -1519,7 +1519,7 @@ func TestTheHostListsPluginsInIDOrder(t *testing.T) {
 		for _, status := range host.GetPluginStatuses() {
 			statuses = append(statuses, status.ID)
 		}
-		for name, got := range map[string][]string{"plugins": listed, "infos": infos, "statuses": statuses} {
+		for name, got := range map[string][]string{"plugins": items, "infos": infos, "statuses": statuses} {
 			if !slices.Equal(got, want) {
 				t.Fatalf("%s listed %v, want %v", name, got, want)
 			}

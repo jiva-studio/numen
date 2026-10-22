@@ -25,7 +25,7 @@ func (a *reviewHandler) GetVaultDeckPreset(
 	}
 
 	out := &v1.GetVaultDeckPresetResponse{}
-	if reason, refused := convertOutcomeToErrorCode(found.Outcome); refused {
+	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}

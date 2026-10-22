@@ -5,7 +5,7 @@
 import { ref, useTemplateRef, watchEffect } from 'vue'
 import { Waiting } from '@numen/ui'
 import BookContent from './BookContent.vue'
-import { BookListing } from './book-listing'
+import { BookListing } from './book-contents'
 import { WORDS as words } from './words'
 import { books } from './api/wire'
 import { useBookReader } from './model/useBookReader'
@@ -102,7 +102,7 @@ function onFollow(destPath: string) {
         ref="bookContent"
         :markup="tabState.markup.value"
         :path="tabState.drawn.value"
-        :reading="tabState.reading.value"
+        :document-span="tabState.documentSpan.value"
         :book-span="tabState.span.value"
         :offset="tabState.offset.value"
         :highlights="tabState.highlights.value"

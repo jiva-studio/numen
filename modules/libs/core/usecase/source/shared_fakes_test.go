@@ -38,8 +38,8 @@ func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf,
 func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, 0, fs.ErrNotExist
 	}
 	s.opens++
@@ -83,8 +83,8 @@ func (c trackedCloser) Close() error {
 func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return raw, nil
@@ -136,7 +136,7 @@ func (s *shelf) hold(name domain.ArtifactName) {
 	s.held[name] = true
 }
 
-func (s *shelf) names() []domain.ArtifactName {
+func (s *shelf) artifactNames() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []domain.ArtifactName
@@ -176,15 +176,15 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlo
 	}
 	// No two pages say the same thing, so a coordinate read at the wrong offset
 	// names the wrong words.
-	said := fmt.Sprintf("%s %d", s.says, s.pages)
+	response := fmt.Sprintf("%s %d", s.says, s.pages)
 	var out []domain.OCRBlock
 	if s.heads != "" {
 		out = append(out, domain.OCRBlock{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
 	}
 	return append(out, domain.OCRBlock{
 		Label: "text",
-		Text:  said,
-		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
+		Text:  response,
+		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(response)}}},
 	}), nil
 }
 
@@ -205,7 +205,7 @@ type names struct {
 // called.
 func textNames(t *testing.T, shelved *shelf) names {
 	t.Helper()
-	for _, name := range shelved.names() {
+	for _, name := range shelved.artifactNames() {
 		if name.File != domain.ArtifactText || name.Producer != domain.OCR {
 			continue
 		}

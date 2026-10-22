@@ -61,9 +61,9 @@ func TestAnswerToAnotherRequestOrWithoutModelsIsAnError(t *testing.T) {
 	if _, err := parseModels(strings.NewReader(readFixture(t)), "other"); err == nil {
 		t.Error("an answer to another request was read")
 	}
-	refused := `{"type":"control_response","response":{"subtype":"error","request_id":"r1","error":"no"}}`
-	if _, err := parseModels(strings.NewReader(refused), "r1"); err == nil {
-		t.Error("a refusal was read as models")
+	errorResp := `{"type":"control_response","response":{"subtype":"error","request_id":"r1","error":"no"}}`
+	if _, err := parseModels(strings.NewReader(errorResp), "r1"); err == nil {
+		t.Error("an error was read as models")
 	}
 	empty := `{"type":"control_response","response":{"subtype":"success","request_id":"r1","response":{"models":[]}}}`
 	if _, err := parseModels(strings.NewReader(empty), "r1"); err == nil {
@@ -73,10 +73,10 @@ func TestAnswerToAnotherRequestOrWithoutModelsIsAnError(t *testing.T) {
 
 // The program is asked over stdin and its answer carries the id of the request.
 func TestTheProgramIsAskedForItsModels(t *testing.T) {
-	asked := t.TempDir() + "/asked"
+	request := t.TempDir() + "/asked"
 	answer := strings.Replace(readFixture(t), `"r1"`, `"numen-models"`, 1)
 	answer = strings.ReplaceAll(answer, "'", "")
-	script := writeScript(t, "claude", "read line\nprintf '%s\\n' \"$line\" > "+asked+"\ncat <<'EOF'\n"+answer+"EOF\nsleep 30\n")
+	script := writeScript(t, "claude", "read line\nprintf '%s\\n' \"$line\" > "+request+"\ncat <<'EOF'\n"+answer+"EOF\nsleep 30\n")
 	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
 	client := startAgent(t, &agentServer{})
 
@@ -88,7 +88,7 @@ func TestTheProgramIsAskedForItsModels(t *testing.T) {
 	if len(models) != 13 {
 		t.Fatalf("the models are %v", models)
 	}
-	raw, err := os.ReadFile(asked)
+	raw, err := os.ReadFile(request)
 	if err != nil {
 		t.Fatal(err)
 	}

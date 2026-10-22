@@ -49,9 +49,9 @@ func indexBatchLines(batch Batch) map[int]string {
 func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[int]string) ([]Line, bool, bool) {
 	var out []Line
 	past := false
-	answered := make(map[int]bool, len(batch.Lines))
+	replyVal := make(map[int]bool, len(batch.Lines))
 	for _, row := range splitRows(reply) {
-		line, keep, reaches, valid := processRow(row, batch, read, answered, maxDistance)
+		line, keep, reaches, valid := processRow(row, batch, read, replyVal, maxDistance)
 		if !valid {
 			return nil, false, false
 		}
@@ -102,8 +102,8 @@ func matchLines(read map[int]string, at, through, last int) (joined string, reac
 		return "", false, false
 	}
 	for line := at + 1; line <= through; line++ {
-		next, held := read[line]
-		if !held {
+		next, target := read[line]
+		if !target {
 			if line > last {
 				return "", true, true
 			}

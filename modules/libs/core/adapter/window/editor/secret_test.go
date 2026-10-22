@@ -16,7 +16,7 @@ var errNoKeychain = errors.New("no keychain on this machine")
 
 // The key the window sends is handed on with the plugin and the secret, and a
 // refusal is a status the window can word.
-func TestAKeyIsHandedOnAndARefusalIsSaid(t *testing.T) {
+func TestAKeyIsHandedOnAndAErrorIsSaid(t *testing.T) {
 	var got [3]string
 	handler := &settingsHandler{
 		writeSecret: setting.NewWriteSecret(func(_ context.Context, pluginID, name, key string) error {
@@ -35,7 +35,7 @@ func TestAKeyIsHandedOnAndARefusalIsSaid(t *testing.T) {
 		PluginId: "md.numen.sample", Name: "apiKey",
 	}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition || !errors.Is(err, errNoKeychain) {
-		t.Errorf("a refusal answered %v", err)
+		t.Errorf("an error answered %v", err)
 	}
 }
 

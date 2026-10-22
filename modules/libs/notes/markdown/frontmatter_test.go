@@ -10,8 +10,8 @@ import (
 )
 
 // The keys around the one being written are what the person owns, and they are
-// the whole reason this is a splice rather than a re-encode.
-func TestSetLeavesEveryOtherKeyAlone(t *testing.T) {
+// the whole reason this is a splice and not a re-encode.
+func TestSetPreservesEveryOtherKeyAlone(t *testing.T) {
 	raw := "---\n" +
 		"# a note to myself\n" +
 		"zebra:   1\n" +
@@ -36,11 +36,11 @@ func TestSetLeavesEveryOtherKeyAlone(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, want := range []string{
 		"# a note to myself\n", "zebra:   1\n", "# about apples\n", "apple: 'two'\n", "body\n",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("lost %q from\n%s", kept, got)
+		if !strings.Contains(got, want) {
+			t.Errorf("lost %q from\n%s", want, got)
 		}
 	}
 	if !strings.Contains(got, "to: Old") {
@@ -85,7 +85,7 @@ func TestANoteWithNoFrontmatterGrowsOne(t *testing.T) {
 	}
 }
 
-func TestRemovingEveryLinkTakesTheKeyOut(t *testing.T) {
+func TestRemovingEveryLinkConsumesTheKeyOut(t *testing.T) {
 	d, err := Open([]byte("---\nid: 01J8\nlinks:\n  - to: Old\n    role: parent\n---\nbody\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -107,7 +107,7 @@ func TestFrontmatterThatDoesNotParseIsRefused(t *testing.T) {
 	}
 }
 
-func TestWhatIsWrittenIntoACRLFNoteIsCRLF(t *testing.T) {
+func TestWhatIsSavedIntoACRLFNoteIsCRLF(t *testing.T) {
 	d, err := Open([]byte("---\r\nid: 01J8\r\n---\r\nbody\r\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -128,7 +128,7 @@ func TestWhatIsWrittenIntoACRLFNoteIsCRLF(t *testing.T) {
 }
 
 // `name://` is how the index holds an address and never how a file spells one.
-func TestANameIsWrittenAsItself(t *testing.T) {
+func TestANameIsSavedAsItself(t *testing.T) {
 	d, err := Open([]byte("---\nid: 01J8\n---\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -162,7 +162,7 @@ func reopen(t *testing.T, raw string) *Document {
 // around it. An entry the parser could not act on is still somebody's writing,
 // a key the application has never heard of is theirs, and a comment inside the
 // block is a note to themselves.
-func TestWritingOneLinkLeavesTheOthersAsBytes(t *testing.T) {
+func TestWritingOneLinkPreservesTheOthersAsBytes(t *testing.T) {
 	raw := "---\n" +
 		"links:\n" +
 		"  # why this one exists\n" +
@@ -186,12 +186,12 @@ func TestWritingOneLinkLeavesTheOthersAsBytes(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, want := range []string{
 		"# why this one exists\n", "- to: Entropy\n", "role: supersedes\n",
 		"mine: keep me\n", "- to: Heat\n",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("lost %q from\n%s", kept, got)
+		if !strings.Contains(got, want) {
+			t.Errorf("lost %q from\n%s", want, got)
 		}
 	}
 	if !strings.Contains(got, "- to: Work") {
@@ -200,7 +200,7 @@ func TestWritingOneLinkLeavesTheOthersAsBytes(t *testing.T) {
 }
 
 // A key the application does not own is the person's, and an entry carrying one
-// is refused rather than rewritten without it.
+// fails and not rewritten without it.
 func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	d, err := Open([]byte("---\nlinks:\n  - to: Entropy\n    role: parent\n    mine: keep me\n---\nbody\n"))
 	if err != nil {
@@ -214,11 +214,11 @@ func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 		t.Fatalf("want ErrNotOwned, got %v", err)
 	}
 	if !strings.Contains(string(d.Bytes()), "mine: keep me") {
-		t.Error("the refused change was made anyway")
+		t.Error("the rejected change was made anyway")
 	}
 }
 
-// A refusal is the whole change refused. Two entries go to the same place, the
+// A refusal is the whole change rejected. Two entries go to the same place, the
 // application owns the second and not the first, and the note comes out of the
 // call as every byte it went in.
 func TestARefusedUpdateWritesNoEntryAtAll(t *testing.T) {
@@ -241,7 +241,7 @@ func TestARefusedUpdateWritesNoEntryAtAll(t *testing.T) {
 		t.Errorf("changed = %d", changed)
 	}
 	if got := string(d.Bytes()); got != raw {
-		t.Errorf("a refused change was written\n want %q\n  got %q", raw, got)
+		t.Errorf("a rejected change was written\n want %q\n  got %q", raw, got)
 	}
 }
 
@@ -274,12 +274,12 @@ func TestPointingALinkSomewhereElseChangesOnlyTheAddress(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, want := range []string{
 		"# the old place", "role: parent\n", "label: follows from\n",
 		"[[Entropy|entropy]]", "[[Heat]]",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("lost %q from\n%s", kept, got)
+		if !strings.Contains(got, want) {
+			t.Errorf("lost %q from\n%s", want, got)
 		}
 	}
 	if strings.Contains(got, "notes/Entropy") {
@@ -356,10 +356,10 @@ func TestOnlyTheAddressKeyIsRewritten(t *testing.T) {
 
 // One line holding several keys means the span of any of them is the span of
 // all of them, so a write meant for one would take the rest with it.
-func TestFrontmatterOnOneLineIsRefusedRatherThanMangled(t *testing.T) {
+func TestFrontmatterOnOneLineIsRefusedInsteadOfMangled(t *testing.T) {
 	raw := "---\n{title: T, id: b}\n---\nbody\n"
 
-	// Reading it is fine; only changing it is refused.
+	// Reading it is fine; only changing it fails.
 	d, err := Open([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -373,14 +373,14 @@ func TestFrontmatterOnOneLineIsRefusedRatherThanMangled(t *testing.T) {
 		t.Errorf("want ErrInline from AddLink, got %v", err)
 	}
 	if got := string(d.Bytes()); got != raw {
-		t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
+		t.Errorf("a failed write changed the note\n want %q\n  got %q", raw, got)
 	}
 }
 
 // A value written on one line occupies its key's own lines, so a key beside it
 // is written as usual. An entry of that value is what cannot be replaced on its
 // own.
-func TestAValueOnOneLineLeavesTheKeysAroundItWritable(t *testing.T) {
+func TestAValueOnOneLinePreservesTheKeysAroundItWritable(t *testing.T) {
 	raw := "---\nlinks: [{to: A, role: jump}]\nlight_days: [sat]\n---\nbody\n"
 
 	d, err := Open([]byte(raw))
@@ -397,9 +397,9 @@ func TestAValueOnOneLineLeavesTheKeysAroundItWritable(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{"links: [{to: A, role: jump}]", "light_days: [sat]", "id: 01J8"} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("%q is not in the note:\n%s", kept, got)
+	for _, want := range []string{"links: [{to: A, role: jump}]", "light_days: [sat]", "id: 01J8"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("%q is not in the note:\n%s", want, got)
 		}
 	}
 	if _, err := Open([]byte(got)); err != nil {
@@ -408,9 +408,9 @@ func TestAValueOnOneLineLeavesTheKeysAroundItWritable(t *testing.T) {
 }
 
 // A file may be called almost anything; an address may not. A note whose name
-// no link could spell is left unreached rather than reached by a link that now
+// no link could spell is left unreached and not reached by a link that now
 // says something else.
-func TestANameNoAddressCanSpellIsNotWrittenIn(t *testing.T) {
+func TestANameNoAddressCanSpellIsNotSavedIn(t *testing.T) {
 	for _, name := range []string{"#tag", "multi\nline", "a|b", "note://x", "ends]]"} {
 		t.Run(name, func(t *testing.T) {
 			raw := "---\nlinks:\n  - to: notes/Old\n    role: parent\n---\nsee [[notes/Old]]\n"
@@ -440,7 +440,7 @@ func TestANameNoAddressCanSpellIsNotWrittenIn(t *testing.T) {
 // A file that opens the block and never closes it is somebody's frontmatter
 // with a line missing. Writing a key would put a second block above theirs and
 // turn their keys into prose.
-func TestANoteWithAnUnclosedBlockRefusesAFrontmatterWrite(t *testing.T) {
+func TestANoteWithAnUnclosedBlockRejectsAFrontmatterWrite(t *testing.T) {
 	raw := "---\ntitle: theirs\n"
 	d, err := Open([]byte(raw))
 	if err != nil {
@@ -457,7 +457,7 @@ func TestANoteWithAnUnclosedBlockRefusesAFrontmatterWrite(t *testing.T) {
 // The whole of such a file stands as its body, so writing the prose writes over
 // the half-written block, and pointing the prose's links at a new name reaches
 // the links inside it.
-func TestANoteWithAnUnclosedBlockRefusesABodyWrite(t *testing.T) {
+func TestANoteWithAnUnclosedBlockRejectsABodyWrite(t *testing.T) {
 	raw := "---\ntitle: theirs\nlinks:\n  - to: notes/Old\n"
 	d, err := Open([]byte(raw))
 	if err != nil {
@@ -523,9 +523,9 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 			if len(links) != 1 || links[0].Target.Value != "Marrowfield" {
 				t.Errorf("want the link at Marrowfield, got %+v\n%s", links, got)
 			}
-			for _, kept := range []string{"# where it sat", "role: child\n"} {
-				if !strings.Contains(got, kept) {
-					t.Errorf("lost %q from\n%s", kept, got)
+			for _, want := range []string{"# where it sat", "role: child\n"} {
+				if !strings.Contains(got, want) {
+					t.Errorf("lost %q from\n%s", want, got)
 				}
 			}
 			if strings.Contains(got, "corner") {
@@ -577,7 +577,7 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 
 // A scalar written over lines of its own is not one token on one line. The link
 // stays as it was written, and the note is left readable.
-func TestARenameLeavesABlockScalarAlone(t *testing.T) {
+func TestARenamePreservesABlockScalarAlone(t *testing.T) {
 	raw := "---\nlinks:\n  - to: >-\n      The far corner\n    role: child\n---\nbody\n"
 	d, err := Open([]byte(raw))
 	if err != nil {
@@ -597,7 +597,7 @@ func TestARenameLeavesABlockScalarAlone(t *testing.T) {
 
 // How somebody writes their own links is theirs: the quotes around the name and
 // the brackets inside them are how they wrote it, and a rename changes the name.
-func TestARenameKeepsTheNotationItFound(t *testing.T) {
+func TestARenamePreservesTheNotationItFound(t *testing.T) {
 	for _, one := range []struct {
 		name    string
 		written string
@@ -631,7 +631,7 @@ func TestARenameKeepsTheNotationItFound(t *testing.T) {
 
 // A note names another in one role, so a role written where one already
 // stands is the role it stands in from then on.
-func TestALinkWrittenAgainInAnotherRoleIsRelatedAgain(t *testing.T) {
+func TestALinkSavedAgainInAnotherRoleIsRelatedAgain(t *testing.T) {
 	raw := "---\n" +
 		"links:\n" +
 		"  - to: \"[[Entropy]]\"\n" +
@@ -662,7 +662,7 @@ func TestALinkWrittenAgainInAnotherRoleIsRelatedAgain(t *testing.T) {
 // A frontmatter written in from the margin is spliced where its own keys stand.
 // A line written flush ends the mapping, and every key below it becomes text
 // the YAML decoder drops without saying so — the person's own keys among them.
-func TestAKeyIsWrittenWhereTheBlocksOwnKeysStand(t *testing.T) {
+func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 	raw := "---\n" +
 		"  type: preset\n" +
 		"  id: 01J8\n" +
@@ -698,7 +698,7 @@ func TestAKeyIsWrittenWhereTheBlocksOwnKeysStand(t *testing.T) {
 }
 
 // A frontmatter carrying an anchor is left alone. Replacing the value the anchor
-// stands on leaves the alias pointing at nothing, and the note stops opening at
+// relies on leaves the alias pointing at nothing, and the note stops opening at
 // all — not the one key, the whole of it.
 func TestAnAnchoredFrontmatterIsRefused(t *testing.T) {
 	raw := "---\n" +
@@ -740,7 +740,7 @@ func TestAnAnchoredFrontmatterIsRefused(t *testing.T) {
 
 // A comment beside a key is the person's, on a key the application owns as much
 // as on any other. Every writer here keeps it.
-func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
+func TestAWritePreservesTheCommentAdjacentTheKey(t *testing.T) {
 	raw := "---\n" +
 		"id: 01J8 # the one it was made with\n" +
 		"title: Old # what I called it\n" +
@@ -773,7 +773,7 @@ func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
 	}
 
 	got := string(d.Bytes())
-	for _, kept := range []string{
+	for _, want := range []string{
 		"id: 01J9 # the one it was made with\n",
 		"title: New # what I called it\n",
 		"minutes_a_day: 35 # twenty is plenty\n",
@@ -781,8 +781,8 @@ func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
 		"sat: 20 # half a Saturday\n",
 		"tags: # what it is about\n",
 	} {
-		if !strings.Contains(got, kept) {
-			t.Errorf("want %q in\n%s", kept, got)
+		if !strings.Contains(got, want) {
+			t.Errorf("want %q in\n%s", want, got)
 		}
 	}
 }
@@ -827,7 +827,7 @@ func TestOneTypeNamesOnePlace(t *testing.T) {
 
 // A note naming no place under the type grows an entry for it, and one written
 // with no block grows the block too.
-func TestATypeNobodyNamedIsWrittenIn(t *testing.T) {
+func TestATypeNobodyNamedIsSavedIn(t *testing.T) {
 	for name, raw := range map[string]string{
 		"no block":       "---\ntype: deck\n---\nbody\n",
 		"a block":        "---\nlinks:\n  - to: Thermodynamics\n    role: parent\n---\nbody\n",
@@ -863,7 +863,7 @@ func TestATypeNobodyNamedIsWrittenIn(t *testing.T) {
 
 // An empty address takes the entry out, and the block goes with it when it held
 // nothing else.
-func TestNamingNoPlaceUnderATypeTakesTheEntryOut(t *testing.T) {
+func TestNamingNoPlaceBelowATypeConsumesTheEntryOut(t *testing.T) {
 	d, err := Open([]byte(
 		"---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\nbody\n"))
 	if err != nil {
@@ -891,13 +891,13 @@ func TestAnEntryOfTheTypeCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 		t.Fatalf("want ErrNotOwned, got %v", err)
 	}
 	if got := string(d.Bytes()); got != raw {
-		t.Errorf("the refused change was made anyway\n%s", got)
+		t.Errorf("the rejected change was made anyway\n%s", got)
 	}
 }
 
-// An entry written with no role is not a link, so it names nothing under the
-// type and is left exactly as it stands.
-func TestAnEntryWithNoRoleIsLeftWhereItStands(t *testing.T) {
+// An entry written with no role is not a link, so it is empty under the
+// type and is left exactly currently.
+func TestAnEntryWithNoRoleIsRemainingWhereItExists(t *testing.T) {
 	d, err := Open([]byte(
 		"---\nlinks:\n  - to: Sanskrit\n    type: preset\n---\nbody\n"))
 	if err != nil {

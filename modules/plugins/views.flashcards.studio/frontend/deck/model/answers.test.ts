@@ -8,7 +8,7 @@ import { createDeckAnswers } from './answers'
 
 const PROBLEM: DeckProblem = { kind: 'unknown', card: 0, face: null, field: '', text: 'Odd' }
 
-const read = (title: string | null) => ({ problems: [PROBLEM], bound: 0, title })
+const readItem = (title: string | null) => ({ problems: [PROBLEM], bound: 0, title })
 
 describe('the title of a deck file', () => {
   it('is the name of the file until the vault reads one', () => {
@@ -20,16 +20,16 @@ describe('the title of a deck file', () => {
   it('is the title a read came back with', () => {
     const answers = createDeckAnswers()
 
-    answers.recordRead('Animals.md', read('Beasts'))
+    answers.recordRead('Animals.md', readItem('Beasts'))
 
     expect(answers.getTitle('Animals.md')).toBe('Beasts')
   })
 
-  it('stands through a read that reached no title', () => {
+  it('remains through a read that reached no title', () => {
     const answers = createDeckAnswers()
-    answers.recordRead('Animals.md', read('Beasts'))
+    answers.recordRead('Animals.md', readItem('Beasts'))
 
-    answers.recordRead('Animals.md', read(null))
+    answers.recordRead('Animals.md', readItem(null))
 
     expect(answers.getTitle('Animals.md')).toBe('Beasts')
   })
@@ -46,7 +46,7 @@ describe('the title of a deck file', () => {
 describe('what is forgotten of a file', () => {
   it('is its problems, its errors and its title', () => {
     const answers = createDeckAnswers()
-    answers.recordRead('Animals.md', { ...read('Beasts'), error: 'notADeck' })
+    answers.recordRead('Animals.md', { ...readItem('Beasts'), error: 'notADeck' })
 
     answers.forgetFile('Animals.md')
 
@@ -57,7 +57,7 @@ describe('what is forgotten of a file', () => {
 
   it('is nothing of another file', () => {
     const answers = createDeckAnswers()
-    answers.recordRead('Other.md', read('Other title'))
+    answers.recordRead('Other.md', readItem('Other title'))
 
     answers.forgetFile('Animals.md')
 
@@ -67,9 +67,9 @@ describe('what is forgotten of a file', () => {
 })
 
 describe('a file that moved', () => {
-  it('carries its problems and its title to where it now stands', () => {
+  it('carries its problems and its title to where it now remains', () => {
     const answers = createDeckAnswers()
-    answers.recordRead('Old.md', read('Beasts'))
+    answers.recordRead('Old.md', readItem('Beasts'))
 
     answers.moveFile('Old.md', 'New.md')
 
@@ -79,7 +79,7 @@ describe('a file that moved', () => {
 
   it('leaves nothing at the name it left', () => {
     const answers = createDeckAnswers()
-    answers.recordRead('Old.md', read('Beasts'))
+    answers.recordRead('Old.md', readItem('Beasts'))
 
     answers.moveFile('Old.md', 'New.md')
 
@@ -87,9 +87,9 @@ describe('a file that moved', () => {
     expect(answers.getTitle('Old.md')).toBe('Old.md')
   })
 
-  it('leaves what stands at the name it went to, where the old name held nothing', () => {
+  it('leaves what remains at the name it went to, where the old name retained nothing', () => {
     const answers = createDeckAnswers()
-    answers.recordRead('New.md', read('Beasts'))
+    answers.recordRead('New.md', readItem('Beasts'))
 
     answers.moveFile('Missing.md', 'New.md')
 

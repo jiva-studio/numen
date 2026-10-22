@@ -28,7 +28,7 @@ func (h *noteHandler) ReadNote(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
-	if reason, refused := wire.ConvertOutcomeToErrorCode(found.Outcome); refused {
+	if reason, ok := wire.ConvertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 	} else {
 		// What the file was when this prose came out of it, for the client to
@@ -59,19 +59,19 @@ func (h *noteHandler) WriteNote(
 	// handed the fingerprint it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
 	// and search does not hold it.
-	behind := h.state.isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := h.state.isUnlevelled(err)
+	if err == nil || unlevelled {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
 		if h.state.NotifyNoteWritten != nil {
 			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFingerprintToWire(at), IsUnlevelled: behind,
+			At: convertFingerprintToWire(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
-	reason, refused := wire.GetErrorCode(err)
-	if !refused {
+	reason, ok := wire.GetErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.WriteNoteResponse{Error: &reason}), nil
@@ -103,20 +103,20 @@ func (h *noteHandler) CreateNote(
 		Path:  r.Msg.GetPath(),
 		Links: links,
 	})
-	behind := h.state.isUnlevelled(err)
+	unlevelled := h.state.isUnlevelled(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so that is the answer. What comes
 		// after the write is the index catching up, and the watcher does it
 		// again.
 		return connect.NewResponse(&v1.CreateNoteResponse{
-			Path: made.Path, IsUnlevelled: behind,
+			Path: made.Path, IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if err == nil {
 		return connect.NewResponse(&v1.CreateNoteResponse{}), nil
 	}
-	reason, refused := wire.GetErrorCode(err)
-	if !refused {
+	reason, ok := wire.GetErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.CreateNoteResponse{Error: &reason}), nil
@@ -145,8 +145,8 @@ func (h *noteHandler) WriteLink(
 	if _, err := h.editLinks.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
 	); err != nil {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.WriteLinkResponse{Error: &reason}), nil
@@ -175,8 +175,8 @@ func (h *noteHandler) RemoveLink(
 	if _, err := h.editLinks.Remove(
 		ctx, showing, r.Msg.GetPath(), to, role, domain.Fingerprint{},
 	); err != nil {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.RemoveLinkResponse{Error: &reason}), nil
@@ -212,8 +212,8 @@ func (h *noteHandler) ReplaceLinks(
 		if errors.Is(err, note.ErrNotAPair) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
+		reason, ok := wire.GetErrorCode(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.ReplaceLinksResponse{Error: &reason}), nil
@@ -299,16 +299,16 @@ func (h *noteHandler) ResolveAddresses(
 	// In the order they were asked about, and an address asked about twice is
 	// one answer.
 	out := &v1.ResolveAddressesResponse{}
-	seen := make(map[string]bool, len(found))
-	for _, written := range r.Msg.GetWritten() {
-		one, reached := found[written]
-		if !reached || seen[written] {
+	observed := make(map[string]bool, len(found))
+	for _, content := range r.Msg.GetWritten() {
+		one, reached := found[content]
+		if !reached || observed[content] {
 			continue
 		}
-		seen[written] = true
+		observed[content] = true
 		vault, crossed := one.InVault(showing.ID)
 		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
-			Written:     written,
+			Written:     content,
 			Path:        one.To,
 			Vault:       string(vault),
 			IsCrossed:   crossed,
@@ -448,8 +448,8 @@ func (h *noteHandler) ListHeadings(
 	// In the order the filter named them.
 	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
 	for _, path := range paths {
-		headings, held := found[path]
-		if !held {
+		headings, target := found[path]
+		if !target {
 			continue
 		}
 		one := &v1.NoteHeadings{Path: path, Headings: make([]*v1.Heading, 0, len(headings))}
@@ -472,8 +472,8 @@ func (h *noteHandler) WatchEdits(
 	_ *connect.Request[v1.WatchEditsRequest],
 	out *connect.ServerStream[v1.WatchEditsResponse],
 ) error {
-	line, done := h.state.Edits.subscribe()
-	defer done()
+	line, isDone := h.state.Edits.subscribe()
+	defer isDone()
 
 	// A stream that says nothing until a note is changed is indistinguishable
 	// from one that never opened.
@@ -492,16 +492,16 @@ func (h *noteHandler) WatchEdits(
 			if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
 				return err
 			}
-		case said, open := <-line:
+		case response, open := <-line:
 			if !open {
 				return nil
 			}
 			if err := out.Send(&v1.WatchEditsResponse{
-				Change:  said.Change,
-				Path:    said.Path,
-				Span:    &v1.Span{From: int32(said.From), To: int32(said.To)},
-				Text:    said.Text,
-				IsFinal: said.IsDone,
+				Change:  response.Change,
+				Path:    response.Path,
+				Span:    &v1.Span{From: int32(response.From), To: int32(response.To)},
+				Text:    response.Text,
+				IsFinal: response.IsDone,
 			}); err != nil {
 				return err
 			}

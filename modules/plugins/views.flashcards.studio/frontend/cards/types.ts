@@ -56,7 +56,7 @@ export interface VaultCard {
    */
   readonly mark: string
   /**
-   * Where the section it stands under stands among the deck's, counting from the first.
+   * Where the section it is placed under stands among the deck's, counting from the first.
    */
   readonly sectionIndex: number | null
   /**
@@ -187,7 +187,7 @@ export interface DeckService {
       sections: readonly VaultSection[]
       tail: string
     },
-    seen: string | null,
+    observed: string | null,
   ): Promise<DeckWriteResult>
 }
 
@@ -207,7 +207,7 @@ export interface StencilService {
   renameField(
     path: string,
     field: { from: string; to: string },
-    seen: string | null,
+    observed: string | null,
   ): Promise<FieldRenameResult>
   readStencil(path: string): Promise<StencilReadResult>
   /** Fields and faces into a stencil, making the file where there is none. */
@@ -219,7 +219,7 @@ export interface StencilService {
       faces: readonly VaultFace[]
       tail: string
     },
-    seen: string | null,
+    observed: string | null,
   ): Promise<StencilWriteResult>
 }
 

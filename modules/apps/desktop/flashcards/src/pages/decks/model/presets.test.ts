@@ -134,7 +134,7 @@ describe('why a preset schedules nothing, in words', () => {
     expect(getStoppedWords(StopReason.UNSPECIFIED, settings(), on)).toBe('')
   })
 
-  it('says which budget stands at nothing', () => {
+  it('says which budget remains at nothing', () => {
     expect(getStoppedWords(StopReason.NO_MINUTES, settings(), on)).toBe('no budget in time')
     expect(getStoppedWords(StopReason.NO_CARDS, settings(), on)).toBe('no cards a day')
     expect(getStoppedWords(StopReason.NO_DAY, settings(), on)).toBe('by no day')
@@ -160,14 +160,14 @@ describe('why a preset schedules nothing, in words', () => {
   })
 })
 
-describe('what a goal comes to in words', () => {
+describe('what a goal evaluates to in words', () => {
   it('says how long a day runs', () => {
     expect(getGoalWords(settings({ minutesADay: 20 }), '2026-09-05')).toBe('20 minutes a day')
     expect(getGoalWords(settings({ minutesADay: 1 }), '2026-09-05')).toBe('1 minute a day')
     expect(getGoalWords(settings({ minutesADay: 0 }), '2026-09-05')).toBe('no budget in time')
   })
 
-  it('says the share asked of memory in hundredths', () => {
+  it('says the share requested of memory in hundredths', () => {
     expect(getGoalWords(settings({ goal: 'retention', retention: 0.9 }), '2026-09-05')).toBe(
       '90% remembered',
     )
@@ -177,8 +177,8 @@ describe('what a goal comes to in words', () => {
   })
 
   it('says the day, and how far off it is', () => {
-    const said = getGoalWords(settings({ goal: 'date', byDate: '2026-09-30' }), '2026-09-12')
-    expect(said).toMatch(/^18 days to /)
+    const saidText = getGoalWords(settings({ goal: 'date', byDate: '2026-09-30' }), '2026-09-12')
+    expect(saidText).toMatch(/^18 days to /)
   })
 
   it('says no day while the goal names none', () => {
@@ -186,17 +186,17 @@ describe('what a goal comes to in words', () => {
   })
 
   it('says only the day once it is today or has passed', () => {
-    const said = (byDate: string) => getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
-    expect(said('2026-09-12')).toMatch(/^by \S/)
-    expect(said('2026-09-10')).toMatch(/^by \S/)
-    expect(said('2026-09-13')).toMatch(/^1 day to /)
+    const saidText = (byDate: string) => getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
+    expect(saidText('2026-09-12')).toMatch(/^by \S/)
+    expect(saidText('2026-09-10')).toMatch(/^by \S/)
+    expect(saidText('2026-09-13')).toMatch(/^1 day to /)
   })
 })
 
 // A budget the goal does not name stands as the person left it and binds
 // nothing. Weighing the day against one of those is measuring against a wall
 // that is not there.
-describe('how far through its day a preset stands', () => {
+describe('how far through its day a preset remains', () => {
   // The user's defaults keep ten new cards a day while being steered by twenty
   // minutes, which is nearer sixty cards. Ten was never a wall.
   it('is weighed against the minutes alone where the minutes close the day', () => {
@@ -227,7 +227,7 @@ describe('how far through its day a preset stands', () => {
   // Two budgets closing one day are two walls, and a day stands as far along as
   // the nearer of them. Answering every new card the day holds is the whole of
   // what the day could give on that side.
-  it('stands at the fuller of two counts and not at their sum', () => {
+  it('remains at the fuller of two counts and not at their sum', () => {
     const one = preset({
       budget: budget({ new: 10, reviews: 200, minutes: 20 }),
       closes: byCounts,
@@ -267,14 +267,14 @@ describe('how far through its day a preset stands', () => {
     expect(getSpentShare(one)).toBeCloseTo(0.75)
   })
 
-  it('stands at nothing where no budget closes the day at all', () => {
+  it('remains at nothing where no budget closes the day at all', () => {
     expect(getSpentShare(preset({ closes: CLOSES_NOTHING, answered: 30, took: 40 }))).toBe(0)
   })
 })
 
 describe('what starting a session on a preset would ask', () => {
   // The count is what the session will put in front of a person, so it is
-  // printed as it stands, under every goal.
+  // printed currently, under every goal.
   it('is the count itself, whatever budget the preset keeps', () => {
     expect(getLeftWords(preset({ cards: 34 }))).toBe('34 cards')
     expect(getLeftWords(preset({ cards: 34, budget: budget({ minutes: 0 }) }))).toBe('34 cards')
@@ -286,7 +286,7 @@ describe('what starting a session on a preset would ask', () => {
     expect(getLeftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('the day is full')
   })
 
-  it('says nothing fell due where the day held none of its cards', () => {
+  it('says nothing fell due where the day retained none of its cards', () => {
     expect(getLeftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing today')
   })
 })
@@ -308,11 +308,11 @@ describe('whether starting a session on a deck is offered', () => {
     expect(canStart(deck(0, 1), createPresets(preset()))).toBe(true)
   })
 
-  it('is refused where the deck owes nothing', () => {
+  it('fails where the deck owes nothing', () => {
     expect(canStart(deck(0), createPresets(preset()))).toBe(false)
   })
 
-  it('is refused where the preset scheduling it schedules nothing', () => {
+  it('fails where the preset scheduling it schedules nothing', () => {
     expect(canStart(deck(3), createPresets(preset({ paused: 'no cards a day' })))).toBe(false)
   })
 
@@ -326,15 +326,15 @@ describe('whether starting a session on a deck is offered', () => {
 describe('why a preset or a deck is asking nothing', () => {
   const on = '2026-09-05'
 
-  it('is said in one register: a clause in lower case, and never a sentence', () => {
-    const said = [
+  it('is returned in one register: a clause in lower case, and never a sentence', () => {
+    const response = [
       STOPPED.nothing,
       STOPPED.full,
       getStoppedWords(StopReason.NO_CARDS, null, on),
       getStoppedWords(StopReason.NO_MINUTES, null, on),
     ]
 
-    for (const one of said) {
+    for (const one of response) {
       expect(one).toBe(one.toLowerCase())
       expect(one).not.toMatch(/[.!?]$/)
     }
@@ -401,7 +401,7 @@ describe('which preset schedules each deck', () => {
       '2026-09-05',
     )
 
-    // What the day leaves is the count's own figure, printed as it stands and
+    // What the day leaves is the count's own figure, printed currently and
     // never worked out again from the budget.
     expect(one.presets.value[0]).toMatchObject({
       cards: 49,
@@ -711,15 +711,15 @@ describe('which preset schedules each deck', () => {
 
   // A person who moves on while the presets of the vault they left are still
   // being asked is handed nothing of that vault.
-  it('holds no preset of a vault left while its presets were being asked', async () => {
+  it('holds no preset of a vault left while its presets were being requested', async () => {
     let answer = () => {}
-    const asked = new Promise<void>((then) => {
+    const request = new Promise<void>((then) => {
       answer = then
     })
     const one = useVaultPresets({
       presets: {
         async getVaultDeckPreset() {
-          await asked
+          await request
           return {
             preset: {
               path: 'Sanskrit.md',
@@ -733,10 +733,10 @@ describe('which preset schedules each deck', () => {
       },
     })
 
-    const reading = one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+    const readText = one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
     one.forget()
     answer()
-    await reading
+    await readText
 
     expect(one.presets.value).toHaveLength(0)
   })
@@ -823,7 +823,7 @@ describe('what a preset read from its decks carries of the count', () => {
     })
   })
 
-  it('stands on its own decks and on nothing answered where the count names it not', async () => {
+  it('relies on its own decks and on nothing answered where the count names it not', async () => {
     const one = useVaultPresets({
       presets: createPresets({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
@@ -849,7 +849,7 @@ describe('what a preset read from its decks carries of the count', () => {
   })
 
   it('says each thing wrong in the file once, the distinct ones apart', async () => {
-    const said: Record<string, string> = {
+    const response: Record<string, string> = {
       'decks/Words.md': '`new_a_day` is not a number',
       'decks/Roots.md': '`load` names no day',
     }
@@ -861,7 +861,7 @@ describe('what a preset read from its decks carries of the count', () => {
               path: 'Sanskrit.md',
               title: 'Sanskrit',
               settings: createSettingsMessage(settings()),
-              problems: [said[deck] ?? ''],
+              problems: [response[deck] ?? ''],
               stopsOn: StopReason.NOTHING,
             },
           }
@@ -988,31 +988,31 @@ describe('what is known of the presets of a vault', () => {
   })
 
   it('stays known while the same vault is read again', async () => {
-    const held = createHeldPresets()
-    const one = useVaultPresets({ presets: held.client })
+    const target = createHeldPresets()
+    const one = useVaultPresets({ presets: target.client })
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
-    held.hold()
-    const reading = one.read(vault([{ deck: 'decks/Words.md', due: 2, new: 1 }]), '2026-09-05')
+    target.hold()
+    const readText = one.read(vault([{ deck: 'decks/Words.md', due: 2, new: 1 }]), '2026-09-05')
 
     expect(one.known.value).toBe(true)
-    held.release()
-    await reading
+    target.release()
+    await readText
     expect(one.known.value).toBe(true)
   })
 
   it('is unknown for another vault until its own reading has run', async () => {
-    const held = createHeldPresets()
-    const one = useVaultPresets({ presets: held.client })
+    const target = createHeldPresets()
+    const one = useVaultPresets({ presets: target.client })
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
-    held.hold()
-    const reading = one.read(other(), '2026-09-05')
+    target.hold()
+    const readText = one.read(other(), '2026-09-05')
 
     expect(one.known.value).toBe(false)
     expect(one.of.value).toBe('01B')
-    held.release()
-    await reading
+    target.release()
+    await readText
     expect(one.known.value).toBe(true)
   })
 

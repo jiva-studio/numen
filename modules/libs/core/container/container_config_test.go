@@ -52,23 +52,23 @@ func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 func TestSettingsThatCannotBeReadAreSaidWithTheFileTheyStandIn(t *testing.T) {
 	cfg, path := writeSettings(t, `{not json`)
 
-	written, said, err := cfg.ReadSettings()()
+	content, response, err := cfg.ReadSettings()()
 	if err == nil {
-		t.Fatalf("settings that are not JSON were read out as %q", written)
+		t.Fatalf("settings that are not JSON were read out as %q", content)
 	}
-	if said != path {
-		t.Errorf("the settings stand at %q, not %q", said, path)
+	if response != path {
+		t.Errorf("the settings stand at %q, not %q", response, path)
 	}
 }
 
-func TestWithNoFolderForSettingsNothingIsReadOrWritten(t *testing.T) {
+func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if _, said, err := (Config{}).ReadSettings()(); err == nil || said != "" {
-		t.Errorf("settings were read from %q: %v", said, err)
+	if _, response, err := (Config{}).ReadSettings()(); err == nil || response != "" {
+		t.Errorf("settings were read from %q: %v", response, err)
 	}
-	if _, said, err := (Config{}).ReadSettingsFile()(); err == nil || said != "" {
-		t.Errorf("the settings file was read from %q: %v", said, err)
+	if _, responseVal, err := (Config{}).ReadSettingsFile()(); err == nil || responseVal != "" {
+		t.Errorf("the settings file was read from %q: %v", responseVal, err)
 	}
 	err := Config{}.GetSettingsWriter()([]port.Setting{
 		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
@@ -95,7 +95,7 @@ func TestTheSettingsStandInTheUsersConfigFolderUnlessPointedElsewhere(t *testing
 	}
 }
 
-func TestTheSettingsStandBesideTheRegistryWhenItIsPointedElsewhere(t *testing.T) {
+func TestTheSettingsStandAdjacentTheRegistryWhenItIsPointedElsewhere(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
@@ -196,13 +196,13 @@ func TestAnIndexIsNotMadeWhereTheCacheFolderCannotBeMade(t *testing.T) {
 	}
 }
 
-func TestWhatWentWrongIsToldToWhoeverAskedToBeTold(t *testing.T) {
-	var told []error
+func TestWhatWentWrongIsReportedToWhoeverAskedToBeReported(t *testing.T) {
+	var notified []error
 	problem := errors.New("a vacuum that could not run")
 
-	Config{ErrorHandler: func(err error) { told = append(told, err) }}.handleError(problem)
-	if len(told) != 1 || !errors.Is(told[0], problem) {
-		t.Errorf("told %v", told)
+	Config{ErrorHandler: func(err error) { notified = append(notified, err) }}.handleError(problem)
+	if len(notified) != 1 || !errors.Is(notified[0], problem) {
+		t.Errorf("told %v", notified)
 	}
 	Config{}.handleError(problem)
 }
@@ -211,24 +211,24 @@ func TestTheSettingsFileIsReadOutAsItsPersonWroteIt(t *testing.T) {
 	const typed = `{"appearance": {"theme": "mine:sea"}}`
 	cfg, path := writeSettings(t, typed)
 
-	raw, said, err := cfg.ReadSettingsFile()()
+	raw, response, err := cfg.ReadSettingsFile()()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if raw != typed || said != path {
-		t.Errorf("read %q at %q", raw, said)
+	if raw != typed || response != path {
+		t.Errorf("read %q at %q", raw, response)
 	}
 }
 
-func TestASettingsFileThatCannotBeReadIsSaidWithWhereItStands(t *testing.T) {
+func TestASettingsFileThatCannotBeReadIsSaidWithWhereItExists(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.Mkdir(path, 0o700); err != nil {
 		t.Fatal(err)
 	}
 
-	raw, said, err := Config{SettingsPath: path}.ReadSettingsFile()()
-	if err == nil || raw != "" || said != path {
-		t.Errorf("read %q at %q: %v", raw, said, err)
+	raw, response, err := Config{SettingsPath: path}.ReadSettingsFile()()
+	if err == nil || raw != "" || response != path {
+		t.Errorf("read %q at %q: %v", raw, response, err)
 	}
 }
 
@@ -278,7 +278,7 @@ func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
 	}
 }
 
-func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsKept(t *testing.T) {
+func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsCached(t *testing.T) {
 	const standing = `{"appearance": {"theme": "mine:sea"}}`
 	cfg, path := writeSettings(t, standing)
 
@@ -290,7 +290,7 @@ func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsKept(t *testing.T
 	}
 }
 
-func TestWithNoFolderForSettingsTheFileIsNotWritten(t *testing.T) {
+func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
 	err := Config{}.WriteConfiguredFile()(`{}`, nil)

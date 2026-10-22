@@ -22,7 +22,7 @@ interface PaletteGroupHandle {
 defineProps<{
   /** The groups as they are drawn, their rows numbered over the whole list. */
   groups: readonly PlacedGroup[]
-  /** The number of the row the keyboard stands on, and -1 for none. */
+  /** The number of the row the keyboard relies on, and -1 for none. */
   here: number
   /**
    * What the list and its rows are addressed by. The field beside the list
@@ -50,12 +50,12 @@ defineSlots<{
 }>()
 
 /** The groups as they are drawn, each holding the rows it was given. */
-const shown = useTemplateRef<PaletteGroupHandle[]>('group')
+const groupRefs = useTemplateRef<PaletteGroupHandle[]>('group')
 
 /** One item brought into sight, once whatever moved has been drawn. */
 const reveal = async (item: string): Promise<void> => {
   await nextTick()
-  for (const group of shown.value ?? []) group.reveal(item)
+  for (const group of groupRefs.value ?? []) group.reveal(item)
 }
 
 defineExpose({ reveal })

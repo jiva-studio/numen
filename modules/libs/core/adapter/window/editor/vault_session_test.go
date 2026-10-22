@@ -72,7 +72,7 @@ func openTwoVaults(t *testing.T) *showing {
 
 	going, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.Services)
+	mountQuestionsServices(mux, installation.Services)
 	mux.Handle(going, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -81,7 +81,7 @@ func openTwoVaults(t *testing.T) *showing {
 	t.Cleanup(server.Close)
 
 	f := &showing{
-		client:       asks(server.Client(), server.URL),
+		client:       newQuestionsClient(server.Client(), server.URL),
 		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
 		cfg:          cfg,
@@ -165,10 +165,10 @@ func (f *showing) getFoundNames(t *testing.T, query string) []string {
 // TestTheWindowSaysWhichVaultItIsShowing. Two windows are open on one
 // installation, so the identity of the vault in front of the person is the
 // window's answer and not the list's.
-func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
+func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if got := f.shows(t, wire.Editor); got != string(f.first.ID) {
+	if got := f.getShownVault(t, wire.Editor); got != string(f.first.ID) {
 		t.Errorf("the window says it is showing %q, want %s", got, string(f.first.ID))
 	}
 
@@ -177,7 +177,7 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 	}
 	f.read(t)
 
-	if got := f.shows(t, wire.Editor); got != string(f.second.ID) {
+	if got := f.getShownVault(t, wire.Editor); got != string(f.second.ID) {
 		t.Errorf("after the swap it says %q, want %s", got, string(f.second.ID))
 	}
 
@@ -190,8 +190,8 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 	}
 }
 
-// shows is the identity of the vault the named window says it is showing.
-func (f *showing) shows(t *testing.T, window string) string {
+// getShownVault returns the identity of the vault the named window says it is showing.
+func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 
 	out, err := f.drawn.GetCurrentVault(t.Context(),
@@ -220,11 +220,11 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
 
-	told := make(chan bool, 1)
+	signalCh := make(chan bool, 1)
 	go func() {
 		for changes.Receive() {
 			if changes.Msg().GetReload() {
-				told <- true
+				signalCh <- true
 				return
 			}
 		}
@@ -255,7 +255,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	}
 
 	select {
-	case <-told:
+	case <-signalCh:
 	case <-time.After(5 * time.Second):
 		t.Error("no page was told that what it holds is from another vault")
 	}
@@ -362,7 +362,7 @@ func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	f := openTwoVaults(t)
 
 	if err := f.installation.Show(t.Context(), f.first); err != nil {
-		t.Fatalf("the vault already shown was refused: %v", err)
+		t.Fatalf("the vault already shown failed: %v", err)
 	}
 	if state := f.state(t); !state.GetScan().GetIsReady() {
 		t.Error("the vault already shown is being read again")
@@ -434,12 +434,12 @@ func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.Wat
 
 // TestAPageThatSaysNothingCostsTheSwapItsBound. A page whose script has stopped
 // answers never, and the vault asked for arrives once the bound is spent.
-func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
+func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	f := openTwoVaults(t)
 
 	// A page that listens and answers nothing.
-	_, done := f.watchQuit(t)
-	defer done()
+	_, isDone := f.watchQuit(t)
+	defer isDone()
 
 	swapped := make(chan error, 1)
 	go func() { swapped <- f.installation.Show(t.Context(), f.second) }()
@@ -460,15 +460,15 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 // TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff. What a person is being
 // asked about is theirs to answer, and the vault it was typed in stays in front
 // of them.
-func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
+func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, done := f.watchQuit(t)
-	defer done()
+	stream, isDone := f.watchQuit(t)
+	defer isDone()
 
-	asked := make(chan struct{})
+	request := make(chan struct{})
 	go func() {
-		defer close(asked)
+		defer close(request)
 		for stream.Receive() {
 			if !stream.Msg().GetFlush() {
 				continue
@@ -491,7 +491,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	}
 
 	select {
-	case <-asked:
+	case <-request:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page was never asked for what it holds")
 	}
@@ -504,14 +504,14 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 }
 
 // TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther. One settling runs at a
-// time. The second to arrive is refused, and the first runs to its end.
+// time. The second to arrive fails, and the first runs to its end.
 func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, done := f.watchQuit(t)
-	defer done()
+	stream, isDone := f.watchQuit(t)
+	defer isDone()
 
-	told := make(chan struct{})
+	signalCh := make(chan struct{})
 	release := make(chan struct{})
 	wrote := make(chan struct{})
 	go func() {
@@ -520,7 +520,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			close(told)
+			close(signalCh)
 			<-release
 			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
@@ -533,15 +533,15 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 		}
 	}()
 
-	settled := make(chan bool, 1)
+	resolved := make(chan bool, 1)
 	go func() {
 		ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 		defer cancel()
-		settled <- f.installation.FlushPending(ctx)
+		resolved <- f.installation.FlushPending(ctx)
 	}()
 
 	select {
-	case <-told:
+	case <-signalCh:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the close never asked the page for what it holds")
 	}
@@ -552,7 +552,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	close(release)
 
 	select {
-	case ok := <-settled:
+	case ok := <-resolved:
 		if !ok {
 			t.Error("the close was called off by the vault asked for beside it")
 		}
@@ -577,15 +577,15 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 	f := openTwoVaults(t)
 
 	asking, stop := context.WithCancel(t.Context())
-	var asked sync.WaitGroup
+	var request sync.WaitGroup
 	for _, of := range []v1.ArtifactKind{
 		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		v1.ArtifactKind_ARTIFACT_KIND_OCR,
 		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	} {
-		asked.Add(1)
+		request.Add(1)
 		go func() {
-			defer asked.Done()
+			defer request.Done()
 			for asking.Err() == nil {
 				f.installation.Services.Artifact.CreateArtifact(asking, connect.NewRequest(&v1.CreateArtifactRequest{
 					Path: entropy, Kind: of,
@@ -606,5 +606,5 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 	}
 
 	stop()
-	asked.Wait()
+	request.Wait()
 }

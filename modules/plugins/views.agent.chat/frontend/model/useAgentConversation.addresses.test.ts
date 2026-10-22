@@ -16,11 +16,11 @@ vi.mock('@numen/ui', async (importOriginal) => {
 
 /** A line of an answer. */
 const turn = (id: string, text: string): Turn =>
-  ({ id, text, voice: 'said', state: 'done' }) as unknown as Turn
+  ({ id, text, voice: 'answered', state: 'settled' })
 
 /** An agent tab over turns already said, and a vault that answers for the notes given. */
-const open = (said: Turn[] = [], notes: Record<string, string> = {}) => {
-  const turns = ref<Turn[]>(said)
+const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
+  const turns = ref<Turn[]>(turn)
   const conversation: Conversation = {
     turns,
     isWorking: ref(false),
@@ -30,18 +30,18 @@ const open = (said: Turn[] = [], notes: Record<string, string> = {}) => {
     finish: () => {},
   }
   const resolved: (readonly string[])[] = []
-  const opened: [string, readonly Span[]][] = []
-  const beside: string[] = []
+  const openedCalls: [string, readonly Span[]][] = []
+  const besideItems: string[] = []
   const state = useAgentConversation(conversation, {
-    openFileAt: (path, ...spans) => opened.push([path, spans]),
-    openFileBeside: (path) => beside.push(path),
-    resolve: async (written) => {
-      resolved.push(written)
-      return new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
+    openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
+    openFileBeside: (path) => besideItems.push(path),
+    resolve: async (content) => {
+      resolved.push(content)
+      return new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
     },
     unreachable: () => '',
   })
-  return { state, turns, resolved, opened, beside }
+  return { state, turns, resolved, opened: openedCalls, beside: besideItems }
 }
 
 /** Lets the lookups come back and the turns be drawn. */
@@ -49,7 +49,7 @@ const settle = async () => {
   for (let step = 0; step < 4; step++) await nextTick()
 }
 
-/** The text of a turn changed where it stands, as it grows while being said. */
+/** The text of a turn changed at its current position, as it grows while active. */
 const rewrite = (one: Turn, text: string) => {
   ;(one as { text: string }).text = text
 }
@@ -61,7 +61,7 @@ const createPress = () => {
 }
 
 describe('the notes an answer names', () => {
-  it('are looked up as soon as the tab is made over turns already said', () => {
+  it('are looked up as soon as the tab is made over turns already returned', () => {
     const one = open([turn('a', 'See [[Entropy]].')])
 
     expect(one.resolved).toEqual([['name://Entropy']])
@@ -75,7 +75,7 @@ describe('the notes an answer names', () => {
     expect(one.resolved).toEqual([['name://Entropy'], ['name://Order']])
   })
 
-  it('are looked up again when the last turn grows while it is being said', async () => {
+  it('are looked up again when the last turn grows while it is being returned', async () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     await settle()
 

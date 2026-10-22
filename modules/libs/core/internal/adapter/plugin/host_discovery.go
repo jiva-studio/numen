@@ -25,13 +25,13 @@ func (h *Host) Discover() error {
 		return nil
 	}
 	h.problems = problems
-	stale := h.registerDiscoveredLocked(discovered)
+	stalePlugins := h.registerDiscoveredLocked(discovered)
 	h.mu.Unlock()
 
 	for _, problem := range problems {
 		h.reportError(problem.Err)
 	}
-	for _, id := range stale {
+	for _, id := range stalePlugins {
 		h.retirePlugin(id)
 	}
 	return nil
@@ -45,7 +45,7 @@ func (h *Host) registerDiscoveredLocked(discovered []DiscoveredPlugin) []string 
 	for _, p := range discovered {
 		id := p.Manifest.ID
 		present[id] = true
-		if known, ok := h.plugins[id]; ok && !reflect.DeepEqual(known, p) {
+		if recognized, ok := h.plugins[id]; ok && !reflect.DeepEqual(recognized, p) {
 			stale = append(stale, id)
 		}
 		h.plugins[id] = p

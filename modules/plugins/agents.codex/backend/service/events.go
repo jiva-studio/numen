@@ -22,7 +22,7 @@ func handleCodexEvent(r *agentrun.Reader, rawMap map[string]any) {
 	switch {
 	case evType == "item.completed" && item["type"] == "agent_message":
 		if text, _ := item["text"].(string); text != "" {
-			r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}})
+			r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}})
 		}
 	case evType == "item.started" && item["type"] == "mcp_tool_call":
 		r.Send(&numenv1.AskAgentResponse{

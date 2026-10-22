@@ -35,8 +35,8 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	last := now.AddDate(0, 0, -1)
 	// A card face first seen yesterday and put off by sixteen days, which is
 	// under the default interval of twenty-one.
-	near := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
-	if p.IsLearned(near, now) {
+	targetSchedule := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
+	if p.IsLearned(targetSchedule, now) {
 		t.Error("a card face sixteen days off is learned under settings naming no rule")
 	}
 	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
@@ -112,7 +112,7 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 //
 // A setting dropped on either side is a person moving a control, watching the
 // value never leave the window, and finding the note written without it.
-func TestEverySettingComesBackAsItWentOut(t *testing.T) {
+func TestEverySettingReachesBackAsItWentOut(t *testing.T) {
 	was := review.Preset{
 		Goal:        review.GoalDate,
 		By:          time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),

@@ -127,7 +127,7 @@ func (x *ReadOcrResponse) GetRuns() []*Run {
 	return nil
 }
 
-// A Run is one run of the text: what it says, and where it stands on the pages
+// A Run is one run of the text: what it says, and where it relies on the pages
 // it was read from. A run standing nowhere carries no boxes.
 type Run struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`

@@ -30,9 +30,9 @@ const create = (doc: string, caret = doc.length) => {
 
 /** The decorations as plain data: where they stand and what they stand for. */
 const describeMarks = (state: EditorState, source: 'field' | 'full') => {
-  const set = source === 'field' ? state.field(wholeLines).marks : blockMarks(state)
+  const activeSet = source === 'field' ? state.field(wholeLines).marks : blockMarks(state)
   const found: unknown[] = []
-  set.between(0, state.doc.length, (from, to, mark) => {
+  activeSet.between(0, state.doc.length, (from, to, mark) => {
     const widget = mark.spec.widget as { table?: unknown; isWritable?: boolean } | undefined
     found.push({
       from,

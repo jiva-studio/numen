@@ -81,14 +81,14 @@ func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 // everything a person has to act on is said in the window they are looking at.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
-	for _, held := range readSources(t) {
-		for _, one := range held.file.Imports {
+	for _, target := range readSources(t) {
+		for _, one := range target.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, held.at+" imports "+to)
+				wrong = append(wrong, target.at+" imports "+to)
 			}
 		}
 	}
@@ -101,18 +101,18 @@ func TestNoApplicationLogs(t *testing.T) {
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
-	var refused []string
+	var violations []string
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template",
 		"github.com/jiva-studio/numen/modules/libs/notes/domain",
 	} {
 		if logs(to) {
-			refused = append(refused, to)
+			violations = append(violations, to)
 		}
 	}
 	want := []string{"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog"}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if !slices.Equal(violations, want) {
+		t.Errorf("the rule rejects %v, want %v", violations, want)
 	}
 }

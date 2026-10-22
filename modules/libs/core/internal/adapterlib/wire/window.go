@@ -28,7 +28,7 @@ const (
 // ErrAnotherWindow is a question naming a window other than the one it reached.
 var ErrAnotherWindow = errors.New("that is another window")
 
-// A Reason is why something a window shows is not so, as it stands now, said by
+// A Reason is why something a window shows is not so, currently now, said by
 // whatever found out and read by whoever draws the window.
 //
 // The empty reason is nothing being the matter. It is a reason and not a flag:
@@ -133,8 +133,8 @@ func (w *Window) WatchQuit(
 	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return err
 	}
-	token, told, done := w.clients.registerClient()
-	defer done()
+	token, notified, isDone := w.clients.registerClient()
+	defer isDone()
 
 	// The token before anything is asked. A client that has not been given one
 	// cannot answer, and a stream that says nothing until the window goes is
@@ -157,11 +157,11 @@ func (w *Window) WatchQuit(
 			if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 				return err
 			}
-		case asked, listening := <-told:
-			if !listening {
+		case request, isOpen := <-notified:
+			if !isOpen {
 				return nil
 			}
-			if err := out.Send(&v1.WatchQuitResponse{Token: asked, Flush: true}); err != nil {
+			if err := out.Send(&v1.WatchQuitResponse{Token: request, Flush: true}); err != nil {
 				return err
 			}
 		}
@@ -470,7 +470,7 @@ func (l *flushCoordinator) recordFlush(token string, said flushState) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if p, listening := l.clients[token]; listening && !p.isDisconnected {
+	if p, found := l.clients[token]; found && !p.isDisconnected {
 		p.state = said
 	}
 	l.updateProgress()

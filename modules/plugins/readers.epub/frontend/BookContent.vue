@@ -10,7 +10,7 @@ import { WORDS as words } from './words'
 const props = defineProps<{
   markup: string
   path: string
-  reading: Span
+  documentSpan: Span
   bookSpan: Span
   offset: number
   highlights: readonly Span[]
@@ -67,7 +67,7 @@ defineExpose({
     ref="book"
     :markup="props.markup"
     :path="props.path"
-    :span="props.reading"
+    :span="props.documentSpan"
     :book="props.bookSpan"
     :at="props.offset"
     :highlights="props.highlights"

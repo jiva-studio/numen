@@ -33,7 +33,7 @@ type Scope struct {
 	IsNamed bool
 }
 
-// QueuedCardFace is one card face as the session queues it: where it stands,
+// QueuedCardFace is one card face as the session queues it: at its current position,
 // how it is laid out, and where the answers so far have left it.
 type QueuedCardFace struct {
 	CardFace
@@ -130,7 +130,7 @@ func (u Session) Execute(
 	// The log is read once here and the schedules worked out from it, so that
 	// what a person is told about lines that could not be read is the log
 	// their own cards were laid out from.
-	held, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}
@@ -141,11 +141,11 @@ func (u Session) Execute(
 	if err != nil {
 		return SessionResult{}, err
 	}
-	schedules := u.schedules.getSchedulesCached(ctx, v, held, asks)
+	schedules := u.schedules.getSchedulesCached(ctx, v, target, asks)
 
 	now := u.now()
 	day, err := getBudgets(
-		ctx, v, reads, u.day, faces, schedules, held,
+		ctx, v, reads, u.day, faces, schedules, target,
 		u.schedules.by, u.schedules.getScheduler, now,
 	)
 	if err != nil {
@@ -163,7 +163,7 @@ func (u Session) Execute(
 		on.Add(s.Due)
 	}
 
-	out := SessionResult{Unwritten: marked.Unwritten, Skipped: held.Skipped}
+	out := SessionResult{Unwritten: marked.Unwritten, Skipped: target.Skipped}
 	out.Queue = make([]QueuedCardFace, 0, len(holds.owed)+len(holds.fresh))
 	for _, one := range holds.owed {
 		s := schedules[one.ID]

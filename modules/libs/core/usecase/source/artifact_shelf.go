@@ -15,14 +15,14 @@ type artifactShelf struct {
 	derived port.DerivedStores
 }
 
-// getHash is the hash everything made from one file stands under. A url stands
+// getHash is the hash everything made from one file is placed under. A url stands
 // under its address, and the index recorded that when it walked past.
 func (s artifactShelf) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
-	said, held, err := s.queries.GetSourceText(ctx, v.ID, path)
-	if err != nil || !held {
+	response, target, err := s.queries.GetSourceText(ctx, v.ID, path)
+	if err != nil || !target {
 		return "", err
 	}
-	return said.Hash, nil
+	return response.Hash, nil
 }
 
 // artifactFile is the file one producer's artifact stands in, and its size.
@@ -98,7 +98,7 @@ func (s artifactShelf) getArtifacts(ctx context.Context, v domain.Vault, path st
 	return artifactSet{Artifacts: out, Store: store, Hash: hash}, nil
 }
 
-// getArtifactWords is the artifact as it stands on disk. A transcript is the WebVTT it
+// getArtifactWords is the artifact as it relies on disk. A transcript is the WebVTT it
 // is written in, times and all.
 func getArtifactWords(ctx context.Context, store port.DerivedStore, producer, hash string) (string, error) {
 	found, err := getArtifactFile(ctx, store, producer, hash)

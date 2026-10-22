@@ -11,7 +11,7 @@ import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { useFileTree, ROOT } from '../model/useFileTree'
 import type { Entry } from '../types'
-import { drawing } from '../fixtures/host'
+import { renderDeps } from '../fixtures/host'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
@@ -39,7 +39,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
-    ...drawing,
+    ...renderDeps,
     openEntry: () => {},
     runCommand: () => {},
     movePath: async () => {},
@@ -114,8 +114,8 @@ export const AFolderOpened: Story = {
     // What a folder holds is drawn inside it, and reads as inside it.
     const canvas = within(canvasElement)
     const holder = canvas.getByText('physics').getBoundingClientRect()
-    const held = canvas.getByText('Kelvin.md').getBoundingClientRect()
-    await expect(held.left).toBeGreaterThan(holder.left)
+    const target = canvas.getByText('Kelvin.md').getBoundingClientRect()
+    await expect(target.left).toBeGreaterThan(holder.left)
   },
 }
 
@@ -132,9 +132,9 @@ export const TheMenuOnARow: Story = {
 
     const getMenuItems = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     await waitFor(() => expect(getMenuItems().length).toBeGreaterThan(0))
-    const said = getMenuItems().map((one) => one.textContent?.trim())
-    await expect(said).toContain('Rename')
-    await expect(said).toContain('Remove note')
+    const saidText = getMenuItems().map((one) => one.textContent?.trim())
+    await expect(saidText).toContain('Rename')
+    await expect(saidText).toContain('Remove note')
 
     // The whole of it is on the screen, on every side.
     const menu = document.body.querySelector<HTMLElement>('[role="menu"]')!.getBoundingClientRect()

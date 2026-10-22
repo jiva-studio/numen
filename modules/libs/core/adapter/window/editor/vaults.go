@@ -38,12 +38,12 @@ func (s *vaultsHandler) ListVaults(
 	if s.list == nil || s.folderCheck == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	held, err := s.list.Execute()
+	target, err := s.list.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(held))}
-	for _, v := range held {
+	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(target))}
+	for _, v := range target {
 		out.Vaults = append(out.Vaults, s.convertVaultToWire(v))
 	}
 	return connect.NewResponse(out), nil
@@ -57,7 +57,7 @@ func (s *vaultsHandler) ChooseFolder(
 	if s.chooseFolder == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	chosen, err := s.chooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	selected, err := s.chooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
 	if vaults.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -65,7 +65,7 @@ func (s *vaultsHandler) ChooseFolder(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	// A person who closed the dialog chose nothing, and that is an answer.
-	return connect.NewResponse(&v1.ChooseFolderResponse{Path: chosen.Path, IsChosen: chosen.IsChosen}), nil
+	return connect.NewResponse(&v1.ChooseFolderResponse{Path: selected.Path, IsChosen: selected.IsChosen}), nil
 }
 
 // AddVault turns a folder into a vault on the list. A name another vault has
@@ -79,8 +79,8 @@ func (s *vaultsHandler) AddVault(
 	}
 	added, err := s.add.Execute(r.Msg.GetPath(), r.Msg.GetName())
 	if err != nil {
-		reason, refused := vaultsErrorCodeBy(err)
-		if !refused {
+		reason, ok := vaultsErrorCodeBy(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
@@ -102,8 +102,8 @@ func (s *vaultsHandler) RenameVault(
 		v, err = s.rename.Execute(ctx, v, r.Msg.GetName())
 	}
 	if err != nil {
-		reason, refused := vaultsErrorCodeBy(err)
-		if !refused {
+		reason, ok := vaultsErrorCodeBy(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
@@ -122,8 +122,8 @@ func (s *vaultsHandler) RemoveVault(
 	}
 	err := s.remove.Execute(ctx, r.Msg.GetId(), s.state.GetCurrentVault().ID, r.Msg.GetTrash())
 	if err != nil {
-		reason, refused := vaultsErrorCodeBy(err)
-		if !refused {
+		reason, ok := vaultsErrorCodeBy(err)
+		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &reason}), nil
@@ -151,8 +151,8 @@ func (s *vaultsHandler) OpenVault(
 	if errors.Is(err, errWindowClosing) || errors.Is(err, errShutdownInProgress) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
-	reason, refused := vaultsErrorCodeBy(err)
-	if !refused {
+	reason, ok := vaultsErrorCodeBy(err)
+	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil

@@ -15,7 +15,7 @@ func TestParseProviderAcceptsEverySpelling(t *testing.T) {
 	}
 }
 
-func TestParseProviderRefusesAnUnknownNameAndFallsBackToTheCPU(t *testing.T) {
+func TestParseProviderRejectsAnUnknownNameAndFallsBackToTheCPU(t *testing.T) {
 	got, err := ParseProvider("tpu")
 	if err == nil || got != ProviderCPU {
 		t.Errorf("ParseProvider(tpu) = %q, %v, want cpu and an error", got, err)

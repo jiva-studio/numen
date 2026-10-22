@@ -17,10 +17,10 @@ func busy(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is busy")
 }
 
-// A deck that could not be written is named and left as it stands. The editor
+// A deck that could not be written is named and left currently. The editor
 // may be holding it, and a person is told which deck their cards are missing
-// from rather than left to wonder.
-func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
+// from and not left to wonder.
+func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 
@@ -40,7 +40,7 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 // A deck the index could not be brought level with was written all the same.
 // Its cards carry the marks that were minted, so they stand in this session and
 // nothing has to mint them a second time.
-func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
+func TestADeckSavedWithNoLevellingIsNotNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 	marking := s.marking.WithIndex(busy)
@@ -52,22 +52,22 @@ func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 	if len(marked.Unwritten) != 0 {
 		t.Fatalf("the deck was written and is named as unwritten: %v", marked.Unwritten)
 	}
-	if held := read(t, s.vault, "decks/Own.md"); !strings.Contains(held, "## Leaf mould ^") {
-		t.Errorf("the deck carries no mark: %q", held)
+	if target := read(t, s.vault, "decks/Own.md"); !strings.Contains(target, "## Leaf mould ^") {
+		t.Errorf("the deck carries no mark: %q", target)
 	}
 
-	stood, err := s.standings.Execute(t.Context(), s.vault)
+	status, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 {
-		t.Errorf("the marked card stands %d times, want once", len(stood))
+	if len(status) != 1 {
+		t.Errorf("the marked card stands %d times, want once", len(status))
 	}
 }
 
 // A vault whose decks are all written has nothing to report, which is what says
 // the naming above is the refusal and not the ordinary case.
-func TestAVaultWhoseDecksAreWrittenNamesNone(t *testing.T) {
+func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 

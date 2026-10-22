@@ -16,7 +16,7 @@ func TestTwoMachinesRunningOneModelAgree(t *testing.T) {
 	}
 }
 
-func TestTwoModelsUnderOneNameAreCaughtByWhatTheySay(t *testing.T) {
+func TestTwoModelsBelowOneNameAreCaughtByWhatTheySay(t *testing.T) {
 	// Nothing in a settings file tells these apart: both are called bge-m3 and
 	// both are three wide.
 	if embedding.IsAgreed([]float32{1, 0, 0}, []float32{0, 1, 0}) {
@@ -39,7 +39,7 @@ func TestOneDimensionEachWayCanAgree(t *testing.T) {
 	}
 }
 
-func TestVectorsStandingExactlyAtTheAgreementAgree(t *testing.T) {
+func TestVectorsActiveExactlyAtTheAgreementAgree(t *testing.T) {
 	// The dot product of these is exactly Agreement: a float32 head and two
 	// float32 pieces that sum to the rest of it.
 	target := float64(embedding.Agreement)

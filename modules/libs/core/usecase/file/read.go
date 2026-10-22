@@ -45,7 +45,7 @@ type ReadResult struct {
 	// within the file and cut at the characters around it.
 	Start  int
 	Length int
-	// Whole is how long the file is, in bytes, so a caller knows what stands on
+	// Whole is how long the file is, in bytes, so a caller knows what relies on
 	// either side of the range.
 	Whole int
 }
@@ -88,12 +88,12 @@ func (u Read) Execute(
 	defer file.Close()
 
 	// A listing of the folder above is the vault saying what it holds there.
-	held, err := getReadOutcome(ctx, reader, path)
+	target, err := getReadOutcome(ctx, reader, path)
 	if err != nil {
 		return ReadResult{}, err
 	}
-	if held != Ok {
-		out.Outcome = held
+	if target != Ok {
+		out.Outcome = target
 		return out, nil
 	}
 

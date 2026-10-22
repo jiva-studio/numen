@@ -84,10 +84,10 @@ func serveAgents(
 	// this window can reach one.
 	api.Unreachable.Store("")
 
-	held := &vaultTracker{}
-	held.endpoint = &agents.Endpoint{
+	target := &vaultTracker{}
+	target.endpoint = &agents.Endpoint{
 		Serve: func() (func() error, error) {
-			v := held.getVault()
+			v := target.getVault()
 			root, err := filepath.Abs(v.Path)
 			if err != nil {
 				return nil, err
@@ -107,15 +107,15 @@ func serveAgents(
 			api.SetAgent(served.Agent)
 			return served.Close, nil
 		},
-		GetVault:       held.getVault,
+		GetVault:       target.getVault,
 		SetAgent:       api.SetAgent,
 		SetUnreachable: func(why string) { api.Unreachable.Store(why) },
 		ErrorHandler:   func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
-	api.Opened = held.SetSessionVault
+	api.Opened = target.SetSessionVault
 	return func() error {
-		held.endpoint.Stop()
+		target.endpoint.Stop()
 		return nil
 	}
 }

@@ -67,11 +67,11 @@ export function cutToFit(label: string, room: number, width: (label: string) => 
   const truncateTo = (count: number) => `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
 
   let fits = 0
-  let over = letters.length
-  while (fits + 1 < over) {
-    const middle = Math.floor((fits + over) / 2)
+  let overCount = letters.length
+  while (fits + 1 < overCount) {
+    const middle = Math.floor((fits + overCount) / 2)
     if (width(truncateTo(middle)) <= room) fits = middle
-    else over = middle
+    else overCount = middle
   }
   return truncateTo(fits)
 }
@@ -136,7 +136,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
 
-  const along: EdgeCurve = {
+  const alongEdge: EdgeCurve = {
     fromPoint: firstGate,
     control1: getControl(firstGate, isVertical, reach),
     control2: getControl(secondGate, isVertical, -reach),
@@ -145,7 +145,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 
   // The caller's from and to are kept, so the curve may run right to left or
   // bottom to top.
-  return fromFirst ? along : reverse(along)
+  return fromFirst ? alongEdge : reverse(alongEdge)
 }
 
 /**
@@ -176,17 +176,17 @@ export function routeEdge(
   const to = byId.get(edge.to)
   if (!from || !to || from === to) return null
 
-  const routing = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const opacity = 'curvature' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
 
-  const curve = curveBetween(from, to, routing)
+  const curve = curveBetween(from, to, routingOptions)
 
   return {
     ...edge,
     ...curve,
     opacity,
     heading: getHeading(curve, MIDDLE),
-    words: cutLabel(edge, curve, routing),
+    words: cutLabel(edge, curve, routingOptions),
     wordsAt: MIDDLE,
     arrowhead: edge.arrow ? getArrow(curve, edge.arrow) : undefined,
   }
@@ -202,11 +202,11 @@ export function routeEdges(
   byId: ReadonlyMap<string, PlacedNode>,
   routingOrOptions: Routing | RouteEdgesOptions,
 ): PlacedEdge[] {
-  const routing = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const getOpacity =
     'curvature' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
 
   return edges
-    .map((edge) => routeEdge(edge, byId, { routing, opacity: getOpacity(edge) }))
+    .map((edge) => routeEdge(edge, byId, { routing: routingOptions, opacity: getOpacity(edge) }))
     .filter((edge): edge is PlacedEdge => edge !== null)
 }

@@ -277,8 +277,8 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "plugin manager not configured", http.StatusNotFound)
 		return
 	}
-	trimmed := strings.TrimPrefix(r.URL.Path, pluginAssetsRoute)
-	parts := strings.SplitN(trimmed, "/", 2)
+	assetPath := strings.TrimPrefix(r.URL.Path, pluginAssetsRoute)
+	parts := strings.SplitN(assetPath, "/", 2)
 	if len(parts) < 2 || parts[0] == "" || parts[1] == "" || !filepath.IsLocal(parts[1]) {
 		http.Error(w, "invalid plugin asset path", http.StatusBadRequest)
 		return

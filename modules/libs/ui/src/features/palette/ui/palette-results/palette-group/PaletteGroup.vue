@@ -14,7 +14,7 @@ import { optionId, type PlacedGroup } from '../../../lib/place'
 const props = defineProps<{
   /** The group as it is drawn, its rows numbered over the whole list. */
   placed: PlacedGroup
-  /** The number of the row the keyboard stands on, and -1 for none. */
+  /** The number of the row the keyboard relies on, and -1 for none. */
   here: number
   /** What the list and its rows are addressed by. */
   uid: string
@@ -33,17 +33,17 @@ defineSlots<{
 }>()
 
 /** The rows as they are drawn, each under the item it stands for. */
-const drawn = new Map<string, HTMLElement>()
+const itemElements = new Map<string, HTMLElement>()
 
 const hold = (item: string, row: Element | ComponentPublicInstance | null): void => {
   const element = row && '$el' in row ? (row.$el as HTMLElement) : (row as HTMLElement | null)
-  if (element) drawn.set(item, element)
-  else drawn.delete(item)
+  if (element) itemElements.set(item, element)
+  else itemElements.delete(item)
 }
 
 /** One item brought into sight, where this group is the one holding it. */
 const reveal = (item: string): void => {
-  drawn.get(item)?.scrollIntoView?.({ block: 'nearest' })
+  itemElements.get(item)?.scrollIntoView?.({ block: 'nearest' })
 }
 
 defineExpose({ reveal })

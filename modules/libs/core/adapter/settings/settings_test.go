@@ -39,11 +39,11 @@ func openAt(path string) (container.Settings, error) {
 // newDocument is the whole file as the installation declares it, holding what
 // an installation nobody has configured does.
 func newDocument() *container.Settings {
-	held := container.DefaultSettings()
-	return &held
+	target := container.DefaultSettings()
+	return &target
 }
 
-func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) {
+func TestAnUntouchedInstallationEmbedsLocallyAndIsGeneratedAsDesigned(t *testing.T) {
 	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -103,18 +103,18 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	_, err := openAt(write(t, `{"appearance":{"text_scale":3}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
-		t.Fatalf("refused with %v", err)
+		t.Fatalf("failed with %v", err)
 	}
 	if outside.At != "appearance.text_scale" || outside.Number != 3 {
-		t.Errorf("refused %+v", outside)
+		t.Errorf("failed %+v", outside)
 	}
 	if outside.Least != settings.TextScaleBounds.Least || outside.Most != settings.TextScaleBounds.Most {
 		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
 	}
 	// What is wrong is the number and how far the setting goes, in the sentence
 	// a person is shown.
-	if said := outside.Error(); !strings.Contains(said, "appearance.text_scale is 3") {
-		t.Errorf("says %q", said)
+	if response := outside.Error(); !strings.Contains(response, "appearance.text_scale is 3") {
+		t.Errorf("says %q", response)
 	}
 }
 
@@ -160,7 +160,7 @@ func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
 
 // The file a person arranged comes back from the renaming with one word of it
 // changed, down to the blank lines and a number written to two places.
-func TestTheRenamingLeavesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
+func TestTheRenamingPreservesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
 	path := write(t, arranged)
 	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
@@ -178,7 +178,7 @@ func TestTheRenamingLeavesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
 
 // The renaming happens once. Every launch after it reads a file naming the
 // setting, so there is nothing to carry and nothing to say, ever again.
-func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
+func TestASecondLaunchRenamesNothingAndReturnsNothing(t *testing.T) {
 	path := write(t, arranged)
 	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
@@ -214,7 +214,7 @@ func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
 
 // A file naming both is drawn at the one this build reads, and keeps both
 // names: one section holds one of a name.
-func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
+func TestAFileNamingBothIsGeneratedAtTheOneThisBuildReads(t *testing.T) {
 	const both = `{"appearance":{"zoom":1.5,"interface_scale":1.25}}`
 	path := write(t, both)
 	cfg, err := openAt(path)
@@ -238,7 +238,7 @@ func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
 
 // A file nothing may be written over is a window that opens, drawn at the
 // size the file names under the name it names it by.
-func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
+func TestAFileThatCannotBeSavedIsReadAndGeneratedAtTheSizeItNames(t *testing.T) {
 	folder := t.TempDir()
 	path := filepath.Join(folder, "numen.json")
 	if err := os.WriteFile(path, []byte(arranged), 0o600); err != nil {
@@ -270,7 +270,7 @@ func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
 
 // Zero named no size, and every file this application has ever written for
 // itself holds one.
-func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
+func TestAZoomNamingNoSizeCarriesNothingAndReturnsNothing(t *testing.T) {
 	cfg, err := openAt(write(t, `{"appearance":{"zoom":0}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -284,8 +284,8 @@ func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
 }
 
 // A session that scaled its own text goes on being drawn by it, whether the
-// file names nothing about size or names the size of the text alone.
-func TestAFileNamingNoSizeIsDrawnAtWhatTheDesktopAsksFor(t *testing.T) {
+// file is empty about size or names the size of the text alone.
+func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
 	for _, body := range []string{`{}`, `{"appearance":{"zoom":0}}`, `{"appearance":{"text_scale":1.25}}`} {
 		cfg, err := openAt(write(t, body))
@@ -301,7 +301,7 @@ func TestAFileNamingNoSizeIsDrawnAtWhatTheDesktopAsksFor(t *testing.T) {
 // A file naming a size is drawn at it, under either name.
 func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
-	for body, drawn := range map[string]float64{
+	for body, scale := range map[string]float64{
 		`{"appearance":{"interface_scale":1.25}}`: 1.25,
 		`{"appearance":{"zoom":1.25}}`:            1.25,
 	} {
@@ -309,7 +309,7 @@ func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Appearance.InterfaceScale != drawn {
+		if cfg.Appearance.InterfaceScale != scale {
 			t.Errorf("%s is drawn at %v", body, cfg.Appearance.InterfaceScale)
 		}
 	}
@@ -329,11 +329,11 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 
 // A number the setting does not take is not carried onto it, and a window whose
 // file was written by an older build opens. The field keeps the name it has, so
-// the launch after this one is not refused over a number a person never wrote
+// the launch after this one is not rejected over a number a person never wrote
 // under that name.
 func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
-	const held = `{"appearance":{"zoom":3}}`
-	path := write(t, held)
+	const target = `{"appearance":{"zoom":3}}`
+	path := write(t, target)
 	cfg, err := openAt(path)
 	if err != nil {
 		t.Fatal(err)
@@ -345,7 +345,7 @@ func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(raw) != held {
+	if string(raw) != target {
 		t.Errorf("the file is now %s", raw)
 	}
 
@@ -387,15 +387,15 @@ func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
 		if len(cfg.Notices) != 1 {
 			t.Fatalf("%s: the person is told %q", zoom, cfg.Notices)
 		}
-		if said := cfg.Notices[0]; len(said) > 62 {
-			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(said), said)
+		if response := cfg.Notices[0]; len(response) > 62 {
+			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(response), response)
 		}
 	}
 }
 
 // What the file holds is what is written back, and the two names are not both
 // written.
-func TestWhatIsWrittenBackNamesTheSettingThisBuildReads(t *testing.T) {
+func TestWhatIsSavedBackNamesTheSettingThisBuildReads(t *testing.T) {
 	cfg, err := openAt(write(t, `{"appearance":{"zoom":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -537,7 +537,7 @@ func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
 
 // An older file naming key_env loads, and no variable of the environment, the
 // one it names or any other, becomes a key of the settings.
-func TestNoEnvironmentVariableGivesTheServiceAKey(t *testing.T) {
+func TestNoEnvironmentVariableProducesTheServiceAKey(t *testing.T) {
 	variables := map[string]string{
 		"NUMEN_EMBEDDING_KEY":    "sk-env-numen-embedding",
 		"NUMEN_PROOFREADING_KEY": "sk-env-numen-proofreading",
@@ -679,7 +679,7 @@ func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
 
 // Which profile puts each kind of text right, and whether it happens without
 // anybody asking, is said where the text is configured.
-func TestEachKindOfTextNamesTheProfileThatPutsItRight(t *testing.T) {
+func TestEachKindOfTextNamesTheProfileThatInsertsItRight(t *testing.T) {
 	cfg, err := openAt(write(t, `{"indexing":{
 		"recognition":   {"proofread":{"with":"openrouter","automatically":true}},
 		"transcription": {"proofread":{"with":"agent","automatically":false}}
@@ -699,7 +699,7 @@ func TestEachKindOfTextNamesTheProfileThatPutsItRight(t *testing.T) {
 // leaving the section out, leaving the field out and writing false are three
 // different things a person can write, and the last of them is the only one
 // that turns it off.
-func TestATitleAndAFilenameAreOneNameUntilTheFileSaysOtherwise(t *testing.T) {
+func TestATitleAndAFilenameAreOneNameUntilTheFileReturnsOtherwise(t *testing.T) {
 	for name, c := range map[string]struct {
 		file       string
 		shouldSync bool
@@ -756,7 +756,7 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 // through a pointer the way the naming is: leaving the section out, leaving the
 // field out and writing false are three different things a person can write,
 // and the last of them is the only one that turns it off.
-func TestANodeHangsTheHeadingsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
+func TestANodeHangsTheHeadingsOfItsNoteUntilTheFileReturnsOtherwise(t *testing.T) {
 	for name, c := range map[string]struct {
 		file       string
 		isHanging  bool
@@ -814,7 +814,7 @@ func TestAnUntouchedInstallationWritesTheNestingDown(t *testing.T) {
 
 // How many headings stand under a node at once. A file naming no number stands the
 // default of them, and a number the setting takes is the number that stands.
-func TestANodeStandsAsManyHeadingsAsTheFileNames(t *testing.T) {
+func TestANodeExistsAsManyHeadingsAsTheFileNames(t *testing.T) {
 	for name, c := range map[string]struct {
 		file       string
 		headings   int
@@ -864,16 +864,16 @@ func TestACountOfHeadingsOutsideWhatItGoesToIsRefused(t *testing.T) {
 	_, err := openAt(write(t, `{"appearance":{"nested_heading_limit":20}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
-		t.Fatalf("refused with %v", err)
+		t.Fatalf("failed with %v", err)
 	}
 	if outside.At != "appearance.nested_heading_limit" || outside.Number != 20 {
-		t.Errorf("refused %+v", outside)
+		t.Errorf("failed %+v", outside)
 	}
 	if outside.Least != settings.NestedHeadingLimitBounds.Least ||
 		outside.Most != settings.NestedHeadingLimitBounds.Most {
 		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
 	}
-	if said := outside.Error(); !strings.Contains(said, "appearance.nested_heading_limit is 20") {
-		t.Errorf("says %q", said)
+	if response := outside.Error(); !strings.Contains(response, "appearance.nested_heading_limit is 20") {
+		t.Errorf("says %q", response)
 	}
 }

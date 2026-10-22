@@ -4,8 +4,8 @@
  * how it is asked for on its own, and the clock a box opens on.
  */
 import { EXPANSION_DELAY } from './expansion'
-import { byHandle, type ReachStrategy } from './reaching'
-import { byDoubleClick, type ShowStrategy } from './showing'
+import { byHandle, type ReachStrategy } from './reachStrategy'
+import { byDoubleClick, type ShowStrategy } from './destination'
 import { browserClock, type Clock } from '@/shared/lib/clock'
 
 export interface PlexBehaviour {

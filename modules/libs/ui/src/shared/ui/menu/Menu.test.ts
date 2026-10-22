@@ -4,7 +4,7 @@
  * look right in a picture.
  *
  * It is drawn at the end of the document, so everything here is read off the
- * document rather than off the wrapper.
+ * document and not off the wrapper.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -55,7 +55,7 @@ describe('being open and being closed', () => {
     expect(getDrawnMenu()).not.toBeNull()
   })
 
-  it('draws itself outside whatever asked for it', async () => {
+  it('draws itself outside whatever requested for it', async () => {
     mountMenu()
     await settle()
     expect(getDrawnMenu()?.parentElement).toBe(document.body)
@@ -75,7 +75,7 @@ describe('being open and being closed', () => {
 })
 
 describe('choosing an item', () => {
-  it('hands back the identifier it was given, and asks to be put away', async () => {
+  it('returns the identifier it was given, and asks to be put away', async () => {
     const menu = mountMenu()
     await settle()
 
@@ -116,7 +116,7 @@ describe('being put away', () => {
     expect(menu.emitted('dismiss')).toHaveLength(1)
   })
 
-  it('asks to go when the area it stands over is resized', async () => {
+  it('asks to go when the area it remains over is resized', async () => {
     const menu = mountMenu()
     await settle()
 
@@ -197,7 +197,7 @@ describe('where the keyboard is while it is open', () => {
     expect(document.activeElement).toBe(choices()[0])
   })
 
-  it('is kept inside: tab moves within the items rather than out of them', async () => {
+  it('is kept inside: tab moves within the items and not out of them', async () => {
     openMenu()
     await settle()
     const menu = getDrawnMenu()!
@@ -293,7 +293,7 @@ describe('where it is drawn', () => {
     expect(getDrawnMenu()?.style.top).toBe('20px')
   })
 
-  it('is brought in off an edge it was asked for right against', async () => {
+  it('is brought in off an edge it was requested for right against', async () => {
     mountMenu({ at: { x: 0, y: 0 }, viewport: { width: 900, height: 700 }, margin: 12 })
     await settle()
     expect(getDrawnMenu()?.style.left).toBe('12px')
@@ -302,7 +302,7 @@ describe('where it is drawn', () => {
 })
 
 describe('when there is nothing to choose', () => {
-  it('says so rather than drawing an empty box', async () => {
+  it('says so and not drawing an empty box', async () => {
     mountMenu({ items: [] })
     await settle()
     expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe(
@@ -348,7 +348,7 @@ describe('the groups the items stand in', () => {
   })
 })
 
-describe('what an item says beside its words', () => {
+describe('what an item says alongside its words', () => {
   it('is drawn under them where the item carries one', async () => {
     mountMenu({ items: [{ id: 'small', text: 'Small', detail: 'somewhere/small.onnx' }] })
     await settle()
@@ -404,13 +404,13 @@ describe('typing to jump', () => {
 })
 
 describe('the width it is told to keep to', () => {
-  it('carries the width of what asked for it into its own rule', async () => {
+  it('carries the width of what requested for it into its own rule', async () => {
     mountMenu({ asking: 420 })
     await settle()
     expect(getDrawnMenu()?.style.getPropertyValue('--asking')).toBe('420px')
   })
 
-  it('asks for nothing where nothing said how wide it asked', async () => {
+  it('asks for nothing where nothing returned how wide it requested', async () => {
     mountMenu()
     await settle()
     expect(getDrawnMenu()?.style.getPropertyValue('--asking')).toBe('0px')
@@ -428,7 +428,7 @@ describe('searching the items', () => {
     await nextTick()
   }
 
-  it('draws no search line unless it is asked for', async () => {
+  it('draws no search line unless it is requested for', async () => {
     mountMenu()
     await settle()
     expect(getSearch()).toBeNull()

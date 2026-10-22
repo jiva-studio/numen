@@ -7,18 +7,18 @@ export interface FrontmatterResult {
 }
 
 function parseFrontmatterValue(raw: string): unknown {
-  const trimmed = raw.trim()
-  if (trimmed === 'true') return true
-  if (trimmed === 'false') return false
-  if (trimmed === 'null') return null
-  if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed)
+  const value = raw.trim()
+  if (value === 'true') return true
+  if (value === 'false') return false
+  if (value === 'null') return null
+  if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value)
   if (
-    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
   ) {
-    return trimmed.slice(1, -1)
+    return value.slice(1, -1)
   }
-  return trimmed
+  return value
 }
 
 export function parseFrontmatter(text: string): FrontmatterResult {
@@ -38,12 +38,12 @@ export function parseFrontmatter(text: string): FrontmatterResult {
   const data: Record<string, unknown> = {}
 
   for (const line of rawYaml.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const colonIndex = trimmed.indexOf(':')
+    const cleanLine = line.trim()
+    if (!cleanLine || cleanLine.startsWith('#')) continue
+    const colonIndex = cleanLine.indexOf(':')
     if (colonIndex > 0) {
-      const key = trimmed.slice(0, colonIndex).trim()
-      const rawValue = trimmed.slice(colonIndex + 1).trim()
+      const key = cleanLine.slice(0, colonIndex).trim()
+      const rawValue = cleanLine.slice(colonIndex + 1).trim()
       data[key] = parseFrontmatterValue(rawValue)
     }
   }

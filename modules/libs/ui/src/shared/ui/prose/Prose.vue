@@ -35,8 +35,8 @@ const deadAddresses = computed<ReadonlySet<string>>((previous) => {
   const members = new Set(props.unresolved)
   return previous && isSameSet(previous, members) ? previous : members
 })
-const drawn = computed(() => render(props.text, deadAddresses.value))
-const Drawn = () => drawn.value
+const renderedContent = computed(() => render(props.text, deadAddresses.value))
+const Drawn = () => renderedContent.value
 
 /* -------------------------------- Handlers -------------------------------- */
 const onClick = (press: MouseEvent) => {

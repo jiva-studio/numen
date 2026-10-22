@@ -11,7 +11,7 @@ import (
 
 // How much one call may ask for. A tool with no ceiling is a way to put a whole
 // vault in a context window by accident, and a limit that truncates in silence
-// reads as "that is all there is" — so going over is refused and says so.
+// reads as "that is all there is" — so going over fails and says so.
 const (
 	maxRefs   = 50
 	maxBodies = 10
@@ -104,7 +104,7 @@ type Neighbour struct {
 // moved.
 type MoveOutcome struct {
 	note.MoveResult
-	Refused string `json:"refused,omitempty" jsonschema:"why this one did not move, empty when it did"`
+	Error string `json:"error,omitempty" jsonschema:"why this one did not move, empty when it did"`
 }
 
 // NewNote is one note a caller wants made, and what it should be joined to.
@@ -118,11 +118,11 @@ type NewNote struct {
 // CreateOutcome is what happened to one note in a batch.
 type CreateOutcome struct {
 	note.CreateResult
-	Refused string `json:"refused,omitempty" jsonschema:"why this one was not made, empty when it was"`
+	Error string `json:"error,omitempty" jsonschema:"why this one was not made, empty when it was"`
 }
 
 // RemoveOutcome is the same for removing.
 type RemoveOutcome struct {
 	note.RemoveResult
-	Refused string `json:"refused,omitempty" jsonschema:"why this one was not removed, empty when it was"`
+	Error string `json:"error,omitempty" jsonschema:"why this one was not removed, empty when it was"`
 }

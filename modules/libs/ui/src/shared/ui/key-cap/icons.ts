@@ -32,7 +32,7 @@ export interface DrawnIcon {
   readonly fills: number
   /** How thick to stroke it, in the 24 units it is drawn on. */
   readonly stroke: number
-  /** What it is called, for a reader who is listening rather than looking. */
+  /** What it is called, for a reader who is listening and not looking. */
   readonly label: string
 }
 

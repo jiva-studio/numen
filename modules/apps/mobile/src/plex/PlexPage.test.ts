@@ -17,27 +17,27 @@ async function toastAfter(why: unknown) {
   const page = mount(PlexPage)
   await flushPromises()
   const toast = page.getComponent(IonToast)
-  return { page, open: toast.props('isOpen'), said: toast.props('message') }
+  return { page, open: toast.props('isOpen'), message: toast.props('message') }
 }
 
 describe('a core that cannot be reached', () => {
-  it('says what the call said, where the code carries a sentence', async () => {
-    const thrown = new ConnectError('numen is still starting', Code.Unavailable)
-    const { page, open, said } = await toastAfter(thrown)
+  it('says what the call returned, where the code carries a sentence', async () => {
+    const caughtError = new ConnectError('numen is still starting', Code.Unavailable)
+    const { page, open, message } = await toastAfter(caughtError)
 
     expect(open).toBe(true)
-    expect(said).toBe('numen is still starting')
+    expect(message).toBe('numen is still starting')
 
     page.unmount()
   })
 
   it('says what went wrong in words, whatever was thrown', async () => {
-    const thrown = new Error('ECONNREFUSED 127.0.0.1:45123')
-    const { page, open, said } = await toastAfter(thrown)
+    const caughtError = new Error('ECONNREFUSED 127.0.0.1:45123')
+    const { page, open, message } = await toastAfter(caughtError)
 
     expect(open).toBe(true)
-    expect(said).toBe(formatErrorMessage(thrown))
-    expect(said).not.toContain('ECONNREFUSED')
+    expect(message).toBe(formatErrorMessage(caughtError))
+    expect(message).not.toContain('ECONNREFUSED')
 
     page.unmount()
   })

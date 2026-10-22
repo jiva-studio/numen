@@ -73,7 +73,7 @@ const canOpen = computed(() => !!props.wide || !!props.hung)
 /**
  * What is hovered or focused, and where that stands.
  */
-const under = computed(() =>
+const openPosition = computed(() =>
   canOpen.value && props.node.opacity >= 1 && props.gestureRole === 'open' && hoverFocus.isOn.value
     ? `${props.node.x} ${props.node.y}`
     : null,
@@ -82,7 +82,7 @@ const under = computed(() =>
 const { open, box, handle } = useOpenBox({
   node: () => props.node,
   wide: () => props.wide,
-  on: () => under.value,
+  on: () => openPosition.value,
   delay: () => props.behaviour.expansionDelay,
   clock: props.behaviour.clock,
 })

@@ -27,7 +27,7 @@ var reads = []string{
 	"vault_get",
 }
 
-// The reading server stands on what it does not serve, so the list is exact:
+// The reading server relies on what it does not serve, so the list is exact:
 // one writing tool reaching it fails this.
 func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 	cfg, db := openIndex(t)
@@ -43,10 +43,10 @@ func TestTheReadingInstructionsSayWhatThisAgentCanDo(t *testing.T) {
 	v := testsupport.NewVault(t, kinetics())
 	session := sessionOf(t, mcp.NewReading(reader(t, cfg, db, v)))
 
-	said := session.InitializeResult().Instructions
+	response := session.InitializeResult().Instructions
 	for _, rule := range []string{"reads", "path", "heading", "chapter or page", "numen:"} {
-		if !strings.Contains(said, rule) {
-			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
+		if !strings.Contains(response, rule) {
+			t.Errorf("the instructions say nothing about %q:\n%s", rule, response)
 		}
 	}
 }
@@ -58,7 +58,7 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 	v := testsupport.NewVault(t, kinetics())
 	session := sessionOf(t, mcp.NewReading(reader(t, cfg, db, v)))
 
-	asked := []struct {
+	request := []struct {
 		name string
 		args any
 	}{
@@ -71,8 +71,8 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 		{"source_read", map[string]any{"path": "Entropy.md", "start": 0, "length": 200}},
 		{"vault_get", map[string]any{}},
 	}
-	called := make([]string, 0, len(asked))
-	for _, one := range asked {
+	called := make([]string, 0, len(request))
+	for _, one := range request {
 		called = append(called, one.name)
 		t.Run(one.name, func(t *testing.T) {
 			call[json.RawMessage](t, session, one.name, one.args)
@@ -107,7 +107,7 @@ func TestTheReadingToolsAnswerAboutOneVaultOnly(t *testing.T) {
 
 	for _, pair := range []struct{ own, other side }{{physics, garden}, {garden, physics}} {
 		t.Run(pair.own.what, func(t *testing.T) {
-			pair.own.answers(t)
+			pair.own.assertAnswers(t)
 			pair.own.checkHoldsNothingOf(t, pair.other)
 		})
 	}
@@ -130,9 +130,9 @@ type side struct {
 	hers []string
 }
 
-// answers is this vault's own content, through every tool the reading server
+// assertAnswers tests this vault's own content, through every tool the reading server
 // serves.
-func (s side) answers(t *testing.T) {
+func (s side) assertAnswers(t *testing.T) {
 	t.Helper()
 
 	found := call[struct {
@@ -155,10 +155,10 @@ func (s side) answers(t *testing.T) {
 		t.Errorf("%s does not read its own note: %+v", s.what, got)
 	}
 
-	near := call[struct {
+	nearVal := call[struct {
 		Related []mcp.Neighbour `json:"related"`
 	}](t, s.session, "note_neighbourhood", map[string]any{"path": s.note})
-	if len(near.Related) == 0 {
+	if len(nearVal.Related) == 0 {
 		t.Errorf("%s sees nothing joined to its own note", s.what)
 	}
 
@@ -183,7 +183,7 @@ func (s side) answers(t *testing.T) {
 func (s side) checkHoldsNothingOf(t *testing.T, other side) {
 	t.Helper()
 
-	for _, asked := range []struct {
+	for _, request := range []struct {
 		name string
 		args any
 	}{
@@ -194,11 +194,11 @@ func (s side) checkHoldsNothingOf(t *testing.T, other side) {
 		{"link_list", map[string]any{"path": other.note}},
 		{"source_read", map[string]any{"path": other.note, "start": 0, "length": 400}},
 	} {
-		said := getAnswer(t, s.session, asked.name, asked.args)
+		response := getAnswer(t, s.session, request.name, request.args)
 		for _, word := range other.hers {
-			if strings.Contains(said, word) {
+			if strings.Contains(response, word) {
 				t.Errorf("%s answered %s with %q, which is %s's:\n%s",
-					s.what, asked.name, word, other.what, said)
+					s.what, request.name, word, other.what, response)
 			}
 		}
 	}

@@ -59,32 +59,32 @@ func FuzzAt(f *testing.F) {
 			return
 		}
 
-		held, err := openAt(writeFile(t, path, string(raw)))
+		target, err := openAt(writeFile(t, path, string(raw)))
 		if err != nil {
 			// The file is well formed and every value in it is of the kind its
 			// setting takes, so the one thing left to refuse it for is a number
-			// the setting does not go to — and the refusal names which.
+			// the setting does not go to — and the rejection names which.
 			var outside *settings.OutsideBounds
 			if !errors.As(err, &outside) {
-				t.Fatalf("%s was refused as %v, which names no setting", raw, err)
+				t.Fatalf("%s failed as %v, which names no setting", raw, err)
 			}
 			return
 		}
 
-		if outside := held.Appearance.Check(); outside != nil {
+		if outside := target.Appearance.Check(); outside != nil {
 			t.Fatalf("%s was read as settings the window is not drawn at: %v", raw, outside)
 		}
-		if held.Version < 1 {
-			t.Fatalf("%s was read at version %d", raw, held.Version)
+		if target.Version < 1 {
+			t.Fatalf("%s was read at version %d", raw, target.Version)
 		}
-		switch held.Appearance.Mode {
+		switch target.Appearance.Mode {
 		case settings.ModeSystem, settings.ModeLight, settings.ModeDark:
 		default:
 			t.Fatalf("%s was read as wearing %q, which is no half of a colour pair",
-				raw, held.Appearance.Mode)
+				raw, target.Appearance.Mode)
 		}
-		if mb > 0 && held.Indexing.GetTranscribeLimit() < int64(mb) {
-			t.Fatalf("%d megabytes was read as %d bytes", mb, held.Indexing.GetTranscribeLimit())
+		if mb > 0 && target.Indexing.GetTranscribeLimit() < int64(mb) {
+			t.Fatalf("%d megabytes was read as %d bytes", mb, target.Indexing.GetTranscribeLimit())
 		}
 	})
 }
@@ -149,8 +149,8 @@ func FuzzWrite(f *testing.F) {
 	}
 	path := filepath.Join(f.TempDir(), "numen.json")
 	f.Fuzz(func(t *testing.T, raw string) {
-		const stood = `{"appearance":{"theme":"mine:dracula"}}`
-		writeFile(t, path, stood)
+		const status = `{"appearance":{"theme":"mine:dracula"}}`
+		writeFile(t, path, status)
 
 		switch err := settings.Write(path, []byte(raw), nil, newDocument()); {
 		case err == nil:
@@ -162,16 +162,16 @@ func FuzzWrite(f *testing.F) {
 			}
 		default:
 			if !errors.Is(err, port.ErrNotASetting) {
-				t.Fatalf("%q was refused as %v, which does not say what is wrong with it", raw, err)
+				t.Fatalf("%q failed as %v, which does not say what is wrong with it", raw, err)
 			}
-			if got := reading(t, path); got != stood {
-				t.Fatalf("%q was refused and left %q in the file", raw, got)
+			if got := reading(t, path); got != status {
+				t.Fatalf("%q failed and left %q in the file", raw, got)
 			}
 		}
 	})
 }
 
-// writeFile stands these bytes in the settings file, and hands back where it
+// writeFile stands these bytes in the settings file, and returns where it
 // is. One file is written over and over: a folder for each of a million inputs
 // is a folder a run never gets to the end of.
 func writeFile(tb testing.TB, path, raw string) string {

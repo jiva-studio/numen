@@ -116,7 +116,7 @@ const (
 // first span that matched, or about the hit itself when no word matched at all.
 //
 // A passage is the whole of the window enclosing its hit, which for a note is
-// the whole note. A hit by meaning stands on no word, so `from` is where the
+// the whole note. A hit by meaning relies on no word, so `from` is where the
 // chunk that matched begins and is what the window opens near.
 //
 // The spans move with the text and the ones left outside are dropped, so what
@@ -154,19 +154,19 @@ func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []do
 		clippedSpans = append(clippedSpans, domain.UnitSpan{From: clipped.From - shift, To: clipped.To - shift})
 	}
 
-	cut := string(runes[first:last])
+	snippet := string(runes[first:last])
 	if first > 0 {
 		// The mark for what was left off stands before the text, so everything
 		// in it begins one unit further along.
-		cut = "…" + cut
+		snippet = "…" + snippet
 		for i := range clippedSpans {
 			clippedSpans[i] = domain.UnitSpan{From: clippedSpans[i].From + 1, To: clippedSpans[i].To + 1}
 		}
 	}
 	if last < len(runes) {
-		cut += "…"
+		snippet += "…"
 	}
-	return cut, clippedSpans
+	return snippet, clippedSpans
 }
 
 // getRunes is the text one rune at a time, and where each of those runes begins

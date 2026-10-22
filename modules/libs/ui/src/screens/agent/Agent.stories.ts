@@ -84,9 +84,9 @@ const conversation =
         let at = 0
         tick = setInterval(() => {
           at = Math.min(reply.length, at + 3)
-          const done = at === reply.length
-          putTurn(id, reply.slice(0, at), done)
-          if (done) settle()
+          const isDone = at === reply.length
+          putTurn(id, reply.slice(0, at), isDone)
+          if (isDone) settle()
         }, 16)
       }
 
@@ -150,10 +150,10 @@ export const LongConversation: Story = {
     await expect(thread.scrollTop).toBeGreaterThan(0)
 
     // The field grown taller expands the composer height.
-    const over = composer.getBoundingClientRect()
+    const overRect = composer.getBoundingClientRect()
     const field = canvasElement.querySelector('textarea') as HTMLTextAreaElement
     await userEvent.click(field)
     await userEvent.keyboard('one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three')
-    await expect(composer.getBoundingClientRect().height).toBeGreaterThan(over.height)
+    await expect(composer.getBoundingClientRect().height).toBeGreaterThan(overRect.height)
   },
 }

@@ -26,7 +26,7 @@ import { addVault, renameVault, removeVault, showVault } from './vaults'
 import type { Outcome, ArtifactState } from '@/entities/artifact'
 import { AGENT, FILES, PLEX, SETTINGS } from '@/entities/tab'
 
-/** What each command comes to. A command with no entry here does nothing. */
+/** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
   read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'here'),
   beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'beside'),

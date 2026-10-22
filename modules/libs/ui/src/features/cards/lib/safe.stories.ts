@@ -1,5 +1,5 @@
 /**
- * What a card's HTML comes to, measured over thousands of arrangements of it in
+ * What a card's HTML evaluates to, measured over thousands of arrangements of it in
  * Chromium and in WebKit, which are the engines a card is drawn in. The
  * measuring is a `DOMParser` reading and writing markup twice, and each engine
  * makes its own of `<svg/onload=` or of a title attribute holding `</noscript>`.
@@ -189,10 +189,10 @@ const QUOTES = [
  * corpus, so a failure names an arrangement that can be looked at again.
  */
 const numbers = (from: number): (() => number) => {
-  let held = from >>> 0
+  let target = from >>> 0
   return () => {
-    held = (held + 0x6d2b79f5) >>> 0
-    let x = held
+    target = (target + 0x6d2b79f5) >>> 0
+    let x = target
     x = Math.imul(x ^ (x >>> 15), x | 1)
     x ^= x + Math.imul(x ^ (x >>> 7), x | 61)
     return ((x ^ (x >>> 14)) >>> 0) / 4294967296
@@ -203,37 +203,37 @@ const numbers = (from: number): (() => number) => {
 const createArrangement = (next: () => number, at: number): string => {
   if (at < KNOWN.length) return KNOWN[at]!
 
-  const among = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
+  const amongItems = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
   const pieces = 1 + Math.floor(next() * 12)
   let out = ''
   for (let i = 0; i < pieces; i++) {
-    out += among(PIECES)
-      .replace('{url}', () => among(URLS))
-      .replace('{on}', () => among(HANDLERS))
-      .replace('{runs}', () => among(RUNS))
-      .replace('{style}', () => among(STYLES))
-      .replace('{quote}', () => among(QUOTES))
+    out += amongItems(PIECES)
+      .replace('{url}', () => amongItems(URLS))
+      .replace('{on}', () => amongItems(HANDLERS))
+      .replace('{runs}', () => amongItems(RUNS))
+      .replace('{style}', () => amongItems(STYLES))
+      .replace('{quote}', () => amongItems(QUOTES))
   }
   // Half of them carry a known arrangement inside, so the generator reaches
   // past what it could have stumbled on.
   if (next() < 0.5) {
     const into = Math.floor(next() * (out.length + 1))
-    out = out.slice(0, into) + among(KNOWN) + out.slice(into)
+    out = out.slice(0, into) + amongItems(KNOWN) + out.slice(into)
   }
   return out
 }
 
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const bare = (url: string): string => url.replace(/[\x00-\x20]/g, '')
+const stripControls = (url: string): string => url.replace(/[\x00-\x20]/g, '')
 
 /** How many comments the markup holds, wherever they stand. */
 const comments = (root: Node): number => {
-  let held = 0
+  let target = 0
   for (const child of root.childNodes) {
-    if (child.nodeType === Node.COMMENT_NODE) held += 1
-    else held += comments(child)
+    if (child.nodeType === Node.COMMENT_NODE) target += 1
+    else target += comments(child)
   }
-  return held
+  return target
 }
 
 /** What is wrong with what one element came to, and nothing where it is drawable. */
@@ -248,28 +248,28 @@ const wrong = (element: Element): string | null => {
       return `${tag} carries ${name}`
     }
     if (name === 'style') {
-      for (const said of attribute.value.split(';')) {
-        if (said.trim() === '') continue
-        const property = said.slice(0, said.indexOf(':')).trim().toLowerCase()
+      for (const response of attribute.value.split(';')) {
+        if (response.trim() === '') continue
+        const property = response.slice(0, response.indexOf(':')).trim().toLowerCase()
         if (!STYLED.includes(property)) return `${tag} is styled with ${property}`
-        if (/url\(|expression|\\/i.test(said)) return `${tag} is styled with ${said.trim()}`
+        if (/url\(|expression|\\/i.test(response)) return `${tag} is styled with ${response.trim()}`
       }
     }
   }
 
   const href = element.getAttribute('href')
   if (href !== null) {
-    const said = scheme(href)
-    if (said !== null && !LEADS.includes(said)) return `a link leads to ${said}`
+    const response = scheme(href)
+    if (response !== null && !LEADS.includes(response)) return `a link leads to ${response}`
   }
 
   const src = element.getAttribute('src')
   if (src !== null) {
-    const said = bare(src)
-    if (scheme(said) === 'data:') {
-      if (!INLINE_IMAGE.test(said)) return `a picture stands in the text as ${said.slice(0, 30)}`
-    } else if (scheme(said) !== null || /^[\\/]{2}/.test(said)) {
-      return `a picture would be fetched from ${said.slice(0, 40)}`
+    const response = stripControls(src)
+    if (scheme(response) === 'data:') {
+      if (!INLINE_IMAGE.test(response)) return `a picture stands in the text as ${response.slice(0, 30)}`
+    } else if (scheme(response) !== null || /^[\\/]{2}/.test(response)) {
+      return `a picture would be fetched from ${response.slice(0, 40)}`
     }
   }
 
@@ -289,30 +289,30 @@ const measureArrangements = (): Tally => {
   const tally: Tally = { arrangements: 0, drawn: 0, elements: 0 }
 
   for (let at = 0; at < ARRANGEMENTS; at++) {
-    const written = createArrangement(next, at)
-    const once = safe(written)
+    const content = createArrangement(next, at)
+    const once = safe(content)
     tally.arrangements += 1
 
     // Read twice is the whole of the measuring: what one reading writes out is
     // what the next parser is handed, and the second reading has to find
     // nothing left to take out.
     if (safe(once) !== once) {
-      throw new Error(`read twice, ${JSON.stringify(written)} came to ${JSON.stringify(once)}`)
+      throw new Error(`read twice, ${JSON.stringify(content)} came to ${JSON.stringify(once)}`)
     }
 
-    const read = new DOMParser().parseFromString(once, 'text/html')
-    const elements = [...read.body.querySelectorAll('*')]
+    const readItem = new DOMParser().parseFromString(once, 'text/html')
+    const elements = [...readItem.body.querySelectorAll('*')]
     if (elements.length > 0) tally.drawn += 1
     tally.elements += elements.length
 
     for (const element of elements) {
-      const said = wrong(element)
-      if (said !== null) {
-        throw new Error(`${said}: ${JSON.stringify(written)} came to ${JSON.stringify(once)}`)
+      const response = wrong(element)
+      if (response !== null) {
+        throw new Error(`${response}: ${JSON.stringify(content)} came to ${JSON.stringify(once)}`)
       }
     }
-    if (comments(read.body) > 0) {
-      throw new Error(`a comment survived ${JSON.stringify(written)}`)
+    if (comments(readItem.body) > 0) {
+      throw new Error(`a comment survived ${JSON.stringify(content)}`)
     }
   }
   return tally
@@ -339,23 +339,23 @@ type Story = StoryObj
  * engine.
  *
  * A run that measured almost nothing would be a run that proved nothing, so
- * what it drew is counted and drawn: an arrangement that comes to plain text
+ * what it drew is counted and drawn: an arrangement that evaluates to plain text
  * has not been measured against anything.
  */
 export const Arrangements: Story = {
   play: ({ canvasElement }) => {
-    const said = canvasElement.querySelector('[data-tally]')?.textContent ?? ''
-    expect(said).toContain(`${ARRANGEMENTS} arrangements`)
+    const saidText = canvasElement.querySelector('[data-tally]')?.textContent ?? ''
+    expect(saidText).toContain(`${ARRANGEMENTS} arrangements`)
 
-    const drawn = Number(/, (\d+) of them drawn/.exec(said)?.[1] ?? 0)
-    const elements = Number(/drawn as (\d+) elements/.exec(said)?.[1] ?? 0)
-    expect(drawn).toBeGreaterThan(ARRANGEMENTS / 4)
+    const drawnCount = Number(/, (\d+) of them drawn/.exec(saidText)?.[1] ?? 0)
+    const elements = Number(/drawn as (\d+) elements/.exec(saidText)?.[1] ?? 0)
+    expect(drawnCount).toBeGreaterThan(ARRANGEMENTS / 4)
     expect(elements).toBeGreaterThan(ARRANGEMENTS)
   },
 }
 
 /**
- * Nothing runs when what a card comes to is put on a live page. An image whose
+ * Nothing runs when what a card evaluates to is put on a live page. An image whose
  * address is no address fires as soon as it is attached, so the frames it would
  * fire in are waited for.
  */
@@ -365,16 +365,16 @@ export const NothingRuns: Story = {
     if (view === null) throw new Error('the story is drawn in no window')
     view.ran = 0
 
-    const held = canvasElement.ownerDocument.createElement('div')
-    canvasElement.append(held)
+    const element = canvasElement.ownerDocument.createElement('div')
+    canvasElement.append(element)
 
     const next = numbers(SEED)
     for (let at = 0; at < ARRANGEMENTS; at++) {
-      held.innerHTML = safe(createArrangement(next, at))
+      element.innerHTML = safe(createArrangement(next, at))
     }
     await new Promise((settle) => view.requestAnimationFrame(() => view.setTimeout(settle, 0)))
 
     expect(view.ran).toBe(0)
-    held.remove()
+    element.remove()
   },
 }

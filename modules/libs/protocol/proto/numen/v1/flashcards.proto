@@ -19,7 +19,7 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 
 // FlashcardsService is the front door, a session, and the answers given in it.
 service FlashcardsService {
-  // WatchCardsDue is what every vault the installation knows comes to today:
+  // WatchCardsDue is what every vault the installation knows evaluates to today:
   // how much it holds, how much is due, and how much has never been asked. It
   // is what the application opens on.
   //
@@ -107,7 +107,7 @@ message VaultCardsDue {
   // Decks is the same three numbers for each deck, by the path of its file.
   repeated DeckCardsDue decks = 7;
 
-  // Presets is what the day comes to under each preset the vault's decks are
+  // Presets is what the day evaluates to under each preset the vault's decks are
   // scheduled by.
   repeated PresetCardsDue presets = 8;
 
@@ -143,7 +143,7 @@ message DeckCardsDue {
   int32 unbegun = 7;
 }
 
-// PresetCardsDue is one preset of a vault, and what the day comes to under it.
+// PresetCardsDue is one preset of a vault, and what the day evaluates to under it.
 message PresetCardsDue {
   // The note the settings were read from, and empty for the decks naming no
   // preset.
@@ -213,7 +213,7 @@ message Intervals {
 // SessionCard is one card face as it is put to a person in a session.
 message SessionCard {
   // Deck is the path of the file the card stands in, and section the name of
-  // the section it stands under. A card standing before the first section
+  // the section it is placed under. A card standing before the first section
   // carries none.
   string deck = 1;
   string section = 2;
@@ -406,7 +406,7 @@ message DeckNeighbour {
   string body = 4;
 
   // Label is what the link was shown as, where the person gave it words of
-  // their own instead of the note's name.
+  // their own and not the note's name.
   string label = 5;
 
   // IsPointedAt says the deck points at this note; otherwise this note points at the

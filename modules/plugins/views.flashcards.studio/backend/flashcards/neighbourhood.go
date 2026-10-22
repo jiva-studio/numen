@@ -119,19 +119,19 @@ func (u ShowNeighbourhood) Execute(
 // then what points at it. A deck naming itself, and a card naming the deck it
 // stands in, are not somewhere else to read.
 func getNeighbours(v domain.Vault, deck string, linked note.NoteLinks) []Neighbour {
-	seen := map[string]bool{deck: true}
+	observed := map[string]bool{deck: true}
 	var found []Neighbour
 	for _, l := range linked.Links {
-		one, isKept := getLinkedNeighbour(v, l, seen)
+		one, isKept := getLinkedNeighbour(v, l, observed)
 		if isKept {
 			found = append(found, one)
 		}
 	}
 	for _, l := range linked.Backlinks {
-		if seen[l.From] {
+		if observed[l.From] {
 			continue
 		}
-		seen[l.From] = true
+		observed[l.From] = true
 		// Nothing is ambiguous on this side: the note shown is the one that
 		// wrote the link, whatever its own name resolved through.
 		found = append(found, Neighbour{Path: l.From, Label: l.Label, IsBacklink: true})

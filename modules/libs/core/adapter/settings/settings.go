@@ -126,14 +126,14 @@ func OpenAt(path string, into Document) error {
 // no half of a colour pair, and says so. The word is left in the file, where
 // the person wrote it and where they will read it again.
 func checkMode(into Document) {
-	drawn := into.GetAppearance()
-	switch drawn.Mode {
+	appearance := into.GetAppearance()
+	switch appearance.Mode {
 	case ModeSystem, ModeLight, ModeDark:
 		return
 	}
 	warn(into, "appearance.mode is %s, %s or %s, and %s stands",
 		ModeSystem, ModeLight, ModeDark, ModeSystem)
-	drawn.Mode = ModeSystem
+	appearance.Mode = ModeSystem
 }
 
 // readInterfaceScale reads `appearance.zoom` as the setting that replaced it,

@@ -258,9 +258,9 @@ func (e *Embedder) encode(text string) []int {
 	if len(ids) <= e.window {
 		return ids
 	}
-	cut := slices.Clone(ids[:e.window])
-	cut[len(cut)-1] = ids[len(ids)-1]
-	return cut
+	windowTokens := slices.Clone(ids[:e.window])
+	windowTokens[len(windowTokens)-1] = ids[len(ids)-1]
+	return windowTokens
 }
 
 func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, error) {
@@ -294,20 +294,20 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 		in[one.name] = value
 	}
 
-	answered, err := session.Run(in)
+	reply, err := session.Run(in)
 	runtime.KeepAlive(padded)
 	if err != nil {
 		return nil, err
 	}
-	for _, v := range answered {
+	for _, v := range reply {
 		defer v.Destroy()
 	}
 
-	held, ok := answered[e.output]
+	target, ok := reply[e.output]
 	if !ok {
 		return nil, fmt.Errorf("%s answered without %s", e.name, e.output)
 	}
-	return e.readVectors(held, rows, seq, padded.mask)
+	return e.readVectors(target, rows, seq, padded.mask)
 }
 
 func (e *Embedder) readVectors(held *ort.Value, rows, seq int, mask []int64) ([][]float32, error) {
@@ -315,8 +315,8 @@ func (e *Embedder) readVectors(held *ort.Value, rows, seq int, mask []int64) ([]
 	if err != nil {
 		return nil, err
 	}
-	if wide := out[len(out)-1]; wide != int64(e.dimensions) {
-		return nil, fmt.Errorf("%s answered with %d dimensions, expected %d", e.name, wide, e.dimensions)
+	if dims := out[len(out)-1]; dims != int64(e.dimensions) {
+		return nil, fmt.Errorf("%s answered with %d dimensions, expected %d", e.name, dims, e.dimensions)
 	}
 	flat, err := ort.GetTensorData[float32](held)
 	if err != nil {

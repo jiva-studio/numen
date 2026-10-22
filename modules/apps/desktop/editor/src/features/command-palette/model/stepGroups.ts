@@ -139,11 +139,11 @@ function createPickingGroup(
   text: string,
   meta: { words: Words; isWorking: boolean; failureMessage: string },
 ): PaletteGroup {
-  const seen = new Set<string>()
+  const observed = new Set<string>()
   const items: PaletteItem[] = []
   for (const one of found) {
-    if (seen.has(one.path)) continue
-    seen.add(one.path)
+    if (observed.has(one.path)) continue
+    observed.add(one.path)
     items.push({
       id: one.path,
       title: one.title || one.path,
@@ -161,12 +161,12 @@ function createPickingGroup(
 }
 
 function createVaultsGroup(
-  known: readonly Vault[],
+  recognized: readonly Vault[],
   step: PendingStep,
   meta: { text: string; words: Words; showing: string; isWorking: boolean; failureMessage: string },
 ): PaletteGroup {
   const word = meta.text.trim().toLowerCase()
-  const items: PaletteItem[] = known
+  const items: PaletteItem[] = recognized
     .filter((one) => one.name.toLowerCase().includes(word))
     .map((one) => {
       const why = getVaultAside(one, meta.showing, meta.words)

@@ -28,22 +28,22 @@ defineEmits<{ (event: 'choose', vault: string): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 /** Each vault as a row of the list, and how many cards it has waiting. */
-const listed = computed(() => getVaultRows(props.vaults, VAULTS_WORDS))
+const vaultRows = computed(() => getVaultRows(props.vaults, VAULTS_WORDS))
 
-const waiting = computed(() => getDueByVault(props.vaults))
+const dueByVault = computed(() => getDueByVault(props.vaults))
 </script>
 
 <template>
   <WelcomePage
     name="flashcards"
-    :vaults="listed"
+    :vaults="vaultRows"
     :heading="VAULTS_WORDS.heading"
     :version="version"
     @open="$emit('choose', $event)"
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">
-      <DueCount v-if="waiting.has(vault.id)" :due="waiting.get(vault.id) ?? null" is-bare />
+      <DueCount v-if="dueByVault.has(vault.id)" :due="dueByVault.get(vault.id) ?? null" is-bare />
     </template>
 
     <!-- Nothing is known about the installation yet, not even which vaults it

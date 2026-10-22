@@ -35,10 +35,10 @@ func drain(work *agentrun.Work) []*numenv1.AskAgentResponse {
 }
 
 func newSaidResponse(text string) *numenv1.AskAgentResponse {
-	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}}
+	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}}
 }
 
-func TestStartHandsJSONLinesToTheHandlerAndSaysTheOthers(t *testing.T) {
+func TestStartPassesJSONLinesToTheHandlerAndReturnsTheOthers(t *testing.T) {
 	spec := shell(`echo '{"say":"hello"}'; echo plain text; echo; echo 42`,
 		func(r *agentrun.Reader, event map[string]any) { r.Send(newSaidResponse(event["say"].(string))) })
 	var reg agentrun.Registry
@@ -54,7 +54,7 @@ func TestStartHandsJSONLinesToTheHandlerAndSaysTheOthers(t *testing.T) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
 	for i, text := range want {
-		if got[i].GetSaid() != text {
+		if got[i].GetText() != text {
 			t.Errorf("response %d is %v, want %q", i, got[i], text)
 		}
 	}
@@ -88,10 +88,10 @@ func TestStartRunsTheChildInTheRootWithTheToken(t *testing.T) {
 	}
 	got := drain(work)
 
-	if len(got) != 1 || got[0].GetSaid() == "" {
+	if len(got) != 1 || got[0].GetText() == "" {
 		t.Fatalf("got %v", got)
 	}
-	if text := got[0].GetSaid(); !strings.HasSuffix(text, " secret-1") || !strings.Contains(text, "/") {
+	if text := got[0].GetText(); !strings.HasSuffix(text, " secret-1") || !strings.Contains(text, "/") {
 		t.Errorf("the child said %q", text)
 	}
 }
@@ -115,7 +115,7 @@ func TestStartStopsTheChildAfterTheStepLimit(t *testing.T) {
 	}
 }
 
-func TestStartKeepsTheSessionOfTheConversation(t *testing.T) {
+func TestStartPreservesTheSessionOfTheConversation(t *testing.T) {
 	spec := shell(`echo '{"session":"s-1"}'`,
 		func(r *agentrun.Reader, event map[string]any) { r.SetSession(event["session"].(string)) })
 	spec.Conversation = "c-1"
@@ -132,7 +132,7 @@ func TestStartKeepsTheSessionOfTheConversation(t *testing.T) {
 	}
 }
 
-func TestStartKeepsNoSessionWithoutAConversation(t *testing.T) {
+func TestStartPreservesNoSessionWithoutAConversation(t *testing.T) {
 	spec := shell(`echo '{"session":"s-1"}'`,
 		func(r *agentrun.Reader, event map[string]any) { r.SetSession(event["session"].(string)) })
 	var reg agentrun.Registry
@@ -184,7 +184,7 @@ func TestStartCleansUpAndFailsWhenTheProgramIsMissing(t *testing.T) {
 	}
 }
 
-func TestStartRefusesWorkOnceTheRegistryIsClosed(t *testing.T) {
+func TestStartRejectsWorkOnceTheRegistryIsClosed(t *testing.T) {
 	var reg agentrun.Registry
 	_ = reg.Close()
 
@@ -203,7 +203,7 @@ func (s *recordingStream) Send(resp *numenv1.AskAgentResponse) error {
 	return s.err
 }
 
-func TestForwardResponsesSendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
+func TestForwardResponsesSendsEveryResponseUntilTheWorkIsCompleted(t *testing.T) {
 	var reg agentrun.Registry
 	work, err := agentrun.Start(t.Context(), &reg, shell(`echo one; echo two`, nil))
 	if err != nil {
@@ -214,7 +214,7 @@ func TestForwardResponsesSendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
 	if err := agentrun.ForwardResponses(t.Context(), work, stream); err != nil {
 		t.Fatal(err)
 	}
-	if len(stream.got) != 2 || stream.got[0].GetSaid() != "one\n" || stream.got[1].GetSaid() != "two\n" {
+	if len(stream.got) != 2 || stream.got[0].GetText() != "one\n" || stream.got[1].GetText() != "two\n" {
 		t.Errorf("got %v", stream.got)
 	}
 }
@@ -337,11 +337,11 @@ func TestStartEndsTheChildThatIgnoresTheClosedOutputAfterALineTooLong(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan []*numenv1.AskAgentResponse, 1)
-	go func() { done <- drain(work) }()
+	isDone := make(chan []*numenv1.AskAgentResponse, 1)
+	go func() { isDone <- drain(work) }()
 
 	select {
-	case got := <-done:
+	case got := <-isDone:
 		if len(got) != 1 || got[0].GetStopped() == "" {
 			t.Errorf("got %v", got)
 		}

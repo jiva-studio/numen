@@ -34,9 +34,9 @@ export interface Turn {
   /** What the turn is about, for a voice that has something to be about. */
   readonly subject?: string
   /**
-   * What is true of the turn beside what it says: how much of a call has been
+   * What is true of the turn along with what it says: how much of a call has been
    * written, how long a wait has lasted, what a finished piece of work took.
-   * It is the part that moves while nothing else does.
+   * It is the part that moves exclusively.
    */
   readonly aside?: string
   readonly state?: TurnState
@@ -62,18 +62,18 @@ export const NO_UNRESOLVED: readonly string[] = Object.freeze([])
 const placedByTurn = new WeakMap<Turn, PlacedTurn>()
 
 const placeTurn = (turn: Turn): PlacedTurn => {
-  const known = placedByTurn.get(turn)
-  if (known) return known
-  const placed: PlacedTurn = {
+  const recognized = placedByTurn.get(turn)
+  if (recognized) return recognized
+  const placedTurn: PlacedTurn = {
     turn,
     voice: VOICES[turn.voice],
     state: turn.state ?? 'settled',
   }
-  placedByTurn.set(turn, placed)
-  return placed
+  placedByTurn.set(turn, placedTurn)
+  return placedTurn
 }
 
-/** The turns, with what is true of each where it sits. A turn keeps the entry it was first given. */
+/** The turns, with what is true of each where it is located. A turn keeps the entry it was first given. */
 export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] => turns.map(placeTurn)
 
 /**

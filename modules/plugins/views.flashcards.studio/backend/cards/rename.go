@@ -49,7 +49,7 @@ type RenameResult struct {
 // every face that places it, and as a heading in every card of every deck that
 // stencil cuts. So the rename reaches them all. The stencil is written once,
 // both of its names in the one write; then every deck of the vault is read, the
-// heading is rewritten in the cards of that stencil, and what stands under it is
+// heading is rewritten in the cards of that stencil, and what is placed under it is
 // untouched.
 //
 // Every field a stencil declares is written this way, the first included.
@@ -127,8 +127,8 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 	if err != nil || u.index == nil {
 		return out, err
 	}
-	written := append([]string{in.Stencil}, out.Decks...)
-	return out, note.WrapUnlevelled(u.index(ctx, v, written), written...)
+	content := append([]string{in.Stencil}, out.Decks...)
+	return out, note.WrapUnlevelled(u.index(ctx, v, content), content...)
 }
 
 // MaxDecksPerRename is the most decks an agent's rename reads and writes at once.
@@ -141,15 +141,15 @@ func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
 	if u.maxDecks <= 0 || u.maxDecks == UnboundedDecks {
 		return nil
 	}
-	held, err := u.getDeckPaths(ctx, v)
+	target, err := u.getDeckPaths(ctx, v)
 	if err != nil {
 		return err
 	}
-	if len(held) > u.maxDecks {
+	if len(target) > u.maxDecks {
 		return fmt.Errorf(
 			"this rename reads and writes every deck in the vault, and there are %d of them, "+
 				"which is more than the %d this does at once: rename the field in the window",
-			len(held), u.maxDecks)
+			len(target), u.maxDecks)
 	}
 	return nil
 }
@@ -212,13 +212,13 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 func (u RenameField) writeStencilField(
 	ctx context.Context, reader ports.VaultReader, writer ports.VaultWriter, in Rename,
 ) (domain.Fingerprint, error) {
-	against := in.Fingerprint
-	if against.IsZero() {
+	expectedFp := in.Fingerprint
+	if expectedFp.IsZero() {
 		on, err := reader.GetFingerprint(ctx, in.Stencil)
 		if err != nil {
 			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.Stencil, err)
 		}
-		against = on
+		expectedFp = on
 	}
 
 	raw, err := reader.Read(ctx, in.Stencil)
@@ -235,7 +235,7 @@ func (u RenameField) writeStencilField(
 	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
-	return writer.Write(ctx, in.Stencil, f.Bytes(), against)
+	return writer.Write(ctx, in.Stencil, f.Bytes(), expectedFp)
 }
 
 // writeIdentifier writes an identifier into a file that carries none, which is

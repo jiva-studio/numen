@@ -10,7 +10,7 @@ import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { PlexRelation } from '../../lib/relation'
 import type { WideBox } from '../../model/expansion'
 import type { PlexBehaviour } from '../../model/behaviour'
-import type { PlexDestination } from '../../model/showing'
+import type { PlexDestination } from '../../model/destination'
 
 export interface PlexPending {
   from: string
@@ -58,7 +58,7 @@ export interface PlexViewProps {
   pending?: PlexPending | null
   /**
    * Something dragged over the picture from outside it: where the pointer
-   * is, and the relation letting go there comes to. Both, or the picture draws
+   * is, and the relation letting go there evaluates to. Both, or the picture draws
    * none of it.
    */
   draggedAt?: Position | null

@@ -74,17 +74,17 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	}
 	t.Cleanup(func() { installation.Close() })
 
-	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
+	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.Services)
-	mux.Handle(drawn, itself)
+	mountQuestionsServices(mux, installation.Services)
+	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)
 	t.Cleanup(server.Close)
 
-	client := asks(server.Client(), server.URL)
+	client := newQuestionsClient(server.Client(), server.URL)
 	watching := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
 
 	// The window opens on what the first scan stored; the watcher reports only
@@ -158,12 +158,12 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 
 	// And the index is level with the disk by the time it is announced.
-	shown, err := client.GetNeighbourhood(t.Context(),
+	displayed, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Note.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if title := shown.Msg.GetFocus().GetTitle(); title != "Renamed" {
+	if title := displayed.Msg.GetFocus().GetTitle(); title != "Renamed" {
 		t.Errorf("the index still says %q", title)
 	}
 }

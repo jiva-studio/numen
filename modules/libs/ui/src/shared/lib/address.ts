@@ -39,8 +39,8 @@ export const parseAddress = (raw: string): Address => {
   if (fragment >= 0) target = target.slice(0, fragment)
   target = target.trim()
 
-  const split = SCHEMED.exec(target)
-  if (split) return { scheme: split[1] as string, value: split[2] as string }
+  const divided = SCHEMED.exec(target)
+  if (divided) return { scheme: divided[1] as string, value: divided[2] as string }
   return { scheme: NAME, value: target }
 }
 
@@ -51,7 +51,7 @@ export const writeAddress = (address: Address): string => `${address.scheme}://$
 export const isNoteAddress = (address: string): boolean =>
   address.startsWith(`${NAME}://`) || address.startsWith(`${NOTE}://`)
 
-/** One wikilink as it stands in a text. */
+/** One wikilink currently in a text. */
 export interface Wikilink {
   /** Where the brackets begin, and where they end. */
   readonly at: number

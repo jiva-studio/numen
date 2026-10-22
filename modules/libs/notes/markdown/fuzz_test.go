@@ -67,7 +67,7 @@ func FuzzAddLink(f *testing.F) {
 	})
 }
 
-// A change to a link stays inside the `links:` block, and a refused one leaves
+// A change to a link stays inside the `links:` block, and a rejected one leaves
 // the note byte for byte.
 func FuzzUpdateLink(f *testing.F) {
 	for _, seed := range spliceSeeds {
@@ -86,7 +86,7 @@ func FuzzUpdateLink(f *testing.F) {
 		was := string(d.Bytes())
 		if _, err := d.UpdateLink(domain.ParseAddress(to), domain.Link{Role: domain.LinkRole(role)}); err != nil {
 			if got := string(d.Bytes()); got != was {
-				t.Fatalf("a refused change was written\n was %q\n now %q", was, got)
+				t.Fatalf("a rejected change was written\n was %q\n now %q", was, got)
 			}
 			return
 		}
@@ -169,19 +169,19 @@ func getOwnedLines(note, key string) (start, end int, found bool) {
 	if len(lines) == 0 || lines[0] != "---" {
 		return 0, 0, false
 	}
-	shut := 0
+	closingLine := 0
 	for i := 1; i < len(lines); i++ {
 		if lines[i] == "---" {
-			shut = i
+			closingLine = i
 			break
 		}
 	}
-	if shut == 0 {
+	if closingLine == 0 {
 		return 0, 0, false
 	}
 
 	margin, at, owner := "", false, 0
-	for i := 1; i < shut; i++ {
+	for i := 1; i < closingLine; i++ {
 		text := strings.TrimSpace(lines[i])
 		if text == "" || strings.HasPrefix(text, "#") {
 			continue
@@ -199,7 +199,7 @@ func getOwnedLines(note, key string) (start, end int, found bool) {
 	}
 
 	last := owner
-	for i := owner + 1; i < shut; i++ {
+	for i := owner + 1; i < closingLine; i++ {
 		text := strings.TrimSpace(lines[i])
 		if text == "" || strings.HasPrefix(text, "#") {
 			continue

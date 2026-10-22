@@ -203,7 +203,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     chooseHeadings: (count: number) => nesting.chooseCount(`${count}`),
     getSetting: (at: readonly string[]) => rest.getSetting(at),
     getModels: (at: readonly string[]) => rest.getModelsAt(at),
-    write: (written: readonly SettingEdit[]) => rest.writeSettings(written),
+    write: (content: readonly SettingEdit[]) => rest.writeSettings(content),
     writeSecret: (pluginId: string, name: string, key: string) =>
       secrets.writeSecret(pluginId, name, key),
     deleteSecret: (pluginId: string, name: string) => secrets.deleteSecret(pluginId, name),
@@ -265,7 +265,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     refresh: rest.start,
   })
   const retry = createPluginRetry(core, {
-    words: { failedAgain: words.pluginFailedAgain, refused: words.pluginRetryRefused },
+    words: { failedAgain: words.pluginFailedAgain, error: words.pluginRetryRefused },
     notify: log.getWriter('plugins'),
     refresh: rest.start,
   })
@@ -285,7 +285,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   watch(dressed.sized, () => onSizeChanged())
 
-  const kept = createSettingsPaletteLists({ dressed, sync, nesting, rest, words })
+  const retainedItem = createSettingsPaletteLists({ dressed, sync, nesting, rest, words })
 
   const kinds = [configured.kind]
 
@@ -308,7 +308,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     rest,
     file,
     configured,
-    kept,
+    kept: retainedItem,
     kinds,
     start,
     close,

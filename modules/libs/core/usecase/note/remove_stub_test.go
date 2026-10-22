@@ -71,10 +71,10 @@ type trashing struct {
 }
 
 func newTrashing() *trashing {
-	moves, asked, levelled := &[]string{}, &[]string{}, &[][]string{}
-	tr := &trashing{moves: moves, asked: asked, levelled: levelled}
+	moves, request, levelled := &[]string{}, &[]string{}, &[][]string{}
+	tr := &trashing{moves: moves, asked: request, levelled: levelled}
 	tr.sources = trashSources{}
-	tr.links = trashLinks{asked: asked}
+	tr.links = trashLinks{asked: request}
 	tr.writers = trashWriters{writer: trashWriter{
 		move: func(_, to string) error {
 			*moves = append(*moves, to)
@@ -96,7 +96,7 @@ func noteAt(path string) domain.Fingerprint {
 	return domain.Fingerprint{Path: path, Kind: domain.KindNote}
 }
 
-func TestRemovingStopsWhenTheIndexCannotSayWhatIsUnderThePath(t *testing.T) {
+func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	broken := errors.New("the index is gone")
@@ -219,7 +219,7 @@ func TestAFullTrashRefusesTheNoteAfterAHundredNames(t *testing.T) {
 		t.Errorf("the trash was offered the note %d times, want 100", len(*tr.moves))
 	}
 	if got.Path != "Entropy.md" || got.Trashed != "" {
-		t.Errorf("the answer to a refused removal is %+v", got)
+		t.Errorf("the answer to a rejected removal is %+v", got)
 	}
 	if len(*tr.levelled) != 0 {
 		t.Errorf("the index was levelled for a note that is still there: %v", *tr.levelled)

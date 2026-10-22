@@ -145,9 +145,9 @@ function guardAgent(
       requirePerm('vault:read', 'agent.finish')
       return agent.finish(conversation)
     },
-    resolve: (written) => {
+    resolve: (content) => {
       requirePerm('vault:read', 'agent.resolve')
-      return agent.resolve(written)
+      return agent.resolve(content)
     },
   }
 }

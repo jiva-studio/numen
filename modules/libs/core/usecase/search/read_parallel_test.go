@@ -63,8 +63,8 @@ func (c *concurrentVault) Read(ctx context.Context, path string) ([]byte, error)
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
-	raw, held := c.content[path]
-	if !held {
+	raw, target := c.content[path]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return []byte(raw), nil
@@ -128,7 +128,7 @@ func TestReadAnswersAsManySourcesAsItIsGivenInTheOrderOfTheRanking(t *testing.T)
 	}
 }
 
-func TestReadNeverHoldsMoreDecodedSourcesThanItHasExtractors(t *testing.T) {
+func TestReadNeverContainsMoreDecodedSourcesThanItHasExtractors(t *testing.T) {
 	content, found := manySources(30)
 	for _, extractors := range []int{1, 3, defaultExtractors} {
 		vault := newConcurrentVault(content)
@@ -177,7 +177,7 @@ func TestReadReadsASourceNamedFarApartOnce(t *testing.T) {
 	}
 }
 
-func TestReadStopsAtTheFirstErrorAndLeavesNoGoroutineRunning(t *testing.T) {
+func TestReadStopsAtTheFirstErrorAndPreservesNoGoroutineRunning(t *testing.T) {
 	content, found := manySources(30)
 	vault := newConcurrentVault(content)
 	vault.failAt = "book-00.md"
@@ -198,7 +198,7 @@ func TestReadStopsAtTheFirstErrorAndLeavesNoGoroutineRunning(t *testing.T) {
 	waitForGoroutines(t, before)
 }
 
-func TestReadStopsWhenTheContextEndsAndLeavesNoGoroutineRunning(t *testing.T) {
+func TestReadStopsWhenTheContextEndsAndPreservesNoGoroutineRunning(t *testing.T) {
 	content, found := manySources(30)
 	vault := newConcurrentVault(content)
 	vault.hold = time.Minute
@@ -206,10 +206,10 @@ func TestReadStopsWhenTheContextEndsAndLeavesNoGoroutineRunning(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	before := runtime.NumGoroutine()
-	done := make(chan error, 1)
+	isDone := make(chan error, 1)
 	go func() {
 		_, err := u.read(ctx, domain.Vault{ID: "v"}, found)
-		done <- err
+		isDone <- err
 	}()
 	for {
 		vault.mu.Lock()
@@ -223,7 +223,7 @@ func TestReadStopsWhenTheContextEndsAndLeavesNoGoroutineRunning(t *testing.T) {
 	cancel()
 
 	select {
-	case err := <-done:
+	case err := <-isDone:
 		if !errors.Is(err, context.Canceled) {
 			t.Errorf("got %v, want the context's own error", err)
 		}

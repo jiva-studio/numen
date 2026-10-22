@@ -13,7 +13,7 @@ describe('the words of an error code', () => {
     }
   })
 
-  it('are said for every code the window has', () => {
+  it('are returned for every code the window has', () => {
     expect(Object.values(ERRORS).every((one) => one !== '')).toBe(true)
   })
 

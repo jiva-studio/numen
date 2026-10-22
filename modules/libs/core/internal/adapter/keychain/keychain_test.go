@@ -50,7 +50,7 @@ func TestAKeyNeverStoredIsNoKey(t *testing.T) {
 }
 
 // Keys under two names stay apart.
-func TestKeysUnderTwoNamesStayApart(t *testing.T) {
+func TestKeysBelowTwoNamesStayApart(t *testing.T) {
 	keyring.MockInit()
 	store := Store{}
 	for name, key := range map[string]string{"a/apiKey": "value-a", "b/apiKey": "value-b"} {

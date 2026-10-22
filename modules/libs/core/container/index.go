@@ -86,7 +86,7 @@ func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) 
 	return i.db.DeleteOtherRecipeVectors(ctx, recipe)
 }
 
-// Compact hands back the space the index no longer holds.
+// Compact returns the space the index no longer holds.
 func (i *Index) Compact(ctx context.Context) error { return i.db.Compact(ctx) }
 
 func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }

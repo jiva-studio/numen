@@ -19,11 +19,11 @@ import (
 func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		shown, err := opened.Queries().GetNotes(t.Context(), v.ID, []string{path})
+		displayed, err := opened.Queries().GetNotes(t.Context(), v.ID, []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, held := shown[path]; held {
+		if _, target := displayed[path]; target {
 			return
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -43,9 +43,9 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			opened, cfg := windowOn(t)
-			said := fmt.Sprintf(`{"naming":{"sync_title_and_filename":%v}}`, bool(c.sync))
+			response := fmt.Sprintf(`{"naming":{"sync_title_and_filename":%v}}`, bool(c.sync))
 			if err := os.WriteFile(
-				filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json"), []byte(said), 0o644,
+				filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json"), []byte(response), 0o644,
 			); err != nil {
 				t.Fatal(err)
 			}

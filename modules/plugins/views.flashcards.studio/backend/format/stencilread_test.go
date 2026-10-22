@@ -15,14 +15,14 @@ func TestAStencilWhoseFrontmatterCannotBeReadIsNotOpened(t *testing.T) {
 	f, err := format.OpenStencil([]byte("---\nfields: [Name\n---\n\n## Recognise\n"))
 
 	if !errors.Is(err, markdown.ErrUnreadable) {
-		t.Fatalf("open = %v, want the frontmatter refused", err)
+		t.Fatalf("open = %v, want the frontmatter rejected", err)
 	}
 	if f != nil {
 		t.Errorf("a stencil was opened over frontmatter nobody can read")
 	}
 }
 
-func TestRenamingAFieldOfAStencilWrittenOnOneLineIsRefused(t *testing.T) {
+func TestRenamingAFieldOfAStencilSavedOnOneLineIsRefused(t *testing.T) {
 	raw := "---\n{type: stencil, fields: [Name, Height]}\n---\n\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 	f, err := format.OpenStencil([]byte(raw))
 	if err != nil {
@@ -30,7 +30,7 @@ func TestRenamingAFieldOfAStencilWrittenOnOneLineIsRefused(t *testing.T) {
 	}
 
 	if err := f.RenameField("Height", "Shoulder height"); !errors.Is(err, markdown.ErrInline) {
-		t.Fatalf("rename = %v, want it refused", err)
+		t.Fatalf("rename = %v, want it rejected", err)
 	}
 	if got := string(f.Bytes()); got != raw {
 		t.Errorf("the file was written: %q", got)
@@ -60,7 +60,7 @@ func TestADeeperHeadingInASideIsText(t *testing.T) {
 
 // A side is opened by the first heading of its name; a heading of another name
 // and a second heading of the same name stand under the side above them.
-func TestSideHeadingsThatOpenNothingStandUnderTheSideAboveThem(t *testing.T) {
+func TestSideHeadingsThatOpenNothingStandBelowTheSideAboveThem(t *testing.T) {
 	for name, tc := range map[string]struct{ body, front string }{
 		"another name": {
 			"### Front\n\n{{Name}}\n\n### Notes\n\nn\n\n### Back\n\nanswer\n",

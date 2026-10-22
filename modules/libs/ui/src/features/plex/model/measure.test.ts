@@ -18,11 +18,11 @@ const PER_CHARACTER = 7
 
 /** A canvas that measures by the character, and remembers what it was asked. */
 function stubCanvas() {
-  const asked: string[] = []
+  const request: string[] = []
   const context = {
     font: '',
     measureText(text: string) {
-      asked.push(text)
+      request.push(text)
       return { width: text.length * PER_CHARACTER } as TextMetrics
     },
   }
@@ -32,7 +32,7 @@ function stubCanvas() {
     context as unknown as CanvasRenderingContext2D,
   )
 
-  return { asked, context }
+  return { request: request, context }
 }
 
 /** The tokens as a theme writes them, which is in whatever unit it likes. */
@@ -56,8 +56,8 @@ const inPixels = (value: string): string =>
 const resolveValue = (declaration: string): string => {
   const token = /^var\((--[a-z-]+)\)$/.exec(declaration)?.[1]
   if (!token) return declaration
-  const written = theme[token]
-  return written ? inPixels(written) : ''
+  const content = theme[token]
+  return content ? inPixels(content) : ''
 }
 
 /**
@@ -163,7 +163,7 @@ describe('what a title needs', () => {
   })
 
   it('measures a string once, however many nodes carry it', () => {
-    const { asked } = stubCanvas()
+    const { request } = stubCanvas()
     stubStyles()
     setTheme()
     const measures = widths()!
@@ -174,12 +174,12 @@ describe('what a title needs', () => {
 
     // The sample word comes first: how deep a line stands is taken off the
     // type when the measurer is made.
-    expect(asked).toStrictEqual(['Hxg', 'Adapter', 'Port'])
+    expect(request).toStrictEqual(['Hxg', 'Adapter', 'Port'])
   })
 })
 
 describe('where a caller draws an icon', () => {
-  it('keeps the room it asked for, and a gap between icon and title', () => {
+  it('keeps the room it requested for, and a gap between icon and title', () => {
     stubCanvas()
     stubStyles()
     setTheme()
@@ -195,7 +195,7 @@ describe('where a caller draws an icon', () => {
 })
 
 describe('what a label needs', () => {
-  it('is the words alone: a label stands on a line and carries no padding', () => {
+  it('is the words alone: a label relies on a line and carries no padding', () => {
     stubCanvas()
     stubStyles()
     setTheme()
@@ -215,7 +215,7 @@ describe('what a label needs', () => {
     expect(context.font).toBe('10px Test Sans, sans-serif')
   })
 
-  it('stands as deep as the font sets its letters about the baseline', () => {
+  it('remains as deep as the font sets its letters about the baseline', () => {
     const { context } = stubCanvas()
     stubStyles()
     setTheme()
@@ -262,7 +262,7 @@ describe('a theme changed under a plex already standing', () => {
     stop()
   })
 
-  it('is the same measurer while the type stands, so nothing is re-arranged', () => {
+  it('is the same measurer while the type remains, so nothing is re-arranged', () => {
     stubCanvas()
     stubStyles()
     setTheme()
@@ -376,7 +376,7 @@ describe('the box a plex measures its type against', () => {
     })
   })
 
-  it('is let go of when the plex goes', () => {
+  it('is release when the plex goes', () => {
     stubCanvas()
     stubStyles()
     setTheme()

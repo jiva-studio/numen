@@ -15,7 +15,7 @@ import type { NodeIdFactory } from '../lib/edit'
 export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
 
 /** A row or a column, in equal shares when none are given. */
-export const split = (
+const splitBranch = (
   id: NodeId,
   children: readonly WorkspaceNode[],
   sizes?: readonly number[],
@@ -33,13 +33,13 @@ export const createWorkspace = (
 
 /** Identities that count up, so a test can name what a gesture made. */
 export function createIdFactory(prefix = 'made'): NodeIdFactory {
-  let made = 0
-  return () => `${prefix}-${++made}`
+  let createdItem = 0
+  return () => `${prefix}-${++createdItem}`
 }
 
 /** What the desktop opens with: the plex, and the agent beside it. */
 export const sideBySide = (): Workspace =>
-  createWorkspace(split('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]))
+  createWorkspace(splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]))
 
 /** One stack holding both, so that only one shows at a time. */
 export const oneStack = (): Workspace => createWorkspace(stack('main', 'plex', 'chat'))
@@ -47,19 +47,19 @@ export const oneStack = (): Workspace => createWorkspace(stack('main', 'plex', '
 /** Two stacks, the second with a tab to spare, so that neither empties. */
 export const withSpare = (): Workspace =>
   createWorkspace(
-    split('root', [stack('main', 'plex'), stack('aside', 'chat', 'notes')], [0.7, 0.3]),
+    splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat', 'notes')], [0.7, 0.3]),
   )
 
 /** Four levels, each turning a quarter from the one above. */
 export const deep = (): Workspace =>
   createWorkspace(
-    split('root', [
+    splitBranch('root', [
       stack('a', 'one'),
-      split('down', [
+      splitBranch('down', [
         stack('b', 'two'),
-        split('across', [
+        splitBranch('across', [
           stack('c', 'three'),
-          split('again', [stack('d', 'four'), stack('e', 'five')]),
+          splitBranch('again', [stack('d', 'four'), stack('e', 'five')]),
         ]),
       ]),
     ]),
@@ -68,7 +68,7 @@ export const deep = (): Workspace =>
 /** A stack with more tabs than a narrow strip can show. */
 export const manyTabs = (): Workspace =>
   createWorkspace(
-    split(
+    splitBranch(
       'root',
       [
         stack('main', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'),
@@ -80,3 +80,5 @@ export const manyTabs = (): Workspace =>
 
 /** Nothing open. */
 export const empty = (): Workspace => createWorkspace(pane('main', []))
+
+export { splitBranch as split }

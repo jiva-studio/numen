@@ -27,7 +27,7 @@ const (
 	noise    = "ει; ·, .· ;, ·. ;· ., ·· ;, .· ει ;· ., ·, .· ;,"
 )
 
-func TestCut(t *testing.T) {
+func TestSplit(t *testing.T) {
 	tests := []struct {
 		name      string
 		text      string
@@ -132,7 +132,7 @@ func TestCut(t *testing.T) {
 
 // TestCutOneLongLine is the rule that a chunk is bounded in words: a book on
 // one line is cut like a book on many.
-func TestCutOneLongLine(t *testing.T) {
+func TestSplitOneLongLine(t *testing.T) {
 	text := line(200000)
 	out := Cut(text, nil, Sizes{}, Legibility{})
 
@@ -149,7 +149,7 @@ func TestCutOneLongLine(t *testing.T) {
 
 // TestCutOverlaps is the rule that two consecutive chunks share words and that
 // both of them slice back to the words they share.
-func TestCutOverlaps(t *testing.T) {
+func TestSplitOverlaps(t *testing.T) {
 	text := "Opening\n" + line(70) + "\nSecond part\n" + latin + " " + sanskrit + "\n" + line(90)
 	parts := []domain.PartStart{
 		{Title: "Opening", Offset: 0},
@@ -184,7 +184,7 @@ func TestCutOverlaps(t *testing.T) {
 // TestCutKeepsSmallChunksUnderTheLimit is the rule that a small chunk stays
 // inside the model's input: the caller gives the limit in characters, and a
 // chunk over it is cut further at a word.
-func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
+func TestSplitKeepsSmallChunksBelowTheLimit(t *testing.T) {
 	tests := []struct {
 		name  string
 		text  string
@@ -198,16 +198,16 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			sizes := Sizes{Small: 50, Limit: test.limit}
 			out := Cut(test.text, nil, sizes, Legibility{})
-			seen := 0
+			observed := 0
 			for _, large := range out {
 				for _, small := range large.Small {
 					if n := utf8.RuneCountInString(small.ExtractText(test.text)); n > test.limit {
 						t.Errorf("small chunk of %d characters, limit %d", n, test.limit)
 					}
-					seen++
+					observed++
 				}
 			}
-			if seen == 0 {
+			if observed == 0 {
 				t.Fatal("no small chunks produced")
 			}
 			assertCutRules(t, test.text, nil, sizes, out)
@@ -218,30 +218,30 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 // TestCutIsPure is what lets a chunk keep an offset and not the text: the same
 // text and the same parts give the same offsets, and Cut leaves the parts as it
 // found them.
-func TestCutIsPure(t *testing.T) {
+func TestSplitIsPure(t *testing.T) {
 	text := line(40) + "\nSecond\n" + line(40) + "\nThird\n" + line(40)
 	parts := []domain.PartStart{
 		{Title: "Third", Offset: 2*len(line(40)) + len("\nSecond\n") + 1},
 		{Title: "Second", Offset: len(line(40)) + 1},
 	}
-	given := append([]domain.PartStart(nil), parts...)
+	provided := append([]domain.PartStart(nil), parts...)
 	sizes := Sizes{Large: 12, Small: 5}
 
-	first := Cut(text, given, sizes, Legibility{})
-	second := Cut(text, given, sizes, Legibility{})
+	first := Cut(text, provided, sizes, Legibility{})
+	second := Cut(text, provided, sizes, Legibility{})
 
 	if !isSame(first, second) {
 		t.Error("two cuts of the same text disagree")
 	}
-	for i := range given {
-		if given[i] != parts[i] {
-			t.Errorf("Cut changed the parts it was given: %v, want %v", given[i], parts[i])
+	for i := range provided {
+		if provided[i] != parts[i] {
+			t.Errorf("Cut changed the parts it was given: %v, want %v", provided[i], parts[i])
 		}
 	}
 }
 
 // TestCutNothing covers the texts that carry no words.
-func TestCutNothing(t *testing.T) {
+func TestSplitNothing(t *testing.T) {
 	for _, text := range []string{"", "   \n\t\n  ", noise} {
 		if out := Cut(text, nil, Sizes{}, Legibility{}); out != nil {
 			t.Errorf("Cut(%q) produced %d chunks", text, len(out))
@@ -349,13 +349,13 @@ func countSmall(out []Chunk) int {
 }
 
 func locations(out []Chunk) []string {
-	var seen []string
+	var observed []string
 	for _, c := range out {
-		if len(seen) == 0 || seen[len(seen)-1] != c.Location {
-			seen = append(seen, c.Location)
+		if len(observed) == 0 || observed[len(observed)-1] != c.Location {
+			observed = append(observed, c.Location)
 		}
 	}
-	return seen
+	return observed
 }
 
 func equal(got, want []string) bool {
@@ -398,7 +398,7 @@ func flatten(out []Chunk) []Chunk {
 // tokens. The bound is a floor over every script: transliterated Sanskrit takes
 // several tokens a word, and a chunk the model silently truncates is a chunk
 // indexed for text it does not contain.
-func TestAChunkIsBoundedUnderTheModelsLimit(t *testing.T) {
+func TestAChunkIsBoundedBelowTheModelsLimit(t *testing.T) {
 	if got := GetCharacterBound(0); got != DefaultLimit {
 		t.Errorf("a model that said nothing gives %d", got)
 	}
@@ -419,7 +419,7 @@ func TestAChunkIsBoundedUnderTheModelsLimit(t *testing.T) {
 
 // TestCutUsesTheDefaultSizes is the rule that a zero size takes its default: a
 // small chunk holds fifty words and the next begins ten words before its end.
-func TestCutUsesTheDefaultSizes(t *testing.T) {
+func TestSplitUsesTheDefaultSizes(t *testing.T) {
 	text := line(120)
 	small := flatten(Cut(text, nil, Sizes{}, Legibility{}))
 	if len(small) < 2 {
@@ -437,7 +437,7 @@ func TestCutUsesTheDefaultSizes(t *testing.T) {
 
 // TestCutDefaultLimit is the rule that a small chunk holds at most a thousand
 // characters when the caller names no limit.
-func TestCutDefaultLimit(t *testing.T) {
+func TestSplitDefaultLimit(t *testing.T) {
 	tests := []struct {
 		name  string
 		runes int

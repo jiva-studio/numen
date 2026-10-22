@@ -39,13 +39,13 @@ func (s *session) invoke(t *testing.T, name string, args any) *v1.CallToolRespon
 		t.Fatal(err)
 	}
 	res, err := s.registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
-		Name: name, Arguments: raw, Asked: s.asked,
+		Name: name, Arguments: raw, Context: s.asked,
 	}))
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
 	}
 	if res.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("%s: refused as %v", name, res.Msg.GetError())
+		t.Fatalf("%s: rejected as %v", name, res.Msg.GetError())
 	}
 	return res.Msg
 }
@@ -74,12 +74,12 @@ func call[T any](t *testing.T, s *session, name string, args any) T {
 	return out
 }
 
-// getRefusal is why a tool refused a call.
-func getRefusal(t *testing.T, s *session, name string, args any) string {
+// getToolError is why a tool refused a call.
+func getToolError(t *testing.T, s *session, name string, args any) string {
 	t.Helper()
 	res := s.invoke(t, name, args).GetResult()
 	if !res.GetIsRefusal() {
-		t.Fatalf("%s: expected a refusal, got %s", name, res.GetStructured())
+		t.Fatalf("%s: expected an error, got %s", name, res.GetStructured())
 	}
 	return res.GetText()
 }

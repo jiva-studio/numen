@@ -145,8 +145,8 @@ const renderOverWindow = (args: Knobs) => ({
   components: { Palette },
   setup() {
     const open = ref(true)
-    const typed = ref('ent')
-    return { args, open, typed }
+    const searchQuery = ref('ent')
+    return { args, open, typed: searchQuery }
   },
   template: `
     <div class="numen" style="height:100vh;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans)">
@@ -265,7 +265,7 @@ export const Choosing: Story = {
 }
 
 /**
- * Nothing behind it is reachable while it stands, which is what a palette is.
+ * Nothing behind it is reachable while active, which is what a palette is.
  * Tab is answered here and moves nowhere, and the panel over the palette says
  * the same of the palette under it.
  */
@@ -439,16 +439,16 @@ export const Filling: Story = {
     components: { Palette },
     setup() {
       const open = ref(true)
-      const typed = ref('ent')
+      const searchQuery = ref('ent')
       const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], isWorking: true }, TEXT])
 
-      let waiting: ReturnType<typeof setTimeout> | undefined
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
       onMounted(() => {
-        waiting = setTimeout(() => (groups.value = [NAMES, TEXT]), 700)
+        timeoutId = setTimeout(() => (groups.value = [NAMES, TEXT]), 700)
       })
-      onUnmounted(() => clearTimeout(waiting))
+      onUnmounted(() => clearTimeout(timeoutId))
 
-      return { args, open, typed, groups }
+      return { args, open, typed: searchQuery, groups }
     },
     template: `
       <div class="numen" style="height:100vh;background:var(--numen-surface)">
@@ -483,19 +483,19 @@ export const NothingHeard: Story = {
     components: { Palette },
     setup() {
       const open = ref(true)
-      const typed = ref('ent')
+      const searchQuery = ref('ent')
       const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], isWorking: true }])
 
-      let waiting: ReturnType<typeof setTimeout> | undefined
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
       onMounted(() => {
-        waiting = setTimeout(
+        timeoutId = setTimeout(
           () => (groups.value = [{ ...NAMES, items: [], silence: 'No note answers to that' }]),
           700,
         )
       })
-      onUnmounted(() => clearTimeout(waiting))
+      onUnmounted(() => clearTimeout(timeoutId))
 
-      return { args, open, typed, groups }
+      return { args, open, typed: searchQuery, groups }
     },
     template: `
       <div class="numen" style="height:100vh;background:var(--numen-surface)">
@@ -597,8 +597,8 @@ const renderWithIcons = (args: Knobs) => ({
   components: { Palette },
   setup() {
     const open = ref(true)
-    const typed = ref('ent')
-    return { args, open, typed, icons: ICONS }
+    const searchQuery = ref('ent')
+    return { args, open, typed: searchQuery, icons: ICONS }
   },
   template: `
     <div class="numen" style="height:100vh;background:var(--numen-surface)">
@@ -672,7 +672,7 @@ export const Icons: Story = {
 }
 
 /**
- * Where an icon stands on a row carrying two lines: on the name, not between
+ * Where an icon relies on a row carrying two lines: on the name, not between
  * the two lines, so the icons read down the list beside the names.
  */
 export const IconsOnTheName: Story = {
@@ -766,7 +766,7 @@ export const NotLatin: Story = {
  * Each is one line and then an ellipsis. The panel keeps the clearance it is
  * drawn with on either side, and nothing in it pushes the window wider. The
  * clearance is a length the interface multiplier moves, so it is read from the
- * panel rather than named.
+ * panel and not named.
  */
 export const TooLong: Story = {
   args: {
@@ -786,13 +786,13 @@ export const TooLong: Story = {
     await waitFor(() => expect(palette()).not.toBeNull())
 
     const panel = document.body.querySelector<HTMLElement>('[data-palette="panel"]')!
-    const over = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
-    const clear = Number.parseFloat(getComputedStyle(over).paddingInlineStart)
-    const drawn = panel.getBoundingClientRect()
-    const room = over.getBoundingClientRect()
+    const overElement = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
+    const clear = Number.parseFloat(getComputedStyle(overElement).paddingInlineStart)
+    const bounds = panel.getBoundingClientRect()
+    const room = overElement.getBoundingClientRect()
 
-    await expect(drawn.left).toBeGreaterThanOrEqual(room.left + clear - 1)
-    await expect(drawn.right).toBeLessThanOrEqual(room.right - clear + 1)
+    await expect(bounds.left).toBeGreaterThanOrEqual(room.left + clear - 1)
+    await expect(bounds.right).toBeLessThanOrEqual(room.right - clear + 1)
     for (const option of options()) {
       await expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth + 1)
     }
@@ -861,10 +861,10 @@ export const SomeCameBackEmpty: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map(
+    const viewElement = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map(
       (group) => group.textContent?.trim(),
     )
-    await expect(drawn).toEqual(['Text', 'Meaning', 'Names'])
+    await expect(viewElement).toEqual(['Text', 'Meaning', 'Names'])
     await expect(lit()?.textContent).toContain('Heat engines')
   },
 }
@@ -962,7 +962,7 @@ export const Steps: Story = {
     setup() {
       const open = ref(true)
       const step = ref('find')
-      const typed = ref('')
+      const searchQuery = ref('')
       const crumb = ref('')
 
       const getTitle = (id: string) => NAMED.items.find((one) => one.id === id)?.title ?? ''
@@ -971,18 +971,18 @@ export const Steps: Story = {
         args.onChoose(item, action)
         if (action !== 'rename') return
         crumb.value = `New name for «${getTitle(item)}»`
-        typed.value = getTitle(item)
+        searchQuery.value = getTitle(item)
         step.value = 'name'
       }
 
       const goBack = () => {
         args.onBack()
         crumb.value = ''
-        typed.value = ''
+        searchQuery.value = ''
         step.value = 'find'
       }
 
-      return { args, open, step, typed, crumb, choose, goBack, NAMED }
+      return { args, open, step, typed: searchQuery, crumb, choose, goBack, NAMED }
     },
     template: `
       <div class="numen" style="height:100vh;background:var(--numen-surface)">

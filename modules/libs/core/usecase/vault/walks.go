@@ -23,12 +23,12 @@ func (w *Walks) turn(vaultID domain.VaultID) chan struct{} {
 	if w.turns == nil {
 		w.turns = map[domain.VaultID]chan struct{}{}
 	}
-	held, found := w.turns[vaultID]
+	target, found := w.turns[vaultID]
 	if !found {
-		held = make(chan struct{}, 1)
-		w.turns[vaultID] = held
+		target = make(chan struct{}, 1)
+		w.turns[vaultID] = target
 	}
-	return held
+	return target
 }
 
 // startOne takes the vault's turn and answers with the release of it. Walks of

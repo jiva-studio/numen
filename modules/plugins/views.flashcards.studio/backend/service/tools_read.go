@@ -26,8 +26,8 @@ func (b *Backend) addCardCurrent(registry *tools.Registry) error {
 			"back empty.",
 		Effect: tools.Reads, Servers: []tools.Server{tools.Review},
 	}, func(ctx context.Context, _ struct{}) (CurrentCard, error) {
-		asked := tools.Asked(ctx)
-		return CurrentCard{Deck: asked[askedFocus], Card: asked[askedMark], Face: asked[askedFace]}, nil
+		request := tools.Asked(ctx)
+		return CurrentCard{Deck: request[askedFocus], Card: request[askedMark], Face: request[askedFace]}, nil
 	})
 }
 
@@ -112,7 +112,7 @@ func (b *Backend) readCardStencil(ctx context.Context, in stencilReadInput) (ste
 		return stencilReadOutput{}, err
 	}
 	if s.Outcome != note.Ok {
-		if reason, refused := convertOutcomeToErrorCode(s.Outcome); refused {
+		if reason, ok := convertOutcomeToErrorCode(s.Outcome); ok {
 			return stencilReadOutput{}, errors.New(describeCode(reason))
 		}
 		return stencilReadOutput{}, fmt.Errorf("%s: %s", in.Path, s.Outcome)
@@ -164,7 +164,7 @@ func (b *Backend) addCardRead(registry *tools.Registry) error {
 			"the runs a person divided the deck into, and every card says which of them " +
 			"it stands under. What was wrong with the file comes back under `faults`, " +
 			"on the card it is against. The fingerprint is what the writing tools want: " +
-			"hand it back and a write is refused if the person changed the deck in the " +
+			"hand it back and a write fails if the person changed the deck in the " +
 			"meantime.",
 		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
 	}, b.readCards)

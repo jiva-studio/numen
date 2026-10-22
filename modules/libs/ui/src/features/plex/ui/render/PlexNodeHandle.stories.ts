@@ -12,7 +12,7 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
 
 interface Knobs {
-  /** Where it sits, in the coordinates of whatever draws it. */
+  /** where it is located, in the coordinates of whatever draws it. */
   x: number
   y: number
   /** Whose hue it takes. The focus has none, and it falls back to the border. */
@@ -106,20 +106,20 @@ export const EveryHue: Story = {
  * pixels they come to.
  *
  * Every one of them is a length in rem inside the handle itself, and what a rem
- * comes to is the browser's answer and no test's.
+ * evaluates to is the browser's answer and no test's.
  */
 export const EverySizeIsAsDesigned: Story = {
   args: { zoom: 1 },
   play: async ({ canvasElement }) => {
     const disc = canvasElement.querySelector('.plex__handle')!
-    const across = canvasElement.querySelector('.plex__handle-mark--across')!
+    const acrossElement = canvasElement.querySelector('.plex__handle-mark--across')!
     const down = canvasElement.querySelector('.plex__handle-mark--down')!
 
     // Nine pixels of radius, arms four out from the middle either way, on a bar
     // of one and a half.
     await expect(getComputedStyle(disc).r).toBe('9px')
-    await expect(getComputedStyle(across).width).toBe('8px')
-    await expect(getComputedStyle(across).height).toBe('1.5px')
+    await expect(getComputedStyle(acrossElement).width).toBe('8px')
+    await expect(getComputedStyle(acrossElement).height).toBe('1.5px')
     await expect(getComputedStyle(down).width).toBe('1.5px')
     await expect(getComputedStyle(down).height).toBe('8px')
   },
@@ -130,7 +130,7 @@ export const EverySizeIsAsDesigned: Story = {
  * has somewhere to be dragged to and the keyboard has not.
  *
  * Only a browser can answer it — what tab stops on inside an SVG, and whether
- * a token that never arrives leaves a disc of no size rather than a default.
+ * a token that never arrives leaves a disc of no size and not a default.
  */
 export const Pressing: Story = {
   play: async ({ args, canvasElement }) => {

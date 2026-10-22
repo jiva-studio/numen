@@ -9,7 +9,7 @@ import type { Preset } from '../types'
 export interface Tile {
   readonly one: Preset
   /**
-   * What stands under the name: the goal, or why it schedules nothing. A preset
+   * What is placed under the name: the goal, or why it schedules nothing. A preset
    * scheduling nothing is asked for its reason, not for what it was aiming at.
    */
   readonly goal: string
@@ -34,13 +34,13 @@ export interface Tile {
  */
 export const getTiles = (presets: readonly Preset[], today: string): Tile[] =>
   presets.filter(isScheduling).map((one) => {
-    const done = getSpentShare(one)
-    const isOver = done > 1
+    const isDone = getSpentShare(one)
+    const isOver = isDone > 1
     return {
       one,
       goal: one.paused || (one.settings ? getGoalWords(one.settings, today) : ''),
       wrong: one.wrong,
-      says: isOver ? 'over budget' : percent(done),
+      says: isOver ? 'over budget' : percent(isDone),
       left: one.paused ? '' : getLeftWords(one),
       isOver,
       canOpen: !one.paused && one.cards > 0,

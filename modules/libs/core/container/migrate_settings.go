@@ -63,12 +63,12 @@ func migrateOneSetting(pluginID string, setting port.PluginSetting, file map[str
 		if !found {
 			continue
 		}
-		written, err := json.Marshal(value)
+		content, err := json.Marshal(value)
 		if err != nil {
 			continue
 		}
 		return port.Setting{
-			Path: []string{"plugins", pluginID, setting.Key}, JSON: string(written),
+			Path: []string{"plugins", pluginID, setting.Key}, JSON: string(content),
 		}, true
 	}
 	return port.Setting{}, false

@@ -12,7 +12,7 @@ import (
 // What answers is a program of somebody else's making, reached over a protocol
 // of its own. Everything above this interface sees one agent and never which.
 type Agent interface {
-	// StartRun gives the agent a task and hands back the run it has begun.
+	// StartRun gives the agent a task and returns the run it has begun.
 	StartRun(ctx context.Context, task Task) (Run, error)
 	// EndConversation says a conversation is over. What the agent kept of it is let go
 	// of, and whatever is still being worked in it is stopped and waited for.
@@ -26,7 +26,7 @@ type Task struct {
 	Question string
 	// Focus is the note the window is showing, empty when it shows none.
 	Focus string
-	// Conversation is which thread of talk this question belongs to, named by
+	// Conversation is which conversation thread this question belongs to, named by
 	// the caller. Questions carrying one name are answered in one conversation
 	// with the agent, so the name has to be the caller's alone: unique among
 	// the conversations it has open, and never given to a second one for as

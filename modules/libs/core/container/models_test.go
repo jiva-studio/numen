@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// A section stands under the key the document spells on the field that holds
+// A section is placed under the key the document spells on the field that holds
 // it, and what a model row writes is put under that same word. A key said twice
 // is a row writing a setting nothing reads.
 func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {

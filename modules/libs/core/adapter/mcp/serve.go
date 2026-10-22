@@ -166,8 +166,8 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHan
 		}
 		errorHandler(err)
 	}()
-	stopped := make(chan struct{})
-	endpoint.stop = func() { close(stopped) }
+	stopCh := make(chan struct{})
+	endpoint.stop = func() { close(stopCh) }
 	go func() {
 		select {
 		case <-ctx.Done():
@@ -175,7 +175,7 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHan
 			// time left: the listener and the idle connections go at once, and
 			// the calls already running are still waited for.
 			endpoint.Close(ctx)
-		case <-stopped:
+		case <-stopCh:
 		}
 	}()
 	return endpoint, nil

@@ -6,7 +6,7 @@
 import { computed, useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { NameBox } from '../../name-box'
-import { useNameEntry } from '../../../model/naming'
+import { useNameEntry } from '../../../model/nameEntry'
 import { Button } from '@/shared/ui/button'
 import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
 import { STENCIL_WORDS, type FaceRow, type StencilWords } from '../../../lib/stencil'
@@ -149,7 +149,7 @@ const says = computed(() => {
   outline: none;
 }
 
-/* What is wrong with the face stands under the strip and over the window,
+/* What is wrong with the face is placed under the strip and over the window,
    taking no room from it. A press meant for what is underneath reaches it. */
 .face__amiss {
   position: absolute;

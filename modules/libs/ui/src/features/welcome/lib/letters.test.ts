@@ -62,11 +62,11 @@ describe('a letter pressed over the list', () => {
     expect(getVaultForKey(createPress('ab'), 2)).toBeNull()
   })
 
-  it('opens nothing while the key is held down', () => {
+  it('opens nothing while the key is retained down', () => {
     expect(getVaultForKey(createPress('a', { repeat: true }), 2)).toBeNull()
   })
 
-  it('opens nothing where the letter is held with a modifier', () => {
+  it('opens nothing where the letter is retained with a modifier', () => {
     expect(getVaultForKey(createPress('a', { ctrlKey: true }), 2)).toBeNull()
     expect(getVaultForKey(createPress('a', { metaKey: true }), 2)).toBeNull()
     expect(getVaultForKey(createPress('a', { altKey: true }), 2)).toBeNull()

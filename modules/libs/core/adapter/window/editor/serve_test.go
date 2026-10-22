@@ -118,7 +118,7 @@ func (r waits) Read(ctx context.Context, path string) ([]byte, error) {
 }
 
 // unwalkable is a set of readers that cannot list the vault, which is what a
-// folder the walk is refused looks like from here. A note named outright is
+// folder the walk fails looks like from here. A note named outright is
 // still read.
 type unwalkable struct{ port.VaultReaders }
 
@@ -209,8 +209,8 @@ func openingWith(
 		api.state.Indexing.Model.Store(embedder.GetModel().String())
 		api.state.Indexing.Progress = db.Progress()
 	}
-	line, done := api.state.ChangeEvents.subscribe()
-	t.Cleanup(done)
+	line, isDone := api.state.ChangeEvents.subscribe()
+	t.Cleanup(isDone)
 
 	made := newWatched(cfg, db, readers, watcher)
 	worker := newIndexWorker(made, api.state, embedder, still, io.Discard)
@@ -242,7 +242,7 @@ func save(t *testing.T, f *behind, path, body string) {
 		t.Fatal(err)
 	}
 	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the save of %s was refused: %v", path, code)
+		t.Fatalf("the save of %s failed: %v", path, code)
 	}
 }
 
@@ -327,7 +327,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 
 // TestANoteChangedUnderTheScanIsReadAgain. The scan writes in groups from what
 // it read, so its copy of a note lands last however early the note was read.
-func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
+func TestANoteChangedBelowTheScanIsReadAgain(t *testing.T) {
 	watcher := byHand()
 	readers := newSlowWait()
 	defer readers.release()
@@ -354,7 +354,7 @@ func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
 
 // TestANoteDeletedUnderTheScanStaysDeleted. The scan holds a copy of a note it
 // read, and the note went while it held it.
-func TestANoteDeletedUnderTheScanStaysDeleted(t *testing.T) {
+func TestANoteDeletedBelowTheScanStaysDeleted(t *testing.T) {
 	watcher := byHand()
 	readers := newSlowWait()
 	defer readers.release()
@@ -430,7 +430,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 // TestAVaultThatCannotBeWatchedSaysSo. The window draws a warning from this,
 // and a vault nobody is following looks exactly like a vault nothing happens
 // to.
-func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
+func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, unwatchable{}, filesystem.VaultReaders{})
@@ -441,7 +441,7 @@ func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 }
 
 // TestAWatchThatStopsSaysSo.
-func TestAWatchThatStopsSaysSo(t *testing.T) {
+func TestAWatchThatStopsReturnsSo(t *testing.T) {
 	watcher := byHand()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
@@ -458,8 +458,8 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 // vault arriving in the window does.
 func modifySession(api *Services, change func(*vaultSession)) {
 	on := vaultSession{}
-	if held := api.state.session.Load(); held != nil {
-		on = *held
+	if target := api.state.session.Load(); target != nil {
+		on = *target
 	}
 	change(&on)
 	api.state.setSession(&on)
@@ -487,11 +487,11 @@ func (s *saying) getBooks(t *testing.T) []int {
 
 	var out []int
 	for _, line := range strings.Split(s.said.String(), "\n") {
-		_, said, found := strings.Cut(line, ": ")
+		_, response, found := strings.Cut(line, ": ")
 		if !found {
 			continue
 		}
-		count, _, found := strings.Cut(said, " books,")
+		count, _, found := strings.Cut(response, " books,")
 		if !found {
 			continue
 		}
@@ -510,12 +510,12 @@ func (s *saying) getBooks(t *testing.T) []int {
 // thousands is taken apart afresh for one file dropped into it.
 func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	const (
-		held    = "library/A Book.epub"
+		target    = "library/A Book.epub"
 		dropped = "library/Another Book.epub"
 	)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	testsupport.WriteBook(t, v.Path, held)
+	testsupport.WriteBook(t, v.Path, target)
 
 	cfg := container.Config{
 		IndexPath:          filepath.Join(t.TempDir(), "index.db"),

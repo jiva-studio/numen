@@ -119,7 +119,7 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	defer db.Close()
 
 	// A statement that cannot apply must leave the version where it was, so the
-	// next start retries the whole migration rather than resuming half-way.
+	// next start retries the whole migration and not resuming half-way.
 	broken := migration{version: 99, name: "0099_broken.sql", body: "CREATE TABLE ok (x INTEGER);\nNOT SQL AT ALL;"}
 	if err := apply(ctx, db, broken); err == nil {
 		t.Fatal("a broken migration reported success")
@@ -231,7 +231,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 		db.Close()
 		t.Fatal("an index whose schema does not match its number was opened")
 	}
-	t.Logf("refused with: %v", err)
+	t.Logf("failed with: %v", err)
 
 	// What it held, it still holds.
 	back, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
@@ -503,7 +503,7 @@ func (r breakingRows) Next(dest []driver.Value) error {
 // remember's rename runs as one transaction: a statement that fails partway
 // through leaves the schema_migrations table that was there before remember
 // was called.
-func TestRememberLeavesTheOriginalTableWhenRenamingFails(t *testing.T) {
+func TestRememberPreservesTheOriginalTableWhenRenamingFails(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 

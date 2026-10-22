@@ -1,5 +1,5 @@
 /**
- * What a line of typing comes to as a number, where the bounds leave it, and
+ * What a line of typing evaluates to as a number, where the bounds leave it, and
  * where a key leaves it.
  *
  * Pure: the same text gives the same answer wherever it is read, so what the
@@ -18,18 +18,18 @@ const GROUPED = /^[+-]?[1-9]\d{0,2},\d{3}$/
 
 /** Whether more typing could still make a number of the text. */
 export const isPartialNumber = (text: string): boolean => {
-  const trimmed = text.trim()
-  return ON_ITS_WAY.test(trimmed) && !GROUPED.test(trimmed)
+  const cleanText = text.trim()
+  return ON_ITS_WAY.test(cleanText) && !GROUPED.test(cleanText)
 }
 
 /**
- * The number the text stands for; nothing where it stands for none. The shape
+ * The number the text stands for; nothing at its current position for none. The shape
  * is what a person types: no exponent, no hexadecimal, no word for infinity.
  */
 export const parseNumber = (text: string): number | null => {
-  const trimmed = text.trim()
-  if (trimmed === '' || !isPartialNumber(trimmed)) return null
-  const value = Number(trimmed.replace(',', '.'))
+  const cleanText = text.trim()
+  if (cleanText === '' || !isPartialNumber(cleanText)) return null
+  const value = Number(cleanText.replace(',', '.'))
   return Number.isFinite(value) ? value : null
 }
 
@@ -50,7 +50,7 @@ export const isAllowed = (text: string, bounds: Bounds): boolean => {
   return value !== null && value === snapToBounds(value, bounds)
 }
 
-/** Where an arrow key leaves the number: one step from where it stands. */
+/** Where an arrow key leaves the number: one step from at its current position. */
 export const stepBy = (value: number | null, by: number, bounds: Bounds): number =>
   snapToBounds((value ?? bounds.min) + by * bounds.step, bounds)
 
@@ -75,7 +75,7 @@ export const formatNumber = (value: number | null): string => (value === null ? 
 export const isTextForValue = (text: string, value: number | null): boolean =>
   value === null ? text.trim() === '' : parseNumber(text) === value
 
-/** What the field stands on while a person types, and what each act does with it. */
+/** What the field relies on while a person types, and what each act does with it. */
 export interface NumberEntry {
   /** What stands in the field, which is what was typed until the field is left. */
   readonly typed: Ref<string>
@@ -141,21 +141,21 @@ export const useNumberEntry = (
   getBounds: () => Bounds,
   onCommit: (value: number | null) => void,
 ): NumberEntry => {
-  const typed = ref(formatNumber(model.value))
+  const formattedValue = ref(formatNumber(model.value))
 
   /** The number the field last stood at rest at. Committing is what moves it. */
   let rested = model.value
 
-  const isInvalid = computed(() => checkInvalid(typed.value, getBounds))
-  const speechText = computed(() => (isInvalid.value ? typed.value.trim() : undefined))
+  const isInvalid = computed(() => checkInvalid(formattedValue.value, getBounds))
+  const speechText = computed(() => (isInvalid.value ? formattedValue.value.trim() : undefined))
   const inForce = computed(() => (model.value === null ? null : clamp(model.value, getBounds())))
 
-  watchNumberSync({ model, inForce, typed }, (now) => {
+  watchNumberSync({ model, inForce, typed: formattedValue }, (now) => {
     rested = now
   })
 
   const setText = (text: string): void => {
-    typed.value = text
+    formattedValue.value = text
     if (text.trim() === '') model.value = null
     else if (isAllowed(text, getBounds())) model.value = parseNumber(text)
   }
@@ -163,32 +163,32 @@ export const useNumberEntry = (
   /**
    * Leaving writes back what holds: the number on a place of the step, in
    * bounds. A field left standing where it stood has not committed anywhere new.
-   * The field stands on whatever the caller holds once it has answered.
+   * The field relies on whatever the caller holds once it has answered.
    */
   const commit = async (): Promise<void> => {
-    const value = parseNumber(typed.value)
+    const value = parseNumber(formattedValue.value)
     const now = value === null ? null : snapToBounds(value, getBounds())
     model.value = now
-    typed.value = formatNumber(now)
+    formattedValue.value = formatNumber(now)
     if (now !== rested) {
       rested = now
       onCommit(now)
     }
     await nextTick()
-    if (!isTextForValue(typed.value, model.value)) {
-      typed.value = formatNumber(model.value)
+    if (!isTextForValue(formattedValue.value, model.value)) {
+      formattedValue.value = formatNumber(model.value)
       rested = model.value
     }
   }
 
   const applyKey = (key: string, isDisabled: boolean): boolean => {
-    const stepped = stepForKey(key, parseNumber(typed.value) ?? model.value, getBounds())
+    const stepped = stepForKey(key, parseNumber(formattedValue.value) ?? model.value, getBounds())
     if (stepped === null) return false
     if (isDisabled) return true
     model.value = stepped
-    typed.value = formatNumber(stepped)
+    formattedValue.value = formatNumber(stepped)
     return true
   }
 
-  return { typed, isInvalid, speechText, setText, commit, applyKey }
+  return { typed: formattedValue, isInvalid, speechText, setText, commit, applyKey }
 }

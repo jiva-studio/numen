@@ -2,7 +2,7 @@
  * A press that becomes a drag once the pointer has travelled far enough.
  *
  * Everything that knows about events is here; where a landing is and what
- * letting go comes to are the caller's.
+ * letting go evaluates to are the caller's.
  */
 import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
 import type { Position } from '@/shared/lib/geometry'
@@ -27,7 +27,7 @@ export interface Press<Item, At> {
   readonly getClock: () => Clock
   /** Where letting go here would put what is held. */
   readonly getDropTargetAt: (item: Item, at: Position) => At | null
-  /** What letting go after a drag comes to. The landing is nothing off any target. */
+  /** What letting go after a drag evaluates to. The landing is nothing off any target. */
   readonly commit: (item: Item, at: At | null) => void
   /** Said once, when the press turns into a drag. */
   readonly begin?: (item: Item) => void
@@ -56,29 +56,29 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function drag(event: PointerEvent): void {
-    const held = dragging.value!
+    const target = dragging.value!
 
     const now: Position = { x: event.clientX, y: event.clientY }
     const hasMoved =
-      held.hasMoved ||
+      target.hasMoved ||
       Math.abs(now.x - start.x) > press.getThreshold() ||
       Math.abs(now.y - start.y) > press.getThreshold()
 
-    dragging.value = { item: held.item, hasMoved }
+    dragging.value = { item: target.item, hasMoved }
     position.value = hasMoved ? now : null
-    at.value = hasMoved ? press.getDropTargetAt(held.item, now) : null
+    at.value = hasMoved ? press.getDropTargetAt(target.item, now) : null
 
-    if (hasMoved && !held.hasMoved) press.begin?.(held.item)
+    if (hasMoved && !target.hasMoved) press.begin?.(target.item)
   }
 
   function drop(): void {
-    const held = dragging.value!
+    const target = dragging.value!
     const found = at.value
 
     detach()
     at.value = null
     position.value = null
-    if (held.hasMoved) press.commit(held.item, found)
+    if (target.hasMoved) press.commit(target.item, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
     press.getClock().schedule(() => {

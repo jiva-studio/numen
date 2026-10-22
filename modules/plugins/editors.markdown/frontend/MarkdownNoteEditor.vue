@@ -81,8 +81,8 @@ const frontmatterError = computed(() => {
     if (delimiterMatch && delimiterMatch.index !== undefined) {
       const rawYaml = rest.slice(0, delimiterMatch.index)
       for (const line of rawYaml.split(/\r?\n/)) {
-        const trimmed = line.trim()
-        if (trimmed.includes('[') && !trimmed.includes(']')) {
+        const cleanLine = line.trim()
+        if (cleanLine.includes('[') && !cleanLine.includes(']')) {
           return 'the frontmatter of this note cannot be read'
         }
       }

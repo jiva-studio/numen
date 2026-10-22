@@ -52,7 +52,7 @@ func getReachingRuns(batch Batch, reply string) []int {
 // takes the whole run out. No two corrections cover one line. A line no
 // accepted reply covers is not in the result.
 func gatherAnswers(answers []answer) (map[int]Line, []int) {
-	kept := gathering{
+	collector := gathering{
 		put:   make(map[int]Line),
 		owner: make(map[int]int),
 		best:  make(map[int]int),
@@ -67,10 +67,10 @@ func gatherAnswers(answers []answer) (map[int]Line, []int) {
 		}
 		after := countRemainingLines(one.batch.Lines)
 		for _, line := range one.lines {
-			kept.offer(line, after)
+			collector.offer(line, after)
 		}
 	}
-	return kept.put, past
+	return collector.put, past
 }
 
 // gathering is the corrections kept so far.
@@ -90,13 +90,13 @@ type gathering struct {
 func (g *gathering) offer(line Line, after map[int]int) {
 	first, last := line.Number, max(line.Last, line.Number)
 	for at := first; at <= last; at++ {
-		if stood, seen := g.best[at]; seen && after[at] < stood {
+		if status, observed := g.best[at]; observed && after[at] < status {
 			return
 		}
 	}
 	for at := first; at <= last; at++ {
-		if held, covered := g.owner[at]; covered {
-			g.evict(held)
+		if target, covered := g.owner[at]; covered {
+			g.evict(target)
 		}
 	}
 	g.put[first] = line

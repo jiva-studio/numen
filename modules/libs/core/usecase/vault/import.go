@@ -33,14 +33,14 @@ type ImportResult struct {
 // dropped stays where it was.
 type Import struct {
 	writers port.VaultWriters
-	// files is what the person handed over, read where it stands. Nothing here
+	// files is what the person handed over, read at its current position. Nothing here
 	// reaches the machine itself: what arrives is a path on a desktop and a
 	// content URI on a phone, and this is what tells them apart.
 	files port.ImportedFiles
 }
 
 // NewImport is what a file a person handed over arrives through: the vault it
-// is copied into, and what reads it where it stands.
+// is copied into, and what reads it at its current position.
 func NewImport(writers port.VaultWriters, files port.ImportedFiles) Import {
 	return Import{writers: writers, files: files}
 }

@@ -94,7 +94,7 @@ const ladder = (least: number, most: number, rounds: (one: number) => number): r
   Array.from({ length: PLACES }, (_, at) => rounds(least + ((most - least) * at) / (PLACES - 1)))
 
 /**
- * What one place of the range comes to, guessed from the settings. A day of
+ * What one place of the range evaluates to, guessed from the settings. A day of
  * review brings back more of the material the longer it runs, and asking for
  * more of it back costs more of the day.
  */
@@ -118,9 +118,9 @@ const estimatePoint = (settings: Settings, value: number, grid: readonly number[
     const span = Math.max(grid[grid.length - 1] ?? 1, 1)
     const minutes = ((settings.minutesADay || DEFAULTS.minutesADay) * span) / Math.max(value, 1)
     const canLearnEveryCard = minutes <= (settings.minutesADay || DEFAULTS.minutesADay)
-    const through = Math.min(value / span, 1)
-    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, through, canLearnEveryCard }
+    const progressRatio = Math.min(value / span, 1)
+    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, through: Math.min(value / span, 1), canLearnEveryCard }
   }
-  const retained = (CEILING * value) / (value + HALF)
-  return { ...flat, minutes: value, reviews: (value * 60) / ANSWER, retained }
+  const retentionRatio = (CEILING * value) / (value + HALF)
+  return { ...flat, minutes: value, reviews: (value * 60) / ANSWER, retained: retentionRatio }
 }

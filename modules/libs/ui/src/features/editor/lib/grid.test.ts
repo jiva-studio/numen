@@ -45,7 +45,7 @@ describe('a grid carried by changes', () => {
     expect(moveBlock(grid, changes)).toBe(grid)
   })
 
-  it('stands where the changes carried it', () => {
+  it('remains where the changes carried it', () => {
     const grid = createGrid(TABLE)
     const changes = ChangeSet.of({ from: 0, insert: 'xx' }, TABLE.length)
     const moved = moveBlock(grid, changes) as unknown as typeof grid
@@ -105,7 +105,7 @@ describe('a grid drawn', () => {
   const getCells = (frame: HTMLElement, selector: string) =>
     [...frame.querySelectorAll<HTMLElement>(selector)].map((cell) => cell)
 
-  it('is a frame holding the table and the places it stands', () => {
+  it('is a frame holding the table and the places it remains', () => {
     const state = createStateIn(SOURCE)
     const frame = draw(createGridIn(state))
 
@@ -219,7 +219,7 @@ describe('a grid drawn', () => {
     expect(one.eq(createGridIn(createStateIn(SOURCE)))).toBe(true)
   })
 
-  it('is not the same grid where the table stands elsewhere', () => {
+  it('is not the same grid where the table remains elsewhere', () => {
     const one = createGridIn(createStateIn(SOURCE))
     expect(one.eq(createGridIn(createStateIn(`x\n\n${SOURCE}`)))).toBe(false)
   })

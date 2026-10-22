@@ -118,7 +118,7 @@ const createTab = (
   options: TabFixtureOptions = {},
 ) => {
   const { isWaiting = true, counts } = options
-  const done: string[] = []
+  const isDone: string[] = []
   const place = ref(2)
   const state: PresetTabState = {
     id: 'Sanskrit.md',
@@ -132,17 +132,17 @@ const createTab = (
     stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
     hasExternalChange: ref(false),
-    reload: () => void done.push('reload'),
-    chooseGoal: (goal) => void done.push(`choose ${goal}`),
+    reload: () => void isDone.push('reload'),
+    chooseGoal: (goal) => void isDone.push(`choose ${goal}`),
     moveSlider: (at) => {
       place.value = at
-      done.push(`move ${at}`)
+      isDone.push(`move ${at}`)
     },
-    flushPending: () => void done.push('flushPending'),
-    updateSetting: (field, value) => void done.push(`type ${field} ${value}`),
+    flushPending: () => void isDone.push('flushPending'),
+    updateSetting: (field, value) => void isDone.push(`type ${field} ${value}`),
     close: () => {},
   }
-  return { state, done }
+  return { state, recorded: isDone }
 }
 
 const mountPresetTab = (

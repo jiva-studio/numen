@@ -20,8 +20,8 @@ describe('an address something plays', () => {
   // and this frames what it was given. A window that composed one of its own
   // would be a second place the answer is decided.
   it('is played in a frame, at the address it was given', () => {
-    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words } })
-    const frame = drawn.get('iframe')
+    const wrapper = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words } })
+    const frame = wrapper.get('iframe')
 
     expect(frame.attributes('src')).toBe(EMBED)
     expect(frame.attributes('title')).toBe(words.playing)
@@ -31,9 +31,9 @@ describe('an address something plays', () => {
   // the page it loads, and that page has a host to answer to: one told nothing
   // about who is framing it plays nothing. What this window frames is its own
   // socket, so there is nothing here to keep from anybody.
-  it('is sandboxed, and tells the page it holds nothing about referrers', () => {
-    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words } })
-    const frame = drawn.get('iframe')
+  it('is sandboxed, and notifies the page it holds nothing about referrers', () => {
+    const wrapper = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words } })
+    const frame = wrapper.get('iframe')
 
     expect(frame.attributes('sandbox')).toBe('allow-scripts allow-same-origin allow-popups')
     expect(frame.attributes('referrerpolicy')).toBeUndefined()
@@ -42,28 +42,28 @@ describe('an address something plays', () => {
 
 describe('an address nothing plays', () => {
   it('is nothing at all: the tab says where it points', () => {
-    const drawn = mount(MediaEmbed, { props: { embed: '', copy: '', words } })
+    const wrapper = mount(MediaEmbed, { props: { embed: '', copy: '', words } })
 
-    expect(drawn.find('iframe').exists()).toBe(false)
-    expect(drawn.find('video').exists()).toBe(false)
+    expect(wrapper.find('iframe').exists()).toBe(false)
+    expect(wrapper.find('video').exists()).toBe(false)
   })
 })
 
 describe('a moment chosen in the transcript', () => {
   it('is where the frame is told to play from, and nobody else is told', () => {
-    const drawn = mount(MediaEmbed, {
+    const wrapper = mount(MediaEmbed, {
       props: { embed: EMBED, copy: '', words },
       attachTo: document.body,
     })
     const postedMessages: [string, string][] = []
-    const frame = drawn.get('iframe').element as HTMLIFrameElement
+    const frame = wrapper.get('iframe').element as HTMLIFrameElement
     Object.defineProperty(frame, 'contentWindow', {
       value: {
         postMessage: (message: string, origin: string) => postedMessages.push([message, origin]),
       },
     })
 
-    drawn.vm.seek(83_000)
+    wrapper.vm.seek(83_000)
 
     expect(postedMessages).toHaveLength(1)
     expect(JSON.parse(postedMessages[0]![0])).toEqual({
@@ -77,24 +77,24 @@ describe('a moment chosen in the transcript', () => {
   })
 
   it('does nothing where the address given is not one a frame can be told to post to', () => {
-    const drawn = mount(MediaEmbed, {
+    const wrapper = mount(MediaEmbed, {
       props: { embed: 'not-a-url', copy: '', words },
       attachTo: document.body,
     })
 
-    expect(() => drawn.vm.seek(1_000)).not.toThrow()
+    expect(() => wrapper.vm.seek(1_000)).not.toThrow()
   })
 
-  it('is where the copy is played from, where a copy stands', () => {
+  it('is where the copy is played from, where a copy remains', () => {
     const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
-    const drawn = mount(MediaEmbed, {
+    const wrapper = mount(MediaEmbed, {
       props: { embed: EMBED, copy: COPY, words },
       attachTo: document.body,
     })
-    const player = drawn.get('video').element as HTMLVideoElement
+    const player = wrapper.get('video').element as HTMLVideoElement
     player.play = () => Promise.resolve()
 
-    drawn.vm.seek(1_500)
+    wrapper.vm.seek(1_500)
 
     expect(player.currentTime).toBe(1.5)
   })
@@ -104,25 +104,25 @@ describe('a copy of the video on this disk', () => {
   const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
 
   it('is played in place of the frame, and nothing of the site is loaded', () => {
-    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: COPY, words } })
+    const wrapper = mount(MediaEmbed, { props: { embed: EMBED, copy: COPY, words } })
 
-    expect(drawn.find('iframe').exists()).toBe(false)
-    expect(drawn.get('video').attributes('src')).toBe(COPY)
+    expect(wrapper.find('iframe').exists()).toBe(false)
+    expect(wrapper.get('video').attributes('src')).toBe(COPY)
   })
 })
 
 describe('the height a person drew the player', () => {
   it('is where the player opens, where the store holds one', () => {
     const store = { read: () => 300, write: vi.fn() }
-    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
+    const wrapper = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
 
-    expect(drawn.get('iframe').attributes('style')).toContain('300px')
+    expect(wrapper.get('iframe').attributes('style')).toContain('300px')
   })
 
   it('leaves the player at sixteen by nine where the store holds none', () => {
     const store = { read: () => null, write: vi.fn() }
-    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
+    const wrapper = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
 
-    expect(drawn.get('iframe').attributes('style')).toBeUndefined()
+    expect(wrapper.get('iframe').attributes('style')).toBeUndefined()
   })
 })

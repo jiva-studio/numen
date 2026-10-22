@@ -11,7 +11,7 @@ import (
 // so they are references — the plain "see also" of a vault.
 func bodyLinks(body []byte) []domain.Link {
 	var out []domain.Link
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 
 	var f Fence
 	rest := body
@@ -32,10 +32,10 @@ func bodyLinks(body []byte) []domain.Link {
 			continue
 		}
 		for _, found := range WikilinksIn(strings.TrimRight(string(line), "\r")) {
-			if seen[found.Target.String()] {
+			if observed[found.Target.String()] {
 				continue
 			}
-			seen[found.Target.String()] = true
+			observed[found.Target.String()] = true
 			out = append(out, domain.Link{Target: found.Target, Role: domain.RoleRef})
 		}
 	}

@@ -38,7 +38,7 @@ func IndexDeclarations(declarations []*numenv1.ToolDeclaration) map[string]Decla
 // the arguments it declared. The arguments may not have finished arriving.
 func Describe(words map[string]Declaration, name, call, args string) *numenv1.ToolCall {
 	declared, isDeclared := words[name]
-	described := &numenv1.ToolCall{Tool: name, Call: call, Written: int32(len([]rune(args)))}
+	described := &numenv1.ToolCall{Tool: name, Call: call, Length: int32(len([]rune(args)))}
 	if !isDeclared {
 		described.About, described.Path, described.Span = readCallDetails(args)
 		return described
@@ -48,7 +48,7 @@ func Describe(words map[string]Declaration, name, call, args string) *numenv1.To
 	}
 	described.Kind = declared.Kind
 	if declared.About == "" {
-		described.Written = 0
+		described.Length = 0
 		return described
 	}
 	described.About = readAbout(declared, args)

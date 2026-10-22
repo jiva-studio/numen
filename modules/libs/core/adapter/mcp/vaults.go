@@ -62,13 +62,13 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := core.Vaults.GetKnownVaults.
+		target, err := core.Vaults.GetKnownVaults.
 			Execute(core.getCurrentVault().Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
-		list := make([]Vault, 0, len(held))
-		for _, one := range held {
+		list := make([]Vault, 0, len(target))
+		for _, one := range target {
 			list = append(list, newVault(one))
 		}
 		return nil, out{Vaults: list}, nil
@@ -160,7 +160,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 		Title: "Rename a vault",
 		Description: "What the person calls a vault. The folder keeps the name the " +
 			"filesystem gives it and nothing on disk moves. A name another vault on the " +
-			"list has is refused, so the names in `vault_list` name one vault each.",
+			"list has fails, so the names in `vault_list` name one vault each.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Vault string `json:"vault" jsonschema:"the vault to rename, addressed by its name, its folder, or the identity vault_list gives it"`
 		Name  string `json:"name" jsonschema:"what it is called from now on"`
@@ -197,7 +197,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		Description: "Take a vault off the list and out of the index. Its folder stays " +
 			"where it is with everything in it, and adding it again brings back the same " +
 			"vault under the same identity. The vault the person is looking at is " +
-			"refused, and so is the last vault an installation has. Nothing here deletes " +
+			"rejected, and so is the last vault an installation has. Nothing here deletes " +
 			"a folder: taking a person's notes off their disk is theirs to ask for, in " +
 			"front of them.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {

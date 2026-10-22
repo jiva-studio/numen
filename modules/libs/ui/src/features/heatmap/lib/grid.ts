@@ -24,8 +24,8 @@ export interface HeatmapMetrics {
  * How many columns fit the room there is, and how large a cell is drawn in it.
  *
  * The cell has a size of its own and the grid takes as many columns as fit, so
- * a wide window shows more weeks rather than the same weeks drawn larger, and a
- * narrow one shows fewer rather than the grid standing in the middle of empty
+ * a wide window shows more weeks and not the same weeks drawn larger, and a
+ * narrow one shows fewer and not the grid standing in the middle of empty
  * room. What is left over is spread between the cells, which keeps the grid
  * flush to both edges.
  */
@@ -73,8 +73,8 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   // what is still to come, and the columns before it.
   const last = new Date(now)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
-  const behind = new Date(last)
-  behind.setDate(behind.getDate() - (columns * ROWS - 1))
+  const behindDate = new Date(last)
+  behindDate.setDate(behindDate.getDate() - (columns * ROWS - 1))
 
   // The grid opening on the week a person began in, which for a vault with
   // nothing behind it is this week, and then all of it stands ahead.
@@ -82,7 +82,7 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   const ahead = new Date(opens)
   ahead.setDate(ahead.getDate() + columns * ROWS - 1)
 
-  return { from: getDayName(behind), to: getDayName(ahead) }
+  return { from: getDayName(behindDate), to: getDayName(ahead) }
 }
 
 /** The Monday of the week a day stands in, which is the column it opens. */

@@ -52,16 +52,16 @@ describe('a registration that says what its tabs hold', () => {
   it('is called what it calls a tab, and its title where it calls it nothing', () => {
     const getTitle = (state: Held) => state.title
     const named = createDeclaredTabKind('p', declare({ getTitle }))
-    const plain = createDeclaredTabKind('p', declare())
+    const plainKind = createDeclaredTabKind('p', declare())
     const { title: _title, ...untitled } = declare()
-    const bare = createDeclaredTabKind('p', untitled)
+    const bareKind = createDeclaredTabKind('p', untitled)
 
     expect(named.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Focus')
-    expect(plain.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
-    expect(bare.getTitle?.({})).toBe('held')
+    expect(plainKind.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
+    expect(bareKind.getTitle?.({})).toBe('held')
   })
 
-  it('hands the window every hook it declares, and no other', () => {
+  it('passes the window every hook it declares, and no other', () => {
     const navigate = vi.fn()
     const receiveText = vi.fn()
     const placement = { pane: 'main', order: 0 } as const
@@ -80,7 +80,7 @@ describe('a registration that says what its tabs hold', () => {
   })
 })
 
-describe('the hooks a registration hands over', () => {
+describe('the hooks a registration passes over', () => {
   it('are the ones it declares', () => {
     const onClose = () => true
     const icon = { name: 'Icon' }
@@ -195,24 +195,24 @@ describe('the services a plugin context is given', () => {
   it('tell every plugin listening for a change to the vault, and a failing one is reported', async () => {
     const onError = vi.fn()
     const host = createPluginHost(createDeps({ onError }))
-    const heard: unknown[] = []
-    const reading = {
+    const received: unknown[] = []
+    const readText = {
       id: 'md.numen.one',
       name: 'One',
       version: '1.0.0',
       permissions: ['vault:read'],
     }
-    host.createContext('md.numen.one', reading).onVaultChange((event) => {
-      heard.push(event)
+    host.createContext('md.numen.one', readText).onVaultChange((event) => {
+      received.push(event)
     })
-    host.createContext('md.numen.two', reading).onVaultChange(() => {
+    host.createContext('md.numen.two', readText).onVaultChange(() => {
       throw new Error('no')
     })
 
     host.notifyVaultChange({ paths: ['A.md'] })
-    await new Promise((done) => setTimeout(done, 0))
+    await new Promise((isDone) => setTimeout(isDone, 0))
 
-    expect(heard).toStrictEqual([{ paths: ['A.md'] }])
+    expect(received).toStrictEqual([{ paths: ['A.md'] }])
     expect(onError).toHaveBeenCalledWith('md.numen.two', expect.any(Error))
   })
 })

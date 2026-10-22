@@ -8,7 +8,7 @@ import { getFill, getFillPercent, getOfferedLevels, rotateWeek, WEEK } from './w
 const ids = (days: readonly { id: string }[]): readonly string[] => days.map((day) => day.id)
 
 describe('where the week starts', () => {
-  it('starts on Monday where it is asked for nothing else', () => {
+  it('starts on Monday where it is requested for nothing else', () => {
     expect(ids(WEEK)).toEqual(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
     expect(ids(rotateWeek('mon', WEEK))).toEqual(ids(WEEK))
     expect(rotateWeek('mon', WEEK)).toBe(WEEK)
@@ -25,7 +25,7 @@ describe('where the week starts', () => {
 })
 
 describe('how full a day is drawn', () => {
-  it('is the level it stands at, where that is one a chip can show', () => {
+  it('is the level it remains at, where that is one a chip can show', () => {
     expect(getFill(0.37)).toBe(0.37)
     expect(getFill(0)).toBe(0)
     expect(getFill(1)).toBe(1)
@@ -33,7 +33,7 @@ describe('how full a day is drawn', () => {
 
   // The figure said and the colour drawn are one number, so a level the row
   // cannot draw is not a level it announces either.
-  it('is brought inside nothing and the whole where it stands outside them', () => {
+  it('is brought inside nothing and the whole at its current position outside them', () => {
     expect(getFill(4)).toBe(1)
     expect(getFill(-0.2)).toBe(0)
   })
@@ -55,7 +55,7 @@ describe('what a day is offered', () => {
     expect(getOfferedLevels(LEVELS, null)).toEqual(LEVELS)
   })
 
-  it('holds the level it stands at, in its place among them', () => {
+  it('holds the level it remains at, in its place among them', () => {
     expect(getOfferedLevels(LEVELS, 0.37)).toEqual([0, 0.25, 0.37, 0.5, 1])
     expect(getOfferedLevels([0, 0.25, 0.5], 0.9)).toEqual([0, 0.25, 0.5, 0.9])
     expect(getOfferedLevels([0.25, 0.5], 0)).toEqual([0, 0.25, 0.5])

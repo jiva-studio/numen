@@ -39,7 +39,7 @@ func TestSpecialFileIsNotANote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	done := make(chan error, 1)
+	isDone := make(chan error, 1)
 	go func() {
 		var walked []string
 		err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
@@ -61,11 +61,11 @@ func TestSpecialFileIsNotANote(t *testing.T) {
 			}
 			t.Errorf("open pipe.md: %v, want ErrNotANote", err)
 		}
-		done <- err
+		isDone <- err
 	}()
 
 	select {
-	case err := <-done:
+	case err := <-isDone:
 		if err != nil {
 			t.Fatal(err)
 		}

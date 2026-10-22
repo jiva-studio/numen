@@ -81,15 +81,15 @@ func listVaults(out io.Writer, deps Deps) error {
 	}
 	// Nobody is sitting in front of a vault here, so the current one is the
 	// vault the next window opens.
-	known, err := vault.NewGetKnownVaults(vaults.Registry, vaults.Readers).Execute("")
+	recognized, err := vault.NewGetKnownVaults(vaults.Registry, vaults.Readers).Execute("")
 	if err != nil {
 		return err
 	}
-	if len(known) == 0 {
+	if len(recognized) == 0 {
 		fmt.Fprintln(out, "no vaults yet — add one with: numen-cli vault add <path>")
 		return nil
 	}
-	for _, one := range known {
+	for _, one := range recognized {
 		last := " "
 		if one.IsCurrent {
 			last = "*"

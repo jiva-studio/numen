@@ -86,16 +86,16 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { WorkspaceLayout, TabStub },
     setup() {
-      const held = ref<State>(ARRANGEMENTS[args.arrangement]())
+      const target = ref<State>(ARRANGEMENTS[args.arrangement]())
       watch(
         () => args.arrangement,
         (next) => {
-          held.value = ARRANGEMENTS[next]()
+          target.value = ARRANGEMENTS[next]()
         },
       )
-      const tabs = () => createTabs(held.value, args.marks)
+      const tabs = () => createTabs(target.value, args.marks)
 
-      return { held, args, tabs }
+      return { held: target, args, tabs }
     },
     template: `
       <div style="height: 100vh; padding: 0">
@@ -171,15 +171,15 @@ const mapToFrame = (at: Position): { window: Position; story: Position } => {
   }
 
   const box = frame.getBoundingClientRect()
-  const across = box.width / window.innerWidth
+  const isAcross = box.width / window.innerWidth
   const down = box.height / window.innerHeight
   const driven = {
-    x: Math.round(box.x + at.x * across),
+    x: Math.round(box.x + at.x * isAcross),
     y: Math.round(box.y + at.y * down),
   }
   return {
     window: driven,
-    story: { x: (driven.x - box.x) / across, y: (driven.y - box.y) / down },
+    story: { x: (driven.x - box.x) / isAcross, y: (driven.y - box.y) / down },
   }
 }
 
@@ -193,16 +193,16 @@ const sweep = async (from: Position, to: Position): Promise<void> => {
     mapToFrame(from).window,
     mapToFrame(to).window,
   )
-  await new Promise((done) => setTimeout(done, 16))
+  await new Promise((isDone) => setTimeout(isDone, 16))
 }
 
 /** The cursor the splitter puts over the whole page while it has the pointer. */
 function getCursor(): string | null {
-  const put = '*{cursor:'
+  const cursorPrefix = '*{cursor:'
 
   for (const style of document.head.querySelectorAll('style')) {
     const text = (style.textContent ?? '').trim()
-    if (text.startsWith(put)) return text.slice(put.length, text.indexOf('!')).trim()
+    if (text.startsWith(cursorPrefix)) return text.slice(cursorPrefix.length, text.indexOf('!')).trim()
   }
   return null
 }
@@ -249,8 +249,8 @@ const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <=
 
 /** The getFurthest out along that line the splitter still had the pointer. */
 function getFurthest(places: readonly Caught[]): Position {
-  const held = places.filter((place) => place.cursor)
-  const edge = held[held.length - 1]?.at
+  const target = places.filter((place) => place.cursor)
+  const edge = target[target.length - 1]?.at
   if (!edge) throw new Error('the handle caught nothing')
   return edge
 }
@@ -355,8 +355,8 @@ export const DividesTheWorkspace: Story = {
     await expect(panes).toHaveLength(3)
 
     // One of them runs the whole width along the foot.
-    const along = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
-    await expect(along).toHaveLength(1)
+    const alongPanes = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
+    await expect(alongPanes).toHaveLength(1)
   },
 }
 
@@ -470,9 +470,9 @@ export const LeavesAPanel: Story = {
 export const FollowsTheModel: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const drawn = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(getRect)
-    const total = drawn.reduce((wide, box) => wide + box.width, 0)
-    await expect((drawn[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)
+    const bounds = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(getRect)
+    const total = bounds.reduce((wide, box) => wide + box.width, 0)
+    await expect((bounds[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)
   },
 }
 
@@ -552,14 +552,14 @@ export const DragsFromItsWholeReach: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle') as HTMLElement
-    const caught = await measureAcross(handle, 'x')
+    const captured = await measureAcross(handle, 'x')
 
-    await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
+    await expect(captured.map((place) => [place.away, place.cursor])).toStrictEqual(
       getReach('ew-resize'),
     )
     await expect(getComputedStyle(handle).cursor).toBe('ew-resize')
 
-    const edge = getFurthest(caught)
+    const edge = getFurthest(captured)
     const before = paneBox(canvasElement, 'main').width
 
     await sweep(edge, { x: edge.x + 40, y: edge.y })
@@ -579,14 +579,14 @@ export const DragsFromItsWholeReachDownwards: Story = {
     const handle = canvasElement.querySelector(
       '.branch__handle[data-direction="vertical"]',
     ) as HTMLElement
-    const caught = await measureAcross(handle, 'y')
+    const captured = await measureAcross(handle, 'y')
 
-    await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
+    await expect(captured.map((place) => [place.away, place.cursor])).toStrictEqual(
       getReach('ns-resize'),
     )
     await expect(getComputedStyle(handle).cursor).toBe('ns-resize')
 
-    const edge = getFurthest(caught)
+    const edge = getFurthest(captured)
     const before = paneBox(canvasElement, 'b').height
 
     await sweep(edge, { x: edge.x, y: edge.y + 30 })

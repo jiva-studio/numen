@@ -4,7 +4,7 @@
  * a reader.
  *
  * It carries no ground and no shape of its own, and comes up to the ink of what
- * it stands on under the hand about to press it.
+ * it relies on under the hand about to press it.
  */
 import { Icon } from '../icon'
 

@@ -81,18 +81,18 @@ func (takenAway) Addr() net.Addr { return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1
 func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 
-	said := make(chan error, 1)
+	response := make(chan error, 1)
 	why := errors.New("the machine took the socket away")
-	back, err := newLoopback(takenAway{why: why}, api.server, func(err error) { said <- err })
+	back, err := newLoopback(takenAway{why: why}, api.server, func(err error) { response <- err })
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer back.Close()
 
 	select {
-	case told := <-said:
-		if !errors.Is(told, why) {
-			t.Errorf("the socket stopping was said as %v", told)
+	case res := <-response:
+		if !errors.Is(res, why) {
+			t.Errorf("the socket stopping was said as %v", res)
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("the socket stopped answering and nobody was told")
@@ -128,22 +128,22 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 // named in the address and not taken from the window.
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	held := api.state.GetCurrentVault()
-	find := vaults.NewFind(heldVaults{held})
+	target := api.state.GetCurrentVault()
+	find := vaults.NewFind(heldVaults{target})
 	api.server.find = &find
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.
 	api.state.setVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
-	if out := ask(handler, back.Address(held, statOf(t, api, held, talk))); out.Code != http.StatusOK {
+	if out := ask(handler, back.Address(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
 			out.Code, out.Body)
 	}
 }
 
 // A vault this installation does not hold is not a vault to read from.
-func TestAFileOfAVaultNobodyHoldsIsRefused(t *testing.T) {
+func TestAFileOfAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
@@ -217,12 +217,12 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	if got := out.Header.Get("Content-Type"); got != "audio/mpeg" {
 		t.Errorf("it came back as %q", got)
 	}
-	said, err := io.ReadAll(out.Body)
+	response, err := io.ReadAll(out.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(said) != sound {
-		t.Errorf("it came back as %q", said)
+	if string(response) != sound {
+		t.Errorf("it came back as %q", response)
 	}
 }
 
@@ -237,12 +237,12 @@ func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	defer back.Close()
 	api.Playing = back
 
-	said := getResponse(api.NewHandler(http.NotFoundHandler()), "/").
+	response := getResponse(api.NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
-	if !strings.Contains(said, "media-src 'self' "+back.address) {
-		t.Errorf("the socket is not what a recording may be played from: %q", said)
+	if !strings.Contains(response, "media-src 'self' "+back.address) {
+		t.Errorf("the socket is not what a recording may be played from: %q", response)
 	}
-	if strings.Contains(said, "img-src 'self' "+back.address) {
+	if strings.Contains(response, "img-src 'self' "+back.address) {
 		t.Error("naming where a recording plays from widened where a picture comes from")
 	}
 }

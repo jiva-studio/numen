@@ -19,7 +19,7 @@ type DiscoveryProblem struct {
 
 // DiscoverPlugins scans directories and loads every valid plugin manifest found; the rest are reported as problems.
 func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, []DiscoveryProblem) {
-	seen := make(map[string]string)
+	observed := make(map[string]string)
 	seenDirs := make(map[string]bool)
 	var found []DiscoveredPlugin
 	var problems []DiscoveryProblem
@@ -37,7 +37,7 @@ func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, []DiscoveryProblem) {
 		}
 		seenDirs[cleanDir] = true
 
-		plugins, dirProblems := scanDirectory(cleanDir, seen)
+		plugins, dirProblems := scanDirectory(cleanDir, observed)
 		found = append(found, plugins...)
 		problems = append(problems, dirProblems...)
 	}

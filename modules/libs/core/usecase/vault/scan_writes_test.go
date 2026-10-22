@@ -43,17 +43,17 @@ func (c *countedMeasurements) ReportChanges(context.Context) error { c.n++; retu
 
 // TestNotesAreWrittenInGroups. Nothing about a scan's result says how many
 // writes it took, so that is what is asserted.
-func TestNotesAreWrittenInGroups(t *testing.T) {
+func TestNotesAreSavedInGroups(t *testing.T) {
 	t.Parallel()
 	const notes = 600
 	v := testsupport.GenerateVault(t, notes)
-	written := &groupedWrites{}
+	content := &groupedWrites{}
 	db := openIndex(t)
 
 	scan := vaults.NewScan(
 		filesystem.VaultReaders{},
 		db.Vaults(),
-		written,
+		content,
 		db.Queries(),
 		&countedMeasurements{},
 	)
@@ -65,19 +65,19 @@ func TestNotesAreWrittenInGroups(t *testing.T) {
 	if res.Indexed != notes {
 		t.Fatalf("indexed %d of %d", res.Indexed, notes)
 	}
-	if len(written.groups) != 2 {
+	if len(content.groups) != 2 {
 		t.Errorf("wrote %d groups, want 2 — %d notes should not be %d transactions",
-			len(written.groups), notes, len(written.groups))
+			len(content.groups), notes, len(content.groups))
 	}
-	seen := 0
-	for _, group := range written.groups {
+	observed := 0
+	for _, group := range content.groups {
 		if len(group) > 500 {
 			t.Errorf("a group held %d notes: a vault of long files would be read into memory whole", len(group))
 		}
-		seen += len(group)
+		observed += len(group)
 	}
-	if seen != notes {
-		t.Errorf("%d notes reached the index, want %d", seen, notes)
+	if observed != notes {
+		t.Errorf("%d notes reached the index, want %d", observed, notes)
 	}
 }
 
@@ -100,12 +100,12 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 	}
 	v := domain.Vault{ID: domain.VaultID(cfg.ID), Name: "transcripts", Path: root}
 
-	written := &groupedWrites{}
+	content := &groupedWrites{}
 	db := openIndex(t)
 	scan := vaults.NewScan(
 		filesystem.VaultReaders{},
 		db.Vaults(),
-		written,
+		content,
 		db.Queries(),
 		&countedMeasurements{},
 	)
@@ -113,12 +113,12 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(written.groups) < 2 {
+	if len(content.groups) < 2 {
 		t.Fatalf("%d notes of a megabyte each were written in %d group(s): the size bound never closed one",
-			notes, len(written.groups))
+			notes, len(content.groups))
 	}
-	if len(written.groups[0]) > 9 {
-		t.Errorf("the first group held %d megabytes before it was written", len(written.groups[0]))
+	if len(content.groups[0]) > 9 {
+		t.Errorf("the first group held %d megabytes before it was written", len(content.groups[0]))
 	}
 }
 
@@ -127,18 +127,18 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 func TestAFailedWriteCountsNothing(t *testing.T) {
 	t.Parallel()
 	v := testsupport.GenerateVault(t, 10)
-	refused := errors.New("disk full")
+	writeErr := errors.New("disk full")
 	db := openIndex(t)
 
 	scan := vaults.NewScan(
 		filesystem.VaultReaders{},
 		db.Vaults(),
-		&groupedWrites{fail: refused},
+		&groupedWrites{fail: writeErr},
 		db.Queries(),
 		&countedMeasurements{},
 	)
 	res, err := scan.Execute(t.Context(), v)
-	if !errors.Is(err, refused) {
+	if !errors.Is(err, writeErr) {
 		t.Fatalf("error = %v, want the one the index gave", err)
 	}
 	if res.Indexed != 0 {

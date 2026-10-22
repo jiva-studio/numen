@@ -20,7 +20,7 @@ type Discovery struct {
 	Token string `json:"token"`
 }
 
-// WriteDiscovery writes the file, and hands back what removes it. A file left behind
+// WriteDiscovery writes the file, and returns what removes it. A file left behind
 // points the next agent at a dead port with a live-looking token.
 func WriteDiscovery(cfg container.Config, _ string, url, token string) (func(), error) {
 	path, err := DiscoveryPath(cfg)
@@ -55,8 +55,8 @@ func GetToken(cfg container.Config) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if kept, err := os.ReadFile(path); err == nil && len(kept) > 0 {
-		return string(kept), nil
+	if retained, err := os.ReadFile(path); err == nil && len(retained) > 0 {
+		return string(retained), nil
 	}
 
 	token, err := CreateToken()

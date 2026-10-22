@@ -42,20 +42,20 @@ func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string)
 	if title == "" {
 		title = "Choose a folder"
 	}
-	asking := application.Get().Dialog.OpenFile().
+	dialog := application.Get().Dialog.OpenFile().
 		AttachToWindow(d.window).
 		CanChooseDirectories(true).
 		CanChooseFiles(false).
 		SetTitle(title)
 	if startingAt != "" {
-		asking.SetDirectory(startingAt)
+		dialog.SetDirectory(startingAt)
 	}
 
-	chosen, err := asking.PromptForSingleSelection()
+	selected, err := dialog.PromptForSingleSelection()
 	if err != nil {
 		return "", false, err
 	}
-	return chosen, chosen != "", nil
+	return selected, selected != "", nil
 }
 
 // tryAcquire takes the dialog, and answers false where it is already up.

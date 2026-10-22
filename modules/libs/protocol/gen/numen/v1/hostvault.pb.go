@@ -154,7 +154,7 @@ func (HostIndexState) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{1}
 }
 
-// HostFingerprint is what a file was at a moment: where it stands, how large it
+// HostFingerprint is what a file was at a moment: at its current position, how large it
 // was and when it last changed.
 type HostFingerprint struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1394,7 +1394,7 @@ func (x *ScanFilesResponse) GetError() HostVaultErrorCode {
 	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
 }
 
-// HostNoteRef is a note: where it stands and what it is called.
+// HostNoteRef is a note: at its current position and what it is called.
 type HostNoteRef struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`

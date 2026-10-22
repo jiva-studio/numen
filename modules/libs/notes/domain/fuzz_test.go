@@ -58,12 +58,12 @@ func FuzzParseAddress(f *testing.F) {
 
 		// A name is written as itself and a scheme carries its own name, so
 		// what a link is written as says which of the two it is.
-		if written := a.GetWritten(); a.Scheme == domain.SchemeName {
-			if written != a.Value {
-				t.Fatalf("the name %q is written as %q", a.Value, written)
+		if content := a.GetWritten(); a.Scheme == domain.SchemeName {
+			if content != a.Value {
+				t.Fatalf("the name %q is written as %q", a.Value, content)
 			}
-		} else if !strings.HasPrefix(written, a.Scheme+"://") {
-			t.Fatalf("%+v is written as %q", a, written)
+		} else if !strings.HasPrefix(content, a.Scheme+"://") {
+			t.Fatalf("%+v is written as %q", a, content)
 		}
 	})
 }

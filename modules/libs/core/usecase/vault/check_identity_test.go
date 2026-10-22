@@ -18,7 +18,7 @@ func TestAVaultWhoseFolderCarriesItsIdentityIsReadable(t *testing.T) {
 	}
 
 	if err := vaults.NewCheckIdentity(filesystem.VaultIdentity{}).Execute(v); err != nil {
-		t.Fatalf("a vault in its own folder was refused: %v", err)
+		t.Fatalf("a vault in its own folder failed: %v", err)
 	}
 }
 
@@ -36,7 +36,7 @@ func TestAFolderCarryingAnotherIdentityIsNotTheVault(t *testing.T) {
 	}
 }
 
-func TestAFolderThatIsGoneIsNotReadable(t *testing.T) {
+func TestAFolderThatIsMissingIsNotReadable(t *testing.T) {
 	t.Parallel()
 	add, _ := newAdd(t)
 	v, err := add.Execute(folder(t, "notes"), "")

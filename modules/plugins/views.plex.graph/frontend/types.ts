@@ -163,7 +163,7 @@ export interface PlexViewState {
 
 export interface PlexMenuState {
   readonly menu: Ref<MenuRequest | null>
-  openMenu(asked: MenuRequest): void
+  openMenu(request: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void
 }

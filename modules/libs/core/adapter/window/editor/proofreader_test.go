@@ -101,7 +101,7 @@ func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 	api, _, by := newProofreadWindow(t, stored{}, newEmptyIndex())
 
 	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
-		t.Fatalf("a recording nothing has heard was refused %s", code)
+		t.Fatalf("a recording nothing has heard failed %s", code)
 	}
 	if by.times != 0 {
 		t.Error("a run was given a recording holding no words")
@@ -121,7 +121,7 @@ func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 
 			if code := getRefusedCode(t, api, path, correctedOf); code != connect.CodeInvalidArgument {
-				t.Fatalf("a file of the wrong kind was refused %s", code)
+				t.Fatalf("a file of the wrong kind failed %s", code)
 			}
 			if by.times != 0 {
 				t.Error("a run was given a file carrying no transcript")
@@ -134,12 +134,12 @@ func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 // the window offers the run nowhere after that. Which model does it is the
 // settings', so the call was answered and the answer is that there is nothing
 // to ask.
-func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
+func TestAnInstallationNamingNoProofreaderReturnsSo(t *testing.T) {
 	api, _, _ := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = &proofreads{} })
 
 	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
-		t.Fatalf("it was refused %s", code)
+		t.Fatalf("it failed %s", code)
 	}
 }
 
@@ -150,21 +150,21 @@ func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = nil })
 
 	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeUnavailable {
-		t.Fatalf("it was refused %s", code)
+		t.Fatalf("it failed %s", code)
 	}
 }
 
 // The corrections a recording carries are what stands beside the transcript,
 // and asking what it carries begins no run.
-func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
-	const put = "the name and the named are not two"
-	held := onTheShelf()
-	held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = []byte(put)
-	api, _, by := newProofreadWindow(t, held, newTranscriptIndex())
+func TestTheCorrectionsARecordingCarriesAreWhatExists(t *testing.T) {
+	const placed = "the name and the named are not two"
+	target := onTheShelf()
+	target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = []byte(placed)
+	api, _, by := newProofreadWindow(t, target, newTranscriptIndex())
 
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {
-		t.Fatalf("asked what the recording carries and was refused: %v", err)
+		t.Fatalf("asked what the recording carries and failed: %v", err)
 	}
 	var corrections *v1.Artifact
 	for _, one := range out.Msg.GetArtifacts() {

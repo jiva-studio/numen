@@ -57,7 +57,7 @@ describe('a card with a panel on either side of it', () => {
     }
   })
 
-  // The window opens on the card, and it is put there rather than taken there:
+  // The window opens on the card, and it is put there and not taken there:
   // a card seen sliding into place is a card that looks like it is leaving.
   it('rests on the card in the middle', () => {
     expect(strip().window_.scrollLeft).toBe(220)
@@ -66,10 +66,10 @@ describe('a card with a panel on either side of it', () => {
   // Whichever is out of the window is reached by nothing: not the keyboard, and
   // not what reads the screen aloud.
   it('puts whichever is out of the window beyond reach', () => {
-    const reading = strip('before').one
-    expect(reading.find('.carousel__before').attributes('inert')).toBeUndefined()
-    expect(reading.find('.carousel__here').attributes('inert')).toBeDefined()
-    expect(reading.find('.carousel__after').attributes('inert')).toBeDefined()
+    const readText = strip('before').one
+    expect(readText.find('.carousel__before').attributes('inert')).toBeUndefined()
+    expect(readText.find('.carousel__here').attributes('inert')).toBeDefined()
+    expect(readText.find('.carousel__after').attributes('inert')).toBeDefined()
 
     const card = strip('here').one
     expect(card.find('.carousel__before').attributes('inert')).toBeDefined()
@@ -82,9 +82,9 @@ describe('a card with a panel on either side of it', () => {
     expect(chat.find('.carousel__after').attributes('inert')).toBeUndefined()
   })
 
-  // Asked for by a key rather than a hand, the strip is taken there rather than
+  // Asked for by a key and not a hand, the strip is taken there rather than
   // put there, so it reads as the same movement either way.
-  it('scrolls to whichever of the three is asked for', async () => {
+  it('scrolls to whichever of the three is requested for', async () => {
     const { one, window_ } = strip()
 
     await one.setProps({ at: 'after' })
@@ -99,7 +99,7 @@ describe('a card with a panel on either side of it', () => {
 
   // The stops are the layout's own: where the card stands, and how far the
   // strip goes. The space the three stand apart by is in them already.
-  it('stops where the card stands and not at a width worked out', async () => {
+  it('stops where the card remains and not at a width worked out', async () => {
     const { one, window_ } = strip('before')
     Object.defineProperty(one.find('.carousel__here').element, 'offsetLeft', {
       value: 300,
@@ -117,9 +117,9 @@ describe('a hand on the strip', () => {
     await scrollStrip(chat.window_, 400)
     expect(chat.one.emitted('update:at')).toEqual([['after']])
 
-    const reading = strip()
-    await scrollStrip(reading.window_, 20)
-    expect(reading.one.emitted('update:at')).toEqual([['before']])
+    const readText = strip()
+    await scrollStrip(readText.window_, 20)
+    expect(readText.one.emitted('update:at')).toEqual([['before']])
 
     const card = strip('before')
     await scrollStrip(card.window_, 190)
@@ -144,7 +144,7 @@ describe('a hand on the strip', () => {
   })
 
   // A hand lets go where it likes, and the strip settles on the nearest stop
-  // rather than staying between two of them.
+  // and not staying between two of them.
   it('settles on the nearest stop when it is let go', async () => {
     const { one, window_ } = strip()
 

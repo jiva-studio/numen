@@ -53,7 +53,7 @@ func TestAnOperationBegunInsideAnotherJoinsIt(t *testing.T) {
 	}
 }
 
-func TestNothingIsKeptOutsideAnOperation(t *testing.T) {
+func TestNothingIsCachedOutsideAnOperation(t *testing.T) {
 	released := 0
 	operation.Remember(t.Context(), "a", "one", func() { released++ })
 
@@ -80,7 +80,7 @@ func TestRememberingAgainReleasesThePreviousValue(t *testing.T) {
 	}
 }
 
-func TestRememberingAgainOverAValueKeptWithNothingToReleaseIsKept(t *testing.T) {
+func TestRememberingAgainOverAValueCachedWithNothingToReleaseIsCached(t *testing.T) {
 	ctx, end := operation.Begin(t.Context())
 	defer end()
 

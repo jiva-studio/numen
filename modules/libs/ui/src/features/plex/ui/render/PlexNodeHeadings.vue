@@ -35,7 +35,7 @@ const groundX = computed(() => props.hung.offset - props.hung.width / 2)
 let carried = 0
 
 // The window opens at the top each time the attention settles afresh, and is
-// left where it stands while the attention leaves.
+// left at its current position while the attention leaves.
 watch(
   () => props.open > 0,
   (now) => {
@@ -51,26 +51,26 @@ watch(
  * carried into the next one.
  */
 const scrollHeadings = (event: WheelEvent) => {
-  const shown = openHeadings.value
-  if (!shown) return
+  const visibleHeadings = openHeadings.value
+  if (!visibleHeadings) return
 
   const wheel = { delta: event.deltaY, mode: event.deltaMode }
-  const { by, left } = scrollBy(props.hung, wheel, carried)
+  const { by, left: remainingDelta } = scrollBy(props.hung, wheel, carried)
   if (by === 0) {
-    carried = left
+    carried = remainingDelta
     return
   }
-  if (by < 0 ? !shown.isAbove : !shown.isBelow) {
+  if (by < 0 ? !visibleHeadings.isAbove : !visibleHeadings.isBelow) {
     carried = 0
     return
   }
 
-  carried = left
+  carried = remainingDelta
   event.preventDefault()
   event.stopPropagation()
   // Stepped from where the window really stands, which is the picture's own
   // reckoning of it.
-  scrollOffset.value = shown.first + by
+  scrollOffset.value = visibleHeadings.first + by
 }
 
 /** The line an arrow at an edge is drawn along. */

@@ -64,7 +64,7 @@ describe('a movement stepped by hand', () => {
     expect(getNode(frame.value.nodes, 'parent-0')).toBeDefined()
   })
 
-  it('measures from the first frame, not from when it was asked', async () => {
+  it('measures from the first frame, not from when it was requested', async () => {
     // A backgrounded tab hands the first callback a stale timestamp.
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
@@ -88,7 +88,7 @@ describe('a movement stepped by hand', () => {
     expect(isMoving.value).toBe(false)
   })
 
-  it('re-aims mid-movement instead of queueing', async () => {
+  it('re-aims mid-movement and not queueing', async () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame } = inScope(() =>
@@ -157,7 +157,7 @@ describe('when nothing should move', () => {
 })
 
 describe('a change to the arrangement is a movement too', () => {
-  it('travels to a new density rather than jumping to it', async () => {
+  it('travels to a new density and not jumping to it', async () => {
     const world = stubClock()
     const input = ref({ options: { maxPerLine: 5 } })
     const { isMoving } = inScope(() =>
@@ -320,7 +320,7 @@ describe('what counts as a change to the arrangement', () => {
   })
 })
 
-describe('a movement nobody asked for', () => {
+describe('a movement nobody requested for', () => {
   it('does not cancel a callback when nothing was waiting for one', async () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)

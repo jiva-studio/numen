@@ -88,8 +88,8 @@ const setTabCapture = StateEffect.define<boolean>()
 
 const tabCapture = StateField.define<boolean>({
   create: () => true,
-  update: (held, change) =>
-    change.effects.reduce((now, effect) => (effect.is(setTabCapture) ? effect.value : now), held),
+  update: (target, change) =>
+    change.effects.reduce((now, effect) => (effect.is(setTabCapture) ? effect.value : now), target),
 })
 
 const restoreTabCapture = EditorView.domEventHandlers({

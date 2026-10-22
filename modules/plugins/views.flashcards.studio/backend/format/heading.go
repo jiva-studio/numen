@@ -28,17 +28,17 @@ func ReadHeading(heading string) (text string, carried cardid.ID) {
 	if at >= 0 {
 		last = heading[at+1:]
 	}
-	written, found := strings.CutPrefix(last, caret)
-	if !found || !cardid.IsValid(cardid.ID(written)) {
+	content, found := strings.CutPrefix(last, caret)
+	if !found || !cardid.IsValid(cardid.ID(content)) {
 		return heading, ""
 	}
 	if at < 0 {
-		return "", cardid.ID(written)
+		return "", cardid.ID(content)
 	}
-	return heading[:at], cardid.ID(written)
+	return heading[:at], cardid.ID(content)
 }
 
-// WriteHeading is the heading a card of this text and this mark stands under.
+// WriteHeading is the heading a card of this text and this mark is placed under.
 func WriteHeading(text string, carried cardid.ID) string {
 	switch {
 	case carried == "":
@@ -62,15 +62,15 @@ func Project(value string) string {
 	}
 	line = strings.TrimSpace(line)
 
-	cut, runes := len(line), 0
+	trimmed, runes := len(line), 0
 	for at := range line {
 		if runes == HeadingRunes {
-			cut = at
+			trimmed = at
 			break
 		}
 		runes++
 	}
-	if cut == len(line) {
+	if trimmed == len(line) {
 		return line
 	}
 	// The cut never falls inside one of these: it falls in front of the whole
@@ -80,12 +80,12 @@ func Project(value string) string {
 	for moved := true; moved; {
 		moved = false
 		for _, span := range spans {
-			if span[0] < cut && cut < span[1] {
-				cut, moved = span[0], true
+			if span[0] < trimmed && trimmed < span[1] {
+				trimmed, moved = span[0], true
 			}
 		}
 	}
-	return strings.TrimRight(line[:cut], " \t")
+	return strings.TrimRight(line[:trimmed], " \t")
 }
 
 // emphasisRe is a run of emphasis closed by the delimiter it was opened with.
@@ -168,7 +168,7 @@ func oneLine(name string) string {
 	return strings.TrimSpace(line)
 }
 
-// headingLine is the line a card, a face, a field or a side stands under. A
+// headingLine is the line a card, a face, a field or a side is placed under. A
 // heading carrying no text is the hashes and nothing after them.
 func headingLine(level int, name string) string {
 	hashes := strings.Repeat("#", level)

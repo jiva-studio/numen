@@ -41,21 +41,21 @@ describe('the room a node takes', () => {
 
 describe('the steps a title is tried in', () => {
   const record = (from: number, to: number, step: number) => {
-    const asked: [number, number][] = []
+    const request: [number, number][] = []
     const boxes = getTitleBoxes(
       (a, b) => {
-        asked.push([a, b])
+        request.push([a, b])
         return square
       },
       { from, to },
       step,
     )
-    return { asked, boxes }
+    return { request: request, boxes }
   }
 
   it('runs from one end to the other in even steps, and no further', () => {
-    const { asked, boxes } = record(0, 1, 0.25)
-    expect(asked).toStrictEqual([
+    const { request, boxes } = record(0, 1, 0.25)
+    expect(request).toStrictEqual([
       [0, 0.25],
       [0.25, 0.5],
       [0.5, 0.75],
@@ -65,7 +65,7 @@ describe('the steps a title is tried in', () => {
   })
 
   it('ends the last step at the end when the steps do not divide the run', () => {
-    expect(record(0, 1, 0.4).asked).toStrictEqual([
+    expect(record(0, 1, 0.4).request).toStrictEqual([
       [0, 0.4],
       [0.4, 0.8],
       [0.8, 1],

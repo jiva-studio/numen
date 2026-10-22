@@ -3,7 +3,7 @@
  * What a thing is, said beside it while a person points at it. It follows the
  * pointer and never takes it.
  *
- * It stands on the far side of the thing it is about, takes the near side where
+ * It relies on the far side of the thing it is about, takes the near side where
  * the far one has no room, and is brought inside the edge where neither has.
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
@@ -35,7 +35,7 @@ const size = ref<Size>({ width: 0, height: 0 })
  * Across, it stands beside the thing it is about. Down, it begins where that
  * thing begins, and folds up from there at the foot of the window.
  */
-const placed = computed(() => ({
+const tooltipPosition = computed(() => ({
   x: getPlaceBeside({
     from: props.at.x,
     to: props.at.x + props.at.width,
@@ -55,8 +55,8 @@ const placed = computed(() => ({
 }))
 
 const tooltipStyle = computed(() => ({
-  insetInlineStart: `${placed.value.x}px`,
-  insetBlockStart: `${placed.value.y}px`,
+  insetInlineStart: `${tooltipPosition.value.x}px`,
+  insetBlockStart: `${tooltipPosition.value.y}px`,
 }))
 
 const measure = () => {
@@ -83,7 +83,7 @@ watch(() => props.at, measure, { flush: 'post' })
 .tooltip {
   position: fixed;
   z-index: var(--numen-lift-tooltip);
-  /* As wide as what it says, whatever room is left beside where it stands. */
+  /* As wide as what it says, whatever room is left beside at its current position. */
   inline-size: max-content;
   padding: var(--numen-inset);
   border: 1px solid var(--numen-rule);

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Projection is what a preset comes to over the days ahead.
+// Projection is what a preset evaluates to over the days ahead.
 //
 // Everything in it is a number a caller shows. It is worked out from the
 // schedules the answers have already produced, and nothing in it is written
@@ -179,10 +179,10 @@ func (p Projection) Session() (int, bool) {
 // this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
 func CountOverdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
-	opened := d.GetStart(now)
+	startTime := d.GetStart(now)
 	out := 0
 	for _, s := range at {
-		if !s.IsNew() && s.Due.Before(opened) {
+		if !s.IsNew() && s.Due.Before(startTime) {
 			out++
 		}
 	}

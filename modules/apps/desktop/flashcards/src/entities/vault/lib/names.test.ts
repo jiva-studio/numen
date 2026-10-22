@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { getDeckName } from './names'
 
 describe('the name of a deck', () => {
-  it('is the file, without the folders it stands in or its suffix', () => {
+  it('is the file, without the folders it remains in or its suffix', () => {
     expect(getDeckName('decks/Mammals.md')).toBe('Mammals')
     expect(getDeckName('Words.md')).toBe('Words')
     expect(getDeckName('a/b/c/Long name.md')).toBe('Long name')

@@ -46,7 +46,7 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 	if got[1].GetToolFinished() == nil {
 		t.Errorf("expected a finished tool, got %v", got[1])
 	}
-	if got[2].GetSaid() != "plain text\n" {
+	if got[2].GetText() != "plain text\n" {
 		t.Errorf("expected the plain line as text, got %v", got[2])
 	}
 }
@@ -66,7 +66,7 @@ func TestTheMessagesOfCodexAreSaid(t *testing.T) {
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
-	if len(got) != 1 || got[0].GetSaid() != "The answer." {
+	if len(got) != 1 || got[0].GetText() != "The answer." {
 		t.Errorf("got %v", got)
 	}
 }

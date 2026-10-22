@@ -129,7 +129,7 @@ describe('the keystroke drawn on a way', () => {
     expect(getKeys('agent', LINUX)).toStrictEqual({ icons: ['control', 'shift'], letter: 'A' })
   })
 
-  it('is the two the window keeps for itself, as the window hands them over', () => {
+  it('is the two the window keeps for itself, as the window passes them over', () => {
     expect(getKeys('find')).toBe(words.findKeys)
     expect(getKeys(COMMANDS)).toBe(words.commandsKeys)
   })
@@ -150,8 +150,8 @@ describe('the vaults the screen lists', () => {
   })
 
   it('marks one whose folder is not there', () => {
-    const held = createVaultRows(createVaultList([vault('b', 'Heat', true)], 'a'), words)
-    expect(held[0]).toStrictEqual({
+    const target = createVaultRows(createVaultList([vault('b', 'Heat', true)], 'a'), words)
+    expect(target[0]).toStrictEqual({
       id: 'b',
       name: 'Heat',
       path: '/vaults/Heat',
@@ -160,8 +160,8 @@ describe('the vaults the screen lists', () => {
   })
 
   it('says the folder is gone of the vault it is showing, which is the worse news', () => {
-    const held = createVaultRows(createVaultList([vault('a', 'Physics', true)], 'a'), words)
-    expect(held[0]).toStrictEqual({
+    const target = createVaultRows(createVaultList([vault('a', 'Physics', true)], 'a'), words)
+    expect(target[0]).toStrictEqual({
       id: 'a',
       name: 'Physics',
       path: '/vaults/Physics',
@@ -169,7 +169,7 @@ describe('the vaults the screen lists', () => {
     })
   })
 
-  it('says nothing beside a vault that is neither', () => {
+  it('says nothing alongside a vault that is neither', () => {
     expect(createVaultRows(two, words)[1]).toStrictEqual({
       id: 'b',
       name: 'Heat',

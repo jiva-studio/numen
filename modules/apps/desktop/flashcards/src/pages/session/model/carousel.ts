@@ -147,13 +147,13 @@ function useCarouselMover(
 export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const window_ = deps.window
   const middle = deps.middle
-  const shown = deps.shown
+  const displayedItems = deps.shown
   const { getStops, findNearest } = createCarouselStops(window_, middle)
   const mover = useCarouselMover(window_, getStops)
 
   const { taking, onPointerDown, onPointerMove, letGo } = useCarouselDrag({
     window_,
-    shown,
+    shown: displayedItems,
     findNearest,
     slideTo: mover.slideTo,
   })
@@ -163,21 +163,21 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     if (!at) return
     mover.checkArrived(at.scrollLeft)
     const where = findNearest(at.scrollLeft)
-    if (!mover.isAiming() && where !== shown.value) shown.value = where
-    if (!taking.value) mover.snapTo(shown.value)
+    if (!mover.isAiming() && where !== displayedItems.value) displayedItems.value = where
+    if (!taking.value) mover.snapTo(displayedItems.value)
   }
 
   watch(
-    () => shown.value,
+    () => displayedItems.value,
     (where) => {
       if (!taking.value) mover.slideTo(where)
     },
   )
 
-  const onResize = () => mover.placeAt(shown.value)
+  const onResize = () => mover.placeAt(displayedItems.value)
 
   onMounted(() => {
-    mover.placeAt(shown.value)
+    mover.placeAt(displayedItems.value)
     window.addEventListener('resize', onResize)
   })
 

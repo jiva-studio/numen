@@ -180,12 +180,12 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
 	host.discoverMu.Lock()
 
-	answered := make(chan error, 1)
+	reply := make(chan error, 1)
 	calling := make(chan struct{})
 	go func() {
 		close(calling)
 		_, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
-		answered <- err
+		reply <- err
 	}()
 	<-calling
 	runtime.Gosched()
@@ -194,12 +194,12 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 		t.Fatal("the discovery lock is not held")
 	}
 	select {
-	case err := <-answered:
+	case err := <-reply:
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
 	default:
 	}
 	host.discoverMu.Unlock()
-	if err := <-answered; err != nil {
+	if err := <-reply; err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {

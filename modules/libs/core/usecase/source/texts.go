@@ -9,7 +9,7 @@ type Texts struct {
 	GetTranscriptCorrectionState  GetTranscriptCorrectionState
 	GetRecognitionCorrectionState GetRecognitionCorrectionState
 	GetTranscript                 GetTranscript
-	GetHeardTranscript            GetHeardTranscript
+	GetRawTranscript              GetRawTranscript
 	WriteTranscript               WriteTranscript
 	GetCopyLocation               GetCopyLocation
 	RemoveCopy                    RemoveCopy
@@ -30,7 +30,7 @@ func NewTexts(
 		GetTranscriptCorrectionState:  GetTranscriptCorrectionState{texts: shared},
 		GetRecognitionCorrectionState: GetRecognitionCorrectionState{texts: shared},
 		GetTranscript:                 GetTranscript{texts: shared},
-		GetHeardTranscript:            GetHeardTranscript{texts: shared},
+		GetRawTranscript:              GetRawTranscript{texts: shared},
 		WriteTranscript:               WriteTranscript{texts: shared},
 		GetCopyLocation:               location,
 		RemoveCopy:                    RemoveCopy{texts: shared, location: location, writers: writers},

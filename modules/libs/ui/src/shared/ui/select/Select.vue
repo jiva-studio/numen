@@ -17,7 +17,7 @@ const props = withDefaults(
   defineProps<{
     /** The choices, in the order they are offered. */
     choices: readonly SelectChoice[]
-    /** What stands on the line while nothing is in force. */
+    /** What relies on the line while nothing is in force. */
     placeholder?: string
     /** What the list of choices is announced as. */
     name?: string
@@ -46,10 +46,10 @@ const items = computed<readonly MenuItem[]>(() =>
 )
 
 /** The choice in force, and none where the value is none of them. */
-const chosen = computed(() => props.choices.find((one) => one.id === model.value))
+const selectedChoice = computed(() => props.choices.find((one) => one.id === model.value))
 
 /** What is written on the line: the choice, the value itself, or the stand-in. */
-const reading = computed(() => chosen.value?.text || model.value || props.placeholder)
+const displayText = computed(() => selectedChoice.value?.text || model.value || props.placeholder)
 
 const element = useTemplateRef<HTMLButtonElement>('element')
 
@@ -57,7 +57,7 @@ const element = useTemplateRef<HTMLButtonElement>('element')
  * Where the choices are drawn and how wide the line asking for them is, and
  * nothing while they are not drawn at all.
  */
-const asking = ref<{ at: Position; wide: number } | null>(null)
+const menuAnchor = ref<{ at: Position; wide: number } | null>(null)
 
 /**
  * The line opens the choices under itself, along its own leading edge and no
@@ -67,7 +67,7 @@ const openChoices = () => {
   const line = element.value
   if (!line || props.disabled) return
   const box = line.getBoundingClientRect()
-  asking.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
+  menuAnchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 
 const onChoose = (id: string) => {
@@ -95,7 +95,7 @@ defineExpose({
     type="button"
     data-slot="select"
     aria-haspopup="menu"
-    :aria-expanded="asking !== null"
+    :aria-expanded="menuAnchor !== null"
     :disabled="disabled"
     :class="
       cn(
@@ -114,19 +114,19 @@ defineExpose({
   >
     <span
       class="select__reading min-w-0"
-      :class="{ 'text-hushed': !chosen && !model }"
-      :title="reading"
+      :class="{ 'text-hushed': !selectedChoice && !model }"
+      :title="displayText"
     >
-      {{ reading }}
+      {{ displayText }}
     </span>
     <ChevronDown class="select__mark shrink-0" aria-hidden="true" />
   </button>
 
   <Menu
-    v-if="asking"
+    v-if="menuAnchor"
     :items="items"
-    :at="asking.at"
-    :asking="asking.wide"
+    :at="menuAnchor.at"
+    :asking="menuAnchor.wide"
     :from="element"
     :current="model"
     :name="name"
@@ -136,7 +136,7 @@ defineExpose({
     open
     trigger="keyboard"
     @choose="onChoose"
-    @dismiss="asking = null"
+    @dismiss="menuAnchor = null"
   >
     <template #silence>Nothing to choose</template>
   </Menu>

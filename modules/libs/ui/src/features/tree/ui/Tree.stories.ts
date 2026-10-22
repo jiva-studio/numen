@@ -28,9 +28,9 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
 }
 
 /** Rows put where a drop target says, in the order they were dragged. */
-const put = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]): readonly Row[] =>
+const insertRows = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
-    const below = row.rows ? { ...row, rows: put(row.rows, at, dragRows) } : row
+    const below = row.rows ? { ...row, rows: insertRows(row.rows, at, dragRows) } : row
     if ('before' in at && row.id === at.before) return [...dragRows, below]
     if ('into' in at && row.id === at.into) {
       return [{ ...below, rows: [...(below.rows ?? []), ...dragRows] }]
@@ -38,15 +38,15 @@ const put = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]):
     return [below]
   })
 
-/** The application's part: what a move comes to, in the rows it holds. */
+/** The application's part: what a move evaluates to, in the rows it holds. */
 const moveRows = (
   rows: readonly Row[],
   dragIds: readonly RowId[],
   at: RowDropTarget,
 ): readonly Row[] => {
-  const held = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
-  const left = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
-  return held.length ? put(left, at, held) : rows
+  const target = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
+  const remainingRows = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
+  return target.length ? insertRows(remainingRows, at, target) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */
@@ -305,9 +305,9 @@ export const Several: Story = { args: { selected: ['work', 'notes', 'loose'] } }
 export const AcrossAFolder: Story = { args: { selected: ['plans', 'notes', 'empty'] } }
 
 const getRow = (canvas: HTMLElement, row: string) => {
-  const held = canvas.querySelector<HTMLElement>(`[data-tree-row="${row}"]`)
-  if (!held) throw new Error(`no row called ${row}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(`[data-tree-row="${row}"]`)
+  if (!element) throw new Error(`no row called ${row}`)
+  return element
 }
 
 const getDrawnRows = (canvas: HTMLElement) =>

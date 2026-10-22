@@ -30,7 +30,7 @@ type Scenarios struct {
 	// Presets is which preset each deck is scheduled by, and how one is read,
 	// written and made.
 	Presets Presets
-	// Curves is what the one control of a preset comes to over the whole range
+	// Curves is what the one control of a preset evaluates to over the whole range
 	// of its goal.
 	Curves ProjectCurve
 	// Day is where one day of review gives way to the next.
@@ -87,7 +87,7 @@ func NewScenarios(cfg Config) Scenarios {
 	presets.Problems = cfg.Problems
 
 	// Each card is worked out at the share of the cards its own preset asks
-	// for, which is what says which preset a card face stands under.
+	// for, which is what says which preset a card face is placed under.
 	var defaultScheduler review.Scheduler = review.NewFSRS()
 	var at func(retention float64) review.Scheduler
 	if cfg.Scheduler != nil {

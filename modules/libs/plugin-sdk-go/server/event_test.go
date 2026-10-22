@@ -61,7 +61,7 @@ func TestTheEventHandlerReceivesADeliveredEvent(t *testing.T) {
 		t.Fatalf("DeliverEvent failed: %v", err)
 	}
 	if code := resp.Msg.GetError(); code != numenv1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("error = %v, want no refusal", code)
+		t.Fatalf("error = %v, want no error", code)
 	}
 
 	mu.Lock()
@@ -71,15 +71,15 @@ func TestTheEventHandlerReceivesADeliveredEvent(t *testing.T) {
 	}
 }
 
-func TestAnEventTheHandlerRefusesIsAnsweredAsARefusal(t *testing.T) {
+func TestAnEventTheHandlerRejectsIsAnsweredAsAError(t *testing.T) {
 	cases := map[string]error{
 		"a plain error":           errors.New("the index is closed"),
 		"an Unimplemented status": connect.NewError(connect.CodeUnimplemented, errors.New("the index is closed")),
 	}
-	for name, refusal := range cases {
+	for name, caseErr := range cases {
 		t.Run(name, func(t *testing.T) {
 			client := newEventClient(serveEvents(t, WithEventHandler(func(_ context.Context, _ string) error {
-				return refusal
+				return caseErr
 			})), eventToken)
 
 			resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&numenv1.DeliverEventRequest{Event: "onFile:pdf"}))

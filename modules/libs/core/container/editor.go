@@ -27,7 +27,7 @@ type EditorAssembly struct {
 	db       *Index
 }
 
-// GetEditorAssembly opens the cache and binds everything that window stands on
+// GetEditorAssembly opens the cache and binds everything that window relies on
 // to this installation's adapters. The window closes the cache when it closes,
 // and a window that could not be opened closes it too.
 func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
@@ -90,9 +90,9 @@ func (e EditorAssembly) GetPassageQueries() port.PassageQueries     { return e.d
 func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 
 func (e EditorAssembly) OpenGetSettings() *settings.Get {
-	held := e.cfg.NestedHeadingLimitBounds()
+	target := e.cfg.NestedHeadingLimitBounds()
 	return settings.NewGet(
-		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: held.Least, Most: held.Most},
+		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: target.Least, Most: target.Most},
 		e.cfg.Plugins(),
 	)
 }
@@ -188,9 +188,9 @@ func (e EditorAssembly) GetRefresh() vault.Refresh {
 func (e EditorAssembly) ReadWholeVault(
 	ctx context.Context, embedder port.Embedder, v domain.Vault, rebuild bool,
 ) (vault.ReadWholeVault, error) {
-	asked := e.cfg
-	asked.ShouldRebuildIndex = rebuild
-	return asked.ReadWholeVault(ctx, e.db, embedder, v)
+	request := e.cfg
+	request.ShouldRebuildIndex = rebuild
+	return request.ReadWholeVault(ctx, e.db, embedder, v)
 }
 
 // StartVault opens the vault the way both windows open one, and answers with
@@ -205,10 +205,10 @@ func (e EditorAssembly) StartVault(
 	refresh vault.Refresh,
 	unwatched error,
 ) {
-	asked := e.cfg
-	asked.ShouldRebuildIndex = rebuild
+	request := e.cfg
+	request.ShouldRebuildIndex = rebuild
 
-	opening := asked.VaultOpener(e.db)
+	opening := request.VaultOpener(e.db)
 	opening.ShouldRebuild = rebuild
 	opening.ErrorHandler = handleError
 	if told != nil {

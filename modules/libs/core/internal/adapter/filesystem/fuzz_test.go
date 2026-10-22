@@ -49,7 +49,7 @@ func vault(tb testing.TB) string {
 // Everything that reaches a vault from outside the application comes through
 // the two rules, so what they answer is the whole of the containment: a path is
 // the vault's or the application's and never both, and whichever of them
-// answers, what it hands back is under the root once every link on the way to
+// answers, what it returns is under the root once every link on the way to
 // it is resolved.
 //
 // A path arrives from a person's editor, from another machine's sync, and from
@@ -86,7 +86,7 @@ func FuzzInside(f *testing.F) {
 		checkRule(t, root, path, "resolveVaultPath", false, asVault, vaultReal, vaultErr)
 		checkRule(t, root, path, "service", true, asOurs, oursReal, oursErr)
 
-		// A path that could not name anything inside a vault is refused before
+		// A path that could not name anything inside a vault fails before
 		// the filesystem is asked anything at all.
 		if strings.ContainsRune(path, 0) || !filepath.IsLocal(path) {
 			if vaultErr == nil || oursErr == nil {
@@ -109,7 +109,7 @@ func FuzzInside(f *testing.F) {
 
 // checkRule fails unless a rule that answered handed back a path under the root,
 // both where it lands and where it lands with every link resolved, and unless a
-// rule that refused handed back nothing at all.
+// rule that rejected handed back nothing at all.
 //
 // Where the path resolves to is what says which of the two rules was entitled
 // to answer. A link is a second spelling for a place, and it is the place the
@@ -120,7 +120,7 @@ func checkRule(t *testing.T, root, path, rule string, application bool, target, 
 	t.Helper()
 	if err != nil {
 		if target != "" || resolved != "" {
-			t.Fatalf("%s refused %q and answered with %q, %q", rule, path, target, resolved)
+			t.Fatalf("%s rejected %q and answered with %q, %q", rule, path, target, resolved)
 		}
 		return
 	}
@@ -160,9 +160,9 @@ var configSeeds = []string{
 }
 
 // A folder carries an identity or it does not, and ReadConfig says which. An
-// identity it hands back is one that could have been made here.
+// identity it returns is one that could have been made here.
 //
-// Bytes nobody can read out are refused as unreadable, and Initialize leaves
+// Bytes nobody can read out are rejected as unreadable, and Initialize leaves
 // them where they are. The file sits in a folder a person keeps in their own
 // sync, so the bytes are a stranger's.
 func FuzzReadConfig(f *testing.F) {
@@ -182,9 +182,9 @@ func FuzzReadConfig(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		held, err := ReadConfig(root, DefaultServiceDir)
-		if err == nil && !ulid.Valid(held.ID) {
-			t.Fatalf("a vault was read as carrying %q, which no vault carries", held.ID)
+		target, err := ReadConfig(root, DefaultServiceDir)
+		if err == nil && !ulid.Valid(target.ID) {
+			t.Fatalf("a vault was read as carrying %q, which no vault carries", target.ID)
 		}
 		if errors.Is(err, ErrNotAVault) {
 			t.Fatalf("%q stands in the folder and it was read as never having been added", raw)
@@ -192,8 +192,8 @@ func FuzzReadConfig(f *testing.F) {
 
 		made, adding := Initialize(root, DefaultServiceDir, time.Unix(1, 0))
 		switch {
-		case err == nil && (adding != nil || made.ID != held.ID):
-			t.Fatalf("a vault carrying %q was added again as %q, %v", held.ID, made.ID, adding)
+		case err == nil && (adding != nil || made.ID != target.ID):
+			t.Fatalf("a vault carrying %q was added again as %q, %v", target.ID, made.ID, adding)
 		case err != nil && adding == nil:
 			t.Fatalf("%q could not be read (%v) and the folder was added all the same", raw, err)
 		}

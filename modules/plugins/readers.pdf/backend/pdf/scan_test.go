@@ -35,16 +35,16 @@ func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {
 	}
 
 	for _, dpi := range []int{0, -1, -72} {
-		drawn, err := scan.RenderPage(0, dpi)
+		rendered, err := scan.RenderPage(0, dpi)
 		if err != nil {
 			t.Fatalf("RenderPage(0, %d) failed: %v", dpi, err)
 		}
-		if drawn.Bounds() != drawn300.Bounds() {
-			t.Errorf("RenderPage(0, %d) bounds = %v, want %v", dpi, drawn.Bounds(), drawn300.Bounds())
+		if rendered.Bounds() != drawn300.Bounds() {
+			t.Errorf("RenderPage(0, %d) bounds = %v, want %v", dpi, rendered.Bounds(), drawn300.Bounds())
 		}
-		if drawn.Bounds().Dx() != wantDx || drawn.Bounds().Dy() != wantDy {
+		if rendered.Bounds().Dx() != wantDx || rendered.Bounds().Dy() != wantDy {
 			t.Errorf("RenderPage(0, %d) = (%d, %d), want (%d, %d)",
-				dpi, drawn.Bounds().Dx(), drawn.Bounds().Dy(), wantDx, wantDy)
+				dpi, rendered.Bounds().Dx(), rendered.Bounds().Dy(), wantDx, wantDy)
 		}
 	}
 }

@@ -19,11 +19,11 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
 
 /** The panel, with the session around it standing in for the window. */
 const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
-  const asked: { vault: string; deck: string }[] = []
+  const request: { vault: string; deck: string }[] = []
   const open = ref(false)
   const deck = ref(more.deck === undefined ? 'decks/Words.md' : more.deck)
   const notices: string[] = []
-  const held = useNotesPanel({
+  const target = useNotesPanel({
     open: () => open.value,
     showPanel: (up) => {
       open.value = up
@@ -31,24 +31,24 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
     vault: () => 'one',
     deck: () => deck.value,
     getDeckNeighbourhood: async (vault, of) => {
-      asked.push({ vault, deck: of })
+      request.push({ vault, deck: of })
       if (more.refuses) throw new Error('out of reach')
       return { notes: [createNeighbour({ written: of })], unread: 2 } satisfies DeckNeighbourhood
     },
     showNotice: (one) => notices.push(one),
   })
-  return { held, asked, notices, open, deck }
+  return { held: target, requests: request, asked: request, notices, open, deck }
 }
 
 describe('the panel the deck is read in', () => {
   it('does not come in between cards', async () => {
-    const { held, asked, open } = panel({ deck: '' })
+    const { held, requests, open } = panel({ deck: '' })
     await held.openPanel()
     expect(open.value).toBe(false)
-    expect(asked).toEqual([])
+    expect(requests).toEqual([])
   })
 
-  it('comes in on the deck the card stands in, turned or not', async () => {
+  it('arrives in on the deck the card remains in, turned or not', async () => {
     const { held, open } = panel()
     await held.openPanel()
     expect(open.value).toBe(true)
@@ -67,12 +67,12 @@ describe('the panel the deck is read in', () => {
   })
 
   it('is put away and keeps what was read', async () => {
-    const { held, asked, open } = panel()
+    const { held, requests, open } = panel()
     await held.openPanel()
     held.closePanel()
     await held.openPanel()
     expect(open.value).toBe(true)
-    expect(asked).toHaveLength(1)
+    expect(requests).toHaveLength(1)
   })
 })
 
@@ -80,14 +80,14 @@ describe('what is read belongs to the deck', () => {
   // The links are the file's, and the file is the deck, so the cards of one
   // deck are all read against the same notes.
   it('asks once for a deck, however many of its cards go by', async () => {
-    const { held, asked } = panel()
+    const { held, requests } = panel()
     await held.openPanel()
     held.closePanel()
     await held.openPanel()
-    expect(asked).toEqual([{ vault: 'one', deck: 'decks/Words.md' }])
+    expect(requests).toEqual([{ vault: 'one', deck: 'decks/Words.md' }])
   })
 
-  it('asks again when the card comes from another deck', async () => {
+  it('asks again when the card arrives from another deck', async () => {
     const { held, asked, deck } = panel()
     await held.openPanel()
     deck.value = 'decks/Trees.md'
@@ -99,10 +99,10 @@ describe('what is read belongs to the deck', () => {
   // A card answered while the asking is in flight moves the session to another
   // deck, and what comes back is then about the deck behind it.
   it('does not take an answer about the deck the session has left', async () => {
-    const waiting: (() => void)[] = []
+    const pendingCallbacks: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
-    const held = useNotesPanel({
+    const target = useNotesPanel({
       open: () => open.value,
       showPanel: (up) => {
         open.value = up
@@ -111,30 +111,30 @@ describe('what is read belongs to the deck', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
-          waiting.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
     })
 
-    const first = held.openPanel()
+    const first = target.openPanel()
     deck.value = 'decks/Trees.md'
-    const second = held.openPanel()
+    const second = target.openPanel()
 
     // The second deck is answered, and the first only afterwards.
-    waiting[1]?.()
+    pendingCallbacks[1]?.()
     await second
-    waiting[0]?.()
+    pendingCallbacks[0]?.()
     await first
 
-    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
+    expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
   // A person must never read one deck's notes under another deck's card.
-  it('holds nothing of the deck behind it while the next is being asked for', async () => {
-    const waiting: (() => void)[] = []
+  it('holds nothing of the deck behind it while the next is being requested for', async () => {
+    const pendingCallbacks: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
-    const held = useNotesPanel({
+    const target = useNotesPanel({
       open: () => open.value,
       showPanel: (up) => {
         open.value = up
@@ -143,22 +143,22 @@ describe('what is read belongs to the deck', () => {
       deck: () => deck.value,
       getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
-          waiting.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
     })
 
-    const first = held.openPanel()
-    waiting[0]?.()
+    const first = target.openPanel()
+    pendingCallbacks[0]?.()
     await first
 
     deck.value = 'decks/Trees.md'
-    const second = held.openPanel()
-    expect(held.notes.value).toEqual([])
+    const second = target.openPanel()
+    expect(target.notes.value).toEqual([])
 
-    waiting[1]?.()
+    pendingCallbacks[1]?.()
     await second
-    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
+    expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
   it('holds nothing once the session is over', async () => {
@@ -171,11 +171,11 @@ describe('what is read belongs to the deck', () => {
   })
 
   it('asks again for a deck the session has been away from', async () => {
-    const { held, asked } = panel()
+    const { held, requests } = panel()
     await held.openPanel()
     held.endSession()
     await held.openPanel()
-    expect(asked).toHaveLength(2)
+    expect(requests).toHaveLength(2)
   })
 })
 
@@ -207,17 +207,17 @@ describe('a link pressed in the card', () => {
 describe('the asking', () => {
   /** The panel over a window that answers each deck when the test says. */
   const slowPanel = () => {
-    const waiting: { deck: string; answer: () => void; refuse: () => void }[] = []
+    const pendingRequests: { deck: string; answer: () => void; refuse: () => void }[] = []
     const deck = ref('decks/Words.md')
     const notices: string[] = []
-    const held = useNotesPanel({
+    const target = useNotesPanel({
       open: () => true,
       showPanel: () => {},
       vault: () => 'one',
       deck: () => deck.value,
       getDeckNeighbourhood: (_vault, of) =>
         new Promise((then, fail) =>
-          waiting.push({
+          pendingRequests.push({
             deck: of,
             answer: () => then({ notes: [createNeighbour({ path: of })], unread: 1 }),
             refuse: () => fail(new Error('out of reach')),
@@ -225,18 +225,18 @@ describe('the asking', () => {
         ),
       showNotice: (one) => notices.push(one),
     })
-    return { held, waiting, deck, notices }
+    return { held: target, waiting: pendingRequests, deck, notices }
   }
 
-  it('is working while the deck is being asked for, and not once it has answered', async () => {
+  it('is working while the deck is being requested for, and not once it has answered', async () => {
     const { held, waiting } = slowPanel()
     expect(held.isWorking.value).toBe(false)
 
-    const asking = held.openPanel()
+    const activePrompt = held.openPanel()
     expect(held.isWorking.value).toBe(true)
 
     waiting[0]?.answer()
-    await asking
+    await activePrompt
     expect(held.isWorking.value).toBe(false)
   })
 

@@ -28,8 +28,8 @@ const sizes = (among: readonly number[]) =>
   among.map((size) => ({ value: String(size), title: `${size}×` }))
 
 /** The multiplier a toolbar is standing on. Anything else is as designed. */
-const chosen = (held: unknown, among: readonly number[]) =>
-  among.includes(Number(held)) ? String(Number(held)) : '1'
+const selected = (target: unknown, among: readonly number[]) =>
+  among.includes(Number(target)) ? String(Number(target)) : '1'
 
 const preview: Preview = {
   parameters: {
@@ -87,9 +87,9 @@ const preview: Preview = {
       // through the same two numbers the window is drawn through.
       root.style.setProperty(
         '--numen-interface-scale',
-        chosen(context.globals['interface'], INTERFACE),
+        selected(context.globals['interface'], INTERFACE),
       )
-      root.style.setProperty('--numen-text-scale', chosen(context.globals['font'], READING))
+      root.style.setProperty('--numen-text-scale', selected(context.globals['font'], READING))
       return { components: { story }, template: '<story />' }
     },
   ],

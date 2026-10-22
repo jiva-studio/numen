@@ -4,7 +4,7 @@
  * the machine draws.
  *
  * A field standing at an hour of the day hands that hour on. A field standing
- * at half an hour, or at nothing, hands nothing on and is left where it stands.
+ * at half an hour, or at nothing, hands nothing on and is left at its current position.
  */
 import { computed, useId, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'

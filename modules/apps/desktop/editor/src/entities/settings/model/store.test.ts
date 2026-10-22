@@ -2,7 +2,7 @@
  * The settings read out of the file whole, asked without a screen.
  *
  * The negatives are the ones worth having: a vault that cannot be asked leaves
- * the window holding nothing, and a write that was refused is said and the
+ * the window holding nothing, and a write that failed is said and the
  * window goes back to what the settings hold.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -28,19 +28,19 @@ const MODELS: readonly Model[] = [
 
 /** A vault holding those settings, and refusing what it is told to refuse. */
 const createStore = (text: string, refuses: string | null = null) => {
-  const asked: unknown[] = []
+  const request: unknown[] = []
   const core: SettingsStoreDeps = {
     getSettings: () => Promise.resolve({ written: text, path: '/numen.json', models: MODELS }),
-    updateSettings: (said) => {
-      asked.push(said)
+    updateSettings: (response) => {
+      request.push(response)
       return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
     },
   }
-  const said = vi.fn()
-  return { asked, said, kept: createSettingsStore(core, words, said) }
+  const response = vi.fn()
+  return { requests: request, notify: response, kept: createSettingsStore(core, words, response) }
 }
 
-describe('what stands at a setting', () => {
+describe('what remains at a setting', () => {
   it('is what the file holds, once the vault has answered', async () => {
     const { kept } = createStore('{"agent": {"claude": {"model": "opus"}}}')
     await kept.start()
@@ -54,28 +54,28 @@ describe('what stands at a setting', () => {
     expect(kept.getSetting(['agent', 'claude', 'model'])).toBeUndefined()
   })
 
-  it('is nothing where the vault cannot be asked', async () => {
-    const said = vi.fn()
-    const kept = createSettingsStore(
+  it('is nothing where the vault cannot be requested', async () => {
+    const response = vi.fn()
+    const retainedState = createSettingsStore(
       {
         getSettings: () => Promise.reject(new Error('gone')),
         updateSettings: () => Promise.resolve(),
       },
       words,
-      said,
+      response,
     )
 
-    await kept.start()
+    await retainedState.start()
 
-    expect(kept.getSetting(['agent'])).toBeUndefined()
-    expect(kept.path.value).toBe('')
+    expect(retainedState.getSetting(['agent'])).toBeUndefined()
+    expect(retainedState.path.value).toBe('')
   })
 
-  it('is nothing where the vault answers with what is not JSON, and is said', async () => {
-    const { kept, said } = createStore('not JSON at all')
+  it('is nothing where the vault answers with what is not JSON, and is returned', async () => {
+    const { kept, notify } = createStore('not JSON at all')
     await kept.start()
     expect(kept.getSetting(['agent'])).toBeUndefined()
-    expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
+    expect(notify).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
   })
 
   it('falls back to declarative plugin default when unset in settings file', async () => {
@@ -168,29 +168,29 @@ describe('the models a setting offers', () => {
 })
 
 describe('a setting written', () => {
-  it('is asked of the vault as it was given', async () => {
-    const { kept, asked } = createStore('{}')
+  it('is requested of the vault as it was given', async () => {
+    const { kept, requests } = createStore('{}')
     await kept.writeSetting(['agent', 'use'], 'claude')
-    expect(asked).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
+    expect(requests).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
 
-  it('clears what was last said before it is written', async () => {
-    const { kept, said } = createStore('{}')
+  it('clears what was last returned before it is written', async () => {
+    const { kept, notify } = createStore('{}')
     await kept.writeSetting(['agent', 'claude', 'model'], 'opus')
-    expect(said).toHaveBeenCalledTimes(1)
-    expect(said).toHaveBeenCalledWith('')
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify).toHaveBeenCalledWith('')
   })
 
   it('asks nothing of the vault where there is nothing to write', async () => {
-    const { kept, asked } = createStore('{}')
+    const { kept, requests } = createStore('{}')
     await kept.writeSettings([])
-    expect(asked).toStrictEqual([])
+    expect(requests).toStrictEqual([])
   })
 
-  it('is said where it was refused', async () => {
-    const { kept, said } = createStore('{}', 'the file could not be written')
+  it('is returned where it failed', async () => {
+    const { kept, notify } = createStore('{}', 'the file could not be written')
     await kept.writeSetting(['agent', 'use'], 'claude')
-    expect(said).toHaveBeenLastCalledWith(
+    expect(notify).toHaveBeenLastCalledWith(
       'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
       'error',
     )
@@ -200,8 +200,8 @@ describe('a setting written', () => {
 /** A promise settled by hand. */
 const defer = <T>() => {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((done) => {
-    resolve = done
+  const promise = new Promise<T>((isDone) => {
+    resolve = isDone
   })
   return { promise, resolve }
 }
@@ -216,69 +216,69 @@ describe('a setting written twice in quick succession', () => {
     const reads: ReturnType<typeof defer<string>>[] = []
     const core: SettingsStoreDeps = {
       getSettings: async () => {
-        const read = defer<string>()
-        reads.push(read)
-        return { written: await read.promise, path: '/numen.json', models: [] }
+        const readItem = defer<string>()
+        reads.push(readItem)
+        return { written: await readItem.promise, path: '/numen.json', models: [] }
       },
       updateSettings: async (edits) => {
-        const done = defer<void>()
-        writes.push(done)
-        await done.promise
+        const isDone = defer<void>()
+        writes.push(isDone)
+        await isDone.promise
         file = `{"appearance":{"nest_headings_under_notes":${edits[0]?.value}}}`
       },
     }
     return { core, writes, reads, getFile: () => file }
   }
 
-  it('stands at the last value through the answer of the first write and a read between', async () => {
+  it('remains at the last value through the answer of the first write and a read between', async () => {
     const vault = createHeldVault()
-    const kept = createSettingsStore(vault.core, words, vi.fn())
+    const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const first = kept.writeSetting(at, false)
-    const second = kept.writeSetting(at, true)
-    expect(kept.getSetting(at)).toBe(true)
+    const first = retainedState.writeSetting(at, false)
+    const second = retainedState.writeSetting(at, true)
+    expect(retainedState.getSetting(at)).toBe(true)
 
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve('{"appearance":{"nest_headings_under_notes":false}}')
     await first
-    expect(kept.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(at)).toBe(true)
 
     vault.writes[1]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve(vault.getFile())
     await second
-    expect(kept.getSetting(at)).toBe(true)
+    expect(retainedState.getSetting(at)).toBe(true)
   })
 
   it('does not take a read that answers after a newer one', async () => {
     const vault = createHeldVault()
-    const kept = createSettingsStore(vault.core, words, vi.fn())
+    const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const older = kept.start()
-    const newer = kept.start()
+    const older = retainedState.start()
+    const newer = retainedState.start()
     vault.reads[1]?.resolve('{"a":2}')
     await newer
     vault.reads[0]?.resolve('{"a":1}')
     await older
-    expect(kept.getSetting(['a'])).toBe(2)
+    expect(retainedState.getSetting(['a'])).toBe(2)
   })
 
-  it('goes back to the file where the write was refused', async () => {
+  it('goes back to the file where the write failed', async () => {
     const vault = createHeldVault()
-    vault.core.updateSettings = () => Promise.reject(new Error('refused'))
-    const kept = createSettingsStore(vault.core, words, vi.fn())
+    vault.core.updateSettings = () => Promise.reject(new Error('failed'))
+    const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
-    const written = kept.writeSetting(at, false)
-    expect(kept.getSetting(at)).toBe(false)
+    const content = retainedState.writeSetting(at, false)
+    expect(retainedState.getSetting(at)).toBe(false)
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve(vault.getFile())
-    await written
-    expect(kept.getSetting(at)).toBe(true)
+    await content
+    expect(retainedState.getSetting(at)).toBe(true)
   })
 })
 
-describe('what stands at a path through a tree', () => {
+describe('what remains at a path through a tree', () => {
   it('is the value the path leads to', () => {
     expect(getSettingAt({ a: { b: [1, 2] } }, ['a', 'b'])).toStrictEqual([1, 2])
   })

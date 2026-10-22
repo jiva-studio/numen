@@ -18,7 +18,7 @@ type tabbed struct {
 }
 
 // newSessionWithTabs is the tools as an agent meets them, with a window saying
-// what the person has open.
+// what currently open.
 func newSessionWithTabs(t *testing.T, open domain.OpenTabs) *sdk.ClientSession {
 	t.Helper()
 	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
@@ -64,7 +64,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 	}
 }
 
-func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
+func TestWindowTabsReturnsWhereInADocumentThePersonIs(t *testing.T) {
 	session := newSessionWithTabs(t, domain.OpenTabs{
 		FrontID: "one",
 		Tabs: []domain.Tab{
@@ -85,7 +85,7 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 // A book that reflows has no pages of its own, so where the person stands in
 // one is an offset into its text, and the page is how far through that offset
 // is.
-func TestWindowTabsSaysWhereInABookThePersonIs(t *testing.T) {
+func TestWindowTabsReturnsWhereInABookThePersonIs(t *testing.T) {
 	session := newSessionWithTabs(t, domain.OpenTabs{
 		FrontID: "one",
 		Tabs: []domain.Tab{
@@ -121,7 +121,7 @@ func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {
 	}
 }
 
-func TestWindowTabsSaysSoWhereNothingIsOpen(t *testing.T) {
+func TestWindowTabsReturnsSoWhereNothingIsOpen(t *testing.T) {
 	session := newSessionWithTabs(t, domain.OpenTabs{})
 
 	out := tabs(t, session)
@@ -132,7 +132,7 @@ func TestWindowTabsSaysSoWhereNothingIsOpen(t *testing.T) {
 }
 
 // A build nobody is sitting at serves the vault and nothing about a window.
-func TestWindowTabsIsNotServedWhereNoWindowSays(t *testing.T) {
+func TestWindowTabsIsNotServedWhereNoWindowReturns(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 	session := newSessionOver(t, core)
 

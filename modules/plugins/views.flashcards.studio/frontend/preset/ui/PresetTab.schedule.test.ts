@@ -24,9 +24,9 @@ describe('a preset that schedules nothing', () => {
   }
 
   it('has a sentence of its own for each verdict there is', () => {
-    const said = STOPPING.map((one) => words.stopped(one))
-    expect(said.filter((one) => one !== '')).toHaveLength(STOPPING.length)
-    expect(new Set(said).size).toBe(STOPPING.length)
+    const saidText = STOPPING.map((one) => words.stopped(one))
+    expect(saidText.filter((one) => one !== '')).toHaveLength(STOPPING.length)
+    expect(new Set(saidText).size).toBe(STOPPING.length)
   })
 
   it('says why, in the words that verdict has', () => {
@@ -85,7 +85,7 @@ describe('a goal with nothing to work on', () => {
 
   // A preset holding cards is never told it holds none, so a curve of zeros
   // keeps its control and says nothing about the vault.
-  it('draws the control for a preset holding cards, whatever its curve comes to', () => {
+  it('draws the control for a preset holding cards, whatever its curve evaluates to', () => {
     const { tab } = mountPresetTab({ ...nothing, decks: 4, cards: 900 })
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(1)
     expect(tab.text()).not.toContain(words.unpointed)
@@ -105,13 +105,13 @@ describe('a goal with nothing to work on', () => {
   })
 
   it('leaves its settings there to be set up before a deck points here', () => {
-    const { tab, done } = mountPresetTab(nothing)
+    const { tab, recorded } = mountPresetTab(nothing)
     expect(tab.findAll('[data-preset-row]')).toHaveLength(6)
     const minutes = tab
       .findAll('[data-preset-row]')
       .find((one) => one.get('[data-preset="name"]').text() === words.fieldName('minutesADay'))
     minutes?.get('input').setValue('7')
-    expect(done).toStrictEqual(['type minutesADay 7'])
+    expect(recorded).toStrictEqual(['type minutesADay 7'])
   })
 })
 
@@ -149,7 +149,7 @@ describe('the settings the chosen goal schedules by', () => {
   })
 
   it('draws the day under the goal that steers it, and moves the knob by it', async () => {
-    const { tab, done } = mountPresetTab(
+    const { tab, recorded } = mountPresetTab(
       {
         goal: 'date',
         grid: [10, 20, 30, 40],
@@ -169,6 +169,6 @@ describe('the settings the chosen goal schedules by', () => {
     expect((day.element as HTMLInputElement).value).toBe('2026-09-29')
     // A day is chosen in one gesture, so choosing it is being done with it.
     await day.setValue('2026-10-09')
-    expect(done).toStrictEqual(['type byDate 2026-10-09', 'flushPending'])
+    expect(recorded).toStrictEqual(['type byDate 2026-10-09', 'flushPending'])
   })
 })

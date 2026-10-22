@@ -19,7 +19,7 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	when := parseTime("2026-08-29T09:00:00Z")
 
 	// A card already spaced, so that the four answers are told apart by what
-	// they do to it rather than by the first steps of learning.
+	// they do to it and not by the first steps of learning.
 	learnt := by.Next(by.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
 	later := learnt.Due
@@ -45,18 +45,18 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 		t.Fatalf("a card answered well twice has %d lapses", learnt.Lapses)
 	}
 
-	forgotten := by.Next(learnt, learnt.Due, review.Again)
-	if forgotten.Lapses != 1 {
-		t.Errorf("a card that did not come back has %d lapses, want 1", forgotten.Lapses)
+	cleared := by.Next(learnt, learnt.Due, review.Again)
+	if cleared.Lapses != 1 {
+		t.Errorf("a card that did not come back has %d lapses, want 1", cleared.Lapses)
 	}
-	if forgotten.Reps != learnt.Reps+1 {
-		t.Errorf("answers counted %d, want %d", forgotten.Reps, learnt.Reps+1)
+	if cleared.Reps != learnt.Reps+1 {
+		t.Errorf("answers counted %d, want %d", cleared.Reps, learnt.Reps+1)
 	}
 }
 
 // An answer leaves a card seen, which is what tells it from one nobody has
 // reached yet.
-func TestAnAnsweredCardIsSeen(t *testing.T) {
+func TestAnAnsweredCardIsObserved(t *testing.T) {
 	by := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 
@@ -162,7 +162,7 @@ func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
 
 // A schedule says which scheduler filled it, because the numbers one carries
 // between answers are its own.
-func TestASchedulerSaysWhichItIs(t *testing.T) {
+func TestASchedulerReturnsWhichItIs(t *testing.T) {
 	got := review.NewFSRS().GetName()
 	if !strings.HasPrefix(got, review.FSRSName+".") {
 		t.Errorf("named itself %q, want the algorithm and what it is running on", got)

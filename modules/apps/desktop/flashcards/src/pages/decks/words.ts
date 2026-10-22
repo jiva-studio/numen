@@ -34,7 +34,7 @@ export const LEARNED = {
  * How many cards starting a session on this preset would put in front of a person,
  * which is what its decks still owe today, or why it would put none there.
  *
- * It is the count the session itself will ask, so it is printed as it stands.
+ * It is the count the session itself will ask, so it is printed currently.
  */
 export const getLeftWords = (one: Preset): string => {
   if (one.cards > 0) return many(one.cards, 'card')
@@ -59,7 +59,7 @@ export const getStoppedWords = (
   })
 
 /**
- * What the goal of a preset comes to, in the few words a person reads at a
+ * What the goal of a preset evaluates to, in the few words a person reads at a
  * glance. A day is said as a person reads one, and not as the file writes it.
  */
 export const getGoalWords = (settings: Settings, today: string): string => {
@@ -68,9 +68,9 @@ export const getGoalWords = (settings: Settings, today: string): string => {
       return `${percent(settings.retention)} remembered`
     case 'date': {
       if (!settings.byDate) return formatStopReasonMessage(StopReason.NO_DAY)
-      const left = daysBetween(today, settings.byDate)
-      if (left <= 0) return `by ${getDayWords(settings.byDate)}`
-      return `${many(left, 'day')} to ${getDayWords(settings.byDate)}`
+      const daysLeft = daysBetween(today, settings.byDate)
+      if (daysLeft <= 0) return `by ${getDayWords(settings.byDate)}`
+      return `${many(daysLeft, 'day')} to ${getDayWords(settings.byDate)}`
     }
     case 'minutes':
       if (settings.minutesADay === 0) return formatStopReasonMessage(StopReason.NO_MINUTES)

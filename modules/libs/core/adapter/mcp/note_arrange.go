@@ -62,7 +62,7 @@ func moveNotes(ctx context.Context, core Core, in noteMoveInput) (noteMoveOutput
 		outcome := MoveOutcome{MoveResult: moved}
 		if err != nil {
 			outcome.MoveResult = note.MoveResult{From: path}
-			outcome.Refused = sayError(err)
+			outcome.Error = sayError(err)
 		}
 		res.Moved = append(res.Moved, outcome)
 	}
@@ -87,7 +87,7 @@ func addNoteRemove(server *sdk.Server, core Core) {
 			"off the disk and leaves nothing to put back. " +
 			"Links that pointed at them are left as they are and " +
 			"come back under `dangling`: a link is not wrong because its note is gone. " +
-			"This removes notes: a path naming a folder is refused, and the notes under " +
+			"This removes notes: a path naming a folder fails, and the notes under " +
 			"one are removed by naming each of them.",
 	}, newHandler(func(ctx context.Context, in noteRemoveInput) (noteRemoveOutput, error) {
 		return removeNotes(ctx, core, in)
@@ -107,7 +107,7 @@ func removeNotes(ctx context.Context, core Core, in noteRemoveInput) (noteRemove
 		outcome := RemoveOutcome{RemoveResult: removed}
 		if err != nil {
 			outcome.RemoveResult = note.RemoveResult{Path: path}
-			outcome.Refused = sayError(err)
+			outcome.Error = sayError(err)
 		}
 		res.Removed = append(res.Removed, outcome)
 	}

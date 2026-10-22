@@ -27,12 +27,12 @@ func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
 		t.Errorf("the first request wrote the cache %d times, want 1", first.Rewritten)
 	}
 
-	warm := l.countLoads(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
-	if warm.Consulted == 0 {
+	cached := l.countLoads(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
+	if cached.Consulted == 0 {
 		t.Error("a warm request never consulted the cache")
 	}
-	if warm.Rewritten != 0 {
-		t.Errorf("a warm request rewrote the cache %d times", warm.Rewritten)
+	if cached.Rewritten != 0 {
+		t.Errorf("a warm request rewrote the cache %d times", cached.Rewritten)
 	}
 }
 
@@ -46,19 +46,19 @@ func TestStartingASessionConsultsTheScheduleCache(t *testing.T) {
 	if _, err := l.owed.Execute(ctx, l.vault); err != nil {
 		t.Fatal(err)
 	}
-	warm := l.countLoads(t, func() error {
+	cached := l.countLoads(t, func() error {
 		_, err := l.sat.Execute(ctx, l.vault, flashcards.Scope{})
 		return err
 	})
-	if warm.Consulted == 0 {
+	if cached.Consulted == 0 {
 		t.Error("starting a session never consulted the cache")
 	}
-	if warm.Rewritten != 0 {
-		t.Errorf("starting a session rewrote the cache %d times", warm.Rewritten)
+	if cached.Rewritten != 0 {
+		t.Errorf("starting a session rewrote the cache %d times", cached.Rewritten)
 	}
 }
 
-// Opening the history consults the cache and leaves it as it stands.
+// Opening the history consults the cache and leaves it currently.
 func TestTheHistoryConsultsTheScheduleCache(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
@@ -67,11 +67,11 @@ func TestTheHistoryConsultsTheScheduleCache(t *testing.T) {
 	if _, err := l.owed.Execute(ctx, l.vault); err != nil {
 		t.Fatal(err)
 	}
-	warm := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
+	cached := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
 	// The day counts are kept in a cache of their own, and the first request
 	// over this vault fills it.
-	if warm.Rewritten > 1 {
-		t.Errorf("opening the history wrote a cache %d times", warm.Rewritten)
+	if cached.Rewritten > 1 {
+		t.Errorf("opening the history wrote a cache %d times", cached.Rewritten)
 	}
 }
 

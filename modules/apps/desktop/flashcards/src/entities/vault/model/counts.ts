@@ -1,12 +1,12 @@
 /**
- * What every vault the installation holds comes to today.
+ * What every vault the installation holds evaluates to today.
  *
  * Apart from the template because counting is asked for from three places — the
  * window opening, a session ending, and a vault moving underneath it — and one
  * count runs at a time however many ask.
  *
  * The vaults arrive first, by name and by where they are, and each count
- * follows on its own. A vault whose count has not arrived stands on the list
+ * follows on its own. A vault whose count has not arrived relies on the list
  * with nothing said about what it holds.
  */
 import { ref, shallowRef } from 'vue'
@@ -137,9 +137,9 @@ function useVaultRows() {
   const vaults = shallowRef<readonly VaultCardsDue[]>([])
 
   const setVaults = (all: readonly VaultCounts[]) => {
-    const held = new Map(vaults.value.map((one) => [one.vault, one]))
+    const target = new Map(vaults.value.map((one) => [one.vault, one]))
     vaults.value = all.map((one) => {
-      const was = held.get(one.id)
+      const was = target.get(one.id)
       return was?.isCounted ? { ...was, name: one.name, path: one.path } : createUncountedVault(one)
     })
   }

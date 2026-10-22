@@ -44,12 +44,12 @@ func mayNamePlugins(dir string) bool {
 func getPluginRequirements(gomod string) []string {
 	var named []string
 	for line := range strings.SplitSeq(gomod, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "module ") || strings.HasPrefix(trimmed, "//") {
+		cleanLine := strings.TrimSpace(line)
+		if strings.HasPrefix(cleanLine, "module ") || strings.HasPrefix(cleanLine, "//") {
 			continue
 		}
-		if strings.Contains(trimmed, pluginsPrefix) || strings.Contains(trimmed, "/plugins/") {
-			named = append(named, trimmed)
+		if strings.Contains(cleanLine, pluginsPrefix) || strings.Contains(cleanLine, "/plugins/") {
+			named = append(named, cleanLine)
 		}
 	}
 	return named
@@ -194,7 +194,7 @@ func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T)
 }
 
 // No module requires a plugin but a composition root: a
-// requirement is how a build comes to be compiled from one.
+// requirement is how a build evaluates to be compiled from one.
 func TestNoModuleButACompositionRootRequiresAPlugin(t *testing.T) {
 	root := filepath.Join("..", "..", "..")
 	found := 0

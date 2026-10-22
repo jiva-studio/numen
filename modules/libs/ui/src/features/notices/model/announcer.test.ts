@@ -8,7 +8,7 @@ import { defineComponent, h, nextTick, shallowRef, watch } from 'vue'
 import { useAnnouncer } from './announcer'
 import type { Notice } from '../lib/notice'
 
-const quiet = (id: string, text: string, about?: string): Notice => ({
+const createQuietNotice = (id: string, text: string, about?: string): Notice => ({
   id,
   text,
   ...(about ? { about } : {}),
@@ -39,7 +39,7 @@ function listen(initial: readonly Notice[]) {
 
 describe('what the corner reads out', () => {
   it('has nothing to say until the notices are drawn', async () => {
-    const { regions } = listen([quiet('a', 'Renamed')])
+    const { regions } = listen([createQuietNotice('a', 'Renamed')])
 
     expect(regions.told.value).toBe('')
     expect(regions.cried.value).toBe('')
@@ -51,7 +51,7 @@ describe('what the corner reads out', () => {
   })
 
   it('reads what a card is about after its words', async () => {
-    const { regions } = listen([quiet('a', 'Renamed', 'notes.md')])
+    const { regions } = listen([createQuietNotice('a', 'Renamed', 'notes.md')])
 
     await flushPromises()
 
@@ -59,7 +59,7 @@ describe('what the corner reads out', () => {
   })
 
   it('reads trouble over everything and the rest politely', async () => {
-    const { regions } = listen([quiet('a', 'Renamed'), loud('b', 'Filed there')])
+    const { regions } = listen([createQuietNotice('a', 'Renamed'), loud('b', 'Filed there')])
 
     await flushPromises()
 
@@ -78,8 +78,8 @@ describe('what the corner reads out', () => {
 
   it('reads several cards in one sentence each, joined', async () => {
     const { regions } = listen([
-      quiet('a', 'Renamed'),
-      quiet('b', 'Moved'),
+      createQuietNotice('a', 'Renamed'),
+      createQuietNotice('b', 'Moved'),
       loud('c', 'Filed there'),
       loud('d', 'Locked'),
     ])
@@ -91,10 +91,10 @@ describe('what the corner reads out', () => {
   })
 
   it('reads a card that arrives, and only that card', async () => {
-    const { regions, notices } = listen([quiet('a', 'Renamed')])
+    const { regions, notices } = listen([createQuietNotice('a', 'Renamed')])
     await flushPromises()
 
-    notices.value = [quiet('a', 'Renamed'), quiet('b', 'Moved')]
+    notices.value = [createQuietNotice('a', 'Renamed'), createQuietNotice('b', 'Moved')]
     await flushPromises()
 
     expect(regions.told.value).toBe('Moved')
@@ -102,27 +102,27 @@ describe('what the corner reads out', () => {
   })
 
   it('reads a card again when its words change', async () => {
-    const { regions, notices } = listen([quiet('a', 'Indexing', '1 of 3')])
+    const { regions, notices } = listen([createQuietNotice('a', 'Indexing', '1 of 3')])
     await flushPromises()
 
-    notices.value = [quiet('a', 'Indexing', '2 of 3')]
+    notices.value = [createQuietNotice('a', 'Indexing', '2 of 3')]
     await flushPromises()
 
     expect(regions.told.value).toBe('Indexing — 2 of 3')
   })
 
   it('does not read a card again when its words have not changed', async () => {
-    const { regions, notices } = listen([quiet('a', 'Renamed')])
+    const { regions, notices } = listen([createQuietNotice('a', 'Renamed')])
     await flushPromises()
 
-    notices.value = [quiet('a', 'Renamed')]
+    notices.value = [createQuietNotice('a', 'Renamed')]
     await nextTick()
 
     expect(regions.told.value).toBe('Renamed')
   })
 
   it('does not read a card that has gone', async () => {
-    const { regions, notices } = listen([quiet('a', 'Renamed')])
+    const { regions, notices } = listen([createQuietNotice('a', 'Renamed')])
     await flushPromises()
 
     notices.value = []
@@ -132,12 +132,12 @@ describe('what the corner reads out', () => {
   })
 
   it('reads a card again when it returns after going', async () => {
-    const { regions, notices } = listen([quiet('a', 'Renamed')])
+    const { regions, notices } = listen([createQuietNotice('a', 'Renamed')])
     await flushPromises()
     notices.value = []
     await flushPromises()
 
-    notices.value = [quiet('a', 'Renamed')]
+    notices.value = [createQuietNotice('a', 'Renamed')]
     await nextTick()
 
     expect(regions.told.value).toBe('')
@@ -146,10 +146,10 @@ describe('what the corner reads out', () => {
   })
 
   it('empties both regions before it fills them again', async () => {
-    const { regions, notices } = listen([quiet('a', 'Renamed'), loud('b', 'Filed there')])
+    const { regions, notices } = listen([createQuietNotice('a', 'Renamed'), loud('b', 'Filed there')])
     await flushPromises()
 
-    notices.value = [quiet('a', 'Renamed'), loud('b', 'Filed there'), quiet('c', 'Moved')]
+    notices.value = [createQuietNotice('a', 'Renamed'), loud('b', 'Filed there'), createQuietNotice('c', 'Moved')]
     await nextTick()
 
     expect(regions.told.value).toBe('')
@@ -165,8 +165,8 @@ describe('what the corner reads out', () => {
     const { regions, notices, next } = listen([])
     await flushPromises()
 
-    next.value = [quiet('a', 'Renamed'), quiet('b', 'Moved')]
-    notices.value = [quiet('a', 'Renamed')]
+    next.value = [createQuietNotice('a', 'Renamed'), createQuietNotice('b', 'Moved')]
+    notices.value = [createQuietNotice('a', 'Renamed')]
     await flushPromises()
 
     expect(regions.told.value).toBe('Renamed. Moved')

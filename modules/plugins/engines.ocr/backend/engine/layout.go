@@ -102,8 +102,8 @@ func (l *Layout) Regions(page image.Image) ([]Region, error) {
 		defer v.Destroy()
 	}
 
-	answer, held := out[outputBoxes]
-	if !held {
+	answer, target := out[outputBoxes]
+	if !target {
 		return nil, fmt.Errorf("the layout model answered with %v and not %s", getNames(out), outputBoxes)
 	}
 	data, err := ort.GetTensorData[float32](answer)

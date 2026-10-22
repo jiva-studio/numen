@@ -17,7 +17,7 @@ func answer(blank, token, step, steps int) []float32 {
 
 // The decoding says the tokens the joiner names and steps on by the number
 // beside them. A blank is a frame carrying nothing and is not said.
-func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
+func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 	const blank, steps = 3, 3
 	named := map[int][]float32{
 		0: answer(blank, 1, 2, steps),
@@ -25,8 +25,8 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 		3: answer(blank, 2, 1, steps),
 	}
 
-	var asked []int
-	said, err := transducer{
+	var request []int
+	response, err := transducer{
 		frames:  4,
 		blank:   blank,
 		encoded: 1,
@@ -35,7 +35,7 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 			return dst
 		},
 		predictor: func(token int) ([]float32, error) {
-			asked = append(asked, token)
+			request = append(request, token)
 			return []float32{float32(token)}, nil
 		},
 		joint: func(frame, _ []float32) ([]float32, error) {
@@ -46,21 +46,21 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(said) != 2 || said[0] != 1 || said[1] != 2 {
-		t.Errorf("the frames said %v", said)
+	if len(response) != 2 || response[0] != 1 || response[1] != 2 {
+		t.Errorf("the frames said %v", response)
 	}
 	// The predictor opens on the blank and is moved on by each token said.
-	if len(asked) != 3 || asked[0] != blank || asked[1] != 1 || asked[2] != 2 {
-		t.Errorf("the predictor was given %v", asked)
+	if len(request) != 3 || request[0] != blank || request[1] != 1 || request[2] != 2 {
+		t.Errorf("the predictor was given %v", request)
 	}
 }
 
 // A frame the joiner covers with nothing is still left behind, and a recording
 // of them ends.
-func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
+func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	const blank, steps = 3, 3
 	visited := 0
-	said, err := transducer{
+	response, err := transducer{
 		frames:    4,
 		blank:     blank,
 		encoder:   func(int, []float32) []float32 { visited++; return nil },
@@ -72,8 +72,8 @@ func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(said) != 0 {
-		t.Errorf("frames carrying nothing said %v", said)
+	if len(response) != 0 {
+		t.Errorf("frames carrying nothing said %v", response)
 	}
 	if visited != 4 {
 		t.Errorf("visited %d frames, want 4", visited)
@@ -192,7 +192,7 @@ func TestDecodeAdvancesAfterMostPerFrame(t *testing.T) {
 	const blank, steps = 3, 3
 	callsPerFrame := make(map[int]int)
 
-	said, err := transducer{
+	response, err := transducer{
 		frames:  3,
 		blank:   blank,
 		encoded: 1,
@@ -215,8 +215,8 @@ func TestDecodeAdvancesAfterMostPerFrame(t *testing.T) {
 	}
 
 	wantTokens := 2 * mostPerFrame
-	if len(said) != wantTokens {
-		t.Fatalf("got %d tokens, want %d", len(said), wantTokens)
+	if len(response) != wantTokens {
+		t.Fatalf("got %d tokens, want %d", len(response), wantTokens)
 	}
 	if callsPerFrame[0] != mostPerFrame {
 		t.Errorf("frame 0 was called %d times, want %d", callsPerFrame[0], mostPerFrame)

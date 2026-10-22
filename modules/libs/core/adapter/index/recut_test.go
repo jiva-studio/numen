@@ -180,8 +180,8 @@ func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
 	n := noteAt("notes/Entropy.md", "Entropy", body)
 	save(t, db, first, n)
 
-	if asked := model.run(t, db, first); asked != 5 {
-		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
+	if request := model.run(t, db, first); request != 5 {
+		t.Fatalf("a note of 200 words owes %d vectors, want 5", request)
 	}
 	was := smallChunks(t, db, first, n.Fingerprint.Path)
 	if len(was) != 5 {
@@ -212,8 +212,8 @@ func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 4 {
 		t.Errorf("%d vectors survived the edit, want the four chunks before it", got)
 	}
-	if asked := model.run(t, db, first); asked != 1 {
-		t.Errorf("editing the end of a note asked for %d vectors, want 1", asked)
+	if requestVal := model.run(t, db, first); requestVal != 1 {
+		t.Errorf("editing the end of a note asked for %d vectors, want 1", requestVal)
 	}
 }
 
@@ -248,8 +248,8 @@ func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != len(was) {
 		t.Errorf("%d vectors, want the %d chunks that carry one", got, len(was))
 	}
-	if asked := model.run(t, db, first); asked != 0 {
-		t.Errorf("a note whose body did not change asked for %d vectors", asked)
+	if request := model.run(t, db, first); request != 0 {
+		t.Errorf("a note whose body did not change asked for %d vectors", request)
 	}
 
 	// Every chunk is read from where its text is now.
@@ -279,8 +279,8 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 	n := noteAt("notes/Entropy.md", "Entropy", body)
 	save(t, db, first, n)
 
-	if asked := model.run(t, db, first); asked != 5 {
-		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
+	if request := model.run(t, db, first); request != 5 {
+		t.Fatalf("a note of 200 words owes %d vectors, want 5", request)
 	}
 	was := smallChunks(t, db, first, n.Fingerprint.Path)
 
@@ -307,8 +307,8 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 			t.Errorf("the chunk at %d carries a vector made from other text", at)
 		}
 	}
-	if asked := model.run(t, db, first); asked != 3 {
-		t.Errorf("editing the middle of a note asked for %d vectors, want 3", asked)
+	if requestVal := model.run(t, db, first); requestVal != 3 {
+		t.Errorf("editing the middle of a note asked for %d vectors, want 3", requestVal)
 	}
 }
 
@@ -330,7 +330,7 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 	model := embedder{seed: 0x11}
 
 	save(t, db, first, before)
-	if asked := model.run(t, db, first); asked == 0 {
+	if request := model.run(t, db, first); request == 0 {
 		t.Fatal("the note owes no vector, so this measures nothing")
 	}
 	was := smallChunks(t, db, first, before.Fingerprint.Path)
@@ -338,17 +338,17 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 	save(t, db, first, after)
 	now := smallChunks(t, db, first, after.Fingerprint.Path)
 
-	kept := 0
+	count := 0
 	for _, row := range now {
 		if !slices.Contains(was, row) {
 			continue
 		}
-		kept++
+		count++
 		if !hasVector(t, db, row) {
 			t.Errorf("row %d kept its number and lost its vector", row)
 		}
 	}
-	return cost{asked: model.run(t, db, first), kept: kept, was: len(was), now: len(now)}
+	return cost{asked: model.run(t, db, first), kept: count, was: len(was), now: len(now)}
 }
 
 func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
@@ -414,8 +414,8 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 	n := noteAt("notes/Entropy.md", "Entropy", body)
 	save(t, db, first, n)
 
-	if asked := model.run(t, db, first); asked != 5 {
-		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
+	if request := model.run(t, db, first); request != 5 {
+		t.Fatalf("a note of 200 words owes %d vectors, want 5", request)
 	}
 	was := smallChunks(t, db, first, n.Fingerprint.Path)
 
@@ -430,8 +430,8 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 			t.Errorf("row %d holds text it did not hold before", row)
 		}
 	}
-	if asked := model.run(t, db, first); asked != len(now) {
-		t.Errorf("editing the start of a note asked for %d vectors, want its %d chunks", asked, len(now))
+	if requestVal := model.run(t, db, first); requestVal != len(now) {
+		t.Errorf("editing the start of a note asked for %d vectors, want its %d chunks", requestVal, len(now))
 	}
 }
 
@@ -449,8 +449,8 @@ func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	model.run(t, db, first)
 
 	enclosing := largeChunk(t, db, first, n.Fingerprint.Path)
-	kept := smallChunks(t, db, first, n.Fingerprint.Path)[0]
-	if !hasVector(t, db, kept) {
+	chunkItem := smallChunks(t, db, first, n.Fingerprint.Path)[0]
+	if !hasVector(t, db, chunkItem) {
 		t.Fatal("the chunk this is about carries no vector, so it would pass either way")
 	}
 
@@ -460,13 +460,13 @@ func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	if now == enclosing {
 		t.Fatalf("the large chunk is row %d after the note was edited, so its text did not move", now)
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ?`, kept); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ?`, chunkItem); got != 1 {
 		t.Fatal("the chunk whose text did not change went with the large chunk enclosing it")
 	}
-	if !hasVector(t, db, kept) {
+	if !hasVector(t, db, chunkItem) {
 		t.Error("the chunk whose text did not change lost its vector")
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent_id = ?`, kept, now); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent_id = ?`, chunkItem, now); got != 1 {
 		t.Error("the chunk that was kept does not sit inside the large chunk that is there now")
 	}
 }
@@ -481,13 +481,13 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 	n := noteAt("notes/Entropy.md", "Entropy", body)
 	save(t, db, first, n)
 
-	kept := smallChunks(t, db, first, n.Fingerprint.Path)[0]
+	chunkItem := smallChunks(t, db, first, n.Fingerprint.Path)[0]
 	// A word of the first chunk, which an edit at the other end does not reach.
 	opening := "word" + spellNumber(3)
 
 	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, body+" wordzz"))
 
-	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, kept); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, chunkItem); got != 1 {
 		t.Errorf("%d full-text rows for the chunk that was kept", got)
 	}
 	// One row per small chunk, and none naming a chunk that is gone.
@@ -537,8 +537,8 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	model.run(t, db, first)
 	model.run(t, db, second)
 
-	untouched := smallChunks(t, db, second, theirs.Fingerprint.Path)
-	if len(untouched) == 0 {
+	unchangedChunks := smallChunks(t, db, second, theirs.Fingerprint.Path)
+	if len(unchangedChunks) == 0 {
 		t.Fatal("the second vault holds no chunk that carries a vector")
 	}
 	was := chunksIn(t, db, second)
@@ -546,7 +546,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 
 	save(t, db, first, noteAt(mine.Fingerprint.Path, mine.Title, mine.Body+" wordzz"))
 
-	for _, row := range untouched {
+	for _, row := range unchangedChunks {
 		if !hasVector(t, db, row) {
 			t.Errorf("row %d of the second vault lost its vector when the first vault's note was cut", row)
 		}
@@ -607,7 +607,7 @@ func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string
 	return out
 }
 
-func TestAChunkIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
+func TestAChunkIsNamedAfterTheSectionItWasSplitInside(t *testing.T) {
 	// A heading names the text under it, and that name is on every chunk cut
 	// there, which is what a result has to show to say where the passage is.
 	db := openDB(t)
@@ -652,7 +652,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	}
 }
 
-func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
+func TestSplittingOneSectionStaysInsideItsVault(t *testing.T) {
 	// One database holds every vault. The two notes here are at one path, are cut
 	// into sections of the same shape, and share no word of prose, so a chunk that
 	// arrived from the wrong vault is recognisable and a cut that reached across
@@ -671,8 +671,8 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	model.run(t, db, first)
 	model.run(t, db, second)
 
-	untouched := smallChunks(t, db, second, path)
-	if len(untouched) == 0 {
+	unchangedChunks := smallChunks(t, db, second, path)
+	if len(unchangedChunks) == 0 {
 		t.Fatal("the second vault holds no chunk that carries a vector")
 	}
 	was := chunksIn(t, db, second)
@@ -681,7 +681,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	// A word typed into the first section of the first vault's note.
 	save(t, db, first, parseNote(path, insertWordBefore(body, 0)))
 
-	for _, row := range untouched {
+	for _, row := range unchangedChunks {
 		if !hasVector(t, db, row) {
 			t.Errorf("row %d of the second vault lost its vector when the first vault's note was cut", row)
 		}
@@ -694,8 +694,8 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
 		t.Errorf("%d vectors, want %d", got, vectors-1)
 	}
-	if asked := model.run(t, db, first); asked != 2 {
-		t.Errorf("editing the first section asked for %d vectors, want 2", asked)
+	if request := model.run(t, db, first); request != 2 {
+		t.Errorf("editing the first section asked for %d vectors, want 2", request)
 	}
 
 	// Neither vault answers for the other.

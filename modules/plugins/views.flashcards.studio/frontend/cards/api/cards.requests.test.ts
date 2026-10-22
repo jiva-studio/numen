@@ -1,6 +1,6 @@
 /**
  * What the window sends the cards service for each thing it does with a deck or
- * a stencil, and what it makes of the answer: a refusal keeps its own words, a
+ * a stencil, and what it makes of the answer: an error keeps its own words, a
  * file moved on is `changed`, and a missing stamp is the empty string.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -98,18 +98,18 @@ describe('reading a deck', () => {
   it('carries the empty string where the service stamped nothing', async () => {
     answer('readDeck', { deck: deckMessage })
 
-    const read = await cards.readDeck('Deck.md')
+    const readItem = await cards.readDeck('Deck.md')
 
-    expect(read.ok && read.value.at).toBe('')
+    expect(readItem.ok && readItem.value.at).toBe('')
   })
 
-  it('is refused in the service words even where a deck came with them', async () => {
+  it('fails in the service words even where a deck came with them', async () => {
     answer('readDeck', { error: ErrorCode.MISSING, deck: deckMessage, bound: 400n })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'missing', bound: 400 }))
   })
 
-  it('is refused in the service words where no deck came', async () => {
+  it('fails in the service words where no deck came', async () => {
     answer('readDeck', { error: ErrorCode.TOO_LARGE, bound: 900n })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'tooLarge', bound: 900 }))
@@ -121,7 +121,7 @@ describe('reading a deck', () => {
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'notADeck', bound: 400 }))
   })
 
-  it('is changed where the file moved past what was asked', async () => {
+  it('is changed where the file moved past what was requested', async () => {
     answer('readDeck', { error: ErrorCode.STALE, bound: 400n })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'changed', bound: 400 }))
@@ -163,7 +163,7 @@ describe('writing a deck', () => {
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(asValue({ at: '' }))
   })
 
-  it('is refused in the service words, with the bound', async () => {
+  it('fails in the service words, with the bound', async () => {
     answer('writeDeck', { error: ErrorCode.DECK_TOO_LARGE, bound: 700n })
 
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(
@@ -173,7 +173,7 @@ describe('writing a deck', () => {
 })
 
 describe('the stencils of a vault', () => {
-  it('are asked for up to the limit given', async () => {
+  it('are requested for up to the limit given', async () => {
     answer('listStencils', { stencils: [], total: 0 })
 
     await cards.stencils(5)
@@ -181,7 +181,7 @@ describe('the stencils of a vault', () => {
     expect(cardsService.listStencils).toHaveBeenCalledWith({ limit: 5 })
   })
 
-  it('are asked for up to no limit where none is given', async () => {
+  it('are requested for up to no limit where none is given', async () => {
     answer('listStencils', { stencils: [], total: 0 })
 
     await cards.stencils()
@@ -209,20 +209,20 @@ describe('renaming a field', () => {
 
     await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
 
-    const sent = vi.mocked(cardsService.renameStencilField).mock.calls[0]?.[0]
-    expect(sent).toEqual({ path: 'Word.md', from: 'Front', to: 'Face' })
-    expect(sent).not.toHaveProperty('seen')
+    const dispatched = vi.mocked(cardsService.renameStencilField).mock.calls[0]?.[0]
+    expect(dispatched).toEqual({ path: 'Word.md', from: 'Front', to: 'Face' })
+    expect(dispatched).not.toHaveProperty('seen')
   })
 
   it('answers with the empty string where the service stamped nothing', async () => {
     answer('renameStencilField', { decks: [], cards: 0, notWritten: [] })
 
-    const renamed = await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
+    const renameResult = await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
 
-    expect(renamed.ok && renamed.value.at).toBe('')
+    expect(renameResult.ok && renameResult.value.at).toBe('')
   })
 
-  it('is refused in the service words', async () => {
+  it('fails in the service words', async () => {
     answer('renameStencilField', { error: ErrorCode.MISSING })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)).toEqual(
@@ -265,24 +265,24 @@ describe('reading a stencil', () => {
   it('carries the empty string where the service stamped nothing', async () => {
     answer('readStencil', { stencil: stencilMessage })
 
-    const read = await cards.readStencil('Word.md')
+    const readItem = await cards.readStencil('Word.md')
 
-    expect(read.ok && read.value.at).toBe('')
+    expect(readItem.ok && readItem.value.at).toBe('')
   })
 
-  it('is refused in the service words even where a stencil came with them', async () => {
+  it('fails in the service words even where a stencil came with them', async () => {
     answer('readStencil', { error: ErrorCode.MISSING, stencil: stencilMessage })
 
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('missing'))
   })
 
-  it('is refused in the service words where no stencil came', async () => {
+  it('fails in the service words where no stencil came', async () => {
     answer('readStencil', { error: ErrorCode.UNREADABLE })
 
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('unreadable'))
   })
 
-  it('is changed where the file moved past what was asked, though a stencil came', async () => {
+  it('is changed where the file moved past what was requested, though a stencil came', async () => {
     answer('readStencil', { error: ErrorCode.STALE, stencil: stencilMessage })
 
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('changed'))
@@ -336,7 +336,7 @@ describe('writing a stencil', () => {
     )
   })
 
-  it('is refused in the service words', async () => {
+  it('fails in the service words', async () => {
     answer('writeStencil', { error: ErrorCode.OCCUPIED })
 
     expect(await cards.writeStencil('Word.md', { ...stencil, fields: ['Front'] }, null)).toEqual(

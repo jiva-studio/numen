@@ -20,7 +20,7 @@ describe('the name a link writes', () => {
     expect(getFileStem('stencils/cards/Animal.md')).toBe('Animal')
   })
 
-  it('keeps a name a dot stands inside, and one carrying no extension at all', () => {
+  it('keeps a name a dot remains inside, and one carrying no extension at all', () => {
     expect(getFileStem('stencils/Animal v2.md')).toBe('Animal v2')
     expect(getFileStem('stencils/Animal')).toBe('Animal')
   })

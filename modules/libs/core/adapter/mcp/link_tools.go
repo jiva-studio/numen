@@ -99,8 +99,8 @@ func addLinks(ctx context.Context, core Core, in linkAddInput) (linkAddOutput, e
 	outcomes := make([]AddOutcome, 0, len(in.Links))
 	for i, add := range in.Links {
 		outcome := AddOutcome{From: add.From, To: add.To}
-		if added[i].Refused != nil {
-			outcome.Refused = sayError(added[i].Refused)
+		if added[i].Error != nil {
+			outcome.Error = sayError(added[i].Error)
 		} else {
 			outcome.Fingerprint = fingerprintOf(added[i].Fingerprint)
 		}
@@ -134,7 +134,7 @@ func addLinkUpdate(server *sdk.Server, core Core) {
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		written, err := core.Notes.Linking.Update(
+		content, err := core.Notes.Linking.Update(
 			ctx, core.getCurrentVault().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
 				Role:  domain.LinkRole(in.Role),
 				Type:  in.Type,
@@ -144,7 +144,7 @@ func addLinkUpdate(server *sdk.Server, core Core) {
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
+		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(content)}, nil
 	}))
 }
 
@@ -168,11 +168,11 @@ func addLinkRemove(server *sdk.Server, core Core) {
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		written, err := core.Notes.Linking.Remove(ctx, core.getCurrentVault().Vault, in.From,
+		content, err := core.Notes.Linking.Remove(ctx, core.getCurrentVault().Vault, in.From,
 			domain.ParseAddress(in.To), domain.LinkRole(in.Role), baseline)
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
-		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
+		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(content)}, nil
 	}))
 }

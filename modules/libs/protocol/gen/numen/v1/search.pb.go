@@ -390,7 +390,7 @@ type Passage struct {
 	// The stretch of the source that matched, as it reads.
 	Text string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 	// Where in that text the words typed stand, counted the way a client counts
-	// text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
+	// text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
 	// word in particular.
 	Spans []*Span `protobuf:"bytes,4,rep,name=spans,proto3" json:"spans,omitempty"`
 	// What the source's own numbering calls the place, empty when the format

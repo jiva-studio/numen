@@ -25,13 +25,13 @@ const setup = (groups: Record<string, TabLinkGroup> = {}, targets: string[] = []
 }
 
 describe('the menu on a tab', () => {
-  it('is closed until asked for', () => {
+  it('is closed until requested for', () => {
     const { menu } = setup()
     expect(menu.tabId.value).toBeNull()
     expect(menu.eligibleTabs.value).toStrictEqual([])
   })
 
-  it('opens on a tab of a kind that can be linked, where it was asked', () => {
+  it('opens on a tab of a kind that can be linked, where it was requested', () => {
     const { menu } = setup()
     menu.open('a', { x: 5, y: 6 })
 

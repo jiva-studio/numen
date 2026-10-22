@@ -78,17 +78,17 @@ func newImportURL(t *testing.T, written string, from *site) (ImportURL, *shelf, 
 	t.Helper()
 	shelved := newLibrary()
 	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
-	kept := newShelf()
-	cut := []string{}
+	shelf := newShelf()
+	paths := []string{}
 	return ImportURL{
 		Readers: vaults{first.ID: shelved},
-		Derived: shelves{kept},
+		Derived: shelves{shelf},
 		By:      from,
 		Cut: func(_ context.Context, _ domain.Vault, path string) error {
-			cut = append(cut, path)
+			paths = append(paths, path)
 			return nil
 		},
-	}, kept, pasted
+	}, shelf, pasted
 }
 
 // A file the palette made is named by the address: an address is no filename,
@@ -107,7 +107,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 		{Text: "what was said", From: 1500, To: 4200},
 		{Text: "what was said next", From: 4200, To: 9100},
 	}}
-	u, kept, address := newImportURL(t, pointsAtAVideo, from)
+	u, retained, address := newImportURL(t, pointsAtAVideo, from)
 
 	res, err := u.Execute(t.Context(), first, videoNote, false)
 	if err != nil {
@@ -121,14 +121,14 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	}
 
 	hash := text.Fingerprint([]byte(address))
-	raw, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash))
+	raw, err := retained.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash))
 	if err != nil {
 		t.Fatalf("nothing stands under the address: %v", err)
 	}
 	if got := getWords(t, raw); len(got) != 2 || got[0] != "what was said" {
 		t.Errorf("the words read %v", got)
 	}
-	if _, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProducer, domain.Captions, hash)); err != nil {
+	if _, err := retained.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProducer, domain.Captions, hash)); err != nil {
 		t.Errorf("what downloaded the words is not recorded: %v", err)
 	}
 }
@@ -142,11 +142,11 @@ func TestAnAddressAlreadyDownloaded(t *testing.T) {
 	if _, err := u.Execute(t.Context(), first, videoNote, false); err != nil {
 		t.Fatal(err)
 	}
-	asked := len(from.asked)
+	request := len(from.asked)
 	if _, err := u.Execute(t.Context(), first, videoNote, false); err != nil {
 		t.Fatal(err)
 	}
-	if len(from.asked) != asked {
+	if len(from.asked) != request {
 		t.Errorf("the address was asked again: %v", from.asked)
 	}
 }
@@ -155,7 +155,7 @@ func TestAnAddressAlreadyDownloaded(t *testing.T) {
 // again every time the vault is scanned.
 func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 	from := &site{title: "Entropy explained"}
-	u, kept, address := newImportURL(t, pointsAtAVideo, from)
+	u, retained, address := newImportURL(t, pointsAtAVideo, from)
 
 	res, err := u.Execute(t.Context(), first, videoNote, false)
 	if err != nil {
@@ -165,7 +165,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 		t.Errorf("it came back with %+v", res)
 	}
 	hash := text.Fingerprint([]byte(address))
-	if _, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, domain.Captions, hash)); err != nil {
+	if _, err := retained.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, domain.Captions, hash)); err != nil {
 		t.Errorf("nothing was written down about it: %v", err)
 	}
 }
@@ -173,7 +173,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 // A page is its prose, without the furniture around it, and it is kept as prose.
 func TestThePagePointedAt(t *testing.T) {
 	from := &site{title: "Entropy — a page", prose: "A measure of disorder."}
-	u, kept, _ := newImportURL(t,
+	u, retained, _ := newImportURL(t,
 		"[InternetShortcut]\nURL=https://example.com/entropy\n", from)
 
 	res, err := u.Execute(t.Context(), first, videoNote, false)
@@ -184,35 +184,35 @@ func TestThePagePointedAt(t *testing.T) {
 		t.Errorf("the prose was downloaded by %q", res.Producer)
 	}
 	hash := text.Fingerprint([]byte("https://example.com/entropy"))
-	raw, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Article, hash))
+	raw, err := retained.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Article, hash))
 	if err != nil {
 		t.Fatalf("nothing stands under the address: %v", err)
 	}
 	if string(raw) != "A measure of disorder." {
 		t.Errorf("the prose reads %q", raw)
 	}
-	if asked := strings.Count(strings.Join(from.asked, " "), "text "); asked != 1 {
-		t.Errorf("the address was asked for its text %d times: %v", asked, from.asked)
+	if request := strings.Count(strings.Join(from.asked, " "), "text "); request != 1 {
+		t.Errorf("the address was asked for its text %d times: %v", request, from.asked)
 	}
 }
 
 // Nothing is downloaded for a note that points nowhere.
 func TestANoteThatPointsNowhere(t *testing.T) {
-	for _, written := range []string{
+	for _, content := range []string{
 		"# Entropy\n",
 		"[InternetShortcut]\n",
 		"[InternetShortcut]\nURL=file:///etc/passwd\n",
 	} {
-		u, _, _ := newImportURL(t, written, &site{})
+		u, _, _ := newImportURL(t, content, &site{})
 		if _, err := u.Execute(t.Context(), first, videoNote, false); err == nil {
-			t.Errorf("%q was downloaded for: %v", written, err)
+			t.Errorf("%q was downloaded for: %v", content, err)
 		}
 	}
 }
 
 // A note still called by the address it points at was named by the paste and by
 // nobody. What is there has a name, and the note takes it.
-func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
+func TestANoteStillCalledByItsAddressConsumesTheTitle(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "said", To: 1000}}}
 	u, _, _ := newImportURL(t, aPastedAddress, from)
 	named := []string{}
@@ -256,9 +256,9 @@ func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 
 // A copy is kept in the application's own folder, where losing it costs another
 // download and the vault stays the person's own writing.
-func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
+func TestACopyCachedInTheApplicationsFolder(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, kept, address := newImportURL(t, pointsAtAVideo, from)
+	u, retained, address := newImportURL(t, pointsAtAVideo, from)
 
 	got, err := u.Copy(t.Context(), first, videoNote, nil)
 	if err != nil {
@@ -271,7 +271,7 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 		t.Errorf("the copy is %d bytes", got.Bytes)
 	}
 	name := domain.NewCopyName(text.Fingerprint([]byte(address)))
-	if _, _, err := kept.OpenArtifact(t.Context(), name); err != nil {
+	if _, _, err := retained.OpenArtifact(t.Context(), name); err != nil {
 		t.Errorf("nothing in the folder the copy was kept in: %v", err)
 	}
 }
@@ -280,7 +280,7 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 // time, and the file opened to check for it is closed, not leaked.
 func TestACopyAlreadyInTheApplicationsFolder(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, kept, _ := newImportURL(t, pointsAtAVideo, from)
+	u, retained, _ := newImportURL(t, pointsAtAVideo, from)
 
 	if _, err := u.Copy(t.Context(), first, videoNote, nil); err != nil {
 		t.Fatal(err)
@@ -295,51 +295,51 @@ func TestACopyAlreadyInTheApplicationsFolder(t *testing.T) {
 	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
 		t.Errorf("the site was asked %v", from.asked)
 	}
-	if kept.closeCount() != kept.opens {
-		t.Errorf("checking for an existing copy opened %d files and closed %d", kept.opens, kept.closeCount())
+	if retained.closeCount() != retained.opens {
+		t.Errorf("checking for an existing copy opened %d files and closed %d", retained.opens, retained.closeCount())
 	}
 }
 
 // `importing.copies_to_vault` keeps a copy beside the note, as a file the
 // person sees in their own folder and plays from where it lies.
-func TestACopyKeptBesideTheNote(t *testing.T) {
+func TestACopyCachedAdjacentTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, kept, address := newImportURL(t, pointsAtAVideo, from)
-	held := newLibrary()
-	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
-	u.Readers = vaults{first.ID: held}
-	u.IsToVault, u.Writers = true, writers{first.ID: held}
+	u, retained, address := newImportURL(t, pointsAtAVideo, from)
+	target := newLibrary()
+	target.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
+	u.Readers = vaults{first.ID: target}
+	u.IsToVault, u.Writers = true, writers{first.ID: target}
 
 	got, err := u.Copy(t.Context(), first, videoNote, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	beside := CopyBeside(videoNote)
-	if got.At != beside {
+	besidePath := CopyBeside(videoNote)
+	if got.At != besidePath {
 		t.Errorf("the copy landed at %q, want it beside the note", got.At)
 	}
 	if got.Bytes != int64(len(from.bytes)) {
 		t.Errorf("the copy is %d bytes", got.Bytes)
 	}
-	if held.files[beside] == nil {
+	if target.files[besidePath] == nil {
 		t.Fatal("nothing stands beside the note")
 	}
-	if string(held.files[beside].raw) != string(from.bytes) {
-		t.Errorf("the copy reads %q", held.files[beside].raw)
+	if string(target.files[besidePath].raw) != string(from.bytes) {
+		t.Errorf("the copy reads %q", target.files[besidePath].raw)
 	}
-	if _, _, err := kept.OpenArtifact(t.Context(), domain.NewCopyName(text.Fingerprint([]byte(address)))); err == nil {
+	if _, _, err := retained.OpenArtifact(t.Context(), domain.NewCopyName(text.Fingerprint([]byte(address)))); err == nil {
 		t.Error("the copy is in the application's folder too, and the vault is where it was asked for")
 	}
 }
 
 // A copy already beside the note is not downloaded a second time.
-func TestACopyAlreadyBesideTheNote(t *testing.T) {
+func TestACopyAlreadyAdjacentTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, _, _ := newImportURL(t, pointsAtAVideo, from)
-	held := newLibrary()
-	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
-	u.Readers = vaults{first.ID: held}
-	u.IsToVault, u.Writers = true, writers{first.ID: held}
+	target := newLibrary()
+	target.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
+	u.Readers = vaults{first.ID: target}
+	u.IsToVault, u.Writers = true, writers{first.ID: target}
 
 	if _, err := u.Copy(t.Context(), first, videoNote, nil); err != nil {
 		t.Fatal(err)
@@ -358,7 +358,7 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 
 // The size gate and the download of one copy run under one operation, so an
 // adapter can extract the address once for both.
-func TestACopyAsksMetadataAndDownloadUnderOneOperation(t *testing.T) {
+func TestACopyAsksMetadataAndDownloadBelowOneOperation(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, _, _ := newImportURL(t, pointsAtAVideo, from)
 

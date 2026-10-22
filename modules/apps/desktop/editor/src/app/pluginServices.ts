@@ -44,7 +44,7 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
   readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
   readonly ask: (text: string) => void
-  /** The note the tool tab the person was last in stands on. */
+  /** The note the tool tab the person was last in relies on. */
   readonly getNoteInFocus: () => NoteRef
   readonly writeMessage: MessageWriter
   /** A writer of messages under a name of its own. */
@@ -130,7 +130,7 @@ export function createAgentHost({ port, core, window, settings }: AgentHostDeps)
   return {
     ask: (query) => port.ask(query),
     finish: (conversation) => port.finish(conversation),
-    resolve: (written) => core.resolve('', written),
+    resolve: (content) => core.resolve('', content),
     getUnreachable: () => window.unreachable.value,
     getSetting: (path) => settings.rest.getSetting(path),
     writeSetting: (path, value) => settings.rest.writeSetting(path, value),

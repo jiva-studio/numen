@@ -85,18 +85,18 @@ const {
   onWheel,
 } = useHandScroll(area)
 
-const laid = computed(() => row(props.pages, viewport.value, zoom.value))
-const shown = computed(() => getPagesWithin(laid.value, viewport.value, along.value))
-const middle = computed(() => inFront(laid.value, viewport.value, along.value))
+const pageLayout = computed(() => row(props.pages, viewport.value, zoom.value))
+const visiblePages = computed(() => getPagesWithin(pageLayout.value, viewport.value, along.value))
+const middle = computed(() => inFront(pageLayout.value, viewport.value, along.value))
 
 /** What each page is asked for at. */
 const { drawnWidth } = usePageWidth(
-  () => laid.value,
+  () => pageLayout.value,
   (pixels) => emit('measure', pixels),
 )
 
 /** Where one page is drawn, once a width has been settled on. */
-const drawing = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
+const getPictureUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
 
 /**
  * The row moved, so the page in front is whichever is under the viewport now. A
@@ -110,7 +110,7 @@ const onScroll = () => {
 
 /** The row put where a page stands, with that page against the left edge. */
 const stand = (page: number, how: ScrollBehavior) => {
-  const to = getScrollTarget(laid.value, viewport.value, page)
+  const to = getScrollTarget(pageLayout.value, viewport.value, page)
   if (to !== undefined) send(to, how)
 }
 
@@ -119,14 +119,14 @@ const stand = (page: number, how: ScrollBehavior) => {
 watch(
   () => props.at,
   (page) => {
-    if (page !== inFront(laid.value, viewport.value, getScrollOffset())) stand(page, 'smooth')
+    if (page !== inFront(pageLayout.value, viewport.value, getScrollOffset())) stand(page, 'smooth')
   },
 )
 
 // Zooming keeps the page in front in front. Every page changes width, so the
 // place along the row the hand was looking at has moved.
 watch(
-  () => laid.value.height,
+  () => pageLayout.value.height,
   () => {
     props.paint(() => stand(props.at, 'auto'))
   },
@@ -134,15 +134,15 @@ watch(
 
 /** One page's box in the row. */
 const getBoxStyle = (page: number) => ({
-  insetInlineStart: `${laid.value.starts[page] ?? 0}px`,
+  insetInlineStart: `${pageLayout.value.starts[page] ?? 0}px`,
   insetBlockStart: `${GAP}px`,
-  inlineSize: `${laid.value.widths[page] ?? 0}px`,
-  blockSize: `${laid.value.height}px`,
+  inlineSize: `${pageLayout.value.widths[page] ?? 0}px`,
+  blockSize: `${pageLayout.value.height}px`,
 })
 
 const rowStyle = computed(() => ({
-  inlineSize: `${laid.value.length}px`,
-  blockSize: `${laid.value.height + 2 * GAP}px`,
+  inlineSize: `${pageLayout.value.length}px`,
+  blockSize: `${pageLayout.value.height + 2 * GAP}px`,
 }))
 
 /**
@@ -186,10 +186,10 @@ defineExpose({
     >
       <div v-if="pages.length > 0" class="reader__row relative" :style="rowStyle">
         <Sheet
-          v-for="page in shown"
+          v-for="page in visiblePages"
           :key="page"
           :at="page"
-          :picture="drawing(page)"
+          :picture="getPictureUrl(page)"
           :highlights="highlights(page)"
           :other-highlights="otherHighlights(page)"
           :page="words.page"
@@ -214,7 +214,7 @@ defineExpose({
 </template>
 
 <style scoped>
-/* The row scrolls under the arrows, so the keyboard is drawn where it stands.
+/* The row scrolls under the arrows, so the keyboard is drawn at its current position.
    Inside, because the row fills the reader to its edges. */
 .reader__viewport:focus-visible {
   outline: none;

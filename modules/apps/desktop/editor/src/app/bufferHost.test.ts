@@ -32,7 +32,7 @@ describe('the files a plugin has open', () => {
     expect(fileFlush.addHandler).toHaveBeenCalledWith(buffers.flush)
   })
 
-  it('are let go of by the window when the plugin stops tracking them', () => {
+  it('are release by the window when the plugin stops tracking them', () => {
     const { fileFlush, remove } = createFlush()
 
     const tracked = createBufferHost({ fileFlush }).track(createBuffers())
@@ -45,14 +45,14 @@ describe('the files a plugin has open', () => {
   it('put a file that moved under a tab to the person before the window goes', async () => {
     const { fileFlush, drop } = createFlush()
     const states = ref<Record<string, string>>({})
-    const stale = {
+    const staleBuffers = {
       flush: vi.fn(),
       getOpenIds: () => Object.keys(states.value),
       getOpenNote: (id: string) => ({ state: states.value[id] ?? 'clean' }),
       keep: vi.fn(),
       take: vi.fn(),
     } as unknown as FileBuffers
-    const tracked = createBufferHost({ fileFlush }).track(stale)
+    const tracked = createBufferHost({ fileFlush }).track(staleBuffers)
 
     states.value = { tab: 'stale' }
     await nextTick()
@@ -64,7 +64,7 @@ describe('the files a plugin has open', () => {
 })
 
 describe('the work a plugin finishes before the window quits', () => {
-  it('is taken by the window, and let go of again', () => {
+  it('is taken by the window, and release again', () => {
     const { fileFlush, remove } = createFlush()
     const handler = () => Promise.resolve()
 

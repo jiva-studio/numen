@@ -290,9 +290,9 @@ export const MoreThanThereIsRoomFor: Story = {
 
     // What folds is what has gone right. Trouble and work are what the corner
     // is for.
-    const left = [...cards()].map((card) => card.textContent ?? '')
-    await expect(left.some((words) => words.includes('not in the catalogue'))).toBe(true)
-    await expect(left.some((words) => words.includes('Reading the vault'))).toBe(true)
+    const remainingCards = [...cards()].map((card) => card.textContent ?? '')
+    await expect(remainingCards.some((words) => words.includes('not in the catalogue'))).toBe(true)
+    await expect(remainingCards.some((words) => words.includes('Reading the vault'))).toBe(true)
 
     await userEvent.click(getFoldedCard()!)
 
@@ -424,31 +424,31 @@ export const Dark: Story = {
     ])
 
     for (const card of cards) {
-      const drawn = getComputedStyle(card)
-      const ground = lightness(drawn.backgroundColor)
-      const ink = lightness(drawn.color)
+      const cardStyle = getComputedStyle(card)
+      const ground = lightness(cardStyle.backgroundColor)
+      const ink = lightness(cardStyle.color)
       // Whatever its tone, a card is written in ink standing above its own
       // ground, which is the way round the dark set is written.
       await expect(ink).toBeGreaterThan(ground + 40)
 
       // The frame is that ink, thinned: it lies between the two, and is a step
-      // away from the ground rather than lost in it.
-      const frame = lightness(drawn.borderTopColor, drawn.backgroundColor)
+      // away from the ground and not lost in it.
+      const frame = lightness(cardStyle.borderTopColor, cardStyle.backgroundColor)
       await expect(frame).toBeGreaterThan(Math.min(ink, ground))
       await expect(frame).toBeLessThan(Math.max(ink, ground))
       await expect(Math.abs(frame - ground)).toBeGreaterThan(2)
     }
 
-    // The way out is only ink until a hand is on it, and then it stands on a
+    // The way out is only ink until a hand is on it, and then it relies on a
     // ground of its own.
     const away = within(cards[2]!).getByRole('button', { name: /^Put away/ })
     await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
-    const behind = getComputedStyle(cards[2]!).backgroundColor
+    const behindColor = getComputedStyle(cards[2]!).backgroundColor
     await hoverOver(away)
     await waitFor(async () => {
-      const under = lightness(getComputedStyle(away).backgroundColor, behind)
-      await expect(Math.abs(under - lightness(behind))).toBeGreaterThan(2)
+      const underLightness = lightness(getComputedStyle(away).backgroundColor, behindColor)
+      await expect(Math.abs(underLightness - lightness(behindColor))).toBeGreaterThan(2)
     })
   },
 }

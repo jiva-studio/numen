@@ -52,7 +52,7 @@ func NewDeferredEmbedder(is port.EmbeddingModel) *Embedder {
 
 // SetModel is the model turning up, or the reason it never will. It is the
 // first of these that counts, and a model arriving after the wait is over is
-// let go of where it stands.
+// release at its current position.
 func (e *Embedder) SetModel(held port.Embedder, why error) {
 	e.mu.Lock()
 	late := e.isDone
@@ -69,17 +69,17 @@ func (e *Embedder) SetModel(held port.Embedder, why error) {
 }
 
 // DiscardModel is the model turning out not to be the one whose vectors are stored.
-// It is let go of, and nothing is asked of it again.
+// It is release, and nothing is asked of it again.
 //
 // The reason is in place before anybody can see the wait is over.
 func (e *Embedder) DiscardModel(why error) error {
 	e.mu.Lock()
-	held := e.held
+	target := e.held
 	e.held, e.reason, e.isDone = nil, why, true
 	e.mu.Unlock()
 
 	e.once.Do(func() { close(e.ready) })
-	return closeIfPresent(held)
+	return closeIfPresent(target)
 }
 
 // closeIfPresent closes a model that is here, and says what closing it said. There is
@@ -113,13 +113,13 @@ func (e *Embedder) Wait(ctx context.Context) error {
 }
 
 // Close lets go of the model. The wait is over from here, so a model still on
-// its way down is let go of the moment it arrives.
+// its way down is release the moment it arrives.
 func (e *Embedder) Close() error {
 	e.mu.Lock()
-	held := e.held
+	target := e.held
 	e.held, e.isDone = nil, true
 	e.mu.Unlock()
-	return closeIfPresent(held)
+	return closeIfPresent(target)
 }
 
 // GetWaitingEmbedder waits for the model. Nothing is owed to anybody watching a
@@ -133,12 +133,12 @@ func (e *Embedder) GetImpatientEmbedder() port.Embedder { return nonBlockingEmbe
 // embed is what the model answers with, once it is here.
 func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, error) {
 	e.mu.RLock()
-	held := e.held
+	target := e.held
 	e.mu.RUnlock()
-	if held == nil {
+	if target == nil {
 		return nil, ErrModelNotReady
 	}
-	return held.Embed(ctx, texts)
+	return target.Embed(ctx, texts)
 }
 
 type blockingEmbedder struct{ e *Embedder }
@@ -190,10 +190,10 @@ func (i nonBlockingEmbedder) Concurrency() int { return i.e.Concurrency() }
 // has not arrived.
 func (e *Embedder) Concurrency() int {
 	e.mu.RLock()
-	held := e.held
+	target := e.held
 	e.mu.RUnlock()
-	if held == nil {
+	if target == nil {
 		return 1
 	}
-	return held.Concurrency()
+	return target.Concurrency()
 }

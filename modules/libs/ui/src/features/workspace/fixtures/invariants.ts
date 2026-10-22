@@ -5,11 +5,11 @@ import { isBranch, getPanes } from '../lib/tree'
 /** Anything that does not hold about a workspace, said in words. */
 export function getFaults(workspace: Workspace): readonly string[] {
   const faults: string[] = []
-  const seen = new Set<string>()
+  const observed = new Set<string>()
 
   const walk = (node: WorkspaceNode): void => {
-    if (seen.has(node.id)) faults.push(`two nodes are called ${node.id}`)
-    seen.add(node.id)
+    if (observed.has(node.id)) faults.push(`two nodes are called ${node.id}`)
+    observed.add(node.id)
 
     if (!isBranch(node)) return
 
@@ -31,9 +31,9 @@ export function getFaults(workspace: Workspace): readonly string[] {
   walk(workspace.root)
 
   const panes = getPanes(workspace.root)
-  const bare = panes.filter((each) => each.tabs.length === 0)
-  if (bare.length > 0 && panes.length > 1) {
-    faults.push(`${bare.length} pane(s) hold nothing while others do`)
+  const emptyPanes = panes.filter((each) => each.tabs.length === 0)
+  if (emptyPanes.length > 0 && panes.length > 1) {
+    faults.push(`${emptyPanes.length} pane(s) hold nothing while others do`)
   }
 
   for (const each of panes) {

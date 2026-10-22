@@ -43,7 +43,7 @@ interface Rect {
   readonly maxY: number
 }
 
-/** A run of the text, highlighted where it sits on the page it was read from. */
+/** A run of the text, highlighted where it is located on the page it was read from. */
 const HIGHLIGHTS: readonly Rect[] = [
   { minX: 0.12, minY: 0.2, maxX: 0.62, maxY: 0.26 },
   { minX: 0.12, minY: 0.27, maxX: 0.44, maxY: 0.33 },
@@ -77,22 +77,22 @@ const book =
     setup() {
       const at = ref(0)
       /** The width the reader last asked for, in device pixels. */
-      const wide = ref(0)
+      const width = ref(0)
       const picture = (page: number) =>
-        wide.value > 0 ? renderPage(String(page + 1), wide.value) : ''
+        width.value > 0 ? renderPage(String(page + 1), width.value) : ''
       const highlightsOn = (page: number) => (page === 0 ? highlights : [])
 
       const go = (page: number) => {
         at.value = Math.min(Math.max(page, 0), pageCount - 1)
       }
 
-      return { at, wide, picture, highlightsOn, pages: createPages(pageCount), go }
+      return { at, width, picture, highlightsOn, pages: createPages(pageCount), go }
     },
     template: TEMPLATE,
   })
 
 const TEMPLATE = `
-  <div class="h-full" :data-wide="wide">
+  <div class="h-full" :data-wide="width">
     <Reader
       class="h-full"
       :pages="pages"
@@ -100,14 +100,14 @@ const TEMPLATE = `
       :picture="picture"
       :highlights="highlightsOn"
       @go="go"
-      @measure="wide = $event"
+      @measure="width = $event"
     >
       <template #silence>Nothing drawn yet</template>
     </Reader>
   </div>
 `
 
-/** One page of the strip, by where it stands in the document. */
+/** One page of the strip, by at its current position in the document. */
 const getSheet = (canvasElement: HTMLElement, page: number) =>
   canvasElement.querySelector(`.reader__page[data-page="${page}"]`) as HTMLElement | null
 
@@ -153,8 +153,8 @@ export const Opened: Story = {
     const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
     await expect(box.height).toBeLessThanOrEqual(room.height)
 
-    const asked = Number(canvasElement.querySelector('[data-wide]')?.getAttribute('data-wide'))
-    await expect(asked).toBeGreaterThanOrEqual(box.width * devicePixelRatio)
+    const query = Number(canvasElement.querySelector('[data-wide]')?.getAttribute('data-wide'))
+    await expect(query).toBeGreaterThanOrEqual(box.width * devicePixelRatio)
   },
 }
 
@@ -169,11 +169,11 @@ export const OnlyWhatIsInTheRoom: Story = {
 
     const room = getRoom(canvasElement).getBoundingClientRect()
     const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
-    const across = Math.ceil(room.width / box.width)
+    const isAcross = Math.ceil(room.width / box.width)
 
     const drawnNow = canvasElement.querySelectorAll('.reader__page').length
     await expect(drawnNow).toBeLessThan(MANY)
-    await expect(drawnNow).toBeGreaterThanOrEqual(across)
+    await expect(drawnNow).toBeGreaterThanOrEqual(isAcross)
 
     // The strip is as long as the whole book, so the scrollbar says how much of
     // it there is even though only a few pages are drawn.
@@ -249,11 +249,11 @@ export const HighlightedOver: Story = {
     /** Every highlighted rectangle, as a share of the page it is drawn over. */
     const expectHighlights = async () => {
       const picture = getSheet(canvasElement, 0)!.getBoundingClientRect()
-      const drawn = [
+      const renderedItems = [
         ...canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
       ]
-      await expect(drawn).toHaveLength(HIGHLIGHTS.length)
-      for (const [index, one] of drawn.entries()) {
+      await expect(renderedItems).toHaveLength(HIGHLIGHTS.length)
+      for (const [index, one] of renderedItems.entries()) {
         const box = one.getBoundingClientRect()
         const want = HIGHLIGHTS[index]!
         await expect((box.left - picture.left) / picture.width).toBeCloseTo(want.minX, 2)
@@ -317,7 +317,7 @@ export const Undrawn: Story = {
 }
 
 /**
- * Nothing is highlighted until the page it stands on is there. A rectangle over
+ * Nothing is highlighted until the page it relies on is there. A rectangle over
  * a page still coming is a mark on nothing, standing where the page is not.
  */
 export const HighlightedOnlyOnceThePageIsThere: Story = {

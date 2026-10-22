@@ -95,7 +95,7 @@ type GetBookResponse struct {
 	// A page is a number of letters and a letter is several bytes in most of the
 	// scripts a book is written in, so the size is measured in this book's own.
 	//
-	// The page an offset falls on is counted from these, and comes to the same
+	// The page an offset falls on is counted from these, and evaluates to the same
 	// page wherever it is counted.
 	TextBytes int32 `protobuf:"varint,6,opt,name=text_bytes,json=textBytes,proto3" json:"text_bytes,omitempty"`
 	PageBytes int32 `protobuf:"varint,7,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`

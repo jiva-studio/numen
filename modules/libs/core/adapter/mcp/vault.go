@@ -60,15 +60,15 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Notes    int    `json:"notes"`
 			Headings int    `json:"headings"`
 		}
-		shown := core.getCurrentVault()
-		summary, err := core.GetSummary.Execute(ctx, shown.Vault)
+		currentVault := core.getCurrentVault()
+		summary, err := core.GetSummary.Execute(ctx, currentVault.Vault)
 		if err != nil {
 			return nil, out{}, err
 		}
 		return nil, out{
-			Name:     shown.Vault.Name,
-			Folder:   shown.Root,
-			ID:       string(shown.Vault.ID),
+			Name:     currentVault.Vault.Name,
+			Folder:   currentVault.Root,
+			ID:       string(currentVault.Vault.ID),
 			Notes:    summary.Notes,
 			Headings: summary.Headings,
 		}, nil

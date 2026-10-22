@@ -256,8 +256,8 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 		return "", fmt.Errorf("read the end of the turn of %s: %w", s.program, err)
 	}
 	switch reply.StopReason {
-	case "refusal":
-		return "", fmt.Errorf("%s refused to answer", s.program)
+	case "rejected":
+		return "", fmt.Errorf("%s rejected the prompt", s.program)
 	case "cancelled":
 		return "", fmt.Errorf("%s cancelled the turn", s.program)
 	}
@@ -456,8 +456,8 @@ func (t *tailBuffer) Write(p []byte) (int, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.buf = append(t.buf, p...)
-	if over := len(t.buf) - stderrTailBytes; over > 0 {
-		t.buf = t.buf[over:]
+	if overVal := len(t.buf) - stderrTailBytes; overVal > 0 {
+		t.buf = t.buf[overVal:]
 	}
 	return len(p), nil
 }

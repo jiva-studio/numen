@@ -49,19 +49,19 @@ func TestAModelAPersonNamedIsNotPinned(t *testing.T) {
 	}
 }
 
-func TestIsFetchedFindsAPinnedModelUnderItsSum(t *testing.T) {
+func TestIsFetchedFindsAPinnedModelBelowItsSum(t *testing.T) {
 	pinTestModel(t, "weights")
 	dir := t.TempDir()
 	cfg := Config{Dir: dir}
-	held := RecogniserModel{Name: pinnedTestAddress}
-	if IsFetched(cfg, held) {
+	target := RecogniserModel{Name: pinnedTestAddress}
+	if IsFetched(cfg, target) {
 		t.Fatal("an empty folder holds the model")
 	}
 	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
 	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !IsFetched(cfg, held) {
+	if !IsFetched(cfg, target) {
 		t.Fatal("the pinned model in the folder is not found")
 	}
 }
@@ -78,21 +78,21 @@ func TestIsFetchedRefusesAPinnedModelWithAnotherSum(t *testing.T) {
 	}
 }
 
-func TestIsFetchedFindsAModelBesideTheApplicationOnlyWithThePinnedSum(t *testing.T) {
+func TestIsFetchedFindsAModelAdjacentTheApplicationOnlyWithThePinnedSum(t *testing.T) {
 	pinTestModel(t, "weights")
 	dir := t.TempDir()
 	cfg := Config{Dir: dir}
-	held := RecogniserModel{Name: pinnedTestAddress}
+	target := RecogniserModel{Name: pinnedTestAddress}
 	if err := os.WriteFile(filepath.Join(dir, "model.onnx"), []byte("other"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if IsFetched(cfg, held) {
+	if IsFetched(cfg, target) {
 		t.Fatal("a file with another sum counts as fetched")
 	}
 	if err := os.WriteFile(filepath.Join(dir, "model.onnx"), []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !IsFetched(cfg, held) {
+	if !IsFetched(cfg, target) {
 		t.Fatal("the pinned file is not found")
 	}
 }
@@ -120,15 +120,15 @@ func TestIsFetchedUnpinnedModel(t *testing.T) {
 	dir := t.TempDir()
 	cfg := Config{Dir: dir}
 	address := "https://example.invalid/unpinned/model.onnx"
-	held := RecogniserModel{Name: address}
-	if IsFetched(cfg, held) {
+	target := RecogniserModel{Name: address}
+	if IsFetched(cfg, target) {
 		t.Fatal("an unpinned model not in cache counts as fetched")
 	}
 	cacheFile := filepath.Join(dir, models.GetCacheName(address, ""))
 	if err := os.WriteFile(cacheFile, []byte("unpinned-weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !IsFetched(cfg, held) {
+	if !IsFetched(cfg, target) {
 		t.Fatal("an unpinned model in cache is not fetched")
 	}
 }
@@ -137,12 +137,12 @@ func TestIsFetchedNonAddressIgnoredEvenIfCacheFileExists(t *testing.T) {
 	dir := t.TempDir()
 	cfg := Config{Dir: dir}
 	name := "custom-model.onnx"
-	held := RecogniserModel{Name: name}
+	target := RecogniserModel{Name: name}
 	cacheFile := filepath.Join(dir, models.GetCacheName(name, ""))
 	if err := os.WriteFile(cacheFile, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if IsFetched(cfg, held) {
+	if IsFetched(cfg, target) {
 		t.Fatal("a non-address name found via cache counts as fetched")
 	}
 }
@@ -165,8 +165,8 @@ func TestIsFetchedReturnsFalseWhenGetDirFails(t *testing.T) {
 	if _, err := cfg.folder().GetDir(); err == nil {
 		t.Fatal("cfg.folder().GetDir() succeeded without environment directory variables")
 	}
-	held := RecogniserModel{Name: address}
-	if IsFetched(cfg, held) {
+	target := RecogniserModel{Name: address}
+	if IsFetched(cfg, target) {
 		t.Fatal("IsFetched returned true when folder().GetDir() failed")
 	}
 }

@@ -70,7 +70,7 @@ func (h *transcriptHandler) WriteTranscript(
 	if err != nil {
 		return nil, err
 	}
-	written, err := h.writeTranscript.Execute(ctx, showing, ref.Path, cues, h.state.getRechunker())
+	content, err := h.writeTranscript.Execute(ctx, showing, ref.Path, cues, h.state.getRechunker())
 	switch {
 	case errors.Is(err, source.ErrNoTranscript):
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -80,8 +80,8 @@ func (h *transcriptHandler) WriteTranscript(
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// A write that landed is not refused for a cut that could not be asked for.
-	if written.CutError != nil {
-		h.state.reportTask(run.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: written.CutError.Error()})
+	if content.CutError != nil {
+		h.state.reportTask(run.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: content.CutError.Error()})
 	}
 	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: newWireCues(cues)}), nil
 }

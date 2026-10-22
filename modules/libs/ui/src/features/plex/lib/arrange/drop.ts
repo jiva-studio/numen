@@ -4,7 +4,7 @@ import { RELATION_NAMES, type PlexRelation } from '../relation'
 import type { Direction, PlexOptions, Size } from './options'
 
 /**
- * What dragging away from a node and letting go comes to.
+ * What dragging away from a node and letting go evaluates to.
  *
  * The plex works out the shape of the gesture and nothing else: which node it
  * started from, which way it went, and whether it landed on something. What a
@@ -25,7 +25,7 @@ export type Drop =
  *
  * One more child, because that is what anyone reaches for; failing that, the
  * first relation the caller allows. A gesture goes nowhere when it is a press
- * rather than a drag — from a trackpad, from a hand that cannot hold a button
+ * and not a drag — from a trackpad, from a hand that cannot hold a button
  * down, or from the keyboard, where there is no direction to read at all.
  */
 export const getRelationWithoutDirection = (
@@ -129,7 +129,7 @@ export interface DroppedInput {
 }
 
 /**
- * The relation something dragged in from outside comes to.
+ * The relation something dragged in from outside evaluates to.
  *
  * Measured from the focus, which is what the arrangement is built around. A
  * node the pointer crosses is not a landing: the relation is read off the

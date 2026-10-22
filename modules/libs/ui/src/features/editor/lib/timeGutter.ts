@@ -46,7 +46,7 @@ interface TimeOptions {
   readonly goToLine: (line: number) => void
 }
 
-/** One time in the gutter. It is clicked to go to the line it stands on. */
+/** One time in the gutter. It is clicked to go to the line it relies on. */
 class Time extends GutterMarker {
   override elementClass: string
   readonly text: string
@@ -157,11 +157,11 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
   const attachPlugin = ViewPlugin.define((got) => {
     view = got
     if (last) {
-      const shown = last
+      const lastTime = last
       queueMicrotask(() => {
         // An editor drawn again is shown what the one before it was shown and
-        // is left where it stands: nothing was said while it was drawn.
-        if (view === got) put(shown, false)
+        // is left at its current position: nothing was said while it was drawn.
+        if (view === got) applyState(lastTime, false)
       })
     }
     return {
@@ -174,7 +174,7 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
   // put shows what is given. It moves the view only where it may: the line to
   // keep in sight has to be one the document has, following has to be on, and
   // one of the two has to have changed.
-  const put = (state: TimeGutterState, may: boolean) => {
+  const applyState = (state: TimeGutterState, may: boolean) => {
     last = state
     if (!view) return
     const was = view.state.field(timeGutterField)
@@ -194,7 +194,7 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
     view.dispatch({ effects })
   }
 
-  const show = (state: TimeGutterState) => put(state, true)
+  const show = (state: TimeGutterState) => applyState(state, true)
 
   return {
     extension: [

@@ -83,7 +83,7 @@ describe('the window kinds', () => {
     expect(deps.windowTabs.registerKinds).toHaveBeenCalledWith(['settings'])
   })
 
-  it('makes files through the makers it hands the commands, and reveals a path in the files tab', async () => {
+  it('makes files through the makers it passes the commands, and reveals a path in the files tab', async () => {
     const { deps, window } = create()
 
     expect(window.made).toBe('made')
@@ -101,7 +101,7 @@ describe('the window kinds', () => {
   })
 })
 
-describe('the note the window stands on', () => {
+describe('the note the window relies on', () => {
   it('is what the plex the person was last in is over', () => {
     const { window } = create({ plex: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
 

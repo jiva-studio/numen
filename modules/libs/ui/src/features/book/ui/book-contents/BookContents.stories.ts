@@ -60,7 +60,7 @@ const PAGES: readonly ContentsEntry[] = Array.from({ length: 5_000 }, (_, index)
  * The panel over a book being read. The button stands for the reading moving on
  * its own, which is what the panel follows.
  */
-const reading =
+const activeReading =
   (entries: readonly ContentsEntry[], deep = 0) =>
   () => ({
     components: { BookContents },
@@ -92,7 +92,7 @@ const getStandingLine = (canvasElement: HTMLElement) =>
 /** Choose a name, narrow the list, and watch the line being read follow. */
 export const Playground: Story = {
   decorators: [panel],
-  render: reading(NAMED),
+  render: activeReading(NAMED),
 }
 
 /**
@@ -101,7 +101,7 @@ export const Playground: Story = {
  */
 export const ANameLongerThanThePanel: Story = {
   decorators: [panel],
-  render: reading(NAMED),
+  render: activeReading(NAMED),
   play: async ({ canvasElement }) => {
     const list = getList(canvasElement)
     const long = within(canvasElement).getByText(/Кхандавы/)
@@ -113,11 +113,11 @@ export const ANameLongerThanThePanel: Story = {
 
 /**
  * Five thousand lines scroll inside the panel. A list that stretched it would
- * take the whole window for a book that names nothing.
+ * take the whole window for a book that is empty.
  */
 export const AllTheWayThrough: Story = {
   decorators: [panel],
-  render: reading(PAGES),
+  render: activeReading(PAGES),
   play: async ({ canvasElement }) => {
     const list = getList(canvasElement)
 
@@ -134,7 +134,7 @@ export const AllTheWayThrough: Story = {
  */
 export const BroughtToWhereTheReadingIs: Story = {
   decorators: [panel],
-  render: reading(PAGES, 1_200 * 1_024),
+  render: activeReading(PAGES, 1_200 * 1_024),
   play: async ({ canvasElement }) => {
     const list = getList(canvasElement)
     await expect(getStandingLine(canvasElement)?.textContent?.trim()).toBe('Page 1')
@@ -163,7 +163,7 @@ export const BroughtToWhereTheReadingIs: Story = {
 /** A book naming nothing at all, and holding no page either. */
 export const NamesNothing: Story = {
   decorators: [panel],
-  render: reading([]),
+  render: activeReading([]),
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('This book names nothing.')).toBeInTheDocument()
   },

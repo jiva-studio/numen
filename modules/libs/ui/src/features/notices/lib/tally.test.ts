@@ -3,15 +3,15 @@ import { activity, percentWord, getRate, getRemainingWord, findShare, SMOOTHING 
 
 describe('findShare', () => {
   it.each([
-    { done: 0, total: 0, want: undefined, why: 'nothing to do has no share' },
-    { done: 0, total: 10, want: 0, why: 'nothing done' },
-    { done: 5, total: 10, want: 0.5, why: 'half' },
-    { done: 10, total: 10, want: 1, why: 'all of it' },
-    { done: 12, total: 10, want: 1, why: 'a tally that overtook its total reads as full' },
-    { done: -1, total: 10, want: 0, why: 'a count below nothing is nothing' },
-    { done: 1, total: -3, want: undefined, why: 'a total below nothing is no total' },
-  ])('$why', ({ done, total, want }) => {
-    expect(findShare({ done, total })).toBe(want)
+    { isDone: 0, total: 0, want: undefined, why: 'nothing to do has no share' },
+    { isDone: 0, total: 10, want: 0, why: 'nothing done' },
+    { isDone: 5, total: 10, want: 0.5, why: 'half' },
+    { isDone: 10, total: 10, want: 1, why: 'all of it' },
+    { isDone: 12, total: 10, want: 1, why: 'a tally that overtook its total reads as full' },
+    { isDone: -1, total: 10, want: 0, why: 'a count below nothing is nothing' },
+    { isDone: 1, total: -3, want: undefined, why: 'a total below nothing is no total' },
+  ])('$why', ({ isDone, total, want }) => {
+    expect(findShare({ done: isDone, total })).toBe(want)
   })
 })
 
@@ -96,8 +96,8 @@ describe('getRemainingWord', () => {
     { left: 300, rate: 5, want: '1:00' },
     { left: 36000, rate: 3, want: '3:20:00' },
     { left: 400000, rate: 3, want: '37:02:13' },
-  ])('says $want for $left at $rate a second', ({ left, rate, want }) => {
-    expect(getRemainingWord(left, rate)).toBe(want)
+  ])('says $want for $left at $rate a second', ({ left: remaining, rate, want }) => {
+    expect(getRemainingWord(remaining, rate)).toBe(want)
   })
 })
 
@@ -122,7 +122,7 @@ describe('getRate', () => {
     expect(long).toBeGreaterThan(15)
   })
 
-  it('stands where it is when nothing moved, so no estimate grows out of it', () => {
+  it('remains where it is when nothing moved, so no estimate grows out of it', () => {
     // A count written in groups stands still between them. Decaying the rate
     // here divides into a longer and longer estimate every time it is drawn.
     let rate = 8

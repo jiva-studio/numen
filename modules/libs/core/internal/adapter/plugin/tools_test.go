@@ -88,8 +88,8 @@ func (h *toolsHost) EnsureActive(_ context.Context, id string) (port.Endpoint, e
 func (h *toolsHost) Release(string) { h.released++ }
 
 func (h *toolsHost) CheckPluginPermission(id, permission string) error {
-	for _, held := range h.holds[id] {
-		if held == permission {
+	for _, target := range h.holds[id] {
+		if target == permission {
 			return nil
 		}
 	}
@@ -214,7 +214,7 @@ func TestACallReachesThePluginThatListedTheToolAndReturnsWhatItAnswered(t *testi
 		t.Errorf("the result was %+v", result)
 	}
 	if len(plugin.called) != 1 || plugin.called[0].GetName() != "reads" || string(plugin.called[0].GetArguments()) != `{"x":1}` ||
-		plugin.called[0].GetAsked()["mark"] != "k7" {
+		plugin.called[0].GetContext()["mark"] != "k7" {
 		t.Errorf("the plugin was asked %v", plugin.called)
 	}
 }
@@ -243,7 +243,7 @@ func TestACallForAToolNoPluginListedIsRefusedWithoutReachingAPlugin(t *testing.T
 	}
 }
 
-func TestACallIsRefusedOnceThePluginNoLongerHoldsThePermission(t *testing.T) {
+func TestACallIsRefusedOnceThePluginNoLongerContainsThePermission(t *testing.T) {
 	plugin := &toolPlugin{tools: []*v1.PluginTool{wireTool("writes", v1.ToolEffect_TOOL_EFFECT_WRITES)}}
 	host := &toolsHost{
 		ids:       []string{"md.numen.a"},

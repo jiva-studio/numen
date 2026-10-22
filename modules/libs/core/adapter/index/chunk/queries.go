@@ -456,12 +456,12 @@ func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte
 	if len(wanted) == 0 {
 		return nil, nil
 	}
-	asked, err := json.Marshal(wanted)
+	request, err := json.Marshal(wanted)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("kept_vectors"), string(asked), recipe)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("kept_vectors"), string(request), recipe)
 	if err != nil {
 		return nil, err
 	}
@@ -511,7 +511,7 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 }
 
 // GetRecognisedSources is the sources of one kind whose text a producer made
-// rather than their own bytes, by path.
+// and not their own bytes, by path.
 //
 // A scan asks it in order to find the ones whose files are gone: the store is a
 // folder on the person's disk and they may empty it, and a source standing on

@@ -41,7 +41,7 @@ func getUnaccountedPlugins(backends, registered, absent []string) []string {
 func TestWhatThePluginRegistrationRuleRefuses(t *testing.T) {
 	backends := []string{"a", "b", "c"}
 	if got := getUnaccountedPlugins(backends, []string{"a", "b"}, []string{"c"}); len(got) != 0 {
-		t.Fatalf("an accounted set is refused: %v", got)
+		t.Fatalf("an accounted set fails: %v", got)
 	}
 	for name, got := range map[string][]string{
 		"a plugin neither registered nor absent": getUnaccountedPlugins(backends, []string{"a", "b"}, nil),
@@ -50,7 +50,7 @@ func TestWhatThePluginRegistrationRuleRefuses(t *testing.T) {
 		"an absent plugin that does not exist":   getUnaccountedPlugins(backends, []string{"a", "b", "c"}, []string{"d"}),
 	} {
 		if len(got) == 0 {
-			t.Errorf("%s is not refused", name)
+			t.Errorf("%s is not rejected", name)
 		}
 	}
 }

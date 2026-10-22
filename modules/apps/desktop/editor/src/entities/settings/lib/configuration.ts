@@ -1,5 +1,5 @@
 /**
- * What the settings hold: one setting written where it stands, and the models a
+ * What the settings hold: one setting written at its current position, and the models a
  * setting that names one can be set to.
  */
 
@@ -61,7 +61,7 @@ export interface PluginSettingInfo {
  * not hold the ai:complete permission, `asked` one that asked since the host
  * started and has had no answer.
  */
-export type Consent = 'none' | 'unanswered' | 'asked' | 'allowed' | 'refused'
+export type Consent = 'none' | 'unanswered' | 'asked' | 'allowed' | 'denied'
 
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
 export interface PluginFailure {
@@ -94,7 +94,7 @@ export interface CompletionChoice {
   readonly model: string
 }
 
-/** Every setting as it stands, where they stand, and the models offered. */
+/** Every setting currently, where they stand, and the models offered. */
 export interface Configuration {
   /** Serialized settings JSON content. */
   readonly jsonContent?: string | undefined

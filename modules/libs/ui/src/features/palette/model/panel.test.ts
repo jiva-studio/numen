@@ -24,7 +24,7 @@ const setUp = (lit: string | undefined) => {
 }
 
 describe('useActionPanel', () => {
-  it('stands closed until it is opened', () => {
+  it('remains closed until it is opened', () => {
     expect(setUp('note').panel.open.value).toBe(false)
   })
 
@@ -36,7 +36,7 @@ describe('useActionPanel', () => {
     expect(panel.open.value).toBe(false)
   })
 
-  it('hands the lit item and the chosen action back', () => {
+  it('passes the lit item and the chosen action back', () => {
     const { choose, panel } = setUp('note')
     panel.chooseAction('open')
     expect(choose).toHaveBeenCalledExactlyOnceWith('note', 'open')

@@ -139,14 +139,14 @@ describe('mock plugin context', () => {
     expect(result).toBe('url:https://example.com')
   })
 
-  it('hands over the agent it is given, and none where it is given none', () => {
+  it('passes over the agent it is given, and none where it is given none', () => {
     const agent = { name: 'agent' } as unknown as NonNullable<PluginContext['agent']>
 
     expect(createMockPluginContext({ agent }).agent).toBe(agent)
     expect(createMockPluginContext()).not.toHaveProperty('agent')
   })
 
-  it('hands over the open files and the way to close a tab it is given, and none where it is given none', () => {
+  it('passes over the open files and the way to close a tab it is given, and none where it is given none', () => {
     const buffers = { track: () => ({ dispose: () => {} }) } as unknown as NonNullable<
       PluginContext['buffers']
     >

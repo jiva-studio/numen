@@ -130,7 +130,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		}
 	}
 
-	if done, err := u.recordSource(ctx, v, store, ref, hash, area, &res); done {
+	if isDone, err := u.recordSource(ctx, v, store, ref, hash, area, &res); isDone {
 		return res, err
 	}
 
@@ -178,7 +178,7 @@ func (u Transcribe) saveTranscript(
 	if err := u.record(ctx, store, area, hash); err != nil {
 		return err
 	}
-	// The source stands on the artifact before the partial goes.
+	// The source relies on the artifact before the partial goes.
 	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
@@ -211,15 +211,15 @@ func (u Transcribe) recordSource(
 	hash, area string,
 	res *TranscribeResult,
 ) (bool, error) {
-	if held, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash)); err == nil {
-		if _, cues := transcript.Parse(held); len(cues) > 0 {
+	if target, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash)); err == nil {
+		if _, cues := transcript.Parse(target); len(cues) > 0 {
 			res.Heard = cues[len(cues)-1].To
 			res.Length = res.Heard
 		}
 		return true, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area)
 	}
-	if held, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, area, hash)); err == nil {
-		gave, _ := text.ReadAnswer(held)
+	if targetVal, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, area, hash)); err == nil {
+		gave, _ := text.ReadAnswer(targetVal)
 		res.IsSilent = gave == text.Silent
 		res.IsUnopened = gave == text.Unopened
 		return true, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
@@ -248,7 +248,7 @@ func (u Transcribe) transcribeSegments(
 	res.Resumed, res.Heard = from, from
 	run.Report(u.OnProgress, *res)
 
-	opened := size > 0
+	hasContent := size > 0
 	for {
 		if err := ctx.Err(); err != nil {
 			// What has been heard is on disk already, and the next run begins
@@ -266,11 +266,11 @@ func (u Transcribe) transcribeSegments(
 		}
 
 		from = reached
-		body := trimHeader(transcript.Marshal(cues), opened)
+		body := trimHeader(transcript.Marshal(cues), hasContent)
 		if err := store.AppendArtifact(ctx, partial, append(body, transcript.GetReachMarker(from)...)); err != nil {
 			return err
 		}
-		opened = true
+		hasContent = true
 		if err := run.Cut(ctx, u.Cut, v, path); err != nil {
 			return err
 		}
@@ -327,7 +327,7 @@ func (u Transcribe) answer(
 	return run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
 }
 
-// record keeps what listened to the recording beside what it heard. Nothing on
+// record keeps what listened to the recording along with what it heard. Nothing on
 // any path that answers a question reads it: it is there so that a person can
 // ask what produced a text, and so that everything a transcriber now known to
 // be bad produced can be found again.
@@ -354,7 +354,7 @@ func describeFailure(why string) string {
 }
 
 // trimHeader is a run of cues as they are added to a file that has been written
-// to already. The header stands once, at the top.
+// to already. The header appears once, at the top.
 func trimHeader(raw []byte, opened bool) []byte {
 	if !opened {
 		return raw

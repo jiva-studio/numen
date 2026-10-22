@@ -49,7 +49,7 @@ func TestWhatTheSDKModuleRulesRefuse(t *testing.T) {
 		{sdkModule + "/onnx", "github.com/getcharzp/onnxruntime_purego", false},
 	} {
 		if got := getSDKRefusal(one.mod, one.dep) != ""; got != one.isRefused {
-			t.Errorf("%s requires %s: refused is %v, want %v", one.mod, one.dep, got, one.isRefused)
+			t.Errorf("%s requires %s: failure is %v, want %v", one.mod, one.dep, got, one.isRefused)
 		}
 	}
 	if isSDK(numenModules + "libs/plugin-sdk-ts") {

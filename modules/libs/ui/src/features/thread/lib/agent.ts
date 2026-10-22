@@ -49,14 +49,14 @@ export interface AgentPort {
   /**
    * Ask about what is in focus, and read what happens as it happens.
    *
-   * The conversation is which thread of talk the question belongs to. Questions
+   * The conversation is which conversation thread the question belongs to. Questions
    * carrying one name are answered as one conversation, and a name stands for
    * one conversation and is never given to a second.
    */
   readonly ask: (query: AgentQuery) => AsyncIterable<AgentStep>
 
   /**
-   * Say a conversation is over. What the agent kept of it is let go of, and
+   * Say a conversation is over. What the agent kept of it is release, and
    * whatever is still being answered in it stops.
    */
   readonly finish: (conversation: string) => Promise<void>

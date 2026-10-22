@@ -181,7 +181,7 @@ const showEach = async (tokens: readonly Token[], times: number) => {
  */
 export const Playground: Story = {
   play: async () => {
-    const held = getScales()
+    const target = getScales()
     try {
       // Nothing asked for, and 1: the pixel every length resolves to today.
       const asDesigned: readonly (readonly [string, string])[] = [
@@ -228,7 +228,7 @@ export const Playground: Story = {
         await showEach(READING, interfaceScale * textScale)
       }
     } finally {
-      wear(held.interfaceScale, held.textScale)
+      wear(target.interfaceScale, target.textScale)
     }
   },
 }

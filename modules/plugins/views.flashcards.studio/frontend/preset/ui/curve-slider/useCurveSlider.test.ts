@@ -87,7 +87,7 @@ describe('the marks on the picture', () => {
     ])
   })
 
-  it('leave the knob out where it stands on no place of the curve', () => {
+  it('leave the knob out where it relies on no place of the curve', () => {
     const { state } = slider({ place: 7 })
     expect(state.marks.value.map((one) => one.key)).toStrictEqual(['suggested'])
   })
@@ -118,7 +118,7 @@ describe('the marks on the picture', () => {
   })
 })
 
-describe('what the control says beside the picture', () => {
+describe('what the control says alongside the picture', () => {
   it('draws the stretch a day leaves cards short over', () => {
     const { state } = slider({
       curve: curve({
@@ -138,7 +138,7 @@ describe('what the control says beside the picture', () => {
     expect(slider({ curve: curve({ goal: 'date' }) }).state.isDated.value).toBe(true)
   })
 
-  it('says nothing of learning where the knob stands on no place', () => {
+  it('says nothing of learning where the knob relies on no place', () => {
     expect(slider({ place: 7 }).state.learning.value).toStrictEqual([])
   })
 
@@ -158,7 +158,7 @@ describe('the keys that walk the knob', () => {
     expect(emitted).toStrictEqual([['move', 3]])
   })
 
-  it('write once a walking key is let go of, and not for a key that walks nothing', () => {
+  it('write once a walking key is release, and not for a key that walks nothing', () => {
     const { state, emitted } = slider()
     state.onKeyUp(key('a'))
     expect(emitted).toStrictEqual([])
@@ -168,7 +168,7 @@ describe('the keys that walk the knob', () => {
 })
 
 describe('the picture the pointer is read against', () => {
-  it('is the element the view hands over', () => {
+  it('is the element the view passes over', () => {
     const { state } = slider()
     const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     state.setPicture(element)
@@ -178,15 +178,15 @@ describe('the picture the pointer is read against', () => {
 
 /** A picture the pointer is read against, scaled and shifted as the test says. */
 const createPicture = (a: number, e: number, isCaptured = false) => {
-  const done: string[] = []
+  const isDone: string[] = []
   const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
     getScreenCTM: () => ({ a, e }),
-    focus: () => void done.push('focus'),
-    setPointerCapture: (id: number) => void done.push(`capture ${id}`),
+    focus: () => void isDone.push('focus'),
+    setPointerCapture: (id: number) => void isDone.push(`capture ${id}`),
     hasPointerCapture: () => isCaptured,
-    releasePointerCapture: (id: number) => void done.push(`release ${id}`),
+    releasePointerCapture: (id: number) => void isDone.push(`release ${id}`),
   })
-  return { element, done }
+  return { element, recorded: isDone }
 }
 
 const pointer = (clientX: number, button = 0) =>
@@ -197,34 +197,34 @@ const pointer = (clientX: number, button = 0) =>
 describe('the pointer on the picture', () => {
   it('takes the knob to the place under it, and holds the pointer', () => {
     const { state, emitted } = slider()
-    const { element, done } = createPicture(2, 100)
+    const { element, recorded } = createPicture(2, 100)
     state.setPicture(element)
     const down = pointer(481)
     state.onPointerDown(down)
     expect(down.preventDefault).toHaveBeenCalled()
-    expect(done).toStrictEqual(['focus', 'capture 7'])
+    expect(recorded).toStrictEqual(['focus', 'capture 7'])
     expect(emitted).toStrictEqual([['move', 1]])
   })
 
   it('leaves a button other than the first to the window', () => {
     const { state, emitted } = slider()
-    const { element, done } = createPicture(2, 100)
+    const { element, recorded } = createPicture(2, 100)
     state.setPicture(element)
     const down = pointer(481, 2)
     state.onPointerDown(down)
     expect(down.preventDefault).not.toHaveBeenCalled()
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
     expect(emitted).toStrictEqual([])
   })
 
-  it('leaves the knob where it stands where the picture has no scale', () => {
+  it('leaves the knob at its current position where the picture has no scale', () => {
     const { state, emitted } = slider()
     state.setPicture(createPicture(0, 100).element)
     state.onPointerDown(pointer(481))
     expect(emitted).toStrictEqual([['move', 2]])
   })
 
-  it('leaves the knob where it stands where there is no picture to read against', () => {
+  it('leaves the knob at its current position where there is no picture to read against', () => {
     const { state, emitted } = slider()
     state.onPointerDown(pointer(481))
     const unscaled = Object.assign(document.createElement('div'), { setPointerCapture: () => {} })
@@ -236,25 +236,25 @@ describe('the pointer on the picture', () => {
     ])
   })
 
-  it('walks the knob while the pointer is held, and writes once it is let go', () => {
+  it('walks the knob while the pointer is retained, and writes once it is let go', () => {
     const { state, emitted } = slider()
-    const { element, done } = createPicture(2, 100, true)
+    const { element, recorded } = createPicture(2, 100, true)
     state.setPicture(element)
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
     expect(emitted).toStrictEqual([['move', 1], ['commit']])
-    expect(done).toStrictEqual(['release 7'])
+    expect(recorded).toStrictEqual(['release 7'])
   })
 
   it('does nothing as a pointer it does not hold moves or is let go', () => {
     const { state, emitted } = slider()
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
-    const { element, done } = createPicture(2, 100, false)
+    const { element, recorded } = createPicture(2, 100, false)
     state.setPicture(element)
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
     expect(emitted).toStrictEqual([])
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 })

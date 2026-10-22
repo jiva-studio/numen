@@ -122,18 +122,18 @@ func SimilarityBytes(query []float32, stored []byte) float64 {
 	}
 
 	dot := float64((dot0 + dot1) + (dot2 + dot3))
-	left := float64((left0 + left1) + (left2 + left3))
+	remaining := float64((left0 + left1) + (left2 + left3))
 	right := float64((right0 + right1) + (right2 + right3))
 
 	for ; i < n; i++ {
 		q, s := query[i], int32(int8(stored[i]))
 		dot += float64(q * float32(s))
-		left += float64(q * q)
+		remaining += float64(q * q)
 		right += float64(s * s)
 	}
 
-	if left == 0 || right == 0 {
+	if remaining == 0 || right == 0 {
 		return 0
 	}
-	return dot / math.Sqrt(left*right)
+	return dot / math.Sqrt(remaining*right)
 }

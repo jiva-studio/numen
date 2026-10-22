@@ -97,7 +97,7 @@ export const AwkwardText: Story = {
 
 /**
  * An agent at work: what it reached for sits between what it said, and the
- * prose is read as it was marked up rather than shown with its marks.
+ * prose is read as it was marked up and not shown with its marks.
  */
 export const Working: Story = {
   render: renderThread([
@@ -196,7 +196,7 @@ const dragAcross = async (from: Position, to: Position): Promise<string | null> 
     mapToFrame(from),
     mapToFrame(to),
   )
-  await new Promise((done) => setTimeout(done, 16))
+  await new Promise((isDone) => setTimeout(isDone, 16))
 
   return String(window.getSelection() ?? '')
 }
@@ -218,16 +218,16 @@ export const Selecting: Story = {
   ]),
   play: async ({ canvasElement }) => {
     const turns = canvasElement.querySelectorAll('.thread__turn')
-    const taken = await dragAcross(
+    const acquiredItem = await dragAcross(
       getWordPosition(turns[1]!, 'damped'),
       getWordPosition(turns[3]!, 'vault'),
     )
-    if (taken === null) return
+    if (acquiredItem === null) return
 
-    await expect(taken).toContain('the driven one')
-    await expect(taken).toContain('Then drop the rest')
-    await expect(taken).toContain('Nine notes are left in the')
-    await expect(taken).not.toContain('the harmonic one')
-    await expect(taken).not.toContain('worth keeping')
+    await expect(acquiredItem).toContain('the driven one')
+    await expect(acquiredItem).toContain('Then drop the rest')
+    await expect(acquiredItem).toContain('Nine notes are left in the')
+    await expect(acquiredItem).not.toContain('the harmonic one')
+    await expect(acquiredItem).not.toContain('worth keeping')
   },
 }

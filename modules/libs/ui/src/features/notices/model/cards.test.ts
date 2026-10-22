@@ -11,7 +11,7 @@ import type { Notice } from '../lib/notice'
 import { getRemainingWord } from '../lib/tally'
 
 const work = (id: string): Notice => ({ id, text: `Indexing ${id}`, isWorking: true })
-const asked = (id: string): Notice => ({
+const request = (id: string): Notice => ({
   id,
   text: `Filed ${id}`,
   stay: 'kept',
@@ -23,12 +23,12 @@ const report = (id: string, text = `Renamed ${id}`): Notice => ({
   stay: 'read',
   isUserStarted: true,
 })
-const counting = (id: string, done: number): Notice => ({
+const countMetric = (id: string, isDone: number): Notice => ({
   id,
   text: `Learning ${id}`,
   isWorking: true,
   isUserStarted: true,
-  done,
+  done: isDone,
   total: 100,
   counting: 'things',
 })
@@ -107,7 +107,7 @@ describe('the clock behind the corner', () => {
   })
 
   it('runs for the work still waiting when other cards are already drawn', async () => {
-    const { wind, ids } = stand([asked('k'), work('a')])
+    const { wind, ids } = stand([request('k'), work('a')])
 
     expect(ids()).toEqual(['k'])
     expect(vi.getTimerCount()).toBe(1)
@@ -118,7 +118,7 @@ describe('the clock behind the corner', () => {
   })
 
   it('does not run for a card that is drawn and stays until it is put away', () => {
-    stand([asked('k')])
+    stand([request('k')])
 
     expect(vi.getTimerCount()).toBe(0)
   })
@@ -143,7 +143,7 @@ describe('the clock behind the corner', () => {
   })
 
   it('runs for a report on its way out, along with a card that stays', () => {
-    stand([report('a'), asked('k')])
+    stand([report('a'), request('k')])
 
     expect(vi.getTimerCount()).toBe(1)
   })
@@ -155,19 +155,19 @@ describe('the clock behind the corner', () => {
   })
 
   it('runs for a count, along with a card that does not count', () => {
-    stand([asked('k'), counting('c', 10)])
+    stand([request('k'), countMetric('c', 10)])
 
     expect(vi.getTimerCount()).toBe(1)
   })
 
   it('does not run for a card that is not counting', () => {
-    stand([asked('k'), asked('j')])
+    stand([request('k'), request('j')])
 
     expect(vi.getTimerCount()).toBe(0)
   })
 
   it('stops when the work that needed it is over', async () => {
-    const { notices } = stand([counting('c', 10)])
+    const { notices } = stand([countMetric('c', 10)])
     expect(vi.getTimerCount()).toBe(1)
 
     notices.value = []
@@ -179,32 +179,32 @@ describe('the clock behind the corner', () => {
 
 describe('what is left on a count', () => {
   it('is nothing for a card that does not count', () => {
-    const { state } = stand([asked('k')])
+    const { state } = stand([request('k')])
 
-    expect(state.leftOn(asked('k'))).toBe('')
+    expect(state.leftOn(request('k'))).toBe('')
   })
 
   it('is nothing before the count has moved', () => {
-    const { state } = stand([counting('c', 10)])
+    const { state } = stand([countMetric('c', 10)])
 
-    expect(state.leftOn(counting('c', 10))).toBe('')
+    expect(state.leftOn(countMetric('c', 10))).toBe('')
   })
 
   it('is nothing for a count the corner has not yet seen', () => {
     const { state } = stand([])
 
-    expect(state.leftOn(counting('unseen', 10))).toBe('')
+    expect(state.leftOn(countMetric('unseen', 10))).toBe('')
   })
 
   it('is what the rate it moved at leaves', async () => {
-    const { state, notices, wind } = stand([counting('c', 0)])
+    const { state, notices, wind } = stand([countMetric('c', 0)])
 
     await wind(1_000)
-    notices.value = [counting('c', 10)]
+    notices.value = [countMetric('c', 10)]
     await nextTick()
 
-    expect(state.leftOn(counting('c', 10))).toBe(getRemainingWord(90, 10))
-    expect(state.leftOn(counting('c', 10))).not.toBe('')
+    expect(state.leftOn(countMetric('c', 10))).toBe(getRemainingWord(90, 10))
+    expect(state.leftOn(countMetric('c', 10))).not.toBe('')
   })
 })
 
@@ -234,13 +234,13 @@ describe('a card that has been read', () => {
     expect(dismiss.mock.calls).toEqual([['a'], ['a']])
   })
 
-  it('is not forgotten while its caller still hands it in', async () => {
-    const { dismiss, notices, wind } = stand([report('a'), asked('k')])
+  it('is not forgotten while its caller still passes it in', async () => {
+    const { dismiss, notices, wind } = stand([report('a'), request('k')])
     await wind(MIN_DURATION * 10)
 
-    notices.value = [report('a'), asked('k'), asked('j')]
+    notices.value = [report('a'), request('k'), request('j')]
     await nextTick()
-    notices.value = [report('a'), asked('k')]
+    notices.value = [report('a'), request('k')]
     await wind(1_000)
 
     expect(dismiss.mock.calls).toEqual([['a']])
@@ -248,14 +248,14 @@ describe('a card that has been read', () => {
 })
 
 describe('the cards folded away behind the rest', () => {
-  const three = [asked('a'), asked('b'), asked('c')]
+  const three = [request('a'), request('b'), request('c')]
 
   it('stay open while they are still more than fit', async () => {
     const { state, notices } = stand(three, { room: 2 })
     state.isOpened.value = true
     await nextTick()
 
-    notices.value = [...three, asked('d')]
+    notices.value = [...three, request('d')]
     await nextTick()
 
     expect(state.isOpened.value).toBe(true)
@@ -288,15 +288,15 @@ describe('the cards folded away behind the rest', () => {
 })
 
 describe('putting a card away by hand', () => {
-  const three = [asked('a'), asked('b'), asked('c')]
+  const three = [request('a'), request('b'), request('c')]
 
   /** Three cards standing, each held under its notice, with the keyboard on one. */
   function hold(focused: 'a' | 'b' | 'c' | undefined) {
-    const stood = stand(three)
+    const status = stand(three)
     const ways = { a: button(), b: button(), c: button() }
-    for (const id of ['a', 'b', 'c'] as const) stood.state.holdCard(id, { way: ways[id] })
+    for (const id of ['a', 'b', 'c'] as const) status.state.holdCard(id, { way: ways[id] })
     if (focused) ways[focused].focus()
-    return { ...stood, ways }
+    return { ...status, ways }
   }
 
   it('names its caller and removes the card', async () => {
@@ -370,17 +370,17 @@ describe('putting a card away by hand', () => {
   })
 
   it('leaves the keyboard alone when it was the only card', async () => {
-    const stood = stand([asked('a')])
+    const status = stand([request('a')])
     const way = button()
-    stood.state.holdCard('a', { way })
+    status.state.holdCard('a', { way })
     way.focus()
 
-    await expect(stood.state.dismissByHand('a')).resolves.toBeUndefined()
+    await expect(status.state.dismissByHand('a')).resolves.toBeUndefined()
 
-    expect(stood.dismiss.mock.calls).toEqual([['a']])
+    expect(status.dismiss.mock.calls).toEqual([['a']])
   })
 
-  it('puts away a card that was never held', async () => {
+  it('puts away a card that was never retained', async () => {
     const { state, dismiss } = stand(three)
 
     await expect(state.dismissByHand('b')).resolves.toBeUndefined()
@@ -389,21 +389,21 @@ describe('putting a card away by hand', () => {
   })
 
   it('moves on when the card that takes its place has no way away', async () => {
-    const stood = stand(three)
+    const status = stand(three)
     const way = button()
-    stood.state.holdCard('b', { way })
-    stood.state.holdCard('c', { way: null })
+    status.state.holdCard('b', { way })
+    status.state.holdCard('c', { way: null })
     way.focus()
 
-    await expect(stood.state.dismissByHand('b')).resolves.toBeUndefined()
+    await expect(status.state.dismissByHand('b')).resolves.toBeUndefined()
   })
 
-  it('moves on when the card that takes its place is not held', async () => {
-    const stood = stand(three)
+  it('moves on when the card that takes its place is not retained', async () => {
+    const status = stand(three)
     const way = button()
-    stood.state.holdCard('b', { way })
+    status.state.holdCard('b', { way })
     way.focus()
 
-    await expect(stood.state.dismissByHand('b')).resolves.toBeUndefined()
+    await expect(status.state.dismissByHand('b')).resolves.toBeUndefined()
   })
 })

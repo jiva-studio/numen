@@ -56,12 +56,12 @@ func (f pluginFolder) Append(ctx context.Context, name string, content []byte) e
 }
 
 func (f pluginFolder) List(ctx context.Context) ([]port.PluginDataFile, error) {
-	held, err := f.store.List(ctx, f.folder)
+	target, err := f.store.List(ctx, f.folder)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.PluginDataFile, 0, len(held))
-	for _, one := range held {
+	out := make([]port.PluginDataFile, 0, len(target))
+	for _, one := range target {
 		out = append(out, port.PluginDataFile{Name: strings.TrimPrefix(one.Name, f.folder+"/"), Size: one.Size})
 	}
 	return out, nil

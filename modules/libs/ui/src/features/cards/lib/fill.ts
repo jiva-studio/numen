@@ -11,7 +11,7 @@ import type { FieldValue } from './card'
 /** The braces, and what a person may write between them. */
 const SLOT = /\{\{([^{}]*)\}\}/g
 
-/** One slot where it stands in a face. */
+/** One slot at its current position in a face. */
 export interface Slot {
   /** The name between the braces, which is a field's name written exactly. */
   readonly field: string
@@ -42,7 +42,7 @@ const escapeHtml = (text: string): string =>
 
 /**
  * A face as its preview shows it. A slot the fields do not name keeps its
- * braces and is marked where it stands, so what is wrong is read in its place.
+ * braces and is marked at its current position, so what is wrong is read in its place.
  */
 export function renderPreview(
   template: string,
@@ -60,15 +60,15 @@ export function renderPreview(
  * they stand.
  */
 export function getUndeclaredSlots(template: string, fields: readonly string[]): readonly string[] {
-  const seen = new Set<string>()
+  const observed = new Set<string>()
   for (const slot of getSlots(template)) {
     if (fields.includes(slot.field)) continue
-    seen.add(slot.field)
+    observed.add(slot.field)
   }
-  return [...seen]
+  return [...observed]
 }
 
-/** A field put into a face: the text it comes to, and where the caret lands. */
+/** A field put into a face: the text it evaluates to, and where the caret lands. */
 export interface InsertResult {
   readonly text: string
   readonly caret: number
@@ -80,10 +80,10 @@ export interface InsertResult {
  */
 export function insert(template: string, at: number, field: string): InsertResult {
   const where = Math.max(0, Math.min(at, template.length))
-  const written = braceField(field)
+  const content = braceField(field)
   return {
-    text: template.slice(0, where) + written + template.slice(where),
-    caret: where + written.length,
+    text: template.slice(0, where) + content + template.slice(where),
+    caret: where + content.length,
   }
 }
 

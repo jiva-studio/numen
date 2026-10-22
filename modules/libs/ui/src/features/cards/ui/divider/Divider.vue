@@ -20,7 +20,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 .divider {
   display: flex;
   align-items: center;
-  /* The air the line keeps from what stands on it. */
+  /* The air the line keeps from what relies on it. */
   gap: var(--numen-box-air);
   inline-size: 100%;
   min-inline-size: 0;
@@ -41,7 +41,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
   flex: 0 0 var(--numen-box-air);
 }
 
-/* What stands on the divider is drawn at its own width while there is room for
+/* What relies on the divider is drawn at its own width while there is room for
    it, and is what the width goes to first. */
 .divider__held {
   display: flex;

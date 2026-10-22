@@ -226,7 +226,7 @@ func ask(t *testing.T, s *Server, task *numenv1.AskAgentRequest) []*numenv1.AskA
 	return steps
 }
 
-// describeSteps writes the steps out one word each, a run of pieces of what was said as one.
+// describeSteps writes the steps out one word each, a run of pieces of the transcript as one.
 func describeSteps(steps []*numenv1.AskAgentResponse) string {
 	words := make([]string, 0, len(steps))
 	for _, one := range steps {
@@ -237,7 +237,7 @@ func describeSteps(steps []*numenv1.AskAgentResponse) string {
 			words = append(words, "call")
 		case one.GetToolFinished() != nil:
 			words = append(words, "finished")
-		case one.GetSaid() != "":
+		case one.GetText() != "":
 			if len(words) == 0 || words[len(words)-1] != "said" {
 				words = append(words, "said")
 			}
@@ -248,15 +248,15 @@ func describeSteps(steps []*numenv1.AskAgentResponse) string {
 	return strings.Join(words, " ")
 }
 
-// getSaid is every piece of what was said, in the order it was sent.
+// getSaid is every piece of the transcript, in the order it was sent.
 func getSaid(steps []*numenv1.AskAgentResponse) []string {
-	var said []string
+	var response []string
 	for _, one := range steps {
-		if text := one.GetSaid(); text != "" {
-			said = append(said, text)
+		if text := one.GetText(); text != "" {
+			response = append(response, text)
 		}
 	}
-	return said
+	return response
 }
 
 func newServer(chatURL string) *Server {
@@ -279,8 +279,8 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 	if call.GetTool() != "Read a note" || call.GetKind() != "read" || call.GetCall() != "call-1" || call.GetPath() != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
-	if said, last := strings.Join(getSaid(steps), ""), steps[len(steps)-1]; said != "Water the garden." || last.GetStopped() != reasonDone {
-		t.Errorf("the answer is %q, stopped %q", said, last.GetStopped())
+	if response, last := strings.Join(getSaid(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != reasonDone {
+		t.Errorf("the answer is %q, stopped %q", response, last.GetStopped())
 	}
 	if calls := vault.getCalls(); len(calls) != 1 || calls[0] != `{"path":"Plan.md"}` {
 		t.Errorf("the vault was called with %v", calls)
@@ -303,7 +303,7 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 	}
 }
 
-func TestAModelThatKeepsCallingToolsStopsAtTheTurnLimit(t *testing.T) {
+func TestAModelThatPreservesCallingToolsStopsAtTheTurnLimit(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
@@ -354,7 +354,7 @@ func TestAVaultThatCannotBeReachedStopsTheRunBeforeTheModelIsAsked(t *testing.T)
 	}
 }
 
-func TestTheKeyIsTheOneConfigureHandsOverAndNoneIsSentWithoutOne(t *testing.T) {
+func TestTheKeyIsTheOneConfigurePassesOverAndNoneIsSentWithoutOne(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "env-key")
 	model := &fakeChat{replies: []message{newTextReply("hi")}}
 	s := &Server{}
@@ -420,7 +420,7 @@ func TestTheProgramIsInstalledWhileTheChatAPIListsItsModels(t *testing.T) {
 	}
 }
 
-func TestTheProgramIsNotInstalledWhileTheChatAPIRefuses(t *testing.T) {
+func TestTheProgramIsNotInstalledWhileTheChatAPIRejects(t *testing.T) {
 	model := &fakeChat{status: http.StatusUnauthorized}
 	s := newServer(model.serve(t).URL)
 
@@ -462,9 +462,9 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	}
 }
 
-func TestAnAnswerCutOffAtItsLengthLimitIsReportedSo(t *testing.T) {
-	cut := newTextReply("The plan is to")
-	model := &fakeChat{replies: []message{cut}, finish: "length"}
+func TestAnAnswerSplitOffAtItsLengthLimitIsReportedSo(t *testing.T) {
+	reply := newTextReply("The plan is to")
+	model := &fakeChat{replies: []message{reply}, finish: "length"}
 	s := newServer(model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
@@ -474,15 +474,15 @@ func TestAnAnswerCutOffAtItsLengthLimitIsReportedSo(t *testing.T) {
 	}
 }
 
-func TestACallWithNoArgumentsIsToldBackWithAnEmptyObject(t *testing.T) {
+func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", ""), newTextReply("ok")}}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
 
 	ask(t, s, newTask(vault.serve(t), "Read."))
 
-	told := model.getRequests()[1].Messages
-	if args := told[len(told)-2].ToolCalls[0].Function.Arguments; args != "{}" {
+	messages := model.getRequests()[1].Messages
+	if args := messages[len(messages)-2].ToolCalls[0].Function.Arguments; args != "{}" {
 		t.Errorf("the call was told back with %q", args)
 	}
 	if calls := vault.getCalls(); len(calls) != 1 || calls[0] != "{}" {
@@ -507,7 +507,7 @@ func TestAKeyIsNotFollowedToPlainHTTP(t *testing.T) {
 		t.Error("a redirect to plain http was followed")
 	}
 	if err := refuseDowngrade(httptest.NewRequest(http.MethodGet, "https://example.com/v1/models", nil), nil); err != nil {
-		t.Errorf("a redirect to https was refused: %v", err)
+		t.Errorf("a redirect to https failed: %v", err)
 	}
 }
 
@@ -557,7 +557,7 @@ func TestATaskNamesTheModelThatAnswersIt(t *testing.T) {
 	}
 }
 
-func TestACutOffReplyCallsNoTool(t *testing.T) {
+func TestASplitOffReplyCallsNoTool(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", "")}, finish: "length"}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
@@ -589,18 +589,18 @@ func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("ok")}}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
-	gone := errors.New("the window closed")
-	sent := 0
+	removed := errors.New("the window closed")
+	dispatched := 0
 
 	err := s.Ask(t.Context(), newTask(vault.serve(t), "Read."), func(*numenv1.AskAgentResponse) error {
-		sent++
-		if sent == 2 {
-			return gone
+		dispatched++
+		if dispatched == 2 {
+			return removed
 		}
 		return nil
 	})
 
-	if !errors.Is(err, gone) {
+	if !errors.Is(err, removed) {
 		t.Errorf("the run ended with %v", err)
 	}
 	if calls := vault.getCalls(); len(calls) != 0 {
@@ -710,12 +710,12 @@ func TestAModelThatListsAReasoningParameterOffersLevels(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var offered []int
+	var proposed []int
 	for _, one := range res.Msg.GetPrograms()[0].GetModels() {
-		offered = append(offered, len(one.GetReasoningLevels()))
+		proposed = append(proposed, len(one.GetReasoningLevels()))
 	}
-	if !slices.Equal(offered, []int{3, 3, 0}) {
-		t.Errorf("the levels offered are %v", offered)
+	if !slices.Equal(proposed, []int{3, 3, 0}) {
+		t.Errorf("the levels offered are %v", proposed)
 	}
 }
 
@@ -759,7 +759,7 @@ func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
 
 // openrouter-models.json holds three entries of the listing OpenRouter serves without a key: a model
 // that names its depths, one that lists the fields and no depths, and one that lists neither.
-func TestTheDepthsAModelTakesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
+func TestTheDepthsAModelConsumesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
 	raw, err := os.ReadFile("testdata/openrouter-models.json")
 	if err != nil {
 		t.Fatal(err)
@@ -790,13 +790,13 @@ func TestTheDepthsAModelTakesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
 	if len(router.ReasoningLevels) != len(commonLevels) || router.DefaultReasoning != "" {
 		t.Errorf("a model of fields and no depths offers %v", router.ReasoningLevels)
 	}
-	if plain := byName["unbiased/pareto-26.10"]; len(plain.ReasoningLevels) != 0 || plain.ReasoningField != "" {
-		t.Errorf("a model of no reasoning offers %v", plain)
+	if unreasoningModel := byName["unbiased/pareto-26.10"]; len(unreasoningModel.ReasoningLevels) != 0 || unreasoningModel.ReasoningField != "" {
+		t.Errorf("a model of no reasoning offers %v", unreasoningModel)
 	}
-	if asked := newEffort(luna, "max"); asked.level != "max" {
-		t.Errorf("a depth the model names was refused")
+	if request := newEffort(luna, "max"); request.level != "max" {
+		t.Errorf("a depth the model names failed")
 	}
-	if asked := newEffort(router, "max"); asked.level != "" {
+	if requestVal := newEffort(router, "max"); requestVal.level != "" {
 		t.Errorf("a depth the model does not name was asked")
 	}
 }

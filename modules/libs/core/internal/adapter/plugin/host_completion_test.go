@@ -73,7 +73,7 @@ func TestAChoiceOfAnotherShapeIsEmpty(t *testing.T) {
 }
 
 // A plugin is answered only once the person allowed it. One not answered for is
-// recorded as asking; a refused one is not asking.
+// recorded as asking; a rejected one is not asking.
 func TestTheConsentIsThePersonsAnswer(t *testing.T) {
 	host := newAskingHost(t)
 	info := func() port.CompletionConsent {
@@ -109,10 +109,10 @@ func TestTheConsentIsThePersonsAnswer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := host.CheckCompletionConsent(askingPluginID); !errors.Is(err, port.ErrNoConsent) {
-		t.Errorf("refused: error = %v, want port.ErrNoConsent", err)
+		t.Errorf("rejected: error = %v, want port.ErrNoConsent", err)
 	}
 	if info() != port.ConsentRefused {
-		t.Errorf("refused: %v", info())
+		t.Errorf("rejected: %v", info())
 	}
 }
 

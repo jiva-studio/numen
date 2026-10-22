@@ -2,7 +2,7 @@
  * Where each problem a reading came back with is drawn: against a card,
  * against a face, against one field of a card, or against the file itself.
  *
- * A problem says where it stands, and the window draws it on the thing
+ * A problem says at its current position, and the window draws it on the thing
  * standing there. Two readings wrong in the same way leave what is drawn where
  * it is, so a mark a person is reading does not blink on every read.
  */
@@ -27,7 +27,7 @@ export interface Marks {
 }
 
 /**
- * Each problem against the thing it stands on. A problem carries where it
+ * Each problem against the thing it relies on. A problem carries where it
  * stands, so a card under no stencil and two cards of one mark each land on the
  * tile they were read from, and a problem naming a field lands on that field of
  * that card. One standing past the end of what was read is against the file.
@@ -38,7 +38,7 @@ export const createMarks = (
   faces: readonly string[],
 ): Marks => {
   const at = new Map<string, string[]>()
-  const under = new Map<string, Map<string, string[]>>()
+  const underMap = new Map<string, Map<string, string[]>>()
   const fields = new Map<string, string[]>()
   const whole: string[] = []
 
@@ -55,12 +55,12 @@ export const createMarks = (
         addProblemMark(at, card, problem.text)
         continue
       }
-      let held = under.get(card)
-      if (!held) {
-        held = new Map<string, string[]>()
-        under.set(card, held)
+      let cardMarks = underMap.get(card)
+      if (!cardMarks) {
+        cardMarks = new Map<string, string[]>()
+        underMap.set(card, cardMarks)
       }
-      addProblemMark(held, problem.field, problem.text)
+      addProblemMark(cardMarks, problem.field, problem.text)
       continue
     }
     const face = faces[problem.face ?? -1]
@@ -75,7 +75,7 @@ export const createMarks = (
     whole.push(problem.text)
   }
 
-  return { at, under, fields, whole }
+  return { at, under: underMap, fields, whole }
 }
 
 /** Whether two lists of words read the same, in the same order. */
@@ -89,8 +89,8 @@ const areMarkMapsEqual = (
 ): boolean => {
   if (one.size !== other.size) return false
   for (const [key, texts] of one) {
-    const against = other.get(key)
-    if (!against || !areWordsEqual(texts, against)) return false
+    const otherVal = other.get(key)
+    if (!otherVal || !areWordsEqual(texts, otherVal)) return false
   }
   return true
 }
@@ -102,8 +102,8 @@ const areUnderMapsEqual = (
 ): boolean => {
   if (one.size !== other.size) return false
   for (const [key, byField] of one) {
-    const against = other.get(key)
-    if (!against || !areMarkMapsEqual(byField, against)) return false
+    const otherVal = other.get(key)
+    if (!otherVal || !areMarkMapsEqual(byField, otherVal)) return false
   }
   return true
 }

@@ -59,7 +59,7 @@ func TestEditLoad(t *testing.T) {
 	api.state.Indexing.Progress = db.Progress()
 	api.state.setVault(v)
 
-	reading := time.Now()
+	startTime := time.Now()
 	made := container.NewEditorAssembly(cfg, nil, db)
 	worker := newIndexWorker(made, api.state, nil, time.Hour, io.Discard)
 	_, wait := startIndexing(t.Context(), v, made, api.state, false, worker, worker.NewSession(), io.Discard)
@@ -70,10 +70,10 @@ func TestEditLoad(t *testing.T) {
 	if why := api.state.Error.Why(); why != "" {
 		t.Fatalf("the vault could not be read: %s", why)
 	}
-	t.Logf("read %d notes in %s", notes, time.Since(reading).Round(time.Millisecond))
+	t.Logf("read %d notes in %s", notes, time.Since(startTime).Round(time.Millisecond))
 
-	line, done := api.state.ChangeEvents.subscribe()
-	t.Cleanup(done)
+	line, isDone := api.state.ChangeEvents.subscribe()
+	t.Cleanup(isDone)
 
 	// One save, the way a quiet interval makes it, and then the wait until the
 	// index answers with what was written and the window is told.
@@ -86,24 +86,24 @@ func TestEditLoad(t *testing.T) {
 	}
 	wrote := time.Since(saving)
 
-	told := make(chan time.Duration, 1)
+	durationCh := make(chan time.Duration, 1)
 	go func() {
 		for what := range line {
 			for _, p := range what.paths {
 				if p == path {
-					told <- time.Since(saving)
+					durationCh <- time.Since(saving)
 					return
 				}
 			}
 			if what.shouldReload {
-				told <- time.Since(saving)
+				durationCh <- time.Since(saving)
 				return
 			}
 		}
 	}()
 
 	select {
-	case reached := <-told:
+	case reached := <-durationCh:
 		t.Logf("save %s, the window told after %s",
 			wrote.Round(time.Millisecond), reached.Round(time.Millisecond))
 	case <-time.After(2 * time.Minute):

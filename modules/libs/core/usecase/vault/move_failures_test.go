@@ -61,7 +61,7 @@ type unfiling struct {
 
 func (u unfiling) MoveSources(context.Context, domain.VaultID, string, string) error { return u.err }
 
-// wiring is everything a Move stands on that a test may replace.
+// wiring is everything a Move relies on that a test may replace.
 type wiring struct {
 	links   port.LinkQueries
 	queries port.SourceQueries
@@ -110,7 +110,7 @@ func (f filing) exists(path string) bool {
 }
 
 // A path moved onto itself is not a move.
-func TestAMoveOntoItselfIsNothingDone(t *testing.T) {
+func TestAMoveOntoItselfIsNothingCompleted(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 
@@ -142,7 +142,7 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 	if !f.exists("physics/Entropy.md") {
 		t.Error("the note moved")
@@ -151,7 +151,7 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 
 // What points at a folder's contents is asked of the notes under it, every one,
 // and of nothing else.
-func TestOnlyTheNotesUnderAFolderAreAskedWhatPointsAtThem(t *testing.T) {
+func TestOnlyTheNotesBelowAFolderAreAskedWhatPointsAtThem(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
@@ -177,7 +177,7 @@ func TestOnlyTheNotesUnderAFolderAreAskedWhatPointsAtThem(t *testing.T) {
 
 // Every note of a folder is told where it went, at the path it now has, and a
 // book is not a note.
-func TestEveryNoteOfAFolderIsToldWhereItWent(t *testing.T) {
+func TestEveryNoteOfAFolderIsReportedWhereItWent(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
@@ -223,7 +223,7 @@ func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 	if !f.exists("physics/Entropy.md") {
 		t.Error("the note moved")
@@ -231,7 +231,7 @@ func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 }
 
 // A vault that cannot be written moves nothing.
-func TestAMoveInAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
+func TestAMoveInAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the vault cannot be written")
@@ -243,12 +243,12 @@ func TestAMoveInAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 }
 
 // A path the vault holds nothing at is no note, and nothing landed.
-func TestAMoveOfAPathThatHoldsNothingIsNoNote(t *testing.T) {
+func TestAMoveOfAPathThatContainsNothingIsNoNote(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 
@@ -260,7 +260,7 @@ func TestAMoveOfAPathThatHoldsNothingIsNoNote(t *testing.T) {
 		t.Error("the move says it landed")
 	}
 	if moved.From != "physics/Missing.md" || moved.To != "archive/Missing.md" {
-		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
 	}
 }
 
@@ -411,18 +411,18 @@ func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
 	cannot := errors.New("the other index cannot be written")
 	other := unfiling{SourceRepository: f.db.Sources(), err: cannot}
 
-	given := f.move().WithSources(other)
-	if _, ok := given.Sources().(unfiling); !ok {
-		t.Fatalf("the move files through %T", given.Sources())
+	provided := f.move().WithSources(other)
+	if _, ok := provided.Sources().(unfiling); !ok {
+		t.Fatalf("the move files through %T", provided.Sources())
 	}
-	if _, err := given.Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md"); !errors.Is(err, cannot) {
+	if _, err := provided.Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md"); !errors.Is(err, cannot) {
 		t.Errorf("got %v", err)
 	}
 }
 
 // A title that could not be written on a rename is reported once the file is
 // where it was sent.
-func TestATitleThatCouldNotBeWrittenOnARenameIsAnError(t *testing.T) {
+func TestATitleThatCouldNotBeSavedOnARenameIsAnError(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",

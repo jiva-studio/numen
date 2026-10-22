@@ -33,7 +33,7 @@ type DeckContents struct {
 	// Body is what the file says. It holds no cards for any outcome but Ok, and
 	// a deck over the bound carries the problem that says why.
 	Body format.Deck
-	// Raw is the prose of the file as it stands, which is what a caller changing
+	// Raw is the prose of the file currently, which is what a caller changing
 	// one card splices. It is empty for any outcome but Ok.
 	Raw string
 	// Stencils is where the wikilink under each card's heading lands, keyed by
@@ -136,16 +136,16 @@ func getStencilPaths(
 	if links == nil {
 		return nil, nil
 	}
-	written := make([]string, 0, len(d.Cards))
+	content := make([]string, 0, len(d.Cards))
 	for _, card := range d.Cards {
 		if card.StencilLink != "" {
-			written = append(written, card.StencilLink)
+			content = append(content, card.StencilLink)
 		}
 	}
-	if len(written) == 0 {
+	if len(content) == 0 {
 		return nil, nil
 	}
-	reached, err := links.ResolveLinks(ctx, vaultID, path, written)
+	reached, err := links.ResolveLinks(ctx, vaultID, path, content)
 	if err != nil {
 		return nil, err
 	}
@@ -168,24 +168,24 @@ func (u Read) readStencils(
 		return nil, nil, nil
 	}
 	read := make(map[string]format.Stencil, len(at))
-	loose := make(map[string]bool, len(at))
+	isLoose := make(map[string]bool, len(at))
 	by = make(map[string]format.Stencil, len(at))
 	ordinary = make(map[string]bool, len(at))
-	for written, path := range at {
-		held, seen := read[path]
-		if !seen {
+	for content, path := range at {
+		target, observed := read[path]
+		if !observed {
 			found, err := u.Stencil(ctx, v, path)
 			if err != nil {
 				return nil, nil, err
 			}
 			if found.Type == format.TypeStencil {
-				held = found.Body
+				target = found.Body
 			}
-			read[path] = held
-			loose[path] = found.Outcome == note.Ok && found.Type != format.TypeStencil
+			read[path] = target
+			isLoose[path] = found.Outcome == note.Ok && found.Type != format.TypeStencil
 		}
-		by[written] = held
-		ordinary[written] = loose[path]
+		by[content] = target
+		ordinary[content] = isLoose[path]
 	}
 	return by, ordinary, nil
 }
@@ -233,9 +233,9 @@ func (u Read) readNote(
 	// leaves alone, or nothing. The size is among what it says, which is what
 	// keeps a deck over the bound unread.
 	ref, err := reader.GetFingerprint(ctx, path)
-	held := err == nil
+	target := err == nil
 	switch {
-	case held:
+	case target:
 		if ref.Kind != domain.KindNote {
 			return domain.Note{}, ref, note.NotANote, nil
 		}
@@ -252,7 +252,7 @@ func (u Read) readNote(
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		return domain.Note{}, ref, note.Missing, nil
-	case !held && err == nil:
+	case !target && err == nil:
 		return domain.Note{}, domain.Fingerprint{}, note.NotANote, nil
 	case err != nil:
 		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("read %s: %w", path, err)

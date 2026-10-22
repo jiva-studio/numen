@@ -93,7 +93,7 @@ describe('a hand on the row', () => {
     expect(hand.to(createPoint(100))).toBeUndefined()
   })
 
-  it('takes hold again from wherever the row now stands', () => {
+  it('takes hold again from wherever the row now remains', () => {
     const hand = new Hand()
     hand.take(createPoint(200), createPoint(500))
     hand.to(createPoint(150))

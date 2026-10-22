@@ -28,21 +28,21 @@ export const INLINE = new Map([
 ])
 
 /** What takes a mark out of the drawing. */
-export const hidden = Decoration.replace({})
+export const HIDDEN = Decoration.replace({})
 
 const lines = new Map<string, Decoration>()
 const named = new Map<string, Decoration>()
 
 /** The decoration that puts a class on a whole line. */
 export const line = (name: string) => {
-  const drawn = lines.get(name) ?? Decoration.line({ class: name })
-  lines.set(name, drawn)
-  return drawn
+  const decoration = lines.get(name) ?? Decoration.line({ class: name })
+  lines.set(name, decoration)
+  return decoration
 }
 
 /** The decoration that puts a class on a stretch of text. */
 export const mark = (name: string) => {
-  const drawn = named.get(name) ?? Decoration.mark({ class: name })
-  named.set(name, drawn)
-  return drawn
+  const decoration = named.get(name) ?? Decoration.mark({ class: name })
+  named.set(name, decoration)
+  return decoration
 }

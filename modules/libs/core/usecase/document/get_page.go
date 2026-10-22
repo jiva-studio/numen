@@ -54,12 +54,12 @@ func (u GetPage) draw(ctx context.Context, reader port.VaultReader, key PageKey)
 		if key.Page >= scan.GetPageCount() {
 			return fmt.Errorf("%w: page %d of %d", ErrNoPage, key.Page, scan.GetPageCount())
 		}
-		drawn, err := scan.Render(key.Page, key.Width)
+		rendered, err := scan.Render(key.Page, key.Width)
 		if err != nil {
 			return err
 		}
 		var out bytes.Buffer
-		if err := jpeg.Encode(&out, drawn, &jpeg.Options{Quality: quality}); err != nil {
+		if err := jpeg.Encode(&out, rendered, &jpeg.Options{Quality: quality}); err != nil {
 			return err
 		}
 		body = out.Bytes()

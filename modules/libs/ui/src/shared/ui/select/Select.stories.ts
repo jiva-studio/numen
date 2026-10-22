@@ -56,8 +56,8 @@ const meta: Meta<Knobs> = {
           .filter((line) => line.length > 0)
           .map(getChoice),
       )
-      const chosen = ref(args.chosen)
-      return { args, choices, chosen }
+      const selected = ref(args.chosen)
+      return { args, choices, chosen: selected }
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">

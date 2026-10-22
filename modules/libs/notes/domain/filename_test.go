@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestATitleThatIsAlreadyAFilenameIsFiledUnderItself(t *testing.T) {
+func TestATitleThatIsAlreadyAFilenameIsFiledBelowItself(t *testing.T) {
 	for _, title := range []string{
 		"Entropy",
 		"Zoë Brontë Mårtensson",
@@ -35,7 +35,7 @@ func TestACharacterAFilesystemReservesBecomesADash(t *testing.T) {
 	}
 }
 
-func TestATitleIsFiledUnderNoLeadingDot(t *testing.T) {
+func TestATitleIsFiledBelowNoLeadingDot(t *testing.T) {
 	// A leading dot files the note where nothing looks.
 	name, exact := domain.GetReducedFilename(".hidden")
 	if name != "hidden" || exact {
@@ -62,7 +62,7 @@ func TestAControlCharacterIsNotInTheName(t *testing.T) {
 	}
 }
 
-func TestATitleTooLongIsCutBetweenCharacters(t *testing.T) {
+func TestATitleTooLongIsSplitBetweenCharacters(t *testing.T) {
 	// Most filesystems stop at 255 bytes for one component, and the cut lands
 	// between characters: half a character is not a character.
 	long := strings.Repeat("ṛ", 200)
@@ -88,7 +88,7 @@ func TestATitleThatCannotBeAFilenameIsNoFilename(t *testing.T) {
 
 // Windows keeps a handful of names for its devices, and a file carrying one
 // cannot be created there. The desktop client ships on Windows.
-func TestATitleThatNamesAWindowsDeviceIsFiledBeside(t *testing.T) {
+func TestATitleThatNamesAWindowsDeviceIsFiledAdjacent(t *testing.T) {
 	for _, title := range []string{
 		"CON", "PRN", "AUX", "NUL", "COM1", "COM9", "LPT1", "LPT9",
 		"con", "Nul", "lpt4",
@@ -109,7 +109,7 @@ func TestATitleThatNamesAWindowsDeviceIsFiledBeside(t *testing.T) {
 }
 
 // A name that only begins like a device is a name.
-func TestATitleThatMerelyLooksLikeADeviceIsFiledUnderItself(t *testing.T) {
+func TestATitleThatMerelyLooksLikeADeviceIsFiledBelowItself(t *testing.T) {
 	for _, title := range []string{
 		"CONSOLE", "Conference", "COM", "COM0", "COM10", "LPT", "NULL", "AUXILIARY",
 	} {
@@ -121,7 +121,7 @@ func TestATitleThatMerelyLooksLikeADeviceIsFiledUnderItself(t *testing.T) {
 
 // A note is reached by a link written by its name, so every filename a title
 // reduces to is one a link can be written by.
-func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
+func TestEveryFilenameATitleReducesToCanBeSavedAsALink(t *testing.T) {
 	for _, title := range []string{
 		"C#", "F# and C#", "#tag", "###",
 		"Notes [[draft]]", "[[", "]]", "[[[deep]]]", "a [1980] note",
@@ -150,7 +150,7 @@ func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
 
 // The characters a name cannot carry are reduced, and the ones it can are left
 // where the person put them.
-func TestAFilenameKeepsWhatALinkCanBeWrittenWith(t *testing.T) {
+func TestAFilenamePreservesWhatALinkCanBeSavedWith(t *testing.T) {
 	for title, want := range map[string]string{
 		"C#":              "C-",
 		"Issue #42":       "Issue -42",
@@ -178,7 +178,7 @@ func TestFilenameAnswersForATitleThatCanBeFiled(t *testing.T) {
 	}
 }
 
-func TestFilenameRefusesATitleThatLeavesNoFilename(t *testing.T) {
+func TestFilenameRejectsATitleThatPreservesNoFilename(t *testing.T) {
 	for _, title := range []string{"", "   ", "...", "\x00"} {
 		name, exact, err := domain.Filename(title)
 		if !errors.Is(err, domain.ErrUnnameable) {
@@ -193,7 +193,7 @@ func TestFilenameRefusesATitleThatLeavesNoFilename(t *testing.T) {
 	}
 }
 
-func TestFilenameRefusesATitleOfMoreThanOneLine(t *testing.T) {
+func TestFilenameRejectsATitleOfMoreThanOneLine(t *testing.T) {
 	for _, title := range []string{"first\nsecond", "first\rsecond", "first\r\nsecond"} {
 		name, exact, err := domain.Filename(title)
 		if !errors.Is(err, domain.ErrUnnameable) {
@@ -208,7 +208,7 @@ func TestFilenameRefusesATitleOfMoreThanOneLine(t *testing.T) {
 	}
 }
 
-func TestATitleOfTheLongestLengthIsFiledUnderItself(t *testing.T) {
+func TestATitleOfTheLongestLengthIsFiledBelowItself(t *testing.T) {
 	longest := strings.Repeat("x", 120)
 	name, exact := domain.GetReducedFilename(longest)
 	if name != longest || !exact {
@@ -223,7 +223,7 @@ func TestATitleOfTheLongestLengthIsFiledUnderItself(t *testing.T) {
 
 // The cut lands after the last character that fits whole, whatever width the
 // characters are and wherever in one the limit falls.
-func TestATitleTooLongIsCutAfterTheLastCharacterThatFits(t *testing.T) {
+func TestATitleTooLongIsSplitAfterTheLastCharacterThatFits(t *testing.T) {
 	for _, char := range []string{"é", "ṛ", "😀"} {
 		for pad := 0; pad < 4; pad++ {
 			title := strings.Repeat("a", pad) + strings.Repeat(char, 150)

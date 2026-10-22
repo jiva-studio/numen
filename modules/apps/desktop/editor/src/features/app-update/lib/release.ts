@@ -30,13 +30,13 @@ export function parseBuildNumber(val: string | number | undefined): number {
     return 0
   }
 
-  const trimmed = val.trim()
-  if (trimmed.includes('.') && !trimmed.includes('-')) {
+  const trimmedText = val.trim()
+  if (trimmedText.includes('.') && !trimmedText.includes('-')) {
     return 0
   }
 
-  const match = trimmed.match(/(?:-beta\.|\b)(\d+)(?:-[a-f0-9]{7})?$/)
-  const candidate = match?.[1] ?? trimmed
+  const match = trimmedText.match(/(?:-beta\.|\b)(\d+)(?:-[a-f0-9]{7})?$/)
+  const candidate = match?.[1] ?? trimmedText
   return toPositiveInt(Number.parseInt(candidate, 10))
 }
 

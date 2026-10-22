@@ -36,11 +36,11 @@ type Scenarios struct {
 // the name it had follows it to the name it now has. Every build with a window
 // binds it.
 func (n Scenarios) FollowMoves(view port.Window) Scenarios {
-	moving := n.Move
-	moving.Drawing = func(ctx context.Context, went domain.Move) {
+	mover := n.Move
+	mover.Drawing = func(ctx context.Context, went domain.Move) {
 		_ = view.ShowMove(ctx, went)
 	}
-	n.Move, n.Rename = moving, NewRename(moving)
+	n.Move, n.Rename = mover, NewRename(mover)
 	return n
 }
 

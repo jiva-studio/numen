@@ -46,22 +46,22 @@ func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
 // getWantedFiles is every file a transcription reads. The transducer is four of them,
 // published as four names in one folder.
 func getWantedFiles(cfg Config, into *paths) []models.Wanted {
-	under := func(name string) string {
+	underVal := func(name string) string {
 		if cfg.Model.Repo == "" {
 			return ""
 		}
 		return strings.TrimSuffix(cfg.Model.Repo, "/") + "/" + name
 	}
 	return []models.Wanted{
-		{Dst: &into.encoder, Path: cfg.Model.Encoder, Name: under(encoderFile), Kind: "encoder"},
-		{Dst: &into.decoder, Path: cfg.Model.Decoder, Name: under(decoderFile), Kind: "decoder"},
-		{Dst: &into.joiner, Path: cfg.Model.Joiner, Name: under(joinerFile), Kind: "joiner"},
-		{Dst: &into.tokens, Path: cfg.Model.Tokens, Name: under(tokensFile), Kind: "tokens"},
+		{Dst: &into.encoder, Path: cfg.Model.Encoder, Name: underVal(encoderFile), Kind: "encoder"},
+		{Dst: &into.decoder, Path: cfg.Model.Decoder, Name: underVal(decoderFile), Kind: "decoder"},
+		{Dst: &into.joiner, Path: cfg.Model.Joiner, Name: underVal(joinerFile), Kind: "joiner"},
+		{Dst: &into.tokens, Path: cfg.Model.Tokens, Name: underVal(tokensFile), Kind: "tokens"},
 		{Dst: &into.segmenter, Path: cfg.Segmenter.Path, Name: cfg.Segmenter.Repo, Kind: "segmenter model"},
 	}
 }
 
-// getModelName is what a model is called, for the record kept beside what it produced.
+// getModelName is what a model is called, for the record kept along with what it produced.
 // A name in the settings stands, and a model without one is called after the
 // file it was loaded from.
 func getModelName(name, at string) string {

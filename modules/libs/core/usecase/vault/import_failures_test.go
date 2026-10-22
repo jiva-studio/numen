@@ -89,14 +89,14 @@ func aFolderOfTwo() handedOver {
 }
 
 // Nothing handed over is nothing done, whether or not the vault can be written.
-func TestNothingHandedOverIsNothingDone(t *testing.T) {
+func TestNothingHandedOverIsNothingCompleted(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	bring := vaults.NewImport(unwritable{err: errors.New("the vault cannot be written")}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", nil)
 	if err != nil {
-		t.Fatalf("an empty drop was refused: %v", err)
+		t.Fatalf("an empty drop failed: %v", err)
 	}
 	if len(brought.Landed) != 0 || len(brought.Errors) != 0 {
 		t.Errorf("an empty drop came to %+v", brought)
@@ -104,7 +104,7 @@ func TestNothingHandedOverIsNothingDone(t *testing.T) {
 }
 
 // A vault that cannot be written takes nothing, and the caller is told why.
-func TestAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
+func TestAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	cannot := errors.New("the vault cannot be written")
@@ -115,7 +115,7 @@ func TestAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if len(brought.Errors) != 0 {
-		t.Errorf("the refusal was reported as a file: %v", brought.Errors)
+		t.Errorf("the rejection was reported as a file: %v", brought.Errors)
 	}
 }
 
@@ -138,7 +138,7 @@ func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 
 // A drop cancelled while a folder is being read leaves what is under it
 // outside.
-func TestADropCancelledInsideAFolderBringsNothingUnderIt(t *testing.T) {
+func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -164,10 +164,10 @@ func TestADropCancelledInsideAFolderBringsNothingUnderIt(t *testing.T) {
 func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
-	gone := errors.New("the file is gone")
+	removed := errors.New("the file is gone")
 	machine := flawed{
 		handedOver: handedOver{names: map[string]string{"content://held/9": "Gone.png"}},
-		statFails:  map[string]error{"content://held/9": gone},
+		statFails:  map[string]error{"content://held/9": removed},
 	}
 	bring := vaults.NewImport(filesystem.VaultWriters{}, machine)
 
@@ -175,7 +175,7 @@ func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Gone.png" || !errors.Is(brought.Errors[0].Why, gone) {
+	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Gone.png" || !errors.Is(brought.Errors[0].Why, removed) {
 		t.Errorf("what stayed outside: %+v", brought.Errors)
 	}
 	if len(brought.Landed) != 0 {
@@ -253,10 +253,10 @@ func TestOneFileOfAFolderThatCannotBeReadIsNamedAndTheRestArrive(t *testing.T) {
 func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
-	gone := errors.New("the entry is gone")
+	removed := errors.New("the entry is gone")
 	machine := flawed{
 		handedOver: aFolderOfTwo(),
-		statFails:  map[string]error{"content://held/3": gone},
+		statFails:  map[string]error{"content://held/3": removed},
 	}
 	bring := vaults.NewImport(filesystem.VaultWriters{}, machine)
 
@@ -264,7 +264,7 @@ func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Kelvin.md" || !errors.Is(brought.Errors[0].Why, gone) {
+	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Kelvin.md" || !errors.Is(brought.Errors[0].Why, removed) {
 		t.Errorf("what stayed outside: %+v", brought.Errors)
 	}
 }
@@ -286,7 +286,7 @@ func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
 
 // Files under a folder are not brought once the drop is cancelled, whatever the
 // vault would do with them.
-func TestNothingUnderAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
+func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())

@@ -131,11 +131,11 @@ func (a *broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 	if !a.isLatest {
 		return -1
 	}
-	for at, held := range waiting {
-		if a.isRequired != nil && a.isRequired(held) {
+	for at, target := range waiting {
+		if a.isRequired != nil && a.isRequired(target) {
 			continue
 		}
-		if a.getTopic == nil || a.getTopic(held) == a.getTopic(message) {
+		if a.getTopic == nil || a.getTopic(target) == a.getTopic(message) {
 			return at
 		}
 	}

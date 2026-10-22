@@ -45,7 +45,7 @@ function claim(event: PointerEvent): void {
   if (event.button === 0) emit('claim')
 }
 
-/** A panel let go of puts the keyboard back on the tab it is held under. */
+/** A panel release puts the keyboard back on the tab it is held under. */
 function onLeave(tab: TabId): void {
   strip.value?.reach(tab)
 }

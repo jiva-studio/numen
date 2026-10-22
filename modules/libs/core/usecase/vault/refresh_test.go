@@ -112,7 +112,7 @@ func TestARefreshedNoteIsWhatIsOnDisk(t *testing.T) {
 // TestADeletedNoteLeavesTheIndex. The vault is authoritative: what is not on
 // disk is not in the index, and a note that stays behind is still searchable
 // and opens nothing.
-func TestADeletedNoteLeavesTheIndex(t *testing.T) {
+func TestADeletedNotePreservesTheIndex(t *testing.T) {
 	t.Parallel()
 	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -168,7 +168,7 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 // TestABookThatWentLeavesTheIndex. A book is filed by kind and carries chunks
 // of its own, and a row left behind goes on answering searches with a passage
 // that opens nothing.
-func TestABookThatWentLeavesTheIndex(t *testing.T) {
+func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	t.Parallel()
 	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
@@ -199,18 +199,18 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	if found := passages(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
-	held, err := db.SourcesKnown().GetSourcesUnder(t.Context(), v.ID, "library")
+	target, err := db.SourcesKnown().GetSourcesUnder(t.Context(), v.ID, "library")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held) != 0 {
-		t.Errorf("the index still holds %v", held)
+	if len(target) != 0 {
+		t.Errorf("the index still holds %v", target)
 	}
 }
 
 // TestARefreshedBookThatWentIsStillGone. Nothing about a second kind of source
 // changes what a path that is not there means.
-func TestARefreshedBookThatWentIsStillGone(t *testing.T) {
+func TestARefreshedBookThatWentIsStillMissing(t *testing.T) {
 	t.Parallel()
 	refresh, _, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -308,25 +308,25 @@ func TestARefreshWritesInGroups(t *testing.T) {
 
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	written := &countingNotes{}
+	content := &countingNotes{}
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, &indexRows{}, written, db.SourcesKnown(), db.Sources(), time.Now,
+		filesystem.VaultReaders{}, &indexRows{}, content, db.SourcesKnown(), db.Sources(), time.Now,
 	)
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
 	}
-	if written.groups < 3 {
+	if content.groups < 3 {
 		t.Errorf("wrote %d notes in %d groups, want groups of at most 500",
-			written.notes, written.groups)
+			content.notes, content.groups)
 	}
-	for _, size := range written.sizes {
+	for _, size := range content.sizes {
 		if size > 500 {
 			t.Errorf("a group held %d notes", size)
 		}
 	}
-	if written.notes != 1200 {
-		t.Errorf("wrote %d notes of 1200", written.notes)
+	if content.notes != 1200 {
+		t.Errorf("wrote %d notes of 1200", content.notes)
 	}
 }
 
@@ -479,7 +479,7 @@ func TestANoteEditedOutsideTheAppWithAnotherModificationTimeIsIndexed(t *testing
 	}
 }
 
-func TestForceSavesANoteTheIndexHoldsAsItIs(t *testing.T) {
+func TestForceSavesANoteTheIndexContainsAsItIs(t *testing.T) {
 	t.Parallel()
 	refresh, saves, _, v := newCounted(t, map[string]string{"Note.md": settledNote})
 	refresh.Force = true
@@ -576,7 +576,7 @@ func TestADeletedNoteIsRemovedWithoutBeingSaved(t *testing.T) {
 	}
 }
 
-func TestALongRunOfSavesLeavesTheLedgerHoldingOnlyTheRecentWindow(t *testing.T) {
+func TestALongRunOfSavesPreservesTheLedgerContainingOnlyTheRecentWindow(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)

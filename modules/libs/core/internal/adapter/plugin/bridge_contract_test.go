@@ -153,12 +153,12 @@ func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context
 		problems = append(problems, "a bridge was returned with the error")
 	}
 	if !isRefusal(err) {
-		problems = append(problems, fmt.Sprintf("the error is %v, which is not the refusal asked for", err))
+		problems = append(problems, fmt.Sprintf("the error is %v, which is not the rejection asked for", err))
 	}
 	return problems
 }
 
-// What the refusal of a bridge is judged by.
+// What the rejection of a bridge is judged by.
 func isUnavailable(err error) bool { return errors.Is(err, port.ErrUnavailable) }
 
 func isNotInstalled(err error) bool {
@@ -207,14 +207,14 @@ func (failingBridge) Close() error { return errors.New("not closed") }
 
 // The check refuses each way a bridge can answer a plugin that cannot answer
 // wrongly, and passes the way it should.
-func TestTheRefusalCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
+func TestTheErrorCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
 	cases := []struct {
 		name string
 		open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error)
 		// want is what the problems say, and empty where there are none.
 		want string
 	}{
-		{"a refusal with no value", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
+		{"an error with no value", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return nil, nil, &port.UnavailableError{Reason: port.PluginNotInstalled}
 		}, ""},
 		{"a call that fails as it should", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
@@ -240,7 +240,7 @@ func TestTheRefusalCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
 		}, "closing the bridge failed"},
 		{"an error that is not unavailable", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) { return true, errors.New("boom") }, nil
-		}, "not the refusal asked for"},
+		}, "not the rejection asked for"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -253,7 +253,7 @@ func TestTheRefusalCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
 	}
 }
 
-func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
+func TestADoubleCloseProducesTheReferenceBackOnce(t *testing.T) {
 	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newLeaseHost(t)
@@ -261,8 +261,8 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			held := host.acquired.Load()
-			if tc.isLeased() && held == 0 {
+			target := host.acquired.Load()
+			if tc.isLeased() && target == 0 {
 				t.Fatal("opening the bridge acquired no reference")
 			}
 			if got := host.released.Load(); got != 0 {
@@ -273,8 +273,8 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if got := host.released.Load(); got != held {
-				t.Errorf("held %d references, gave back %d", held, got)
+			if got := host.released.Load(); got != target {
+				t.Errorf("held %d references, gave back %d", target, got)
 			}
 		})
 	}

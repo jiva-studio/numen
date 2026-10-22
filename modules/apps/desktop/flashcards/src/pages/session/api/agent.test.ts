@@ -9,7 +9,7 @@ import type { CardFace } from '@/entities/card'
 
 const { askAgent, finishConversation } = vi.hoisted(() => ({
   askAgent: vi.fn(async function* (_request: unknown, _options: unknown) {
-    yield { step: { case: 'said', value: 'Because of the leaves.' } }
+    yield { step: { case: 'text', value: 'Because of the leaves.' } }
   }),
   finishConversation: vi.fn(async (_request: unknown) => ({})),
 }))
@@ -30,8 +30,8 @@ const card: CardFace = {
   ahead: null,
 }
 
-describe('the agent a card is asked about', () => {
-  it('sends the mark and the face of the card beside the question, and reads the answer', async () => {
+describe('the agent a card is requested about', () => {
+  it('sends the mark and the face of the card alongside the question, and reads the answer', async () => {
     const signal = new AbortController().signal
     const steps = []
     for await (const step of createCardAgentPort(card).ask({
@@ -56,7 +56,7 @@ describe('the agent a card is asked about', () => {
     expect(steps).toEqual([{ kind: 'said', text: 'Because of the leaves.' }])
   })
 
-  it('ends the conversation under the name it was held by', async () => {
+  it('ends the conversation under the name it was retained by', async () => {
     await createCardAgentPort(card).finish('card-0')
     expect(finishConversation).toHaveBeenCalledWith({ conversation: 'card-0' })
   })

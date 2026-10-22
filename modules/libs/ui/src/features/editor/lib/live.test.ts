@@ -25,8 +25,8 @@ const ELSEWHERE = '\n\nelsewhere'
 
 const collectDrawn = (state: EditorState): Drawn[] => {
   const found: Drawn[] = []
-  const collect = (set: ReturnType<typeof getMarks>) =>
-    set.between(
+  const collect = (activeSet: ReturnType<typeof getMarks>) =>
+    activeSet.between(
       0,
       state.doc.length,
       (from, to, deco) => void found.push({ from, to, spec: deco.spec ?? {} }),
@@ -43,8 +43,8 @@ const getDrawn = (doc: string, caret?: number): Drawn[] => {
 }
 
 /** The stretch is drawn as something else, wherever the selection stands. */
-const isHidden = (drawn: readonly Drawn[], from: number, to: number) =>
-  drawn.some((deco) => deco.from === from && deco.to === to && !deco.spec.class)
+const isHidden = (rendered: readonly Drawn[], from: number, to: number) =>
+  rendered.some((deco) => deco.from === from && deco.to === to && !deco.spec.class)
 
 /** A state whose selection is a caret at each of `carets`, and which is read-only if asked. */
 const createCaretState = (doc: string, carets: number[], isReadOnly = false): EditorState => {
@@ -83,7 +83,7 @@ describe('a heading', () => {
     expect(applyReplace('### Entropy', '### ')).toBe(true)
   })
 
-  it('shows them where the caret stands', () => {
+  it('shows them where the caret remains', () => {
     expect(applyReplace('### Entropy', '### ', 5)).toBe(false)
     expect(classes('### Entropy', 5)).toContain('cm-heading cm-heading-3')
   })
@@ -134,9 +134,9 @@ describe('a list', () => {
   })
 
   it('draws a box for something to do, ticked or not', () => {
-    const [waiting, done] = widgets('- [ ] a\n- [x] b\n').filter((it) => it instanceof Box)
+    const [waiting, isDone] = widgets('- [ ] a\n- [x] b\n').filter((it) => it instanceof Box)
     expect((waiting as Box).isTicked).toBe(false)
-    expect((done as Box).isTicked).toBe(true)
+    expect((isDone as Box).isTicked).toBe(true)
   })
 })
 
@@ -184,7 +184,7 @@ describe('a table', () => {
     expect(deco?.to).toBe(TABLE.trimEnd().length)
   })
 
-  it('is shown as it is written where the caret stands in it', () => {
+  it('is shown as it is written where the caret remains in it', () => {
     expect(widgets(TABLE, 3)).toHaveLength(0)
   })
 })
@@ -197,12 +197,12 @@ describe('the text itself', () => {
 })
 
 describe('what is shown as written', () => {
-  it('is a construct any one of the carets stands in', () => {
+  it('is a construct any one of the carets remains in', () => {
     const doc = '**a** and **b**' + ELSEWHERE
-    const drawn = collectDrawn(createCaretState(doc, [3, 20]))
-    expect(isHidden(drawn, 0, 2)).toBe(false)
-    expect(isHidden(drawn, 3, 5)).toBe(false)
-    expect(isHidden(drawn, 10, 12)).toBe(true)
+    const drawnMarks = collectDrawn(createCaretState(doc, [3, 20]))
+    expect(isHidden(drawnMarks, 0, 2)).toBe(false)
+    expect(isHidden(drawnMarks, 3, 5)).toBe(false)
+    expect(isHidden(drawnMarks, 10, 12)).toBe(true)
   })
 
   it('is a mark of quotation only under a caret in the quotation', () => {
@@ -221,9 +221,9 @@ describe('the space after a mark', () => {
   })
 
   it('is not made up when there is none', () => {
-    const drawn = getDrawn('>said')
-    expect(isHidden(drawn, 0, 1)).toBe(true)
-    expect(isHidden(drawn, 0, 2)).toBe(false)
+    const drawnMarks = getDrawn('>said')
+    expect(isHidden(drawnMarks, 0, 1)).toBe(true)
+    expect(isHidden(drawnMarks, 0, 2)).toBe(false)
   })
 })
 
@@ -238,7 +238,7 @@ describe('what stays as written', () => {
     expect(applyReplace('```go\nx := 1\n```\n', '```')).toBe(false)
   })
 
-  it('is text that no construct stands over', () => {
+  it('is text that no construct remains over', () => {
     expect(getDrawn('plain words')).toEqual([])
   })
 
@@ -280,7 +280,7 @@ describe('whole lines', () => {
     expect(classes(TABLE)).not.toContain('cm-strong')
   })
 
-  it('give the words inside a table their marks where the caret stands in it', () => {
+  it('give the words inside a table their marks where the caret remains in it', () => {
     expect(classes(TABLE, 3)).toContain('cm-strong')
   })
 })
@@ -315,7 +315,7 @@ const getStanding = (state: EditorState): Standing[] => {
   return found
 }
 
-describe('the marks of whole lines held in the state', () => {
+describe('the marks of whole lines retained in the state', () => {
   const RULE = 'a\n\n---\n\nb\n\nelse'
   const INTRO = 'intro\n\n| a | b |\n|---|---|\n| c | d |\n\nelse'
 
@@ -354,7 +354,7 @@ describe('the marks of whole lines held in the state', () => {
     expect(now?.deco.spec.block).toBe(true)
   })
 
-  it('show a rule as written when a second caret stands in it', () => {
+  it('show a rule as written when a second caret remains in it', () => {
     const { state } = createLinesState(RULE)
     expect(getStanding(state)).toHaveLength(1)
 
@@ -496,11 +496,11 @@ describe('the marks drawn for the lines on screen', () => {
   }
 
   const isDrawnAt = (view: EditorView, from: number, to: number) => {
-    let hidden = false
+    let concealed = false
     getPlugin(view).decorations.between(from, to, (start, end, deco) => {
-      if (start === from && end === to && !(deco.spec as { class?: string }).class) hidden = true
+      if (start === from && end === to && !(deco.spec as { class?: string }).class) concealed = true
     })
-    return hidden
+    return concealed
   }
 
   it('reach a margin past the lines on screen, and no further', () => {
@@ -639,17 +639,17 @@ describe('the marks drawn for the lines on screen', () => {
   it('are drawn again where the parser is swapped without the text changing', () => {
     const doc = '~~a~~ b\n'
     const { view, language } = open(doc, [{ from: 0, to: 3 }])
-    const struck = () => {
+    const struckVal = () => {
       let found = false
       getPlugin(view).decorations.between(0, doc.length, (_f, _t, deco) => {
         if ((deco.spec as { class?: string }).class === 'cm-strike') found = true
       })
       return found
     }
-    expect(struck()).toBe(true)
+    expect(struckVal()).toBe(true)
 
     view.dispatch({ effects: language.reconfigure(markdown()) })
-    expect(struck()).toBe(false)
+    expect(struckVal()).toBe(false)
     view.destroy()
   })
 })

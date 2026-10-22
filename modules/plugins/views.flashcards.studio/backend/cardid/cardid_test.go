@@ -26,13 +26,13 @@ func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {
 
 // An identifier says which card this is, so two of them are two cards.
 func TestTwoIdentifiersDiffer(t *testing.T) {
-	seen := map[cardid.ID]bool{}
+	observed := map[cardid.ID]bool{}
 	for range 100 {
 		minted := cardid.New()
-		if seen[minted] {
+		if observed[minted] {
 			t.Fatalf("%q was minted twice", minted)
 		}
-		seen[minted] = true
+		observed[minted] = true
 	}
 }
 
@@ -84,15 +84,15 @@ func TestIsValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 func TestEveryCharacterOfTheAlphabetIsMinted(t *testing.T) {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 
-	seen := map[rune]bool{}
+	observed := map[rune]bool{}
 	for range 3000 {
 		minted := cardid.New()
 		for _, c := range minted {
-			seen[c] = true
+			observed[c] = true
 		}
 	}
 	for _, c := range alphabet {
-		if !seen[c] {
+		if !observed[c] {
 			t.Errorf("%q was never minted", c)
 		}
 	}

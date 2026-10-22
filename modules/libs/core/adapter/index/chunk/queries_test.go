@@ -246,10 +246,10 @@ func TestAnIdentifierThatIsNotDecimalNamesNoChunk(t *testing.T) {
 			continue
 		}
 		if row != 0 {
-			t.Errorf("%q is refused with row %d", id, row)
+			t.Errorf("%q fails with row %d", id, row)
 		}
 		if !strings.Contains(err.Error(), strconv.Quote(string(id))) {
-			t.Errorf("the refusal does not say which identifier: %v", err)
+			t.Errorf("the rejection does not say which identifier: %v", err)
 		}
 	}
 }
@@ -296,8 +296,8 @@ func TestAFingerprintReadFromAClosedOrBrokenIndexFails(t *testing.T) {
 	if _, err := closed(t).GetFingerprints(t.Context(), vaultA, "note"); err == nil {
 		t.Error("a closed index answered")
 	}
-	gone := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
-	if _, err := gone.GetFingerprints(t.Context(), vaultA, "note"); err == nil {
+	removed := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
+	if _, err := removed.GetFingerprints(t.Context(), vaultA, "note"); err == nil {
 		t.Error("an index with no sources table answered")
 	}
 	garbled := broken(t, func(db *index.DB) {
@@ -308,7 +308,7 @@ func TestAFingerprintReadFromAClosedOrBrokenIndexFails(t *testing.T) {
 	}
 }
 
-func TestWhatIsUnderAPathIsTheFileOrEverythingTheFolderHolds(t *testing.T) {
+func TestWhatIsBelowAPathIsTheFileOrEverythingTheFolderContains(t *testing.T) {
 	db := openIndex(t)
 	at := time.Date(2022, 5, 6, 7, 8, 9, 10, time.UTC)
 	source{path: "physics/Entropy.md", kind: "note", size: 40, mtime: at.UnixNano()}.save(t, db)
@@ -347,12 +347,12 @@ func TestWhatIsUnderAPathIsTheFileOrEverythingTheFolderHolds(t *testing.T) {
 	}
 }
 
-func TestWhatIsUnderAPathFailsOnAClosedOrBrokenIndex(t *testing.T) {
+func TestWhatIsBelowAPathFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	if _, err := closed(t).GetSourcesUnder(t.Context(), vaultA, "p"); err == nil {
 		t.Error("a closed index answered")
 	}
-	gone := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
-	_, err := gone.GetSourcesUnder(t.Context(), vaultA, "p")
+	removed := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
+	_, err := removed.GetSourcesUnder(t.Context(), vaultA, "p")
 	if err == nil || !strings.Contains(err.Error(), "p") {
 		t.Errorf("an index with no sources table answered, or did not say the path: %v", err)
 	}
@@ -384,7 +384,7 @@ func searchFixture(t *testing.T) *index.DB {
 	return db
 }
 
-func TestASearchByWordsAnswersWithWhereEachHitStands(t *testing.T) {
+func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 	db := searchFixture(t)
 
 	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, "stripes", []domain.SourceKind{domain.KindBook}, 10, false)
@@ -476,10 +476,10 @@ func TestASearchByWordsHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
 
-	for _, typed := range []string{"", "   "} {
-		got, err := queries.FindLexical(t.Context(), vaultA, typed, nil, 10, false)
+	for _, input := range []string{"", "   "} {
+		got, err := queries.FindLexical(t.Context(), vaultA, input, nil, 10, false)
 		if err != nil || got != nil {
-			t.Errorf("%q answered %v, %v", typed, got, err)
+			t.Errorf("%q answered %v, %v", input, got, err)
 		}
 	}
 	got, err := queries.FindLexical(t.Context(), nobody, "zebra", nil, 10, false)
@@ -577,10 +577,10 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 
 func TestASearchByNameHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	queries := openIndex(t).ChunkQueries()
-	for _, typed := range []string{"", "  "} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, typed, nil, 10, false)
+	for _, input := range []string{"", "  "} {
+		got, err := queries.GetNamedPassages(t.Context(), vaultA, input, nil, 10, false)
 		if err != nil || got != nil {
-			t.Errorf("%q answered %v, %v", typed, got, err)
+			t.Errorf("%q answered %v, %v", input, got, err)
 		}
 	}
 	got, err := queries.GetNamedPassages(t.Context(), nobody, "word", nil, 10, false)
@@ -639,7 +639,7 @@ func meaningFixture(t *testing.T) *index.DB {
 	return db
 }
 
-func TestASearchByMeaningAnswersNearestFirstWithWhereEachStands(t *testing.T) {
+func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	db := meaningFixture(t)
 
 	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 10, -1)
@@ -831,7 +831,7 @@ func TestAPassageFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestSourcesWithNoSmallChunkOweTheCut(t *testing.T) {
+func TestSourcesWithNoSmallChunkOweTheSplit(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/c-cut.epub", large: "l", smalls: []string{"s"}}.save(t, db)
 	source{path: "lib/b-large-only.epub", large: "l"}.save(t, db)
@@ -896,8 +896,8 @@ func TestListsOfPathsFailOnAClosedOrBrokenIndex(t *testing.T) {
 		t.Error("a closed index answered")
 	}
 	seed := func(db *index.DB) { source{path: "lib/a.epub"}.save(t, db) }
-	gone := broken(t, seed, `ALTER TABLE sources RENAME TO gone`)
-	if _, err := gone.GetUnchunkedSources(t.Context(), vaultA, "book", 5); err == nil {
+	removed := broken(t, seed, `ALTER TABLE sources RENAME TO gone`)
+	if _, err := removed.GetUnchunkedSources(t.Context(), vaultA, "book", 5); err == nil {
 		t.Error("an index with no sources answered")
 	}
 }
@@ -1030,7 +1030,7 @@ func TestOwedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestProgressCountsTheSmallChunksAndWhatIsEmbeddedUnderTheRecipe(t *testing.T) {
+func TestProgressCountsTheSmallChunksAndWhatIsEmbeddedBelowTheRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	source{path: "lib/b.epub", large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
@@ -1038,32 +1038,32 @@ func TestProgressCountsTheSmallChunksAndWhatIsEmbeddedUnderTheRecipe(t *testing.
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	queries := db.ChunkQueries()
 
-	held, embedded, err := queries.GetProgress(t.Context(), vaultA, recipe)
-	if err != nil || held != 5 || embedded != 3 {
-		t.Errorf("held %d, embedded %d, %v; want 5 and 3", held, embedded, err)
+	target, embedded, err := queries.GetProgress(t.Context(), vaultA, recipe)
+	if err != nil || target != 5 || embedded != 3 {
+		t.Errorf("held %d, embedded %d, %v; want 5 and 3", target, embedded, err)
 	}
-	held, embedded, err = queries.GetProgress(t.Context(), vaultA, "another model")
-	if err != nil || held != 5 || embedded != 0 {
-		t.Errorf("under another model held %d, embedded %d, %v; want 5 and 0", held, embedded, err)
+	target, embedded, err = queries.GetProgress(t.Context(), vaultA, "another model")
+	if err != nil || target != 5 || embedded != 0 {
+		t.Errorf("under another model held %d, embedded %d, %v; want 5 and 0", target, embedded, err)
 	}
-	held, embedded, err = queries.GetProgress(t.Context(), nobody, recipe)
-	if err != nil || held != 0 || embedded != 0 {
-		t.Errorf("an unknown vault held %d, embedded %d, %v", held, embedded, err)
+	target, embedded, err = queries.GetProgress(t.Context(), nobody, recipe)
+	if err != nil || target != 0 || embedded != 0 {
+		t.Errorf("an unknown vault held %d, embedded %d, %v", target, embedded, err)
 	}
 }
 
 func TestProgressFailsOnAClosedOrBrokenIndex(t *testing.T) {
-	held, embedded, err := closed(t).GetProgress(t.Context(), vaultA, recipe)
-	if err == nil || held != 0 || embedded != 0 {
-		t.Errorf("a closed index answered %d, %d, %v", held, embedded, err)
+	target, embedded, err := closed(t).GetProgress(t.Context(), vaultA, recipe)
+	if err == nil || target != 0 || embedded != 0 {
+		t.Errorf("a closed index answered %d, %d, %v", target, embedded, err)
 	}
-	gone := broken(t, func(*index.DB) {}, `ALTER TABLE chunks RENAME TO gone`)
-	if _, _, err := gone.GetProgress(t.Context(), vaultA, recipe); err == nil {
+	removed := broken(t, func(*index.DB) {}, `ALTER TABLE chunks RENAME TO gone`)
+	if _, _, err := removed.GetProgress(t.Context(), vaultA, recipe); err == nil {
 		t.Error("an index with no chunks answered")
 	}
 }
 
-func TestKeptVectorsAreFoundByTheHashOfTheirTextUnderTheRecipe(t *testing.T) {
+func TestCachedVectorsAreFoundByTheHashOfTheirTextBelowTheRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2"}}.save(t, db)
 	chunks := getOwed(t, db, vaultA)
@@ -1099,7 +1099,7 @@ func TestKeptVectorsAreFoundByTheHashOfTheirTextUnderTheRecipe(t *testing.T) {
 	}
 }
 
-func TestKeptVectorsOfNoHashAreNone(t *testing.T) {
+func TestCachedVectorsOfNoHashAreNone(t *testing.T) {
 	queries := openIndex(t).ChunkQueries()
 	for _, of := range [][][]byte{nil, {}, {nil}, {{}, nil}} {
 		got, err := queries.GetKeptVectors(t.Context(), recipe, of)
@@ -1113,18 +1113,18 @@ func TestKeptVectorsOfNoHashAreNone(t *testing.T) {
 	}
 }
 
-func TestKeptVectorsFailOnAClosedOrBrokenIndex(t *testing.T) {
+func TestCachedVectorsFailOnAClosedOrBrokenIndex(t *testing.T) {
 	hashes := [][]byte{{1, 2, 3}}
 	if _, err := closed(t).GetKeptVectors(t.Context(), recipe, hashes); err == nil {
 		t.Error("a closed index answered")
 	}
-	gone := broken(t, func(*index.DB) {}, `ALTER TABLE vectors RENAME TO gone`)
-	if _, err := gone.GetKeptVectors(t.Context(), recipe, hashes); err == nil {
+	removed := broken(t, func(*index.DB) {}, `ALTER TABLE vectors RENAME TO gone`)
+	if _, err := removed.GetKeptVectors(t.Context(), recipe, hashes); err == nil {
 		t.Error("an index with no vectors answered")
 	}
 }
 
-func TestASourceTextSaysWhatMadeItAndTheFileItWasMadeFrom(t *testing.T) {
+func TestASourceTextReturnsWhatMadeItAndTheFileItWasMadeFrom(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/scan.pdf", kind: "book", size: 321, mtime: century + 7, producer: "ocr", hash: "h-scan"}.save(t, db)
 	source{path: "lib/plain.epub", size: 12}.save(t, db)
@@ -1203,8 +1203,8 @@ func TestRecognisedSourcesFailOnAClosedOrBrokenIndex(t *testing.T) {
 	if _, err := closed(t).GetRecognisedSources(t.Context(), vaultA, "book"); err == nil {
 		t.Error("a closed index answered")
 	}
-	gone := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
-	if _, err := gone.GetRecognisedSources(t.Context(), vaultA, "book"); err == nil {
+	removed := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
+	if _, err := removed.GetRecognisedSources(t.Context(), vaultA, "book"); err == nil {
 		t.Error("an index with no sources answered")
 	}
 }
@@ -1252,9 +1252,9 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 	if err == nil || found || text != (chunk.SourceText{}) {
 		t.Errorf("GetSourceText answered %+v, %v, %v", text, found, err)
 	}
-	held, embedded, err := q.GetProgress(ctx, vaultA, recipe)
-	if err == nil || held != 0 || embedded != 0 {
-		t.Errorf("GetProgress answered %d, %d, %v", held, embedded, err)
+	target, embedded, err := q.GetProgress(ctx, vaultA, recipe)
+	if err == nil || target != 0 || embedded != 0 {
+		t.Errorf("GetProgress answered %d, %d, %v", target, embedded, err)
 	}
 }
 

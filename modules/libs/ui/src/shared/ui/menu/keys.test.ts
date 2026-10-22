@@ -46,7 +46,7 @@ describe('where the keyboard starts', () => {
 })
 
 describe('taking the keyboard onto a row', () => {
-  it('focuses the row held for the item', () => {
+  it('focuses the row retained for the item', () => {
     const { keys, focusMenu } = setup()
     const focus = vi.fn<() => void>()
     keys.holdRow('copy', { focus })

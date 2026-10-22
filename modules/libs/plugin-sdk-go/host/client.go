@@ -92,7 +92,7 @@ func fail(code v1.HostVaultErrorCode) error {
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:
 		return ErrNotANote
 	}
-	return fmt.Errorf("host: refused with code %s", code)
+	return fmt.Errorf("host: rejected with code %s", code)
 }
 
 func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
@@ -394,9 +394,9 @@ func (c *Client) Watch(ctx context.Context) (<-chan Change, error) {
 }
 
 func (c *Client) With(id domain.VaultID) Vault {
-	bound := *c
-	bound.vault = string(id)
-	return &bound
+	linked := *c
+	linked.vault = string(id)
+	return &linked
 }
 
 func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {

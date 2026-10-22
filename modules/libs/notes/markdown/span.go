@@ -17,7 +17,7 @@ type Span struct {
 // FindSpans returns every place `wanted` stands in `text`.
 //
 // Three readings are tried and the first that finds anything answers: the text
-// as it stands, then punctuation and spacing read as the marks they stand for,
+// currently, then punctuation and spacing read as the marks they stand for,
 // then a run of spacing inside a line read as one space. A span that stands
 // exactly is therefore never reported where it only nearly stands.
 //
@@ -34,17 +34,17 @@ func FindSpans(text, wanted string) (at []Span, isApproximate bool) {
 		return found, false
 	}
 	for _, read := range []func(string) mappedText{foldPunctuation, foldSpacing} {
-		held, sought := read(text), read(wanted)
+		target, sought := read(text), read(wanted)
 		if sought.text == "" {
 			continue
 		}
-		found := occurrences(held.text, sought.text)
+		found := occurrences(target.text, sought.text)
 		if len(found) == 0 {
 			continue
 		}
 		at = make([]Span, 0, len(found))
 		for _, span := range found {
-			at = append(at, Span{From: held.at[span.From], To: held.at[span.To]})
+			at = append(at, Span{From: target.at[span.From], To: target.at[span.To]})
 		}
 		return at, true
 	}

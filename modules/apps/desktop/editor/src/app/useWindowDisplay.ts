@@ -25,11 +25,11 @@ export interface DisplayOptions {
   wait?(ms: number): Promise<unknown>
   /**
    * What hears that the vault changed, and is waited for. A change carrying no
-   * paths names nothing: everything showing the vault reads again.
+   * paths is empty: everything showing the vault reads again.
    */
   onVaultChanged?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */
-  reportChange?(said: NoteEdit): void
+  reportChange?(response: NoteEdit): void
   /** What puts a note in front of the person, asked for from outside the window. */
   travelTo?(path: string): void | Promise<void>
   /**
@@ -149,7 +149,7 @@ export function useWindowDisplay(
   const reload = how.reload ?? (() => {})
   const display = createDisplayState()
   let open = true
-  const listening = new AbortController()
+  const abortController = new AbortController()
 
   const ask = () => askDisplayState(core, display)
   const readInitialNote = () => readInitialNotePath(core, display)
@@ -157,10 +157,10 @@ export function useWindowDisplay(
 
   const streams = useWindowStreams({
     core,
-    listening,
+    listening: abortController,
     isOpen: () => open,
-    setLost: (said) => {
-      display.lost.value = said
+    setLost: (response) => {
+      display.lost.value = response
     },
     wait,
     opening: display.opening,
@@ -192,7 +192,7 @@ export function useWindowDisplay(
     watch: streams.watch,
     close: () => {
       open = false
-      listening.abort()
+      abortController.abort()
     },
   }
 }

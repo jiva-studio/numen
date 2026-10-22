@@ -12,7 +12,7 @@ export interface Question {
   readonly isCurrent: boolean
   /**
    * Whether this answer may be drawn over what is drawn already. An answer
-   * older than one that has landed is let go of.
+   * older than one that has landed is release.
    */
   claim(): boolean
 }
@@ -24,7 +24,7 @@ export function createAnswerGuard() {
   let renderedSeq = 0
   let isListening = true
 
-  /** A turn for one question. What is already on its way is let go of. */
+  /** A turn for one question. What is already on its way is release. */
   const ask = (): Question => {
     const mine = ++questionSeq
     return {

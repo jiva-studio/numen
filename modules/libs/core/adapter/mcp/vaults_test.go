@@ -60,8 +60,8 @@ func (f *folders) ChooseFolder(_ context.Context, title, _ string) (string, bool
 	return f.pick, f.isChosen, nil
 }
 
-// answers is what the dialog hands back to the call that put it up.
-func (f *folders) answers(path string, chose bool) {
+// choose sets what the dialog returns to the call that displayed it.
+func (f *folders) choose(path string, chose bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.pick, f.isChosen = path, chose
@@ -95,14 +95,14 @@ func onTheList(t *testing.T) *installation {
 
 	registry := appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 	adding := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now)
-	held := &rows{}
-	renaming := vaults.NewRename(registry, held)
-	forgetting := vaults.NewUnregister(registry, held)
+	target := &rows{}
+	renaming := vaults.NewRename(registry, target)
+	forgetting := vaults.NewUnregister(registry, target)
 	finding := vaults.NewFind(registry)
 
 	f := &installation{
 		registry: registry,
-		rows:     held,
+		rows:     target,
 		dialog:   &folders{},
 		first:    addVaultFolder(t, adding, "one"),
 		second:   addVaultFolder(t, adding, "two"),
@@ -175,11 +175,11 @@ type joining struct {
 func getToolDescription(t *testing.T, s *sdk.ClientSession, name string) string {
 	t.Helper()
 
-	listed, err := s.ListTools(t.Context(), nil)
+	items, err := s.ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, tool := range listed.Tools {
+	for _, tool := range items.Tools {
 		if tool.Name == name {
 			return tool.Description
 		}
@@ -192,11 +192,11 @@ func getToolDescription(t *testing.T, s *sdk.ClientSession, name string) string 
 func hasTool(t *testing.T, s *sdk.ClientSession, name string) bool {
 	t.Helper()
 
-	listed, err := s.ListTools(t.Context(), nil)
+	items, err := s.ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, tool := range listed.Tools {
+	for _, tool := range items.Tools {
 		if tool.Name == name {
 			return true
 		}
@@ -204,7 +204,7 @@ func hasTool(t *testing.T, s *sdk.ClientSession, name string) bool {
 	return false
 }
 
-func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
+func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsMissing(t *testing.T) {
 	f := onTheList(t)
 	if err := os.RemoveAll(f.second.Path); err != nil {
 		t.Fatal(err)
@@ -234,12 +234,12 @@ func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
 // A vault added with no path is the person's own choice, made in front of them.
 func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 	f := onTheList(t)
-	chosen := folderNamed(t, "three")
-	f.dialog.answers(chosen, true)
+	selected := folderNamed(t, "three")
+	f.dialog.choose(selected, true)
 	session := newSessionOver(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
-	if !out.IsAdded || out.Folder != chosen || out.Name != "three" {
+	if !out.IsAdded || out.Folder != selected || out.Name != "three" {
 		t.Fatalf("the vault added is %+v", out)
 	}
 	if f.dialog.getTitle() == "" {
@@ -251,28 +251,28 @@ func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 }
 
 // The folder gains a file, and the tool says which one before it is called.
-func TestAddingSaysTheIdentityIsWrittenIntoTheFolder(t *testing.T) {
+func TestAddingReturnsTheIdentityIsSavedIntoTheFolder(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	said := getToolDescription(t, session, "vault_add")
+	response := getToolDescription(t, session, "vault_add")
 	for _, rule := range []string{"identity", filesystem.DefaultServiceDir} {
-		if !strings.Contains(said, rule) {
-			t.Errorf("vault_add says nothing about %q:\n%s", rule, said)
+		if !strings.Contains(response, rule) {
+			t.Errorf("vault_add says nothing about %q:\n%s", rule, response)
 		}
 	}
 
-	chosen := folderNamed(t, "four")
-	call[joining](t, session, "vault_add", map[string]any{"path": chosen})
-	if _, err := os.Stat(filepath.Join(chosen, filesystem.DefaultServiceDir)); err != nil {
+	selected := folderNamed(t, "four")
+	call[joining](t, session, "vault_add", map[string]any{"path": selected})
+	if _, err := os.Stat(filepath.Join(selected, filesystem.DefaultServiceDir)); err != nil {
 		t.Errorf("the folder holds no identity: %v", err)
 	}
 }
 
 // A person who closed the dialog chose nothing, and that is an answer.
-func TestAFolderDialogThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
+func TestAFolderDialogThePersonClosedAddsNothingAndReturnsSo(t *testing.T) {
 	f := onTheList(t)
-	f.dialog.answers("", false)
+	f.dialog.choose("", false)
 	session := newSessionOver(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
@@ -282,9 +282,9 @@ func TestAFolderDialogThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
 	if !strings.Contains(out.Why, "picker") {
 		t.Errorf("the answer says %q", out.Why)
 	}
-	held, err := f.registry.List()
-	if err != nil || len(held) != 2 {
-		t.Errorf("the list holds %v: %v", held, err)
+	target, err := f.registry.List()
+	if err != nil || len(target) != 2 {
+		t.Errorf("the list holds %v: %v", target, err)
 	}
 }
 
@@ -302,21 +302,21 @@ func TestAFilesystemRootAndAHomeDirectoryAreRefused(t *testing.T) {
 	// path on a machine that names no volume.
 	top := filepath.VolumeName(home) + string(filepath.Separator)
 
-	for root, said := range map[string]string{
+	for root, response := range map[string]string{
 		top:  "root of this filesystem",
 		home: "home directory",
 	} {
-		why := getRefusal(t, session, "vault_add", map[string]any{"path": root})
-		if !strings.Contains(why, said) {
-			t.Errorf("%s was refused with %q", root, why)
+		why := getToolError(t, session, "vault_add", map[string]any{"path": root})
+		if !strings.Contains(why, response) {
+			t.Errorf("%s failed with %q", root, why)
 		}
 		if _, err := os.Stat(filepath.Join(root, filesystem.DefaultServiceDir)); err == nil {
-			t.Errorf("%s was made into a vault before it was refused", root)
+			t.Errorf("%s was made into a vault before it failed", root)
 		}
 	}
-	held, err := f.registry.List()
-	if err != nil || len(held) != 2 {
-		t.Errorf("the list holds %v: %v", held, err)
+	target, err := f.registry.List()
+	if err != nil || len(target) != 2 {
+		t.Errorf("the list holds %v: %v", target, err)
 	}
 }
 
@@ -329,21 +329,21 @@ func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 	}
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_add", map[string]any{"path": inner})
+	why := getToolError(t, session, "vault_add", map[string]any{"path": inner})
 	if !strings.Contains(why, "does not lie inside") {
-		t.Errorf("a folder inside a vault was refused with %q", why)
+		t.Errorf("a folder inside a vault failed with %q", why)
 	}
 }
 
-func TestRenamingToANameAnotherVaultHasSaysSo(t *testing.T) {
+func TestRenamingToANameAnotherVaultHasReturnsSo(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_rename", map[string]any{
+	why := getToolError(t, session, "vault_rename", map[string]any{
 		"vault": f.second.ID, "name": f.first.Name,
 	})
 	if !strings.Contains(why, "already called") {
-		t.Errorf("a taken name was refused with %q", why)
+		t.Errorf("a taken name failed with %q", why)
 	}
 
 	out := call[struct {
@@ -362,9 +362,9 @@ func TestTheVaultTheWindowIsShowingIsNotForgotten(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
+	why := getToolError(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
 	if !strings.Contains(why, "showing") {
-		t.Errorf("the vault in front was refused with %q", why)
+		t.Errorf("the vault in front failed with %q", why)
 	}
 	if len(f.rows.getForgotten()) != 0 {
 		t.Errorf("the index was told to forget %v", f.rows.getForgotten())
@@ -373,7 +373,7 @@ func TestTheVaultTheWindowIsShowingIsNotForgotten(t *testing.T) {
 
 // A vault forgotten leaves the list and the index, and its folder stays where
 // it is.
-func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
+func TestForgettingPreservesTheFolderWhereItIs(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
@@ -398,7 +398,7 @@ func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
 // An installation keeps a vault.
 func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	f := onTheList(t)
-	// The window is showing neither, so what is left is refused for being the
+	// The window is showing neither, so what is left fails for being the
 	// last one and not for being in front of anybody.
 	f.core.Showing = mcp.ShowOneVault(domain.Vault{ID: "elsewhere"}, "")
 	session := newSessionOver(t, f.core)
@@ -407,23 +407,23 @@ func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 		IsForgotten bool `json:"forgotten"`
 	}](t, session, "vault_remove", map[string]any{"vault": f.second.ID})
 
-	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
+	why := getToolError(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
 	if !strings.Contains(why, "only vault") {
-		t.Errorf("the last vault was refused with %q", why)
+		t.Errorf("the last vault failed with %q", why)
 	}
-	held, err := f.registry.List()
-	if err != nil || len(held) != 1 {
-		t.Errorf("the list holds %v: %v", held, err)
+	target, err := f.registry.List()
+	if err != nil || len(target) != 1 {
+		t.Errorf("the list holds %v: %v", target, err)
 	}
 }
 
-func TestForgettingAVaultTheListDoesNotHoldSaysSo(t *testing.T) {
+func TestForgettingAVaultTheListDoesNotHoldReturnsSo(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": "nowhere"})
+	why := getToolError(t, session, "vault_remove", map[string]any{"vault": "nowhere"})
 	if !strings.Contains(why, "no such vault") {
-		t.Errorf("a vault nothing answers to was refused with %q", why)
+		t.Errorf("a vault nothing answers to failed with %q", why)
 	}
 }
 
@@ -440,9 +440,9 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 	}
 
 	select {
-	case shown := <-f.swapped:
-		if shown.ID != f.second.ID {
-			t.Errorf("the window was asked to show %+v", shown)
+	case swappedVault := <-f.swapped:
+		if swappedVault.ID != f.second.ID {
+			t.Errorf("the window was asked to show %+v", swappedVault)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("the window was never asked to show another vault")
@@ -451,12 +451,12 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 
 // The session ends with the vault it was serving, and the tool's own
 // description is where an agent is told so.
-func TestOpeningSaysThatTheSessionEnds(t *testing.T) {
+func TestOpeningReturnsThatTheSessionEnds(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	if said := getToolDescription(t, session, "vault_open"); !strings.Contains(said, "session ends") {
-		t.Errorf("vault_open says %q", said)
+	if response := getToolDescription(t, session, "vault_open"); !strings.Contains(response, "session ends") {
+		t.Errorf("vault_open says %q", response)
 	}
 }
 
@@ -465,19 +465,19 @@ func TestOpeningTheVaultInFrontIsRefused(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_open", map[string]any{"vault": string(f.first.ID)})
+	why := getToolError(t, session, "vault_open", map[string]any{"vault": string(f.first.ID)})
 	if !strings.Contains(why, "already showing") {
-		t.Errorf("the vault in front was refused with %q", why)
+		t.Errorf("the vault in front failed with %q", why)
 	}
 	select {
-	case shown := <-f.swapped:
-		t.Errorf("the window was asked to show %+v", shown)
+	case swappedVault := <-f.swapped:
+		t.Errorf("the window was asked to show %+v", swappedVault)
 	default:
 	}
 }
 
 // A tool is served where what it works through is there, and a build without it
-// serves nothing an agent could call and be refused by.
+// serves nothing an agent could call and be rejected by.
 func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 	for _, one := range []struct {
 		tool    string
@@ -509,7 +509,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 
 // A vault is added by a person choosing a folder, and a build with nowhere to
 // put a dialog takes the folder named.
-func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
+func TestAddingWithNoPathAndNoFolderDialogReturnsSo(t *testing.T) {
 	f := onTheList(t)
 	core := f.core
 	core.Vaults.PickFolder = nil
@@ -518,8 +518,8 @@ func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
 	if !hasTool(t, session, "vault_add") {
 		t.Fatal("vault_add is missing, and a folder can be named")
 	}
-	why := getRefusal(t, session, "vault_add", struct{}{})
+	why := getToolError(t, session, "vault_add", struct{}{})
 	if !strings.Contains(why, "pick a folder") {
-		t.Errorf("a build with no dialog refused with %q", why)
+		t.Errorf("a build with no dialog failed with %q", why)
 	}
 }

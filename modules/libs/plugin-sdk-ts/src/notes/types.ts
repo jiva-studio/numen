@@ -44,7 +44,7 @@ export interface OpenNote {
  */
 export interface Notes {
   read(path: string): Promise<NoteResult>
-  write(path: string, body: string, seen: NoteBaseline | null): Promise<WriteResult>
+  write(path: string, body: string, observed: NoteBaseline | null): Promise<WriteResult>
 }
 
 /** What a person is told and answers with when their tab is in conflict. */

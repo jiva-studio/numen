@@ -13,8 +13,8 @@ import (
 // This is the whole of it: a value added to the schema is answered here before
 // it can travel, and the window's own table is keyed by the schema, so it is
 // asked for a word at the same moment.
-func TestEveryBudgetTheSchemaNamesIsOneTheCoreHolds(t *testing.T) {
-	held := map[v1.BudgetName]review.BudgetName{
+func TestEveryBudgetTheSchemaNamesIsOneTheCoreContains(t *testing.T) {
+	target := map[v1.BudgetName]review.BudgetName{
 		v1.BudgetName_BUDGET_NAME_UNSPECIFIED:   review.ClosedNothing,
 		v1.BudgetName_BUDGET_NAME_MINUTES_A_DAY: review.ClosedMinutes,
 		v1.BudgetName_BUDGET_NAME_NEW_A_DAY:     review.ClosedNew,
@@ -26,8 +26,8 @@ func TestEveryBudgetTheSchemaNamesIsOneTheCoreHolds(t *testing.T) {
 
 	for value := range v1.BudgetName_name {
 		named := v1.BudgetName(value)
-		one, answered := held[named]
-		if !answered {
+		one, reply := target[named]
+		if !reply {
 			t.Errorf("the schema names %s and nothing in the core answers to it", named)
 			continue
 		}

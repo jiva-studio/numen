@@ -39,13 +39,13 @@ const createSection = (
   file: Record<string, unknown> = {},
   plugins: readonly PluginInfo[] = [AGENT_B, AGENT_A, ASKING, ALLOWED],
 ) => {
-  const written: SettingEdit[] = []
+  const content: SettingEdit[] = []
   const secrets: string[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: createProgramModels(PROGRAMS),
-    write: (said) => {
-      written.push(...said)
+    write: (response) => {
+      content.push(...response)
     },
     writeSecret: (pluginId, name, key) => {
       secrets.push(`write ${pluginId} ${name} ${key}`)
@@ -75,7 +75,7 @@ const createSection = (
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(AiSettingsSection, { props: { state } })
-  return { written, secrets, wrapper }
+  return { recordedWrites: content, secrets, wrapper }
 }
 
 const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: number) =>
@@ -85,7 +85,7 @@ const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: nu
   }[]
 
 describe('the default agent', () => {
-  it('offers the agents the plugins list, said with the one that answers while none is named', () => {
+  it('offers the agents the plugins list, returned with the one that answers while none is named', () => {
     const { wrapper } = createSection()
     expect(getChoices(wrapper, 0).map((one) => one.text)).toStrictEqual([
       'Agent of the panel (Agent A)',
@@ -100,20 +100,20 @@ describe('the default agent', () => {
   })
 
   it('is written with its model under ai.default, and another agent leaves the model to it', () => {
-    const { wrapper, written } = createSection({
+    const { wrapper, recordedWrites } = createSection({
       ai: { default: { agent: 'agent-b', model: 'b-fast' } },
     })
     pick(wrapper.findAllComponents({ name: 'Select' }), 0).vm.$emit('update:modelValue', 'agent-a')
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['ai', 'default', 'agent'], value: '"agent-a"' },
       { at: ['ai', 'default', 'model'], value: '""' },
     ])
   })
 
-  it('writes the model chosen beside the agent', () => {
-    const { wrapper, written } = createSection({ ai: { default: { agent: 'agent-b' } } })
+  it('writes the model chosen alongside the agent', () => {
+    const { wrapper, recordedWrites } = createSection({ ai: { default: { agent: 'agent-b' } } })
     pick(wrapper.findAllComponents({ name: 'Select' }), 1).vm.$emit('update:modelValue', 'b-fast')
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['ai', 'default', 'agent'], value: '"agent-b"' },
       { at: ['ai', 'default', 'model'], value: '"b-fast"' },
     ])
@@ -121,31 +121,31 @@ describe('the default agent', () => {
 })
 
 describe('the consent', () => {
-  it('asks the person about a plugin that asked, and writes the answer', async () => {
-    const { wrapper, written } = createSection()
-    const asking = wrapper.find('[role="alert"]')
-    expect(asking.text()).toContain('Asking Plugin asks to use a model.')
+  it('asks the person about a plugin that requested, and writes the answer', async () => {
+    const { wrapper, recordedWrites } = createSection()
+    const activePrompt = wrapper.find('[role="alert"]')
+    expect(activePrompt.text()).toContain('Asking Plugin asks to use a model.')
 
-    await pick(asking.findAll('button'), 0).trigger('click')
-    await pick(asking.findAll('button'), 1).trigger('click')
-    expect(written).toStrictEqual([
+    await pick(activePrompt.findAll('button'), 0).trigger('click')
+    await pick(activePrompt.findAll('button'), 1).trigger('click')
+    expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'test.asking', 'aiConsent'], value: 'true' },
       { at: ['plugins', 'test.asking', 'aiConsent'], value: 'false' },
     ])
   })
 
-  it('stands on a switch for each plugin that may ask', () => {
-    const { wrapper, written } = createSection()
+  it('relies on a switch for each plugin that may ask', () => {
+    const { wrapper, recordedWrites } = createSection()
     const switches = wrapper.findAllComponents({ name: 'Switch' })
     expect(switches.map((one) => one.props('modelValue'))).toStrictEqual([false, true])
 
     pick(switches, 1).vm.$emit('update:modelValue', false)
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'test.allowed', 'aiConsent'], value: 'false' },
     ])
   })
 
-  it('asks nothing where no plugin asked', () => {
+  it('asks nothing where no plugin requested', () => {
     const { wrapper } = createSection({}, [AGENT_A, ALLOWED])
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })

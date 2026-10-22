@@ -7,7 +7,7 @@ import { branch, orthogonal, type Workspace, type WorkspaceNode } from './node'
 import { fit } from './shares'
 import { isBranch, isPane, getPanes, withChildren } from './tree'
 
-/** One node a node comes to, and the share it takes of that node's length. */
+/** One node a node evaluates to, and the share it takes of that node's length. */
 interface Piece {
   readonly node: WorkspaceNode
   readonly share: number

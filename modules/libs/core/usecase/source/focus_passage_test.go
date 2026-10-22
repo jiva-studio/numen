@@ -26,7 +26,7 @@ func newFocus(t *testing.T) (*FocusPassage, *glancing) {
 	return NewFocusPassage(vaults{first.ID: shelved}, view), view
 }
 
-func TestAPassageIsPutInFrontOfThePersonWithTheOthersLit(t *testing.T) {
+func TestAPassageIsInsertInFrontOfThePersonWithTheOthersLit(t *testing.T) {
 	focus, view := newFocus(t)
 
 	summary, err := focus.Execute(t.Context(), first, Passage{
@@ -83,7 +83,7 @@ func TestAPassageThatCannotBeShownMovesNobody(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := focus.Execute(t.Context(), first, tc.in); err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Errorf("refused as %v, want it to say %q", err, tc.want)
+				t.Errorf("rejected as %v, want it to say %q", err, tc.want)
 			}
 		})
 	}

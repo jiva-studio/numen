@@ -58,21 +58,21 @@ export const EveryIcon: Story = {
 
     const weights: number[] = []
     for (const cap of caps) {
-      const set = Number.parseFloat(getComputedStyle(cap).fontSize)
+      const activeSet = Number.parseFloat(getComputedStyle(cap).fontSize)
       const box = cap.getBoundingClientRect()
       const middle = box.top + box.height / 2
 
       // The line the letter is set on is the middle of the box holding it,
       // which is one line-height tall whatever the face.
       const line = cap.querySelector('span[aria-hidden="true"]')!.getBoundingClientRect()
-      await expect(Math.abs(line.top + line.height / 2 - middle) / set).toBeLessThanOrEqual(0.02)
+      await expect(Math.abs(line.top + line.height / 2 - middle) / activeSet).toBeLessThanOrEqual(0.02)
 
       // One line: an icon's ink is centred on that line, within a fiftieth of
       // the type the cap is set in. What is left over is the asymmetry of the
       // icon's own grid.
       const icon = await drawingInk(cap.querySelector('svg')!)
-      await expect(Math.abs(icon.middle - middle) / set).toBeLessThanOrEqual(0.02)
-      weights.push(icon.stroke / set)
+      await expect(Math.abs(icon.middle - middle) / activeSet).toBeLessThanOrEqual(0.02)
+      weights.push(icon.stroke / activeSet)
     }
 
     // One weight: every icon's ink is as thick as every other's, which is what
@@ -110,20 +110,20 @@ export const Dark: Story = {
     await expect(caps).toHaveLength(EVERY.length)
 
     // A cap keeps a ground of its own, told from the surface the row of them
-    // stands on, and is read in ink standing above that ground — which is the
+    // relies on, and is read in ink standing above that ground — which is the
     // way round the dark set is written.
-    const behind = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
-    const surface = lightness(behind)
+    const behindColor = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
+    const surface = lightness(behindColor)
     for (const cap of caps) {
-      const drawn = getComputedStyle(cap)
-      const ground = lightness(drawn.backgroundColor, behind)
+      const renderedStyle = getComputedStyle(cap)
+      const ground = lightness(renderedStyle.backgroundColor, behindColor)
       await expect(Math.abs(ground - surface)).toBeGreaterThan(4)
-      await expect(lightness(drawn.color, drawn.backgroundColor)).toBeGreaterThan(ground + 24)
+      await expect(lightness(renderedStyle.color, renderedStyle.backgroundColor)).toBeGreaterThan(ground + 24)
     }
   },
 }
 
-/** What a reader who is listening rather than looking is told. */
+/** What a reader who is listening and not looking is told. */
 export const Announced: Story = {
   args: { keys: { icons: ['control', 'shift'], letter: 'W' } },
   play: async ({ canvasElement }) => {
@@ -132,9 +132,9 @@ export const Announced: Story = {
     await expect(within(canvasElement).getByText('Control Shift W')).toHaveClass('sr-only')
 
     // Two icons and the letter held with them.
-    const drawn = Array.from(canvasElement.querySelectorAll('.cap > :not(.sr-only)'))
-    await expect(drawn).toHaveLength(3)
-    for (const one of drawn) {
+    const viewElement = Array.from(canvasElement.querySelectorAll('.cap > :not(.sr-only)'))
+    await expect(viewElement).toHaveLength(3)
+    for (const one of viewElement) {
       await expect(one).toHaveAttribute('aria-hidden', 'true')
     }
   },

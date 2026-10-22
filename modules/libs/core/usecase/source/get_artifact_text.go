@@ -21,7 +21,7 @@ type ArtifactText struct {
 	Length int
 }
 
-// GetArtifactText reads a range of one artifact as it stands on disk.
+// GetArtifactText reads a range of one artifact as it relies on disk.
 type GetArtifactText struct {
 	shelf artifactShelf
 }

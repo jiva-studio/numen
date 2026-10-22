@@ -10,7 +10,7 @@ import { useCarouselStrip } from '../model/carousel'
 import type { PanelPlace } from '../model/carousel'
 
 /** A hand moves this as much as the owner does, so it is a model and not a prop. */
-const shown = defineModel<PanelPlace>('at', { required: true })
+const currentPlace = defineModel<PanelPlace>('at', { required: true })
 
 /* --------------------------------- State ---------------------------------- */
 const window_ = useTemplateRef<HTMLElement>('window')
@@ -19,7 +19,7 @@ const middle = useTemplateRef<HTMLElement>('middle')
 const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStrip({
   window: window_,
   middle,
-  shown,
+  shown: currentPlace,
 })
 </script>
 
@@ -34,13 +34,13 @@ const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStr
     @pointerup="letGo"
     @pointercancel="letGo"
   >
-    <div class="carousel__before" :inert="shown !== 'before' || undefined">
+    <div class="carousel__before" :inert="currentPlace !== 'before' || undefined">
       <slot name="before" />
     </div>
-    <div ref="middle" class="carousel__here" :inert="shown !== 'here' || undefined">
+    <div ref="middle" class="carousel__here" :inert="currentPlace !== 'here' || undefined">
       <slot />
     </div>
-    <div class="carousel__after" :inert="shown !== 'after' || undefined">
+    <div class="carousel__after" :inert="currentPlace !== 'after' || undefined">
       <slot name="after" />
     </div>
   </div>
@@ -67,7 +67,7 @@ const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStr
   overflow-y: hidden;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
-  /* Taken there rather than put there, so a key and a hand read as the same
+  /* Taken there and not put there, so a key and a hand read as the same
      movement. A hand is already moving it and turns this off.
 
      Nothing snaps the strip: a snap put back over a strip a hand has already

@@ -2,7 +2,7 @@
  * The agent port, answered from the wire.
  *
  * Every window asks the same agent the same way, so what a step on the wire
- * comes to in the port is written down once. The window makes the client; this
+ * evaluates to in the port is written down once. The window makes the client; this
  * says what its answers mean.
  */
 import type { AskAgentResponse, Span } from '@numen/protocol'
@@ -46,7 +46,7 @@ export const createAgentPort = (agent: AgentClient): AgentPort => ({
       { signal },
     )) {
       switch (step.step.case) {
-        case 'said':
+        case 'text':
           yield { kind: 'said', text: step.step.value }
           break
         case 'toolCall': {
@@ -55,7 +55,7 @@ export const createAgentPort = (agent: AgentClient): AgentPort => ({
             kind: 'toolCall',
             tool: toolCall.tool,
             subject: toolCall.about,
-            written: toolCall.written,
+            written: toolCall.length,
             ...(toolCall.path
               ? { place: { path: toolCall.path, span: normalizeSpan(toolCall.span) } }
               : {}),

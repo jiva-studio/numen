@@ -125,9 +125,9 @@ export const Narrow: Story = {
     // A field at rest is one row, so nothing moves as the first character lands.
     await expect(empty).toBe(typed)
 
-    // The words that do not fit end in an ellipsis rather than wrapping.
-    const shown = canvasElement.querySelector('.composer__placeholder') as HTMLElement
-    await expect(shown.scrollWidth).toBeGreaterThan(shown.clientWidth)
-    await expect(getComputedStyle(shown).textOverflow).toBe('ellipsis')
+    // The words that do not fit end in an ellipsis and not wrapping.
+    const placeholder = canvasElement.querySelector('.composer__placeholder') as HTMLElement
+    await expect(placeholder.scrollWidth).toBeGreaterThan(placeholder.clientWidth)
+    await expect(getComputedStyle(placeholder).textOverflow).toBe('ellipsis')
   },
 }

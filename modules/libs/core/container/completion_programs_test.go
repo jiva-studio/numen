@@ -21,11 +21,11 @@ func serveCompletions(t *testing.T, host *plugin.Host, written string) (port.Com
 		t.Fatal(err)
 	}
 	cfg := container.Config{PluginHost: host, SettingsPath: path}
-	held, err := cfg.Settings()
+	target, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.SetSettings(held)
+	cfg.SetSettings(target)
 	completer := host.GetCompleter()
 	if completer == nil {
 		t.Fatal("the host has no completer")
@@ -51,11 +51,11 @@ func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 		t.Fatalf("answered %q, %v", got, err)
 	}
 
-	asked := one.getAsked()
-	if len(asked) != 1 {
-		t.Fatalf("%d tasks, want 1", len(asked))
+	request := one.getAsked()
+	if len(request) != 1 {
+		t.Fatalf("%d tasks, want 1", len(request))
 	}
-	task := asked[0]
+	task := request[0]
 	if task.GetAgent() != "alpha" || task.GetModel() != "section-model" || task.GetInstructions() != "be brief" ||
 		!slices.Equal(task.GetCommand(), []string{"/bin/alpha", "--x"}) {
 		t.Errorf("the task is %v", task)
@@ -68,7 +68,7 @@ func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 
 // The model the route names stands over the one the program's section names, and an empty default
 // is the program the plugins mark as the default.
-func TestTheRouteModelStandsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(t *testing.T) {
+func TestTheRouteModelExistsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, _ := serveCompletions(t, host, `{
 		"agent": {"alpha": {"model": "section-model"}},
@@ -79,9 +79,9 @@ func TestTheRouteModelStandsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(
 		t.Fatal(err)
 	}
 
-	asked := one.getAsked()
-	if len(asked) != 1 || asked[0].GetAgent() != "alpha" || asked[0].GetModel() != "big" {
-		t.Errorf("the tasks are %v", asked)
+	request := one.getAsked()
+	if len(request) != 1 || request[0].GetAgent() != "alpha" || request[0].GetModel() != "big" {
+		t.Errorf("the tasks are %v", request)
 	}
 }
 
@@ -92,8 +92,8 @@ func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 	if _, err := named.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	if asked := one.getAsked(); len(asked) != 1 || asked[0].GetAgent() != "alpha" {
-		t.Errorf("the tasks are %v", asked)
+	if request := one.getAsked(); len(request) != 1 || request[0].GetAgent() != "alpha" {
+		t.Errorf("the tasks are %v", request)
 	}
 
 	none, _ := serveCompletions(t, host, `{"agent": {"use": ""}}`)
@@ -106,13 +106,13 @@ func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 // programs are all no route, and no other program answers in their place.
 func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 	host, one, two := twoProviders(t)
-	for _, written := range []string{
+	for _, content := range []string{
 		`{"ai": {"default": {"agent": "ghost"}}}`,
 		`{"ai": {"default": {"agent": "beta"}}}`,
 	} {
-		completer, _ := serveCompletions(t, host, written)
+		completer, _ := serveCompletions(t, host, content)
 		if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, port.ErrNoRoute) {
-			t.Errorf("%s: error = %v, want port.ErrNoRoute", written, err)
+			t.Errorf("%s: error = %v, want port.ErrNoRoute", content, err)
 		}
 	}
 	if len(one.getAsked()) != 0 || len(two.getAsked()) != 0 {
@@ -139,7 +139,7 @@ func TestAProviderThatCannotBeStartedIsUnavailable(t *testing.T) {
 
 // The default is read from the settings file at every question, so a default written while the
 // application runs applies to the next one.
-func TestADefaultWrittenToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
+func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, path := serveCompletions(t, host, `{"ai": {"default": {"agent": "ghost"}}}`)
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, port.ErrNoRoute) {
@@ -152,8 +152,8 @@ func TestADefaultWrittenToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	if asked := one.getAsked(); len(asked) != 1 || asked[0].GetModel() != "big" {
-		t.Errorf("the tasks are %v", asked)
+	if request := one.getAsked(); len(request) != 1 || request[0].GetModel() != "big" {
+		t.Errorf("the tasks are %v", request)
 	}
 }
 
@@ -166,7 +166,7 @@ func TestAModelTheProgramNoLongerListsIsReplacedByItsDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if asked := one.getAsked(); len(asked) != 1 || asked[0].GetModel() != "big" {
-		t.Errorf("the tasks are %v", asked)
+	if request := one.getAsked(); len(request) != 1 || request[0].GetModel() != "big" {
+		t.Errorf("the tasks are %v", request)
 	}
 }

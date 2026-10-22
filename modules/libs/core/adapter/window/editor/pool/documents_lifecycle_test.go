@@ -57,7 +57,7 @@ func (s *shelf) getCloses() int {
 
 func (s *shelf) isClosed() bool { return s.getCloses() > 0 }
 
-func opens(s port.OpenDocument) func() (port.OpenDocument, error) {
+func openerOf(s port.OpenDocument) func() (port.OpenDocument, error) {
 	return func() (port.OpenDocument, error) { return s, nil }
 }
 
@@ -89,7 +89,7 @@ func getOrder(d *Documents) []document.Fingerprint {
 	return slices.Clone(d.order)
 }
 
-func TestTheBoundsAWindowKeepsDocumentsUnder(t *testing.T) {
+func TestTheBoundsAWindowKeepsDocumentsBelow(t *testing.T) {
 	if DocumentIdleTimeout != 2*time.Minute {
 		t.Errorf("a document nobody looks at is kept %v", DocumentIdleTimeout)
 	}
@@ -105,7 +105,7 @@ func TestAWindowKeepsMostOpenDocumentsAndClosesTheOldest(t *testing.T) {
 	for _, name := range []string{"a", "b", "c"} {
 		s := &shelf{}
 		scans = append(scans, s)
-		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -122,12 +122,12 @@ func TestAWindowKeepsMostOpenDocumentsAndClosesTheOldest(t *testing.T) {
 	}
 }
 
-func TestDocumentsAtTheBoundAreAllKept(t *testing.T) {
+func TestDocumentsAtTheBoundAreAllCached(t *testing.T) {
 	docs := NewDocuments(2, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b := &shelf{}, &shelf{}
 	for name, s := range map[string]*shelf{"a": a, "b": b} {
-		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -143,7 +143,7 @@ func TestADocumentAskedForAgainIsTheNewestInTheOrder(t *testing.T) {
 	t.Cleanup(docs.Close)
 	a, b, c := &shelf{}, &shelf{}, &shelf{}
 	take := func(name string, s *shelf) {
-		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -175,11 +175,11 @@ func TestADocumentInUseIsNotClosedForTheBound(t *testing.T) {
 	docs := NewDocuments(1, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b := &shelf{}, &shelf{}
-	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), opens(a))
+	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(a))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), opens(b))
+	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), openerOf(b))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,12 +190,12 @@ func TestADocumentInUseIsNotClosedForTheBound(t *testing.T) {
 	giveB()
 }
 
-func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
+func TestADocumentThatCannotBeOpenedIsReportedAndNotCached(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	cause := errors.New("not a document")
 	good := &shelf{}
-	_, giveGood, err := docs.Acquire(t.Context(), markOf("good"), opens(good))
+	_, giveGood, err := docs.Acquire(t.Context(), markOf("good"), openerOf(good))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,23 +226,23 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	docs.Close()
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(isDone)
 		for range 2 {
-			if _, _, err := docs.Acquire(t.Context(), markOf("a"), opens(&shelf{})); !errors.Is(err, ErrBusy) {
+			if _, _, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{})); !errors.Is(err, ErrBusy) {
 				t.Errorf("answered %v", err)
 			}
 		}
 	}()
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the second ask waited on a lock the first kept")
 	}
 }
 
-func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
+func TestACallerThatRanOutOfTimeIsReportedTheDocumentIsBusy(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -268,7 +268,7 @@ func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
 func TestADocumentIsHeldByOneCallAtATime(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	doc, give, err := docs.Acquire(t.Context(), markOf("a"), opens(&shelf{}))
+	doc, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +297,7 @@ func TestAskingAgainStopsTheClockOnClosingTheDocument(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	_, give, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
+	_, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +308,7 @@ func TestAskingAgainStopsTheClockOnClosingTheDocument(t *testing.T) {
 		t.Fatal("giving a document back started no clock")
 	}
 
-	_, give, err = docs.Acquire(t.Context(), markOf("a"), opens(s))
+	_, give, err = docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,11 +325,11 @@ func TestADocumentStillHeldByAnotherCallIsNotOnTheClock(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	_, giveOne, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
+	_, giveOne, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, giveTwo, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
+	_, giveTwo, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +349,7 @@ func TestADocumentNobodyLooksAtIsClosedAndForgotten(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, 10*time.Millisecond)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	_, give, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
+	_, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -364,12 +364,12 @@ func TestADocumentGivenBackAfterItWasEvictedIsClosedOnce(t *testing.T) {
 	docs := NewDocuments(1, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b := &shelf{}, &shelf{}
-	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), opens(a))
+	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(a))
 	if err != nil {
 		t.Fatal(err)
 	}
 	giveA()
-	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), opens(b))
+	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), openerOf(b))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -387,7 +387,7 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 	for i := range 12 {
 		s := &shelf{}
 		name := string(rune('a' + i))
-		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), openerOf(s))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -401,10 +401,10 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 		}
 	}
 
-	gone := make(chan struct{})
+	removed := make(chan struct{})
 	go func() {
 		docs.Close()
-		close(gone)
+		close(removed)
 	}()
 
 	for i, s := range idle {
@@ -419,7 +419,7 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 		}
 	}
 	select {
-	case <-gone:
+	case <-removed:
 		t.Fatal("the window went with documents in use")
 	default:
 	}
@@ -428,7 +428,7 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 		give()
 	}
 	select {
-	case <-gone:
+	case <-removed:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the window never went")
 	}
@@ -476,7 +476,7 @@ func TestShuttingAnOpenDocumentClosesItsScan(t *testing.T) {
 	}
 }
 
-func TestAPageIsDrawnAtTheResolutionItsWidthNeeds(t *testing.T) {
+func TestAPageIsGeneratedAtTheResolutionItsWidthNeeds(t *testing.T) {
 	for _, c := range []struct {
 		name          string
 		across        float64
@@ -521,7 +521,7 @@ func TestAPagesWidthIsMeasuredOnce(t *testing.T) {
 	}
 }
 
-func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
+func TestAPageThatCannotBeGeneratedIsReported(t *testing.T) {
 	cause := errors.New("the library said no")
 
 	measure := &shelf{across: 612, sizeErr: cause}
@@ -548,23 +548,23 @@ func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
 	}
 }
 
-func TestAnEvictedDocumentFromTheMiddleOfTheOrderLeavesTheRestInOrder(t *testing.T) {
+func TestAnEvictedDocumentFromTheMiddleOfTheOrderPreservesTheRestInOrder(t *testing.T) {
 	docs := NewDocuments(1, time.Hour)
 	t.Cleanup(docs.Close)
-	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), opens(&shelf{}))
+	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), openerOf(&shelf{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer giveA()
 	b := &shelf{}
-	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), opens(b))
+	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), openerOf(b))
 	if err != nil {
 		t.Fatal(err)
 	}
 	giveB()
 	clock := docs.open[markOf("b")].idle
 
-	_, giveC, err := docs.Acquire(t.Context(), markOf("c"), opens(&shelf{}))
+	_, giveC, err := docs.Acquire(t.Context(), markOf("c"), openerOf(&shelf{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -593,11 +593,11 @@ func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
 	}
 }
 
-func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
+func TestRetiringClosesOnlyTheDocumentNobodyContains(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	doc, give, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
+	doc, give, err := docs.Acquire(t.Context(), markOf("a"), openerOf(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -619,7 +619,7 @@ func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
 	}
 }
 
-func TestADocumentGivenBackAfterItWasReplacedLeavesTheReplacementHeld(t *testing.T) {
+func TestADocumentGivenBackAfterItWasReplacedPreservesTheReplacementHeld(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	mark := markOf("a")
 	failed := &Document{uses: 1}

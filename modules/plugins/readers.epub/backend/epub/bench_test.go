@@ -23,18 +23,18 @@ func getLargestBook(b *testing.B) string {
 		b.Skipf("the corpus is not here: %v (set %s to say where it is)", err, corpusEnv)
 	}
 
-	held, err := booksUnder(root)
+	target, err := booksUnder(root)
 	if err != nil {
 		b.Fatalf("walk the corpus: %v", err)
 	}
 	at, most := "", int64(0)
-	for _, held := range held {
-		info, err := os.Stat(held)
+	for _, targetVal := range target {
+		info, err := os.Stat(targetVal)
 		if err != nil {
 			continue
 		}
 		if info.Size() > most {
-			at, most = held, info.Size()
+			at, most = targetVal, info.Size()
 		}
 	}
 	if at == "" {
@@ -75,11 +75,11 @@ func BenchmarkDrawingOneDocument(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		drawn, err := book.Markup(at)
+		rendered, err := book.Markup(at)
 		if err != nil {
 			b.Fatal(err)
 		}
-		_ = drawn.HTML()
+		_ = rendered.HTML()
 	}
 }
 

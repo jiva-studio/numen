@@ -67,12 +67,12 @@ func OpenHostEndpoint(ctx context.Context, address string, callers HostCallers) 
 	if err != nil {
 		return nil, fmt.Errorf("listen for plugins: %w", err)
 	}
-	bound, ok := listener.Addr().(*net.TCPAddr)
+	linked, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
 		_ = listener.Close()
 		return nil, fmt.Errorf("%w: %s", errNotTCP, listener.Addr())
 	}
-	endpoint := &HostEndpoint{callers: callers, port: bound.Port}
+	endpoint := &HostEndpoint{callers: callers, port: linked.Port}
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
@@ -134,8 +134,8 @@ func (e *HostEndpoint) Complete(
 // is known to hold the permission.
 func (e *HostEndpoint) authorize(header, permission string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
-	pluginID, known := e.callers.GetPluginIDByToken(token)
-	if !found || !known {
+	pluginID, recognized := e.callers.GetPluginIDByToken(token)
+	if !found || !recognized {
 		return "", connect.NewError(connect.CodeUnauthenticated, errUnknownCaller)
 	}
 	if err := e.callers.CheckPluginPermission(pluginID, permission); err != nil {

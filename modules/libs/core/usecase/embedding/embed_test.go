@@ -44,8 +44,8 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 
 	stopCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	stopped := &interruptedStore{store: index, cancel: cancel, after: 2}
-	embed := newEmbed(vaults{first.ID: shelf}, index, stopped)
+	interrupted := &interruptedStore{store: index, cancel: cancel, after: 2}
+	embed := newEmbed(vaults{first.ID: shelf}, index, interrupted)
 	embed.Embedder = &embedder{dims: dimensions}
 	embed.BatchCharacters = 4000
 	if _, err := embed.Execute(stopCtx, first); err == nil {
@@ -53,7 +53,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	}
 
 	part := len(index.vectors)
-	if stopped.saved != stopped.after || part == 0 || part == len(small) {
+	if interrupted.saved != interrupted.after || part == 0 || part == len(small) {
 		t.Fatalf("the interrupted run embedded %d of %d chunks, want some of them", part, len(small))
 	}
 	// A chunk is written before its vector, so every vector the interrupted run
@@ -98,7 +98,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	}
 }
 
-func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
+func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400), words(sanskrit, 400)), 1)
@@ -151,7 +151,7 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 	}
 }
 
-func TestWithNoEmbedderTheTextIsCutAndNothingFails(t *testing.T) {
+func TestWithNoEmbedderTheTextIsSplitAndNothingFails(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
@@ -286,8 +286,8 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-func TestASourceStandingOnARecognitionIsEmbeddedFromIt(t *testing.T) {
-	// A source that stands on what a model read in it holds no text of its own
+func TestASourceActiveOnARecognitionIsEmbeddedFromIt(t *testing.T) {
+	// A source that relies on what a model read in it holds no text of its own
 	// that a chunk is a place in. Reaching that text is the store's, and an
 	// embedder without one passes the chunk over and says nothing.
 	ctx := t.Context()

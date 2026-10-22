@@ -46,7 +46,7 @@ type Attribute struct {
 	Value string
 }
 
-// Markup reads one spine document again, as elements rather than as text.
+// Markup reads one spine document again, as elements and not as text.
 //
 // A document the book was not read from is not one to ask for: what a book holds
 // beside its spine is not part of it.
@@ -141,15 +141,15 @@ func (b *builder) openElement(n *html.Node, offset int) bool {
 }
 
 func (b *builder) close() {
-	done := b.stack[len(b.stack)-1]
+	isDone := b.stack[len(b.stack)-1]
 	b.stack = b.stack[:len(b.stack)-1]
 	// A table that opened no cell keeps the runs written inside it, in the
 	// order they stand.
-	if len(b.waiting) > 0 && tabular[done.Name] && !tabular[b.stack[len(b.stack)-1].Name] {
-		done.Children, done.Offset = append(b.waiting, done.Children...), b.waiting[0].Offset
+	if len(b.waiting) > 0 && tabular[isDone.Name] && !tabular[b.stack[len(b.stack)-1].Name] {
+		isDone.Children, isDone.Offset = append(b.waiting, isDone.Children...), b.waiting[0].Offset
 		b.waiting = nil
 	}
-	b.appendChild(done)
+	b.appendChild(isDone)
 }
 
 // run marks a run of text written at an offset, whether it was written from the
@@ -243,7 +243,7 @@ func collectNodes(nodes []Node, into []*Node) []*Node {
 	return into
 }
 
-// shift moves a document to where it stands in the book.
+// shift moves a document to at its current position in the book.
 func shift(nodes []Node, by int) {
 	for i := range nodes {
 		nodes[i].Offset += by
@@ -320,8 +320,8 @@ var reachable = map[string]bool{
 
 // isInlineImage reports whether an address is a base64 image written into the markup.
 func isInlineImage(url string) bool {
-	head, _, written := strings.Cut(strings.ToLower(url), ",")
-	return written && strings.HasPrefix(head, "data:image/") && strings.HasSuffix(head, ";base64")
+	head, _, content := strings.Cut(strings.ToLower(url), ",")
+	return content && strings.HasPrefix(head, "data:image/") && strings.HasSuffix(head, ";base64")
 }
 
 // removeSpacesAndControls returns an address with its spaces and control

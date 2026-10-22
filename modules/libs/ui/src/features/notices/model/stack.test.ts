@@ -59,7 +59,7 @@ describe('the moment cards are read against', () => {
     expect(state.read.value).toBe(1500)
   })
 
-  it('stands still while a pointer is on the stack, and moves on once it leaves', () => {
+  it('remains still while a pointer is on the stack, and moves on once it leaves', () => {
     pointOver()
     advanceTo(2500)
     expect(state.now.value).toBe(2500)
@@ -70,14 +70,14 @@ describe('the moment cards are read against', () => {
     expect(state.read.value).toBe(1500)
   })
 
-  it('stands still while the keyboard is in the stack', () => {
+  it('remains still while the keyboard is in the stack', () => {
     card.focus()
     state.onFocusIn()
     advanceTo(2500)
     expect(state.read.value).toBe(START)
   })
 
-  it('stands still while the window is hidden', () => {
+  it('remains still while the window is hidden', () => {
     isHidden = true
     advanceTo(2000)
     expect(state.read.value).toBe(START)
@@ -179,7 +179,7 @@ describe('a stack that is not on the page', () => {
     )
   })
 
-  it('lets go of the keyboard whenever it is asked', () => {
+  it('lets go of the keyboard whenever it is requested', () => {
     state.onFocusIn()
     advanceTo(2000)
     expect(state.read.value).toBe(2000)

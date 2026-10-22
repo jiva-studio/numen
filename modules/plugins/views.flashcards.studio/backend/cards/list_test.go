@@ -51,7 +51,7 @@ func TestAListingWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
 
 // A limit above the number of stencils lists all of them, and a limit below it
 // lists that many while the count still says how many the vault holds.
-func TestAListingLimitedAboveOrBelowTheStencilsSaysHowManyThereAre(t *testing.T) {
+func TestAListingLimitedAboveOrBelowTheStencilsReturnsHowManyThereAre(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewList(vs.ports.Readers, vs.queries)
 

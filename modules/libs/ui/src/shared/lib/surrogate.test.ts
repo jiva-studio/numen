@@ -4,7 +4,7 @@ import { isLeading, isTrailing } from './surrogate'
 const PAIR = '😀'
 
 describe('the halves of a pair', () => {
-  it('tells the leading half from the trailing one', () => {
+  it('notifies the leading half from the trailing one', () => {
     expect(isLeading(PAIR.charCodeAt(0))).toBe(true)
     expect(isTrailing(PAIR.charCodeAt(0))).toBe(false)
     expect(isTrailing(PAIR.charCodeAt(1))).toBe(true)

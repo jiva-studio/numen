@@ -10,7 +10,7 @@ export type TreeKey = (typeof TREE_KEYS)[number]
 export const isTreeKey = (key: string): key is TreeKey =>
   (TREE_KEYS as readonly string[]).includes(key)
 
-/** What a key comes to: a row to turn on the way, and where the keyboard lands. */
+/** What a key evaluates to: a row to turn on the way, and where the keyboard lands. */
 export interface Step {
   /** Where the keyboard is afterwards. Null while nothing is drawn. */
   readonly at: RowId | null
@@ -18,7 +18,7 @@ export interface Step {
   readonly turn: { readonly row: RowId; readonly open: boolean } | null
 }
 
-/** What one key does, told the rows, where the keyboard stands in them, and the row it stands on. */
+/** What one key does, told the rows, where the keyboard stands in them, and the row it relies on. */
 type Move = (visibleRows: readonly ShownRow[], at: number, here: ShownRow) => Step
 
 const MOVES: Record<TreeKey, Move> = {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One card, as it stands in front of a person: the front, and the back once
+ * One card, currently in front of a person: the front, and the back once
  * they have said they are ready for it.
  *
  * A face is drawn by the one component every face is drawn by, so a card reads
@@ -39,7 +39,7 @@ const onPointerDown = (press: PointerEvent) => {
  * A name written into an href is escaped, and a card comes from whoever wrote
  * it: one escaped wrongly is taken as the characters it already is.
  */
-const plain = (href: string) => {
+const decodeHref = (href: string) => {
   try {
     return decodeURIComponent(href)
   } catch {
@@ -57,7 +57,7 @@ const onFollow = (href: string, press: MouseEvent) => {
   press.preventDefault()
   // A name carrying no scheme points inside the vault, which is where the
   // reading beside the card is.
-  if (scheme(href) === null) emit('read', plain(href))
+  if (scheme(href) === null) emit('read', decodeHref(href))
 }
 
 /** The card is turned over by pressing it, a press spent on a link aside. */

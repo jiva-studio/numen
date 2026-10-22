@@ -33,7 +33,7 @@ func (h *presetsHandler) GetDeckPreset(
 	}
 
 	out := &v1.GetDeckPresetResponse{Bounds: presetwire.GetSettingsBounds()}
-	if reason, refused := convertOutcomeToErrorCode(found.Outcome); refused {
+	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
@@ -54,13 +54,13 @@ func (h *presetsHandler) ListPresets(
 	if err != nil {
 		return nil, err
 	}
-	held, err := h.scenarios().flash.Presets.List(ctx, showing)
+	target, err := h.scenarios().flash.Presets.List(ctx, showing)
 	if err != nil {
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(held))}
-	for _, one := range held {
+	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(target))}
+	for _, one := range target {
 		out.Presets = append(out.Presets, &v1.PresetSummary{Path: one.Path, Title: one.Title})
 	}
 	return connect.NewResponse(out), nil
@@ -97,18 +97,18 @@ func (h *presetsHandler) ScheduleDeck(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.ScheduleDeckResponse{
-			At: writeFingerprint(at), IsUnlevelled: behind,
+			At: writeFingerprint(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
 		return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
 	return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
@@ -128,7 +128,7 @@ func (h *presetsHandler) ReadPreset(
 	}
 
 	out := &v1.ReadPresetResponse{Bounds: presetwire.GetSettingsBounds()}
-	if reason, refused := convertOutcomeToErrorCode(found.Outcome); refused {
+	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
@@ -155,10 +155,10 @@ func (h *presetsHandler) WritePreset(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WritePresetResponse{
-			At: writeFingerprint(at), IsUnlevelled: behind,
+			At: writeFingerprint(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.
@@ -169,8 +169,8 @@ func (h *presetsHandler) WritePreset(
 		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
 		return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
 	return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
@@ -190,9 +190,9 @@ func (h *presetsHandler) ComputeCurve(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	held, err := h.scenarios().flash.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
+	target, err := h.scenarios().flash.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
 	if err != nil {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(held)}), nil
+	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(target)}), nil
 }

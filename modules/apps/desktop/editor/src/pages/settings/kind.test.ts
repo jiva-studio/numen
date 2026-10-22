@@ -11,14 +11,14 @@ import type { WindowHandle } from '@/entities/tab'
 
 /** A window, writing down what it was asked to open. */
 const window_ = () => {
-  const opened: string[] = []
+  const openedTab: string[] = []
   const handle = {
     openTab: async (kind: string) => {
-      opened.push(kind)
+      openedTab.push(kind)
       return kind
     },
   } as unknown as WindowHandle
-  return { handle, opened }
+  return { handle, opened: openedTab }
 }
 
 const installation = (): Installation =>
@@ -50,9 +50,9 @@ const installation = (): Installation =>
 
 describe('the settings tab', () => {
   it('holds the installation the window already keeps', () => {
-    const held = installation()
-    const settings = useSettingsTab(window_().handle, held)
-    expect(settings.state.installation).toBe(held)
+    const target = installation()
+    const settings = useSettingsTab(window_().handle, target)
+    expect(settings.state.installation).toBe(target)
     expect(settings.kind.open('', 'tab')).toBe(settings.state)
   })
 
@@ -76,13 +76,13 @@ describe('the settings tab', () => {
     expect(settings.kind.identity?.('something else')).toBe(SETTINGS)
   })
 
-  it('is put in front when the window is asked to show it', () => {
+  it('is put in front when the window is requested to show it', () => {
     const { handle, opened } = window_()
     useSettingsTab(handle, installation()).openSettings()
     expect(opened).toEqual([SETTINGS])
   })
 
-  it('is not open until a tab is opened or settings are asked for', () => {
+  it('is not open until a tab is opened or settings are requested for', () => {
     const settings = useSettingsTab(window_().handle, installation())
     expect(settings.isOpen.value).toBe(false)
   })
@@ -93,7 +93,7 @@ describe('the settings tab', () => {
     expect(settings.isOpen.value).toBe(true)
   })
 
-  it('is open once the settings are asked for', () => {
+  it('is open once the settings are requested for', () => {
     const settings = useSettingsTab(window_().handle, installation())
     settings.openSettings()
     expect(settings.isOpen.value).toBe(true)

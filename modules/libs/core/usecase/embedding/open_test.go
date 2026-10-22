@@ -24,7 +24,7 @@ func is(name string) port.EmbeddingModel {
 
 // saying is a provider that answers every text with the one vector it was
 // given. It counts the times it was asked the text two providers are compared
-// over, and the times it was let go of.
+// over, and the times it was release.
 type saying struct {
 	model  port.EmbeddingModel
 	vector []float32
@@ -60,7 +60,7 @@ func refuseFetch(context.Context, func(done, total int64)) (port.Embedder, error
 }
 
 // An installation that places its index nowhere embeds with nothing, and there
-// is nothing to let go of.
+// is nothing to release.
 func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
 	filling, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.Provider{}, embedding.Provider{})
@@ -83,11 +83,11 @@ func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
 // Saying nothing about questions is asking the way the vault was indexed: one
 // provider is one model, waited for on the way in and not waited for on the way
 // out.
-func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
-	held := newSaying("one-provider", 1, 0, 0)
+func TestOneProviderIsOneModelObservedTwoWays(t *testing.T) {
+	target := newSaying("one-provider", 1, 0, 0)
 
 	filling, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
-		embedding.NewReached(held.GetModel(), "one-provider", held), embedding.Provider{})
+		embedding.NewReached(target.GetModel(), "one-provider", target), embedding.Provider{})
 	if filling == nil || asking == nil {
 		t.Fatalf("got %v and %v", filling, asking)
 	}
@@ -97,7 +97,7 @@ func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	if err := letGo(); err != nil {
 		t.Fatal(err)
 	}
-	if held.closed.Load() == 0 {
+	if target.closed.Load() == 0 {
 		t.Error("the provider was not let go of")
 	}
 }
@@ -115,8 +115,8 @@ func TestTwoProvidersAnsweringAlikeAreOneModel(t *testing.T) {
 	defer func() { _ = letGo() }()
 
 	waitForComparison(t, first, second)
-	if listed := tasks.List(); len(listed) != 0 {
-		t.Errorf("two providers of one model are in the list: %+v", listed)
+	if items := tasks.List(); len(items) != 0 {
+		t.Errorf("two providers of one model are in the list: %+v", items)
 	}
 	if second.closed.Load() != 0 {
 		t.Error("a provider that agreed was let go of")
@@ -130,7 +130,7 @@ func TestTwoProvidersAnsweringAlikeAreOneModel(t *testing.T) {
 }
 
 // Two providers that answer one text differently are two models, and the second
-// is let go of: a question embedded in another space finds nothing the first
+// is release: a question embedded in another space finds nothing the first
 // indexed. It is said in the list of what is being done.
 func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 	first := newSaying("indexed-here", 1, 0, 0)
@@ -142,12 +142,12 @@ func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 		embedding.NewReached(second.GetModel(), "somewhere-else", second))
 	defer func() { _ = letGo() }()
 
-	held := waitForFailures(t, tasks, 1)
-	if len(held) != 1 {
-		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
+	target := waitForFailures(t, tasks, 1)
+	if len(target) != 1 {
+		t.Fatalf("the list holds %d pieces of work: %+v", len(target), target)
 	}
-	if held[0].About != "somewhere-else" {
-		t.Errorf("the provider that answers questions is in the list as %q", held[0].About)
+	if target[0].About != "somewhere-else" {
+		t.Errorf("the provider that answers questions is in the list as %q", target[0].About)
 	}
 	if _, err := asking.Embed(t.Context(), []string{"anything"}); err == nil {
 		t.Error("a question was embedded by a model the index knows nothing about")
@@ -157,7 +157,7 @@ func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 
 // A comparison nobody got an answer out of is not agreement. The model the
 // index would be filled by never arrives, so the provider that answers
-// questions is let go of, and both halves are in the list under what stopped
+// questions is release, and both halves are in the list under what stopped
 // them.
 func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 	second := newSaying("asked-elsewhere", 1, 0, 0)
@@ -168,8 +168,8 @@ func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 		embedding.NewReached(second.GetModel(), "asked-elsewhere", second))
 	defer func() { _ = letGo() }()
 
-	if held := waitForFailures(t, tasks, 2); len(held) != 2 {
-		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
+	if target := waitForFailures(t, tasks, 2); len(target) != 2 {
+		t.Fatalf("the list holds %d pieces of work: %+v", len(target), target)
 	}
 	waitFor(t, func() bool { return second.closed.Load() > 0 }, "the second provider was not let go of")
 }
@@ -183,27 +183,27 @@ func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
 		embedding.NewFetched(is("one/repository"), "one/repository", refuseFetch))
 	defer func() { _ = letGo() }()
 
-	held := waitForFailures(t, tasks, 2)
-	if len(held) != 2 {
-		t.Fatalf("two providers are %d lines: %+v", len(held), held)
+	target := waitForFailures(t, tasks, 2)
+	if len(target) != 2 {
+		t.Fatalf("two providers are %d lines: %+v", len(target), target)
 	}
-	if held[0].ID == held[1].ID {
-		t.Errorf("two providers share the line %q", held[0].ID)
+	if target[0].ID == target[1].ID {
+		t.Errorf("two providers share the line %q", target[0].ID)
 	}
 }
 
 // A provider reached at once is nothing a person waits for, so it stands in no
 // list.
-func TestAProviderReachedAtOnceStandsInNoList(t *testing.T) {
-	held := newSaying("reached-at-once", 1, 0, 0)
+func TestAProviderReachedAtOnceExistsInNoList(t *testing.T) {
+	target := newSaying("reached-at-once", 1, 0, 0)
 
 	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(t.Context(), tasks,
-		embedding.NewReached(held.GetModel(), "reached-at-once", held), embedding.Provider{})
+		embedding.NewReached(target.GetModel(), "reached-at-once", target), embedding.Provider{})
 	defer func() { _ = letGo() }()
 
-	if listed := tasks.List(); len(listed) != 0 {
-		t.Errorf("a provider nobody waits for is getting ready: %+v", listed)
+	if items := tasks.List(); len(items) != 0 {
+		t.Errorf("a provider nobody waits for is getting ready: %+v", items)
 	}
 }
 
@@ -211,10 +211,10 @@ func TestAProviderReachedAtOnceStandsInNoList(t *testing.T) {
 // of nothing against a size is a row sitting at nought per cent for the length
 // of a download, which says less than a ring that turns.
 func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
-	told := make(chan func(done, total int64), 1)
+	progressCh := make(chan func(done, total int64), 1)
 	stop := make(chan struct{})
 	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
-		told <- tell
+		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
 	}
@@ -233,7 +233,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 		t.Errorf("a line that has counted nothing is drawn against %d", at.Total)
 	}
 
-	tell := <-told
+	tell := <-progressCh
 
 	// The cache is read before the first bytes land, and the size is known.
 	tell(0, 90_000_000)
@@ -252,7 +252,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 
 	// The model never turns up, and the line stays in the list under the reason.
 	close(stop)
-	if held := waitForFailures(t, tasks, 1); held[0].Error == "" {
+	if target := waitForFailures(t, tasks, 1); target[0].Error == "" {
 		t.Error("a model that never arrived left no reason")
 	}
 }
@@ -260,15 +260,15 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 // A model that arrived is no longer being got ready: what is in the list is
 // what is happening, not a record of what happened.
 func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
-	held := newSaying("a/model", 1, 0, 0)
+	target := newSaying("a/model", 1, 0, 0)
 	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
 		tell(90_000_000, 90_000_000)
-		return held, nil
+		return target, nil
 	}
 
 	tasks := run.NewTasks()
 	filling, _, letGo := embedding.Open(t.Context(), tasks,
-		embedding.NewFetched(held.GetModel(), "a/model", opening), embedding.Provider{})
+		embedding.NewFetched(target.GetModel(), "a/model", opening), embedding.Provider{})
 	defer func() { _ = letGo() }()
 
 	if _, err := filling.Embed(t.Context(), []string{"anything"}); err != nil {
@@ -320,27 +320,27 @@ func waitFor(t *testing.T, done func() bool, why string) {
 // getOnlyTask is the one piece of work in the list.
 func getOnlyTask(t *testing.T, tasks *run.Tasks) run.Task {
 	t.Helper()
-	held := tasks.List()
-	if len(held) != 1 {
-		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
+	target := tasks.List()
+	if len(target) != 1 {
+		t.Fatalf("the list holds %d pieces of work: %+v", len(target), target)
 	}
-	return held[0]
+	return target[0]
 }
 
 // waitForFailures is the list once the number of things that stopped badly is
 // reached.
 func waitForFailures(t *testing.T, tasks *run.Tasks, want int) []run.Task {
 	t.Helper()
-	var held []run.Task
+	var target []run.Task
 	waitFor(t, func() bool {
-		held = tasks.List()
+		target = tasks.List()
 		got := 0
-		for _, at := range held {
+		for _, at := range target {
 			if at.Error != "" {
 				got++
 			}
 		}
 		return got == want
 	}, "the list never held what stopped badly")
-	return held
+	return target
 }

@@ -24,7 +24,7 @@ const createReviewDays = (
 })
 
 describe('what a vault was answered on', () => {
-  it('is held by the day it was answered on', async () => {
+  it('is retained by the day it was answered on', async () => {
     const cards: ReviewDaysClient = {
       async listReviewDays() {
         return createReviewDays(
@@ -119,12 +119,12 @@ describe('what a vault was answered on', () => {
 
 // A vault grows a day for every day it is reviewed, and the grid draws the
 // stretch it has room for. The ask is that stretch and not the whole of it.
-describe('the days asked about', () => {
+describe('the days requested about', () => {
   it('is the stretch the widest grid could draw, and not every day there is', async () => {
-    let asked: { vault: string; from: string; to: string } | null = null
+    let request: { vault: string; from: string; to: string } | null = null
     const cards: ReviewDaysClient = {
-      listReviewDays(request) {
-        asked = request
+      listReviewDays(query) {
+        request = query
         return Promise.resolve({ days: [], due: [], streak: 0, answered: 0 })
       },
     }
@@ -132,27 +132,27 @@ describe('the days asked about', () => {
 
     await one.read('01VAULT')
 
-    expect(asked).not.toBeNull()
-    const said = asked as unknown as { from: string; to: string }
-    expect(said.from).not.toBe('')
-    expect(said.to).not.toBe('')
-    expect(said.from < said.to).toBe(true)
+    expect(request).not.toBeNull()
+    const response = request as unknown as { from: string; to: string }
+    expect(response.from).not.toBe('')
+    expect(response.to).not.toBe('')
+    expect(response.from < response.to).toBe(true)
 
     // A grid with less room asks about less time.
     const narrow = useReviewDays({ cards, reportError: () => {}, widest: () => 200 })
     await narrow.read('01VAULT')
-    const less = asked as unknown as { from: string; to: string }
-    expect(less.from > said.from).toBe(true)
+    const less = request as unknown as { from: string; to: string }
+    expect(less.from > response.from).toBe(true)
   })
 })
 
-describe('what is held of a vault after another answer', () => {
+describe('what is retained of a vault after another answer', () => {
   it('holds nothing, and asks nothing, once it is read for no vault at all', async () => {
-    const asked: string[] = []
+    const request: string[] = []
     const errors: unknown[] = []
     const cards: ReviewDaysClient = {
       async listReviewDays({ vault }) {
-        asked.push(vault)
+        request.push(vault)
         return createReviewDays([['2026-08-29', 3]], 1, [['2026-08-31', 12]])
       },
     }
@@ -161,7 +161,7 @@ describe('what is held of a vault after another answer', () => {
 
     await one.read('')
 
-    expect(asked).toEqual(['01VAULT'])
+    expect(request).toEqual(['01VAULT'])
     expect(errors).toHaveLength(0)
     expect(one.days.value.size).toBe(0)
     expect(one.due.value.size).toBe(0)
@@ -170,7 +170,7 @@ describe('what is held of a vault after another answer', () => {
     expect(one.of.value).toBe('')
   })
 
-  it('drops what it held of a vault whose days could not be read again', async () => {
+  it('drops what it retained of a vault whose days could not be read again', async () => {
     let fails = false
     const cards: ReviewDaysClient = {
       async listReviewDays() {

@@ -52,7 +52,7 @@ type cachedSchedule struct {
 //
 // What is kept between launches is a cache: a file listing the runs it was
 // worked out from. A cache filled from every run the vault now holds, by this
-// scheduler, is used as it stands. Anything else is the whole history read
+// scheduler, is used currently. Anything else is the whole history read
 // again — a run arriving from another machine holds answers older than ones
 // already counted, and a schedule depends on the order of the answers, so
 // nothing can be added to what the later ones produced.
@@ -100,7 +100,7 @@ func (u Schedules) Presets() Presets {
 }
 
 // assignment is which scheduler each card face is worked out by, and what that
-// assignment comes to.
+// assignment evaluates to.
 //
 // The mark is what says a cache is out of date. A target moving, a deck
 // repointed, a card moved between decks and a preset placing its cards
@@ -161,32 +161,32 @@ func (u Schedules) getAssignmentFrom(
 	}
 
 	by := make(map[string]review.SchedulingPolicy)
-	under := make(map[review.CardFaceID]review.SchedulingPolicy, len(faces))
-	asked := make(map[string]string, len(faces))
+	underMap := make(map[review.CardFaceID]review.SchedulingPolicy, len(faces))
+	request := make(map[string]string, len(faces))
 	for _, one := range faces {
-		path, known := asked[one.Deck]
-		if !known {
+		path, recognized := request[one.Deck]
+		if !recognized {
 			p, err := reads.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return assignment{}, err
 			}
 			path = p.Path
-			asked[one.Deck] = path
-			if _, held := by[path]; !held {
+			request[one.Deck] = path
+			if _, target := by[path]; !target {
 				by[path] = review.SchedulingPolicy{By: u.getScheduler(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
-		under[one.ID] = by[path]
+		underMap[one.ID] = by[path]
 	}
 
-	marks := make([]string, 0, len(under)+2)
+	marks := make([]string, 0, len(underMap)+2)
 	marks = append(marks, u.by.GetName(), u.getDayStartMark())
-	for face, one := range under {
+	for face, one := range underMap {
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.GetName()+"\t"+one.Preset.GetPlacing())
 	}
 	out.mark = getMark(marks)
 	out.under = func(face review.CardFaceID) review.SchedulingPolicy {
-		if one, held := under[face]; held {
+		if one, targetVal := underMap[face]; targetVal {
 			return one
 		}
 		return review.SchedulingPolicy{By: u.by, Preset: review.Defaults()}
@@ -236,11 +236,11 @@ func (u Schedules) Execute(
 		return out, nil
 	}
 
-	held, err := log.Read(ctx, v)
+	target, err := log.Read(ctx, v)
 	if err != nil {
 		return nil, err
 	}
-	return u.replayAndRemember(ctx, v, held, asks), nil
+	return u.replayAndRemember(ctx, v, target, asks), nil
 }
 
 // GetFromLog is where a log that has already been read leaves every card face.

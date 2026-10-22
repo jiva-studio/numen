@@ -1,5 +1,5 @@
 /**
- * A hand left on a box opens it where it stands, until the whole of a title too
+ * A hand left on a box opens it at its current position, until the whole of a title too
  * long for it is there. Every other box keeps its place.
  *
  * The opening is drawn frame by frame, off the same clock the plex moves on.
@@ -77,12 +77,12 @@ export function useExpansion(
   clock: Clock = browserClock,
 ): Ref<number> {
   const open = ref(0)
-  let waiting: ReturnType<typeof setTimeout> | undefined
+  let expandTimer: ReturnType<typeof setTimeout> | undefined
   let frame: number | null = null
 
   const stopWaiting = () => {
-    clearTimeout(waiting)
-    waiting = undefined
+    clearTimeout(expandTimer)
+    expandTimer = undefined
   }
 
   const stopMoving = () => {
@@ -117,7 +117,7 @@ export function useExpansion(
       stopWaiting()
       move(0)
       if (what === null || ms <= 0) return
-      waiting = setTimeout(() => move(1), ms)
+      expandTimer = setTimeout(() => move(1), ms)
     },
     { immediate: true },
   )

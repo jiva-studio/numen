@@ -21,7 +21,7 @@ const relativeCorpus = "../../../../../../../resources/mahabharata"
 // moves a book from one tier to another has changed what a reader is shown, and
 // has to be looked at.
 //
-// Half the corpus names nothing: sixteen of those twenty books carry no heading
+// Half the corpus is empty: sixteen of those twenty books carry no heading
 // at all, and four carry one heading, which names the book.
 var wantStructure = map[epub.Structure]int{
 	epub.FromNavigation: 16,
@@ -169,21 +169,21 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 	t.Helper()
 
 	for _, doc := range book.Documents {
-		drawn, err := book.Markup(doc.Path)
+		rendered, err := book.Markup(doc.Path)
 		if err != nil {
 			t.Fatalf("markup of %s: %v", doc.Path, err)
 		}
-		if drawn.Offset != doc.Offset || drawn.Length != doc.Length {
+		if rendered.Offset != doc.Offset || rendered.Length != doc.Length {
 			t.Fatalf("markup of %s runs from %d for %d, and the document from %d for %d",
-				doc.Path, drawn.Offset, drawn.Length, doc.Offset, doc.Length)
+				doc.Path, rendered.Offset, rendered.Length, doc.Offset, doc.Length)
 		}
 		want := book.Text[doc.Offset : doc.Offset+doc.Length]
-		if got := getNodeText(drawn.Nodes); got != want {
+		if got := getNodeText(rendered.Nodes); got != want {
 			t.Fatalf("the markup of %s says %d bytes and its text is %d:\n%q\n%q",
 				doc.Path, len(got), len(want), excerpt(got, 0), excerpt(want, 0))
 		}
-		checkSpans(t, book.Text, doc, drawn.Nodes, doc.Offset+doc.Length)
-		checkHTML(t, book, doc, drawn)
+		checkSpans(t, book.Text, doc, rendered.Nodes, doc.Offset+doc.Length)
+		checkHTML(t, book, doc, rendered)
 	}
 }
 

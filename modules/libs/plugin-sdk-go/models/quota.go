@@ -83,11 +83,11 @@ func reserve(ctx context.Context, root string, want int64, part string, touch ti
 	if err != nil {
 		return nil, fmt.Errorf("counting the bytes under %s: %w", root, err)
 	}
-	left := max(GetQuota()-used, 0)
+	remaining := max(GetQuota()-used, 0)
 	if want < 0 {
-		want = left
+		want = remaining
 	}
-	if want > left {
+	if want > remaining {
 		return nil, fmt.Errorf("%s holds %d bytes, and %d more would pass the %d the %s allows", root, used, want, GetQuota(), EnvQuota)
 	}
 	file, err := os.CreateTemp(root, "reservation-*"+reserveSuffix)

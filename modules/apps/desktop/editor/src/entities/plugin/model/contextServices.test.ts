@@ -99,7 +99,7 @@ const FILE_WRITES: Record<string, Call> = {
 
 describe('a note a plugin writes', () => {
   it.each(Object.entries(NOTE_WRITES))(
-    'is refused through %s without vault:write',
+    'fails through %s without vault:write',
     async (_, call) => {
       const { context } = createContext(['vault:read'])
 
@@ -130,9 +130,9 @@ const BUFFER_WRITES: Record<string, Call> = {
   addFlushHandler: (c) => c.buffers!.addFlushHandler(async () => {}),
 }
 
-describe('the open files a plugin hands the window', () => {
+describe('the open files a plugin passes the window', () => {
   it.each(Object.entries(BUFFER_WRITES))(
-    'are refused through %s without vault:write',
+    'fail through %s without vault:write',
     async (_, call) => {
       const { context } = createContext(['vault:read'])
 
@@ -180,7 +180,7 @@ describe('the registrations of a plugin in the open files', () => {
 
 describe('a file a plugin writes', () => {
   it.each(Object.entries(FILE_WRITES))(
-    'is refused through %s without vault:write',
+    'fails through %s without vault:write',
     async (_, call) => {
       const { context } = createContext(['vault:read'])
 
@@ -211,7 +211,7 @@ describe('a command a plugin runs over the vault', () => {
   const row = { paths: ['a.md'], name: 'a', source: 'note' as const }
 
   it.each(['remove', 'child', 'title', 'transcribe'])(
-    'is refused for %s without vault:write',
+    'fails for %s without vault:write',
     (id) => {
       const { context, workspace } = createContext(['vault:read'])
 
@@ -274,7 +274,7 @@ const ASKING: Record<string, [string, Call]> = {
 
 describe('the agent a plugin asks', () => {
   it.each(Object.entries(ASKING))(
-    'is refused through %s without its permission',
+    'fails through %s without its permission',
     async (_, [permission, call]) => {
       const { context } = createContext([])
 
@@ -303,20 +303,20 @@ describe('the agent a plugin asks', () => {
 
   it('reads, writes and lists the settings under agent, and no others', async () => {
     const { context, agent } = createContext([])
-    const asked = getAgent(context)
+    const request = getAgent(context)
 
-    await asked.writeSetting(['agent', 'use'], 'zeta')
-    asked.getSetting(['agent', 'use'])
-    asked.getModelsAt(['agent', 'zeta', 'model'])
+    await request.writeSetting(['agent', 'use'], 'zeta')
+    request.getSetting(['agent', 'use'])
+    request.getModelsAt(['agent', 'zeta', 'model'])
 
     expect(agent.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'zeta')
     expect(agent.getSetting).toHaveBeenCalledWith(['agent', 'use'])
     expect(agent.getModelsAt).toHaveBeenCalledWith(['agent', 'zeta', 'model'])
 
     const elsewhere = ['plugins', 'md.numen.other', 'enabled']
-    expect(asked.getSetting(elsewhere)).toBeUndefined()
-    expect(asked.getModelsAt(elsewhere)).toStrictEqual([])
-    await expect(asked.writeSetting(elsewhere, false)).rejects.toThrowError(/agent settings/)
+    expect(request.getSetting(elsewhere)).toBeUndefined()
+    expect(request.getModelsAt(elsewhere)).toStrictEqual([])
+    await expect(request.writeSetting(elsewhere, false)).rejects.toThrowError(/agent settings/)
     expect(agent.getSetting).toHaveBeenCalledTimes(1)
     expect(agent.writeSetting).toHaveBeenCalledTimes(1)
   })

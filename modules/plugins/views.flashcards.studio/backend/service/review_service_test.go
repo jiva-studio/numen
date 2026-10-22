@@ -34,12 +34,12 @@ func answerCard(t *testing.T, api *API, vault string, session *v1.StartSessionRe
 	return out.Msg.GetAnswer()
 }
 
-// A card that has been answered before comes back carrying where it stands: it
+// A card that has been answered before comes back carrying at its current position: it
 // has been seen, and it is due at an instant the page can read. A card nobody
 // has answered carries neither.
-func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+func TestACardAlreadyAnsweredReachesBackWithWhereItExists(t *testing.T) {
+	api, target := newAPI(t, deck)
+	v := target[0]
 
 	first := startSession(t, api, v)
 	for _, card := range first.GetCards() {
@@ -70,14 +70,14 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 // A person hits the wrong key and takes it back, and what they took back is
 // not part of what they answered.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 
 	session := startSession(t, api, v)
-	given := answerCard(t, api, string(v.ID), session)
+	provided := answerCard(t, api, string(v.ID), session)
 
 	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
-		Vault: string(v.ID), Run: session.GetRun(), Answer: given,
+		Vault: string(v.ID), Run: session.GetRun(), Answer: provided,
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -95,40 +95,40 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	}
 }
 
-// Taking back an answer nobody named is the caller's mistake, and is refused as
+// Taking back an answer nobody named is the caller's mistake, and fails as
 // one.
 func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 	session := startSession(t, api, v)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 
 // An answer is taken back on the run it was given on. A run this window never
 // opened is not one to write into.
 func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
-	api, held := newAPI(t, deck)
-	v := held[0]
+	api, target := newAPI(t, deck)
+	v := target[0]
 	session := startSession(t, api, v)
-	given := answerCard(t, api, string(v.ID), session)
+	provided := answerCard(t, api, string(v.ID), session)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
-		Vault: string(v.ID), Run: "nothing", Answer: given,
+		Vault: string(v.ID), Run: "nothing", Answer: provided,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 
 // An answer names the vault it belongs to. One the installation does not hold
-// is refused before a line is written into anybody's review.
-func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
+// fails before a line is written into anybody's review.
+func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
@@ -136,7 +136,7 @@ func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 		Mark: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }
 
@@ -150,7 +150,7 @@ func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 // A window that cannot read the installation's vaults says so. An empty list
 // would read as an installation holding none, which is a person told their
 // vaults are gone.
-func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
+func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	_, _, installation := newAPIOn(t)
 	api := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}})}
 
@@ -164,18 +164,18 @@ func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 		t.Fatalf("a window that cannot read the vaults listed %+v", stream.Msg())
 	}
 	if connect.CodeOf(stream.Err()) != connect.CodeInternal {
-		t.Errorf("refused with %v", connect.CodeOf(stream.Err()))
+		t.Errorf("failed with %v", connect.CodeOf(stream.Err()))
 	}
 }
 
-// A vault the installation does not hold is refused before anything is written.
-func TestTakingBackOnAVaultNobodyHoldsIsRefused(t *testing.T) {
+// A vault the installation does not hold fails before anything is written.
+func TestTakingBackOnAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
 }

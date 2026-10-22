@@ -32,41 +32,41 @@ const findCloseButton = (wrapper: ReturnType<typeof mountWorkspace>, tab: string
 
 describe('a close', () => {
   it('is told to the caller before anything is applied', async () => {
-    let told: unknown
-    const held = mountWorkspace(oneStack(), {
+    let notifiedEvent: unknown
+    const target = mountWorkspace(oneStack(), {
       onClose: () => {
-        told = held.emitted('update:modelValue')
+        notifiedEvent = target.emitted('update:modelValue')
       },
     })
 
-    await findCloseButton(held, 'chat').trigger('click')
+    await findCloseButton(target, 'chat').trigger('click')
 
-    expect(told).toBeUndefined()
-    expect(held.emitted('close')?.[0]?.[0]).toBe('chat')
+    expect(notifiedEvent).toBeUndefined()
+    expect(target.emitted('close')?.[0]?.[0]).toBe('chat')
   })
 
   it('is applied where the caller lets it go', async () => {
-    const held = mountWorkspace()
-    await findCloseButton(held, 'chat').trigger('click')
+    const target = mountWorkspace()
+    await findCloseButton(target, 'chat').trigger('click')
 
-    const after = held.emitted('update:modelValue')?.[0]?.[0] as State
+    const after = target.emitted('update:modelValue')?.[0]?.[0] as State
     expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual(['plex'])
   })
 
   it('leaves the tab standing where the caller holds it', async () => {
     const hold = vi.fn()
-    const held = mountWorkspace(oneStack(), {
+    const target = mountWorkspace(oneStack(), {
       onClose: (_tab: string, take: () => void) => {
         take()
         hold()
       },
     })
 
-    await findCloseButton(held, 'chat').trigger('click')
+    await findCloseButton(target, 'chat').trigger('click')
 
     expect(hold).toHaveBeenCalledOnce()
-    expect(held.emitted('update:modelValue')).toBeUndefined()
-    expect(held.findAll('[data-workspace-tab]')).toHaveLength(2)
+    expect(target.emitted('update:modelValue')).toBeUndefined()
+    expect(target.findAll('[data-workspace-tab]')).toHaveLength(2)
   })
 })
 
@@ -78,64 +78,64 @@ describe('the last tab in the workspace', () => {
   })
 
   it('leaves one pane holding nothing where it is closed', async () => {
-    const held = mountWorkspace(createLoneTab())
-    await findCloseButton(held, 'plex').trigger('click')
+    const tab = mountWorkspace(createLoneTab())
+    await findCloseButton(tab, 'plex').trigger('click')
 
-    const after = held.emitted('update:modelValue')?.[0]?.[0] as State
+    const after = tab.emitted('update:modelValue')?.[0]?.[0] as State
     expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual([])
-    expect(held.findAll('[data-workspace-tab]')).toHaveLength(0)
-    expect(held.findComponent(WorkspacePane).exists()).toBe(true)
+    expect(tab.findAll('[data-workspace-tab]')).toHaveLength(0)
+    expect(tab.findComponent(WorkspacePane).exists()).toBe(true)
   })
 
-  // The silence stands on the arrangement the caller wrote back, not on
+  // The silence relies on the arrangement the caller wrote back, not on
   // anything the workspace kept to itself: a caller holding the tab open sees
   // none of this.
   it('leaves the silence in its place', async () => {
-    const held = mountWorkspace(
+    const target = mountWorkspace(
       createLoneTab(),
       {},
       { silence: '<p class="quiet">Nothing here</p>' },
     )
-    await findCloseButton(held, 'plex').trigger('click')
+    await findCloseButton(target, 'plex').trigger('click')
 
-    const after = held.emitted('update:modelValue')?.[0]?.[0] as State
+    const after = target.emitted('update:modelValue')?.[0]?.[0] as State
     expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual([])
-    await held.setProps({ modelValue: after })
+    await target.setProps({ modelValue: after })
 
-    expect(held.find('.quiet').exists()).toBe(true)
-    expect(held.find('[data-workspace-strip]').exists()).toBe(false)
+    expect(target.find('.quiet').exists()).toBe(true)
+    expect(target.find('[data-workspace-strip]').exists()).toBe(false)
   })
 })
 
-describe('a menu asked for on a tab', () => {
+describe('a menu requested for on a tab', () => {
   it('is told to the caller with the tab and the point', async () => {
-    const held = mountWorkspace()
+    const target = mountWorkspace()
 
-    await held
+    await target
       .find('[data-workspace-tab="chat"]')
       .trigger('contextmenu', { clientX: 5, clientY: 6 })
 
-    expect(held.emitted('tab-context-menu')).toStrictEqual([['chat', { x: 5, y: 6 }]])
+    expect(target.emitted('tab-context-menu')).toStrictEqual([['chat', { x: 5, y: 6 }]])
   })
 })
 
 describe('what a tab carries', () => {
   it('reaches the strip from the tabs the caller declared', () => {
-    const held = mountWorkspace(oneStack(), {
+    const target = mountWorkspace(oneStack(), {
       tabs: [
         { id: 'plex', title: 'Plex' },
         { id: 'chat', title: 'Chat', mark: 'unsaved' },
       ],
     })
 
-    expect(held.find('[data-workspace-tab="chat"] .tab__mark').attributes('aria-label')).toBe(
+    expect(target.find('[data-workspace-tab="chat"] .tab__mark').attributes('aria-label')).toBe(
       'unsaved',
     )
-    expect(held.find('[data-workspace-tab="plex"] .tab__mark').exists()).toBe(false)
+    expect(target.find('[data-workspace-tab="plex"] .tab__mark').exists()).toBe(false)
   })
 
   it('is drawn by the caller where the caller draws one', () => {
-    const held = mountWorkspace(
+    const target = mountWorkspace(
       oneStack(),
       {
         tabs: [
@@ -146,8 +146,8 @@ describe('what a tab carries', () => {
       { mark: '<i class="mine">{{ params.id }}: {{ params.mark }}</i>' },
     )
 
-    expect(held.find('.mine').text()).toBe('chat: stuck')
-    expect(held.find('.tab__mark').exists()).toBe(false)
+    expect(target.find('.mine').text()).toBe('chat: stuck')
+    expect(target.find('.tab__mark').exists()).toBe(false)
   })
 })
 
@@ -160,39 +160,39 @@ describe('what is drawn before a tab’s name', () => {
     mountWorkspace(state, {}, { icon: '<i class="mine">{{ params.id }}</i>' })
 
   it('reaches the tabs of a workspace of one pane', () => {
-    const held = mountWithIcon(oneStack())
+    const target = mountWithIcon(oneStack())
 
-    expect(held.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
+    expect(target.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
   })
 
   it('reaches the tabs of every pane of a workspace that is split', () => {
-    const held = mountWithIcon(sideBySide())
+    const target = mountWithIcon(sideBySide())
 
-    expect(held.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
+    expect(target.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
   })
 
   it('is nothing where the caller draws none, and takes no room', () => {
-    const held = mountWorkspace(sideBySide())
+    const target = mountWorkspace(sideBySide())
 
-    expect(held.find('.tab__icon').exists()).toBe(false)
+    expect(target.find('.tab__icon').exists()).toBe(false)
   })
 })
 
 describe('the strip under a keyboard', () => {
   it('shows what an arrow reaches', async () => {
-    const held = mountWorkspace()
-    await held.find('[data-workspace-tab="plex"]').trigger('keydown', { key: 'ArrowRight' })
+    const target = mountWorkspace()
+    await target.find('[data-workspace-tab="plex"]').trigger('keydown', { key: 'ArrowRight' })
 
-    const after = held.emitted('update:modelValue')?.[0]?.[0] as State
+    const after = target.emitted('update:modelValue')?.[0]?.[0] as State
     expect(after.root.kind === 'pane' && after.root.active).toBe('chat')
-    expect(held.emitted('activate')?.[0]?.[0]).toBe('chat')
+    expect(target.emitted('activate')?.[0]?.[0]).toBe('chat')
   })
 })
 
 describe('a tab dragged out of the workspace', () => {
   it('emits tear-off when released outside any drop target', async () => {
-    const held = mountWorkspace()
-    const tab = held.find('[data-workspace-tab="plex"]')
+    const target = mountWorkspace()
+    const tab = target.find('[data-workspace-tab="plex"]')
     tab.element.dispatchEvent(
       new PointerEvent('pointerdown', { button: 0, clientX: 200, clientY: 200, bubbles: true }),
     )
@@ -201,6 +201,6 @@ describe('a tab dragged out of the workspace', () => {
     )
     window.dispatchEvent(new PointerEvent('pointerup', { clientX: 10, clientY: 10, bubbles: true }))
 
-    expect(held.emitted('tear-off')).toStrictEqual([['plex', { x: 10, y: 10 }]])
+    expect(target.emitted('tear-off')).toStrictEqual([['plex', { x: 10, y: 10 }]])
   })
 })

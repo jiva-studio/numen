@@ -2,7 +2,7 @@
 /**
  * A person who goes in and comes back out finds the window as they opened it.
  *
- * What a screen took up is declared beside the screen and let go of when the
+ * What a screen took up is declared beside the screen and release when the
  * screen is left. Nothing here names those holdings: it walks everything the
  * window hands out and compares the round trip against the opening. So a
  * collaborator left un-forgotten fails this whether or not anybody remembered
@@ -32,8 +32,8 @@ const wire = vi.hoisted(() => {
       async *read(): AsyncGenerator<unknown> {
         for (;;) {
           while (queue.length) yield queue.shift()
-          await new Promise<void>((done) => {
-            wake = done
+          await new Promise<void>((isDone) => {
+            wake = isDone
           })
         }
       },
@@ -88,8 +88,8 @@ vi.mock('@/shared/clients', async (original) => ({
       })
     },
     watchReloads: () => wire.reloads.read(),
-    listReviewDays: async (asked: { vault: string; from: string; to: string }) => {
-      wire.daysAsked.push(asked)
+    listReviewDays: async (request: { vault: string; from: string; to: string }) => {
+      wire.daysAsked.push(request)
       return {
         days: [
           {
@@ -108,12 +108,12 @@ vi.mock('@/shared/clients', async (original) => ({
         answered: 3,
       }
     },
-    getVaultDeckPreset: async (asked: unknown) => {
-      wire.presetsAsked.push(asked)
+    getVaultDeckPreset: async (request: unknown) => {
+      wire.presetsAsked.push(request)
       return { preset: undefined }
     },
-    getDeckNeighbourhood: async (asked: unknown) => {
-      wire.notesAsked.push(asked)
+    getDeckNeighbourhood: async (request: unknown) => {
+      wire.notesAsked.push(request)
       return {
         notes: [
           {
@@ -129,8 +129,8 @@ vi.mock('@/shared/clients', async (original) => ({
         unread: 0,
       }
     },
-    startSession: async (asked: unknown) => {
-      wire.sessionsAsked.push(asked)
+    startSession: async (request: unknown) => {
+      wire.sessionsAsked.push(request)
       if (wire.isStartRefused) {
         throw new ConnectError('the vault is closing', Code.FailedPrecondition)
       }
@@ -152,12 +152,12 @@ vi.mock('@/shared/clients', async (original) => ({
         ...wire.opened,
       }
     },
-    answerCard: async (asked: { mark: string }) => {
-      wire.answered.push(asked)
+    answerCard: async (request: { mark: string }) => {
+      wire.answered.push(request)
       return { answer: 'answer-1' }
     },
-    takeBackAnswer: async (asked: unknown) => {
-      wire.takenBack.push(asked)
+    takeBackAnswer: async (request: unknown) => {
+      wire.takenBack.push(request)
       return {}
     },
   },
@@ -171,7 +171,7 @@ const { useWindow } = await import('./window')
 
 type Window = ReturnType<typeof useWindow>
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /**
  * Everything the window hands out, as plain values: a ref stands for what it
@@ -180,10 +180,10 @@ const settle = () => new Promise((done) => setTimeout(done, 0))
 const shot = (value: unknown): unknown => {
   if (isRef(value)) return shot(value.value)
   if (typeof value === 'function') return null
-  if (value instanceof Map) return [...value].map(([key, held]) => [key, shot(held)])
+  if (value instanceof Map) return [...value].map(([key, val]) => [key, shot(val)])
   if (Array.isArray(value)) return value.map(shot)
   if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([key, held]) => [key, shot(held)]))
+    return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, shot(val)]))
   }
   return value
 }
@@ -198,11 +198,11 @@ const Page = defineComponent({
 
 /** The window made, in a page, with the counts on the screen. */
 const openWindow = async ({ isPageDrawn = true } = {}) => {
-  let held: Window | null = null
+  let target: Window | null = null
   const page = mount(
     defineComponent({
       setup() {
-        held = useWindow()
+        target = useWindow()
         return () => (isPageDrawn ? h(Page, { ref: 'page' }) : null)
       },
     }),
@@ -210,16 +210,16 @@ const openWindow = async ({ isPageDrawn = true } = {}) => {
   pages.push(page)
   await settle()
   await settle()
-  return held as unknown as Window
+  return target as unknown as Window
 }
 
 /** The window taken into the session over the vault's one deck. */
 const openSession = async () => {
-  const opened = await openWindow()
-  opened.vaults.choose('roots')
+  const sessionWindow = await openWindow()
+  sessionWindow.vaults.choose('roots')
   await settle()
-  await opened.decks.start('decks/Suffixes.md')
-  return opened
+  await sessionWindow.decks.start('decks/Suffixes.md')
+  return sessionWindow
 }
 
 /** A key pressed anywhere in the window, as the page then holds it. */
@@ -307,17 +307,17 @@ describe('a person who went in and came back out', () => {
 describe('a vault chosen', () => {
   it('ends the counting of the vaults', async () => {
     wire.isCountHeld = true
-    const opened = await openWindow()
+    const sessionWindow = await openWindow()
     expect(wire.counts[0]!.aborted).toBe(false)
 
-    opened.vaults.choose('roots')
+    sessionWindow.vaults.choose('roots')
 
     expect(wire.counts[0]!.aborted).toBe(true)
   })
 
   it('asks which preset schedules each of its decks', async () => {
-    const opened = await openWindow()
-    opened.vaults.choose('roots')
+    const sessionWindow = await openWindow()
+    sessionWindow.vaults.choose('roots')
     await settle()
 
     expect(wire.presetsAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
@@ -326,37 +326,37 @@ describe('a vault chosen', () => {
   it('asks for the days the wider of the screen and the page would draw', async () => {
     const askDays = async (screen: number, page: number) => {
       setWidths(screen, page)
-      const opened = await openWindow()
-      opened.vaults.choose('roots')
+      const sessionWindow = await openWindow()
+      sessionWindow.vaults.choose('roots')
       await settle()
       const { from, to } = wire.daysAsked.at(-1)!
       return { from, to }
     }
 
-    const wide = await askDays(2000, 2000)
-    expect(await askDays(400, 2000)).toEqual(wide)
-    expect(await askDays(2000, 400)).toEqual(wide)
-    expect(await askDays(400, 400)).not.toEqual(wide)
+    const wideDays = await askDays(2000, 2000)
+    expect(await askDays(400, 2000)).toEqual(wideDays)
+    expect(await askDays(2000, 400)).toEqual(wideDays)
+    expect(await askDays(400, 400)).not.toEqual(wideDays)
   })
 })
 
 describe('a deck written underneath the window', () => {
   it('reads the days of the open vault again, and of no vault while none is open', async () => {
-    const opened = await openWindow()
+    const sessionWindow = await openWindow()
 
     wire.reloads.send({ reload: true })
     await settle()
     await settle()
     expect(wire.daysAsked).toHaveLength(0)
 
-    opened.vaults.choose('roots')
+    sessionWindow.vaults.choose('roots')
     await settle()
     wire.reloads.send({ reload: true })
     await settle()
     await settle()
     expect(wire.daysAsked.map((one) => one.vault)).toEqual(['roots', 'roots'])
 
-    await opened.decks.goToVaults()
+    await sessionWindow.decks.goToVaults()
     wire.reloads.send({ reload: true })
     await settle()
     await settle()
@@ -367,70 +367,70 @@ describe('a deck written underneath the window', () => {
 describe('a session sat down to', () => {
   it('says once what it could not act on', async () => {
     wire.opened = { unwritten: ['decks/Suffixes.md'], skipped: 2 }
-    const opened = await openSession()
+    const sessionWindow = await openSession()
 
-    const said = opened.notices.value
-    expect(said).toHaveLength(2)
-    expect(said.every((one) => one.tone === 'caution')).toBe(true)
-    expect(said[0]!.text).toContain('Suffixes')
-    expect(said[1]!.text).toContain('2')
+    const response = sessionWindow.notices.value
+    expect(response).toHaveLength(2)
+    expect(response.every((one) => one.tone === 'caution')).toBe(true)
+    expect(response[0]!.text).toContain('Suffixes')
+    expect(response[1]!.text).toContain('2')
   })
 
   it('names every deck it could not act on, in one line', async () => {
     wire.opened = { unwritten: ['decks/Suffixes.md', 'decks/Prefixes.md'], skipped: 0 }
-    const opened = await openSession()
+    const sessionWindow = await openSession()
 
-    expect(opened.notices.value.map((one) => one.text)).toEqual([
+    expect(sessionWindow.notices.value.map((one) => one.text)).toEqual([
       'Not asked from Suffixes, Prefixes: the deck could not be written.',
     ])
   })
 
   it('says nothing when it could act on everything', async () => {
-    const opened = await openSession()
+    const sessionWindow = await openSession()
 
-    expect(opened.on.value).toBe('session')
-    expect(opened.notices.value).toHaveLength(0)
+    expect(sessionWindow.on.value).toBe('session')
+    expect(sessionWindow.notices.value).toHaveLength(0)
   })
 
   it('sits down to every deck of a preset, and says what it could not act on', async () => {
     wire.opened = { unwritten: ['decks/Suffixes.md'], skipped: 0 }
-    const opened = await openWindow()
-    opened.vaults.choose('roots')
+    const sessionWindow = await openWindow()
+    sessionWindow.vaults.choose('roots')
     await settle()
 
-    await opened.decks.startPreset('presets/Daily.md')
+    await sessionWindow.decks.startPreset('presets/Daily.md')
 
-    expect(opened.on.value).toBe('session')
+    expect(sessionWindow.on.value).toBe('session')
     expect(wire.sessionsAsked).toEqual([{ vault: 'roots', deck: '', preset: 'presets/Daily.md' }])
-    expect(opened.notices.value.map((one) => one.tone)).toEqual(['caution'])
+    expect(sessionWindow.notices.value.map((one) => one.tone)).toEqual(['caution'])
   })
 
   it('stays on the decks when a preset’s session cannot be opened', async () => {
     wire.isStartRefused = true
-    const opened = await openWindow()
-    opened.vaults.choose('roots')
+    const sessionWindow = await openWindow()
+    sessionWindow.vaults.choose('roots')
     await settle()
 
-    await opened.decks.startPreset('presets/Daily.md')
+    await sessionWindow.decks.startPreset('presets/Daily.md')
 
-    expect(opened.on.value).toBe('decks')
-    expect(opened.notices.value.map((one) => one.tone)).toEqual(['alarm'])
+    expect(sessionWindow.on.value).toBe('decks')
+    expect(sessionWindow.notices.value.map((one) => one.tone)).toEqual(['alarm'])
   })
 
   it('ends the conversation with the card it was about', async () => {
-    const opened = await openSession()
-    opened.session.toggleAgent()
-    expect(opened.session.agentPanel.about.value).not.toBeNull()
+    const sessionWindow = await openSession()
+    sessionWindow.session.toggleAgent()
+    expect(sessionWindow.session.agentPanel.about.value).not.toBeNull()
 
-    opened.session.state.show()
-    await opened.session.answerCard('good')
+    sessionWindow.session.state.show()
+    await sessionWindow.session.answerCard('good')
 
-    expect(opened.session.agentPanel.about.value).toBeNull()
-    expect(opened.session.agentPanel.open.value).toBe(false)
+    expect(sessionWindow.session.agentPanel.about.value).toBeNull()
+    expect(sessionWindow.session.agentPanel.open.value).toBe(false)
   })
 
   it('is left alone by a deck written underneath it', async () => {
-    const opened = await openSession()
+    const sessionWindow = await openSession()
     const counted = wire.counts.length
     const daysRead = wire.daysAsked.length
 
@@ -438,52 +438,52 @@ describe('a session sat down to', () => {
     await settle()
     await settle()
 
-    expect(opened.on.value).toBe('session')
+    expect(sessionWindow.on.value).toBe('session')
     expect(wire.counts).toHaveLength(counted)
     expect(wire.daysAsked).toHaveLength(daysRead)
   })
 
   it('stays on the decks when the session cannot be opened', async () => {
     wire.isStartRefused = true
-    const opened = await openSession()
+    const sessionWindow = await openSession()
 
-    expect(opened.on.value).toBe('decks')
-    expect(opened.notices.value.map((one) => one.tone)).toEqual(['alarm'])
+    expect(sessionWindow.on.value).toBe('decks')
+    expect(sessionWindow.notices.value.map((one) => one.tone)).toEqual(['alarm'])
   })
 
   it('reads the notes of the vault it is on', async () => {
-    const opened = await openSession()
-    opened.session.toggleNotes()
+    const sessionWindow = await openSession()
+    sessionWindow.session.toggleNotes()
     await settle()
 
     expect(wire.notesAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
   })
 
-  it('lets the conversation in before the agent has said whether it can be reached', async () => {
+  it('lets the conversation in before the agent has returned whether it can be reached', async () => {
     wire.agent = () => new Promise<never>(() => {})
-    const opened = await openSession()
-    opened.session.toggleAgent()
+    const sessionWindow = await openSession()
+    sessionWindow.session.toggleAgent()
 
-    expect(opened.session.agentPanel.open.value).toBe(true)
-    expect(opened.notices.value).toHaveLength(0)
+    expect(sessionWindow.session.agentPanel.open.value).toBe(true)
+    expect(sessionWindow.notices.value).toHaveLength(0)
   })
 
   it('keeps the conversation out when the agent cannot be reached, and says why', async () => {
     wire.agent = async () => ({ unreachable: 'no model is set up' })
-    const opened = await openSession()
-    opened.session.toggleAgent()
+    const sessionWindow = await openSession()
+    sessionWindow.session.toggleAgent()
 
-    expect(opened.session.agentPanel.open.value).toBe(false)
-    expect(opened.notices.value).toMatchObject([{ text: 'no model is set up', tone: 'caution' }])
+    expect(sessionWindow.session.agentPanel.open.value).toBe(false)
+    expect(sessionWindow.notices.value).toMatchObject([{ text: 'no model is set up', tone: 'caution' }])
   })
 })
 
 describe('the keys of the window', () => {
   it('turn the card over, answer it and take the answer back', async () => {
-    const opened = await openSession()
+    const sessionWindow = await openSession()
 
     expect((await press(' ')).defaultPrevented).toBe(true)
-    expect(opened.session.state.shown.value).toBe(true)
+    expect(sessionWindow.session.state.shown.value).toBe(true)
 
     // With the answer showing, the space bar asks nothing of the card and is
     // left to the page.
@@ -494,15 +494,15 @@ describe('the keys of the window', () => {
 
     await press('u')
     expect(wire.takenBack).toHaveLength(1)
-    expect(opened.session.state.card.value?.mark).toBe('mark-1')
+    expect(sessionWindow.session.state.card.value?.mark).toBe('mark-1')
   })
 
   it('scroll nothing, and break nothing, while no reading is drawn', async () => {
-    const opened = await openWindow({ isPageDrawn: false })
-    opened.vaults.choose('roots')
+    const sessionWindow = await openWindow({ isPageDrawn: false })
+    sessionWindow.vaults.choose('roots')
     await settle()
-    await opened.decks.start('decks/Suffixes.md')
-    opened.session.toggleNotes()
+    await sessionWindow.decks.start('decks/Suffixes.md')
+    sessionWindow.session.toggleNotes()
     await settle()
     const faults: unknown[] = []
     const onFault = (event: ErrorEvent) => faults.push(event.error)
@@ -516,27 +516,27 @@ describe('the keys of the window', () => {
   })
 
   it('scroll the reading with the space bar while it is up', async () => {
-    const opened = await openSession()
-    opened.session.toggleNotes()
+    const sessionWindow = await openSession()
+    sessionWindow.session.toggleNotes()
     await settle()
 
     await press(' ')
 
     expect(wire.scrolled).toEqual([false])
-    expect(opened.session.state.shown.value).toBe(false)
+    expect(sessionWindow.session.state.shown.value).toBe(false)
   })
 
   it('leave the session for the decks counted again, and the decks for the vaults', async () => {
-    const opened = await openSession()
+    const sessionWindow = await openSession()
     const counted = wire.counts.length
     const daysRead = wire.daysAsked.length
 
     await press('Escape')
-    expect(opened.on.value).toBe('decks')
+    expect(sessionWindow.on.value).toBe('decks')
     expect(wire.counts).toHaveLength(counted + 1)
     expect(wire.daysAsked).toHaveLength(daysRead + 1)
 
     await press('Escape')
-    expect(opened.on.value).toBe('vaults')
+    expect(sessionWindow.on.value).toBe('vaults')
   })
 })

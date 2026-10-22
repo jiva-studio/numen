@@ -44,7 +44,7 @@ func (h *articleHandler) ReadArticle(
 }
 
 // readSpan is the run of the prose a request named, and the whole of it where a
-// request named none. A run is held within the prose and stands on whole
+// request named none. A run is held within the prose and relies on whole
 // characters.
 func readSpan(prose string, at *v1.Span) (string, error) {
 	if at == nil {

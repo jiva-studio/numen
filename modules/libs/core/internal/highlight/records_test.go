@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestBoxesComeBackAsTheyWereWritten(t *testing.T) {
+func TestBoxesComeBackAsTheyWereSaved(t *testing.T) {
 	boxes := []domain.HighlightBox{
 		testsupport.Box(0, 0, 5, domain.Rect{MinX: 0, MinY: 0.25, MaxX: 0.5, MaxY: 0.75}),
 		testsupport.Box(1, 25, 32, domain.Rect{MinX: 0.125, MinY: 0.5, MaxX: 1, MaxY: 1}),
@@ -26,7 +26,7 @@ func TestBoxesComeBackAsTheyWereWritten(t *testing.T) {
 	}
 }
 
-func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
+func TestATornTailProducesBackTheWholeRecords(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written.
 	// What was written whole is still a box.
 	boxes := []domain.HighlightBox{
@@ -42,8 +42,8 @@ func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
 	if !reflect.DeepEqual(got[0], boxes[0]) {
 		t.Errorf("unpacked %+v, want %+v", got[0], boxes[0])
 	}
-	if left := highlight.Unpack(raw[:12]); len(left) != 0 {
-		t.Errorf("unpacked %d boxes from less than one record", len(left))
+	if remaining := highlight.Unpack(raw[:12]); len(remaining) != 0 {
+		t.Errorf("unpacked %d boxes from less than one record", len(remaining))
 	}
 }
 

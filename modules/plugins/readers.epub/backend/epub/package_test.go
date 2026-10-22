@@ -83,7 +83,7 @@ func TestOnlyTheBooksOwnMetaSetsTheLayout(t *testing.T) {
 			}))
 
 			if book.Layout != epub.Reflowable {
-				t.Errorf("layout = %q, want the book to reflow", book.Layout)
+				t.Errorf("layout = %q, want reflowable book layout", book.Layout)
 			}
 		})
 	}
@@ -168,7 +168,7 @@ func TestWhichNavigationControlFileIsRead(t *testing.T) {
 	}
 }
 
-func TestAnItemrefOfAnUndeclaredItemLeavesTheRestOfTheSpine(t *testing.T) {
+func TestAnItemrefOfAnUndeclaredItemPreservesTheRestOfTheSpine(t *testing.T) {
 	spine := `<spine><itemref idref="a"/><itemref idref="nothing"/><itemref idref="b"/></spine>`
 	book := read(t, buildSpineArchive(t, buildOpf("", twoItems, spine), map[string]string{
 		oneDoc: chapterOne, twoDoc: chapterTwo,
@@ -193,7 +193,7 @@ func TestHowAnHrefNamesAnArchiveEntry(t *testing.T) {
 	}
 }
 
-func TestADocumentWrittenLoosely(t *testing.T) {
+func TestADocumentSavedLoosely(t *testing.T) {
 	t.Run("an ampersand that escapes nothing", func(t *testing.T) {
 		book := read(t, buildSpineArchive(t, buildOpf(`<dc:title>Tom & Jerry</dc:title>`, twoItems, twoRefs),
 			map[string]string{oneDoc: chapterOne, twoDoc: chapterTwo}))

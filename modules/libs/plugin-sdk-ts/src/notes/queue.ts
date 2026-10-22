@@ -42,18 +42,18 @@ export interface NoteWriteRequest {
   baseline: NoteBaseline | null
 }
 
-function toReadResult(answered: NoteResult): ReadResult {
-  if (answered.ok) {
-    return { kind: 'body', body: answered.value.body, at: answered.value.at ?? '' }
+function toReadResult(reply: NoteResult): ReadResult {
+  if (reply.ok) {
+    return { kind: 'body', body: reply.value.body, at: reply.value.at ?? '' }
   }
-  if (answered.error === 'missing') return { kind: 'missing' }
-  return { kind: 'error', error: convertErrorCode(answered.error) }
+  if (reply.error === 'missing') return { kind: 'missing' }
+  return { kind: 'error', error: convertErrorCode(reply.error) }
 }
 
-function toWriteResult(answered: CoreWriteResult): WriteResult {
-  if (answered.ok) return { kind: 'ok', at: answered.value.at ?? '' }
-  if (answered.error === 'changed') return { kind: 'changed' }
-  return { kind: 'error', error: convertErrorCode(answered.error) }
+function toWriteResult(reply: CoreWriteResult): WriteResult {
+  if (reply.ok) return { kind: 'ok', at: reply.value.at ?? '' }
+  if (reply.error === 'changed') return { kind: 'changed' }
+  return { kind: 'error', error: convertErrorCode(reply.error) }
 }
 
 function createQueueTimers(dispatch: NoteQueueDeps['dispatch']) {
@@ -92,33 +92,33 @@ export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
   }
 
   const flushPending = (id: string): Promise<void> =>
-    new Promise((done) => {
-      if (!hasTab(id)) return done()
-      flushWaiters.set(id, done)
+    new Promise((isDone) => {
+      if (!hasTab(id)) return isDone()
+      flushWaiters.set(id, isDone)
       dispatch(id, { kind: 'flush' })
     })
 
-  const read = async (id: string, path: string, generation: number): Promise<void> => {
-    let answered: NoteResult
+  const readItem = async (id: string, path: string, generation: number): Promise<void> => {
+    let reply: NoteResult
     try {
-      answered = await core.read(path)
+      reply = await core.read(path)
     } catch {
       dispatch(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
     }
-    setAddress(id, answered.ok ? (answered.value.link ?? null) : null)
-    dispatch(id, { kind: 'read', generation, answer: toReadResult(answered) })
+    setAddress(id, reply.ok ? (reply.value.link ?? null) : null)
+    dispatch(id, { kind: 'read', generation, answer: toReadResult(reply) })
   }
 
   const write = async (id: string, request: NoteWriteRequest): Promise<void> => {
-    let answered: CoreWriteResult
+    let reply: CoreWriteResult
     try {
-      answered = await core.write(request.path, request.body, request.baseline)
+      reply = await core.write(request.path, request.body, request.baseline)
     } catch {
       dispatch(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
       return
     }
-    dispatch(id, { kind: 'written', answer: toWriteResult(answered) })
+    dispatch(id, { kind: 'written', answer: toWriteResult(reply) })
     resumeClosing(id)
   }
 
@@ -132,7 +132,7 @@ export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
     cancelTimer,
     resolveFlush,
     flushPending,
-    read,
+    read: readItem,
     write,
     discard,
   }

@@ -36,12 +36,12 @@ export const nameOf = (element: Element): string => {
   if (label?.trim()) return label.trim()
   const by = element.getAttribute('aria-labelledby')
   if (by) {
-    const said = by
+    const response = by
       .split(/\s+/)
       .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
       .join(' ')
       .trim()
-    if (said) return said
+    if (response) return response
   }
   if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
     const id = element.getAttribute('id')
@@ -80,7 +80,7 @@ export const whereOf = (element: Element): string => {
 }
 
 /** Whether the browser draws this where a person could see it. */
-const shown = (element: Element): boolean => {
+const displayed = (element: Element): boolean => {
   if (element.getClientRects().length === 0) return false
   const style = getComputedStyle(element)
   return style.visibility !== 'hidden' && Number(style.opacity) > 0.01
@@ -102,7 +102,7 @@ const elsewhere = (from: Element): boolean =>
       !one.contains(from) &&
       (one as HTMLElement).tabIndex >= 0 &&
       !one.matches(':disabled') &&
-      shown(one),
+      displayed(one),
   )
 
 /** A dialog holds the keyboard for as long as it stands, which is what modal means. */
@@ -173,7 +173,7 @@ const settles = async (): Promise<boolean> => {
  * the way.
  */
 export async function walk(): Promise<Walk> {
-  const settled = await settles()
+  const resolved = await settles()
 
   const still = document.createElement('style')
   still.textContent = STILL
@@ -183,7 +183,7 @@ export async function walk(): Promise<Walk> {
   document.body.focus()
 
   const stops: Stop[] = []
-  const seen = new Set<Element>()
+  const observed = new Set<Element>()
   let trapped: string | null = null
 
   /**
@@ -193,7 +193,7 @@ export async function walk(): Promise<Walk> {
    */
   const onward = async (from: Element): Promise<Element | null> => {
     const strikes = from.matches?.(PARTED) ? PARTS + 1 : 1
-    for (let held = 0; held < strikes; held += 1) {
+    for (let target = 0; target < strikes; target += 1) {
       await userEvent.tab()
       const here = document.activeElement
       if (!here || here === document.body || here === document.documentElement) return null
@@ -212,13 +212,13 @@ export async function walk(): Promise<Walk> {
     }
     at = here
 
-    if (seen.has(here)) break
-    seen.add(here)
+    if (observed.has(here)) break
+    observed.add(here)
 
     stops.push({
       where: whereOf(here),
       name: nameOf(here),
-      shown: shown(here),
+      shown: displayed(here),
       // The stop itself, or whatever it is drawn inside: a row on its way in
       // carries every control standing on it.
       isMoving: here.closest(MOVING) !== null,
@@ -228,5 +228,5 @@ export async function walk(): Promise<Walk> {
   document.body.focus()
   document.body.removeAttribute('tabindex')
   still.remove()
-  return { stops, trapped, settled }
+  return { stops, trapped, settled: resolved }
 }

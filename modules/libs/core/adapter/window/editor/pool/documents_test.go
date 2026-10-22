@@ -47,21 +47,21 @@ func (h *held) Close() {
 //
 // Closing gives the library's worker back. Given back while a page is being
 // drawn on it, it is taken from under the drawing.
-func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
+func TestGoingWaitsForWhatIsBeingGenerated(t *testing.T) {
 	one := &held{drawing: make(chan struct{}), let: make(chan struct{})}
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	mark := document.Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
 
-	drawn := make(chan error, 1)
+	renderErrCh := make(chan error, 1)
 	go func() {
 		doc, give, err := docs.Acquire(t.Context(), mark, func() (port.OpenDocument, error) { return one, nil })
 		if err != nil {
-			drawn <- err
+			renderErrCh <- err
 			return
 		}
 		defer give()
 		_, err = doc.Scan.RenderPage(0, 72)
-		drawn <- err
+		renderErrCh <- err
 	}()
 
 	<-one.drawing
@@ -81,7 +81,7 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 	}
 
 	close(one.let)
-	if err := <-drawn; err != nil {
+	if err := <-renderErrCh; err != nil {
 		t.Errorf("the drawing was answered %v", err)
 	}
 	select {
@@ -94,10 +94,10 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 // A window with nothing open goes at once.
 func TestGoingWithNothingOpenIsNotAWait(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
-	done := make(chan struct{})
-	go func() { docs.Close(); close(done) }()
+	isDone := make(chan struct{})
+	go func() { docs.Close(); close(isDone) }()
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(time.Second):
 		t.Fatal("closing an empty window waited")
 	}

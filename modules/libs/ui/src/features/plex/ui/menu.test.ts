@@ -42,10 +42,10 @@ describe('a right-click on a node', () => {
     rightClick(focus.element)
     await plex.vm.$nextTick()
 
-    const [asked] = plex.emitted('menu') as [string, { x: number; y: number }, string][]
-    expect(asked?.[0]).toBe('focus')
-    expect(asked?.[1]).toStrictEqual({ x: 320, y: 240 })
-    expect(asked?.[2]).toBe('pointer')
+    const [request] = plex.emitted('menu') as [string, { x: number; y: number }, string][]
+    expect(request?.[0]).toBe('focus')
+    expect(request?.[1]).toStrictEqual({ x: 320, y: 240 })
+    expect(request?.[2]).toBe('pointer')
     expect(plex.emitted('activate')).toBeUndefined()
   })
 
@@ -54,8 +54,8 @@ describe('a right-click on a node', () => {
     rightClick(plex.get(`[aria-label^="${A_CHILD}"]`).element)
     await plex.vm.$nextTick()
 
-    const [asked] = plex.emitted('menu') as [string, unknown, unknown][]
-    expect(asked?.[0]).not.toBe('focus')
+    const [request] = plex.emitted('menu') as [string, unknown, unknown][]
+    expect(request?.[0]).not.toBe('focus')
   })
 
   it('refuses the menu the webview would draw for itself', () => {
@@ -142,31 +142,31 @@ describe('asking for a menu from the keyboard', () => {
     await plex.get('[aria-label^="A node"]').trigger('keydown', press('F10', true))
     await plex.get(`[aria-label^="${A_CHILD}"]`).trigger('keydown', press('ContextMenu'))
 
-    const asked = plex.emitted('menu') as [string, unknown, unknown][]
-    expect(asked).toHaveLength(2)
-    expect(asked[0]?.[0]).toBe('focus')
+    const request = plex.emitted('menu') as [string, unknown, unknown][]
+    expect(request).toHaveLength(2)
+    expect(request[0]?.[0]).toBe('focus')
   })
 
   // A keypress has nowhere of its own to point, so it points at the middle of
   // the box it was pressed on.
-  it('points at the middle of the box it was asked from', async () => {
+  it('points at the middle of the box it was requested from', async () => {
     const plex = mountPlex()
     const node = plex.get('[aria-label^="A node"]')
     node.element.getBoundingClientRect = () => new DOMRect(120, 40, 200, 80)
 
     await node.trigger('keydown', press('ContextMenu'))
 
-    const [asked] = plex.emitted('menu') as [string, { x: number; y: number }, string][]
-    expect(asked?.[1]).toStrictEqual({ x: 220, y: 80 })
+    const [request] = plex.emitted('menu') as [string, { x: number; y: number }, string][]
+    expect(request?.[1]).toStrictEqual({ x: 220, y: 80 })
   })
 
-  it('puts the keyboard back on the node it was asked from', async () => {
+  it('puts the keyboard back on the node it was requested from', async () => {
     const plex = mountPlex()
     const focus = plex.get('[aria-label^="A node"]')
     await focus.trigger('keydown', press('ContextMenu'))
 
-    const [asked] = plex.emitted('menu') as [string, unknown, string][]
-    plex.vm.focusNode(asked![0])
+    const [request] = plex.emitted('menu') as [string, unknown, string][]
+    plex.vm.focusNode(request![0])
     expect(document.activeElement).toBe(focus.element)
   })
 
@@ -174,8 +174,8 @@ describe('asking for a menu from the keyboard', () => {
     const plex = mountPlex()
     await plex.get('[aria-label^="A node"]').trigger('keydown', press('F10', true))
 
-    const [asked] = plex.emitted('menu') as [string, unknown, string][]
-    expect(asked?.[2]).toBe('keyboard')
+    const [request] = plex.emitted('menu') as [string, unknown, string][]
+    expect(request?.[2]).toBe('keyboard')
   })
 
   it('leaves F10 on its own, and Enter and the space bar to choosing', async () => {
@@ -205,7 +205,7 @@ describe('asking for a menu from the keyboard', () => {
 })
 
 describe('when the picture moves under a menu', () => {
-  it('says a menu asked for on a node has nothing left to stand on', async () => {
+  it('says a menu requested for on a node has nothing left to stand on', async () => {
     // The neighbourhood is re-fetched on every change and the nodes travel to
     // new relations; a menu is anchored where one of them was.
     const plex = mountPlex()
@@ -213,7 +213,7 @@ describe('when the picture moves under a menu', () => {
     expect(plex.emitted('dismiss')).toHaveLength(1)
   })
 
-  it('says nothing while the neighbourhood stands still', async () => {
+  it('says nothing while the neighbourhood remains still', async () => {
     const plex = mountPlex()
     await plex.setProps({ duration: 200 })
     expect(plex.emitted('dismiss')).toBeUndefined()

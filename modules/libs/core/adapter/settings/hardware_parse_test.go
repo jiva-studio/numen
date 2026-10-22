@@ -21,7 +21,7 @@ func TestParseMeminfo_ReadsTotalAndAvailableInMegabytes(t *testing.T) {
 	}
 }
 
-func TestParseMeminfo_LeavesAMissingFieldUnknown(t *testing.T) {
+func TestParseMeminfo_PreservesAMissingFieldUnknown(t *testing.T) {
 	total, available := parseMeminfo("MemTotal:  2048000 kB\nMemFree: 1024 kB\n")
 
 	if total != 2000 || available != 0 {

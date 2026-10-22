@@ -148,26 +148,26 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	}
 	res.Pages = len(pages)
 
-	stood, err := u.readCheckpoint(ctx, store, corrections, progressName)
+	status, err := u.readCheckpoint(ctx, store, corrections, progressName)
 	if err != nil {
 		return res, err
 	}
-	done := min(stood.Pages, len(pages))
-	stood.Pages = done
-	if err := dropCorrections(ctx, store, corrections, pages, done); err != nil {
+	isDone := min(status.Pages, len(pages))
+	status.Pages = isDone
+	if err := dropCorrections(ctx, store, corrections, pages, isDone); err != nil {
 		return res, err
 	}
-	res.Resumed, res.Read = done, done
+	res.Resumed, res.Read = isDone, isDone
 	// Progress is reported once there is a page to ask about, so a recognition
 	// nothing is left to be asked about is never work anybody is shown.
-	if done < len(pages) {
+	if isDone < len(pages) {
 		run.Report(u.OnProgress, res)
 	}
 
 	job := proofreadRecognitionJob{
 		v: v, store: store, path: path, pages: pages, corrections: corrections, progressName: progressName,
 	}
-	err = u.askPages(ctx, job, done, &res)
+	err = u.askPages(ctx, job, isDone, &res)
 	return res, err
 }
 
@@ -195,12 +195,12 @@ func (u Proofread) askPages(
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	asked := p.pages[at:]
-	answer, err := u.by.ProofreadScan(ctx, asked)
+	request := p.pages[at:]
+	answer, err := u.by.ProofreadScan(ctx, request)
 	if err != nil {
 		return fmt.Errorf("proofread %s: %w", p.path, err)
 	}
-	return u.writeCorrections(ctx, p, asked, answer, len(p.pages), res)
+	return u.writeCorrections(ctx, p, request, answer, len(p.pages), res)
 }
 
 // writeCorrections writes the corrections a batch came back with, cuts the source, and
@@ -214,16 +214,16 @@ func (u Proofread) writeCorrections(
 	end int,
 	res *ProofreadResult,
 ) error {
-	put, err := getCorrectionLines(asked, answer.Corrections)
+	placed, err := getCorrectionLines(asked, answer.Corrections)
 	if err != nil {
 		return fmt.Errorf("proofread %s: %w", p.path, err)
 	}
 	res.UncorrectedPages += answer.Uncorrected
-	if len(put) > 0 {
-		if err := p.store.AppendArtifact(ctx, p.corrections, correction.Pack(put)); err != nil {
+	if len(placed) > 0 {
+		if err := p.store.AppendArtifact(ctx, p.corrections, correction.Pack(placed)); err != nil {
 			return err
 		}
-		res.Fixed += len(put)
+		res.Fixed += len(placed)
 	}
 	res.Read = end
 	if err := run.Cut(ctx, u.Cut, p.v, p.path); err != nil {
@@ -300,14 +300,14 @@ func (u Proofread) readCheckpoint(
 	if err != nil {
 		return checkpoint{}, err
 	}
-	var stood checkpoint
-	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.by.GetName() {
+	var status checkpoint
+	if err := json.Unmarshal(raw, &status); err != nil || status.By != u.by.GetName() {
 		if err := store.RemoveArtifact(ctx, corrections); err != nil {
 			return checkpoint{}, err
 		}
 		return checkpoint{}, store.RemoveArtifact(ctx, progressName)
 	}
-	return stood, nil
+	return status, nil
 }
 
 // dropCorrections drops the corrections of pages no count claims. A line is
@@ -331,20 +331,20 @@ func dropCorrections(
 	if err != nil {
 		return err
 	}
-	held := correction.Unpack(raw)
-	kept := make([]domain.CorrectionLine, 0, len(held))
-	for _, line := range held {
+	target := correction.Unpack(raw)
+	keptLines := make([]domain.CorrectionLine, 0, len(target))
+	for _, line := range target {
 		if line.Number < beyond {
-			kept = append(kept, line)
+			keptLines = append(keptLines, line)
 		}
 	}
-	if len(kept) == len(held) {
+	if len(keptLines) == len(target) {
 		return nil
 	}
 	// Written back whatever was dropped. An append that did not land whole leaves
 	// bytes that are not a record, and every record appended after them is read
 	// at a shifted offset.
-	return store.WriteArtifact(ctx, corrections, correction.Pack(kept))
+	return store.WriteArtifact(ctx, corrections, correction.Pack(keptLines))
 }
 
 // opening is the number of the first line no count claims.

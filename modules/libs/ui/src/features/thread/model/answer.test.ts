@@ -3,7 +3,7 @@ import { createAnswer } from './answer'
 import type { Turn } from '../lib/turn'
 
 const create = () => {
-  const put = vi.fn<(turn: Turn) => void>()
+  const sendTurn = vi.fn<(turn: Turn) => void>()
   const drop = vi.fn<(id: string) => void>()
   let count = 0
   const nextId = () => `a${++count}`
@@ -16,14 +16,14 @@ const create = () => {
       draw()
     })
   }
-  return { answer: createAnswer({ put, drop, nextId }, paint), put, drop, frames, flush }
+  return { answer: createAnswer({ put: sendTurn, drop, nextId }, paint), put: sendTurn, drop, frames, flush }
 }
 
 describe('an answer as it arrives', () => {
   it('puts the turn up with its first words at once, arriving', () => {
-    const { answer, put, frames } = create()
+    const { answer, put: sendTurn, frames } = create()
     answer.say('Hel')
-    expect(put).toHaveBeenCalledExactlyOnceWith({
+    expect(sendTurn).toHaveBeenCalledExactlyOnceWith({
       id: 'a1',
       voice: 'answered',
       text: 'Hel',
@@ -33,19 +33,19 @@ describe('an answer as it arrives', () => {
   })
 
   it('grows the turn once a frame, however many words came since the last', () => {
-    const { answer, put, frames, flush } = create()
+    const { answer, put: sendTurn, frames, flush } = create()
     answer.say('a')
     answer.say('b')
     answer.say('c')
     expect(frames).toHaveLength(1)
     flush()
-    expect(put).toHaveBeenLastCalledWith({
+    expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a1',
       voice: 'answered',
       text: 'abc',
       state: 'arriving',
     })
-    expect(put).toHaveBeenCalledTimes(2)
+    expect(sendTurn).toHaveBeenCalledTimes(2)
   })
 
   it('asks for another frame for words that arrive after one was drawn', () => {
@@ -57,23 +57,23 @@ describe('an answer as it arrives', () => {
     expect(frames).toHaveLength(1)
   })
 
-  it('draws nothing from a frame that comes after the answer ended', () => {
-    const { answer, put, flush } = create()
+  it('draws nothing from a frame that arrives after the answer ended', () => {
+    const { answer, put: sendTurn, flush } = create()
     answer.say('a')
     answer.say('b')
     answer.settle()
-    put.mockClear()
+    sendTurn.mockClear()
     flush()
-    expect(put).not.toHaveBeenCalled()
+    expect(sendTurn).not.toHaveBeenCalled()
   })
 
   it('settles with its text and no state, and the next words begin another turn', () => {
-    const { answer, put } = create()
+    const { answer, put: sendTurn } = create()
     answer.say('done')
     answer.settle()
-    expect(put).toHaveBeenLastCalledWith({ id: 'a1', voice: 'answered', text: 'done' })
+    expect(sendTurn).toHaveBeenLastCalledWith({ id: 'a1', voice: 'answered', text: 'done' })
     answer.say('next')
-    expect(put).toHaveBeenLastCalledWith({
+    expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a2',
       voice: 'answered',
       text: 'next',
@@ -82,26 +82,26 @@ describe('an answer as it arrives', () => {
   })
 
   it('leaves no turn for an answer with nothing in it', () => {
-    const { answer, put, drop } = create()
+    const { answer, put: sendTurn, drop } = create()
     answer.say('')
-    put.mockClear()
+    sendTurn.mockClear()
     answer.settle()
     expect(drop).toHaveBeenCalledExactlyOnceWith('a1')
-    expect(put).not.toHaveBeenCalled()
+    expect(sendTurn).not.toHaveBeenCalled()
   })
 
   it('does nothing when settled with no answer open', () => {
-    const { answer, put, drop } = create()
+    const { answer, put: sendTurn, drop } = create()
     answer.settle()
-    expect(put).not.toHaveBeenCalled()
+    expect(sendTurn).not.toHaveBeenCalled()
     expect(drop).not.toHaveBeenCalled()
   })
 
   it('marks the turn failed, and closes it', () => {
-    const { answer, put } = create()
+    const { answer, put: sendTurn } = create()
     answer.say('half')
     answer.fail()
-    expect(put).toHaveBeenLastCalledWith({
+    expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a1',
       voice: 'answered',
       text: 'half',
@@ -109,7 +109,7 @@ describe('an answer as it arrives', () => {
     })
     expect(answer.isOpen()).toBe(false)
     answer.say('again')
-    expect(put).toHaveBeenLastCalledWith({
+    expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a2',
       voice: 'answered',
       text: 'again',
@@ -118,19 +118,19 @@ describe('an answer as it arrives', () => {
   })
 
   it('drops a failed answer with nothing in it', () => {
-    const { answer, put, drop } = create()
+    const { answer, put: sendTurn, drop } = create()
     answer.say('')
-    put.mockClear()
+    sendTurn.mockClear()
     answer.fail()
     expect(drop).toHaveBeenCalledExactlyOnceWith('a1')
-    expect(put).not.toHaveBeenCalled()
+    expect(sendTurn).not.toHaveBeenCalled()
     expect(answer.isOpen()).toBe(false)
   })
 
   it('does nothing when failed with no answer open', () => {
-    const { answer, put, drop } = create()
+    const { answer, put: sendTurn, drop } = create()
     answer.fail()
-    expect(put).not.toHaveBeenCalled()
+    expect(sendTurn).not.toHaveBeenCalled()
     expect(drop).not.toHaveBeenCalled()
   })
 

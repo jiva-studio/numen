@@ -1,5 +1,5 @@
 /**
- * What a press on a node comes to: the node chosen, the node asked for on its
+ * What a press on a node evaluates to: the node chosen, the node asked for on its
  * own, or a menu on it. The hand and the keyboard arrive here as the same three
  * answers, and a node not there yet answers none of them.
  */
@@ -8,9 +8,9 @@ import { isMenuKey, isPress, isShowKey } from '../lib/keys'
 import { isReachable, isStop, type GestureRole, type PlacedNode, type Position } from '../lib/node'
 import type { MenuTrigger } from '@/shared/ui/menu'
 import type { PlexBehaviour } from './behaviour'
-import { getDestination, mergeListeners, type PlexDestination } from './showing'
+import { getDestination, mergeListeners, type PlexDestination } from './destination'
 
-/** What the node says when a press comes to something. */
+/** What the node says when a press evaluates to something. */
 export interface NodePressSaid {
   readonly activate: () => void
   readonly show: (showing: PlexDestination) => void
@@ -57,7 +57,7 @@ export function useNodePress(
   }
 
   /** What this node listens for beyond the handle. */
-  const listening = mergeListeners(
+  const combinedListeners = mergeListeners(
     props.behaviour.reaching.listeners({
       ready: () => !isGhost.value && props.gestureRole === 'open',
       reach: (event: PointerEvent) => listeners.reach(event),
@@ -73,7 +73,7 @@ export function useNodePress(
     canReach,
     canStop,
     isAnnounced,
-    listening,
+    listening: combinedListeners,
 
     onClick: (): void => {
       activateNode()

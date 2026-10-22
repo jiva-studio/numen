@@ -10,7 +10,7 @@ import (
 
 // The column is an INTEGER of nanoseconds since the epoch, and it holds that
 // number and no other.
-func TestTheSourceRowHoldsNanosecondsSinceTheEpoch(t *testing.T) {
+func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	const nanos = 1788433445123456789
 
@@ -25,13 +25,13 @@ func TestTheSourceRowHoldsNanosecondsSinceTheEpoch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var held int64
+	var target int64
 	if err := db.read.QueryRowContext(t.Context(),
-		`SELECT modified_at FROM sources WHERE path = ?`, "notes/Compost.md").Scan(&held); err != nil {
+		`SELECT modified_at FROM sources WHERE path = ?`, "notes/Compost.md").Scan(&target); err != nil {
 		t.Fatal(err)
 	}
-	if held != nanos {
-		t.Errorf("the row holds modified_at %d, want %d", held, nanos)
+	if target != nanos {
+		t.Errorf("the row holds modified_at %d, want %d", target, nanos)
 	}
 
 	found, err := db.NoteQueries().GetFingerprints(t.Context(), first.ID)
@@ -70,10 +70,10 @@ func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
 
 // Nothing said about a file is not the epoch, either way round.
 func TestNoStampIsNoTimeAndNotTheEpoch(t *testing.T) {
-	if held := chunk.ConvertTimeToNanos(time.Time{}); held != 0 {
-		t.Errorf("no stamp goes into the column as %d", held)
+	if target := chunk.ConvertTimeToNanos(time.Time{}); target != 0 {
+		t.Errorf("no stamp goes into the column as %d", target)
 	}
-	if held := chunk.ConvertNanosToTime(0); !held.IsZero() {
-		t.Errorf("a column naming no time came back as %v", held)
+	if targetVal := chunk.ConvertNanosToTime(0); !targetVal.IsZero() {
+		t.Errorf("a column naming no time came back as %v", targetVal)
 	}
 }

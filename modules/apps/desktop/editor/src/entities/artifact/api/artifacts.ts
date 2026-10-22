@@ -20,16 +20,16 @@ import type { Artifact, ArtifactRunner, ArtifactState } from '../types'
 export const running: ArtifactRunner = {
   getArtifactStates: async (path) => {
     const answer = await artifacts.listArtifacts({ path })
-    const held: Record<string, ArtifactState> = {}
+    const target: Record<string, ArtifactState> = {}
     for (const one of answer.artifacts) {
-      const of = drawn[one.kind]
-      if (of) held[of] = parseState(one.state)
+      const of = ARTIFACT_BY_KIND[one.kind]
+      if (of) target[of] = parseState(one.state)
     }
-    return held
+    return target
   },
   createArtifact: async (path, of) => {
     try {
-      const answer = await artifacts.createArtifact({ path, kind: asking[of] })
+      const answer = await artifacts.createArtifact({ path, kind: KIND_BY_ARTIFACT[of] })
       return {
         able: true,
         of,
@@ -46,15 +46,15 @@ export const running: ArtifactRunner = {
   correctArtifact: async (path) => {
     // Which text is put right follows from the file: a recording carries a
     // transcript and a scan carries a reading.
-    const held = await running.getArtifactStates(path)
-    const of: Artifact = held.transcript === undefined ? 'ocr.corrected' : 'transcript.corrected'
+    const target = await running.getArtifactStates(path)
+    const of: Artifact = target.transcript === undefined ? 'ocr.corrected' : 'transcript.corrected'
     return running.createArtifact(path, of)
   },
   fetchArtifact: async (path) => {
     // Which of the two the text at an address is, is the vault's to say: it
     // knows the address, and this asks for the one it says the note carries.
-    const held = await running.getArtifactStates(path)
-    const of: Artifact = held.transcript === undefined ? 'article' : 'transcript'
+    const target = await running.getArtifactStates(path)
+    const of: Artifact = target.transcript === undefined ? 'article' : 'transcript'
     return running.createArtifact(path, of)
   },
   deleteTranscript: (path) => deleteArtifact(path, Kinds.TRANSCRIPT),
@@ -77,7 +77,7 @@ const deleteArtifact = async (path: string, kind: Kinds): Promise<boolean> => {
  * schema, so an artifact added to it has to be given a word here before this
  * compiles.
  */
-const drawn: Readonly<Record<Kinds, Artifact | null>> = {
+const ARTIFACT_BY_KIND: Readonly<Record<Kinds, Artifact | null>> = {
   [Kinds.UNSPECIFIED]: null,
   [Kinds.OCR]: 'ocr',
   [Kinds.OCR_CORRECTED]: 'ocr.corrected',
@@ -88,7 +88,7 @@ const drawn: Readonly<Record<Kinds, Artifact | null>> = {
 }
 
 /** And back, for asking for one. */
-const asking = getNames<Artifact, Kinds>(drawn)
+const KIND_BY_ARTIFACT = getNames<Artifact, Kinds>(ARTIFACT_BY_KIND)
 
 /** What has become of an artifact, in the words the window uses. */
 const become: Record<States, ArtifactState> = {

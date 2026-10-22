@@ -24,7 +24,7 @@ type CardsDue struct {
 	Due   int
 	New   int
 	Decks []DeckCardsDue
-	// Presets is what the day comes to under every preset the vault holds,
+	// Presets is what the day evaluates to under every preset the vault holds,
 	// whether a deck points at it or not.
 	Presets []PresetCardsDue
 }
@@ -153,9 +153,9 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	for deck, one := range in.day.spentUnder {
 		rows.get(deck).Answered = one.Answered
 	}
-	due, fresh := rows.countDueAndNew(in.day, holds, &out)
+	due, newCount := rows.countDueAndNew(in.day, holds, &out)
 	out.Decks = rows.getSorted()
-	out.Presets, err = u.getPresets(ctx, v, in.reads, in.day, due, fresh)
+	out.Presets, err = u.getPresets(ctx, v, in.reads, in.day, due, newCount)
 	if err != nil {
 		return CardsDue{}, err
 	}
@@ -219,8 +219,8 @@ type deckRows map[string]*DeckCardsDue
 
 // get is the row of a deck, created when it is new.
 func (r deckRows) get(deck string) *DeckCardsDue {
-	one, held := r[deck]
-	if !held {
+	one, target := r[deck]
+	if !target {
 		one = &DeckCardsDue{Deck: deck}
 		r[deck] = one
 	}
@@ -333,7 +333,7 @@ func (u CountCardsDue) getPresets(
 	return out, nil
 }
 
-// getCardsDue is what the day comes to under each preset the vault's decks
+// getCardsDue is what the day evaluates to under each preset the vault's decks
 // name: the budget the day of the week leaves it, and what has been answered
 // under it since the day opened.
 func (b *budgets) getCardsDue(due, fresh map[string]int) []PresetCardsDue {

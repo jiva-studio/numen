@@ -96,7 +96,7 @@ func getPoolSize() int {
 
 // waitForWorker is how long a reader waits for one to come free. Reading a
 // document takes a second or two, and the wait is bounded so that a worker
-// wedged inside the library is a failure rather than a program that stops.
+// wedged inside the library is a failure and not a program that stops.
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="waitForWorker is the bounded wait timeout for an available worker"
 const waitForWorker = 2 * time.Minute
 
@@ -246,7 +246,7 @@ func open(src source) (*document, error) {
 		putWorker(worker)
 		closeFile()
 		// A file that asks for a password is a file whose text nobody here can
-		// read, and it is worth saying so rather than saying it is malformed.
+		// read, and it is worth saying so and not saying it is malformed.
 		// gomutants:disable-next-line EXPRESSION_REMOVE reason="password-protected PDFs return ErrEncrypted"
 		if errors.Is(err, pdfiumerrors.ErrPassword) || errors.Is(err, pdfiumerrors.ErrSecurity) {
 			return nil, fmt.Errorf("%w: %w", ErrEncrypted, err)

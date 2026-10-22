@@ -30,7 +30,7 @@ func TestALineEndingIsWhatEveryBreakUses(t *testing.T) {
 }
 
 // A note that arrived with CRLF is written back with CRLF, prose and all.
-func TestTheProseOfACRLFNoteIsWrittenWithCRLF(t *testing.T) {
+func TestTheProseOfACRLFNoteIsSavedWithCRLF(t *testing.T) {
 	d, err := Open([]byte("---\r\nid: 01J8\r\n---\r\nbody\r\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)

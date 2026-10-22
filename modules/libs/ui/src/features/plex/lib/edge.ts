@@ -51,7 +51,7 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
   readonly words?: string | undefined
   /**
    * Where those words sit: the fraction of the line they are read along that
-   * the middle of them stands on. The middle of the line, unless the title
+   * the middle of them relies on. The middle of the line, unless the title
    * had to slide along it to find room.
    */
   readonly wordsAt: number
@@ -77,18 +77,18 @@ const getPoint = (edge: EdgeCurve, t: number): Position => {
   const leaving = back * back * back
   const first = 3 * back * back * t
   const second = 3 * back * t * t
-  const arriving = t * t * t
+  const incoming = t * t * t
   return {
     x:
       leaving * edge.fromPoint.x +
       first * edge.control1.x +
       second * edge.control2.x +
-      arriving * edge.toPoint.x,
+      incoming * edge.toPoint.x,
     y:
       leaving * edge.fromPoint.y +
       first * edge.control1.y +
       second * edge.control2.y +
-      arriving * edge.toPoint.y,
+      incoming * edge.toPoint.y,
   }
 }
 
@@ -101,14 +101,14 @@ const LENGTH_SAMPLES = 24
  * so the answer runs a little under.
  */
 function measureAlong(edge: EdgeCurve): number[] {
-  const along = [0]
+  const alongOffset = [0]
   let previous = edge.fromPoint
   for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
     const point = getPoint(edge, step / LENGTH_SAMPLES)
-    along.push(along[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
+    alongOffset.push(alongOffset[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
     previous = point
   }
-  return along
+  return alongOffset
 }
 
 /** How long the curve is, as an estimate. */
@@ -139,8 +139,8 @@ function getParameter(along: readonly number[], fraction: number): number {
  * tried at several places on the same line.
  */
 export function createPointOnCurve(edge: EdgeCurve): (fraction: number) => Position {
-  const along = measureAlong(edge)
-  return (fraction) => getPoint(edge, getParameter(along, fraction))
+  const alongEdge = measureAlong(edge)
+  return (fraction) => getPoint(edge, getParameter(alongEdge, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
@@ -148,16 +148,16 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = 3 * back * back
   const middle = 6 * back * t
-  const arriving = 3 * t * t
+  const incoming = 3 * t * t
   return {
     x:
       leaving * (edge.control1.x - edge.fromPoint.x) +
       middle * (edge.control2.x - edge.control1.x) +
-      arriving * (edge.toPoint.x - edge.control2.x),
+      incoming * (edge.toPoint.x - edge.control2.x),
     y:
       leaving * (edge.control1.y - edge.fromPoint.y) +
       middle * (edge.control2.y - edge.control1.y) +
-      arriving * (edge.toPoint.y - edge.control2.y),
+      incoming * (edge.toPoint.y - edge.control2.y),
   }
 }
 
@@ -192,12 +192,12 @@ export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
   const at = getPoint(edge, t)
 
-  const along = measureAlong(edge)
-  const total = along[LENGTH_SAMPLES]!
+  const alongEdge = measureAlong(edge)
+  const total = alongEdge[LENGTH_SAMPLES]!
   const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
-  const behind = getPoint(edge, getParameter(along, end === 'to' ? 1 - covered : covered))
+  const behindPoint = getPoint(edge, getParameter(alongEdge, end === 'to' ? 1 - covered : covered))
 
-  const spanned = { x: at.x - behind.x, y: at.y - behind.y }
+  const spanned = { x: at.x - behindPoint.x, y: at.y - behindPoint.y }
   const way = getTangent(edge, t)
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent

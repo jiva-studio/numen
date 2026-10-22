@@ -27,7 +27,7 @@ type Fingerprint struct {
 	// an index built on one platform describes the same source on another.
 	Path string
 	// Kind is what the file is. A walk and a stat both say it; a fingerprint the
-	// index hands back leaves it empty, because the kind is what was asked for.
+	// index returns leaves it empty, because the kind is what was asked for.
 	Kind SourceKind
 	Size int64
 	// ModTime is when the file last changed. Each adapter converts at its own

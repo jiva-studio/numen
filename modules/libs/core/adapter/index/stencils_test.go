@@ -22,16 +22,16 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 }
 
 // A note carrying no type is a note.
-func TestANoteWhoseFileSaysNothingIsANote(t *testing.T) {
+func TestANoteWhoseFileReturnsNothingIsANote(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
 
-	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"notes/entropy.md"})
+	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held["notes/entropy.md"] != domain.TypeNote {
-		t.Errorf("the index calls it %q, want %q", held["notes/entropy.md"], domain.TypeNote)
+	if target["notes/entropy.md"] != domain.TypeNote {
+		t.Errorf("the index calls it %q, want %q", target["notes/entropy.md"], domain.TypeNote)
 	}
 }
 
@@ -47,19 +47,19 @@ func TestTheNotesOfATypeInOneVaultAreNotAnotherVaultsNotes(t *testing.T) {
 	saveTypedNote(t, db, second, "patterns/quasar.md", "Quasar", stencilType)
 	saveTypedNote(t, db, second, "collections/pulsars.md", "Pulsars", deckType)
 
-	for _, held := range []struct {
+	for _, target := range []struct {
 		vault domain.Vault
 		want  string
 	}{
 		{first, "sheets/animal.md"},
 		{second, "patterns/quasar.md"},
 	} {
-		found, err := db.NoteQueries().GetPathsOfType(t.Context(), held.vault.ID, stencilType)
+		found, err := db.NoteQueries().GetPathsOfType(t.Context(), target.vault.ID, stencilType)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(found) != 1 || found[0] != held.want {
-			t.Errorf("%s answered with %v, and it holds %s", held.vault.Name, found, held.want)
+		if len(found) != 1 || found[0] != target.want {
+			t.Errorf("%s answered with %v, and it holds %s", target.vault.Name, found, target.want)
 		}
 	}
 }
@@ -73,7 +73,7 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	saveTypedNote(t, db, first, "cards/reading.md", "Reading", domain.TypeNote)
 	saveTypedNote(t, db, second, "cards/quasars.md", "Quasars", deckType)
 
-	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{
+	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{
 		"cards/mammals.md", "cards/animal.md", "cards/reading.md",
 		"cards/quasars.md", "cards/llama.jpg",
 	})
@@ -86,16 +86,16 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 		"cards/animal.md":  stencilType,
 		"cards/reading.md": domain.TypeNote,
 	} {
-		if held[path] != want {
-			t.Errorf("%s is %q, want %q", path, held[path], want)
+		if target[path] != want {
+			t.Errorf("%s is %q, want %q", path, target[path], want)
 		}
 	}
 	// A path of another vault and a path the index holds nothing at are both
 	// absent, and a listing draws such an entry as the file it is.
-	if _, drawn := held["cards/quasars.md"]; drawn {
+	if _, hasCard := target["cards/quasars.md"]; hasCard {
 		t.Error("a folder of one vault was told the type of another vault's note at the same path")
 	}
-	if _, drawn := held["cards/llama.jpg"]; drawn {
+	if _, renderedVal := target["cards/llama.jpg"]; renderedVal {
 		t.Error("a file the index holds no note at was given a type")
 	}
 }
@@ -106,11 +106,11 @@ func TestSavingANoteAgainWritesTheTypeItNowCarries(t *testing.T) {
 	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeNote)
 	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", deckType)
 
-	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"cards/mammals.md"})
+	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"cards/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held["cards/mammals.md"] != deckType {
-		t.Errorf("the index calls it %q, want %q", held["cards/mammals.md"], deckType)
+	if target["cards/mammals.md"] != deckType {
+		t.Errorf("the index calls it %q, want %q", target["cards/mammals.md"], deckType)
 	}
 }

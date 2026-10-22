@@ -40,7 +40,7 @@ const setup = () => {
   const applyPathChanges = vi.fn()
   const createUntitled = vi.fn()
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
-  const made = createFileMakers({
+  const createdItem = createFileMakers({
     core: { createUrl },
     tabOpeners: { openNewFile } as never,
     windowTabs: { createFileOfKind },
@@ -49,7 +49,7 @@ const setup = () => {
   })
   const files = createVaultFiles({
     core: { list: (folder) => Promise.resolve([{ path: `${folder}/a.md` }] as never) },
-    made,
+    made: createdItem,
     making: { createUntitled } as never,
     getTarget: () => target as never,
     commandDeps: commandDeps as never,
@@ -101,7 +101,7 @@ describe('the files of the vault a plugin is handed', () => {
     )
   })
 
-  it('make a note in a folder and answer where it stands, or no path where none was made', async () => {
+  it('make a note in a folder and answer at its current position, or no path where none was made', async () => {
     const { files, createUntitled } = setup()
     createUntitled.mockResolvedValueOnce({ path: 'dir/Untitled.md' }).mockResolvedValueOnce(null)
 
@@ -136,7 +136,7 @@ describe('the files of the vault a plugin is handed', () => {
     expect(writeMessage.mock.calls).toEqual([[words.notOffered, 'error']])
   })
 
-  it('say why the vault refused a stencil, in the words of the window', async () => {
+  it('say why the vault rejected a stencil, in the words of the window', async () => {
     const { files, createFileOfKind, writeMessage } = setup()
     createFileOfKind.mockResolvedValue({ ok: false, error: 'occupied' })
 
@@ -163,7 +163,7 @@ describe('the files of the vault a plugin is handed', () => {
 })
 
 describe('an address imported', () => {
-  it('fetches what the note points at and tells the notes its path changed', async () => {
+  it('fetches what the note points at and notifies the notes its path changed', async () => {
     const { files, createUrl, applyPathChanges } = setup()
     createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/U.md' } })
 
@@ -188,7 +188,7 @@ describe('an address imported', () => {
     expect(applyPathChanges).not.toHaveBeenCalled()
   })
 
-  it('fetches nothing where the vault refused the address', async () => {
+  it('fetches nothing where the vault rejected the address', async () => {
     const { files, createUrl, applyPathChanges, writeMessage } = setup()
     createUrl.mockResolvedValue({ ok: false, error: 'occupied' })
 

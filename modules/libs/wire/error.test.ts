@@ -32,7 +32,7 @@ describe('an error code', () => {
     expect(formatErrorCodeMessage(undefined)).toBe('')
   })
 
-  it('says something plain where the code names nothing here yet', () => {
+  it('says something plain where the code is empty here yet', () => {
     expect(formatErrorCodeMessage(UNNAMED_CODE)).toMatch(/\S/)
   })
 })
@@ -81,7 +81,7 @@ describe('a fault', () => {
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
   })
 
-  it('says something plain where the code names nothing here yet', () => {
+  it('says something plain where the code is empty here yet', () => {
     const message = formatErrorMessage(new ConnectError('', UNNAMED_CONNECT_CODE))
     expect(message).toMatch(/\S/)
   })

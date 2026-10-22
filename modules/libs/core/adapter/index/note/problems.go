@@ -118,8 +118,8 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 	answers := map[string][]string{}
 	var out []domain.AmbiguousLink
 	for _, l := range candidates {
-		answering, known := answers[l.Target.Value]
-		if !known {
+		answering, recognized := answers[l.Target.Value]
+		if !recognized {
 			if answering, err = q.candidates(ctx, vault, l.Target.Value); err != nil {
 				return nil, err
 			}

@@ -189,7 +189,7 @@ func TestAnEntryIsNamedOrItIsNotThere(t *testing.T) {
 	}
 }
 
-func TestAFileThatIsNoArchiveSaysWhyItIsNone(t *testing.T) {
+func TestAFileThatIsNoArchiveReturnsWhyItIsNone(t *testing.T) {
 	_, err := epub.Read([]byte("PK, and then a lie about what follows"))
 	if !errors.Is(err, epub.ErrNotArchive) || !errors.Is(err, zip.ErrFormat) {
 		t.Errorf("err = %v, want it to wrap %v and %v", err, epub.ErrNotArchive, zip.ErrFormat)
@@ -220,10 +220,10 @@ func TestATruncatedEncryptionFileLocksNothing(t *testing.T) {
 	}
 }
 
-func TestAnElementHoldsNoTextOfItsOwn(t *testing.T) {
-	_, drawn := readOne(t, `<p>Hello <b>big</b> world<img src="x.png"/></p><p>end</p>`)
+func TestAnElementContainsNoTextOfItsOwn(t *testing.T) {
+	_, markup := readOne(t, `<p>Hello <b>big</b> world<img src="x.png"/></p><p>end</p>`)
 
-	for _, node := range getEveryNode(drawn.Nodes) {
+	for _, node := range getEveryNode(markup.Nodes) {
 		if node.Name != "" && node.Text != "" {
 			t.Errorf("the %s element says %q itself", node.Name, node.Text)
 		}
@@ -350,25 +350,25 @@ func buildCommentBook(t *testing.T, sizes []int) []byte {
 	return out.Bytes()
 }
 
-func TestTheMarkupIsWrittenIntoOneAllocation(t *testing.T) {
+func TestTheMarkupIsSavedIntoOneAllocation(t *testing.T) {
 	const runs, width = 50, 200
-	drawn := &epub.Markup{Length: runs * width}
+	markup := &epub.Markup{Length: runs * width}
 	for i := range runs {
-		drawn.Nodes = append(drawn.Nodes, epub.Node{Offset: i, Text: strings.Repeat("a", width)})
+		markup.Nodes = append(markup.Nodes, epub.Node{Offset: i, Text: strings.Repeat("a", width)})
 	}
-	if got := len(drawn.HTML()); got <= drawn.Length || got >= 2*drawn.Length {
-		t.Fatalf("the page is %d bytes for a text of %d: the fixture does not fit between one and two times it", got, drawn.Length)
+	if got := len(markup.HTML()); got <= markup.Length || got >= 2*markup.Length {
+		t.Fatalf("the page is %d bytes for a text of %d: the fixture does not fit between one and two times it", got, markup.Length)
 	}
 
-	if got := testing.AllocsPerRun(10, func() { _ = drawn.HTML() }); got > 1 {
+	if got := testing.AllocsPerRun(10, func() { _ = markup.HTML() }); got > 1 {
 		t.Errorf("the page took %v allocations, want the one that holds it", got)
 	}
 }
 
-func TestALineEndAfterATableHoldingOnlyAnElementBelongsToThatTable(t *testing.T) {
-	_, drawn := readOne(t, `<table><template><b>X</b></template></table><table><tr><td>Y</td></tr></table>`)
+func TestALineEndAfterATableContainingOnlyAnElementBelongsToThatTable(t *testing.T) {
+	_, markup := readOne(t, `<table><template><b>X</b></template></table><table><tr><td>Y</td></tr></table>`)
 
-	if got := getNodeText(element(t, drawn.Nodes, "td").Children); got != "Y\n" {
+	if got := getNodeText(element(t, markup.Nodes, "td").Children); got != "Y\n" {
 		t.Errorf("the cell says %q, want %q", got, "Y\n")
 	}
 }

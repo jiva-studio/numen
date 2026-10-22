@@ -43,7 +43,7 @@ describe('useDrag, the pointer', () => {
     expect(drag.dragged.value).toBe('a')
   })
 
-  it('hands the browser the name of what was lifted as plain text', () => {
+  it('passes the browser the name of what was lifted as plain text', () => {
     const { drag } = setup()
     const lifted = dragEvent()
     drag.lift('a', lifted.press)
@@ -52,19 +52,19 @@ describe('useDrag, the pointer', () => {
 
   it('answers a hover over a place that takes it, and says the drop may follow', () => {
     const { drag } = setup()
-    const over = dragEvent()
+    const overTarget = dragEvent()
     drag.lift('a', dragEvent().press)
-    drag.hover('b', over.press)
+    drag.hover('b', overTarget.press)
     expect(drag.at.value).toBe('b')
-    expect(over.prevented()).toBe(1)
+    expect(overTarget.prevented()).toBe(1)
   })
 
   it('answers no hover while nothing is dragged', () => {
     const { drag } = setup()
-    const over = dragEvent()
-    drag.hover('b', over.press)
+    const overTarget = dragEvent()
+    drag.hover('b', overTarget.press)
     expect(drag.at.value).toBeUndefined()
-    expect(over.prevented()).toBe(0)
+    expect(overTarget.prevented()).toBe(0)
   })
 
   it('lets go of everything on release', () => {
@@ -101,7 +101,7 @@ describe('useDrag, the pointer', () => {
     expect(move).not.toHaveBeenCalled()
   })
 
-  it('moves nothing dropped when nothing is held, whatever stands for nowhere', () => {
+  it('moves nothing dropped when nothing is retained, whatever remains for nowhere', () => {
     const move = vi.fn<(dragged: string, at: InsertionPoint) => void>()
     const drag = useDrag<InsertionPoint>({
       order: () => ['a'],
@@ -115,7 +115,7 @@ describe('useDrag, the pointer', () => {
 })
 
 describe('useDrag, the keyboard', () => {
-  it('moves what is held one place and says the key is taken', () => {
+  it('moves what is retained one place and says the key is taken', () => {
     const { drag, move } = setup()
     const key = keyEvent()
     drag.step('c', 'up', key.press)

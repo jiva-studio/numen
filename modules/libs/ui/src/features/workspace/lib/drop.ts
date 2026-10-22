@@ -1,5 +1,5 @@
 /**
- * What letting go of a dragged tab comes to, as geometry alone.
+ * What letting go of a dragged tab evaluates to, as geometry alone.
  *
  * A point and a box in, a side out. Which pane that box belongs to and what
  * the side then does to the tree are settled elsewhere; `getRect` is the one
@@ -48,15 +48,15 @@ export function getSide(at: Position, box: Rect, options: Partial<DropOptions> =
     ['bottom', downZone > 0 ? (box.height - y) / downZone : Infinity],
   ]
 
-  let chosen: Side = 'center'
+  let selected: Side = 'center'
   let deepest = 1
   for (const [side, reach] of reaches) {
     if (reach < deepest) {
-      chosen = side
+      selected = side
       deepest = reach
     }
   }
-  return chosen
+  return selected
 }
 
 /** The part of a box a side would take, for the overlay that shows it. */
@@ -93,16 +93,16 @@ export function getSlot(x: number, tabs: readonly Rect[]): number {
  * no tabs takes the whole of itself.
  */
 export function getCaretRect(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
-  const beside = tabs[slot] ?? tabs[tabs.length - 1]
-  if (!beside) return strip
+  const besideElement = tabs[slot] ?? tabs[tabs.length - 1]
+  if (!besideElement) return strip
 
-  const at = slot < tabs.length ? beside.x : beside.x + beside.width
-  return { x: at, y: beside.y, width: 0, height: beside.height }
+  const at = slot < tabs.length ? besideElement.x : besideElement.x + besideElement.width
+  return { x: at, y: besideElement.y, width: 0, height: besideElement.height }
 }
 
 /** The outer edge a place is within reach of, and nothing away from every edge. */
 export function findEdgeSide(at: Position, box: Rect, reach: number): Side | null {
-  const near: readonly (readonly [Side, number])[] = [
+  const nearSides: readonly (readonly [Side, number])[] = [
     ['left', at.x - box.x],
     ['right', box.x + box.width - at.x],
     ['top', at.y - box.y],
@@ -111,7 +111,7 @@ export function findEdgeSide(at: Position, box: Rect, reach: number): Side | nul
 
   let side: Side | null = null
   let nearest = reach
-  for (const [each, distance] of near) {
+  for (const [each, distance] of nearSides) {
     if (distance < nearest) {
       side = each
       nearest = distance

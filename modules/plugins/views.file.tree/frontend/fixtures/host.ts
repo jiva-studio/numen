@@ -49,7 +49,7 @@ export const getPathCommands = ({ entry, isSeveral }: PathMenuRow): readonly Men
 const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
 /** What a files tab asks of the window to draw its menu and its rows. */
-export const drawing = {
+export const renderDeps = {
   getPathCommands,
   getCommandIcon: (id: string) => (id === 'unknown' ? null : Icon),
   getEntryIcon: () => Icon,
@@ -93,7 +93,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     getMessageWriter: () => () => {},
     getToday: () => '2026-01-01',
     runPathCommand: (id, target) => void recorded.commands.push([id, target]),
-    ...drawing,
+    ...renderDeps,
   }
 
   const record = (what: string) => async (folder: string, name?: string) => {

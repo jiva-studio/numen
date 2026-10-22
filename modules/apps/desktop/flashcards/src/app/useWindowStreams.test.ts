@@ -39,9 +39,9 @@ vi.mock('@/shared/clients', () => ({
     },
   },
   windowService: {
-    watchTasks: (asked: unknown, call?: { signal?: AbortSignal }) => {
+    watchTasks: (request: unknown, call?: { signal?: AbortSignal }) => {
       if (call?.signal) wire.taken.push(call.signal)
-      wire.tasksAsked.push(asked)
+      wire.tasksAsked.push(request)
       return wire.tasks()
     },
   },
@@ -95,7 +95,7 @@ const openWindow = () => {
 /** How long a stream that went waits before it is taken up again, in milliseconds. */
 const AGAIN = 1000
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 beforeEach(() => {
   wire.taken.length = 0
@@ -161,7 +161,7 @@ describe('what the window follows', () => {
     window.unmount()
   })
 
-  it('hands the work being done over as cards to draw', async () => {
+  it('passes the work being done over as cards to draw', async () => {
     wire.tasks = () =>
       sends({
         tasks: [
@@ -199,7 +199,7 @@ describe('what the window follows', () => {
   })
 })
 
-describe('whether a card can be asked about', () => {
+describe('whether a card can be requested about', () => {
   it('is what the agent says', async () => {
     wire.agent = async () => ({ unreachable: 'no model is set up' })
     const { window, deps } = openWindow()
@@ -209,7 +209,7 @@ describe('whether a card can be asked about', () => {
     window.unmount()
   })
 
-  it('is no, when the agent cannot be asked', async () => {
+  it('is no, when the agent cannot be requested', async () => {
     wire.agent = async () => {
       throw new Error('the connection went')
     }

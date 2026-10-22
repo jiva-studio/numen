@@ -28,7 +28,7 @@ export function useDrawnRows(
   onScrollToRow?: (index: number) => void,
 ): DrawnRowsState {
   /** The rows as they are drawn, each under the row it stands for. */
-  const drawn = new Map<RowId, HTMLElement>()
+  const viewElement = new Map<RowId, HTMLElement>()
 
   const here = shallowRef<RowId | null>(null)
 
@@ -42,11 +42,11 @@ export function useDrawnRows(
 
   const setRowElement = (row: RowId, element: unknown): void => {
     const found = (element as { $el?: unknown } | null)?.$el
-    if (found) drawn.set(row, found as HTMLElement)
-    else drawn.delete(row)
+    if (found) viewElement.set(row, found as HTMLElement)
+    else viewElement.delete(row)
   }
 
-  const getRowElement = (row: RowId): HTMLElement | null => drawn.get(row) ?? null
+  const getRowElement = (row: RowId): HTMLElement | null => viewElement.get(row) ?? null
 
   const focusRow = async (row: RowId | null, scrollTo?: (index: number) => void): Promise<void> => {
     if (row === null) return

@@ -237,12 +237,12 @@ func (x *WatchTasksResponse) GetTasks() []*Task {
 // A Task is one piece of work the application is doing behind the window.
 //
 // Every kind of work is one of these. That is the point: the next kind is an
-// entry in a list rather than another field on the state, another thing for the
+// entry in a list and not another field on the state, another thing for the
 // window to poll, and another branch in what draws it.
 type Task struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Id is what this work is called, so that the same work reported again
-	// replaces itself rather than appearing twice.
+	// replaces itself and not appearing twice.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Title is the work, in the words to show. About is what it is on, and is
 	// empty for work that is on nothing in particular.
@@ -600,7 +600,7 @@ func (x *GetCurrentVaultRequest) GetWindow() string {
 type GetCurrentVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The identity the list of vaults holds that vault under. Empty in a window
-	// showing none, and in one that is open on the installation rather than on
+	// showing none, and in one that is open on the installation and not on
 	// any one vault.
 	Vault         string `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	unknownFields protoimpl.UnknownFields

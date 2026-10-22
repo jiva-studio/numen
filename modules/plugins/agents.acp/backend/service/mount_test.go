@@ -27,8 +27,8 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 		t.Fatalf("call with the token: %v", err)
 	}
 
-	refused := connect.NewRequest(&numenv1.GetAgentProgramsRequest{})
-	_, err = client.GetAgentPrograms(t.Context(), refused)
+	unauthReq := connect.NewRequest(&numenv1.GetAgentProgramsRequest{})
+	_, err = client.GetAgentPrograms(t.Context(), unauthReq)
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("call without the token = %v, want unauthenticated", err)
 	}

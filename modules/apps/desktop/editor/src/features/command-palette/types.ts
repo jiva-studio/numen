@@ -2,7 +2,7 @@
  * What a command is, and what it is asked over.
  *
  * Nothing here decides anything: the table of commands is `lib/table.ts`, when
- * each is offered is `lib/offered.ts`, the words they are drawn in are `words.ts`,
+ * each is offered is `lib/availability.ts`, the words they are drawn in are `words.ts`,
  * and what the window offers one being carried out is `model/deps.ts`.
  */
 import type { PaletteKeys, PlexDestination } from '@numen/ui'
@@ -161,7 +161,7 @@ export interface PaletteLists {
    * come too: a list may hold a row made out of them.
    */
   getStepGroups(command: string, typed: string): readonly StepGroup[]
-  /** The one the keyboard is standing on, and nothing where it stands on none. */
+  /** The one the keyboard is standing on, and nothing where it relies on none. */
   previewItem(command: string, item: string): void
 }
 

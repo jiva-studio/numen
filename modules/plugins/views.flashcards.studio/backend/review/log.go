@@ -21,7 +21,7 @@ const TimestampLayout = "2006-01-02T15:04:05.000Z"
 // back is not held to the one shape this build writes.
 func ParseTimestamp(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
-// line is one line of a log, as it stands in the file.
+// line is one line of a log, currently in the file.
 type line struct {
 	V      int    `json:"v"`
 	ID     string `json:"id"`
@@ -62,10 +62,10 @@ func Write(a Answer) ([]byte, error) {
 // reason to refuse the rest of somebody's history.
 func Read(raw []byte) (answers []Answer, skipped int) {
 	// What stands after the last newline is a line that did not land whole.
-	if cut := bytes.LastIndexByte(raw, '\n'); cut < 0 {
+	if lastNewline := bytes.LastIndexByte(raw, '\n'); lastNewline < 0 {
 		return nil, whole(raw)
-	} else if cut+1 < len(raw) {
-		skipped, raw = 1, raw[:cut+1]
+	} else if lastNewline+1 < len(raw) {
+		skipped, raw = 1, raw[:lastNewline+1]
 	}
 
 	for _, one := range bytes.Split(raw, []byte("\n")) {

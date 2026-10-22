@@ -18,14 +18,14 @@ function fake(over: Partial<Notes> = {}) {
         : asFailure('missing'),
     write: async (path, body, seen) => {
       wrote.push({ path, body })
-      const held = files.get(path)
+      const existing = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
       if (
         seen &&
-        held !== undefined &&
-        held !== seen.prose &&
-        getFingerprint(held) !== seen.fingerprint
+        existing !== undefined &&
+        existing !== seen.prose &&
+        getFingerprint(existing) !== seen.fingerprint
       ) {
         return asFailure('changed' as const)
       }
@@ -128,11 +128,11 @@ describe('typing', () => {
 
 describe('a change in the vault', () => {
   it('is read again, and the document is left alone where the text is the same', async () => {
-    const asked: string[] = []
+    const requests: string[] = []
     const { core, files } = fake()
     files.set('Heat.md', 'unchanged')
     const notes = openNotes(
-      { ...core, read: async (path) => (asked.push(path), core.read(path)) },
+      { ...core, read: async (path) => (requests.push(path), core.read(path)) },
       { limits: quick },
     )
     notes.open('Heat.md')
@@ -141,7 +141,7 @@ describe('a change in the vault', () => {
     notes.applyPathChanges(['Heat.md'])
     await settle()
 
-    expect(asked).toEqual(['Heat.md', 'Heat.md'])
+    expect(requests).toEqual(['Heat.md', 'Heat.md'])
     expect(notes.getOpenNote('Heat.md').body).toBe('unchanged')
   })
 
@@ -175,11 +175,11 @@ describe('a change in the vault', () => {
   })
 
   it('naming other paths only reaches nobody', async () => {
-    const asked: string[] = []
+    const requests: string[] = []
     const { core, files } = fake()
     files.set('Heat.md', 'x')
     const notes = openNotes(
-      { ...core, read: async (path) => (asked.push(path), core.read(path)) },
+      { ...core, read: async (path) => (requests.push(path), core.read(path)) },
       { limits: quick },
     )
     notes.open('Heat.md')
@@ -188,7 +188,7 @@ describe('a change in the vault', () => {
     notes.applyPathChanges(['Other.md'])
     await settle()
 
-    expect(asked).toHaveLength(1)
+    expect(requests).toHaveLength(1)
   })
 })
 
@@ -291,7 +291,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
   })
 
-  it('answers at once for a note with nothing unsaved, and for one it never held', async () => {
+  it('answers at once for a note with nothing unsaved, and for one it never retained', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
@@ -322,7 +322,7 @@ describe('a note whose file is about to be renamed or removed', () => {
   })
 })
 
-describe('where a note stands', () => {
+describe('where a note remains', () => {
   it('is the file its tab opened with while nothing has moved it', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
@@ -334,7 +334,7 @@ describe('where a note stands', () => {
     expect(notes.getPath('Nowhere.md')).toBe('Nowhere.md')
   })
 
-  it('follows each rename, so a note moved twice stands at the last of them', async () => {
+  it('follows each rename, so a note moved twice remains at the last of them', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
@@ -369,7 +369,7 @@ describe('where a note stands', () => {
   })
 })
 
-describe('a save asked for now', () => {
+describe('a save requested for now', () => {
   it('writes what is unsaved without waiting for the text to be still', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
@@ -468,7 +468,7 @@ describe('a note that changed on disk under a save', () => {
 })
 
 describe('a core that cannot be reached', () => {
-  it('sticks the note instead of leaving it loading for ever', async () => {
+  it('sticks the note and not leaving it loading for ever', async () => {
     const { core } = fake({
       read: async () => {
         throw new Error('no transport')
@@ -483,8 +483,8 @@ describe('a core that cannot be reached', () => {
   })
 })
 
-describe('a save that was refused', () => {
-  it('says why in the tab it was refused on, for as long as that tab is open', async () => {
+describe('a save that failed', () => {
+  it('says why in the tab it failed on, for as long as that tab is open', async () => {
     const { core, files } = fake({
       write: async () => asFailure('bodyUnwritable' as const),
     })
@@ -522,7 +522,7 @@ describe('a save that was refused', () => {
 })
 
 describe('closing a note that could not be written', () => {
-  it('holds it once and says why, and lets it go when it is asked again', async () => {
+  it('holds it once and says why, and lets it go when it is requested again', async () => {
     const { core, files } = fake({
       write: async () => {
         throw new Error('no transport')
@@ -568,7 +568,7 @@ describe('a note that points somewhere', () => {
     },
   }
 
-  it('carries the link, beside the prose it was read with', async () => {
+  it('carries the link, alongside the prose it was read with', async () => {
     const { core } = fake({ read: async () => asValue(linked) })
     const notes = openNotes(core, { limits: quick })
 
@@ -688,10 +688,10 @@ describe('the ids of the open notes', () => {
     files.set('A.md', 'a')
     files.set('B.md', 'b')
     const notes = openNotes(core, { limits: quick })
-    const seen: string[][] = []
+    const observed: string[][] = []
     const stop = watch(
       () => [...notes.getOpenIds()],
-      (ids) => seen.push(ids),
+      (ids) => observed.push(ids),
       { flush: 'sync' },
     )
 
@@ -701,14 +701,14 @@ describe('the ids of the open notes', () => {
     notes.open('B.md')
     await settle()
     notes.setBody('B.md', 'b2')
-    expect(seen.at(-1)).toEqual(['A.md', 'B.md'])
-    const afterOpen = seen.length
+    expect(observed.at(-1)).toEqual(['A.md', 'B.md'])
+    const afterOpen = observed.length
 
     notes.setBody('A.md', 'a3')
-    expect(seen).toHaveLength(afterOpen)
+    expect(observed).toHaveLength(afterOpen)
 
     await notes.close('A.md')
-    expect(seen.at(-1)).toEqual(['B.md'])
+    expect(observed.at(-1)).toEqual(['B.md'])
     stop()
   })
 
@@ -799,7 +799,7 @@ describe('a note with nothing wrong', () => {
 })
 
 describe('a note replaced by what its file holds', () => {
-  it('is announced by the path it stands at', async () => {
+  it('is announced by the path it remains at', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'entropy grows')
     const onReplaced = vi.fn<(path: string) => void>()
@@ -813,7 +813,7 @@ describe('a note replaced by what its file holds', () => {
   })
 })
 
-describe('reloading a note that held something', () => {
+describe('reloading a note that retained something', () => {
   const linked = {
     body: 'What I made of it.',
     at: getFingerprint('What I made of it.'),
@@ -930,7 +930,7 @@ describe('closing a note', () => {
     await settle()
     notes.setBody('Heat.md', 'one two')
     const answers: boolean[] = []
-    void notes.close('Heat.md').then((gone) => answers.push(gone))
+    void notes.close('Heat.md').then((closedResult) => answers.push(closedResult))
 
     notes.setBody('Heat.md', 'one two three')
     await settle()
@@ -941,7 +941,7 @@ describe('closing a note', () => {
     expect(base.files.get('Heat.md')).toBe('one two three')
   })
 
-  it('answers that a stale note was kept open, every time it is asked', async () => {
+  it('answers that a stale note was kept open, every time it is requested', async () => {
     const base = fake()
     base.files.set('Heat.md', 'one')
     const notes = openNotes(base.core, { limits: quick })
@@ -976,7 +976,7 @@ describe('a note that could not be written, closed, and opened again', () => {
     return { core, down }
   }
 
-  it('is held again, and is not closed by the writes of the note it was', async () => {
+  it('is retained again, and is not closed by the writes of the note it was', async () => {
     const { core, down } = createFlakyCore()
     const notes = openNotes(core, { limits: quick })
     notes.open('Heat.md')
@@ -999,7 +999,7 @@ describe('a note that could not be written, closed, and opened again', () => {
     expect(await notes.close('Heat.md')).toBe(false)
   })
 
-  it('is held again once it is reloaded and fails again', async () => {
+  it('is retained again once it is reloaded and fails again', async () => {
     const { core } = createFlakyCore()
     const notes = openNotes(core, { limits: quick })
     notes.open('Heat.md')

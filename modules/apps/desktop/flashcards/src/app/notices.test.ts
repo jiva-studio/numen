@@ -14,32 +14,32 @@ describe('what the window has to say', () => {
     one.dismissNotice(first.id)
     one.showNotice('the third', 'caution')
 
-    expect(one.notices.value.map((said) => said.text)).toEqual(['the second', 'the third'])
-    const names = one.notices.value.map((said) => said.id)
+    expect(one.notices.value.map((saidText) => saidText.text)).toEqual(['the second', 'the third'])
+    const names = one.notices.value.map((response) => response.id)
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it('numbers what it says in the order it was said', () => {
+  it('numbers what it says in the order it was returned', () => {
     const one = useNotices()
     one.showNotice('the first', 'caution')
     one.showNotice('the second', 'caution')
 
-    expect(one.notices.value.map((said) => said.id)).toEqual(['1', '2'])
+    expect(one.notices.value.map((response) => response.id)).toEqual(['1', '2'])
   })
 
-  it('says trouble in the person’s own words, and stands until they put it away', () => {
+  it('says trouble in the person’s own words, and remains until they put it away', () => {
     const one = useNotices()
     one.reportError(new ConnectError('the vault could not be read', Code.Unavailable))
 
-    const said = one.notices.value[0]!
-    expect(said.text).toBe('The vault could not be read.')
-    expect(said.tone).toBe('alarm')
-    expect(said.stay).toBe('kept')
+    const response = one.notices.value[0]!
+    expect(response.text).toBe('The vault could not be read.')
+    expect(response.tone).toBe('alarm')
+    expect(response.stay).toBe('kept')
   })
 
-  // Pressing a tile whose count is a moment stale is refused, and what the
+  // Pressing a tile whose count is a moment stale fails, and what the
   // application said is what a person needs. How it travelled is not.
-  it('says a refusal without the wire it came over', () => {
+  it('says an error without the wire it came over', () => {
     const one = useNotices()
     one.reportError(
       new ConnectError(
@@ -58,7 +58,7 @@ describe('what the window has to say', () => {
     expect(one.notices.value[0]!.text).toBe('The deck could not be written.')
   })
 
-  it('ends a sentence whose only stop stands inside it', () => {
+  it('ends a sentence whose only stop remains inside it', () => {
     const one = useNotices()
     one.reportError(
       new ConnectError('is the preset paused? the deck says so', Code.FailedPrecondition),
@@ -93,7 +93,7 @@ describe('what the window has to say', () => {
   // the window on that vault, so the card is drawn the moment it arrives.
   it('draws work being done, and draws it at once', () => {
     const one = useNotices()
-    one.setTasks([reads()])
+    one.setTasks([createTask()])
 
     expect(one.notices.value[0]).toMatchObject({
       id: 'indexing\t01A',
@@ -104,9 +104,9 @@ describe('what the window has to say', () => {
     })
   })
 
-  it('says why work stopped, and stands until it is put away', () => {
+  it('says why work stopped, and remains until it is put away', () => {
     const one = useNotices()
-    one.setTasks([reads({ error: 'no such folder' })])
+    one.setTasks([createTask({ error: 'no such folder' })])
 
     expect(one.notices.value[0]).toMatchObject({
       text: 'no such folder',
@@ -120,16 +120,16 @@ describe('what the window has to say', () => {
   // finished is work the next list leaves out.
   it('lets go of work the list no longer names', () => {
     const one = useNotices()
-    one.setTasks([reads()])
+    one.setTasks([createTask()])
     one.showNotice('the first', 'caution')
     one.setTasks([])
 
-    expect(one.notices.value.map((said) => said.text)).toEqual(['the first'])
+    expect(one.notices.value.map((notice) => notice.text)).toEqual(['the first'])
   })
 })
 
-/** One vault being read, as the answer holds it. */
-const reads = (fields: Partial<Task> = {}): Task => ({
+/** Creates a task fixture for testing. */
+const createTask = (fields: Partial<Task> = {}): Task => ({
   id: 'indexing\t01A',
   label: 'Indexing the vault',
   about: 'Sanskrit',

@@ -207,7 +207,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 
 // What ended is not what is being done, and a list a finished pass stays in is a
 // list nobody reads.
-func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
+func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	model := &asked{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
@@ -269,8 +269,8 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
 
-	at, held := watching.opening(MakingVectors)
-	if !held {
+	at, target := watching.opening(MakingVectors)
+	if !target {
 		t.Fatal("nothing was being indexed while a vector was asked for")
 	}
 	if at.About != "Note.md" {
@@ -290,17 +290,17 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 
 	// The weights are still coming down, and in this test they never land.
-	arriving := embedding.NewDeferredEmbedder(model.GetModel())
+	incoming := embedding.NewDeferredEmbedder(model.GetModel())
 
-	over := make(chan struct{})
+	doneCh := make(chan struct{})
 	go func() {
-		defer close(over)
-		newPass(made, db, newRecorder(), arriving.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
+		defer close(doneCh)
+		newPass(made, db, newRecorder(), incoming.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
 			embed(t.Context())
 	}()
 
 	select {
-	case <-over:
+	case <-doneCh:
 	case <-time.After(10 * time.Second):
 		t.Fatal("the pass is waiting for a model to embed nothing with")
 	}
@@ -317,11 +317,11 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	cut(t, made, db, v)
 	events := newRecorder()
 
-	arriving := embedding.NewDeferredEmbedder(model.GetModel())
-	over := make(chan struct{})
+	incoming := embedding.NewDeferredEmbedder(model.GetModel())
+	doneCh := make(chan struct{})
 	go func() {
-		defer close(over)
-		newPass(made, db, events, arriving.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
+		defer close(doneCh)
+		newPass(made, db, events, incoming.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
 			embed(t.Context())
 	}()
 
@@ -332,8 +332,8 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 
-	arriving.SetModel(model, nil)
-	<-over
+	incoming.SetModel(model, nil)
+	<-doneCh
 
 	if at := findTask(t, events, MakingVectors); at != nil {
 		t.Errorf("the pass that embedded what was owed is still being done: %+v", *at)
@@ -406,7 +406,7 @@ func (o *overheard) lists() [][]run.Task {
 // enters the list before it has opened a source stands there as the word
 // "Indexing" over an empty line, at a share of nothing, for as long as the first
 // vectors take to come back.
-func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
+func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	events := newRecorder()
 	model := &asked{dims: 64}
 	made, db := reading(t)
@@ -417,13 +417,13 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
-	over := &overheard{asked: model, tasks: events.tasks}
-	held := embedding.NewDeferredEmbedder(model.GetModel())
-	held.SetModel(over, nil)
+	overVal := &overheard{asked: model, tasks: events.tasks}
+	target := embedding.NewDeferredEmbedder(model.GetModel())
+	target.SetModel(overVal, nil)
 
-	newPass(made, db, events, held.GetWaitingEmbedder(), model.GetModel().Recipe(), v).embed(t.Context())
+	newPass(made, db, events, target.GetWaitingEmbedder(), model.GetModel().Recipe(), v).embed(t.Context())
 
-	for _, list := range over.lists() {
+	for _, list := range overVal.lists() {
 		for _, at := range list {
 			if at.ID != MakingVectors || at.Error != "" {
 				continue
@@ -448,13 +448,13 @@ type nudging struct {
 }
 
 func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error) {
-	stopped := false
+	isStopped := false
 	n.once.Do(func() {
 		signal(n.wake)
 		<-ctx.Done()
-		stopped = true
+		isStopped = true
 	})
-	if stopped {
+	if isStopped {
 		return nil, ctx.Err()
 	}
 	return n.asked.Embed(ctx, texts)
@@ -478,14 +478,14 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	p.worker.read = model.wake
 	p.embed(t.Context())
 
-	held, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held == 0 {
+	if target == 0 {
 		t.Fatal("the vault owed no vector, and the pass had nothing to stand aside from")
 	}
-	if embedded == held {
+	if embedded == target {
 		t.Error("the pass embedded the whole vault while a recognition waited to be cut")
 	}
 
@@ -505,12 +505,12 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	again := newPass(made, db, events, model.asked, model.GetModel().Recipe(), v)
 	again.embed(t.Context())
 
-	held, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if embedded != held {
-		t.Errorf("the pass taken up again left %d of %d chunks without a vector", held-embedded, held)
+	if embedded != target {
+		t.Errorf("the pass taken up again left %d of %d chunks without a vector", target-embedded, target)
 	}
 }
 

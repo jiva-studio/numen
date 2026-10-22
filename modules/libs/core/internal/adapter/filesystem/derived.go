@@ -79,8 +79,8 @@ type places struct {
 // folder of the store's own, so a link standing where an area should be holds
 // nothing.
 func (p *places) isInside(resolved, area string) bool {
-	bound, named := p.areas[area]
-	return named && isUnderRoot(resolved, bound)
+	linked, named := p.areas[area]
+	return named && isUnderRoot(resolved, linked)
 }
 
 // isCurrent says the store's folder still resolves to the place found.
@@ -140,7 +140,7 @@ func (d DerivedStores) Open(v domain.Vault) (port.DerivedStore, error) {
 // The store answers for every area named and the first of them is what it is
 // called. Naming none is the default area alone.
 func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore, error) {
-	kept := make([]string, 0, len(areas))
+	validAreas := make([]string, 0, len(areas))
 	for _, area := range areas {
 		if area == "" {
 			continue
@@ -148,10 +148,10 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 		if strings.ContainsAny(area, `/\`) || area == "." || area == ".." {
 			return nil, fmt.Errorf("%q is not one folder", area)
 		}
-		kept = append(kept, area)
+		validAreas = append(validAreas, area)
 	}
-	if len(kept) == 0 {
-		kept = []string{OCRDir}
+	if len(validAreas) == 0 {
+		validAreas = []string{OCRDir}
 	}
 	abs, err := filepath.Abs(vaultRoot)
 	if err != nil {
@@ -169,7 +169,7 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 		service: opts.serviceDir(),
 		id:      id,
 		root:    filepath.Join(abs, opts.serviceDir()),
-		areas:   kept,
+		areas:   validAreas,
 	}
 	d.last.Store(was)
 	if found, err := d.locate(); err == nil {
@@ -240,11 +240,11 @@ func (d *DerivedStore) WriteStream(ctx context.Context, name string, from io.Rea
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return 0, err
 	}
-	written, err := replace(ctx, root, at, from, 0o644)
+	content, err := replace(ctx, root, at, from, 0o644)
 	if err != nil {
 		return 0, err
 	}
-	return written.Size, syncDirectory(root, filepath.Dir(at))
+	return content.Size, syncDirectory(root, filepath.Dir(at))
 }
 
 func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) error {
@@ -545,8 +545,8 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	}
 	// A name says which area it belongs to, and a store answers for its own
 	// only.
-	area, held := d.findArea(clean)
-	if !held {
+	area, targetVal := d.findArea(clean)
+	if !targetVal {
 		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), ErrOutside)
 	}
 	target := filepath.Join(d.root, filepath.FromSlash(clean))
@@ -570,7 +570,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 // expresses either.
 //
 // The folder it is judged against is the one resolved last, and an answer
-// stands only while the store's folder is still that one. A name it refuses,
+// persists only while the store's folder is still that one. A name it refuses,
 // and a folder that has moved, are judged against where the folder is now.
 func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.isCurrent(where) {

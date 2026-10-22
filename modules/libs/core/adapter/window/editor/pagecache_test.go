@@ -33,7 +33,7 @@ func countDrawings(t *testing.T, cache *pagecache.Disk) int {
 // A page of a scan is half a second of decoding whatever size is asked for, and
 // it is the same half second every time it is turned back to. A page drawn once
 // is drawn once.
-func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
+func TestAPageGeneratedBeforeIsNotGeneratedAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
@@ -42,7 +42,7 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
-	_, drawn, _ := from.getCounts()
+	_, rendered, _ := from.getCounts()
 	if n := countDrawings(t, cache); n != 1 {
 		t.Fatalf("the folder holds %d drawings after one page", n)
 	}
@@ -54,8 +54,8 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
-	if _, again, _ := from.getCounts(); again != drawn {
-		t.Errorf("the page was drawn %d times, and %d of them after it was kept", again, again-drawn)
+	if _, again, _ := from.getCounts(); again != rendered {
+		t.Errorf("the page was drawn %d times, and %d of them after it was kept", again, again-rendered)
 	}
 	if out.Body.Len() == 0 {
 		t.Error("what came back from the folder is empty")
@@ -70,9 +70,9 @@ func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 	stopReadAhead(api)
 	cache := newDiskCache(t, api)
 
-	for _, wide := range []int{400, 800} {
-		if out := ask(handler, getPageAddress(t, api, book, 0, wide)); out.Code != http.StatusOK {
-			t.Fatalf("asked for a page %d wide and got %d", wide, out.Code)
+	for _, width := range []int{400, 800} {
+		if out := ask(handler, getPageAddress(t, api, book, 0, width)); out.Code != http.StatusOK {
+			t.Fatalf("asked for a page %d wide and got %d", width, out.Code)
 		}
 	}
 	if n := countDrawings(t, cache); n != 2 {
@@ -82,7 +82,7 @@ func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 
 // A document rewritten under the same name is another document. A drawing kept
 // for the bytes that were there is a picture of a page that is gone.
-func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
+func TestADocumentRewrittenIsGeneratedAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
@@ -91,7 +91,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
-	_, drawn, _ := from.getCounts()
+	_, rendered, _ := from.getCounts()
 
 	at := filepath.Join(string(api.state.GetCurrentVault().Path), book)
 	if err := os.WriteFile(at, []byte("the bytes of another scan entirely"), 0o644); err != nil {
@@ -106,8 +106,8 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
-	if _, again, _ := from.getCounts(); again <= drawn {
-		t.Errorf("the rewritten document was not drawn again: %d drawings both times", drawn)
+	if _, again, _ := from.getCounts(); again <= rendered {
+		t.Errorf("the rewritten document was not drawn again: %d drawings both times", rendered)
 	}
 	if n := countDrawings(t, cache); n != 2 {
 		t.Errorf("the folder holds %d drawings, want 2 — one for each of the two documents", n)
@@ -152,11 +152,11 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 // from.
 func getFingerprint(t *testing.T, api *Services) document.Fingerprint {
 	t.Helper()
-	said, err := api.stat(t.Context(), book)
+	response, err := api.stat(t.Context(), book)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return said
+	return response
 }
 
 // countBytes is what the folder's drawings come to, in bytes.

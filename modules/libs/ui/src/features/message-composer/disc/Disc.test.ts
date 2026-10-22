@@ -24,7 +24,7 @@ describe('the disc', () => {
     expect(disc({ disabled: true }).get('button').attributes('disabled')).toBeDefined()
   })
 
-  it('stands one disc either way, and changes the glyph on it', () => {
+  it('remains one disc either way, and changes the glyph on it', () => {
     const glyph = (action: string) => {
       const wrapper = disc({ action })
       expect(wrapper.findAll('button')).toHaveLength(1)
@@ -34,8 +34,8 @@ describe('the disc', () => {
   })
 
   it('takes a glyph of its own while it sends, and keeps its own while it stops', () => {
-    const given = { glyph: '<i class="mine" />' }
-    expect(disc({}, given).find('.mine').exists()).toBe(true)
-    expect(disc({ action: 'stop' }, given).find('.mine').exists()).toBe(false)
+    const provided = { glyph: '<i class="mine" />' }
+    expect(disc({}, provided).find('.mine').exists()).toBe(true)
+    expect(disc({ action: 'stop' }, provided).find('.mine').exists()).toBe(false)
   })
 })

@@ -197,7 +197,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
 
   /**
    * Where in that text the words typed stand, counted the way a client counts
-   * text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
+   * text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
    * word in particular.
    *
    * @generated from field: repeated numen.v1.Span spans = 4;

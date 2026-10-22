@@ -27,32 +27,32 @@ func writeSettings(t *testing.T, written string) (Config, string) {
 
 // What the window is given is every setting, so a setting the file leaves out
 // is read out as what this installation is doing about it.
-func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
+func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
 
-	written, said, err := cfg.ReadSettings()()
+	content, response, err := cfg.ReadSettings()()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said != path {
-		t.Errorf("the settings stand at %q, not %q", said, path)
+	if response != path {
+		t.Errorf("the settings stand at %q, not %q", response, path)
 	}
 
-	var held Settings
-	if err := json.Unmarshal([]byte(written), &held); err != nil {
+	var target Settings
+	if err := json.Unmarshal([]byte(content), &target); err != nil {
 		t.Fatal(err)
 	}
-	if held.Appearance.Theme != "mine:sea" {
-		t.Errorf("the theme reads %q", held.Appearance.Theme)
+	if target.Appearance.Theme != "mine:sea" {
+		t.Errorf("the theme reads %q", target.Appearance.Theme)
 	}
-	if held.Appearance.NestedHeadingLimit != settings.DefaultNestedHeadingLimit {
-		t.Errorf("the count reads %d", held.Appearance.NestedHeadingLimit)
+	if target.Appearance.NestedHeadingLimit != settings.DefaultNestedHeadingLimit {
+		t.Errorf("the count reads %d", target.Appearance.NestedHeadingLimit)
 	}
 }
 
-// A setting written is written where it stands, and every key a person typed
+// A setting written is written at its current position, and every key a person typed
 // stays where it was.
-func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
+func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 	cfg, path := writeSettings(t, `{
   "appearance": {"theme": "mine:sea"},
   "something_this_build_knows_nothing_about": 7
@@ -73,21 +73,21 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 		t.Errorf("the file came back as %s", after)
 	}
 
-	held, err := cfg.getSettingsAt(path)
+	target, err := cfg.getSettingsAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Agent.GetProgram("claude").Model != "opus" {
-		t.Errorf("the model reads %q", held.Agent.GetProgram("claude").Model)
+	if target.Agent.GetProgram("claude").Model != "opus" {
+		t.Errorf("the model reads %q", target.Agent.GetProgram("claude").Model)
 	}
-	if held.Appearance.Theme != "mine:sea" {
-		t.Errorf("the theme reads %q", held.Appearance.Theme)
+	if target.Appearance.Theme != "mine:sea" {
+		t.Errorf("the theme reads %q", target.Appearance.Theme)
 	}
 }
 
 // Several settings are written together, which is what choosing one model that
 // decides more than its own name asks for.
-func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
+func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
 	err := cfg.GetSettingsWriter()([]port.Setting{
@@ -98,12 +98,12 @@ func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := cfg.getSettingsAt(path)
+	target, err := cfg.getSettingsAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Agent.GetUse() != "claude" || held.Agent.GetProgram("claude").MaxSteps != 12 {
-		t.Errorf("the agent reads %+v", held.Agent)
+	if target.Agent.GetUse() != "claude" || target.Agent.GetProgram("claude").MaxSteps != 12 {
+		t.Errorf("the agent reads %+v", target.Agent)
 	}
 }
 
@@ -113,12 +113,12 @@ func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
-	held, why := Config{}.Settings()
+	target, why := Config{}.Settings()
 	if why == nil {
 		t.Fatal("no reason")
 	}
-	if !reflect.DeepEqual(held, Settings{}) {
-		t.Errorf("got settings: %+v", held)
+	if !reflect.DeepEqual(target, Settings{}) {
+		t.Errorf("got settings: %+v", target)
 	}
 }
 
@@ -129,45 +129,45 @@ func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	cfg, _ := writeSettings(t, `{"appearance": `)
 
-	held, why := cfg.Settings()
+	target, why := cfg.Settings()
 	if why == nil {
 		t.Fatal("no reason")
 	}
-	if !reflect.DeepEqual(held, Settings{}) {
-		t.Errorf("got settings: %+v", held)
+	if !reflect.DeepEqual(target, Settings{}) {
+		t.Errorf("got settings: %+v", target)
 	}
 }
 
 // Settings that cannot be written as JSON are refused with no text.
-func TestSettingsThatCannotBeWrittenAreRefused(t *testing.T) {
-	held := DefaultSettings()
-	held.Appearance.InterfaceScale = math.NaN()
+func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
+	target := DefaultSettings()
+	target.Appearance.InterfaceScale = math.NaN()
 
-	written, why := held.WriteJSON()
+	content, why := target.WriteJSON()
 	if why == nil {
 		t.Fatal("no reason")
 	}
-	if written != "" {
-		t.Errorf("wrote %q", written)
+	if content != "" {
+		t.Errorf("wrote %q", content)
 	}
 }
 
 // Every section of the settings arrives in the configuration, and the compute
 // plan is resolved from the performance section.
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
-	said := DefaultSettings()
-	said.Indexing.Recognition.Proofread = Proofread{Profile: "for scans", IsAutomatic: true}
-	said.Indexing.Transcription.Proofread = Proofread{Profile: "for speech"}
-	said.Agent.Use = settings.UseProgram("claude")
-	said.Importing.Captions = []string{"sa", "en"}
-	said.Performance = settings.Performance{Profile: settings.ProfileEco}
+	response := DefaultSettings()
+	response.Indexing.Recognition.Proofread = Proofread{Profile: "for scans", IsAutomatic: true}
+	response.Indexing.Transcription.Proofread = Proofread{Profile: "for speech"}
+	response.Agent.Use = settings.UseProgram("claude")
+	response.Importing.Captions = []string{"sa", "en"}
+	response.Performance = settings.Performance{Profile: settings.ProfileEco}
 
-	got := Config{}.SetSettings(said)
+	got := Config{}.SetSettings(response)
 
-	if got.ScanProofreading != said.Indexing.Recognition.Proofread {
+	if got.ScanProofreading != response.Indexing.Recognition.Proofread {
 		t.Errorf("scans are put right with %+v", got.ScanProofreading)
 	}
-	if got.TranscriptProofreading != said.Indexing.Transcription.Proofread {
+	if got.TranscriptProofreading != response.Indexing.Transcription.Proofread {
 		t.Errorf("speech is put right with %+v", got.TranscriptProofreading)
 	}
 	if got.Agent.GetUse() != "claude" {
@@ -188,28 +188,28 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 }
 
 // A line said is kept for whoever read the settings to put in front of a person.
-func TestWhatIsSaidWhileReadingIsKept(t *testing.T) {
-	var held Settings
-	held.AddNotice("first")
-	held.AddNotice("second")
-	if !slices.Equal(held.Notices, []string{"first", "second"}) {
-		t.Errorf("said %v", held.Notices)
+func TestWhatIsSaidWhileReadingIsCached(t *testing.T) {
+	var target Settings
+	target.AddNotice("first")
+	target.AddNotice("second")
+	if !slices.Equal(target.Notices, []string{"first", "second"}) {
+		t.Errorf("said %v", target.Notices)
 	}
 }
 
-func TestNestedHeadingLimitIsWhatTheAppearanceSays(t *testing.T) {
-	held := DefaultSettings()
-	if !held.HasNestedHeadings() {
+func TestNestedHeadingLimitIsWhatTheAppearanceReturns(t *testing.T) {
+	target := DefaultSettings()
+	if !target.HasNestedHeadings() {
 		t.Error("untouched settings hang no headings under a node")
 	}
 	off := false
-	held.Appearance.NestHeadingsUnderNotes = &off
-	if held.HasNestedHeadings() {
+	target.Appearance.NestHeadingsUnderNotes = &off
+	if target.HasNestedHeadings() {
 		t.Error("settings turning it off still hang headings under a node")
 	}
-	held.Appearance.NestedHeadingLimit = 7
-	if held.GetNestedHeadingLimit() != 7 {
-		t.Errorf("%d headings stand under a node", held.GetNestedHeadingLimit())
+	target.Appearance.NestedHeadingLimit = 7
+	if target.GetNestedHeadingLimit() != 7 {
+		t.Errorf("%d headings stand under a node", target.GetNestedHeadingLimit())
 	}
 }
 

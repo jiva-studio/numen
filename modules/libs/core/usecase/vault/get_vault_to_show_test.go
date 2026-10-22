@@ -60,7 +60,7 @@ func TestWithNothingNamedTheVaultShownLastIsChosen(t *testing.T) {
 func TestWithNothingShownYetTheFirstVaultIsChosen(t *testing.T) {
 	t.Parallel()
 	add, registry := newAdd(t)
-	held, err := add.Execute(folder(t, "first"), "")
+	target, err := add.Execute(folder(t, "first"), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,12 +69,12 @@ func TestWithNothingShownYetTheFirstVaultIsChosen(t *testing.T) {
 	}
 
 	got, err := vaults.NewGetVaultToShow(registry).Execute("")
-	if err != nil || got.ID != held.ID {
+	if err != nil || got.ID != target.ID {
 		t.Fatalf("chose %+v, %v; want the first on the list", got, err)
 	}
 }
 
-func TestAnInstallationHoldingNoVaultChoosesNone(t *testing.T) {
+func TestAnInstallationContainingNoVaultChoosesNone(t *testing.T) {
 	t.Parallel()
 	got, err := vaults.NewGetVaultToShow(registryAt(t)).Execute("")
 	if err != nil || got != (domain.Vault{}) {

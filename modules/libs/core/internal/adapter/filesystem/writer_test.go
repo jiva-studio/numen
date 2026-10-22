@@ -144,7 +144,7 @@ func TestAnyFileOfTheVaultMoves(t *testing.T) {
 }
 
 // A folder moves whole, and everything under it arrives with it.
-func TestAFolderMovesWithWhatIsUnderIt(t *testing.T) {
+func TestAFolderMovesWithWhatIsBelowIt(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
@@ -165,7 +165,7 @@ func TestAFolderMovesWithWhatIsUnderIt(t *testing.T) {
 	}
 }
 
-// A destination that is taken is refused, and what was going there stays where
+// A destination that is taken fails, and what was going there stays where
 // it is.
 func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
 	w, root := openWriter(t)
@@ -229,7 +229,7 @@ func TestAFolderIsMade(t *testing.T) {
 
 // A note kept as a link to another file in the vault is a link after a write,
 // and the file at the other end holds the new bytes.
-func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
+func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"notes/Real.md": "# Entropy\n"})
 	link := filepath.Join(v.Path, "Entropy.md")
 	if err := os.Symlink(filepath.Join("notes", "Real.md"), link); err != nil {
@@ -263,7 +263,7 @@ func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
 // What a vault leaves alone is answered for out of the file's metadata. The
 // file here is sixteen megabytes and cannot be opened at all, and the answer
 // still comes back.
-func TestAskingAboutAFileTheVaultLeavesAloneOpensNothing(t *testing.T) {
+func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
 	root := t.TempDir()
 	export, err := os.OpenFile(filepath.Join(root, "export.iso"), os.O_CREATE|os.O_WRONLY, 0o000)
 	if err != nil {
@@ -334,9 +334,9 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	for _, at := range []struct {
 		name  string
 		makes string
-		// sentinel is what the refusal carries, where the refusal is the
+		// sentinel is what the rejection carries, where the error is the
 		// vault's answer about what it holds. A link into the application's
-		// own folder is refused before that question is reached.
+		// own folder fails before that question is reached.
 		sentinel error
 	}{
 		{"the service folder", ".numen/vault.yml", nil},
@@ -345,11 +345,11 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	} {
 		t.Run(at.name, func(t *testing.T) {
 			root := t.TempDir()
-			held := filepath.Join(root, filepath.FromSlash(at.makes))
-			if err := os.MkdirAll(filepath.Dir(held), 0o755); err != nil {
+			target := filepath.Join(root, filepath.FromSlash(at.makes))
+			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(held, []byte("what was there\n"), 0o644); err != nil {
+			if err := os.WriteFile(target, []byte("what was there\n"), 0o644); err != nil {
 				t.Fatal(err)
 			}
 			if err := os.Symlink(filepath.FromSlash(at.makes), filepath.Join(root, "Note.md")); err != nil {
@@ -367,7 +367,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 			case at.sentinel != nil && !errors.Is(err, at.sentinel):
 				t.Errorf("writing through the link gave %v, want %v", err, at.sentinel)
 			}
-			raw, readErr := os.ReadFile(held)
+			raw, readErr := os.ReadFile(target)
 			if readErr != nil {
 				t.Fatal(readErr)
 			}
@@ -379,7 +379,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 }
 
 // A folder does not go inside itself. The window's tree refuses the gesture, and
-// a caller that asks for it anyway is refused here.
+// a caller that asks for it anyway fails here.
 func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -408,14 +408,14 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 	ctx := t.Context()
 
 	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("PNG")); err != nil {
-		t.Fatalf("the file was refused: %v", err)
+		t.Fatalf("the file failed: %v", err)
 	}
-	held, err := os.ReadFile(filepath.Join(root, "scans", "Cover.png"))
+	target, err := os.ReadFile(filepath.Join(root, "scans", "Cover.png"))
 	if err != nil {
 		t.Fatalf("the file did not arrive: %v", err)
 	}
-	if string(held) != "PNG" {
-		t.Errorf("the file arrived as %q", held)
+	if string(target) != "PNG" {
+		t.Errorf("the file arrived as %q", target)
 	}
 
 	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, port.ErrOccupied) {
@@ -440,7 +440,7 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 }
 
 // A folder whose name begins with another folder's is not inside it.
-func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
+func TestAFolderMovesAdjacentOneWhoseNameItBegins(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
@@ -448,7 +448,7 @@ func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := w.Move(ctx, "physics", "physics-old"); err != nil {
-		t.Fatalf("the move was refused: %v", err)
+		t.Fatalf("the move failed: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "physics-old", "Entropy.md")); err != nil {
 		t.Errorf("the folder did not arrive: %v", err)
@@ -464,12 +464,12 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
-	held := filepath.Join(root, filesystem.DefaultServiceDir, "ocr")
-	if err := os.MkdirAll(held, 0o755); err != nil {
+	target := filepath.Join(root, filesystem.DefaultServiceDir, "ocr")
+	if err := os.MkdirAll(target, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	kept := filepath.Join(held, "abc.txt")
-	if err := os.WriteFile(kept, []byte("what was recognised\n"), 0o644); err != nil {
+	filePath := filepath.Join(target, "abc.txt")
+	if err := os.WriteFile(filePath, []byte("what was recognised\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// The link is written the way a sync tool writes one, relative to the
@@ -478,7 +478,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	refused := map[string]error{
+	rejected := map[string]error{
 		"write":  errorOf(w.Write(ctx, "link/ocr/note.md", []byte("# Mine\n"), domain.Fingerprint{})),
 		"create": w.Create(ctx, "link/ocr/note.md", []byte("# Mine\n")),
 		"bring":  w.Import(ctx, "link/ocr/brought.txt", strings.NewReader("brought\n")),
@@ -486,20 +486,20 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 		"remove": w.Remove(ctx, "link/ocr/abc.txt"),
 		"move":   w.Move(ctx, "link/ocr/abc.txt", "Stolen.md"),
 	}
-	for what, err := range refused {
+	for what, err := range rejected {
 		if err == nil {
 			t.Errorf("%s through the link was allowed", what)
 		}
 	}
 
-	body, err := os.ReadFile(kept)
+	body, err := os.ReadFile(filePath)
 	if err != nil {
 		t.Fatalf("the derived file did not survive: %v", err)
 	}
 	if string(body) != "what was recognised\n" {
 		t.Errorf("the derived file holds %q", body)
 	}
-	if entries, err := os.ReadDir(held); err != nil || len(entries) != 1 {
+	if entries, err := os.ReadDir(target); err != nil || len(entries) != 1 {
 		t.Errorf("the application's folder holds %v, %v", entries, err)
 	}
 }
@@ -510,7 +510,7 @@ func errorOf(_ domain.Fingerprint, err error) error { return err }
 // A vault may be reached through a link: a home folder on another disk, a
 // synced folder, a temporary folder on a machine that keeps them elsewhere.
 // Every rule the writer applies is applied to the name on the other side of it.
-func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
+func TestAVaultReachedThroughALinkIsSavedLikeAnyOther(t *testing.T) {
 	physical := filepath.Join(t.TempDir(), "physical")
 	if err := os.Mkdir(physical, 0o755); err != nil {
 		t.Fatal(err)
@@ -560,8 +560,8 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
-	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), held); err != nil {
+	target := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
+	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), target); err != nil {
 		t.Fatalf("the note could not be saved: %v", err)
 	}
 	if err := w.Import(ctx, stem+".png", strings.NewReader("PNG")); err != nil {
@@ -642,7 +642,7 @@ func sameFile(t *testing.T, one, other string) bool {
 
 // A name another file stands at is taken, whatever the filesystem does with
 // case.
-func TestANameAnotherFileStandsAtIsRefused(t *testing.T) {
+func TestANameAnotherFileExistsAtIsRefused(t *testing.T) {
 	w, _ := openWriter(t)
 	ctx := t.Context()
 

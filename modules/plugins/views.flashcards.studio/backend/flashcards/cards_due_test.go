@@ -34,7 +34,7 @@ var saturday = time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
 
 // What a day came to is counted under the preset each deck names, over as many
 // sessions as the day held. A deck naming no preset comes under the defaults.
-func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
+func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
 
@@ -81,7 +81,7 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 
 // A vault holding no preset at all is one scope: the defaults, with every deck
 // under them.
-func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
+func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":      term,
@@ -109,7 +109,7 @@ func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 
 // Every preset the vault holds stands in the count. A person who wrote one and
 // pointed nothing at it can still see it, and it says nothing of a day.
-func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
+func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	t.Parallel()
 	files := make(map[string]string, len(scheduled)+1)
 	for path, raw := range scheduled {
@@ -124,23 +124,23 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var held *flashcards.PresetCardsDue
+	var target *flashcards.PresetCardsDue
 	for at, one := range owing.Presets {
 		if one.Preset == "Empty.md" {
-			held = &owing.Presets[at]
+			target = &owing.Presets[at]
 		}
 	}
-	if held == nil {
+	if target == nil {
 		t.Fatalf("the preset nothing points at is not in the count: %+v", owing.Presets)
 	}
-	if *held != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
-		t.Errorf("it came to %+v, want a preset nothing stands under", *held)
+	if *target != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
+		t.Errorf("it came to %+v, want a preset nothing stands under", *target)
 	}
 }
 
 // What was answered on another day is not what today came to, and neither is an
 // answer taken back.
-func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
+func TestADayContainsWhatWasAnsweredInIt(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
 
@@ -148,8 +148,8 @@ func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 	answer(t, before, "k7m2xq9fzp", 6*time.Second)
 
 	session := s.run(t, saturday)
-	given := answer(t, session, "zpqrstvwxy", 9*time.Second)
-	if _, err := session.TakeBack(t.Context(), given); err != nil {
+	provided := answer(t, session, "zpqrstvwxy", 9*time.Second)
+	if _, err := session.TakeBack(t.Context(), provided); err != nil {
 		t.Fatal(err)
 	}
 
@@ -238,7 +238,7 @@ func (r replaying) Next(
 	return r.Scheduler.Next(s, at, rating)
 }
 
-// answer writes down one card answered well, and hands back the line it stands
+// answer writes down one card answered well, and returns the line it stands
 // as. Every card of this vault is shown through the one face.
 func answer(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
@@ -257,12 +257,12 @@ func answerWith(
 	rating review.Rating, took time.Duration,
 ) string {
 	t.Helper()
-	given, err := record.Answer(
+	provided, err := record.Answer(
 		t.Context(), review.CardFaceID{Card: card, Face: "Say it"}, rating, took)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return given.ID
+	return provided.ID
 }
 
 // A preset a deck names is pointed at whatever the deck holds, and how many
@@ -327,16 +327,16 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 //
 // The scenario here holds nothing to read a vault through, so nothing past the
 // first check can run.
-func TestACountIsDroppedOnceTheWindowHasGone(t *testing.T) {
+func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 	t.Parallel()
-	gone, went := context.WithCancel(t.Context())
+	removed, went := context.WithCancel(t.Context())
 	went()
 
 	u := flashcards.NewCountCardsDue(
 		flashcards.ListCardFaces{}, flashcards.Schedules{}, flashcards.Presets{},
 		review.Day{}, time.Now,
 	)
-	_, err := u.Execute(gone, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
+	_, err := u.Execute(removed, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("the count came back with %v", err)
 	}

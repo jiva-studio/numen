@@ -55,11 +55,11 @@ func (e *vaultEndpoint) begin(header http.Header, permission string) (string, po
 	if vault == nil || named == "" {
 		return pluginID, vault, nil
 	}
-	bound, err := vault.With(domain.VaultID(named))
+	linked, err := vault.With(domain.VaultID(named))
 	if err != nil {
 		return "", nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	return pluginID, bound, nil
+	return pluginID, linked, nil
 }
 
 // answer sorts the failure of a call to the vault: a refusal the host can name is the code of the
@@ -153,12 +153,12 @@ func (e *vaultEndpoint) ListHostVaults(
 	if vault == nil {
 		return connect.NewResponse(&v1.ListHostVaultsResponse{}), nil
 	}
-	known, err := vault.GetVaults()
+	recognized, err := vault.GetVaults()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := make([]*v1.HostVaultInfo, 0, len(known))
-	for _, one := range known {
+	out := make([]*v1.HostVaultInfo, 0, len(recognized))
+	for _, one := range recognized {
 		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path})
 	}
 	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: out}), nil
@@ -374,14 +374,14 @@ func (e *vaultEndpoint) GetNoteRefs(
 	if vault == nil {
 		return connect.NewResponse(&v1.GetNoteRefsResponse{Error: noVault}), nil
 	}
-	held, err := vault.GetNotes(ctx, req.Msg.GetPaths())
+	target, err := vault.GetNotes(ctx, req.Msg.GetPaths())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetNoteRefsResponse{Error: code}), err
 	}
-	notes := make([]*v1.HostNoteRef, 0, len(held))
+	notes := make([]*v1.HostNoteRef, 0, len(target))
 	for _, path := range req.Msg.GetPaths() {
-		if one, found := held[path]; found {
+		if one, found := target[path]; found {
 			notes = append(notes, &v1.HostNoteRef{Path: one.Path, Title: one.Title})
 		}
 	}
@@ -398,13 +398,13 @@ func (e *vaultEndpoint) GetNoteTypes(
 	if vault == nil {
 		return connect.NewResponse(&v1.GetNoteTypesResponse{Error: noVault}), nil
 	}
-	held, err := vault.GetTypes(ctx, req.Msg.GetPaths())
+	target, err := vault.GetTypes(ctx, req.Msg.GetPaths())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetNoteTypesResponse{Error: code}), err
 	}
-	types := make(map[string]string, len(held))
-	for path, one := range held {
+	types := make(map[string]string, len(target))
+	for path, one := range target {
 		types[path] = string(one)
 	}
 	return connect.NewResponse(&v1.GetNoteTypesResponse{Types: types}), nil
@@ -498,8 +498,8 @@ func (e *vaultEndpoint) ResolveLinks(
 		return connect.NewResponse(&v1.ResolveLinksResponse{Error: code}), err
 	}
 	links := make(map[string]*v1.HostLink, len(reached))
-	for written, one := range reached {
-		links[written] = writeLink(one)
+	for content, one := range reached {
+		links[content] = writeLink(one)
 	}
 	return connect.NewResponse(&v1.ResolveLinksResponse{Links: links}), nil
 }
@@ -514,13 +514,13 @@ func (e *vaultEndpoint) GetParseProblems(
 	if vault == nil {
 		return connect.NewResponse(&v1.GetParseProblemsResponse{Error: noVault}), nil
 	}
-	held, err := vault.GetParseProblems(ctx)
+	target, err := vault.GetParseProblems(ctx)
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetParseProblemsResponse{Error: code}), err
 	}
-	problems := make([]*v1.HostParseProblem, 0, len(held))
-	for _, one := range held {
+	problems := make([]*v1.HostParseProblem, 0, len(target))
+	for _, one := range target {
 		problems = append(problems, &v1.HostParseProblem{Path: one.Path, Detail: one.Detail})
 	}
 	return connect.NewResponse(&v1.GetParseProblemsResponse{Problems: problems}), nil
@@ -588,13 +588,13 @@ func (e *vaultEndpoint) ListData(
 	if err != nil || store == nil {
 		return connect.NewResponse(&v1.ListDataResponse{Error: code}), err
 	}
-	held, err := store.List(ctx)
+	target, err := store.List(ctx)
 	code, err = answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ListDataResponse{Error: code}), err
 	}
-	files := make([]*v1.HostDataFile, 0, len(held))
-	for _, one := range held {
+	files := make([]*v1.HostDataFile, 0, len(target))
+	for _, one := range target {
 		files = append(files, &v1.HostDataFile{Name: one.Name, Size: int64(one.Size)})
 	}
 	return connect.NewResponse(&v1.ListDataResponse{Files: files}), nil
@@ -646,14 +646,14 @@ func (e *vaultEndpoint) WatchVault(
 	if !showing {
 		return connect.NewError(connect.CodeFailedPrecondition, ErrNoVault)
 	}
-	changes, lost, err := vault.Watch(ctx)
+	changes, missing, err := vault.Watch(ctx)
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
 	if err := stream.Send(&v1.WatchVaultResponse{}); err != nil {
 		return err
 	}
-	return followVault(ctx, vault, watched, changes, lost, stream)
+	return followVault(ctx, vault, watched, changes, missing, stream)
 }
 
 // followVault sends the changes of the vault until the watch ends, and says when the window moves to

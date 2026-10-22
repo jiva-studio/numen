@@ -56,15 +56,15 @@ func captureStderr(t *testing.T) func() string {
 	previous := os.Stderr
 	os.Stderr = writer
 	var collected bytes.Buffer
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		_, _ = io.Copy(&collected, reader)
-		close(done)
+		close(isDone)
 	}()
 	return func() string {
 		os.Stderr = previous
 		_ = writer.Close()
-		<-done
+		<-isDone
 		_ = reader.Close()
 		return collected.String()
 	}
@@ -76,7 +76,7 @@ func setUmask(t *testing.T, mask int) {
 	t.Cleanup(func() { syscall.Umask(previous) })
 }
 
-func TestStartWhileStandingAnswersThePortItHas(t *testing.T) {
+func TestStart_WhenAlreadyRunning_ReturnsAssignedPort(t *testing.T) {
 	first := startIn(t, t.TempDir())
 	second, err := Start(t.TempDir())
 	if err != nil {
@@ -103,8 +103,8 @@ func TestStartPointsEveryFolderLookupAtTheFolderItWasGiven(t *testing.T) {
 func TestStartAnswersTheErrorOfAFolderTheEnvironmentRefuses(t *testing.T) {
 	keepEnvironment(t)
 	port, err := Start("a\x00folder")
-	var refused *os.SyscallError
-	if !errors.As(err, &refused) || refused.Syscall != "setenv" || port != 0 {
+	var sysErr *os.SyscallError
+	if !errors.As(err, &sysErr) || sysErr.Syscall != "setenv" || port != 0 {
 		t.Fatalf("Start answered %d, %v, want 0 and the error of setting the environment", port, err)
 	}
 	if Port() != 0 {
@@ -198,27 +198,27 @@ func TestStartAnswersTheErrorOfAnIndexItCannotOpen(t *testing.T) {
 	}
 }
 
-func TestStartSaysWhenTheThemesFolderCannotBeMadeAndStillStarts(t *testing.T) {
+func TestStart_ThemesFolderCreationFailure_LogsAndStarts(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "themes"), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	read := captureStderr(t)
 	startIn(t, dir)
-	if said := read(); !strings.Contains(said, "themes:") {
-		t.Errorf("nothing said the themes folder could not be made: %q", said)
+	if response := read(); !strings.Contains(response, "themes:") {
+		t.Errorf("nothing said the themes folder could not be made: %q", response)
 	}
 }
 
-func TestStartSaysNothingOfThemesWhenTheirFolderIsThere(t *testing.T) {
+func TestStart_ThemesFolderExists_NoThemesErrorLogged(t *testing.T) {
 	read := captureStderr(t)
 	startIn(t, t.TempDir())
-	if said := read(); strings.Contains(said, "themes:") {
-		t.Errorf("themes were complained of: %q", said)
+	if response := read(); strings.Contains(response, "themes:") {
+		t.Errorf("themes were complained of: %q", response)
 	}
 }
 
-func TestStartGivesTheWindowTheInstallationsThemes(t *testing.T) {
+func TestStart_InstallsThemesForWindow(t *testing.T) {
 	startIn(t, t.TempDir())
 	mu.Lock()
 	defer mu.Unlock()
@@ -259,8 +259,8 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 	}
 	// A server closed by Stop is not one that ended on its own, and says nothing.
 	time.Sleep(300 * time.Millisecond)
-	if said := read(); strings.Contains(said, "numen:") {
-		t.Errorf("stopping was reported as a failure: %q", said)
+	if response := read(); strings.Contains(response, "numen:") {
+		t.Errorf("stopping was reported as a failure: %q", response)
 	}
 }
 
@@ -274,7 +274,7 @@ func TestPortIsZeroOnceTheServerEndedOnItsOwn(t *testing.T) {
 	}
 }
 
-func TestSeedLeavesAVaultThatHoldsANoteAsItIs(t *testing.T) {
+func TestSeed_PreservesExistingVaultNotes(t *testing.T) {
 	root := t.TempDir()
 	for _, name := range []string{"a.txt", "b.md"} {
 		if err := os.WriteFile(filepath.Join(root, name), nil, 0o600); err != nil {
@@ -284,12 +284,12 @@ func TestSeedLeavesAVaultThatHoldsANoteAsItIs(t *testing.T) {
 	if err := seedVault(root); err != nil {
 		t.Fatal(err)
 	}
-	held, err := os.ReadDir(root)
+	target, err := os.ReadDir(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held) != 2 {
-		t.Errorf("the vault holds %d entries after seeding, want the 2 it had", len(held))
+	if len(target) != 2 {
+		t.Errorf("the vault holds %d entries after seeding, want the 2 it had", len(target))
 	}
 }
 
@@ -303,7 +303,7 @@ func TestSeedAnswersTheErrorOfAFolderItCannotList(t *testing.T) {
 	}
 }
 
-func TestRegisterVaultFilesAVaultUnderThePathItResolvesTo(t *testing.T) {
+func TestRegisterVault_RegistersVaultAtResolvedPath(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "target")
 	if err := os.Mkdir(target, 0o755); err != nil {
@@ -384,12 +384,12 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotWrite(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser writes into any folder")
 	}
-	kept := t.TempDir()
-	if err := os.Chmod(kept, 0o500); err != nil {
+	tempDir := t.TempDir()
+	if err := os.Chmod(tempDir, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(kept, 0o700) })
-	filed, err := registerVault(makeConfig(kept, io.Discard), t.TempDir())
+	t.Cleanup(func() { _ = os.Chmod(tempDir, 0o700) })
+	filed, err := registerVault(makeConfig(tempDir, io.Discard), t.TempDir())
 	if !errors.Is(err, fs.ErrPermission) || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a list it cannot write, want no path and the permission error", filed, err)
 	}
@@ -410,7 +410,7 @@ func TestAllowOriginAnswersAPreflightWithTheRulesAndNoBody(t *testing.T) {
 	checkCORSHeaders(t, res.Header())
 }
 
-func TestAllowOriginHandsEveryOtherAskOnWithTheRules(t *testing.T) {
+func TestAllowOrigin_ForwardsRequestsWithHeaders(t *testing.T) {
 	reached := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		reached = true
@@ -446,12 +446,12 @@ func checkCORSHeaders(t *testing.T, head http.Header) {
 			"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin",
 		},
 	} {
-		listed := map[string]bool{}
+		items := map[string]bool{}
 		for _, one := range strings.Split(head.Get(name), ", ") {
-			listed[one] = true
+			items[one] = true
 		}
 		for _, one := range wanted {
-			if !listed[one] {
+			if !items[one] {
 				t.Errorf("%s = %q, missing %s", name, head.Get(name), one)
 			}
 		}
@@ -482,7 +482,7 @@ func checkNoIndexOpened(t *testing.T, dir string) {
 	}
 }
 
-func TestStartAnswersTheErrorOfANoteItCannotSeedAndLeavesNothingStanding(t *testing.T) {
+func TestStart_SeedError_FailsAndCleansUp(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser writes into any folder")
 	}
@@ -517,11 +517,11 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 	if err := syscall.Mkfifo(path, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		for {
 			select {
-			case <-done:
+			case <-isDone:
 				return
 			default:
 			}
@@ -538,7 +538,7 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 		}
 	}()
 	t.Cleanup(func() {
-		close(done)
+		close(isDone)
 		if release, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0); err == nil {
 			_ = release.Close()
 		}
@@ -577,19 +577,17 @@ func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *t
 	}
 }
 
-// countOpenFiles is how many file descriptors the process holds. A limit of
-// that many leaves room for the new ones only in the gaps below its highest.
+// countOpenFiles is the lowest unused file descriptor in the process.
 func countOpenFiles() int {
-	held := 0
 	for fd := 0; fd < 4096; fd++ {
-		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno == 0 {
-			held++
+		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno != 0 {
+			return fd
 		}
 	}
-	return held
+	return 4096
 }
 
-func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding(t *testing.T) {
+func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 	keepEnvironment(t)
 	var before syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &before); err != nil {
@@ -608,7 +606,7 @@ func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding
 		restore()
 		if err == nil {
 			_ = Stop()
-			t.Fatalf("Start answered %d with %d files to spare, and was never refused a socket", port, extra)
+			t.Fatalf("Start answered %d with %d files to spare, and was never denied a socket", port, extra)
 		}
 		var failed *net.OpError
 		if !errors.As(err, &failed) || failed.Op != "listen" {
@@ -622,10 +620,10 @@ func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding
 		}
 		return
 	}
-	t.Fatal("no limit on open files left Start refused at the socket alone")
+	t.Fatal("no limit on open files left Start failed at the socket alone")
 }
 
-func TestStopCancelsWhatTheCoreRunsUnder(t *testing.T) {
+func TestStop_CancelsCoreContext(t *testing.T) {
 	startIn(t, t.TempDir())
 	mu.Lock()
 	cancel := running.stop
@@ -668,10 +666,10 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	refusal := errors.New("the listener will not close")
+	closeErr := errors.New("the listener will not close")
 	accepted := make(chan struct{})
 	stubborn := &http.Server{}
-	go func() { _ = stubborn.Serve(refusingListener{inner, refusal, accepted, &sync.Once{}}) }()
+	go func() { _ = stubborn.Serve(refusingListener{inner, closeErr, accepted, &sync.Once{}}) }()
 	<-accepted
 
 	mu.Lock()
@@ -680,7 +678,7 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	mu.Unlock()
 	t.Cleanup(func() { _ = live.Close() })
 
-	if err := Stop(); !errors.Is(err, refusal) {
+	if err := Stop(); !errors.Is(err, closeErr) {
 		t.Errorf("Stop() = %v, want the error of closing the server", err)
 	}
 	if Port() != 0 {
@@ -743,11 +741,11 @@ func getListenersOf(server *http.Server) []net.Listener {
 	lockField := elem.FieldByName("mu")
 	lock := reflect.NewAt(lockField.Type(), unsafe.Pointer(lockField.UnsafeAddr())).Interface().(*sync.Mutex)
 	setField := elem.FieldByName("listeners")
-	held := reflect.NewAt(setField.Type(), unsafe.Pointer(setField.UnsafeAddr())).Elem()
+	target := reflect.NewAt(setField.Type(), unsafe.Pointer(setField.UnsafeAddr())).Elem()
 	lock.Lock()
 	defer lock.Unlock()
 	var found []net.Listener
-	for _, key := range held.MapKeys() {
+	for _, key := range target.MapKeys() {
 		found = append(found, *(*net.Listener)(key.UnsafePointer()))
 	}
 	return found
@@ -790,7 +788,7 @@ func TestPortIsZeroAndTheErrorIsSaidOnceTheServerStopsAcceptingOnItsOwn(t *testi
 	if err := Stop(); err != nil {
 		t.Logf("Stop() = %v", err)
 	}
-	if said := read(); !strings.Contains(said, "numen: accept") {
-		t.Errorf("nothing said the server stopped accepting: %q", said)
+	if response := read(); !strings.Contains(response, "numen: accept") {
+		t.Errorf("nothing said the server stopped accepting: %q", response)
 	}
 }

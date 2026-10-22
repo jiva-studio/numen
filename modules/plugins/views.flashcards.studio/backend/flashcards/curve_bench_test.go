@@ -25,7 +25,7 @@ func curveLoad(cards int) map[string]string {
 		}
 		path := fmt.Sprintf("decks/Deck%02d.md", at)
 		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
-			"---\ntype: deck\n"+names(to), 1)
+			"---\ntype: deck\n"+createPresetLink(to), 1)
 	}
 	return out
 }
@@ -39,14 +39,14 @@ func curveWhole(cards int) map[string]string {
 	for at := range 20 {
 		path := fmt.Sprintf("decks/Deck%02d.md", at)
 		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
-			"---\ntype: deck\n"+names("Whole"), 1)
+			"---\ntype: deck\n"+createPresetLink("Whole"), 1)
 	}
 	return out
 }
 
 // The curve of a preset holding the whole vault, at four sizes of it.
 //
-// What the projection costs stands on the card faces the preset holds, and
+// What the projection costs relies on the card faces the preset holds, and
 // these four rows are what says how it grows with them. The log grows with the
 // vault too, at the same half an answer a card face the row above is built on.
 //

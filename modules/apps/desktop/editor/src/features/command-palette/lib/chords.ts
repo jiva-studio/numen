@@ -5,7 +5,7 @@
  * for, and the commands read it to write the key on the row that names one.
  * Control and Command are the same key, and a chord holding Alt is nobody's.
  *
- * `k` puts up the search and `p` the commands; neither is here, and each is
+ * `k` sets up the search and `p` the commands; neither is here, and each is
  * that letter with Shift left alone.
  */
 import { keyChord, type PaletteKeys } from '@numen/ui'
@@ -62,6 +62,6 @@ export const findChordKeys = (command: string, agent: string): PaletteKeys | und
 
 /** That keystroke as a row of the palette takes it. */
 export const createRowKeys = (command: string, agent: string): { keys?: PaletteKeys } => {
-  const drawn = findChordKeys(command, agent)
-  return drawn ? { keys: drawn } : {}
+  const chordKeys = findChordKeys(command, agent)
+  return chordKeys ? { keys: chordKeys } : {}
 }

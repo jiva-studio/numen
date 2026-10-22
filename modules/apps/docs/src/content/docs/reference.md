@@ -127,7 +127,7 @@ How an address a link note points at is reached, and where the tools that reach 
 | --- | --- | --- |
 | `captions` | a list of words | the languages published words are preferred in, best first. |
 | `automatic_captions` | yes or no | whether words a machine wrote count where a person published none. |
-| `copy_max_size_mb` | a number | how large a copy may be. Above it, a copy asked for says the size it was refused at and nothing is fetched. |
+| `copy_max_size_mb` | a number | how large a copy may be. Above it, a copy asked for says the size it failed at and nothing is fetched. |
 | `copies_to_vault` | yes or no | whether a copy is kept beside the note as a file of the person's own. |
 | `yt_dlp` |  | what is run to reach a video. Empty asks the path. |
 | `yt_dlp.command` | a list of words | what is run, so a machine that writes the path afresh at every build names whatever does know where the tool is. |

@@ -45,22 +45,22 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 // card face nothing groups is left out, and a kind of answer a preset holds too
 // few of stands at the default.
 func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]AnswerCost {
-	held := make(map[string]*answerTimes)
+	target := make(map[string]*answerTimes)
 	walkAnswers(by, answers, func(before Schedule, a Answer) {
 		path, groups := under[a.CardFace]
 		if !groups {
 			return
 		}
-		one := held[path]
+		one := target[path]
 		if one == nil {
 			one = &answerTimes{}
-			held[path] = one
+			target[path] = one
 		}
 		one.addAnswer(by.IsSpaced(before), a.GetCountedTime())
 	})
 
-	out := make(map[string]AnswerCost, len(held))
-	for path, one := range held {
+	out := make(map[string]AnswerCost, len(target))
+	for path, one := range target {
 		out[path] = one.cost()
 	}
 	return out

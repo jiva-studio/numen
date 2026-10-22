@@ -169,7 +169,7 @@ func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	checkLocation(t, doc, ganges, "page 3 of the file")
 }
 
-func TestAPageIsSaidByWhereItStandsInTheFile(t *testing.T) {
+func TestAPageIsSaidByWhereItExistsInTheFile(t *testing.T) {
 	// One name to a page, and it is the one a viewer opens at. What the paper
 	// printed is a second number for the same page, and a person shown both has
 	// to work out which is being talked about.
@@ -179,10 +179,10 @@ func TestAPageIsSaidByWhereItStandsInTheFile(t *testing.T) {
 	})
 	doc := text.ReadRecognition(raw, nil, nil, nil)
 
-	if said := doc.Locate(0); said != "page 1 of the file" {
-		t.Errorf("the first page is located at %q", said)
+	if response := doc.Locate(0); response != "page 1 of the file" {
+		t.Errorf("the first page is located at %q", response)
 	}
-	if said := doc.Locate(len(doc.Text) - 3); said != "page 2 of the file" {
-		t.Errorf("the second page is located at %q", said)
+	if responseVal := doc.Locate(len(doc.Text) - 3); responseVal != "page 2 of the file" {
+		t.Errorf("the second page is located at %q", responseVal)
 	}
 }

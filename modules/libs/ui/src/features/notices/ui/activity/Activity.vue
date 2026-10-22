@@ -35,7 +35,7 @@ const props = withDefaults(
   { text: '', about: '', isWorking: false, left: '', tone: 'plain' },
 )
 
-const shown = computed(() =>
+const activityView = computed(() =>
   activity({
     text: props.text,
     ...(props.tone === 'alarm' ? { hasFailed: true } : {}),
@@ -52,11 +52,11 @@ const words = computed(() => props.text)
  * A share is drawn as a percentage and as nothing else.
  */
 const percent = computed(() =>
-  shown.value.share === undefined ? '' : percentWord(shown.value.share),
+  activityView.value.share === undefined ? '' : percentWord(activityView.value.share),
 )
 
 /** Read off the count, so it is shown only where there is one. */
-const left = computed(() => (shown.value.hasCounts ? props.left : ''))
+const remainingText = computed(() => (activityView.value.hasCounts ? props.left : ''))
 
 /**
  * How the words give way.
@@ -66,9 +66,9 @@ const left = computed(() => (shown.value.hasCounts ? props.left : ''))
  * reason is read over two.
  */
 const givesSays = computed(() =>
-  shown.value.hasCounts || props.about ? 'truncate' : 'line-clamp-3',
+  activityView.value.hasCounts || props.about ? 'truncate' : 'line-clamp-3',
 )
-const givesAbout = computed(() => (shown.value.hasCounts ? 'truncate' : 'line-clamp-2'))
+const givesAbout = computed(() => (activityView.value.hasCounts ? 'truncate' : 'line-clamp-2'))
 
 /**
  * A line about work is hushed. A line with a tone is drawn in it, and takes the
@@ -79,22 +79,22 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
 
 <template>
   <p
-    v-if="shown.state !== 'quiet'"
+    v-if="activityView.state !== 'quiet'"
     class="activity numen text-small flex items-center gap-2 font-sans"
     :class="strength"
-    :data-state="shown.state"
+    :data-state="activityView.state"
     :data-tone="tone"
   >
     <span class="activity__words flex min-w-0 flex-1 flex-col">
       <span class="activity__says" :class="givesSays">{{ words }}</span>
       <span v-if="about" class="activity__about" :class="givesAbout">{{ about }}</span>
     </span>
-    <span v-if="percent || left" class="activity__count flex gap-2 tabular-nums opacity-70">
+    <span v-if="percent || remainingText" class="activity__count flex gap-2 tabular-nums opacity-70">
       <span v-if="percent" class="activity__percent">{{ percent }}</span>
-      <span v-if="left" class="activity__left">{{ left }}</span>
+      <span v-if="remainingText" class="activity__left">{{ remainingText }}</span>
     </span>
     <Spinner
-      v-if="shown.share === undefined && shown.state === 'working'"
+      v-if="activityView.share === undefined && activityView.state === 'working'"
       class="activity__spinner"
     />
   </p>
@@ -106,7 +106,7 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
   overflow-wrap: anywhere;
 }
 
-/* What it is happening to stands under what is happening, and is said more
+/* What it is happening to is placed under what is happening, and is said more
    quietly. */
 .activity__about {
   opacity: 0.75;

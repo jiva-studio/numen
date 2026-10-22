@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-var errRefused = errors.New("refused on purpose")
+var errRefused = errors.New("rejected on purpose")
 
 // notebook is the vault every command here is asked about.
 var notebook = domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
@@ -72,7 +72,7 @@ func newResolvedLink(role domain.LinkRole, scheme, value, to string) domain.Reso
 
 func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
-	for name, given := range map[string]cli.Deps{
+	for name, provided := range map[string]cli.Deps{
 		"the list of vaults cannot be opened": {
 			Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
 		},
@@ -89,7 +89,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			out, err := runWithDeps(given, "links", "notebook", "Bees.md")
+			out, err := runWithDeps(provided, "links", "notebook", "Bees.md")
 			if !errors.Is(err, errRefused) {
 				t.Errorf("links answered %v", err)
 			}
@@ -100,7 +100,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	}
 }
 
-func TestLinksWithoutAVaultAndANoteSaysHowToAsk(t *testing.T) {
+func TestLinksWithoutAVaultAndANoteReturnsHowToAsk(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"links"}, {"links", "notebook"}, {"links", "notebook", "a.md", "b.md"}} {
 		_, err := runWithDeps(createLinkDeps(nil, nil), args...)
@@ -110,9 +110,9 @@ func TestLinksWithoutAVaultAndANoteSaysHowToAsk(t *testing.T) {
 	}
 }
 
-func TestLinksSaysWhichDirectionsAreEmpty(t *testing.T) {
+func TestLinksReturnsWhichDirectionsAreEmpty(t *testing.T) {
 	t.Parallel()
-	pointing := []domain.ResolvedLink{newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")}
+	links := []domain.ResolvedLink{newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")}
 	pointed := []domain.ResolvedLink{newResolvedLink(domain.RoleRef, domain.SchemeName, "Bees", "Bees.md")}
 	pointed[0].From = "Honey.md"
 
@@ -121,9 +121,9 @@ func TestLinksSaysWhichDirectionsAreEmpty(t *testing.T) {
 		want             string
 	}{
 		"neither":   {nil, nil, "no links either way\n"},
-		"out only":  {pointing, nil, "points at:\n  child      Hives.md\n"},
+		"out only":  {links, nil, "points at:\n  child      Hives.md\n"},
 		"in only":   {nil, pointed, "pointed at by:\n  ref        Honey.md\n"},
-		"both ways": {pointing, pointed, "points at:\n  child      Hives.md\npointed at by:\n  ref        Honey.md\n"},
+		"both ways": {links, pointed, "points at:\n  child      Hives.md\npointed at by:\n  ref        Honey.md\n"},
 	} {
 		out, err := runWithDeps(createLinkDeps(c.links, c.backlinks), "links", "notebook", "Bees.md")
 		if err != nil {
@@ -143,8 +143,8 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 	crossed.ToVault = "vlt-02"
 	home := newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
 	home.ToVault = notebook.ID
-	typed := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
-	typed.Type = "kin"
+	refLink := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
+	refLink.Type = "kin"
 	reasoned := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
 	reasoned.Why = "they share a queen"
 	both := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
@@ -172,7 +172,7 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 		"a name several notes answer to":     {ambiguous, "child      Hives.md  (several notes answer to that name)"},
 		"a note in another vault":            {crossed, "child      Hives.md  (in another vault: vlt-02)"},
 		"a note in the vault it was written": {home, "child      Hives.md"},
-		"a type":                             {typed, "ref        Hives.md  [kin]"},
+		"a type":                             {refLink, "ref        Hives.md  [kin]"},
 		"a reason":                           {reasoned, "ref        Hives.md  — they share a queen"},
 		"a type and a reason":                {both, "ref        Hives.md  [kin]  — they share a queen"},
 	} {
@@ -216,7 +216,7 @@ func problemsDeps(queries port.ProblemQueries) cli.Deps {
 
 func TestProblemsNamesTheChecksItRuns(t *testing.T) {
 	t.Parallel()
-	given := problemsDeps(fixedProblemQueries{
+	provided := problemsDeps(fixedProblemQueries{
 		parse:      []domain.VaultProblem{{Path: "a.md", Detail: "no role"}},
 		unreadable: []domain.VaultProblem{{Path: "b.md", Detail: "bad yaml"}},
 	})
@@ -250,7 +250,7 @@ func TestProblemsNamesTheChecksItRuns(t *testing.T) {
 			"nothing to report\n",
 		},
 	} {
-		out, err := runWithDeps(given, c.args...)
+		out, err := runWithDeps(provided, c.args...)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -300,21 +300,21 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}
 	if _, err := runWithDeps(cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
-		t.Errorf("the refusal was lost: %v", err)
+		t.Errorf("the rejection was lost: %v", err)
 	}
 }
 
-func TestACommandGivesBackWhatItOpened(t *testing.T) {
+func TestACommandProducesBackWhatItOpened(t *testing.T) {
 	t.Parallel()
 	closed := 0
-	given := createLinkDeps(nil, nil)
-	given.Links = func(context.Context) (cli.Links, error) {
+	provided := createLinkDeps(nil, nil)
+	provided.Links = func(context.Context) (cli.Links, error) {
 		return cli.Links{
 			Show:  note.NewShowLinks(fixedLinkQueries{}),
 			Close: func() error { closed++; return nil },
 		}, nil
 	}
-	if _, err := runWithDeps(given, "links", "notebook", "Bees.md"); err != nil {
+	if _, err := runWithDeps(provided, "links", "notebook", "Bees.md"); err != nil {
 		t.Fatal(err)
 	}
 	if closed != 1 {
@@ -325,10 +325,10 @@ func TestACommandGivesBackWhatItOpened(t *testing.T) {
 // A vault the list cannot find is reported with the list's own reason intact.
 func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 	t.Parallel()
-	given := cli.Deps{Vaults: func() (cli.Vaults, error) {
+	provided := cli.Deps{Vaults: func() (cli.Vaults, error) {
 		return cli.Vaults{Registry: brokenVaultList{}}, nil
 	}}
-	_, err := runWithDeps(given, "links", "notebook", "Bees.md")
+	_, err := runWithDeps(provided, "links", "notebook", "Bees.md")
 	if !errors.Is(err, errRefused) {
 		t.Errorf("the list's reason was lost: %v", err)
 	}
@@ -353,19 +353,19 @@ func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 	os.Stderr = file
 	t.Cleanup(func() { os.Stderr = was; file.Close() })
 
-	opened := false
+	wasOpened := false
 	var out bytes.Buffer
 	runErr := cli.Run(t.Context(), &out, io.Discard, []string{"--no-such-flag", "help"},
-		func(cli.Locations) cli.Deps { opened = true; return cli.Deps{} })
+		func(cli.Locations) cli.Deps { wasOpened = true; return cli.Deps{} })
 
 	if runErr == nil {
 		t.Error("a flag nobody knows was accepted")
 	}
-	if opened {
+	if wasOpened {
 		t.Error("an installation was opened for a command line that did not parse")
 	}
-	if said, _ := os.ReadFile(file.Name()); len(said) != 0 {
-		t.Errorf("the flag package wrote to the terminal:\n%s", said)
+	if response, _ := os.ReadFile(file.Name()); len(response) != 0 {
+		t.Errorf("the flag package wrote to the terminal:\n%s", response)
 	}
 }
 
@@ -501,13 +501,13 @@ func createNoteVault(t *testing.T) domain.Vault {
 
 func TestScanReportsTheNotesItIndexed(t *testing.T) {
 	t.Parallel()
-	held := createNoteVault(t)
+	target := createNoteVault(t)
 	s := &scanFixture{unembedded: errors.New("no model here")}
-	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
+	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "not embedding " + held.Name + ": no model here\n"; !strings.HasPrefix(out, want) {
+	if want := "not embedding " + target.Name + ": no model here\n"; !strings.HasPrefix(out, want) {
 		t.Errorf("scan did not say why no vectors are made:\n%q", out)
 	}
 	for _, want := range []string{"  1 indexed\r", "index now holds 1 notes"} {
@@ -527,9 +527,9 @@ func TestScanReportsTheNotesItIndexed(t *testing.T) {
 
 func TestScanReportsTheVectorsItMade(t *testing.T) {
 	t.Parallel()
-	held := createNoteVault(t)
+	target := createNoteVault(t)
 	s := &scanFixture{embedder: constantEmbedder{}}
-	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
+	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,10 +545,10 @@ func TestScanReportsTheVectorsItMade(t *testing.T) {
 
 func TestScanReportsTheBooksItRead(t *testing.T) {
 	t.Parallel()
-	held := testsupport.NewVault(t, nil)
-	testsupport.WriteBook(t, held.Path, "bee.epub")
+	target := testsupport.NewVault(t, nil)
+	testsupport.WriteBook(t, target.Path, "bee.epub")
 	s := &scanFixture{}
-	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
+	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -564,14 +564,14 @@ func TestScanReportsTheBooksItRead(t *testing.T) {
 
 func TestScanRebuildsTheIndexWhenAsked(t *testing.T) {
 	t.Parallel()
-	held := createNoteVault(t)
+	target := createNoteVault(t)
 	s := &scanFixture{}
 	for _, args := range [][]string{
-		{"scan", held.Name, "--rebuild-index"},
-		{"scan", "--rebuild-index", held.Name},
+		{"scan", target.Name, "--rebuild-index"},
+		{"scan", "--rebuild-index", target.Name},
 	} {
 		s.rebuilt = false
-		if _, err := runWithDeps(s.deps(t, held), args...); err != nil {
+		if _, err := runWithDeps(s.deps(t, target), args...); err != nil {
 			t.Fatalf("%v: %v", args, err)
 		}
 		if !s.rebuilt {
@@ -582,16 +582,16 @@ func TestScanRebuildsTheIndexWhenAsked(t *testing.T) {
 
 func TestScanReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
-	held := createNoteVault(t)
+	target := createNoteVault(t)
 
-	opening := (&scanFixture{}).deps(t, held)
+	opening := (&scanFixture{}).deps(t, target)
 	opening.Scan = func(context.Context, domain.Vault, bool) (cli.Scan, error) { return cli.Scan{}, errRefused }
-	if _, err := runWithDeps(opening, "scan", held.Name); !errors.Is(err, errRefused) {
+	if _, err := runWithDeps(opening, "scan", target.Name); !errors.Is(err, errRefused) {
 		t.Errorf("a scan that cannot open answered %v", err)
 	}
 
 	summing := &scanFixture{summary: errRefused}
-	out, err := runWithDeps(summing.deps(t, held), "scan", held.Name)
+	out, err := runWithDeps(summing.deps(t, target), "scan", target.Name)
 	if !errors.Is(err, errRefused) {
 		t.Errorf("a scan that cannot count answered %v", err)
 	}
@@ -599,8 +599,8 @@ func TestScanReturnsWhatWentWrong(t *testing.T) {
 		t.Errorf("scan reported a count it did not have:\n%q", out)
 	}
 
-	gone := domain.Vault{ID: held.ID, Name: held.Name, Path: filepath.Join(t.TempDir(), "not-there")}
-	if _, err := runWithDeps((&scanFixture{}).deps(t, gone), "scan", gone.Name); err == nil {
+	removed := domain.Vault{ID: target.ID, Name: target.Name, Path: filepath.Join(t.TempDir(), "not-there")}
+	if _, err := runWithDeps((&scanFixture{}).deps(t, removed), "scan", removed.Name); err == nil {
 		t.Error("a scan of a folder that is not there succeeded")
 	}
 }
@@ -612,9 +612,9 @@ func (failing) Embed(context.Context, []string) ([][]float32, error) { return ni
 
 func TestScanReturnsWhyTheVectorsWereNotMade(t *testing.T) {
 	t.Parallel()
-	held := createNoteVault(t)
+	target := createNoteVault(t)
 	s := &scanFixture{embedder: failing{}}
-	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
+	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
 	if !errors.Is(err, errRefused) {
 		t.Errorf("a scan whose model failed answered %v", err)
 	}
@@ -625,9 +625,9 @@ func TestScanReturnsWhyTheVectorsWereNotMade(t *testing.T) {
 
 func TestScanNeedsExactlyOneVault(t *testing.T) {
 	t.Parallel()
-	held := createNoteVault(t)
-	for _, args := range [][]string{{"scan"}, {"scan", held.Name, "other"}, {"scan", "--rebuild-index"}} {
-		_, err := runWithDeps((&scanFixture{}).deps(t, held), args...)
+	target := createNoteVault(t)
+	for _, args := range [][]string{{"scan"}, {"scan", target.Name, "other"}, {"scan", "--rebuild-index"}} {
+		_, err := runWithDeps((&scanFixture{}).deps(t, target), args...)
 		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli scan <vault> [--rebuild-index]") {
 			t.Errorf("%v answered %v", args, err)
 		}

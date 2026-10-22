@@ -107,14 +107,14 @@ func (w *watched) waitUntilDone(t *testing.T) {
 // getTask is the one task in the list, or nothing.
 func (w *watched) getTask(t *testing.T) (run.Task, bool) {
 	t.Helper()
-	held := w.tasks.List()
-	if len(held) == 0 {
+	target := w.tasks.List()
+	if len(target) == 0 {
 		return run.Task{}, false
 	}
-	if len(held) != 1 {
-		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
+	if len(target) != 1 {
+		t.Fatalf("the list holds %d pieces of work: %+v", len(target), target)
 	}
-	return held[0], true
+	return target[0], true
 }
 
 var somewhere = domain.Vault{ID: "v", Path: "/nowhere"}
@@ -124,13 +124,13 @@ var somewhere = domain.Vault{ID: "v", Path: "/nowhere"}
 func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	w := newWatched(t, errors.New("nothing to read with"))
 
-	reading, held := make(chan struct{}, 2), make(chan struct{})
+	reading, target := make(chan struct{}, 2), make(chan struct{})
 	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		w.mu.Lock()
 		w.open++
 		w.mu.Unlock()
 		reading <- struct{}{}
-		<-held
+		<-target
 		return nil, nil, errors.New("nothing to read with")
 	}
 
@@ -150,7 +150,7 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 		t.Errorf("%d documents are in line", w.CountWaiting())
 	}
 
-	close(held)
+	close(target)
 	w.waitUntilDone(t)
 
 	if w.countOpens() != 2 {
@@ -170,8 +170,8 @@ func TestARecognitionThatFailedStaysInTheList(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	at, held := w.getTask(t)
-	if !held {
+	at, target := w.getTask(t)
+	if !target {
 		t.Fatal("the failure was not said")
 	}
 	if at.ID != "recognition-a.pdf" || at.Error == "" || at.About != "a.pdf" {
@@ -182,7 +182,7 @@ func TestARecognitionThatFailedStaysInTheList(t *testing.T) {
 // Getting the models is a step of its own, and it is named for what it is. A
 // row that calls it by the name of the work that follows leaves a person
 // watching a recognition that has not begun.
-func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
+func TestTheModelsAreGotBelowTheirOwnName(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -210,8 +210,8 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	at, held := w.getTask(t)
-	if !held || at.ID != "recognition-a.pdf" || at.Error == "" {
+	at, target := w.getTask(t)
+	if !target || at.ID != "recognition-a.pdf" || at.Error == "" {
 		t.Fatalf("first failure not recorded properly: %+v", at)
 	}
 
@@ -229,7 +229,7 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	if at, held := w.getTask(t); held {
+	if at, targetVal := w.getTask(t); targetVal {
 		t.Errorf("task remained in list after successful retry: %+v", at)
 	}
 }
@@ -273,7 +273,7 @@ func TestARecognitionStoppedIsNotAFailure(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	if at, held := w.getTask(t); held {
+	if at, target := w.getTask(t); target {
 		t.Errorf("a recognition that was stopped is in the list: %+v", at)
 	}
 }
@@ -331,9 +331,9 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 func TestTheApplicationWaitsForARecognitionItStarted(t *testing.T) {
 	w := newWatched(t, nil)
 
-	holding := make(chan struct{})
+	blockCh := make(chan struct{})
 	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
-		<-holding
+		<-blockCh
 		return nil, nil, errors.New("nothing to read with")
 	}
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -349,7 +349,7 @@ func TestTheApplicationWaitsForARecognitionItStarted(t *testing.T) {
 	case <-time.After(50 * time.Millisecond):
 	}
 
-	close(holding)
+	close(blockCh)
 	select {
 	case <-waited:
 	case <-time.After(2 * time.Second):
@@ -370,8 +370,8 @@ func TestAProofreaderThatFailedToOpenIsSaid(t *testing.T) {
 
 	w.proofread(t.Context(), somewhere, "a.pdf")
 
-	at, held := w.getTask(t)
-	if !held {
+	at, target := w.getTask(t)
+	if !target {
 		t.Fatal("a proofreader that failed to open was not said")
 	}
 	if at.Error == "" || at.About != "a.pdf" {
@@ -381,7 +381,7 @@ func TestAProofreaderThatFailedToOpenIsSaid(t *testing.T) {
 
 // A proofreading the person has not let ask a model says what allows it, in the
 // list of what is being done.
-func TestAProofreadingWithoutConsentSaysWhereToAllowIt(t *testing.T) {
+func TestAProofreadingWithoutConsentReturnsWhereToAllowIt(t *testing.T) {
 	w := newWatched(t, nil)
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,

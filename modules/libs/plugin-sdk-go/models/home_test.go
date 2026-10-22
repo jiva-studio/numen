@@ -17,7 +17,7 @@ func TestGetHomeNamesTheEnvironmentFolder(t *testing.T) {
 	}
 }
 
-func TestGetHomeIsUnderTheApplicationDataDirectory(t *testing.T) {
+func TestGetHomeIsBelowTheApplicationDataDirectory(t *testing.T) {
 	cache := t.TempDir()
 	t.Setenv(EnvDir, "")
 	t.Setenv("XDG_CONFIG_HOME", cache)
@@ -72,7 +72,7 @@ func TestGetUsageSumsNestedFiles(t *testing.T) {
 	}
 }
 
-func TestGetUsageCountsWhatALiveReservationHasNotWritten(t *testing.T) {
+func TestGetUsageCountsWhatALiveReservationHasNotSaved(t *testing.T) {
 	dir := t.TempDir()
 	part := filepath.Join(dir, "m.part-1")
 	if err := os.WriteFile(part, make([]byte, 30), 0o644); err != nil {
@@ -175,7 +175,7 @@ func TestResolvePathFollowsALinkInTheExistingPart(t *testing.T) {
 	}
 }
 
-func TestGetUsageCountsTheFilesBehindALinkedRoot(t *testing.T) {
+func TestGetUsageCountsTheFilesPriorALinkedRoot(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("links need privileges on windows")
 	}

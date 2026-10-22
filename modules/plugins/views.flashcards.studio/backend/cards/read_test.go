@@ -119,8 +119,8 @@ func TestAVaultThatWillNotOpenIsAnError(t *testing.T) {
 // is an error of the deck's read.
 func TestADeckWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
 	vs := newVaults(t)
-	plain := cards.NewRead(vs.ports.Readers, vs.queries)
-	birds, err := plain.Deck(t.Context(), vs.first, "decks/Birds.md")
+	reader := cards.NewRead(vs.ports.Readers, vs.queries)
+	birds, err := reader.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,8 +138,8 @@ func TestADeckWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
 // not answer is an error of the read.
 func TestADeckWhoseLinksCannotBeResolvedIsAnError(t *testing.T) {
 	vs := newVaults(t)
-	plain := cards.NewRead(vs.ports.Readers, vs.queries)
-	birds, err := plain.Deck(t.Context(), vs.first, "decks/Birds.md")
+	reader := cards.NewRead(vs.ports.Readers, vs.queries)
+	birds, err := reader.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,8 +197,8 @@ func TestTheOneCardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get the card stencils: %v", err)
 	}
-	if held, ok := by["Weather"]; !ok || !reflect.DeepEqual(held, format.Stencil{}) {
-		t.Errorf("the card is cut by %+v, want a stencil of nothing", held)
+	if target, ok := by["Weather"]; !ok || !reflect.DeepEqual(target, format.Stencil{}) {
+		t.Errorf("the card is cut by %+v, want a stencil of nothing", target)
 	}
 }
 
@@ -293,7 +293,7 @@ func TestAFileOfAnotherKindIsNotADeck(t *testing.T) {
 
 // What the vault says is at a path outranks the bytes: a path it says holds no
 // note is not read as one, and a read failing there is an error.
-func TestAPathTheVaultSaysHoldsNothingIsNotReadAsANote(t *testing.T) {
+func TestAPathTheVaultReturnsContainsNothingIsNotReadAsANote(t *testing.T) {
 	vs := newVaults(t)
 
 	nothing := faulty{inner: vs.ports.Readers, stat: map[string]error{"decks/Birds.md": fs.ErrNotExist}}
@@ -346,7 +346,7 @@ func TestADeckWhoseFrontmatterCannotBeReadIsUnreadable(t *testing.T) {
 }
 
 // A deck over the bound says how large it is.
-func TestADeckOverTheBoundSaysItsSize(t *testing.T) {
+func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 	vs := newVaults(t)
 	if err := os.Truncate(filepath.Join(vs.first.Path, "decks", "Mammals.md"), cards.MaxBytes+1); err != nil {
 		t.Fatal(err)
@@ -366,7 +366,7 @@ func TestADeckOverTheBoundSaysItsSize(t *testing.T) {
 
 // A file the vault's own rules leave alone is not a note, and its bytes are not
 // handed over.
-func TestAFileTheVaultLeavesAloneIsNotADeck(t *testing.T) {
+func TestAFileTheVaultPreservesAloneIsNotADeck(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/.Hidden.md", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")
 

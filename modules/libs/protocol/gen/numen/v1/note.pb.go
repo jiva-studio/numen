@@ -561,7 +561,7 @@ type ResolveAddressesRequest struct {
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The addresses to answer about. A scheme written before `://` is read as
 	// one — `name://Entropy`, `note://<identifier>` — and everything else is a
-	// name, so what a file carries between its brackets is taken as it stands.
+	// name, so what a file carries between its brackets is taken currently.
 	Written       []string `protobuf:"bytes,2,rep,name=written,proto3" json:"written,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -889,11 +889,11 @@ func (x *NoteHeadings) GetHeadings() []*Heading {
 type Heading struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Text  string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	// The line it stands on, counted from the first line of the prose.
+	// The line it relies on, counted from the first line of the prose.
 	Line int32 `protobuf:"varint,2,opt,name=line,proto3" json:"line,omitempty"`
 	// How deep it sits, from one for the shallowest a note can carry. Zero where
 	// the answer does not say: a name that matched carries the heading's words
-	// and where it stands, and nothing about its depth.
+	// and at its current position, and nothing about its depth.
 	Level         int32 `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

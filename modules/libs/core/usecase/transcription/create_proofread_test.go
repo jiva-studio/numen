@@ -38,9 +38,9 @@ func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	}
 	readers, derived := somewhereToProofread()
 
-	right, held, err := CreateProofread(config, readers, derived)
-	if err != nil || !held {
-		t.Fatalf("held %v, %v", held, err)
+	right, target, err := CreateProofread(config, readers, derived)
+	if err != nil || !target {
+		t.Fatalf("held %v, %v", target, err)
 	}
 	if right.by != port.Proofreader(by) {
 		t.Error("a transcript is put right by something the installation did not place")
@@ -49,16 +49,16 @@ func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 
 // An installation that placed no proofreader holds none, and that is no
 // failure: the transcript is used exactly as it was heard.
-func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
+func TestNamingNoProofreaderContainsNoneAndIsNoFailure(t *testing.T) {
 	t.Parallel()
 	readers, derived := somewhereToProofread()
-	for _, said := range []run.ProofreadingConfig{
+	for _, response := range []run.ProofreadingConfig{
 		{},
 		{By: func() (port.Proofreader, error) { return nil, nil }},
 	} {
-		right, held, err := CreateProofread(said, readers, derived)
-		if err != nil || held || right.by != nil {
-			t.Errorf("a transcript came back: held %v, %v", held, err)
+		right, target, err := CreateProofread(response, readers, derived)
+		if err != nil || target || right.by != nil {
+			t.Errorf("a transcript came back: held %v, %v", target, err)
 		}
 	}
 }
@@ -67,13 +67,13 @@ func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 func TestAProofreaderThatCannotBeOpenedIsAnError(t *testing.T) {
 	t.Parallel()
 	keyless := errors.New("no key is configured")
-	said := run.ProofreadingConfig{
+	response := run.ProofreadingConfig{
 		IsNamed: true,
 		By:      func() (port.Proofreader, error) { return nil, keyless },
 	}
 	readers, derived := somewhereToProofread()
 
-	if _, _, err := CreateProofread(said, readers, derived); !errors.Is(err, keyless) {
+	if _, _, err := CreateProofread(response, readers, derived); !errors.Is(err, keyless) {
 		t.Errorf("got %v", err)
 	}
 }

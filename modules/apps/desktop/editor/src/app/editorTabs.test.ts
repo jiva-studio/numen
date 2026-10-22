@@ -34,13 +34,13 @@ describe('the tab that edits the file at a path', () => {
     expect(findEditorTabAt(windowTabs, 'a.md')).toBe('deck:a')
   })
 
-  it('is none where only a tab that edits nothing stands at the path', () => {
+  it('is none where only a tab that edits nothing remains at the path', () => {
     const windowTabs = createWindowTabs({ 'document:a': { editsFiles: false, path: 'a.md' } })
 
     expect(findEditorTabAt(windowTabs, 'a.md')).toBeNull()
   })
 
-  it('is none where no tab stands at the path', () => {
+  it('is none where no tab remains at the path', () => {
     const windowTabs = createWindowTabs({ 'deck:a': { editsFiles: true, path: 'a.md' } })
 
     expect(findEditorTabAt(windowTabs, 'b.md')).toBeNull()
@@ -70,14 +70,14 @@ describe('what the window knows of the note open at a path', () => {
     expect(lookup.getTitle('a.md')).toBe('Alpha')
   })
 
-  it('is the tab of a kind that edits files where no note editor stands at the path, called what the tab is', () => {
+  it('is the tab of a kind that edits files where no note editor remains at the path, called what the tab is', () => {
     const lookup = create(null)
 
     expect(lookup.getTabAt('a.md')).toBe('deck:a')
     expect(lookup.getTitle('a.md')).toBe('deck:a')
   })
 
-  it('is no tab and no title where nothing stands at the path', () => {
+  it('is no tab and no title where nothing remains at the path', () => {
     const lookup = create(null)
 
     expect(lookup.getTabAt('b.md')).toBeNull()

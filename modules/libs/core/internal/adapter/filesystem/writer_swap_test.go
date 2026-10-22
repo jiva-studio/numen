@@ -17,7 +17,7 @@ import (
 // A sync client owns the folder it syncs and may put a link where a folder was
 // at any moment. A rule asked of the name before the write is a rule about a
 // vault that has since changed; the write itself is what has to stay inside.
-func TestAFolderSwappedForALinkTakesNothingOutOfTheVault(t *testing.T) {
+func TestAFolderSwappedForALinkConsumesNothingOutOfTheVault(t *testing.T) {
 	root := t.TempDir()
 	elsewhere := t.TempDir()
 	writer, err := filesystem.OpenForWriting(root, filesystem.Options{})
@@ -64,13 +64,13 @@ func TestAFolderSwappedForALinkTakesNothingOutOfTheVault(t *testing.T) {
 	close(stop)
 	swapping.Wait()
 
-	left, err := os.ReadDir(elsewhere)
+	remaining, err := os.ReadDir(elsewhere)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(left) != 0 {
-		names := make([]string, 0, len(left))
-		for _, each := range left {
+	if len(remaining) != 0 {
+		names := make([]string, 0, len(remaining))
+		for _, each := range remaining {
 			names = append(names, each.Name())
 		}
 		t.Errorf("a write landed outside the vault: %v", names)

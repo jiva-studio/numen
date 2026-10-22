@@ -68,7 +68,7 @@ func (f *StencilFile) RenameField(from, to string) error {
 	if at < 0 {
 		return fmt.Errorf("%w: %s", ErrNoSuchField, from)
 	}
-	if taken := slices.Index(names, to); taken >= 0 && taken != at {
+	if targetIndex := slices.Index(names, to); targetIndex >= 0 && targetIndex != at {
 		return fmt.Errorf("%w: %s", ErrFieldTaken, to)
 	}
 	names[at] = to
@@ -82,7 +82,7 @@ func (f *StencilFile) RenameField(from, to string) error {
 // markdown around the braces is the person's and is left as it was.
 func (f *StencilFile) replacePlaceholders(from, to string) error {
 	body := f.doc.Body()
-	written := "{{" + to + "}}"
+	content := "{{" + to + "}}"
 
 	// Backwards, because a splice moves every byte after it.
 	found := placeholderRe.FindAllStringSubmatchIndex(body, -1)
@@ -91,7 +91,7 @@ func (f *StencilFile) replacePlaceholders(from, to string) error {
 		if body[at[2]:at[3]] != from {
 			continue
 		}
-		if err := f.doc.SpliceBody(at[0], at[1], written); err != nil {
+		if err := f.doc.SpliceBody(at[0], at[1], content); err != nil {
 			return err
 		}
 	}

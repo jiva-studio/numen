@@ -267,7 +267,7 @@ func TestReadProofreadErrorReadsTheEndOfTheContextAsItsOwn(t *testing.T) {
 }
 
 func TestReadProofreadErrorReadsAFailureThatIsNotAPluginAnswerAsUnavailable(t *testing.T) {
-	err := readProofreadError(t.Context(), errors.New("connection refused"))
+	err := readProofreadError(t.Context(), errors.New("connection failed"))
 
 	if !errors.Is(err, port.ErrUnavailable) {
 		t.Errorf("got %v", err)

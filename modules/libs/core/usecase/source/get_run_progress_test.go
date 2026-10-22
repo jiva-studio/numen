@@ -49,7 +49,7 @@ func TestRunProgressIsReadOffTheNamesTheRunWrites(t *testing.T) {
 	}
 }
 
-func TestRunProgressOfARecordingTheIndexKnowsNothingOfStandsOnItsBytes(t *testing.T) {
+func TestRunProgressOfARecordingTheIndexKnowsNothingOfExistsOnItsBytes(t *testing.T) {
 	s := newTextScene(t).withoutIndex()
 	s.write(t, domain.NewArtifactName(domain.ArtifactText, domain.ASR, text.Fingerprint([]byte("a recording"))), "words")
 
@@ -68,7 +68,7 @@ func TestRunProgressOfAScanNoModelProducedIsNone(t *testing.T) {
 	}
 }
 
-func TestRunProgressOfALinkNoteIsReadUnderItsAddress(t *testing.T) {
+func TestRunProgressOfALinkNoteIsReadBelowItsAddress(t *testing.T) {
 	s := newTextScene(t)
 	read := func() RunState {
 		got, err := s.texts.GetRunProgress.Execute(t.Context(), s.vault, linkPath, domain.KindURL)

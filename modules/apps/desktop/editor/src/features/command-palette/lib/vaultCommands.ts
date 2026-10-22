@@ -2,7 +2,7 @@
  * The commands offered over the vaults an installation holds.
  */
 import { createRowKeys } from './chords'
-import { isAlwaysOffered, isVaultOpen } from './offered'
+import { isAlwaysOffered, isVaultOpen } from './availability'
 import type { Command } from '../types'
 import type { Words } from '../words'
 

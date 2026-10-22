@@ -19,14 +19,14 @@ func TestAQuestionIsReadWithItsMessagesAndPurpose(t *testing.T) {
 	if got.Purpose != "proofreading" || len(got.Messages) != 2 || got.Messages[0] != (port.Message{Role: "system", Text: "be brief"}) {
 		t.Errorf("read %+v", got)
 	}
-	if bare := readWireQuestion(nil); len(bare.Messages) != 0 {
-		t.Errorf("read %+v", bare)
+	if bareMsg := readWireQuestion(nil); len(bareMsg.Messages) != 0 {
+		t.Errorf("read %+v", bareMsg)
 	}
 }
 
 // A refusal is answered with its code, consent before route before unavailability, and any other
 // error is none.
-func TestARefusalIsAnsweredWithItsCode(t *testing.T) {
+func TestAErrorIsAnsweredWithItsCode(t *testing.T) {
 	for _, tc := range []struct {
 		err  error
 		want v1.CompletionErrorCode
@@ -40,6 +40,6 @@ func TestARefusalIsAnsweredWithItsCode(t *testing.T) {
 		}
 	}
 	if _, isRefusal := writeRefusal(errors.New("other")); isRefusal {
-		t.Error("an error of no refusal was answered with a code")
+		t.Error("an error with no error code was answered with a code")
 	}
 }

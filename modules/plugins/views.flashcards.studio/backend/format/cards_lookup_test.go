@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 )
 
-func TestACardStandingBeforeEverySectionIsNotAtAnyOfThem(t *testing.T) {
+func TestACardActiveBeforeEverySectionIsNotAtAnyOfThem(t *testing.T) {
 	if format.NoSection >= 0 {
 		t.Errorf("NoSection is %d, which is a position among the sections", format.NoSection)
 	}
 }
 
-func TestACardHoldsNoValueUnderAFieldItDoesNotHave(t *testing.T) {
+func TestACardContainsNoValueBelowAFieldItDoesNotHave(t *testing.T) {
 	card := format.Card{Values: []format.Value{{Field: "Front", Text: "ant"}}}
 
 	if text, ok := card.Value("Back"); ok || text != "" {
@@ -25,7 +25,7 @@ func TestACardHoldsNoValueUnderAFieldItDoesNotHave(t *testing.T) {
 	}
 }
 
-func TestADeckHoldingNoCardOfAMarkSaysSo(t *testing.T) {
+func TestADeckContainingNoCardOfAMarkReturnsSo(t *testing.T) {
 	deck := format.Deck{Cards: []format.Card{{Mark: "aaaaaaaaaa", Heading: "ant"}}}
 
 	got, err := deck.Card("bbbbbbbbbb")
@@ -38,7 +38,7 @@ func TestADeckHoldingNoCardOfAMarkSaysSo(t *testing.T) {
 	}
 }
 
-func TestADeckHoldingTwoCardsOfAMarkSaysSo(t *testing.T) {
+func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
 	deck := format.Deck{Cards: []format.Card{
 		{Mark: cardid.ID("aaaaaaaaaa"), Heading: "ant"},
 		{Mark: cardid.ID("aaaaaaaaaa"), Heading: "bee"},

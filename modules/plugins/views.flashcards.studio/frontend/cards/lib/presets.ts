@@ -1,4 +1,4 @@
-/** How the decks pointing at one preset are scheduled, and what that comes to. */
+/** How the decks pointing at one preset are scheduled, and what that evaluates to. */
 import {
   type Result,
   DEFAULT_SETTINGS,
@@ -110,7 +110,7 @@ export type PresetWriteResult = Result<{ readonly at: string }, CardsFailure>
 /** Where a preset was filed, or why none was made. */
 export type MakeResult = Result<{ readonly path: string }, ErrorCode>
 
-/** What a preset comes to at one place of the grid. */
+/** What a preset evaluates to at one place of the grid. */
 export interface Point {
   readonly reviews: number
   readonly minutes: number
@@ -169,8 +169,8 @@ export interface Presets {
   read(path: string): Promise<PresetReadResult>
   list(): Promise<readonly PresetChoice[]>
   createPreset(title: string, folder: string): Promise<MakeResult>
-  scheduleDeck(deck: string, preset: string, seen: string): Promise<PresetWriteResult>
+  scheduleDeck(deck: string, preset: string, observed: string): Promise<PresetWriteResult>
   getDeckPreset(deck: string): Promise<PresetReadResult>
-  write(path: string, settings: Settings, seen: string): Promise<PresetWriteResult>
+  write(path: string, settings: Settings, observed: string): Promise<PresetWriteResult>
   curve(path: string, settings: Settings): Promise<Curve>
 }

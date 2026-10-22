@@ -87,23 +87,23 @@ export function createStencilFields(
 
   const getStencil = (id: string): BufferStencil => {
     const body = getBody(id)
-    const held = parsed.get(id)
-    const read = parseStencil(body)
-    const stencil = held && areStencilsEqual(held.stencil, read) ? held.stencil : read
+    const target = parsed.get(id)
+    const readItem = parseStencil(body)
+    const stencil = target && areStencilsEqual(target.stencil, readItem) ? target.stencil : readItem
     parsed.set(id, { body, stencil })
     return stencil
   }
 
   const getMarks = (id: string): Marks => {
     const problems = getProblems(id)
-    const held = marked.get(id)
-    if (held && held.problems === problems) return held.marks
-    const read = createMarks(
+    const target = marked.get(id)
+    if (target && target.problems === problems) return target.marks
+    const readItem = createMarks(
       problems,
       [],
       getStencil(id).faces.map((face) => face.id),
     )
-    const marks = held && areMarksEqual(held.marks, read) ? held.marks : read
+    const marks = target && areMarksEqual(target.marks, readItem) ? target.marks : readItem
     marked.set(id, { problems, marks })
     return marks
   }

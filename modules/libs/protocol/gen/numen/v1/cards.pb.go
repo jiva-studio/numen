@@ -374,7 +374,7 @@ type Deck struct {
 	// The cards, in the order they stand in the note.
 	Cards []*Card `protobuf:"bytes,4,rep,name=cards,proto3" json:"cards,omitempty"`
 	// The sections, in the order they stand in the note. A card says which of
-	// them it stands under.
+	// them it is placed under.
 	Sections []*Section `protobuf:"bytes,5,rep,name=sections,proto3" json:"sections,omitempty"`
 	// What was wrong with the note and was not guessed at, in the order it was
 	// found. The deck is read either way, and every card a person wrote is here.
@@ -524,7 +524,7 @@ func (x *Section) GetPreamble() string {
 }
 
 // Problem is something in a file that could not be acted on and was not guessed
-// at. The file is read either way, and each one carries where it stands so that
+// at. The file is read either way, and each one carries at its current position so that
 // the interface marks the card or the face it is against.
 type Problem struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -617,7 +617,7 @@ type Card struct {
 	// the ten characters alone, without the caret a heading writes them behind,
 	// and it is empty for a card the application has not written yet.
 	Mark string `protobuf:"bytes,1,opt,name=mark,proto3" json:"mark,omitempty"`
-	// Where the section this card stands under stands in the deck's own, counted
+	// Where the section this card is placed under stands in the deck's own, counted
 	// from the first. Absent for a card standing before the first section.
 	//
 	// A write naming a section the deck does not hold is refused. Nothing is
@@ -629,7 +629,7 @@ type Card struct {
 	//
 	// It travels for the one card that cannot be read again — a card whose
 	// stencil is missing or unreadable, where nothing can say which of its fields
-	// is first. That heading is left exactly as it stands, so a write hands back
+	// is first. That heading is left exactly currently, so a write returns
 	// what it was given. A write carrying nothing here leaves such a card headed
 	// by its mark alone.
 	Heading string `protobuf:"bytes,3,opt,name=heading,proto3" json:"heading,omitempty"`
@@ -1754,7 +1754,7 @@ type WriteDeckRequest struct {
 	// The cards, in the order they are to stand in the note.
 	Cards []*Card `protobuf:"bytes,3,rep,name=cards,proto3" json:"cards,omitempty"`
 	// The sections, in the order they are to stand in the note. A card says
-	// which of them it stands under.
+	// which of them it is placed under.
 	Sections []*Section `protobuf:"bytes,4,rep,name=sections,proto3" json:"sections,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the deck now holds.

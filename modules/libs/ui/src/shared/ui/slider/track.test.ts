@@ -26,7 +26,7 @@ describe('the keys the handle walks under', () => {
     expect(stepForKey('End', 40, { bounds: bounds(), isBigStep: false })).toBe(100)
   })
 
-  it('cover ten steps under a page key, and under a key held with shift', () => {
+  it('cover ten steps under a page key, and under a key retained with shift', () => {
     expect(stepForKey('PageUp', 40, { bounds: bounds(), isBigStep: false })).toBe(50)
     expect(stepForKey('PageDown', 40, { bounds: bounds(), isBigStep: false })).toBe(30)
     expect(stepForKey('ArrowRight', 40, { bounds: bounds(), isBigStep: true })).toBe(50)

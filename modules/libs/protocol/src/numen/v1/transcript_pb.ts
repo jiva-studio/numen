@@ -21,10 +21,10 @@ export const file_numen_v1_transcript: GenFile = /*@__PURE__*/
   fileDesc("ChludW1lbi92MS90cmFuc2NyaXB0LnByb3RvEghudW1lbi52MSItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkMKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhwKBHNwYW4YAiABKAsyDi5udW1lbi52MS5TcGFuIjUKFlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZSJDChZXcml0ZVRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSGwoEY3VlcxgCIAMoCzINLm51bWVuLnYxLkN1ZSI2ChdXcml0ZVRyYW5zY3JpcHRSZXNwb25zZRIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlMsABChFUcmFuc2NyaXB0U2VydmljZRJTCg5SZWFkVHJhbnNjcmlwdBIfLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVxdWVzdBogLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USVgoPV3JpdGVUcmFuc2NyaXB0EiAubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBohLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
- * A Cue is one stretch of speech: what was said, and the milliseconds of the
+ * A Cue is one stretch of speech: the transcript, and the milliseconds of the
  * recording it spans.
  *
- * One cue stands on one line. A cue broken over two is two a client would offer
+ * One cue relies on one line. A cue broken over two is two a client would offer
  * to edit and one the recording would play.
  *
  * @generated from message numen.v1.Cue

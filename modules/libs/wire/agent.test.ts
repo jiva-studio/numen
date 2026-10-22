@@ -15,7 +15,7 @@ const call = (place?: { path: string; span: { from: number; to: number } }): Ask
       value: create(ToolCallSchema, {
         tool: 'read',
         about: 'notes/Leaf mould.md',
-        written: 12,
+        length: 12,
         ...place,
       }),
     },
@@ -24,18 +24,18 @@ const call = (place?: { path: string; span: { from: number; to: number } }): Ask
 /** The service, saying what a test told it to and keeping what it was asked. */
 const service = (says: AskAgentResponse[]) => {
   const requests: { request: unknown; signal: AbortSignal }[] = []
-  const over: string[] = []
+  const finished: string[] = []
   const agent: AgentClient = {
     async *askAgent(request, options) {
       requests.push({ request, signal: options.signal })
       for (const step of says) yield step
     },
     async finishConversation(request) {
-      over.push(request.conversation)
+      finished.push(request.conversation)
       return {}
     },
   }
-  return { agent, requests, over }
+  return { agent, requests, finished }
 }
 
 /** Everything the port yields for what the service said. */
@@ -55,7 +55,7 @@ const steps = async (says: AskAgentResponse[]): Promise<AgentStep[]> => {
 }
 
 describe('createAgentPort', () => {
-  it('hands the question, the focus and the conversation to the service', async () => {
+  it('passes the question, the focus and the conversation to the service', async () => {
     const { agent, requests } = service([])
     const abort = new AbortController()
     for await (const _ of createAgentPort(agent).ask({
@@ -74,8 +74,8 @@ describe('createAgentPort', () => {
     ])
   })
 
-  it('reads what was said as text', async () => {
-    const response = create(AskAgentResponseSchema, { step: { case: 'said', value: 'Leaves.' } })
+  it('reads the transcript as text', async () => {
+    const response = create(AskAgentResponseSchema, { step: { case: 'text', value: 'Leaves.' } })
     expect(await steps([response])).toEqual([{ kind: 'said', text: 'Leaves.' }])
   })
 
@@ -112,13 +112,13 @@ describe('createAgentPort', () => {
   })
 
   it('reads why the agent stopped', async () => {
-    const stopped = create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'no key' } })
-    expect(await steps([stopped])).toEqual([{ kind: 'stopped', error: 'no key' }])
+    const stoppedResponse = create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'no key' } })
+    expect(await steps([stoppedResponse])).toEqual([{ kind: 'stopped', error: 'no key' }])
   })
 
   it('reads a finished answer as stopped with no error', async () => {
-    const stopped = create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'done' } })
-    expect(await steps([stopped])).toEqual([{ kind: 'stopped', error: '' }])
+    const stoppedResponse = create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'done' } })
+    expect(await steps([stoppedResponse])).toEqual([{ kind: 'stopped', error: '' }])
   })
 
   it('says nothing for a step it does not know', async () => {
@@ -126,9 +126,9 @@ describe('createAgentPort', () => {
   })
 
   it('finishes the conversation it was given', async () => {
-    const { agent, over } = service([])
+    const { agent, finished } = service([])
     await createAgentPort(agent).finish('one')
-    expect(over).toEqual(['one'])
+    expect(finished).toEqual(['one'])
   })
 })
 

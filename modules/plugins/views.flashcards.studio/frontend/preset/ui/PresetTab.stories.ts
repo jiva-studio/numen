@@ -86,11 +86,11 @@ const BOUNDS: SettingsBounds = {
 /** A tab standing at those settings, holding the place the knob was moved to. */
 const createPresetTab = (args: Knobs): PresetTabState => {
   const place = ref(args.place)
-  const drawn = curve({ goal: args.goal, isHonest: args.isHonest })
+  const picture = curve({ goal: args.goal, isHonest: args.isHonest })
   return {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, goal: args.goal }),
-    curve: shallowRef(drawn),
+    curve: shallowRef(picture),
     material: shallowRef(args.isHonest ? MATERIAL : null),
     place,
     isWaiting: ref(args.isWaiting),
@@ -224,7 +224,7 @@ export const TheRowsShareTheirColumns: Story = {
     expect(new Set(names.map((box) => Math.round(box.right))).size).toBe(1)
 
     // The controls stand in the second column, past the line every name stops
-    // on, and inside the section rather than spilling out of it.
+    // on, and inside the section and not spilling out of it.
     const edge = names[0]!.right
     const room = settings.getBoundingClientRect()
     for (const control of controls) {
@@ -281,7 +281,7 @@ export const TheReadoutStaysUnderThePicture: Story = {
  *
  * It is hung off the knob's own point and pulled back by half its width, or by
  * the whole of it at the trailing end, so it stays over the picture. Its tail
- * stands on the knob whichever way it was pulled.
+ * relies on the knob whichever way it was pulled.
  */
 export const TheBubbleStandsOverTheKnob: Story = {
   play: async ({ canvasElement }) => {
@@ -321,13 +321,13 @@ export const TheBacklogKeepsItsRoom: Story = {
     const backlogRoom = (tab: HTMLElement): DOMRect => getRooms(tab)[1]!.getBoundingClientRect()
 
     // The backlog's own two axes are named, and it is drawn under the picture it
-    // belongs to rather than beside it.
+    // belongs to and not beside it.
     const canvas = within(answered!)
     const backlog = canvas.getByText(words.backlogY)
-    const along = canvas.getByText(words.backlogX)
+    const alongElem = canvas.getByText(words.backlogX)
     const picture = getPicture(answered!).getBoundingClientRect()
     expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
-    expect(along.getBoundingClientRect().top).toBeGreaterThan(backlog.getBoundingClientRect().top)
+    expect(alongElem.getBoundingClientRect().top).toBeGreaterThan(backlog.getBoundingClientRect().top)
 
     // It runs from the first day to the last of the run at this place, and the
     // two ends stand at the two ends of it.
@@ -341,12 +341,12 @@ export const TheBacklogKeepsItsRoom: Story = {
     expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
     // The room is the same either way, and in the backlog's own proportion.
-    const drawn = backlogRoom(answered!)
+    const backlogBox = backlogRoom(answered!)
     const empty = backlogRoom(waiting!)
-    expect(drawn.width).toBeGreaterThan(0)
-    expect(empty.width).toBeCloseTo(drawn.width, 0)
-    expect(empty.height).toBeCloseTo(drawn.height, 0)
-    expect(drawn.width / drawn.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
+    expect(backlogBox.width).toBeGreaterThan(0)
+    expect(empty.width).toBeCloseTo(backlogBox.width, 0)
+    expect(empty.height).toBeCloseTo(backlogBox.height, 0)
+    expect(backlogBox.width / backlogBox.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
   },
 }
 
@@ -386,8 +386,8 @@ export const TheRingStandsOnTheKnob: Story = {
   play: async ({ canvasElement }) => {
     const picture = getPicture(canvasElement)
     const knob = picture.querySelector<SVGCircleElement>('[data-control="knob"]')!
-    const resting = getComputedStyle(knob)
-    const before = { stroke: resting.stroke, width: resting.strokeWidth }
+    const initialStyle = getComputedStyle(knob)
+    const before = { stroke: initialStyle.stroke, width: initialStyle.strokeWidth }
 
     // The keyboard's own way in, so the browser counts the focus as one it
     // draws a ring for.
@@ -397,9 +397,9 @@ export const TheRingStandsOnTheKnob: Story = {
     await waitFor(() => expect(picture).toHaveFocus())
 
     // The knob wears the ring: it is stroked in another colour and heavier.
-    const held = getComputedStyle(knob)
-    expect(held.stroke).not.toBe(before.stroke)
-    expect(Number.parseFloat(held.strokeWidth)).toBeGreaterThan(Number.parseFloat(before.width))
+    const target = getComputedStyle(knob)
+    expect(target.stroke).not.toBe(before.stroke)
+    expect(Number.parseFloat(target.strokeWidth)).toBeGreaterThan(Number.parseFloat(before.width))
 
     // The picture itself wears none.
     expect(getComputedStyle(picture).outlineStyle).toBe('none')

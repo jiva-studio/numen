@@ -1,5 +1,5 @@
 /**
- * What the panel shows: what was said, what the agent is doing, and whether an
+ * What the panel shows: the transcript, what the agent is doing, and whether an
  * answer is still on its way, in the panel's vocabulary and not the agent's.
  *
  * An answer grows as its pieces arrive. Work is one line, put up the moment a
@@ -14,7 +14,7 @@ import { createWorkLine, type WorkLine } from './work'
 import type { Turn } from '../lib/turn'
 import type { AgentPort, AgentQuery, AgentStep, SourceLocation } from '../lib/agent'
 
-/** The words the panel puts up itself. */
+/** The words the panel sets up itself. */
 export interface ConversationStrings {
   /** The line shown before the agent has reached for anything. */
   readonly thinking: string
@@ -38,11 +38,11 @@ export interface Conversation {
   readonly ask: (question: string, focus: string, options?: AskOptions) => Promise<void>
   /** Where in a source one line was isWorking, for a line that says it opens one. */
   readonly getSourceLocation: (turn: string) => SourceLocation | null
-  /** The answer on its way is let go of, and the conversation keeps what arrived. */
+  /** The answer on its way is release, and the conversation keeps what arrived. */
   readonly stop: () => void
   /**
-   * The conversation is over: the answer on its way is let go of, and the agent
-   * is told so it can let go of what it kept of the talk.
+   * The conversation is over: the answer on its way is release, and the agent
+   * is told so it can release what it kept of the talk.
    */
   readonly finish: () => void
 }
@@ -50,7 +50,7 @@ export interface Conversation {
 export interface ConversationOptions {
   readonly agent: AgentPort
   readonly words: ConversationStrings
-  /** What this thread of talk is called, for as long as it is open. */
+  /** What this conversation thread is called, for as long as it is open. */
   readonly conversation: string
   readonly paint?: Paint | undefined
 }
@@ -137,9 +137,9 @@ interface SettleTurnOptions {
 function settleTurn(options: SettleTurnOptions, put: (turn: Turn) => void, nextId: () => string) {
   const { answer, error, words } = options
   if (error) {
-    const trimmed = error.trim()
+    const cleanError = error.trim()
     const text = answer.getText().trim()
-    if (answer.hasContent() && (text === trimmed || text.endsWith(trimmed))) {
+    if (answer.hasContent() && (text === cleanError || text.endsWith(cleanError))) {
       answer.fail()
       return
     }
@@ -160,7 +160,7 @@ function useConversationTurns() {
   const locations = new Map<string, SourceLocation>()
   let next = 0
 
-  const put = (turn: Turn) => {
+  const saveTurn = (turn: Turn) => {
     const at = turns.value.findIndex((other) => other.id === turn.id)
     if (at < 0) turns.value.push(turn)
     else turns.value[at] = turn
@@ -172,7 +172,7 @@ function useConversationTurns() {
 
   const nextId = () => `${next++}`
 
-  return { turns, locations, put, drop, nextId }
+  return { turns, locations, put: saveTurn, drop, nextId }
 }
 
 function useFlightState() {

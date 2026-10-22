@@ -3,7 +3,7 @@
  * against.
  *
  * Time spent with the corner under a pointer, with the keyboard in it, or away
- * from the window entirely, is not time spent reading it. What that comes to is
+ * from the window entirely, is not time spent reading it. What that evaluates to is
  * kept here; nothing here draws anything.
  */
 import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
@@ -39,7 +39,7 @@ export function useNoticeStack(
   /** How long it has been held for. */
   const heldFor = ref(0)
 
-  const read = computed(() => now.value - heldFor.value)
+  const readItem = computed(() => now.value - heldFor.value)
 
   /** The card a pointer is on, for as long as that card is still there. */
   let on: Element | null = null
@@ -83,5 +83,5 @@ export function useNoticeStack(
     focused.value = false
   }
 
-  return { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut }
+  return { now, read: readItem, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut }
 }

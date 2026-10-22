@@ -20,8 +20,8 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
   const markup = ref('')
   const drawnDocument = shallowRef<SpineDocument | undefined>(undefined)
 
-  const reading = computed<Span>(() => drawnDocument.value?.span ?? { from: 0, to: 0 })
-  const drawn = computed(() => drawnDocument.value?.path ?? '')
+  const documentSpan = computed<Span>(() => drawnDocument.value?.span ?? { from: 0, to: 0 })
+  const picture = computed(() => drawnDocument.value?.path ?? '')
 
   /** Which ask for markup is the current one. An older answer is dropped. */
   let wanted = 0
@@ -29,16 +29,16 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
   const draw = async (document: SpineDocument | undefined) => {
     if (!document || document.path === drawnDocument.value?.path) return
     // Stryker disable next-line UpdateOperator: only the inequality of the tickets matters; the direction of the count does not
-    const asked = ++wanted
+    const request = ++wanted
     try {
       const markupContent = await books.readMarkup(path, document.path, fingerprint.value)
-      if (!isOpen() || asked !== wanted) return
+      if (!isOpen() || request !== wanted) return
       drawnDocument.value = document
       markup.value = resolveImageUrls(markupContent, (name) =>
         books.getEntryUrl(path, name, fingerprint.value),
       )
     } catch (error) {
-      if (!isOpen() || asked !== wanted) return
+      if (!isOpen() || request !== wanted) return
       writeMessage(formatErrorMessage(error), 'error')
     }
   }
@@ -47,5 +47,5 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
     markup.value = ''
   }
 
-  return { markup, drawn, reading, draw, close }
+  return { markup, drawn: picture, documentSpan, draw, close }
 }

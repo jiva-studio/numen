@@ -10,7 +10,7 @@
 // defaults.
 //
 // One control steers a preset: `goal` says which value it moves, and the curve
-// says what the whole range of that value comes to. A curve is asked for with
+// says what the whole range of that value evaluates to. A curve is asked for with
 // the settings a person is moving and has not written yet, and asking for one
 // writes nothing.
 
@@ -199,7 +199,7 @@ export const PresetSchema: GenMessage<Preset> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 1);
 
 /**
- * Curve is what the one control comes to over the whole range of its goal.
+ * Curve is what the one control evaluates to over the whole range of its goal.
  *
  * @generated from message numen.v1.Curve
  */
@@ -225,7 +225,7 @@ export type Curve = Message<"numen.v1.Curve"> & {
   days: string[];
 
   /**
-   * What the preset comes to at each place of the grid, one for one with it.
+   * What the preset evaluates to at each place of the grid, one for one with it.
    *
    * @generated from field: repeated numen.v1.Point at = 4;
    */
@@ -287,7 +287,7 @@ export const CurveSchema: GenMessage<Curve> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 2);
 
 /**
- * Point is what a preset comes to at one place of the grid.
+ * Point is what a preset evaluates to at one place of the grid.
  *
  * @generated from message numen.v1.Point
  */
@@ -981,8 +981,8 @@ export const GoalSchema: GenEnum<Goal> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 0);
 
 /**
- * Rule is what a preset counts as learned, and stands under `learned`. The
- * value it reads stands under the key it names, and the other rule keeps its
+ * Rule is what a preset counts as learned, and is placed under `learned`. The
+ * value it reads is placed under the key it names, and the other rule keeps its
  * value and takes no part.
  *
  * @generated from enum numen.v1.Rule
@@ -1016,7 +1016,7 @@ export const RuleSchema: GenEnum<Rule> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 1);
 
 /**
- * BudgetUnit is what a day's budget is counted in, and stands under `counts`.
+ * BudgetUnit is what a day's budget is counted in, and is placed under `counts`.
  *
  * @generated from enum numen.v1.BudgetUnit
  */

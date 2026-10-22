@@ -308,7 +308,7 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 func listBackendSources(t *testing.T, backend string) []string {
 	t.Helper()
 	var files []string
-	seen := []string{backend}
+	observed := []string{backend}
 	queue := []string{backend}
 	for len(queue) > 0 {
 		dir := queue[0]
@@ -322,8 +322,8 @@ func listBackendSources(t *testing.T, backend string) []string {
 			for _, spec := range parsed.Imports {
 				rest, local := strings.CutPrefix(strings.Trim(spec.Path.Value, `"`), modulesPath)
 				imported := filepath.Join(modulesRoot, filepath.FromSlash(rest))
-				if local && !slices.Contains(seen, imported) {
-					seen = append(seen, imported)
+				if local && !slices.Contains(observed, imported) {
+					observed = append(observed, imported)
 					queue = append(queue, imported)
 				}
 			}
@@ -502,7 +502,7 @@ func TestEveryCapabilityInAManifestIsResolvedOrMarked(t *testing.T) {
 }
 
 func TestWhatTheCapabilityRuleRefuses(t *testing.T) {
-	var refused []string
+	var violations []string
 	for _, capability := range []string{
 		"document",
 		"audio",
@@ -511,12 +511,12 @@ func TestWhatTheCapabilityRuleRefuses(t *testing.T) {
 		"unresolved",
 	} {
 		if !isResolvedCapability(capability) {
-			refused = append(refused, capability)
+			violations = append(violations, capability)
 		}
 	}
 	want := []string{"views.agent.chat", "unknown.capability", "unresolved"}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the capability rule refuses %v, want %v", refused, want)
+	if !slices.Equal(violations, want) {
+		t.Errorf("the capability rule rejects %v, want %v", violations, want)
 	}
 }
 
@@ -551,7 +551,7 @@ func TestEveryActivationEventIsOneTheHostEmits(t *testing.T) {
 }
 
 func TestWhatTheActivationEventRuleRefuses(t *testing.T) {
-	var refused []string
+	var violations []string
 	for _, event := range []string{
 		"*",
 		"onFile:*.pdf",
@@ -564,12 +564,12 @@ func TestWhatTheActivationEventRuleRefuses(t *testing.T) {
 		"onView:",
 	} {
 		if !isEmittedActivationEvent(event) {
-			refused = append(refused, event)
+			violations = append(violations, event)
 		}
 	}
 	want := []string{"onStartupFinished", "onView:agent", "unsupportedEvent", "onFile:", "onCommand:", "onView:"}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the activation event rule refuses %v, want %v", refused, want)
+	if !slices.Equal(violations, want) {
+		t.Errorf("the activation event rule rejects %v, want %v", violations, want)
 	}
 }
 

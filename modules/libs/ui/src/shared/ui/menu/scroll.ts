@@ -20,14 +20,14 @@ export interface ScrollGate {
 }
 
 export const createScrollGate = (): ScrollGate => {
-  let seen = false
+  let observed = false
   return {
     reset: () => {
-      seen = false
+      observed = false
     },
     noteInput: () => {
-      seen = true
+      observed = true
     },
-    isUserScroll: () => seen,
+    isUserScroll: () => observed,
   }
 }

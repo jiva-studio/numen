@@ -94,13 +94,13 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	}
 	forget := func() {}
 	if opts.IsAnnouncing {
-		gone, err := WriteDiscovery(opts.Config, opts.Root, endpoint.URL, secret)
+		removed, err := WriteDiscovery(opts.Config, opts.Root, endpoint.URL, secret)
 		if err != nil {
 			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
 			endpoint.Close(context.Background())
 			return nil, err
 		}
-		forget = gone
+		forget = removed
 	}
 
 	fmt.Fprintf(opts.Out, "agents: %s\n", endpoint.URL)
@@ -125,13 +125,13 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
 	served.close = func() error {
 		forget()
-		stopped := router.Close()
+		closeErr := router.Close()
 		shutdown, cancel := context.WithTimeout(context.Background(), bound)
 		defer cancel()
 		if err := endpoint.Close(shutdown); err != nil {
 			return err
 		}
-		return stopped
+		return closeErr
 	}
 	return served, nil
 }

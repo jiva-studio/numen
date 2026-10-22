@@ -118,7 +118,7 @@ function useReasoningSelection(
     readonly modelOptions: ComputedRef<readonly AgentModelOption[]>
   },
 ) {
-  const chosen = ref({ agentId: '', id: '' })
+  const selected = ref({ agentId: '', id: '' })
 
   const selectedOption = computed(() =>
     selection.modelOptions.value.find(
@@ -133,18 +133,18 @@ function useReasoningSelection(
   /** The level chosen or kept, else the default of the model; empty where the model offers none. */
   const selectedReasoningId = computed(() => {
     const agentId = selection.selectedAgentId.value
-    const kept =
-      (chosen.value.agentId === agentId ? chosen.value.id : '') ||
+    const configuredReasoning =
+      (selected.value.agentId === agentId ? selected.value.id : '') ||
       getKept(deps, getReasoningAt(agentId))
     const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
-    if (offers(kept)) return kept
+    if (offers(configuredReasoning)) return configuredReasoning
     const byDefault = selectedOption.value?.defaultReasoning ?? ''
     return offers(byDefault) ? byDefault : ''
   })
 
   const selectReasoning = (id: string) => {
     const agentId = selection.selectedAgentId.value
-    chosen.value = { agentId, id }
+    selected.value = { agentId, id }
     if (deps.writeSetting) void deps.writeSetting(getReasoningAt(agentId), id)
   }
 
@@ -184,12 +184,12 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
   const enrichedByTurn = new WeakMap<Turn, { unresolved: readonly string[]; enriched: Turn }>()
 
   const resolveAddresses = (addresses: readonly string[]) => {
-    const fresh = addresses.filter((one) => !pendingAddresses.has(one))
-    if (!fresh.length) return
-    for (const one of fresh) pendingAddresses.add(one)
-    void deps.resolve(fresh).then((found) => {
+    const newAddresses = addresses.filter((one) => !pendingAddresses.has(one))
+    if (!newAddresses.length) return
+    for (const one of newAddresses) pendingAddresses.add(one)
+    void deps.resolve(newAddresses).then((found) => {
       const next = new Map(resolvedAddresses.value)
-      for (const one of fresh) next.set(one, found.get(one) ?? '')
+      for (const one of newAddresses) next.set(one, found.get(one) ?? '')
       resolvedAddresses.value = next
     })
   }
@@ -217,8 +217,8 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
       (address) => resolvedAddresses.value.get(address) === '',
     )
     if (!unresolved.length) return turn
-    const known = enrichedByTurn.get(turn)
-    if (known && isSameList(known.unresolved, unresolved)) return known.enriched
+    const recognized = enrichedByTurn.get(turn)
+    if (recognized && isSameList(recognized.unresolved, unresolved)) return recognized.enriched
     const enriched = { ...turn, unresolved }
     enrichedByTurn.set(turn, { unresolved, enriched })
     return enriched

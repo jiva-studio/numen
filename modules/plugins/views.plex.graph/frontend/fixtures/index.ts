@@ -9,7 +9,7 @@ import type { PlexRelation } from '@numen/ui'
 import type { PlexEditor, PlexView, Neighbourhood, NoteType } from '../types'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
-export const settle = () => new Promise((done) => setTimeout(done, 0))
+export const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** Which of three each note of a neighbourhood is, by the path it stands at. */
 export type Types = Record<string, NoteType>
@@ -78,18 +78,18 @@ export const viewOn = (
 
 /** A vault that takes every note it is asked to make, and records the asking. */
 export const createVault = (takes = true) => {
-  const made: [string, string][] = []
+  const createdItem: [string, string][] = []
   const joined: [string, string, string, string?][] = []
   const replaced: { first: string; second: string; links: unknown[] }[] = []
   /** The notes this vault will write no link to, which a test names. */
   const notJoinedPaths = new Set<string>()
   const editor: PlexEditor = {
     createInRelation: async (from, relation) => {
-      made.push([from, relation])
+      createdItem.push([from, relation])
       return takes ? { path: 'Made.md', title: 'Made' } : null
     },
     createWithTitle: async (title, from, relation) => {
-      made.push([from, relation])
+      createdItem.push([from, relation])
       return takes ? { path: `${title}.md`, title } : null
     },
     join: async (...[from, to, relation, label]) => {
@@ -102,5 +102,5 @@ export const createVault = (takes = true) => {
       return takes
     },
   }
-  return { editor, made, joined, replaced, notJoinedPaths }
+  return { editor, made: createdItem, joined, replaced, notJoinedPaths }
 }

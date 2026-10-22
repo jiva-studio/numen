@@ -56,7 +56,7 @@ export interface SearchDestination {
   path: string
   /** What the note is called, for a tab that has not been opened before. */
   title: string
-  /** The line the item stands on, for a place inside a file. */
+  /** The line the item relies on, for a place inside a file. */
   line?: number
   /** The span of the source's own text to light, for a place in a document. */
   start?: number
@@ -80,13 +80,13 @@ export interface SearchHit {
   start: number
   length: number
   offers: readonly string[]
-  /** Which of four the note it stands in is, and nothing where it stands in none. */
+  /** Which of four the note it stands in is, and nothing at its current position in none. */
   type: NoteType | null
-  /** What the vault holds where it stands. */
+  /** What the vault holds at its current position. */
   kind: Source
 }
 
-/** One item as it is drawn, beside where it stands and what it offers. */
+/** One item as it is drawn, beside at its current position and what it offers. */
 export interface SearchRow {
   item: PaletteItem
   hit: SearchHit

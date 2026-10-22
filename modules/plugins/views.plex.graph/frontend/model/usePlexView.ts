@@ -24,7 +24,7 @@ export function usePlexView(core: Neighbours) {
    * The note this plex is showing, as it asked for it.
    */
   const here = ref('')
-  /** What this plex could not show, in words the window puts up for it. */
+  /** What this plex could not show, in words the window sets up for it. */
   const error = ref('')
 
   /**
@@ -49,9 +49,9 @@ export function usePlexView(core: Neighbours) {
       error.value = ''
       here.value = path
       if (!areNeighbourhoodsEqual(neighbourhood.value, answer)) neighbourhood.value = answer
-    } catch (thrown) {
+    } catch (caughtError) {
       if (!mine.isCurrent) return
-      error.value = formatErrorMessage(thrown)
+      error.value = formatErrorMessage(caughtError)
     } finally {
       if (mine.isCurrent) isLoading.value = false
     }

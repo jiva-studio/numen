@@ -10,7 +10,7 @@ const getTable = (state: EditorState) => {
   return readTable(state, node)
 }
 
-const read = (doc: string) => getTable(createState(doc))
+const readItem = (doc: string) => getTable(createState(doc))
 
 const TABLE = `| Word | Kind |
 |:-----|----:|
@@ -29,14 +29,14 @@ describe('reading a table', () => {
   })
 
   it('reads the head apart from the rows', () => {
-    const table = read(TABLE)
+    const table = readItem(TABLE)
     expect(table.head.map((cell) => cell?.text)).toEqual(['Word', 'Kind'])
     expect(table.body).toHaveLength(2)
   })
 
   it('takes the alignment from the row of dashes', () => {
-    expect(read(TABLE).align).toEqual(['start', 'end'])
-    expect(read('| a | b |\n|:-:|---|\n| c | d |\n').align).toEqual(['centre', 'none'])
+    expect(readItem(TABLE).align).toEqual(['start', 'end'])
+    expect(readItem('| a | b |\n|:-:|---|\n| c | d |\n').align).toEqual(['centre', 'none'])
   })
 
   it('gives an empty cell a place to be written', () => {
@@ -49,13 +49,13 @@ describe('reading a table', () => {
   })
 
   it('leaves a column nothing was written in without a cell', () => {
-    const table = read('| a | b | c |\n|---|---|---|\n| d |\n')
+    const table = readItem('| a | b | c |\n|---|---|---|\n| d |\n')
     expect(getWidth(table)).toBe(3)
     expect(getRows(table)[1]).toEqual([expect.objectContaining({ text: 'd' }), null, null])
   })
 
   it('reads a row that carries no outer pipes', () => {
-    const table = read('a | b\n---|---\nc | d\n')
+    const table = readItem('a | b\n---|---\nc | d\n')
     expect(table.head.map((cell) => cell?.text)).toEqual(['a', 'b'])
     expect(table.body[0]?.map((cell) => cell?.text)).toEqual(['c', 'd'])
   })
@@ -104,14 +104,14 @@ describe('a column made at the right', () => {
   })
 
   it('is read back as one column more', () => {
-    const before = read(TABLE)
-    const after = read(`${withColumn(TABLE.trimEnd())}\n`)
+    const before = readItem(TABLE)
+    const after = readItem(`${withColumn(TABLE.trimEnd())}\n`)
     expect(getWidth(after)).toBe(getWidth(before) + 1)
     expect(after.body).toHaveLength(before.body.length)
   })
 
   it('leaves what was written in the cells alone', () => {
-    const after = read(`${withColumn(TABLE.trimEnd())}\n`)
+    const after = readItem(`${withColumn(TABLE.trimEnd())}\n`)
     expect(after.head.map((cell) => cell?.text)).toEqual(['Word', 'Kind', ''])
     expect(after.body[0]?.map((cell) => cell?.text)).toEqual(['Entropy', 'parent', ''])
   })
@@ -123,18 +123,18 @@ describe('a row made at the end', () => {
   })
 
   it('parses as a row of that table', () => {
-    const table = read(`${TABLE.trimEnd()}${emptyRow(2)}\n`)
+    const table = readItem(`${TABLE.trimEnd()}${emptyRow(2)}\n`)
     expect(table.body).toHaveLength(3)
   })
 })
 
 describe('the alignment of a table', () => {
   it('is read from a row of dashes that carries no outer pipes', () => {
-    expect(read('a | b\n---|:-:\nc | d\n').align).toEqual(['none', 'centre'])
+    expect(readItem('a | b\n---|:-:\nc | d\n').align).toEqual(['none', 'centre'])
   })
 
   it('is read from a row of dashes with spaces around its cells', () => {
-    expect(read('| a | b | c |\n| :-- | --: | :-: |\n| d | e | f |\n').align).toEqual([
+    expect(readItem('| a | b | c |\n| :-- | --: | :-: |\n| d | e | f |\n').align).toEqual([
       'start',
       'end',
       'centre',
@@ -142,7 +142,7 @@ describe('the alignment of a table', () => {
   })
 
   it('is read from an indented row of dashes', () => {
-    expect(read('  | a | b |\n  |:--|--:|\n  | c | d |\n').align).toEqual(['start', 'end'])
+    expect(readItem('  | a | b |\n  |:--|--:|\n  | c | d |\n').align).toEqual(['start', 'end'])
   })
 })
 

@@ -34,13 +34,13 @@ func getExposedDependencies(file *ast.File) []exposed {
 		if made == "" {
 			return true
 		}
-		var taken []string
+		var acquired []string
 		for _, one := range fn.Type.Params.List {
 			for _, name := range one.Names {
-				taken = append(taken, strings.ToLower(name.Name))
+				acquired = append(acquired, strings.ToLower(name.Name))
 			}
 		}
-		ctors[strings.TrimPrefix(made, "*")] = taken
+		ctors[strings.TrimPrefix(made, "*")] = acquired
 		return true
 	})
 
@@ -50,18 +50,18 @@ func getExposedDependencies(file *ast.File) []exposed {
 		if !is {
 			return true
 		}
-		held, is := spec.Type.(*ast.StructType)
+		target, is := spec.Type.(*ast.StructType)
 		if !is {
 			return true
 		}
-		taken, made := ctors[spec.Name.Name]
+		acquiredVal, made := ctors[spec.Name.Name]
 		if !made {
 			return true
 		}
 		var open []string
-		for _, one := range held.Fields.List {
+		for _, one := range target.Fields.List {
 			for _, name := range one.Names {
-				if name.IsExported() && slices.Contains(taken, strings.ToLower(name.Name)) {
+				if name.IsExported() && slices.Contains(acquiredVal, strings.ToLower(name.Name)) {
 					open = append(open, name.Name)
 				}
 			}
@@ -78,11 +78,11 @@ func getExposedDependencies(file *ast.File) []exposed {
 func getUseCases(t *testing.T) []string {
 	t.Helper()
 	var findings []string
-	held, err := os.ReadDir(filepath.Join("..", "usecase"))
+	target, err := os.ReadDir(filepath.Join("..", "usecase"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, folder := range held {
+	for _, folder := range target {
 		if !folder.IsDir() {
 			continue
 		}
@@ -146,15 +146,15 @@ func NewOver(passages port.PassageQueries) Search {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var violations []string
 	for _, one := range getExposedDependencies(file) {
-		refused = append(refused, one.in+": "+strings.Join(one.fields, ", "))
+		violations = append(violations, one.in+": "+strings.Join(one.fields, ", "))
 	}
 	// Pages is the caller's own and no collaborator; notes is closed; Write has
 	// no constructor to promise anything. Search is reached through a
 	// constructor not named after it.
-	slices.Sort(refused)
-	if !slices.Equal(refused, []string{"Read: Readers", "Search: Passages"}) {
-		t.Errorf("the rule refuses %v, want the one collaborator left in the open", refused)
+	slices.Sort(violations)
+	if !slices.Equal(violations, []string{"Read: Readers", "Search: Passages"}) {
+		t.Errorf("the rule rejects %v, want the one collaborator left in the open", violations)
 	}
 }

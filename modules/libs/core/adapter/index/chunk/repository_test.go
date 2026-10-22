@@ -53,7 +53,7 @@ func TestTheCoarsePassIsConstrainedInsideTheQuery(t *testing.T) {
 	}
 }
 
-func TestABitVectorSaysThatItIsOne(t *testing.T) {
+func TestABitVectorReturnsThatItIsOne(t *testing.T) {
 	// The 128 bytes of a 1024-bit vector are also 32 float32 dimensions, and the
 	// extension reads them as the latter unless the type is named.
 	for _, name := range []string{"insert_vec", "coarse"} {
@@ -63,7 +63,7 @@ func TestABitVectorSaysThatItIsOne(t *testing.T) {
 	}
 }
 
-func TestTheVaultOfAVectorRowComesFromItsChunk(t *testing.T) {
+func TestTheVaultOfAVectorRowReachesFromItsChunk(t *testing.T) {
 	// The vault a chunk carries comes from its source, so the two cannot
 	// disagree.
 	statement := withoutComments(stmt.Get("insert_vec"))
@@ -107,7 +107,7 @@ func TestTheCoarseRowReadsTheChunkItBelongsTo(t *testing.T) {
 	if !strings.Contains(statement, "FROM chunks WHERE id = ?") {
 		t.Errorf("insert_vec writes without reading the chunk it belongs to: %s", statement)
 	}
-	if kept := withoutComments(stmt.Get("keep_vector")); strings.Contains(kept, "FROM chunks") {
-		t.Errorf("keep_vector reads a chunk, and a vector outlives every chunk: %s", kept)
+	if queryText := withoutComments(stmt.Get("keep_vector")); strings.Contains(queryText, "FROM chunks") {
+		t.Errorf("keep_vector reads a chunk, and a vector outlives every chunk: %s", queryText)
 	}
 }

@@ -13,8 +13,8 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 	cfg.RegistryPath = where.Registry
 	cfg.ServiceDir = where.ServiceDir
 	cfg = cfg.SetSafeMode(where.SafeMode)
-	if chosen, err := cfg.Settings(); err == nil {
-		cfg = cfg.SetSettings(chosen)
+	if selected, err := cfg.Settings(); err == nil {
+		cfg = cfg.SetSettings(selected)
 	}
 	return cfg
 }
@@ -155,10 +155,10 @@ func createRecognition(
 		_ = closeModels()
 		return cli.Recognise{}, err
 	}
-	db, cut := indexed.db, indexed.cut
+	db, cutFn := indexed.db, indexed.cut
 	return cli.Recognise{
 		Recognise: cfg.Recognise(db.Sources(), models),
-		Cut:       cut,
+		Cut:       cutFn,
 		Close: func() error {
 			_ = closeModels()
 			return db.Close()
@@ -185,10 +185,10 @@ func createTranscription(
 		_ = closeModels()
 		return cli.Transcribe{}, err
 	}
-	db, cut := indexed.db, indexed.cut
+	db, cutFn := indexed.db, indexed.cut
 	return cli.Transcribe{
 		Transcribe: cfg.Transcribe(db.Sources(), models),
-		Cut:        cut,
+		Cut:        cutFn,
 		Close: func() error {
 			_ = closeModels()
 			return db.Close()
@@ -235,8 +235,8 @@ func createProofreadRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadRecognition, error) {
 	cfg.SetPluginVaultPath(v.Path)
-	proofread, held, err := cfg.CreateRecognitionProofread()
-	if err != nil || !held {
+	proofread, target, err := cfg.CreateRecognitionProofread()
+	if err != nil || !target {
 		return cli.ProofreadRecognition{}, err
 	}
 	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
@@ -254,8 +254,8 @@ func createProofreadTranscript(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadTranscript, error) {
 	cfg.SetPluginVaultPath(v.Path)
-	proofread, held, err := cfg.CreateTranscriptProofread()
-	if err != nil || !held {
+	proofread, target, err := cfg.CreateTranscriptProofread()
+	if err != nil || !target {
 		return cli.ProofreadTranscript{}, err
 	}
 	indexed, err := createCut(ctx, cfg, v, cfg.Extract)

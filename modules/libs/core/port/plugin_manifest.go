@@ -314,15 +314,15 @@ func (m PluginManifest) ListIssues() []error {
 // listServiceIssues checks that each service is a full name of dot-separated words, and is listed once.
 func (m PluginManifest) listServiceIssues() []error {
 	var issues []error
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 	for _, name := range m.Services {
 		switch {
 		case !manifestServicePattern.MatchString(name):
 			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidService, name))
-		case seen[name]:
+		case observed[name]:
 			issues = append(issues, fmt.Errorf("%w: %q is listed twice", ErrInvalidService, name))
 		}
-		seen[name] = true
+		observed[name] = true
 	}
 	return issues
 }
@@ -331,15 +331,15 @@ func (m PluginManifest) listServiceIssues() []error {
 // that the levels it names are those of headings.
 func (m PluginManifest) listNoteTypeIssues() []error {
 	var issues []error
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 	for _, declared := range m.NoteTypes {
 		switch {
 		case !manifestSecretPattern.MatchString(declared.Type):
 			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidNoteType, declared.Type))
-		case seen[declared.Type]:
+		case observed[declared.Type]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidNoteType, declared.Type))
 		}
-		seen[declared.Type] = true
+		observed[declared.Type] = true
 		if _, err := regexp.Compile(declared.MarkPattern); err != nil {
 			issues = append(issues, fmt.Errorf("%w: %q has a mark pattern that is no pattern: %w", ErrInvalidNoteType, declared.Type, err))
 		}
@@ -524,34 +524,34 @@ func isRecognizedActivationEvent(event string) bool {
 
 func (m PluginManifest) listRuntimeIssues() []error {
 	var issues []error
-	seen := make(map[string]bool, len(m.Runtimes))
+	observed := make(map[string]bool, len(m.Runtimes))
 	for _, name := range m.Runtimes {
 		switch {
 		case name != RuntimeONNX:
 			issues = append(issues, fmt.Errorf("%w: %q, expected %q", ErrInvalidRuntime, name, RuntimeONNX))
-		case seen[name]:
+		case observed[name]:
 			issues = append(issues, fmt.Errorf("%w: %s is declared twice", ErrInvalidRuntime, name))
 		}
-		seen[name] = true
+		observed[name] = true
 	}
 	return issues
 }
 
 func (m PluginManifest) listSecretIssues() []error {
 	var issues []error
-	seen := make(map[string]bool, len(m.Secrets))
+	observed := make(map[string]bool, len(m.Secrets))
 	for _, name := range m.Secrets {
 		switch {
 		case !manifestSecretPattern.MatchString(name):
 			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
 		case slices.Contains(reservedSettingKeys, name):
 			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
-		case seen[name]:
+		case observed[name]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSecret, name))
 		case slices.ContainsFunc(m.Settings, func(s PluginManifestSetting) bool { return s.Key == name }):
 			issues = append(issues, fmt.Errorf("%w: %q is also a setting", ErrInvalidSecret, name))
 		}
-		seen[name] = true
+		observed[name] = true
 	}
 	return issues
 }

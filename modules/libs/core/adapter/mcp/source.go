@@ -8,8 +8,8 @@ import (
 // about it.
 type Source struct {
 	Path string `json:"path"`
-	// ShouldRead says whether this document stands on what a model read in it. A
-	// recognition still running stands on the pages it has reached, so this is true
+	// ShouldRead says whether this document relies on what a model read in it. A
+	// recognition still running relies on the pages it has reached, so this is true
 	// from the first of them.
 	//
 	// A scan that carries its own text says nothing about whether that text is

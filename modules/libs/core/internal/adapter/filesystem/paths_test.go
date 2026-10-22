@@ -55,7 +55,7 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 				t.Errorf("%q is both the vault's (%s) and the application's (%s)", path, isVault, isOurs)
 			case vaultErr != nil && oursErr != nil:
 				// A path that is neither is an ordinary outcome: it leaves the
-				// vault, or it names nothing.
+				// vault, or it is empty.
 			}
 		})
 	}
@@ -103,7 +103,7 @@ func TestAWindowsDeviceNameIsNotAPathInTheVault(t *testing.T) {
 
 	for _, path := range []string{"NUL", "notes/con.md", "c:notes.md"} {
 		_, _, err := resolveVaultPath(resolved, path, DefaultServiceDir)
-		if held := err == nil; held == (runtime.GOOS == "windows") {
+		if target := err == nil; target == (runtime.GOOS == "windows") {
 			t.Errorf("resolveVaultPath(%q) gave %v on %s", path, err, runtime.GOOS)
 		}
 	}

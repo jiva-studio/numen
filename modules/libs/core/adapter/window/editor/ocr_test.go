@@ -24,8 +24,8 @@ import (
 type indexed map[string]port.SourceText
 
 func (i indexed) GetSourceText(_ context.Context, _ domain.VaultID, path string) (port.SourceText, bool, error) {
-	found, held := i[path]
-	return found, held, nil
+	found, target := i[path]
+	return found, target, nil
 }
 
 func (i indexed) GetFingerprints(context.Context, domain.VaultID, domain.SourceKind) (map[string]domain.Fingerprint, error) {
@@ -90,9 +90,9 @@ func where(t *testing.T, doc *testsupport.PDFBook, word string) *v1.Span {
 	return &v1.Span{From: int32(at), To: int32(at + len(word))}
 }
 
-// reads is what the runs of a source's text say and where they sit, as the
+// readRuns is what the runs of a source's text say and where they sit, as the
 // window is told it.
-func reads(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
+func readRuns(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
 	out, err := api.Ocr.ReadOcr(context.Background(), connect.NewRequest(&v1.ReadOcrRequest{
 		Path: path, Spans: at,
 	}))
@@ -104,12 +104,12 @@ func reads(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
 
 // A run of a source's text comes back as what it says and the boxes covering
 // it, each on the page it was read from.
-func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
+func TestARunOfTheProseReachesBackAsTextAndBoxes(t *testing.T) {
 	api, _, doc := openHighlightWindow(t)
 
-	runs, err := reads(api, book, where(t, doc, "Delta"))
+	runs, err := readRuns(api, book, where(t, doc, "Delta"))
 	if err != nil {
-		t.Fatalf("asked where a word is and was refused: %v", err)
+		t.Fatalf("asked where a word is and failed: %v", err)
 	}
 	if len(runs) != 1 {
 		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
@@ -137,15 +137,15 @@ func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
 // A source the index does not hold says nothing and is lit nowhere. It keeps
 // its place in the answer, so a caller still reads one run per run it asked
 // about.
-func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
+func TestASourceNothingIsKnownAboutReachesBackEmpty(t *testing.T) {
 	api, _, doc := openHighlightWindow(t)
 	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, nil)
 	hl.Documents = testsupport.Documents{}
 	api.Ocr.highlight = &hl
 
-	runs, err := reads(api, book, where(t, doc, "Delta"))
+	runs, err := readRuns(api, book, where(t, doc, "Delta"))
 	if err != nil {
-		t.Fatalf("asked where a word is and was refused: %v", err)
+		t.Fatalf("asked where a word is and failed: %v", err)
 	}
 	if len(runs) != 1 {
 		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
@@ -155,7 +155,7 @@ func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
 	}
 }
 
-// A path the vault does not hold is refused, and so is a path that leaves it
+// A path the vault does not hold fails, and so is a path that leaves it
 // and a file the vault holds as nothing. The path goes to the vault the way
 // every path from outside does, and it answers for all three.
 func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
@@ -168,16 +168,16 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			api, _, _ := openHighlightWindow(t)
 
-			_, err := reads(api, path, &v1.Span{From: 0, To: 5})
+			_, err := readRuns(api, path, &v1.Span{From: 0, To: 5})
 			if code := connect.CodeOf(err); code != connect.CodeNotFound &&
 				code != connect.CodeInvalidArgument {
-				t.Errorf("%s was refused %v", path, err)
+				t.Errorf("%s failed %v", path, err)
 			}
 		})
 	}
 }
 
-// A run that is not one is refused, and nothing is read to say so.
+// A run that is not one fails, and nothing is read to say so.
 func TestARunThatIsNotOneIsRefused(t *testing.T) {
 	for _, one := range []struct {
 		what string
@@ -191,8 +191,8 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _, _ := openHighlightWindow(t)
 
-			if _, err := reads(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
-				t.Errorf("asking about %s was refused %v", one.what, err)
+			if _, err := readRuns(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Errorf("asking about %s failed %v", one.what, err)
 			}
 		})
 	}

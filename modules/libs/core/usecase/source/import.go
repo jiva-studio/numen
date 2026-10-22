@@ -149,17 +149,17 @@ func (u ImportURL) writeDownload(
 	at domain.URL,
 	extracted port.Text,
 ) (producer string, bytes int, err error) {
-	written := []byte(extracted.Prose)
+	content := []byte(extracted.Prose)
 	if len(extracted.Cues) > 0 {
-		written = transcript.Marshal(extracted.Cues)
+		content = transcript.Marshal(extracted.Cues)
 	}
-	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, extracted.Producer, hash), written); err != nil {
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, extracted.Producer, hash), content); err != nil {
 		return "", 0, err
 	}
 	if err := u.record(ctx, store, by, extracted.Producer, hash, at, extracted); err != nil {
 		return "", 0, err
 	}
-	return extracted.Producer, len(written), nil
+	return extracted.Producer, len(content), nil
 }
 
 // silent writes down that the address published none of what was asked for, so
@@ -238,7 +238,7 @@ func (u ImportURL) renameURL(
 	return res, nil
 }
 
-// record keeps what downloaded an address beside what it brought back. Nothing on
+// record keeps what downloaded an address along with what it brought back. Nothing on
 // any path that answers a question reads it: it is there so a person can ask
 // what produced a text they are reading, and so everything one tool produced
 // can be found again.
@@ -250,7 +250,7 @@ func (u ImportURL) record(
 	at domain.URL,
 	extracted port.Text,
 ) error {
-	written, err := json.Marshal(struct {
+	content, err := json.Marshal(struct {
 		Address    string `json:"address"`
 		Title      string `json:"title,omitempty"`
 		Length     int    `json:"length,omitempty"`
@@ -266,7 +266,7 @@ func (u ImportURL) record(
 	if err != nil {
 		return err
 	}
-	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactProducer, producer, hash), written)
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactProducer, producer, hash), content)
 }
 
 // cut brings the url level in the index, so the words are searched with it.

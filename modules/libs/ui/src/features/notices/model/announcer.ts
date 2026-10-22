@@ -23,45 +23,45 @@ export interface Announcer {
  * Nothing is read out until the regions themselves have been drawn.
  */
 export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
-  const told = ref('')
+  const announcementText = ref('')
   const cried = ref('')
 
   /** The words each card was last read out by. */
   const announced = shallowRef<ReadonlyMap<string, string>>(new Map())
   /** Whether both regions have stood empty, which is what makes them read. */
-  let listening = false
+  let isListening = false
   /** Which reading is the one in hand, and what is waiting to be read out. */
-  let reading = 0
-  let waiting: readonly Notice[] = []
+  let activeReadCount = 0
+  let pendingNotices: readonly Notice[] = []
 
   const readOut = async (all: readonly Notice[]): Promise<void> => {
-    if (!listening) return
-    const fresh = all.filter((one) => announced.value.get(one.id) !== getWords(one))
+    if (!isListening) return
+    const unannounced = all.filter((one) => announced.value.get(one.id) !== getWords(one))
     announced.value = new Map(all.map((one) => [one.id, getWords(one)]))
-    if (fresh.length === 0) return
-    waiting = [...waiting, ...fresh]
+    if (unannounced.length === 0) return
+    pendingNotices = [...pendingNotices, ...unannounced]
 
-    const mine = ++reading
-    told.value = ''
+    const mine = ++activeReadCount
+    announcementText.value = ''
     cried.value = ''
     await nextTick()
-    if (mine !== reading) return
+    if (mine !== activeReadCount) return
 
-    const pending = waiting
-    waiting = []
+    const pending = pendingNotices
+    pendingNotices = []
     const loud = pending.filter((one) => one.tone === 'alarm')
-    const quiet = pending.filter((one) => one.tone !== 'alarm')
+    const regular = pending.filter((one) => one.tone !== 'alarm')
     if (loud.length) cried.value = loud.map(getWords).join('. ')
-    if (quiet.length) told.value = quiet.map(getWords).join('. ')
+    if (regular.length) announcementText.value = regular.map(getWords).join('. ')
   }
 
   watch(getNotices, (all) => void readOut(all))
 
   onMounted(async () => {
     await nextTick()
-    listening = true
+    isListening = true
     void readOut(getNotices())
   })
 
-  return { told, cried }
+  return { told: announcementText, cried }
 }

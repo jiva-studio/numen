@@ -54,7 +54,7 @@ func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 
 // A token takes a colour, a length, or a shadow, which is lengths and a colour
 // in one value. A preset that sets a token writes the shape that token takes.
-func TestAPresetGivesEachTokenTheShapeItTakes(t *testing.T) {
+func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 	sets := getThemeFields(t)
 	for name, css := range readPresets(t) {
 		for _, one := range setBy(css) {
@@ -99,16 +99,16 @@ func getThemeFields(t *testing.T) map[string]valueKind {
 	}
 	for _, block := range splitBlocks(stripComments(string(css))) {
 		sets := map[string]valueKind{}
-		held := map[string]string{}
+		target := map[string]string{}
 		for _, one := range getDeclarations(block) {
 			if strings.HasPrefix(one.property, "--") {
-				held[one.property] = one.value
+				target[one.property] = one.value
 			}
 		}
-		for property, value := range held {
+		for property, value := range target {
 			// A token given as another token takes the shape that one takes:
 			// two names for one value are one value.
-			sets[property] = getValueKind(resolveToken(value, held))
+			sets[property] = getValueKind(resolveToken(value, target))
 		}
 		if len(sets) > 0 {
 			return sets
@@ -237,12 +237,12 @@ func splitBlocks(css string) []string {
 		if open < 0 {
 			return found
 		}
-		shut := strings.Index(css[open:], "}")
-		if shut < 0 {
+		shutIdx := strings.Index(css[open:], "}")
+		if shutIdx < 0 {
 			return found
 		}
-		found = append(found, css[open+1:open+shut])
-		css = css[open+shut+1:]
+		found = append(found, css[open+1:open+shutIdx])
+		css = css[open+shutIdx+1:]
 	}
 }
 

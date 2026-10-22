@@ -9,7 +9,7 @@ import (
 )
 
 // A `.url` file is what every system writes, and what one wrote is read back.
-func TestAnAddressIsReadBackFromWhatWasWritten(t *testing.T) {
+func TestAnAddressIsReadBackFromWhatWasSaved(t *testing.T) {
 	at, err := domain.ParseURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 	if err != nil {
 		t.Fatal(err)
@@ -39,7 +39,7 @@ func TestWhatAnotherProgramWroteIsRead(t *testing.T) {
 
 // A file naming no address is one the vault says so about, and not one that
 // silently points nowhere.
-func TestAFileWithNoAddressSaysSo(t *testing.T) {
+func TestAFileWithNoAddressReturnsSo(t *testing.T) {
 	if _, err := urlfile.Read([]byte("[InternetShortcut]\nIconIndex=0\n")); !errors.Is(err, urlfile.ErrNoAddress) {
 		t.Errorf("a file with no URL gave %v", err)
 	}

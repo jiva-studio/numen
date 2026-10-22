@@ -13,7 +13,7 @@ import (
 
 // TestAMoveNamesTheLinksItCouldNotRepair. The note pointing at what moved was
 // written in another editor since the vault read it, and its frontmatter no
-// longer parses. Its link is left as it stands, and it is named.
+// longer parses. Its link is left currently, and it is named.
 func TestAMoveNamesTheLinksItCouldNotRepair(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{

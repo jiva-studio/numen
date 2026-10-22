@@ -224,7 +224,7 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 	return lines[keyLine-1], lines[last], true
 }
 
-// endLine is the last line of the frontmatter one node stands on. A value
+// endLine is the last line of the frontmatter one node relies on. A value
 // continuing past its first line stands indented past the column of the key or
 // the dash it hangs from, which is the column given here.
 func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
@@ -297,13 +297,13 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 	}
 	// A key written twice names two values, and which of them the note holds is
 	// not a question the block answers.
-	written := make(map[string]bool, len(node.Content)/2)
+	content := make(map[string]bool, len(node.Content)/2)
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		key := node.Content[i].Value
-		if written[key] {
+		if content[key] {
 			return nil, fmt.Errorf("%w: %s is written twice", ErrUnreadable, key)
 		}
-		written[key] = true
+		content[key] = true
 	}
 	d.mapping = node
 	return node, nil
@@ -336,7 +336,7 @@ func (d *Document) getWritableNode() (*yaml.Node, error) {
 // key's own span while one line holds one key. `{title: T, id: b}` puts them
 // all on one, so the span of any of them is the span of all of them. A value
 // written on one line — `load: {sat: 50}` — still occupies its key's own
-// lines and is replaced as it stands.
+// lines and is replaced currently.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
 
 // ErrAnchored is a frontmatter carrying a YAML anchor. Nothing is changed in it.
@@ -377,7 +377,7 @@ func isFlowCollection(node *yaml.Node) bool {
 }
 
 // isNullValue reports whether a key holds nothing at all, which is a key a first
-// entry is written under. A null somebody wrote out stands on the line and is
+// entry is written under. A null somebody wrote out relies on the line and is
 // not one.
 func isNullValue(node *yaml.Node) bool {
 	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""

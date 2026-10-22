@@ -10,7 +10,7 @@ import { asValue } from '@numen/wire'
 import type { Cards } from '@plugins/views.flashcards.studio/frontend/cards'
 import type { Documents } from '@plugins/readers.pdf/frontend'
 import { requests } from './requests'
-import { held, maker, said } from './answers'
+import { maker, mockVaultState, pendingStream } from './answers'
 
 const documentsSaid: { documents: Documents } = {
   documents: {
@@ -34,8 +34,8 @@ vi.mock('@/entities/artifact', async (original) => ({
   running: {
     getArtifactStates: async (path: string) => {
       requests.carried.push(path)
-      if (!said.carrying) throw new Error('what the file carries cannot be asked')
-      return said.carries[path] ?? {}
+      if (!mockVaultState.carrying) throw new Error('what the file carries cannot be asked')
+      return mockVaultState.carries[path] ?? {}
     },
     createArtifact: async (path: string, of: string) => {
       requests.ran.push(`${of} ${path}`)
@@ -78,7 +78,7 @@ const cardsSaid = {
     },
     renameField: async (path: string, { from, to }: { from: string; to: string }) => {
       requests.renamedField.push(`${path} ${from} ${to}`)
-      return said.renaming
+      return mockVaultState.renaming
     },
     readDeck: async (path: string) =>
       asValue({
@@ -128,7 +128,7 @@ vi.mock('@plugins/views.flashcards.studio/frontend/cards', async (original) => (
   ...cardsSaid,
 }))
 
-vi.mock('@/app/agentPort', () => ({ agentPort: { ask: held, finish: () => Promise.resolve() } }))
+vi.mock('@/app/agentPort', () => ({ agentPort: { ask: pendingStream, finish: () => Promise.resolve() } }))
 
 const themesSaid = {
   themes: {
@@ -137,9 +137,9 @@ const themesSaid = {
         { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
         { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
       ],
-      applied: said.applied,
-      mode: said.mode,
-      sizes: said.sizes,
+      applied: mockVaultState.applied,
+      mode: mockVaultState.mode,
+      sizes: mockVaultState.sizes,
       bounds: { interfaceScale: { least: 0.8, most: 2 }, textScale: { least: 0.8, most: 1.75 } },
     }),
     readTheme: async (name: string) => `:root { --numen-surface: ${name} }`,
@@ -149,9 +149,9 @@ const themesSaid = {
       sizes: { interfaceScale: number; textScale: number },
     ) => {
       requests.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
-      return said.writeError
+      return mockVaultState.writeError
     },
-    watchThemes: held,
+    watchThemes: pendingStream,
   },
 }
 

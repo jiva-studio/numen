@@ -61,10 +61,10 @@ describe('what a notice counts against', () => {
 describe('a notice put away', () => {
   it('is not drawn, and the rest are', () => {
     const notices = [createNotice({ id: 'reading' }), createNotice({ id: 'embedding' })]
-    const arrived = getArrivalTimes(new Map(), notices, 0)
+    const arrivalTimes = getArrivalTimes(new Map(), notices, 0)
     expect(
       getShownNotices(notices, 20_000, {
-        firstSeen: arrived,
+        firstSeen: arrivalTimes,
         away: new Set(['reading']),
       }).map((each) => each.id),
     ).toEqual(['embedding'])
@@ -94,14 +94,14 @@ describe('how long work runs before it is worth a card', () => {
   })
 
   it('draws nothing while the work is younger than the wait', () => {
-    const arrived = getArrivalTimes(new Map(), embedding, 1000)
-    expect(getShownNotices(embedding, 10_999, { firstSeen: arrived, wait: 10_000 })).toEqual([])
+    const arrivalTimes = getArrivalTimes(new Map(), embedding, 1000)
+    expect(getShownNotices(embedding, 10_999, { firstSeen: arrivalTimes, wait: 10_000 })).toEqual([])
   })
 
   it('draws it once the work has lasted', () => {
-    const arrived = getArrivalTimes(new Map(), embedding, 1000)
+    const arrivalTimes = getArrivalTimes(new Map(), embedding, 1000)
     expect(
-      getShownNotices(embedding, 11_000, { firstSeen: arrived, wait: 10_000 }).map(
+      getShownNotices(embedding, 11_000, { firstSeen: arrivalTimes, wait: 10_000 }).map(
         (each) => each.id,
       ),
     ).toEqual(['embedding'])
@@ -112,33 +112,33 @@ describe('how long work runs before it is worth a card', () => {
   })
 })
 
-describe('a notice somebody asked for', () => {
-  const asked: Notice = { id: 'reading', text: 'Recognising a scan', isUserStarted: true }
-  const behind: Notice = { id: 'indexing', text: 'Indexing' }
+describe('a notice somebody requested for', () => {
+  const request: Notice = { id: 'reading', text: 'Recognising a scan', isUserStarted: true }
+  const behindNotice: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
     // The wait is for work nobody asked for. Somebody who asked is waiting to
     // be told it began, and ten seconds of nothing is an application that did
     // not hear them.
-    const arrived = getArrivalTimes(new Map(), [asked, behind], 0)
+    const arrivalTimes = getArrivalTimes(new Map(), [request, behindNotice], 0)
 
     expect(
-      getShownNotices([asked, behind], 0, { firstSeen: arrived }).map(
+      getShownNotices([request, behindNotice], 0, { firstSeen: arrivalTimes }).map(
         (createNotice) => createNotice.id,
       ),
     ).toEqual(['reading'])
   })
 
   it('is put away like any other', () => {
-    const arrived = getArrivalTimes(new Map(), [asked], 0)
+    const arrivalTimes = getArrivalTimes(new Map(), [request], 0)
 
-    expect(getShownNotices([asked], 0, { firstSeen: arrived, away: new Set(['reading']) })).toEqual(
+    expect(getShownNotices([request], 0, { firstSeen: arrivalTimes, away: new Set(['reading']) })).toEqual(
       [],
     )
   })
 })
 
-describe('how long something said stands to be read', () => {
+describe('how long something returned remains to be read', () => {
   it('gives more time to more words', () => {
     expect(getNoticeDuration('Renamed')).toBe(MIN_DURATION + PER_WORD)
     expect(getNoticeDuration('Renamed', 'One.md')).toBe(MIN_DURATION + 2 * PER_WORD)
@@ -150,60 +150,60 @@ describe('how long something said stands to be read', () => {
     expect(getNoticeDuration('Links repaired in', list)).toBe(Infinity)
   })
 
-  it('stands for as long as twenty words, which is not too much to read in passing', () => {
+  it('remains for as long as twenty words, which is not too much to read in passing', () => {
     const list = Array.from({ length: 20 }, (_, at) => `Note${at}.md`).join(' ')
 
     expect(getNoticeDuration(list)).toBe(MIN_DURATION + 20 * PER_WORD)
   })
 
   it('is drawn the moment it arrives and goes once it has been read', () => {
-    const said: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
-    const arrived = getArrivalTimes(new Map(), [said], 1000)
+    const saidText: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
+    const arrivalTimes = getArrivalTimes(new Map(), [saidText], 1000)
 
-    expect(getShownNotices([said], 1000, { firstSeen: arrived }).map((each) => each.id)).toEqual([
+    expect(getShownNotices([saidText], 1000, { firstSeen: arrivalTimes }).map((each) => each.id)).toEqual([
       'renamed',
     ])
     expect(
-      getShownNotices([said], 1000 + MIN_DURATION + PER_WORD - 1, { firstSeen: arrived }),
+      getShownNotices([saidText], 1000 + MIN_DURATION + PER_WORD - 1, { firstSeen: arrivalTimes }),
     ).toHaveLength(1)
-    expect(getShownNotices([said], 1000 + MIN_DURATION + PER_WORD, { firstSeen: arrived })).toEqual(
+    expect(getShownNotices([saidText], 1000 + MIN_DURATION + PER_WORD, { firstSeen: arrivalTimes })).toEqual(
       [],
     )
   })
 
-  it('stands until it is put away where it was not asked to be read in passing', () => {
-    const kept: Notice = {
+  it('remains until it is put away where it was not requested to be read in passing', () => {
+    const retainedNotice: Notice = {
       id: 'occupied',
       text: 'A note of that name is filed there',
       stay: 'kept',
     }
-    const arrived = getArrivalTimes(new Map(), [kept], 0)
+    const arrivalTimes = getArrivalTimes(new Map(), [retainedNotice], 0)
 
     expect(
-      getShownNotices([kept], 10_000_000, { firstSeen: arrived }).map((each) => each.id),
+      getShownNotices([retainedNotice], 10_000_000, { firstSeen: arrivalTimes }).map((each) => each.id),
     ).toEqual(['occupied'])
   })
 
   it('keeps a notice too long to be read in passing standing, and never finishes it', () => {
     const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
     const long: Notice = { id: 'repaired', text: 'Links repaired in', about: list, stay: 'read' }
-    const arrived = getArrivalTimes(new Map(), [long], 0)
+    const arrivalTimes = getArrivalTimes(new Map(), [long], 0)
 
     expect(
-      getShownNotices([long], 10_000_000, { firstSeen: arrived }).map((each) => each.id),
+      getShownNotices([long], 10_000_000, { firstSeen: arrivalTimes }).map((each) => each.id),
     ).toEqual(['repaired'])
-    expect(getFinishedNotices([long], arrived, 10_000_000)).toEqual([])
+    expect(getFinishedNotices([long], arrivalTimes, 10_000_000)).toEqual([])
   })
 
   it('names the ones whose caller may dismiss them, and only those', () => {
-    const said: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
-    const kept: Notice = { id: 'occupied', text: 'Filed there already', stay: 'kept' }
+    const saidText: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
+    const retainedNotice: Notice = { id: 'occupied', text: 'Filed there already', stay: 'kept' }
     const work: Notice = { id: 'embedding', text: 'Indexing', isWorking: true }
-    const all = [said, kept, work]
-    const arrived = getArrivalTimes(new Map(), all, 0)
+    const all = [saidText, retainedNotice, work]
+    const arrivalTimes = getArrivalTimes(new Map(), all, 0)
 
-    expect(getFinishedNotices(all, arrived, 0)).toEqual([])
-    expect(getFinishedNotices(all, arrived, 1_000_000)).toEqual(['renamed'])
+    expect(getFinishedNotices(all, arrivalTimes, 0)).toEqual([])
+    expect(getFinishedNotices(all, arrivalTimes, 1_000_000)).toEqual(['renamed'])
   })
 })
 
@@ -219,43 +219,43 @@ describe('how many cards stand at once', () => {
   })
 
   it('folds nothing while there is room, even when everything in it could fold', () => {
-    const drawn = [word('a'), word('b'), word('c')]
+    const renderedNotices = [word('a'), word('b'), word('c')]
 
-    expect(foldNotices(drawn, 4)).toEqual({ shown: drawn, over: 0 })
+    expect(foldNotices(renderedNotices, 4)).toEqual({ shown: renderedNotices, over: 0 })
   })
 
   it('never folds a notice that holds', () => {
-    const holds = (id: string): Notice => ({ id, text: 'Indexing', stay: 'holds' })
-    const drawn = [holds('a'), holds('b'), holds('c')]
+    const persistentNotice = (id: string): Notice => ({ id, text: 'Indexing', stay: 'holds' })
+    const renderedNotices = [persistentNotice('a'), persistentNotice('b'), persistentNotice('c')]
 
-    expect(foldNotices(drawn, 1)).toEqual({ shown: drawn, over: 0 })
+    expect(foldNotices(renderedNotices, 1)).toEqual({ shown: renderedNotices, over: 0 })
   })
 
-  it('folds the oldest of what has been said, and counts them', () => {
-    const drawn = [word('a'), word('b'), work('c'), word('d')]
+  it('folds the oldest of what has been returned, and counts them', () => {
+    const renderedNotices = [word('a'), word('b'), work('c'), word('d')]
 
-    expect(foldNotices(drawn, 2)).toEqual({ shown: [work('c'), word('d')], over: 2 })
+    expect(foldNotices(renderedNotices, 2)).toEqual({ shown: [work('c'), word('d')], over: 2 })
   })
 
   it('folds no work and nothing that is so, however many there are', () => {
-    const drawn = [work('a'), work('b'), work('c'), work('d'), work('e')]
+    const renderedNotices = [work('a'), work('b'), work('c'), work('d'), work('e')]
 
-    expect(foldNotices(drawn, 2)).toEqual({ shown: drawn, over: 0 })
+    expect(foldNotices(renderedNotices, 2)).toEqual({ shown: renderedNotices, over: 0 })
   })
 
   it('keeps the order of what it did not fold', () => {
-    const drawn = [word('a'), word('b'), word('c')]
+    const renderedNotices = [word('a'), word('b'), word('c')]
 
-    expect(foldNotices(drawn, 2).shown.map((each) => each.id)).toEqual(['b', 'c'])
+    expect(foldNotices(renderedNotices, 2).shown.map((each) => each.id)).toEqual(['b', 'c'])
   })
 
-  it('folds nothing that stopped badly, wherever it stands', () => {
+  it('folds nothing that stopped badly, wherever it remains', () => {
     // Trouble is what a person has to see, and it arrives before the reports
     // that pile up behind it.
     const failed: Notice = { id: 'failed', text: 'Reading', tone: 'alarm', stay: 'kept' }
-    const drawn = [failed, word('a'), word('b'), word('c')]
+    const renderedNotices = [failed, word('a'), word('b'), word('c')]
 
-    const { shown, over } = foldNotices(drawn, 2)
+    const { shown, over } = foldNotices(renderedNotices, 2)
 
     expect(shown.map((each) => each.id)).toEqual(['failed', 'c'])
     expect(over).toBe(2)
@@ -273,12 +273,12 @@ describe('measuring how fast a count moves', () => {
   })
 
   it('reads a count once before it has a rate', () => {
-    const moving = measureMovement(new Map(), [createFetching(0)], 1000)
+    const movements = measureMovement(new Map(), [createFetching(0)], 1000)
 
-    expect(moving.get('model')).toEqual({ done: 0, rate: 0, at: 1000 })
+    expect(movements.get('model')).toEqual({ done: 0, rate: 0, at: 1000 })
   })
 
-  it('measures how fast the count is moving between two readings', () => {
+  it('measures how fast the count is moving between two samples', () => {
     const first = measureMovement(new Map(), [createFetching(0)], 1000)
     const second = measureMovement(first, [createFetching(4_000_000)], 3000)
 
@@ -288,13 +288,13 @@ describe('measuring how fast a count moves', () => {
   it('measures a group over the stretch it took, not the moment it landed in', () => {
     // Ten seconds of readings, four million arriving at the end of them. The
     // work did four hundred thousand a second, whatever the last reading saw.
-    let moving = measureMovement(new Map(), [createFetching(0)], 1000)
+    let movements = measureMovement(new Map(), [createFetching(0)], 1000)
     for (let at = 1250; at < 11_000; at += 250) {
-      moving = measureMovement(moving, [createFetching(0)], at)
+      movements = measureMovement(movements, [createFetching(0)], at)
     }
-    moving = measureMovement(moving, [createFetching(4_000_000)], 11_000)
+    movements = measureMovement(movements, [createFetching(4_000_000)], 11_000)
 
-    expect(moving.get('model')?.rate).toBe(400_000)
+    expect(movements.get('model')?.rate).toBe(400_000)
   })
 
   it('forgets work that is no longer standing', () => {

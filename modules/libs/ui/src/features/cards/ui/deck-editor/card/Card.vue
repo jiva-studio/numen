@@ -3,7 +3,7 @@
  * One card of a deck, as a tile: a strip it is dragged by and removed from, and
  * under it the card's values, each in a box that is always open to typing.
  *
- * Every field of the stencil stands under its own name and holds as many lines
+ * Every field of the stencil is placed under its own name and holds as many lines
  * as a person writes. What is wrong with the card is said under its strip, and
  * what is wrong with one value is said under that value.
  */
@@ -44,12 +44,12 @@ const uid = useId()
 
 /**
  * What the card is announced as. A card holds no name of its own: what it is
- * called is the line its first field comes to, and the file writes that.
+ * called is the line its first field evaluates to, and the file writes that.
  */
 const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
 /** What the strip says cut the card, and where nothing cut it, that nothing did. */
-const cut = computed(() => props.tile.stencil ?? props.words.unknown(null))
+const stencilTitle = computed(() => props.tile.stencil ?? props.words.unknown(null))
 
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
@@ -84,7 +84,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
         :aria-label="words.cut"
         data-cut-of
       >
-        {{ cut }}
+        {{ stencilTitle }}
       </p>
 
       <template #actions>

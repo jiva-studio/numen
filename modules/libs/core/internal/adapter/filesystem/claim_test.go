@@ -8,7 +8,7 @@ import (
 
 // A name taken out of the store leaves nothing behind it, the file its claim
 // was held on included.
-func TestANameRemovedLeavesNoClaimBehindIt(t *testing.T) {
+func TestANameRemovedPreservesNoClaimPriorIt(t *testing.T) {
 	derived, root := store(t)
 	const name = "ocr/abc.txt"
 
@@ -27,11 +27,11 @@ func TestANameRemovedLeavesNoClaimBehindIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	left, err := os.ReadDir(filepath.Join(root, ".numen", "ocr"))
+	remaining, err := os.ReadDir(filepath.Join(root, ".numen", "ocr"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range left {
+	for _, one := range remaining {
 		t.Errorf("%s was left behind", one.Name())
 	}
 }
@@ -57,11 +57,11 @@ func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	left, err := os.ReadDir(filepath.Join(root, ".numen", "ocr"))
+	remaining, err := os.ReadDir(filepath.Join(root, ".numen", "ocr"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range left {
+	for _, one := range remaining {
 		t.Errorf("%s was left behind", one.Name())
 	}
 }

@@ -18,7 +18,7 @@ beforeEach(() => {
 })
 
 describe('a name searched for', () => {
-  it('is asked for with the words typed, as many as the window shows', async () => {
+  it('is requested for with the words typed, as many as the window shows', async () => {
     search.searchNames.mockResolvedValue({ found: [] })
 
     await searchCore.names('lla', 8)
@@ -52,7 +52,7 @@ describe('a name searched for', () => {
 })
 
 describe('a passage searched for', () => {
-  it('is asked for in the mode chosen', async () => {
+  it('is requested for in the mode chosen', async () => {
     search.searchPassages.mockResolvedValue({ found: [] })
 
     await searchCore.search('grass', 'meaning', 8)

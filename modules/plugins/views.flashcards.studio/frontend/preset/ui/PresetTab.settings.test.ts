@@ -18,7 +18,7 @@ import { BOUNDS, mountPresetTab, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('the settings under the control', () => {
-  it('draws a row for each, with what it is beside it', () => {
+  it('draws a row for each, with what it is alongside it', () => {
     const { tab } = mountPresetTab()
     expect(tab.text()).toContain(words.fieldName('minutesADay'))
     expect(tab.text()).toContain(words.fieldDetail('minutesADay'))
@@ -27,22 +27,22 @@ describe('the settings under the control', () => {
   })
 
   // What a budget is spent on is a row like any other, and a person moving it
-  // writes the group the way every other row does. It stands under the goal
+  // writes the group the way every other row does. It is placed under the goal
   // whose budget is cards.
   it('offers the two things a budget is spent on', async () => {
-    const { tab, done } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
+    const { tab, recorded } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.text()).toContain(words.fieldName('counts'))
 
     const unit = tab.findAll('button').find((one) => one.text() === words.budgetUnitName('shows'))
     await unit?.trigger('click')
-    expect(done).toStrictEqual(['type counts shows', 'flushPending'])
+    expect(recorded).toStrictEqual(['type counts shows', 'flushPending'])
   })
 
   // The share of a day the debt takes is moved along its whole range, so any
   // of the hundred stands and none of them is a named position. The track
   // draws no figure, so the per cent is read out beside it.
   it('moves the share of a day the debt takes along a track, and reads it out', async () => {
-    const { tab, done } = mountPresetTab({}, { backlog: 70 })
+    const { tab, recorded } = mountPresetTab({}, { backlog: 70 })
     expect(tab.text()).toContain(words.fieldName('backlog'))
     const row = tab.get('[data-preset-row="backlog"]')
 
@@ -57,11 +57,11 @@ describe('the settings under the control', () => {
     expect(row.get('[data-preset="percent"]').text()).toBe(words.percent(70))
 
     // The value is handed on as the handle moves, and the row is written once
-    // the key is let go of.
+    // the key is release.
     await track.trigger('keydown', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['type backlog 69'])
+    expect(recorded).toStrictEqual(['type backlog 69'])
     await track.trigger('keyup', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['type backlog 69', 'flushPending'])
+    expect(recorded).toStrictEqual(['type backlog 69', 'flushPending'])
   })
 
   // The rule stands over the one value it reads, and the value the other rule
@@ -96,38 +96,38 @@ describe('the settings under the control', () => {
     expect(document.body.querySelectorAll('[role="menuitemradio"]')).toHaveLength(0)
 
     await line.trigger('click')
-    const offered = [...document.body.querySelectorAll('[role="menuitemradio"]')].map(
+    const proposed = [...document.body.querySelectorAll('[role="menuitemradio"]')].map(
       (one) => one.textContent?.trim() ?? '',
     )
-    expect(offered).toStrictEqual([words.ruleName('interval'), words.ruleName('retention')])
+    expect(proposed).toStrictEqual([words.ruleName('interval'), words.ruleName('retention')])
   })
 
-  it('hands on the rule that was chosen, and is done with it at once', async () => {
-    const { tab, done } = mountPresetTab({}, { learned: 'interval' })
+  it('passes on the rule that was chosen, and is done with it at once', async () => {
+    const { tab, recorded } = mountPresetTab({}, { learned: 'interval' })
     await tab.get('[data-preset="choice"]').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].find(
       (one) => one.textContent?.trim() === words.ruleName('retention'),
     )
-    chosen?.click()
+    selected?.click()
     await tab.vm.$nextTick()
-    expect(done).toStrictEqual(['type learned retention', 'flushPending'])
+    expect(recorded).toStrictEqual(['type learned retention', 'flushPending'])
   })
 
   it('holds the days a card is put off inside what a preset may hold', async () => {
-    const { tab, done } = mountPresetTab({}, { learned: 'interval', interval: 21 })
+    const { tab, recorded } = mountPresetTab({}, { learned: 'interval', interval: 21 })
     const row = tab.get('[data-preset-row="interval"]')
     const field = row.get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
     expect(field.attributes('aria-valuemin')).toBe(`${BOUNDS.interval.least}`)
     expect(field.attributes('aria-valuemax')).toBe(`${BOUNDS.interval.most}`)
     await field.setValue('30')
-    expect(done).toStrictEqual(['type interval 30'])
+    expect(recorded).toStrictEqual(['type interval 30'])
   })
 
   // A tab draws its rows before the first read lands. Until the application
   // has said how far a field goes, the field stands at the ends it draws
   // itself with.
-  it('leaves a field the application has said nothing about at its own ends', () => {
+  it('leaves a field the application has returned nothing about at its own ends', () => {
     const one = createTab({}, { learned: 'interval', interval: 21 })
     const state: PresetTabState = { ...one.state, bounds: shallowRef(NO_BOUNDS) }
     const tab = mount(PresetTab, { props: { state } })
@@ -143,21 +143,21 @@ describe('what the tab says went wrong', () => {
   const mountWithError = (words: string) => {
     const one = createTab()
     const state: PresetTabState = { ...one.state, errorMessage: ref(words) }
-    return { tab: mount(PresetTab, { props: { state } }), done: one.done }
+    return { tab: mount(PresetTab, { props: { state } }), recorded: one.recorded }
   }
 
-  it('offers reading the file again beside what it says', async () => {
-    const { tab, done } = mountWithError(words.notRead('missing'))
+  it('offers reading the file again along with what it says', async () => {
+    const { tab, recorded } = mountWithError(words.notRead('missing'))
     const alert = tab.get('[role="alert"]')
     expect(alert.text()).toContain(words.notRead('missing'))
     await alert.get('button').trigger('click')
-    expect(done).toStrictEqual(['reload'])
+    expect(recorded).toStrictEqual(['reload'])
   })
 
-  it('offers it for a refused write as well as a refused read', async () => {
-    const { tab, done } = mountWithError(words.notSaved('unreadable'))
+  it('offers it for a failed write as well as a failed read', async () => {
+    const { tab, recorded } = mountWithError(words.notSaved('unreadable'))
     await tab.get('[role="alert"] button').trigger('click')
-    expect(done).toStrictEqual(['reload'])
+    expect(recorded).toStrictEqual(['reload'])
   })
 
   it('offers nothing where there is nothing to say', () => {
@@ -174,10 +174,10 @@ describe('a file that changed under the tab', () => {
     const one = createTab()
     const state: PresetTabState = { ...one.state, hasExternalChange: ref(true) }
     const tab = mount(PresetTab, { props: { state } })
-    const said = tab.get('[role="status"].preset__answering')
-    expect(said.text()).toContain(words.changed)
-    await said.get('button').trigger('click')
-    expect(one.done).toStrictEqual(['reload'])
+    const response = tab.get('[role="status"].preset__answering')
+    expect(response.text()).toContain(words.changed)
+    await response.get('button').trigger('click')
+    expect(one.recorded).toStrictEqual(['reload'])
   })
 
   it('says nothing where the file is the one the tab read', () => {
@@ -187,22 +187,22 @@ describe('a file that changed under the tab', () => {
   })
 })
 
-// The row of days draws a level and hands back a day and a level. That the
+// The row of days draws a level and returns a day and a level. That the
 // whole of a day is a hundred, and that a day back at it stops being named,
 // are the file's own way of writing the week and belong to this tab.
 describe('the load of the week', () => {
   /** A tab whose row of days is watched for what it puts into the settings. */
   const mountWithLoad = (load: Record<string, number>) => {
     const one = createTab({}, { load })
-    const put: [Field, SettingValue][] = []
+    const loadWrites: [Field, SettingValue][] = []
     const state: PresetTabState = {
       ...one.state,
       updateSetting: (field, value) => {
-        put.push([field, value])
-        one.done.push('type')
+        loadWrites.push([field, value])
+        one.recorded.push('type')
       },
     }
-    return { tab: mount(PresetTab, { props: { state } }), put, done: one.done }
+    return { tab: mount(PresetTab, { props: { state } }), loadWrites, recorded: one.recorded }
   }
 
   /** The chips of the row that draws the week. */
@@ -240,22 +240,22 @@ describe('the load of the week', () => {
   })
 
   it('writes the day it was handed at the share chosen, leaving the others', async () => {
-    const { tab, put, done } = mountWithLoad({ sat: 50, sun: 0 })
+    const { tab, loadWrites, recorded } = mountWithLoad({ sat: 50, sun: 0 })
     await chips(tab)[0]?.trigger('click')
     getMenuItems()[2]?.click()
     await tab.vm.$nextTick()
 
-    expect(put).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
-    expect(done).toStrictEqual(['type', 'flushPending'])
+    expect(loadWrites).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
+    expect(recorded).toStrictEqual(['type', 'flushPending'])
   })
 
   it('stops naming a day put back to the whole of a day', async () => {
-    const { tab, put } = mountWithLoad({ sat: 50, sun: 0 })
+    const { tab, loadWrites } = mountWithLoad({ sat: 50, sun: 0 })
     await chips(tab)[5]?.trigger('click')
     getMenuItems()[6]?.click()
     await tab.vm.$nextTick()
 
-    expect(put).toStrictEqual([['load', { sun: 0 }]])
+    expect(loadWrites).toStrictEqual([['load', { sun: 0 }]])
   })
 })
 
@@ -305,7 +305,7 @@ describe('the line the tab is read against', () => {
 // Every figure a person reads of a chance of recall is a percentage: the mark
 // on the curve, the words beside it, the axis. The row it is typed into is one.
 describe('the row a chance of recall is typed into', () => {
-  it('stands in per cent, and is bounded and stepped in per cent', () => {
+  it('remains in per cent, and is bounded and stepped in per cent', () => {
     const { tab } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
     const field = tab
       .findAll('[role="spinbutton"]')
@@ -317,8 +317,8 @@ describe('the row a chance of recall is typed into', () => {
     expect(field?.attributes('aria-valuenow')).toBe('87')
   })
 
-  it('hands a percentage back as the share the settings hold', async () => {
-    const { tab, done } = mountPresetTab(
+  it('passes a percentage back as the share the settings hold', async () => {
+    const { tab, recorded } = mountPresetTab(
       { goal: 'retention' },
       { goal: 'retention', retention: 0.87 },
     )
@@ -327,21 +327,21 @@ describe('the row a chance of recall is typed into', () => {
       .find((one) => one.attributes('aria-valuemax') === '99')
 
     await field?.setValue('90')
-    expect(done).toStrictEqual(['type retention 0.9'])
+    expect(recorded).toStrictEqual(['type retention 0.9'])
   })
 })
 
 // The rules are a choice between two, and the line that asked for them is where
 // the keyboard comes back to.
 describe('the rules under the learned row', () => {
-  it('marks the rule in force and returns the focus to the line that asked', async () => {
+  it('marks the rule in force and returns the focus to the line that requested', async () => {
     // Attached to the page, because taking the focus back is what is measured.
     const one = createTab({}, { learned: 'interval' })
     const tab = mount(PresetTab, { props: { state: one.state }, attachTo: document.body })
     const line = tab.get('[data-preset="choice"]')
     await line.trigger('click')
 
-    // The menu is drawn onto the page rather than inside the tab.
+    // The menu is drawn onto the page and not inside the tab.
     const items = [...document.querySelectorAll('[role="menuitemradio"]')]
     expect(items.map((one) => one.getAttribute('aria-checked'))).toStrictEqual(['true', 'false'])
 

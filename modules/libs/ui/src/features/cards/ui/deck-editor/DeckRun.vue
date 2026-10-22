@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * One run of a deck: the heading of the section it stands under, the cards
+ * One run of a deck: the heading of the section it is placed under, the cards
  * under it as tiles, and the plus that ends it.
  */
 import { SectionHeading } from './section-heading'
 import { Card } from './card'
-import { CutChoice } from './cut-choice'
+import { CutChoice } from './stencil-choice'
 import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
 import { DECK_WORDS, createRunEnd, type DeckWords, type DeckProblems } from '../../lib/deck'
@@ -54,13 +54,13 @@ const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
 /** Where a card let go past the last of this run lands. */
 const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 
-/** The section this run stands under, under a new name. */
+/** The section this run is placed under, under a new name. */
 const renameSection = (name: string): void => {
   const section = props.run.section
   if (section) emit('rename-section', section.id, name)
 }
 
-/** The section this run stands under, gone. */
+/** The section this run is placed under, gone. */
 const removeSection = (): void => {
   const section = props.run.section
   if (section) emit('remove-section', section.id)

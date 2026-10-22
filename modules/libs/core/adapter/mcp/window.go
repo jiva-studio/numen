@@ -19,7 +19,7 @@ type Tab struct {
 	IsFront bool   `json:"front,omitempty" jsonschema:"set on the one tab the person is looking at"`
 }
 
-// addWindowTools tells an agent what the person has open.
+// addWindowTools tells an agent what currently open.
 //
 // They are added only where a window says. A binary nobody is sitting at
 // answers about a vault and about nothing in front of anybody.
@@ -106,8 +106,8 @@ var tabPresenters = map[string]tabPresenter{
 
 // tabPosition returns the position string for the given tab.
 func tabPosition(t domain.Tab) string {
-	presenter, known := tabPresenters[t.Kind]
-	if !known || presenter.position == nil {
+	presenter, recognized := tabPresenters[t.Kind]
+	if !recognized || presenter.position == nil {
 		return ""
 	}
 	return presenter.position(t)
@@ -115,8 +115,8 @@ func tabPosition(t domain.Tab) string {
 
 // describeTab returns the description of the tab currently in front.
 func describeTab(t domain.Tab) string {
-	presenter, known := tabPresenters[t.Kind]
-	if !known {
+	presenter, recognized := tabPresenters[t.Kind]
+	if !recognized {
 		return fmt.Sprintf("a tab of kind %q is in front of them", t.Kind)
 	}
 	return presenter.describe(t, formatTabName(t), tabPosition(t))

@@ -22,8 +22,8 @@ export interface GestureHandlers {
   readonly begin: (from: string, event: PointerEvent) => void
   /**
    * Reach out from a node with nowhere to point — from the keyboard, where
-   * there is no direction to read. It comes to what a press that never
-   * travelled comes to, and is over as soon as it is asked for.
+   * there is no direction to read. It evaluates to what a press that never
+   * travelled evaluates to, and is over as soon as it is asked for.
    */
   readonly ask: (from: string) => void
   readonly cancel: () => void
@@ -71,7 +71,7 @@ function releasePointer(element: SVGSVGElement | null, pointerId: number | null)
       // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
       element.releasePointerCapture?.(pointerId)
     } catch {
-      // Never held it; nothing to let go of.
+      // Never held it; nothing to release.
     }
   }
 }

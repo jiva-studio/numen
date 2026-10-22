@@ -83,11 +83,11 @@ func parseTopologyID(content string) (int, error) {
 
 // countCores is the number of distinct physical cores among the cores of a set of logical CPUs.
 func countCores(cores []cpuCore) int {
-	seen := make(map[cpuCore]struct{}, len(cores))
+	observed := make(map[cpuCore]struct{}, len(cores))
 	for _, core := range cores {
-		seen[core] = struct{}{}
+		observed[core] = struct{}{}
 	}
-	return len(seen)
+	return len(observed)
 }
 
 // parseCPUMax reads the content of a cgroup v2 cpu.max file into the number of CPUs the quota allows, rounded up. A file without a quota gives 0.

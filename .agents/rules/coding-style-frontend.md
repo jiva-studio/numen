@@ -18,15 +18,15 @@ The dependency runs `modules/apps/*` → `modules/libs/ui`. Never back, never si
 
 ## 2. The pure core and the humble view
 
-Every component splits in two.
+Every component is decoupled into logic and presentation:
 
-**The core is pure.** Given the props it computes what is to be drawn — every coordinate, every state, every derived flag — as plain values: no DOM, no Vue, no clock, no randomness, no measurement of text. It lives in plain modules beside the component (`carry.ts`, `measure.ts`, `sizing.ts`, `model/`), each with its own `.test.ts`.
+**Pure core logic.** Given props, pure TypeScript functions compute render properties — coordinates, states, derived flags — as plain data objects with no DOM, Vue, clock, randomness, or DOM measurement dependencies. Pure logic resides in standalone TypeScript modules alongside the component (`measure.ts`, `sizing.ts`, `model/`), each with dedicated unit tests.
 
-**The view is humble.** It receives those values and turns them into elements. It works nothing out. A number appearing in a template that the core did not produce is a broken split, and so is a `computed` reaching for `window`, `Date.now` or an element's size.
+**Presentational views.** Vue components receive these computed values and render elements without performing business logic or calculations in templates. A template must not calculate values directly, and a computed property must not access `window`, `Date.now()`, or element dimensions directly.
 
-**Anything with a lifetime is a port**: the clock, `requestAnimationFrame`, the viewport, the motion preference. Each is a parameter with a browser-shaped default.
+**Browser and platform dependencies are ports**: clocks, `requestAnimationFrame`, viewport geometry, and media preferences must be passed as parameters with browser defaults.
 
-A `computed` in a `.vue` file is a thin projection. Loops, index arithmetic, string parsing and transformations belong in the pure modules, where they are tested without mounting anything.
+A `computed` in a `.vue` file is a thin projection. Loops, arithmetic, string parsing, and data transformations belong in pure modules tested in isolation without mounting components.
 
 ---
 
@@ -119,11 +119,11 @@ function formatValue(val: string) { ... }
 
 - **Functions and methods** are imperative verb phrases (`getTranscript`, `createTab`, `openVault`) or predicates. Never third-person singular (`carries`, `reads`), never a past participle (`listened`, `spoken`), never a literary metaphor where a standard term exists.
 - **Handlers** are `on<Action>`.
-- **Composables** are named `use<Feature>` — never a gerund, never a bare noun. The file they live in is either that name (`useAppHotkeys.ts`) or the word for what the module is about (`useWorkspaceTabs` lives in `windowing.ts`, `useVaultStatus` in `showing.ts`); both are in use, and the module word is the more common of the two.
+- **Composables** are named `use<Feature>` — never a gerund, never a bare noun. The file they live in matches the composable name (`useAppHotkeys.ts`, `useWorkspaceTabs.ts`, `useVaultStatus.ts`).
 - **A composable has one coherent responsibility.** A composable that takes an entire component's script — every piece of state, every handler, a long list of exports — is that component undecomposed. Split the component instead.
 - **Factories are `create…`.** The word `make` is not used for a factory in frontend code.
 - **Files**: directories `kebab-case`, components `PascalCase`, other TypeScript `camelCase`.
-- **Domain code stays in its domain and layer.** A file of a window stands on one of six layers (`shared` → `entities` → `features` → `widgets` → `pages` → `app`). Slices reach lower layers or sibling slices through explicit `@x` public interfaces. Imports use the `@/` alias.
+- **Domain code stays in its domain and layer.** A file in desktop UI belongs to one of six layers (`shared` → `entities` → `features` → `widgets` → `pages` → `app`). Slices import lower layers or sibling slices through explicit `@x` public interfaces. Imports use the `@/` alias.
 
 ---
 
@@ -165,9 +165,7 @@ Go code is formatted with `gofmt` (`gofmt -l .`).
 
 ---
 
-## 11. Comments
-
-A comment states the rule that holds, and stops. It never names an alternative that is not in the code. Delete each clause in turn: what still describes the code is the comment, and the rest was argument.
+A comment describes the active behavior or invariant. It does not argue, justify rejected alternatives, or narrate history. See Rule 1 and Rule 13 of `AGENTS.md`.
 
 ---
 

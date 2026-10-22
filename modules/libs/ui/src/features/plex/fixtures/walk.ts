@@ -50,13 +50,13 @@ const getChildren = (id: string): string[] =>
 
 /** The other children of my parents. Worked out here, never by the plex. */
 const getSiblings = (id: string): string[] => {
-  const seen = new Set<string>()
+  const observed = new Set<string>()
   for (const parent of getParents(id)) {
     for (const child of getChildren(parent)) {
-      if (child !== id) seen.add(child)
+      if (child !== id) observed.add(child)
     }
   }
-  return [...seen]
+  return [...observed]
 }
 
 /** Everything that points at me by association, and everything I point at. */
@@ -80,7 +80,7 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
   // A node reachable two ways takes one relation, first match wins. The plex
   // refuses a neighbourhood that holds the same node twice.
   const related: PlexNode[] = []
-  const taken = new Set<string>([id])
+  const visited = new Set<string>([id])
   for (const group of [
     createRelated(getParents(id), 'parent'),
     createRelated(getChildren(id), 'child'),
@@ -88,8 +88,8 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
     createRelated(getSiblings(id), 'sibling'),
   ]) {
     for (const node of group) {
-      if (taken.has(node.id)) continue
-      taken.add(node.id)
+      if (visited.has(node.id)) continue
+      visited.add(node.id)
       related.push(node)
     }
   }
@@ -103,7 +103,7 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
 
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so
-      // it belongs here rather than in the plex.
+      // it belongs here and not in the plex.
       const shared = getParents(id).find((parent) => getParents(node.id).includes(parent))
       return shared ? [{ from: shared, to: node.id, label: 'contains' }] : []
     }),

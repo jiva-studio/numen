@@ -2,7 +2,7 @@
  * Everything an open menu listens to on the window: a press, a scroll, a
  * change of size, and Escape.
  *
- * Each of them puts the menu away, and what putting it away comes to is the
+ * Each of them puts the menu away, and what putting it away evaluates to is the
  * caller's. A scroll puts it away once the person has given input since the
  * menu opened; the scroll that opening itself causes does not.
  */
@@ -14,7 +14,7 @@ import { MENU_INPUT_EVENTS, createScrollGate } from './scroll'
 export interface MenuGroundState {
   /** The window listened to, and listened to once however often this is called. */
   readonly listen: () => void
-  /** The window let go of. */
+  /** The window release. */
   readonly release: () => void
 }
 

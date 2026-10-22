@@ -15,26 +15,26 @@ const window = (options: HostOptions = {}) => {
   const fixture = createHost(options)
   const conversations: { said: ReturnType<typeof ref<Turn[]>>; stopped: string[] }[] = []
   const chats = createAgentKind(fixture.host, (deps) => {
-    const said = ref<Turn[]>([])
-    const stopped: string[] = []
+    const turn = ref<Turn[]>([])
+    const stopCalls: string[] = []
     const conversation: Conversation = {
-      turns: said,
+      turns: turn,
       isWorking: ref(false),
       ask: async () => {},
       getSourceLocation: () => null,
-      stop: () => void stopped.push('stop'),
-      finish: () => void stopped.push('finish'),
+      stop: () => void stopCalls.push('stop'),
+      finish: () => void stopCalls.push('finish'),
     }
-    conversations.push({ said, stopped })
+    conversations.push({ said: turn, stopped: stopCalls })
     return useAgentConversation(conversation, deps)
   })
   const open = (): AgentTabState => chats.kind.open!('', `${AGENT}:1`)
   return { ...fixture, ...chats, open, conversations }
 }
 
-/** A line of the talk, as the panel hands one back. */
-const turn = (id: string, voice: string, text: string): Turn =>
-  ({ id, voice, text, state: 'done' }) as unknown as Turn
+/** A line of the conversation. */
+const turn = (id: string, voice: 'asked' | 'answered', text: string): Turn =>
+  ({ id, voice, text, state: 'settled' })
 
 describe('the agent tab as the window keeps it', () => {
   it('is a tool the trailing pane opens with, in front of the rest', () => {
@@ -47,7 +47,7 @@ describe('the agent tab as the window keeps it', () => {
 })
 
 describe('what an agent tab is called', () => {
-  it('is the first thing asked of it, shortened', () => {
+  it('is the first thing requested of it, shortened', () => {
     const one = window()
     const state = one.open()
     one.conversations[0]!.said.value = [turn('a', 'asked', 'what is this whole vault about')]
@@ -55,26 +55,26 @@ describe('what an agent tab is called', () => {
     expect(one.kind.getTitle?.(state)).toBe('what is this whole…')
   })
 
-  it('is the first thing asked, whatever was said before it', () => {
+  it('is the first thing requested, whatever was returned before it', () => {
     const one = window()
     const state = one.open()
     one.conversations[0]!.said.value = [
-      turn('a', 'said', 'an answer'),
+      turn('a', 'answered', 'an answer'),
       turn('b', 'asked', 'the question'),
     ]
 
     expect(one.kind.getTitle?.(state)).toBe('the question')
   })
 
-  it('is the word for an agent while nothing has been asked of it', () => {
+  it('is the word for an agent while nothing has been requested of it', () => {
     const one = window()
 
     expect(one.kind.getTitle?.(one.open())).toBe('Agent')
   })
 })
 
-describe('what a command asked over an agent tab is over', () => {
-  it('is the note the window stands on, which is no note of the tab itself', () => {
+describe('what a command requested over an agent tab is over', () => {
+  it('is the note the window relies on, which is no note of the tab itself', () => {
     const one = window({ focus: { path: 'physics/Ontology.md', title: 'Ontology' } })
 
     expect(one.kind.getTarget!(one.open())).toStrictEqual({
@@ -85,7 +85,7 @@ describe('what a command asked over an agent tab is over', () => {
 })
 
 describe('an agent tab that closes', () => {
-  it('tells the conversation it is over, so the agent lets go of what it kept', () => {
+  it('notifies the conversation it is over, so the agent lets go of what it kept', () => {
     const one = window()
     const state = one.open()
 

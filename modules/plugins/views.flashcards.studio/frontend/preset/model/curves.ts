@@ -53,7 +53,7 @@ export function createCurveState(
 export const isSameGrid = (one: readonly number[], two: readonly number[]): boolean =>
   one.length === two.length && one.every((value, at) => value === two[at])
 
-/** Where the knob stands on a curve: the preset's own place, or the nearest. */
+/** Where the knob relies on a curve: the preset's own place, or the nearest. */
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
   curve.now.at >= 0
     ? curve.now.at

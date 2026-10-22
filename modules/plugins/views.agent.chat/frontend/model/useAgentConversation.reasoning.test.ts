@@ -43,13 +43,13 @@ const LISTED = [
 
 /** An agent tab over the models listed, the settings kept, and the questions it asks. */
 function open(settings: Record<string, string> = {}) {
-  const asked: AskOptions[] = []
-  const written: [string, unknown][] = []
+  const request: AskOptions[] = []
+  const content: [string, unknown][] = []
   const conversation: Conversation = {
     turns: ref([]),
     isWorking: ref(false),
     ask: async (_question, _focus, options) => {
-      asked.push(options ?? {})
+      request.push(options ?? {})
     },
     getSourceLocation: () => null,
     stop: () => {},
@@ -62,11 +62,11 @@ function open(settings: Record<string, string> = {}) {
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],
     writeSetting: async (path, value) => {
-      written.push([path.join('/'), value])
+      content.push([path.join('/'), value])
     },
     getModelsAt: (at) => LISTED.filter((one) => one.namedAt.join('/') === at.join('/')),
   })
-  return { state, asked, written }
+  return { state, requests: request, writtenSettings: content }
 }
 
 describe('the levels offered', () => {
@@ -103,10 +103,10 @@ describe('the level selected', () => {
   })
 
   it('is the one chosen, and the choice is kept for the agent', () => {
-    const { state, written } = open()
+    const { state, writtenSettings } = open()
     state.selectReasoning('high')
     expect(state.selectedReasoningId.value).toBe('high')
-    expect(written).toEqual([['agent/alpha/reasoning', 'high']])
+    expect(writtenSettings).toEqual([['agent/alpha/reasoning', 'high']])
   })
 
   it('does not follow an agent other than the one it was chosen for', () => {
@@ -125,18 +125,18 @@ describe('the level selected', () => {
 
 describe('the question', () => {
   it('names the level selected', () => {
-    const { state, asked } = open({ 'agent/alpha/reasoning': 'high' })
+    const { state, requests } = open({ 'agent/alpha/reasoning': 'high' })
     state.send('hello')
-    expect(asked).toEqual([{ agentId: 'alpha', modelId: 'deep', reasoning: 'high' }])
+    expect(requests).toEqual([{ agentId: 'alpha', modelId: 'deep', reasoning: 'high' }])
   })
 
   it('names no level for a model that offers none', () => {
-    const { state, asked } = open({
+    const { state, requests } = open({
       'agent/use': 'alpha',
       'agent/alpha/model': 'plain',
       'agent/alpha/reasoning': 'high',
     })
     state.send('hello')
-    expect(asked[0]?.reasoning).toBe('')
+    expect(requests[0]?.reasoning).toBe('')
   })
 })

@@ -126,28 +126,28 @@ func renameField(path string, at []string, to string) error {
 			return fmt.Errorf("%s: %w", path, err)
 		}
 
-		renamed, done := renameMember(raw, at, to)
-		if !done {
+		renamed, isDone := renameMember(raw, at, to)
+		if !isDone {
 			return nil
 		}
 		return writeFileAtomically(path, renamed)
 	})
 }
 
-// renameMember hands back the object's bytes with one member's name changed,
+// renameMember returns the object's bytes with one member's name changed,
 // and whether it found the member to change.
 func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 	if len(at) == 0 {
 		return object, false
 	}
-	held, err := parseObjectShape(object)
+	target, err := parseObjectShape(object)
 	if err != nil {
 		return object, false
 	}
 
-	for _, one := range held.pairs {
+	for _, one := range target.pairs {
 		if one.key == at[0] {
-			return renameInMember(object, held, one, at, to)
+			return renameInMember(object, target, one, at, to)
 		}
 	}
 
@@ -157,8 +157,8 @@ func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 // renameInMember renames the member the path ends at, and says whether it did.
 func renameInMember(object []byte, held shape, one member, at []string, to string) ([]byte, bool) {
 	if len(at) > 1 {
-		section, done := renameMember(object[one.from:one.to], at[1:], to)
-		if !done {
+		section, isDone := renameMember(object[one.from:one.to], at[1:], to)
+		if !isDone {
 			return object, false
 		}
 		return splice(object, one.from, one.to, section), true
@@ -184,14 +184,14 @@ var errRepeated = errors.New("a section holds one of a name")
 // checkNoDuplicateNames says which name a section of the file holds twice, and nothing where
 // every section holds one of each. A value that is not a section holds no names.
 func checkNoDuplicateNames(object []byte) error {
-	held, err := parseObjectShape(object)
+	target, err := parseObjectShape(object)
 	if errors.Is(err, errNotASection) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	for _, one := range held.pairs {
+	for _, one := range target.pairs {
 		if err := checkNoDuplicateNames(object[one.from:one.to]); err != nil {
 			return fmt.Errorf("%s: %w", one.key, err)
 		}
@@ -210,32 +210,32 @@ func applySetting(raw []byte, setting Setting) ([]byte, error) {
 	return replaceValueAt(raw, setting.At, value, "")
 }
 
-// replaceValueAt replaces the value at a path through an object, and hands back the
+// replaceValueAt replaces the value at a path through an object, and returns the
 // object's bytes with that one span changed.
 //
 // outer is the indentation of the line the object's own name sits on, which is
 // what a section made here is laid out against.
 func replaceValueAt(object []byte, at []string, value []byte, outer string) ([]byte, error) {
-	held, err := parseObjectShape(object)
+	target, err := parseObjectShape(object)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, one := range held.pairs {
+	for _, one := range target.pairs {
 		if one.key != at[0] {
 			continue
 		}
 		if len(at) == 1 {
 			return splice(object, one.from, one.to, value), nil
 		}
-		section, err := replaceValueAt(object[one.from:one.to], at[1:], value, held.indent)
+		section, err := replaceValueAt(object[one.from:one.to], at[1:], value, target.indent)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", one.key, err)
 		}
 		return splice(object, one.from, one.to, section), nil
 	}
 
-	return held.appendMember(object, at, value, outer), nil
+	return target.appendMember(object, at, value, outer), nil
 }
 
 // member is one member of an object: its name, where that name is written, and
@@ -273,22 +273,22 @@ func parseObjectShape(object []byte) (shape, error) {
 		return shape{}, errNotASection
 	}
 
-	held := shape{last: int(decoder.InputOffset())}
+	target := shape{last: int(decoder.InputOffset())}
 	for decoder.More() {
-		one, err := readMember(decoder, object, held)
+		one, err := readMember(decoder, object, target)
 		if err != nil {
 			return shape{}, err
 		}
-		held.pairs = append(held.pairs, one)
-		held.last = one.to
+		target.pairs = append(target.pairs, one)
+		target.last = one.to
 	}
 	if _, err := decoder.Token(); err != nil {
 		return shape{}, err
 	}
-	if len(held.pairs) > 0 {
-		held.indent = getIndent(object, held.pairs[0].from)
+	if len(target.pairs) > 0 {
+		target.indent = getIndent(object, target.pairs[0].from)
 	}
-	return held, nil
+	return target, nil
 }
 
 // readMember reads the next member of the object the decoder is in.

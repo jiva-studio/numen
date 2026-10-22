@@ -25,7 +25,7 @@ import (
 //	NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 //	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
 //
-// It reports rather than asserts. A threshold that fails on a slower laptop
+// It reports and not asserts. A threshold that fails on a slower laptop
 // teaches people to ignore the test; the numbers belong in docs/performance.md,
 // where a human compares them.
 func TestLoad(t *testing.T) {
@@ -63,22 +63,22 @@ func TestLoad(t *testing.T) {
 		db.Maintenance(),
 	)
 
-	cold := time.Now()
+	coldStart := time.Now()
 	res, err := scan.Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	elapsed := time.Since(cold)
+	elapsed := time.Since(coldStart)
 	t.Logf("cold scan: %d notes in %s (%.2f ms/note, %.0f notes/s)",
 		res.Indexed, elapsed.Round(time.Millisecond),
 		float64(elapsed.Milliseconds())/float64(res.Indexed),
 		float64(res.Indexed)/elapsed.Seconds())
 
-	warm := time.Now()
+	warmStart := time.Now()
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("warm scan: %s — this is what a startup pays", getElapsed(warm))
+	t.Logf("warm scan: %s — this is what a startup pays", getElapsed(warmStart))
 
 	size, err := os.Stat(db.Path())
 	if err == nil {
@@ -123,12 +123,12 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		}
 	}()
 
-	var reading sync.WaitGroup
+	var readWg sync.WaitGroup
 	latencies := make([][]time.Duration, readers)
 	for i := range readers {
-		reading.Add(1)
+		readWg.Add(1)
 		go func() {
-			defer reading.Done()
+			defer readWg.Done()
 			queries := db.Passages()
 			deadline := time.Now().Add(duration)
 			for time.Now().Before(deadline) && ctx.Err() == nil {
@@ -140,7 +140,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 			}
 		}()
 	}
-	reading.Wait()
+	readWg.Wait()
 	cancel()
 	writing.Wait()
 

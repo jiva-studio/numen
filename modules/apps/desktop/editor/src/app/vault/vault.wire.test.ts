@@ -128,10 +128,10 @@ describe('a neighbourhood the vault answers with', () => {
       ],
     })
 
-    const around = await core.neighbourhood('Rota.md')
-    expect(around.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
-    expect(around.focusType).toBe('deck')
-    expect(around.related).toEqual([
+    const neighbourhood = await core.neighbourhood('Rota.md')
+    expect(neighbourhood.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
+    expect(neighbourhood.focusType).toBe('deck')
+    expect(neighbourhood.related).toEqual([
       {
         path: 'Allotments.md',
         title: 'Allotments',
@@ -157,7 +157,7 @@ describe('a neighbourhood the vault answers with', () => {
     expect((await core.neighbourhood('Rota.md')).related).toEqual([])
   })
 
-  it('stands on nothing where the vault no longer holds the note', async () => {
+  it('relies on nothing where the vault no longer holds the note', async () => {
     answerWith({ related: [] })
 
     expect((await core.neighbourhood('Gone.md')).focus.path).toBe('')

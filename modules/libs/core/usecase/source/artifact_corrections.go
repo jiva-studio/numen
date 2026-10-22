@@ -52,8 +52,8 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 	if in.Kind != KindTranscript {
 		return 0, ErrNotCorrectable
 	}
-	_, put := transcript.Parse([]byte(in.Words))
-	if len(put) == 0 {
+	_, cues := transcript.Parse([]byte(in.Words))
+	if len(cues) == 0 {
 		return 0, ErrNoCue
 	}
 
@@ -65,7 +65,7 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 		if one.Kind != KindTranscript {
 			continue
 		}
-		return u.write(ctx, set.Store, in, one.Producer, set.Hash, put)
+		return u.write(ctx, set.Store, in, one.Producer, set.Hash, cues)
 	}
 	return 0, fmt.Errorf("nothing of the kind %q was made from %s", in.Kind, in.Path)
 }
@@ -89,10 +89,10 @@ func (u *WriteCorrections) write(
 	}
 	defer release()
 
-	_, stood := transcript.Parse([]byte(words))
-	whole := spliceCues(stood, put, in.Start, in.Length)
-	written := append(transcript.Marshal(whole), transcript.GetHandWrittenMark()...)
-	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash), written); err != nil {
+	_, status := transcript.Parse([]byte(words))
+	whole := spliceCues(status, put, in.Start, in.Length)
+	content := append(transcript.Marshal(whole), transcript.GetHandWrittenMark()...)
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash), content); err != nil {
 		return 0, err
 	}
 	if u.changed != nil {

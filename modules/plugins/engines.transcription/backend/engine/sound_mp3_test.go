@@ -156,7 +156,7 @@ func TestMP3IsDecodedToTheSamplesOfTheWholeOutput(t *testing.T) {
 
 // The memory an mp3 holds while it decodes follows the one channel it comes
 // out as.
-func TestMP3DecodeHoldsMemoryInProportionToOneChannel(t *testing.T) {
+func TestMP3DecodeContainsMemoryInProportionToOneChannel(t *testing.T) {
 	raw := encodeMP3(2000, 3)
 	moments := 2000 * 1152
 
@@ -183,9 +183,9 @@ func peakHeap(run func()) int {
 	runtime.ReadMemStats(&base)
 
 	var peak atomic.Uint64
-	stop, done := make(chan struct{}), make(chan struct{})
+	stop, isDone := make(chan struct{}), make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(isDone)
 		var now runtime.MemStats
 		for {
 			runtime.ReadMemStats(&now)
@@ -201,7 +201,7 @@ func peakHeap(run func()) int {
 	}()
 	run()
 	close(stop)
-	<-done
+	<-isDone
 	return int(peak.Load()) - int(base.HeapAlloc)
 }
 

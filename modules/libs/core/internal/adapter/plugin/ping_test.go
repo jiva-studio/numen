@@ -97,7 +97,7 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 				t.Fatalf("failure reported for %q with %q, want md.numen.engines.ocr with the protocol reason", failedID, reason)
 			}
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
-				t.Fatalf("signal the refused process: %v, want %v", err, os.ErrProcessDone)
+				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)
 			}
 			if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); !errors.Is(err, errPluginFailed) {
 				t.Fatalf("second EnsureActive() = %v, want %v", err, errPluginFailed)

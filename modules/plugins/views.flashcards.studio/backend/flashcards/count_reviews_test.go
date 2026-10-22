@@ -82,18 +82,18 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The run is left where it stands and its content is replaced with a line
+	// The run is left at its current position and its content is replaced with a line
 	// nothing can read. A count that read it again would lose the day it holds.
-	held := getRunFiles(t, s)
-	if len(held) != 1 {
-		t.Fatalf("the vault holds %v", held)
+	target := getRunFiles(t, s)
+	if len(target) != 1 {
+		t.Fatalf("the vault holds %v", target)
 	}
-	torn := filepath.Join(s.vault.Path, ".numen", "flashcards", held[0])
-	was, err := os.ReadFile(torn)
+	divided := filepath.Join(s.vault.Path, ".numen", "flashcards", target[0])
+	was, err := os.ReadFile(divided)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(torn, spaces(len(was)), 0o644); err != nil {
+	if err := os.WriteFile(divided, spaces(len(was)), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -141,7 +141,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 // One identifier is one answer, however many files carry it. A synchroniser
 // that met a conflict leaves a second copy of a run beside the first, and the
 // day holds what the person answered.
-func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
+func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -176,9 +176,9 @@ func writeConflictedCopies(t *testing.T, s vaulted) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		beside := strings.TrimSuffix(name, ".jsonl") +
+		stem := strings.TrimSuffix(name, ".jsonl") +
 			" (conflicted copy).jsonl"
-		if err := os.WriteFile(filepath.Join(at, beside), raw, 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(at, stem), raw, 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -214,7 +214,7 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
-	// Answered easily, so it is days away rather than minutes.
+	// Answered easily, so it is days away and not minutes.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -313,7 +313,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, held := got.Days["1999-01-01"]; held {
+	if _, target := got.Days["1999-01-01"]; target {
 		t.Errorf("a cache of another shape was believed: %v", got.Days)
 	}
 	if got.Answered != 1 {
@@ -344,7 +344,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 
 // A build that keeps nothing counts the whole log at every launch, and says the
 // same as one that keeps it.
-func TestAVaultIsCountedWithNothingKept(t *testing.T) {
+func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -352,10 +352,10 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kept := s.counted
-	kept.Cache = nil
+	countReviews := s.counted
+	countReviews.Cache = nil
 
-	got, err := kept.Execute(t.Context(), s.vault)
+	got, err := countReviews.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -366,7 +366,7 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 
 // What is still to come is worked out from the schedules. A counting with no
 // scheduler behind it says what was answered and nothing about what is coming,
-// rather than refusing to count at all.
+// and not refusing to count at all.
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)

@@ -17,16 +17,16 @@ import (
 // and what is put in front of them.
 type workspaceHandler struct{ state *State }
 
-// WriteOpenTabs takes what the person has open, as the window last said it.
+// WriteOpenTabs takes what currently open, as the window last said it.
 //
 // It is the other direction to WatchFocus: a place is put in front of the
 // person there, and here the window says what is in front of them now.
 func (h *workspaceHandler) WriteOpenTabs(
 	_ context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
 ) (*connect.Response[v1.WriteOpenTabsResponse], error) {
-	told := r.Msg.GetTabs()
-	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(told)), FrontID: r.Msg.GetFront()}
-	for _, one := range told {
+	tabs := r.Msg.GetTabs()
+	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(tabs)), FrontID: r.Msg.GetFront()}
+	for _, one := range tabs {
 		tab := domain.Tab{
 			ID:    one.GetId(),
 			Kind:  one.GetKind(),
@@ -74,7 +74,7 @@ func (h *workspaceHandler) DetachTab(
 	return connect.NewResponse(&v1.DetachTabResponse{}), nil
 }
 
-// GetOpenTabs is what the person has open, as the window last said. A window
+// GetOpenTabs is what currently open, as the window last said. A window
 // that has said nothing has nothing open as far as anyone here knows.
 func (s *State) GetOpenTabs() domain.OpenTabs {
 	if open := s.openTabs.Load(); open != nil {
@@ -90,8 +90,8 @@ func (h *workspaceHandler) WatchFocus(
 	_ *connect.Request[v1.WatchFocusRequest],
 	out *connect.ServerStream[v1.WatchFocusResponse],
 ) error {
-	line, done := h.state.Places.subscribe()
-	defer done()
+	line, isDone := h.state.Places.subscribe()
+	defer isDone()
 
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
@@ -101,7 +101,7 @@ func (h *workspaceHandler) WatchFocus(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			// A place nobody asked for names nothing, and is here to fail when
+			// A place nobody asked for is empty, and is here to fail when
 			// the client has gone.
 			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
 				return err

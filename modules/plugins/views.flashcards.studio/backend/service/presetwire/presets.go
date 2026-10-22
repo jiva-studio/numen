@@ -113,16 +113,16 @@ func ConvertSettingsFromWire(s *v1.Settings) (review.Preset, error) {
 		Backlog:     int(s.GetBacklog()),
 		IsEvenLoad:  s.GetHasEvenLoad(),
 	}
-	if written := strings.TrimSpace(s.GetByDate()); written != "" {
-		day, err := time.Parse(review.DayLayout, written)
+	if content := strings.TrimSpace(s.GetByDate()); content != "" {
+		day, err := time.Parse(review.DayLayout, content)
 		if err != nil {
 			return review.Preset{}, err
 		}
 		out.By = day
 	}
 	for _, name := range slices.Sorted(maps.Keys(s.GetLoad())) {
-		day, known := review.Weekday(name)
-		if !known {
+		day, recognized := review.Weekday(name)
+		if !recognized {
 			return review.Preset{}, errors.New(name + " is not a day of the week")
 		}
 		if out.Load == nil {

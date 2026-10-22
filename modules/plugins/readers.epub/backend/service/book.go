@@ -124,13 +124,13 @@ func (s *BookServer) ReadBookMarkup(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parse epub %s: %w", path, err))
 	}
 
-	drawn, err := book.Markup(req.Msg.GetDocument())
+	rendered, err := book.Markup(req.Msg.GetDocument())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read document markup %s: %w", req.Msg.GetDocument(), err))
 	}
 
 	return connect.NewResponse(&numenv1.ReadBookMarkupResponse{
-		Markup: drawn.HTML(),
+		Markup: rendered.HTML(),
 	}), nil
 }
 

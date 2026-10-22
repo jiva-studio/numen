@@ -2,7 +2,7 @@
  * Which settings a goal schedules by, and the one word that says their shape.
  *
  * A goal names one budget, and the settings of the other two take no part in
- * it: they are neither drawn nor written while it stands, and the file keeps
+ * it: they are neither drawn nor written while active, and the file keeps
  * them where the person left them.
  */
 import type { Bounds, Goal, Rule, Settings, SettingsBounds } from '../types'
@@ -83,8 +83,8 @@ const ALWAYS: readonly Field[] = ['load', 'hasEvenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
 export const getGoalFields = (goal: Goal, rule: Rule): readonly Field[] => {
-  const drawn = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...LEARNS[rule], ...ALWAYS])
-  return FIELDS.filter((field) => drawn.has(field))
+  const goalFields = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...LEARNS[rule], ...ALWAYS])
+  return FIELDS.filter((field) => goalFields.has(field))
 }
 
 /** The field the goal steers, which is the knob under another name. */

@@ -31,7 +31,7 @@ describe('the commands over a row standing for a recording', () => {
     expect(getItemIds('recording')).toContain('transcribe')
   })
 
-  it('offer nothing to recognise, which is asked of a scan', () => {
+  it('offer nothing to recognise, which is requested of a scan', () => {
     expect(getItemIds('recording')).not.toContain('recognise')
   })
 })
@@ -46,9 +46,9 @@ describe('the commands over a row standing for an address', () => {
   // A build that cannot reach one offers none of them, which is how a person
   // is told this build does not do it.
   it('offer none of them where the build cannot do them', () => {
-    const offered = getItemIds('url', false, () => false)
+    const proposed = getItemIds('url', false, () => false)
     for (const one of ['downloadText', 'downloadCopy', 'deleteText', 'deleteCopy']) {
-      expect(offered).not.toContain(one)
+      expect(proposed).not.toContain(one)
     }
   })
 
@@ -64,7 +64,7 @@ describe('the commands over a row standing for a scanned document', () => {
     expect(getItemIds('book')).toContain('recognise')
   })
 
-  it('offer nothing to transcribe, which is asked of a recording', () => {
+  it('offer nothing to transcribe, which is requested of a recording', () => {
     expect(getItemIds('book')).not.toContain('transcribe')
   })
 })
@@ -111,8 +111,8 @@ describe('the commands over a note', () => {
   })
 })
 
-describe('where a run stands among the commands', () => {
-  it('stands after the path and before the remove, parted from both by a rule', () => {
+describe('where a run remains among the commands', () => {
+  it('remains after the path and before the remove, parted from both by a rule', () => {
     expect(getGroupedIds('recording')).toStrictEqual([
       'copy',
       '— transcribe',
@@ -127,8 +127,8 @@ describe('where a run stands among the commands', () => {
 })
 
 describe('disabling of runs based on artifact states', () => {
-  const getRuns = (source: 'recording' | 'book', made: ArtifactStates, format = 'pdf' as const) =>
-    createPathCommands({ source, isFolder: false, format, made }, false, canRunAnything)
+  const getRuns = (source: 'recording' | 'book', createdItem: ArtifactStates, format = 'pdf' as const) =>
+    createPathCommands({ source, isFolder: false, format, made: createdItem }, false, canRunAnything)
 
   it('disables transcribe and enables proofread when transcript is done', () => {
     const items = getRuns('recording', { transcript: 'done' })
@@ -177,11 +177,11 @@ describe('the commands where this build cannot do a run at all', () => {
 describe('a run that is under way or finished', () => {
   const getDisabled = (
     source: 'recording' | 'book',
-    made: ArtifactStates,
+    createdItem: ArtifactStates,
     id: string,
   ): boolean | undefined =>
     createPathCommands(
-      { source, isFolder: false, format: 'pdf', made },
+      { source, isFolder: false, format: 'pdf', made: createdItem },
       false,
       canRunAnything,
     ).find((one) => one.id === id)?.disabled
@@ -212,8 +212,8 @@ describe('a run that is under way or finished', () => {
   })
 
   it('disables proofread while the proofreading is running', () => {
-    const made: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'running' }
-    expect(getDisabled('recording', made, 'proofread')).toBe(true)
+    const createdItem: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'running' }
+    expect(getDisabled('recording', createdItem, 'proofread')).toBe(true)
   })
 
   it('leaves proofread enabled where the proofreading is queued or failed', () => {
@@ -224,8 +224,8 @@ describe('a run that is under way or finished', () => {
   })
 
   it('disables proofread of a scan while the scan or the proofreading is running', () => {
-    const made: ArtifactStates = { ocr: 'done', 'ocr.corrected': 'running' }
-    expect(getDisabled('book', made, 'proofread')).toBe(true)
+    const createdItem: ArtifactStates = { ocr: 'done', 'ocr.corrected': 'running' }
+    expect(getDisabled('book', createdItem, 'proofread')).toBe(true)
     expect(getDisabled('book', { ocr: 'running' }, 'proofread')).toBe(true)
   })
 })

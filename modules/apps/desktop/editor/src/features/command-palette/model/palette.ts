@@ -1,10 +1,10 @@
 /**
- * The palette a person types into: which step it stands on, what it draws
+ * The palette a person types into: which step it relies on, what it draws
  * there, and the invocation an answer makes.
  *
  * A command that needs nothing is carried out the moment it is chosen. One that
  * needs a name, a note, a vault or an answer opens a step of its own, and the
- * step it stands on is what the field means. What a step draws is read again
+ * step it relies on is what the field means. What a step draws is read again
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
@@ -103,10 +103,10 @@ function createVaultsLoader(deps: PaletteVaultsDeps) {
     deps.isWorking.value = true
     deps.failureMessage.value = ''
     try {
-      const listed = await deps.core.vaults()
+      const items = await deps.core.vaults()
       if (!mine.isCurrent) return
-      deps.known.value = listed.vaults
-      deps.showing.value = listed.showing
+      deps.known.value = items.vaults
+      deps.showing.value = items.showing
     } catch {
       if (!mine.isCurrent) return
       deps.known.value = []
@@ -178,25 +178,25 @@ function parsePaletteDeps(
 
 function createPaletteState(wait?: Wait) {
   const open = ref(false)
-  const typed = ref('')
+  const inputValue = ref('')
   const found = shallowRef<readonly NameMatch[]>(BLANK.found)
-  const known = shallowRef<readonly Vault[]>(BLANK.known)
+  const recognized = shallowRef<readonly Vault[]>(BLANK.known)
   const showing = ref(BLANK.showing)
   const isWorking = ref(BLANK.isWorking)
   const failureMessage = ref(BLANK.failureMessage)
-  const asked = latest()
-  const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
+  const request = latest()
+  const debounced = useDebouncedAsk({ guard: request, ...(wait ? { wait } : {}) })
 
   const drop = () => {
-    asked.drop()
+    request.drop()
     found.value = BLANK.found
-    known.value = BLANK.known
+    recognized.value = BLANK.known
     showing.value = BLANK.showing
     isWorking.value = BLANK.isWorking
     failureMessage.value = BLANK.failureMessage
   }
 
-  return { open, typed, found, known, showing, isWorking, failureMessage, asked, debounced, drop }
+  return { open, typed: inputValue, found, known: recognized, showing, isWorking, failureMessage, asked: request, debounced, drop }
 }
 
 function createPaletteStepsAndSearch(

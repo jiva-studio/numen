@@ -47,7 +47,7 @@ describe('UpdateIndicator', () => {
       },
     })
 
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
     expect(wrapper.find('.update-indicator').exists()).toBe(false)
   })
 
@@ -69,7 +69,7 @@ describe('UpdateIndicator', () => {
       attachTo: document.body,
     })
 
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
 
     expect(wrapper.find('.update-indicator').exists()).toBe(true)
     expect(wrapper.text()).toContain('v2026.10.1')
@@ -103,7 +103,7 @@ describe('UpdateIndicator', () => {
       attachTo: document.body,
     })
 
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
     await wrapper.find('.update-indicator__trigger').trigger('click')
 
     const dismissBtn = wrapper.find('.update-popover__btn--quiet')
@@ -126,7 +126,7 @@ describe('UpdateIndicator', () => {
       attachTo: document.body,
     })
 
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
     await wrapper.find('.update-indicator__trigger').trigger('click')
     expect(wrapper.find('.update-popover').exists()).toBe(true)
 
@@ -154,7 +154,7 @@ describe('UpdateIndicator', () => {
       attachTo: document.body,
     })
 
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
     await wrapper.find('.update-indicator__trigger').trigger('click')
 
     expect(wrapper.find('.update-popover').exists()).toBe(true)
@@ -193,7 +193,7 @@ describe('UpdateIndicator', () => {
       attachTo: document.body,
     })
 
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
     await wrapper.find('.update-indicator__trigger').trigger('click')
 
     const downloadBtn = wrapper.find('.update-popover__btn--primary')
@@ -224,7 +224,7 @@ describe('UpdateIndicator', () => {
       attachTo: document.body,
     })
 
-    await new Promise((done) => setTimeout(done, 10))
+    await new Promise((isDone) => setTimeout(isDone, 10))
     await wrapper.find('.update-indicator__trigger').trigger('click')
 
     const notesBtn = wrapper.find('.update-popover__btn--ghost')

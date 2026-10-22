@@ -14,12 +14,12 @@ import (
 func coarseRows(t *testing.T, db *DB, vault domain.Vault, path string) (reached, small int) {
 	t.Helper()
 
-	held := `FROM chunks c
+	target := `FROM chunks c
 		JOIN sources s ON s.id = c.source_id
 		JOIN vaults v ON v.id = s.vault_id
 		WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NOT NULL`
-	small = countRows(t, db, `SELECT COUNT(*) `+held, vault.ID, path)
-	reached = countRows(t, db, `SELECT COUNT(*) `+held+
+	small = countRows(t, db, `SELECT COUNT(*) `+target, vault.ID, path)
+	reached = countRows(t, db, `SELECT COUNT(*) `+target+
 		` AND c.id IN (SELECT chunk_id FROM chunks_vec)`, vault.ID, path)
 	if small == 0 {
 		t.Fatalf("%s in %s holds no small chunk, so this test would pass either way", path, vault.Name)
@@ -42,14 +42,14 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	for _, p := range owing {
 		hashes = append(hashes, hashOf(t, db, p.Chunk))
 	}
-	kept, err := db.ChunkQueries().GetKeptVectors(ctx, testRecipe, hashes)
+	retained, err := db.ChunkQueries().GetKeptVectors(ctx, testRecipe, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for i, p := range owing {
-		value, held := kept[hex.EncodeToString(hashes[i])]
-		if !held {
+		value, target := retained[hex.EncodeToString(hashes[i])]
+		if !target {
 			t.Errorf("chunk %d owes a vector nothing keeps", p.Chunk)
 			continue
 		}
@@ -116,12 +116,12 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 			vault, path := tc.put(t, db)
 
 			_, small := coarseRows(t, db, vault, path)
-			held, done, err := db.ChunkQueries().GetProgress(t.Context(), vault.ID, testRecipe)
+			target, isDone, err := db.ChunkQueries().GetProgress(t.Context(), vault.ID, testRecipe)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if held-done != int64(small) {
-				t.Errorf("progress counts %d of %d chunks still to do, want the %d of %s", held-done, held, small, path)
+			if target-isDone != int64(small) {
+				t.Errorf("progress counts %d of %d chunks still to do, want the %d of %s", target-isDone, target, small, path)
 			}
 			if wrote := embedFromKeptVectors(t, db, vault); wrote != small {
 				t.Errorf("%d of the %d small chunks of %s were owed", wrote, small, path)
@@ -136,7 +136,7 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 	}
 }
 
-func TestAVectorWrittenBackAsItIsKeptLeavesItsRowUntouched(t *testing.T) {
+func TestAVectorSavedBackAsItIsCachedPreservesItsRowUntouched(t *testing.T) {
 	// A reclaimed vector is written beside its coarse row, and the vector is
 	// the one already kept. The guard writes a different vector, so a trigger
 	// that never fires cannot pass.

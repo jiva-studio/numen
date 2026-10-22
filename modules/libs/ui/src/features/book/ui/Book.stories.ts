@@ -1,6 +1,6 @@
 /**
  * A book made for a screen, read in one piece: its text in columns, the countSpreads
- * it comes to, and the controls floating over them.
+ * it evaluates to, and the controls floating over them.
  *
  * Where the layout is judged, because nothing without a layout can judge it:
  * whether a narrow area takes one column and a wide one two, whether a spread
@@ -71,7 +71,7 @@ const TABLE = `<table><tbody>${Array.from(
 const UNBROKEN =
   'Sarvabhutahitaratahsarvabhutasthitasyatathasarvatragamacintyarupamavyaktamniravadyampada'
 
-const reading =
+const activeReading =
   (chapter: Chapter, highlights: readonly Span[] = []): Render =>
   () => ({
     components: { Book },
@@ -204,7 +204,7 @@ const getColumnWidth = (canvasElement: HTMLElement) =>
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
 export const Playground: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([...VERSES, ...PROSE])),
+  render: activeReading(createChapter([...VERSES, ...PROSE])),
 }
 
 /**
@@ -213,7 +213,7 @@ export const Playground: Story = {
  */
 export const OneColumn: Story = {
   decorators: [NARROW],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -229,7 +229,7 @@ export const OneColumn: Story = {
  */
 export const NoLineCutInHalf: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -244,14 +244,14 @@ export const NoLineCutInHalf: Story = {
 }
 
 /**
- * A document longer than one column comes to several, in a pane holding one
- * column as in a pane holding two. A document that comes to one spread has
+ * A document longer than one column evaluates to several, in a pane holding one
+ * column as in a pane holding two. A document that evaluates to one spread has
  * nowhere to turn inside it, and the reader hands the turn to the next document
  * of the book: a chapter read a chapter at a time, with most of it never drawn.
  */
 export const OneColumnTurns: Story = {
   decorators: [NARROW],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -283,7 +283,7 @@ export const OneColumnTurns: Story = {
  */
 export const TwoColumns: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -314,7 +314,7 @@ export const TwoColumns: Story = {
  */
 export const PictureTallerThanTheColumn: Story = {
   decorators: [WIDE],
-  render: reading(
+  render: activeReading(
     createChapter([
       { tag: 'p', text: 'A plate, taller than the column it is printed in.' },
       { tag: 'figure', inside: `<img src="${TALL}" alt="A plate" />` },
@@ -342,7 +342,7 @@ export const PictureTallerThanTheColumn: Story = {
  */
 export const AWordWithNothingToBreakAt: Story = {
   decorators: [NARROW],
-  render: reading(createChapter([{ tag: 'p', text: UNBROKEN }, ...PROSE.slice(0, 4)])),
+  render: activeReading(createChapter([{ tag: 'p', text: UNBROKEN }, ...PROSE.slice(0, 4)])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -362,7 +362,7 @@ export const AWordWithNothingToBreakAt: Story = {
  */
 export const ATableThatWillNotBreak: Story = {
   decorators: [WIDE],
-  render: reading(
+  render: activeReading(
     createChapter([
       { tag: 'p', text: 'A table of nine columns, in a column of one.' },
       { tag: 'div', inside: TABLE },
@@ -387,21 +387,21 @@ export const ATableThatWillNotBreak: Story = {
  */
 export const VerseSetInAPreElement: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([{ tag: 'pre', text: VERSE }])),
+  render: activeReading(createChapter([{ tag: 'pre', text: VERSE }])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const set = getPaper(canvasElement).querySelector('pre')!
-    await expect(set.scrollHeight).toBeLessThanOrEqual(set.clientHeight + 1)
-    await expect(set.scrollWidth).toBeLessThanOrEqual(set.clientWidth + 1)
+    const activeSet = getPaper(canvasElement).querySelector('pre')!
+    await expect(activeSet.scrollHeight).toBeLessThanOrEqual(activeSet.clientHeight + 1)
+    await expect(activeSet.scrollWidth).toBeLessThanOrEqual(activeSet.clientWidth + 1)
 
-    // It stands on the paper the rest of the text does. The typography dresses
+    // It relies on the paper the rest of the text does. The typography dresses
     // a pre as a block of code, and a title page is not one.
-    const drawn = getComputedStyle(set)
-    await expect(drawn.backgroundColor).toBe('rgba(0, 0, 0, 0)')
-    await expect(drawn.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
+    const renderedStyle = getComputedStyle(activeSet)
+    await expect(renderedStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(renderedStyle.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
 
-    // It ran on into columns of its own rather than stopping at the first.
+    // It ran on into columns of its own and not stopping at the first.
     const area = getArea(canvasElement)
     await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth)
   },
@@ -414,7 +414,7 @@ export const VerseSetInAPreElement: Story = {
  */
 export const WordsCanBeTakenUp: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([...PROSE])),
+  render: activeReading(createChapter([...PROSE])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -426,10 +426,10 @@ export const WordsCanBeTakenUp: Story = {
   },
 }
 
-/** A document of one line comes to one spread, and there is nowhere to turn. */
+/** A document of one line evaluates to one spread, and there is nowhere to turn. */
 export const OneLine: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([{ tag: 'p', text: 'One line, and the book is over.' }])),
+  render: activeReading(createChapter([{ tag: 'p', text: 'One line, and the book is over.' }])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -450,12 +450,12 @@ export const OneLine: Story = {
  * is a book that will not open.
  *
  * The line under the text stands there, because the way into the contents
- * stands on it; what a document of no pages puts on it is neither a count nor a
+ * relies on it; what a document of no pages puts on it is neither a count nor a
  * chapter to finish.
  */
 export const NoTextAtAll: Story = {
   decorators: [WIDE],
-  render: reading({ markup: '', span: { from: 0, to: 0 } }),
+  render: activeReading({ markup: '', span: { from: 0, to: 0 } }),
   play: async ({ canvasElement }) => {
     await expect(getPaper(canvasElement)).toBeInTheDocument()
     await expect(getRunsOf(canvasElement)).toHaveLength(0)
@@ -471,7 +471,7 @@ export const NoTextAtAll: Story = {
  */
 export const SetLarger: Story = {
   decorators: [WIDE],
-  render: reading(createChapter([...VERSES, ...PROSE])),
+  render: activeReading(createChapter([...VERSES, ...PROSE])),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
@@ -482,11 +482,11 @@ export const SetLarger: Story = {
     })
     const before = getFrontOffset(canvasElement)
 
-    const set = getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize
+    const activeSet = getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize
     await userEvent.click(canvas.getByLabelText('Larger'))
     await waitFor(
       async () =>
-        await expect(getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize).not.toBe(set),
+        await expect(getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize).not.toBe(activeSet),
       { timeout: ITS_OWN_PACE },
     )
 
@@ -494,10 +494,10 @@ export const SetLarger: Story = {
     // another spread. What the person was reading is on it.
     await waitFor(
       async () => {
-        const standing = getRunsOf(canvasElement).find(
+        const activeRun = getRunsOf(canvasElement).find(
           (run) => Number(run.dataset['offset']) === before,
         )!
-        const rect = standing.getClientRects()[0]!
+        const rect = activeRun.getClientRects()[0]!
         const area = getArea(canvasElement).getBoundingClientRect()
         await expect(rect.left).toBeGreaterThanOrEqual(area.left - 1)
         await expect(rect.left).toBeLessThan(area.right)
@@ -508,7 +508,7 @@ export const SetLarger: Story = {
 }
 
 /**
- * A run marked where it stands. The range is taken from the offsets the caller
+ * A run marked at its current position. The range is taken from the offsets the caller
  * gave and the offsets the runs carry, and the text is never searched.
  */
 export const Marked: Story = {
@@ -516,14 +516,14 @@ export const Marked: Story = {
   render: (() => {
     const chapter = createChapter(VERSES)
     const second = chapter.span.from + countBytes(VERSES[0]!.text!)
-    return reading(chapter, [{ from: second, to: second + 30 }])
+    return activeReading(chapter, [{ from: second, to: second + 30 }])
   })(),
 }
 
 /** The pages turned by the keyboard, and by a press near either edge. */
 export const TurnedByHand: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
     const area = getArea(canvasElement)
@@ -571,13 +571,13 @@ export const DrawnOutOfSight: Story = {
 
 /**
  * The turn is the columns being carried, so the page slides across the pane
- * rather than jumping. A layout is not a turn and is put in place at once, and
+ * and not jumping. A layout is not a turn and is put in place at once, and
  * a layout that left the transition switched off is a book that turns without
  * moving.
  */
 export const TheTurnIsCarried: Story = {
   decorators: [WIDE],
-  render: reading(createChapter(PROSE)),
+  render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 

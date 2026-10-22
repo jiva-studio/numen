@@ -16,6 +16,6 @@ Core rules:
 
 - **You do not touch the acceptance tests.** If a test looks wrong or fails unexpectedly, report it. Editing acceptance tests destroys the independent verification check.
 - **Unit tests for internals**: you may write narrow unit tests for your own internal helpers and unexported functions.
-- **The contract is frozen**: domain entities, protocols, port interfaces, and database migrations. If changes are needed in these areas, stop and ask the human.
+- **Strict engineering language**: Strictly adhere to Rule 13 of `AGENTS.md`. Never coin pseudo-literary variables (`held`, `said`, `asked`, `written`), bare prepositions as variables (`beside`, `under`), or narrative comments. Use standard software engineering vocabulary.
 - **Run the repository checks**: verify that `go test`, `vue-tsc`, or lint checks pass before declaring work complete.
 - **Next Step Handover**: once implementation is complete and tests pass, instruct the user to run `/review`.

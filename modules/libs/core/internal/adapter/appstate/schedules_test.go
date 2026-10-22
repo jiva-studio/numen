@@ -14,19 +14,19 @@ import (
 
 // What was worked out is kept by the vault it was worked out for, and comes
 // back as it was written.
-func TestSchedulesAreKeptByVault(t *testing.T) {
-	kept := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
+func TestSchedulesAreCachedByVault(t *testing.T) {
+	schedules := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
 	ctx := t.Context()
 
-	if err := kept.Write(ctx, "01J8F3K2M9QRSTVWXYZ012", []byte(`{"v":1}`)); err != nil {
+	if err := schedules.Write(ctx, "01J8F3K2M9QRSTVWXYZ012", []byte(`{"v":1}`)); err != nil {
 		t.Fatal(err)
 	}
-	got, err := kept.Read(ctx, "01J8F3K2M9QRSTVWXYZ012")
+	got, err := schedules.Read(ctx, "01J8F3K2M9QRSTVWXYZ012")
 	if err != nil || string(got) != `{"v":1}` {
 		t.Errorf("read back %q, %v", got, err)
 	}
 
-	if _, err := kept.Read(ctx, "01J8F3K2M9QRSTVWXYZ999"); !errors.Is(err, fs.ErrNotExist) {
+	if _, err := schedules.Read(ctx, "01J8F3K2M9QRSTVWXYZ999"); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("a vault nothing was kept for answers %v", err)
 	}
 }
@@ -34,9 +34,9 @@ func TestSchedulesAreKeptByVault(t *testing.T) {
 // The identity is written into a file's name, so a name that is not one is
 // refused: anything else could reach a file this folder does not hold.
 func TestAnIdentityThatIsNotOneNamesNoFile(t *testing.T) {
-	kept := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
+	schedules := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
 	for _, id := range []domain.VaultID{"", "../numen.json", "a/b", `a\b`, "one.json"} {
-		if err := kept.Write(t.Context(), id, []byte("{}")); err == nil {
+		if err := schedules.Write(t.Context(), id, []byte("{}")); err == nil {
 			t.Errorf("wrote under %q", id)
 		}
 	}
@@ -97,9 +97,9 @@ func TestNoCacheLocationOpensNothing(t *testing.T) {
 
 // A vault whose identity is not one is read as an error.
 func TestAnIdentityThatIsNotOneReadsNothing(t *testing.T) {
-	kept := appstate.SchedulesAt(t.TempDir())
+	schedules := appstate.SchedulesAt(t.TempDir())
 	for _, id := range []domain.VaultID{"", "a/b", "one.json"} {
-		if _, err := kept.Read(t.Context(), id); err == nil {
+		if _, err := schedules.Read(t.Context(), id); err == nil {
 			t.Errorf("read under %q", id)
 		}
 	}
@@ -114,14 +114,14 @@ func TestAFolderThatCannotBeMadeFailsTheWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kept := appstate.SchedulesAt(filepath.Join(file, "flashcards"))
-	if err := kept.Write(t.Context(), "vault-a", []byte("{}")); err == nil {
+	schedules := appstate.SchedulesAt(filepath.Join(file, "flashcards"))
+	if err := schedules.Write(t.Context(), "vault-a", []byte("{}")); err == nil {
 		t.Error("wrote under a folder that is a file")
 	}
 }
 
 // A file is written readable by its owner alone.
-func TestAWrittenFileIsTheOwnersAlone(t *testing.T) {
+func TestASavedFileIsTheOwnersAlone(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Windows files have no permission bits to read")
 	}
@@ -140,7 +140,7 @@ func TestAWrittenFileIsTheOwnersAlone(t *testing.T) {
 
 // A write that cannot place the file where it belongs fails and leaves nothing
 // beside it.
-func TestAWriteThatCannotReplaceTheFileLeavesNothingBehind(t *testing.T) {
+func TestAWriteThatCannotReplaceTheFilePreservesNothingPrior(t *testing.T) {
 	dir := t.TempDir()
 	occupied := filepath.Join(dir, "vault-a.json")
 	if err := os.MkdirAll(filepath.Join(occupied, "inner"), 0o755); err != nil {
@@ -160,7 +160,7 @@ func TestAWriteThatCannotReplaceTheFileLeavesNothingBehind(t *testing.T) {
 }
 
 // A folder that cannot be written into fails the write.
-func TestAFolderThatCannotBeWrittenIntoFailsTheWrite(t *testing.T) {
+func TestAFolderThatCannotBeSavedIntoFailsTheWrite(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser writes into any folder")
 	}

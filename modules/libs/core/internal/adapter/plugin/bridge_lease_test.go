@@ -109,7 +109,7 @@ func newLeaseHost(t *testing.T) *leaseHost {
 	return &leaseHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
 }
 
-func TestEveryProofreadingGivesItsReferenceBack(t *testing.T) {
+func TestEveryProofreadingProducesItsReferenceBack(t *testing.T) {
 	host := newLeaseHost(t)
 	bridge, err := OpenProofreaderBridge(host)
 	if err != nil {
@@ -124,7 +124,7 @@ func TestEveryProofreadingGivesItsReferenceBack(t *testing.T) {
 	}
 }
 
-func TestEveryRunOfAnAgentHoldsAndGivesBackItsOwnReference(t *testing.T) {
+func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
 	host := newLeaseHost(t)
 	bridge, err := OpenAgentBridgeForPlugin(t.Context(), host, "md.numen.stub")
 	if err != nil {
@@ -162,7 +162,7 @@ type seekCloser struct {
 
 func (seekCloser) Close() error { return nil }
 
-func TestEveryOpenDocumentHoldsAndGivesBackItsOwnReference(t *testing.T) {
+func TestEveryOpenDocumentContainsAndProducesBackItsOwnReference(t *testing.T) {
 	host := newLeaseHost(t)
 	bridge, err := OpenDocumentBridge(t.Context(), host)
 	if err != nil {

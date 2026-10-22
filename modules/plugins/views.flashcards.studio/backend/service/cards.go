@@ -29,14 +29,14 @@ func (h *cardsHandler) ListStencils(
 	if err != nil {
 		return nil, err
 	}
-	held, count, err := h.scenarios().cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
+	target, count, err := h.scenarios().cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	out := &v1.ListStencilsResponse{Total: int32(count)}
-	out.Stencils = make([]*v1.StencilSummary, 0, len(held))
-	for _, stencil := range held {
+	out.Stencils = make([]*v1.StencilSummary, 0, len(target))
+	for _, stencil := range target {
 		out.Stencils = append(out.Stencils, cardwire.NewWireSummary(stencil))
 	}
 	return connect.NewResponse(out), nil
@@ -102,8 +102,8 @@ func (b *Backend) createCardNote(
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(getCode(err), err)
 	}
 	return cards.CreateNoteResult{}, &reason, false, nil
@@ -134,8 +134,8 @@ func (h *cardsHandler) RenameStencilField(
 	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
 	return connect.NewResponse(&v1.RenameStencilFieldResponse{Error: &reason}), nil
@@ -155,7 +155,7 @@ func (h *cardsHandler) ReadStencil(
 	}
 
 	out := &v1.ReadStencilResponse{}
-	if code, refused := errorCodeOfStencil(found.Outcome, found.Type); refused {
+	if code, ok := errorCodeOfStencil(found.Outcome, found.Type); ok {
 		out.Error = &code
 		return connect.NewResponse(out), nil
 	}
@@ -181,7 +181,7 @@ func (h *cardsHandler) ReadDeck(
 	}
 
 	out := &v1.ReadDeckResponse{}
-	if code, refused := errorCodeOfDeck(found.Outcome, found.Type); refused {
+	if code, ok := errorCodeOfDeck(found.Outcome, found.Type); ok {
 		out.Error = &code
 		// The bound travels with the error code, so the interface names it
 		// without holding a number of its own.
@@ -214,10 +214,10 @@ func (h *cardsHandler) WriteDeck(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WriteDeckResponse{
-			At: writeFingerprint(wrote.Fingerprint), IsUnlevelled: behind,
+			At: writeFingerprint(wrote.Fingerprint), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
@@ -226,8 +226,8 @@ func (h *cardsHandler) WriteDeck(
 			Error: &code, Bound: cards.MaxBytes,
 		}), nil
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
 	return connect.NewResponse(&v1.WriteDeckResponse{Error: &reason}), nil
@@ -253,21 +253,21 @@ func (h *cardsHandler) WriteStencil(
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := isUnlevelled(err)
-	if err == nil || behind {
+	unlevelled := isUnlevelled(err)
+	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WriteStencilResponse{
-			At: writeFingerprint(at), IsUnlevelled: behind,
+			At: writeFingerprint(at), IsUnlevelled: unlevelled,
 		}), nil
 	}
-	reason, refused := getErrorCode(err)
-	if !refused {
+	reason, ok := getErrorCode(err)
+	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
 	return connect.NewResponse(&v1.WriteStencilResponse{Error: &reason}), nil
 }
 
 // errorCodeOfDeck is why a deck was not read. What holds for a note holds here,
-// and a deck read at a bound of its own is refused at that bound.
+// and a deck read at a bound of its own fails at that bound.
 func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (v1.ErrorCode, bool) {
 	if o == note.TooLarge {
 		return v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE, true

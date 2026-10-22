@@ -44,7 +44,7 @@ func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 				t.Fatalf("the days %v came back, want %v", got.Days, one.want)
 			}
 			for _, day := range one.want {
-				if _, held := got.Days[day]; !held {
+				if _, target := got.Days[day]; !target {
 					t.Errorf("%s is missing from %v", day, got.Days)
 				}
 			}

@@ -18,14 +18,14 @@ func createWholeID() cardid.ID { return "zpqrstvwxy" }
 func TestWholeWritesTheHeadingFromTheFirstField(t *testing.T) {
 	body := "\n## Old ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\nthe woolly one\n"
 
-	got, given := format.Whole(body, wholeAnimals(), createWholeID)
+	got, provided := format.Whole(body, wholeAnimals(), createWholeID)
 
 	want := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\nthe woolly one\n"
 	if got != want {
 		t.Errorf("body\n want %q\n  got %q", want, got)
 	}
-	if len(given) != 0 {
-		t.Errorf("given = %+v, want no mark given", given)
+	if len(provided) != 0 {
+		t.Errorf("given = %+v, want no mark given", provided)
 	}
 }
 
@@ -44,27 +44,27 @@ func TestWholeKeepsTheHeadingOfACardWhoseStencilIsUnknown(t *testing.T) {
 
 // A heading already in step is not written again: the spacing around it stays
 // as the person typed it.
-func TestWholeLeavesAHeadingInStepAsItStands(t *testing.T) {
+func TestWholePreservesAHeadingInStepAsItExists(t *testing.T) {
 	body := "\n##   Llama ^k7m2xq9fzp  \n\n[[Animal]]\n\n### Name\n\nLlama\n"
 
-	got, given := format.Whole(body, wholeAnimals(), createWholeID)
+	got, provided := format.Whole(body, wholeAnimals(), createWholeID)
 
 	if got != body {
 		t.Errorf("body\n want %q\n  got %q", body, got)
 	}
-	if len(given) != 0 {
-		t.Errorf("given = %+v", given)
+	if len(provided) != 0 {
+		t.Errorf("given = %+v", provided)
 	}
 }
 
 // A heading that ends the body is written without a line break after it.
 func TestWholeWritesTheLastHeadingWithoutAnEnding(t *testing.T) {
-	got, given := format.Whole("## Llama", nil, createWholeID)
+	got, provided := format.Whole("## Llama", nil, createWholeID)
 
 	if want := "## Llama ^zpqrstvwxy"; got != want {
 		t.Errorf("body = %q, want %q", got, want)
 	}
-	if len(given) != 1 {
-		t.Errorf("given = %+v", given)
+	if len(provided) != 1 {
+		t.Errorf("given = %+v", provided)
 	}
 }

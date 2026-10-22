@@ -20,7 +20,7 @@ export interface Run {
   readonly inside?: string
 }
 
-/** One document of a book, and where it stands in the book's text. */
+/** One document of a book, and at its current position in the book's text. */
 export interface Chapter {
   readonly markup: string
   readonly span: Span
@@ -36,15 +36,15 @@ const escapeHtml = (text: string): string =>
  */
 export function createChapter(runs: readonly Run[], from = 0): Chapter {
   let at = from
-  const written: string[] = []
+  const content: string[] = []
   for (const run of runs) {
     const text = run.text ?? ''
-    written.push(
+    content.push(
       `<${run.tag} data-offset="${at}">${escapeHtml(text)}${run.inside ?? ''}</${run.tag}>`,
     )
     at += countBytes(text)
   }
-  return { markup: written.join('\n'), span: { from, to: at } }
+  return { markup: content.join('\n'), span: { from, to: at } }
 }
 
 /** A page of Sanskrit in Devanagari, its transliteration and its rendering. */

@@ -64,7 +64,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 // It happens here because only resolution knows that two different strings
 // mean one note.
 func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
-	seen := map[string]int{}
+	observed := map[string]int{}
 	var out []domain.ResolvedLink
 	for _, l := range links {
 		key := l.To
@@ -73,9 +73,9 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 			// nothing here knows what they meant.
 			key = "\x00" + l.Target.String()
 		}
-		at, known := seen[key]
-		if !known {
-			seen[key] = len(out)
+		at, recognized := observed[key]
+		if !recognized {
+			observed[key] = len(out)
 			out = append(out, l)
 			continue
 		}
@@ -101,13 +101,13 @@ func (q *Queries) ResolveLinks(
 		return nil, err
 	}
 
-	asked := make(map[string]bool, len(written))
+	request := make(map[string]bool, len(written))
 	out := make(map[string]domain.ResolvedLink, len(written))
 	for _, raw := range written {
-		if asked[raw] {
+		if request[raw] {
 			continue
 		}
-		asked[raw] = true
+		request[raw] = true
 		one := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}, From: from}
 		if err := q.resolve(ctx, vault, vaultID, from, &one); err != nil {
 			return nil, err

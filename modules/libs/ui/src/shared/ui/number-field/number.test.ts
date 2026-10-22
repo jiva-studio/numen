@@ -1,5 +1,5 @@
 /**
- * What a line of typing comes to, without a field to type it into.
+ * What a line of typing evaluates to, without a field to type it into.
  *
  * The negatives matter most: a word is no number, and neither is a line that
  * only looks like one until the end of it.
@@ -24,7 +24,7 @@ const BOUNDS: Bounds = { min: 0, max: 240, step: 5 }
 /** A step of a hundredth, where the arithmetic of a float shows. */
 const FINE: Bounds = { min: 0.7, max: 0.99, step: 0.01 }
 
-describe('what the text comes to', () => {
+describe('what the text evaluates to', () => {
   it('reads a number out of the digits', () => {
     expect(parseNumber('20')).toBe(20)
     expect(parseNumber(' 20 ')).toBe(20)
@@ -39,13 +39,13 @@ describe('what the text comes to', () => {
 
   // A comma before a group of three is how a thousand is written, and reading
   // it as the point would turn a thousand two hundred into one and a fifth.
-  it('comes to nothing where a comma stands before a group of three', () => {
+  it('evaluates to nothing where a comma remains before a group of three', () => {
     expect(parseNumber('1,200')).toBeNull()
     expect(isPartialNumber('1,200')).toBe(false)
     expect(parseNumber('12,000')).toBeNull()
   })
 
-  it('comes to nothing where the text is no number', () => {
+  it('evaluates to nothing where the text is no number', () => {
     expect(parseNumber('')).toBeNull()
     expect(parseNumber('   ')).toBeNull()
     expect(parseNumber('twenty')).toBeNull()
@@ -62,14 +62,14 @@ describe('what the text comes to', () => {
 
 describe('text a number could still be typed out of', () => {
   it('lets a half-typed number stand', () => {
-    for (const said of ['', '-', '1', '1.', '1,', '.5', '12.30']) {
-      expect(isPartialNumber(said)).toBe(true)
+    for (const response of ['', '-', '1', '1.', '1,', '.5', '12.30']) {
+      expect(isPartialNumber(response)).toBe(true)
     }
   })
 
   it('says so where nothing further would make a number of it', () => {
-    for (const said of ['x', '12x', '1.2.3', '1 2', '--1']) {
-      expect(isPartialNumber(said)).toBe(false)
+    for (const response of ['x', '12x', '1.2.3', '1 2', '--1']) {
+      expect(isPartialNumber(response)).toBe(false)
     }
   })
 })
@@ -82,7 +82,7 @@ describe('the bounds', () => {
     expect(stepBy(238, 1, BOUNDS)).toBe(240)
   })
 
-  it('starts at the floor where no number stands', () => {
+  it('starts at the floor where no number remains', () => {
     expect(stepBy(null, 1, BOUNDS)).toBe(5)
     expect(stepBy(null, -1, BOUNDS)).toBe(0)
   })
@@ -147,7 +147,7 @@ describe('the keys a spin button answers', () => {
     expect(stepForKey('PageUp', 200, BOUNDS)).toBe(240)
   })
 
-  it('opens at the floor where no number stands there', () => {
+  it('opens at the floor where no number remains there', () => {
     expect(stepForKey('ArrowUp', null, BOUNDS)).toBe(5)
   })
 
@@ -158,7 +158,7 @@ describe('the keys a spin button answers', () => {
   })
 })
 
-describe('whether what is typed stands for the number in force', () => {
+describe('whether what is typed remains for the number in force', () => {
   it('is the number the digits come to, however they are written', () => {
     expect(isTextForValue('20', 20)).toBe(true)
     expect(isTextForValue('20.0', 20)).toBe(true)
@@ -167,7 +167,7 @@ describe('whether what is typed stands for the number in force', () => {
 
   // A line that is no number stands for no number, and not for the absence of
   // one either.
-  it('is an empty field alone that stands for no number at all', () => {
+  it('is an empty field alone that remains for no number at all', () => {
     expect(isTextForValue('', null)).toBe(true)
     expect(isTextForValue('  ', null)).toBe(true)
     expect(isTextForValue('twenty', null)).toBe(false)
@@ -205,7 +205,7 @@ describe('a field being typed into', () => {
     return { model, onCommit, entry }
   }
 
-  it('stands on the number it is given, written out', () => {
+  it('relies on the number it is given, written out', () => {
     expect(create(10).entry.typed.value).toBe('10')
     expect(create(null).entry.typed.value).toBe('')
   })

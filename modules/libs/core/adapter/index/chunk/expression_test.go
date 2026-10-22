@@ -9,13 +9,13 @@ func TestOrdinaryWordsAreNotFTSSyntax(t *testing.T) {
 	// Each of these is a real thing to search for, and each of them is a syntax
 	// error if it reaches FTS5 unquoted: a hyphen is read as a column reference,
 	// a plus as an operator, a quote as the start of a string.
-	for _, typed := range []string{"state-function", "C++", `"entropy`, "a:b", "one (two)"} {
-		got := Expression(typed, true)
+	for _, input := range []string{"state-function", "C++", `"entropy`, "a:b", "one (two)"} {
+		got := Expression(input, true)
 		if got == "" {
-			t.Errorf("%q produced no expression", typed)
+			t.Errorf("%q produced no expression", input)
 		}
 		if got[0] != '"' {
-			t.Errorf("%q produced %q, which is not quoted", typed, got)
+			t.Errorf("%q produced %q, which is not quoted", input, got)
 		}
 	}
 }
@@ -47,9 +47,9 @@ func TestEmbeddedQuotesAreDoubled(t *testing.T) {
 func TestBlankInputProducesNoExpression(t *testing.T) {
 	// An empty expression is not a query that matches everything; the caller
 	// answers with nothing.
-	for _, typed := range []string{"", "   ", "\t\n"} {
-		if got := Expression(typed, true); got != "" {
-			t.Errorf("%q produced %q", typed, got)
+	for _, input := range []string{"", "   ", "\t\n"} {
+		if got := Expression(input, true); got != "" {
+			t.Errorf("%q produced %q", input, got)
 		}
 	}
 }
@@ -89,10 +89,10 @@ var expressionInputs = []string{
 }
 
 func TestExpressionMatchesReference(t *testing.T) {
-	for _, typed := range expressionInputs {
+	for _, input := range expressionInputs {
 		for _, growing := range []bool{false, true} {
-			if got, want := Expression(typed, growing), expressionReference(typed, growing); got != want {
-				t.Errorf("Expression(%q, %v) = %q, want %q", typed, growing, got, want)
+			if got, want := Expression(input, growing), expressionReference(input, growing); got != want {
+				t.Errorf("Expression(%q, %v) = %q, want %q", input, growing, got, want)
 			}
 		}
 	}

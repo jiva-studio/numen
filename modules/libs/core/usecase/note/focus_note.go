@@ -29,8 +29,8 @@ func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (d
 	if err != nil {
 		return domain.NoteRef{}, err
 	}
-	ref, known := found[path]
-	if !known {
+	ref, recognized := found[path]
+	if !recognized {
 		return domain.NoteRef{}, fmt.Errorf("no note at %s", path)
 	}
 	if err := u.view.FocusPlace(ctx, domain.Place{Path: path}); err != nil {

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestSpeechIsCutIntoBatchesOfSize(t *testing.T) {
+func TestSpeechIsSplitIntoBatchesOfSize(t *testing.T) {
 	cues := makeLines("one", "two", "three", "four", "five")
 
 	batches := speechBatches(cues, 2, 0)
@@ -50,7 +50,7 @@ func makeTranscript(count int) []Line {
 	return cues
 }
 
-func TestSharingNothingCutsSpeechAsItAlwaysWas(t *testing.T) {
+func TestSharingNothingSplitsSpeechAsItAlwaysWas(t *testing.T) {
 	cues := makeTranscript(7)
 
 	for _, overlap := range []int{0, -1, -8} {
@@ -78,7 +78,7 @@ func TestABatchOpensOnTheLastLinesOfTheOneBefore(t *testing.T) {
 	}
 }
 
-func TestSharingAsMuchAsABatchHoldsStillWalksTheTranscript(t *testing.T) {
+func TestSharingAsMuchAsABatchContainsStillWalksTheTranscript(t *testing.T) {
 	for _, overlap := range []int{3, 4, 9} {
 		got := numbers(speechBatches(makeTranscript(5), 3, overlap))
 		want := [][]int{{0, 1, 2}, {1, 2, 3}, {2, 3, 4}}
@@ -88,14 +88,14 @@ func TestSharingAsMuchAsABatchHoldsStillWalksTheTranscript(t *testing.T) {
 	}
 }
 
-func TestEveryLineIsInABatchHoweverSpeechIsCut(t *testing.T) {
+func TestEveryLineIsInABatchHoweverSpeechIsSplit(t *testing.T) {
 	for _, count := range []int{0, 1, 2, 3, 5, 8, 13} {
 		for size := 1; size <= 6; size++ {
 			for overlap := -2; overlap <= 8; overlap++ {
 				cues := makeTranscript(count)
 				batches := speechBatches(cues, size, overlap)
 
-				seen := make(map[int]bool, count)
+				observed := make(map[int]bool, count)
 				for i, batch := range batches {
 					if len(batch.Lines) == 0 {
 						t.Fatalf("%d cues by %d sharing %d: batch %d holds nothing", count, size, overlap, i)
@@ -107,11 +107,11 @@ func TestEveryLineIsInABatchHoweverSpeechIsCut(t *testing.T) {
 						t.Errorf("%d cues by %d sharing %d: batch %d is numbered %d", count, size, overlap, i, batch.Number)
 					}
 					for _, line := range batch.Lines {
-						seen[line.Number] = true
+						observed[line.Number] = true
 					}
 				}
 				for at := range cues {
-					if !seen[at] {
+					if !observed[at] {
 						t.Errorf("%d cues by %d sharing %d: cue %d is in no batch", count, size, overlap, at)
 					}
 				}
@@ -167,7 +167,7 @@ func TestACueSayingNothingCarriesNoLine(t *testing.T) {
 	}
 }
 
-func TestABatchOfNoLinesHoldsNothing(t *testing.T) {
+func TestABatchOfNoLinesContainsNothing(t *testing.T) {
 	if batches := speechBatches(makeLines("one"), 0, 0); batches != nil {
 		t.Errorf("a size of nothing gave back %v", batches)
 	}
@@ -227,7 +227,7 @@ func cuts(batches int) []int {
 
 // A batch over a cut batch holds the size lines around a cut, half of them before it, and
 // is numbered on from the batches the transcript was cut into.
-func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
+func TestASeamContainsTheLinesOnBothSidesOfASplit(t *testing.T) {
 	cues := makeTranscript(8)
 	batches := speechBatches(cues, 4, 1)
 	if got := numbers(batches); !reflect.DeepEqual(got, [][]int{{0, 1, 2, 3}, {3, 4, 5, 6}, {6, 7}}) {
@@ -250,7 +250,7 @@ func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
 
 // A batch over a cut is built for the cuts it is asked for and no others. The cut after
 // the last batch is no cut at all.
-func TestOnlyTheCutsAskedForAreBuilt(t *testing.T) {
+func TestOnlyTheSplitsAskedForAreBuilt(t *testing.T) {
 	cues := makeTranscript(8)
 	if got := numbers(cutBatches(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
 		t.Errorf("batchesAcrossCuts %v, want the window over the second cut", got)
@@ -280,12 +280,12 @@ func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 
 // hasLines reports whether a batch holds every line of a run, first to last.
 func hasLines(batch Batch, at, through int) bool {
-	held := make(map[int]bool, len(batch.Lines))
+	target := make(map[int]bool, len(batch.Lines))
 	for _, line := range batch.Lines {
-		held[line.Number] = true
+		target[line.Number] = true
 	}
 	for line := at; line <= through; line++ {
-		if !held[line] {
+		if !target[line] {
 			return false
 		}
 	}
@@ -294,7 +294,7 @@ func hasLines(batch Batch, at, through int) bool {
 
 // A run of lines is answered for inside one batch. A run of half a batch or
 // fewer that no batch of the transcript holds whole is held whole by a batch over a cut.
-func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
+func TestASentenceCrossingASplitExistsWholeInASeam(t *testing.T) {
 	for _, count := range []int{2, 3, 5, 8, 13, 21} {
 		for size := 2; size <= 8; size++ {
 			for overlap := 0; overlap < size; overlap++ {
@@ -303,17 +303,17 @@ func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
 				batchesAcrossCuts := cutBatches(cues, size, overlap, cuts(len(batches)))
 
 				for at := 0; at < count; at++ {
-					for through := at; through <= min(at+size/2-1, count-1); through++ {
+					for throughIdx := at; throughIdx <= min(at+size/2-1, count-1); throughIdx++ {
 						if slices.ContainsFunc(batches, func(b Batch) bool {
-							return hasLines(b, at, through)
+							return hasLines(b, at, throughIdx)
 						}) {
 							continue
 						}
 						if !slices.ContainsFunc(batchesAcrossCuts, func(b Batch) bool {
-							return hasLines(b, at, through)
+							return hasLines(b, at, throughIdx)
 						}) {
 							t.Errorf("%d lines by %d sharing %d: the run %d-%d is in no batch and no batch over a cut",
-								count, size, overlap, at, through)
+								count, size, overlap, at, throughIdx)
 						}
 					}
 				}

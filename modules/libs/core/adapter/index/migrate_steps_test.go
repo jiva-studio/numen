@@ -85,7 +85,7 @@ func readColumns(t *testing.T, db *sql.DB, table string) string {
 
 // A migration whose any step fails is reported with what failed, and the index
 // stays at the version it was at, holding nothing of the migration.
-func TestAMigrationStepThatFailsLeavesTheIndexAtItsVersion(t *testing.T) {
+func TestAMigrationStepThatFailsPreservesTheIndexAtItsVersion(t *testing.T) {
 	for _, step := range []struct {
 		name   string
 		breaks func(string) bool
@@ -116,7 +116,7 @@ func TestAMigrationStepThatFailsLeavesTheIndexAtItsVersion(t *testing.T) {
 	}
 }
 
-// Bookkeeping already in the shape this build writes is used as it stands.
+// Bookkeeping already in the shape this build writes is used currently.
 func TestBookkeepingInShapeIsNotRebuilt(t *testing.T) {
 	db := openAtVersionOne(t)
 	breakOn(t, "schema_migrations_next")
@@ -268,7 +268,7 @@ func TestBookkeepingWhoseReshapeCannotBeCommittedIsLeftAsItWas(t *testing.T) {
 }
 
 // A file name that is not a migration's names no version.
-func TestAFileNameThatIsNotAMigrationsGivesVersionZero(t *testing.T) {
+func TestAFileNameThatIsNotAMigrationsProducesVersionZero(t *testing.T) {
 	for _, name := range []string{"initial.sql", "abc_initial.sql", "0000_zero.sql", "-3_negative.sql"} {
 		if v, err := parseVersion(name); err == nil || v != 0 {
 			t.Errorf("%q gave %d, %v", name, v, err)

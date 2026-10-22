@@ -199,12 +199,12 @@ func (s store) AppendArtifact(ctx context.Context, name domain.ArtifactName, con
 }
 
 func (s store) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
-	held, err := s.vault.ListData(ctx)
+	target, err := s.vault.ListData(ctx)
 	if err != nil {
 		return nil, readError(err)
 	}
-	out := make([]ports.Entry, 0, len(held))
-	for _, one := range held {
+	out := make([]ports.Entry, 0, len(target))
+	for _, one := range target {
 		id, isLog := strings.CutSuffix(one.Name, reviewLogSuffix)
 		if !isLog {
 			continue

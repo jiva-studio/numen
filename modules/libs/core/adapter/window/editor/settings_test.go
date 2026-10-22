@@ -18,22 +18,22 @@ import (
 // them. What the file leaves out stands there at its default.
 func getSetting(t *testing.T, f *going, at ...string) any {
 	t.Helper()
-	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
+	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var held any
-	if err := json.Unmarshal([]byte(said.Msg.GetWritten()), &held); err != nil {
-		t.Fatalf("the settings read out as %q: %v", said.Msg.GetWritten(), err)
+	var target any
+	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
+		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
 	}
 	for _, step := range at {
-		section, is := held.(map[string]any)
+		section, is := target.(map[string]any)
 		if !is {
 			t.Fatalf("%s is not a section of the settings", strings.Join(at, "."))
 		}
-		held = section[step]
+		target = section[step]
 	}
-	return held
+	return target
 }
 
 // The settings read out hold what the file leaves out, so the window draws what
@@ -41,25 +41,25 @@ func getSetting(t *testing.T, f *going, at ...string) any {
 func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
+	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetPath() == "" {
+	if response.Msg.GetPath() == "" {
 		t.Error("the settings stand nowhere")
 	}
 
-	var held map[string]any
-	if err := json.Unmarshal([]byte(said.Msg.GetWritten()), &held); err != nil {
-		t.Fatalf("the settings read out as %q: %v", said.Msg.GetWritten(), err)
+	var target map[string]any
+	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
+		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
 	}
-	if _, stands := held["appearance"]; !stands {
-		t.Errorf("the settings read out as %v", held)
+	if _, stands := target["appearance"]; !stands {
+		t.Errorf("the settings read out as %v", target)
 	}
 
 	// A model reaches the window with the setting it is read from and what
 	// choosing it writes, which is the whole of what the window does with one.
-	models := said.Msg.GetModels()
+	models := response.Msg.GetModels()
 	if len(models) == 0 {
 		t.Fatal("no setting names a model")
 	}
@@ -72,7 +72,7 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 
 // A setting written is answered by the next question, and the model chosen for
 // the agent stands where the models said it would.
-func TestASettingWrittenIsAnsweredByTheNextQuestion(t *testing.T) {
+func TestASettingSavedIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
@@ -84,12 +84,12 @@ func TestASettingWrittenIsAnsweredByTheNextQuestion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
+	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(said.Msg.GetWritten(), `"model":"opus"`) {
-		t.Errorf("the settings read out as %s", said.Msg.GetWritten())
+	if !strings.Contains(response.Msg.GetWritten(), `"model":"opus"`) {
+		t.Errorf("the settings read out as %s", response.Msg.GetWritten())
 	}
 }
 
@@ -136,7 +136,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 
 // Settings are written together or not at all, so one the settings cannot hold
 // leaves the ones beside it where they were.
-func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
+func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
@@ -149,52 +149,52 @@ func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T)
 		t.Fatalf("the settings were taken as %v", err)
 	}
 
-	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
+	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(said.Msg.GetWritten(), `"model":"opus"`) {
-		t.Errorf("the settings read out as %s", said.Msg.GetWritten())
+	if strings.Contains(response.Msg.GetWritten(), `"model":"opus"`) {
+		t.Errorf("the settings read out as %s", response.Msg.GetWritten())
 	}
 }
 
 // The window opens the settings file whole, and what it reads is the file as
 // its person wrote it.
-func TestTheSettingsFileIsReadAsItStands(t *testing.T) {
+func TestTheSettingsFileIsReadAsItExists(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	said, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
+	response, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetPath() == "" {
+	if response.Msg.GetPath() == "" {
 		t.Error("the file stands nowhere")
 	}
 
-	var held map[string]any
-	if err := json.Unmarshal([]byte(said.Msg.GetWritten()), &held); err != nil {
-		t.Fatalf("the file reads as %q: %v", said.Msg.GetWritten(), err)
+	var target map[string]any
+	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
+		t.Fatalf("the file reads as %q: %v", response.Msg.GetWritten(), err)
 	}
 }
 
 // The file is written as it was typed, and read back the same way.
-func TestTheSettingsFileIsWrittenAsItWasTyped(t *testing.T) {
+func TestTheSettingsFileIsSavedAsItWasTyped(t *testing.T) {
 	f := opening(t, nil, nil, true)
-	written := "{\n  \"agent\": {\n    \"claude\": { \"model\": \"opus\" }\n  }\n}\n"
+	content := "{\n  \"agent\": {\n    \"claude\": { \"model\": \"opus\" }\n  }\n}\n"
 
 	if _, err := f.configuring.WriteSettingsFile(
 		t.Context(),
-		connect.NewRequest(&v1.WriteSettingsFileRequest{Written: written}),
+		connect.NewRequest(&v1.WriteSettingsFileRequest{Written: content}),
 	); err != nil {
 		t.Fatal(err)
 	}
 
-	said, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
+	response, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetWritten() != written {
-		t.Errorf("the file reads as %q, wanted %q", said.Msg.GetWritten(), written)
+	if response.Msg.GetWritten() != content {
+		t.Errorf("the file reads as %q, wanted %q", response.Msg.GetWritten(), content)
 	}
 }
 
@@ -239,7 +239,7 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 }
 
 // The file holds a person's keys, and what an error says does not repeat them.
-func TestWhatAnErrorSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
+func TestWhatAnErrorReturnsDoesNotRepeatWhatExistsInTheFile(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	secret := "sk-not-a-real-key-0000"
 
@@ -282,7 +282,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
+	response, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
 		&v1.WriteSettingsFileRequest{
 			Written:  "{\n  \"agent\": { \"use\": \"claude\" }\n}\n",
 			Baseline: newString(was.Msg.GetWritten()),
@@ -291,7 +291,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
+	if response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Error("the write landed, wanted the question put to the person")
 	}
 
@@ -305,21 +305,21 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 }
 
 // A client presenting the file it read writes over it.
-func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
+func TestAFileActiveAtWhatTheClientReadIsSaved(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	was, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	written := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
+	content := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 
-	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
-		&v1.WriteSettingsFileRequest{Written: written, Baseline: newString(was.Msg.GetWritten())},
+	response, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
+		&v1.WriteSettingsFileRequest{Written: content, Baseline: newString(was.Msg.GetWritten())},
 	))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatal("the write was answered the question, wanted it to land")
 	}
 
@@ -327,8 +327,8 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if now.Msg.GetWritten() != written {
-		t.Errorf("the file reads as %q, wanted %q", now.Msg.GetWritten(), written)
+	if now.Msg.GetWritten() != content {
+		t.Errorf("the file reads as %q, wanted %q", now.Msg.GetWritten(), content)
 	}
 }
 

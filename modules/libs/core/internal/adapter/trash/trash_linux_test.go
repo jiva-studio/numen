@@ -144,7 +144,7 @@ func TestANameAlreadyTaken(t *testing.T) {
 // TestAVolumeThatTakesNoTrash is the rule that a folder is never deleted
 // because there is nowhere to put it: a volume whose root refuses a trash
 // directory has none, and the answer says so.
-func TestAVolumeThatTakesNoTrash(t *testing.T) {
+func TestAVolumeThatConsumesNoTrash(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("root writes into a directory whose mode refuses it")
 	}
@@ -161,7 +161,7 @@ func TestAVolumeThatTakesNoTrash(t *testing.T) {
 
 // TestNowhereToPutIt is the whole answer for a folder this machine cannot trash:
 // the sentinel, and the folder still where the person left it.
-func TestNowhereToPutIt(t *testing.T) {
+func TestNowhereToInsertIt(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("root makes a trash directory at the root of any volume")
 	}

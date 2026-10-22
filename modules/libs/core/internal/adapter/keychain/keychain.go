@@ -59,13 +59,13 @@ func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
 		value T
 		err   error
 	}
-	done := make(chan outcome, 1)
+	isDone := make(chan outcome, 1)
 	go func() {
 		value, err := call()
-		done <- outcome{value, err}
+		isDone <- outcome{value, err}
 	}()
 	select {
-	case result := <-done:
+	case result := <-isDone:
 		return result.value, result.err
 	case <-ctx.Done():
 		var none T

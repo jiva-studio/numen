@@ -163,7 +163,7 @@ func TestMovingANoteToItsOwnPathAnswersWithThatPath(t *testing.T) {
 
 // A move that stops before the file moved says where it was asked to go, and
 // that the file did not.
-func TestAMoveThatStopsBeforeTheFileMovedSaysSo(t *testing.T) {
+func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 	boom := errors.New("the vault would not do it")
 	for name, c := range map[string]struct {
 		from  string
@@ -214,16 +214,16 @@ func TestAMoveThatStopsBeforeTheFileMovedSaysSo(t *testing.T) {
 // Whoever is drawing the note is told where it went.
 func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 	c := openLinked(t)
-	var told []domain.Move
-	moving := c.move()
-	moving.Drawing = func(_ context.Context, went domain.Move) { told = append(told, went) }
+	var notified []domain.Move
+	mover := c.move()
+	mover.Drawing = func(_ context.Context, went domain.Move) { notified = append(notified, went) }
 
-	if _, err := moving.Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md"); err != nil {
+	if _, err := mover.Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md"); err != nil {
 		t.Fatal(err)
 	}
 	want := []domain.Move{{From: "physics/Entropy.md", To: "archive/Thermodynamics.md"}}
-	if !slices.Equal(told, want) {
-		t.Errorf("told %+v", told)
+	if !slices.Equal(notified, want) {
+		t.Errorf("told %+v", notified)
 	}
 }
 
@@ -232,12 +232,12 @@ func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 // level with notes nothing was written into.
 func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	c := openLinked(t)
-	var asked [][]string
+	var request [][]string
 	parts := moveParts{
 		names:    failingNames{err: errors.New("no names")},
 		hasIndex: true,
 		index: func(_ context.Context, _ domain.Vault, paths []string) error {
-			asked = append(asked, paths)
+			request = append(request, paths)
 			return errors.New("the index was asked")
 		},
 	}
@@ -249,14 +249,14 @@ func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	if !res.IsLanded || len(res.Repaired) != 0 || len(res.Dangling) != 0 {
 		t.Errorf("got %+v", res)
 	}
-	if len(asked) != 0 {
-		t.Errorf("the index was brought level with %v", asked)
+	if len(request) != 0 {
+		t.Errorf("the index was brought level with %v", request)
 	}
 }
 
 // The work after the file moved stops at the first thing that fails, and says
 // so, and the file stays where it landed.
-func TestAMoveThatFailsAfterTheFileLandedSaysWhatFailed(t *testing.T) {
+func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 	boom := errors.New("the vault would not do it")
 	unterminated := "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n# Heat\n"
 	for name, c := range map[string]struct {
@@ -344,7 +344,7 @@ func TestAMoveThatFailsAfterTheFileLandedSaysWhatFailed(t *testing.T) {
 }
 
 // A link the note no longer holds is not repaired and not reported.
-func TestALinkTheNoteNoLongerHoldsIsLeftOut(t *testing.T) {
+func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
 	c := openLinked(t)
 	parts := moveParts{links: staleLinks{LinkQueries: c.db.Links(), isLinksEmpty: true}}
 
@@ -378,7 +378,7 @@ func TestANoteThatWentSinceTheLinksWereReadIsLeftOut(t *testing.T) {
 
 // A note that no longer says the address the index read from it has nothing to
 // repair, and is not written.
-func TestANoteThatNoLongerSaysTheLinkIsNotWritten(t *testing.T) {
+func TestANoteThatNoLongerReturnsTheLinkIsNotSaved(t *testing.T) {
 	c := openLinked(t)
 	c.overwrite(t, "physics/Heat.md", "# Heat\n")
 
@@ -451,7 +451,7 @@ func TestANoteNoLinkReachesCanStillBeMoved(t *testing.T) {
 
 // A link that is gone from one note does not stop the notes after it from
 // being repaired.
-func TestALinkTheNoteNoLongerHoldsDoesNotStopTheNextRepair(t *testing.T) {
+func TestALinkTheNoteNoLongerContainsDoesNotStopTheNextRepair(t *testing.T) {
 	isolate(t)
 	c := openChanging(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
@@ -486,7 +486,7 @@ func TestAMoveNamesTheNoteItCouldNotRead(t *testing.T) {
 
 // A note whose frontmatter is written on one line cannot be repaired a key at a
 // time, and is not written.
-func TestANoteWithInlineFrontmatterIsReportedAndNotWritten(t *testing.T) {
+func TestANoteWithInlineFrontmatterIsReportedAndNotSaved(t *testing.T) {
 	c := openLinked(t)
 	inline := "---\n{title: Heat, links: []}\n---\n# Heat\n"
 	c.overwrite(t, "physics/Heat.md", inline)
@@ -502,24 +502,24 @@ func TestANoteWithInlineFrontmatterIsReportedAndNotWritten(t *testing.T) {
 
 // The collaborators of a move are replaced one at a time, and each is given
 // back as it was set.
-func TestAMoveHandsBackTheCollaboratorsItWasGiven(t *testing.T) {
+func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
 	c := openLinked(t)
 	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: filesystem.VaultWriters{}, opened: new(int)}
 	sources := sulking{SourceRepository: c.db.Sources()}
 
-	moving := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)
-	if moving.Readers() != port.VaultReaders(readers) {
+	mover := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)
+	if mover.Readers() != port.VaultReaders(readers) {
 		t.Error("the readers are not the ones set")
 	}
-	if moving.Writers() != port.VaultWriters(writers) {
+	if mover.Writers() != port.VaultWriters(writers) {
 		t.Error("the writers are not the ones set")
 	}
-	if moving.Sources() != port.SourceRepository(sources) {
+	if mover.Sources() != port.SourceRepository(sources) {
 		t.Error("the sources are not the ones set")
 	}
 }
 
-func TestAFolderKeepsTheNameOfTheNoteFiledUnderIt(t *testing.T) {
+func TestAFolderKeepsTheNameOfTheNoteFiledBelowIt(t *testing.T) {
 	if got := note.GetPathUnder("archive", "physics/Entropy.md"); got != "archive/Entropy.md" {
 		t.Errorf("got %q", got)
 	}

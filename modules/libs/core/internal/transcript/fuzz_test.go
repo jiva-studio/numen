@@ -38,14 +38,14 @@ func FuzzParse(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
-		said, cues := transcript.Parse([]byte(raw))
+		response, cues := transcript.Parse([]byte(raw))
 		at := -1
 		for _, cue := range cues {
-			if cue.Offset < 0 || cue.Offset+len(cue.Text) > len(said) {
+			if cue.Offset < 0 || cue.Offset+len(cue.Text) > len(response) {
 				t.Fatalf("a cue of %d bytes stands at %d in %d bytes of words",
-					len(cue.Text), cue.Offset, len(said))
+					len(cue.Text), cue.Offset, len(response))
 			}
-			if got := said[cue.Offset : cue.Offset+len(cue.Text)]; got != cue.Text {
+			if got := response[cue.Offset : cue.Offset+len(cue.Text)]; got != cue.Text {
 				t.Fatalf("a cue reading %q stands at %q", cue.Text, got)
 			}
 			if cue.Offset <= at {
@@ -88,7 +88,7 @@ func FuzzMarshal(f *testing.F) {
 			{Text: strings.TrimSpace(first), From: times[0], To: times[1]},
 			{Text: strings.TrimSpace(second), From: times[1], To: times[2]},
 		}
-		var written []domain.TranscriptCue
+		var content []domain.TranscriptCue
 		for _, cue := range want {
 			// A cue whose words hold a blank line is two blocks of the format
 			// and comes back as something else. Nothing writes one: a cue is
@@ -96,17 +96,17 @@ func FuzzMarshal(f *testing.F) {
 			if cue.Text == "" || strings.Contains(cue.Text, "\n\n") {
 				return
 			}
-			written = append(written, cue)
+			content = append(content, cue)
 		}
 
-		_, got := transcript.Parse(transcript.Marshal(written))
-		if len(got) != len(written) {
-			t.Fatalf("%d cues written came back as %d", len(written), len(got))
+		_, got := transcript.Parse(transcript.Marshal(content))
+		if len(got) != len(content) {
+			t.Fatalf("%d cues written came back as %d", len(content), len(got))
 		}
 		for at, cue := range got {
-			if cue.Text != written[at].Text ||
-				cue.From != written[at].From || cue.To != written[at].To {
-				t.Fatalf("a cue %+v came back as %+v", written[at], cue)
+			if cue.Text != content[at].Text ||
+				cue.From != content[at].From || cue.To != content[at].To {
+				t.Fatalf("a cue %+v came back as %+v", content[at], cue)
 			}
 		}
 	})

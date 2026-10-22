@@ -50,22 +50,22 @@ func stop(why string) port.Step { return port.Step{Kind: domain.StepStop, Detail
 // The pieces the agent says are the answer, in the order they arrive, and the run is stopped once
 // it has been read.
 func TestTheAnswerIsWhatTheAgentSaid(t *testing.T) {
-	held := &starter{run: newRun(
+	target := &starter{run: newRun(
 		port.Step{Kind: domain.StepModelStart}, say("The "), say("answer."), stop(""),
 	)}
 
-	got, err := agent.Answer(t.Context(), held, port.Task{Question: "why?"})
+	got, err := agent.Answer(t.Context(), target, port.Task{Question: "why?"})
 
 	if err != nil || got != "The answer." {
 		t.Fatalf("got %q, %v", got, err)
 	}
-	if held.run.stopped != 1 {
-		t.Errorf("the run was stopped %d times, want 1", held.run.stopped)
+	if target.run.stopped != 1 {
+		t.Errorf("the run was stopped %d times, want 1", target.run.stopped)
 	}
 }
 
 // An agent that stops with "done", or closes its steps without a stop, has answered.
-func TestAnAgentThatIsDoneHasAnswered(t *testing.T) {
+func TestAnAgentThatIsCompletedHasAnswered(t *testing.T) {
 	for name, steps := range map[string][]port.Step{
 		"done":    {say("yes"), stop("done")},
 		"no stop": {say("yes")},
@@ -79,7 +79,7 @@ func TestAnAgentThatIsDoneHasAnswered(t *testing.T) {
 
 // The task is sent as a single answer: no tool, no endpoint, no conversation, and the rest as given.
 func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
-	held := &starter{run: newRun(say("yes"), stop(""))}
+	target := &starter{run: newRun(say("yes"), stop(""))}
 	task := port.Task{
 		Question:         "why?",
 		Instructions:     "be brief",
@@ -91,12 +91,12 @@ func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
 		Endpoint:         port.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "secret"},
 	}
 
-	if _, err := agent.Answer(t.Context(), held, task); err != nil {
+	if _, err := agent.Answer(t.Context(), target, task); err != nil {
 		t.Fatal(err)
 	}
 
 	want := port.Task{Question: "why?", Instructions: "be brief", Agent: "claude", Model: "m1"}
-	if got := held.task; got.Question != want.Question || got.Instructions != want.Instructions ||
+	if got := target.task; got.Question != want.Question || got.Instructions != want.Instructions ||
 		got.Agent != want.Agent || got.Model != want.Model || got.Conversation != "" ||
 		len(got.Tools) != 0 || len(got.ToolDeclarations) != 0 || got.Endpoint != (port.ToolEndpoint{}) {
 		t.Errorf("the agent was given %+v", got)
@@ -104,12 +104,12 @@ func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
 }
 
 // What the agent says about a tool is not part of the answer.
-func TestOnlyWhatTheAgentSaysIsTheAnswer(t *testing.T) {
-	held := &starter{run: newRun(
+func TestOnlyWhatTheAgentReturnsIsTheAnswer(t *testing.T) {
+	target := &starter{run: newRun(
 		port.Step{Kind: domain.StepToolCall, Tool: "note_read", Text: "no"}, say("yes"), stop(""),
 	)}
 
-	if got, err := agent.Answer(t.Context(), held, port.Task{}); err != nil || got != "yes" {
+	if got, err := agent.Answer(t.Context(), target, port.Task{}); err != nil || got != "yes" {
 		t.Errorf("got %q, %v", got, err)
 	}
 }
@@ -123,16 +123,16 @@ func TestAnAgentThatCannotBeStartedIsUnavailable(t *testing.T) {
 }
 
 func TestAnAgentThatStopsForAReasonIsUnavailableWithThatReason(t *testing.T) {
-	held := &starter{run: newRun(say("partial"), stop("not signed in"))}
+	target := &starter{run: newRun(say("partial"), stop("not signed in"))}
 
-	_, err := agent.Answer(t.Context(), held, port.Task{})
+	_, err := agent.Answer(t.Context(), target, port.Task{})
 
 	if !errors.Is(err, port.ErrUnavailable) || !strings.Contains(err.Error(), "not signed in") {
 		t.Errorf("got %v, want port.ErrUnavailable naming the reason", err)
 	}
 }
 
-func TestAnAgentThatSaysNothingIsUnavailable(t *testing.T) {
+func TestAnAgentThatReturnsNothingIsUnavailable(t *testing.T) {
 	for name, steps := range map[string][]port.Step{
 		"only a stop": {stop("")},
 		"blank":       {say(" \n"), stop("")},
@@ -150,12 +150,12 @@ func TestTheEndOfTheContextIsNotAnUnavailability(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	for name, held := range map[string]*starter{
+	for name, target := range map[string]*starter{
 		"not started": {err: errors.New("canceled")},
 		"no answer":   {run: newRun()},
 		"stopped":     {run: newRun(stop("canceled"))},
 	} {
-		_, err := agent.Answer(ctx, held, port.Task{})
+		_, err := agent.Answer(ctx, target, port.Task{})
 		if !errors.Is(err, context.Canceled) || errors.Is(err, port.ErrUnavailable) {
 			t.Errorf("%s: got %v, want context.Canceled alone", name, err)
 		}
@@ -165,19 +165,19 @@ func TestTheEndOfTheContextIsNotAnUnavailability(t *testing.T) {
 // A run that never closes its steps does not hold the answer past the end of the context.
 func TestTheEndOfTheContextEndsTheWaitForSteps(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
-	held := &starter{run: &run{steps: make(chan port.Step)}}
-	done := make(chan error, 1)
+	target := &starter{run: &run{steps: make(chan port.Step)}}
+	isDone := make(chan error, 1)
 	go func() {
-		_, err := agent.Answer(ctx, held, port.Task{})
-		done <- err
+		_, err := agent.Answer(ctx, target, port.Task{})
+		isDone <- err
 	}()
 
 	cancel()
 
-	if err := <-done; !errors.Is(err, context.Canceled) {
+	if err := <-isDone; !errors.Is(err, context.Canceled) {
 		t.Errorf("got %v, want context.Canceled", err)
 	}
-	if held.run.stopped != 1 {
-		t.Errorf("the run was stopped %d times, want 1", held.run.stopped)
+	if target.run.stopped != 1 {
+		t.Errorf("the run was stopped %d times, want 1", target.run.stopped)
 	}
 }

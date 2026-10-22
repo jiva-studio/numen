@@ -39,9 +39,9 @@ afterEach(() => {
 })
 
 const setup = (measure: () => TreeMetrics | null = () => METRICS) => {
-  const told: unknown[][] = []
+  const notifiedCalls: unknown[][] = []
   const tell: RowDragTell = (...args: unknown[]) => {
-    told.push(args)
+    notifiedCalls.push(args)
   }
   const world = stubClock()
   scope = effectScope()
@@ -56,7 +56,7 @@ const setup = (measure: () => TreeMetrics | null = () => METRICS) => {
       tell,
     }),
   ) as RowDragState
-  return { drag, told }
+  return { drag, notified: notifiedCalls }
 }
 
 const pointer = (kind: string, x: number, y: number): void => {
@@ -124,13 +124,13 @@ describe('a press that has become a drag', () => {
   })
 
   it('lands nowhere where the tree is not drawn', () => {
-    const { drag, told } = setup(() => null)
+    const { drag, notified } = setup(() => null)
     lift(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
     expect(drag.at.value).toBeNull()
-    expect(told).toStrictEqual([['drag', ['loose']], ['drop']])
+    expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
   })
 
   it('lands nowhere that would put a row inside itself', () => {
@@ -164,7 +164,7 @@ describe('how far the tree reaches', () => {
     expect(canLandAt(10, 221)).toBe(false)
   })
 
-  it('takes in nothing beside it, level with its rows', () => {
+  it('takes in nothing alongside it, level with its rows', () => {
     expect(canLandAt(300, 150)).toBe(false)
     expect(canLandAt(-50, 150)).toBe(false)
   })
@@ -176,7 +176,7 @@ describe('how far the tree reaches', () => {
 })
 
 describe('a tree whose rows begin below its top edge', () => {
-  it('takes in nothing above the edge, though a row stands there', () => {
+  it('takes in nothing above the edge, though a row remains there', () => {
     const { drag } = setup(() => ({ ...METRICS, top: 88 }))
     lift(drag, ['loose'])
     pointer('pointermove', 10, 95)
@@ -194,25 +194,25 @@ describe('a tree whose rows begin below its top edge', () => {
 })
 
 describe('letting go', () => {
-  it('tells where the rows landed, then that they were let go', () => {
-    const { drag, told } = setup()
+  it('notifies where the rows landed, then that they were let go', () => {
+    const { drag, notified } = setup()
     lift(drag, ['loose'])
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
-    expect(told).toStrictEqual([
+    expect(notified).toStrictEqual([
       ['drag', ['loose']],
       ['move', ['loose'], { into: 'work' }],
       ['drop'],
     ])
   })
 
-  it('tells only that they were let go where they landed nowhere', () => {
-    const { drag, told } = setup()
+  it('notifies only that they were let go where they landed nowhere', () => {
+    const { drag, notified } = setup()
     lift(drag, ['loose'])
     pointer('pointermove', 10, 400)
     pointer('pointerup', 10, 400)
 
-    expect(told).toStrictEqual([['drag', ['loose']], ['drop']])
+    expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
   })
 })

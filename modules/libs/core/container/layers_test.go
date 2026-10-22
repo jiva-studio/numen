@@ -21,7 +21,7 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 // scenarios; a driven adapter stands behind a port and calls none, so what a
 // scenario is written over is a port and never an adapter's own answer.
 //
-// Which way an adapter faces has nothing to do with where it stands: internal/
+// Which way an adapter faces has nothing to do with at its current position: internal/
 // says only that nothing outside composes it, which holds of a driving adapter
 // another adapter mounts.
 var driving = map[string]bool{
@@ -45,7 +45,7 @@ var pure = []string{
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
-// given what it needs rather than taking another, and what is assembled is
+// given what it needs and not taking another, and what is assembled is
 // assembled in one place.
 //
 // A test file is left out: a test stands outside the package it exercises and
@@ -126,9 +126,9 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 			if err != nil || !strings.HasPrefix(to, module) {
 				continue
 			}
-			held := strings.TrimPrefix(to, module)
-			if isAdapter(held) || held == "container" {
-				wrong = append(wrong, path+" is tested through "+held)
+			target := strings.TrimPrefix(to, module)
+			if isAdapter(target) || target == "container" {
+				wrong = append(wrong, path+" is tested through "+target)
 			}
 		}
 		return nil
@@ -217,7 +217,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 //
 // An adapter's own test is not this. It builds the thing it is about, and so
 // does the composition root's.
-func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
+func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 	var wrong []string
 	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -241,8 +241,8 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 			if err != nil || !strings.HasPrefix(to, module) {
 				continue
 			}
-			if held := strings.TrimPrefix(to, module); isAdapter(held) {
-				wrong = append(wrong, path+" builds "+held+" from inside "+pkg)
+			if target := strings.TrimPrefix(to, module); isAdapter(target) {
+				wrong = append(wrong, path+" builds "+target+" from inside "+pkg)
 			}
 		}
 		return nil
@@ -421,7 +421,7 @@ func TestNoInnerLayerImportsATransport(t *testing.T) {
 
 // What the transport rule refuses, read against imports written to be refused.
 func TestWhatTheTransportRuleRefuses(t *testing.T) {
-	var refused []string
+	var rejected []string
 	for _, to := range []string{
 		"connectrpc.com/connect",
 		"database/sql",
@@ -435,7 +435,7 @@ func TestWhatTheTransportRuleRefuses(t *testing.T) {
 		module + "port",
 	} {
 		if isTransport(to) {
-			refused = append(refused, to)
+			rejected = append(rejected, to)
 		}
 	}
 	want := []string{
@@ -447,8 +447,8 @@ func TestWhatTheTransportRuleRefuses(t *testing.T) {
 		"github.com/jiva-studio/numen/modules/libs/protocol",
 		"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1",
 	}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if !slices.Equal(rejected, want) {
+		t.Errorf("the rule rejected %v, want %v", rejected, want)
 	}
 }
 
@@ -512,18 +512,18 @@ func TestNothingOfTheCoreLogs(t *testing.T) {
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
-	var refused []string
+	var rejected []string
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template", module + "domain",
 	} {
 		if logs(to) {
-			refused = append(refused, to)
+			rejected = append(rejected, to)
 		}
 	}
 	want := []string{"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog"}
-	if !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if !slices.Equal(rejected, want) {
+		t.Errorf("the rule rejected %v, want %v", rejected, want)
 	}
 }
 
@@ -626,11 +626,11 @@ func identities(file *ast.File) []identity {
 		if !is {
 			return true
 		}
-		held, is := spec.Type.(*ast.StructType)
+		target, is := spec.Type.(*ast.StructType)
 		if !is {
 			return true
 		}
-		for _, one := range held.Fields.List {
+		for _, one := range target.Fields.List {
 			for _, name := range one.Names {
 				if name.IsExported() && strings.HasSuffix(name.Name, "ID") {
 					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
@@ -645,12 +645,12 @@ func identities(file *ast.File) []identity {
 // getTypeName is a type as it is written, and empty for one this rule reads
 // nothing into.
 func getTypeName(at ast.Expr) string {
-	switch held := at.(type) {
+	switch target := at.(type) {
 	case *ast.Ident:
-		return held.Name
+		return target.Name
 	case *ast.SelectorExpr:
-		if from, is := held.X.(*ast.Ident); is {
-			return from.Name + "." + held.Sel.Name
+		if from, is := target.X.(*ast.Ident); is {
+			return from.Name + "." + target.Sel.Name
 		}
 	}
 	return ""
@@ -660,7 +660,7 @@ func getTypeName(at ast.Expr) string {
 // store's: it says which row of which table, whatever counts rows hands it out,
 // and it can be ordered and paged when the thing it names cannot. A core
 // carrying one has taken the store's numbering into its language, and then into
-// what a scenario does — which is how a use case comes to loop on ascending
+// what a scenario does — which is how a use case evaluates to loop on ascending
 // integer keys.
 //
 // Every identity here is its own type, and this is what keeps it so.
@@ -669,11 +669,11 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var read int
 	for _, at := range []string{"domain", "port"} {
 		dir := getPackageDir(at)
-		held, err := os.ReadDir(dir)
+		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, one := range held {
+		for _, one := range target {
 			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 				strings.HasSuffix(one.Name(), "_test.go") {
 				continue
@@ -719,14 +719,14 @@ type Thing struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range identities(file) {
 		if numbered[one.spelled] {
-			refused = append(refused, one.field)
+			rejected = append(rejected, one.field)
 		}
 	}
-	if !slices.Equal(refused, []string{"ChunkID"}) {
-		t.Errorf("the rule refuses %v, want the one identity spelled as a number", refused)
+	if !slices.Equal(rejected, []string{"ChunkID"}) {
+		t.Errorf("the rule rejected %v, want the one identity spelled as a number", rejected)
 	}
 }
 
@@ -738,7 +738,7 @@ type Thing struct {
 // package's own. A variable that holds a port is not one: it is given the
 // adapter, and names what it was given.
 func getClaimedPorts(file *ast.File) []string {
-	var held []string
+	var target []string
 	ast.Inspect(file, func(node ast.Node) bool {
 		decl, is := node.(*ast.GenDecl)
 		if !is || decl.Tok != token.VAR {
@@ -753,13 +753,13 @@ func getClaimedPorts(file *ast.File) []string {
 			}
 			if at, is := named.Type.(*ast.SelectorExpr); is {
 				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-					held = append(held, at.Sel.Name)
+					target = append(target, at.Sel.Name)
 				}
 			}
 		}
 		return true
 	})
-	return held
+	return target
 }
 
 // What the rule refuses, read against a file written to be refused. The three
@@ -772,12 +772,12 @@ var _ port.VaultReader = (*Reader)(nil)
 
 var _, _ port.VaultWriter = (*Writer)(nil), (*Writer)(nil)
 
-var held port.DerivedStore
+var storePort port.DerivedStore
 
 func mount() {
 	var _ port.Recording = (*sound)(nil)
-	var kept port.Agent
-	_, _ = held, kept
+	var agentPort port.Agent
+	_, _ = storePort, agentPort
 }
 `, 0)
 	if err != nil {
@@ -976,12 +976,12 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 // keyed as Interface.Method and giving the method's own name. An embedded
 // interface is the other one's declaration and is read there.
 func methodsIn(dir string) (map[string]string, error) {
-	held, err := os.ReadDir(dir)
+	target, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	declared := map[string]string{}
-	for _, one := range held {
+	for _, one := range target {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
 			continue
@@ -1077,12 +1077,12 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 // getDeclaredTypes are the exported types a folder's own files declare, each
 // said to be an interface or not.
 func getDeclaredTypes(dir string) (map[string]bool, error) {
-	held, err := os.ReadDir(dir)
+	target, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	declared := map[string]bool{}
-	for _, one := range held {
+	for _, one := range target {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
 			continue
@@ -1119,7 +1119,7 @@ var layers = map[string]bool{
 // says, and the reader is left with usecase.Add for what is vaults.Add.
 //
 // The tests are read too: most of a package's call sites are in them.
-func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
+func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 	var wrong []string
 	var read, aliased int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -1139,11 +1139,11 @@ func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
 			if !layers[one.Name.Name] {
 				continue
 			}
-			held, err := strconv.Unquote(one.Path.Value)
+			target, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
 				return err
 			}
-			wrong = append(wrong, path+" names "+held+" "+one.Name.Name)
+			wrong = append(wrong, path+" names "+target+" "+one.Name.Name)
 		}
 		return nil
 	})
@@ -1181,24 +1181,24 @@ import (
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range file.Imports {
 		if one.Name != nil && layers[one.Name.Name] {
-			refused = append(refused, one.Name.Name)
+			rejected = append(rejected, one.Name.Name)
 		}
 	}
-	if want := []string{"usecase", "adapter"}; !slices.Equal(refused, want) {
-		t.Errorf("the rule refuses %v, want %v", refused, want)
+	if want := []string{"usecase", "adapter"}; !slices.Equal(rejected, want) {
+		t.Errorf("the rule rejected %v, want %v", rejected, want)
 	}
 }
 
 // getPackage is the package a file belongs to, as the rules name it.
 func getPackage(root, path string) string {
-	held, err := filepath.Rel(root, filepath.Dir(path))
+	target, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
 		return path
 	}
-	return filepath.ToSlash(held)
+	return filepath.ToSlash(target)
 }
 
 // isAdapter says whether a package is an adapter, wherever it stands. An
@@ -1240,7 +1240,7 @@ func getRefusal(from, to string) string {
 	return ""
 }
 
-// isAmong says whether a package is one of these, or stands under one.
+// isAmong says whether a package is one of these, or is placed under one.
 func isAmong(these []string, pkg string) bool {
 	for _, one := range these {
 		if pkg == one || strings.HasPrefix(pkg, one+"/") {
@@ -1275,15 +1275,15 @@ func family(pkg string) string {
 			depth = max(depth, strings.Count(one, "/")+2)
 		}
 	}
-	held := strings.Split(pkg, "/")
-	if len(held) < depth {
+	target := strings.Split(pkg, "/")
+	if len(target) < depth {
 		return pkg
 	}
-	return strings.Join(held[:depth], "/")
+	return strings.Join(target[:depth], "/")
 }
 
 // getAdaptersIn are the adapters in one folder, named under it. A folder that
-// groups adapters is not an adapter, so what stands under it is read in its
+// groups adapters is not an adapter, so what is placed under it is read in its
 // place.
 func getAdaptersIn(dir, at string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
@@ -1431,10 +1431,10 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 	} {
 		why := getRefusal(one.from, one.to)
 		if one.isRefused && why == "" {
-			t.Errorf("%s reaches %s and is not refused", one.from, one.to)
+			t.Errorf("%s reaches %s and is not rejected", one.from, one.to)
 		}
 		if !one.isRefused && why != "" {
-			t.Errorf("%s reaches %s and is refused: %s", one.from, one.to, why)
+			t.Errorf("%s reaches %s and is rejected: %s", one.from, one.to, why)
 		}
 	}
 }
@@ -1458,11 +1458,11 @@ func getInstants(file *ast.File) []identity {
 		if !is {
 			return true
 		}
-		held, is := spec.Type.(*ast.StructType)
+		target, is := spec.Type.(*ast.StructType)
 		if !is {
 			return true
 		}
-		for _, one := range held.Fields.List {
+		for _, one := range target.Fields.List {
 			for _, name := range one.Names {
 				if name.IsExported() && strings.HasSuffix(name.Name, "Time") {
 					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
@@ -1486,11 +1486,11 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var read int
 	for _, at := range []string{"domain", "port"} {
 		dir := getPackageDir(at)
-		held, err := os.ReadDir(dir)
+		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, one := range held {
+		for _, one := range target {
 			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 				strings.HasSuffix(one.Name(), "_test.go") {
 				continue
@@ -1537,14 +1537,14 @@ type Reading struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range getInstants(file) {
 		if one.spelled != "time.Time" {
-			refused = append(refused, one.field)
+			rejected = append(rejected, one.field)
 		}
 	}
-	if !slices.Equal(refused, []string{"SeenTime"}) {
-		t.Errorf("the rule refuses %v, want the one instant written as a number", refused)
+	if !slices.Equal(rejected, []string{"SeenTime"}) {
+		t.Errorf("the rule rejected %v, want the one instant written as a number", rejected)
 	}
 }
 
@@ -1561,11 +1561,11 @@ func getMethodIdentities(file *ast.File) []identity {
 		if !is {
 			return true
 		}
-		held, is := spec.Type.(*ast.InterfaceType)
+		target, is := spec.Type.(*ast.InterfaceType)
 		if !is {
 			return true
 		}
-		for _, method := range held.Methods.List {
+		for _, method := range target.Methods.List {
 			signature, is := method.Type.(*ast.FuncType)
 			if !is || len(method.Names) == 0 {
 				continue
@@ -1598,11 +1598,11 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	var wrong []string
 	var read int
 	dir := filepath.Join("..", "port")
-	held, err := os.ReadDir(dir)
+	target, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range held {
+	for _, one := range target {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
 			continue
@@ -1647,14 +1647,14 @@ type Store interface {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var refused []string
+	var rejected []string
 	for _, one := range getMethodIdentities(file) {
 		if numbered[one.spelled] {
-			refused = append(refused, one.field)
+			rejected = append(rejected, one.field)
 		}
 	}
-	if !slices.Equal(refused, []string{"chunkID", "rowID"}) {
-		t.Errorf("the rule refuses %v, want the two identities spelled as numbers", refused)
+	if !slices.Equal(rejected, []string{"chunkID", "rowID"}) {
+		t.Errorf("the rule rejected %v, want the two identities spelled as numbers", rejected)
 	}
 }
 

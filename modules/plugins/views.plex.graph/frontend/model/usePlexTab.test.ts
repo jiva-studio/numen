@@ -1,5 +1,5 @@
 /**
- * What a gesture in a plex comes to, asked without a screen.
+ * What a gesture in a plex evaluates to, asked without a screen.
  *
  * A note made from a node other than the focus is the one to watch: it is
  * written into the vault whatever happens, and a picture one relation deep draws
@@ -24,8 +24,8 @@ const tab = (
 ) => {
   const plex = viewOn(at, neighbours, types)
   const vault = createVault(takes)
-  const opened: [string, string, string][] = []
-  const asked: string[] = []
+  const openedCalls: [string, string, string][] = []
+  const request: string[] = []
   const ran: [string, string, string][] = []
   const messages: string[] = []
   /** Every note the vault was asked to make on its own. */
@@ -48,7 +48,7 @@ const tab = (
     isNesting,
     headings: ref(6),
     openNote: (path, options) => {
-      opened.push([path, options?.title ?? '', options?.showing ?? 'here'])
+      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'here'])
       if (options?.line !== undefined) entered.push([path, options.line])
     },
     // The vault answers about the notes it was asked about and no others.
@@ -56,7 +56,7 @@ const tab = (
       headingsAsked.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
-    askAgent: (text) => asked.push(text),
+    askAgent: (text) => request.push(text),
     runCommand: (id, path, title) => ran.push([id, path, title]),
     openingPath: ref('Opening.md'),
     readOpeningPath: async () => 'Opening.md',
@@ -79,12 +79,12 @@ const tab = (
     wrote,
     went: plex.went,
     ...vault,
-    opened,
+    opened: openedCalls,
     entered,
     divides,
     isNesting,
     headingsAsked,
-    asked,
+    asked: request,
     ran,
     messages,
   }
@@ -95,7 +95,7 @@ const getNode = (state: PlexTabState, title: string): string =>
   state.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
 
 describe('a note made from a node', () => {
-  it('stands the plex on the node it was made from', async () => {
+  it('remains the plex on the node it was made from', async () => {
     const one = tab('Root.md', ['Child.md'])
 
     await one.state.createNode(one.node('Child.md'), 'child')
@@ -123,7 +123,7 @@ describe('a note made from a node', () => {
 })
 
 describe('two notes a line was drawn between', () => {
-  it('stands the plex on the note the line was drawn from', async () => {
+  it('remains the plex on the note the line was drawn from', async () => {
     const one = tab('Root.md', ['Child.md', 'Other.md'])
 
     await one.state.joinNodes(one.node('Child.md'), one.node('Other.md'), 'jump')
@@ -148,7 +148,7 @@ describe('the menu on a node', () => {
     opening: 'pointer' as const,
   })
 
-  it('hands the command the note it was asked for on, called what the picture calls it', () => {
+  it('passes the command the note it was requested for on, called what the picture calls it', () => {
     const one = tab('Root.md', ['Child.md'])
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
@@ -158,7 +158,7 @@ describe('the menu on a node', () => {
     expect(one.state.menu.value).toBeNull()
   })
 
-  it('hands over every command it offers, and nothing it does not', () => {
+  it('passes over every command it offers, and nothing it does not', () => {
     const one = tab('Root.md', ['Child.md'])
     for (const item of ITEMS) {
       one.state.openMenu(createMenuRequest(one.node('Child.md')))
@@ -172,7 +172,7 @@ describe('the menu on a node', () => {
     expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
   })
 
-  it('does nothing when it stands on nothing', () => {
+  it('does nothing when it relies on nothing', () => {
     const one = tab('Root.md')
 
     one.state.chooseMenuItem('read')
@@ -235,17 +235,17 @@ describe('a plex drawing nothing', () => {
     expect(plex({ openingPath: ref('Opening.md') }).empty.value).toBe(false)
   })
 
-  it('is not an empty vault once the plex stands on a note', () => {
+  it('is not an empty vault once the plex relies on a note', () => {
     expect(tab('Root.md').state.empty.value).toBe(false)
   })
 })
 
 describe('the menu off every node', () => {
-  const asked = { node: null, at: { x: 1, y: 2 }, opening: 'pointer' as const }
+  const request = { node: null, at: { x: 1, y: 2 }, opening: 'pointer' as const }
 
-  it('makes a note, and the plex stands on it', async () => {
+  it('makes a note, and the plex relies on it', async () => {
     const one = tab('Root.md')
-    one.state.openMenu(asked)
+    one.state.openMenu(request)
 
     one.state.chooseMenuItem(NEW_NOTE)
     await settle()
@@ -255,10 +255,10 @@ describe('the menu off every node', () => {
     expect(one.state.menu.value).toBeNull()
   })
 
-  it('stands where it stood where the vault made none', async () => {
+  it('remains where it stood where the vault made none', async () => {
     const one = tab('Root.md')
     one.writes.value = ''
-    one.state.openMenu(asked)
+    one.state.openMenu(request)
 
     one.state.chooseMenuItem(NEW_NOTE)
     await settle()
@@ -268,7 +268,7 @@ describe('the menu off every node', () => {
 
   it('makes nothing of a command over a note, there being no note it is over', async () => {
     const one = tab('Root.md')
-    one.state.openMenu(asked)
+    one.state.openMenu(request)
 
     one.state.chooseMenuItem('read')
     await settle()
@@ -319,7 +319,7 @@ describe('the picture', () => {
 })
 
 describe('notes dragged in and let go over the picture', () => {
-  it('writes the link into the note the plex stands on, naming the dragged one second', async () => {
+  it('writes the link into the note the plex relies on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])
 
     await one.state.dropNodes(['physics/Entropy.md'], 'child')
@@ -353,7 +353,7 @@ describe('notes dragged in and let go over the picture', () => {
     ])
   })
 
-  it('writes the rest where one of them was refused, and says which stayed', async () => {
+  it('writes the rest where one of them failed, and says which stayed', async () => {
     const one = tab('Root.md')
     one.notJoinedPaths.add('Kelvin.md')
 
@@ -386,7 +386,7 @@ describe('notes dragged in and let go over the picture', () => {
     expect(one.messages).toEqual([])
   })
 
-  it('leaves the note the plex stands on out, and joins the rest', async () => {
+  it('leaves the note the plex relies on out, and joins the rest', async () => {
     const one = tab('Root.md')
 
     await one.state.dropNodes(['Root.md', 'Entropy.md'], 'child')
@@ -408,7 +408,7 @@ describe('what the picture draws a line to', () => {
     expect(tab('Root.md').state.dragged.value).toStrictEqual([])
   })
 
-  it('leaves out the note the plex stands on, and keeps the rest', () => {
+  it('leaves out the note the plex relies on, and keeps the rest', () => {
     const one = tab('Root.md')
     one.dragging.value = ['Root.md', 'Entropy.md']
 
@@ -420,7 +420,7 @@ describe('the headings a node nests', () => {
   /** One heading of a note, as the vault answers one. */
   const heading = (text: string, line: number, level = 1): NoteHeading => ({ text, level, line })
 
-  it('are what the vault said that note is divided into', async () => {
+  it('are what the vault returned that note is divided into', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4), heading('Cold', 9, 2)]]])
 
@@ -432,7 +432,7 @@ describe('the headings a node nests', () => {
     ])
   })
 
-  it('are none for a node the vault said nothing about', async () => {
+  it('are none for a node the vault returned nothing about', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
@@ -441,7 +441,7 @@ describe('the headings a node nests', () => {
     expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
-  it('are each named by the line it stands on', async () => {
+  it('are each named by the line it relies on', async () => {
     const one = tab('Root.md')
     one.divides.value = new Map([['Root.md', [heading('Heat', 12)]]])
 
@@ -452,7 +452,7 @@ describe('the headings a node nests', () => {
     ])
   })
 
-  it('are asked for again once the plex stands somewhere else', async () => {
+  it('are requested for again once the plex remains somewhere else', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Other.md', [heading('Heat', 4)]]])
 
@@ -464,10 +464,10 @@ describe('the headings a node nests', () => {
     ])
   })
 
-  it('are what the question asked last came back with, whatever order they land in', async () => {
+  it('are what the question requested last came back with, whatever order they land in', async () => {
     // The first answer is held up until the second has settled, which is a
     // change followed while a travel is still out.
-    const answers: ((held: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
+    const answers: ((target: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
     const plex = usePlexTab(one.state.view, {
       editor: createVault().editor,
@@ -475,7 +475,7 @@ describe('the headings a node nests', () => {
       isNesting: ref(true),
       headings: ref(6),
       openNote: () => {},
-      readHeadings: () => new Promise((done) => answers.push(done)),
+      readHeadings: () => new Promise((isDone) => answers.push(isDone)),
       askAgent: () => {},
       runCommand: () => {},
       openingPath: ref('Root.md'),
@@ -488,11 +488,11 @@ describe('the headings a node nests', () => {
     const node = () => getNode(plex, 'Root')
 
     // The picture asks once as it is built, and that answer is left pending.
-    const asked = answers.length
+    const request = answers.length
     void plex.readHeadings()
     void plex.readHeadings()
-    answers[asked + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
-    answers[asked]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
+    answers[request + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
+    answers[request]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
     await settle()
 
     expect(plex.getHeadings(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
@@ -508,7 +508,7 @@ describe('the headings a node nests', () => {
     expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
-  it('are not asked of the vault at all while the setting is off', async () => {
+  it('are not requested of the vault at all while the setting is off', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.isNesting.value = false
     one.headingsAsked.length = 0
@@ -540,7 +540,7 @@ describe('the headings a node nests', () => {
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
-  it('are the headings of an ordinary note beside them', async () => {
+  it('are the headings of an ordinary note alongside them', async () => {
     const one = tab('Root.md', ['Animals.md', 'Child.md'], true, {
       'Animals.md': 'deck',
     })
@@ -583,7 +583,7 @@ describe('the headings a node nests', () => {
 })
 
 describe('a heading of a node chosen', () => {
-  it('opens the note it stands in, and puts the keyboard on its line', () => {
+  it('opens the note it remains in, and puts the keyboard on its line', () => {
     const one = tab('Root.md')
 
     one.state.openHeading(one.node('Root.md'), '12')
@@ -592,7 +592,7 @@ describe('a heading of a node chosen', () => {
     expect(one.entered).toStrictEqual([['Root.md', 12]])
   })
 
-  it('opens the note the node stands for, the focus being another one', () => {
+  it('opens the note the node remains for, the focus being another one', () => {
     const one = tab('Root.md', ['Child.md'])
 
     one.state.openHeading(one.node('Child.md'), '7')
@@ -601,7 +601,7 @@ describe('a heading of a node chosen', () => {
     expect(one.entered).toStrictEqual([['Child.md', 7]])
   })
 
-  it('stands the plex where it stood', () => {
+  it('remains the plex where it stood', () => {
     const one = tab('Root.md', ['Child.md'])
 
     one.state.openHeading(one.node('Child.md'), '7')
@@ -620,7 +620,7 @@ describe('a heading of a node chosen', () => {
   })
 })
 
-/** A note beside another: where it sits, and the note it comes through. */
+/** A note beside another: where it is located, and the note it comes through. */
 type NeighbourRow = readonly [path: string, relation: NoteRelation, through?: string]
 
 /** What a note is shown by, which a move of its file leaves alone. */
@@ -634,29 +634,29 @@ const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/
  * another editor. A move renames its files and is told to the plex as a change
  * arriving tells it.
  */
-const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
-  let around = beside.map(([path, relation, through]) => ({
+const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[] = []) => {
+  let relatedItems = initialNeighbours.map(([path, relation, through]) => ({
     path,
     relation,
     through: through ?? '',
   }))
   /** An answer the vault is holding back, and what lets it go. */
-  let holding: Promise<void> | null = null
+  let pendingGate: Promise<void> | null = null
   let release = () => {}
   /** Every note the vault was asked about, in the order it was asked. */
-  const asked: string[] = []
+  const request: string[] = []
   const vault = createVault()
-  const opened: [string, string, string][] = []
+  const openedCalls: [string, string, string][] = []
   const ran: [string, string, string][] = []
 
   const view = viewing({
     neighbourhood: async (path) => {
-      asked.push(path)
-      if (holding) await holding
+      request.push(path)
+      if (pendingGate) await pendingGate
       return {
         focus: { path, title: getNoteTitle(path) },
         focusType: 'note' as const,
-        related: around.map((one) => ({
+        related: relatedItems.map((one) => ({
           path: one.path,
           title: getNoteTitle(one.path),
           type: 'note' as const,
@@ -674,7 +674,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     isNesting: ref(true),
     headings: ref(6),
     openNote: (path, options) =>
-      opened.push([path, options?.title ?? '', options?.showing ?? 'here']),
+      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'here']),
     readHeadings: async () => new Map(),
     askAgent: () => {},
     runCommand: (id, path, title) => ran.push([id, path, title]),
@@ -687,7 +687,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   })
   await view.go(focus)
 
-  /** The picture as it stands, which is what a drawn window reads. */
+  /** The picture currently, which is what a drawn window reads. */
   const picture = () => state.picture.value
   /** What the picture calls the note shown by this title. */
   const node = (title: string) => getNode(state, title)
@@ -698,7 +698,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
 
   /** Files moved in the vault, and the plex told what went where. */
   const moveFiles = (...renamed: readonly PathRename[]) => {
-    around = around.map((one) => ({
+    relatedItems = relatedItems.map((one) => ({
       ...one,
       path: getRenamedPath(renamed, one.path) || one.path,
       through: getRenamedPath(renamed, one.through) || one.through,
@@ -712,7 +712,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   }
   /** The person travels to another note, which is a picture of its own. */
   const goToNote = async (path: string, ...now: readonly NeighbourRow[]) => {
-    around = now.map(([at, relation, through]) => ({ path: at, relation, through: through ?? '' }))
+    relatedItems = now.map(([at, relation, through]) => ({ path: at, relation, through: through ?? '' }))
     await view.go(path)
   }
 
@@ -726,14 +726,14 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     moveFiles,
     moveFilesAndReload,
     goToNote,
-    asked,
-    opened,
+    asked: request,
+    opened: openedCalls,
     ran,
     made: vault.made,
     joined: vault.joined,
-    /** The vault holds every answer back until it is let go of. */
+    /** The vault holds every answer back until it is release. */
     holdAnswers: () => {
-      holding = new Promise<void>((wake) => (release = wake))
+      pendingGate = new Promise<void>((wake) => (release = wake))
     },
     answers: () => release(),
   }
@@ -836,13 +836,13 @@ describe('a note whose file moved', () => {
 
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    const drawn = one.picture()?.nodes.map((node) => node.id) ?? []
-    expect(new Set(drawn).size).toBe(4)
+    const nodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
+    expect(new Set(nodeIds).size).toBe(4)
   })
 })
 
 describe('a gesture the plex reports', () => {
-  it('travels to the note the node stands for', async () => {
+  it('travels to the note the node remains for', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
@@ -851,7 +851,7 @@ describe('a gesture the plex reports', () => {
     expect(one.asked.at(-1)).toBe('physics/Heat.md')
   })
 
-  it('opens the note the node stands for, called what the picture calls it', async () => {
+  it('opens the note the node remains for, called what the picture calls it', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
@@ -870,7 +870,7 @@ describe('a gesture the plex reports', () => {
     expect(one.ran).toStrictEqual([['read', 'physics/Heat.md', 'Heat']])
   })
 
-  it('makes a note in a relation of the note the node stands for', async () => {
+  it('makes a note in a relation of the note the node remains for', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
@@ -888,10 +888,10 @@ describe('a gesture the plex reports', () => {
     expect(one.joined).toStrictEqual([['physics/Heat.md', 'Root.md', 'jump']])
   })
 
-  it('is let go of where the picture never drew that node', async () => {
+  it('is release where the picture never drew that node', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     expect(one.node('Heat')).not.toBe('')
-    const asked = one.asked.length
+    const request = one.asked.length
 
     for (const node of ['Heat.md', 'Root.md', 'nothing']) {
       one.state.activate(node)
@@ -902,7 +902,7 @@ describe('a gesture the plex reports', () => {
       await one.state.joinNodes(node, one.node('Root'), 'jump')
     }
 
-    expect(one.asked).toHaveLength(asked)
+    expect(one.asked).toHaveLength(request)
     expect(one.opened).toStrictEqual([])
     expect(one.ran).toStrictEqual([])
     expect(one.made).toStrictEqual([])
@@ -913,22 +913,22 @@ describe('a gesture the plex reports', () => {
 describe('a plex that travelled', () => {
   it('calls the notes it arrives at nothing it called the ones it left', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    const left = one.picture()?.nodes.map((node) => node.id) ?? []
+    const initialNodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
 
     await one.goToNote('Cold.md', ['Ice.md', 'child'])
 
-    const arrived = one.picture()?.nodes.map((node) => node.id) ?? []
-    expect(arrived).toHaveLength(2)
-    expect(arrived.filter((id) => left.includes(id))).toStrictEqual([])
+    const nextNodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
+    expect(nextNodeIds).toHaveLength(2)
+    expect(nextNodeIds.filter((id) => initialNodeIds.includes(id))).toStrictEqual([])
 
     // A node stands for nothing once a navigation has passed it by twice, so
     // a gesture dragging one asks the vault about nothing.
     await one.goToNote('Warm.md', ['Fire.md', 'child'])
-    for (const node of left) one.state.activate(node)
+    for (const node of initialNodeIds) one.state.activate(node)
     expect(one.asked.at(-1)).toBe('Warm.md')
   })
 
-  it('calls a note that comes back the navigation right after leaving what it always called it', async () => {
+  it('calls a note that arrives back the navigation right after leaving what it always called it', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     const root = one.node('Root')
     const before = one.node('Heat')
@@ -959,10 +959,10 @@ describe('a plex that travelled', () => {
     // The vault is asked about the note where it was, and the file moves while
     // that answer is on its way.
     one.holdAnswers()
-    const asking = one.view.go('One.md')
+    const nav = one.view.go('One.md')
     one.moveFiles({ from: 'One.md', to: 'moved/One.md' }, { from: 'Heat.md', to: 'moved/Heat.md' })
     one.answers()
-    await asking
+    await nav
     one.picture()
 
     await one.view.go(one.view.here.value)
@@ -972,7 +972,7 @@ describe('a plex that travelled', () => {
   })
 })
 
-describe('what a node stands for', () => {
+describe('what a node remains for', () => {
   it('is what the vault says of the note the node draws', () => {
     const one = tab('Root.md', ['Deck.md', 'Stencil.md'], true, {
       'Deck.md': 'deck',
@@ -1221,7 +1221,7 @@ describe('a quick link confirmed', () => {
     expect(one.went).toStrictEqual([])
   })
 
-  it('stands where it stood when the vault wrote no link to the note', async () => {
+  it('remains where it stood when the vault wrote no link to the note', async () => {
     const one = tab('Root.md', ['Other.md'], false)
     one.state.openQuickLink({ from: one.node('Root.md'), relation: 'jump', at: { x: 1, y: 2 } })
 
@@ -1231,7 +1231,7 @@ describe('a quick link confirmed', () => {
     expect(one.went).toStrictEqual([])
   })
 
-  it('stands where it stood when the vault made no note', async () => {
+  it('remains where it stood when the vault made no note', async () => {
     const one = tab('Root.md', [], false)
     one.state.openQuickLink({ from: one.node('Root.md'), relation: 'child', at: { x: 1, y: 2 } })
 
@@ -1250,7 +1250,7 @@ describe('what a note is called where the picture names it nowhere', () => {
     expect(one.state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })
 
-  it('is the file it is filed under beside the notes the picture does name', () => {
+  it('is the file it is filed under alongside the notes the picture does name', () => {
     expect(tab('Root.md', ['Child.md']).state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })
 
@@ -1259,7 +1259,7 @@ describe('what a note is called where the picture names it nowhere', () => {
   })
 })
 
-describe('what a node the picture never drew stands for', () => {
+describe('what a node the picture never drew remains for', () => {
   it('is a note', () => {
     expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.getType('nowhere')).toBe('note')
   })

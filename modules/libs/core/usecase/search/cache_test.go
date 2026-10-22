@@ -18,7 +18,7 @@ func TestQueryCacheEmptyGet(t *testing.T) {
 	}
 }
 
-func TestQueryCachePutAndGet(t *testing.T) {
+func TestQueryCacheInsertAndGet(t *testing.T) {
 	c := search.NewQueryCache(2)
 	vec := []float32{1.0, 2.0, 3.0}
 	c.Put("recipe1", "query1", vec)

@@ -85,11 +85,11 @@ describe('a name typed over a row', () => {
 })
 
 describe('the ending a file carries', () => {
-  it('is read from the dot onward, whatever stands before the dot', () => {
+  it('is read from the dot onward, whatever remains before the dot', () => {
     expect(resolveRenamePath('physics/My note.md', 'Celsius')).toBe('physics/Celsius.md')
   })
 
-  it('is the ending a typed name carries, whatever stands before the dot', () => {
+  it('is the ending a typed name carries, whatever remains before the dot', () => {
     expect(resolveRenamePath('Cover.png', 'Big jacket.jpg')).toBe('Big jacket.jpg')
   })
 })

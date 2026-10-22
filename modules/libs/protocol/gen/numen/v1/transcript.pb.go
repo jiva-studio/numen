@@ -27,10 +27,10 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A Cue is one stretch of speech: what was said, and the milliseconds of the
+// A Cue is one stretch of speech: the transcript, and the milliseconds of the
 // recording it spans.
 //
-// One cue stands on one line. A cue broken over two is two a client would offer
+// One cue relies on one line. A cue broken over two is two a client would offer
 // to edit and one the recording would play.
 type Cue struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`

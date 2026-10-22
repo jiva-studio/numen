@@ -86,7 +86,7 @@ export interface WindowNavigator {
    * and the preset a deck is scheduled by where it is a deck.
    */
   openPreset(path: string): Promise<void>
-  /** A tab let go of. */
+  /** A tab release. */
   closeTab(tab: string): void
   /** Something to ask, put in the agent the person was last in. */
   ask(text: string): void
@@ -101,19 +101,19 @@ export interface SettingsWriter {
    * colour pair the tokens are read as, or how large one of the two kinds of
    * text is set.
    */
-  chooseAppearance(chosen: string): Promise<void>
+  chooseAppearance(selected: string): Promise<void>
   /** Whether a note's title and the name of its file are kept as one name. */
-  chooseSync(chosen: string): Promise<void>
+  chooseSync(selected: string): Promise<void>
   /** Whether a node nests the headings of its note under it. */
-  chooseNesting(chosen: string): Promise<void>
+  chooseNesting(selected: string): Promise<void>
   /** How many headings nest under a note at once. */
-  chooseHeadings(chosen: string): Promise<void>
+  chooseHeadings(selected: string): Promise<void>
   /** The performance workload profile chosen. */
-  choosePerformance(chosen: string): Promise<void>
+  choosePerformance(selected: string): Promise<void>
   /** The indexing model chosen. */
-  chooseIndexingModel(chosen: string): Promise<void>
+  chooseIndexingModel(selected: string): Promise<void>
   /** A declarative plugin setting chosen. */
-  choosePluginSetting?(pluginId: string, key: string, chosen: unknown): Promise<void>
+  choosePluginSetting?(pluginId: string, key: string, selected: unknown): Promise<void>
 }
 
 /** The one line the window says a command's answer in. */

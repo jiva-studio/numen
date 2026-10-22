@@ -129,7 +129,7 @@ describe('a node that is only in one picture', () => {
     expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
   })
 
-  it('finds the chosen node wherever it stands in the new picture', () => {
+  it('finds the chosen node wherever it remains in the new picture', () => {
     const reordered: PlexFrame = { ...to, nodes: [...to.nodes].reverse() }
     const source = node(from, 'a')
     const end = node(to, 'a1')
@@ -199,8 +199,8 @@ describe('the edges follow the boxes', () => {
 
   it('keeps an edge that both pictures have at full strength throughout', () => {
     const frame = interpolatePlex(from, to, 0.5)
-    const kept = frame.edges.find((e) => e.from === 'focus' && e.to === 'a')
-    expect(kept?.opacity).toBe(1)
+    const retainedEdge = frame.edges.find((e) => e.from === 'focus' && e.to === 'a')
+    expect(retainedEdge?.opacity).toBe(1)
   })
 
   it('fades an edge in or out with the node it belongs to', () => {
@@ -225,7 +225,7 @@ describe('the title a line carries while the picture moves', () => {
   const getEdgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
 
   it('holds the way round the words are read', () => {
-    const settled = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.heading]))
+    const resolved = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.heading]))
 
     // A child promoted to the focus swings its edge across the page, and
     // halfway over it runs the other way round from the way it ends.
@@ -235,7 +235,7 @@ describe('the title a line carries while the picture moves', () => {
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
-        const heading = settled.get(getEdgeKey(edge))
+        const heading = resolved.get(getEdgeKey(edge))
         if (heading === undefined) continue
         expect(edge.heading, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(heading)
       }
@@ -244,7 +244,7 @@ describe('the title a line carries while the picture moves', () => {
 
   it('holds the words a settled line was cut to', () => {
     // Wide letters and a long label, so the cut is well short of the whole.
-    const wide = (label: string) => 30 * [...label].length
+    const measureLabelWidth = (label: string) => 30 * [...label].length
     const arrangeWithLabels = (neighbourhood: PlexNeighbourhood) =>
       arrangePlex(
         {
@@ -254,22 +254,22 @@ describe('the title a line carries while the picture moves', () => {
             label: 'the scene in the assembly',
           })),
         },
-        { measureLabel: wide },
+        { measureLabel: measureLabelWidth },
       )
 
     const start = arrangeWithLabels(before)
     const end = arrangeWithLabels(after)
-    const cut = end.edges.find((e) => e.to === 'a')!.words!
-    expect(cut.endsWith('…')).toBe(true)
+    const trimmedWords = end.edges.find((e) => e.to === 'a')!.words!
+    expect(trimmedWords.endsWith('…')).toBe(true)
 
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      expect(edge.words, `at ${t.toFixed(2)}`).toBe(cut)
+      expect(edge.words, `at ${t.toFixed(2)}`).toBe(trimmedWords)
     }
   })
 
   it('holds where along the line the words sit', () => {
-    const wide = (label: string) => 6 * [...label].length
+    const measureLabelWidth = (label: string) => 6 * [...label].length
 
     // A window that wraps the fan, at the settings: what this is about is a
     // title moving off the middle, not how much room the window has to spare.
@@ -279,7 +279,7 @@ describe('the title a line carries while the picture moves', () => {
           ...neighbourhood,
           edges: neighbourhood.edges.map((edge) => ({ ...edge, label: 'contains' })),
         },
-        { measureLabel: wide, options: { viewport: { width: 900, height: 800 }, spread: 1 } },
+        { measureLabel: measureLabelWidth, options: { viewport: { width: 900, height: 800 }, spread: 1 } },
       )
 
     // A fan wide enough that its titles cannot all keep the middle.
@@ -300,7 +300,7 @@ describe('the title a line carries while the picture moves', () => {
 
     const start = arrangeWithTitles(before)
     const end = arrangeWithTitles(fanned)
-    const settled = new Map(end.edges.map((edge) => [getEdgeKey(edge), edge.wordsAt]))
+    const resolved = new Map(end.edges.map((edge) => [getEdgeKey(edge), edge.wordsAt]))
 
     // Some of the lines out of one node had to move their titles to stand
     // clear, and those are the ones a movement could set crawling.
@@ -308,7 +308,7 @@ describe('the title a line carries while the picture moves', () => {
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(start, end, t).edges) {
-        const at = settled.get(getEdgeKey(edge))
+        const at = resolved.get(getEdgeKey(edge))
         if (at === undefined) continue
         expect(edge.wordsAt, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(at)
       }
@@ -353,16 +353,16 @@ describe('the arrow a line carries while the picture moves', () => {
   it('keeps it aimed along the piece of curve it covers, wherever the line has got to', () => {
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      const behind = createPointOnCurve(edge)(1 - ARROW_LENGTH / getLength(edge))
+      const behindPoint = createPointOnCurve(edge)(1 - ARROW_LENGTH / getLength(edge))
       const chord =
-        (Math.atan2(edge.toPoint.y - behind.y, edge.toPoint.x - behind.x) * 180) / Math.PI
+        (Math.atan2(edge.toPoint.y - behindPoint.y, edge.toPoint.x - behindPoint.x) * 180) / Math.PI
       expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(chord, 1)
     }
   })
 })
 
 describe('the frame the viewport is fitted to', () => {
-  it('travels from one extent to the other rather than jumping', () => {
+  it('travels from one extent to the other and not jumping', () => {
     const half = interpolatePlex(from, to, 0.5).extent
     expect(half.minX).toBe((from.extent.minX + to.extent.minX) / 2)
     expect(half.maxY).toBe((from.extent.maxY + to.extent.maxY) / 2)
@@ -409,7 +409,7 @@ describe('a line whose ends swap', () => {
       ],
       edges: [{ from: 'across', to: 'here' }],
     }
-    const across: PlexNeighbourhood = {
+    const acrossRoute: PlexNeighbourhood = {
       nodes: [
         { id: 'across', title: 'Across', relation: 'focus' },
         { id: 'here', title: 'Here', relation: 'jump' },
@@ -417,9 +417,9 @@ describe('a line whose ends swap', () => {
       edges: [{ from: 'here', to: 'across' }],
     }
 
-    const moving = interpolatePlex(arrangePlex(here), arrangePlex(across), 0.5)
-    expect(moving.edges).toHaveLength(1)
-    expect(moving.edges[0]?.opacity).toBe(1)
+    const interpolated = interpolatePlex(arrangePlex(here), arrangePlex(acrossRoute), 0.5)
+    expect(interpolated.edges).toHaveLength(1)
+    expect(interpolated.edges[0]?.opacity).toBe(1)
   })
 })
 

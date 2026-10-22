@@ -40,7 +40,7 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
   // Stryker disable next-line ArrayDeclaration: a first entry of the stack is never read, as every closing token has its opener.
   const stack: Frame[] = []
   const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
-  let placed = 0
+  let placedCount = 0
 
   for (const token of tokens) {
     // A hidden token is one the marks imply and the reader never sees: the
@@ -52,12 +52,12 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
       continue
     }
     if (token.nesting === -1) {
-      const done = stack.pop()!
-      top().push(h(done.tag, done.attrs, done.children))
+      const isDone = stack.pop()!
+      top().push(h(isDone.tag, isDone.attrs, isDone.children))
       continue
     }
 
-    top().push(...block(token, deadAddresses, () => placed++))
+    top().push(...block(token, deadAddresses, () => placedCount++))
   }
   return root
 }
@@ -100,8 +100,8 @@ const inline = (
       continue
     }
     if (token.nesting === -1) {
-      const done = stack.pop()!
-      top().push(h(done.tag, done.attrs, done.children))
+      const isDone = stack.pop()!
+      top().push(h(isDone.tag, isDone.attrs, isDone.children))
       continue
     }
 
@@ -145,10 +145,10 @@ const words = (text: string, next: () => number): (VNode | string)[] =>
     .map((piece) => (/^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece)))
 
 const attrs = (token: Token, deadAddresses: BrokenAddresses = NONE): Record<string, string> => {
-  const written: Record<string, string> = Object.fromEntries(
+  const content: Record<string, string> = Object.fromEntries(
     (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
   )
-  const href = written.href
-  if (href !== undefined && deadAddresses.has(href)) written[REACHES] = 'nothing'
-  return written
+  const href = content.href
+  if (href !== undefined && deadAddresses.has(href)) content[REACHES] = 'nothing'
+  return content
 }

@@ -101,11 +101,11 @@ function onChooseTab(tab: TabId): void {
 }
 
 function onCloseTab(tab: TabId): void {
-  let held = false
+  let isPrevented = false
   emit('close', tab, () => {
-    held = true
+    isPrevented = true
   })
-  if (held) return
+  if (isPrevented) return
 
   workspace.value = closeTab(workspace.value, tab)
 }
@@ -147,8 +147,8 @@ provide(
       :axis="workspace.axis"
       :depth="0"
     >
-      <template v-for="name in passed" #[name]="bound">
-        <slot :name="name" v-bind="getSlotProps(bound)" />
+      <template v-for="name in passed" #[name]="slotProps">
+        <slot :name="name" v-bind="getSlotProps(slotProps)" />
       </template>
     </WorkspaceBranch>
 
@@ -163,8 +163,8 @@ provide(
       @show="emit('show', $event)"
       @claim="onClaimPane(workspace.root.id)"
     >
-      <template v-for="name in passed" #[name]="bound">
-        <slot :name="name" v-bind="getSlotProps(bound)" />
+      <template v-for="name in passed" #[name]="slotProps">
+        <slot :name="name" v-bind="getSlotProps(slotProps)" />
       </template>
     </WorkspacePane>
 

@@ -26,7 +26,7 @@ var cutSeeds = []string{
 
 // Every chunk of a cut is a stretch of the text it was cut from: inside it, of
 // no negative length, and cut at a character and never through one. A small
-// chunk stands under a large chunk that reaches its middle.
+// chunk is placed under a large chunk that reaches its middle.
 //
 // The text is a stranger's: a source's text is whatever the file held.
 func FuzzCut(f *testing.F) {
@@ -64,19 +64,19 @@ func FuzzCut(f *testing.F) {
 		cuts := utf8.ValidString(text)
 		for _, one := range chunking.Cut(text, parts, sizes, chunking.Legibility{}) {
 			assertChunkInText(t, text, one, cuts, "a large chunk")
-			for _, held := range one.Small {
-				assertChunkInText(t, text, held, cuts, "a small chunk")
-				if middle := held.Start + held.Length/2; middle < one.Start ||
+			for _, target := range one.Small {
+				assertChunkInText(t, text, target, cuts, "a small chunk")
+				if middle := target.Start + target.Length/2; middle < one.Start ||
 					middle >= one.Start+max(one.Length, 1) {
 					t.Fatalf("a small chunk at %d+%d stands under a large one at %d+%d",
-						held.Start, held.Length, one.Start, one.Length)
+						target.Start, target.Length, one.Start, one.Length)
 				}
-				if held.Length == 0 {
+				if target.Length == 0 {
 					continue
 				}
-				if held.Location != one.Location && one.Location != "" {
+				if target.Location != one.Location && one.Location != "" {
 					t.Fatalf("a small chunk of %q stands under a large chunk of %q",
-						held.Location, one.Location)
+						target.Location, one.Location)
 				}
 			}
 		}

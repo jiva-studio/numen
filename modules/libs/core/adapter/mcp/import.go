@@ -30,8 +30,8 @@ type ImportOutcome struct {
 	// CopiedBytes is how large the copy is, and is nothing where none was asked
 	// for or the video was over the size the settings allow.
 	CopiedBytes int64  `json:"copied_bytes,omitempty" jsonschema:"how large the copy on this disk is"`
-	CopyRefused string `json:"copy_refused,omitempty" jsonschema:"why no copy was made, empty when one was or none was asked for"`
-	Refused     string `json:"refused,omitempty" jsonschema:"why the address was not fetched; the file stands either way"`
+	CopyError string `json:"copy_error,omitempty" jsonschema:"why no copy was made, empty when one was or none was asked for"`
+	Error string `json:"error,omitempty" jsonschema:"why the address was not fetched; the file stands either way"`
 }
 
 // addImportTool serves the one tool that makes a file out of an address.
@@ -63,12 +63,12 @@ func addImportTool(server *sdk.Server, core Core) {
 		out := ImportOutcome{Path: imported.Path}
 		var copyFailed *source.CopyError
 		if err != nil && !errors.As(err, &copyFailed) {
-			out.Refused = sayError(err)
+			out.Error = sayError(err)
 			return nil, out, nil
 		}
 		out.Producer, out.Bytes, out.IsNothing = imported.Producer, imported.Bytes, imported.IsNothing
 		if in.ShouldCopy {
-			out.CopiedBytes, out.CopyRefused = describeCopy(imported.Copy, err)
+			out.CopiedBytes, out.CopyError = describeCopy(imported.Copy, err)
 		}
 		return nil, out, nil
 	})

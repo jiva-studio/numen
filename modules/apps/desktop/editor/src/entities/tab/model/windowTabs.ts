@@ -2,7 +2,7 @@
  * The window as a set of kinds, and the tabs it keeps of each.
  *
  * A kind says how one of its tabs opens, what it is called, what is drawn in
- * it and what letting go of it comes to. Everything here is written once for
+ * it and what letting go of it evaluates to. Everything here is written once for
  * all of them: a kind is added by declaring one, and the window is not told
  * about it twice.
  */
@@ -26,7 +26,7 @@ import { createUnavailableKind } from '../lib/unavailable'
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
 
-/** The file path a tab stands on. */
+/** The file path a tab relies on. */
 const getTabPath = (tab: WindowTab): string => {
   const openTab = tab.kind.getOpenTab?.(tab.state)
   if (openTab?.path) return openTab.path
@@ -58,14 +58,14 @@ export function useWindowTabs() {
   const closers = createTabClosers({ open, layout, drop })
   const handle = createWindowHandle({ ...openers, ...queries })
   const navigation = createTabNavigation(open, openers)
-  const asked = createKindQuestions(byKind)
+  const request = createKindQuestions(byKind)
   /** A kind whose tab fails to open is told to `onError` and left out of the layout. */
   const openPlacedTabs = async (onError: PlacementError) => {
     const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
     layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
-    const placed = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
+    const placedItems = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
     for (const id of earlier) {
-      if (open.value.has(id) && !placed.has(id)) layout.value = openTab(layout.value, id)
+      if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
     }
   }
   const onKeyPress = (event: KeyboardEvent): boolean =>
@@ -79,8 +79,8 @@ export function useWindowTabs() {
     registerKind,
     hasKind,
     openPlacedTabs,
-    resolveCommand: asked.resolveCommand,
-    createFileOfKind: asked.createFileOfKind,
+    resolveCommand: request.resolveCommand,
+    createFileOfKind: request.createFileOfKind,
     navigateTab: navigation.navigateTab,
     navigateTabsAt: navigation.navigateTabsAt,
     sendText: navigation.sendText,
@@ -265,7 +265,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
   }
 
   const finishClose = (id: string) => {
-    ctx.open.value = without(ctx.open.value, id)
+    ctx.open.value = omitEntry(ctx.open.value, id)
     ctx.drop(id)
     ctx.layout.value = closeTab(ctx.layout.value, id)
   }
@@ -273,7 +273,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
   const onTabShown = (id: string) => {
     const one = ctx.open.value.get(id)
     if (!one) return
-    ctx.open.value = new Map([...without(ctx.open.value, id), [id, one]])
+    ctx.open.value = new Map([...omitEntry(ctx.open.value, id), [id, one]])
     one.kind.onShow?.(one.state, id)
   }
 
@@ -286,7 +286,7 @@ function createTabClosers(ctx: TabStoreContext) {
     const one = ctx.open.value.get(id)
     if (!one) return true
     if (one.kind.onClose && !one.kind.onClose(one.state, id)) return false
-    ctx.open.value = without(ctx.open.value, id)
+    ctx.open.value = omitEntry(ctx.open.value, id)
     ctx.drop(id)
     return true
   }
@@ -334,11 +334,11 @@ function createTabNavigation(
 
   /** Every tab standing on a path, of a kind that navigates, moved to another. */
   const navigateTabsAt = async (from: string, to: string): Promise<void> => {
-    const standing = [...open.value.values()].filter(
+    const matchingTabs = [...open.value.values()].filter(
       (one) => one.kind.navigate && getTabPath(one) === from,
     )
     await Promise.all(
-      standing.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
+      matchingTabs.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
     )
   }
 
@@ -387,21 +387,21 @@ function dispatchTabKeyPress(
   open: ReadonlyMap<string, WindowTab>,
   event: KeyboardEvent,
 ): boolean {
-  const drawn = getPanes(layout.root).map((one) => one.active)
+  const activeTabIds = getPanes(layout.root).map((one) => one.active)
   const front = paneById(layout.root, layout.focus)?.active
-  const offered = new Set<string>()
+  const proposed = new Set<string>()
   for (const id of [front, ...[...open.keys()].reverse()]) {
-    if (!id || offered.has(id) || !drawn.includes(id)) continue
-    offered.add(id)
+    if (!id || proposed.has(id) || !activeTabIds.includes(id)) continue
+    proposed.add(id)
     const one = open.get(id)
     if (one?.kind.onKeyPress?.(one.state, event)) return true
   }
   return false
 }
 
-/** One tab let go of, and the rest kept. */
-const without = <T>(held: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
-  const rest = new Map(held)
+/** One tab release, and the rest kept. */
+const omitEntry = <T>(target: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
+  const rest = new Map(target)
   rest.delete(id)
   return rest
 }

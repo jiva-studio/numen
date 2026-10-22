@@ -95,7 +95,7 @@ func (s *Server) getModel(named string) string {
 }
 
 // AskAgent works the task and reports each request to the model, what it says, each tool it calls
-// and why it stopped. A conversation goes on from what was said in it before.
+// and why it stopped. A conversation goes on from the transcript in it before.
 func (s *Server) AskAgent(
 	ctx context.Context,
 	req *connect.Request[numenv1.AskAgentRequest],
@@ -161,7 +161,7 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 	return send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
 }
 
-// getConversation is what was said in the conversation so far, oldest first.
+// getConversation is the transcript in the conversation so far, oldest first.
 func (s *Server) getConversation(conversation string) []message {
 	if conversation == "" {
 		return nil
@@ -171,7 +171,7 @@ func (s *Server) getConversation(conversation string) []message {
 	return append([]message(nil), s.conversations[conversation]...)
 }
 
-// appendConversation adds what was said in one task to the conversation. A task that named no
+// appendConversation adds the transcript in one task to the conversation. A task that named no
 // conversation keeps nothing.
 func (s *Server) appendConversation(conversation string, transcript []message) {
 	if conversation == "" {
@@ -245,12 +245,12 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 		defer s.mu.Unlock()
 		return s.models, nil
 	}
-	asked := chat{baseURL: s.baseURL, key: s.key, client: s.Client}
+	request := chat{baseURL: s.baseURL, key: s.key, client: s.Client}
 	s.mu.Unlock()
 
 	listing, stop := context.WithTimeout(ctx, modelsLimit)
 	defer stop()
-	models, err := asked.listModels(listing)
+	models, err := request.listModels(listing)
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -258,7 +258,7 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 	// A failure is asked again, and what was listed under settings that have changed since is not kept.
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if err == nil && s.baseURL == asked.baseURL && s.key == asked.key {
+	if err == nil && s.baseURL == request.baseURL && s.key == request.key {
 		s.models, s.isListed = models, true
 	}
 	return models, err

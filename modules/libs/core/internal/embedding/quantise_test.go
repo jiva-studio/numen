@@ -132,7 +132,7 @@ func TestQuantisationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
 	}
 }
 
-func TestNormaliseGivesUnitLength(t *testing.T) {
+func TestNormaliseProducesUnitLength(t *testing.T) {
 	got := embedding.Normalise([]float32{3, 4})
 	if !slices.Equal(got, []float32{0.6, 0.8}) {
 		t.Errorf("got %v", got)
@@ -294,14 +294,14 @@ func TestSimilarityWithNoDirectionIsZero(t *testing.T) {
 
 // getCosine is the cosine of the angle between two vectors, summed in float64.
 func getCosine(query []float32, stored []int8) float64 {
-	var dot, left, right float64
+	var dot, remaining, right float64
 	for i := range query {
 		q, s := float64(query[i]), float64(stored[i])
 		dot += q * s
-		left += q * q
+		remaining += q * q
 		right += s * s
 	}
-	return dot / math.Sqrt(left*right)
+	return dot / math.Sqrt(remaining*right)
 }
 
 // Four elements are summed a step in single precision, so a sum of 2^24 and 1

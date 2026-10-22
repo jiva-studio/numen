@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FlushResult, Unit } from '@numen/protocol'
 import { sessionCore } from './session'
 
-const asked = vi.hoisted(() => ({
+const request = vi.hoisted(() => ({
   getVaultState: vi.fn(),
   writeOpenTabs: vi.fn(),
   reportFlush: vi.fn(),
@@ -18,10 +18,10 @@ const asked = vi.hoisted(() => ({
 }))
 
 vi.mock('@/shared/clients', () => ({
-  vault: asked,
-  agentService: asked,
-  workspace: asked,
-  windowService: asked,
+  vault: request,
+  agentService: request,
+  workspace: request,
+  windowService: request,
 }))
 
 beforeEach(() => {
@@ -30,7 +30,7 @@ beforeEach(() => {
 
 describe('the state of the vault', () => {
   it('is a scan not begun and nothing indexed where the answer carries neither', async () => {
-    asked.getVaultState.mockResolvedValue({ id: 'v1', name: 'Zoo', path: '/zoo' })
+    request.getVaultState.mockResolvedValue({ id: 'v1', name: 'Zoo', path: '/zoo' })
 
     expect(await sessionCore.state()).toStrictEqual({
       id: 'v1',
@@ -42,7 +42,7 @@ describe('the state of the vault', () => {
   })
 
   it('carries how far the scan got and how much the index holds', async () => {
-    asked.getVaultState.mockResolvedValue({
+    request.getVaultState.mockResolvedValue({
       id: 'v1',
       name: 'Zoo',
       path: '/zoo',
@@ -67,7 +67,7 @@ describe('the tabs a window holds open', () => {
 
     await sessionCore.writeOpenTabs({ tabs: [tab], front: 't1' } as never)
 
-    expect(asked.writeOpenTabs).toHaveBeenCalledWith({ tabs: [tab], front: 't1' })
+    expect(request.writeOpenTabs).toHaveBeenCalledWith({ tabs: [tab], front: 't1' })
   })
 })
 
@@ -75,7 +75,7 @@ describe('a flush reported', () => {
   it('says nothing was left where the window owed nothing', async () => {
     await sessionCore.reportFlush('token-1')
 
-    expect(asked.reportFlush).toHaveBeenCalledWith({
+    expect(request.reportFlush).toHaveBeenCalledWith({
       window: 'editor',
       token: 'token-1',
       result: FlushResult.NOTHING,
@@ -85,7 +85,7 @@ describe('a flush reported', () => {
   it('says what the window wrote', async () => {
     await sessionCore.reportFlush('token-1', 'written')
 
-    expect(asked.reportFlush).toHaveBeenCalledWith({
+    expect(request.reportFlush).toHaveBeenCalledWith({
       window: 'editor',
       token: 'token-1',
       result: FlushResult.WRITTEN,
@@ -95,43 +95,43 @@ describe('a flush reported', () => {
 
 /** Everything a stream gave, read to its end. */
 const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
-  const read: T[] = []
-  for await (const one of stream) read.push(one)
-  return read
+  const readItem: T[] = []
+  for await (const one of stream) readItem.push(one)
+  return readItem
 }
 
 describe('the streams a window follows', () => {
   const signal = new AbortController().signal
 
-  it('tells each change of the vault, and where every note named went', async () => {
-    asked.watchVaultChanges.mockImplementation(async function* () {
+  it('notifies each change of the vault, and where every note named went', async () => {
+    request.watchVaultChanges.mockImplementation(async function* () {
       yield { paths: ['Llama.md'], reload: true, renamed: [{ from: 'A.md', to: 'B.md' }] }
     })
 
     expect(await readAll(sessionCore.watchVaultChanges(signal))).toStrictEqual([
       { paths: ['Llama.md'], shouldReload: true, renamed: [{ from: 'A.md', to: 'B.md' }] },
     ])
-    expect(asked.watchVaultChanges).toHaveBeenCalledWith({}, { signal })
+    expect(request.watchVaultChanges).toHaveBeenCalledWith({}, { signal })
   })
 
   it('follows the focus, and lets go of it on the signal', () => {
     const focus = (async function* () {})()
-    asked.watchFocus.mockReturnValue(focus)
+    request.watchFocus.mockReturnValue(focus)
 
     expect(sessionCore.watchFocus(signal)).toBe(focus)
-    expect(asked.watchFocus).toHaveBeenCalledWith({}, { signal })
+    expect(request.watchFocus).toHaveBeenCalledWith({}, { signal })
   })
 
-  it('follows a quit asked of this window', () => {
+  it('follows a quit requested of this window', () => {
     const quit = (async function* () {})()
-    asked.watchQuit.mockReturnValue(quit)
+    request.watchQuit.mockReturnValue(quit)
 
     expect(sessionCore.watchQuit(signal)).toBe(quit)
-    expect(asked.watchQuit).toHaveBeenCalledWith({ window: 'editor' }, { signal })
+    expect(request.watchQuit).toHaveBeenCalledWith({ window: 'editor' }, { signal })
   })
 
-  it('tells the work under way, counted in what each counts', async () => {
-    asked.watchTasks.mockImplementation(async function* () {
+  it('notifies the work under way, counted in what each counts', async () => {
+    request.watchTasks.mockImplementation(async function* () {
       yield {
         tasks: [
           {
@@ -182,15 +182,15 @@ describe('the streams a window follows', () => {
         },
       ],
     ])
-    expect(asked.watchTasks).toHaveBeenCalledWith({ window: 'editor' }, { signal })
+    expect(request.watchTasks).toHaveBeenCalledWith({ window: 'editor' }, { signal })
   })
 })
 
 describe('detaching a tab', () => {
   it('asks the workspace to open a new window for the tab', async () => {
-    asked.detachTab.mockResolvedValue({})
+    request.detachTab.mockResolvedValue({})
     await sessionCore.detachTab('tab-42', { x: 100, y: 200 })
 
-    expect(asked.detachTab).toHaveBeenCalledWith({ tabId: 'tab-42', x: 100, y: 200 })
+    expect(request.detachTab).toHaveBeenCalledWith({ tabId: 'tab-42', x: 100, y: 200 })
   })
 })

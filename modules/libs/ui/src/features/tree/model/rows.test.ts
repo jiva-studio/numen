@@ -20,11 +20,11 @@ const create = (rows: readonly Row[] = ROWS, selection: readonly RowId[] = []) =
 /** A drawn row: what a row component hands over, with the element under `$el`. */
 const createDrawn = () => {
   const focus = vi.fn<() => void>()
-  return { focus, drawn: { $el: { focus } } }
+  return { focus, rendered: { $el: { focus } } }
 }
 
 describe('the row the tab key reaches', () => {
-  it('is the first row where nothing else is asked for', () => {
+  it('is the first row where nothing else is requested for', () => {
     expect(create().tabbed.value).toBe('work')
   })
 
@@ -55,18 +55,18 @@ describe('the row the tab key reaches', () => {
 })
 
 describe('a row as it is drawn', () => {
-  it('is found under the row it stands for', () => {
+  it('is found under the row it remains for', () => {
     const rows = create()
-    const { drawn } = createDrawn()
-    rows.setRowElement('notes', drawn)
+    const { rendered } = createDrawn()
+    rows.setRowElement('notes', rendered)
 
-    expect(rows.getRowElement('notes')).toBe(drawn.$el)
+    expect(rows.getRowElement('notes')).toBe(rendered.$el)
     expect(rows.getRowElement('work')).toBeNull()
   })
 
   it('is forgotten once it is taken away', () => {
     const rows = create()
-    rows.setRowElement('notes', createDrawn().drawn)
+    rows.setRowElement('notes', createDrawn().rendered)
     rows.setRowElement('notes', null)
 
     expect(rows.getRowElement('notes')).toBeNull()
@@ -74,7 +74,7 @@ describe('a row as it is drawn', () => {
 
   it('is forgotten once it is replaced by something that draws nothing', () => {
     const rows = create()
-    rows.setRowElement('notes', createDrawn().drawn)
+    rows.setRowElement('notes', createDrawn().rendered)
     rows.setRowElement('notes', {})
 
     expect(rows.getRowElement('notes')).toBeNull()
@@ -84,21 +84,21 @@ describe('a row as it is drawn', () => {
 describe('the keyboard put onto a row', () => {
   it('lands on the row once the rows are drawn', async () => {
     const rows = create()
-    const { focus, drawn } = createDrawn()
-    rows.setRowElement('notes', drawn)
+    const { focus, rendered } = createDrawn()
+    rows.setRowElement('notes', rendered)
 
-    const done = rows.focusRow('notes')
+    const isDone = rows.focusRow('notes')
     expect(focus).not.toHaveBeenCalled()
     expect(rows.here.value).toBe('notes')
 
-    await done
+    await isDone
     expect(focus).toHaveBeenCalledTimes(1)
   })
 
   it('lands on no row for no row', async () => {
     const rows = create()
-    const { focus, drawn } = createDrawn()
-    rows.setRowElement('notes', drawn)
+    const { focus, rendered } = createDrawn()
+    rows.setRowElement('notes', rendered)
     rows.here.value = 'notes'
 
     await rows.focusRow(null)
@@ -121,8 +121,8 @@ describe('the keyboard put onto a row', () => {
       () => [],
       scrollToRow,
     )
-    const { focus, drawn } = createDrawn()
-    rows.setRowElement('notes', drawn)
+    const { focus, rendered } = createDrawn()
+    rows.setRowElement('notes', rendered)
 
     await rows.focusRow('notes')
 
@@ -138,8 +138,8 @@ describe('the keyboard put onto a row', () => {
       () => [],
       defaultScroll,
     )
-    const { drawn } = createDrawn()
-    rows.setRowElement('notes', drawn)
+    const { rendered } = createDrawn()
+    rows.setRowElement('notes', rendered)
 
     await rows.focusRow('notes', explicitScroll)
 

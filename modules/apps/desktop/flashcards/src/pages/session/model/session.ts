@@ -65,24 +65,24 @@ export interface SessionDeps {
 }
 
 function useSessionCards() {
-  const asked = shallowRef<readonly CardFace[]>([])
+  const request = shallowRef<readonly CardFace[]>([])
   const at = ref(0)
-  const shown = ref(false)
+  const isAnswerShown = ref(false)
   const answers = ref<string[]>([])
 
-  const card = computed<CardFace | null>(() => asked.value[at.value] ?? null)
-  const left = computed(() => asked.value.length - at.value)
-  const over = computed(() => card.value === null)
-  const done = computed(() => answers.value.length)
+  const card = computed<CardFace | null>(() => request.value[at.value] ?? null)
+  const remaining = computed(() => request.value.length - at.value)
+  const isOver = computed(() => card.value === null)
+  const isDone = computed(() => answers.value.length)
 
   const reset = () => {
-    asked.value = []
+    request.value = []
     at.value = 0
-    shown.value = false
+    isAnswerShown.value = false
     answers.value = []
   }
 
-  return { asked, at, shown, answers, card, left, over, done, reset }
+  return { asked: request, at, shown: isAnswerShown, answers, card, left: remaining, over: isOver, done: isDone, reset }
 }
 
 async function openSession(deps: {
@@ -93,15 +93,15 @@ async function openSession(deps: {
   preset?: string
 }): Promise<{ run: string; cards: readonly CardFace[]; report: Report } | null> {
   try {
-    const opened = await deps.cards.startSession(
+    const startedSession = await deps.cards.startSession(
       deps.preset === undefined
         ? { vault: deps.id, deck: deps.deck }
         : { vault: deps.id, deck: deps.deck, preset: deps.preset },
     )
     return {
-      run: opened.run,
-      cards: opened.cards.map(createCardFace),
-      report: { unwritten: opened.unwritten, skipped: opened.skipped },
+      run: startedSession.run,
+      cards: startedSession.cards.map(createCardFace),
+      report: { unwritten: startedSession.unwritten, skipped: startedSession.skipped },
     }
   } catch (why) {
     deps.reportError(why)
@@ -225,22 +225,22 @@ function useSessionOpener(deps: {
     deck: string,
     preset?: string | undefined,
   ): Promise<Report | null> => {
-    const opened = await openSession({
+    const startedSession = await openSession({
       cards: deps.cardsClient,
       reportError: deps.reportError,
       id,
       deck,
       ...(preset !== undefined ? { preset } : {}),
     })
-    if (!opened) return null
+    if (!startedSession) return null
     deps.vault.value = id
-    deps.run.value = opened.run
-    deps.cards.asked.value = opened.cards
+    deps.run.value = startedSession.run
+    deps.cards.asked.value = startedSession.cards
     deps.cards.at.value = 0
     deps.cards.shown.value = false
     deps.cards.answers.value = []
     deps.setPut(deps.now())
-    return opened.report
+    return startedSession.report
   }
 
   const forget = () => {
@@ -257,7 +257,7 @@ export function useReviewSession(deps: SessionDeps) {
   const vault = ref('')
   const run = ref('')
   const writing = ref(false)
-  let put = now()
+  let displayedAt = now()
   const cards = useSessionCards()
 
   const { start, forget } = useSessionOpener({
@@ -268,7 +268,7 @@ export function useReviewSession(deps: SessionDeps) {
     vault,
     run,
     setPut: (time) => {
-      put = time
+      displayedAt = time
     },
   })
 
@@ -280,9 +280,9 @@ export function useReviewSession(deps: SessionDeps) {
     run,
     cards,
     writing,
-    getPut: () => put,
+    getPut: () => displayedAt,
     setPut: (time) => {
-      put = time
+      displayedAt = time
     },
   })
 

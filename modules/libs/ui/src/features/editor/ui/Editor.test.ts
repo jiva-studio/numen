@@ -1,5 +1,5 @@
 /**
- * What the component does with what it is handed, and what it hands back.
+ * What the component does with what it is handed, and what it returns.
  *
  * The view is found through the DOM. The tests hold the component to its
  * props, its model, its events and what it exposes.
@@ -21,11 +21,11 @@ Range.prototype.getClientRects = () =>
   Object.assign([], { item: () => null }) as unknown as DOMRectList
 Range.prototype.getBoundingClientRect = () => new DOMRect()
 
-const drawn: { unmount: () => void }[] = []
+const renderedViews: { unmount: () => void }[] = []
 
 const editor = (props: Partial<Props> = {}) => {
   const wrapper = mount(Editor, { attachTo: document.body, props })
-  drawn.push(wrapper)
+  renderedViews.push(wrapper)
   const view = EditorView.findFromDOM(wrapper.element as HTMLElement)
   if (!view) throw new Error('the editor drew no view')
   return { wrapper, view, exposed: wrapper.vm as unknown as EditorHandle }
@@ -66,7 +66,7 @@ const chord = (on: EventTarget, modifiers: KeyboardEventInit = { ctrlKey: true }
 }
 
 afterEach(() => {
-  while (drawn.length) drawn.pop()?.unmount()
+  while (renderedViews.length) renderedViews.pop()?.unmount()
   vi.restoreAllMocks()
   document.body.innerHTML = ''
 })
@@ -118,7 +118,7 @@ describe('the echo of what was typed', () => {
     expect(serialise).toHaveBeenCalledTimes(1)
   })
 
-  it('is applied when the parent hands back a different string', async () => {
+  it('is applied when the parent returns a different string', async () => {
     const { view } = echoing('one', (value) => value.toUpperCase())
     type(view, ' two')
     await flushPromises()
@@ -202,7 +202,7 @@ describe('a document put in from outside', () => {
 })
 
 describe('what it will not be typed into', () => {
-  it('is editable as it stands', () => {
+  it('is editable currently', () => {
     const { view } = editor({ modelValue: 'one' })
     expect(view.state.readOnly).toBe(false)
     expect(view.state.facet(EditorView.editable)).toBe(true)
@@ -214,7 +214,7 @@ describe('what it will not be typed into', () => {
     expect(view.state.facet(EditorView.editable)).toBe(false)
   })
 
-  it('is closed and opened again while it stands', async () => {
+  it('is closed and opened again while active', async () => {
     const { wrapper, view } = editor({ modelValue: 'one' })
 
     await wrapper.setProps({ readonly: true })
@@ -258,7 +258,7 @@ describe('a change something other than the reader is making', () => {
     expect(getChangeMarks(view)).toEqual([])
   })
 
-  it('is drawn where a second change stands instead of where the first did', async () => {
+  it('is drawn where a second change remains and not where the first did', async () => {
     const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
     await wrapper.setProps({ change: { id: 'two', from: 12, to: 14, text: 'under' } })
     expect(getChangeMarks(view)).toEqual([{ from: 12, to: 14, mark: 'cm-changing' }])
@@ -301,7 +301,7 @@ describe('an address in the text', () => {
     expect(view.state.facet(addressResolver)('note.md')).toBe('vault://note.md')
   })
 
-  it('stands as it was written where the caller makes nothing of it', () => {
+  it('remains as it was written where the caller makes nothing of it', () => {
     expect(editor({ modelValue: 'go' }).view.state.facet(addressResolver)('note.md')).toBe(
       'note.md',
     )
@@ -322,7 +322,7 @@ describe('what a parent can ask for', () => {
     expect(view.state.selection.main.head).toBe(view.state.doc.line(3).from)
   })
 
-  it('is refused by an editor holding no text, which has no line to give', () => {
+  it('is rejected by an editor holding no text, which has no line to give', () => {
     const { exposed } = editor({ modelValue: '' })
     expect(exposed.reveal(2)).toBe(false)
   })
@@ -385,7 +385,7 @@ describe('the chord that keeps the text', () => {
 })
 
 describe('what the caller draws into the editor', () => {
-  it('stands there beside everything the editor is', () => {
+  it('remains there alongside everything the editor is', () => {
     const counted = StateField.define({
       create: () => 0,
       update: (was) => was + 1,
@@ -407,10 +407,10 @@ describe('a document written in one language', () => {
       attachTo: document.body,
     })
     // The language is loaded when it is first wanted.
-    const drawn = editor.get('.cm-editor').element
+    const viewElement = editor.get('.cm-editor').element
     await vi.waitFor(() => {
       // The face is the token the editor's theme names, not a family named here.
-      expect(getComputedStyle(drawn).fontFamily).toBe('var(--editor-mono)')
+      expect(getComputedStyle(viewElement).fontFamily).toBe('var(--editor-mono)')
     })
 
     editor.unmount()

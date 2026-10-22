@@ -57,11 +57,11 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const held = useReviewCounter({ cards, reportError: () => {} })
+    const card = useReviewCounter({ cards, reportError: () => {} })
 
-    await held.count()
+    await card.count()
 
-    expect(held.day.value).toBe('2026-09-04')
+    expect(card.day.value).toBe('2026-09-04')
   })
 
   it('leaves a preset due today running in the hours past midnight', async () => {
@@ -76,11 +76,11 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const held = useReviewCounter({ cards, reportError: () => {} })
-    await held.count()
+    const card = useReviewCounter({ cards, reportError: () => {} })
+    await card.count()
 
     const one = useVaultPresets({ presets: createPresets(createSettings('2026-09-04')) })
-    await one.read(vault, held.day.value)
+    await one.read(vault, card.day.value)
 
     expect(one.presets.value[0]?.paused).toBe('')
     expect(one.presets.value[0]?.cards).toBe(4)

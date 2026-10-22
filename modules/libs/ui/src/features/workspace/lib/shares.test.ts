@@ -39,11 +39,11 @@ describe('fit', () => {
 })
 
 describe('insert', () => {
-  it('takes half of the share it is put beside', () => {
+  it('takes half of the share it is put alongside', () => {
     expect(insert([0.5, 0.5], 0, false)).toStrictEqual([0.25, 0.25, 0.5])
   })
 
-  it('goes ahead of it when asked', () => {
+  it('goes ahead of it when requested', () => {
     expect(insert([0.5, 0.5], 1, true)).toStrictEqual([0.5, 0.25, 0.25])
   })
 

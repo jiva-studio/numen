@@ -19,36 +19,36 @@ import (
 // getHeadingLimit how many of them stand there at once, as the settings hold the two.
 func isHanging(t *testing.T, f *going) bool {
 	t.Helper()
-	held, is := getSetting(t, f, "appearance", "nest_headings_under_notes").(bool)
+	target, is := getSetting(t, f, "appearance", "nest_headings_under_notes").(bool)
 	if !is {
 		t.Fatal("the setting is not written as a switch")
 	}
-	return held
+	return target
 }
 
 func getHeadingLimit(t *testing.T, f *going) int {
 	t.Helper()
-	held, is := getSetting(t, f, "appearance", "nested_heading_limit").(float64)
+	target, is := getSetting(t, f, "appearance", "nested_heading_limit").(float64)
 	if !is {
 		t.Fatal("the count is not written as a number")
 	}
-	return int(held)
+	return int(target)
 }
 
 // turnsHanging writes the switch into the settings, with the count beside it
 // where one is named.
 func turnsHanging(t *testing.T, f *going, hangs bool, count *int) error {
 	t.Helper()
-	written := []*v1.Setting{
+	content := []*v1.Setting{
 		{At: []string{"appearance", "nest_headings_under_notes"}, Value: fmt.Sprint(hangs)},
 	}
 	if count != nil {
-		written = append(written, &v1.Setting{
+		content = append(content, &v1.Setting{
 			At: []string{"appearance", "nested_heading_limit"}, Value: fmt.Sprint(*count),
 		})
 	}
 	_, err := f.configuring.WriteSettings(t.Context(),
-		connect.NewRequest(&v1.WriteSettingsRequest{Settings: written}))
+		connect.NewRequest(&v1.WriteSettingsRequest{Settings: content}))
 	return err
 }
 
@@ -76,8 +76,8 @@ func TestTurningTheNestingIsAnsweredByTheNextQuestion(t *testing.T) {
 func TestTurningTheCountOfHeadingsIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	if said := getHeadingLimit(t, f); said != 6 {
-		t.Fatalf("an installation nobody has configured stands %d", said)
+	if response := getHeadingLimit(t, f); response != 6 {
+		t.Fatalf("an installation nobody has configured stands %d", response)
 	}
 
 	three := 3
@@ -89,8 +89,8 @@ func TestTurningTheCountOfHeadingsIsAnsweredByTheNextQuestion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if said := getHeadingLimit(t, f); said != 3 {
-		t.Errorf("a node stands %d headings", said)
+	if responseVal := getHeadingLimit(t, f); responseVal != 3 {
+		t.Errorf("a node stands %d headings", responseVal)
 	}
 	if isHanging(t, f) {
 		t.Error("the setting was turned and the window still hangs the headings")
@@ -99,7 +99,7 @@ func TestTurningTheCountOfHeadingsIsAnsweredByTheNextQuestion(t *testing.T) {
 
 // A count the setting does not take is not written, and the settings are left
 // as they are.
-func TestACountOfHeadingsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
+func TestACountOfHeadingsOutsideWhatItGoesToIsNotSaved(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	twenty := 20
@@ -107,14 +107,14 @@ func TestACountOfHeadingsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
 		t.Fatal("a count of twenty was written")
 	}
 
-	if said := getHeadingLimit(t, f); said != 6 {
-		t.Errorf("a node stands %d headings", said)
+	if response := getHeadingLimit(t, f); response != 6 {
+		t.Errorf("a node stands %d headings", response)
 	}
 }
 
 // The setting a person turns is written where they will read it, and every
 // other byte of the file is left as they typed it.
-func TestTurningTheNestingLeavesTheRestOfTheFileAlone(t *testing.T) {
+func TestTurningTheNestingPreservesTheRestOfTheFileAlone(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
 	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"text_scale\": 1.5}\n}\n"), 0o644); err != nil {

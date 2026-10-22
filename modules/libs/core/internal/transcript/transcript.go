@@ -4,10 +4,10 @@
 //	WEBVTT
 //
 //	00:00:01.500 --> 00:00:04.200
-//	what was said
+//	the transcript
 //
 //	00:00:04.200 --> 00:00:09.100
-//	what was said next
+//	the transcript next
 //
 //	NOTE heard 9100
 //
@@ -117,11 +117,11 @@ func Parse(raw []byte) (string, []domain.TranscriptCue) {
 		outBuf, cues, cueLens = parseBlock(lines, outBuf, cues, cueLens)
 	}
 
-	said := string(outBuf)
+	response := string(outBuf)
 	for i := range cues {
-		cues[i].Text = said[cues[i].Offset : cues[i].Offset+cueLens[i]]
+		cues[i].Text = response[cues[i].Offset : cues[i].Offset+cueLens[i]]
 	}
-	return said, cues
+	return response, cues
 }
 
 // parseBlock is one block of the file as a cue, and whether it is one. The
@@ -192,12 +192,12 @@ func appendCueText(outBuf []byte, lines [][]byte, isFirstCue bool) (buf []byte, 
 	textOffset := len(outBuf)
 
 	if len(lines) == 1 {
-		trimmed := bytes.TrimSpace(lines[0])
-		if len(trimmed) == 0 {
+		cleanBytes := bytes.TrimSpace(lines[0])
+		if len(cleanBytes) == 0 {
 			return outBuf[:cueStart], 0, 0, false
 		}
-		outBuf = append(outBuf, trimmed...)
-		return outBuf, textOffset, len(trimmed), true
+		outBuf = append(outBuf, cleanBytes...)
+		return outBuf, textOffset, len(cleanBytes), true
 	}
 
 	for i, line := range lines {
@@ -207,15 +207,15 @@ func appendCueText(outBuf []byte, lines [][]byte, isFirstCue bool) (buf []byte, 
 		outBuf = append(outBuf, line...)
 	}
 	textBytes := outBuf[textOffset:]
-	trimmed := bytes.TrimSpace(textBytes)
-	if len(trimmed) == 0 {
+	cleanBytes := bytes.TrimSpace(textBytes)
+	if len(cleanBytes) == 0 {
 		return outBuf[:cueStart], 0, 0, false
 	}
-	if &trimmed[0] != &textBytes[0] {
-		copy(outBuf[textOffset:], trimmed)
+	if &cleanBytes[0] != &textBytes[0] {
+		copy(outBuf[textOffset:], cleanBytes)
 	}
-	outBuf = outBuf[:textOffset+len(trimmed)]
-	return outBuf, textOffset, len(trimmed), true
+	outBuf = outBuf[:textOffset+len(cleanBytes)]
+	return outBuf, textOffset, len(cleanBytes), true
 }
 
 // indexSpace is the index of the first ASCII whitespace byte in b.
@@ -258,7 +258,7 @@ func appendStamp(dst []byte, ms int) []byte {
 }
 
 // Clock is a moment of a recording as a person reads one: the way a player
-// writes where it stands. An hour that is not there is not written.
+// writes at its current position. An hour that is not there is not written.
 func Clock(ms int) string {
 	whole := max(ms, 0) / 1000
 	m := whole / 60 % 60
@@ -369,7 +369,7 @@ func GetCuesAt(cues []domain.TranscriptCue, start, length int) []domain.Transcri
 	return out
 }
 
-// progressNote is the note a run stopped part way leaves, as it stands in the file.
+// progressNote is the note a run stopped part way leaves, currently in the file.
 // The words after it are how many milliseconds of the recording have been
 // written down.
 const progressNote = "NOTE heard "

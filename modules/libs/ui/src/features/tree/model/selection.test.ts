@@ -19,13 +19,13 @@ const ROWS = ['a', 'b', 'c', 'd'].map(createRow)
 
 /** The selection the owner holds, changed only by what it is told. */
 function createOwner(initial: readonly RowId[] = []) {
-  let held = initial
+  let target = initial
   const select = vi.fn<(rows: readonly RowId[]) => void>((rows) => {
-    held = rows
+    target = rows
   })
   const state = useRowSelection(
     () => ROWS,
-    () => held,
+    () => target,
     select,
   )
   return { state, select }
@@ -36,7 +36,7 @@ describe('a press on a row', () => {
     expect(createOwner().state.hasApplied.value).toBe(false)
   })
 
-  it('selects the row and tells the owner', () => {
+  it('selects the row and notifies the owner', () => {
     const { state, select } = createOwner()
 
     expect(state.selectRow('b', PLAIN)).toStrictEqual(['b'])
@@ -44,7 +44,7 @@ describe('a press on a row', () => {
     expect(state.picked.value.has('b')).toBe(true)
   })
 
-  it('tells the owner nothing when the selection is the same', () => {
+  it('notifies the owner nothing when the selection is the same', () => {
     const { state, select } = createOwner(['b'])
 
     state.selectRow('b', PLAIN)

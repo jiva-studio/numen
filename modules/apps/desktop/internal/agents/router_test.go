@@ -116,8 +116,8 @@ func TestATaskGoesToTheProgramItNamesOrTheConfiguredOne(t *testing.T) {
 	provider := &fakeProvider{}
 	router, out := makeRouter(t, provider, settings.Agent{Use: settings.UseProgram("codex")}, EditPreview{})
 
-	for _, asked := range []string{"", "claude"} {
-		run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: asked})
+	for _, request := range []string{"", "claude"} {
+		run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: request})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -156,7 +156,7 @@ func TestTheDefaultProgramAnswersWhereTheSettingsLeaveTheChoice(t *testing.T) {
 	}
 }
 
-// A task is refused where no program can answer it.
+// A task fails where no program can answer it.
 func TestATaskNoProgramCanAnswerIsRefused(t *testing.T) {
 	for name, router := range map[string]*Router{
 		"the settings name none": mustRouter(t, &fakeProvider{}, settings.Agent{Use: settings.UseProgram("")}),
@@ -237,7 +237,7 @@ func TestAProgramTheSettingsSayNothingAboutGetsTheDefaultStepLimit(t *testing.T)
 }
 
 // A plugin that cannot start the task is told to the person.
-func TestWhatThePluginsRefuseIsToldWithTheTask(t *testing.T) {
+func TestPluginError_ReportedWithTask(t *testing.T) {
 	router, _ := makeRouter(t, &fakeProvider{startErr: errors.New("no such program")}, settings.Agent{}, EditPreview{})
 	if _, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"}); err == nil ||
 		!strings.Contains(err.Error(), "no such program") {
@@ -246,7 +246,7 @@ func TestWhatThePluginsRefuseIsToldWithTheTask(t *testing.T) {
 }
 
 // Closing the router refuses the work that comes after it.
-func TestNoProgramTakesWorkAfterTheRouterIsClosed(t *testing.T) {
+func TestRouterClosed_RejectsWork(t *testing.T) {
 	router, _ := makeRouter(t, &fakeProvider{}, settings.Agent{}, EditPreview{})
 	if err := router.Close(); err != nil {
 		t.Fatal(err)
@@ -302,7 +302,7 @@ func draftOf(call, path, match, text string) port.Step {
 
 // A change being written is drawn where the note holds the stretch it replaces, as each draft
 // arrives, and is no step the person is shown.
-func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
+func TestDraftRendered_NotStep(t *testing.T) {
 	call := port.Step{Kind: domain.StepEdit, Call: "c-1", Tool: "Edit a note"}
 	provider := &fakeProvider{steps: []port.Step{
 		call,
@@ -310,8 +310,8 @@ func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
 		draftOf("c-1", "a.md", "old", "new text"),
 		{Kind: domain.StepStop},
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(true))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
@@ -327,22 +327,22 @@ func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
 		{Change: "c-1", Path: "a.md", From: 10, To: 13, Text: "new text"},
 		{Change: "c-1", IsDone: true},
 	}
-	if !slices.Equal(seen.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", seen.edits, want)
+	if !slices.Equal(observed.edits, want) {
+		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
 	}
-	if !slices.Equal(seen.located, []string{"a.md:old"}) {
-		t.Errorf("the stretch was looked for as %q, and once is enough", seen.located)
+	if !slices.Equal(observed.located, []string{"a.md:old"}) {
+		t.Errorf("the stretch was looked for as %q, and once is enough", observed.located)
 	}
 }
 
 // A stretch that stands nowhere or twice is not drawn, and is not looked for again.
-func TestAStretchThatIsNotUniqueIsNotDrawn(t *testing.T) {
+func TestNonUniqueSpan_NotRendered(t *testing.T) {
 	provider := &fakeProvider{steps: []port.Step{
 		draftOf("c-1", "a.md", "old", "x"),
 		draftOf("c-1", "a.md", "old", "xy"),
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(false))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(false))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
@@ -351,8 +351,8 @@ func TestAStretchThatIsNotUniqueIsNotDrawn(t *testing.T) {
 	if steps := drain(run); len(steps) != 0 {
 		t.Errorf("the person is shown %+v", steps)
 	}
-	if len(seen.edits) != 0 || len(seen.located) != 1 {
-		t.Errorf("drawn %+v after looking %q", seen.edits, seen.located)
+	if len(observed.edits) != 0 || len(observed.located) != 1 {
+		t.Errorf("drawn %+v after looking %q", observed.edits, observed.located)
 	}
 }
 
@@ -364,44 +364,44 @@ func TestAnotherChangeIsLookedForAgain(t *testing.T) {
 		draftOf("c-2", "b.md", "old", "x"),
 		draftOf("c-2", "b.md", "older", "x"),
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(true))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	drain(run)
-	if want := []string{"a.md:old", "a.md:old", "b.md:old", "b.md:older"}; !slices.Equal(seen.located, want) {
-		t.Errorf("looked for %q, want %q", seen.located, want)
+	if want := []string{"a.md:old", "a.md:old", "b.md:old", "b.md:older"}; !slices.Equal(observed.located, want) {
+		t.Errorf("looked for %q, want %q", observed.located, want)
 	}
-	done := 0
-	for _, one := range seen.edits {
+	isDone := 0
+	for _, one := range observed.edits {
 		if one.IsDone {
-			done++
+			isDone++
 		}
 	}
-	if len(seen.edits) != 6 || done != 2 {
-		t.Errorf("drawn %+v", seen.edits)
+	if len(observed.edits) != 6 || isDone != 2 {
+		t.Errorf("drawn %+v", observed.edits)
 	}
 }
 
 // A draft naming no note or no stretch is not drawn, and neither is one where nothing can be drawn.
-func TestADraftThatSaysNothingIsNotDrawn(t *testing.T) {
+func TestEmptyDraft_NotRendered(t *testing.T) {
 	steps := []port.Step{
 		draftOf("c-1", "", "old", "x"),
 		draftOf("c-1", "a.md", "", "x"),
 		draftOf("c-1", "a.md", "old", "x"),
 	}
 
-	var seen drawn
-	router, _ := makeRouter(t, &fakeProvider{steps: steps[:2]}, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, &fakeProvider{steps: steps[:2]}, settings.Agent{}, observed.preview(true))
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if shown := drain(run); len(shown) != 0 || len(seen.edits) != 0 || len(seen.located) != 0 {
-		t.Errorf("shown %+v, drawn %+v, looked for %q", shown, seen.edits, seen.located)
+	if items := drain(run); len(items) != 0 || len(observed.edits) != 0 || len(observed.located) != 0 {
+		t.Errorf("shown %+v, drawn %+v, looked for %q", items, observed.edits, observed.located)
 	}
 
 	router, _ = makeRouter(t, &fakeProvider{steps: steps[2:]}, settings.Agent{}, EditPreview{})
@@ -409,8 +409,8 @@ func TestADraftThatSaysNothingIsNotDrawn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if shown := drain(run); len(shown) != 0 {
-		t.Errorf("a draft was shown as %+v", shown)
+	if displayedVal := drain(run); len(displayedVal) != 0 {
+		t.Errorf("a draft was shown as %+v", displayedVal)
 	}
 }
 
@@ -440,14 +440,14 @@ func TestStoppingTheRunStopsThePluginsRun(t *testing.T) {
 	}
 }
 
-// Where no program can be chosen because a plugin could not be asked, the refusal says why.
-func TestARefusalSaysWhyThePluginsCouldNotBeAsked(t *testing.T) {
+// Where no program can be chosen because a plugin could not be asked, the rejection says why.
+func TestError_PluginUnavailableReason(t *testing.T) {
 	provider := &fakeProvider{listErr: errors.New("plugin md.test.one cannot be started")}
 	router, _ := makeRouter(t, provider, settings.Agent{}, EditPreview{})
 
 	_, err := router.StartRun(t.Context(), port.Task{Question: "q"})
 	if err == nil || !strings.Contains(err.Error(), "cannot be started") {
-		t.Errorf("the refusal is %v", err)
+		t.Errorf("the error is %v", err)
 	}
 }
 
@@ -484,8 +484,8 @@ func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 		{Kind: domain.StepToolDone},
 		{Kind: domain.StepSay, Text: "after"},
 	}}
-	var seen drawn
-	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(true))
+	var observed drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, observed.preview(true))
 
 	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
 	if err != nil {
@@ -497,8 +497,8 @@ func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 		{Change: "c-1", Path: "a.md", From: 10, To: 13, Text: "x"},
 		{Change: "c-1", IsDone: true},
 	}
-	if !slices.Equal(seen.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", seen.edits, want)
+	if !slices.Equal(observed.edits, want) {
+		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
 	}
 }
 

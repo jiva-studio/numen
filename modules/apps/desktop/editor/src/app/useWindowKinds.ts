@@ -58,7 +58,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     else await tabOpeners.openFile(path, '', 'here')
   }
 
-  /** The note the plex the person was last in stands on, which a talk is about. */
+  /** The note the plex the person was last in relies on, which a talk is about. */
   const getPlexTarget = () => {
     const last = windowTabs.handle.last(PLEX)
     const target = last ? windowTabs.getTab(last.id)?.kind.getTarget?.(last.state) : undefined
@@ -73,7 +73,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     openFile: (path, title, line) => void tabOpeners.openFile(path, title, { where: 'here', line }),
   }
 
-  const made = createFileMakers({
+  const createdItem = createFileMakers({
     core,
     tabOpeners,
     windowTabs,
@@ -95,7 +95,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       today: () => formatLocalDate(new Date()),
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
-    files: createVaultFiles({ ...deps, made, making: editing.making }),
+    files: createVaultFiles({ ...deps, made: createdItem, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),
   }
@@ -107,7 +107,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
         if (windowTabs.hasKind(FILES)) await windowTabs.navigateTab(FILES, path)
       },
     },
-    made,
+    made: createdItem,
     destinations,
     dragged,
     travel,

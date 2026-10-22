@@ -42,19 +42,19 @@ func storedBits(t *testing.T, db *DB) map[int64][]byte {
 		t.Fatal(err)
 	}
 	defer rows.Close()
-	held := map[int64][]byte{}
+	target := map[int64][]byte{}
 	for rows.Next() {
 		var id int64
 		var value []byte
 		if err := rows.Scan(&id, &value); err != nil {
 			t.Fatal(err)
 		}
-		held[id] = value
+		target[id] = value
 	}
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
-	return held
+	return target
 }
 
 func fit(t *testing.T, db *DB, recipe string) {
@@ -81,11 +81,11 @@ func TestSwitchingBetweenTwoModelsOfOneWidthAndBackRestoresTheFirstModelsBits(t 
 	}
 
 	fit(t, db, testRecipe)
-	held := storedBits(t, db)
-	if len(held) != small {
-		t.Fatalf("%d coarse rows, want %d", len(held), small)
+	target := storedBits(t, db)
+	if len(target) != small {
+		t.Fatalf("%d coarse rows, want %d", len(target), small)
 	}
-	for id, got := range held {
+	for id, got := range target {
 		if !bytes.Equal(got, bits(0x0f)) {
 			t.Errorf("chunk %d holds %x, want the bits of the recipe in use", id, got[:2])
 		}
@@ -95,7 +95,7 @@ func TestSwitchingBetweenTwoModelsOfOneWidthAndBackRestoresTheFirstModelsBits(t 
 	}
 }
 
-func TestFittingTheRecipeAndWidthAlreadyHeldLeavesTheCoarseIndexAlone(t *testing.T) {
+func TestFittingTheRecipeAndWidthAlreadyHeldPreservesTheCoarseIndexAlone(t *testing.T) {
 	db := openDB(t)
 	book(t, db, first, "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
@@ -106,12 +106,12 @@ func TestFittingTheRecipeAndWidthAlreadyHeldLeavesTheCoarseIndexAlone(t *testing
 		t.Fatal(err)
 	}
 	fit(t, db, testRecipe)
-	if _, held := storedBits(t, db)[999999]; !held {
+	if _, target := storedBits(t, db)[999999]; !target {
 		t.Error("fitting the recipe already held rebuilt the coarse index")
 	}
 
 	fit(t, db, otherRecipe)
-	if _, held := storedBits(t, db)[999999]; held {
+	if _, targetVal := storedBits(t, db)[999999]; targetVal {
 		t.Error("fitting another recipe left a row of the old one")
 	}
 }
@@ -135,11 +135,11 @@ func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 	}
 
 	fit(t, db, testRecipe)
-	held := storedBits(t, db)
-	if len(held) == 0 {
+	target := storedBits(t, db)
+	if len(target) == 0 {
 		t.Fatal("the index was not filled")
 	}
-	for id, got := range held {
+	for id, got := range target {
 		if !bytes.Equal(got, bits(0x0f)) {
 			t.Errorf("chunk %d still holds %x", id, got[:2])
 		}
@@ -149,7 +149,7 @@ func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 	}
 }
 
-func TestAChunkTheNewRecipeHoldsNoVectorForGetsNoCoarseRow(t *testing.T) {
+func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 	db := openDB(t)
 	book(t, db, first, "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
@@ -210,7 +210,7 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 	}
 }
 
-func TestAFreshIndexHoldsTheRecipeTableAndNoRecipe(t *testing.T) {
+func TestAFreshIndexContainsTheRecipeTableAndNoRecipe(t *testing.T) {
 	db := openDB(t)
 	if _, recorded, err := coarseRecipe(t.Context(), db.write); err != nil || recorded {
 		t.Errorf("a fresh index records %v, %v", recorded, err)

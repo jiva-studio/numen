@@ -1,7 +1,7 @@
 /**
  * What is drawn in place of a mark.
  *
- * A widget is told nothing but what it draws. Where it stands is read back
+ * A widget is told nothing but what it draws. at its current position is read back
  * from the editor when it acts, so a widget kept from an earlier draw still
  * writes in the right place.
  */

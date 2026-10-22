@@ -22,9 +22,9 @@ export function createNodeIdMap() {
   }
 
   const retainNodeIds = (ids: readonly string[]): void => {
-    const drawing = new Set(ids)
+    const activeIds = new Set(ids)
     for (const [path, id] of nodeIdsByPath) {
-      if (!drawing.has(id)) nodeIdsByPath.delete(path)
+      if (!activeIds.has(id)) nodeIdsByPath.delete(path)
     }
   }
 

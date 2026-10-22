@@ -1,7 +1,7 @@
 package domain
 
 // NameMatch is one name in a vault that matched what was typed: a note, and
-// the heading inside it when a heading is what matched rather than the note's
+// the heading inside it when a heading is what matched and not the note's
 // own title.
 //
 // It is a read model — a note is not reconstructed from it. A search over the
@@ -19,7 +19,7 @@ type NameMatch struct {
 	Heading string
 
 	// Line is where that heading stands, counted from the first line of the
-	// prose. Zero for a title, which stands on no line of the prose at all.
+	// prose. Zero for a title, which relies on no line of the prose at all.
 	Line int
 
 	// Spans are where in the name that matched the words typed stand, counted

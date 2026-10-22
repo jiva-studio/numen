@@ -64,22 +64,22 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
   one.writeQueue.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.writeQueue.hasExternalChange.value = false
   one.curves.answers.clear()
-  const read = answer.ok ? answer.value.preset : null
+  const readItem = answer.ok ? answer.value.preset : null
   if (answer.ok) {
     one.writeQueue.revision = answer.value.at
     bounds.value = answer.value.bounds
   }
-  if (!read) {
+  if (!readItem) {
     one.problems.value = []
     one.stopped.value = StopReason.NOTHING
     one.curves.isWaiting.value = false
     return
   }
-  if (read.title) titles.set(one.path.value, read.title)
-  one.problems.value = read.problems
-  one.stopped.value = read.stopsOn
+  if (readItem.title) titles.set(one.path.value, readItem.title)
+  one.problems.value = readItem.problems
+  one.stopped.value = readItem.stopsOn
   one.settings.value = reconcileSettings(
-    read.settings,
+    readItem.settings,
     one.settings.value,
     one.writeQueue.dirtyFields,
   )
@@ -170,8 +170,8 @@ const createTabCloser = (one: OpenPreset, context: PresetStateContext) => (tab: 
     settings: one.settings.value,
     core: context.core,
     writeMessage: context.writeMessage,
-  }).then((gone) => {
-    if (!gone) return
+  }).then((removed) => {
+    if (!removed) return
     context.onClosed(one.path.value)
     context.closeTab(tab)
   })

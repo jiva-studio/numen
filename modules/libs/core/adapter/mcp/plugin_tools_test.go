@@ -58,7 +58,7 @@ func TestThePluginsToolsAreServedOnTheServersTheyNameAndNoOthers(t *testing.T) {
 	plugins := &offeredTools{tools: sampleTools()}
 
 	full := servedWith(t, plugins, mcp.New)
-	reading := servedWith(t, plugins, mcp.NewReading)
+	readingService := servedWith(t, plugins, mcp.NewReading)
 	review := servedWith(t, plugins, mcp.NewReviewServer)
 
 	for _, served := range []struct {
@@ -68,7 +68,7 @@ func TestThePluginsToolsAreServedOnTheServersTheyNameAndNoOthers(t *testing.T) {
 		not  []string
 	}{
 		{"the full server", full, []string{"sample_read", "sample_write", "sample_drop"}, []string{"sample_review"}},
-		{"the reading server", reading, []string{"sample_read"}, []string{"sample_write", "sample_drop", "sample_review"}},
+		{"the reading server", readingService, []string{"sample_read"}, []string{"sample_write", "sample_drop", "sample_review"}},
 		{"the review server", review, []string{"sample_review"}, []string{"sample_read", "sample_write"}},
 	} {
 		for _, name := range served.want {
@@ -84,15 +84,15 @@ func TestThePluginsToolsAreServedOnTheServersTheyNameAndNoOthers(t *testing.T) {
 	}
 }
 
-func TestNoPluginsLeavesTheToolsOfTheCoreAlone(t *testing.T) {
+func TestNoPluginsPreservesTheToolsOfTheCoreAlone(t *testing.T) {
 	_, core := newCore(t)
-	without := getServedTools(t, sessionOf(t, mcp.New(core)))
+	unmountedTools := getServedTools(t, sessionOf(t, mcp.New(core)))
 
 	empty := &offeredTools{}
 	core.Plugins = plugintool.NewTools(empty)
 
-	if with := getServedTools(t, sessionOf(t, mcp.New(core))); !slices.Equal(with, without) {
-		t.Errorf("an empty list of plugin tools changed what is served:\n%v\n%v", with, without)
+	if with := getServedTools(t, sessionOf(t, mcp.New(core))); !slices.Equal(with, unmountedTools) {
+		t.Errorf("an empty list of plugin tools changed what is served:\n%v\n%v", with, unmountedTools)
 	}
 }
 
@@ -126,7 +126,7 @@ func TestACallIsHandedToThePluginThatListedTheToolWithItsArgumentsKeyedAsListed(
 	}
 
 	if res.IsError || text(res) != "done" {
-		t.Errorf("the answer was %q (refused: %v)", text(res), res.IsError)
+		t.Errorf("the answer was %q (rejected: %v)", text(res), res.IsError)
 	}
 	structured, err := json.Marshal(res.StructuredContent)
 	if err != nil || string(structured) != `{"ok":true}` {
@@ -138,22 +138,22 @@ func TestACallIsHandedToThePluginThatListedTheToolWithItsArgumentsKeyedAsListed(
 	}
 }
 
-func TestAToolThatRefusedOrFailedAnswersAsARefusal(t *testing.T) {
-	refused := &offeredTools{tools: sampleTools(), reply: plugintool.Result{Text: "no such deck", IsRefusal: true}}
+func TestAToolThatRefusedOrFailedAnswersAsAError(t *testing.T) {
+	rejected := &offeredTools{tools: sampleTools(), reply: plugintool.Result{Text: "no such deck", IsRefusal: true}}
 	failed := &offeredTools{tools: sampleTools(), err: port.ErrUnavailable}
 
-	for name, plugins := range map[string]*offeredTools{"refused": refused, "failed": failed} {
+	for name, plugins := range map[string]*offeredTools{"rejected": rejected, "failed": failed} {
 		_, core := newCore(t)
 		core.Plugins = plugintool.NewTools(plugins)
 		session := sessionOf(t, mcp.New(core))
 
-		if said := getRefusal(t, session, "sample_read", map[string]any{"deckPath": "x.md"}); said == "" {
+		if response := getToolError(t, session, "sample_read", map[string]any{"deckPath": "x.md"}); response == "" {
 			t.Errorf("a tool that %s said nothing", name)
 		}
 	}
 }
 
-func TestACallOfAPluginToolIsShownAsWhatTheToolSaysItDoes(t *testing.T) {
+func TestACallOfAPluginToolIsShownAsWhatTheToolReturnsItDoes(t *testing.T) {
 	_, core := newCore(t)
 	plugins := &offeredTools{tools: sampleTools()}
 	core.Plugins = plugintool.NewTools(plugins)

@@ -23,14 +23,14 @@ func (a *reviewHandler) ListReviewDays(
 	if err != nil {
 		return nil, err
 	}
-	said, err := a.scenarios().flash.GetReviewDays.Execute(ctx, v, r.Msg.GetFrom(), r.Msg.GetTo())
+	response, err := a.scenarios().flash.GetReviewDays.Execute(ctx, v, r.Msg.GetFrom(), r.Msg.GetTo())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	days := make([]*v1.ReviewDay, 0, len(said.Days))
-	for day, one := range said.Days {
-		came := said.Retained[day]
+	days := make([]*v1.ReviewDay, 0, len(response.Days))
+	for day, one := range response.Days {
+		came := response.Retained[day]
 		days = append(days, &v1.ReviewDay{
 			Day:      day,
 			Answered: int32(one.Answered),
@@ -42,16 +42,16 @@ func (a *reviewHandler) ListReviewDays(
 			Recalled: int32(came.Recalled),
 		})
 	}
-	due := make([]*v1.ReviewDay, 0, len(said.Due))
-	for day, falls := range said.Due {
+	due := make([]*v1.ReviewDay, 0, len(response.Due))
+	for day, falls := range response.Due {
 		due = append(due, &v1.ReviewDay{Day: day, Answered: int32(falls)})
 	}
 
 	return connect.NewResponse(&v1.ListReviewDaysResponse{
 		Days:     sortReviewDays(days),
 		Due:      sortReviewDays(due),
-		Streak:   int32(said.Streak),
-		Answered: int32(said.Answered),
+		Streak:   int32(response.Streak),
+		Answered: int32(response.Answered),
 	}), nil
 }
 

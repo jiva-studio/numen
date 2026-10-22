@@ -33,11 +33,11 @@ const createTile = (
   cards: readonly DeckCard[] = CARDS,
   sections: readonly DeckSection[] = [],
 ): Tile => {
-  const laid = getGrid({ cards, sections, stencils: CUTS }, null)
+  const cardGrid = getGrid({ cards, sections, stencils: CUTS }, null)
     .runs.flatMap((run) => run.tiles)
     .find((tile) => tile.id === id)
-  if (!laid) throw new Error(`no tile for ${id}`)
-  return laid
+  if (!cardGrid) throw new Error(`no tile for ${id}`)
+  return cardGrid
 }
 
 const write = vi.fn<(card: string, target: { field: string; nth: number }, text: string) => void>()
@@ -56,27 +56,27 @@ afterEach(() => {
 
 describe('Card', () => {
   it('says its place among the tiles and how many stand with it, from the tile itself', () => {
-    const held = mountCard(createTile('yak'))
-    expect(held.get('[data-card]').attributes('aria-posinset')).toBe('2')
-    expect(held.get('[data-card]').attributes('aria-setsize')).toBe('3')
+    const card = mountCard(createTile('yak'))
+    expect(card.get('[data-card]').attributes('aria-posinset')).toBe('2')
+    expect(card.get('[data-card]').attributes('aria-setsize')).toBe('3')
   })
 
   it('is drawn with words that say nothing of adding a card', () => {
-    const held = mountCard(createTile('llama'), { words: WORDS })
-    expect(held.get('[data-cut-of]').attributes('aria-label')).toBe('Stencil')
+    const card = mountCard(createTile('llama'), { words: WORDS })
+    expect(card.get('[data-cut-of]').attributes('aria-label')).toBe('Stencil')
   })
 
-  it('announces a card by the place it stands in the deck, and by no name of its own', () => {
-    const held = mountCard(createTile('yak'), { words: WORDS })
-    expect(held.get('[data-card]').attributes('aria-label')).toBe('Card 2')
-    expect(held.get('.card-header__grip').attributes('aria-label')).toBe('Reorder: Card 2')
+  it('announces a card by the place it remains in the deck, and by no name of its own', () => {
+    const card = mountCard(createTile('yak'), { words: WORDS })
+    expect(card.get('[data-card]').attributes('aria-label')).toBe('Card 2')
+    expect(card.get('.card-header__grip').attributes('aria-label')).toBe('Reorder: Card 2')
   })
 
-  it('says which section it stands under, and nothing where it stands under none', () => {
-    const under: readonly DeckCard[] = [
+  it('says which section it is placed under, and nothing where it is placed under none', () => {
+    const underCards: readonly DeckCard[] = [
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
-    const tile = createTile('llama', under, [{ id: 'roots', name: 'Roots' }])
+    const tile = createTile('llama', underCards, [{ id: 'roots', name: 'Roots' }])
     expect(mountCard(tile).get('[data-card]').attributes('data-section')).toBe('roots')
     expect(
       mountCard(createTile('llama')).get('[data-card]').attributes('data-section'),
@@ -84,8 +84,8 @@ describe('Card', () => {
   })
 
   it('holds what was typed, breaks and all, in the box of the first field', async () => {
-    const held = mountCard(createTile('llama'))
-    const box = held.get<HTMLTextAreaElement>('[data-value="Name"]')
+    const card = mountCard(createTile('llama'))
+    const box = card.get<HTMLTextAreaElement>('[data-value="Name"]')
     const press = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
     box.element.dispatchEvent(press)
     expect(press.defaultPrevented).toBe(false)
@@ -95,27 +95,27 @@ describe('Card', () => {
   })
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {
-    const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const bareCards: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
     expect(mountCard(createTile('llama')).get('[data-cut-of]').text()).toBe('Animal')
-    expect(mountCard(createTile('bare', bare), { words: WORDS }).get('[data-cut-of]').text()).toBe(
+    expect(mountCard(createTile('bare', bareCards), { words: WORDS }).get('[data-cut-of]').text()).toBe(
       'Cut by no stencil',
     )
   })
 
-  it('holds nothing against a card that names no stencil, having said so on its strip', () => {
-    const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
-    const held = mountCard(createTile('bare', bare), { words: WORDS })
-    expect(held.findAll('.card__objections')).toHaveLength(0)
+  it('holds nothing against a card that names no stencil, having returned so on its strip', () => {
+    const bareCards: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const card = mountCard(createTile('bare', bareCards), { words: WORDS })
+    expect(card.findAll('.card__objections')).toHaveLength(0)
   })
 
   it('says which stencil a card naming one is waiting for', () => {
-    const gone: readonly DeckCard[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
-    const held = mountCard(createTile('gone', gone), { words: WORDS })
-    expect(held.get('.card__objections').text()).toContain('No stencil called Gone')
+    const removed: readonly DeckCard[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
+    const card = mountCard(createTile('gone', removed), { words: WORDS })
+    expect(card.get('.card__objections').text()).toContain('No stencil called Gone')
   })
 
   it('reads a value of a card no stencil cuts, and types into none of them', () => {
-    const bare: readonly DeckCard[] = [
+    const bareCards: readonly DeckCard[] = [
       {
         id: 'bare',
         section: null,
@@ -123,10 +123,10 @@ describe('Card', () => {
         filled: [{ field: 'Question', text: 'what did I mean' }],
       },
     ]
-    const held = mountCard(createTile('bare', bare), { words: WORDS })
-    expect(held.findAll('textarea')).toHaveLength(0)
-    expect(held.find('.card__silence').exists()).toBe(false)
-    const wrote = held.get('[data-wrote="Question"]')
+    const card = mountCard(createTile('bare', bareCards), { words: WORDS })
+    expect(card.findAll('textarea')).toHaveLength(0)
+    expect(card.find('.card__silence').exists()).toBe(false)
+    const wrote = card.get('[data-wrote="Question"]')
     expect(wrote.text()).toBe('what did I mean')
     expect(wrote.attributes('aria-label')).toBe('Question')
   })
@@ -143,16 +143,16 @@ describe('Card', () => {
         ],
       },
     ]
-    const held = mountCard(createTile('twice', twice), {
+    const card = mountCard(createTile('twice', twice), {
       wrongUnder: new Map([['Name', ['this card writes Name twice']]]),
     })
-    const said = held.findAll('[data-wrong-value="Name"]')
-    expect(said).toHaveLength(1)
-    expect(said[0]?.text()).toContain('this card writes Name twice')
+    const response = card.findAll('[data-wrong-value="Name"]')
+    expect(response).toHaveLength(1)
+    expect(response[0]?.text()).toContain('this card writes Name twice')
   })
 
   it('holds nothing against any value of a card it was handed no marks for', () => {
-    const held = mountCard(createTile('llama'))
-    expect(held.find('[data-wrong-value]').exists()).toBe(false)
+    const card = mountCard(createTile('llama'))
+    expect(card.find('[data-wrong-value]').exists()).toBe(false)
   })
 })

@@ -127,16 +127,16 @@ func resolveProgram(named Tool, tool string) program {
 
 func run(ctx context.Context, tool program, into io.Writer, arguments ...string) ([]byte, error) {
 	running := tool.buildCommand(ctx, arguments...)
-	var out, said bytes.Buffer
-	running.Stdout, running.Stderr = &out, &said
+	var out, response bytes.Buffer
+	running.Stdout, running.Stderr = &out, &response
 	if into != nil {
 		running.Stdout = into
 	}
 	if err := running.Run(); err != nil {
-		if stopped := ctx.Err(); stopped != nil {
-			return nil, stopped
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
 		}
-		return nil, fmt.Errorf("%w: %s", err, getLastLine(said.String()))
+		return nil, fmt.Errorf("%w: %s", err, getLastLine(response.String()))
 	}
 	return out.Bytes(), nil
 }

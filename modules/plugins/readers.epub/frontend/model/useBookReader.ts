@@ -196,7 +196,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
     page,
     chapter,
     offset: nav.offset,
-    reading: bookDocument.reading,
+    documentSpan: bookDocument.documentSpan,
     drawn: bookDocument.drawn,
     markup: bookDocument.markup,
     highlights: marks.highlights,

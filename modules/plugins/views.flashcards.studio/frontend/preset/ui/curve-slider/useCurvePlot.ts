@@ -34,7 +34,7 @@ export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
   const places = computed(() => getCurve().grid.length)
   const knob = computed(() => positions.value[getPlace()] ?? null)
   const suggested = computed(() => positions.value[getCurve().suggested.at] ?? null)
-  const held = computed(() => getKnobValue(getCurve(), getPlace()))
+  const target = computed(() => getKnobValue(getCurve(), getPlace()))
 
   return {
     scale,
@@ -45,6 +45,6 @@ export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
     places,
     knob,
     suggested,
-    held,
+    held: target,
   }
 }

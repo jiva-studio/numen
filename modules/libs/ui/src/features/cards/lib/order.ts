@@ -19,18 +19,18 @@ export function orderNames(
 ): readonly string[] {
   if (!names.includes(dragEntry)) return names
 
-  const left = names.filter((name) => name !== dragEntry)
-  if (at === null) return [...left, dragEntry]
+  const remaining = names.filter((name) => name !== dragEntry)
+  if (at === null) return [...remaining, dragEntry]
 
-  const before = left.indexOf(at)
+  const before = remaining.indexOf(at)
   if (before === -1) return names
-  return [...left.slice(0, before), dragEntry, ...left.slice(before)]
+  return [...remaining.slice(0, before), dragEntry, ...remaining.slice(before)]
 }
 
 /**
  * A dragged field may land where it was let go. The first field names every
  * card the stencil cuts, so it stays first: it does not move, and nothing lands
- * above it. A field let go where it stands moves nothing either.
+ * above it. A field let go at its current position moves nothing either.
  */
 export function canDropField(
   fields: readonly string[],
@@ -73,7 +73,7 @@ export function getStepInsertionPoint(
   return names[at + 2] ?? null
 }
 
-/** The order a dragged field lands in, with the first field left where it is. */
+/** The order a dragged field lands in, with the first field remaining where it is. */
 export const reorderFields = (
   fields: readonly string[],
   dragEntry: string,
@@ -100,8 +100,8 @@ export interface NameCheckResult<Why extends Objection> {
  * carrying a brace cannot be written, and one already taken names two slots.
  */
 export function checkFieldName(name: string, names: readonly string[]): NameCheckResult<Objection> {
-  const trimmed = name.trim()
-  if (trimmed.includes('{') || trimmed.includes('}')) return { name: trimmed, objection: 'braced' }
+  const cleanName = name.trim()
+  if (cleanName.includes('{') || cleanName.includes('}')) return { name: cleanName, objection: 'braced' }
   return checkHeadingName(name, names)
 }
 
@@ -113,10 +113,10 @@ export function checkHeadingName(
   name: string,
   names: readonly string[],
 ): NameCheckResult<HeadingObjection> {
-  const trimmed = name.trim()
-  if (trimmed === '') return { name: trimmed, objection: 'blank' }
-  if (names.some((each) => each.trim() === trimmed)) return { name: trimmed, objection: 'taken' }
-  return { name: trimmed, objection: null }
+  const cleanName = name.trim()
+  if (cleanName === '') return { name: cleanName, objection: 'blank' }
+  if (names.some((each) => each.trim() === cleanName)) return { name: cleanName, objection: 'taken' }
+  return { name: cleanName, objection: null }
 }
 
 /**
@@ -124,10 +124,10 @@ export function checkHeadingName(
  * alone is not one of them, so every name made this way carries a number.
  */
 export function getFreeName(names: readonly string[], stem: string): string {
-  const held = new Set(names.map((name) => name.trim()))
+  const target = new Set(names.map((name) => name.trim()))
   for (let at = 1; ; at += 1) {
     const tried = `${stem} ${at}`
-    if (!held.has(tried)) return tried
+    if (!target.has(tried)) return tried
   }
 }
 

@@ -65,7 +65,7 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 
 // The choice lands in the settings file, and the keys a person typed into it
 // are still there afterwards.
-func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
+func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(
@@ -74,21 +74,21 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	}
 
 	client := newThemeClient(t, cfg)
-	chosen, err := client.WriteAppearance(t.Context(),
+	selected, err := client.WriteAppearance(t.Context(),
 		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := chosen.Msg.GetError(); reason != "" {
-		t.Fatalf("refused: %s", reason)
+	if reason := selected.Msg.GetError(); reason != "" {
+		t.Fatalf("failed: %s", reason)
 	}
 
-	said := container.DefaultSettings()
-	if err := settings.OpenAt(file, &said); err != nil {
+	response := container.DefaultSettings()
+	if err := settings.OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
-	if said.Appearance.Theme != "preset:nord" || said.Appearance.Mode != settings.ModeDark {
-		t.Errorf("the file says %+v", said.Appearance)
+	if response.Appearance.Theme != "preset:nord" || response.Appearance.Mode != settings.ModeDark {
+		t.Errorf("the file says %+v", response.Appearance)
 	}
 	// The key sits in the half the settings are not on, which nothing reads
 	// through a provider. What it is still doing there is what the file says.
@@ -110,30 +110,30 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 }
 
 // The two sizes land in the settings file, and each is written on its own.
-func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
+func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	client := newThemeClient(t, cfg)
 
-	drawn := 1.5
-	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+	zoomLevel := 1.5
+	selected, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
-		InterfaceScale: &drawn,
+		InterfaceScale: &zoomLevel,
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := chosen.Msg.GetError(); reason != "" {
-		t.Fatalf("refused: %s", reason)
+	if reason := selected.Msg.GetError(); reason != "" {
+		t.Fatalf("failed: %s", reason)
 	}
 
-	said := container.DefaultSettings()
-	if err := settings.OpenAt(file, &said); err != nil {
+	response := container.DefaultSettings()
+	if err := settings.OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
-	if said.Appearance.InterfaceScale != 1.5 || said.Appearance.TextScale != 1 {
-		t.Errorf("the file says %+v", said.Appearance)
+	if response.Appearance.InterfaceScale != 1.5 || response.Appearance.TextScale != 1 {
+		t.Errorf("the file says %+v", response.Appearance)
 	}
 
 	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
@@ -146,8 +146,8 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 }
 
 // A window can be made hard to read only as far as the bounds go, and the file
-// is left as it stands.
-func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
+// is left currently.
+func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(`{"appearance":{"theme":"preset:nord"}}`), 0o600); err != nil {
@@ -156,7 +156,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 
 	client := newThemeClient(t, cfg)
 	set := 4.0
-	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+	selected, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:      settings.DefaultTheme,
 		Mode:      v1.Mode_MODE_LIGHT,
 		TextScale: &set,
@@ -164,22 +164,22 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := chosen.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
-		t.Errorf("refused with %q", reason)
+	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
+		t.Errorf("failed with %q", reason)
 	}
 
-	held, err := os.ReadFile(file)
+	target, err := os.ReadFile(file)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(held) != `{"appearance":{"theme":"preset:nord"}}` {
-		t.Errorf("the file now reads %s", held)
+	if string(target) != `{"appearance":{"theme":"preset:nord"}}` {
+		t.Errorf("the file now reads %s", target)
 	}
 }
 
 // What the command line said stands over the file, and a person choosing that
-// size for themselves is what it is let go of for.
-func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
+// size for themselves is what it is release for.
+func TestASizeSaidForOneLaunchExistsUntilAPersonChoosesOne(t *testing.T) {
 	cfg := newConfig(t)
 	cfg.InterfaceScale = 1.25
 	client := newThemeClient(t, cfg)
@@ -192,11 +192,11 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 		t.Errorf("drawn at %v", answer.Msg.GetInterfaceScale())
 	}
 
-	drawn := 1.5
+	zoomLevel := 1.5
 	if _, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
-		InterfaceScale: &drawn,
+		InterfaceScale: &zoomLevel,
 	})); err != nil {
 		t.Fatal(err)
 	}

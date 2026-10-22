@@ -43,23 +43,23 @@ func TestStartAnswers(t *testing.T) {
 			t.Fatalf("asking %s: %v", method, err)
 		}
 		defer res.Body.Close()
-		said, _ := io.ReadAll(res.Body)
+		response, _ := io.ReadAll(res.Body)
 		if res.StatusCode != http.StatusOK {
-			t.Fatalf("%s answered %s: %s", method, res.Status, said)
+			t.Fatalf("%s answered %s: %s", method, res.Status, response)
 		}
-		var held map[string]any
-		if err := json.Unmarshal(said, &held); err != nil {
-			t.Fatalf("%s answered %q: %v", method, said, err)
+		var target map[string]any
+		if err := json.Unmarshal(response, &target); err != nil {
+			t.Fatalf("%s answered %q: %v", method, response, err)
 		}
-		return held
+		return target
 	}
 
 	names := func() []string {
-		var held []string
+		var targetVal []string
 		for _, entry := range ask("FileService", "ListFiles", map[string]any{"folder": ""})["entries"].([]any) {
-			held = append(held, entry.(map[string]any)["name"].(string))
+			targetVal = append(targetVal, entry.(map[string]any)["name"].(string))
 		}
-		return held
+		return targetVal
 	}
 
 	if got := len(names()); got == 0 {
@@ -68,7 +68,7 @@ func TestStartAnswers(t *testing.T) {
 
 	// The note it opens on stands in every relation at once, which is what makes a
 	// picture worth drawing. The vault is read behind the caller, so the relations
-	// arrive rather than being there.
+	// arrive and not being there.
 	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
 	relations := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
@@ -117,7 +117,7 @@ const page = "http://localhost"
 // Go, and a scheme changed in one is a page refused by the other with nothing
 // said. The two are read against each other.
 func TestThePageIsServedFromTheOriginTheCoreAnswers(t *testing.T) {
-	held, err := os.ReadFile(filepath.Join("..", "capacitor.config.ts"))
+	target, err := os.ReadFile(filepath.Join("..", "capacitor.config.ts"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestThePageIsServedFromTheOriginTheCoreAnswers(t *testing.T) {
 	if !found {
 		t.Fatalf("%q names no scheme", page)
 	}
-	if want := "androidScheme: '" + scheme + "'"; !strings.Contains(string(held), want) {
+	if want := "androidScheme: '" + scheme + "'"; !strings.Contains(string(target), want) {
 		t.Errorf("the core answers %q and capacitor.config.ts says no %s", page, want)
 	}
 }
@@ -216,12 +216,12 @@ func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, said := range []string{
+	for _, response := range []string{
 		`android:allowBackup="false"`,
 		`android:dataExtractionRules="@xml/data_extraction_rules"`,
 	} {
-		if !strings.Contains(string(manifest), said) {
-			t.Errorf("the manifest does not say %s", said)
+		if !strings.Contains(string(manifest), response) {
+			t.Errorf("the manifest does not say %s", response)
 		}
 	}
 
@@ -229,9 +229,9 @@ func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, said := range []string{"<cloud-backup>", "<device-transfer>"} {
-		if !strings.Contains(string(rules), said) {
-			t.Errorf("the rules name no %s", said)
+	for _, responseVal := range []string{"<cloud-backup>", "<device-transfer>"} {
+		if !strings.Contains(string(rules), responseVal) {
+			t.Errorf("the rules name no %s", responseVal)
 		}
 	}
 	if strings.Contains(string(rules), "<include") {
@@ -245,10 +245,10 @@ func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	dir := t.TempDir()
 	secret := "sk-the-persons-own"
-	written := fmt.Sprintf(`{"indexing":{"proofreading":{"profiles":{
+	content := fmt.Sprintf(`{"indexing":{"proofreading":{"profiles":{
 		"openai": {"use":"service","name":"a-model","key":%q}
 	}}}}`, secret)
-	if err := os.WriteFile(filepath.Join(dir, "numen.json"), []byte(written), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "numen.json"), []byte(content), 0o600); err != nil {
 		t.Fatalf("writing the settings: %v", err)
 	}
 
@@ -275,21 +275,21 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 		if err != nil {
 			t.Fatalf("asking %s: %v", at, err)
 		}
-		said, _ := io.ReadAll(res.Body)
+		response, _ := io.ReadAll(res.Body)
 		res.Body.Close()
 		if res.StatusCode == http.StatusOK {
-			t.Errorf("%s answered %s: %s", at, res.Status, said)
+			t.Errorf("%s answered %s: %s", at, res.Status, response)
 		}
-		if bytes.Contains(said, []byte(secret)) {
-			t.Errorf("%s gave the key away: %s", at, said)
+		if bytes.Contains(response, []byte(secret)) {
+			t.Errorf("%s gave the key away: %s", at, response)
 		}
 	}
 
-	held, err := os.ReadFile(filepath.Join(dir, "numen.json"))
+	target, err := os.ReadFile(filepath.Join(dir, "numen.json"))
 	if err != nil {
 		t.Fatalf("reading the settings back: %v", err)
 	}
-	if !bytes.Contains(held, []byte(secret)) {
-		t.Errorf("the settings file was written over: %s", held)
+	if !bytes.Contains(target, []byte(secret)) {
+		t.Errorf("the settings file was written over: %s", target)
 	}
 }

@@ -68,7 +68,7 @@ func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Work
 		shelved.hold(path, domain.KindRecording, []byte("not a recording: "+path), 1)
 	}
 	v := domain.Vault{ID: "v", Path: "/vault"}
-	held := NewWorker(t.Context(), Config{
+	target := NewWorker(t.Context(), Config{
 		Readers: vaults{v.ID: shelved},
 		Derived: shelves{newShelf()},
 		Tasks:   run.NewTasks(),
@@ -81,11 +81,11 @@ func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Work
 			},
 		},
 	})
-	held.Cut = func(context.Context, domain.Vault, string) error { return nil }
-	return held, v
+	target.Cut = func(context.Context, domain.Vault, string) error { return nil }
+	return target, v
 }
 
-// unheard is an index holding recordings, none of which stands on a text.
+// unheard is an index holding recordings, none of which relies on a text.
 type unheard struct {
 	port.SourceQueries
 	recordings []string
@@ -113,10 +113,10 @@ func (h unheard) GetRecognisedSources(
 func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
 	by := &deaf{why: errors.New("not a container anything here decodes")}
 	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
-	known := unheard{recordings: []string{"talks/one.mp3"}}
+	recognized := unheard{recordings: []string{"talks/one.mp3"}}
 
 	for range 3 {
-		listening.round(t.Context(), known, v)
+		listening.round(t.Context(), recognized, v)
 	}
 	if got := by.times(); got != 1 {
 		t.Errorf("the recording was handed over %d times", got)
@@ -126,10 +126,10 @@ func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
 // Getting the models is a step of its own, and it is named for what it is. A
 // row that calls it by the name of the work that follows leaves a person
 // watching a recording nothing has listened to yet.
-func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
+func TestTheModelsAreGotBelowTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 	by := &deaf{}
 	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
-	known := unheard{recordings: []string{"talks/one.mp3"}}
+	recognized := unheard{recordings: []string{"talks/one.mp3"}}
 
 	var while []run.Task
 	open := listening.with.Runtime.Open
@@ -141,7 +141,7 @@ func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 		return open(ctx, tell)
 	}
 
-	listening.round(t.Context(), known, v)
+	listening.round(t.Context(), recognized, v)
 
 	if len(while) != 1 {
 		t.Fatalf("the list holds %d pieces of work while the models arrive: %+v", len(while), while)
@@ -159,10 +159,10 @@ func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 	by := &deaf{}
 	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
-	known := unheard{recordings: []string{"talks/one.mp3"}}
+	recognized := unheard{recordings: []string{"talks/one.mp3"}}
 
 	for range 3 {
-		listening.round(t.Context(), known, v)
+		listening.round(t.Context(), recognized, v)
 	}
 	if got := by.times(); got != 1 {
 		t.Errorf("the recording was handed over %d times", got)
@@ -171,7 +171,7 @@ func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 
 // The queue is a question asked of the index: what it holds, less what stands
 // on a text a producer made.
-func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
+func TestARecordingActiveOnATextIsNotOwed(t *testing.T) {
 	by := &deaf{}
 	listening, v := newTranscriptionWorker(t, by)
 	owed := listening.getUntranscribed(t.Context(), recognised{"talks/one.mp3"}, v)
@@ -180,7 +180,7 @@ func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 	}
 }
 
-// recognised is an index holding one recording that stands on what a model wrote.
+// recognised is an index holding one recording that relies on what a model wrote.
 type recognised struct{ path string }
 
 func (h recognised) GetFingerprints(
@@ -306,8 +306,8 @@ func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 	listening, v := newTranscriptionWorker(t, by, "album.flac")
 	listening.with.Unasked = 10 << 20
 
-	known := sized{recordings: map[string]int64{"album.flac": 400 << 20}}
-	if owed := listening.getUntranscribed(t.Context(), known, v); len(owed) != 0 {
+	recognized := sized{recordings: map[string]int64{"album.flac": 400 << 20}}
+	if owed := listening.getUntranscribed(t.Context(), recognized, v); len(owed) != 0 {
 		t.Fatalf("the queue took %v on its own", owed)
 	}
 
@@ -363,11 +363,11 @@ func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 
 // One run holds the models on a machine: a scan being read holds them, and a
 // transcription waits for them and says so.
-func TestARecordingWaitsForTheModelsAScanHolds(t *testing.T) {
+func TestARecordingWaitsForTheModelsAScanContains(t *testing.T) {
 	by := &deaf{}
 	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 
-	held, err := listening.with.Models.Acquire(t.Context(), true, nil)
+	target, err := listening.with.Models.Acquire(t.Context(), true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -384,7 +384,7 @@ func TestARecordingWaitsForTheModelsAScanHolds(t *testing.T) {
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	held()
+	target()
 	listening.Wait()
 
 	if !waited {
@@ -421,21 +421,21 @@ func (sized) GetRecognisedSources(
 // What the queue takes on its own stops at a size; the hand still asks for
 // anything.
 func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
-	held, v := newTranscriptionWorker(t, &deaf{}, "talk.mp3", "album.flac")
-	held.with.Unasked = 10 << 20
+	target, v := newTranscriptionWorker(t, &deaf{}, "talk.mp3", "album.flac")
+	target.with.Unasked = 10 << 20
 
-	known := sized{recordings: map[string]int64{
+	recognized := sized{recordings: map[string]int64{
 		"talk.mp3":   5 << 20,
 		"album.flac": 400 << 20,
 	}}
-	owed := held.getUntranscribed(t.Context(), known, v)
+	owed := target.getUntranscribed(t.Context(), recognized, v)
 	if len(owed) != 1 || owed[0] != "talk.mp3" {
 		t.Errorf("the queue took %v", owed)
 	}
 
 	// Naming no size takes whatever the vault holds.
-	held.with.Unasked = 0
-	if owed := held.getUntranscribed(t.Context(), known, v); len(owed) != 2 {
+	target.with.Unasked = 0
+	if owed := target.getUntranscribed(t.Context(), recognized, v); len(owed) != 2 {
 		t.Errorf("with no limit the queue took %v", owed)
 	}
 }
@@ -444,21 +444,21 @@ func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
 // when there is a recording to transcribe.
 func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 	by := &deaf{}
-	held, v := newTranscriptionWorker(t, by, "talk.mp3")
+	target, v := newTranscriptionWorker(t, by, "talk.mp3")
 
-	var opened, given int
-	held.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+	var opened, provided int
+	target.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
 		opened++
-		return by, func() error { given++; return by.Close() }, nil
+		return by, func() error { provided++; return by.Close() }, nil
 	}
 
-	if err := held.transcribeOne(t.Context(), v, "talk.mp3", true); err != nil {
+	if err := target.transcribeOne(t.Context(), v, "talk.mp3", true); err != nil {
 		t.Fatalf("the recording was not transcribed: %v", err)
 	}
 	if opened != 1 {
 		t.Errorf("what was missing was fetched %d times", opened)
 	}
-	if given != 1 {
+	if provided != 1 {
 		t.Error("what was opened was not given back")
 	}
 	if by.times() != 1 {
@@ -470,10 +470,10 @@ func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 // avoids reading the source file from disk.
 func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t *testing.T) {
 	by := &deaf{}
-	held, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	target, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	hash := text.Fingerprint([]byte("not a recording: talks/one.mp3"))
 
-	store, err := held.with.Derived.Open(v)
+	store, err := target.with.Derived.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -485,15 +485,15 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 	}
 
 	corr := &corrector{says: says(fixes(0, "FIRST THING"))}
-	held.with.Proofreading = run.ProofreadingConfig{
+	target.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
 		By: func() (port.Proofreader, error) { return corr, nil },
 	}
-	held.with.Readers = brokenReaders{}
+	target.with.Readers = brokenReaders{}
 
-	known := heard{path: "talks/one.mp3", hash: hash}
-	held.TakeUp(t.Context(), known, v)
-	held.Wait()
+	recognized := heard{path: "talks/one.mp3", hash: hash}
+	target.TakeUp(t.Context(), recognized, v)
+	target.Wait()
 
 	if len(corr.froms) != 1 {
 		t.Errorf("expected proofreader to be asked, got %v", corr.froms)

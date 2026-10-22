@@ -76,15 +76,15 @@ function useNoticeSampling(
   now: Ref<number>,
   beat: () => void,
 ) {
-  const moving = shallowRef<ReadonlyMap<string, Movement>>(new Map())
+  const movements = shallowRef<ReadonlyMap<string, Movement>>(new Map())
   const sample = (): void => {
     beat()
-    moving.value = measureMovement(moving.value, getNotices(), now.value)
+    movements.value = measureMovement(movements.value, getNotices(), now.value)
   }
   const leftOn = (one: Notice): string => {
     const tally = findTally(one)
     if (tally === undefined) return ''
-    return getRemainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
+    return getRemainingWord(tally.total - tally.done, movements.value.get(one.id)?.rate ?? 0)
   }
   return { sample, leftOn }
 }
@@ -112,8 +112,8 @@ function useNoticeDismissal(context: DismissalContext) {
     context.dismiss(id)
     if (!hadFocus || at < 0) return
     await nextTick()
-    const left = context.folds.value.shown
-    const next = left[Math.min(at, left.length - 1)]
+    const remainingFolds = context.folds.value.shown
+    const next = remainingFolds[Math.min(at, remainingFolds.length - 1)]
     if (next) cards.get(next.id)?.way?.focus()
   }
 
@@ -122,24 +122,24 @@ function useNoticeDismissal(context: DismissalContext) {
 
 function watchNoticeTicker(
   sample: () => void,
-  drawn: ComputedRef<readonly Notice[]>,
+  rendered: ComputedRef<readonly Notice[]>,
   options: { getNotices: () => readonly Notice[]; away: ShallowRef<ReadonlySet<string>> },
 ): void {
   const coming = computed(() => {
-    const shown = new Set(drawn.value.map((one) => one.id))
+    const displayedIds = new Set(rendered.value.map((one) => one.id))
     return getReadable(options.getNotices()).some(
-      (one) => one.stay !== 'read' && !options.away.value.has(one.id) && !shown.has(one.id),
+      (one) => one.stay !== 'read' && !options.away.value.has(one.id) && !displayedIds.has(one.id),
     )
   })
   const timing = computed(() =>
-    drawn.value.some(
+    rendered.value.some(
       (one) => one.stay === 'read' && getNoticeDuration(one.text, one.about) !== Infinity,
     ),
   )
-  const counting = computed(() => drawn.value.some((one) => findTally(one) !== undefined))
+  const hasTally = computed(() => rendered.value.some((one) => findTally(one) !== undefined))
 
   watchEffect((clean) => {
-    if (!coming.value && !timing.value && !counting.value) return
+    if (!coming.value && !timing.value && !hasTally.value) return
     const tick = setInterval(sample, 250)
     clean(() => clearInterval(tick))
   })
@@ -149,30 +149,30 @@ interface NoticeLifecycleOptions {
   readonly getNotices: () => readonly Notice[]
   readonly arrived: ShallowRef<ReadonlyMap<string, number>>
   readonly away: ShallowRef<ReadonlySet<string>>
-  readonly forgotten: Set<string>
-  readonly read: ShallowRef<number>
+  readonly cleared: Set<string>
+  readonly readItem: ShallowRef<number>
   readonly sample: () => void
   readonly dismiss: (id: string) => void
 }
 
 function useNoticeLifecycle(options: NoticeLifecycleOptions): void {
-  const { getNotices, arrived, away, forgotten, read, sample, dismiss } = options
+  const { getNotices, arrived, away, cleared, readItem, sample, dismiss } = options
   watch(
     getNotices,
     (all) => {
       sample()
-      arrived.value = getArrivalTimes(arrived.value, all, read.value)
+      arrived.value = getArrivalTimes(arrived.value, all, readItem.value)
       away.value = getStillAway(away.value, all)
       const here = new Set(getReadable(all).map((one) => one.id))
-      for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
+      for (const id of [...cleared]) if (!here.has(id)) cleared.delete(id)
     },
     { immediate: true },
   )
 
   watchEffect(() => {
-    for (const id of getFinishedNotices(getNotices(), arrived.value, read.value)) {
-      if (forgotten.has(id)) continue
-      forgotten.add(id)
+    for (const id of getFinishedNotices(getNotices(), arrived.value, readItem.value)) {
+      if (cleared.has(id)) continue
+      cleared.add(id)
       dismiss(id)
     }
   })
@@ -180,8 +180,8 @@ function useNoticeLifecycle(options: NoticeLifecycleOptions): void {
 
 export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   const away = shallowRef<ReadonlySet<string>>(new Set())
-  const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
-  const forgotten = new Set<string>()
+  const arrivalTimes = shallowRef<ReadonlyMap<string, number>>(new Map())
+  const cleared = new Set<string>()
 
   const { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut } = useNoticeStack(
     options.stack,
@@ -193,17 +193,17 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   useNoticeLifecycle({
     getNotices: options.getNotices,
-    arrived,
+    arrived: arrivalTimes,
     away,
-    forgotten,
-    read,
+    cleared: cleared,
+    readItem: read,
     sample,
     dismiss: options.dismiss,
   })
 
-  const drawn = computed(() =>
+  const shownNotices = computed(() =>
     getShownNotices(options.getNotices(), read.value, {
-      firstSeen: arrived.value,
+      firstSeen: arrivalTimes.value,
       away: away.value,
       wait: options.getWait(),
     }),
@@ -211,24 +211,24 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   const isOpened = ref(false)
   const folds = computed(() =>
-    foldNotices(drawn.value, isOpened.value ? drawn.value.length : options.getRoom()),
+    foldNotices(shownNotices.value, isOpened.value ? shownNotices.value.length : options.getRoom()),
   )
 
-  watch(drawn, (all) => {
+  watch(shownNotices, (all) => {
     if (all.length <= options.getRoom()) isOpened.value = false
   })
 
-  watchNoticeTicker(sample, drawn, { getNotices: options.getNotices, away })
+  watchNoticeTicker(sample, shownNotices, { getNotices: options.getNotices, away })
 
   const { holdCard, dismissByHand } = useNoticeDismissal({
     folds,
     away,
-    forgotten,
+    forgotten: cleared,
     dismiss: options.dismiss,
   })
 
   return {
-    drawn,
+    drawn: shownNotices,
     folds,
     isOpened,
     leftOn,

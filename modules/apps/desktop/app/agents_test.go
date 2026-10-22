@@ -35,7 +35,7 @@ func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
 	if hasToken(t, cfg) {
 		t.Error("a token was written")
 	}
-	if _, written := readAnnouncement(t, cfg); written {
+	if _, content := readAnnouncement(t, cfg); content {
 		t.Error("an endpoint was announced")
 	}
 	if opened.State.Unreachable.Why() == "" {
@@ -62,14 +62,14 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if !hasToken(t, cfg) {
 		t.Error("no token was kept")
 	}
-	said, written := readAnnouncement(t, cfg)
-	if !written {
+	response, content := readAnnouncement(t, cfg)
+	if !content {
 		t.Fatal("nothing says where the endpoint is")
 	}
-	if want := "http://" + addr + "/mcp"; said.URL != want {
-		t.Errorf("the announcement points at %q, and the endpoint is at %q", said.URL, want)
+	if want := "http://" + addr + "/mcp"; response.URL != want {
+		t.Errorf("the announcement points at %q, and the endpoint is at %q", response.URL, want)
 	}
-	if said.Token == "" {
+	if response.Token == "" {
 		t.Error("the announcement carries no token")
 	}
 	if opened.State.GetAgent() == nil {
@@ -82,7 +82,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if isListening(addr) {
 		t.Error("the port is still open")
 	}
-	if _, left := readAnnouncement(t, cfg); left {
+	if _, remaining := readAnnouncement(t, cfg); remaining {
 		t.Error("the announcement was left behind")
 	}
 }
@@ -102,8 +102,8 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	if !isListening(addr) {
 		t.Error("nothing answers where the agents are told to look")
 	}
-	said, written := readAnnouncement(t, cfg)
-	if !written || said.Token == "" {
+	response, content := readAnnouncement(t, cfg)
+	if !content || response.Token == "" {
 		t.Fatal("an agent has nothing to be configured from")
 	}
 	if opened.State.GetAgent() != nil {
@@ -119,7 +119,7 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	if isListening(addr) {
 		t.Error("the port is still open")
 	}
-	if _, left := readAnnouncement(t, cfg); left {
+	if _, remaining := readAnnouncement(t, cfg); remaining {
 		t.Error("the announcement was left behind")
 	}
 }
@@ -166,11 +166,11 @@ func readAnnouncement(t *testing.T, cfg container.Config) (agents.Discovery, boo
 	if err != nil {
 		t.Fatal(err)
 	}
-	var said agents.Discovery
-	if err := json.Unmarshal(raw, &said); err != nil {
+	var response agents.Discovery
+	if err := json.Unmarshal(raw, &response); err != nil {
 		t.Fatal(err)
 	}
-	return said, true
+	return response, true
 }
 
 // hasToken is whether the token an agent presents has been written down.

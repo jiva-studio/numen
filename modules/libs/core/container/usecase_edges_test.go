@@ -154,10 +154,10 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 	} {
 		reason := getUseCaseEdgeRefusal(tc.from, tc.to)
 		if tc.isRefused && reason == "" {
-			t.Errorf("%s reaches %s and is not refused", tc.from, tc.to)
+			t.Errorf("%s reaches %s and is not rejected", tc.from, tc.to)
 		}
 		if !tc.isRefused && reason != "" {
-			t.Errorf("%s reaches %s and is refused: %s", tc.from, tc.to, reason)
+			t.Errorf("%s reaches %s and fails: %s", tc.from, tc.to, reason)
 		}
 	}
 }

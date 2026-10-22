@@ -303,7 +303,7 @@ describe('the room or the type changing size', () => {
 })
 
 describe('another document being opened', () => {
-  it('starts at the first spread and is set at the offset asked for', async () => {
+  it('starts at the first spread and is set at the offset requested for', async () => {
     const { props, takeLed } = room()
     turns().standing.value = 3
     columns().measure.mockClear()
@@ -357,8 +357,8 @@ describe('another document being opened', () => {
   })
 })
 
-describe('an offset asked for from outside', () => {
-  const asked = async (at: number, standing = 0) => {
+describe('an offset requested for from outside', () => {
+  const request = async (at: number, standing = 0) => {
     const { props } = room()
     turns().standing.value = standing
     turns().stand.mockClear()
@@ -368,46 +368,46 @@ describe('an offset asked for from outside', () => {
   }
 
   it('is turned to, smoothly, when it falls inside the document', async () => {
-    await asked(150)
+    await request(150)
 
     expect(turns().stand).toHaveBeenCalledTimes(1)
     expect(turns().stand).toHaveBeenCalledWith(SPREAD_OF(150), 'smooth')
   })
 
   it('is turned to when it is the first byte of the document', async () => {
-    await asked(100)
+    await request(100)
 
     expect(turns().stand).toHaveBeenCalledWith(SPREAD_OF(100), 'smooth')
   })
 
   it('is turned to when it is the last byte of the document', async () => {
-    await asked(199)
+    await request(199)
 
     expect(turns().stand).toHaveBeenCalledWith(SPREAD_OF(199), 'smooth')
   })
 
   it('is not turned to when it falls before the document', async () => {
-    await asked(99)
+    await request(99)
 
     expect(turns().getSpreadOf).not.toHaveBeenCalled()
     expect(turns().stand).not.toHaveBeenCalled()
   })
 
   it('is not turned to when it falls where the document ends', async () => {
-    await asked(200)
+    await request(200)
 
     expect(turns().getSpreadOf).not.toHaveBeenCalled()
     expect(turns().stand).not.toHaveBeenCalled()
   })
 
   it('is not turned to when it falls after the document', async () => {
-    await asked(350)
+    await request(350)
 
     expect(turns().stand).not.toHaveBeenCalled()
   })
 
   it('is not turned to when its spread is the one in front', async () => {
-    await asked(150, SPREAD_OF(150))
+    await request(150, SPREAD_OF(150))
 
     expect(turns().getSpreadOf).toHaveBeenCalledWith(150)
     expect(turns().stand).not.toHaveBeenCalled()
@@ -415,7 +415,7 @@ describe('an offset asked for from outside', () => {
 })
 
 describe('the layout being mounted', () => {
-  it('sets the columns at the offset asked for', () => {
+  it('sets the columns at the offset requested for', () => {
     room()
 
     expect(columns().measure).toHaveBeenCalledTimes(1)

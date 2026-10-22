@@ -70,5 +70,5 @@ export const books = createClient(BookService, transport)
 /** The pages a document is laid out in. */
 export const documents = createClient(DocumentService, transport)
 
-/** Where the text of a document stands on its pages. */
+/** Where the text of a document relies on its pages. */
 export const ocr = createClient(OcrService, transport)

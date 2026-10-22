@@ -72,7 +72,7 @@ describe('the settings as they are put together', () => {
     expect(close).toHaveBeenCalledOnce()
   })
 
-  it('opens the settings file beside the current tab', async () => {
+  it('opens the settings file alongside the current tab', async () => {
     const { settings, handle } = createSettings()
     await settings.rest.start()
     settings.file.openSettingsFile()
@@ -164,7 +164,7 @@ describe('the lists the palette offers for a setting', () => {
     expect(settings.kept.getStepGroups('syncing', '')[0]?.items).toHaveLength(2)
   })
 
-  it('previews what the keyboard stands on in an appearance list, and nowhere else', () => {
+  it('previews what the keyboard relies on in an appearance list, and nowhere else', () => {
     const { settings } = createSettings()
     const preview = vi.spyOn(settings.dressed, 'previewItem').mockImplementation(vi.fn())
 

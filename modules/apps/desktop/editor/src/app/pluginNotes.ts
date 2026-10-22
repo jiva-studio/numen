@@ -39,35 +39,35 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
   const tails = new Map<string, Promise<void>>()
 
   const writeNote = (path: string, body: string): Promise<void> => {
-    const waiting = queued.get(path)
-    if (waiting) {
-      waiting.body = body
-      return waiting.done
+    const pendingItem = queued.get(path)
+    if (pendingItem) {
+      pendingItem.body = body
+      return pendingItem.done
     }
     const job: QueuedWrite = { body, done: Promise.resolve() }
     const run = async (): Promise<void> => {
       if (queued.get(path) === job) queued.delete(path)
-      const answered = await deps.write(path, job.body, null)
-      if (!answered.ok) throw new Error(NOT_WRITTEN)
+      const reply = await deps.write(path, job.body, null)
+      if (!reply.ok) throw new Error(NOT_WRITTEN)
     }
     queued.set(path, job)
     const before = tails.get(path)
     job.done = before ? before.then(run) : run()
-    const settled: Promise<void> = job.done
+    const resolved: Promise<void> = job.done
       .catch(() => undefined)
       .then(() => {
-        if (tails.get(path) === settled) tails.delete(path)
+        if (tails.get(path) === resolved) tails.delete(path)
       })
-    tails.set(path, settled)
+    tails.set(path, resolved)
     return job.done
   }
 
   const readNote = async (path: string): Promise<{ body: string; error?: string }> => {
     const before = tails.get(path)
     queued.delete(path)
-    const answered = await (before ? before.then(() => deps.read(path)) : deps.read(path))
-    if (answered.ok) return { body: answered.value.body }
-    return { body: '', error: ERROR_MESSAGES[convertErrorCode(answered.error)] || UNREADABLE }
+    const reply = await (before ? before.then(() => deps.read(path)) : deps.read(path))
+    if (reply.ok) return { body: reply.value.body }
+    return { body: '', error: ERROR_MESSAGES[convertErrorCode(reply.error)] || UNREADABLE }
   }
 
   return { readNote, writeNote }

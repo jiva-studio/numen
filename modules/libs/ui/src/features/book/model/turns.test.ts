@@ -1,5 +1,5 @@
 /**
- * Where in a book the reader stands, and what turning a page comes to.
+ * Where in a book the reader stands, and what turning a page evaluates to.
  *
  * The document is four spreads of one column, each holding one run. The style
  * of the drawn text is stood in for, so a test reads what was written to it and
@@ -35,12 +35,12 @@ const paperWithStyle = () => {
   return { paper, writes }
 }
 
-const setUp = (marks: readonly Mark[] = MARKS, at = 0, drawn = true) => {
+const setUp = (marks: readonly Mark[] = MARKS, at = 0, rendered = true) => {
   const { paper, writes } = paperWithStyle()
   const props = { book: { from: 0, to: 400 }, span: { from: 0, to: 400 }, at } as SettledBookProps
   const onMove = vi.fn<(at: number) => void>()
   const turns = useBookTurns({
-    paper: shallowRef<HTMLElement | null>(drawn ? paper : null),
+    paper: shallowRef<HTMLElement | null>(rendered ? paper : null),
     props,
     flow: computed(() => FLOW),
     spreadCount: computed(() => 4),
@@ -98,7 +98,7 @@ describe('putting a spread in front', () => {
 })
 
 describe('going to a spread', () => {
-  it('carries the columns with the transition and says what stands in front', () => {
+  it('carries the columns with the transition and says what remains in front', () => {
     const { turns, writes, onMove } = setUp()
 
     turns.goTo(1)
@@ -107,7 +107,7 @@ describe('going to a spread', () => {
     expect(onMove).toHaveBeenCalledExactlyOnceWith(100)
   })
 
-  it('says nothing where the offset in front is the one already held', () => {
+  it('says nothing where the offset in front is the one already retained', () => {
     const { turns, onMove } = setUp(MARKS, 100)
 
     turns.goTo(1)
@@ -115,7 +115,7 @@ describe('going to a spread', () => {
     expect(onMove).not.toHaveBeenCalled()
   })
 
-  it('says nothing where no run stands in the spread', () => {
+  it('says nothing where no run remains in the spread', () => {
     const { turns, onMove } = setUp(MARKS.slice(0, 2))
 
     turns.goTo(3)
@@ -133,7 +133,7 @@ describe('the offset kept in front', () => {
     expect(turns.getKeptOffset()).toBe(200)
   })
 
-  it('is the offset held where no run stands in the spread in front', () => {
+  it('is the offset retained where no run remains in the spread in front', () => {
     const { turns } = setUp(MARKS.slice(0, 2), 7)
 
     turns.stand(3, 'auto')

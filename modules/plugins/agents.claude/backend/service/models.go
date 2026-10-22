@@ -81,7 +81,7 @@ func parseModels(lines io.Reader, requestID string) ([]claudeModel, error) {
 			continue
 		}
 		if line.Response.Subtype != "success" {
-			return nil, fmt.Errorf("the program refused the request: %s", line.Response.Error)
+			return nil, fmt.Errorf("the program rejected the request: %s", line.Response.Error)
 		}
 		if len(line.Response.Response.Models) == 0 {
 			return nil, errors.New("the program listed no model")
@@ -167,9 +167,9 @@ func (c *modelCache) find(model string) ([]reasoning.Level, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, one := range c.lists {
-		for _, listed := range one.models {
-			if listed.Value == model {
-				return listed.getLevels(), true
+		for _, items := range one.models {
+			if items.Value == model {
+				return items.getLevels(), true
 			}
 		}
 	}

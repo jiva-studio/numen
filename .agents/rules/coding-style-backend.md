@@ -77,7 +77,8 @@ There is no `go.work`. Each module is built and tested from its own directory.
 ## 3. Naming and API surface
 
 - No stutter: `filesystem.VaultReader`, not `filesystem.FilesystemVaultReader`.
-- Functions and methods are imperative verb phrases (`ReadVault`, `WriteNote`) or predicates (`IsStale`, `HasTranscript`). Never third-person singular, never a past participle, never a literary metaphor where a standard engineering term exists.
+- Functions and methods are imperative verb phrases (`ReadVault`, `WriteNote`) or predicates (`IsExpired`, `HasTranscript`). Never third-person singular, never a past participle, never a literary metaphor where a standard engineering term exists.
+- Variables and parameters must use standard engineering nouns. Never use irregular past participles (`held`, `said`, `asked`, `written`, `done`, `kept`) or bare prepositions (`beside`, `under`, `behind`) as variable names. See Rule 13 of `AGENTS.md`.
 - Exported identifiers documented, starting with the identifier's own name.
 - `internal/` by default; exported only what something outside actually uses.
 
@@ -85,9 +86,7 @@ There is no `go.work`. Each module is built and tested from its own directory.
 
 ## 4. Comments
 
-A comment states the rule that holds, and stops. It never names an alternative that is not in the code.
-
-Delete each clause in turn: if what remains still describes the code, the deleted clause was argument. Rewrite on sight of `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…`, or any comparison with a previous implementation. Benchmark numbers live in `docs/performance.md`.
+A comment describes the active behavior, invariant, or constraint. It does not argue, narrate history, or use biblical/Saxon phrasing. See Rule 1 and Rule 13 of `AGENTS.md`.
 
 ---
 

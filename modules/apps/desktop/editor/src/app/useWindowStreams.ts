@@ -15,7 +15,7 @@ export interface WindowStreamsDeps {
     Pick<NotePort, 'watchEdits'>
   readonly listening: AbortController
   readonly isOpen: () => boolean
-  readonly setLost: (said: string) => void
+  readonly setLost: (response: string) => void
   readonly wait: (ms: number) => Promise<unknown>
   readonly opening: Ref<string>
   readonly tasks: ShallowRef<readonly Task[]>
@@ -57,16 +57,16 @@ async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDep
 }
 
 async function handleFocusChange(
-  asked: { path?: string; spans: readonly Span[] },
+  request: { path?: string; spans: readonly Span[] },
   travelTo: (path: string) => Promise<void> | void,
   openFileAt: (path: string, spans: readonly Span[]) => void,
 ): Promise<void> {
-  if (!asked.path) return
-  const spans = asked.spans
+  if (!request.path) return
+  const spans = request.spans
     .map((one) => ({ from: one.from, to: one.to }))
     .filter((one) => one.to > one.from)
-  if (!spans.length) return void (await travelTo(asked.path))
-  openFileAt(asked.path, spans)
+  if (!spans.length) return void (await travelTo(request.path))
+  openFileAt(request.path, spans)
 }
 
 export function useWindowStreams(deps: WindowStreamsDeps) {
@@ -89,17 +89,17 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
   const draw = () =>
     follows(
       () => core.watchEdits(listening.signal),
-      (said) => {
+      (response) => {
         // The stream opens by saying nothing, which is how an open one is told
         // from one that never opened.
-        if (said.path) reportChange(said)
+        if (response.path) reportChange(response)
       },
     )
 
   const watch = () =>
     follows(
       () => core.watchFocus(listening.signal),
-      (asked) => handleFocusChange(asked, travelTo, openFileAt),
+      (request) => handleFocusChange(request, travelTo, openFileAt),
     )
 
   const followTasks = () =>

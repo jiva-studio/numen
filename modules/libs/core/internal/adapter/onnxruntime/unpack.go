@@ -36,9 +36,9 @@ func unpackTgz(archive, name, at string) error {
 	}
 	defer unzipped.Close()
 
-	held := tar.NewReader(unzipped)
+	target := tar.NewReader(unzipped)
 	for {
-		entry, err := held.Next()
+		entry, err := target.Next()
 		if errors.Is(err, io.EOF) {
 			return fmt.Errorf("%s holds no %s", archive, name)
 		}
@@ -48,17 +48,17 @@ func unpackTgz(archive, name, at string) error {
 		if entry.Typeflag != tar.TypeReg || !isLibrary(path.Base(entry.Name), name) {
 			continue
 		}
-		return write(at, held)
+		return write(at, target)
 	}
 }
 
 func unpackZip(archive, name, at string) error {
-	held, err := zip.OpenReader(archive)
+	target, err := zip.OpenReader(archive)
 	if err != nil {
 		return err
 	}
-	defer held.Close()
-	for _, entry := range held.File {
+	defer target.Close()
+	for _, entry := range target.File {
 		if !isLibrary(path.Base(entry.Name), name) {
 			continue
 		}

@@ -42,11 +42,11 @@ func (u Unregister) Execute(ctx context.Context, v domain.Vault) error {
 
 // keepTheLastVault refuses a vault that is all the installation has left.
 func keepTheLastVault(registry port.VaultRegistry, v domain.Vault) error {
-	known, err := registry.List()
+	recognized, err := registry.List()
 	if err != nil {
 		return err
 	}
-	if len(known) == 1 && known[0].ID == v.ID {
+	if len(recognized) == 1 && recognized[0].ID == v.ID {
 		return fmt.Errorf("%w: %s is the only vault this installation has", ErrLastVault, v.Name)
 	}
 	return nil

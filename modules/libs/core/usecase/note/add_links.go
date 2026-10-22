@@ -19,11 +19,11 @@ type LinkAddition struct {
 	FingerprintError error
 }
 
-// LinkAdded is what happened to one addition. Refused is nil when it was
+// LinkAdded is what happened to one addition. Error is nil when it was
 // written, and Fingerprint is then the note as it now stands.
 type LinkAdded struct {
 	Fingerprint domain.Fingerprint
-	Refused     error
+	Error       error
 }
 
 // AddLinks writes a batch of relationships, grouped by the note each is
@@ -40,24 +40,24 @@ func NewAddLinks(linking EditLinks) AddLinks {
 }
 
 // Execute writes the additions and answers for each one, in the order given. An
-// addition that cannot be written is refused on its own and costs the others
+// addition that cannot be written is rejected on its own and costs the others
 // nothing.
 func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]LinkAdded, error) {
 	results := make([]LinkAdded, len(additions))
 	groups := newLinkGroups()
 	for i, add := range additions {
-		results[i].Refused = groups.add(i, add)
+		results[i].Error = groups.add(i, add)
 	}
 	for _, from := range groups.order {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
 		group := groups.links[from]
-		written, err := u.linking.Add(ctx, v, from, groups.fingerprints[from], group[0], group[1:]...)
+		content, err := u.linking.Add(ctx, v, from, groups.fingerprints[from], group[0], group[1:]...)
 		for _, i := range groups.positions[from] {
-			results[i].Refused = err
+			results[i].Error = err
 			if err == nil {
-				results[i].Fingerprint = written
+				results[i].Fingerprint = content
 			}
 		}
 	}

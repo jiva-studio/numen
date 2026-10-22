@@ -50,15 +50,15 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
 
-	fresh := p.GetAllowance(day, time.Now(), review.Spent{}, 0, 0)
+	initialAllowance := p.GetAllowance(day, time.Now(), review.Spent{}, 0, 0)
 	after := p.GetAllowance(day, time.Now(), review.Spent{
 		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
 	}, 0, 0)
 
-	if after.Minutes != fresh.Minutes-18*time.Second {
-		t.Errorf("a day of %v with 18s gone still admits %v", fresh.Minutes, after.Minutes)
+	if after.Minutes != initialAllowance.Minutes-18*time.Second {
+		t.Errorf("a day of %v with 18s gone still admits %v", initialAllowance.Minutes, after.Minutes)
 	}
-	if after.New != fresh.New-3 || after.Reviews != fresh.Reviews-3 {
+	if after.New != initialAllowance.New-3 || after.Reviews != initialAllowance.Reviews-3 {
 		t.Errorf("a day that has begun 3 and reviewed 3 still admits %d new and %d reviews",
 			after.New, after.Reviews)
 	}

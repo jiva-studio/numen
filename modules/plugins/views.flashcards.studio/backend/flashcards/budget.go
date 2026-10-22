@@ -13,7 +13,7 @@ import (
 )
 
 // budgets is what today leaves each preset a vault's decks are scheduled by,
-// and which preset each card face stands under.
+// and which preset each card face is placed under.
 //
 // The presets are separate scopes: one running out closes its own decks and no
 // others. A preset standing in no note schedules the decks naming none.
@@ -60,22 +60,22 @@ func getBudgets(
 	}
 
 	out.decks = survey.asked
-	counting := make(map[string]review.BudgetUnit, len(survey.asked))
+	deckCounts := make(map[string]review.BudgetUnit, len(survey.asked))
 	for deck, path := range survey.asked {
-		counting[deck] = survey.settings[path].Counts
+		deckCounts[deck] = survey.settings[path].Counts
 	}
 	named := day.GetName(now)
 	out.faced = review.GetFaced(day, named, log.Answers)
 
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
-	out.spentUnder = review.GetSpentUnder(day, named, log.Answers, survey.in, counting)
-	spent := sumSpentByPreset(out.spentUnder, survey.asked)
+	out.spentUnder = review.GetSpentUnder(day, named, log.Answers, survey.in, deckCounts)
+	elapsed := sumSpentByPreset(out.spentUnder, survey.asked)
 
 	costed := review.GetCostUnder(by, log.Answers, out.under)
 	for path, p := range survey.settings {
-		cost, held := costed[path]
-		if !held {
+		cost, target := costed[path]
+		if !target {
 			cost = review.DefaultCost
 		}
 		// A date paces the day against how long a card face begun today takes to
@@ -86,10 +86,10 @@ func getBudgets(
 			learn = review.GetDaysToLearn(at(p.Retention), day, p, now)
 		}
 		out.allowances[path] = &allowance{
-			admits: p.GetAllowance(day, now, spent[path], survey.unseen[path], learn),
+			admits: p.GetAllowance(day, now, elapsed[path], survey.unseen[path], learn),
 			cost:   cost,
 			counts: p.Counts,
-			spent:  spent[path],
+			spent:   elapsed[path],
 		}
 	}
 	return out, nil
@@ -109,7 +109,7 @@ type presetSurvey struct {
 }
 
 // readPresetSurvey reads the preset of every deck the faces stand in, and
-// records in out which preset each face stands under and how many faces each
+// records in out which preset each face is placed under and how many faces each
 // preset holds. A deck is asked once however many faces it holds, and a preset
 // note is opened once however many decks name it.
 func readPresetSurvey(
@@ -123,22 +123,22 @@ func readPresetSurvey(
 		unseen:   make(map[string]int),
 	}
 	for _, one := range faces {
-		path, known := sv.asked[one.Deck]
-		if !known {
+		path, recognized := sv.asked[one.Deck]
+		if !recognized {
 			p, err := reads.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return presetSurvey{}, err
 			}
 			path = p.Path
 			sv.asked[one.Deck] = path
-			if _, held := sv.settings[path]; !held {
+			if _, target := sv.settings[path]; !target {
 				sv.settings[path] = p.Settings
 			}
 		}
 		out.under[one.ID] = path
 		sv.in[one.ID] = one.Deck
 		out.cards[path]++
-		if _, answered := schedules[one.ID]; !answered {
+		if _, reply := schedules[one.ID]; !reply {
 			sv.unseen[path]++
 		}
 	}
@@ -149,19 +149,19 @@ func readPresetSurvey(
 func sumSpentByPreset(
 	spentUnder map[string]review.Spent, asked map[string]string,
 ) map[string]review.Spent {
-	spent := make(map[string]review.Spent, len(asked))
+	elapsed := make(map[string]review.Spent, len(asked))
 	for deck, one := range spentUnder {
-		sum := spent[asked[deck]]
+		sum := elapsed[asked[deck]]
 		sum.Answered += one.Answered
 		sum.New += one.New
 		sum.Reviews += one.Reviews
 		sum.Took += one.Took
-		spent[asked[deck]] = sum
+		elapsed[asked[deck]] = sum
 	}
-	return spent
+	return elapsed
 }
 
-// charge reports whether the preset a card face stands under has room for it
+// charge reports whether the preset a card face is placed under has room for it
 // today, in the deck the face stands in, and spends the room where it has.
 //
 // The day is closed by the budget the preset's goal names, and every other
@@ -172,8 +172,8 @@ func sumSpentByPreset(
 // comes round again for no count. The minutes are spent on every answer
 // whichever way the preset counts.
 func (b *budgets) charge(share *allowance, face review.CardFaceID, fresh bool) bool {
-	one, held := b.allowances[b.under[face]]
-	if !held || one.admits.IsPaused() {
+	one, target := b.allowances[b.under[face]]
+	if !target || one.admits.IsPaused() {
 		return false
 	}
 	counted := one.counts.IsCharged(b.faced[face])
@@ -192,11 +192,11 @@ func (b *budgets) charge(share *allowance, face review.CardFaceID, fresh bool) b
 // hasRoom reports whether this day has a place left for a card face of this kind
 // at this cost.
 func (a *allowance) hasRoom(fresh, counted bool, cost time.Duration) bool {
-	left, closes := a.admits.Reviews, a.admits.Limits.Reviews
+	remaining, closes := a.admits.Reviews, a.admits.Limits.Reviews
 	if fresh {
-		left, closes = a.admits.New, a.admits.Limits.New
+		remaining, closes = a.admits.New, a.admits.Limits.New
 	}
-	if counted && closes != review.ClosedNothing && left <= 0 {
+	if counted && closes != review.ClosedNothing && remaining <= 0 {
 		return false
 	}
 	return a.admits.Limits.Minutes == review.ClosedNothing || a.admits.Minutes >= cost
@@ -267,9 +267,9 @@ func (b *budgets) getAsking(
 ) asking {
 	var owed, fresh []CardFace
 	for _, one := range faces {
-		s, answered := schedules[one.ID]
+		s, reply := schedules[one.ID]
 		switch {
-		case !answered:
+		case !reply:
 			fresh = append(fresh, one)
 		case day.IsOwed(s, now):
 			owed = append(owed, one)
@@ -311,18 +311,18 @@ type deckShare struct {
 // countRemaining is how many of a deck's cards no share has taken, which is
 // what the deck still owes of the day.
 func (q *deckShare) countRemaining(out budgetAllocation) int {
-	held := 0
+	target := 0
 	for _, at := range q.owed {
 		if !out.owed[at] {
-			held++
+			target++
 		}
 	}
 	for _, at := range q.fresh {
 		if !out.fresh[at] {
-			held++
+			target++
 		}
 	}
-	return held
+	return target
 }
 
 // getTimeSpent is how much of the day a deck has had, in the time it took: what
@@ -347,8 +347,8 @@ func (b *budgets) spend(owed, fresh []CardFace) budgetAllocation {
 	out := budgetAllocation{owed: make([]bool, len(owed)), fresh: make([]bool, len(fresh))}
 	book := b.collectShares(owed, fresh)
 	for _, path := range book.order {
-		one, held := b.allowances[path]
-		if !held || one.admits.IsPaused() {
+		one, target := b.allowances[path]
+		if !target || one.admits.IsPaused() {
 			continue
 		}
 		b.spendPreset(one, book.getSorted(path), owed, fresh, &out)
@@ -364,14 +364,14 @@ type shareBook struct {
 
 // getShare is the share of a deck under a preset, created when it is new.
 func (k *shareBook) getShare(path, deck string) *deckShare {
-	decks, held := k.at[path]
-	if !held {
+	decks, target := k.at[path]
+	if !target {
 		decks = make(map[string]*deckShare)
 		k.at[path] = decks
 		k.order = append(k.order, path)
 	}
-	one, held := decks[deck]
-	if !held {
+	one, target := decks[deck]
+	if !target {
 		one = &deckShare{deck: deck}
 		decks[deck] = one
 	}
@@ -407,7 +407,7 @@ func (b *budgets) collectShares(owed, fresh []CardFace) *shareBook {
 	// A deck already sat through today holds a share of the day whether or not
 	// it has a card left to give, so what it took stands against its own share.
 	for deck, path := range b.decks {
-		if _, spent := b.spentUnder[deck]; spent {
+		if _, elapsed := b.spentUnder[deck]; elapsed {
 			book.getShare(path, deck)
 		}
 	}
@@ -439,8 +439,8 @@ func (b *budgets) spendPreset(
 	})
 	for _, q := range decks {
 		q.owedIndex, q.freshIndex = 0, 0
-		over := *one
-		b.deal(&over, q, owed, fresh, out)
+		overVal := *one
+		b.deal(&overVal, q, owed, fresh, out)
 	}
 }
 
@@ -454,11 +454,11 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 	begun := make([]int, len(decks))
 	minutes := make([]int, len(decks))
 	for at, q := range decks {
-		spent := b.spentUnder[q.deck]
-		reviews[at] = len(q.owed) + spent.Reviews
-		begun[at] = len(q.fresh) + spent.New
+		elapsed := b.spentUnder[q.deck]
+		reviews[at] = len(q.owed) + elapsed.Reviews
+		begun[at] = len(q.fresh) + elapsed.New
 		minutes[at] = int(time.Duration(len(q.owed))*one.cost.Review +
-			time.Duration(len(q.fresh))*one.cost.New + spent.Took)
+			time.Duration(len(q.fresh))*one.cost.New + elapsed.Took)
 	}
 	keeps := one.admits.Keeps
 	reviews = review.DivideBudget(keeps.Reviews, reviews)
@@ -467,11 +467,11 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 
 	out := make([]allowance, len(decks))
 	for at, q := range decks {
-		spent := b.spentUnder[q.deck]
+		elapsedVal := b.spentUnder[q.deck]
 		out[at] = *one
-		out[at].admits.Reviews = max(0, reviews[at]-spent.Reviews)
-		out[at].admits.New = max(0, begun[at]-spent.New)
-		out[at].admits.Minutes = max(0, time.Duration(minutes[at])-spent.Took)
+		out[at].admits.Reviews = max(0, reviews[at]-elapsedVal.Reviews)
+		out[at].admits.New = max(0, begun[at]-elapsedVal.New)
+		out[at].admits.Minutes = max(0, time.Duration(minutes[at])-elapsedVal.Took)
 	}
 	return out
 }

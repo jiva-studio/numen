@@ -38,10 +38,10 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     try {
-      const held = await core.getSyncEnabled()
-      if (guard.isIdle()) isEnabled.value = held
+      const target = await core.getSyncEnabled()
+      if (guard.isIdle()) isEnabled.value = target
     } catch {
-      // A vault that cannot be asked leaves the setting where it stands.
+      // A vault that cannot be asked leaves the setting at its current position.
     }
   }
 

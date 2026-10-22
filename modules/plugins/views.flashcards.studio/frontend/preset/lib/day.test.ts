@@ -70,7 +70,7 @@ const createHonestCurve = (): Curve => {
 
 /** A tab over one preset, answered with the curve given, or with none at all. */
 const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
-  const written: Settings[] = []
+  const content: Settings[] = []
   const core: Presets = {
     read: async (path) =>
       asValue({
@@ -89,8 +89,8 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
     scheduleDeck: async () => asValue({ at: '' }),
-    write: async (_path, put) => {
-      written.push(put)
+    write: async (_path, payload) => {
+      content.push(payload)
       return asValue({ at: 'two' })
     },
     // A curve nobody answers leaves the sketch standing, which is what the
@@ -106,7 +106,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
   })
   const state = kind.kind.open?.('Sanskrit.md', 'preset:Sanskrit.md') as PresetTabState
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
-  return { state, written }
+  return { state, written: content }
 }
 
 // One in the morning: the calendar says the fifth, and the review day that
@@ -119,14 +119,14 @@ describe('a goal of a date', () => {
     expect(state.curve.value.now.value).toBe(8)
   })
 
-  it('leaves the knob where it stands when the day it already aims at is typed', async () => {
-    const answered = createHonestCurve()
-    const { state } = await openPresetTab({ goal: 'date', byDate: BY }, answered)
-    expect(state.place.value).toBe(answered.now.at)
+  it('leaves the knob at its current position when the day it already aims at is typed', async () => {
+    const reply = createHonestCurve()
+    const { state } = await openPresetTab({ goal: 'date', byDate: BY }, reply)
+    expect(state.place.value).toBe(reply.now.at)
 
     state.updateSetting('byDate', BY)
 
-    expect(state.place.value).toBe(answered.now.at)
+    expect(state.place.value).toBe(reply.now.at)
   })
 
   it('opens on a day counted from the review day where the file names none', async () => {

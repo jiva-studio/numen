@@ -30,7 +30,7 @@ func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e domain.So
 
 // dropper is a window holding one recording a model has listened to, with the
 // use case that takes what it heard away. `known` is what the index says the
-// recording stands on.
+// recording relies on.
 func dropper(t *testing.T, held port.DerivedStore, known indexed) (*Services, *noting, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
@@ -50,7 +50,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*Services, *n
 	return api, index, api.NewHandler(http.NotFoundHandler())
 }
 
-// newTranscriptIndex is what the index says a recording a model listened to stands on.
+// newTranscriptIndex is what the index says a recording a model listened to relies on.
 func newTranscriptIndex() indexed {
 	return indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}}
 }
@@ -65,17 +65,17 @@ func deleteTranscript(api *Services) error {
 
 // Everything one run of listening produced goes, and the recording is left
 // owing its text.
-func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
-	held := whole(newCues())
-	held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = held[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]
-	held[domain.NewArtifactName(domain.ArtifactProducer, asr, hashed)] = []byte(`{"model":"parakeet"}`)
-	api, index, _ := dropper(t, held, newTranscriptIndex())
+func TestATranscriptDroppedConsumesEverythingListeningProduced(t *testing.T) {
+	target := whole(newCues())
+	target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = target[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]
+	target[domain.NewArtifactName(domain.ArtifactProducer, asr, hashed)] = []byte(`{"model":"parakeet"}`)
+	api, index, _ := dropper(t, target, newTranscriptIndex())
 
 	if err := deleteTranscript(api); err != nil {
-		t.Fatalf("dropped the transcript and was refused: %v", err)
+		t.Fatalf("dropped the transcript and failed: %v", err)
 	}
-	if len(held) != 0 {
-		t.Errorf("the store still holds %v", held)
+	if len(target) != 0 {
+		t.Errorf("the store still holds %v", target)
 	}
 	if len(index.written) != 1 {
 		t.Fatalf("the index was written %d times", len(index.written))
@@ -91,21 +91,21 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))
 	}
 
-	if told := readTranscript(t, api); len(told.GetCues()) != 0 {
-		t.Errorf("the recording still says %+v", told.GetCues())
+	if cuesDoc := readTranscript(t, api); len(cuesDoc.GetCues()) != 0 {
+		t.Errorf("the recording still says %+v", cuesDoc.GetCues())
 	}
 }
 
 // A run appends to the transcript, and what is being appended to is not taken
 // out from under it.
 func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: whole(newCues()), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
-	api, index, _ := dropper(t, held, newTranscriptIndex())
+	target := heldBy{stored: whole(newCues()), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
+	api, index, _ := dropper(t, target, newTranscriptIndex())
 
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
-		t.Fatalf("dropped a transcript being written and was refused %v", err)
+		t.Fatalf("dropped a transcript being written and failed %v", err)
 	}
-	if _, kept := held.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !kept {
+	if _, hasArtifact := target.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !hasArtifact {
 		t.Error("the transcript went out from under the run")
 	}
 	if len(index.written) != 0 {
@@ -118,7 +118,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	api, index, _ := dropper(t, stored{}, indexed{})
 
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeNotFound {
-		t.Fatalf("dropped the transcript of a recording nothing heard and was refused %v", err)
+		t.Fatalf("dropped the transcript of a recording nothing heard and failed %v", err)
 	}
 	if len(index.written) != 0 {
 		t.Error("the index was written for a drop that did nothing")

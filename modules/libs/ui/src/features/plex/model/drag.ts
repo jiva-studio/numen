@@ -1,6 +1,6 @@
 /**
  * Something dragged over the plex from outside it. Everything that knows about
- * events and screen pixels is here; which relation a place comes to is worked out
+ * events and screen pixels is here; which relation a place evaluates to is worked out
  * in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
@@ -15,7 +15,7 @@ const CAPTURE = { capture: true } as const
 export interface PlexDragState {
   /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Ref<Position | null>
-  /** The relation letting go here comes to, so it can be shown before it does. */
+  /** The relation letting go here evaluates to, so it can be shown before it does. */
   readonly relation: Ref<PlexRelation | null>
 }
 

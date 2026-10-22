@@ -81,17 +81,17 @@ func openToolbox(ctx context.Context, url, token string, named []string) (*toolb
 
 // readFunctionTool is the tool as the chat API is offered it.
 func readFunctionTool(tool *mcp.Tool) functionTool {
-	var offered functionTool
-	offered.Type = "function"
-	offered.Function.Name = tool.Name
-	offered.Function.Description = tool.Description
-	offered.Function.Parameters = emptySchema
+	var proposed functionTool
+	proposed.Type = "function"
+	proposed.Function.Name = tool.Name
+	proposed.Function.Description = tool.Description
+	proposed.Function.Parameters = emptySchema
 	if tool.InputSchema != nil {
 		if schema, err := json.Marshal(tool.InputSchema); err == nil {
-			offered.Function.Parameters = schema
+			proposed.Function.Parameters = schema
 		}
 	}
-	return offered
+	return proposed
 }
 
 // call runs the tool with the arguments the model wrote and returns what the model is told: the

@@ -25,7 +25,7 @@ const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood
  * The picture, and the note each node ID in it stands for. Every note here is
  * one carrying no identifier, which is the note the picture has to draw.
  */
-const drawing = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
+const renderPicture = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const map = createNodeIdMap()
   return { plex: convertNeighbourhood(neighbourhood, map.getNodeId), note: map.getNodePath }
 }
@@ -35,7 +35,7 @@ const drawing = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
  * nothing, so an edge drawn under anything else says so here.
  */
 const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
-  const { plex, note } = drawing(neighbourhood)
+  const { plex, note } = renderPicture(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}${edge.label ? ` (${edge.label})` : ''}`,
   )
@@ -56,7 +56,7 @@ describe('what the plex is handed', () => {
 
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the word the person put on it.
-    const [line] = drawing(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
+    const [line] = renderPicture(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
     expect(line?.label).toBeUndefined()
   })
 
@@ -101,7 +101,7 @@ describe('what the plex is handed', () => {
   })
 
   it('places every note it was given', () => {
-    const { plex, note } = drawing(
+    const { plex, note } = renderPicture(
       createNeighbourhood('Here', [
         ['Above', 'parent', 'part of', ''],
         ['Below', 'child', '', ''],
@@ -118,7 +118,7 @@ describe('what the plex is handed', () => {
 })
 
 describe('what a note is drawn under', () => {
-  const held = createNeighbourhood('Here', [
+  const target = createNeighbourhood('Here', [
     ['Above', 'parent', '', ''],
     ['Below', 'child', '', ''],
     ['Beside', 'sibling', '', 'Above'],
@@ -126,20 +126,20 @@ describe('what a note is drawn under', () => {
 
   it('is the ticket the note holds, and never the file it is filed under', () => {
     const map = createNodeIdMap()
-    const plex = convertNeighbourhood(held, (path) => `#${path}`)
+    const plex = convertNeighbourhood(target, (path) => `#${path}`)
 
     expect(plex.nodes.map((node) => node.id)).toEqual(['#Here', '#Above', '#Below', '#Beside'])
     expect(map.getNodePath('Here')).toBe('')
   })
 
   it('calls every note of one picture something different from every other', () => {
-    const { plex } = drawing(held)
+    const { plex } = renderPicture(target)
 
     expect(new Set(plex.nodes.map((node) => node.id)).size).toBe(plex.nodes.length)
   })
 
   it('runs an edge between the tickets of the two notes it joins', () => {
-    const plex = convertNeighbourhood(held, (path) => `#${path}`)
+    const plex = convertNeighbourhood(target, (path) => `#${path}`)
 
     expect(plex.edges.map((edge) => `${edge.from} -> ${edge.to}`)).toEqual([
       '#Above -> #Here',
@@ -151,22 +151,22 @@ describe('what a note is drawn under', () => {
   it('mints nothing for a parent the picture does not show', () => {
     // A sibling whose parent is off the screen hangs off nothing, and the note
     // it named is one this picture never drew.
-    const asked: string[] = []
+    const request: string[] = []
     convertNeighbourhood(
       createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]),
       (path) => {
-        asked.push(path)
+        request.push(path)
         return `#${path}`
       },
     )
 
-    expect(asked).not.toContain('Missing')
+    expect(request).not.toContain('Missing')
   })
 })
 
 /** Every edge as the end its arrow is drawn at, and the pair it joins. */
 const arrows = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
-  const { plex, note } = drawing(neighbourhood)
+  const { plex, note } = renderPicture(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}: ${edge.arrow ?? 'no arrow'}`,
   )
@@ -266,7 +266,7 @@ describe('a sibling nested under the note in focus', () => {
 
 describe('what each note of a neighbourhood is', () => {
   it('is what the vault says of the focus and of every note around it', () => {
-    const around: Neighbourhood = {
+    const neighbourhood: Neighbourhood = {
       focus: { path: 'Words.md', title: 'Words' },
       focusType: 'deck',
       related: [
@@ -282,16 +282,16 @@ describe('what each note of a neighbourhood is', () => {
       ],
     }
 
-    expect([...getNoteTypes(around)]).toStrictEqual([
+    expect([...getNoteTypes(neighbourhood)]).toStrictEqual([
       ['Words.md', 'deck'],
       ['Faces.md', 'stencil'],
     ])
   })
 
-  it('names nothing for a focus with no path', () => {
-    const around: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
+  it('is empty for a focus with no path', () => {
+    const neighbourhood: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
 
-    expect(getNoteTypes(around).size).toBe(0)
+    expect(getNoteTypes(neighbourhood).size).toBe(0)
   })
 })
 
@@ -299,7 +299,7 @@ describe('what each note of a neighbourhood is', () => {
 type Neighbour = Neighbourhood['related'][number]
 
 describe('two neighbourhoods drawing one picture', () => {
-  const held = (): Neighbourhood => ({
+  const target = (): Neighbourhood => ({
     focus: { path: 'Here.md', title: 'Here' },
     focusType: 'note',
     related: [
@@ -326,12 +326,12 @@ describe('two neighbourhoods drawing one picture', () => {
 
   /** The neighbourhood held, its second note changed as given. */
   const changed = (more: Partial<Neighbour>): Neighbourhood => {
-    const one = held()
+    const one = target()
     return { ...one, related: [one.related[0]!, { ...one.related[1]!, ...more }] }
   }
 
   it('are two answers with every heading the same', () => {
-    expect(areNeighbourhoodsEqual(held(), held())).toBe(true)
+    expect(areNeighbourhoodsEqual(target(), target())).toBe(true)
   })
 
   it('are two answers of nothing', () => {
@@ -339,30 +339,30 @@ describe('two neighbourhoods drawing one picture', () => {
   })
 
   it('are not an answer and nothing, either way round', () => {
-    expect(areNeighbourhoodsEqual(held(), null)).toBe(false)
-    expect(areNeighbourhoodsEqual(null, held())).toBe(false)
+    expect(areNeighbourhoodsEqual(target(), null)).toBe(false)
+    expect(areNeighbourhoodsEqual(null, target())).toBe(false)
   })
 
   it('are not two answers standing on different notes', () => {
-    const other = { ...held(), focus: { path: 'There.md', title: 'Here' } }
+    const other = { ...target(), focus: { path: 'There.md', title: 'Here' } }
 
-    expect(areNeighbourhoodsEqual(held(), other)).toBe(false)
+    expect(areNeighbourhoodsEqual(target(), other)).toBe(false)
   })
 
   it('are not two answers calling the focus differently', () => {
-    const other = { ...held(), focus: { path: 'Here.md', title: 'There' } }
+    const other = { ...target(), focus: { path: 'Here.md', title: 'There' } }
 
-    expect(areNeighbourhoodsEqual(held(), other)).toBe(false)
+    expect(areNeighbourhoodsEqual(target(), other)).toBe(false)
   })
 
   it('are not two answers saying the focus is something different', () => {
-    expect(areNeighbourhoodsEqual(held(), { ...held(), focusType: 'deck' })).toBe(false)
+    expect(areNeighbourhoodsEqual(target(), { ...target(), focusType: 'deck' })).toBe(false)
   })
 
   it('are not two answers with a different number of notes around', () => {
-    const other = { ...held(), related: held().related.slice(0, 1) }
+    const other = { ...target(), related: target().related.slice(0, 1) }
 
-    expect(areNeighbourhoodsEqual(held(), other)).toBe(false)
+    expect(areNeighbourhoodsEqual(target(), other)).toBe(false)
   })
 
   it.each<[string, Partial<Neighbour>]>([
@@ -374,6 +374,6 @@ describe('two neighbourhoods drawing one picture', () => {
     ['through', { through: 'Here.md' }],
     ['isMutual', { isMutual: false }],
   ])('are not two answers whose second note differs in its %s', (_, more) => {
-    expect(areNeighbourhoodsEqual(held(), changed(more))).toBe(false)
+    expect(areNeighbourhoodsEqual(target(), changed(more))).toBe(false)
   })
 })

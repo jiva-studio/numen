@@ -25,7 +25,7 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
 >
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // Each tab is drawn into the page, so the one before it goes before the next
 // stands: a mark is teleported to the tile a selector finds in the whole page.
@@ -107,7 +107,7 @@ const mountDeck = async (
   /** Which preset the deck names, as the vault answers it. */
   let by = schedule.by ?? ''
   /** Every deck put on a preset, as the tab asked for it. */
-  const put: string[] = []
+  const appliedPresets: string[] = []
 
   const presets: Presets = {
     read: async (path) =>
@@ -135,7 +135,7 @@ const mountDeck = async (
         bounds: NO_BOUNDS,
       }),
     scheduleDeck: async (_deck, preset) => {
-      put.push(preset)
+      appliedPresets.push(preset)
       if (schedule.notScheduled) return asFailure(schedule.notScheduled)
       by = preset
       return asValue({ at: 'scheduled' })
@@ -169,7 +169,7 @@ const mountDeck = async (
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { state: tab }, attachTo: document.body })
   await settle()
-  return { window, tab, decks, put }
+  return { window, tab, decks, appliedPresets }
 }
 
 /** The tile one card is drawn as, by the identity the window gave that card. */
@@ -263,7 +263,7 @@ describe('a mark on a tile', () => {
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
   })
 
-  it('stands with the card and not with its place, so removing another leaves it', async () => {
+  it('remains with the card and not with its place, so removing another leaves it', async () => {
     const { window, tab } = await mountDeck([stencilless])
     const first = tab.deck.value.cards[0]?.id ?? ''
     const second = tab.deck.value.cards[1]?.id ?? ''
@@ -285,7 +285,7 @@ describe('what is wrong with the file itself', () => {
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
   })
 
-  it('is drawn nowhere where every problem stands on a card', async () => {
+  it('is drawn nowhere where every problem relies on a card', async () => {
     const { window } = await mountDeck([stencilless])
 
     expect(window.find(`[aria-label="${words.problems}"]`).exists()).toBe(false)
@@ -344,7 +344,7 @@ describe('the question a file that changed on disk puts', () => {
 })
 
 describe('the preset a deck is scheduled by', () => {
-  it('stands on a line at the top of the deck, saying which one is in force', async () => {
+  it('relies on a line at the top of the deck, saying which one is in force', async () => {
     const { window } = await mountDeck([], { by: 'Sanskrit.md' })
 
     const line = window.get('.deck-tab__scheduled')
@@ -366,10 +366,10 @@ describe('the preset a deck is scheduled by', () => {
 
     await line.trigger('click')
 
-    const offered = [...document.body.querySelectorAll('.menu__item')].map(
+    const proposed = [...document.body.querySelectorAll('.menu__item')].map(
       (one) => one.textContent?.trim() ?? '',
     )
-    expect(offered).toStrictEqual([words.defaults, 'Sanskrit', 'Slow.md'])
+    expect(proposed).toStrictEqual([words.defaults, 'Sanskrit', 'Slow.md'])
   })
 
   it('marks the preset in force among the ones offered', async () => {
@@ -383,32 +383,32 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('puts the deck on the preset that was chosen, and says it afterwards', async () => {
-    const { window, put } = await mountDeck()
+    const { window, appliedPresets } = await mountDeck()
     await window.get('.deck-tab__choice').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === 'Sanskrit',
     )
 
-    chosen?.click()
+    selected?.click()
     await settle()
     await window.vm.$nextTick()
 
-    expect(put).toStrictEqual(['Sanskrit.md'])
+    expect(appliedPresets).toStrictEqual(['Sanskrit.md'])
     expect(window.get('.deck-tab__choice').text()).toContain('Sanskrit')
   })
 
   it('takes the deck back to the defaults', async () => {
-    const { window, put } = await mountDeck([], { by: 'Sanskrit.md' })
+    const { window, appliedPresets } = await mountDeck([], { by: 'Sanskrit.md' })
     await window.get('.deck-tab__choice').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === words.defaults,
     )
 
-    chosen?.click()
+    selected?.click()
     await settle()
     await window.vm.$nextTick()
 
-    expect(put).toStrictEqual([''])
+    expect(appliedPresets).toStrictEqual([''])
     expect(window.get('.deck-tab__choice').text()).toContain(words.defaults)
   })
 
@@ -424,11 +424,11 @@ describe('the preset a deck is scheduled by', () => {
   it('says on the line that a choice was not written', async () => {
     const { window } = await mountDeck([], { notScheduled: 'notAPreset' })
     await window.get('.deck-tab__choice').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+    const selected = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === 'Sanskrit',
     )
 
-    chosen?.click()
+    selected?.click()
     await settle()
     await window.vm.$nextTick()
 

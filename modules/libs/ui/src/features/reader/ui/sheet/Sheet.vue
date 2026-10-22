@@ -44,13 +44,13 @@ const ATTEMPTS = 3
 
 /** How many times this page has been asked for again, and whether it arrived. */
 const tries = ref(0)
-const arrived = ref(false)
+const isLoaded = ref(false)
 
 /** Whether it has been asked for as many times as it is going to be. */
 const givenUp = computed(() => tries.value > ATTEMPTS)
 
 /** The address it is asked for at, this attempt. */
-const drawing = computed(() => {
+const pictureUrl = computed(() => {
   if (!props.picture || givenUp.value) return ''
   if (tries.value === 0) return props.picture
   return `${props.picture}${props.picture.includes('?') ? '&' : '?'}again=${tries.value}`
@@ -62,7 +62,7 @@ watch(
   () => props.picture,
   () => {
     tries.value = 0
-    arrived.value = false
+    isLoaded.value = false
   },
 )
 
@@ -78,22 +78,22 @@ const getBoxStyle = (one: Rect) => ({
 <template>
   <figure class="reader__page rounded-node absolute top-0 overflow-hidden" :data-page="at">
     <img
-      v-if="drawing"
+      v-if="pictureUrl"
       class="reader__picture block size-full object-contain"
-      :class="{ invisible: !arrived }"
-      :src="drawing"
+      :class="{ invisible: !isLoaded }"
+      :src="pictureUrl"
       :alt="`${page} ${at + 1}`"
       draggable="false"
       @error="tries += 1"
-      @load="arrived = true"
+      @load="isLoaded = true"
     />
-    <div v-if="!arrived" class="reader__spinner absolute inset-0 grid place-items-center">
+    <div v-if="!isLoaded" class="reader__spinner absolute inset-0 grid place-items-center">
       <span v-if="givenUp" class="px-inset text-small text-hushed text-center">
         {{ undrawn }}
       </span>
       <Spinner v-else class="text-hushed" />
     </div>
-    <template v-if="arrived">
+    <template v-if="isLoaded">
       <div
         v-for="(one, index) in otherHighlights"
         :key="`other-highlight-${index}`"
@@ -111,7 +111,7 @@ const getBoxStyle = (one: Rect) => ({
 </template>
 
 <style scoped>
-/* The page stands on the surface, and its own edge is what tells it from it.
+/* The page relies on the surface, and its own edge is what tells it from it.
    The edge is the page's, so a highlight is placed inside it. */
 .reader__page {
   border: var(--numen-stroke) solid var(--numen-rule);

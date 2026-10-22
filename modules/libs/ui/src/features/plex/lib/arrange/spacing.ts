@@ -35,16 +35,16 @@ export function findSpacing(
   options: PlexOptions,
   canFit: (spacing: Spacing, viewport: Size) => boolean,
 ): Spacing {
-  const set = spacingAsSet(options)
+  const activeSet = spacingAsSet(options)
   const { viewport } = options
-  if (!viewport || options.spread <= 1 || !canFit(set, viewport)) return set
+  if (!viewport || options.spread <= 1 || !canFit(activeSet, viewport)) return activeSet
 
-  let spacing = set
+  let spacing = activeSet
   for (const opening of OPENS) {
     const factor = findWidestFactor(options.spread, (candidate) =>
-      canFit({ ...spacing, [opening]: set[opening] * candidate }, viewport),
+      canFit({ ...spacing, [opening]: activeSet[opening] * candidate }, viewport),
     )
-    spacing = { ...spacing, [opening]: set[opening] * factor }
+    spacing = { ...spacing, [opening]: activeSet[opening] * factor }
   }
   return spacing
 }

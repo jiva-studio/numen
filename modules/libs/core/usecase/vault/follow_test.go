@@ -150,7 +150,7 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 }
 
 // Not knowing what changed is answered by looking at everything, books included.
-func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
+func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 	t.Parallel()
 	watcher := newHand()
 	f := newFollowed(t, map[string]string{"Note.md": "# Note\n"}, watcher)
@@ -234,7 +234,7 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 // TestAVaultThatCannotBeWatchedSaysSo. It is still a vault: what fails is
 // following it, and the failure has to reach whoever would otherwise see a
 // window that looks up to date.
-func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
+func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	// Nothing to refresh with and nothing to walk with: a watch that never
@@ -278,16 +278,16 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		started.Run(t.Context())
-		close(done)
+		close(isDone)
 	}()
 
 	close(watcher.changes)
 
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the watch went on after its watcher stopped")
 	}

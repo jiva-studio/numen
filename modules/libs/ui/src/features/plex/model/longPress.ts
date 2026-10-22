@@ -32,34 +32,34 @@ export function useLongPress(
   onReach: (event: PointerEvent) => void,
   after: () => number = () => LONG_PRESS_DELAY,
 ): LongPressState {
-  const held = ref<{ timer: number; x: number; y: number } | null>(null)
+  const target = ref<{ timer: number; x: number; y: number } | null>(null)
 
   const letGo = () => {
-    if (!held.value) return
-    window.clearTimeout(held.value.timer)
-    held.value = null
+    if (!target.value) return
+    window.clearTimeout(target.value.timer)
+    target.value = null
   }
 
   const onPointerDown = (event: PointerEvent) => {
     if (event.pointerType === 'mouse' || !ready()) return
     letGo()
-    held.value = {
+    target.value = {
       x: event.clientX,
       y: event.clientY,
       timer: window.setTimeout(() => {
-        held.value = null
+        target.value = null
         onReach(event)
       }, after()),
     }
   }
 
   const onPointerMove = (event: PointerEvent) => {
-    const began = held.value
+    const began = target.value
     if (!began) return
     if (Math.hypot(event.clientX - began.x, event.clientY - began.y) > LONG_PRESS_TOLERANCE) letGo()
   }
 
   onScopeDispose(letGo)
 
-  return { isResting: () => held.value !== null, onPointerDown, onPointerMove, letGo }
+  return { isResting: () => target.value !== null, onPointerDown, onPointerMove, letGo }
 }

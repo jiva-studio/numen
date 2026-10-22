@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
-func TestAMissingSpanSaysWhatItIs(t *testing.T) {
+func TestAMissingSpanReturnsWhatItIs(t *testing.T) {
 	t.Parallel()
 
 	if got, want := (note.MissingSpan{}).Error(), "no part of this span is in the note"; got != want {
@@ -25,7 +25,7 @@ func TestAMissingSpanSaysWhatItIs(t *testing.T) {
 	}
 }
 
-func TestAnAmbiguousSpanSaysHowManyPlaces(t *testing.T) {
+func TestAnAmbiguousSpanReturnsHowManyPlaces(t *testing.T) {
 	t.Parallel()
 
 	got := note.AmbiguousSpan{Places: 3}.Error()
@@ -81,7 +81,7 @@ func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); body != before {
-		t.Errorf("the refused replacement landed anyway:\n%s", body)
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
 	}
 }
 
@@ -89,13 +89,13 @@ func TestAReplacementAnswersWithTheFileItWrote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.Fingerprint{})
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	written := c.read(t, "Aggressor.md")
-	if done.Fingerprint.Path != "Aggressor.md" || done.Fingerprint.Size != int64(len(written)) {
-		t.Errorf("the answer describes %+v, and the file is %d bytes", done.Fingerprint, len(written))
+	content := c.read(t, "Aggressor.md")
+	if isDone.Fingerprint.Path != "Aggressor.md" || isDone.Fingerprint.Size != int64(len(content)) {
+		t.Errorf("the answer describes %+v, and the file is %d bytes", isDone.Fingerprint, len(content))
 	}
 }
 
@@ -109,7 +109,7 @@ func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if body := c.read(t, "Big.md"); body != was {
-		t.Error("the refused replacement landed anyway")
+		t.Error("the rejected replacement landed anyway")
 	}
 }
 
@@ -124,26 +124,26 @@ func TestAReplacementInANoteWhoseFrontmatterIsNeverClosedIsRefused(t *testing.T)
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); body != was {
-		t.Errorf("the refused replacement landed anyway:\n%s", body)
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
 	}
 }
 
 // Whoever is drawing the note is told the stretch in the units a client counts,
 // and told when the change is over.
-func TestWhoeverIsDrawingTheNoteIsToldTheStretchInUTF16(t *testing.T) {
+func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
-	var told []domain.Edit
+	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, said domain.Edit) { told = append(told, said) }
+	replacing.Drawing = func(_ context.Context, said domain.Edit) { notified = append(notified, said) }
 
 	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
-	if len(told) != 2 {
-		t.Fatalf("told %d times: %+v", len(told), told)
+	if len(notified) != 2 {
+		t.Fatalf("told %d times: %+v", len(notified), notified)
 	}
-	begun, ended := told[0], told[1]
+	begun, ended := notified[0], notified[1]
 	if begun.Path != "Aggressor.md" || begun.From != 7 || begun.To != 13 || begun.Text != "goal" || begun.IsDone {
 		t.Errorf("the change began as %+v", begun)
 	}
@@ -213,24 +213,24 @@ func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.Fingerprint{})
 	var nowhere note.MissingSpan
 	if err == nil || errors.As(err, &nowhere) || !strings.Contains(err.Error(), "name the text to replace") {
-		t.Errorf("want the refusal to name the text, got %v", err)
+		t.Errorf("want the rejection to name the text, got %v", err)
 	}
 }
 
-// A refused replacement draws nothing and names the note it was refused in.
+// A rejected replacement draws nothing and names the note it failed in.
 func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
-	var told []domain.Edit
+	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, said domain.Edit) { told = append(told, said) }
+	replacing.Drawing = func(_ context.Context, said domain.Edit) { notified = append(notified, said) }
 
 	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.Fingerprint{})
 	if err == nil || !strings.HasPrefix(err.Error(), "Aggressor.md: ") {
 		t.Errorf("want the error to name the note, got %v", err)
 	}
-	if len(told) != 0 {
-		t.Errorf("a refused change was drawn: %+v", told)
+	if len(notified) != 0 {
+		t.Errorf("a rejected change was drawn: %+v", notified)
 	}
 }
 

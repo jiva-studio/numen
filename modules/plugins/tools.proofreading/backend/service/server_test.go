@@ -106,7 +106,7 @@ func TestProofreadTextAnswersAScan(t *testing.T) {
 	}
 }
 
-func TestProofreadTextHoldsAScanToTheDistanceItIsGiven(t *testing.T) {
+func TestProofreadText_ScanMaxDistanceLimit(t *testing.T) {
 	proof, _ := newServer(func(string) string { return "1|abcdeXYZ" })
 	request := func(distance float64) int {
 		res, err := proof.ProofreadText(t.Context(), connect.NewRequest(
@@ -117,11 +117,11 @@ func TestProofreadTextHoldsAScanToTheDistanceItIsGiven(t *testing.T) {
 		return len(res.Msg.GetCorrections())
 	}
 
-	if kept := request(0); kept != 0 {
-		t.Errorf("the proofreader's own limit kept %d", kept)
+	if count := request(0); count != 0 {
+		t.Errorf("the proofreader's own limit kept %d", count)
 	}
-	if kept := request(0.9); kept != 1 {
-		t.Errorf("a limit of 0.9 kept %d", kept)
+	if retainedVal := request(0.9); retainedVal != 1 {
+		t.Errorf("a limit of 0.9 kept %d", retainedVal)
 	}
 }
 
@@ -182,7 +182,7 @@ func TestProofreadTextRefusesARequestItCannotAnswer(t *testing.T) {
 		}
 	}
 	if len(h.asked) != 0 {
-		t.Errorf("a refused request asked the model %d times", len(h.asked))
+		t.Errorf("a rejected request asked the model %d times", len(h.asked))
 	}
 }
 

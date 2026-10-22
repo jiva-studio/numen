@@ -57,7 +57,7 @@ service SettingsService {
 message GetSettingsRequest {}
 
 message GetSettingsResponse {
-  // Every setting as it stands, as JSON: what the file says, and what an
+  // Every setting currently, as JSON: what the file says, and what an
   // installation nobody has configured does under everything it does not.
   string written = 1;
 

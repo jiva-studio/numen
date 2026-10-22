@@ -34,7 +34,7 @@ describe('where a problem is drawn', () => {
     expect([...marks.at.keys()]).toStrictEqual(['c2', 'c3'])
   })
 
-  it('stands every problem of one card together, in the order they were read', () => {
+  it('remains every problem of one card together, in the order they were read', () => {
     const marks = createMarks(
       [problem({ card: 0, text: 'first' }), problem({ card: 0, text: 'second' })],
       ['c1'],
@@ -52,7 +52,7 @@ describe('where a problem is drawn', () => {
     expect(marks.at.get('f1')).toStrictEqual(['no back'])
   })
 
-  it('is the field of the card where it names both, so it is said under that value', () => {
+  it('is the field of the card where it names both, so it is returned under that value', () => {
     const marks = createMarks(
       [problem({ kind: 'fieldWrittenTwice', card: 1, field: 'Name', text: 'twice' })],
       ['c1', 'c2'],
@@ -62,7 +62,7 @@ describe('where a problem is drawn', () => {
     expect(marks.at.has('c2')).toBe(false)
   })
 
-  it('is the field where it stands against no card and no face', () => {
+  it('is the field at its current position against no card and no face', () => {
     const marks = createMarks(
       [problem({ kind: 'fieldDeclaredTwice', field: 'Height', text: 'declared twice' })],
       [],
@@ -72,7 +72,7 @@ describe('where a problem is drawn', () => {
     expect(marks.whole).toStrictEqual([])
   })
 
-  it('is the file where it stands against none of the three', () => {
+  it('is the file at its current position against none of the three', () => {
     const marks = createMarks([problem({ text: 'something else' })], ['c1'], [])
     expect(marks.whole).toStrictEqual(['something else'])
   })
@@ -103,12 +103,12 @@ describe('where two problems of one card stand', () => {
 /** The marks of problems read against two cards and a face. */
 const createTestMarks = (...problems: DeckProblem[]) => createMarks(problems, ['c1', 'c2'], ['f1'])
 
-describe('whether two readings are wrong in the same way', () => {
-  it('is so for two readings of nothing', () => {
+describe('whether two evaluations are wrong in the same way', () => {
+  it('is so for two evaluations of nothing', () => {
     expect(areMarksEqual(createTestMarks(), createTestMarks())).toBe(true)
   })
 
-  it('is so for two readings saying the same against the same things', () => {
+  it('is so for two evaluations saying the same against the same things', () => {
     const all = () => [
       problem({ text: 'file' }),
       problem({ card: 0, text: 'card' }),
@@ -159,7 +159,7 @@ describe('whether two readings are wrong in the same way', () => {
     ).toBe(false)
   })
 
-  it('is not so where one reading stands against more cards than the other', () => {
+  it('is not so where one reading remains against more cards than the other', () => {
     const one = createTestMarks(problem({ card: 0 }))
     const other = createTestMarks(problem({ card: 0 }), problem({ card: 1 }))
 
@@ -181,7 +181,7 @@ describe('whether two readings are wrong in the same way', () => {
     ).toBe(false)
   })
 
-  it('is not so where one reading stands against more cards with values than the other', () => {
+  it('is not so where one reading remains against more cards with values than the other', () => {
     const one = createTestMarks(problem({ card: 0, field: 'Front' }))
     const other = createTestMarks(
       problem({ card: 0, field: 'Front' }),
@@ -192,7 +192,7 @@ describe('whether two readings are wrong in the same way', () => {
     expect(areMarksEqual(other, one)).toBe(false)
   })
 
-  it('is not so where one reading stands against more values of a card than the other', () => {
+  it('is not so where one reading remains against more values of a card than the other', () => {
     const one = createTestMarks(problem({ card: 0, field: 'Front' }))
     const other = createTestMarks(
       problem({ card: 0, field: 'Front' }),

@@ -155,18 +155,18 @@ func (u CountReviews) countFile(
 	ctx context.Context, log Log, store ports.DerivedStore, file ports.Entry, run *reviewCounter,
 ) error {
 	var ran LogFile
-	var opened bool
+	var didOpen bool
 	var err error
-	one, kept := run.was[file.Name.Hash]
-	stale := !kept || one.Size != file.Size
-	if stale || run.coming {
+	one, hasCached := run.was[file.Name.Hash]
+	isStale := !hasCached || one.Size != file.Size
+	if isStale || run.coming {
 		ran, err = log.ReadFile(ctx, store, file)
 		if err != nil {
 			return err
 		}
-		opened = true
+		didOpen = true
 	}
-	if stale {
+	if isStale {
 		one = cachedRun{
 			Name: file.Name.Hash,
 			Size: ran.Size,
@@ -175,14 +175,14 @@ func (u CountReviews) countFile(
 		}
 	}
 	run.now.Runs = append(run.now.Runs, one)
-	if opened && !ran.IsGone && !ran.IsUnreadable {
+	if didOpen && !ran.IsGone && !ran.IsUnreadable {
 		run.held.Answers = append(run.held.Answers, ran.Answers...)
 		run.held.Files = append(run.held.Files, ports.Entry{Name: file.Name, Size: ran.Size})
 	}
 
 	days := one.Days
 	if isRepeated(one.IDs, run.seen) {
-		if !opened {
+		if !didOpen {
 			ran, err = log.ReadFile(ctx, store, file)
 			if err != nil {
 				return err

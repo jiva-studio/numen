@@ -34,7 +34,7 @@ var (
 		"notes/Quasar.md": "# Quasar\n\nA distant beacon, shared by no textbook here.\n",
 	}
 
-	// A note whose prose stands under a frontmatter block, with the words
+	// A note whose prose is placed under a frontmatter block, with the words
 	// looked for on the seventh line of that prose.
 	isotherm = "---\nid: 01M0DEM0000000000000000002\n---\n" +
 		"# Isotherm\n\nA curve of one temperature.\n\n## Below\n\nThe curve holds throughout.\n"
@@ -221,7 +221,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 	// Every note of the first vault is a fair answer; nothing of the second is.
 	for _, p := range near {
-		if _, held := firstNotes[p.Source]; !held {
+		if _, target := firstNotes[p.Source]; !target {
 			t.Errorf("the dense half answered with %s, which the first vault does not hold", p.Source)
 		}
 	}
@@ -297,7 +297,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 	}
 }
 
-func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
+func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
@@ -429,14 +429,14 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	}
 }
 
-func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
+func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 	// The window puts the caret where the words were found. A note's
 	// frontmatter stands before its prose and is no line of it.
 	ctx := t.Context()
 	c := newCorpus(t)
 
 	const path = "notes/Isotherm.md"
-	const held = "The curve holds throughout."
+	const target = "The curve holds throughout."
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
 	scan := vaults.NewScan(
 		filesystem.VaultReaders{}, c.db.Vaults(), c.db.Notes(),
@@ -446,10 +446,10 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	at := strings.Index(isotherm, held)
+	at := strings.Index(isotherm, target)
 	whole := chunk.Chunk{
 		Start: 0, Length: len(isotherm), Text: isotherm,
-		Small: []chunk.Chunk{{Start: at, Length: len(held), Text: held}},
+		Small: []chunk.Chunk{{Start: at, Length: len(target), Text: target}},
 	}
 	if err := c.db.Chunks().ReplaceChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
 		t.Fatal(err)
@@ -515,9 +515,9 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 	}
 }
 
-func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
+func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	// The recipe is what the vector was written under. A search asking under
-	// anything else joins on nothing, and the failure is silence rather than an
+	// anything else joins on nothing, and the failure is silence and not an
 	// error: a search by words answers and the search looks like it worked.
 	ctx := t.Context()
 	c := newCorpus(t)
@@ -582,7 +582,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	}
 }
 
-func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
+func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	// One half left unfiltered answers about the wrong kind, and the fused
 	// order carries it: a way that ignores the kind is a half that undoes it.
 	ctx := t.Context()

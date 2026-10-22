@@ -1,6 +1,6 @@
 /**
  * The runs of a drawn document: where each of them begins in the book's text,
- * where it stands across the columns, and what part of the drawn nodes an
+ * at its current position across the columns, and what part of the drawn nodes an
  * offset falls on.
  *
  * A run is an element carrying `data-offset`, the byte offset at which its text
@@ -36,12 +36,12 @@ export function getRuns(paper: HTMLElement): Run[] {
  * has one in each column, and it begins in the first.
  */
 export function createMarks(runs: readonly Run[], origin: number): Mark[] {
-  const placed: Mark[] = []
+  const placedMarks: Mark[] = []
   for (const run of runs) {
     const first = run.element.getClientRects()[0]
-    if (first) placed.push({ at: run.at, x: first.left - origin })
+    if (first) placedMarks.push({ at: run.at, x: first.left - origin })
   }
-  return placed
+  return placedMarks
 }
 
 /** The run an offset falls in: the last one beginning at or before it. */
@@ -125,10 +125,10 @@ const rangeOver = (runs: readonly Run[], span: Span): Range | undefined => {
 
 /** The stretches that fall in the drawn document, as ranges over its nodes. */
 export function rangesOver(runs: readonly Run[], spans: readonly Span[]): Range[] {
-  const drawn: Range[] = []
+  const renderedRanges: Range[] = []
   for (const span of spans) {
     const range = rangeOver(runs, span)
-    if (range) drawn.push(range)
+    if (range) renderedRanges.push(range)
   }
-  return drawn
+  return renderedRanges
 }

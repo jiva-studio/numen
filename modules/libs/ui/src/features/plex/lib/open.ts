@@ -30,7 +30,7 @@ const ARROW_DIRECTION = { above: -1, below: 1 } as const
 
 /** One heading at a moment of the opening. */
 export interface DrawnHeading extends HungHeading {
-  /** Where it stands now, from the top of what is hung. */
+  /** at its current position now, from the top of what is hung. */
   readonly y: number
   readonly opacity: number
 }
@@ -43,7 +43,7 @@ export interface OpenHeadings {
   readonly opacity: number
   /** The headings standing in the window, in the order they stand. */
   readonly headings: readonly DrawnHeading[]
-  /** Which heading the window stands on, counted from the first. */
+  /** Which heading the window relies on, counted from the first. */
   readonly first: number
   /** Whether the window has headings above it, and headings below it. */
   readonly isAbove: boolean
@@ -68,19 +68,19 @@ export interface Arrow {
  * can be measured against a heading.
  */
 export function scrollBy(
-  hung: NodeHeadings,
+  suspended: NodeHeadings,
   wheel: { readonly delta: number; readonly mode: number },
   leftover: number,
 ): { by: number; left: number } {
-  const pixels = leftover + wheel.delta * getStride(hung, wheel.mode)
-  const by = Math.trunc(pixels / hung.headingHeight)
-  return { by, left: pixels - by * hung.headingHeight }
+  const pixels = leftover + wheel.delta * getStride(suspended, wheel.mode)
+  const by = Math.trunc(pixels / suspended.headingHeight)
+  return { by, left: pixels - by * suspended.headingHeight }
 }
 
-/** What one of a wheel's own units comes to in pixels: a line, or a window. */
-function getStride(hung: NodeHeadings, mode: number): number {
-  if (mode === LINES) return hung.headingHeight
-  if (mode === WINDOWS) return hung.shown * hung.headingHeight
+/** What one of a wheel's own units evaluates to in pixels: a line, or a window. */
+function getStride(suspended: NodeHeadings, mode: number): number {
+  if (mode === LINES) return suspended.headingHeight
+  if (mode === WINDOWS) return suspended.shown * suspended.headingHeight
   return 1
 }
 
@@ -89,8 +89,8 @@ const LINES = 1
 const WINDOWS = 2
 
 /** The getFurthest the window on the headings may be scrolled down, counted in headings. */
-export const getFurthest = (hung: NodeHeadings): number =>
-  Math.max(0, hung.headings.length - hung.shown)
+export const getFurthest = (suspended: NodeHeadings): number =>
+  Math.max(0, suspended.headings.length - suspended.shown)
 
 /**
  * What a node hangs at a moment of the opening.
@@ -103,46 +103,46 @@ export const getFurthest = (hung: NodeHeadings): number =>
  * Nothing while it is shut, which is what a node draws nothing at all under.
  */
 export function getOpenHeadings(
-  hung: NodeHeadings,
+  suspended: NodeHeadings,
   open: number,
   scrollOffset = 0,
 ): OpenHeadings | null {
-  const opened = clamp01(open)
-  if (opened <= 0) return null
+  const openProgress = clamp01(open)
+  if (openProgress <= 0) return null
 
   // The window stands whole on the headings, scrolled by one at a time.
-  const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthest(hung))
-  const shown = hung.headings.slice(first, first + hung.shown)
+  const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthest(suspended))
+  const visibleHeadings = suspended.headings.slice(first, first + suspended.shown)
 
   // Each heading sets off a lead behind the one above it, and the leads together
   // take the same share of the opening whatever number of headings stand. What is
   // left for any one of them to run in is the opening less every lead before it.
-  const many = shown.length
+  const many = visibleHeadings.length
   const lead = Math.min(LEAD, SPREAD / (many - 1))
   const runs = 1 - lead * (many - 1)
 
   /** The deepest a heading may set off from and still stand on the ground. */
-  const floor = hung.height - 2 * hung.pad - hung.headingHeight
+  const floor = suspended.height - 2 * suspended.pad - suspended.headingHeight
 
-  const headings = shown.map((heading, at) => {
-    const own = easeOut(clamp01((opened - at * lead) / runs))
-    const rests = at * hung.headingHeight
-    const from = Math.min(rests + RISE * hung.headingHeight, floor)
+  const headings = visibleHeadings.map((heading, at) => {
+    const own = easeOut(clamp01((openProgress - at * lead) / runs))
+    const rests = at * suspended.headingHeight
+    const from = Math.min(rests + RISE * suspended.headingHeight, floor)
     return { ...heading, at: rests, y: lerp(from, rests, own), opacity: own }
   })
 
   const isAbove = first > 0
-  const isBelow = first < getFurthest(hung)
+  const isBelow = first < getFurthest(suspended)
   return {
-    height: hung.height,
-    opacity: easeOut(opened),
+    height: suspended.height,
+    opacity: easeOut(openProgress),
     headings,
     first,
     isAbove,
     isBelow,
     arrows: [
-      ...(isAbove ? [createArrow(hung, hung.pad / 2, 'above')] : []),
-      ...(isBelow ? [createArrow(hung, hung.height - hung.pad / 2, 'below')] : []),
+      ...(isAbove ? [createArrow(suspended, suspended.pad / 2, 'above')] : []),
+      ...(isBelow ? [createArrow(suspended, suspended.height - suspended.pad / 2, 'below')] : []),
     ],
   }
 }
@@ -151,10 +151,10 @@ export function getOpenHeadings(
  * An arrow at one edge of the ground, pointing the way there is more to scroll
  * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function createArrow(hung: NodeHeadings, down: number, at: Arrow['at']): Arrow {
+function createArrow(suspended: NodeHeadings, down: number, at: Arrow['at']): Arrow {
   const direction = ARROW_DIRECTION[at]
-  const middle = hung.offset
-  const y = hung.top + down
+  const middle = suspended.offset
+  const y = suspended.top + down
   return {
     at,
     points: [

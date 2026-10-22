@@ -65,9 +65,9 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 	// The vault says what is at a path without opening it: a note, a file it leaves alone, or
 	// nothing.
 	ref, err := files.GetFingerprint(ctx, path)
-	held := err == nil
+	target := err == nil
 	switch {
-	case held:
+	case target:
 		out.Fingerprint = ref
 		// A vault holds several kinds of source and this reads one of them.
 		if ref.Kind != domain.KindNote {
@@ -90,7 +90,7 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 	case errors.Is(err, fs.ErrNotExist):
 		out.Outcome = Missing
 		return out, nil
-	case !held && err == nil:
+	case !target && err == nil:
 		out.Outcome = NotANote
 		return out, nil
 	case err != nil:

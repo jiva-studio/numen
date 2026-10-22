@@ -27,21 +27,21 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 
 	w := agentrun.NewWork(conversation, 1, cancel)
 	if !registry.Add(w) {
-		t.Fatal("the registry refused work while open")
+		t.Fatal("the registry rejected work while open")
 	}
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
-	over := make(chan struct{})
+	doneCh := make(chan struct{})
 	go func() {
 		defer w.End()
 		defer registry.Remove(w)
 		defer close(w.Output)
 		_ = cmd.Wait()
-		close(over)
+		close(doneCh)
 	}()
 	t.Cleanup(func() { _ = w.Stop() })
-	return w, over
+	return w, doneCh
 }
 
 // isOver is whether the child has been waited for.
@@ -55,7 +55,7 @@ func isOver(over <-chan struct{}) bool {
 }
 
 // Close returns only once every child is over, and refuses work after it.
-func TestCloseStopsEveryChildAndRefusesMore(t *testing.T) {
+func TestCloseStopsEveryChildAndRejectsMore(t *testing.T) {
 	var registry agentrun.Registry
 	_, first := start(t, &registry, "one")
 	_, second := start(t, &registry, "")
@@ -97,7 +97,7 @@ func TestEndConversationStopsOnlyThatConversation(t *testing.T) {
 }
 
 // A task that named no conversation keeps no session, and ending none is not an error.
-func TestNoConversationKeepsNoSession(t *testing.T) {
+func TestNoConversationPreservesNoSession(t *testing.T) {
 	var registry agentrun.Registry
 	registry.SetSession("", "s-lost")
 	if got := registry.GetSession(""); got != "" {
@@ -111,12 +111,12 @@ func TestNoConversationKeepsNoSession(t *testing.T) {
 // Stop on one work ends its child and is safe to repeat.
 func TestStopEndsTheChildOnce(t *testing.T) {
 	var registry agentrun.Registry
-	w, over := start(t, &registry, "")
+	w, doneCh := start(t, &registry, "")
 
 	if err := w.Stop(); err != nil {
 		t.Fatal(err)
 	}
-	if !isOver(over) {
+	if !isOver(doneCh) {
 		t.Error("the child is still running after Stop")
 	}
 	if err := w.Stop(); err != nil {
@@ -130,7 +130,7 @@ func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
 	var registry agentrun.Registry
 	w := agentrun.NewWork("", 1, func() {})
 	if !registry.Add(w) {
-		t.Fatal("the registry refused work while open")
+		t.Fatal("the registry rejected work while open")
 	}
 
 	closed := make(chan struct{})

@@ -15,13 +15,13 @@ const mountDivider = (inside: string) =>
   })
 
 describe('Divider', () => {
-  it('stands what it holds in its middle, and nothing else', () => {
+  it('remains what it holds in its middle, and nothing else', () => {
     const divider = mountDivider('Add a field')
     expect(divider.element.children).toHaveLength(1)
     expect(divider.get('button').text()).toBe('Add a field')
   })
 
-  it('is announced as nothing, so nothing is said around what it holds', () => {
+  it('is announced as nothing, so nothing is returned around what it holds', () => {
     const divider = mountDivider('Add a field')
     expect(divider.attributes('role')).toBe('presentation')
     expect(divider.attributes('aria-orientation')).toBeUndefined()
@@ -33,11 +33,11 @@ describe('Divider', () => {
     expect(divider.findAll('hr')).toHaveLength(0)
   })
 
-  it('stands what it holds in its middle where it is asked for nothing else', () => {
+  it('remains what it holds in its middle where it is requested for nothing else', () => {
     expect(mountDivider('Add a field').attributes('data-at')).toBe('middle')
   })
 
-  it('leads with what it holds where it is asked to', () => {
+  it('leads with what it holds where it is requested to', () => {
     const divider = mount(Divider, {
       props: { at: 'start' },
       slots: { default: h('button', { type: 'button' }, 'Turn') },

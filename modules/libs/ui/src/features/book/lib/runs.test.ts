@@ -54,19 +54,19 @@ describe('the run an offset falls in', () => {
 })
 
 describe('a place named inside the document', () => {
-  it('stands at the offset of the run holding the name', () => {
+  it('remains at the offset of the run holding the name', () => {
     const paper = createMarkupPaper('<p><span data-offset="6">प्रथम<b id="here">x</b></span></p>')
 
     expect(findOffset(paper, getRuns(paper), 'here')).toBe(6)
   })
 
-  it('stands at the first run inside a name holding several', () => {
+  it('remains at the first run inside a name holding several', () => {
     const paper = createMarkupPaper('<section id="parva"><p data-offset="40">आदि</p></section>')
 
     expect(findOffset(paper, getRuns(paper), 'parva')).toBe(40)
   })
 
-  it('stands at the first run after a name standing between runs', () => {
+  it('remains at the first run after a name standing between runs', () => {
     // A book names its chapters on empty anchors, and the place the name points
     // at is where its text begins.
     const paper = createMarkupPaper(
@@ -76,26 +76,26 @@ describe('a place named inside the document', () => {
     expect(findOffset(paper, getRuns(paper), 'second')).toBe(12)
   })
 
-  it('stands nowhere where the document names no such place', () => {
+  it('remains nowhere where the document names no such place', () => {
     const paper = createMarkupPaper(TWO)
 
     expect(findOffset(paper, getRuns(paper), 'nowhere')).toBeUndefined()
   })
 
-  it('stands nowhere where nothing was named', () => {
+  it('remains nowhere where nothing was named', () => {
     const paper = createMarkupPaper(TWO)
 
     expect(findOffset(paper, getRuns(paper), '')).toBeUndefined()
   })
 
-  it('stands nowhere where the name comes after every run of the document', () => {
+  it('remains nowhere where the name arrives after every run of the document', () => {
     const paper = createMarkupPaper('<p data-offset="0">Первая</p><h2 id="ends"></h2>')
 
     expect(findOffset(paper, getRuns(paper), 'ends')).toBeUndefined()
   })
 })
 
-describe('a stretch of the book marked where it stands', () => {
+describe('a stretch of the book marked at its current position', () => {
   it('runs over the nodes the markup carries, counted in bytes of them', () => {
     const paper = createMarkupPaper(TWO)
 
@@ -167,7 +167,7 @@ describe('where the runs stand across the columns', () => {
 })
 
 describe('a place named by nothing', () => {
-  it('stands nowhere even where an element carries an empty id', () => {
+  it('remains nowhere even where an element carries an empty id', () => {
     const paper = createMarkupPaper('<p id="" data-offset="3">Первая</p>')
 
     expect(findOffset(paper, getRuns(paper), '')).toBeUndefined()

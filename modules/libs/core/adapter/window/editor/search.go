@@ -108,10 +108,10 @@ func (h *searchHandler) SearchPassages(
 	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found))}
 	for _, p := range found {
 		// A passage is the whole window enclosing its hit, so what is drawn is the
-		// words about the first run that matched. A hit by meaning stands on no
+		// words about the first run that matched. A hit by meaning relies on no
 		// word, and the window opens where the chunk that matched begins.
-		read, hit := nearby(p.Text, p.HitAt)
-		text, at := getTextAround(read, spans(read, query), markdown.CountUTF16(read, hit))
+		read, matched := nearby(p.Text, p.HitAt)
+		text, at := getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
@@ -121,7 +121,7 @@ func (h *searchHandler) SearchPassages(
 			Line:     int32(p.Line),
 			Kind:     convertSourceKindToWire(p.Kind),
 		}
-		if note, held := titles[p.Source]; held {
+		if note, target := titles[p.Source]; target {
 			passage.Note = convertNoteToWire(note)
 			passage.Type = convertNoteTypeToWire(types[p.Source])
 		}
@@ -159,13 +159,13 @@ func atMost(limit int32) int {
 // the ceiling is refused: each path costs a round trip of its own, and an
 // answer cut to fit says nothing about which paths were left out.
 func eachOnce(paths []string) ([]string, error) {
-	seen := make(map[string]bool, len(paths))
+	observed := make(map[string]bool, len(paths))
 	out := make([]string, 0, len(paths))
 	for _, path := range paths {
-		if seen[path] {
+		if observed[path] {
 			continue
 		}
-		seen[path] = true
+		observed[path] = true
 		out = append(out, path)
 	}
 	if len(out) > mostAsked {
@@ -176,13 +176,13 @@ func eachOnce(paths []string) ([]string, error) {
 
 // getPassageSources is every file the passages came out of, each named once.
 func getPassageSources(found []domain.Passage) []string {
-	seen := make(map[string]bool, len(found))
+	observed := make(map[string]bool, len(found))
 	out := make([]string, 0, len(found))
 	for _, p := range found {
-		if seen[p.Source] {
+		if observed[p.Source] {
 			continue
 		}
-		seen[p.Source] = true
+		observed[p.Source] = true
 		out = append(out, p.Source)
 	}
 	return out

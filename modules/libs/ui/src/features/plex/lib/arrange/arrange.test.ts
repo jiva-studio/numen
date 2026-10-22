@@ -117,12 +117,12 @@ describe('where the relations sit', () => {
 
   it('clears the rows a column runs alongside, and only those', () => {
     // A column at a fixed distance lands on a row once the row outgrows it.
-    const wide = arrangePlex(neighbourhoods.overcrowded)
-    const columns = getNodesByRelation(wide, 'jump')
+    const wideLayout = arrangePlex(neighbourhoods.overcrowded)
+    const columns = getNodesByRelation(wideLayout, 'jump')
     const columnReach = Math.max(...columns.map((n) => Math.abs(n.y) + n.height / 2))
     const alongside = [
-      ...getNodesByRelation(wide, 'parent'),
-      ...getNodesByRelation(wide, 'child'),
+      ...getNodesByRelation(wideLayout, 'parent'),
+      ...getNodesByRelation(wideLayout, 'child'),
     ].filter((n) => Math.abs(n.y) - n.height / 2 < columnReach)
     expect(alongside.length).toBeGreaterThan(0)
     const rowsReach = Math.max(...alongside.map((n) => Math.abs(n.x) + n.width / 2))
@@ -191,9 +191,9 @@ describe('a box is as wide as its title needs', () => {
       expect(node.x - node.width / 2 - (before.x + before.width / 2)).toBeCloseTo(gap)
     }
 
-    const left = Math.min(...children.map((node) => node.x - node.width / 2))
+    const minLeft = Math.min(...children.map((node) => node.x - node.width / 2))
     const right = Math.max(...children.map((node) => node.x + node.width / 2))
-    expect(left + right).toBeCloseTo(0)
+    expect(minLeft + right).toBeCloseTo(0)
   })
 
   it('turns one edge of a column towards the focus, whatever the widths', () => {
@@ -201,8 +201,8 @@ describe('a box is as wide as its title needs', () => {
     const jumps = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'jump')
 
     expect(new Set(jumps.map((node) => node.width)).size).toBeGreaterThan(1)
-    const near = jumps.map((node) => Math.abs(node.x) - node.width / 2)
-    for (const edge of near) expect(edge).toBeCloseTo(near[0]!)
+    const nearDistances = jumps.map((node) => Math.abs(node.x) - node.width / 2)
+    for (const edge of nearDistances) expect(edge).toBeCloseTo(nearDistances[0]!)
   })
 
   it('starts each further column beyond the widest of the one before it', () => {
@@ -225,10 +225,10 @@ describe('a box is as wide as its title needs', () => {
     // How much is admitted is settled from the widest a box gets, so what a
     // title measures never changes the count or what the overflow reports.
     const measured = arrangePlex(neighbourhoods.overcrowded, { measure: byTitle })
-    const plain = arrangePlex(neighbourhoods.overcrowded)
+    const defaultLayout = arrangePlex(neighbourhoods.overcrowded)
 
-    expect(measured.overflow).toStrictEqual(plain.overflow)
-    expect(measured.nodes.map((node) => node.id)).toStrictEqual(plain.nodes.map((node) => node.id))
+    expect(measured.overflow).toStrictEqual(defaultLayout.overflow)
+    expect(measured.nodes.map((node) => node.id)).toStrictEqual(defaultLayout.nodes.map((node) => node.id))
   })
 })
 
@@ -246,16 +246,16 @@ describe('a label is as long as its words', () => {
     arrangePlex(labelled, { measureLabel }).edges[0]!.words
 
   it('asks the measurer for the words a line carries, and for no others', () => {
-    const asked: string[] = []
+    const request: string[] = []
     arrangePlex(labelled, {
       measureLabel: (label) => {
-        asked.push(label)
+        request.push(label)
         return 0
       },
     })
 
     // Once to cut the words to the line, and once to find them room along it.
-    expect(asked).toStrictEqual(['the scene in the assembly', 'the scene in the assembly'])
+    expect(request).toStrictEqual(['the scene in the assembly', 'the scene in the assembly'])
   })
 
   it('cuts words too long for their line', () => {
@@ -316,7 +316,7 @@ describe('the same input gives the same numbers', () => {
       arrangePlex(n)
         .nodes.filter((node) => node.relation === 'child')
         .map((node) => node.id)
-    // Order follows the input rather than a sort; the set of relations is equal.
+    // Order follows the input and not a sort; the set of relations is equal.
     expect(byRelation(shuffled)).toHaveLength(byRelation(neighbourhoods.typical).length)
     expect([...byRelation(shuffled)].sort()).toStrictEqual(
       [...byRelation(neighbourhoods.typical)].sort(),
@@ -389,7 +389,7 @@ describe('order along a line follows the order given', () => {
   })
 })
 
-describe('what does not fit is reported rather than dropped silently', () => {
+describe('what does not fit is reported and not dropped silently', () => {
   it('counts the nodes past the last line, per relation', () => {
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS
     const capacity = maxPerLine * maxLines
@@ -407,10 +407,10 @@ describe('what does not fit is reported rather than dropped silently', () => {
 
   it('drops the edges that lead to a node which did not fit', () => {
     const { nodes, edges } = arrangePlex(neighbourhoods.overcrowded)
-    const placed = new Set(nodes.map((node) => node.id))
+    const placedIds = new Set(nodes.map((node) => node.id))
     for (const edge of edges) {
-      expect(placed.has(edge.from)).toBe(true)
-      expect(placed.has(edge.to)).toBe(true)
+      expect(placedIds.has(edge.from)).toBe(true)
+      expect(placedIds.has(edge.to)).toBe(true)
     }
     expect(edges.length).toBeLessThan(neighbourhoods.overcrowded.edges.length)
   })
@@ -437,7 +437,7 @@ describe('the extent', () => {
     },
   )
 
-  it('is the focus box alone when the note stands alone', () => {
+  it('is the focus box alone when the note remains alone', () => {
     const { extent } = arrangePlex(neighbourhoods.solitary)
     const { width, height } = DEFAULT_OPTIONS.focusSize
     expect(extent).toStrictEqual({
@@ -521,7 +521,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
   it('does not let a strategy decide how much is shown', () => {
     // Admission is settled before a strategy runs, so the count is the same
     // whichever arrangement drew it.
-    const counting: Placement = {
+    const countPlacement: Placement = {
       name: 'counting',
       place: (nodesByRelation) =>
         Object.values(nodesByRelation)
@@ -538,11 +538,11 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     }
 
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS
-    const frame = arrangePlex(neighbourhoods.overcrowded, { placement: counting })
+    const frame = arrangePlex(neighbourhoods.overcrowded, { placement: countPlacement })
     expect(frame.overflow.child).toBe(200 - maxPerLine * maxLines)
   })
 
-  it('hands a strategy only the relations that have nodes in them', () => {
+  it('passes a strategy only the relations that have nodes in them', () => {
     const handed: string[][] = []
     const recording: Placement = {
       name: 'recording',

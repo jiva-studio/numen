@@ -40,7 +40,7 @@ func NewReplaceLinks(linking EditLinks, addresses *GetLinkAddress) ReplaceLinks 
 func (u ReplaceLinks) Execute(
 	ctx context.Context, v domain.Vault, first, second string, links []PairLink,
 ) error {
-	written, err := checkPairLinks(first, second, links)
+	content, err := checkPairLinks(first, second, links)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (u ReplaceLinks) Execute(
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := u.replaceIn(ctx, v, end.note, end.other, written[end.note]); err != nil {
+		if err := u.replaceIn(ctx, v, end.note, end.other, content[end.note]); err != nil {
 			return fmt.Errorf("replace the link in %s: %w", end.note, err)
 		}
 	}
@@ -80,7 +80,7 @@ func checkPairLinks(first, second string, links []PairLink) (map[string]*PairLin
 	if first == "" || second == "" || first == second {
 		return nil, fmt.Errorf("%w: %q and %q", ErrNotAPair, first, second)
 	}
-	written := map[string]*PairLink{}
+	content := map[string]*PairLink{}
 	for i := range links {
 		link := &links[i]
 		isForward := link.From == first && link.To == second
@@ -91,10 +91,10 @@ func checkPairLinks(first, second string, links []PairLink) (map[string]*PairLin
 		if !domain.IsKnownRole(link.Role) {
 			return nil, fmt.Errorf("%q is not a role a link can carry", link.Role)
 		}
-		if written[link.From] != nil {
+		if content[link.From] != nil {
 			return nil, fmt.Errorf("%w: two links written in %s", ErrNotAPair, link.From)
 		}
-		written[link.From] = link
+		content[link.From] = link
 	}
-	return written, nil
+	return content, nil
 }

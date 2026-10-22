@@ -45,7 +45,7 @@ export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> = /*@__PUR
  */
 export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   /**
-   * Every setting as it stands, as JSON: what the file says, and what an
+   * Every setting currently, as JSON: what the file says, and what an
    * installation nobody has configured does under everything it does not.
    *
    * @generated from field: string written = 1;

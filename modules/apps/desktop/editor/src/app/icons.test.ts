@@ -50,8 +50,8 @@ describe('the icon a command is drawn with', () => {
   it('is the same one wherever a command is offered', () => {
     const onANode = new Map(ITEMS.map((item) => [item.id, findIcon(item.id)]))
     for (const item of inTheTree) {
-      const drawn = onANode.get(item.id)
-      if (drawn) expect(findIcon(item.id), item.id).toBe(drawn)
+      const renderedElement = onANode.get(item.id)
+      if (renderedElement) expect(findIcon(item.id), item.id).toBe(renderedElement)
     }
   })
 
@@ -79,7 +79,7 @@ describe('the icon of a kind of note', () => {
     for (const kind of kinds) expect(getNoteIcon(kind), kind).toBeTruthy()
   })
 
-  it('tells the five kinds apart', () => {
+  it('notifies the five kinds apart', () => {
     expect(new Set(kinds.map(getNoteIcon)).size).toBe(kinds.length)
   })
 

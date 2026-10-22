@@ -85,7 +85,7 @@ func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 
 // The mode chooses for this product's own palette, so that palette says nothing
 // about `color-scheme`.
-func TestThisProductsOwnPaletteLeavesTheModeSomethingToChoose(t *testing.T) {
+func TestThisProductsOwnPalettePreservesTheModeSomethingToChoose(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	text, err := catalogue.Text(theme.Default)
 	if err != nil {
@@ -103,17 +103,17 @@ func TestThisProductsOwnPaletteLeavesTheModeSomethingToChoose(t *testing.T) {
 
 // A palette published in one half pins it; one published in two halves does not,
 // and the setting chooses.
-func TestAThemeSaysWhetherItIsAPair(t *testing.T) {
+func TestAThemeReturnsWhetherItIsAPair(t *testing.T) {
 	pinned := map[string]bool{"preset:dracula": true, "preset:solarized": false}
 	for _, one := range createThemeFolder(t).Themes() {
-		want, asked := pinned[one.Name]
-		if asked && one.IsPinned != want {
+		want, request := pinned[one.Name]
+		if request && one.IsPinned != want {
 			t.Errorf("%s is pinned: %v", one.Name, one.IsPinned)
 		}
 	}
 }
 
-func TestAPersonsThemeStandsBesideThePresetItsNameIsShared(t *testing.T) {
+func TestAPersonsThemeExistsAdjacentThePresetItsNameIsShared(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	writeTheme(t, catalogue, "dracula.css", ":root { --numen-surface: #000000 }")
 
@@ -191,7 +191,7 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 	}
 }
 
-func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *testing.T) {
+func TestANameMatchingNothingWearsThisProductsPaletteAndReturnsWhichNameItWas(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	applied, missing := catalogue.GetApplied("mine:the-one-i-deleted")
 	if applied != theme.Default {

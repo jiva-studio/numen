@@ -31,7 +31,7 @@ func TestAFileIsTheKindItsNameMakesIt(t *testing.T) {
 
 func TestANameOnTwoListsIsANote(t *testing.T) {
 	opts := Options{RecordingExtensions: []string{".md"}}
-	if kind, ok := opts.kind("talks/spoken.md"); !ok || kind != domain.KindNote {
+	if kind, ok := opts.kind("talks/speech.md"); !ok || kind != domain.KindNote {
 		t.Errorf("a name both lists claim is %q", kind)
 	}
 }

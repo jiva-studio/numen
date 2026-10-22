@@ -1,5 +1,5 @@
 /**
- * What the window asks of the application, and how it reads a refusal.
+ * What the window asks of the application, and how it reads an error.
  *
  * Each call hands the client the message the schema names for it, and each
  * refusal comes back as a failure in the window's own words.
@@ -10,7 +10,7 @@ import { core, vaults } from './index'
 import { WINDOW } from './clients'
 
 const { asked } = vi.hoisted(() => {
-  const asked = {
+  const request = {
     createNote: vi.fn(),
     getNeighbourhood: vi.fn(),
     getOpeningNote: vi.fn(),
@@ -36,7 +36,7 @@ const { asked } = vi.hoisted(() => {
     openVault: vi.fn(),
   }
   vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
-  return { asked }
+  return { asked: request }
 })
 
 vi.mock('@/shared/clients', () => ({
@@ -51,23 +51,23 @@ vi.mock('@/shared/clients', () => ({
   windowService: asked,
 }))
 
-describe('a note asked for', () => {
-  it('is created at the path of its folder, and refused in the words of the error', async () => {
+describe('a note requested for', () => {
+  it('is created at the path of its folder, and rejected with error of the error', async () => {
     asked.createNote.mockResolvedValue({ path: 'Notes/Heat.md' })
     const created = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
     expect(created).toEqual({ ok: true, value: { path: 'Notes/Heat.md' } })
     expect(asked.createNote.mock.calls.at(-1)?.[0].path).toBe('Notes')
 
     asked.createNote.mockResolvedValue({ error: ErrorCode.OCCUPIED })
-    const refused = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
-    expect(refused).toEqual({ ok: false, error: 'occupied' })
+    const outcome = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
+    expect(outcome).toEqual({ ok: false, error: 'occupied' })
   })
 
   it('is renamed by the path it has, and a stale answer is a change under the window', async () => {
     asked.renameNote.mockResolvedValue({ path: 'B.md', title: 'B', nameSource: 1 })
-    const renamed = await core.rename('A.md', 'B')
+    const renamedItems = await core.rename('A.md', 'B')
     expect(asked.renameNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'A.md', title: 'B' })
-    expect(renamed).toEqual({
+    expect(renamedItems).toEqual({
       ok: true,
       value: { path: 'B.md', title: 'B', hasFrontmatter: true, moved: null },
     })
@@ -79,7 +79,7 @@ describe('a note asked for', () => {
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'occupied' })
   })
 
-  it('has its headings asked of every path given', async () => {
+  it('has its headings requested of every path given', async () => {
     asked.listHeadings.mockResolvedValue({ headings: [] })
     await core.headings(['a.md', 'b.md'])
     expect(asked.listHeadings.mock.calls.at(-1)?.[0]).toEqual({ paths: ['a.md', 'b.md'] })
@@ -101,8 +101,8 @@ describe('a note asked for', () => {
   })
 })
 
-describe('a file asked for', () => {
-  it('is removed to the trash unless it is to be destroyed, and refused in words', async () => {
+describe('a file requested for', () => {
+  it('is removed to the trash unless it is to be destroyed, and rejected with error', async () => {
     asked.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     await core.remove('a.md')
     expect(asked.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: false })
@@ -121,7 +121,7 @@ describe('a file asked for', () => {
     expect(asked.listFiles.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes' })
   })
 
-  it('is moved from one path to another, and refused in words', async () => {
+  it('is moved from one path to another, and rejected with error', async () => {
     asked.moveFile.mockResolvedValue({})
     await core.move('a.md', 'b.md')
     expect(asked.moveFile.mock.calls.at(-1)?.[0]).toEqual({ from: 'a.md', to: 'b.md' })
@@ -136,7 +136,7 @@ describe('a file asked for', () => {
     expect(asked.createFolder.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes/New' })
   })
 
-  it('has a url created in a folder, and refused in words', async () => {
+  it('has a url created in a folder, and rejected with error', async () => {
     asked.createURL.mockResolvedValue({ path: 'Notes/page.md' })
     await core.createUrl('https://example.com', 'Notes')
     expect(asked.createURL.mock.calls.at(-1)?.[0]).toEqual({
@@ -151,14 +151,14 @@ describe('a file asked for', () => {
     })
   })
 
-  it('has its kinds asked of every path given', async () => {
+  it('has its kinds requested of every path given', async () => {
     asked.listFileKinds.mockResolvedValue({ kinds: [] })
     await core.fileKinds(['a.epub', 'b.pdf'])
     expect(asked.listFileKinds.mock.calls.at(-1)?.[0]).toEqual({ paths: ['a.epub', 'b.pdf'] })
   })
 })
 
-describe('a vault asked for', () => {
+describe('a vault requested for', () => {
   it('is listed with the vault this window shows', async () => {
     asked.listVaults.mockResolvedValue({ vaults: [] })
     asked.getCurrentVault.mockResolvedValue({ vault: 'v1' })
@@ -191,20 +191,20 @@ describe('a vault asked for', () => {
     expect(asked.openVault.mock.calls.at(-1)?.[0]).toEqual({ id: 'v1' })
   })
 
-  it('is refused in the words of the error', async () => {
+  it('fails in the words of the error', async () => {
     asked.addVault.mockResolvedValue({ error: VaultsErrorCode.NAME_TAKEN })
     expect(await vaults.add('/v', 'Name')).toEqual({ ok: false, error: 'nameTaken' })
   })
 })
 
 describe('a note followed', () => {
-  it('has its neighbourhood asked of its path', async () => {
+  it('has its neighbourhood requested of its path', async () => {
     asked.getNeighbourhood.mockResolvedValue({ focus: { path: 'a.md', title: 'A' }, related: [] })
     await core.neighbourhood('a.md')
     expect(asked.getNeighbourhood.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md' })
   })
 
-  it('has the opening note asked of nobody in particular', async () => {
+  it('has the opening note requested of nobody in particular', async () => {
     asked.getOpeningNote.mockResolvedValue({})
     expect(await core.getInitialOpenPath()).toBeNull()
     expect(asked.getOpeningNote.mock.calls.at(-1)?.[0]).toEqual({})
@@ -244,11 +244,11 @@ describe('a note followed', () => {
     })
     const signal = new AbortController().signal
 
-    const seen = []
-    for await (const edit of core.watchEdits(signal)) seen.push(edit)
+    const observed = []
+    for await (const edit of core.watchEdits(signal)) observed.push(edit)
 
     expect(asked.watchEdits.mock.calls.at(-1)).toEqual([{}, { signal }])
-    expect(seen).toEqual([
+    expect(observed).toEqual([
       { change: 1, path: 'a.md', span: { from: 2, to: 5 }, text: 'abc', isComplete: false },
       { change: 2, path: 'a.md', span: { from: 0, to: 0 }, text: 'x', isComplete: true },
     ])
@@ -256,7 +256,7 @@ describe('a note followed', () => {
 })
 
 describe('a note read', () => {
-  it('is asked for by its path', async () => {
+  it('is requested for by its path', async () => {
     asked.readNote.mockResolvedValue({ body: 'prose' })
     await core.read('Notes/Heat.md')
     expect(asked.readNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes/Heat.md' })

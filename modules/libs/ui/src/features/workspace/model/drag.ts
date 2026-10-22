@@ -93,9 +93,9 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
   const overlay = computed(() => (hasMoved.value ? (dropTarget.value?.box ?? null) : null))
   const label = computed(() => {
-    const held = dragging.value
-    if (!held?.hasMoved) return null
-    return options.getTab(held.item.tab)?.title ?? held.item.tab
+    const target = dragging.value
+    if (!target?.hasMoved) return null
+    return options.getTab(target.item.tab)?.title ?? target.item.tab
   })
 
   function press(tab: TabId, at: PointerEvent): void {
@@ -200,10 +200,10 @@ function resolveDropTarget(
   if (!isInside(at, outer)) return null
 
   const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
-  const under = document.elementFromPoint ? document.elementFromPoint(at.x, at.y) : null
+  const underElement = document.elementFromPoint ? document.elementFromPoint(at.x, at.y) : null
 
-  const strip = getClosest(under, '[data-workspace-strip]')
-  const pane = getClosest(under, '[data-workspace-pane]')
+  const strip = getClosest(underElement, '[data-workspace-strip]')
+  const pane = getClosest(underElement, '[data-workspace-pane]')
   const id = pane?.getAttribute('data-workspace-pane')
 
   if (strip && id) return getStripDropTarget({ x: at.x, strip, pane: id }, local)

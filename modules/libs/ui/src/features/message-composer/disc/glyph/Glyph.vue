@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * What stands on the disc: an arrow while it sends, a square while it stops.
+ * What relies on the disc: an arrow while it sends, a square while it stops.
  */
 import type { ComposerAction } from '../../state'
 

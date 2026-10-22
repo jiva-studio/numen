@@ -75,7 +75,7 @@ type ScanResult struct {
 	Unchanged  int // skipped on size and modification time alone
 	Removed    int // in the index, no longer on disk
 	Vanished   int // walked, but gone by the time it was read
-	Unreadable int // walked, still there, and the read refused
+	Unreadable int // walked, still there, and the read failed
 }
 
 // FingerprintQueries is the one question a scan asks of the index, so that a
@@ -115,7 +115,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return ScanResult{}, fmt.Errorf("register vault: %w", err)
 	}
 
-	known, err := u.known.GetFingerprints(ctx, v.ID)
+	recognized, err := u.known.GetFingerprints(ctx, v.ID)
 	if err != nil {
 		return ScanResult{}, fmt.Errorf("read index: %w", err)
 	}
@@ -125,7 +125,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 
 	group := u.newGroup(v, &res)
-	seen, err := u.indexChanged(ctx, reader, found, known, &group, &res)
+	observed, err := u.indexChanged(ctx, reader, found, recognized, &group, &res)
 	if err != nil {
 		return res, err
 	}
@@ -133,7 +133,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, err
 	}
 
-	if err := u.removeGone(ctx, v, known, seen, &res); err != nil {
+	if err := u.removeGone(ctx, v, recognized, observed, &res); err != nil {
 		return res, err
 	}
 
@@ -190,7 +190,7 @@ func (u Scan) indexChanged(
 	group *grouping,
 	res *ScanResult,
 ) (map[string]bool, error) {
-	seen := make(map[string]bool, len(known))
+	observed := make(map[string]bool, len(known))
 	for _, ref := range found {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -202,7 +202,7 @@ func (u Scan) indexChanged(
 			continue
 		}
 		res.Notes++
-		seen[ref.Path] = true
+		observed[ref.Path] = true
 
 		if previous, ok := known[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
@@ -216,7 +216,7 @@ func (u Scan) indexChanged(
 			return nil, err
 		}
 	}
-	return seen, nil
+	return observed, nil
 }
 
 // readNoteBytes is the bytes of the note at path and whether they were read. A
@@ -244,15 +244,15 @@ func readNoteBytes(ctx context.Context, reader port.VaultReader, path string, re
 func (u Scan) removeGone(
 	ctx context.Context, v domain.Vault, known map[string]domain.Fingerprint, seen map[string]bool, res *ScanResult,
 ) error {
-	var gone []string
+	var removed []string
 	for path := range known {
 		if !seen[path] {
-			gone = append(gone, path)
+			removed = append(removed, path)
 		}
 	}
-	if err := u.notes.Remove(ctx, v.ID, gone); err != nil {
+	if err := u.notes.Remove(ctx, v.ID, removed); err != nil {
 		return fmt.Errorf("remove deleted notes: %w", err)
 	}
-	res.Removed = len(gone)
+	res.Removed = len(removed)
 	return nil
 }

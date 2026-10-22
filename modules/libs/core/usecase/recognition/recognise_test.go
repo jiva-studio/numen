@@ -46,15 +46,15 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlo
 	}
 	// No two pages say the same thing, so a coordinate read at the wrong offset
 	// names the wrong words.
-	said := fmt.Sprintf("%s %d", s.says, s.pages)
+	response := fmt.Sprintf("%s %d", s.says, s.pages)
 	var out []domain.OCRBlock
 	if s.heads != "" {
 		out = append(out, domain.OCRBlock{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
 	}
 	return append(out, domain.OCRBlock{
 		Label: "text",
-		Text:  said,
-		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
+		Text:  response,
+		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(response)}}},
 	}), nil
 }
 
@@ -88,7 +88,7 @@ func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, do
 	return r, v, index, shelf, model
 }
 
-func TestWhatIsReadIsWrittenDownAndClaimed(t *testing.T) {
+func TestWhatIsReadIsSavedDownAndClaimed(t *testing.T) {
 	u, v, index, shelf, model := recogniser(t, "What the page says.")
 
 	res, err := u.Execute(t.Context(), v, documentPath)
@@ -139,10 +139,10 @@ func TestADocumentSayingNothingWritesNothing(t *testing.T) {
 	if !res.IsEmpty {
 		t.Error("a document that says nothing was not reported as saying nothing")
 	}
-	if names := shelf.names(); len(names) != 0 {
+	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if src, held := index.sources[v.ID][documentPath]; held && src.Producer != "" {
+	if src, target := index.sources[v.ID][documentPath]; target && src.Producer != "" {
 		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 }
@@ -165,7 +165,7 @@ func TestADocumentAlreadyReadIsNotReadAgain(t *testing.T) {
 
 func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 	// A document is an hour, and a person may stop one. What was read is on
-	// disk, and the next run begins where the last one left off rather than at
+	// disk, and the next run begins where the last one left off and not at
 	// the beginning.
 	u, v, _, shelf, model := recogniser(t, "A page.")
 
@@ -179,14 +179,14 @@ func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stopped := model.pages
-	if stopped < 2 {
-		t.Fatalf("it stopped after %d pages, which is too early to tell anything", stopped)
+	stoppedPages := model.pages
+	if stoppedPages < 2 {
+		t.Fatalf("it stopped after %d pages, which is too early to tell anything", stoppedPages)
 	}
 
 	// Nothing final was written: a half-read document is not an artifact, and
 	// a scan meeting one cuts the document itself.
-	for _, name := range shelf.names() {
+	for _, name := range shelf.artifactNames() {
 		if name.File == domain.ArtifactText {
 			t.Errorf("a stopped run left %q behind", name)
 		}
@@ -200,15 +200,15 @@ func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 	if res.Resumed == 0 {
 		t.Error("the second run began at the beginning")
 	}
-	if model.pages >= stopped+res.Pages {
-		t.Errorf("the second run read %d pages, and the document has %d", model.pages-stopped, res.Pages)
+	if model.pages >= stoppedPages+res.Pages {
+		t.Errorf("the second run read %d pages, and the document has %d", model.pages-stoppedPages, res.Pages)
 	}
 	if res.Read != res.Pages {
 		t.Errorf("read %d of %d pages after taking it up again", res.Read, res.Pages)
 	}
 }
 
-func TestWhatReadItIsKeptBesideWhatItRead(t *testing.T) {
+func TestWhatReadItIsCachedAdjacentWhatItRead(t *testing.T) {
 	u, v, index, shelf, _ := recogniser(t, "Something.")
 
 	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
@@ -237,8 +237,8 @@ func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	stood := index.sources[v.ID][documentPath]
-	if stood.Producer == "" {
+	status := index.sources[v.ID][documentPath]
+	if status.Producer == "" {
 		t.Fatal("the source does not stand on a recognition")
 	}
 
@@ -252,7 +252,7 @@ func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
 		t.Fatal("the source was not cut, so this cannot tell anything")
 	}
 
-	if err := shelf.RemoveArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, stood.Producer, stood.Hash)); err != nil {
+	if err := shelf.RemoveArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, status.Producer, status.Hash)); err != nil {
 		t.Fatal(err)
 	}
 	res, err := extract.Execute(t.Context(), v)
@@ -275,7 +275,7 @@ func documentHash() string { return text.Fingerprint(printPages(outline)) }
 //
 // The offsets rise, because the prose of every page written before this one
 // stands in front of it.
-func reads(t *testing.T, prose string, boxes []domain.HighlightBox, says string) {
+func assertBoxesRead(t *testing.T, prose string, boxes []domain.HighlightBox, says string) {
 	t.Helper()
 	at := -1
 	for i, box := range boxes {
@@ -293,7 +293,7 @@ func reads(t *testing.T, prose string, boxes []domain.HighlightBox, says string)
 	}
 }
 
-func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
+func TestADocumentAnotherRunContainsIsLeftAlone(t *testing.T) {
 	// The name is the hash of the document's bytes, and it is appended to for an
 	// hour. One run holds it for all of that.
 	u, v, index, shelf, model := recogniser(t, "A page.")
@@ -309,10 +309,10 @@ func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
 	if model.pages != 0 {
 		t.Errorf("the model was shown %d pages", model.pages)
 	}
-	if names := shelf.names(); len(names) != 0 {
+	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if _, held := index.sources[v.ID][documentPath]; held {
+	if _, target := index.sources[v.ID][documentPath]; target {
 		t.Error("the source was recorded")
 	}
 }
@@ -347,7 +347,7 @@ func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
 			t.Errorf("coordinate %d is on page %d", i, box.Page)
 		}
 	}
-	reads(t, prose, boxes, says)
+	assertBoxesRead(t, prose, boxes, says)
 }
 
 func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
@@ -391,10 +391,10 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
-	reads(t, prose, boxes, says)
+	assertBoxesRead(t, prose, boxes, says)
 }
 
-func TestTheSourceIsCutAsItsPagesAreRead(t *testing.T) {
+func TestTheSourceIsSplitAsItsPagesAreRead(t *testing.T) {
 	// A book is an hour. The pages already read answer questions while the rest
 	// of it is still being read.
 	u, v, _, _, _ := recogniser(t, "A page.")
@@ -432,11 +432,11 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 
 	// The tail of an append that never finished.
 	partial := domain.NewArtifactName(domain.ArtifactPartial, "ocr", documentHash())
-	torn, err := shelf.ReadArtifact(t.Context(), partial)
+	divided, err := shelf.ReadArtifact(t.Context(), partial)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shelf.WriteArtifact(t.Context(), partial, append(torn, "A pa"...)); err != nil {
+	if err := shelf.WriteArtifact(t.Context(), partial, append(divided, "A pa"...)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -462,7 +462,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, highlight.Unpack(packed), says)
+	assertBoxesRead(t, prose, highlight.Unpack(packed), says)
 }
 
 func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
@@ -483,12 +483,12 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	}
 
 	partial := domain.NewArtifactName(domain.ArtifactPartial, "ocr", documentHash())
-	held, err := shelf.ReadArtifact(t.Context(), partial)
+	target, err := shelf.ReadArtifact(t.Context(), partial)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var without []string
-	for _, line := range strings.SplitAfter(string(held), "\n") {
+	for _, line := range strings.SplitAfter(string(target), "\n") {
 		if !strings.HasPrefix(line, resumeMark) {
 			without = append(without, line)
 		}
@@ -518,7 +518,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, highlight.Unpack(packed), says)
+	assertBoxesRead(t, prose, highlight.Unpack(packed), says)
 }
 
 func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
@@ -561,7 +561,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
-	reads(t, prose, boxes, says)
+	assertBoxesRead(t, prose, boxes, says)
 }
 
 // artifact is what recognition wrote for the document under test.
@@ -670,7 +670,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 }
 
 func TestTheArtifactMarksOnePageForEachPageOfTheDocument(t *testing.T) {
-	// A page is called where it stands among the marks, so the marks and the
+	// A page is called at its current position among the marks, so the marks and the
 	// pages have to be the same run of things in the same order. A page
 	// nothing was read on is still marked.
 	u, v, index, shelf, model := recogniser(t, "A page.")

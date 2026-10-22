@@ -214,8 +214,8 @@ func (v *ytDLP) Download(ctx context.Context, at string, into io.Writer) (Copy, 
 	var logBuffer bytes.Buffer
 	taking.Stdout, taking.Stderr = &logBuffer, &logBuffer
 	if err := taking.Run(); err != nil {
-		if stopped := ctx.Err(); stopped != nil {
-			return Copy{}, stopped
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return Copy{}, ctxErr
 		}
 		return Copy{}, fmt.Errorf("%w: %s", err, getLastLine(logBuffer.String()))
 	}

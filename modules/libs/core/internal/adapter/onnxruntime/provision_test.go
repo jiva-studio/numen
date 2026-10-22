@@ -243,8 +243,8 @@ func TestProvisionOfflineDropsAnArchiveThatIsNotPinned(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	stale := filepath.Join(dir, "onnxruntime.tgz")
-	if err := os.WriteFile(stale, []byte("truncated"), 0o644); err != nil {
+	staleFile := filepath.Join(dir, "onnxruntime.tgz")
+	if err := os.WriteFile(staleFile, []byte("truncated"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cfg.Offline = true
@@ -252,7 +252,7 @@ func TestProvisionOfflineDropsAnArchiveThatIsNotPinned(t *testing.T) {
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil {
 		t.Fatal("Provision() accepted an archive that is not the pinned one")
 	}
-	if _, err := os.Stat(stale); err == nil {
+	if _, err := os.Stat(staleFile); err == nil {
 		t.Error("an archive that is not the pinned one was kept")
 	}
 }
@@ -324,10 +324,10 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 	cfg.Dir = t.TempDir()
 	provisioner := onnxruntime.New(cfg)
 
-	done := make(chan error, 1)
+	isDone := make(chan error, 1)
 	go func() {
 		_, _, err := provisioner.Provision(context.WithoutCancel(t.Context()), t.TempDir())
-		done <- err
+		isDone <- err
 	}()
 	<-entered
 
@@ -337,7 +337,7 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 		t.Error("a caller whose context ended was held to the provisioning of another")
 	}
 	close(release)
-	if err := <-done; err != nil {
+	if err := <-isDone; err != nil {
 		t.Fatalf("the first caller = %v", err)
 	}
 }
@@ -353,7 +353,7 @@ func TestProvisionRefusesAnAddressThatIsNotHTTPS(t *testing.T) {
 		},
 	}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "https") {
-		t.Fatalf("Provision() = %v, want an https refusal", err)
+		t.Fatalf("Provision() = %v, want an https error", err)
 	}
 }
 
@@ -368,7 +368,7 @@ func TestProvisionRefusesASumThatIsNotASha256(t *testing.T) {
 		},
 	}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "sha256") {
-		t.Fatalf("Provision() = %v, want a sha256 refusal", err)
+		t.Fatalf("Provision() = %v, want a sha256 error", err)
 	}
 }
 
@@ -509,42 +509,42 @@ func TestProvisionNamedInTheEnvironmentIsUsedAsGiven(t *testing.T) {
 	}
 }
 
-func TestProvisionPrefersALibraryBesideThePlugin(t *testing.T) {
+func TestProvisionPrefersALibraryAdjacentThePlugin(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
 	plugin := t.TempDir()
-	beside := writeLibrary(t, filepath.Join(plugin, "bin"))
+	siblingPath := writeLibrary(t, filepath.Join(plugin, "bin"))
 
 	got, provider, err := onnxruntime.New(cfg).Provision(t.Context(), plugin)
-	if err != nil || got != beside || provider != "auto" {
-		t.Fatalf("Provision() = %q, %q, %v, want %q and auto", got, provider, err, beside)
+	if err != nil || got != siblingPath || provider != "auto" {
+		t.Fatalf("Provision() = %q, %q, %v, want %q and auto", got, provider, err, siblingPath)
 	}
 	if hits.Load() != 0 {
 		t.Errorf("the server was asked %d times", hits.Load())
 	}
 }
 
-func TestProvisionUsesALibraryTheMachineHolds(t *testing.T) {
+func TestProvisionUsesALibraryTheMachineContains(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
 	shared := t.TempDir()
-	held := writeLibrary(t, shared)
+	target := writeLibrary(t, shared)
 	cfg.Machine = []string{t.TempDir(), shared}
 
 	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
-	if err != nil || got != held {
-		t.Fatalf("Provision() = %q, %v, want %q", got, err, held)
+	if err != nil || got != target {
+		t.Fatalf("Provision() = %q, %v, want %q", got, err, target)
 	}
 	if hits.Load() != 0 {
 		t.Errorf("the server was asked %d times", hits.Load())
 	}
 }
 
-func TestProvisionPassesAnyProviderOnToALibraryTheMachineHolds(t *testing.T) {
+func TestProvisionPassesAnyProviderOnToALibraryTheMachineContains(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, _ := serve(t, archive)
 	shared := t.TempDir()
@@ -592,7 +592,7 @@ func TestProvisionRefusesAGPUProviderForThePinnedCPUBuild(t *testing.T) {
 		cfg.Dir = t.TempDir()
 		cfg.Provider = name
 		if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "GPU build") || !strings.Contains(err.Error(), name) {
-			t.Errorf("provider %q = %v, want a GPU build refusal", name, err)
+			t.Errorf("provider %q = %v, want a GPU build error", name, err)
 		}
 	}
 }
@@ -607,8 +607,8 @@ func TestProvisionAsksForTheLibraryOncePerPluginFolder(t *testing.T) {
 	if _, _, err := provisioner.Provision(t.Context(), first); err != nil {
 		t.Fatal(err)
 	}
-	beside := writeLibrary(t, filepath.Join(first, "bin"))
-	if got, _, _ := provisioner.Provision(t.Context(), first); got == beside {
+	siblingPath := writeLibrary(t, filepath.Join(first, "bin"))
+	if got, _, _ := provisioner.Provision(t.Context(), first); got == siblingPath {
 		t.Error("a folder was searched again after it was answered")
 	}
 }
@@ -624,8 +624,8 @@ func writeLibraryDir(t *testing.T) string {
 // refuse returns a check that refuses the libraries at the given paths.
 func refuse(paths ...string) func(string) error {
 	return func(at string) error {
-		for _, refused := range paths {
-			if at == refused {
+		for _, rejected := range paths {
+			if at == rejected {
 				return errors.New("serves no API 23")
 			}
 		}
@@ -638,15 +638,15 @@ func TestProvisionTriesTheNextLibraryWhenOneDoesNotOpen(t *testing.T) {
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
-	old, held := writeLibraryDir(t), writeLibraryDir(t)
-	cfg.Machine = []string{old, held}
+	old, target := writeLibraryDir(t), writeLibraryDir(t)
+	cfg.Machine = []string{old, target}
 	plugin := t.TempDir()
-	beside := writeLibrary(t, filepath.Join(plugin, "bin"))
-	cfg.Check = refuse(beside, filepath.Join(old, filepath.Base(beside)))
+	siblingPath := writeLibrary(t, filepath.Join(plugin, "bin"))
+	cfg.Check = refuse(siblingPath, filepath.Join(old, filepath.Base(siblingPath)))
 
 	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), plugin)
-	if err != nil || got != filepath.Join(held, filepath.Base(beside)) {
-		t.Fatalf("Provision() = %q, %v, want the library in %s", got, err, held)
+	if err != nil || got != filepath.Join(target, filepath.Base(siblingPath)) {
+		t.Fatalf("Provision() = %q, %v, want the library in %s", got, err, target)
 	}
 	if hits.Load() != 0 {
 		t.Errorf("the server was asked %d times", hits.Load())
@@ -674,7 +674,7 @@ func TestProvisionTriesEveryLibraryInAFolder(t *testing.T) {
 	}
 }
 
-func TestProvisionFetchesThePinnedLibraryWhenNoneTheMachineHoldsOpens(t *testing.T) {
+func TestProvisionFetchesThePinnedLibraryWhenNoneTheMachineContainsOpens(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -705,7 +705,7 @@ func TestProvisionNamesTheLibrariesThatDoNotOpenWhenAGPUProviderMeetsThePinnedBu
 
 	_, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
 	if err == nil || !strings.Contains(err.Error(), "GPU build") || !strings.Contains(err.Error(), gpu) {
-		t.Fatalf("Provision() = %v, want a GPU build refusal naming %s", err, gpu)
+		t.Fatalf("Provision() = %v, want a GPU build error naming %s", err, gpu)
 	}
 }
 

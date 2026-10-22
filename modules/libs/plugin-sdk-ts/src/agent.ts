@@ -58,7 +58,7 @@ export interface AgentHost {
   // Ends a conversation; whatever is still being answered in it stops.
   finish(conversation: string): Promise<void>
   // The vault path each written name stands for, and empty where a name stands for none.
-  resolve(written: readonly string[]): Promise<ReadonlyMap<string, string>>
+  resolve(content: readonly string[]): Promise<ReadonlyMap<string, string>>
   // Why the agent cannot be reached, and empty where it can.
   getUnreachable(): string
   getSetting(path: readonly string[]): unknown

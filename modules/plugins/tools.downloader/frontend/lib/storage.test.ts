@@ -6,11 +6,11 @@ import { LEAST } from './height'
 import { createHeightStore, type KeyValueStorage } from './storage'
 
 const createMemory = (): KeyValueStorage & { held: Map<string, string> } => {
-  const held = new Map<string, string>()
+  const target = new Map<string, string>()
   return {
-    held,
-    getItem: (key) => held.get(key) ?? null,
-    setItem: (key, value) => void held.set(key, value),
+    held: target,
+    getItem: (key) => target.get(key) ?? null,
+    setItem: (key, value) => void target.set(key, value),
   }
 }
 

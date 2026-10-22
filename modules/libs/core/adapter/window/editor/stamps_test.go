@@ -17,14 +17,14 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 	const nanos = 1788433445123456789
 
 	ref := domain.Fingerprint{Path: "library/Compost.pdf", Size: 12, ModTime: at}
-	if held := convertFingerprintToWire(ref).GetMtime(); held != nanos {
-		t.Errorf("the schema carries mtime %d, want %d", held, nanos)
+	if target := convertFingerprintToWire(ref).GetMtime(); target != nanos {
+		t.Errorf("the schema carries mtime %d, want %d", target, nanos)
 	}
 
 	back := &Loopback{address: "http://127.0.0.1:1", token: "given-out"}
 	want := "?size=12&mtime=1788433445123456789"
-	if held := back.Address(domain.Vault{ID: "01VAULT"}, ref); !strings.HasSuffix(held, want) {
-		t.Errorf("the address is %q, and it should end %q", held, want)
+	if targetVal := back.Address(domain.Vault{ID: "01VAULT"}, ref); !strings.HasSuffix(targetVal, want) {
+		t.Errorf("the address is %q, and it should end %q", targetVal, want)
 	}
 }
 
@@ -42,12 +42,12 @@ func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
 // a map key compares by zone and by monotonic reading as well as by instant, so
 // one picture would be two keys and the cache would never answer.
 func TestTheWindowsFingerprintIsAKeyOfPlainNumbers(t *testing.T) {
-	held := reflect.TypeOf(document.Fingerprint{})
-	if !held.Comparable() {
+	target := reflect.TypeOf(document.Fingerprint{})
+	if !target.Comparable() {
 		t.Fatal("the window's fingerprint cannot be a map key at all")
 	}
-	for at := range held.NumField() {
-		if field := held.Field(at); field.Type == reflect.TypeOf(time.Time{}) {
+	for at := range target.NumField() {
+		if field := target.Field(at); field.Type == reflect.TypeOf(time.Time{}) {
 			t.Errorf("%s is a time.Time, and this struct is a map key", field.Name)
 		}
 	}
@@ -59,7 +59,7 @@ func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
 	if back := convertFingerprintFromWire(convertFingerprintToWire(domain.Fingerprint{})); !back.IsZero() {
 		t.Errorf("nothing said about a file came back as %+v", back)
 	}
-	if held := stamp(time.Time{}); held != 0 {
-		t.Errorf("no stamp goes on the wire as %d", held)
+	if target := stamp(time.Time{}); target != 0 {
+		t.Errorf("no stamp goes on the wire as %d", target)
 	}
 }

@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-func TestModelCacheKeepsWhatWasListedWhileTheKeyStays(t *testing.T) {
+func TestModelCachePreservesWhatWasListedWhileTheKeyStays(t *testing.T) {
 	var cache ModelCache[string]
-	asked := 0
+	request := 0
 	list := func(context.Context) ([]string, error) {
-		asked++
+		request++
 		return []string{"a"}, nil
 	}
 	for range 2 {
@@ -19,22 +19,22 @@ func TestModelCacheKeepsWhatWasListedWhileTheKeyStays(t *testing.T) {
 			t.Fatalf("the models are %v", got)
 		}
 	}
-	if asked != 1 {
-		t.Errorf("the program was asked %d times, want 1", asked)
+	if request != 1 {
+		t.Errorf("the program was asked %d times, want 1", request)
 	}
 	cache.Get(t.Context(), "other", list)
-	if asked != 2 {
-		t.Errorf("a new key asked %d times in all, want 2", asked)
+	if request != 2 {
+		t.Errorf("a new key asked %d times in all, want 2", request)
 	}
 }
 
-func TestModelCacheLeavesAFailedKeyAloneForAWhile(t *testing.T) {
+func TestModelCachePreservesAFailedKeyAloneForAWhile(t *testing.T) {
 	now := time.Unix(1000, 0)
 	cache := ModelCache[string]{Now: func() time.Time { return now }}
 	failing := true
-	asked := 0
+	request := 0
 	list := func(context.Context) ([]string, error) {
-		asked++
+		request++
 		if failing {
 			return nil, errors.New("down")
 		}
@@ -45,8 +45,8 @@ func TestModelCacheLeavesAFailedKeyAloneForAWhile(t *testing.T) {
 		t.Fatalf("a failed listing gave %v", got)
 	}
 	failing = false
-	if got := cache.Get(t.Context(), "k", list); got != nil || asked != 1 {
-		t.Fatalf("a key that just failed was asked again: %v after %d asks", got, asked)
+	if got := cache.Get(t.Context(), "k", list); got != nil || request != 1 {
+		t.Fatalf("a key that just failed was asked again: %v after %d asks", got, request)
 	}
 	now = now.Add(ModelFailureBackoff)
 	if got := cache.Get(t.Context(), "k", list); len(got) != 1 {
@@ -54,7 +54,7 @@ func TestModelCacheLeavesAFailedKeyAloneForAWhile(t *testing.T) {
 	}
 }
 
-func TestModelCacheKeepsNothingFromAnEndedRequest(t *testing.T) {
+func TestModelCachePreservesNothingFromAnEndedRequest(t *testing.T) {
 	var cache ModelCache[string]
 	list := func(ctx context.Context) ([]string, error) {
 		if err := ctx.Err(); err != nil {

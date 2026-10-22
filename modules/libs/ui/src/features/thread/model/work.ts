@@ -52,7 +52,7 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
 
   // Whether the line is up. It comes down when the answer begins, and a tool
   // answering does not put it back: what a tool did belongs above the answer it
-  // led to, and a line raised here stands under that answer for good.
+  // led to, and a line raised here is placed under that answer for good.
   let up = false
 
   const show = (state: 'arriving' | 'settled', count = 0) => {

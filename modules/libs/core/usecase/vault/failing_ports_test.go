@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-var errRefused = errors.New("the machine refused")
+var errRefused = errors.New("the machine failed")
 
 // refusingIdentity is the identity a folder carries, read through the
 // filesystem, with a question answered by an error or a fixed answer when a

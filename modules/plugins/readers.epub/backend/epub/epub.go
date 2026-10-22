@@ -12,7 +12,7 @@
 // One document is read a second time as the elements it is drawn from, carrying
 // the offsets its text already stands at.
 //
-// A book that names nothing is still read. An error here means the file is not a
+// A book that is empty is still read. An error here means the file is not a
 // book at all.
 package epub
 
@@ -86,7 +86,7 @@ type Document struct {
 }
 
 // A Layout is whether a document can be reflowed or is a page laid out once and
-// drawn as it stands.
+// drawn currently.
 type Layout string
 
 const (
@@ -168,19 +168,19 @@ func Read(raw []byte) (*Book, error) {
 		files:     files,
 		held:      map[string]Document{},
 	}
-	left := int64(mostPerBook)
+	remaining := int64(mostPerBook)
 	for _, item := range pkg.spine {
-		if left <= 0 {
+		if remaining <= 0 {
 			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="left never grows, so every later document also ends the iteration"
 			break
 		}
-		markup, ok := readBounded(files[item.path], min(int64(mostPerDocument), left))
+		markup, ok := readBounded(files[item.path], min(int64(mostPerDocument), remaining))
 		if !ok {
 			// A manifest may name a file the archive does not hold, and one it
 			// holds may be larger than a chapter can be.
 			continue
 		}
-		left -= int64(len(markup))
+		remaining -= int64(len(markup))
 		doc := text.readDocument(item.path, markup)
 		doc.IsLinear, doc.Layout, doc.mediaType = item.isLinear, item.layout, item.mediaType
 		book.Documents = append(book.Documents, doc)

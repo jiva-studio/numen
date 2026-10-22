@@ -80,7 +80,7 @@ describe('a gesture asking for what the tree does not hold', () => {
     expect(openTab(before, 'notes')).toStrictEqual(before)
   })
 
-  it('opens no tab beside a pane when there is no pane', () => {
+  it('opens no tab alongside a pane when there is no pane', () => {
     const before = nowhere()
     expect(
       openTabBeside(before, 'notes', { side: 'left', createId: createIdFactory() }),
@@ -135,7 +135,7 @@ describe('opening a tab in a pane of its own', () => {
     expect(getFaults(after)).toStrictEqual([])
   })
 
-  it('leaves one that is alone in the pane it would open beside where it is', () => {
+  it('leaves one that is alone in the pane it would open alongside where it is', () => {
     const before = createWorkspace(stack('main', 'plex'))
     const ids = createIdFactory()
 
@@ -185,7 +185,7 @@ describe('opening a tab in a pane of its own', () => {
     expect(getFaults(after)).toStrictEqual([])
   })
 
-  it('takes half of what it opened beside', () => {
+  it('takes half of what it opened alongside', () => {
     const after = openTabBeside(sideBySide(), 'notes', {
       side: 'right',
       createId: createIdFactory(),
@@ -210,7 +210,7 @@ describe('opening a tab in a pane of its own', () => {
     expect(after.get('aside')).toStrictEqual(before.get('aside'))
   })
 
-  it('opens beside the pane a tab opens into when told no other', () => {
+  it('opens alongside the pane a tab opens into when told no other', () => {
     const focused = createWorkspace(sideBySide().root, 'horizontal', 'aside')
     const after = openTabBeside(focused, 'notes', { side: 'right', createId: createIdFactory() })
 
@@ -233,14 +233,14 @@ describe('opening a tab in a pane of its own', () => {
     ).toStrictEqual(before)
   })
 
-  it('leaves a tab that is open where it is when asked for the middle', () => {
+  it('leaves a tab that is open where it is when requested for the middle', () => {
     const before = sideBySide()
     expect(
       openTabBeside(before, 'chat', { side: 'center', createId: createIdFactory() }),
     ).toStrictEqual(before)
   })
 
-  it('leaves the tree canonical when the pane it opened beside empties', () => {
+  it('leaves the tree canonical when the pane it opened alongside empties', () => {
     const after = openTabBeside(oneStack(), 'plex', {
       side: 'left',
       createId: createIdFactory(),
@@ -253,7 +253,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 })
 
-describe('a tab let go beside a pane', () => {
+describe('a tab let go alongside a pane', () => {
   it('joins the parent when the parent already divides that way', () => {
     const after = dropTab(
       sideBySide(),
@@ -282,7 +282,7 @@ describe('a tab let go beside a pane', () => {
     expect(getFaults(after)).toStrictEqual([])
   })
 
-  it('takes half of what it landed beside', () => {
+  it('takes half of what it landed alongside', () => {
     const after = dropTab(
       oneStack(),
       { tab: 'chat', onto: 'main', side: 'right' },
@@ -428,11 +428,11 @@ describe('moving a tab along its own strip', () => {
     expect(getTabs(moveTabWithin(three, 'three', slot), 'main')).toStrictEqual(expected)
   })
 
-  it('leaves a tab where it is when its own slot is asked for', () => {
+  it('leaves a tab where it is when its own slot is requested for', () => {
     expect(getTabs(moveTabWithin(three, 'two', 1), 'main')).toStrictEqual(['one', 'two', 'three'])
   })
 
-  it('counts the slot as it stands before the tab is lifted', () => {
+  it('counts the slot currently before the tab is lifted', () => {
     expect(getTabs(moveTabWithin(three, 'one', 2), 'main')).toStrictEqual(['two', 'one', 'three'])
   })
 })
@@ -459,15 +459,15 @@ describe('every gesture keeps the tree canonical', () => {
   ])
 
   it('through a run of them', () => {
-    const made = createIdFactory()
+    const createdItem = createIdFactory()
     let workspace = createWorkspace(start, 'horizontal', 'a')
 
     const run: readonly ((current: Workspace) => Workspace)[] = [
-      (current) => dropTab(current, { tab: 'two', onto: 'c', side: 'bottom' }, made),
+      (current) => dropTab(current, { tab: 'two', onto: 'c', side: 'bottom' }, createdItem),
       (current) => openTab(current, 'five', 'b'),
-      (current) => dropOnEdge(current, { tab: 'three', side: 'left' }, made),
+      (current) => dropOnEdge(current, { tab: 'three', side: 'left' }, createdItem),
       (current) => closeTab(current, 'four'),
-      (current) => dropTab(current, { tab: 'one', onto: 'b', side: 'center' }, made),
+      (current) => dropTab(current, { tab: 'one', onto: 'b', side: 'center' }, createdItem),
       (current) => closeTab(current, 'five'),
       (current) => closeTab(current, 'two'),
     ]

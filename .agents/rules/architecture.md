@@ -50,7 +50,7 @@ There is no `go.work`. Each Go module — `libs/core`, `libs/protocol`, `apps/de
 - **Interfaces belong to whoever needs them.** The consumer declares the interface; the implementation never names it. An adapter importing the port package to announce it satisfies it is ceremony.
 - **Driving and driven adapters are both adapters.** A CLI, a window and an MCP server drive the core; a database, a filesystem and a clock are driven by it. The core must not be able to tell which is on the other side.
 - **A use case is one business scenario**, and it owns the boundary of one unit of work — which is where a transaction belongs.
-- **A repository is a collection**: put an aggregate in, take one out, remove one. Searches and counts are queries beside it, not methods on it.
+- **A repository is a collection**: put an aggregate in, take one out, remove one. Searches and counts are separate queries, not methods on the repository.
 - **Entities hold rules, not the world.** No I/O, no clock, no framework tags, no knowledge of how they are stored.
 
 ## 4. The interface hexagon & Feature-Sliced Design (FSD)
@@ -61,16 +61,16 @@ The frontend is structured into **six FSD layers**:
 
 $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{features (2)} \longrightarrow \text{widgets (3)} \longrightarrow \text{pages / screens (4)} \longrightarrow \text{app (5)}$$
 
-- **Directionality**: A file reaches only what stands below it and never what stands above.
-- **Slice isolation**: A slice reaches no sibling slice of its own layer. What two slices need stands on a lower layer, or is accessed through an explicit public `@x` interface.
+- **Directionality**: A module may only import from lower architectural layers and never from higher layers.
+- **Slice isolation**: A slice must not import directly from sibling slices on the same layer. Shared code must reside in a lower layer or be exposed via an explicit `@x` public interface.
 - **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
 
-Beside the layer structure, the pure split runs through every component:
+Component architecture enforces separation of concerns:
 
-- **The core is pure.** Given the props it computes what is to be drawn — every coordinate, state and derived flag — as plain values, with no DOM, no Vue, no clock, no randomness and no measurement of text.
-- **The view is humble.** It turns those values into elements and works nothing out. A number in a template that the pure core did not produce is a broken split.
-- **Anything with a lifetime is a port**: the clock, `requestAnimationFrame`, the viewport, the motion preference. Each is a parameter with a browser-shaped default, so the component works with no ceremony in an application and is fully determined in a test.
-- **Styling is design tokens, and only design tokens**, declared on the root alone in `src/tokens/`.
+- **Pure logic**: Pure functions compute rendering data (coordinates, states, flags) with no dependencies on DOM, Vue, clock, randomness, or text measurement.
+- **Presentational views**: Views receive precomputed data and render elements without executing business calculations in templates.
+- **Platform capabilities as ports**: Clocks, `requestAnimationFrame`, viewport geometry, and media preferences must be passed as parameters with browser defaults.
+- **Design tokens**: Styling is exclusively driven by design tokens defined in `src/tokens/`.
 
 ## 5. Determinism
 

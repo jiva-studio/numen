@@ -36,12 +36,12 @@ const goals = computed(() => GOALS.map((one) => ({ id: one, text: words.goalName
 const day = computed(() => curve.value.days[place.value] ?? settings.value.byDate)
 
 /** The value the control stands at, in the units of its goal. */
-const reading = computed(() =>
+const targetValueText = computed(() =>
   words.value(curve.value.goal, getKnobValue(curve.value, place.value), day.value),
 )
 
 /** Why the preset schedules nothing, and empty while it schedules something. */
-const stopped = computed(() => words.stopped(stoppedAt.value))
+const stoppedMessage = computed(() => words.stopped(stoppedAt.value))
 
 // --- Handlers ---
 function onSelectGoal(one: string) {
@@ -78,13 +78,13 @@ function onSliderCommit() {
       :curve="curve"
       :material="material"
       :place="place"
-      :value-text="reading"
+      :value-text="targetValueText"
       :is-waiting="isWaiting"
       @move="onMoveSlider"
       @commit="onSliderCommit"
     />
 
-    <p v-if="stopped" class="preset__stopped" data-preset="stopped">{{ stopped }}</p>
+    <p v-if="stoppedMessage" class="preset__stopped" data-preset="stopped">{{ stoppedMessage }}</p>
   </section>
 </template>
 

@@ -71,7 +71,7 @@ const (
 
 // FlashcardsServiceClient is a client for the numen.v1.FlashcardsService service.
 type FlashcardsServiceClient interface {
-	// WatchCardsDue is what every vault the installation knows comes to today:
+	// WatchCardsDue is what every vault the installation knows evaluates to today:
 	// how much it holds, how much is due, and how much has never been asked. It
 	// is what the application opens on.
 	//
@@ -236,7 +236,7 @@ func (c *flashcardsServiceClient) GetVaultDeckPreset(ctx context.Context, req *c
 
 // FlashcardsServiceHandler is an implementation of the numen.v1.FlashcardsService service.
 type FlashcardsServiceHandler interface {
-	// WatchCardsDue is what every vault the installation knows comes to today:
+	// WatchCardsDue is what every vault the installation knows evaluates to today:
 	// how much it holds, how much is due, and how much has never been asked. It
 	// is what the application opens on.
 	//

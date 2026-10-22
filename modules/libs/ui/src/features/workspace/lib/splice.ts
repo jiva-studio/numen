@@ -57,15 +57,15 @@ export function putBeside(
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }
 
-  const made = pane(id(), [tab])
+  const createdItem = pane(id(), [tab])
   const index = path[path.length - 1]
   const above = path.slice(0, -1)
 
   if (index === undefined) {
     return {
-      root: branch(id(), orderPair(made, root, side), [0.5, 0.5]),
+      root: branch(id(), orderPair(createdItem, root, side), [0.5, 0.5]),
       axis: wanted,
-      focus: made.id,
+      focus: createdItem.id,
     }
   }
 
@@ -73,18 +73,18 @@ export function putBeside(
 
   if (getOrientation(axis, above.length) === wanted) {
     return {
-      root: replaceAt(root, above, joinBeside(parent, made, { index, side })),
+      root: replaceAt(root, above, joinBeside(parent, createdItem, { index, side })),
       axis,
-      focus: made.id,
+      focus: createdItem.id,
     }
   }
 
   const target = findNode(root, path) as WorkspaceNode
 
   return {
-    root: replaceAt(root, path, branch(id(), orderPair(made, target, side), [0.5, 0.5])),
+    root: replaceAt(root, path, branch(id(), orderPair(createdItem, target, side), [0.5, 0.5])),
     axis,
-    focus: made.id,
+    focus: createdItem.id,
   }
 }
 
@@ -109,11 +109,11 @@ export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
   const holder = paneWithTab(root, tab)
   if (!holder) return root
 
-  return mapPane(root, holder.id, (held) => {
-    const at = held.tabs.indexOf(tab)
-    const tabs = held.tabs.filter((each) => each !== tab)
-    const active = held.active === tab ? (tabs[at] ?? tabs[at - 1] ?? null) : held.active
-    return { ...held, tabs, active }
+  return mapPane(root, holder.id, (target) => {
+    const at = target.tabs.indexOf(tab)
+    const tabs = target.tabs.filter((each) => each !== tab)
+    const active = target.active === tab ? (tabs[at] ?? tabs[at - 1] ?? null) : target.active
+    return { ...target, tabs, active }
   })
 }
 
@@ -121,12 +121,12 @@ export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
 export function commit(workspace: Workspace, focus: NodeId): Workspace {
   const normalized = normalize(workspace)
   const panes = getPanes(normalized.root)
-  const kept =
+  const retainedBranch =
     panes.find((each) => each.id === focus) ??
     panes.find((each) => each.id === workspace.focus) ??
     panes[0]
 
-  return kept ? { ...normalized, focus: kept.id } : normalized
+  return retainedBranch ? { ...normalized, focus: retainedBranch.id } : normalized
 }
 
 export function mapPane(

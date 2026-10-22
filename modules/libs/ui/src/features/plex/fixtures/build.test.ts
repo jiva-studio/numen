@@ -10,10 +10,10 @@ const COUNTS = { parent: 3, child: 6, jump: 3, sibling: 3 }
 
 /** Choose a node and hand back the neighbourhood around it, as a story does. */
 function step(current: ReturnType<typeof build>, id: string) {
-  const chosen = current.nodes.find((node) => node.id === id)!
+  const selected = current.nodes.find((node) => node.id === id)!
   const was = current.nodes.find((node) => node.relation === 'focus')!
   const from: TitledNode = { id: was.id, title: was.title }
-  return buildAround({ id: chosen.id, title: chosen.title }, from, COUNTS)
+  return buildAround({ id: selected.id, title: selected.title }, from, COUNTS)
 }
 
 describe('walking', () => {
@@ -42,9 +42,9 @@ describe('walking', () => {
     expect(next.nodes.some((node) => node.id === 'focus' && node.relation === 'parent')).toBe(true)
   })
 
-  it('gives every node a name from the pool rather than a number', () => {
-    const built = build('A node', COUNTS)
-    for (const node of built.nodes) {
+  it('gives every node a name from the pool and not a number', () => {
+    const builtNode = build('A node', COUNTS)
+    for (const node of builtNode.nodes) {
       expect(node.title).not.toMatch(/^(Parent|Child|Jump|Sibling) \d+$/)
     }
   })

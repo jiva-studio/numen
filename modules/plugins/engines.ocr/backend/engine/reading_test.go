@@ -96,16 +96,16 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 	}
 }
 
-func TestOnePartThatCouldNotBeReadLeavesTheRest(t *testing.T) {
+func TestOnePartThatCouldNotBeReadPreservesTheRest(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
-	var asked atomic.Int32
+	var request atomic.Int32
 
 	r := &Recogniser{
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
 		read: func(image.Image) ([]read.RecResult, error) {
-			if asked.Add(1) == 1 {
+			if request.Add(1) == 1 {
 				return nil, errors.New("the first part")
 			}
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
@@ -296,13 +296,13 @@ func TestAPartOfAnUnwantedKindIsNotRead(t *testing.T) {
 
 func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 	var mu sync.Mutex
-	var asked []image.Image
+	var request []image.Image
 	r := &Recogniser{
 		layout: partsOf(image.Rect(700, 900, 800, 950), image.Rect(10, 10, 590, 400)),
 		body:   map[string]bool{"text": true},
 		read: func(img image.Image) ([]read.RecResult, error) {
 			mu.Lock()
-			asked = append(asked, img)
+			request = append(request, img)
 			mu.Unlock()
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
 		},
@@ -312,15 +312,15 @@ func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(asked) != 1 || asked[0] == nil {
-		t.Errorf("parts read: %v", asked)
+	if len(request) != 1 || request[0] == nil {
+		t.Errorf("parts read: %v", request)
 	}
 	if len(blocks) != 1 {
 		t.Errorf("blocks = %+v", blocks)
 	}
 }
 
-func TestAPageWithNothingToReadSaysNothing(t *testing.T) {
+func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	r := &Recogniser{
@@ -387,7 +387,7 @@ func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 		var active atomic.Int32
 		var maxActive atomic.Int32
 		secondEntered := make(chan struct{})
-		done := make(chan struct{})
+		isDone := make(chan struct{})
 
 		runBounded(t.Context(), 10, 1, func(int) {
 			cur := active.Add(1)
@@ -406,12 +406,12 @@ func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 				select {
 				case <-secondEntered:
 				case <-time.After(10 * time.Millisecond):
-				case <-done:
+				case <-isDone:
 				}
 			}
 			active.Add(-1)
 		})
-		close(done)
+		close(isDone)
 		if got := maxActive.Load(); got != 1 {
 			t.Errorf("concurrent workers = %d, want 1", got)
 		}

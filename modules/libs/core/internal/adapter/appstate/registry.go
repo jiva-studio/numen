@@ -185,7 +185,7 @@ func (r *VaultRegistry) RecordOpened(id domain.VaultID) error {
 }
 
 // GetLastVault is the vault opened most recently. Nothing has been opened until a vault
-// is recorded, and an identity that names nothing on the list answers the same.
+// is recorded, and an identity that is empty on the list answers the same.
 func (r *VaultRegistry) GetLastVault() (domain.Vault, bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

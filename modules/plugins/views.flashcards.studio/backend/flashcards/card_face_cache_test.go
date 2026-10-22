@@ -131,7 +131,7 @@ func TestADeckWhoseModificationTimeChangedIsReadAgain(t *testing.T) {
 	}
 }
 
-func TestADeckThatIsDeletedLeavesNoEntryBehind(t *testing.T) {
+func TestADeckThatIsDeletedPreservesNoEntryPrior(t *testing.T) {
 	t.Parallel()
 	s, faces, reads := openTallied(t, vault)
 	at := filepath.Join(s.vault.Path, "decks", "Words.md")
@@ -141,11 +141,11 @@ func TestADeckThatIsDeletedLeavesNoEntryBehind(t *testing.T) {
 	}
 
 	remove(t, s, "decks/Words.md")
-	left, err := faces.Execute(t.Context(), s.vault)
+	remaining, err := faces.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range left {
+	for _, one := range remaining {
 		if one.Deck == "decks/Words.md" {
 			t.Fatalf("a deleted deck stands: %+v", one.ID)
 		}
@@ -169,7 +169,7 @@ func TestADeckThatIsDeletedLeavesNoEntryBehind(t *testing.T) {
 	}
 }
 
-func TestAChangedStencilIsReadAgainWithEveryDeckCutByIt(t *testing.T) {
+func TestAChangedStencilIsReadAgainWithEveryDeckSplitByIt(t *testing.T) {
 	t.Parallel()
 	s, faces, reads := openTallied(t, vault)
 
@@ -186,7 +186,7 @@ func TestAChangedStencilIsReadAgainWithEveryDeckCutByIt(t *testing.T) {
 	}
 }
 
-func TestInvalidatingAStencilForgetsEveryDeckCutByIt(t *testing.T) {
+func TestInvalidatingAStencilForgetsEveryDeckSplitByIt(t *testing.T) {
 	t.Parallel()
 	s, faces, reads := openTallied(t, vault)
 
@@ -228,7 +228,7 @@ func TestInvalidatingAllForgetsEveryDeck(t *testing.T) {
 	}
 }
 
-func TestAMarkWrittenThroughTheAppIsStandingInTheNextRequest(t *testing.T) {
+func TestAMarkSavedThroughTheAppIsActiveInTheNextRequest(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
 		"Term.md": vault["Term.md"],

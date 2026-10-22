@@ -28,11 +28,11 @@ var profiles = map[domain.NoteType]domain.NoteProfile{
 
 // saveCut stores notes cut at the default sizes, the way a scan hands them over.
 func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain.Note) error {
-	cut := notecase.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
+	cutNotes := notecase.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
 		profile, declared := profiles[t]
 		return profile, declared
 	}}
-	return db.Notes().Save(ctx, vaultID, cut.Execute(notes))
+	return db.Notes().Save(ctx, vaultID, cutNotes.Execute(notes))
 }
 
 // saveNote saves one note of a title of its own through the opening given.
@@ -71,7 +71,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 }
 
 // Two writers over one index file lose nothing. Both write at once and every
-// note either lands or is refused loudly.
+// note either lands or fails loudly.
 func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "index.db")
 	one := openDBAt(t, path)
@@ -107,7 +107,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 	// A writer that could not have its turn says so; it does not come back
 	// having written nothing.
 	for _, err := range failed {
-		t.Errorf("a write was refused: %v", err)
+		t.Errorf("a write failed: %v", err)
 	}
 
 	want := make([]string, 0, 2*each)

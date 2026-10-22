@@ -85,7 +85,7 @@ func awaitReturn(t *testing.T, returned <-chan error) error {
 
 // A stream whose page can no longer be written to ends with the write's error,
 // at whichever message it was found out.
-func TestAReloadStreamThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
+func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	cancelled, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -130,7 +130,7 @@ func TestAReloadStreamThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
 
 // The front door ends with the write's error when the page can no longer be
 // written to, whichever message finds it out.
-func TestTheFrontDoorThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
+func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	for name, fails := range map[string]func(n int, msg any) bool{
 		// The vaults are listed before anything is counted.
 		"listing": func(n int, _ any) bool { return n == 1 },
@@ -160,13 +160,13 @@ func TestTheFrontDoorThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
 
 // A page found gone while a count is still running ends the stream, which is
 // the only report there is.
-func TestTheFrontDoorFoundGoneWhileCountingEnds(t *testing.T) {
+func TestTheFrontDoorFoundMissingWhileCountingEnds(t *testing.T) {
 	api, _ := newAPI(t, deck)
 	front(t, api)
 
-	held := make(chan struct{})
-	defer close(held)
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(waiting{until: held}))
+	target := make(chan struct{})
+	defer close(target)
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(waiting{until: target}))
 
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, api, breaking{
@@ -203,12 +203,12 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 // A stream that has just said a count is not about to say the list again: the
 // time it waits starts over with every count.
 func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
-	api, held := newAPI(t, deck, other)
+	api, target := newAPI(t, deck, other)
 	front(t, api)
 
 	first, second := make(chan struct{}), make(chan struct{})
 	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(gated{
-		until:   map[domain.VaultID]<-chan struct{}{held[0].ID: first, held[1].ID: second},
+		until:   map[domain.VaultID]<-chan struct{}{target[0].ID: first, target[1].ID: second},
 		entered: make(chan domain.VaultID, 16),
 	}))
 	openFirst := sync.OnceFunc(func() { close(first) })
@@ -230,30 +230,30 @@ func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
 	time.AfterFunc(500*time.Millisecond, openFirst)
 	time.AfterFunc(1300*time.Millisecond, openSecond)
 
-	var counted, listed int
+	var counted, items int
 	for stream.Receive() {
 		if stream.Msg().GetCounted() != nil {
 			counted++
 		} else {
-			listed++
+			items++
 		}
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if counted != 2 || listed != 0 {
-		t.Errorf("%d counts arrived and the list was said again %d times, want 2 and 0", counted, listed)
+	if counted != 2 || items != 0 {
+		t.Errorf("%d counts arrived and the list was said again %d times, want 2 and 0", counted, items)
 	}
 }
 
 // Four vaults are counted alongside each other, and the rest wait for a place.
 func TestFourVaultsAreCountedAtOnce(t *testing.T) {
-	api, held := newAPI(t, deck, deck, deck, deck, deck, deck)
+	api, target := newAPI(t, deck, deck, deck, deck, deck, deck)
 	front(t, api)
 
 	until := make(chan struct{})
 	gates := map[domain.VaultID]<-chan struct{}{}
-	for _, v := range held {
+	for _, v := range target {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)
@@ -302,12 +302,12 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 // A stream whose client has gone waits for the counts already running before
 // it ends, so no count outlives the call that asked for it.
 func TestTheFrontDoorEndsOnlyWhenTheCountsRunningHaveEnded(t *testing.T) {
-	api, held := newAPI(t, deck, deck, deck, deck, deck, deck)
+	api, target := newAPI(t, deck, deck, deck, deck, deck, deck)
 	front(t, api)
 
 	until := make(chan struct{})
 	gates := map[domain.VaultID]<-chan struct{}{}
-	for _, v := range held {
+	for _, v := range target {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)

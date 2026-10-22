@@ -42,12 +42,12 @@ const onScreen = (view: EditorView) => {
 
 /** Those lines with a margin of them either side, which is what is drawn for. */
 const getDrawnRange = (view: EditorView) => {
-  const seen = onScreen(view)
-  if (!seen) return null
+  const observed = onScreen(view)
+  if (!observed) return null
   const doc = view.state.doc
   return {
-    from: doc.lineAt(Math.max(seen.from - margin, 0)).from,
-    to: doc.lineAt(Math.min(seen.to + margin, doc.length)).to,
+    from: doc.lineAt(Math.max(observed.from - margin, 0)).from,
+    to: doc.lineAt(Math.min(observed.to + margin, doc.length)).to,
   }
 }
 
@@ -159,8 +159,8 @@ export const live = ViewPlugin.fromClass(
 
       // The lines on screen, against the wider span the marks in hand were
       // drawn for. A viewport still inside them is already drawn.
-      const seen = onScreen(update.view)
-      if (!afresh && this.span && seen && seen.from >= this.span.from && seen.to <= this.span.to) {
+      const observed = onScreen(update.view)
+      if (!afresh && this.span && observed && observed.from >= this.span.from && observed.to <= this.span.to) {
         return
       }
 

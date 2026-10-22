@@ -49,7 +49,7 @@ func (a *asking) Start(v domain.Vault, path string) port.StartOutcome {
 }
 
 // claimed is a store a run holds one name in. A run holds the name it writes
-// under for as long as it takes, and a claim on it is refused.
+// under for as long as it takes, and a claim on it fails.
 type claimed struct {
 	stored
 	name domain.ArtifactName
@@ -110,9 +110,8 @@ const (
 	copyOf       = v1.ArtifactKind_ARTIFACT_KIND_COPY
 )
 
-// makes asks for an artifact of a file to be made, and answers with what came
-// back.
-func makes(api *Services, path string, of v1.ArtifactKind) (*connect.Response[v1.CreateArtifactResponse], error) {
+// requestCreateArtifact sends an RPC request to create an artifact.
+func requestCreateArtifact(api *Services, path string, of v1.ArtifactKind) (*connect.Response[v1.CreateArtifactResponse], error) {
 	return api.Artifact.CreateArtifact(context.Background(), connect.NewRequest(&v1.CreateArtifactRequest{
 		Path: path, Kind: of,
 	}))
@@ -122,9 +121,9 @@ func makes(api *Services, path string, of v1.ArtifactKind) (*connect.Response[v1
 // the window would not.
 func createArtifact(t *testing.T, api *Services, path string, of v1.ArtifactKind) *v1.Artifact {
 	t.Helper()
-	out, err := makes(api, path, of)
+	out, err := requestCreateArtifact(api, path, of)
 	if err != nil {
-		t.Fatalf("asked for the %s of %s and was refused: %v", of, path, err)
+		t.Fatalf("asked for the %s of %s and failed: %v", of, path, err)
 	}
 	return out.Msg.GetArtifact()
 }
@@ -134,7 +133,7 @@ func getArtifactStates(t *testing.T, api *Services, path string) map[v1.Artifact
 	t.Helper()
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: path}))
 	if err != nil {
-		t.Fatalf("asked what %s carries and was refused: %v", path, err)
+		t.Fatalf("asked what %s carries and failed: %v", path, err)
 	}
 	by := map[v1.ArtifactKind]v1.State{}
 	for _, one := range out.Msg.GetArtifacts() {
@@ -146,7 +145,7 @@ func getArtifactStates(t *testing.T, api *Services, path string) map[v1.Artifact
 // getRefusedCode is the code the window would not make an artifact under.
 func getRefusedCode(t *testing.T, api *Services, path string, of v1.ArtifactKind) connect.Code {
 	t.Helper()
-	out, err := makes(api, path, of)
+	out, err := requestCreateArtifact(api, path, of)
 	if err == nil {
 		t.Fatalf("the %s of %s was made: %+v", of, path, out.Msg.GetArtifact())
 	}
@@ -233,7 +232,7 @@ func TestAFileOnlyCarriesTheArtifactsItsKindDoes(t *testing.T) {
 			api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
 			if code := getRefusedCode(t, api, one.path, one.of); code != connect.CodeInvalidArgument {
-				t.Errorf("a file carrying no such artifact was refused %s", code)
+				t.Errorf("a file carrying no such artifact failed %s", code)
 			}
 			if scans.times+hears.times != 0 {
 				t.Error("a run was given a file of the wrong kind")
@@ -242,13 +241,13 @@ func TestAFileOnlyCarriesTheArtifactsItsKindDoes(t *testing.T) {
 	}
 }
 
-// An artifact no file carries is refused before the vault is read at all.
+// An artifact no file carries fails before the vault is read at all.
 func TestAnArtifactNoFileCarriesIsNotMade(t *testing.T) {
 	scans, hears := willRun(), willRun()
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
 	if code := getRefusedCode(t, api, book, v1.ArtifactKind(99)); code != connect.CodeInvalidArgument {
-		t.Errorf("an artifact nothing makes was refused %s", code)
+		t.Errorf("an artifact nothing makes failed %s", code)
 	}
 	if scans.times+hears.times != 0 {
 		t.Error("a run was given a file for an artifact nothing makes")
@@ -257,7 +256,7 @@ func TestAnArtifactNoFileCarriesIsNotMade(t *testing.T) {
 
 // A source already standing on the whole of the text a model produced is not
 // put through the run again, and is told so plainly.
-func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
+func TestASourceAlreadyCompletedIsNotRunAgain(t *testing.T) {
 	for _, one := range []struct {
 		name string
 		of   v1.ArtifactKind
@@ -291,7 +290,7 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 // A source a run holds is said to be under way. A recording is heard without
 // anybody asking, so a person asking for the one being heard is told that it is
 // happening, and not that theirs did not start.
-func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
+func TestASourceARunContainsIsSaidToBeBelowWay(t *testing.T) {
 	for _, one := range []struct {
 		name string
 		of   v1.ArtifactKind
@@ -327,7 +326,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 
 // A source nothing holds is not under way, whatever a run wrote before it
 // stopped. It is named afresh and waits its turn.
-func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
+func TestASourceNothingContainsIsNotBelowWay(t *testing.T) {
 	for _, one := range []struct {
 		name string
 		of   v1.ArtifactKind
@@ -360,7 +359,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 
 // A source a run holds and has finished is one already done. A finished run
 // gives the name it was writing under back.
-func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
+func TestASourceCompletedIsCompletedEvenWhereAPartialExists(t *testing.T) {
 	scans := willRun()
 	api, _ := openRunWindow(t,
 		stored{
@@ -406,7 +405,7 @@ func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
 		transcriptOf: "talks/nothing.mp3",
 	} {
 		if code := getRefusedCode(t, api, path, of); code != connect.CodeNotFound {
-			t.Errorf("asked for a run over nothing and was refused %s", code)
+			t.Errorf("asked for a run over nothing and failed %s", code)
 		}
 	}
 }
@@ -418,7 +417,7 @@ func TestARunAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 
 	for of, path := range map[v1.ArtifactKind]string{readingOf: book, transcriptOf: talk} {
 		if code := getRefusedCode(t, api, path, of); code != connect.CodeUnavailable {
-			t.Errorf("asked before the passes were up and was refused %s", code)
+			t.Errorf("asked before the passes were up and failed %s", code)
 		}
 	}
 }

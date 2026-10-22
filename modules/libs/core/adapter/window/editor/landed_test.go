@@ -27,7 +27,7 @@ func (stuck) MoveSources(context.Context, domain.VaultID, string, string) error 
 	return errors.New("the index would not file the row under the new path")
 }
 
-func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
+func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
@@ -44,12 +44,12 @@ func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
 	if to := answer.Msg.GetMoved().GetTo(); to != "notes/Entropy.md" {
 		t.Errorf("the file the vault holds at notes/Entropy.md is answered for as %q", to)
 	}
-	if held := onDisk(t, f.root, "notes/Entropy.md"); held == "" {
+	if target := onDisk(t, f.root, "notes/Entropy.md"); target == "" {
 		t.Error("the file the client was told about holds nothing")
 	}
 }
 
-func TestARenameThatCameApartAfterTheFileLandedSaysWhatTheNoteIsCalled(t *testing.T) {
+func TestARenameThatCameApartAfterTheFileLandedReturnsWhatTheNoteIsCalled(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})

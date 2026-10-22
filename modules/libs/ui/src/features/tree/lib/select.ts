@@ -1,4 +1,4 @@
-/** What a press on a row comes to: the rows selected, and the row a reach is measured from. */
+/** What a press on a row evaluates to: the rows selected, and the row a reach is measured from. */
 
 import type { RowId, ShownRow } from './row'
 
@@ -15,7 +15,7 @@ export interface Press {
 /** A press with nothing held down. */
 export const PLAIN: Press = { isJoining: false, isExtending: false }
 
-/** What a press comes to: the selection, and the row a reach is measured from. */
+/** What a press evaluates to: the selection, and the row a reach is measured from. */
 export interface RowSelection {
   readonly rows: readonly RowId[]
   readonly anchor: RowId | null
@@ -53,7 +53,7 @@ export interface SelectionTarget {
  * What a press on a row makes the selection.
  *
  * Reaching takes the rows from the anchor to this one and leaves the anchor
- * where it stands; joining takes the row in or out and puts the anchor on it.
+ * at its current position; joining takes the row in or out and puts the anchor on it.
  * The rows come back in the order they are drawn, and a row that is not drawn
  * is among none of them.
  */
@@ -80,7 +80,7 @@ export function resolveSelection(
   return { rows: [row], anchor: row }
 }
 
-/** Every row that is drawn, with the anchor left where it stands. */
+/** Every row that is drawn, with the anchor left at its current position. */
 export const everyRow = (visibleRows: readonly ShownRow[], anchor: RowId | null): RowSelection => ({
   rows: visibleRows.map((row) => row.id),
   anchor: anchor ?? visibleRows[0]?.id ?? null,

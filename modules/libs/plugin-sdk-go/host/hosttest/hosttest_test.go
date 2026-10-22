@@ -67,16 +67,16 @@ func TestAnotherVaultIsWorkedByItsIdentity(t *testing.T) {
 	chemistry.File("a.md", "x")
 	physics.Beside(chemistry)
 
-	known, _ := physics.GetVaults(ctx)
+	recognized, _ := physics.GetVaults(ctx)
 	_, _, readErr := physics.With("Chemistry").Read(ctx, "a.md")
 	_, _, unknown := physics.With("Biology").Read(ctx, "a.md")
 
-	if len(known) != 2 || readErr != nil || !errors.Is(unknown, host.ErrUnknownVault) {
-		t.Errorf("the vaults were %v, the read gave %v, an unknown vault gave %v", known, readErr, unknown)
+	if len(recognized) != 2 || readErr != nil || !errors.Is(unknown, host.ErrUnknownVault) {
+		t.Errorf("the vaults were %v, the read gave %v, an unknown vault gave %v", recognized, readErr, unknown)
 	}
 }
 
-func TestAMoveIsToldToTheWatch(t *testing.T) {
+func TestAMoveIsReportedToTheWatch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	v := hosttest.New("Physics")
@@ -109,7 +109,7 @@ func TestANoteIsInTheIndexAsSoonAsItsFileIsThere(t *testing.T) {
 	}
 }
 
-func TestANameReachesTheNearestNoteAndSaysWhenSeveralAnswer(t *testing.T) {
+func TestANameReachesTheNearestNoteAndReturnsWhenSeveralAnswer(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.New("Physics")
 	v.File("a/Entropy.md", "# A\n")
@@ -141,7 +141,7 @@ func TestALinkIsABacklinkOnlyWhereItResolves(t *testing.T) {
 	}
 }
 
-func TestAVaultOnDiskIsChangedByAProgramBesideIt(t *testing.T) {
+func TestAVaultOnDiskIsChangedByAProgramAdjacentIt(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"a/Note.md": "# One\n"})
 	_, before, _ := v.Read(ctx, "a/Note.md")
@@ -157,7 +157,7 @@ func TestAVaultOnDiskIsChangedByAProgramBesideIt(t *testing.T) {
 	}
 }
 
-func TestACreateOnDiskMakesTheFoldersAndRefusesAFileThatIsThere(t *testing.T) {
+func TestACreateOnDiskMakesTheFoldersAndRejectsAFileThatIsThere(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", nil)
 
@@ -170,23 +170,23 @@ func TestACreateOnDiskMakesTheFoldersAndRefusesAFileThatIsThere(t *testing.T) {
 	}
 }
 
-func TestAFileTheHostMayNotOpenFailsWithWhatItWasToldToFailWith(t *testing.T) {
+func TestAFileTheHostMayNotOpenFailsWithWhatItWasReportedToFailWith(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.New("Physics")
 	v.File("a.md", "x")
-	refusal := errors.New("permission denied")
-	v.Refuse("a.md", refusal)
+	testErr := errors.New("permission denied")
+	v.Refuse("a.md", testErr)
 
 	_, _, readErr := v.Read(ctx, "a.md")
 	v.Refuse("a.md", nil)
 	_, _, again := v.Read(ctx, "a.md")
 
-	if !errors.Is(readErr, refusal) || again != nil {
+	if !errors.Is(readErr, testErr) || again != nil {
 		t.Errorf("got %v and then %v", readErr, again)
 	}
 }
 
-func TestTheIndexKnowsAFileChangedBesideItOnlyOnceItIsTold(t *testing.T) {
+func TestTheIndexKnowsAFileChangedAdjacentItOnlyOnceItIsReported(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"A.md": "---\ntype: deck\n---\n"})
 	if err := os.WriteFile(filepath.Join(v.Vault().Path, "B.md"), []byte("---\ntype: deck\n---\n"), 0o644); err != nil {
@@ -202,7 +202,7 @@ func TestTheIndexKnowsAFileChangedBesideItOnlyOnceItIsTold(t *testing.T) {
 	}
 }
 
-func TestAFileInAHiddenFolderIsLeftAloneByTheVault(t *testing.T) {
+func TestAFileInAHiddenFolderIsRemainingAloneByTheVault(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"decks/.Hidden.md": "---\ntype: deck\n---\n"})
 
@@ -230,7 +230,7 @@ func TestVaultsMadeKnownToOneAnotherAreKnownToAll(t *testing.T) {
 	}
 }
 
-func TestAVaultWhoseFolderIsGoneRefusesItsFilesAndItsData(t *testing.T) {
+func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsData(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"a.md": "x"})
 	if err := os.RemoveAll(v.Vault().Path); err != nil {
@@ -247,7 +247,7 @@ func TestAVaultWhoseFolderIsGoneRefusesItsFilesAndItsData(t *testing.T) {
 	}
 }
 
-func TestTheDataFolderIsAFolderOfTheVaultsOwnStoreWhereATestCanLookAndPut(t *testing.T) {
+func TestTheDataFolderIsAFolderOfTheVaultsOwnStoreWhereATestCanLookAndInsert(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", nil, hosttest.DataFolder("flashcards"))
 	folder := filepath.Join(v.Vault().Path, ".numen", "flashcards")
@@ -260,7 +260,7 @@ func TestTheDataFolderIsAFolderOfTheVaultsOwnStoreWhereATestCanLookAndPut(t *tes
 
 	appendErr := v.AppendData(ctx, "run.jsonl", []byte("a\n"))
 	again := v.AppendData(ctx, "run.jsonl", []byte("b\n"))
-	listed, listErr := v.ListData(ctx)
+	items, listErr := v.ListData(ctx)
 	read, readErr := v.ReadData(ctx, "run.jsonl")
 	_, outside := v.ReadData(ctx, "../a.md")
 	_, missing := v.ReadData(ctx, "none.jsonl")
@@ -268,8 +268,8 @@ func TestTheDataFolderIsAFolderOfTheVaultsOwnStoreWhereATestCanLookAndPut(t *tes
 	if appendErr != nil || again != nil || listErr != nil || readErr != nil || string(read) != "a\nb\n" {
 		t.Fatalf("got %v, %v, %v, %v and %q", appendErr, again, listErr, readErr, read)
 	}
-	if len(listed) != 2 || listed[0].Name != "beside.jsonl" || listed[1].Size != 4 {
-		t.Errorf("the folder held %v", listed)
+	if len(items) != 2 || items[0].Name != "beside.jsonl" || items[1].Size != 4 {
+		t.Errorf("the folder held %v", items)
 	}
 	if !errors.Is(outside, host.ErrOutside) || !errors.Is(missing, host.ErrNotExist) {
 		t.Errorf("got %v and %v", outside, missing)

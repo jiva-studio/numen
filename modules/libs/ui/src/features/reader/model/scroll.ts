@@ -71,12 +71,12 @@ function usePointerDrag(
 
   const onPointerMove = (event: PointerEvent): void => {
     if (!area.value || !hand.holding) return
-    const stood = hand.to({ x: event.clientX, y: event.clientY })
-    if (!stood) return
+    const status = hand.to({ x: event.clientX, y: event.clientY })
+    if (!status) return
     isDragging.value = true
     onInterrupted()
-    area.value.scrollLeft = stood.x
-    area.value.scrollTop = stood.y
+    area.value.scrollLeft = status.x
+    area.value.scrollTop = status.y
     followPointer(area.value, event)
   }
 
@@ -92,27 +92,27 @@ function usePointerDrag(
 }
 
 export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): HandScroll {
-  const along = ref(0)
+  const alongOffset = ref(0)
   const isDragging = ref(false)
 
   /** Where the row was told to stand, while it is on its way there. */
   let heading: number | undefined
 
-  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? along.value
+  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? alongOffset.value
 
   const send = (to: number, how: ScrollBehavior): void => {
     if (!area.value) return
     if (Math.abs(area.value.scrollLeft - to) <= THERE) return
     heading = to
     // A scroll that does not travel is over as soon as it is asked for.
-    if (how === 'auto') along.value = to
+    if (how === 'auto') alongOffset.value = to
     area.value.scrollTo({ left: to, behavior: how })
   }
 
   const isStill = (): boolean => {
     if (!area.value) return false
-    along.value = area.value.scrollLeft
-    if (Math.abs(along.value - (heading ?? along.value)) > THERE) return false
+    alongOffset.value = area.value.scrollLeft
+    if (Math.abs(alongOffset.value - (heading ?? alongOffset.value)) > THERE) return false
     heading = undefined
     return true
   }
@@ -127,7 +127,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
   }
 
   return {
-    along,
+    along: alongOffset,
     isDragging,
     getScrollOffset,
     send,

@@ -9,7 +9,7 @@ import (
 
 // A sweep works through the files a producer writes, and a transcription writes
 // no coordinates or parts.
-func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
+func TestASweepOfATranscriptNamesWhatItSaved(t *testing.T) {
 	want := []domain.ArtifactName{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"),
 		domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, "abc123"),
@@ -24,7 +24,7 @@ func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
 }
 
 // A sweep of a recognition takes the coordinates and the parts with the rest.
-func TestASweepOfARecognitionNamesWhatItWrote(t *testing.T) {
+func TestASweepOfARecognitionNamesWhatItSaved(t *testing.T) {
 	want := []domain.ArtifactName{
 		domain.NewArtifactName(domain.ArtifactText, domain.OCR, "abc123"),
 		domain.NewArtifactName(domain.ArtifactPartial, domain.OCR, "abc123"),
@@ -41,7 +41,7 @@ func TestASweepOfARecognitionNamesWhatItWrote(t *testing.T) {
 
 // The files written for an address are what each producer that reaches one
 // writes.
-func TestTheFilesOfAnAddressAreWhatEveryProducerWrote(t *testing.T) {
+func TestTheFilesOfAnAddressAreWhatEveryProducerSaved(t *testing.T) {
 	texts := domain.GetAddressTextNames("abc123")
 	for _, producer := range domain.GetAddressProducers() {
 		for _, name := range domain.GetArtifactNames(producer, "abc123") {

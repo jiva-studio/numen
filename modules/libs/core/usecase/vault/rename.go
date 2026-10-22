@@ -37,25 +37,25 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 		return v, nil
 	}
 
-	known, err := u.registry.List()
+	recognized, err := u.registry.List()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if other, taken := domain.Vaults(known).FindByName(name, v.ID); taken {
+	if other, exists := domain.Vaults(recognized).FindByName(name, v.ID); exists {
 		return domain.Vault{}, fmt.Errorf("%w: the vault at %s is already called %s",
 			ErrNameTaken, other.Path, other.Name)
 	}
 
-	renamed := v
-	renamed.Name = name
-	if err := u.registry.Save(renamed); err != nil {
+	renamedVault := v
+	renamedVault.Name = name
+	if err := u.registry.Save(renamedVault); err != nil {
 		return domain.Vault{}, err
 	}
 	// The index holds no name, so a rename writes nothing to it. This covers a
 	// vault renamed before its first scan, which has no row yet to be scanned
 	// into.
-	if err := u.index.Register(ctx, renamed.ID); err != nil {
+	if err := u.index.Register(ctx, renamedVault.ID); err != nil {
 		return domain.Vault{}, fmt.Errorf("register %s in the index: %w", v.Name, err)
 	}
-	return renamed, nil
+	return renamedVault, nil
 }

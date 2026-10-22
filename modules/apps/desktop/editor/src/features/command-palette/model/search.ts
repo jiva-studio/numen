@@ -191,7 +191,7 @@ async function executeSearchQuery(
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const coverage = how.coverage
   const open = ref(false)
-  const typed = ref('')
+  const inputValue = ref('')
 
   const names = shallowRef<readonly NameMatch[]>([])
   const texts = shallowRef<readonly Passage[]>([])
@@ -215,7 +215,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     executeSearchQuery({ core, query, mine, notAskedWord: words.notAsked }, state)
 
   const setTyped = async (text: string) => {
-    typed.value = text
+    inputValue.value = text
     await debounced.ask(text, { blank: drop, run: ask })
   }
 
@@ -223,15 +223,15 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     open.value = now
     if (now) return
     debounced.drop()
-    typed.value = ''
+    inputValue.value = ''
     drop()
   }
 
   const getEmptyGroupMessage = (id: SearchGroup): string =>
     getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], words, coverage })
 
-  const built = computed(() => {
-    if (!typed.value.trim())
+  const searchGroups = computed(() => {
+    if (!inputValue.value.trim())
       return { groups: [] as readonly PaletteGroup[], hitsById: new Map<string, SearchHit>() }
     return buildSearchGroups({
       names: names.value,
@@ -243,19 +243,19 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     })
   })
 
-  const groups = computed(() => built.value.groups)
+  const groups = computed(() => searchGroups.value.groups)
 
   const findNoteType = (item: string): NoteType | null =>
-    built.value.hitsById.get(item)?.type ?? null
+    searchGroups.value.hitsById.get(item)?.type ?? null
 
   const findHitSource = (item: string): Source | null =>
-    built.value.hitsById.get(item)?.kind ?? null
+    searchGroups.value.hitsById.get(item)?.kind ?? null
 
   const chooseItem = (item: string, action: string): SearchDestination | null => {
-    return resolveDestination(built.value.hitsById.get(item), action)
+    return resolveDestination(searchGroups.value.hitsById.get(item), action)
   }
 
-  return { open, typed, groups, setTyped, setOpen, chooseItem, findNoteType, findHitSource }
+  return { open, typed: inputValue, groups, setTyped, setOpen, chooseItem, findNoteType, findHitSource }
 }
 
 export type SearchState = ReturnType<typeof useSearch>

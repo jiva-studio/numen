@@ -124,7 +124,7 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 
 // TestEveryStepTheAgentTakesReachesTheClient, in the words the schema carries
 // and in the order they were taken.
-func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
+func TestEveryStepTheAgentConsumesReachesTheClient(t *testing.T) {
 	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{
 		{Kind: domain.StepModelStart},
 		{Kind: domain.StepToolCall, Tool: "note_rewrite", About: "notes/Fugue.md", Count: 240},
@@ -141,15 +141,15 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	if steps[0].GetModelStarted() == nil {
 		t.Errorf("the first step is %+v, want a wait beginning", steps[0])
 	}
-	doing := steps[1].GetToolCall()
-	if doing.GetTool() != "note_rewrite" || doing.GetAbout() != "notes/Fugue.md" || doing.GetWritten() != 240 {
-		t.Errorf("the tool in hand is %+v, want note_rewrite over notes/Fugue.md at 240", doing)
+	executing := steps[1].GetToolCall()
+	if executing.GetTool() != "note_rewrite" || executing.GetAbout() != "notes/Fugue.md" || executing.GetLength() != 240 {
+		t.Errorf("the tool in hand is %+v, want note_rewrite over notes/Fugue.md at 240", executing)
 	}
 	if steps[2].GetToolFinished() == nil {
 		t.Errorf("the third step is %+v, want the tool answering", steps[2])
 	}
-	if said := steps[3].GetSaid(); said != "Rewritten." {
-		t.Errorf("the agent said %q, want %q", said, "Rewritten.")
+	if response := steps[3].GetText(); response != "Rewritten." {
+		t.Errorf("the agent said %q, want %q", response, "Rewritten.")
 	}
 	if why := steps[4].GetStopped(); why != "out of turns" {
 		t.Errorf("it stopped saying %q, want %q", why, "out of turns")
@@ -157,9 +157,9 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 }
 
 // A call says where in the vault it was working, so that an answer can name the
-// place it stands on. A call the vault serves is drawn as a tool in hand
+// place it relies on. A call the vault serves is drawn as a tool in hand
 // whatever that tool does to the vault.
-func TestACallSaysWhereItIsWorking(t *testing.T) {
+func TestACallReturnsWhereItIsWorking(t *testing.T) {
 	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{
 		{
 			Kind: domain.StepRead, Tool: "Show the person a passage of a document",
@@ -171,15 +171,15 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	steps := getSteps(t, client, &v1.AskAgentRequest{Prompt: "show me where that is"})
-	doing := steps[0].GetToolCall()
-	if doing.GetPath() != "library/A Book.epub" ||
-		doing.GetSpan().GetFrom() != 1200 || doing.GetSpan().GetTo() != 1280 {
-		t.Errorf("the call is working at %+v", doing)
+	executing := steps[0].GetToolCall()
+	if executing.GetPath() != "library/A Book.epub" ||
+		executing.GetSpan().GetFrom() != 1200 || executing.GetSpan().GetTo() != 1280 {
+		t.Errorf("the call is working at %+v", executing)
 	}
 }
 
 // TestAConversationSaidToBeOverReachesTheAgent, under the name its questions
-// carried. A tab closes, and what was kept for it is let go of.
+// carried. A tab closes, and what was kept for it is release.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 	taking := &askedAgent{over: make(chan string, 1)}
 	client := newAgentClient(t, newAgentAPI(taking))
@@ -189,14 +189,14 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if over := <-taking.over; over != "8f2c1e" {
-		t.Errorf("the conversation said to be over is %q, want %q", over, "8f2c1e")
+	if overVal := <-taking.over; overVal != "8f2c1e" {
+		t.Errorf("the conversation said to be over is %q, want %q", overVal, "8f2c1e")
 	}
 }
 
 // TestAConversationThatCouldNotBeFinishedSaysSo. The client hears it and the
 // agent is the one that could not let go.
-func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
+func TestAConversationThatCouldNotBeFinishedReturnsSo(t *testing.T) {
 	taking := &askedAgent{over: make(chan string, 1), refuses: errors.New("the child would not go")}
 	client := newAgentClient(t, newAgentAPI(taking))
 
@@ -222,7 +222,7 @@ func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 
 // TestAVaultWithNoAgentSaysSo. The rest of the window works as it did, and the
 // panel is told there is nobody to ask.
-func TestAVaultWithNoAgentSaysSo(t *testing.T) {
+func TestAVaultWithNoAgentReturnsSo(t *testing.T) {
 	client := newAgentClient(t, &agentHandler{state: &State{}})
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{Prompt: "anyone?"}))

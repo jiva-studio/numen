@@ -11,11 +11,11 @@ import { ANY, DRAWN, OWN, SCHEMES, STRUCK, STYLED } from './tags'
 const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i
 
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const bare = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
+const stripControls = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
 
 /** The scheme a URL names, and nothing where it names none. */
 export const scheme = (url: string): string | null =>
-  /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(bare(url))?.[0].toLowerCase() ?? null
+  /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(stripControls(url))?.[0].toLowerCase() ?? null
 
 const canLinkTo = (url: string): boolean => {
   const named = scheme(url)
@@ -29,7 +29,7 @@ const canLinkTo = (url: string): boolean => {
  * tells whoever wrote the deck that it was read, and from where.
  */
 const canShow = (url: string): boolean => {
-  const cleaned = bare(url)
+  const cleaned = stripControls(url)
   if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
   // An address opening with two slashes names a host and keeps the window's
   // own scheme, so it names no scheme and reaches off the machine all the same.
@@ -98,10 +98,10 @@ const strip = (element: Element): void => {
 
 /** One reading of the text, with everything not drawn with taken out of it. */
 const pass = (html: string): string => {
-  const read = new DOMParser().parseFromString(html, 'text/html')
-  stripComments(read.body)
+  const readItem = new DOMParser().parseFromString(html, 'text/html')
+  stripComments(readItem.body)
 
-  for (const element of [...read.body.querySelectorAll('*')]) {
+  for (const element of [...readItem.body.querySelectorAll('*')]) {
     const tag = element.tagName.toLowerCase()
     if (STRUCK.has(tag)) {
       element.remove()
@@ -114,7 +114,7 @@ const pass = (html: string): string => {
     strip(element)
   }
 
-  return read.body.innerHTML
+  return readItem.body.innerHTML
 }
 
 /**

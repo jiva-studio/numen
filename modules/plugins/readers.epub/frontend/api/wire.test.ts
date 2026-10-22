@@ -8,11 +8,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { books, client } from './wire'
 
-const asked = {
+const request = {
   getBook: vi.fn(),
   readBookMarkup: vi.fn(),
 }
-client.books = asked as unknown as typeof client.books
+client.books = request as unknown as typeof client.books
 
 /** An answer with nothing in it, for a test that cares about one field only. */
 const nothing = {
@@ -26,8 +26,8 @@ const nothing = {
 }
 
 describe('a book', () => {
-  it('comes back as its spine, its parts and the file it was read from', async () => {
-    asked.getBook.mockResolvedValue({
+  it('arrives back as its spine, its parts and the file it was read from', async () => {
+    request.getBook.mockResolvedValue({
       title: 'Anabasis',
       textBytes: 4000,
       documents: [
@@ -54,11 +54,11 @@ describe('a book', () => {
       pageBytes: 500,
       fingerprint: '12 34 Anabasis.epub',
     })
-    expect(asked.getBook).toHaveBeenCalledWith({ path: 'Anabasis.epub' })
+    expect(request.getBook).toHaveBeenCalledWith({ path: 'Anabasis.epub' })
   })
 
   it('names no file where the answer carries none', async () => {
-    asked.getBook.mockResolvedValue(nothing)
+    request.getBook.mockResolvedValue(nothing)
 
     expect((await books.getBook('Anabasis.epub')).fingerprint).toBe('')
   })
@@ -66,12 +66,12 @@ describe('a book', () => {
 
 describe('the markup of one document', () => {
   it('names the file the window read', async () => {
-    asked.readBookMarkup.mockResolvedValue({ markup: '<p>Up country</p>' })
+    request.readBookMarkup.mockResolvedValue({ markup: '<p>Up country</p>' })
 
     expect(await books.readMarkup('Anabasis.epub', 'one.xhtml', '12 34 Anabasis.epub')).toBe(
       '<p>Up country</p>',
     )
-    expect(asked.readBookMarkup).toHaveBeenCalledWith({
+    expect(request.readBookMarkup).toHaveBeenCalledWith({
       path: 'Anabasis.epub',
       document: 'one.xhtml',
       baseline: { path: 'Anabasis.epub', size: 12n, mtime: 34n },
@@ -79,11 +79,11 @@ describe('the markup of one document', () => {
   })
 
   it('names no file where the window read none', async () => {
-    asked.readBookMarkup.mockResolvedValue({ markup: '' })
+    request.readBookMarkup.mockResolvedValue({ markup: '' })
 
     await books.readMarkup('Anabasis.epub', 'one.xhtml', '')
 
-    expect(asked.readBookMarkup).toHaveBeenCalledWith({
+    expect(request.readBookMarkup).toHaveBeenCalledWith({
       path: 'Anabasis.epub',
       document: 'one.xhtml',
     })

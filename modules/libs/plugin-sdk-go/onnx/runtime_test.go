@@ -11,7 +11,7 @@ import (
 
 type fakeEngine struct{ at string }
 
-func TestOpenRefusesWhenTheHostGaveNoLibrary(t *testing.T) {
+func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	_, _, err := r.Open(t.Context(), "", func(at string) (*fakeEngine, error) {
 		t.Fatal("load ran with no library")
@@ -28,8 +28,8 @@ func TestOpenRefusesWhenTheHostGaveNoLibrary(t *testing.T) {
 func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	var loads atomic.Int32
-	var heard []string
-	r.Register(func(at string) { heard = append(heard, at) })
+	var received []string
+	r.Register(func(at string) { received = append(received, at) })
 	load := func(at string) (*fakeEngine, error) {
 		loads.Add(1)
 		return &fakeEngine{at: at}, nil
@@ -46,8 +46,8 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	if got := loads.Load(); got != 1 {
 		t.Errorf("load ran %d times, want 1", got)
 	}
-	if len(heard) != 1 || heard[0] != "/lib/one.so" {
-		t.Errorf("hooks heard %v, want [/lib/one.so]", heard)
+	if len(received) != 1 || received[0] != "/lib/one.so" {
+		t.Errorf("hooks heard %v, want [/lib/one.so]", received)
 	}
 	if engine, at := r.GetLoaded(); engine != first || at != "/lib/one.so" {
 		t.Errorf("GetLoaded() = %v, %q", engine, at)
@@ -76,7 +76,7 @@ func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 	}
 }
 
-func TestAWaiterLeavesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
+func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	entered := make(chan struct{})
 	release := make(chan struct{})
@@ -88,13 +88,13 @@ func TestAWaiterLeavesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 		return &fakeEngine{at: at}, nil
 	}
 
-	done := make(chan *fakeEngine)
+	isDone := make(chan *fakeEngine)
 	go func() {
 		engine, _, err := r.Open(context.Background(), "/lib/one.so", load)
 		if err != nil {
 			t.Errorf("first Open() = %v", err)
 		}
-		done <- engine
+		isDone <- engine
 	}()
 	<-entered
 
@@ -105,7 +105,7 @@ func TestAWaiterLeavesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	}
 
 	close(release)
-	first := <-done
+	first := <-isDone
 	engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
 	if err != nil || engine != first {
 		t.Fatalf("Open() = %v, %v, want the first engine", engine, err)

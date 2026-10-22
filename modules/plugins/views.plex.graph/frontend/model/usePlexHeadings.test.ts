@@ -10,9 +10,9 @@ import { usePlexHeadings } from './usePlexHeadings'
 /** A window that hangs headings and answers with the headings it is given. */
 const createDeps = (
   headings: ReadonlyMap<string, readonly NoteHeading[]>,
-  asked: (readonly string[])[],
+  request: (readonly string[])[],
   readHeadings: PlexTabDeps['readHeadings'] = async (paths) => {
-    asked.push(paths)
+    request.push(paths)
     return headings
   },
 ): PlexTabDeps => ({
@@ -39,20 +39,20 @@ const createDeps = (
 
 describe('the notes whose headings are read', () => {
   it('include a path the types say nothing about', async () => {
-    const asked: (readonly string[])[] = []
+    const request: (readonly string[])[] = []
     const heading: NoteHeading = { line: 3, text: 'Intro', level: 1 }
     const map = createNodeIdMap()
     const node = map.getNodeId('Loose.md')
     const plex = usePlexHeadings(
       ref(['Loose.md']),
       ref<ReadonlyMap<string, NoteType>>(new Map()),
-      createDeps(new Map([['Loose.md', [heading]]]), asked),
+      createDeps(new Map([['Loose.md', [heading]]]), request),
       map,
     )
 
     await plex.readHeadings()
 
-    expect(asked.at(-1)).toStrictEqual(['Loose.md'])
+    expect(request.at(-1)).toStrictEqual(['Loose.md'])
     expect(plex.getHeadings(node)).toStrictEqual([{ id: '3', text: 'Intro', level: 1 }])
   })
 })
@@ -97,7 +97,7 @@ describe('the headings of a node', () => {
     expect(plex.getHeadings(node)).toStrictEqual([])
   })
 
-  it('are left alone by a read that failed after a newer one was asked', async () => {
+  it('are left alone by a read that failed after a newer one was requested', async () => {
     const map = createNodeIdMap()
     const node = map.getNodeId('A.md')
     let fail = () => {}

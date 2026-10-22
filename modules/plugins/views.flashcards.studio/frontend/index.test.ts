@@ -89,7 +89,7 @@ describe('flashcards-studio plugin', () => {
     expect(typeof ctx.getRegisteredTabKinds()[2]?.resolveCommand).toBe('function')
   })
 
-  it('hands the closing of a tab that took its own close to the window', async () => {
+  it('passes the closing of a tab that took its own close to the window', async () => {
     const { ctx, window, closeTab } = createContext()
     activate(ctx)
     const kinds = ctx.getRegisteredTabKinds()

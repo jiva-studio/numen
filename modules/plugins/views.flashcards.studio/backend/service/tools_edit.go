@@ -70,7 +70,7 @@ func (b *Backend) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutco
 		return WriteOutcome{}, err
 	}
 	var added cards.AddedCard
-	written, err := b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+	content, err := b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
 		var err error
 		added, err = b.scenarios().cards.AddCard.Execute(ctx, v, at, in.Stencil, values(in.Values), in.Section)
 		return added.EditResult, err
@@ -78,8 +78,8 @@ func (b *Backend) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutco
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	written.Mark = added.Mark
-	return written, nil
+	content.Mark = added.Mark
+	return content, nil
 }
 
 type cardEditInput struct {
@@ -135,7 +135,7 @@ func (b *Backend) addCardValueRemove(registry *tools.Registry) error {
 			"it keep the order they were written in, and every other byte of the file is " +
 			"left as it was. The stencil is not touched: it goes on declaring the field, " +
 			"and every other card cut by it goes on carrying its own value. A card " +
-			"writing nothing under that field is refused. The card is addressed by the " +
+			"writing nothing under that field fails. The card is addressed by the " +
 			"mark `card_read` gives it, the fingerprint from `card_read` is required, and " +
 			"a write lands only on the deck that fingerprint names.",
 	}, func(ctx context.Context, in cardValueRemoveInput) (WriteOutcome, error) {
@@ -261,7 +261,7 @@ func (b *Backend) addCardStencilEdit(registry *tools.Registry) error {
 		Title: "Edit a stencil",
 		Description: "Change a stencil in place: its fields and the faces a card cut by " +
 			"it is shown through. Hand back the fingerprint from `card_stencil_read` so " +
-			"the write is refused if the stencil has changed in the meantime.",
+			"the write fails if the stencil has changed in the meantime.",
 	}, b.writeCardStencilEdit)
 }
 
@@ -279,7 +279,7 @@ func (b *Backend) writeCardStencilEdit(ctx context.Context, in stencilEditInput)
 		return WriteOutcome{}, err
 	}
 	if current.Outcome != note.Ok {
-		if reason, refused := convertOutcomeToErrorCode(current.Outcome); refused {
+		if reason, ok := convertOutcomeToErrorCode(current.Outcome); ok {
 			return WriteOutcome{}, errors.New(describeCode(reason))
 		}
 		return WriteOutcome{}, fmt.Errorf("%s: %s", in.Path, current.Outcome)

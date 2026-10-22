@@ -20,10 +20,10 @@ export const createFolder = async (
 ): Promise<string | null> => {
   const into = getFolderFor(list, path)
   const name = list.getUniqueNameInFolder(into, words.folder)
-  const made = into === ROOT ? name : `${into}/${name}`
-  await deps.createFolder(made)
+  const createdItem = into === ROOT ? name : `${into}/${name}`
+  await deps.createFolder(createdItem)
   await list.openFolder(into)
-  return list.getEntryAt(made) ? made : null
+  return list.getEntryAt(createdItem) ? createdItem : null
 }
 
 /** Creates a note in the folder and returns the created path. */
@@ -33,10 +33,10 @@ export const createNote = async (
   path: string | null,
 ): Promise<string | null> => {
   const into = getFolderFor(list, path)
-  const made = await deps.createNote(into)
-  if (!made) return null
+  const createdItem = await deps.createNote(into)
+  if (!createdItem) return null
   await list.openFolder(into)
-  return made
+  return createdItem
 }
 
 export interface CreateEntryOptions {
@@ -52,8 +52,8 @@ export const createOne = async (
 ): Promise<string | null> => {
   const { createEntry, name } = options
   const into = getFolderFor(list, path)
-  const made = await createEntry(into, name)
-  if (!made) return null
+  const createdItem = await createEntry(into, name)
+  if (!createdItem) return null
   await list.openFolder(into)
-  return made
+  return createdItem
 }

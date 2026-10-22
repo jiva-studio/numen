@@ -23,20 +23,20 @@ var learnedDecks = map[string]string{
 
 // The count carries how much of each deck stands learned, so the deck screen
 // draws the core's own answer and works out no rule of its own.
-func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
-	api, held := newAPI(t, learnedDecks)
-	v := held[0]
+func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
+	api, target := newAPI(t, learnedDecks)
+	v := target[0]
 	setNow(api, firstMorning)
 
 	// One card of each deck answered, so the two decks differ by their rule
 	// alone and not by what was done to them.
 	session := startSession(t, api, v)
-	answered := map[string]bool{}
+	reply := map[string]bool{}
 	for _, one := range session.GetCards() {
-		if answered[one.GetDeck()] {
+		if reply[one.GetDeck()] {
 			continue
 		}
-		answered[one.GetDeck()] = true
+		reply[one.GetDeck()] = true
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: one.GetMark(), Face: one.GetFace(),
@@ -62,8 +62,8 @@ func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
 // A vault nobody has answered carries no learned face on the wire, and the
 // screen has a nought to draw.
 func TestAVaultNobodyHasAnsweredCarriesNothingLearned(t *testing.T) {
-	api, held := newAPI(t, learnedDecks)
-	v := held[0]
+	api, target := newAPI(t, learnedDecks)
+	v := target[0]
 	setNow(api, firstMorning)
 
 	for _, one := range getVaultCount(t, api, v).GetDecks() {

@@ -29,7 +29,7 @@ func read(t *testing.T, u note.Read, v domain.Vault, path string) note.Contents 
 	return contents
 }
 
-func TestAReadGivesTheProseAndWhatTheFileWas(t *testing.T) {
+func TestAReadProducesTheProseAndWhatTheFileWas(t *testing.T) {
 	t.Parallel()
 	raw := "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nA measure of disorder.\n"
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": raw})
@@ -62,7 +62,7 @@ func TestAPathWithNoFileIsMissing(t *testing.T) {
 }
 
 // The vault holds notes. Anything else in the folder — an export, an
-// attachment, a book — is refused by name rather than handed over as prose.
+// attachment, a book — fails by name and not handed over as prose.
 func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 	t.Parallel()
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -81,7 +81,7 @@ func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 }
 
 // The body goes out in a string field, and one byte that is not UTF-8 turns
-// into U+FFFD wherever it is shown. The note is refused, and its bytes stay as
+// into U+FFFD wherever it is shown. The note fails, and its bytes stay as
 // the person left them.
 func TestAFileThatIsNotTextIsRefused(t *testing.T) {
 	t.Parallel()
@@ -110,7 +110,7 @@ func TestANoteOverTheCeilingIsRefused(t *testing.T) {
 		t.Errorf("a note over the ceiling came back anyway: %d bytes", len(got.Body))
 	}
 	if got.Fingerprint.Size <= note.MaxBytes {
-		t.Errorf("the size that was refused is not reported: %+v", got.Fingerprint)
+		t.Errorf("the size that failed is not reported: %+v", got.Fingerprint)
 	}
 }
 
@@ -132,7 +132,7 @@ func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
 // The prose a person is handed has one kind of line break in it. The file keeps
 // its own: a chunk's offsets are byte offsets into it, so the bytes the index
 // is built from are the bytes on disk.
-func TestAReadNormalisesTheProseAndLeavesTheFileAlone(t *testing.T) {
+func TestAReadNormalisesTheProseAndPreservesTheFileAlone(t *testing.T) {
 	t.Parallel()
 	raw := "---\r\nid: 01J8F3K2M9QRSTVWXYZ012\r\n---\r\n# Entropy\r\n\r\nA measure of disorder.\r\n"
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": raw})

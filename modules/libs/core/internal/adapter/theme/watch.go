@@ -62,7 +62,7 @@ func (c Catalogue) debounce(
 	changed chan<- []string,
 ) {
 	batch := newThemeBatch()
-	var held <-chan time.Time
+	var target <-chan time.Time
 
 	for {
 		// The delivery arm is only in the select when there is something to
@@ -90,12 +90,12 @@ func (c Catalogue) debounce(
 			batch.pending[name] = true
 			// Measured from the first event of a batch, so a folder being
 			// written to continuously is still reported.
-			if held == nil {
-				held = time.After(hold)
+			if target == nil {
+				target = time.After(hold)
 			}
 
-		case <-held:
-			held = nil
+		case <-target:
+			target = nil
 			batch.closeHold()
 		}
 	}

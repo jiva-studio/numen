@@ -35,7 +35,7 @@ const VALUES = [
  *
  * Every slot of the table names a field the stencil declares. A slot naming
  * none is where the two surfaces part on purpose — the review window lays it
- * out as nothing and the preview marks it where it stands, because the stencil
+ * out as nothing and the preview marks it at its current position, because the stencil
  * is what the preview is there to settle — and it is held to below instead.
  */
 describe('a card face', () => {
@@ -49,7 +49,7 @@ describe('a card face', () => {
     }
 
     const named = new Set<string>()
-    let laid = 0
+    let arrangedCount = 0
     let changed = 0
     for (const { name, construct, face, fields, values, laid: want } of corpus.faces) {
       if (name === '' || construct === '') {
@@ -58,20 +58,20 @@ describe('a card face', () => {
       if (named.has(name)) throw new Error(`two faces of the table are called "${name}"`)
       named.add(name)
 
-      laid += 1
+      arrangedCount += 1
       if (want !== face) changed += 1
 
-      const said = { name, construct, laid: want }
-      expect({ name, construct, laid: renderPreview(face, values, fields) }).toStrictEqual(said)
+      const response = { name, construct, laid: want }
+      expect({ name, construct, laid: renderPreview(face, values, fields) }).toStrictEqual(response)
     }
 
-    expect(laid).toBe(corpus.count)
+    expect(arrangedCount).toBe(corpus.count)
     expect(changed).toBe(corpus.changed)
   })
 })
 
 describe('getSlots', () => {
-  it('finds every slot where it stands', () => {
+  it('finds every slot at its current position', () => {
     expect(getSlots('a {{One}} b {{Two}}')).toEqual([
       { field: 'One', from: 2, to: 9 },
       { field: 'Two', from: 12, to: 19 },
@@ -92,11 +92,11 @@ describe('getSlots', () => {
 })
 
 describe('renderPreview', () => {
-  it('stands a value in every slot the fields name', () => {
+  it('remains a value in every slot the fields name', () => {
     expect(renderPreview('{{Height}}', VALUES, ['Height'])).toBe('about 45"')
   })
 
-  it('stands the naming field like any other', () => {
+  it('remains the naming field like any other', () => {
     const values = [{ field: 'Name', text: 'Llama' }]
     expect(renderPreview('{{Name}} is tall', values, ['Name'])).toBe('Llama is tall')
   })
@@ -112,14 +112,14 @@ describe('renderPreview', () => {
     )
   })
 
-  it('stands a value that is itself markup', () => {
+  it('remains a value that is itself markup', () => {
     const values = [{ field: 'Picture', text: '<img src="llama.jpg" alt="a llama">' }]
     expect(renderPreview('{{Picture}}', values, ['Picture'])).toBe(
       '<img src="llama.jpg" alt="a llama">',
     )
   })
 
-  it('does not read the braces a value stands in the text', () => {
+  it('does not read the braces a value remains in the text', () => {
     const values = [
       { field: 'One', text: '{{Two}}' },
       { field: 'Two', text: 'caught' },
@@ -127,7 +127,7 @@ describe('renderPreview', () => {
     expect(renderPreview('{{One}}', values, ['One', 'Two'])).toBe('{{Two}}')
   })
 
-  it('stands text that is not Latin', () => {
+  it('remains text that is not Latin', () => {
     const values = [
       { field: 'Перевод', text: 'compost' },
       { field: 'Слово', text: 'Компост' },
@@ -137,21 +137,21 @@ describe('renderPreview', () => {
     )
   })
 
-  it('leaves a slot the fields do not name in its braces, marked where it stands', () => {
+  it('leaves a slot the fields do not name in its braces, marked at its current position', () => {
     expect(renderPreview('a {{Colour}} b', VALUES, ['Height'])).toBe('a <mark>{{Colour}}</mark> b')
   })
 
-  it('marks every stray slot where each of them stands', () => {
+  it('marks every stray slot where each of them remains', () => {
     expect(renderPreview('{{A}}{{Height}}{{B}}', VALUES, ['Height'])).toBe(
       '<mark>{{A}}</mark>about 45"<mark>{{B}}</mark>',
     )
   })
 
-  it('stands a marked slot as text, so its braces draw no tags', () => {
+  it('remains a marked slot as text, so its braces draw no tags', () => {
     expect(renderPreview('{{<img src=x>}}', [], [])).toBe('<mark>{{&lt;img src=x&gt;}}</mark>')
   })
 
-  it('stands an ampersand in a marked slot as text', () => {
+  it('remains an ampersand in a marked slot as text', () => {
     expect(renderPreview('{{A&B}}', [], [])).toBe('<mark>{{A&amp;B}}</mark>')
   })
 
@@ -187,14 +187,14 @@ describe('getUndeclaredSlots', () => {
 })
 
 describe('insert', () => {
-  it('writes the field where the caret stands', () => {
+  it('writes the field where the caret remains', () => {
     expect(insert('ab', 1, 'X')).toEqual({ text: 'a{{X}}b', caret: 6 })
   })
 
   it('lands the caret past the closing brace', () => {
-    const done = insert('one two', 3, 'Life span')
-    expect(done.text).toBe('one{{Life span}} two')
-    expect(done.text.slice(0, done.caret)).toBe('one{{Life span}}')
+    const isDone = insert('one two', 3, 'Life span')
+    expect(isDone.text).toBe('one{{Life span}} two')
+    expect(isDone.text.slice(0, isDone.caret)).toBe('one{{Life span}}')
   })
 
   it('takes a caret past the end to the end, the caret with it', () => {
@@ -221,7 +221,7 @@ describe('renameField', () => {
 })
 
 describe('sampleValues', () => {
-  it('stands each field under its own name', () => {
+  it('remains each field under its own name', () => {
     expect(sampleValues(['Height', 'Weight'])).toEqual([
       { field: 'Height', text: 'Height' },
       { field: 'Weight', text: 'Weight' },

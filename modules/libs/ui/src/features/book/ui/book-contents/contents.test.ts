@@ -28,7 +28,7 @@ describe('the line an offset falls on', () => {
     expect(findLineAt([{ title: 'Chapter One', at: 500, level: 0 }], 12)).toBe(-1)
   })
 
-  it('is none where the book names nothing', () => {
+  it('is none where the book is empty', () => {
     expect(findLineAt([], 0)).toBe(-1)
   })
 })

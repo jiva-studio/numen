@@ -15,7 +15,7 @@ import { hoverOver, lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
-import type { PlexDestination } from '../../model/showing'
+import type { PlexDestination } from '../../model/destination'
 
 interface Knobs {
   title: string
@@ -65,7 +65,7 @@ const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
 /**
  * A window in plex units, one to the pixel, with the origin in its middle.
  *
- * Sized rather than stretched: fitting it to the frame would scale every box
+ * Sized and not stretched: fitting it to the frame would scale every box
  * and letter, and the size of a node against the size of its text is most of
  * what there is to judge here.
  */
@@ -105,7 +105,7 @@ const range = (min: number, max: number, step = 1) => ({
 })
 
 /**
- * Annotated rather than `satisfies`, unlike the plex's own stories: the knobs
+ * Annotated and not `satisfies`, unlike the plex's own stories: the knobs
  * are the node's fields, and the node is assembled from them. Tying the args
  * to the component would demand a whole `node` in every story alongside the
  * knobs that make it.
@@ -234,9 +234,9 @@ export const Reaching: Story = {
     await expect(handle()).not.toBeNull()
 
     // Its disc and its cross are sized by CSS geometry properties, so a token
-    // that never arrives is a handle of no size rather than a default one.
-    const drawn = handle()!.getBoundingClientRect()
-    await expect(drawn.width).toBeGreaterThan(0)
+    // that never arrives is a handle of no size and not a default one.
+    const bounds = handle()!.getBoundingClientRect()
+    await expect(bounds.width).toBeGreaterThan(0)
     await expect(
       canvasElement.querySelector('.plex__handle-mark')!.getBoundingClientRect().width,
     ).toBeGreaterThan(0)
@@ -276,7 +276,7 @@ export const Reaching: Story = {
 /**
  * Not Latin, far too long, nothing to break at, and nothing at all — the same
  * corpus the plex is shown, laid out in a grid because these are being
- * compared rather than arranged.
+ * compared and not arranged.
  *
  * Only a browser can answer it: jsdom lays out no text, so every title is the
  * same size to it and one that overflows looks identical to one that fits.
@@ -317,7 +317,7 @@ export const AwkwardLabels: Story = {
  * The two corners a node is drawn with: its own, and the wider one the node in
  * front wears.
  *
- * Both are lengths in rem inside the node itself, and what a rem comes to is
+ * Both are lengths in rem inside the node itself, and what a rem evaluates to is
  * the browser's answer and no test's.
  */
 export const TheCornersAreAsDesigned: Story = {
@@ -391,20 +391,20 @@ export const Dark: Story = {
       const node = canvas.getByLabelText(new RegExp(`^${title},`))
       const box = node.querySelector('rect')!
       const ink = lightness(getComputedStyle(canvas.getByText(title)).color)
-      const resting = lightness(getComputedStyle(box).fill)
-      fills.push(resting)
+      const restingLightness = lightness(getComputedStyle(box).fill)
+      fills.push(restingLightness)
 
       // The title is read off the ground the box is painted, which is what the
       // hover then moves a little way towards. On the dark set a plain node is
       // light on dark and the focused one is dark on light.
-      await expect(Math.abs(ink - resting)).toBeGreaterThan(40)
-      await expect(Math.sign(ink - resting)).toBe(title === 'Where you are' ? -1 : 1)
+      await expect(Math.abs(ink - restingLightness)).toBeGreaterThan(40)
+      await expect(Math.sign(ink - restingLightness)).toBe(title === 'Where you are' ? -1 : 1)
 
       await hoverOver(node)
       await waitFor(async () => {
-        const moved = lightness(getComputedStyle(box).fill) - resting
+        const moved = lightness(getComputedStyle(box).fill) - restingLightness
         await expect(Math.abs(moved)).toBeGreaterThan(2)
-        await expect(Math.sign(moved)).toBe(Math.sign(ink - resting))
+        await expect(Math.sign(moved)).toBe(Math.sign(ink - restingLightness))
       })
     }
 

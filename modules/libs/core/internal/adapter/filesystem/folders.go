@@ -79,7 +79,7 @@ func readShape(reader *VaultReader) (*folders, error) {
 	return f, why
 }
 
-// reloadShape reads the shape from the vault as it stands now. It answers for events
+// reloadShape reads the shape from the vault currently now. It answers for events
 // that were dropped, some of which may have made folders or taken them away.
 // A folder the walk could not enter is missing from the shape it returns; the
 // rescan that goes with this call already answers for it.
@@ -94,9 +94,9 @@ func (f *folders) removeFolder(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	delete(f.known, path)
-	for held := range f.known {
-		if strings.HasPrefix(held, path+"/") {
-			delete(f.known, held)
+	for target := range f.known {
+		if strings.HasPrefix(target, path+"/") {
+			delete(f.known, target)
 		}
 	}
 }
@@ -107,7 +107,7 @@ func (f *folders) removeFolder(path string) {
 //
 // A file is itself, when the vault holds it. A folder new to the watch is
 // everything under it, since such a folder arrives with its contents already in
-// place. A folder already known names nothing, and so does one the walk stops
+// place. A folder already known is empty, and so does one the walk stops
 // at and everything under it.
 //
 // `whole` is set where the answer cannot be worked out from the disk: a folder

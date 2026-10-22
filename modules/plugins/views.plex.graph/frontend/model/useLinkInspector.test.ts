@@ -120,7 +120,7 @@ describe('saving the link inspector', () => {
     expect(one.linkInspector.value).toBeNull()
   })
 
-  it('stays open where the core refused, and shows the picture the core now holds', async () => {
+  it('stays open where the core rejected, and shows the picture the core now holds', async () => {
     const one = inspecting(['Child.md'], false)
     one.open()
 
@@ -149,7 +149,7 @@ describe('saving the link inspector', () => {
     expect(one.replaced).toEqual([])
   })
 
-  it('travels nowhere while the plex stands nowhere', async () => {
+  it('travels nowhere while the plex remains nowhere', async () => {
     const one = inspecting()
     one.open()
     one.view.here.value = ''

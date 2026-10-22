@@ -33,9 +33,9 @@ func TestACollectionIsShownByItsFirstElementAndTheCountOfTheRest(t *testing.T) {
 	}
 }
 
-func TestACallOfAToolThatIsAboutNothingCountsNothingWritten(t *testing.T) {
+func TestACallOfAToolThatIsAboutNothingCountsNothingSaved(t *testing.T) {
 	got := Describe(testWords, "vault_list", "c", `{"depth":2}`)
-	if got.GetWritten() != 0 || got.GetAbout() != "" {
+	if got.GetLength() != 0 || got.GetAbout() != "" {
 		t.Errorf("got %+v", got)
 	}
 }

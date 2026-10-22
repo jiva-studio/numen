@@ -40,14 +40,14 @@ func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
 
 func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 	t.Parallel()
-	taken, renamed, registry := twoVaults(t)
+	acquired, renamed, registry := twoVaults(t)
 	index := &indexRows{}
 
 	// The comparison is the one the list is searched by: without case, over
 	// normalised text.
 	_, err := vaults.NewRename(registry, index).Execute(t.Context(), renamed, "PERSONAL")
 	if !errors.Is(err, vaults.ErrNameTaken) {
-		t.Fatalf("a name %s already has was answered %v", taken.Name, err)
+		t.Fatalf("a name %s already has was answered %v", acquired.Name, err)
 	}
 	onTheList, found, err := registry.FindVault(string(renamed.ID))
 	if err != nil || !found {
@@ -136,7 +136,7 @@ func TestARenameFailsWhenTheListCannotBeRead(t *testing.T) {
 	}
 }
 
-func TestARenameFailsWhenTheListCannotBeWritten(t *testing.T) {
+func TestARenameFailsWhenTheListCannotBeSaved(t *testing.T) {
 	t.Parallel()
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}

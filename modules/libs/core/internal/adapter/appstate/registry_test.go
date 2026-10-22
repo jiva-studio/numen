@@ -51,7 +51,7 @@ func TestSavingTheSameIdentityMovesTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The identity travels with the folder; the registry only remembers where it
-	// was last seen, so re-adding must move the entry rather than duplicate it.
+	// was last seen, so re-adding must move the entry and not duplicate it.
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/new"}); err != nil {
 		t.Fatal(err)
 	}
@@ -75,17 +75,17 @@ func TestFindAcceptsNamePathAndIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, typed := range []string{"01AAA", "Personal", "personal", dir} {
-		got, found, err := r.FindVault(typed)
+	for _, input := range []string{"01AAA", "Personal", "personal", dir} {
+		got, found, err := r.FindVault(input)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if !found {
-			t.Errorf("%q found nothing", typed)
+			t.Errorf("%q found nothing", input)
 			continue
 		}
 		if got.ID != v.ID {
-			t.Errorf("%q found %s", typed, got.ID)
+			t.Errorf("%q found %s", input, got.ID)
 		}
 	}
 
@@ -115,10 +115,10 @@ func TestNothingNamesNoVault(t *testing.T) {
 	}
 }
 
-func TestRemoveTakesAVaultOffTheList(t *testing.T) {
+func TestRemoveConsumesAVaultOffTheList(t *testing.T) {
 	r := newRegistry(t)
-	kept := domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}
-	if err := r.Save(kept); err != nil {
+	vault := domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}
+	if err := r.Save(vault); err != nil {
 		t.Fatal(err)
 	}
 	if err := r.Save(domain.Vault{ID: "01BBB", Name: "work", Path: "/work"}); err != nil {
@@ -131,8 +131,8 @@ func TestRemoveTakesAVaultOffTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0] != kept {
-		t.Errorf("got %v, want only %v", got, kept)
+	if len(got) != 1 || got[0] != vault {
+		t.Errorf("got %v, want only %v", got, vault)
 	}
 }
 
@@ -343,7 +343,7 @@ func TestConcurrentWritesLoseNothing(t *testing.T) {
 	}
 }
 
-func TestWriteDoesNotLeaveATemporaryFileBehind(t *testing.T) {
+func TestWriteDoesNotLeaveATemporaryFilePrior(t *testing.T) {
 	dir := t.TempDir()
 	r := appstate.OpenAt(filepath.Join(dir, "vaults.json"))
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "x", Path: "/x"}); err != nil {
@@ -360,7 +360,7 @@ func TestWriteDoesNotLeaveATemporaryFileBehind(t *testing.T) {
 
 // Two processes hold the registry at one path. Each write takes a temporary
 // name of its own, so each of them renames a file it wrote whole.
-func TestTheRegistryTakesATemporaryNameOfItsOwn(t *testing.T) {
+func TestTheRegistryConsumesATemporaryNameOfItsOwn(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "vaults.json")
 	// The name a shared temporary would take, occupied by another writer.
@@ -381,7 +381,7 @@ func TestTheRegistryTakesATemporaryNameOfItsOwn(t *testing.T) {
 	}
 }
 
-func TestAFailedSaveLeavesTheOldRegistryIntact(t *testing.T) {
+func TestAFailedSavePreservesTheOldRegistryIntact(t *testing.T) {
 	// The registry is the one thing here whose loss costs the user manual work,
 	// so a half-written file is the failure worth defending against. The write
 	// goes through a temporary file and a rename; this makes the temporary write

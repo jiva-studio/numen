@@ -123,16 +123,16 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 		t.Errorf("the exact title is not in the note:\n%s", body)
 	}
 
-	shown, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
+	displayed, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if shown[created.Path].Title != "TCP/IP" {
-		t.Errorf("want the title back, got %q", shown[created.Path].Title)
+	if displayed[created.Path].Title != "TCP/IP" {
+		t.Errorf("want the title back, got %q", displayed[created.Path].Title)
 	}
 }
 
-func TestCreatingSaysWhenTheNameIsAlreadyTaken(t *testing.T) {
+func TestCreatingReturnsWhenTheNameIsAlreadyTaken(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"archive/Entropy.md": "# Entropy\n"})
 
@@ -157,7 +157,7 @@ func TestCreatingRefusesToLandOnAnExistingNote(t *testing.T) {
 
 // The whole point of resolving a name at the moment it is asked: a note moves
 // and the links written by its name follow it, untouched.
-func TestMovingLeavesLinksWrittenByNameAlone(t *testing.T) {
+func TestMovingPreservesLinksSavedByNameAlone(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
@@ -184,7 +184,7 @@ func TestMovingLeavesLinksWrittenByNameAlone(t *testing.T) {
 
 // A note its title names is called that wherever its file goes, so the name a
 // link is written by still finds it after the file is renamed.
-func TestRenamingTheFileOfATitledNoteLeavesTheNameLinksFindItBy(t *testing.T) {
+func TestRenamingTheFileOfATitledNotePreservesTheNameLinksFindItBy(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"physics/Old.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
@@ -211,7 +211,7 @@ func TestRenamingTheFileOfATitledNoteLeavesTheNameLinksFindItBy(t *testing.T) {
 
 // A `title` key names the note whatever the filename says, so a file renamed
 // under it leaves the note called what the file says it is called.
-func TestRenamingTheFileOfATitledNoteLeavesTheTitleAlone(t *testing.T) {
+func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
@@ -305,7 +305,7 @@ func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 
 // A link that reaches a different note of the same name is not broken, so it is
 // left alone: which of two notes under one name it means is the person's.
-func TestMovingLeavesALinkThatNowMeansAnotherNote(t *testing.T) {
+func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
@@ -352,7 +352,7 @@ func TestRepairingALinkWritesThePathWhereTheNameIsShared(t *testing.T) {
 	}
 }
 
-func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
+func TestRemovingInsertsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n\nA measure of disorder.\n",
@@ -382,7 +382,7 @@ func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 	}
 }
 
-func TestRemovingRemadeNotePutsItInTrashWithSuffix(t *testing.T) {
+func TestRemovingRemadeNoteInsertsItInTrashWithSuffix(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n\nA measure of disorder.\n",
@@ -418,7 +418,7 @@ func TestRemovingRemadeNotePutsItInTrashWithSuffix(t *testing.T) {
 // A folder goes to the trash whole, in one move, and the notes that pointed
 // into it are named. A note that went with the folder points at nothing from
 // the trash, so it is not among them.
-func TestRemovingAFolderTakesWhatIsUnderItAndNamesTheLinksLeft(t *testing.T) {
+func TestRemovingAFolderConsumesWhatIsBelowItAndNamesTheLinksLeft(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n\nA measure of disorder.\n",
@@ -483,7 +483,7 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 	}
 }
 
-func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
+func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Sanskrit.md": "# Sanskrit\n",
@@ -527,7 +527,7 @@ func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
 	}
 }
 
-func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
+func TestRemovingALinkPreservesTheOtherNoteAlone(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
@@ -580,7 +580,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Theirs.") {
-		t.Errorf("the refused write landed anyway:\n%s", body)
+		t.Errorf("the failed write landed anyway:\n%s", body)
 	}
 }
 
@@ -613,7 +613,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if _, err := writing.Execute(
 		t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n", at,
 	); err != nil {
-		t.Fatalf("the write after a write was refused: %v", err)
+		t.Fatalf("the write after a write failed: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
 		t.Errorf("the second write did not land:\n%s", body)

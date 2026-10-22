@@ -294,7 +294,7 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 }
 
 // A date paces what it holds, so no day of the range is out of reach and the
-// material is through by the day the preset aims at. The card counts standing
+// material is through by the day the preset aims at. The card counts learned
 // beside the date take no part in it.
 func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	t.Parallel()
@@ -412,7 +412,7 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 
 // A curve carries how many card faces stand under the preset, so a preset whose
 // decks hold nothing is told apart from one nothing points at.
-func TestACurveCarriesTheCardFacesUnderThePreset(t *testing.T) {
+func TestACurveCarriesTheCardFacesBelowThePreset(t *testing.T) {
 	t.Parallel()
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
@@ -461,7 +461,7 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 }
 
 // inRange says the two marks fall on the curve, and that each mark named
-// stands on it at all.
+// relies on it at all.
 func inRange(t *testing.T, c review.Curve, stands ...string) {
 	t.Helper()
 	marks := map[string]review.CurvePoint{"now": c.Now, "suggested": c.Suggested}
@@ -478,8 +478,8 @@ func inRange(t *testing.T, c review.Curve, stands ...string) {
 			t.Errorf("the %s mark is at place %d of %d", name, mark.Index, len(c.Grid))
 			continue
 		}
-		// A mark stands on a place of the grid, so the figures a person reads
-		// under it are the figures of the setting they are standing at.
+		// A mark relies on a place of the grid, so the figures a person reads
+		// under it are the figures of the setting they are learned at.
 		if mark.Value != c.Grid[mark.Index] {
 			t.Errorf("the %s mark is at %v and the place it names is %v",
 				name, mark.Value, c.Grid[mark.Index])
@@ -490,9 +490,9 @@ func inRange(t *testing.T, c review.Curve, stands ...string) {
 	}
 }
 
-// The range a date is chosen from stands on the vault and not on the date, so a
+// The range a date is chosen from relies on the vault and not on the date, so a
 // day the file names close at hand is a range a person can still drag out.
-func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
+func TestANearDateStillPreservesRoomToGiveYourselfLonger(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
 	// The day after tomorrow, which is the shortest range a person could have
@@ -578,7 +578,7 @@ func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 
 // A day at none of the load that is not today leaves the curve where it was.
 // What it changes is what those days do further out, on the band beside it.
-func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
+func TestADayAtNoneOfTheLoadAwayFromTodayPreservesTheCurve(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
@@ -612,7 +612,7 @@ func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
 // and falls away as the day moves off. Nothing is hidden by it: the pace beside
 // it is the one that reaches every card face that can be reached, and where
 // none can be, that is what the number says.
-func TestACurveOfADateSaysWhatNoPaceReaches(t *testing.T) {
+func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
 	p := review.Preset{
@@ -672,7 +672,7 @@ func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
 // It is read off the schedules the vault already holds, before a projected day
 // is spent, so no budget, no share of the day and no share of the week can
 // reach it. What a day's budget is spent on cannot reach it either.
-func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
+func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
 	// Every card answered on days going back, and nothing asked for months: the
@@ -689,9 +689,9 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	base.NewADay, base.ReviewsADay = 8, 45
 	base.Rule, base.Interval = review.RuleInterval, 21
 
-	standing := getLearned(t, s, base)
-	if len(standing) != 1 || standing[0] == 0 {
-		t.Fatalf("the vault stands at %v learned, and there is nothing to hold still", standing)
+	learned := getLearned(t, s, base)
+	if len(learned) != 1 || learned[0] == 0 {
+		t.Fatalf("the vault stands at %v learned, and there is nothing to hold still", learned)
 	}
 
 	for _, one := range []struct {
@@ -713,22 +713,22 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	} {
 		p := base
 		one.alter(&p)
-		if got := getLearned(t, s, p); !reflect.DeepEqual(got, standing) {
-			t.Errorf("%s moved what stands learned from %v to %v", one.what, standing, got)
+		if got := getLearned(t, s, p); !reflect.DeepEqual(got, learned) {
+			t.Errorf("%s moved what stands learned from %v to %v", one.what, learned, got)
 		}
 	}
 
 	// And what does move it: the rule, and the threshold that rule reads.
 	other := base
 	other.Rule = review.RuleRetention
-	if got := getLearned(t, s, other); reflect.DeepEqual(got, standing) {
+	if got := getLearned(t, s, other); reflect.DeepEqual(got, learned) {
 		t.Errorf("a material months past its answers stands %v learned under both rules", got)
 	}
 	tighter := base
 	tighter.Interval = int(review.IntervalBounds.Most)
-	if got := getLearned(t, s, tighter); got[0] >= standing[0] {
+	if got := getLearned(t, s, tighter); got[0] >= learned[0] {
 		t.Errorf("an interval of a year learns %v of what an interval of three weeks learns %v",
-			got, standing)
+			got, learned)
 	}
 }
 
@@ -738,7 +738,7 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 //
 // It is a prediction under a stated assumption — that every card asked comes
 // back — so it is read off a run of its own and not off the run beside it.
-func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T) {
+func TestTheDayTheMaterialIsLearnedIsGeneratedBelowMinutesAndRetention(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
 	for back := 60; back >= 15; back -= 15 {
@@ -788,12 +788,12 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 	}
 }
 
-// The day the file names is a place of the grid, and the mark stands on it.
+// The day the file names is a place of the grid, and the mark relies on it.
 //
 // The picture puts the mark on the range and the person reads the numbers
 // beneath it, so those numbers are the day they named and not the day beside
 // it.
-func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
+func TestTheMarkOfADateExistsOnTheDayTheFileNames(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
 	for _, days := range []int{1, 2, 7, 14, 21, 30, 90, 365} {
@@ -1048,13 +1048,13 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	}
 }
 
-// The setting a person is standing at is a place of the grid, so the figures
+// The setting a person is learned at is a place of the grid, so the figures
 // under the mark are the figures of that setting.
 //
 // The mark carried the preset's own value while the figures beside it were the
 // grid's nearest place, so a day of fifteen minutes was drawn as a day of
 // fourteen and a day of one minute as a day of two.
-func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
+func TestTheMarkExistsOnTheSettingThePresetContains(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
 	before := s.run(t, noon.AddDate(0, 0, -30))
@@ -1098,7 +1098,7 @@ func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
 
 // The curve carries why the settings it was drawn under schedule nothing, so
 // what a person is told is the verdict on the value under their hand.
-func TestACurveCarriesTheVerdictOnTheSettingsItWasDrawnUnder(t *testing.T) {
+func TestACurveCarriesTheVerdictOnTheSettingsItWasGeneratedBelow(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
 	for _, one := range []struct {
@@ -1161,7 +1161,7 @@ func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 // A curve is drawn under the settings a save would take.
 //
 // A control asks for a curve at the value under the hand, and that value is
-// written the moment the hand is let go of. Settings the writer refuses draw no
+// written the moment the hand is release. Settings the writer refuses draw no
 // curve.
 func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	t.Parallel()

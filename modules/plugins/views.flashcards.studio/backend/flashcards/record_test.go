@@ -11,8 +11,8 @@ import (
 
 // An answer belongs to one card through one face. A line naming neither stands
 // for nothing a schedule could be worked out from, so it is refused before it
-// is written rather than left in the log for every later reading to skip.
-func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
+// is written and not left in the log for every later reading to skip.
+func TestAnAnswerReturnsWhichCardAndThroughWhichFace(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	record := s.run(t, time.Now())
@@ -27,12 +27,12 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 		}
 	}
 
-	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Answers) != 0 {
-		t.Errorf("the vault holds %d answers, want none", len(held.Answers))
+	if len(target.Answers) != 0 {
+		t.Errorf("the vault holds %d answers, want none", len(target.Answers))
 	}
 }
 
@@ -51,7 +51,7 @@ func TestARecordWithNoClockRefusesAnAnswer(t *testing.T) {
 
 // Taking back an answer names the one it takes back. Nothing here guesses which
 // of a session's answers a person meant.
-func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
+func TestTakingBackNamesTheAnswerItConsumesBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
@@ -78,8 +78,8 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	}
 
 	name := run.GetName()
-	held := getRunFiles(t, s)
-	if len(held) != 1 || held[0] != name+".jsonl" {
-		t.Errorf("the run is known as %q and the vault holds %v", name, held)
+	target := getRunFiles(t, s)
+	if len(target) != 1 || target[0] != name+".jsonl" {
+		t.Errorf("the run is known as %q and the vault holds %v", name, target)
 	}
 }

@@ -52,16 +52,16 @@ type completionPrograms struct {
 // GetProgram returns the program named. An empty name is the program the
 // settings name under agent.use, else the default of the plugins.
 func (p *completionPrograms) GetProgram(ctx context.Context, name string) (port.AgentProgram, error) {
-	held := p.getAgent()
-	if name == "" && !held.IsNamed() {
+	target := p.getAgent()
+	if name == "" && !target.IsNamed() {
 		return port.AgentProgram{}, fmt.Errorf("%w: the settings name no agent", port.ErrNoRoute)
 	}
 	if name == "" {
-		name = held.GetUse()
+		name = target.GetUse()
 	}
 	listing, stop := context.WithTimeout(ctx, programsLimit)
 	defer stop()
-	programs, listErr := p.provider.GetPrograms(listing, held.GetCommands())
+	programs, listErr := p.provider.GetPrograms(listing, target.GetCommands())
 	found, isFound := findProgram(programs, name)
 	switch {
 	case !isFound && listErr != nil:

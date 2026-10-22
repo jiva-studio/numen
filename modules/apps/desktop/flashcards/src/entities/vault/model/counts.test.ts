@@ -49,7 +49,7 @@ const count = (one: VaultCounts): DueCounts => ({ day: '', vaults: [], counted: 
 
 /** A count a test feeds by hand, message by message. */
 const createFeed = () => {
-  const held: DueCounts[] = []
+  const target: DueCounts[] = []
   let wake: (() => void) | null = null
   let isOver = false
 
@@ -59,7 +59,7 @@ const createFeed = () => {
   ): AsyncGenerator<DueCounts> {
     isOver = false
     for (;;) {
-      while (held.length) yield held.shift() as DueCounts
+      while (target.length) yield target.shift() as DueCounts
       if (isOver) return
       await new Promise<void>((then, stopped) => {
         wake = () => {
@@ -76,7 +76,7 @@ const createFeed = () => {
   return {
     cards: { watchCardsDue } satisfies CardsDueClient,
     sendCount(one: DueCounts) {
-      held.push(one)
+      target.push(one)
       wake?.()
     },
     endCounts() {
@@ -92,7 +92,7 @@ const flushPromises = () => new Promise((then) => setTimeout(then, 0))
 describe('counting what every vault owes', () => {
   // The window opens counting, and has no day to stand in until the first
   // message names one.
-  it('reads as counting, in no day yet, before the first count is asked for', () => {
+  it('reads as counting, in no day yet, before the first count is requested for', () => {
     const one = useReviewCounter({ cards: createFeed().cards, reportError: () => {} })
 
     expect(one.isCounting.value).toBe(true)
@@ -119,12 +119,12 @@ describe('counting what every vault owes', () => {
     await flushPromises()
 
     expect(one.day.value).toBe('2026-09-05')
-    expect(one.vaults.value.map((held) => held.vault)).toStrictEqual(['01A', '01B'])
+    expect(one.vaults.value.map((target) => target.vault)).toStrictEqual(['01A', '01B'])
     // Nothing is known about what any of them holds, and none of them reads as
     // a vault owing nothing.
-    for (const held of one.vaults.value) {
-      expect(held.isCounted).toBe(false)
-      expect(held.due + held.new).toBe(0)
+    for (const target of one.vaults.value) {
+      expect(target.isCounted).toBe(false)
+      expect(target.due + target.new).toBe(0)
     }
   })
 
@@ -181,7 +181,7 @@ describe('counting what every vault owes', () => {
   })
 
   // A vault being read into the index has no numbers yet, so its row goes on
-  // waiting for them rather than standing at nothing.
+  // waiting for them and not standing at nothing.
   it('leaves a vault being read uncounted, and says it is being read', async () => {
     const front = createFeed()
     const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
@@ -227,18 +227,18 @@ describe('counting what every vault owes', () => {
   // The window opening, a session ending and a vault moving underneath it all
   // ask, and they arrive together. One count answers all three.
   it('runs one count however many ask for it at once', async () => {
-    let asked = 0
+    let request = 0
     const front = createFeed()
     const cards: CardsDueClient = {
-      watchCardsDue(said, how) {
-        asked += 1
-        return front.cards.watchCardsDue(said, how)
+      watchCardsDue(response, how) {
+        request += 1
+        return front.cards.watchCardsDue(response, how)
       },
     }
     const one = useReviewCounter({ cards, reportError: () => {} })
 
     const three = [one.count(), one.count(), one.count()]
-    expect(asked).toBe(1)
+    expect(request).toBe(1)
 
     front.sendCount(createVaultList(vault('01A')))
     front.sendCount(count(vault('01A')))
@@ -248,18 +248,18 @@ describe('counting what every vault owes', () => {
 
     // And the next ask is a count of its own, because the vaults have moved on.
     void one.count()
-    expect(asked).toBe(2)
+    expect(request).toBe(2)
   })
 
   // A vault read while a count was running lands after that count worked its
   // row out, so the asking it wakes is answered by a count of its own.
-  it('counts again when asked after it has worked a row out', async () => {
-    let asked = 0
+  it('counts again when requested after it has worked a row out', async () => {
+    let request = 0
     const front = createFeed()
     const cards: CardsDueClient = {
-      watchCardsDue(said, how) {
-        asked += 1
-        return front.cards.watchCardsDue(said, how)
+      watchCardsDue(response, how) {
+        request += 1
+        return front.cards.watchCardsDue(response, how)
       },
     }
     const one = useReviewCounter({ cards, reportError: () => {} })
@@ -278,7 +278,7 @@ describe('counting what every vault owes', () => {
     front.endCounts()
     await first
 
-    expect(asked).toBe(2)
+    expect(request).toBe(2)
   })
 
   // A count that has already been worked out is what the window keeps showing
@@ -323,11 +323,11 @@ describe('counting what every vault owes', () => {
     const front = createFeed()
     const one = useReviewCounter({ cards: front.cards, reportError: (why) => errors.push(why) })
 
-    const asked = one.count()
+    const request = one.count()
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
     await flushPromises()
     one.stop()
-    await asked
+    await request
 
     expect(errors).toHaveLength(0)
     expect(one.isCounting.value).toBe(false)

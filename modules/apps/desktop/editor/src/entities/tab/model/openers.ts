@@ -28,7 +28,7 @@ export interface OpenNewFileOptions {
 
 /**
  * A file put in front of the person in one editor. A line is somewhere inside
- * the file, and what standing there comes to is the editor's own.
+ * the file, and what standing there evaluates to is the editor's own.
  */
 export type FileOpener = (
   path: string,
@@ -120,12 +120,12 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * A kind of tab hands over the reader its sources open in. Where one format
    * of a source is read its own way, the kind that reads it that way says so.
    */
-  const registerReader = (key: ReaderKey, read: SourceReader) => {
-    readers.set(createReaderKey(key.kind, key.format), read)
+  const registerReader = (key: ReaderKey, readItem: SourceReader) => {
+    readers.set(createReaderKey(key.kind, key.format), readItem)
   }
 
-  const registerExtensionReader = (extension: string, read: SourceReader): (() => void) =>
-    addExtensionReader(extensionReaders, extension, read)
+  const registerExtensionReader = (extension: string, readItem: SourceReader): (() => void) =>
+    addExtensionReader(extensionReaders, extension, readItem)
 
   /**
    * A file just made here, put in front of the person as what it was made as.
@@ -210,10 +210,10 @@ function dispatchReader(
 function addExtensionReader(
   extensionReaders: Map<string, SourceReader>,
   extension: string,
-  read: SourceReader,
+  readItem: SourceReader,
 ): () => void {
   const ext = extension.startsWith('.') ? extension.slice(1).toLowerCase() : extension.toLowerCase()
-  const entry: SourceReader = (path, spans) => read(path, spans)
+  const entry: SourceReader = (path, spans) => readItem(path, spans)
   extensionReaders.set(ext, entry)
   return () => {
     if (extensionReaders.get(ext) === entry) extensionReaders.delete(ext)

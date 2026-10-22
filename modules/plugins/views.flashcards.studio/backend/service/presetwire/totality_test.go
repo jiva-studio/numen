@@ -26,7 +26,7 @@ func TestEveryBudgetUnitCrossesBothWays(t *testing.T) {
 	schematest.RoundTrip(t, ConvertBudgetUnitFromWire, ConvertBudgetUnitToWire)
 }
 
-func TestEveryVerdictIsWrittenFromOne(t *testing.T) {
+func TestEveryVerdictIsSavedFromOne(t *testing.T) {
 	schematest.CheckProduced(t, map[v1.StopReason]review.StopReason{
 		v1.StopReason_STOP_REASON_NOTHING:    review.StoppedNothing,
 		v1.StopReason_STOP_REASON_NO_MINUTES: review.StoppedNoMinutes,

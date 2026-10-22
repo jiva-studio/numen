@@ -78,7 +78,7 @@ export type VaultCardsDue = Message<"numen.v1.VaultCardsDue"> & {
   decks: DeckCardsDue[];
 
   /**
-   * Presets is what the day comes to under each preset the vault's decks are
+   * Presets is what the day evaluates to under each preset the vault's decks are
    * scheduled by.
    *
    * @generated from field: repeated numen.v1.PresetCardsDue presets = 8;
@@ -170,7 +170,7 @@ export const DeckCardsDueSchema: GenMessage<DeckCardsDue> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 1);
 
 /**
- * PresetCardsDue is one preset of a vault, and what the day comes to under it.
+ * PresetCardsDue is one preset of a vault, and what the day evaluates to under it.
  *
  * @generated from message numen.v1.PresetCardsDue
  */
@@ -353,7 +353,7 @@ export const IntervalsSchema: GenMessage<Intervals> = /*@__PURE__*/
 export type SessionCard = Message<"numen.v1.SessionCard"> & {
   /**
    * Deck is the path of the file the card stands in, and section the name of
-   * the section it stands under. A card standing before the first section
+   * the section it is placed under. A card standing before the first section
    * carries none.
    *
    * @generated from field: string deck = 1;
@@ -901,7 +901,7 @@ export type DeckNeighbour = Message<"numen.v1.DeckNeighbour"> & {
 
   /**
    * Label is what the link was shown as, where the person gave it words of
-   * their own instead of the note's name.
+   * their own and not the note's name.
    *
    * @generated from field: string label = 5;
    */
@@ -1076,7 +1076,7 @@ export const RatingSchema: GenEnum<Rating> = /*@__PURE__*/
  */
 export const FlashcardsService: GenService<{
   /**
-   * WatchCardsDue is what every vault the installation knows comes to today:
+   * WatchCardsDue is what every vault the installation knows evaluates to today:
    * how much it holds, how much is due, and how much has never been asked. It
    * is what the application opens on.
    *

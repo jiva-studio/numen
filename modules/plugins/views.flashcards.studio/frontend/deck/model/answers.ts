@@ -13,7 +13,7 @@ import { getFileName } from '@numen/plugin-sdk'
 export interface VaultAnswer {
   /**
    * What is wrong with the file, in the order the cards were read in. Which
-   * card each stands on is decided against the deck the grid is drawing, so a
+   * card each relies on is decided against the deck the grid is drawing, so a
    * card the window is holding through a re-read keeps its mark.
    */
   readonly problems: readonly DeckProblem[]
@@ -27,8 +27,8 @@ export interface VaultAnswer {
 
 const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
 
-const findFailureReason = (errorCode: ErrorCode | null, bound: number): string | null => {
-  if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
+const findFailureReason = (errorCode: ErrorCode | null, linked: number): string | null => {
+  if (errorCode === 'deckTooLarge') return words.tooLarge(linked)
   if (errorCode === 'notADeck') return words.notADeck
   return null
 }

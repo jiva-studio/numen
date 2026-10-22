@@ -2,7 +2,7 @@
  * The commands, from the palette and from the keystrokes that reach them.
  *
  * A command is offered over what is in front, asks for what it needs, and is
- * carried out over the note the window holds it by. What each one comes to is
+ * carried out over the note the window holds it by. What each one evaluates to is
  * asked of the window drawn, since the palette is where a person meets it.
  */
 import { describe, expect, it } from 'vitest'
@@ -69,7 +69,7 @@ describe('the palette', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     window.findComponent(Palette).vm.$emit('choose', path, 'note')
     await settle()
     await settle()
@@ -80,7 +80,7 @@ describe('the palette', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     await settle()
   }
 
@@ -151,7 +151,7 @@ describe('the palette', () => {
     expect(document.body.querySelector('[data-palette="silence"]')).toBeNull()
   })
 
-  it('keeps the group that could not be asked, with what it has to say', async () => {
+  it('keeps the group that could not be requested, with what it has to say', async () => {
     said.embedded = 0
     const window = await mountWindowWithPalette()
 
@@ -234,7 +234,7 @@ describe('the palette', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'en')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     window.findComponent(Palette).vm.$emit('choose', 'physics/Entropy.md', 'plex')
     await settle()
 
@@ -430,7 +430,7 @@ describe('a command reached by its own keystroke', () => {
     pressKey('g')
     await settle()
     await type('en')
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
     await press('Enter')
     await settle()
 
@@ -440,7 +440,7 @@ describe('a command reached by its own keystroke', () => {
     expect(plex.view.here.value).toBe('physics/Entropy.md')
   })
 
-  it('leaves a keystroke alone while Alt is held with it', async () => {
+  it('leaves a keystroke alone while Alt is retained with it', async () => {
     const window = await mountWindow()
 
     const event = pressKey('n', { altKey: true })
@@ -571,7 +571,7 @@ describe('a command reached by a keystroke holding Shift', () => {
   })
 })
 
-describe('a command asked for on a node of the plex', () => {
+describe('a command requested for on a node of the plex', () => {
   /** The menu on a node, and an item of it chosen. */
   const chooseOnNode = async (window: Awaited<ReturnType<typeof mountWindow>>, id: string) => {
     const plex = window.findComponent(PlexTab).props('state') as {
@@ -609,7 +609,7 @@ describe('a command asked for on a node of the plex', () => {
  * A vault still being read draws no picture, so a command over it is reached by
  * the keyboard: this is the window a person meets while a vault is opening.
  */
-describe('a command asked for while the vault is being read', () => {
+describe('a command requested for while the vault is being read', () => {
   const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
   const type = async (text: string) => {
@@ -679,7 +679,7 @@ describe('the keyboard on the command that removes a note', () => {
     expect(requests.removed).toStrictEqual(['Root.md false'])
   })
 
-  it('stands on no step, and the palette goes with the choice', async () => {
+  it('relies on no step, and the palette goes with the choice', async () => {
     const window = await overRemove()
 
     expect(document.body.textContent).not.toContain('Keep the note')
@@ -763,12 +763,12 @@ describe('a file the window has open in an editor of cards, removed from the tre
 })
 
 /** The tree makes one where the row stands, and the vault may answer nothing. */
-describe('a deck or a stencil the file tree asked the vault for', () => {
+describe('a deck or a stencil the file tree requested the vault for', () => {
   /** What a row of the tree asks for, on the row the menu was opened on. */
   const askForFile = async (stencil: boolean) => {
     const window = await mountWindow()
     const tree = window.findComponent(FilesTab).props('state') as {
-      openMenu(asked: { path: string | null; at: { x: number; y: number } }): void
+      openMenu(request: { path: string | null; at: { x: number; y: number } }): void
       chooseMenuItem(id: string): void
     }
     maker.fail()

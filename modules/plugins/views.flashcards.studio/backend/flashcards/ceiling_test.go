@@ -71,7 +71,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 }
 
 // And the same ceiling holds when a person sits to one deck at a time.
-func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
+func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -92,12 +92,12 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	var out time.Duration
 	for d := range 3 {
-		over := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
+		cardScope := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
 		for range 200 {
 			sat, err := flashcards.NewSession(
 				s.marking, s.standings, s.kept,
 				s.presets, today, func() time.Time { return now },
-			).Execute(t.Context(), s.vault, over)
+			).Execute(t.Context(), s.vault, cardScope)
 			if err != nil || len(sat.Queue) == 0 {
 				break
 			}
@@ -125,7 +125,7 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 //
 // A preset is the scope of its own budget, and entering one of its decks does
 // not open a budget of that deck's own.
-func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
+func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 30\n" +
@@ -156,8 +156,8 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 	}
 
 	whole := 0
-	for _, held := range byDeck(sits(flashcards.Scope{})) {
-		whole += held
+	for _, target := range byDeck(sits(flashcards.Scope{})) {
+		whole += target
 	}
 	if whole != 30 {
 		t.Errorf("the whole vault hands over %d card faces, and the day holds 30", whole)

@@ -14,7 +14,7 @@ var (
 	ErrNothingDownloaded = errors.New("nothing of the sort is published there")
 )
 
-// DownloadModel names what downloaded, and is kept beside what it brought back.
+// DownloadModel names what downloaded, and is kept along with what it brought back.
 type DownloadModel struct {
 	Tool     string
 	Version  string
@@ -37,7 +37,7 @@ type PreferredCaptions struct {
 	IsAutomatic bool
 }
 
-// Cue is one stretch of speech: what was said, and the milliseconds of the recording it spans.
+// Cue is one stretch of speech: the transcript, and the milliseconds of the recording it spans.
 type Cue struct {
 	Text string
 	From int

@@ -61,12 +61,12 @@ const createSection = (
   plugins: readonly PluginInfo[] = [SAMPLE_PLUGIN],
   programs: readonly ProgramFixture[] = [],
 ) => {
-  const written: SettingEdit[] = []
+  const content: SettingEdit[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: createProgramModels(programs),
-    write: (said) => {
-      written.push(...said)
+    write: (response) => {
+      content.push(...response)
     },
     plugins: ref(plugins),
     file: ref('/numen.json'),
@@ -94,7 +94,7 @@ const createSection = (
   const wrapper = mount(PluginSettingsSection, {
     props: { state },
   })
-  return { written, wrapper }
+  return { recordedWrites: content, wrapper }
 }
 
 describe('PluginSettingsSection', () => {
@@ -130,41 +130,41 @@ describe('PluginSettingsSection', () => {
   })
 
   it('writes boolean setting change', async () => {
-    const { wrapper, written } = createSection()
+    const { wrapper, recordedWrites } = createSection()
     const toggle = wrapper.findComponent({ name: 'Switch' })
     toggle.vm.$emit('update:modelValue', true)
 
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'test.transcription', 'autoRun'], value: 'true' },
     ])
   })
 
   it('writes number setting change', async () => {
-    const { wrapper, written } = createSection()
+    const { wrapper, recordedWrites } = createSection()
     const numField = wrapper.findComponent({ name: 'NumberField' })
     numField.vm.$emit('commit', 5)
 
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'test.transcription', 'maxRetries'], value: '5' },
     ])
   })
 
   it('writes enum setting change', async () => {
-    const { wrapper, written } = createSection()
+    const { wrapper, recordedWrites } = createSection()
     const select = wrapper.findComponent({ name: 'Select' })
     select.vm.$emit('update:modelValue', 'en')
 
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'test.transcription', 'language'], value: '"en"' },
     ])
   })
 
   it('writes string setting change', async () => {
-    const { wrapper, written } = createSection()
+    const { wrapper, recordedWrites } = createSection()
     const input = wrapper.find('.settings__text-input')
     await input.setValue('Prefix: ')
 
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['plugins', 'test.transcription', 'promptPrefix'], value: '"Prefix: "' },
     ])
   })
@@ -190,7 +190,7 @@ const ASKING: PluginInfo = {
 }
 
 describe('a setting of type agent', () => {
-  it('offers the default, said with the agent that answers it, then the agents the plugins list', () => {
+  it('offers the default, returned with the agent that answers it, then the agents the plugins list', () => {
     const { wrapper } = createSection({}, [ASKING], PROGRAMS)
     const selects = wrapper.findAllComponents({ name: 'Select' })
     expect(selects).toHaveLength(1)
@@ -218,9 +218,9 @@ describe('a setting of type agent', () => {
   })
 
   it('is written as the agent and the model, under the plugin', () => {
-    const { wrapper, written } = createSection({}, [ASKING], PROGRAMS)
+    const { wrapper, recordedWrites } = createSection({}, [ASKING], PROGRAMS)
     wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'test-agent')
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       {
         at: ['plugins', 'test.asking', 'agent'],
         value: JSON.stringify({ agent: 'test-agent', model: '' }, null, 2),
@@ -228,7 +228,7 @@ describe('a setting of type agent', () => {
     ])
   })
 
-  it('keeps an agent no plugin lists, said so', () => {
+  it('keeps an agent no plugin lists, returned so', () => {
     const { wrapper } = createSection(
       { plugins: { 'test.asking': { agent: { agent: 'test.gone' } } } },
       [ASKING],
@@ -282,9 +282,9 @@ describe('a string setting offered the models of a program', () => {
   })
 
   it('writes the model chosen', () => {
-    const { wrapper, written } = createSection({}, [MODEL_PLUGIN], LISTING)
+    const { wrapper, recordedWrites } = createSection({}, [MODEL_PLUGIN], LISTING)
     wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'v/other')
-    expect(written).toStrictEqual([{ at: ['plugins', 'test.agent', 'model'], value: '"v/other"' }])
+    expect(recordedWrites).toStrictEqual([{ at: ['plugins', 'test.agent', 'model'], value: '"v/other"' }])
   })
 
   it('is typed by hand where the program lists no model', () => {

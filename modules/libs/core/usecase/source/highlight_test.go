@@ -110,12 +110,12 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 
 	// Two words on one page and a third on the next, as a model reading the
 	// pages wrote them down.
-	written := []domain.HighlightBox{
+	content := []domain.HighlightBox{
 		testsupport.Box(4, 0, 5, domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
 		testsupport.Box(4, 6, 10, domain.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
 		testsupport.Box(5, 11, 16, domain.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(written)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(content)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -188,16 +188,16 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, outline)
 	recordSource(t, index, shelved, "", "abc123")
 
-	var asked []int
+	var request []int
 	u = setPlacer(u, func(_ []byte, pages []int) ([]domain.HighlightBox, error) {
-		asked = pages
+		request = pages
 		return book.boxes(pages), nil
 	})
 
 	start, length := locate(t, book, "closer")
 	found := litOn(t, u, documentPath, start, length)
-	if !slices.Equal(asked, []int{2}) {
-		t.Errorf("a word on page 2 of %d asked for pages %v", len(book.Pages), asked)
+	if !slices.Equal(request, []int{2}) {
+		t.Errorf("a word on page 2 of %d asked for pages %v", len(book.Pages), request)
 	}
 	if len(found) != 1 || found[0].Page != 2 {
 		t.Errorf("%q was lit at %+v", "closer", found)
@@ -211,9 +211,9 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, outline)
 	recordSource(t, index, shelved, "", "abc123")
 
-	var asked [][]int
+	var request [][]int
 	u = setPlacer(u, func(_ []byte, pages []int) ([]domain.HighlightBox, error) {
-		asked = append(asked, pages)
+		request = append(request, pages)
 		return book.boxes(pages), nil
 	})
 
@@ -238,8 +238,8 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	if found[0].Text != "Afterword" || found[1].Text != "closer" {
 		t.Errorf("the runs read %q and %q", found[0].Text, found[1].Text)
 	}
-	if len(asked) != 1 || !slices.Equal(asked[0], []int{2, 3}) {
-		t.Errorf("the layer was asked for %v, want both pages once", asked)
+	if len(request) != 1 || !slices.Equal(request[0], []int{2, 3}) {
+		t.Errorf("the layer was asked for %v, want both pages once", request)
 	}
 }
 
@@ -366,18 +366,18 @@ func TestAProofreadRecognitionIsLitWhereItsWordsNowStand(t *testing.T) {
 	u, index, store, _, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "ocr", "abc123")
 
-	written := []domain.HighlightBox{
+	content := []domain.HighlightBox{
 		testsupport.Box(4, 0, 5, domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
 		testsupport.Box(4, 6, 10, domain.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
 		testsupport.Box(5, 11, 16, domain.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(written)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(content)); err != nil {
 		t.Fatal(err)
 	}
 	// The first line is put right and grows by three bytes, so the third line
 	// begins at 14 and runs to 19.
-	put := []domain.CorrectionLine{{Number: 0, Text: "eighteen"}}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), correction.Pack(put)); err != nil {
+	correctionLines := []domain.CorrectionLine{{Number: 0, Text: "eighteen"}}
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), correction.Pack(correctionLines)); err != nil {
 		t.Fatal(err)
 	}
 

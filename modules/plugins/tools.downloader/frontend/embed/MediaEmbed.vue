@@ -3,7 +3,7 @@
  * What a url points at, played at the top of its tab: a copy on this disk where
  * there is one, and a frame where there is not.
  *
- * The transcript stands under this and is where a moment is chosen. What that
+ * The transcript is placed under this and is where a moment is chosen. What that
  * moment does is here: a copy is seeked, and a frame is told through the
  * messages a player takes from the page holding it, so nothing that host serves
  * runs in this window.
@@ -43,7 +43,7 @@ const player = useTemplateRef<HTMLVideoElement>('player')
 
 /** How tall the player is drawn, remembered on this machine. */
 const tall = ref(props.store.read())
-const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
+const dragSession = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
 const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
 )
@@ -62,13 +62,13 @@ onBeforeUnmount(() => onPointerUp())
  */
 function onPointerDown(at: PointerEvent): void {
   const bar = at.currentTarget as HTMLElement
-  const held = bar.previousElementSibling
+  const prevElement = bar.previousElementSibling
   bar.setPointerCapture(at.pointerId)
-  drawn.value = {
+  dragSession.value = {
     bar,
     pointer: at.pointerId,
     from: at.clientY,
-    was: held?.clientHeight ?? LEAST,
+    was: prevElement?.clientHeight ?? LEAST,
   }
   bar.addEventListener('pointermove', onPointerMove)
   bar.addEventListener('pointerup', onPointerUp)
@@ -76,19 +76,19 @@ function onPointerDown(at: PointerEvent): void {
 }
 
 function onPointerMove(at: PointerEvent): void {
-  const held = drawn.value
-  if (!held) return
-  tall.value = getDraggedHeight(held.was, at.clientY - held.from, window.innerHeight)
+  const currentDrag = dragSession.value
+  if (!currentDrag) return
+  tall.value = getDraggedHeight(currentDrag.was, at.clientY - currentDrag.from, window.innerHeight)
 }
 
 function onPointerUp(): void {
-  const held = drawn.value
-  if (!held) return
-  drawn.value = null
-  held.bar.removeEventListener('pointermove', onPointerMove)
-  held.bar.removeEventListener('pointerup', onPointerUp)
-  held.bar.removeEventListener('pointercancel', onPointerUp)
-  if (held.bar.hasPointerCapture(held.pointer)) held.bar.releasePointerCapture(held.pointer)
+  const currentDrag = dragSession.value
+  if (!currentDrag) return
+  dragSession.value = null
+  currentDrag.bar.removeEventListener('pointermove', onPointerMove)
+  currentDrag.bar.removeEventListener('pointerup', onPointerUp)
+  currentDrag.bar.removeEventListener('pointercancel', onPointerUp)
+  if (currentDrag.bar.hasPointerCapture(currentDrag.pointer)) currentDrag.bar.releasePointerCapture(currentDrag.pointer)
   if (tall.value !== null) props.store.write(tall.value)
 }
 
@@ -117,7 +117,7 @@ defineExpose({ seek })
       v-if="props.copy"
       ref="player"
       class="embed__frame"
-      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': drawn !== null }"
+      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--currentDrag': dragSession !== null }"
       :style="frameStyle"
       :src="props.copy"
       :title="props.words.playing"
@@ -132,7 +132,7 @@ defineExpose({ seek })
       v-else-if="props.embed"
       ref="frame"
       class="embed__frame"
-      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': drawn !== null }"
+      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--currentDrag': dragSession !== null }"
       :style="frameStyle"
       :src="props.embed"
       :title="props.words.playing"
@@ -146,7 +146,7 @@ defineExpose({ seek })
       class="embed__handle"
       role="separator"
       aria-orientation="horizontal"
-      :data-state="drawn ? 'drag' : undefined"
+      :data-state="dragSession ? 'drag' : undefined"
       :title="props.words.taller"
       @pointerdown="onPointerDown"
     ></div>
@@ -181,9 +181,9 @@ defineExpose({ seek })
   background: var(--numen-media-backdrop);
 }
 
-/* While the bar is held, the player takes no pointers: a frame that took one
+/* While the bar is currentDrag, the player takes no pointers: a frame that took one
    would take the release with it. */
-.embed__frame--held {
+.embed__frame--currentDrag {
   pointer-events: none;
 }
 

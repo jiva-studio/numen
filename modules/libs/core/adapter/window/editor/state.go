@@ -74,12 +74,12 @@ type State struct {
 	// place be put in front of the person.
 	Places broadcaster[domain.Place]
 
-	// openTabs is what the person has open, as the window last said. It is
+	// openTabs is what currently open, as the window last said. It is
 	// replaced while requests are being served, so every reader takes it
 	// through GetOpenTabs.
 	openTabs atomic.Pointer[domain.OpenTabs]
 
-	// NotifyOpenTabs hears what the person has open each time the window says it,
+	// NotifyOpenTabs hears what currently open each time the window says it,
 	// once what it said stands. A build without one takes the report and tells
 	// nobody.
 	NotifyOpenTabs func(domain.OpenTabs)
@@ -300,11 +300,11 @@ func (h *vaultHandler) GetVaultState(
 		Coverage: &v1.IndexCoverage{IsEmbedding: text(&h.state.Indexing.Model) != ""},
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
-	// the state is answered as it stands. A window standing on nothing holds no
+	// the state is answered currently. A window standing on nothing holds no
 	// chunks and counts none.
 	if h.state.Indexing.Progress != nil && showing.ID != "" {
-		if held, embedded, err := h.state.Indexing.Progress.GetProgress(ctx, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
-			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = held, embedded
+		if target, embedded, err := h.state.Indexing.Progress.GetProgress(ctx, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
+			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = target, embedded
 		}
 	}
 	return connect.NewResponse(out), nil
@@ -316,8 +316,8 @@ func (h *vaultHandler) WatchVaultChanges(
 	_ *connect.Request[v1.WatchVaultChangesRequest],
 	out *connect.ServerStream[v1.WatchVaultChangesResponse],
 ) error {
-	line, done := h.state.ChangeEvents.subscribe()
-	defer done()
+	line, isDone := h.state.ChangeEvents.subscribe()
+	defer isDone()
 
 	// Named as following before anything has changed. A stream that says
 	// nothing until the vault moves is indistinguishable from one that never
@@ -350,9 +350,9 @@ func (h *vaultHandler) WatchVaultChanges(
 
 // newChangeResponse is the wire message that reports one change.
 func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
-	renamed := make([]*v1.Move, 0, len(what.renamed))
+	renamedMoves := make([]*v1.Move, 0, len(what.renamed))
 	for _, went := range what.renamed {
-		renamed = append(renamed, &v1.Move{From: went.From, To: went.To})
+		renamedMoves = append(renamedMoves, &v1.Move{From: went.From, To: went.To})
 	}
-	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamed}
+	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves}
 }

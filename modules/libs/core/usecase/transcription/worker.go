@@ -198,7 +198,7 @@ func (t *Worker) getUntranscribed(ctx context.Context, known port.SourceQueries,
 	if known == nil {
 		return nil
 	}
-	held, err := known.GetFingerprints(ctx, v.ID, domain.KindRecording)
+	target, err := known.GetFingerprints(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
@@ -207,18 +207,18 @@ func (t *Worker) getUntranscribed(ctx context.Context, known port.SourceQueries,
 		return nil
 	}
 	for _, one := range recognised {
-		delete(held, one.Path)
+		delete(target, one.Path)
 	}
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	under := t.with.Unasked
-	out := make([]string, 0, len(held))
-	for path, ref := range held {
+	underVal := t.with.Unasked
+	out := make([]string, 0, len(target))
+	for path, ref := range target {
 		if t.answered[run.GetKey(v, path)] {
 			continue
 		}
-		if under > 0 && ref.Size > under {
+		if underVal > 0 && ref.Size > underVal {
 			// A recording this large is somebody's music or somebody's archive.
 			// It is transcribed when it is asked for by name.
 			continue
@@ -344,12 +344,12 @@ func (t *Worker) proofreadTranscript(
 		t.reportTask(run.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserStarted)
 	}
 
-	right, held, err := CreateProofread(proofreading, t.with.Readers, t.with.Derived)
+	right, target, err := CreateProofread(proofreading, t.with.Readers, t.with.Derived)
 	if err != nil {
 		fail(err)
 		return ProofreadResult{Path: path}, err
 	}
-	if !held {
+	if !target {
 		t.finishTask(id)
 		return ProofreadResult{Path: path}, nil
 	}
@@ -459,8 +459,8 @@ func (t *Worker) acquireModels(
 	id, path string,
 	isUserStarted bool,
 ) (by port.Transcriber, finish func(ran error) error, err error) {
-	if kept, ok := t.resident.take(); ok {
-		return kept, func(ran error) error { return t.finishResident(ctx, ran) }, nil
+	if retained, ok := t.resident.take(); ok {
+		return retained, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}
 
 	release, err := t.with.Models.Acquire(ctx, isUserStarted, func() {
@@ -470,7 +470,7 @@ func (t *Worker) acquireModels(
 		return nil, nil, err
 	}
 
-	// Getting the models is a step of its own and stands under its own name.
+	// Getting the models is a step of its own and is placed under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	t.reportTask(run.Task{ID: id, Title: "Fetching models"}, isUserStarted)
 	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {

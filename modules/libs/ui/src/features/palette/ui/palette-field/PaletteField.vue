@@ -16,7 +16,7 @@ defineProps<{
    * row that is lit, so the two are addressed off one prefix.
    */
   uid: string
-  /** The number of the row the keyboard stands on, and -1 for none. */
+  /** The number of the row the keyboard relies on, and -1 for none. */
   here: number
   /** Whether there is a list under the field at all. */
   isExpanded: boolean
@@ -31,7 +31,7 @@ defineProps<{
   crumb: string
 }>()
 
-const typed = defineModel<string>({ required: true })
+const searchQuery = defineModel<string>({ required: true })
 
 const field = useTemplateRef<HTMLInputElement>('field')
 
@@ -56,7 +56,7 @@ defineExpose({ focus, select })
     </span>
     <input
       ref="field"
-      v-model="typed"
+      v-model="searchQuery"
       class="palette__field w-full bg-transparent"
       data-palette="field"
       type="text"

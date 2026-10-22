@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/ports"
 )
 
-// answering is a store that hands back what it was given for every name.
+// answering is a store that returns what it was given for every name.
 type answering struct {
 	ports.DerivedStore
 	why error
@@ -29,7 +29,7 @@ func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 
 	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Name: domain.NewReviewLogName("run")})
 	if err != nil {
-		t.Fatalf("a file nobody may open refused the whole history: %v", err)
+		t.Fatalf("a file nobody may open failed the whole history: %v", err)
 	}
 	if !ran.IsUnreadable || ran.Skipped != 1 || len(ran.Answers) != 0 {
 		t.Errorf("the run came back as %+v", ran)
@@ -43,7 +43,7 @@ func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 
 	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Name: domain.NewReviewLogName("run")})
 	if err != nil {
-		t.Fatalf("a file that was gone refused the whole history: %v", err)
+		t.Fatalf("a file that was gone failed the whole history: %v", err)
 	}
 	if !ran.IsGone || ran.Skipped != 0 {
 		t.Errorf("the run came back as %+v", ran)
@@ -67,7 +67,7 @@ func TestARunHeldByAnotherProgramIsOneSkippedRun(t *testing.T) {
 
 	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Name: domain.NewReviewLogName("run")})
 	if err != nil {
-		t.Fatalf("a file another program holds refused the whole history: %v", err)
+		t.Fatalf("a file another program holds failed the whole history: %v", err)
 	}
 	if !ran.IsUnreadable || ran.Skipped != 1 || len(ran.Answers) != 0 {
 		t.Errorf("the run came back as %+v", ran)

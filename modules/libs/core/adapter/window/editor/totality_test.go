@@ -35,7 +35,7 @@ func TestEveryRoleIsRead(t *testing.T) {
 	})
 }
 
-func TestEveryRelationIsWrittenFromOne(t *testing.T) {
+func TestEveryRelationIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Relation]domain.Relation{
 		v1.Relation_RELATION_PARENT:  domain.RelationParent,
 		v1.Relation_RELATION_CHILD:   domain.RelationChild,
@@ -44,7 +44,7 @@ func TestEveryRelationIsWrittenFromOne(t *testing.T) {
 	}, convertRelationToWire)
 }
 
-func TestANoteTypeIsWrittenAsTheWordItHoldsAndAnOrdinaryNoteAsNone(t *testing.T) {
+func TestANoteTypeIsSavedAsTheWordItContainsAndAnOrdinaryNoteAsNone(t *testing.T) {
 	for typed, want := range map[domain.NoteType]string{
 		domain.TypeNote: "",
 		"deck":          "deck",
@@ -56,7 +56,7 @@ func TestANoteTypeIsWrittenAsTheWordItHoldsAndAnOrdinaryNoteAsNone(t *testing.T)
 	}
 }
 
-func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
+func TestEverySourceKindIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.SourceKind]domain.SourceKind{
 		v1.SourceKind_SOURCE_KIND_NOTE:      domain.KindNote,
 		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
@@ -65,21 +65,21 @@ func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
 	}, convertSourceKindToWire)
 }
 
-func TestEveryBookFormatIsWrittenFromOne(t *testing.T) {
+func TestEveryBookFormatIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.BookFormat]string{
 		v1.BookFormat_BOOK_FORMAT_EPUB: "library/a.epub",
 		v1.BookFormat_BOOK_FORMAT_PDF:  "library/a.pdf",
 	}, func(path string) v1.BookFormat { return convertBookFormatToWire(path, domain.KindBook) })
 }
 
-func TestEveryNamingIsWrittenFromOne(t *testing.T) {
+func TestEveryNamingIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.NameSource]note.NameSource{
 		v1.NameSource_NAME_SOURCE_FRONTMATTER: note.ByFrontmatter,
 		v1.NameSource_NAME_SOURCE_FILENAME:    note.ByFilename,
 	}, newWireNameSource)
 }
 
-func TestEveryPresenceIsWrittenFromOne(t *testing.T) {
+func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Presence]port.Presence{
 		v1.Presence_PRESENCE_PRESENT:          port.Present,
 		v1.Presence_PRESENCE_NOT_FETCHED:      port.NotFetched,
@@ -87,7 +87,7 @@ func TestEveryPresenceIsWrittenFromOne(t *testing.T) {
 	}, func(is port.Presence) v1.Presence { return presences[is] })
 }
 
-func TestEveryCompletionConsentIsWrittenFromOne(t *testing.T) {
+func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.CompletionConsent]settings.Consent{
 		v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED: settings.ConsentUnanswered,
 		v1.CompletionConsent_COMPLETION_CONSENT_ASKED:      settings.ConsentAsked,
@@ -96,7 +96,7 @@ func TestEveryCompletionConsentIsWrittenFromOne(t *testing.T) {
 	}, func(is settings.Consent) v1.CompletionConsent { return consents[is] })
 }
 
-func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
+func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.VaultsErrorCode]error{
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: vaults.ErrUnreadable,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       vaults.ErrCopy,
@@ -116,7 +116,7 @@ func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
 // What an artifact stands at is written in two places: how far a run has got,
 // and what a run just set going is. Each schema value names the call that
 // writes it.
-func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
+func TestEveryArtifactStateIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.State]func() v1.State{
 		v1.State_STATE_NONE:    getStateAt(source.RunProgress{State: source.RunNone}),
 		v1.State_STATE_DONE:    getStateAt(source.RunProgress{State: source.RunComplete}),
@@ -128,9 +128,9 @@ func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 	}, func(writes func() v1.State) v1.State { return writes() })
 }
 
-// Every artifact the schema names stands under a name in the store, and is
+// Every artifact the schema names is placed under a name in the store, and is
 // carried by a file of some kind.
-func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
+func TestEveryArtifactTheSchemaNamesExistsSomewhere(t *testing.T) {
 	testsupport.CheckHandled(t, func(of v1.ArtifactKind) bool {
 		id, named := getArtifactID(of)
 		return named && id != ""

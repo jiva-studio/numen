@@ -104,9 +104,9 @@ func getReportedModels(at []string, set string, offered []port.AgentModel) []por
 
 // newSetting is one setting written down.
 func newSetting(at []string, value any) port.Setting {
-	said, err := json.Marshal(value)
+	response, err := json.Marshal(value)
 	if err != nil {
 		return port.Setting{Path: at, JSON: ""}
 	}
-	return port.Setting{Path: at, JSON: string(said)}
+	return port.Setting{Path: at, JSON: string(response)}
 }

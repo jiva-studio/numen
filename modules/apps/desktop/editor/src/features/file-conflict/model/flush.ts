@@ -49,7 +49,7 @@ export interface ConflictPrompt {
  */
 function createConflictRegistry(onChanged: () => void) {
   const outstanding = new Set<Conflict>()
-  const put = new Set<string>()
+  const postponed = new Set<string>()
   const conflicts = shallowRef([]) as Ref<readonly ConflictPrompt[]>
 
   const prompt = (one: Conflict): ConflictPrompt => ({
@@ -57,14 +57,14 @@ function createConflictRegistry(onChanged: () => void) {
     keep: one.keep,
     take: one.take,
     later: () => {
-      put.add(one.note)
+      postponed.add(one.note)
       conflicts.value = conflicts.value.filter((each) => each.note !== one.note)
     },
   })
 
   const refresh = () => {
     const all = [...outstanding]
-    conflicts.value = all.filter((one) => !put.has(one.note)).map(prompt)
+    conflicts.value = all.filter((one) => !postponed.has(one.note)).map(prompt)
     return all
   }
 
@@ -73,7 +73,7 @@ function createConflictRegistry(onChanged: () => void) {
     onChanged()
     return () => {
       if (!outstanding.delete(one)) return
-      put.delete(one.note)
+      postponed.delete(one.note)
       onChanged()
     }
   }
@@ -82,7 +82,7 @@ function createConflictRegistry(onChanged: () => void) {
     conflicts,
     raise,
     refresh,
-    clearPut: () => put.clear(),
+    clearPut: () => postponed.clear(),
   }
 }
 
@@ -99,12 +99,12 @@ function createFlushReporter(
   registry: ReturnType<typeof createConflictRegistry>,
   handlers: Set<FlushHandler>,
 ) {
-  let under: string | null = null
+  let underVal: string | null = null
   let lastResult: FlushResult | null = null
   let writing: Promise<unknown> | null = null
 
   async function report() {
-    const token = under
+    const token = underVal
     if (token === null) return
     const all = registry.refresh()
     if (all.length === 0 && writing !== null) return
@@ -115,7 +115,7 @@ function createFlushReporter(
   }
 
   async function answer(token: string) {
-    under = token
+    underVal = token
     lastResult = null
     registry.clearPut()
     const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
@@ -129,7 +129,7 @@ function createFlushReporter(
   }
 
   const reset = () => {
-    under = null
+    underVal = null
     lastResult = null
     writing = null
   }
@@ -140,7 +140,7 @@ function createFlushReporter(
 export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
   const handlers = new Set<FlushHandler>()
   let open = true
-  const listening = new AbortController()
+  const abortController = new AbortController()
 
   const reporterHolder: { current?: ReturnType<typeof createFlushReporter> } = {}
   // Stryker disable next-line OptionalChaining: Assigned synchronously before conflict callbacks run.
@@ -163,7 +163,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   /** Listen for the quit, for as long as the window is drawn. */
   const start = () =>
     follows(
-      () => core.watchQuit(listening.signal),
+      () => core.watchQuit(abortController.signal),
       async (message) => {
         if (message.flush) await reporter.answer(message.token)
       },
@@ -176,7 +176,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     start,
     close: () => {
       open = false
-      listening.abort()
+      abortController.abort()
     },
   }
 }

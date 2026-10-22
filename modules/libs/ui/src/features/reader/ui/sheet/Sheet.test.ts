@@ -83,7 +83,7 @@ describe('a page that will not come', () => {
     return page
   }
 
-  it('says so, once it has been asked for enough times', async () => {
+  it('says so, once it has been requested for enough times', async () => {
     const page = await mountRefusedPage()
 
     expect(page.text()).toContain('This page would not come.')
@@ -107,7 +107,7 @@ describe('a page that will not come', () => {
 })
 
 describe('a page pointed somewhere else', () => {
-  it('is asked for afresh', async () => {
+  it('is requested for afresh', async () => {
     // Another address is another question. What would not come is what would
     // not come at that width.
     const page = sheet()

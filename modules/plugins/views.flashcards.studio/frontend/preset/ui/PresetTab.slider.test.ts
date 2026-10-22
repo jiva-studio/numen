@@ -2,8 +2,8 @@
  * The picture the one slider is, drawn in a document.
  *
  * The curve is the track: one stop on the way round the screen, walked by the
- * arrow keys, and read back off wherever a pointer stands on it. What is asked
- * here is what the picture draws and what a gesture on it comes to.
+ * arrow keys, and read back off wherever a pointer relies on it. What is asked
+ * here is what the picture draws and what a gesture on it evaluates to.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -25,28 +25,28 @@ describe('the one slider', () => {
     expect(control.attributes('aria-valuetext')).toBe(words.value('minutes', 20, ''))
   })
 
-  it('walks the grid a place at a time, and writes once the key is let go of', async () => {
-    const { tab, done } = mountPresetTab()
+  it('walks the grid a place at a time, and writes once the key is release', async () => {
+    const { tab, recorded } = mountPresetTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'ArrowRight' })
     await control.trigger('keyup', { key: 'ArrowRight' })
-    expect(done).toStrictEqual(['move 3', 'flushPending'])
+    expect(recorded).toStrictEqual(['move 3', 'flushPending'])
   })
 
   it('walks to either end, and no further', async () => {
-    const { tab, done } = mountPresetTab()
+    const { tab, recorded } = mountPresetTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'End' })
     await control.trigger('keydown', { key: 'ArrowRight' })
     await control.trigger('keydown', { key: 'Home' })
     await control.trigger('keydown', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['move 3', 'move 3', 'move 0', 'move 0'])
+    expect(recorded).toStrictEqual(['move 3', 'move 3', 'move 0', 'move 0'])
   })
 
   it('leaves a keystroke that is nobody’s to the window', async () => {
-    const { tab, done } = mountPresetTab()
+    const { tab, recorded } = mountPresetTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'k' })
-    expect(done).toStrictEqual([])
+    expect(recorded).toStrictEqual([])
   })
 
   it('offers the three goals by the value each steers, under a label saying so', () => {
@@ -91,7 +91,7 @@ describe('the one slider', () => {
 
   // The tiles take an equal share of the width, so a figure standing at
   // nothing leaves the rest to spread over it.
-  it('leaves out a tile whose figure stands at nothing', () => {
+  it('leaves out a tile whose figure remains at nothing', () => {
     const { tab } = mountPresetTab({ decks: 4, cards: 160, overdue: 0, unbegun: 0 })
     expect(tab.findAll('[data-control="material"] [data-control="tile"]')).toHaveLength(2)
   })
@@ -99,22 +99,22 @@ describe('the one slider', () => {
   // A card nobody has answered is new, which is what the rest of the product
   // calls it. Overdue keeps its own word, which is a distinction of its own.
   it('calls a card nobody has answered new', () => {
-    const said = words
+    const saidText = words
       .material({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
       .map((one) => one.name)
-    expect(said).toContain('new')
-    expect(said).not.toContain('unbegun')
-    expect(said).toContain('overdue')
+    expect(saidText).toContain('new')
+    expect(saidText).not.toContain('unbegun')
+    expect(saidText).toContain('overdue')
   })
 
-  it('leaves out whichever figure stands at nothing', () => {
-    const names = (over: number, fresh: number) =>
+  it('leaves out whichever figure remains at nothing', () => {
+    const formatMaterials = (overdueCount: number, freshCount: number) =>
       words
-        .material({ decks: 1, cards: 160, overdue: over, unbegun: fresh })
+        .material({ decks: 1, cards: 160, overdue: overdueCount, unbegun: freshCount })
         .map((one) => `${one.figure} ${one.name}`)
-    expect(names(0, 30)).toStrictEqual(['1 deck', '160 cards', '30 new'])
-    expect(names(45, 0)).toStrictEqual(['1 deck', '160 cards', '45 overdue'])
-    expect(names(0, 0)).toStrictEqual(['1 deck', '160 cards'])
+    expect(formatMaterials(0, 30)).toStrictEqual(['1 deck', '160 cards', '30 new'])
+    expect(formatMaterials(45, 0)).toStrictEqual(['1 deck', '160 cards', '45 overdue'])
+    expect(formatMaterials(0, 0)).toStrictEqual(['1 deck', '160 cards'])
   })
 
   // A figure beside an area measures nothing. Each picture carries the two
@@ -127,9 +127,9 @@ describe('the one slider', () => {
     expect(rules).toHaveLength(4)
     // Each picture has one line up its left side and one along its foot.
     const upright = rules.filter((one) => one.attributes('x1') === one.attributes('x2'))
-    const along = rules.filter((one) => one.attributes('y1') === one.attributes('y2'))
+    const horizontalRules = rules.filter((one) => one.attributes('y1') === one.attributes('y2'))
     expect(upright).toHaveLength(2)
-    expect(along).toHaveLength(2)
+    expect(horizontalRules).toHaveLength(2)
   })
 
   // The knob shows its own value on the line under the picture and nothing
@@ -139,11 +139,11 @@ describe('the one slider', () => {
     const { tab } = mountPresetTab({
       at: [point(), point(), point({ reviews: 80, backlog: [9, 4, 0, 0] }), point()],
     })
-    const said = tab
+    const response = tab
       .get('[data-control="callout"]')
       .findAll('[data-control="bought"]')
       .map((one) => one.text())
-    expect(said).toStrictEqual(['20 minutes a day', '80 cards a session', 'overdue gone in 3 days'])
+    expect(response).toStrictEqual(['20 minutes a day', '80 cards a session', 'overdue gone in 3 days'])
     // Its own value on the width stays on its own line under the picture.
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
       words.formatGoalValue('minutes', 20),
@@ -154,7 +154,7 @@ describe('the one slider', () => {
   })
 
   it('says what a target costs, and a date the days and the day’s length', () => {
-    const kept = mountPresetTab(
+    const tabWrapper = mountPresetTab(
       {
         goal: 'retention',
         grid: [0.7, 0.8, 0.9, 0.95],
@@ -163,7 +163,7 @@ describe('the one slider', () => {
       },
       { goal: 'retention' },
     )
-    expect(kept.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
+    expect(tabWrapper.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
       '90% remembered',
       '14 minutes a day',
       'overdue gone in 2 days',
@@ -234,7 +234,7 @@ describe('the one slider', () => {
   })
 
   // A bubble that covered the line would hide the thing it is about.
-  it('stands over the knob, and under it where over would leave the picture', async () => {
+  it('remains over the knob, and under it where over would leave the picture', async () => {
     const { tab } = mountPresetTab()
     // Which way the bubble is lifted off its anchor, which is the anchor the
     // tail sits on.
@@ -256,7 +256,7 @@ describe('the one slider', () => {
     expect(getTailUnder()).toBeDefined()
   })
 
-  // The picture is what the keyboard comes to and what it moves. What focus is
+  // The picture is what the keyboard evaluates to and what it moves. What focus is
   // drawn as on it is a browser's answer, and is asked in the stories.
   it('is what the keyboard reaches, and it takes the focus', () => {
     const one = createTab()
@@ -305,7 +305,7 @@ describe('the one slider', () => {
 })
 
 // A day can leave a card less time than the rule wants, and no pace reaches
-// it. That is arithmetic, so it is a count said beside what the place buys,
+// it. That is arithmetic, so it is a count said along with what the place buys,
 // where a person choosing the day is already reading.
 describe('what a day cannot reach', () => {
   const getBoughtTexts = (tab: ReturnType<typeof mount>) =>
@@ -329,7 +329,7 @@ describe('what a day cannot reach', () => {
       { goal: 'date', byDate: '2026-09-14' },
     )
 
-  it('says how many no pace reaches, beside what the day costs', async () => {
+  it('says how many no pace reaches, along with what the day costs', async () => {
     const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
     expect(getBoughtTexts(tab)).toStrictEqual([
@@ -342,10 +342,10 @@ describe('what a day cannot reach', () => {
   it('says nothing of it where the day leaves every card time enough', async () => {
     const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
-    const said = getBoughtTexts(tab)
-    expect(said).toStrictEqual(['180 days off', '15 minutes a day'])
-    expect(said.join(' ')).not.toContain('cannot get there')
-    expect(said.join(' ')).not.toContain('0 of')
+    const saidText = getBoughtTexts(tab)
+    expect(saidText).toStrictEqual(['180 days off', '15 minutes a day'])
+    expect(saidText.join(' ')).not.toContain('cannot get there')
+    expect(saidText.join(' ')).not.toContain('0 of')
   })
 
   it('follows the day, since each day leaves its own cards short', async () => {
@@ -368,7 +368,7 @@ describe('what a day cannot reach', () => {
   })
 })
 
-describe('what the control stands at', () => {
+describe('what the control remains at', () => {
   it('is read out in the units of its goal, with what it buys over the knob', () => {
     const { tab } = mountPresetTab()
     expect(tab.text()).toContain(words.value('minutes', 20, ''))
@@ -392,11 +392,11 @@ describe('what the control stands at', () => {
   })
 
   // A point read as zero draws a screen of zeroes, which reads as a broken one.
-  it('reads the cards off the place the knob stands at', () => {
+  it('reads the cards off the place the knob remains at', () => {
     const { tab } = mountPresetTab()
-    const said = tab.findAll('[data-control="bought"]').map((one) => one.text())
-    expect(said).toContain('80 cards a session')
-    expect(said).not.toContain('0 cards a session')
+    const saidText = tab.findAll('[data-control="bought"]').map((one) => one.text())
+    expect(saidText).toContain('80 cards a session')
+    expect(saidText).not.toContain('0 cards a session')
   })
 
   // The figure is what a person would recall when a card comes round, said as
@@ -405,7 +405,7 @@ describe('what the control stands at', () => {
     expect(words.value('retention', 0.9, '')).toBe('90% remembered')
     expect(words.formatGoalValue('retention', 0.9)).toBe('90%')
     expect(words.fieldDetail('retention')).toContain('remember')
-    for (const said of [
+    for (const response of [
       words.value('retention', 0.9, ''),
       words
         .buys('retention', {
@@ -420,7 +420,7 @@ describe('what the control stands at', () => {
         .join(' '),
       words.fieldDetail('retention'),
     ]) {
-      expect(said).not.toContain('0.9')
+      expect(response).not.toContain('0.9')
     }
   })
 
@@ -450,7 +450,7 @@ describe('what the control stands at', () => {
   // What the tiles count is a fact about the material, and no setting moves
   // one of those figures. They stand at what the window was last told while
   // the curve of the settings a person is moving is worked out.
-  it('keeps the figures the material stands at while a curve is on its way', () => {
+  it('keeps the figures the material remains at while a curve is on its way', () => {
     const { tab } = mountPresetTab(
       { isHonest: false },
       {},
@@ -542,9 +542,9 @@ describe('what the control stands at', () => {
     expect(numbers).toContain(words.formatGoalCost('minutes', 120))
   })
 
-  // A number the line or a mark stands on is dropped: the axis gives way, and
+  // A number the line or a mark relies on is dropped: the axis gives way, and
   // the drawing keeps what it has to say.
-  it('drops an axis number the drawing stands on rather than print over it', () => {
+  it('drops an axis number the drawing relies on and not print over it', () => {
     // The fixture's curve leaves the foot at the left edge, where the low
     // number would be set.
     const numbers = mountPresetTab()
@@ -554,7 +554,7 @@ describe('what the control stands at', () => {
   })
 
   // Two ends of an extent of no width are one number, and one number said twice
-  // says nothing. A run of nothing is that extent, and its one number stands on
+  // says nothing. A run of nothing is that extent, and its one number relies on
   // the foot the run lies along.
   it('says the one value once where the curve never moves', () => {
     const flat = mountPresetTab({ at: [point(), point(), point()] })
@@ -575,7 +575,7 @@ describe('what the control stands at', () => {
 
   // A run that touches nothing touches the foot, and one that never gets near
   // it is still read against a foot of nothing.
-  it('stands the foot at nothing whether or not the run gets there', () => {
+  it('remains the foot at nothing whether or not the run gets there', () => {
     const touching = mountPresetTab({
       at: [point(), point({ reviews: 40 }), point({ reviews: 80 })],
     })
@@ -594,10 +594,10 @@ describe('what the control stands at', () => {
   // print over a number read off the picture.
   it('keeps the knob’s value on its own line, clear of the picture’s numbers', async () => {
     const { tab } = mountPresetTab()
-    const over = tab.get('[data-control="over"]')
-    const under = tab.get('[data-control="under"]')
-    expect(under.findAll('[data-control="number"][data-at-knob]')).toHaveLength(1)
-    expect(over.findAll('[data-control="number"][data-at-knob]')).toHaveLength(0)
+    const overControl = tab.get('[data-control="over"]')
+    const underControl = tab.get('[data-control="under"]')
+    expect(underControl.findAll('[data-control="number"][data-at-knob]')).toHaveLength(1)
+    expect(overControl.findAll('[data-control="number"][data-at-knob]')).toHaveLength(0)
 
     // At either end the knob's value is pulled back inside the picture's width.
     const slider = tab.get('[data-control="picture"][role="slider"]')
@@ -611,15 +611,15 @@ describe('what the control stands at', () => {
     )
   })
 
-  it('carries the value at either end of the range, and no words beside them', () => {
+  it('carries the value at either end of the range, and no words alongside them', () => {
     const ends = mountPresetTab().tab.get('[data-control="ends"]').text()
     expect(ends).toContain(words.formatGoalValue('minutes', 0))
     expect(ends).toContain(words.formatGoalValue('minutes', 30))
     expect(ends).not.toContain('·')
   })
 
-  // The knob says the value it stands on, and the end under it says nothing.
-  it('leaves the end the knob stands on to the knob', async () => {
+  // The knob says the value it relies on, and the end under it says nothing.
+  it('leaves the end the knob relies on to the knob', async () => {
     const { tab } = mountPresetTab()
     const endTexts = () =>
       tab

@@ -52,12 +52,12 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
-	held, err := u.registry.List()
+	target, err := u.registry.List()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	known := domain.Vaults(held)
-	if err := known.CheckRoom(root); err != nil {
+	recognized := domain.Vaults(target)
+	if err := recognized.CheckRoom(root); err != nil {
 		return domain.Vault{}, err
 	}
 
@@ -98,7 +98,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		// The folder name is what the user already calls this collection.
 		v.Name = filepath.Base(root)
 	}
-	v.Name = known.FreeName(v.Name, v.ID)
+	v.Name = recognized.FreeName(v.Name, v.ID)
 	if err := u.registry.Save(v); err != nil {
 		return domain.Vault{}, err
 	}

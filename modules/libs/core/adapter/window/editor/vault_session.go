@@ -56,7 +56,7 @@ var errAnswerPending = errors.New("a page is holding work a person has to answer
 // Nothing is taken away until the vault asked for reads as a vault and every
 // page has written what only it holds. A page holding text a person has to
 // answer for calls the swap off, and so does a vault that will not come up: the
-// window stays on the one it had, and a window neither comes up in stands on
+// window stays on the one it had, and a window neither comes up in relies on
 // nothing and says so.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.State.GetCurrentVault().ID {
@@ -71,10 +71,10 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	defer o.shutdown.endKeepOpen()
 
 	// A page that says nothing is waited for HandedOverIn and no longer.
-	held, spent := context.WithTimeout(ctx, FlushTimeout)
-	defer spent()
+	target, elapsed := context.WithTimeout(ctx, FlushTimeout)
+	defer elapsed()
 
-	if !flushPending(held, o.State.Window, &o.State.Writing) {
+	if !flushPending(target, o.State.Window, &o.State.Writing) {
 		return errAnswerPending
 	}
 
@@ -134,7 +134,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 // and the watch behind it, the extraction of the documents it holds, and the
 // batches left with a proofreader.
 func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession, error) {
-	known, err := o.vaults.List.Execute()
+	recognized, err := o.vaults.List.Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 
 	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
-	recognising.TakeUp(watching, sources, known...)
+	recognising.TakeUp(watching, sources, recognized...)
 
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
@@ -168,7 +168,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 	// A transcript's proofreading stands at the line it reached, and is taken up
 	// here whether or not this installation listens to recordings on its own.
 	// Every vault this installation holds is asked after.
-	transcribing.TakeUp(watching, sources, known...)
+	transcribing.TakeUp(watching, sources, recognized...)
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
@@ -219,7 +219,7 @@ func (o *Installation) stopVault() {
 	}
 }
 
-// resetStatus clears what the previous vault left behind: what was said
+// resetStatus clears what the previous vault left behind: the transcript
 // about indexing it, and the entries its passes left in the list of what is
 // being done.
 //

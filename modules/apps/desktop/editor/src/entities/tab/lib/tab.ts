@@ -1,5 +1,5 @@
 /**
- * The tabs of the window, and what the person has open in them.
+ * The tabs of the window, and what currently open in them.
  */
 
 /** What a tab holds besides its file, by the kind that holds it. */
@@ -62,7 +62,7 @@ export interface RecordingProgress {
   readonly durationMs: number
 }
 
-/** What the person has open: every tab, and which of them is in front. */
+/** What currently open: every tab, and which of them is in front. */
 export interface OpenTabs {
   readonly tabs: readonly Tab[]
   readonly front: string

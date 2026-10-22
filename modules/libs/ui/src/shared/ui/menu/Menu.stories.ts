@@ -273,10 +273,10 @@ export const NotClipped: Story = {
     await expect(box.height).toBeGreaterThan(clipping.getBoundingClientRect().height)
     await expect(clipping.contains(menu)).toBe(false)
 
-    // Whole where it stands: what is under its far edge is the menu itself,
+    // Whole at its current position: what is under its far edge is the menu itself,
     // which is exactly what being clipped would take away.
-    const under = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4)
-    await expect(menu.contains(under)).toBe(true)
+    const underElement = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4)
+    await expect(menu.contains(underElement)).toBe(true)
 
     // And inside the area it is placed in, on every side.
     await expect(box.left).toBeGreaterThanOrEqual(0)
@@ -293,10 +293,10 @@ export const NotClipped: Story = {
 export const TheOneInForce: Story = {
   args: { trigger: 'keyboard', current: 'child' },
   play: async () => {
-    const chosen = within(menuElement()!).getAllByRole('menuitemradio')
-    await expect(chosen).toHaveLength(4)
-    await expect(chosen[1]).toHaveFocus()
-    await expect(chosen.map((one) => one.getAttribute('aria-checked'))).toEqual([
+    const selected = within(menuElement()!).getAllByRole('menuitemradio')
+    await expect(selected).toHaveLength(4)
+    await expect(selected[1]).toHaveFocus()
+    await expect(selected.map((one) => one.getAttribute('aria-checked'))).toEqual([
       'false',
       'true',
       'false',
@@ -326,7 +326,7 @@ export const Icons: Story = {
   },
 }
 
-/** Far more than fits: the list scrolls and the menu still stands on screen. */
+/** Far more than fits: the list scrolls and the menu still relies on screen. */
 export const FarTooMany: Story = {
   args: {
     items: Array.from({ length: 60 }, (_, at) => ({

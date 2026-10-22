@@ -64,7 +64,7 @@ func TestWhatThePluginRulesRefuse(t *testing.T) {
 		{"ocr", "net/http", false},
 	} {
 		if got := getPluginRefusal(one.plugin, one.dep) != ""; got != one.isRefused {
-			t.Errorf("%s names %s: refused is %v, want %v", one.plugin, one.dep, got, one.isRefused)
+			t.Errorf("%s names %s: failure is %v, want %v", one.plugin, one.dep, got, one.isRefused)
 		}
 	}
 }
@@ -216,7 +216,7 @@ func getGoModRefusals(plugin string, mod goMod) []string {
 func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		name, text string
-		refused    int
+		rejected    int
 	}{
 		{"a core requirement in a block", "require (\n\t" + numenModules + "libs/core v0.0.0\n)", 1},
 		{"a block opener with a comment", "require ( // deps\n\t" + numenModules + "plugins/ocr v0.0.0\n)", 1},
@@ -226,8 +226,8 @@ func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
 		{"a module-path replacement by core", "require example.com/x v1.0.0\nreplace example.com/x v1.0.0 => " + numenModules + "libs/core v0.0.0", 1},
 		{"the contract", "require (\n\t" + numenModules + "libs/protocol v0.0.0\n\texample.com/x v1.0.0\n)\nreplace " + numenModules + "libs/protocol => ../../libs/protocol", 0},
 	} {
-		if got := len(getGoModRefusals("agent", parseGoMod(one.text))); got != one.refused {
-			t.Errorf("%s: %d refusals, want %d", one.name, got, one.refused)
+		if got := len(getGoModRefusals("agent", parseGoMod(one.text))); got != one.rejected {
+			t.Errorf("%s: %d refusals, want %d", one.name, got, one.rejected)
 		}
 	}
 }

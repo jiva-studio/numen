@@ -41,7 +41,7 @@ func startWatch(t *testing.T, catalogue theme.Catalogue, hold time.Duration) <-c
 	return changed
 }
 
-func TestAThemeWrittenIntoTheFolderIsReported(t *testing.T) {
+func TestAThemeSavedIntoTheFolderIsReported(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	changed := startWatch(t, catalogue, 20*time.Millisecond)
 

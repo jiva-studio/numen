@@ -31,7 +31,7 @@ export interface TabKind<TabState, K extends string = string> {
   /**
    * What one of its tabs holds, made as the tab opens on what it was given.
    * It is made at once, so whatever it watches is caught by the tab's scope
-   * and let go of with the tab.
+   * and release with the tab.
    */
   open(at: string, id: string): TabState
   /** What the tab is called, as what it holds now stands. */

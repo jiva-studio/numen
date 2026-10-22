@@ -15,7 +15,7 @@ import type { VaultCardsDue } from '@/entities/vault'
 import type { SessionKeyIntent } from '@/features/keyboard'
 import type { Preset } from '@/pages/decks'
 
-/** The screens the window stands on, in the order a person goes through them. */
+/** The screens the window relies on, in the order a person goes through them. */
 export type WindowScreen = 'vaults' | 'decks' | 'session'
 
 /** What the keys ask of the window: what it is showing, and what it can do. */
@@ -68,16 +68,16 @@ const applyVaultKey = (press: KeyboardEvent, deps: WindowKeysDeps) => {
 }
 
 const applyDeckKey = (press: KeyboardEvent, vault: VaultCardsDue, deps: WindowKeysDeps) => {
-  const asked = getPickerKeyIntent(press, vault.decks.length)
-  if (!asked) return
+  const request = getPickerKeyIntent(press, vault.decks.length)
+  if (!request) return
   press.preventDefault()
 
-  switch (asked.does) {
+  switch (request.does) {
     case 'all':
       if (vault.due + vault.new > 0) deps.start('')
       break
     case 'deck': {
-      const deck = vault.decks[asked.at]
+      const deck = vault.decks[request.at]
       if (deck && canStart(deck, deps.getPresetsByDeck())) deps.start(deck.deck)
       break
     }
@@ -127,14 +127,14 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
   }
 
   const onSessionKey = (press: KeyboardEvent) => {
-    const asked = getSessionKeyIntent(press, {
+    const request = getSessionKeyIntent(press, {
       isShown: deps.isShown(),
       isAsking: deps.getShowing() === 'asking',
       isNotesOpen: deps.getShowing() === 'reading',
     })
-    if (!asked) return
-    if (shouldConsumeKey(asked)) press.preventDefault()
-    applySessionIntent(asked, deps, closeShownPanel)
+    if (!request) return
+    if (shouldConsumeKey(request)) press.preventDefault()
+    applySessionIntent(request, deps, closeShownPanel)
   }
 
   const onKeyDown = (press: KeyboardEvent) => {

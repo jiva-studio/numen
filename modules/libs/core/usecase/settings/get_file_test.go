@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
-func TestGetFileAnswersTheFileAndWhereItStands(t *testing.T) {
+func TestGetFileAnswersTheFileAndWhereItExists(t *testing.T) {
 	t.Parallel()
 
 	got, err := settings.NewGetFile(read).Execute()

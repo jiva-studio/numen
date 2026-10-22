@@ -80,7 +80,7 @@ describe('prose', () => {
     )
   })
 
-  it('holds a wikilink to what every other link is held to', () => {
+  it('holds a wikilink to what every other link is retained to', () => {
     for (const address of [
       'javascript://%0Aalert(1)',
       'JavaScript://%0Aalert(1)',
@@ -143,8 +143,8 @@ describe('prose', () => {
     const text = '[gone](https://example.com/gone) and [here](https://example.com/here)'
     const dead = new Set(['https://example.com/gone'])
     const prose = mount({ render: () => h('div', render(text, dead)) })
-    const [gone, here] = prose.findAll('a')
-    expect(gone!.attributes('data-reaches')).toBe('nothing')
+    const [removed, here] = prose.findAll('a')
+    expect(removed!.attributes('data-reaches')).toBe('nothing')
     expect(here!.attributes('data-reaches')).toBeUndefined()
   })
 

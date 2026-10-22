@@ -8,7 +8,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Plex } from '@numen/ui'
-import { requests, cards, mountWindowWithPalette, nodeInPlex, said, settle } from '@/testing/window'
+import { requests, cards, mountWindowWithPalette, nodeInPlex, mockVaultState, settle } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
 
 describe('the four commands over how the window is drawn', () => {
@@ -56,8 +56,8 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   /** The keyboard still walking, and the keyboard stood still on a row. */
-  const waitUnderHold = () => new Promise((done) => setTimeout(done, 60))
-  const wait = () => new Promise((done) => setTimeout(done, 200))
+  const waitUnderHold = () => new Promise((isDone) => setTimeout(isDone, 60))
+  const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
   /** Every tenth the interface goes between, as a person reads them. */
   const TENTHS = [
@@ -87,7 +87,7 @@ describe('the four commands over how the window is drawn', () => {
   }
 
   /** Every row the words typed leave, in the order they are drawn. */
-  const left = () =>
+  const getRemainingRows = () =>
     [...document.body.querySelectorAll('[data-palette="list"] [role="option"]')].map((one) =>
       one.querySelector('[data-palette="name"]')?.textContent?.trim(),
     )
@@ -111,13 +111,13 @@ describe('the four commands over how the window is drawn', () => {
       await settle()
 
       await type('theme')
-      expect(left()).toStrictEqual(['Change the theme'])
+      expect(getRemainingRows()).toStrictEqual(['Change the theme'])
 
       await type('light')
-      expect(left()).toStrictEqual(['Light or dark'])
+      expect(getRemainingRows()).toStrictEqual(['Light or dark'])
 
       await type('dark')
-      expect(left()).toStrictEqual(['Light or dark'])
+      expect(getRemainingRows()).toStrictEqual(['Light or dark'])
     })
 
     it('find the two sizes by “interface”, by “font” and by “reading”', async () => {
@@ -126,13 +126,13 @@ describe('the four commands over how the window is drawn', () => {
       await settle()
 
       await type('interface')
-      expect(left()).toStrictEqual(['Interface size'])
+      expect(getRemainingRows()).toStrictEqual(['Interface size'])
 
       await type('font')
-      expect(left()).toStrictEqual(['Reading font size'])
+      expect(getRemainingRows()).toStrictEqual(['Reading font size'])
 
       await type('reading')
-      expect(left()).toStrictEqual(['Reading font size'])
+      expect(getRemainingRows()).toStrictEqual(['Reading font size'])
     })
 
     it('turn up both of them, and nothing else, for the word they share', async () => {
@@ -142,7 +142,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('size')
 
-      expect(left()).toStrictEqual(['Interface size', 'Reading font size'])
+      expect(getRemainingRows()).toStrictEqual(['Interface size', 'Reading font size'])
     })
   })
 
@@ -190,7 +190,7 @@ describe('the four commands over how the window is drawn', () => {
       await runCommand('light')
 
       expect(groups()).toStrictEqual(['Light and dark'])
-      expect(left()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
+      expect(getRemainingRows()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
@@ -225,7 +225,7 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   /**
-   * The row the keyboard is standing on, read off the document rather than out
+   * The row the keyboard is standing on, read off the document and not out
    * of the list the window handed the palette.
    */
   const getStandingRow = () =>
@@ -243,8 +243,8 @@ describe('the four commands over how the window is drawn', () => {
       return [mode, SERVED, sizes]
     }
 
-    it('stands on the theme the settings name, and goes on wearing it', async () => {
-      said.applied = 'mine:sea'
+    it('relies on the theme the settings name, and goes on wearing it', async () => {
+      mockVaultState.applied = 'mine:sea'
       const was = applyServedStyles()
 
       await runCommand('theme')
@@ -254,8 +254,8 @@ describe('the four commands over how the window is drawn', () => {
       expect(requests.worn).toStrictEqual([])
     })
 
-    it('stands on the half the tokens are read as, and goes on reading them so', async () => {
-      said.mode = 'dark'
+    it('relies on the half the tokens are read as, and goes on reading them so', async () => {
+      mockVaultState.mode = 'dark'
       const was = applyServedStyles(':root { color-scheme: dark; }')
 
       await runCommand('light')
@@ -264,8 +264,8 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles()).toStrictEqual(was)
     })
 
-    it('stands on the size the interface is drawn at, and leaves it there', async () => {
-      said.sizes = { interfaceScale: 1.5, textScale: 1 }
+    it('relies on the size the interface is drawn at, and leaves it there', async () => {
+      mockVaultState.sizes = { interfaceScale: 1.5, textScale: 1 }
       const was = applyServedStyles(
         PAIR,
         ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }',
@@ -278,8 +278,8 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles()).toStrictEqual(was)
     })
 
-    it('stands on a size between two steps, which is the row put in for it', async () => {
-      said.sizes = { interfaceScale: 1, textScale: 1.17 }
+    it('relies on a size between two steps, which is the row put in for it', async () => {
+      mockVaultState.sizes = { interfaceScale: 1, textScale: 1.17 }
       const was = applyServedStyles(
         PAIR,
         ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }',
@@ -293,7 +293,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
-      said.sizes = { interfaceScale: 1.5, textScale: 1 }
+      mockVaultState.sizes = { interfaceScale: 1.5, textScale: 1 }
       applyServedStyles(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
       await runCommand('interface')
 
@@ -308,7 +308,7 @@ describe('the four commands over how the window is drawn', () => {
       await runCommand('interface')
 
       expect(groups()).toStrictEqual(['How large the interface is drawn'])
-      expect(left()).toStrictEqual(TENTHS)
+      expect(getRemainingRows()).toStrictEqual(TENTHS)
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
@@ -325,7 +325,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('137')
 
-      expect(left()).toStrictEqual(['137%'])
+      expect(getRemainingRows()).toStrictEqual(['137%'])
     })
 
     it('draws and writes a number typed, the way it does a step', async () => {
@@ -345,7 +345,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('250')
 
-      expect(left()).toStrictEqual([])
+      expect(getRemainingRows()).toStrictEqual([])
       expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
         'Nothing',
       )
@@ -356,7 +356,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('15')
 
-      expect(left()).toStrictEqual(['150%'])
+      expect(getRemainingRows()).toStrictEqual(['150%'])
     })
 
     it('holds the size until the keyboard has stood on the row it walked to', async () => {
@@ -396,8 +396,8 @@ describe('the four commands over how the window is drawn', () => {
       )
     })
 
-    it('says what the settings refused, where the window says what it could not do', async () => {
-      said.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
+    it('says what the settings rejected, where the window says what it could not do', async () => {
+      mockVaultState.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
       const window = await runCommand('interface')
       await press('End')
 
@@ -421,7 +421,7 @@ describe('the four commands over how the window is drawn', () => {
       return window
     }
 
-    it('takes its measurements again at the size the keyboard is held on', async () => {
+    it('takes its measurements again at the size the keyboard is retained on', async () => {
       await openNote()
       await type('interface')
       await press('Enter')
@@ -462,10 +462,10 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(groups()).toStrictEqual(['How large the text is set'])
       // The far end of this one falls between two steps, and is offered there.
-      expect(left()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
+      expect(getRemainingRows()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
     })
 
-    it('writes the size that was chosen beside the interface’s, which stands', async () => {
+    it('writes the size that was chosen alongside the interface’s, which remains', async () => {
       await runCommand('reading')
       await press('End')
 

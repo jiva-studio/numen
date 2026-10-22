@@ -48,7 +48,7 @@ describe('the window a plugin is handed', () => {
     expect(workspace.isReady.value).toBe(false)
   })
 
-  it('opens a file where and at the line asked, and only what is asked', () => {
+  it('opens a file where and at the line requested, and only what is requested', () => {
     const { workspace, deps } = createWorkspace()
 
     workspace.openFile('One.md', { title: 'One', placement: 'beside', line: 3 })
@@ -126,12 +126,12 @@ describe('the window a plugin opens files and reads the note in focus through', 
     })
 
     workspace.openFileAt('Gone.pdf', [])
-    await new Promise((done) => setTimeout(done, 0))
+    await new Promise((isDone) => setTimeout(isDone, 0))
 
     expect(deps.writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 
-  it('names the note the window stands on', () => {
+  it('names the note the window relies on', () => {
     const { workspace } = createWorkspace()
 
     expect(workspace.getNoteInFocus()).toStrictEqual({ path: 'Focus.md', title: 'Focus' })

@@ -12,7 +12,7 @@ const line = (props: Props) => mount(Activity, { props })
 
 describe('a line of work', () => {
   it('carries what is happening and what it is happening to on lines of their own', () => {
-    const drawn = line({
+    const renderedLine = line({
       text: 'Proofreading the transcript',
       about: 'A Conversation in Vrindavan, 1972-11-04.md',
       isWorking: true,
@@ -20,13 +20,13 @@ describe('a line of work', () => {
       left: '4:05',
     })
 
-    expect(drawn.get('.activity__says').text()).toBe('Proofreading the transcript')
-    expect(drawn.get('.activity__about').text()).toBe('A Conversation in Vrindavan, 1972-11-04.md')
-    expect(drawn.get('.activity__words').classes()).toContain('flex-col')
+    expect(renderedLine.get('.activity__says').text()).toBe('Proofreading the transcript')
+    expect(renderedLine.get('.activity__about').text()).toBe('A Conversation in Vrindavan, 1972-11-04.md')
+    expect(renderedLine.get('.activity__words').classes()).toContain('flex-col')
   })
 
-  it('draws how far and how long as figures, beside the words', () => {
-    const drawn = line({
+  it('draws how far and how long as figures, alongside the words', () => {
+    const renderedLine = line({
       text: 'Learning what it says',
       about: 'Sabhaparva.epub',
       isWorking: true,
@@ -34,51 +34,51 @@ describe('a line of work', () => {
       left: '1:58:20',
     })
 
-    expect(drawn.get('.activity__percent').text()).toBe('3%')
-    expect(drawn.get('.activity__left').text()).toBe('1:58:20')
+    expect(renderedLine.get('.activity__percent').text()).toBe('3%')
+    expect(renderedLine.get('.activity__left').text()).toBe('1:58:20')
   })
 
   it('keeps a count to two lines, and lets a reason run on', () => {
-    const counting = line({
+    const tallyLine = line({
       text: 'Reading',
       about: 'a-note-nobody-shortened-before-they-filed-it-away.md',
       tally: { done: 2, total: 8 },
     })
-    expect(counting.get('.activity__says').classes()).toContain('truncate')
-    expect(counting.get('.activity__about').classes()).toContain('truncate')
+    expect(tallyLine.get('.activity__says').classes()).toContain('truncate')
+    expect(tallyLine.get('.activity__about').classes()).toContain('truncate')
 
-    const resting = line({ text: 'Reading', about: 'permission denied' })
-    expect(resting.get('.activity__about').classes()).toContain('line-clamp-2')
+    const restLine = line({ text: 'Reading', about: 'permission denied' })
+    expect(restLine.get('.activity__about').classes()).toContain('line-clamp-2')
 
     const words = line({ text: 'Searching by words — no model to learn what it says' })
     expect(words.get('.activity__says').classes()).toContain('line-clamp-3')
   })
 
   it('says nothing about a count it was given none of', () => {
-    const drawn = line({ text: 'Reading', about: 'Sabhaparva.epub', isWorking: true })
+    const renderedLine = line({ text: 'Reading', about: 'Sabhaparva.epub', isWorking: true })
 
-    expect(drawn.find('.activity__count').exists()).toBe(false)
+    expect(renderedLine.find('.activity__count').exists()).toBe(false)
   })
 
-  it('waits rather than draw a share of nothing', () => {
-    const drawn = line({ text: 'Fetching models', about: 'inference.onnx', isWorking: true })
+  it('waits and not draw a share of nothing', () => {
+    const renderedLine = line({ text: 'Fetching models', about: 'inference.onnx', isWorking: true })
 
-    expect(drawn.find('.activity__percent').exists()).toBe(false)
-    expect(drawn.find('.activity__spinner').exists()).toBe(true)
+    expect(renderedLine.find('.activity__percent').exists()).toBe(false)
+    expect(renderedLine.find('.activity__spinner').exists()).toBe(true)
   })
 
   it('follows what the work moved on to', async () => {
-    const drawn = line({
+    const renderedLine = line({
       text: 'Indexing',
       about: 'Sabhaparva.epub',
       isWorking: true,
       tally: { done: 3, total: 12 },
     })
-    expect(drawn.get('.activity__about').text()).toBe('Sabhaparva.epub')
+    expect(renderedLine.get('.activity__about').text()).toBe('Sabhaparva.epub')
 
-    await drawn.setProps({ about: 'notes/Vrindavan.md', tally: { done: 8, total: 12 } })
+    await renderedLine.setProps({ about: 'notes/Vrindavan.md', tally: { done: 8, total: 12 } })
 
-    expect(drawn.get('.activity__about').text()).toBe('notes/Vrindavan.md')
-    expect(drawn.get('.activity__percent').text()).toBe('66%')
+    expect(renderedLine.get('.activity__about').text()).toBe('notes/Vrindavan.md')
+    expect(renderedLine.get('.activity__percent').text()).toBe('66%')
   })
 })

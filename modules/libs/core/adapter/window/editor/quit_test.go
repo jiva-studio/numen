@@ -137,11 +137,11 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	installation.Services.SetNoteWrite(&writing)
 
 	turning, settings := numenv1connect.NewSettingsServiceHandler(installation.Services.Settings)
-	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
+	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.Services)
+	mountQuestionsServices(mux, installation.Services)
 	mux.Handle(turning, settings)
-	mux.Handle(drawn, itself)
+	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -149,7 +149,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	t.Cleanup(server.Close)
 
 	return &going{
-		client:       asks(server.Client(), server.URL),
+		client:       newQuestionsClient(server.Client(), server.URL),
 		configuring:  numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
 		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
@@ -226,9 +226,9 @@ func (w records) Write(
 			return domain.Fingerprint{}, ctx.Err()
 		}
 	}
-	written, err := w.VaultWriter.Write(ctx, path, content, ref)
+	contentVal, err := w.VaultWriter.Write(ctx, path, content, ref)
 	w.order.record("wrote " + path)
-	return written, err
+	return contentVal, err
 }
 
 // TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses. The window may not
@@ -255,9 +255,9 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		t.Fatal("the write never reached the vault")
 	}
 
-	shut := make(chan struct{})
+	shutCh := make(chan struct{})
 	go func() {
-		defer close(shut)
+		defer close(shutCh)
 		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
 		f.installation.FlushPending(ctx)
@@ -268,7 +268,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	}()
 
 	select {
-	case <-shut:
+	case <-shutCh:
 		t.Fatal("the quit closed the database with a write in the air")
 	case <-time.After(300 * time.Millisecond):
 	}
@@ -276,12 +276,12 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	hold.release()
 
 	select {
-	case <-shut:
+	case <-shutCh:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the quit never finished")
 	}
 	if err := <-writing; err != nil {
-		t.Fatalf("the write was refused: %v", err)
+		t.Fatalf("the write failed: %v", err)
 	}
 
 	if got := f.order.getAll(); len(got) != 2 || got[0] != "wrote Note.md" || got[1] != "closed" {
@@ -394,8 +394,8 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	}
 
 	// The page is listening and will say nothing at all.
-	bound := 400 * time.Millisecond
-	ctx, cancel := context.WithTimeout(t.Context(), bound)
+	linked := 400 * time.Millisecond
+	ctx, cancel := context.WithTimeout(t.Context(), linked)
 	defer cancel()
 
 	began := time.Now()
@@ -404,10 +404,10 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	}
 	took := time.Since(began)
 
-	if took < bound {
-		t.Errorf("the quit gave the page %v of the %v it is owed", took, bound)
+	if took < linked {
+		t.Errorf("the quit gave the page %v of the %v it is owed", took, linked)
 	}
-	if took > 3*bound {
+	if took > 3*linked {
 		t.Errorf("a page that never answered held the quit for %v", took)
 	}
 }
@@ -496,7 +496,7 @@ func (p *speaking) endStream(t *testing.T) {
 
 // TestAPageWithAQuestionStandingDoesNotLetTheWindowGo. The text is in that
 // buffer and nowhere else, and only the person says where it ends up.
-func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
+func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 
@@ -547,11 +547,11 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 
 	// What the window does with a close it called off: it waits on a person,
 	// and that wait is not measured.
-	answered := make(chan bool, 1)
-	go func() { answered <- f.installation.WaitForFlush(t.Context()) }()
+	reply := make(chan bool, 1)
+	go func() { reply <- f.installation.WaitForFlush(t.Context()) }()
 
 	select {
-	case <-answered:
+	case <-reply:
 		t.Fatal("the window was let go before the person answered")
 	case <-time.After(300 * time.Millisecond):
 	}
@@ -560,7 +560,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	page.sendFlush(page.token, v1.FlushResult_FLUSH_RESULT_WRITTEN)
 
 	select {
-	case let := <-answered:
+	case let := <-reply:
 		if !let {
 			t.Fatal("the page has nothing left and the window was not let go")
 		}
@@ -619,7 +619,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 // TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind. A stream
 // ending is not an answer, so what the page held is waited for; and it is
 // waited for as silence is, which is the bound and no longer.
-func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testing.T) {
+func TestAPageThatGoesWithAQuestionActiveIsWaitedForAndThenLeftPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 
@@ -633,8 +633,8 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 	}
 	page.endStream(t)
 
-	bound := 400 * time.Millisecond
-	ctx, endsAt := context.WithTimeout(t.Context(), bound)
+	linked := 400 * time.Millisecond
+	ctx, endsAt := context.WithTimeout(t.Context(), linked)
 	defer endsAt()
 
 	began := time.Now()
@@ -643,17 +643,17 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 	}
 	took := time.Since(began)
 
-	if took < bound {
-		t.Errorf("the quit gave the page %v of the %v it is owed", took, bound)
+	if took < linked {
+		t.Errorf("the quit gave the page %v of the %v it is owed", took, linked)
 	}
-	if took > 3*bound {
+	if took > 3*linked {
 		t.Errorf("a page that went held the quit for %v", took)
 	}
 }
 
 // TestAPageThatComesBackRaisesItsQuestionAgain. The client is back after a
 // second under a token of its own, and the text it holds is still its own.
-func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
+func TestAPageThatReachesBackRaisesItsQuestionAgain(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 

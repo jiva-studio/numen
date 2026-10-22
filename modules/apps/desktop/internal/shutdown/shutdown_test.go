@@ -19,7 +19,7 @@ func TestTheStepsRunInTheOrderTheyWereGiven(t *testing.T) {
 }
 
 // The application's shutdown and the return of the run it was made in both ask,
-// and the window is let go of once.
+// and the window is release once.
 func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
 	times := 0
 	steps := NewSequence(func() { times++ })
@@ -37,10 +37,10 @@ func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
 // to close what that step has open.
 func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 	running := make(chan struct{})
-	held := make(chan struct{})
+	target := make(chan struct{})
 	steps := NewSequence(func() {
 		close(running)
-		<-held
+		<-target
 	})
 
 	go steps.Run()
@@ -58,7 +58,7 @@ func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 	case <-time.After(300 * time.Millisecond):
 	}
 
-	close(held)
+	close(target)
 	select {
 	case <-returned:
 	case <-time.After(5 * time.Second):
@@ -75,15 +75,15 @@ func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 		times++
 	})
 
-	var asking sync.WaitGroup
+	var wg sync.WaitGroup
 	for range 8 {
-		asking.Add(1)
+		wg.Add(1)
 		go func() {
-			defer asking.Done()
+			defer wg.Done()
 			steps.Run()
 		}()
 	}
-	asking.Wait()
+	wg.Wait()
 
 	mu.Lock()
 	defer mu.Unlock()

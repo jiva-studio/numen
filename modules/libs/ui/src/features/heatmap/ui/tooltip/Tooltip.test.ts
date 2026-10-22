@@ -72,7 +72,7 @@ describe('the tooltip itself', () => {
   })
 })
 
-describe('where it stands', () => {
+describe('at its current position', () => {
   it('runs on from the far end of the thing it is about, and level with its top', async () => {
     expect(getPlacement(await mountTooltip())).toEqual({ x: '128px', y: '200px' })
   })
@@ -90,7 +90,7 @@ describe('where it stands', () => {
     expect(getPlacement(tooltip).x).toBe('72px')
   })
 
-  it('folds up from the foot of the room rather than running past it', async () => {
+  it('folds up from the foot of the room and not running past it', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ y: 90 }),
       viewport: createViewport({ width: 1000, height: 100 }),
@@ -98,7 +98,7 @@ describe('where it stands', () => {
     expect(getPlacement(tooltip).y).toBe('50px')
   })
 
-  it('stands clear of the edge it is against where it is larger than the room', async () => {
+  it('remains clear of the edge it is against where it is larger than the room', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ x: 10, y: 10 }),
       viewport: createViewport({ width: 60, height: 800 }),
@@ -108,7 +108,7 @@ describe('where it stands', () => {
 })
 
 describe('the thing it is about moving', () => {
-  it('is placed again beside where that thing now is', async () => {
+  it('is placed again alongside where that thing now is', async () => {
     const tooltip = await mountTooltip()
     expect(getPlacement(tooltip).x).toBe('128px')
 

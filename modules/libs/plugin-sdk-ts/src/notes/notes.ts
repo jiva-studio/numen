@@ -25,7 +25,7 @@ interface NoteStoreContext {
   bodies: Map<string, string>
   addresses: Map<string, LinkAddress>
   reportedIds: Set<string>
-  closeCallbacks: Map<string, (gone: boolean) => void>
+  closeCallbacks: Map<string, (removed: boolean) => void>
   queue: ReturnType<typeof createNoteQueue>
   onReplaced: (path: string) => void
 }
@@ -104,7 +104,7 @@ function createNoteStoreContext(
   const bodies = shallowReactive(new Map<string, string>())
   const addresses = shallowReactive(new Map<string, LinkAddress>())
   const reportedIds = new Set<string>()
-  const closeCallbacks = new Map<string, (gone: boolean) => void>()
+  const closeCallbacks = new Map<string, (removed: boolean) => void>()
 
   const context: NoteStoreContext = {
     tabs,
@@ -150,13 +150,13 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const getOpenIds = (): readonly string[] => [...tabs.keys()]
 
   const close = (id: string): Promise<boolean> =>
-    new Promise((done) => {
-      if (!tabs.has(id)) return done(true)
+    new Promise((isDone) => {
+      if (!tabs.has(id)) return isDone(true)
       if (reportedIds.has(id)) {
         discardTab(context, id)
-        return done(true)
+        return isDone(true)
       }
-      closeCallbacks.set(id, done)
+      closeCallbacks.set(id, isDone)
       dispatch(id, { kind: 'close' })
     })
 

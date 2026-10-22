@@ -357,7 +357,7 @@ func TestAFileIsReadWithWhatItWasWhenAskedAbout(t *testing.T) {
 	}
 }
 
-func TestAFileIsWrittenOnlyOverWhatWasRead(t *testing.T) {
+func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	read, err := client.GetFileFingerprint(t.Context(), connect.NewRequest(&v1.GetFileFingerprintRequest{Path: "decks/A.md"}))
 	if err != nil {
@@ -382,7 +382,7 @@ func TestAFileIsWrittenOnlyOverWhatWasRead(t *testing.T) {
 	}
 }
 
-func TestAFileIsMadeOnlyWhereNoneStands(t *testing.T) {
+func TestAFileIsMadeOnlyWhereNoneExists(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
 	first, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "decks/B.md", Content: []byte("b")}))
@@ -431,7 +431,7 @@ func TestTheIndexIsBroughtLevelWithTheFilesNamed(t *testing.T) {
 	}
 }
 
-func TestWhatTheIndexSaysOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
+func TestWhatTheIndexReturnsOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 
@@ -470,7 +470,7 @@ func TestWhatTheIndexSaysOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
 	}
 }
 
-func TestADataFolderIsKeptOnlyWhereTheManifestNamesOne(t *testing.T) {
+func TestADataFolderIsCachedOnlyWhereTheManifestNamesOne(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	ctx := t.Context()
 
@@ -481,14 +481,14 @@ func TestADataFolderIsKeptOnlyWhereTheManifestNamesOne(t *testing.T) {
 		t.Fatal(err)
 	}
 	read, err := client.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "run.log"}))
-	listed, listErr := client.ListData(ctx, connect.NewRequest(&v1.ListDataRequest{}))
+	items, listErr := client.ListData(ctx, connect.NewRequest(&v1.ListDataRequest{}))
 	missing, missingErr := client.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "other.log"}))
 
 	if err != nil || string(read.Msg.GetContent()) != "one\ntwo\n" {
 		t.Errorf("the data read back was %q (%v)", read.Msg.GetContent(), err)
 	}
-	if listErr != nil || len(listed.Msg.GetFiles()) != 1 || listed.Msg.GetFiles()[0].GetSize() != 8 {
-		t.Errorf("the files were %v (%v)", listed.Msg, listErr)
+	if listErr != nil || len(items.Msg.GetFiles()) != 1 || items.Msg.GetFiles()[0].GetSize() != 8 {
+		t.Errorf("the files were %v (%v)", items.Msg, listErr)
 	}
 	if missingErr != nil || missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING {
 		t.Errorf("a missing file was answered %v (%v)", missing.Msg, missingErr)
@@ -496,14 +496,14 @@ func TestADataFolderIsKeptOnlyWhereTheManifestNamesOne(t *testing.T) {
 
 	hosted := newCallers(nil)
 	hosted.vault = vault
-	bare := newVaultClient(t, hosted, "token-a")
-	none, err := bare.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "run.log"}))
+	bareClient := newVaultClient(t, hosted, "token-a")
+	none, err := bareClient.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "run.log"}))
 	if err != nil || none.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER {
 		t.Errorf("a plugin with no folder was answered %v (%v)", none.Msg, err)
 	}
 }
 
-func TestACacheIsKeptPerPluginAndRemembersWhetherAnythingWasKept(t *testing.T) {
+func TestACacheIsCachedPerPluginAndRemembersWhetherAnythingWasCached(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 
@@ -521,7 +521,7 @@ func TestACacheIsKeptPerPluginAndRemembersWhetherAnythingWasKept(t *testing.T) {
 	}
 }
 
-func TestAWatchSaysItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
+func TestAWatchReturnsItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
 	if err != nil {
@@ -542,7 +542,7 @@ func TestAWatchSaysItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	}
 }
 
-func TestAWatchSaysWhenTheWindowShowsAnotherVault(t *testing.T) {
+func TestAWatchReturnsWhenTheWindowShowsAnotherVault(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
 	if err != nil {
@@ -606,10 +606,10 @@ func TestAHeaderNamesTheVaultACallWorks(t *testing.T) {
 	}
 	unknown := connect.NewRequest(&v1.GetHostVaultRequest{})
 	unknown.Header().Set("Numen-Vault", "v9")
-	_, refused := client.GetHostVault(t.Context(), unknown)
+	_, rejected := client.GetHostVault(t.Context(), unknown)
 
-	if res.Msg.GetName() != "Chemistry" || connect.CodeOf(refused) != connect.CodeNotFound {
-		t.Errorf("the vault was %v, and an unknown one was answered %v", res.Msg, refused)
+	if res.Msg.GetName() != "Chemistry" || connect.CodeOf(rejected) != connect.CodeNotFound {
+		t.Errorf("the vault was %v, and an unknown one was answered %v", res.Msg, rejected)
 	}
 }
 
@@ -633,7 +633,7 @@ func TestEveryVaultTheInstallationKnowsIsListed(t *testing.T) {
 	}
 }
 
-func TestWhereTheIndexStandsIsSaid(t *testing.T) {
+func TestWhereTheIndexExistsIsSaid(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	cases := map[port.PluginIndexStatus]v1.HostIndexState{
 		port.PluginIndexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
@@ -669,7 +669,7 @@ func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 	}
 }
 
-func TestTheNotesFiledUnderANameAreListed(t *testing.T) {
+func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
 	res, err := client.GetNamedPaths(t.Context(), connect.NewRequest(&v1.GetNamedPathsRequest{Name: "Animal"}))

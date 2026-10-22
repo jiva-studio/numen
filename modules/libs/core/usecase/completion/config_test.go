@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
 
-// The default stands under ai.default, with the agent, the model and the limit.
+// The default is placed under ai.default, with the agent, the model and the limit.
 func TestTheDefaultIsReadFromItsOwnKey(t *testing.T) {
 	var config completion.Config
 	if err := json.Unmarshal([]byte(`{"default": {"agent": "a", "model": "m", "concurrency": 3}}`), &config); err != nil {
@@ -39,7 +39,7 @@ func TestAnOlderFileKeepsItsDefaultRoute(t *testing.T) {
 }
 
 // The default of the new shape stands over the routes of the older one.
-func TestTheDefaultStandsOverTheOlderRoutes(t *testing.T) {
+func TestTheDefaultExistsOverTheOlderRoutes(t *testing.T) {
 	var config completion.Config
 	both := `{"default": {"agent": "new"}, "routes": {"default": {"agent": "old"}}}`
 	if err := json.Unmarshal([]byte(both), &config); err != nil {

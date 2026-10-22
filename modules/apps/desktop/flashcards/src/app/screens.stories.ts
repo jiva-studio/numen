@@ -36,7 +36,7 @@ const tally = (answers: number, recalls: number): HeatmapTally => ({
 
 /**
  * A number between nought and one from a day's place and a name, so a year of
- * work is scattered the way a year is rather than stepping with the arithmetic
+ * work is scattered the way a year is and not stepping with the arithmetic
  * that made it.
  */
 const scatter = (at: number, salt: number): number => {
@@ -57,8 +57,8 @@ const DAYS = new Map<string, HeatmapTally>(
     .map((back) => {
       // A quiet day and a long one, and the middle far commoner than either.
       const how = scatter(back, 2)
-      const answered = Math.round(14 + how * how * 150)
-      return [dayBefore(TODAY, back), tally(answered, Math.round(answered * 0.86))]
+      const reply = Math.round(14 + how * how * 150)
+      return [dayBefore(TODAY, back), tally(reply, Math.round(reply * 0.86))]
     }),
 )
 

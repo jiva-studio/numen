@@ -26,9 +26,9 @@ func TestALinkedHandlerAnswersWithTheTokenOfItsVariables(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	refused := numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL,
+	unauthClient := numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL,
 		connect.WithInterceptors(&bearerAuthInterceptor{token: "another-token"}))
-	_, err = refused.Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{}))
+	_, err = unauthClient.Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{}))
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("Configure with another token = %v, want unauthenticated", err)
 	}

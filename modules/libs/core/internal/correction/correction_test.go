@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {
+func TestCorrectionsComeBackAsTheyWereSaved(t *testing.T) {
 	lines := []domain.CorrectionLine{
 		{Number: 0, Text: "Śrī Jayadeva Gosvāmī"},
 		{Number: 7, Text: ""},
@@ -25,7 +25,7 @@ func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {
 	}
 }
 
-func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
+func TestATornTailProducesBackTheWholeCorrections(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written. What
 	// was written whole is still a correction.
 	lines := []domain.CorrectionLine{
@@ -41,8 +41,8 @@ func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
 	if !reflect.DeepEqual(got[0], lines[0]) {
 		t.Errorf("unpacked %+v, want %+v", got[0], lines[0])
 	}
-	if left := correction.Unpack(raw[:6]); len(left) != 0 {
-		t.Errorf("unpacked %d corrections from less than one header", len(left))
+	if remaining := correction.Unpack(raw[:6]); len(remaining) != 0 {
+		t.Errorf("unpacked %d corrections from less than one header", len(remaining))
 	}
 }
 

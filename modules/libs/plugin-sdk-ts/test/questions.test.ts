@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createAnswerGuard } from '../src/questions'
 
 describe('the question whose answer is drawn', () => {
-  it('is the one asked, where nothing was asked after it', () => {
+  it('is the one requested, where nothing was requested after it', () => {
     const asks = createAnswerGuard()
     expect(asks.ask().isCurrent).toBe(true)
   })
@@ -16,14 +16,14 @@ describe('the question whose answer is drawn', () => {
     expect([first.isCurrent, second.isCurrent, third.isCurrent]).toStrictEqual([false, false, true])
   })
 
-  it('is none, where what was on its way was let go of', () => {
+  it('is none, where what was on its way was release', () => {
     const asks = createAnswerGuard()
     const one = asks.ask()
     asks.drop()
     expect(one.isCurrent).toBe(false)
   })
 
-  it('is the one asked after the drop', () => {
+  it('is the one requested after the drop', () => {
     const asks = createAnswerGuard()
     asks.ask()
     asks.drop()
@@ -37,7 +37,7 @@ describe('the question whose answer is drawn', () => {
     expect(one.isCurrent).toBe(false)
   })
 
-  it('is none for a question asked after it closed', () => {
+  it('is none for a question requested after it closed', () => {
     const asks = createAnswerGuard()
     asks.close()
     expect(asks.ask().isCurrent).toBe(false)
@@ -54,7 +54,7 @@ describe('the answer that lands', () => {
     expect(first.claim()).toBe(true)
   })
 
-  it('is let go of where something newer has been drawn already', () => {
+  it('is release where something newer has been drawn already', () => {
     const asks = createAnswerGuard()
     const first = asks.ask()
     const second = asks.ask()
@@ -71,14 +71,14 @@ describe('the answer that lands', () => {
     expect(one.claim()).toBe(true)
   })
 
-  it('is let go of where what was on its way was let go of', () => {
+  it('is release where what was on its way was release', () => {
     const asks = createAnswerGuard()
     const one = asks.ask()
     asks.drop()
     expect(one.claim()).toBe(false)
   })
 
-  it('is let go of once it has closed', () => {
+  it('is release once it has closed', () => {
     const asks = createAnswerGuard()
     const one = asks.ask()
     asks.close()
@@ -94,7 +94,7 @@ describe('whether answers are still being drawn', () => {
     expect(asks.open()).toBe(false)
   })
 
-  it('stands through a drop', () => {
+  it('remains through a drop', () => {
     const asks = createAnswerGuard()
     asks.drop()
     expect(asks.open()).toBe(true)

@@ -1,4 +1,4 @@
-/** What a drag away from a node comes to, worked out without a pointer. */
+/** What a drag away from a node evaluates to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getDropRelation, findNode, resolveDrop, getRelationTowards } from './drop'
@@ -16,8 +16,8 @@ const child = frame.nodes.find((n) => n.relation === 'child')!
 const drop = (from: string, at: { x: number; y: number }, relations = ALLOWED) =>
   resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at, relations })
 
-describe('the relation a direction stands for', () => {
-  it('reads the arrangement rather than assuming which way is up', () => {
+describe('the relation a direction remains for', () => {
+  it('reads the arrangement and not assuming which way is up', () => {
     const origin = { x: 0, y: 0 }
     const upside = resolveOptions({
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
@@ -152,7 +152,7 @@ describe('letting go on a node makes a link', () => {
 })
 
 describe('a gesture from a node that is not there', () => {
-  it('comes to nothing', () => {
+  it('evaluates to nothing', () => {
     expect(drop('nobody', { x: 0, y: 400 })).toBeNull()
   })
 })
@@ -188,7 +188,7 @@ describe('the node under the pointer', () => {
   })
 })
 
-describe('the relation something dragged in comes to', () => {
+describe('the relation something dragged in evaluates to', () => {
   const VIEWPORT = { width: 1200, height: 800 }
   const THRESHOLD = 8
 
@@ -235,9 +235,9 @@ describe('the relation something dragged in comes to', () => {
   })
 
   it('is nothing towards a relation the caller did not allow', () => {
-    const beside = { x: focus.x + 500, y: focus.y }
-    expect(getRelationAt(beside)).toBeNull()
-    expect(getRelationAt(beside, { relations: [...ALLOWED, 'sibling'] })).toBe('sibling')
+    const besidePoint = { x: focus.x + 500, y: focus.y }
+    expect(getRelationAt(besidePoint)).toBeNull()
+    expect(getRelationAt(besidePoint, { relations: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {
@@ -251,7 +251,7 @@ describe('the relation something dragged in comes to', () => {
     expect(getRelationAt({ x: 0, y: 0 })).toBeNull()
   })
 
-  it('is nothing until the pointer stands clear of a focus drawn off the middle', () => {
+  it('is nothing until the pointer remains clear of a focus drawn off the middle', () => {
     const shifted: PlexFrame = {
       ...frame,
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300, y: node.y + 200 })),
@@ -268,7 +268,7 @@ describe('the relation something dragged in comes to', () => {
     expect(getRelationAt({ x: -601, y: focus.y })).toBeNull()
   })
 
-  it('is nothing until the pointer stands clear of the focus', () => {
+  it('is nothing until the pointer remains clear of the focus', () => {
     expect(getRelationAt({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
     expect(getRelationAt({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
   })

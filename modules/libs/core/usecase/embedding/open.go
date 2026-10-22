@@ -54,7 +54,7 @@ const (
 //
 // They are one model where only the first is named. Where both are, the second
 // is held to the first by being asked one text once both are here, and a second
-// answering it differently is let go of: a question embedded in another space
+// answering it differently is release: a question embedded in another space
 // finds nothing the first indexed.
 //
 // Where only the first is named, the index side holds at most one fewer call in
@@ -92,18 +92,18 @@ func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
 	if !from.isPlaced() {
 		return nil, nil
 	}
-	held := open(ctx, nil, arrival{from: from})
-	return held.GetWaitingEmbedder(), held.Close
+	target := open(ctx, nil, arrival{from: from})
+	return target.GetWaitingEmbedder(), target.Close
 }
 
 // open is one provider held under the identity its vectors are kept under. What
 // it is is known before it is here, so the index is fitted and a vector claimed
 // under the right recipe while the weights are still coming down.
 func open(ctx context.Context, tasks *run.Tasks, at arrival) *embedding.Embedder {
-	held := embedding.NewDeferredEmbedder(at.from.model)
+	target := embedding.NewDeferredEmbedder(at.from.model)
 	if at.from.fetch == nil {
-		held.SetModel(at.from.held, nil)
-		return held
+		target.SetModel(at.from.held, nil)
+		return target
 	}
 
 	tell := newProgressReport(tasks, at)
@@ -111,14 +111,14 @@ func open(ctx context.Context, tasks *run.Tasks, at arrival) *embedding.Embedder
 	go func() {
 		model, err := at.from.fetch(ctx, tell)
 		if err != nil {
-			held.SetModel(nil, err)
+			target.SetModel(nil, err)
 			reportError(tasks, at, err)
 			return
 		}
-		held.SetModel(model, nil)
+		target.SetModel(model, nil)
 		ready(tasks, at)
 	}()
-	return held
+	return target
 }
 
 // compareModels is the two providers answering one text alike, once both are
@@ -144,7 +144,7 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 		return unchecked(err)
 	}
 
-	said, err := first.GetWaitingEmbedder().Embed(ctx, []string{embedding.Asked})
+	response, err := first.GetWaitingEmbedder().Embed(ctx, []string{embedding.Asked})
 	if err != nil {
 		return unchecked(err)
 	}
@@ -152,7 +152,7 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 	if err != nil {
 		return unchecked(err)
 	}
-	if len(said) != 1 || len(back) != 1 || !embedding.IsAgreed(said[0], back[0]) {
+	if len(response) != 1 || len(back) != 1 || !embedding.IsAgreed(response[0], back[0]) {
 		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
 			first.GetModel(), second.GetModel())
 	}
@@ -185,11 +185,11 @@ func newProgressReport(tasks *run.Tasks, at arrival) func(done, total int64) {
 		return func(int64, int64) {}
 	}
 	return func(done, total int64) {
-		held := run.Task{ID: at.id, Title: "Preparing the model", About: at.name}
+		target := run.Task{ID: at.id, Title: "Preparing the model", About: at.name}
 		if done > 0 {
-			held.Count, held.Total, held.Unit = done, total, run.Bytes
+			target.Count, target.Total, target.Unit = done, total, run.Bytes
 		}
-		tasks.Set(held)
+		tasks.Set(target)
 	}
 }
 

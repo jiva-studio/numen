@@ -48,8 +48,8 @@ func (d Day) zone() *time.Location {
 func (d Day) GetEnd(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
-	if opened := d.getStartTime(y, m, day); local.Before(opened) {
-		return opened
+	if startTime := d.getStartTime(y, m, day); local.Before(startTime) {
+		return startTime
 	}
 	return d.getStartTime(y, m, day+1)
 }
@@ -58,8 +58,8 @@ func (d Day) GetEnd(at time.Time) time.Time {
 func (d Day) GetStart(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
-	if opened := d.getStartTime(y, m, day); !local.Before(opened) {
-		return opened
+	if startTime := d.getStartTime(y, m, day); !local.Before(startTime) {
+		return startTime
 	}
 	return d.getStartTime(y, m, day-1)
 }

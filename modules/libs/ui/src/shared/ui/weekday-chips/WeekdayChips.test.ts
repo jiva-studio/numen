@@ -41,7 +41,7 @@ afterEach(() => {
 })
 
 describe('what is drawn', () => {
-  it('draws the seven days, each under its whole name and how full it stands', () => {
+  it('draws the seven days, each under its whole name and how full it remains', () => {
     const chips = mountChips().findAll('button')
     expect(chips).toHaveLength(7)
     expect(chips.map((chip) => chip.attributes('aria-label'))).toEqual([
@@ -63,7 +63,7 @@ describe('what is drawn', () => {
 
   // The week is read at a glance: a day at the whole of it is full colour, and
   // a day at nothing has none.
-  it('fills a day in step with the level it stands at', () => {
+  it('fills a day in step with the level it remains at', () => {
     const chips = mountChips({ days: week({ sat: 0, sun: 0.75 }) }).findAll('button')
     const getStyle = (at: number) => chips[at]?.attributes('style') ?? ''
     expect(getStyle(0)).toContain('var(--numen-accent) 100%')
@@ -71,7 +71,7 @@ describe('what is drawn', () => {
     expect(getStyle(6)).toContain('var(--numen-accent) 75%')
   })
 
-  it('says a day offers the levels rather than turning on the spot', () => {
+  it('says a day offers the levels and not turning on the spot', () => {
     expect(mountChips().get('button').attributes('aria-haspopup')).toBe('menu')
   })
 
@@ -136,7 +136,7 @@ describe('the keyboard while the levels are offered', () => {
     ...document.body.querySelectorAll<HTMLElement>('.menu__item'),
   ]
 
-  it('opens on the level the day stands at, and says which of them it is', async () => {
+  it('opens on the level the day remains at, and says which of them it is', async () => {
     const row = mountChips()
     await openMenu(row, 5)
     expect(document.activeElement).toBe(items()[3])
@@ -185,14 +185,14 @@ describe('giving a day a level', () => {
 
   // The day is handed back as it was given, and the level with it; what a level
   // means, and what becomes of the days it says nothing about, are the caller's.
-  it('hands back the day it was given and the level chosen for it', async () => {
+  it('returns the day it was given and the level chosen for it', async () => {
     const row = mountChips()
     await row.findAll('button')[0]?.trigger('click')
     await document.body.querySelectorAll<HTMLElement>('.menu__item')[2]?.click()
     expect(getChosen(row)).toEqual([['mon', 0.25]])
   })
 
-  it('hands back a day put at the whole of it like any other', async () => {
+  it('returns a day put at the whole of it like any other', async () => {
     const row = mountChips()
     await row.findAll('button')[5]?.trigger('click')
     await document.body.querySelectorAll<HTMLElement>('.menu__item')[6]?.click()

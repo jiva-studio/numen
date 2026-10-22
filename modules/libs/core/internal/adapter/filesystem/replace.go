@@ -109,8 +109,8 @@ func replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 	if err := rename(ctx, root, at, target); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
-	return written, syncDirectory(root, dir)
+	content := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
+	return content, syncDirectory(root, dir)
 }
 
 // syncDirectory flushes the folder the rename was recorded in.

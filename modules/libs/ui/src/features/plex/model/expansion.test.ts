@@ -39,22 +39,22 @@ describe('a box with more of its title to show', () => {
 
   it('grows about its own middle, so it opens both ways at once', () => {
     const node = createNode({ x: 120 })
-    const wide = getWideBox(node, 300, BOUNDS)!
-    expect(getSpan(node, wide)).toStrictEqual({ from: -30, to: 270 })
+    const wideBox = getWideBox(node, 300, BOUNDS)!
+    expect(getSpan(node, wideBox)).toStrictEqual({ from: -30, to: 270 })
   })
 
   it('slides back inside the window where its middle leaves no room', () => {
     const node = createNode({ x: 500 })
-    const wide = getWideBox(node, 300, BOUNDS)!
-    expect(wide.width).toBe(300)
-    expect(getSpan(node, wide)).toStrictEqual({ from: 284, to: 584 })
+    const wideBox = getWideBox(node, 300, BOUNDS)!
+    expect(wideBox.width).toBe(300)
+    expect(getSpan(node, wideBox)).toStrictEqual({ from: 284, to: 584 })
   })
 
   it('grows no wider than the window, the margin kept clear', () => {
     const node = createNode({ x: 500 })
-    const wide = getWideBox(node, 2000, BOUNDS)!
-    expect(wide.width).toBe(WINDOW.width - 2 * MARGIN)
-    expect(getSpan(node, wide)).toStrictEqual({ from: -584, to: 584 })
+    const wideBox = getWideBox(node, 2000, BOUNDS)!
+    expect(wideBox.width).toBe(WINDOW.width - 2 * MARGIN)
+    expect(getSpan(node, wideBox)).toStrictEqual({ from: -584, to: 584 })
   })
 })
 
@@ -101,7 +101,7 @@ describe('a box opening under the attention', () => {
     expect(world.pending).toBe(false)
   })
 
-  it('opens across several frames rather than in one', async () => {
+  it('opens across several frames and not in one', async () => {
     const on = ref<string | null>(null)
     const { open, world } = createExpansion(() => on.value)
 

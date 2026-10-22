@@ -9,7 +9,7 @@ import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../lib/commands'
 import type { PendingStep } from '../lib/step'
 import type { Command, CommandTarget, PaletteLists } from '../types'
-import { runSupport } from './runs'
+import { runSupport } from './runSupport'
 import { getPaletteView } from './view'
 
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -60,26 +60,26 @@ describe('the commands as the words typed leave them', () => {
   const view = createView(createCommands(words))
 
   it('lights nothing where nothing is typed', () => {
-    const read = getNoteGroup(view, front(), '')?.items.find((item) => item.id === 'read')
+    const readItem = getNoteGroup(view, front(), '')?.items.find((item) => item.id === 'read')
 
-    expect(read).toBeDefined()
-    expect(read).not.toHaveProperty('at')
+    expect(readItem).toBeDefined()
+    expect(readItem).not.toHaveProperty('at')
   })
 
   it('lights the words typed where the text of a command begins with them', () => {
     const word = words.read.toLowerCase().slice(0, 3)
 
-    const read = getNoteGroup(view, front(), word)?.items.find((item) => item.id === 'read')
+    const readItem = getNoteGroup(view, front(), word)?.items.find((item) => item.id === 'read')
 
-    expect(read?.at).toStrictEqual([{ from: 0, to: 3 }])
+    expect(readItem?.at).toStrictEqual([{ from: 0, to: 3 }])
   })
 
   it('lights the words typed where they stand inside the text of a command', () => {
-    const read = getNoteGroup(view, front(), words.read.toLowerCase().slice(1, 3))?.items.find(
+    const readItem = getNoteGroup(view, front(), words.read.toLowerCase().slice(1, 3))?.items.find(
       (item) => item.id === 'read',
     )
 
-    expect(read?.at).toStrictEqual([{ from: 1, to: 3 }])
+    expect(readItem?.at).toStrictEqual([{ from: 1, to: 3 }])
   })
 
   it('leaves out every command the words typed are not in', () => {

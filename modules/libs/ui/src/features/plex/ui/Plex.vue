@@ -97,7 +97,7 @@ const gesture = usePlexGesture({
 /**
  * Something dragged across the picture from outside it.
  *
- * The plex works out which relation letting go comes to, measured from the focus,
+ * The plex works out which relation letting go evaluates to, measured from the focus,
  * and says so. What is being dragged it never looks at.
  */
 const dragging = usePlexDrag({

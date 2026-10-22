@@ -46,7 +46,7 @@ describe('the preset one deck is scheduled by', () => {
     expect(one.ok && one.value.held.settings.goal).toBe('minutes')
   })
 
-  it('is refused with the error given where the preset came without settings', async () => {
+  it('fails with the error given where the preset came without settings', async () => {
     const one = await readDeckPreset(
       answering({ preset: preset(), error: ErrorCode.NOT_A_NOTE }),
       '01A',
@@ -56,7 +56,7 @@ describe('the preset one deck is scheduled by', () => {
     expect(one).toMatchObject({ ok: false, error: 'that file is not a note' })
   })
 
-  it('is refused as unread where no preset and no error came', async () => {
+  it('fails as unread where no preset and no error came', async () => {
     const one = await readDeckPreset(answering({}), '01A', 'decks/Words.md')
 
     expect(one).toMatchObject({ ok: false, error: PRESET_UNREADABLE_MESSAGE })

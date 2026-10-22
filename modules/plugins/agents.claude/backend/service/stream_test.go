@@ -153,13 +153,13 @@ func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
 	}
 }
 
-func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
+func TestParseLines_VaultMcpFailure(t *testing.T) {
 	cases := map[string]string{
 		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:         "the agent could not reach this vault",
 		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                           "the agent was started without this vault",
 		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"connected"}]}`:      "",
 		`{"type":"system","subtype":"init"}`:                                                            "",
-		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"refused"}]}`: "the agent was not given this vault: refused",
+		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"rejected"}]}`: "the agent was not given this vault: rejected",
 	}
 	for line, want := range cases {
 		if _, reason := parseLines(t, nil, line); reason != want {
@@ -168,7 +168,7 @@ func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 	}
 }
 
-func TestAnErrorResultIsPutIntoWords(t *testing.T) {
+func TestParseLines_ErrorResultFormatting(t *testing.T) {
 	cases := map[string]string{
 		`{"type":"result","is_error":true,"subtype":"error_max_turns"}`:                            "the agent reached the limit of steps without finishing",
 		`{"type":"result","is_error":true,"subtype":"error_context_length_exceeded"}`:              "the conversation is too long for the model",
@@ -184,7 +184,7 @@ func TestAnErrorResultIsPutIntoWords(t *testing.T) {
 	}
 }
 
-func TestTheFirstReasonHolds(t *testing.T) {
+func TestParseLines_FirstErrorPriority(t *testing.T) {
 	_, reason := parseLines(t, nil,
 		`{"type":"result","is_error":true,"subtype":"error_rate_limit"}`,
 		`{"type":"result","is_error":true,"subtype":"error_overloaded"}`)
@@ -193,7 +193,7 @@ func TestTheFirstReasonHolds(t *testing.T) {
 	}
 }
 
-func TestTheAgentReadsNothingThisMachineHoldsForItByDefault(t *testing.T) {
+func TestBuildClaudeArguments_SettingSources(t *testing.T) {
 	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}})
 	assertPair(t, args, "--setting-sources", "")
 	args = buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}, mayReadHooks: true})
@@ -224,7 +224,7 @@ func assertPair(t *testing.T, args []string, flag, want string) {
 	t.Errorf("%s absent from %v", flag, args)
 }
 
-func TestTheChildIsNotToldAboutSomebodyElsesSession(t *testing.T) {
+func TestBuildEnvironment_SessionSanitization(t *testing.T) {
 	got := buildEnvironment([]string{"PATH=/bin", "CLAUDECODE=1", "CLAUDE_CODE_SESSION_ID=x", "HOME=/h"})
 	if strings.Join(got, ",") != "PATH=/bin,HOME=/h" {
 		t.Fatalf("got %v", got)
@@ -326,8 +326,8 @@ func TestStreamParserToolCallChunkAndReset(t *testing.T) {
 	if len(t2Calls) != 3 {
 		t.Fatalf("expected exactly 3 calls for t2, got %d (%+v)", len(t2Calls), t2Calls)
 	}
-	if t2Calls[1].GetWritten() != 200 {
-		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].GetWritten())
+	if t2Calls[1].GetLength() != 200 {
+		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].GetLength())
 	}
 	var t3Calls []*numenv1.ToolCall
 	for _, c := range calls {
@@ -355,7 +355,7 @@ func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
 
 	saids := 0
 	for _, s := range got {
-		if s.GetSaid() != "" {
+		if s.GetText() != "" {
 			saids++
 		}
 	}

@@ -115,16 +115,16 @@ describe('the queue of an open note', () => {
 
     it('asks the tab to flush and waits until it is resolved', async () => {
       const { queue, turned } = setup()
-      let done = false
+      let isFinished = false
 
-      const flushed = queue.flushPending('a').then(() => (done = true))
+      const flushed = queue.flushPending('a').then(() => (isFinished = true))
       await Promise.resolve()
       expect(turned).toEqual([['a', { kind: 'flush' }]])
-      expect(done).toBe(false)
+      expect(isFinished).toBe(false)
       queue.resolveFlush('a')
       await flushed
 
-      expect(done).toBe(true)
+      expect(isFinished).toBe(true)
     })
 
     it('is resolved only for the note named', async () => {
@@ -152,20 +152,20 @@ describe('the queue of an open note', () => {
     it('stops its timer and resolves its flush', async () => {
       const { queue, turned } = setup()
       queue.startTimer('a', 100)
-      let done = false
-      const flushed = queue.flushPending('a').then(() => (done = true))
+      let isFinished = false
+      const flushed = queue.flushPending('a').then(() => (isFinished = true))
 
       queue.discard('a')
       await flushed
       vi.advanceTimersByTime(500)
 
-      expect(done).toBe(true)
+      expect(isFinished).toBe(true)
       expect(turned).toEqual([['a', { kind: 'flush' }]])
     })
   })
 
   describe('a read', () => {
-    it('hands the body, the file it came from and the link to the tab', async () => {
+    it('passes the body, the file it came from and the link to the tab', async () => {
       const { queue, turned, addresses } = setup({
         read: async () => asValue({ body: 'text', at: 'v1', link }),
       })
@@ -178,7 +178,7 @@ describe('the queue of an open note', () => {
       ])
     })
 
-    it('hands an empty file mark and no link where the note has neither', async () => {
+    it('passes an empty file mark and no link where the note has neither', async () => {
       const { queue, turned, addresses } = setup({ read: async () => asValue({ body: 'text' }) })
 
       await queue.read('a', 'Note.md', 1)
@@ -225,7 +225,7 @@ describe('the queue of an open note', () => {
   })
 
   describe('a write', () => {
-    it('hands the file it wrote to the tab and lets a closing tab go on', async () => {
+    it('passes the file it wrote to the tab and lets a closing tab go on', async () => {
       const { queue, turned, resumed } = setup({
         write: async () => asValue({ body: '', at: 'v2' }),
       })
@@ -236,7 +236,7 @@ describe('the queue of an open note', () => {
       expect(resumed).toEqual(['a'])
     })
 
-    it('hands an empty file mark where the write names none', async () => {
+    it('passes an empty file mark where the write names none', async () => {
       const { queue, turned } = setup({ write: async () => asValue({ body: '' }) })
 
       await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })

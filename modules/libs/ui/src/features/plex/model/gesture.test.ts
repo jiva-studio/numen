@@ -1,6 +1,6 @@
 /**
  * The pointer, driven without a browser: the drawing is a stand-in with a
- * matrix, and the events are made here. What a drop comes to is
+ * matrix, and the events are made here. What a drop evaluates to is
  * `lib/arrange/drop.test.ts`; this holds what the pointer does to the window and
  * the drawing.
  */
@@ -65,7 +65,7 @@ const send = (type: string, x = 0, y = 0, pointerId = 1) =>
 const scopes: EffectScope[] = []
 
 function setUp(relations: readonly PlexRelation[] = RELATIONS_OFFERED) {
-  const drawing = createDrawing()
+  const gestureDrawing = createDrawing()
   const commits: Drop[] = []
   const scope = effectScope()
   scopes.push(scope)
@@ -78,7 +78,7 @@ function setUp(relations: readonly PlexRelation[] = RELATIONS_OFFERED) {
       commit: (drop) => commits.push(drop),
     }),
   )!
-  return { gesture, drawing, commits, scope }
+  return { gesture, drawing: gestureDrawing, commits, scope }
 }
 
 afterEach(() => {
@@ -91,18 +91,18 @@ describe('screen to plex coordinates', () => {
   const inverse: Matrix = { a: 2, b: 3, c: 5, d: 7, e: 11, f: 13 }
 
   it('goes through the whole matrix', () => {
-    const drawing = createDrawing(inverse)
+    const gestureDrawing = createDrawing(inverse)
 
-    expect(getPosition(asSvg(drawing), createPointerEvent('pointermove', 17, 19))).toEqual({
+    expect(getPosition(asSvg(gestureDrawing), createPointerEvent('pointermove', 17, 19))).toEqual({
       x: 2 * 17 + 5 * 19 + 11,
       y: 3 * 17 + 7 * 19 + 13,
     })
   })
 
   it('is nowhere when the drawing has no matrix to give', () => {
-    const drawing = createDrawing(null)
+    const gestureDrawing = createDrawing(null)
 
-    expect(getPosition(asSvg(drawing), createPointerEvent('pointermove', 17, 19))).toBeNull()
+    expect(getPosition(asSvg(gestureDrawing), createPointerEvent('pointermove', 17, 19))).toBeNull()
   })
 
   it('is nowhere when the drawing cannot say where it is', () => {
@@ -149,7 +149,7 @@ describe('where a gesture can begin', () => {
     expect(add).not.toHaveBeenCalled()
   })
 
-  it('goes on when the pointer cannot be held', () => {
+  it('goes on when the pointer cannot be retained', () => {
     const { gesture, drawing } = setUp()
     drawing.setPointerCapture.mockImplementation(() => {
       throw new Error('the pointer is not down')
@@ -204,7 +204,7 @@ describe('how far a gesture must go to be a drag', () => {
   })
 })
 
-describe('what a gesture comes to when nothing has begun', () => {
+describe('what a gesture evaluates to when nothing has begun', () => {
   it('is nothing', () => {
     const { gesture } = setUp()
 
@@ -235,7 +235,7 @@ describe('one pointer at a time', () => {
     expect(gesture.at.value).toEqual({ x: 50, y: 60 })
   })
 
-  it('is not let go of by another pointer coming up', () => {
+  it('is not release by another pointer coming up', () => {
     const { gesture, drawing, commits } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0, 1))
 
@@ -280,7 +280,7 @@ describe('letting go', () => {
     expect(gesture.outcome.value).toBeNull()
   })
 
-  it('lets go of the pointer it held', () => {
+  it('lets go of the pointer it retained', () => {
     const { drawing, gesture } = setUp()
     gesture.begin('focus', createDown(drawing, 0, 0, 7))
 
@@ -289,7 +289,7 @@ describe('letting go', () => {
     expect(drawing.releasePointerCapture).toHaveBeenCalledWith(7)
   })
 
-  it('is over even when the pointer was never held', () => {
+  it('is over even when the pointer was never retained', () => {
     const { drawing, gesture } = setUp()
     drawing.releasePointerCapture.mockImplementation(() => {
       throw new Error('not held')

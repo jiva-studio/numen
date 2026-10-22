@@ -1,7 +1,7 @@
 /**
  * The splitter that composes panes, drawn on its own.
  *
- * A branch is told what the workspace holds rather than handed it, so these
+ * A branch is told what the workspace holds and not handed it, so these
  * provide that themselves and keep the shares a handle settles on.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -74,11 +74,11 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { WorkspaceBranch, TabStub },
     setup() {
-      const held = ref<Branch>(ARRANGEMENTS[args.arrangement]())
+      const target = ref<Branch>(ARRANGEMENTS[args.arrangement]())
 
       /** The shares the last handle settled on, written where a story can read them. */
       const resize = (branch: NodeId, sizes: readonly number[]) => {
-        held.value = resizeBranch(held.value, branch, sizes)
+        target.value = resizeBranch(target.value, branch, sizes)
       }
 
       provide(
@@ -98,7 +98,7 @@ const meta: Meta<Knobs> = {
         })),
       )
 
-      return { held, args }
+      return { held: target, args }
     },
     template: `
       <div :style="{ height: '100vh', inlineSize: args.room, padding: 0 }">
@@ -130,8 +130,8 @@ export const TwoPanes: Story = {
     const panes = canvasElement.querySelectorAll('[data-workspace-pane]')
     await expect(panes).toHaveLength(2)
 
-    const [left, right] = [...panes].map((pane) => pane.getBoundingClientRect().width)
-    await expect(left).toBeGreaterThan(right!)
+    const [leftWidth, rightWidth] = [...panes].map((pane) => pane.getBoundingClientRect().width)
+    await expect(leftWidth).toBeGreaterThan(rightWidth!)
   },
 }
 

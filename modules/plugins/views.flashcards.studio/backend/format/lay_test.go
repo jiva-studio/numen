@@ -100,15 +100,15 @@ func corpusOf(t *testing.T) table {
 		t.Fatalf("the table holds %d faces and declares %d, %d of which the slots change",
 			len(read.Faces), read.Count, read.Changed)
 	}
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 	for _, one := range read.Faces {
 		if one.Name == "" || one.Construct == "" {
 			t.Fatalf("a face of the table is called %q and pins %q", one.Name, one.Construct)
 		}
-		if seen[one.Name] {
+		if observed[one.Name] {
 			t.Fatalf("two faces of the table are called %q", one.Name)
 		}
-		seen[one.Name] = true
+		observed[one.Name] = true
 	}
 	return read
 }
@@ -139,7 +139,7 @@ func TestLayFillsAFaceWithACard(t *testing.T) {
 
 // The first field is a field like any other: it is laid out from what the card
 // holds under its heading, and the card's own heading lays out nothing.
-func TestTheFirstFieldLaysOutWhatTheCardHolds(t *testing.T) {
+func TestTheFirstFieldLaysOutWhatTheCardContains(t *testing.T) {
 	card := format.Card{
 		Heading: "Llama, cut short",
 		Values: []format.Value{
@@ -175,7 +175,7 @@ func TestACardWithNoFirstFieldLaysNothingOutForIt(t *testing.T) {
 
 // A field the card leaves out lays out as nothing, and so does one the stencil
 // never declared.
-func TestAPlaceholderWithNothingBehindItLaysOutAsNothing(t *testing.T) {
+func TestAPlaceholderWithNothingPriorItLaysOutAsNothing(t *testing.T) {
 	face := format.FaceTemplate{Front: "{{Name}}", Back: "[{{Height}}][{{Weight}}]"}
 	card := format.Card{Heading: "Llama", Values: []format.Value{{Field: "Height", Text: `45"`}}}
 
@@ -190,7 +190,7 @@ func TestAPlaceholderWithNothingBehindItLaysOutAsNothing(t *testing.T) {
 
 // The name inside the braces is a field's name written exactly: a space is part
 // of it, and so is every letter of every alphabet.
-func TestAPlaceholderIsANameWrittenExactly(t *testing.T) {
+func TestAPlaceholderIsANameSavedExactly(t *testing.T) {
 	card := format.Card{
 		Heading: "яблоня",
 		Values: []format.Value{

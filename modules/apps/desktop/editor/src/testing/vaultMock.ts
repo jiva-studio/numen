@@ -5,14 +5,14 @@
 import { vi } from 'vitest'
 import { asValue } from '@numen/wire'
 import { requests } from './requests'
-import { folders, getFileKind, held, listed, outside, said } from './answers'
+import { folders, getFileKind, mockVaultList, mockVaultState, outside, pendingStream } from './answers'
 import type { Tab } from '@/entities/tab'
 import type { VaultCore } from '@/app/vault/core'
 import type { Vaults } from '@/entities/vault'
 
 vi.mock('@/app/vault', () => ({
   vaults: {
-    list: async () => listed,
+    list: async () => mockVaultList,
     choose: async () => {
       requests.chose += 1
       return ''
@@ -27,26 +27,26 @@ vi.mock('@/app/vault', () => ({
   } satisfies Partial<Vaults>,
   core: {
     vaults: async () => {
-      if (!said.listable) throw new Error('the vaults are not there')
-      return listed
+      if (!mockVaultState.listable) throw new Error('the vaults are not there')
+      return mockVaultList
     },
     state: async () => ({
       id: 'physics',
       name: 'Vault',
       path: '/vaults/Physics',
       scan: {
-        isReady: said.isReady,
-        error: said.error,
+        isReady: mockVaultState.isReady,
+        error: mockVaultState.error,
         unwatchedPath: '',
       },
       coverage: {
         chunkCount: 0n,
-        embeddedCount: BigInt(said.embedded),
+        embeddedCount: BigInt(mockVaultState.embedded),
         isEmbedding: false as boolean,
       },
     }),
     agentUnreachable: async () => '',
-    getInitialOpenPath: async () => (said.opening ? { path: said.opening } : null),
+    getInitialOpenPath: async () => (mockVaultState.opening ? { path: mockVaultState.opening } : null),
     neighbourhood: async (path: string) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: 'note' as const,
@@ -79,20 +79,20 @@ vi.mock('@/app/vault', () => ({
       requests.urls.push(`${url} ${folder}`)
       return asValue({ path: folder ? `${folder}/made.url` : 'made.url' })
     },
-    watchVaultChanges: held,
-    watchEdits: held,
-    watchTasks: held,
+    watchVaultChanges: pendingStream,
+    watchEdits: pendingStream,
+    watchTasks: pendingStream,
     watchFocus: outside.stream,
     writeOpenTabs: async (open: { tabs: readonly Tab[]; front: string }) => {
       requests.openTabs.push(open)
     },
-    watchQuit: held,
+    watchQuit: pendingStream,
     reportFlush: async () => {},
     detachTab: async () => {
-      if (said.detachError) throw new Error(said.detachError)
+      if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
     },
-    names: async () => said.names,
-    search: async () => said.passages,
+    names: async () => mockVaultState.names,
+    search: async () => mockVaultState.passages,
     fileKinds: async (paths: readonly string[]) =>
       new Map(paths.map((path) => [path, getFileKind(path)])),
     headings: async () => new Map(),

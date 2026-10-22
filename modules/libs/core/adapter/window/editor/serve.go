@@ -123,7 +123,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	}
 
 	//nolint:contextcheck // a document stays open for the window, not for the request that opened it
-	state, services, shown := createWindow(made, tasks, embedder)
+	state, services, viewer := createWindow(made, tasks, embedder)
 	indexer := newIndexWorker(made, state, embedder, quietPeriod, out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
@@ -140,7 +140,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	pool := &Installation{
 		State:         state,
 		Services:      services,
-		viewer:        shown,
+		viewer:        viewer,
 		Embedder:      embedder,
 		Asking:        asking,
 		made:          made,
@@ -168,8 +168,8 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// A recording is played over a socket of its own, opened once everything it
 	// answers through is in place. A machine that refuses one leaves the player
 	// with no address, and the words are still read.
-	stopped := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
-	if playing, why := Listen(services.server, stopped); why != nil {
+	onStop := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
+	if playing, why := Listen(services.server, onStop); why != nil {
 		fmt.Fprintf(out, "recordings will not play: %v\n", why)
 	} else {
 		services.openPlaying(playing)
@@ -285,7 +285,7 @@ const (
 	// wearingATheme is a theme the settings name that the catalogue has not.
 	wearingATheme = "wearing a theme"
 	// readingTheSettings is a name the settings file holds that this build
-	// reads under another one. Each sentence stands under this and its place.
+	// reads under another one. Each sentence is placed under this and its place.
 	readingTheSettings = "reading the settings"
 	// levellingTheIndex is a file that reached the vault and an index that did
 	// not follow it.
@@ -329,13 +329,13 @@ func createWindow(
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
-	shown := newCachingViewer(made.GetPageRenderer())
+	viewer := newCachingViewer(made.GetPageRenderer())
 	services := createServices(state)
 	services.getPluginDir = made.GetPluginDir
 	state.EmitEvent = made.EmitEvent
 	readers := made.GetVaultReaders()
 	services.readFiles(readers)
-	services.readDocuments(readers, made.GetBooks(), shown)
+	services.readDocuments(readers, made.GetBooks(), viewer)
 	services.readTexts(made.OpenSourceTexts())
 	services.Ocr.highlight = &highlight
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
@@ -360,7 +360,7 @@ func createWindow(
 		state.Indexing.Model.Store(model.String())
 		state.Indexing.Recipe.Store(model.Recipe())
 	}
-	return state, services, shown
+	return state, services, viewer
 }
 
 // wireUseCases builds the use cases the window and everything else working its
@@ -397,16 +397,16 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	services.Settings.deleteSecret = made.OpenDeletePluginSecret()
 	services.Settings.retryPlugin = made.OpenRetryPlugin()
 
-	held := &o.vaults
-	services.File.move = &held.Move
+	target := &o.vaults
+	services.File.move = &target.Move
 	services.File.urls = &source.CreateURL{Writers: made.GetVaultWriters(), Index: o.level}
-	services.Vaults.list = &held.List
-	services.Vaults.find = &held.Find
-	services.Vaults.folderCheck = &held.FolderCheck
-	services.Vaults.add = &held.Add
-	services.Vaults.rename = &held.Rename
-	services.Vaults.remove = &held.Remove
-	services.server.find = &held.Find
+	services.Vaults.list = &target.List
+	services.Vaults.find = &target.Find
+	services.Vaults.folderCheck = &target.FolderCheck
+	services.Vaults.add = &target.Add
+	services.Vaults.rename = &target.Rename
+	services.Vaults.remove = &target.Remove
+	services.server.find = &target.Find
 
 	services.Artifact.drops = &transcription.Drop{
 		Readers: made.GetVaultReaders(),

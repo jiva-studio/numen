@@ -36,7 +36,7 @@ service VaultsService {
   rpc RemoveVault(RemoveVaultRequest) returns (RemoveVaultResponse);
 
   // OpenVault shows another vault in this window. What the window was showing
-  // is let go of, and everything a client asked about it is asked again of the
+  // is release, and everything a client asked about it is asked again of the
   // vault that arrives.
   rpc OpenVault(OpenVaultRequest) returns (OpenVaultResponse);
 }
@@ -151,7 +151,7 @@ message RenameVaultRequest {
 
 message RenameVaultResponse {
   // The vault under its new name. Absent when it was not renamed. The name a
-  // vault already has is not a change and answers with the vault as it stands.
+  // vault already has is not a change and answers with the vault currently.
   optional Vault vault = 1;
 
   // Set when the vault was not renamed, and why.

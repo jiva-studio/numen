@@ -20,7 +20,7 @@ export interface WindowStreamsDeps {
   readonly onKeyDown: (press: KeyboardEvent) => void
   /** Everything the window shows, counted again. */
   readonly count: () => Promise<void>
-  /** The counting ended where it stands. */
+  /** The counting ended at its current position. */
   readonly stop: () => void
   /** Read again, a deck having been written or a card changed underneath. */
   readonly refresh: () => Promise<void>
@@ -33,7 +33,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   let open = true
 
   /** What ends every call this window has in flight when it closes. */
-  const listening = new AbortController()
+  const abortController = new AbortController()
 
   const follows = createFollower({
     isOpen: () => open,
@@ -47,9 +47,9 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // Whether a card can be asked about is the window's to know before a person
     // reaches for it, so it is asked once and the way in is drawn from it.
     void agentService
-      .getAgentState({}, { signal: listening.signal })
-      .then((said) => {
-        deps.unreachable.value = said.unreachable
+      .getAgentState({}, { signal: abortController.signal })
+      .then((response) => {
+        deps.unreachable.value = response.unreachable
       })
       .catch(() => {
         deps.unreachable.value = WORDS.unreachable
@@ -58,20 +58,20 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // without a person asking. A session is left alone: its cards were laid out
     // when it opened, and what a deck says now is read at the next one.
     void follows(
-      () => cards.watchReloads({}, { signal: listening.signal }),
-      async (said) => {
+      () => cards.watchReloads({}, { signal: abortController.signal }),
+      async (response) => {
         // A message carrying no reload keeps the stream open and moves nothing.
-        if (!said.reload) return
+        if (!response.reload) return
         await deps.refresh()
       },
     )
     // What is being done behind the window, which is a vault read into the index.
     // It is a stream because an indexing begins without the page asking for one.
     void follows(
-      () => windowService.watchTasks({ window: WINDOW }, { signal: listening.signal }),
-      (said) => {
+      () => windowService.watchTasks({ window: WINDOW }, { signal: abortController.signal }),
+      (response) => {
         deps.setTasks(
-          said.tasks.map((at) => ({
+          response.tasks.map((at) => ({
             id: at.id,
             label: at.title,
             about: at.about,
@@ -84,7 +84,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   })
   onUnmounted(() => {
     open = false
-    listening.abort()
+    abortController.abort()
     deps.stop()
     window.removeEventListener('keydown', deps.onKeyDown)
   })

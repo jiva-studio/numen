@@ -37,7 +37,7 @@ const props = defineProps<{
   search: SearchState
   doing: CommandDeps
   getTarget: () => CommandTarget
-  /** A command asked for, which is what every way in but the commands comes to. */
+  /** A command asked for, which is what every way in but the commands evaluates to. */
   runCommand: (id: string, at: CommandTarget) => void
 }>()
 

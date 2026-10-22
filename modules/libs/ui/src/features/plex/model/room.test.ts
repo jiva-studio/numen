@@ -129,7 +129,7 @@ describe('how wide a box opens', () => {
     expect(room.widen.value).toBeUndefined()
   })
 
-  it('is the room the title asks for, held inside the window', () => {
+  it('is the room the title asks for, retained inside the window', () => {
     stand.metrics = METRICS
     const { room, tell } = mountRoom()
     tell({ width: 600, height: 400 })
@@ -151,13 +151,13 @@ describe('the headings a node hangs', () => {
     expect(room.hung.value).toBeUndefined()
   })
 
-  it('are asked for by the node that hangs them', () => {
+  it('are requested for by the node that hangs them', () => {
     const headings = vi.fn<(id: string) => typeof HEADINGS>(() => HEADINGS)
     const { room } = mountRoom({ headings })
-    const hung = room.hung.value?.(NODE)
+    const suspended = room.hung.value?.(NODE)
     expect(headings).toHaveBeenCalledWith('one')
-    expect(hung?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
-    expect(hung?.headingHeight).toBe(OPTIONS.headingHeight)
+    expect(suspended?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
+    expect(suspended?.headingHeight).toBe(OPTIONS.headingHeight)
   })
 
   it('are as wide as the measuring says their words are', () => {
@@ -167,7 +167,7 @@ describe('the headings a node hangs', () => {
     expect(room.hung.value?.(NODE)?.width).toBe(300 + 2 * 5)
   })
 
-  it('are held inside the window the plex is in', () => {
+  it('are retained inside the window the plex is in', () => {
     stand.metrics = METRICS
     const { room, tell } = mountRoom({ headings: () => HEADINGS })
     tell({ width: 200, height: 400 })

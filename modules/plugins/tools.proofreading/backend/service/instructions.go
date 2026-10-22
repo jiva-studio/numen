@@ -55,7 +55,7 @@ as the first and the last of them:
   run it is answered in.
 - Do not write ` + Opens + ` or ` + Closes + ` in your answer.
 - Do not translate, rephrase, summarise or improve speech that was heard
-  correctly. Every hesitation, repetition and false start that was spoken
+  correctly. Every hesitation, repetition and false start that was transcribed
   stays.
 - A line you would leave alone is a line you do not answer with. Speech you
   would leave alone is an empty answer.`

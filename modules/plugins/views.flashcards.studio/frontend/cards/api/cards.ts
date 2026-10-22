@@ -31,12 +31,12 @@ export const deckService: DeckService = {
   },
   readDeck: async (path) => {
     const answer = await cardsService.readDeck({ path })
-    const bound = Number(answer.bound)
+    const linked = Number(answer.bound)
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
-    if (code || !answer.deck) return asFailure({ code: code ?? 'notADeck', bound })
+    if (code || !answer.deck) return asFailure({ code: code ?? 'notADeck', bound: linked })
     return asValue({ deck: deserializeDeck(answer.deck), at: formatFingerprint(answer.at) ?? '' })
   },
-  writeDeck: async (path, deck, seen) => {
+  writeDeck: async (path, deck, observed) => {
     const answer = await cardsService.writeDeck({
       path,
       preamble: deck.preamble,
@@ -46,7 +46,7 @@ export const deckService: DeckService = {
         preamble: section.preamble,
       })),
       tail: deck.tail,
-      ...(seen === null ? {} : { baseline: parseFingerprint(seen) }),
+      ...(observed === null ? {} : { baseline: parseFingerprint(observed) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure({ code, bound: Number(answer.bound) })
@@ -65,12 +65,12 @@ export const stencilService: StencilService = {
     const error = findErrorCode(answer)
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
-  renameField: async (path, { from, to }, seen) => {
+  renameField: async (path, { from, to }, observed) => {
     const answer = await cardsService.renameStencilField({
       path,
       from,
       to,
-      ...(seen === null ? {} : { baseline: parseFingerprint(seen) }),
+      ...(observed === null ? {} : { baseline: parseFingerprint(observed) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)
@@ -93,7 +93,7 @@ export const stencilService: StencilService = {
       at: formatFingerprint(answer.at) ?? '',
     })
   },
-  writeStencil: async (path, stencil, seen) => {
+  writeStencil: async (path, stencil, observed) => {
     const answer = await cardsService.writeStencil({
       path,
       fields: [...stencil.fields],
@@ -105,7 +105,7 @@ export const stencilService: StencilService = {
         back: face.back,
       })),
       tail: stencil.tail,
-      ...(seen === null ? {} : { baseline: parseFingerprint(seen) }),
+      ...(observed === null ? {} : { baseline: parseFingerprint(observed) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)

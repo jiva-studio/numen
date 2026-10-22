@@ -104,12 +104,12 @@ const search = useTemplateRef<HTMLInputElement>('search')
 const query = ref('')
 
 /** The items the search leaves, and all of them where there is none. */
-const shown = computed(() =>
+const visibleItems = computed(() =>
   props.searchable ? filterItems(props.items, query.value) : props.items,
 )
 
 /** The items shown, with the rules that stand between their groups. */
-const rows = computed(() => groupItems(shown.value))
+const rows = computed(() => groupItems(visibleItems.value))
 
 const { placed, setSize } = useMenuPlacement({
   at: () => props.at,
@@ -125,7 +125,7 @@ const measure = () => {
 
 const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
 
-const { here, holdRow, goTo, onKey: onRowKey } = useMenuKeys(() => shown.value, menu, props.clock)
+const { here, holdRow, goTo, onKey: onRowKey } = useMenuKeys(() => visibleItems.value, menu, props.clock)
 
 const choose = (item: MenuItem) => {
   if (item.disabled) return
@@ -143,7 +143,7 @@ const onKey = (event: KeyboardEvent): void => {
   if (event.target === search.value) {
     if (event.key === 'Enter') {
       event.preventDefault()
-      const first = shown.value.find((one) => !one.disabled)
+      const first = visibleItems.value.find((one) => !one.disabled)
       if (first && query.value) choose(first)
     } else if (['ArrowDown', 'ArrowUp', 'Tab'].includes(event.key)) {
       here.value = -1
@@ -183,7 +183,7 @@ watch(query, () => (here.value = -1))
 
 /** Measured again when what it holds changes, and when the point does. */
 watch(
-  () => [shown.value, props.at],
+  () => [visibleItems.value, props.at],
   async () => {
     if (!props.open) return
     await nextTick()
@@ -240,7 +240,7 @@ const menuStyle = computed(() => ({
         <slot name="icon" :id="item.id" />
       </MenuRow>
 
-      <p v-if="!shown.length" class="menu__silence text-hushed px-2 py-1.5">
+      <p v-if="!visibleItems.length" class="menu__silence text-hushed px-2 py-1.5">
         <slot name="silence">Nothing to do</slot>
       </p>
     </div>

@@ -90,17 +90,17 @@ const isProofreadDisabled = (
 
 /** What a recording offers: transcribe and proofread, disabled once done. */
 const getRecordingRuns = (
-  made: ArtifactStates | undefined,
+  createdItem: ArtifactStates | undefined,
   canRun: RunGuard,
 ): readonly PathItem[] => {
   const runs: PathItem[] = []
   if (canRun(TRANSCRIBE.id)) {
-    runs.push({ ...TRANSCRIBE, disabled: isBusyOrDone(made?.transcript) })
+    runs.push({ ...TRANSCRIBE, disabled: isBusyOrDone(createdItem?.transcript) })
   }
   if (canRun(PROOFREAD.id)) {
     runs.push({
       ...PROOFREAD,
-      disabled: isProofreadDisabled(made?.transcript, made?.['transcript.corrected']),
+      disabled: isProofreadDisabled(createdItem?.transcript, createdItem?.['transcript.corrected']),
     })
   }
   return runs
@@ -109,18 +109,18 @@ const getRecordingRuns = (
 /** What a book offers: recognise and proofread, disabled once done. */
 const getBookRuns = (
   format: DocumentFormat | BookFormat | undefined,
-  made: ArtifactStates | undefined,
+  createdItem: ArtifactStates | undefined,
   canRun: RunGuard,
 ): readonly PathItem[] => {
   if (format === 'epub') return []
   const runs: PathItem[] = []
   if (canRun(RECOGNISE.id)) {
-    runs.push({ ...RECOGNISE, disabled: isBusyOrDone(made?.ocr) })
+    runs.push({ ...RECOGNISE, disabled: isBusyOrDone(createdItem?.ocr) })
   }
   if (canRun(PROOFREAD.id)) {
     runs.push({
       ...PROOFREAD,
-      disabled: isProofreadDisabled(made?.ocr, made?.['ocr.corrected']),
+      disabled: isProofreadDisabled(createdItem?.ocr, createdItem?.['ocr.corrected']),
     })
   }
   return runs

@@ -70,8 +70,8 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
   const before = otherCards.findIndex((card) => card.id === at)
   if (before !== -1) {
     // Stryker disable next-line OptionalChaining: the index was found in this array, so the card exists
-    const under = { ...targetCard, section: otherCards[before]?.section ?? null }
-    return { ...deck, cards: [...otherCards.slice(0, before), under, ...otherCards.slice(before)] }
+    const underVal = { ...targetCard, section: otherCards[before]?.section ?? null }
+    return { ...deck, cards: [...otherCards.slice(0, before), underVal, ...otherCards.slice(before)] }
   }
 
   if (at === null) {
@@ -99,7 +99,7 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
     const seat = left.findIndex((each) => rank(each.section) >= rank(section))
     return seat === -1 ? left.length : seat
   }
-  const put = (section: string | null, where: number): BufferDeck => ({
+  const placeCard = (section: string | null, where: number): BufferDeck => ({
     ...deck,
     cards: [...left.slice(0, where), { ...card, section }, ...left.slice(where)],
   })
@@ -120,11 +120,11 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
     const section = run === CARD_HEAD ? null : run
     if (section !== null && !deck.sections.some((each) => each.id === section)) return deck
     const seat = last(section)
-    return put(section, seat === -1 ? head(section) : seat + 1)
+    return placeCard(section, seat === -1 ? head(section) : seat + 1)
   }
 
   if (!deck.sections.some((section) => section.id === at)) return deck
-  return put(at, head(at))
+  return placeCard(at, head(at))
 }
 
 export interface ReplaceValueTarget {
@@ -147,12 +147,12 @@ export const replaceCardValue = (
     cards: deck.cards.map((card) => {
       if (card.id !== id) return card
 
-      let under = 0
+      let underCount = 0
       let found = false
       const values = card.values.map((value) => {
         if (value.field !== field) return value
-        under += 1
-        if (under !== nth) return value
+        underCount += 1
+        if (underCount !== nth) return value
         found = true
         return { field, text }
       })

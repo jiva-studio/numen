@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// The window says what the person has open, and whoever answers on their behalf
+// The window says what currently open, and whoever answers on their behalf
 // reads the last of it.
 
 func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
@@ -53,8 +53,8 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 }
 
 func TestAttendingTellsWhoeverIsListening(t *testing.T) {
-	var heard []domain.OpenTabs
-	state := &State{NotifyOpenTabs: func(open domain.OpenTabs) { heard = append(heard, open) }}
+	var received []domain.OpenTabs
+	state := &State{NotifyOpenTabs: func(open domain.OpenTabs) { received = append(received, open) }}
 	api := &workspaceHandler{state: state}
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
@@ -65,11 +65,11 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(heard) != 1 {
-		t.Fatalf("what the window has open was said %d times", len(heard))
+	if len(received) != 1 {
+		t.Fatalf("what the window has open was said %d times", len(received))
 	}
-	front, held := heard[0].GetFrontTab()
-	if !held || front.Path != "Entropy.md" {
+	front, target := received[0].GetFrontTab()
+	if !target || front.Path != "Entropy.md" {
 		t.Errorf("the tab in front is %+v", front)
 	}
 }
@@ -93,9 +93,9 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			front, held := c.open.GetFrontTab()
-			if held != (c.want != "") {
-				t.Fatalf("a tab in front is %v", held)
+			front, target := c.open.GetFrontTab()
+			if target != (c.want != "") {
+				t.Fatalf("a tab in front is %v", target)
 			}
 			if front.Path != c.want {
 				t.Errorf("the tab in front holds %q", front.Path)

@@ -4,7 +4,7 @@ export const WORDS = {
   reading: 'What these cards were written from',
   nothing: 'This deck is not joined to anything.',
   unreached: 'What this deck is joined to could not be read.',
-  /** Said over a note that points at the deck rather than being pointed at. */
+  /** Said over a note that points at the deck and not being pointed at. */
   pointsHere: 'points at this deck',
   /** Said where a name is written that no note answers to. */
   dangling: 'no note of that name is in the vault',

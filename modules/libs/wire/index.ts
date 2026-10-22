@@ -7,7 +7,7 @@
 export { createAgentPort } from './agent'
 export { goalNames, goalOf } from './goal'
 export type { Goal } from './goal'
-export { getNames } from './naming'
+export { getNames } from './enumNames'
 export { transport } from './transport'
 export { formatErrorMessage, formatErrorCodeMessage } from './error'
 export { asFailure, asValue } from './result'

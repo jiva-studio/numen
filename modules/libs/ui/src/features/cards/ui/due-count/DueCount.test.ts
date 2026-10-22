@@ -11,8 +11,8 @@ const mountDueCount = (props: Record<string, unknown> = {}) =>
 
 describe('a figure still on its way', () => {
   it('is read out as being counted, and carries a role to be read out by', () => {
-    const held = mountDueCount({ due: null })
-    const pill = held.get('.due-count')
+    const target = mountDueCount({ due: null })
+    const pill = target.get('.due-count')
 
     expect(pill.attributes('role')).toBe('status')
     expect(pill.attributes('aria-label')).toBe('still being counted')
@@ -25,7 +25,7 @@ describe('a figure still on its way', () => {
     expect(pill.text()).toBe('12 to review')
   })
 
-  it('says the figure alone where it is asked to be bare', () => {
+  it('says the figure alone where it is requested to be bare', () => {
     expect(mountDueCount({ isBare: true }).get('.due-count').text()).toBe('12')
   })
 })

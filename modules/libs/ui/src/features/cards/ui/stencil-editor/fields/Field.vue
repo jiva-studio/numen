@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * One field of a stencil, edited: a handle it is dragged by, the name typed in
- * it, and the way to be rid of it. What is wrong with it stands under its row.
+ * it, and the way to be rid of it. What is wrong with it is placed under its row.
  */
 import { computed } from 'vue'
 import { ErrorMessage } from '../../error-message'
@@ -9,7 +9,7 @@ import { Icon } from '../../icon'
 import { NameBox } from '../../name-box'
 import { CardRow } from '../../card-row'
 import { Button } from '@/shared/ui/button'
-import type { NameEntryState } from '../../../model/naming'
+import type { NameEntryState } from '../../../model/nameEntry'
 import {
   parseStepKey,
   STEP_KEYS,
@@ -140,7 +140,7 @@ const onGripKey = (event: KeyboardEvent): void => {
 <style scoped>
 @import '../../caret.css';
 
-/* The row is one block; what is wrong with it stands under that block. */
+/* The row is one block; what is wrong with it is placed under that block. */
 .stencil__field {
   position: relative;
   display: flex;

@@ -28,7 +28,7 @@ func newRenameField(t *testing.T, vs vaulted) cards.RenameField {
 
 // A field renamed in a stencil is renamed in every card that stencil cuts, and
 // in no card of another one. The value under the heading is left where it was.
-func TestAFieldRenamedInAStencilIsRenamedInEveryCardItCuts(t *testing.T) {
+func TestAFieldRenamedInAStencilIsRenamedInEveryCardItSplits(t *testing.T) {
 	vs := newVaults(t)
 
 	got, err := newRenameField(t, vs).Execute(t.Context(), vs.first, cards.Rename{
@@ -99,10 +99,10 @@ func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
 	}
 }
 
-// The first field stands under a heading of its own in every card, so renaming
+// The first field is placed under a heading of its own in every card, so renaming
 // it is a write to every deck that stencil cuts, as renaming any other field
 // already was.
-func TestRenamingTheFirstFieldReachesEveryDeckThatStencilCuts(t *testing.T) {
+func TestRenamingTheFirstFieldReachesEveryDeckThatStencilSplits(t *testing.T) {
 	vs := newVaults(t)
 
 	got, err := newRenameField(t, vs).Execute(t.Context(), vs.first, cards.Rename{
@@ -203,7 +203,7 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 		t.Errorf("the deck was written\n was %q\n now %q", before, after)
 	}
 	if !strings.Contains(read(t, vs.first, "decks/Mammals.md"), "### Shoulder height\n") {
-		t.Error("the deck after the refused one was not written")
+		t.Error("the deck after the rejected one was not written")
 	}
 }
 
@@ -245,7 +245,7 @@ func TestARenameTheStencilRefusedReachesNoDeck(t *testing.T) {
 		Stencil: "Animal.md", From: "Girth", To: "Waist",
 	})
 	if !errors.Is(err, format.ErrNoSuchField) {
-		t.Fatalf("rename = %v, want it refused", err)
+		t.Fatalf("rename = %v, want it rejected", err)
 	}
 	if after := read(t, vs.first, "decks/Mammals.md"); after != before {
 		t.Errorf("a deck was written\n was %q\n now %q", before, after)
@@ -302,8 +302,8 @@ func (q byType) GetTypes(
 // every other write in the application waiting behind a vault-sized loop.
 func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	vs := newVaults(t)
-	var asked int
-	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.queries, t: t, asked: &asked})
+	var request int
+	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.queries, t: t, asked: &request})
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
@@ -314,8 +314,8 @@ func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	if !slices.Equal(got.Decks, []string{"decks/Birds.md", "decks/Mammals.md"}) {
 		t.Errorf("decks = %v", got.Decks)
 	}
-	if asked != 1 {
-		t.Errorf("the index was asked for the decks %d times, want once", asked)
+	if request != 1 {
+		t.Errorf("the index was asked for the decks %d times, want once", request)
 	}
 }
 
@@ -411,7 +411,7 @@ func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 
 // A rename made with nothing to level the index writes all the same, and says
 // what it wrote.
-func TestARenameWithNoIndexToLevelSaysWhatItWrote(t *testing.T) {
+func TestARenameWithNoIndexToLevelReturnsWhatItWrote(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
@@ -434,7 +434,7 @@ func TestARenameWithNoIndexToLevelSaysWhatItWrote(t *testing.T) {
 
 // A rename is the application writing, so a file it writes that carried no
 // identifier carries one afterwards.
-func TestARenameGivesEveryFileItWritesAnIdentifier(t *testing.T) {
+func TestARenameProducesEveryFileItWritesAnIdentifier(t *testing.T) {
 	vs := newVaults(t)
 	for _, path := range []string{"Animal.md", "decks/Birds.md"} {
 		if strings.Contains(read(t, vs.first, path), "\nid: ") {
@@ -516,7 +516,7 @@ func TestARenameOfAStencilOutOfReachWritesNothing(t *testing.T) {
 	}
 }
 
-// A stencil whose frontmatter is not YAML is refused, and no deck is written.
+// A stencil whose frontmatter is not YAML fails, and no deck is written.
 func TestARenameOfAStencilThatWillNotOpenWritesNothing(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Animal.md", "---\nfields: [Name\n---\n\n## Recognise\n")
@@ -526,7 +526,7 @@ func TestARenameOfAStencilThatWillNotOpenWritesNothing(t *testing.T) {
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if !errors.Is(err, markdown.ErrUnreadable) {
-		t.Fatalf("rename = %v, want the stencil refused", err)
+		t.Fatalf("rename = %v, want the stencil rejected", err)
 	}
 	if read(t, vs.first, "decks/Birds.md") != birds {
 		t.Error("a deck was written")
@@ -547,7 +547,7 @@ func TestARenameDoesNotWriteOverAStencilSavedWhileItRan(t *testing.T) {
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if !errors.Is(err, ports.ErrStale) {
-		t.Fatalf("rename = %v, want it refused as stale", err)
+		t.Fatalf("rename = %v, want it rejected as stale", err)
 	}
 	if after := read(t, vs.first, "Animal.md"); after != saved {
 		t.Errorf("what the person saved was written over: %q", after)
@@ -688,7 +688,7 @@ func TestADeckAtTheBoundIsRenamed(t *testing.T) {
 
 // A deck holding no card of the stencil is not written, byte for byte, though a
 // write would have given its card a mark and the deck an identifier.
-func TestADeckHoldingNoCardOfTheStencilIsLeftAsItWas(t *testing.T) {
+func TestADeckContainingNoCardOfTheStencilIsLeftAsItWas(t *testing.T) {
 	vs := newVaults(t)
 	words := "---\ntype: deck\n---\n\n## Gloss\n\n[[Term]]\n\n### Word\n\nGloss\n\n### Height\n\nnot a length\n"
 	write(t, vs.first, "decks/Words.md", words)

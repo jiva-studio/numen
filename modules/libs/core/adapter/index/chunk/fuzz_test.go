@@ -56,9 +56,9 @@ func FuzzExpression(f *testing.F) {
 		f.Fatal(err)
 	}
 
-	for _, typed := range typedSeeds {
-		f.Add(typed, true)
-		f.Add(typed, false)
+	for _, seed := range typedSeeds {
+		f.Add(seed, true)
+		f.Add(seed, false)
 	}
 
 	f.Fuzz(func(t *testing.T, typed string, growing bool) {
@@ -77,7 +77,7 @@ func FuzzExpression(f *testing.F) {
 			// An empty expression is not a query, and no search is made.
 			if expression != "" {
 				if err := row.Scan(&count); err != nil {
-					t.Fatalf("%q was asked as %q, which FTS5 refused: %v", typed, expression, err)
+					t.Fatalf("%q was asked as %q, which FTS5 rejected: %v", typed, expression, err)
 				}
 			}
 		}
@@ -89,11 +89,11 @@ func FuzzExpression(f *testing.F) {
 			}
 			return
 		}
-		if asked := words(t, expression, growing); len(asked) != len(fields) {
+		if request := words(t, expression, growing); len(request) != len(fields) {
 			t.Fatalf("%q holds %d words and was asked as %q, which holds %d",
-				typed, len(fields), expression, len(asked))
+				typed, len(fields), expression, len(request))
 		} else {
-			for i, word := range asked {
+			for i, word := range request {
 				if word != fields[i] {
 					t.Fatalf("%q asks for %q where %q was typed", expression, word, fields[i])
 				}
@@ -108,8 +108,8 @@ func FuzzExpression(f *testing.F) {
 func words(t *testing.T, expression string, growing bool) []string {
 	t.Helper()
 	if growing {
-		last, cut := strings.CutSuffix(expression, "*")
-		if !cut {
+		last, hasSuffix := strings.CutSuffix(expression, "*")
+		if !hasSuffix {
 			t.Fatalf("%q asks for a word still being typed and carries no prefix mark", expression)
 		}
 		expression = last

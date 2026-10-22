@@ -13,7 +13,7 @@ const props = defineProps<{
   row: ShownRow
   /** What the tree is announced as. */
   name: string
-  /** The selection stands on it. */
+  /** The selection relies on it. */
   isSelected: boolean
   /** It is among the rows being dragged. */
   isLifted: boolean
@@ -25,7 +25,7 @@ const props = defineProps<{
   isTabStop: boolean
   /** Its name is in a field. */
   isRenaming: boolean
-  /** What the row is marked with, written onto it as it stands. */
+  /** What the row is marked with, written onto it currently. */
   mark: Record<string, string>
 }>()
 
@@ -121,7 +121,7 @@ watch(
   background: var(--numen-bubble-bg);
 }
 
-/* A row on its way somewhere, drawn plainly where it stands. */
+/* A row on its way somewhere, drawn plainly at its current position. */
 .tree__row[data-dragged] {
   opacity: var(--dragged-fade);
 }

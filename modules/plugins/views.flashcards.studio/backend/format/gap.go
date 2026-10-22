@@ -26,11 +26,11 @@ func formatSection(value string, last bool) string {
 // above it that markdown wants and the blank line below it when something
 // follows.
 func insert(body []byte, at int, block string) string {
-	written := getSeparator(body, at) + block + "\n"
+	content := getSeparator(body, at) + block + "\n"
 	if at < len(body) {
-		written += "\n"
+		content += "\n"
 	}
-	return written
+	return content
 }
 
 // getSeparator is the break and the blank line a new block needs, counting what already

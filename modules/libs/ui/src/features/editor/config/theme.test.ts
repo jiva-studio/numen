@@ -50,23 +50,23 @@ describe('the editor’s stylesheet', () => {
 
   // A selector the browser cannot read takes its whole rule with it, and says
   // nothing about it.
-  it('is written in selectors a document can be asked for', () => {
-    const written = selectors(getSheet())
-    expect(written.length).toBeGreaterThan(20)
+  it('is written in selectors a document can be requested for', () => {
+    const content = selectors(getSheet())
+    expect(content.length).toBeGreaterThan(20)
 
-    for (const selector of written) {
+    for (const selector of content) {
       expect(() => document.querySelector(selector), selector).not.toThrow()
     }
   })
 
   // A colour is a token, and a name no token carries paints nothing.
   it('reads only tokens that are declared', () => {
-    const read = [...getSheet().matchAll(/var\((--numen-[\w-]+)/g)].map(
+    const readItem = [...getSheet().matchAll(/var\((--numen-[\w-]+)/g)].map(
       (found) => found[1] as string,
     )
-    expect(read.length).toBeGreaterThan(10)
+    expect(readItem.length).toBeGreaterThan(10)
 
-    for (const token of new Set(read)) {
+    for (const token of new Set(readItem)) {
       expect(TOKENS, token).toContain(token)
     }
   })

@@ -14,19 +14,19 @@ import { NO_DECK, type BufferDeck } from '../types'
  * A deck as the vault read it.
  */
 export const deserializeVaultDeck = (
-  read: VaultDeck,
+  readItem: VaultDeck,
   generateBufferId: IdMaker = generateId,
 ): BufferDeck => {
   const markCounts = new Map<string, number>()
-  for (const card of read.cards) markCounts.set(card.mark, (markCounts.get(card.mark) ?? 0) + 1)
-  const sections = read.sections.map((section) => ({
+  for (const card of readItem.cards) markCounts.set(card.mark, (markCounts.get(card.mark) ?? 0) + 1)
+  const sections = readItem.sections.map((section) => ({
     id: generateBufferId(),
     name: section.name,
     preamble: section.preamble,
   }))
   return {
-    preamble: read.preamble,
-    cards: read.cards.map((card) => ({
+    preamble: readItem.preamble,
+    cards: readItem.cards.map((card) => ({
       id: card.mark && markCounts.get(card.mark) === 1 ? card.mark : generateBufferId(),
       mark: card.mark,
       section: sections[card.sectionIndex ?? -1]?.id ?? null,
@@ -37,7 +37,7 @@ export const deserializeVaultDeck = (
       values: card.values,
     })),
     sections,
-    tail: read.tail,
+    tail: readItem.tail,
   }
 }
 

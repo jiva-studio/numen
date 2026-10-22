@@ -108,7 +108,7 @@ func TestTheTitleDoesNotDependOnThePrefix(t *testing.T) {
 }
 
 func TestStructureFallsThroughTheTiers(t *testing.T) {
-	plain := map[string]string{
+	plainFiles := map[string]string{
 		firstDoc:  "variant/plain.xhtml",
 		secondDoc: "variant/plain.xhtml",
 	}
@@ -140,7 +140,7 @@ func TestStructureFallsThroughTheTiers(t *testing.T) {
 		parts:   []string{"Of the Beginning", "Of the Middle"},
 	}, {
 		name:    "a book that names nothing is a book",
-		replace: plain,
+		replace: plainFiles,
 		want:    epub.FromNothing,
 		parts:   nil,
 	}} {
@@ -260,7 +260,7 @@ func TestTheSameBytesGiveTheSameText(t *testing.T) {
 	first, second := read(t, raw), read(t, raw)
 
 	if first.Text != second.Text {
-		t.Error("the text differs between two readings")
+		t.Error("the text differs between two reads")
 	}
 	if !slices.Equal(first.Documents, second.Documents) {
 		t.Errorf("documents differ: %v and %v", first.Documents, second.Documents)

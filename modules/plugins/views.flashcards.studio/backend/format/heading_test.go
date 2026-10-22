@@ -44,7 +44,7 @@ func TestReadHeading(t *testing.T) {
 	}
 }
 
-// A card whose first field is empty stands under a heading of its mark alone,
+// A card whose first field is empty is placed under a heading of its mark alone,
 // and a heading is the text alone until the card is written.
 func TestWriteHeading(t *testing.T) {
 	for name, one := range map[string]struct {

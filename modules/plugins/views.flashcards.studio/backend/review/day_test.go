@@ -158,16 +158,16 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 
 // The hour a day of review begins at is read as hours and minutes of the clock on the wall.
 func TestTheHourADayBeginsAtIsReadAsTheClockOnTheWall(t *testing.T) {
-	for written, want := range map[string]time.Duration{
+	for content, want := range map[string]time.Duration{
 		"":      review.DayStartTime,
 		"  ":    review.DayStartTime,
 		"03:30": 3*time.Hour + 30*time.Minute,
 		"00:00": 0,
 		"12:00": 12 * time.Hour,
 	} {
-		got, err := review.ParseDayStart(written)
+		got, err := review.ParseDayStart(content)
 		if err != nil || got != want {
-			t.Errorf("%q: got %v (%v), want %v", written, got, err, want)
+			t.Errorf("%q: got %v (%v), want %v", content, got, err, want)
 		}
 	}
 }
@@ -175,10 +175,10 @@ func TestTheHourADayBeginsAtIsReadAsTheClockOnTheWall(t *testing.T) {
 // Something that is not an hour of the day, or lies past the latest hour a day may begin at, is
 // refused, and the default stands with the refusal.
 func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
-	for _, written := range []string{"half past four", "18:00", "12:01", "4", "24:00"} {
-		got, err := review.ParseDayStart(written)
+	for _, content := range []string{"half past four", "18:00", "12:01", "4", "24:00"} {
+		got, err := review.ParseDayStart(content)
 		if !errors.Is(err, review.ErrNotAnHour) || got != review.DayStartTime {
-			t.Errorf("%q: got %v (%v)", written, got, err)
+			t.Errorf("%q: got %v (%v)", content, got, err)
 		}
 	}
 }

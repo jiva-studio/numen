@@ -77,7 +77,7 @@ describe('an answer', () => {
     expect(conversation.turns.value.at(-1)?.state).toBeUndefined()
   })
 
-  it('is not left waiting when the agent finishes having said nothing', async () => {
+  it('is not left waiting when the agent finishes having returned nothing', async () => {
     const conversation = useConversation(
       createPort([createToolStep('Search notes'), createStopped()]),
       words,
@@ -126,13 +126,13 @@ describe('an answer', () => {
 })
 
 describe('the line about work', () => {
-  it('is up before anything comes back, and says what is in hand', async () => {
-    let seen: string[] = []
+  it('is up before anything arrives back, and says what is in hand', async () => {
+    let observed: string[] = []
     const conversation = useConversation(
       {
         async *ask() {
           yield createToolStep('Search notes', 'entropy')
-          seen = conversation.turns.value.map((turn) => `${turn.voice}:${turn.text}`)
+          observed = conversation.turns.value.map((turn) => `${turn.voice}:${turn.text}`)
           yield createSaidStep('Two notes.')
           yield createStopped()
         },
@@ -144,10 +144,10 @@ describe('the line about work', () => {
     )
     await conversation.ask('what is here?', '')
 
-    expect(seen).toEqual(['asked:what is here?', 'doing:Search notes'])
+    expect(observed).toEqual(['asked:what is here?', 'doing:Search notes'])
   })
 
-  it('comes down when the answer begins', async () => {
+  it('arrives down when the answer begins', async () => {
     const conversation = useConversation(
       createPort([createToolStep('Search notes'), createSaidStep('Two notes.'), createStopped()]),
       words,
@@ -180,21 +180,21 @@ describe('the line about work', () => {
 describe('giving up', () => {
   it('keeps what arrived and says nothing about failing', async () => {
     let release = () => {}
-    const held = new Promise<void>((done) => {
-      release = done
+    const target = new Promise<void>((isDone) => {
+      release = isDone
     })
     const conversation = useConversation(
-      createPort([createSaidStep('Two ')], held),
+      createPort([createSaidStep('Two ')], target),
       words,
       called,
       now,
     )
 
-    const asking = conversation.ask('what is here?', '')
+    const askPromise = conversation.ask('what is here?', '')
     await nap()
     conversation.stop()
     release()
-    await asking
+    await askPromise
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
     expect(conversation.isWorking.value).toBe(false)
@@ -203,12 +203,12 @@ describe('giving up', () => {
 
 describe('a tool nobody titled', () => {
   it('is read as words', async () => {
-    let seen = ''
+    let observed = ''
     const conversation = useConversation(
       {
         async *ask() {
           yield createToolStep('note_search')
-          seen = conversation.turns.value.at(-1)?.text ?? ''
+          observed = conversation.turns.value.at(-1)?.text ?? ''
           yield createStopped()
         },
         finish: async () => {},
@@ -219,23 +219,23 @@ describe('a tool nobody titled', () => {
     )
     await conversation.ask('what is here?', '')
 
-    expect(seen).toBe('note search')
+    expect(observed).toBe('note search')
   })
 })
 
 describe('a wait that explains itself', () => {
   it('shows which note is being written while it is being written', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createToolStep('Create a note', "Bram Doyle's warning", 12015)], held),
+      createPort([createToolStep('Create a note', "Bram Doyle's warning", 12015)], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('write it up', '')
+    const askPromise = conversation.ask('write it up', '')
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
@@ -247,24 +247,24 @@ describe('a wait that explains itself', () => {
     expect(line?.aside).toBe('12 015 characters')
 
     release()
-    await asking
+    await askPromise
   })
 
   it('stops claiming a tool is running once it has answered', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
       createPort(
         [createToolStep('Create a note', "Bram Doyle's warning", 4000), createAnswered()],
-        held,
+        target,
       ),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('write it up', '')
+    const askPromise = conversation.ask('write it up', '')
     await nap()
 
     // Which tool answered is not said, and with two in hand this is one of them.
@@ -274,12 +274,12 @@ describe('a wait that explains itself', () => {
     expect(line?.state).toBe('settled')
 
     release()
-    await asking
+    await askPromise
   })
 
-  it('says the model is working when the model is asked, and not before', async () => {
+  it('says the model is working when the model is requested, and not before', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
@@ -289,13 +289,13 @@ describe('a wait that explains itself', () => {
           createAnswered(),
           createThinking(),
         ],
-        held,
+        target,
       ),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('write it up', '')
+    const askPromise = conversation.ask('write it up', '')
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
@@ -304,7 +304,7 @@ describe('a wait that explains itself', () => {
     expect(line?.state).toBe('arriving')
 
     release()
-    await asking
+    await askPromise
   })
 
   /**
@@ -315,19 +315,19 @@ describe('a wait that explains itself', () => {
    */
   it('says it is working while a tool that answered leads nowhere yet', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
       createPort(
         [createToolStep('Create a note', "Bram Doyle's warning", 4000), createAnswered()],
-        held,
+        target,
       ),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('write it up', '')
+    const askPromise = conversation.ask('write it up', '')
     await nap()
 
     const lines = conversation.turns.value.filter((turn) => turn.voice === 'doing')
@@ -337,16 +337,16 @@ describe('a wait that explains itself', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 
   it('says it is working before anything at all has come back', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
-    const conversation = useConversation(createPort([], held), words, called, now)
-    const asking = conversation.ask('write it up', '')
+    const conversation = useConversation(createPort([], target), words, called, now)
+    const askPromise = conversation.ask('write it up', '')
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
@@ -354,7 +354,7 @@ describe('a wait that explains itself', () => {
     expect(line?.state).toBe('arriving')
 
     release()
-    await asking
+    await askPromise
   })
 })
 
@@ -366,16 +366,16 @@ describe('a call that was working on a place', () => {
 
   it('makes the line about it one a person can press, and says where it goes', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createToolStep('Read a document', 'gardening.epub', 0, place)], held),
+      createPort([createToolStep('Read a document', 'gardening.epub', 0, place)], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('what does it say of frost?', '')
+    const askPromise = conversation.ask('what does it say of frost?', '')
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
@@ -383,22 +383,22 @@ describe('a call that was working on a place', () => {
     expect(conversation.getSourceLocation(line?.id ?? '')).toEqual(place)
 
     release()
-    await asking
+    await askPromise
   })
 
   it('leaves the line alone where the call named a source and no place in it', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const whole: SourceLocation = { path: 'notes/heat.md', span: { from: 0, to: 0 } }
     const conversation = useConversation(
-      createPort([createToolStep('Read a note', 'notes/heat.md', 0, whole)], held),
+      createPort([createToolStep('Read a note', 'notes/heat.md', 0, whole)], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('what does it say of frost?', '')
+    const askPromise = conversation.ask('what does it say of frost?', '')
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
@@ -406,21 +406,21 @@ describe('a call that was working on a place', () => {
     expect(conversation.getSourceLocation(line?.id ?? '')).toBeNull()
 
     release()
-    await asking
+    await askPromise
   })
 
   it('leaves the line alone where the call was working on nothing', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createToolStep('Search notes', 'frost')], held),
+      createPort([createToolStep('Search notes', 'frost')], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('what does it say of frost?', '')
+    const askPromise = conversation.ask('what does it say of frost?', '')
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
@@ -428,11 +428,11 @@ describe('a call that was working on a place', () => {
     expect(conversation.getSourceLocation(line?.id ?? '')).toBeNull()
 
     release()
-    await asking
+    await askPromise
   })
 })
 
-describe('where the line about work stands', () => {
+describe('where the line about work remains', () => {
   /** What the panel is drawing, in the order it draws it. */
   const getDrawnTurns = (conversation: {
     turns: { value: readonly { voice: string; text: string }[] }
@@ -440,7 +440,7 @@ describe('where the line about work stands', () => {
 
   it('stays down once the answer has begun, whatever a tool answers after it', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
@@ -451,41 +451,41 @@ describe('where the line about work stands', () => {
           createAnswered(),
           createSaidStep('was the chair.'),
         ],
-        held,
+        target,
       ),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('tell me about him', '')
+    const askPromise = conversation.ask('tell me about him', '')
     await nap()
 
     // A tool answering says nothing about the answer being written over it, and
-    // a line put back here stands under the answer for the rest of the conversation.
+    // a line put back here is placed under the answer for the rest of the conversation.
     expect(getDrawnTurns(conversation)).toEqual([
       'asked: tell me about him',
       'answered: Bram Doyle was the chair.',
     ])
 
     release()
-    await asking
+    await askPromise
   })
 
-  it('goes back up under the answer when the model is asked again', async () => {
+  it('goes back up under the answer when the model is requested again', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
       createPort(
         [createSaidStep('One moment. '), createThinking(), createToolStep('Read a note')],
-        held,
+        target,
       ),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('tell me about him', '')
+    const askPromise = conversation.ask('tell me about him', '')
     await nap()
 
     expect(getDrawnTurns(conversation)).toEqual([
@@ -495,21 +495,21 @@ describe('where the line about work stands', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 
-  it('leaves no empty answer behind when the model said nothing before it stopped', async () => {
+  it('leaves no empty answer behind when the model returned nothing before it stopped', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createSaidStep(''), createThinking()], held),
+      createPort([createSaidStep(''), createThinking()], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('tell me about him', '')
+    const askPromise = conversation.ask('tell me about him', '')
     await nap()
 
     // An answer with nothing in it is drawn as a turn with no words and a gap
@@ -520,12 +520,12 @@ describe('where the line about work stands', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 })
 
 describe('a conversation', () => {
-  it('carries its own name, so what is asked in one is remembered in one', async () => {
+  it('carries its own name, so what is requested in one is remembered in one', async () => {
     const carried: string[] = []
     const agent: AgentPort = {
       async *ask(query) {
@@ -546,10 +546,10 @@ describe('a conversation', () => {
 })
 
 describe('a conversation that is over', () => {
-  it('tells the agent, under the name it answers by', () => {
-    const over: string[] = []
+  it('notifies the agent, under the name it answers by', () => {
+    const overKeys: string[] = []
     const conversation = useConversation(
-      { ...createPort([createStopped()]), finish: async (named) => void over.push(named) },
+      { ...createPort([createStopped()]), finish: async (named) => void overKeys.push(named) },
       words,
       called,
       now,
@@ -557,26 +557,26 @@ describe('a conversation that is over', () => {
 
     conversation.finish()
 
-    expect(over).toStrictEqual([called])
+    expect(overKeys).toStrictEqual([called])
   })
 
   it('lets go of the answer on its way, and keeps what arrived', async () => {
     let release = () => {}
-    const held = new Promise<void>((done) => {
-      release = done
+    const target = new Promise<void>((isDone) => {
+      release = isDone
     })
     const conversation = useConversation(
-      createPort([createSaidStep('Two ')], held),
+      createPort([createSaidStep('Two ')], target),
       words,
       called,
       now,
     )
 
-    const asking = conversation.ask('what is here?', '')
+    const askPromise = conversation.ask('what is here?', '')
     await nap()
     conversation.finish()
     release()
-    await asking
+    await askPromise
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
     expect(conversation.isWorking.value).toBe(false)
@@ -623,16 +623,16 @@ describe('a window nobody is looking at', () => {
 
   it('shows the answer as it arrives, and takes the wait down with it', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createSaidStep('Two notes.')], held),
+      createPort([createSaidStep('Two notes.')], target),
       words,
       called,
       never,
     )
-    const asking = conversation.ask('what is here?', '')
+    const askPromise = conversation.ask('what is here?', '')
     await nap()
 
     // The question with nothing under it is the failure this guards against.
@@ -642,23 +642,23 @@ describe('a window nobody is looking at', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 })
 
 describe('giving up on an answer', () => {
-  it('takes down what was said about working on it', async () => {
+  it('takes down the transcript about working on it', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createToolStep('Search notes')], held),
+      createPort([createToolStep('Search notes')], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('what is here?', '')
+    const askPromise = conversation.ask('what is here?', '')
     await nap()
 
     conversation.stop()
@@ -667,14 +667,14 @@ describe('giving up on an answer', () => {
     expect(conversation.isWorking.value).toBe(false)
 
     release()
-    await asking
+    await askPromise
   })
 })
 
 describe('two tools in hand at once', () => {
   it('says nothing about either when one of them answers', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
@@ -684,13 +684,13 @@ describe('two tools in hand at once', () => {
           createToolStep('Read a note', 'Bram Doyle'),
           createAnswered(),
         ],
-        held,
+        target,
       ),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('tell me about him', '')
+    const askPromise = conversation.ask('tell me about him', '')
     await nap()
 
     // Which tool answered is not said. The one still running is not finished,
@@ -699,7 +699,7 @@ describe('two tools in hand at once', () => {
     expect(lines.map((turn) => [turn.text, turn.state])).toEqual([['Read a note', 'arriving']])
 
     release()
-    await asking
+    await askPromise
   })
 })
 
@@ -739,16 +739,16 @@ describe('an exchange that is over', () => {
 describe('words with none in them', () => {
   it('leave the wait standing, and put no empty turn under the question', async () => {
     let release = () => {}
-    const held = new Promise<void>((go) => {
+    const target = new Promise<void>((go) => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createSaidStep(''), createSaidStep('')], held),
+      createPort([createSaidStep(''), createSaidStep('')], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('what is here?', '')
+    const askPromise = conversation.ask('what is here?', '')
     await nap()
 
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
@@ -757,17 +757,17 @@ describe('words with none in them', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 })
 
 /** A promise that stays open until the test lets it go. */
 const createHold = () => {
   let release = () => {}
-  const held = new Promise<void>((go) => {
+  const target = new Promise<void>((go) => {
     release = go
   })
-  return { held, release }
+  return { target: target, release }
 }
 
 /** What the panel draws, with how far along each turn is. */
@@ -790,9 +790,9 @@ describe('an error the answer already carries', () => {
       'out of credit.',
       'Sorry: out of credit.',
     ],
-  ])('marks that answer failed and adds none beside it, %s', async (_how, said, error, shown) => {
+  ])('marks that answer failed and adds none beside it, %s', async (_how, response, error, displayed) => {
     const conversation = useConversation(
-      createPort([createSaidStep(said), createStopped(error)]),
+      createPort([createSaidStep(response), createStopped(error)]),
       words,
       called,
       now,
@@ -801,7 +801,7 @@ describe('an error the answer already carries', () => {
 
     expect(getDrawn(conversation)).toEqual([
       ['asked', 'what is here?', undefined],
-      ['answered', shown, 'failed'],
+      ['answered', displayed, 'failed'],
     ])
   })
 
@@ -821,7 +821,7 @@ describe('an error the answer already carries', () => {
     ])
   })
 
-  it('is said on a turn of its own when it is nothing but blank and no answer came', async () => {
+  it('is returned on a turn of its own when it is nothing but blank and no answer came', async () => {
     const conversation = useConversation(createPort([createStopped('  ')]), words, called, now)
     await conversation.ask('what is here?', '')
 
@@ -833,7 +833,7 @@ describe('an error the answer already carries', () => {
 })
 
 describe('an exchange that ends without saying why', () => {
-  it('adds nothing beside what was said', async () => {
+  it('adds nothing along with the transcript', async () => {
     const conversation = useConversation(
       createPort([createSaidStep('Two notes.')]),
       words,
@@ -848,7 +848,7 @@ describe('an exchange that ends without saying why', () => {
     ])
   })
 
-  it('says it said nothing, in the voice of the answer', async () => {
+  it('says it returned nothing, in the voice of the answer', async () => {
     const conversation = useConversation(createPort([]), words, called, now)
     await conversation.ask('what is here?', '')
 
@@ -858,7 +858,7 @@ describe('an exchange that ends without saying why', () => {
     ])
   })
 
-  it('keeps every turn of two exchanges that each said nothing', async () => {
+  it('keeps every turn of two exchanges that each returned nothing', async () => {
     const conversation = useConversation(createPort([]), words, called, now)
     await conversation.ask('first?', '')
     await conversation.ask('second?', '')
@@ -872,13 +872,13 @@ describe('an exchange that ends without saying why', () => {
   })
 })
 
-describe('a question that cannot be asked', () => {
-  it('is not asked when it is empty', async () => {
-    let asked = 0
+describe('a question that cannot be requested', () => {
+  it('is not requested when it is empty', async () => {
+    let request = 0
     const conversation = useConversation(
       {
         async *ask() {
-          asked++
+          request++
           yield createStopped()
         },
         finish: async () => {},
@@ -889,19 +889,19 @@ describe('a question that cannot be asked', () => {
     )
     await conversation.ask('', '')
 
-    expect(asked).toBe(0)
+    expect(request).toBe(0)
     expect(conversation.turns.value).toEqual([])
     expect(conversation.isWorking.value).toBe(false)
   })
 
-  it('is not asked while an answer is on its way', async () => {
-    const { held, release } = createHold()
-    let asked = 0
+  it('is not requested while an answer is on its way', async () => {
+    const { target, release } = createHold()
+    let request = 0
     const conversation = useConversation(
       {
         async *ask() {
-          asked++
-          await held
+          request++
+          await target
         },
         finish: async () => {},
       },
@@ -909,15 +909,15 @@ describe('a question that cannot be asked', () => {
       called,
       now,
     )
-    const asking = conversation.ask('what is here?', '')
+    const askPromise = conversation.ask('what is here?', '')
     await nap()
     expect(conversation.isWorking.value).toBe(true)
 
     await conversation.ask('and below it?', '')
     release()
-    await asking
+    await askPromise
 
-    expect(asked).toBe(1)
+    expect(request).toBe(1)
     expect(conversation.turns.value.filter((turn) => turn.voice === 'asked')).toHaveLength(1)
     expect(conversation.isWorking.value).toBe(false)
   })
@@ -943,7 +943,7 @@ describe('the names of the turns', () => {
     expect(conversation.turns.value.map((turn) => turn.id)).toEqual(['0', '3', '4', '5', '8', '9'])
   })
 
-  it('go on from a turn that said the agent could not be reached', async () => {
+  it('go on from a turn that returned the agent could not be reached', async () => {
     let calls = 0
     const conversation = useConversation(
       {
@@ -964,13 +964,13 @@ describe('the names of the turns', () => {
   })
 
   it('give each line about the exchange a name of its own', async () => {
-    const seen: string[][] = []
+    const observed: string[][] = []
     const conversation = useConversation(
       {
         async *ask() {
-          seen.push(conversation.turns.value.map((turn) => turn.id))
+          observed.push(conversation.turns.value.map((turn) => turn.id))
           yield createToolStep('Read a note')
-          seen.push(conversation.turns.value.map((turn) => turn.id))
+          observed.push(conversation.turns.value.map((turn) => turn.id))
           yield createStopped()
         },
         finish: async () => {},
@@ -981,21 +981,21 @@ describe('the names of the turns', () => {
     )
     await conversation.ask('what is here?', '')
 
-    expect(seen).toEqual([
+    expect(observed).toEqual([
       ['0', '2'],
       ['0', '1'],
     ])
   })
 
-  it('replace a turn that is put again, wherever it stands', async () => {
-    let seen: string[] = []
+  it('replace a turn that is put again, wherever it remains', async () => {
+    let observed: string[] = []
     const conversation = useConversation(
       {
         async *ask() {
           yield createToolStep('Search notes')
           conversation.turns.value = conversation.turns.value.slice(1)
           yield createToolStep('Read a note')
-          seen = conversation.turns.value.map((turn) => turn.text)
+          observed = conversation.turns.value.map((turn) => turn.text)
           yield createStopped()
         },
         finish: async () => {},
@@ -1006,7 +1006,7 @@ describe('the names of the turns', () => {
     )
     await conversation.ask('what is here?', '')
 
-    expect(seen).toEqual(['Read a note'])
+    expect(observed).toEqual(['Read a note'])
   })
 })
 
@@ -1033,15 +1033,15 @@ describe('while an answer is on its way', () => {
 })
 
 describe('the line about work and the answer beginning', () => {
-  it('comes down as the first words arrive', async () => {
-    const { held, release } = createHold()
+  it('arrives down as the first words arrive', async () => {
+    const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createToolStep('Read a note'), createSaidStep('Hi')], held),
+      createPort([createToolStep('Read a note'), createSaidStep('Hi')], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('q', '')
+    const askPromise = conversation.ask('q', '')
     await nap()
 
     expect(conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
@@ -1050,18 +1050,18 @@ describe('the line about work and the answer beginning', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 
-  it('is not put back by the next tool being asked about while the answer grows', async () => {
-    const { held, release } = createHold()
+  it('is not put back by the next tool being requested about while the answer grows', async () => {
+    const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createSaidStep('One. '), createToolStep('Read a note')], held),
+      createPort([createSaidStep('One. '), createToolStep('Read a note')], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('q', '')
+    const askPromise = conversation.ask('q', '')
     await nap()
 
     expect(getDrawn(conversation)).toEqual([
@@ -1071,25 +1071,25 @@ describe('the line about work and the answer beginning', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 
-  it('leaves the answer so far settled when the model is asked again', async () => {
-    const { held, release } = createHold()
+  it('leaves the answer so far settled when the model is requested again', async () => {
+    const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createSaidStep('One moment. '), createThinking()], held),
+      createPort([createSaidStep('One moment. '), createThinking()], target),
       words,
       called,
       now,
     )
-    const asking = conversation.ask('q', '')
+    const askPromise = conversation.ask('q', '')
     await nap()
 
     expect(conversation.turns.value[1]?.text).toBe('One moment. ')
     expect(conversation.turns.value[1]?.state).toBeUndefined()
 
     release()
-    await asking
+    await askPromise
   })
 })
 
@@ -1103,12 +1103,12 @@ describe('which tool answered', () => {
   ]
 
   it.each([
-    ['the model has spoken', createSaidStep('So. ')],
+    ['the model has completed', createSaidStep('So. ')],
     ['the model is asked again', createThinking()],
   ])('is known again once %s, and the one in hand stops running', async (_when, between) => {
-    const { held, release } = createHold()
-    const conversation = useConversation(createPort(steps(between), held), words, called, now)
-    const asking = conversation.ask('q', '')
+    const { target, release } = createHold()
+    const conversation = useConversation(createPort(steps(between), target), words, called, now)
+    const askPromise = conversation.ask('q', '')
     await nap()
 
     expect(getDoing(conversation)).toEqual([
@@ -1117,18 +1117,18 @@ describe('which tool answered', () => {
     ])
 
     release()
-    await asking
+    await askPromise
   })
 })
 
 describe('giving up on an answer in the middle', () => {
-  it('leaves what was said settled, whatever the agent goes on to say', async () => {
-    const { held, release } = createHold()
+  it('leaves the transcript settled, whatever the agent goes on to say', async () => {
+    const { target, release } = createHold()
     const conversation = useConversation(
       {
         async *ask() {
           yield createSaidStep('Two ')
-          await held
+          await target
           yield createSaidStep('more')
         },
         finish: async () => {},
@@ -1137,11 +1137,11 @@ describe('giving up on an answer in the middle', () => {
       called,
       now,
     )
-    const asking = conversation.ask('q', '')
+    const askPromise = conversation.ask('q', '')
     await nap()
     conversation.stop()
     release()
-    await asking
+    await askPromise
 
     expect(getDrawn(conversation)).toEqual([
       ['asked', 'q', undefined],
@@ -1149,24 +1149,24 @@ describe('giving up on an answer in the middle', () => {
     ])
   })
 
-  it('does not say the agent said nothing', async () => {
-    const { held, release } = createHold()
-    const conversation = useConversation(createPort([], held), words, called, now)
-    const asking = conversation.ask('q', '')
+  it('does not say the agent returned nothing', async () => {
+    const { target, release } = createHold()
+    const conversation = useConversation(createPort([], target), words, called, now)
+    const askPromise = conversation.ask('q', '')
     await nap()
     conversation.stop()
     release()
-    await asking
+    await askPromise
 
     expect(getDrawn(conversation)).toEqual([['asked', 'q', undefined]])
   })
 
   it('does not say the agent could not be reached when it fails afterwards', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     const conversation = useConversation(
       {
         async *ask() {
-          await held
+          await target
           throw new Error('cut off')
         },
         finish: async () => {},
@@ -1175,11 +1175,11 @@ describe('giving up on an answer in the middle', () => {
       called,
       now,
     )
-    const asking = conversation.ask('q', '')
+    const askPromise = conversation.ask('q', '')
     await nap()
     conversation.stop()
     release()
-    await asking
+    await askPromise
 
     expect(getDrawn(conversation)).toEqual([['asked', 'q', undefined]])
   })
@@ -1214,7 +1214,7 @@ describe('giving up on an answer in the middle', () => {
 })
 
 describe('an agent that cannot be reached', () => {
-  it('leaves what was said settled, and says so in the voice of the answer', async () => {
+  it('leaves the transcript settled, and says so in the voice of the answer', async () => {
     const conversation = useConversation(
       {
         async *ask() {
@@ -1239,14 +1239,14 @@ describe('an agent that cannot be reached', () => {
 
 describe('a conversation that is over, while an answer is on its way', () => {
   it('stops the answer at once', async () => {
-    const { held, release } = createHold()
+    const { target, release } = createHold()
     let signal: AbortSignal | undefined
     const conversation = useConversation(
       {
         async *ask(query) {
           signal = query.signal
           yield createToolStep('Search notes')
-          await held
+          await target
         },
         finish: async () => {},
       },
@@ -1254,7 +1254,7 @@ describe('a conversation that is over, while an answer is on its way', () => {
       called,
       now,
     )
-    const asking = conversation.ask('q', '')
+    const askPromise = conversation.ask('q', '')
     await nap()
 
     conversation.finish()
@@ -1264,6 +1264,6 @@ describe('a conversation that is over, while an answer is on its way', () => {
     expect(getDoing(conversation)).toEqual([])
 
     release()
-    await asking
+    await askPromise
   })
 })

@@ -66,7 +66,7 @@ describe('how much of a change is shown', () => {
     expect(steps).toEqual([0, 4, 8, 14, 19, 23, 23])
   })
 
-  it('takes in the space after a word, so the boundary stands between words', () => {
+  it('takes in the space after a word, so the boundary remains between words', () => {
     expect(createReveal(FIVE, 0.2).shown).toBe(4)
   })
 
@@ -74,7 +74,7 @@ describe('how much of a change is shown', () => {
     expect(createReveal(FIVE, 1)).toEqual({ shown: 23, fading: 23 })
   })
 
-  it('stays inside the text however far it is asked for', () => {
+  it('stays inside the text however far it is requested for', () => {
     expect(createReveal(FIVE, 4)).toEqual({ shown: 23, fading: 23 })
     expect(createReveal(FIVE, -1)).toEqual({ shown: 0, fading: 0 })
   })
@@ -107,10 +107,10 @@ describe('a change on its way', () => {
   })
 
   it('moves with the text when something is typed before it', () => {
-    const typed = createMarkedState(DOC, CHANGE).update({
+    const updatedState = createMarkedState(DOC, CHANGE).update({
       changes: { from: 0, insert: 'so ' },
     }).state
-    expect(getDrawn(typed)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
+    expect(getDrawn(updatedState)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
   })
 
   it('is drawn for nothing where it is addressed past the end of the text', () => {
@@ -123,10 +123,10 @@ describe('a change on its way', () => {
   })
 
   it('stays where it starts when the text is typed at its first character', () => {
-    const typed = createMarkedState(DOC, CHANGE).update({
+    const updatedState = createMarkedState(DOC, CHANGE).update({
       changes: { from: 4, insert: 'x' },
     }).state
-    expect(getDrawn(typed)).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
+    expect(getDrawn(updatedState)).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
   })
 
   it('is the same drawing after an update that says nothing about it', () => {
@@ -141,8 +141,8 @@ describe('a change on its way', () => {
 
 describe('a change that puts nothing in', () => {
   it('marks the stretch it takes out, and there is nothing to show', () => {
-    const gone: EditorChange = { id: 'a', from: 4, to: 8, text: '' }
-    expect(getDrawn(createMarkedState('the cat sat', gone))).toEqual([
+    const removed: EditorChange = { id: 'a', from: 4, to: 8, text: '' }
+    expect(getDrawn(createMarkedState('the cat sat', removed))).toEqual([
       { from: 4, to: 8, mark: 'cm-changing' },
     ])
   })
@@ -174,17 +174,17 @@ describe('a change whose text has arrived', () => {
   })
 
   it('takes over from the mark when the text lands in the document', () => {
-    const waiting = createMarkedState('the cat sat', { id: 'a', from: 4, to: 7, text: 'dog' })
-    expect(getDrawn(waiting)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+    const pendingState = createMarkedState('the cat sat', { id: 'a', from: 4, to: 7, text: 'dog' })
+    expect(getDrawn(pendingState)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
 
-    const landed = waiting.update({ changes: { from: 4, to: 7, insert: 'dog' } }).state
+    const landed = pendingState.update({ changes: { from: 4, to: 7, insert: 'dog' } }).state
     expect(getDrawn(landed)).toEqual([{ from: 4, to: 7, mark: null }])
   })
 
   it('goes back to the mark when the text is typed away from under it', () => {
-    const shown = getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
-    const typed = shown.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
-    expect(getDrawn(typed)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
+    const displayedState = getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
+    const updatedState = displayedState.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
+    expect(getDrawn(updatedState)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
   })
 })
 
@@ -259,9 +259,9 @@ describe('the showing, setReveal by the clock', () => {
     const { world, view } = wound()
     for (const now of [0, 220, 440, 660, 880]) world.tick(now)
 
-    const settled = getDrawn(view.state)
+    const resolved = getDrawn(view.state)
     world.tick(1100)
-    expect(getDrawn(view.state)).toEqual(settled)
+    expect(getDrawn(view.state)).toEqual(resolved)
 
     view.destroy()
   })
@@ -277,35 +277,35 @@ describe('the showing, setReveal by the clock', () => {
 
 /** A clock that keeps every frame it was asked for, and what it was told to cancel. */
 const createLedgerClock = () => {
-  const waiting = new Map<number, (now: number) => void>()
-  const asked: ((now: number) => void)[] = []
+  const pendingState = new Map<number, (now: number) => void>()
+  const request: ((now: number) => void)[] = []
   const cancelled: unknown[] = []
   const clock: Clock = {
     now: () => 0,
     schedule: (run) => {
-      asked.push(run)
-      waiting.set(asked.length, run)
-      return asked.length
+      request.push(run)
+      pendingState.set(request.length, run)
+      return request.length
     },
     cancel: (handle) => {
       cancelled.push(handle)
-      waiting.delete(handle)
+      pendingState.delete(handle)
     },
   }
   return {
     clock,
     cancelled,
     /** How many frames are waiting for their timestamp. */
-    getWaiting: () => waiting.size,
+    getWaiting: () => pendingState.size,
     /** Hand the latest frame that is waiting its timestamp. */
     tick: (now: number) => {
-      const [id, run] = [...waiting.entries()].at(-1) ?? []
+      const [id, run] = [...pendingState.entries()].at(-1) ?? []
       if (id === undefined || !run) return
-      waiting.delete(id)
+      pendingState.delete(id)
       run(now)
     },
     /** Hand a frame that was asked for earlier, waiting or not. */
-    fire: (index: number, now: number) => asked[index]?.(now),
+    fire: (index: number, now: number) => request[index]?.(now),
   }
 }
 

@@ -11,7 +11,7 @@ import (
 
 // A rename that stops because the decks cannot be named has still written the
 // stencil, and says what the stencil now stands at.
-func TestARenameWhoseDecksCannotBeNamedSaysWhatTheStencilStandsAt(t *testing.T) {
+func TestARenameWhoseDecksCannotBeNamedReturnsWhatTheStencilExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	u := newRenameField(t, vs).WithNotes(decksOf{err: errOutOfReach})
 
@@ -28,7 +28,7 @@ func TestARenameWhoseDecksCannotBeNamedSaysWhatTheStencilStandsAt(t *testing.T) 
 
 // A rename whose caller has gone has still written the stencil, and says what
 // the stencil now stands at.
-func TestARenameWhoseContextEndsSaysWhatTheStencilStandsAt(t *testing.T) {
+func TestARenameWhoseContextEndsReturnsWhatTheStencilExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()

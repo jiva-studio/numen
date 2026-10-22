@@ -39,7 +39,7 @@ export interface Installation {
    */
   getSetting(at: readonly string[]): unknown
   getModels(at: readonly string[]): readonly Model[]
-  write(written: readonly SettingEdit[]): void
+  write(content: readonly SettingEdit[]): void
   /**
    * The key of a secret a plugin declares, stored or removed. The window is
    * told only which secrets have a key, under each plugin's `storedSecrets`.

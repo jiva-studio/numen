@@ -31,7 +31,7 @@ watch(
     if (!open || !at || !notes.length) return
     void nextTick(() => {
       const found = notes.find((one) => one.written === at || one.path === at)
-      if (found) drawn.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
+      if (found) noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
       props.held.read()
     })
   },
@@ -46,11 +46,11 @@ const getNoteKey = (one: Neighbour) => one.path || one.written
  * Where each note was drawn, so the one a link named can be scrolled to. Read
  * only when a link is followed, so it is held outside the reactive graph.
  */
-const drawn = new Map<string, HTMLElement>()
+const noteElements = new Map<string, HTMLElement>()
 
 const registerNoteElement = (one: Neighbour, element: unknown): void => {
-  if (element) drawn.set(getNoteKey(one), element as HTMLElement)
-  else drawn.delete(getNoteKey(one))
+  if (element) noteElements.set(getNoteKey(one), element as HTMLElement)
+  else noteElements.delete(getNoteKey(one))
 }
 
 /** How much of the panel one press of space moves it. */

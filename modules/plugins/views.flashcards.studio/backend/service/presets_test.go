@@ -84,7 +84,7 @@ func settings() *v1.Settings {
 
 // TestASettingOutsideItsBoundsIsNotWritten. A retention target outside what
 // memory does is a number to correct, and the file is not opened to find out.
-func TestASettingOutsideItsBoundsIsNotWritten(t *testing.T) {
+func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	targetSettings := settings()
@@ -100,7 +100,7 @@ func TestASettingOutsideItsBoundsIsNotWritten(t *testing.T) {
 	}
 }
 
-func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
+func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&v1.ReadPresetRequest{
@@ -140,7 +140,7 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("a deck naming no preset was refused %v", code)
+		t.Fatalf("a deck naming no preset failed %v", code)
 	}
 	if path := answer.Msg.GetPreset().GetPath(); path != "" {
 		t.Errorf("a deck naming no preset was answered from %q", path)
@@ -160,7 +160,7 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 // TestADeckWhosePresetLinkHasNoRoleIsToldSo. An entry of the `links:` block
 // written with no role is not read, so a preset named in one schedules nothing
 // and the window says why the deck is on the defaults.
-func TestADeckWhosePresetLinkHasNoRoleIsToldSo(t *testing.T) {
+func TestADeckWhosePresetLinkHasNoRoleIsReportedSo(t *testing.T) {
 	f := newScheduling(t, map[string]string{
 		"Sanskrit.md": sanskrit,
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    type: preset\n---\n\n" +
@@ -176,9 +176,9 @@ func TestADeckWhosePresetLinkHasNoRoleIsToldSo(t *testing.T) {
 	if path := answer.Msg.GetPreset().GetPath(); path != "" {
 		t.Fatalf("a deck whose link has no role was answered from %q", path)
 	}
-	said := answer.Msg.GetPreset().GetProblems()
-	if len(said) != 1 || !strings.Contains(said[0], "no role") {
-		t.Errorf("the deck is shown %v", said)
+	response := answer.Msg.GetPreset().GetProblems()
+	if len(response) != 1 || !strings.Contains(response[0], "no role") {
+		t.Errorf("the deck is shown %v", response)
 	}
 }
 
@@ -214,7 +214,7 @@ func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 
 // TestChangingWhatABudgetCountsIsWritten. What a budget counts is settled on
 // every save, so a preset moved from one to the other holds what was settled.
-func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
+func TestChangingWhatABudgetCountsIsSaved(t *testing.T) {
 	cards := strings.Replace(counting, "counts: shows", "counts: cards", 1)
 	f := newScheduling(t, map[string]string{"Shows.md": cards})
 
@@ -269,7 +269,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 // TestACurveComesBackWithItsTwoPlaces. The control is drawn from where the
 // preset stands to what is suggested, so a curve that came back without both
 // places is a control with nothing to point at.
-func TestACurveComesBackWithItsTwoPlaces(t *testing.T) {
+func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	answer, err := f.client.ComputeCurve(t.Context(), connect.NewRequest(&v1.ComputeCurveRequest{
@@ -363,7 +363,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := read.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the preset just made was refused with %v", code)
+		t.Fatalf("the preset just made failed with %v", code)
 	}
 	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
 		t.Errorf("the preset just made stands against %v", problems)
@@ -371,24 +371,24 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if stops := read.Msg.GetPreset().GetStops(); stops != v1.StopReason_STOP_REASON_NOTHING {
 		t.Errorf("the preset just made schedules nothing, and says %v", stops)
 	}
-	settled := read.Msg.GetPreset().GetSettings()
-	if settled.GetGoal() != v1.Goal_GOAL_MINUTES_A_DAY || settled.GetMinutesADay() != 20 {
-		t.Errorf("the goal is %v at %d minutes", settled.GetGoal(), settled.GetMinutesADay())
+	resolved := read.Msg.GetPreset().GetSettings()
+	if resolved.GetGoal() != v1.Goal_GOAL_MINUTES_A_DAY || resolved.GetMinutesADay() != 20 {
+		t.Errorf("the goal is %v at %d minutes", resolved.GetGoal(), resolved.GetMinutesADay())
 	}
-	if settled.GetNewADay() != 10 || settled.GetReviewsADay() != 200 {
+	if resolved.GetNewADay() != 10 || resolved.GetReviewsADay() != 200 {
 		t.Errorf("a day holds %d new and %d reviews",
-			settled.GetNewADay(), settled.GetReviewsADay())
+			resolved.GetNewADay(), resolved.GetReviewsADay())
 	}
-	if settled.GetRetention() != 0.9 || settled.GetInterval() != 21 {
+	if resolved.GetRetention() != 0.9 || resolved.GetInterval() != 21 {
 		t.Errorf("retention %g at an interval of %d days",
-			settled.GetRetention(), settled.GetInterval())
+			resolved.GetRetention(), resolved.GetInterval())
 	}
-	if settled.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_CARDS || settled.GetBacklog() != 100 {
+	if resolved.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_CARDS || resolved.GetBacklog() != 100 {
 		t.Errorf("a day counts %v and gives %d to the debt",
-			settled.GetCounts(), settled.GetBacklog())
+			resolved.GetCounts(), resolved.GetBacklog())
 	}
-	if len(settled.GetLoad()) != 0 || !settled.GetHasEvenLoad() {
-		t.Errorf("the load is %v, evened %t", settled.GetLoad(), settled.GetHasEvenLoad())
+	if len(resolved.GetLoad()) != 0 || !resolved.GetHasEvenLoad() {
+		t.Errorf("the load is %v, evened %t", resolved.GetLoad(), resolved.GetHasEvenLoad())
 	}
 }
 
@@ -407,30 +407,30 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listed := make([]string, 0, len(answer.Msg.GetPresets()))
+	items := make([]string, 0, len(answer.Msg.GetPresets()))
 	for _, one := range answer.Msg.GetPresets() {
-		listed = append(listed, one.GetPath())
+		items = append(items, one.GetPath())
 	}
-	if !slices.Contains(listed, "presets/Prosody.md") {
-		t.Errorf("the vault lists %v", listed)
+	if !slices.Contains(items, "presets/Prosody.md") {
+		t.Errorf("the vault lists %v", items)
 	}
 }
 
 // TestADeckIsPutOnAPresetAndTakenOffAgain. Choosing a preset writes the deck's
 // one entry, and choosing the defaults takes it out.
-func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
+func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	put, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
+	placed, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if put.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the write was refused: %+v", put.Msg)
+	if placed.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the write failed: %+v", placed.Msg)
 	}
-	if put.Msg.GetAt() == nil {
+	if placed.Msg.GetAt() == nil {
 		t.Error("the write says nothing about the file it made")
 	}
 
@@ -449,7 +449,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 
 	// The fingerprint the write answered with is what the next write presents.
 	off, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
-		Deck: "decks/Terms.md", Baseline: put.Msg.GetAt(),
+		Deck: "decks/Terms.md", Baseline: placed.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -516,7 +516,7 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 
 // TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead. Somebody editing
 // their own deck outranks a client that read it and arrived late.
-func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
+func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
 	read, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{

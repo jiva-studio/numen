@@ -50,20 +50,20 @@ export function useEdgeLines(frame: () => PlexFrame, uid: string) {
   const lines = computed(() => getLines(frame().edges, uid))
 
   /** The edge the hand is on, by a key that survives the re-routing of a move. */
-  const over = ref<string | null>(null)
+  const overKey = ref<string | null>(null)
 
   // A new frame is a picture on its way somewhere, and the hand is on none of
   // it until it settles.
   watch(frame, () => {
-    over.value = null
+    overKey.value = null
   })
 
   return {
     lines,
-    lifted: computed(() => lines.value.filter((line) => line.pair === over.value)),
-    resting: computed(() => lines.value.filter((line) => line.pair !== over.value)),
+    lifted: computed(() => lines.value.filter((line) => line.pair === overKey.value)),
+    resting: computed(() => lines.value.filter((line) => line.pair !== overKey.value)),
     setOver: (pair: string | null) => {
-      over.value = pair
+      overKey.value = pair
     },
   }
 }

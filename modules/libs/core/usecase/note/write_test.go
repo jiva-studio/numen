@@ -17,23 +17,23 @@ func TestASizeIsHeldToItsBound(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		size, bound int
-		refused     bool
+		wantErr bool
 	}{
 		{"no bound holds to nothing", 5, 0, false},
 		{"a negative bound holds to nothing", 5, -1, false},
 		{"a bound of one holds", 5, 1, true},
 		{"exactly the bound is allowed", 5, 5, false},
-		{"one over the bound is refused", 6, 5, true},
+		{"one over the bound fails", 6, 5, true},
 		{"under the bound is allowed", 4, 5, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			err := note.CheckSize("Entropy.md", tc.size, tc.bound)
-			if got := errors.Is(err, note.ErrTooLarge); got != tc.refused {
+			if got := errors.Is(err, note.ErrTooLarge); got != tc.wantErr {
 				t.Errorf("size %d at bound %d answered %v", tc.size, tc.bound, err)
 			}
 			if err != nil && !strings.Contains(err.Error(), "Entropy.md") {
-				t.Errorf("the refusal does not name the note: %v", err)
+				t.Errorf("the rejection does not name the note: %v", err)
 			}
 		})
 	}
@@ -48,7 +48,7 @@ func TestAWriteOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 		t.Fatalf("want ErrBodyUnwritable, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
-		t.Errorf("a refused write changed the note:\n%s", body)
+		t.Errorf("a failed write changed the note:\n%s", body)
 	}
 }
 
@@ -61,7 +61,7 @@ func TestASaveOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 		t.Fatalf("want ErrBodyUnwritable, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
-		t.Errorf("a refused save changed the note:\n%s", body)
+		t.Errorf("a rejected save changed the note:\n%s", body)
 	}
 }
 
@@ -75,12 +75,12 @@ func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if got := c.read(t, "Mammals.md"); got != "# Mammals\n" {
-		t.Error("a refused write changed the note")
+		t.Error("a failed write changed the note")
 	}
 
-	wide := c.newWrite()
-	wide.Bound = 2 * note.MaxBytes
-	if _, err := wide.Execute(t.Context(), c.vault, "Mammals.md", body, domain.Fingerprint{}); err != nil {
+	wideWrite := c.newWrite()
+	wideWrite.Bound = 2 * note.MaxBytes
+	if _, err := wideWrite.Execute(t.Context(), c.vault, "Mammals.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(c.read(t, "Mammals.md")); got <= note.MaxBytes {
@@ -121,15 +121,15 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Entropy.md": tc.was})
-			var told []domain.Edit
+			var notified []domain.Edit
 
-			if _, err := c.newDrawingWrite(&told).Execute(t.Context(), c.vault, "Entropy.md", tc.now, domain.Fingerprint{}); err != nil {
+			if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", tc.now, domain.Fingerprint{}); err != nil {
 				t.Fatal(err)
 			}
-			if len(told) != 2 {
-				t.Fatalf("told %+v, want the change and its end", told)
+			if len(notified) != 2 {
+				t.Fatalf("told %+v, want the change and its end", notified)
 			}
-			begin, end := told[0], told[1]
+			begin, end := notified[0], notified[1]
 			if begin.Path != "Entropy.md" || begin.From != tc.want.From || begin.To != tc.want.To || begin.Text != tc.want.Text {
 				t.Errorf("told %+v, want %+v", begin, tc.want)
 			}
@@ -146,13 +146,13 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 func TestAWriteOfTheSameProseTellsNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "alpha beta\n"})
-	var told []domain.Edit
+	var notified []domain.Edit
 
-	if _, err := c.newDrawingWrite(&told).Execute(t.Context(), c.vault, "Entropy.md", "alpha beta\n", domain.Fingerprint{}); err != nil {
+	if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", "alpha beta\n", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
-	if len(told) != 0 {
-		t.Errorf("told %+v of a note that did not change", told)
+	if len(notified) != 0 {
+		t.Errorf("told %+v of a note that did not change", notified)
 	}
 }
 
@@ -160,14 +160,14 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 	t.Parallel()
 	half := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\ntitle: Heat death\n"
 	c := openChanging(t, map[string]string{"Heat.md": half})
-	var told []domain.Edit
+	var notified []domain.Edit
 
-	_, err := c.newDrawingWrite(&told).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.Fingerprint{})
+	_, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.Fingerprint{})
 	if !errors.Is(err, note.ErrUnterminated) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
-	if len(told) != 0 {
-		t.Errorf("told %+v of a change that was refused", told)
+	if len(notified) != 0 {
+		t.Errorf("told %+v of a change that failed", notified)
 	}
 }
 

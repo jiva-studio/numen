@@ -51,7 +51,7 @@ const positions = computed(() => getBacklogPositions(backlog.value, extent.value
 const line = computed(() => createLinePath(positions.value))
 
 /** Whether there is a backlog to draw at all. */
-const drawn = computed(() => props.isHonest && backlog.value.length > 1)
+const hasBacklog = computed(() => props.isHonest && backlog.value.length > 1)
 
 /**
  * The ends of the extent, against the lines they are the height of. Nothing
@@ -98,11 +98,11 @@ const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
 
     <div class="curve-slider__over" data-control="over">
       <div class="curve-slider__room" data-control="room" :style="roomStyle">
-        <BacklogPicture v-if="drawn" :line="line" />
+        <BacklogPicture v-if="hasBacklog" :line="line" />
       </div>
 
       <span
-        v-for="(one, at) in drawn ? heights : []"
+        v-for="(one, at) in hasBacklog ? heights : []"
         :key="at"
         class="curve-slider__number"
         data-control="number"
@@ -115,8 +115,8 @@ const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
 
   <div class="curve-slider__foot" data-control="foot">
     <p class="curve-slider__ends" data-control="ends">
-      <span>{{ drawn ? ends[0] : '' }}</span>
-      <span>{{ drawn ? ends[1] : '' }}</span>
+      <span>{{ hasBacklog ? ends[0] : '' }}</span>
+      <span>{{ hasBacklog ? ends[1] : '' }}</span>
     </p>
 
     <p class="curve-slider__name curve-slider__name--x" data-control="name" data-axis="x">

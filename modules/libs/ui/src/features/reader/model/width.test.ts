@@ -26,7 +26,7 @@ const setup = (...widths: number[]) => {
   return { row, atWidth, state, wrapper }
 }
 
-describe('the width pages are asked for at', () => {
+describe('the width pages are requested for at', () => {
   beforeEach(() => {
     vi.useFakeTimers()
   })

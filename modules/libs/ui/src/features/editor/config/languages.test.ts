@@ -135,8 +135,8 @@ describe('loadLanguage', () => {
     vi.doMock('@codemirror/lang-python', () => {
       throw new Error('chunk failed')
     })
-    const fresh = await import('./languages')
-    await expect(fresh.loadLanguage('python')).rejects.toThrow()
-    expect((await fresh.loadLanguage('rust'))?.language).toBeDefined()
+    const reloaded = await import('./languages')
+    await expect(reloaded.loadLanguage('python')).rejects.toThrow()
+    expect((await reloaded.loadLanguage('rust'))?.language).toBeDefined()
   })
 })

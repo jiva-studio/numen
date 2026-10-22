@@ -194,13 +194,13 @@ func (u Move) rewriteLink(
 	if lands != "" {
 		return nil
 	}
-	left, err := u.repair(ctx, v, was.From, was.Target, address)
+	remaining, err := u.repair(ctx, v, was.From, was.Target, address)
 	switch {
 	case err != nil:
 		return err
-	case left == linkRepaired:
+	case remaining == linkRepaired:
 		res.Repaired = append(res.Repaired, was.From)
-	case left == linkDangling:
+	case remaining == linkDangling:
 		res.Dangling = append(res.Dangling, was.From)
 	}
 	return nil

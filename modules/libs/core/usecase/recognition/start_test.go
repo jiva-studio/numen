@@ -15,7 +15,7 @@ func TestRecognitionIsStartedAndBeginsWhereNothingIsGoing(t *testing.T) {
 	w.waitUntilDone(t)
 }
 
-func TestRecognitionStatusSaysWhetherTheModelsAreHere(t *testing.T) {
+func TestRecognitionStatusReturnsWhetherTheModelsAreHere(t *testing.T) {
 	w := newWatched(t, nil)
 	status := NewGetStatus(w.Worker)
 	if got := status.Execute(); !got.IsReady || got.IsRunning {

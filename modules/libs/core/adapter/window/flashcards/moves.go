@@ -28,9 +28,9 @@ func (f *changeSubscribers) subscribe() (<-chan struct{}, func()) {
 	return line, func() {
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		if held, is := f.subscribers[at]; is {
+		if target, is := f.subscribers[at]; is {
 			delete(f.subscribers, at)
-			close(held)
+			close(target)
 		}
 	}
 }
@@ -73,11 +73,11 @@ func (a *API) ReportChangesFrom(ctx context.Context, moved <-chan struct{}) {
 // WatchMoves tells that something moved, until ctx is done. It is what the plugins of the installation
 // are told through the host.
 func (a *API) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
-	line, done := a.subscribers.subscribe()
+	line, isDone := a.subscribers.subscribe()
 	out := make(chan struct{}, 1)
 	go func() {
 		defer close(out)
-		defer done()
+		defer isDone()
 		for {
 			select {
 			case <-ctx.Done():

@@ -104,7 +104,7 @@ export function useCurveAnnotations(
     ),
   )
 
-  const reading = computed(() => getKnobValueStyle(plot.knob.value))
+  const knobStyle = computed(() => getKnobValueStyle(plot.knob.value))
   const atKnob = computed(() => words.formatGoalValue(props.curve.goal, plot.held.value))
   const counts = computed(() => (props.material ? words.material(props.material) : []))
   const learning = computed(() => {
@@ -123,7 +123,7 @@ export function useCurveAnnotations(
     callout,
     named,
     heights,
-    reading,
+    reading: knobStyle,
     atKnob,
     counts,
     learning,

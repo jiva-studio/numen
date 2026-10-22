@@ -35,8 +35,8 @@ func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf,
 func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, 0, fs.ErrNotExist
 	}
 	s.opens++
@@ -72,8 +72,8 @@ func (c trackedCloser) Close() error {
 func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return raw, nil
@@ -132,7 +132,7 @@ func (s *shelf) claims(name domain.ArtifactName) bool {
 	return s.held[name]
 }
 
-func (s *shelf) names() []domain.ArtifactName {
+func (s *shelf) artifactNames() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []domain.ArtifactName
@@ -205,14 +205,14 @@ func (c *corrector) ProofreadSpeech(
 		end = min(end, at+c.limit)
 	}
 	out := domain.SpeechProofreading{Uncorrected: c.uncorrected}
-	var answered []int
+	var reply []int
 	for _, line := range lines[at:end] {
-		answered = append(answered, line.Number)
+		reply = append(reply, line.Number)
 		if one, has := c.says[line.Number]; has {
 			out.Corrections = append(out.Corrections, one)
 		}
 	}
-	c.asked = append(c.asked, answered)
+	c.asked = append(c.asked, reply)
 	if end == len(lines) {
 		out.IsDone = true
 		if end > 0 {

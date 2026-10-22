@@ -84,7 +84,7 @@ func (d *Document) GetNamesAt(offset int) []string {
 	return names
 }
 
-// page is what a page of a file is called: where it stands in it.
+// page is what a page of a file is called: at its current position in it.
 //
 // A person is told the number a viewer opens at, so there is one number and it
 // is the one on the screen. What the paper printed is a second number for the
@@ -145,7 +145,7 @@ func ReaderName(ref domain.Fingerprint) (string, bool) {
 // and a chunk's offsets belong to that and not to the bytes on disk: slicing an
 // archive at a text offset returns compressed noise.
 //
-// One format is read by a library, which is given rather than reached for.
+// One format is read by a library, which is given and not reached for.
 //
 // The bytes are somebody else's: a book in a synced vault was put there by
 // whoever synced it, and a library taking text out of it is a library being

@@ -91,9 +91,9 @@ describe('edges', () => {
     expect(edge).toBeDefined()
     expect(edge!.label).toBe('contains')
 
-    const left = layout.nodes.find((n) => n.id === 'parent-0')!
+    const leftNode = layout.nodes.find((n) => n.id === 'parent-0')!
     const right = layout.nodes.find((n) => n.id === 'parent-1')!
-    expect(edge!.fromPoint).toStrictEqual({ x: left.x + left.width / 2, y: left.y })
+    expect(edge!.fromPoint).toStrictEqual({ x: leftNode.x + leftNode.width / 2, y: leftNode.y })
     expect(edge!.toPoint).toStrictEqual({ x: right.x - right.width / 2, y: right.y })
     expect(edge!.control1.x).toBeGreaterThan(edge!.fromPoint.x)
     expect(edge!.control2.x).toBeLessThan(edge!.toPoint.x)
@@ -170,9 +170,9 @@ describe('a title cut to the line it is set on', () => {
     edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
   }
 
-  const placed = arrangePlex(sideways)
-  const byId = new Map(placed.nodes.map((node) => [node.id, node]))
-  const curve = placed.edges[0]!
+  const placedPlex = arrangePlex(sideways)
+  const byId = new Map(placedPlex.nodes.map((node) => [node.id, node]))
+  const curve = placedPlex.edges[0]!
   const arc = getLength(curve)
 
   const routeWithLabel = (measureLabel?: (label: string) => number) =>
@@ -225,26 +225,26 @@ describe('a title cut to the line it is set on', () => {
   })
 
   it('measures the words it carries, and no other', () => {
-    const asked: string[] = []
+    const request: string[] = []
     routeWithLabel((label) => {
-      asked.push(label)
+      request.push(label)
       return 0
     })
-    expect(asked).toStrictEqual(['the scene in the assembly'])
+    expect(request).toStrictEqual(['the scene in the assembly'])
   })
 
-  it('halves in on the cut rather than stepping through the label', () => {
+  it('halves in on the cut and not stepping through the label', () => {
     const label = 'a'.repeat(400)
-    const asked: string[] = []
+    const request: string[] = []
     routeEdges(
       [{ from: 'aside', to: 'focus', label }],
       byId,
       createRouting(DEFAULT_OPTIONS, (words) => {
-        asked.push(words)
+        request.push(words)
         return [...words].length
       }),
     )
-    expect(asked.length).toBeLessThan(20)
+    expect(request.length).toBeLessThan(20)
   })
 })
 
@@ -301,9 +301,9 @@ describe('the arrowhead a line carries', () => {
     }).edges.find((edge) => edge.to === 'wide')!
 
     const covered = ARROW_LENGTH / getLength(aside)
-    const behind = createPointOnCurve(aside)(1 - covered)
+    const behindPoint = createPointOnCurve(aside)(1 - covered)
     const chord =
-      (Math.atan2(aside.toPoint.y - behind.y, aside.toPoint.x - behind.x) * 180) / Math.PI
+      (Math.atan2(aside.toPoint.y - behindPoint.y, aside.toPoint.x - behindPoint.x) * 180) / Math.PI
 
     // The line bends over the head's length, so the two readings differ.
     expect(Math.abs(chord - 90)).toBeGreaterThan(3)
@@ -311,9 +311,9 @@ describe('the arrowhead a line carries', () => {
 
     // The end a line leaves from is read the same way, backwards.
     const leaving = getArrow(aside, 'from')
-    const along = createPointOnCurve(aside)(ARROW_LENGTH / getLength(aside))
+    const alongEdge = createPointOnCurve(aside)(ARROW_LENGTH / getLength(aside))
     const back =
-      (Math.atan2(aside.fromPoint.y - along.y, aside.fromPoint.x - along.x) * 180) / Math.PI
+      (Math.atan2(aside.fromPoint.y - alongEdge.y, aside.fromPoint.x - alongEdge.x) * 180) / Math.PI
     expect(leaving.angle).toBeCloseTo(back, 1)
   })
 
@@ -411,9 +411,9 @@ describe('the run of a line between two boxes', () => {
     opacity: 1,
   })
 
-  const routing = createRouting(DEFAULT_OPTIONS)
+  const edgeRouting = createRouting(DEFAULT_OPTIONS)
 
-  const route = (from: PlacedNode, to: PlacedNode, using = routing) =>
+  const route = (from: PlacedNode, to: PlacedNode, using = edgeRouting) =>
     routeEdge(
       { from: from.id, to: to.id },
       new Map([from, to].map((node) => [node.id, node])),
@@ -441,7 +441,7 @@ describe('the run of a line between two boxes', () => {
     expect(edge.toPoint).toStrictEqual({ x: 30, y: -10 })
   })
 
-  it('runs across the page for a horizontal relation with clear space beside it', () => {
+  it('runs across the page for a horizontal relation with clear space alongside it', () => {
     const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 150, 200))
 
     expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
@@ -464,15 +464,15 @@ describe('the run of a line between two boxes', () => {
   })
 
   it('takes the axis from the geometry where neither relation has one', () => {
-    const undeclared = { ...routing, getAxis: () => 'auto' as const }
+    const undeclared = { ...edgeRouting, getAxis: () => 'auto' as const }
 
     const down = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 200), undeclared)
     expect(down.fromPoint).toStrictEqual({ x: 0, y: 20 })
     expect(down.toPoint).toStrictEqual({ x: 150, y: 180 })
 
-    const across = route(box('a', 'focus', 0, 0), box('b', 'focus', 300, 60), undeclared)
-    expect(across.fromPoint).toStrictEqual({ x: 50, y: 0 })
-    expect(across.toPoint).toStrictEqual({ x: 250, y: 60 })
+    const acrossRoute = route(box('a', 'focus', 0, 0), box('b', 'focus', 300, 60), undeclared)
+    expect(acrossRoute.fromPoint).toStrictEqual({ x: 50, y: 0 })
+    expect(acrossRoute.toPoint).toStrictEqual({ x: 250, y: 60 })
 
     // Equally far across and down, the run is down the page.
     const level = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 150), undeclared)
@@ -503,7 +503,7 @@ describe('the run of a line between two boxes', () => {
     expect(edge.toPoint).toStrictEqual({ x: 10, y: -20 })
   })
 
-  it('leaves from the right of a box at the same height beside the one it arrives at', () => {
+  it('leaves from the right of a box at the same height alongside the one it arrives at', () => {
     const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 0, 10))
 
     expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
@@ -511,7 +511,7 @@ describe('the run of a line between two boxes', () => {
   })
 
   it('holds the leaving direction for a fraction of the gap between the gates', () => {
-    const half = { ...routing, curvature: 0.5, minReach: 0 }
+    const half = { ...edgeRouting, curvature: 0.5, minReach: 0 }
     const edge = route(box('a', 'child', 0, 0), box('b', 'child', 0, 200), half)
 
     // The gates are 160 apart, so each control stands 80 out of its gate.
@@ -524,9 +524,9 @@ describe('the run of a line between two boxes', () => {
     const b = box('b', 'child', 0, 200)
     const byId = new Map([a, b].map((node) => [node.id, node]))
 
-    expect(routeEdges([{ from: 'a', to: 'b' }], byId, routing)[0]!.opacity).toBe(1)
+    expect(routeEdges([{ from: 'a', to: 'b' }], byId, edgeRouting)[0]!.opacity).toBe(1)
     expect(
-      routeEdges([{ from: 'a', to: 'b' }], byId, { routing, opacity: () => 0.25 })[0]!.opacity,
+      routeEdges([{ from: 'a', to: 'b' }], byId, { routing: edgeRouting, opacity: () => 0.25 })[0]!.opacity,
     ).toBe(0.25)
   })
 })

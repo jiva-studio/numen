@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// scanVault scans a vault and hands back the checks over it.
+// scanVault scans a vault and returns the checks over it.
 func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
@@ -147,7 +147,7 @@ func TestWhatOneFileGotWrongIsReportedAgainstThatFile(t *testing.T) {
 	}
 }
 
-func TestAskingForACheckThatDoesNotExistSaysWhatDoes(t *testing.T) {
+func TestAskingForACheckThatDoesNotExistReturnsWhatDoes(t *testing.T) {
 	l, v := scanVault(t, nil)
 
 	_, err := l.Run(t.Context(), v, "spelling")

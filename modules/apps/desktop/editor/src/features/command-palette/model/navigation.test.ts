@@ -62,7 +62,7 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
 const match = (path: string, title: string) => ({ path, title }) as NameMatch
 
 describe('the palette at its list of commands', () => {
-  it('stands on no step, and asks for a command', () => {
+  it('relies on no step, and asks for a command', () => {
     const { steps } = createSteps()
 
     expect(steps.steps.value).toStrictEqual([])
@@ -97,7 +97,7 @@ describe('a step taken', () => {
     expect(steps.placeholder.value).toBe(words.typeBack)
   })
 
-  it('is taken back with what was found and lit let go of', () => {
+  it('is taken back with what was found and lit release', () => {
     const { steps, happened, text } = createSteps()
     steps.pushStep(pending('naming'))
     text.value = 'Alpaca'
@@ -111,7 +111,7 @@ describe('a step taken', () => {
 })
 
 describe('what a step is over', () => {
-  it('is said as a count where it is over several files', () => {
+  it('is returned as a count where it is over several files', () => {
     const { steps } = createSteps()
 
     expect(steps.getStepLabel(pending('asking', { on: { ...on, others: ['a.md', 'b.md'] } }))).toBe(
@@ -119,7 +119,7 @@ describe('what a step is over', () => {
     )
   })
 
-  it('is said by its title where it is over one', () => {
+  it('is returned by its title where it is over one', () => {
     const { steps } = createSteps()
 
     expect(steps.getStepLabel(pending('asking'))).toBe('“Llama”')
@@ -138,7 +138,7 @@ describe('the steps when files move', () => {
     expect(steps.steps.value).toBe(before)
   })
 
-  it('are all let go of on a reset', () => {
+  it('are all release on a reset', () => {
     const { steps } = createSteps()
     steps.pushStep(pending('naming'))
 
@@ -150,10 +150,10 @@ describe('the steps when files move', () => {
 
 describe('choosing on a step', () => {
   const choose = (step: PendingStep, item: string, action: string, found: NameMatch[] = []) => {
-    const made = createSteps()
+    const createdItem = createSteps()
     return {
-      ...made,
-      chosen: () => made.steps.chooseInStep(step, item, action, found, [], () => false),
+      ...createdItem,
+      chosen: () => createdItem.steps.chooseInStep(step, item, action, found, [], () => false),
     }
   }
 
@@ -176,12 +176,12 @@ describe('choosing on a step', () => {
   })
 
   it('names with what was typed, the spaces around it taken off', () => {
-    const made = choose(pending('naming'), '', '')
-    made.text.value = '  Alpaca  '
+    const createdItem = choose(pending('naming'), '', '')
+    createdItem.text.value = '  Alpaca  '
 
-    made.chosen()
+    createdItem.chosen()
 
-    expect(made.invoked[0]?.[2]).toBe('Alpaca')
+    expect(createdItem.invoked[0]?.[2]).toBe('Alpaca')
   })
 
   it('is carried out on yes, and on no other answer but no', () => {
@@ -194,12 +194,12 @@ describe('choosing on a step', () => {
   })
 
   it('takes a name typed back only as the answer that retypes it', () => {
-    const typed = choose(pending('exactly'), '', 'maybe')
-    typed.text.value = 'Llama'
+    const inputValue = choose(pending('exactly'), '', 'maybe')
+    inputValue.text.value = 'Llama'
     const exact = choose(pending('exactly'), '', EXACT)
     exact.text.value = 'Llama'
 
-    expect(typed.chosen()).toBeNull()
+    expect(inputValue.chosen()).toBeNull()
     exact.chosen()
     expect(exact.invoked).toHaveLength(1)
   })
@@ -217,7 +217,7 @@ describe('the row a list opens on', () => {
     expect(steps.opensOn.value).toBe('dark')
   })
 
-  it('is none where no row stands now', () => {
+  it('is none where no row remains now', () => {
     const { steps } = createSteps([{ id: 'g', title: 'Themes', items: [row('light')] }])
 
     steps.pushStep(pending('choosing'))

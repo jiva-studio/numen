@@ -16,16 +16,16 @@ const ITEMS: MenuItem[] = [
 
 /** A word typed one letter at a time, each letter a moment after the last. */
 const typeWord = (word: string): { typed: Typeahead; at: number | null } => {
-  let typed = NOTHING_TYPED
+  let testTypeahead = NOTHING_TYPED
   let at: number | null = null
   let now = 0
   for (const letter of word) {
-    const jumped = jumpTo(ITEMS, typed, { letter, from: at ?? -1, now })
-    typed = jumped.typed
+    const jumped = jumpTo(ITEMS, testTypeahead, { letter, from: at ?? -1, now })
+    testTypeahead = jumped.typed
     at = jumped.at
     now += 10
   }
-  return { typed, at }
+  return { typed: testTypeahead, at }
 }
 
 describe('what a run of letters lands on', () => {
@@ -33,11 +33,11 @@ describe('what a run of letters lands on', () => {
     expect(typeWord('c').at).toBe(2)
   })
 
-  it('stands where it is while the word grows', () => {
+  it('remains where it is while the word grows', () => {
     expect(typeWord('co').at).toBe(2)
   })
 
-  it('lands on the item the whole word begins rather than the first letter', () => {
+  it('lands on the item the whole word begins and not the first letter', () => {
     expect(typeWord('cu').at).toBe(3)
   })
 
@@ -48,7 +48,7 @@ describe('what a run of letters lands on', () => {
     expect([first.at, second.at, third.at]).toStrictEqual([2, 3, 2])
   })
 
-  it('wraps to the top counting on from where the keyboard stands', () => {
+  it('wraps to the top counting on from where the keyboard remains', () => {
     expect(jumpTo(ITEMS, NOTHING_TYPED, { letter: 'o', from: 2, now: 0 }).at).toBe(0)
   })
 
@@ -86,7 +86,7 @@ describe('how long a run of letters stays one word', () => {
   })
 })
 
-describe('a key that stands for a letter', () => {
+describe('a key that remains for a letter', () => {
   const press = (over: Partial<KeyboardEvent> = {}) =>
     isLetter({ key: 'c', ctrlKey: false, metaKey: false, altKey: false, ...over })
 
@@ -119,7 +119,7 @@ describe('where a letter counts on from', () => {
     expect(jumpTo(PAIR, NOTHING_TYPED, { letter: 'c', from: 0, now: 0 }).at).toBe(1)
   })
 
-  it('stands on the item the keyboard is on while the word grows', () => {
+  it('relies on the item the keyboard is on while the word grows', () => {
     expect(jumpTo(PAIR, { word: 'c', struck: 0 }, { letter: 'o', from: 0, now: 10 }).at).toBe(0)
   })
 

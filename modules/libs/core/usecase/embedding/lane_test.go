@@ -40,8 +40,8 @@ func (g *gated) Embed(ctx context.Context, texts []string) ([][]float32, error) 
 	now := g.running.Add(1)
 	defer g.running.Add(-1)
 	for {
-		seen := g.peak.Load()
-		if now <= seen || g.peak.CompareAndSwap(seen, now) {
+		observed := g.peak.Load()
+		if now <= observed || g.peak.CompareAndSwap(observed, now) {
 			break
 		}
 	}
@@ -89,7 +89,7 @@ func waitEntered(t *testing.T, m *gated, n int) {
 	}
 }
 
-func TestAQuestionIsAnsweredWhileIndexingHoldsEveryIndexSlot(t *testing.T) {
+func TestAQuestionIsAnsweredWhileIndexingContainsEveryIndexSlot(t *testing.T) {
 	for _, passes := range []int{2, 3, 8} {
 		filling, asking, model := openGated(t, passes)
 		ctx, cancel := context.WithCancel(t.Context())
@@ -97,13 +97,13 @@ func TestAQuestionIsAnsweredWhileIndexingHoldsEveryIndexSlot(t *testing.T) {
 		wg, _ := holdOnIndexSide(ctx, filling, passes*2)
 		waitEntered(t, model, passes-1)
 
-		answered := make(chan error, 1)
+		reply := make(chan error, 1)
 		go func() {
 			_, err := asking.Embed(t.Context(), []string{"question"})
-			answered <- err
+			reply <- err
 		}()
 		select {
-		case err := <-answered:
+		case err := <-reply:
 			if err != nil {
 				t.Errorf("%d passes: %v", passes, err)
 			}
@@ -139,7 +139,7 @@ func TestTheIndexSideNeverHasMoreCallsInFlightThanItsLimit(t *testing.T) {
 	}
 }
 
-func TestAModelOfOnePassLetsAQuestionThroughAndHoldsOneIndexCall(t *testing.T) {
+func TestAModelOfOnePassLetsAQuestionThroughAndContainsOneIndexCall(t *testing.T) {
 	filling, asking, model := openGated(t, 1)
 	if got := filling.(interface{ Concurrency() int }).Concurrency(); got != 1 {
 		t.Fatalf("the index side reports %d, want 1", got)
@@ -211,7 +211,7 @@ func TestTheLaneStartsNoGoroutineThatOutlivesACall(t *testing.T) {
 	}
 }
 
-func TestASeparateQuestionProviderLeavesTheIndexSideUnlimited(t *testing.T) {
+func TestASeparateQuestionProviderPreservesTheIndexSideUnlimited(t *testing.T) {
 	first, second := newGated(4), newGated(4)
 	second.model = first.model
 	filling, _, closer := embedding.Open(t.Context(), run.NewTasks(),
@@ -264,21 +264,21 @@ func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
 	wg.Wait()
 }
 
-func TestTheIndexSideLetsGoOfTheModelAndSaysWhatClosingSaid(t *testing.T) {
-	held := newSaying("closing", 1, 0, 0)
+func TestTheIndexSideLetsGoOfTheModelAndReturnsWhatClosingSaid(t *testing.T) {
+	target := newSaying("closing", 1, 0, 0)
 	filling, _, letGo := embedding.Open(t.Context(), run.NewTasks(),
-		embedding.NewReached(held.model, "closing", closing{saying: held, why: errModelGone}), embedding.Provider{})
+		embedding.NewReached(target.model, "closing", closing{saying: target, why: errModelGone}), embedding.Provider{})
 	_ = letGo
 
 	if err := filling.Close(); !errors.Is(err, errModelGone) {
 		t.Errorf("close = %v, want what closing the model said", err)
 	}
-	if held.closed.Load() != 1 {
+	if target.closed.Load() != 1 {
 		t.Error("the model was not let go of")
 	}
 }
 
-func TestTheIndexSideSaysWhyTheModelNeverArrives(t *testing.T) {
+func TestTheIndexSideReturnsWhyTheModelNeverArrives(t *testing.T) {
 	filling, _, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewFetched(is("never"), "never", failWith(errModelGone)), embedding.Provider{})
 	defer func() { _ = letGo() }()

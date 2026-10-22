@@ -114,9 +114,9 @@ func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string)
 func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	scan := o.GetScan()
 	follow := vault.NewFollow(o.watcher, o.refresh, scan)
-	if told := o.Told; told != nil {
+	if callback := o.Told; callback != nil {
 		follow.Changed = func(m vault.VaultChanges) {
-			told(VaultChanges{Paths: m.Paths, Assets: m.Assets, ShouldReload: m.ShouldReload})
+			callback(VaultChanges{Paths: m.Paths, Assets: m.Assets, ShouldReload: m.ShouldReload})
 		}
 	}
 	follow.ErrorHandler = o.ErrorHandler
@@ -161,11 +161,11 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	res, err := walk.Execute(ctx, o.vault)
 
-	under := o.opening.buffered.stopRecording()
+	recSession := o.opening.buffered.stopRecording()
 	if err != nil {
 		return res.Notes, err
 	}
-	if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
+	if _, err := o.opening.refresh.Execute(ctx, o.vault, recSession); err != nil {
 		o.handleError(err)
 	}
 	return res.Notes, nil

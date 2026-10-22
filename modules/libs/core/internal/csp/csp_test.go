@@ -11,18 +11,18 @@ import (
 // person may have downloaded, and this is the whole of what stops one reaching
 // the network.
 func TestAWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self'; media-src 'self'; frame-src 'self'; " +
+	const target = "default-src 'self'; img-src 'self'; media-src 'self'; frame-src 'self'; " +
 		"style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
-	if got := (csp.Sources{}).Policy(); got != held {
+	if got := (csp.Sources{}).Policy(); got != target {
 		t.Errorf("the policy reads %q", got)
 	}
 }
 
 // A window drawing text that carries its own pictures says where a picture may
 // come from, and changes nothing else.
-func TestAWindowDrawingItsOwnPicturesSaysSoAndNoMore(t *testing.T) {
+func TestAWindowDrawingItsOwnPicturesReturnsSoAndNoMore(t *testing.T) {
 	own := csp.Sources{}.Policy()
 	with := csp.Sources{Images: []string{"data:"}}.Policy()
 
@@ -53,7 +53,7 @@ func TestAFormIsSubmittedNowhere(t *testing.T) {
 }
 
 // A window connecting to external services names where it reaches.
-func TestAWindowConnectingOutsideSaysSoAndNoMore(t *testing.T) {
+func TestAWindowConnectingOutsideReturnsSoAndNoMore(t *testing.T) {
 	own := csp.Sources{}.Policy()
 	with := csp.Sources{Connect: []string{"https://dl.numen.md"}}.Policy()
 

@@ -74,7 +74,7 @@ func (h *hostAgentProvider) GetPrograms(
 	ctx context.Context, commands map[string][]string,
 ) ([]port.AgentProgram, error) {
 	ids := h.getProviders()
-	listed := make([][]port.AgentProgram, len(ids))
+	items := make([][]port.AgentProgram, len(ids))
 	failed := make([]error, len(ids))
 
 	var group sync.WaitGroup
@@ -82,13 +82,13 @@ func (h *hostAgentProvider) GetPrograms(
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			listed[at], failed[at] = h.listPrograms(ctx, id, commands)
+			items[at], failed[at] = h.listPrograms(ctx, id, commands)
 		}()
 	}
 	group.Wait()
 
 	var programs []port.AgentProgram
-	for _, one := range listed {
+	for _, one := range items {
 		programs = append(programs, one...)
 	}
 	h.setProviders(programs)
@@ -114,7 +114,7 @@ func (h *hostAgentProvider) setProviders(programs []port.AgentProgram) {
 	defer h.mu.Unlock()
 	h.providers = make(map[string]string, len(programs))
 	for _, one := range programs {
-		if _, taken := h.providers[one.Name]; !taken {
+		if _, hasProvider := h.providers[one.Name]; !hasProvider {
 			h.providers[one.Name] = one.Provider
 		}
 	}
@@ -127,9 +127,9 @@ func (h *hostAgentProvider) getProvider(ctx context.Context, program string, com
 		return "", errors.New("no agent program is named")
 	}
 	h.mu.Lock()
-	id, known := h.providers[program]
+	id, recognized := h.providers[program]
 	h.mu.Unlock()
-	if known {
+	if recognized {
 		return id, nil
 	}
 
@@ -195,11 +195,11 @@ func (h *hostAgentProvider) EndConversation(ctx context.Context, conversation st
 	// A plugin the conversation was asked in meanwhile, or whose cleanup failed, stays recorded.
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	left := slices.DeleteFunc(h.conversations[conversation], func(id string) bool { return slices.Contains(ended, id) })
-	if len(left) == 0 {
+	remaining := slices.DeleteFunc(h.conversations[conversation], func(id string) bool { return slices.Contains(ended, id) })
+	if len(remaining) == 0 {
 		delete(h.conversations, conversation)
 	} else {
-		h.conversations[conversation] = left
+		h.conversations[conversation] = remaining
 	}
 	return errors.Join(failed...)
 }

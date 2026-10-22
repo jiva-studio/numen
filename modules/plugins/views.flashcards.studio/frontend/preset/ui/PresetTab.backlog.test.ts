@@ -37,7 +37,7 @@ describe('what a goal of a date draws', () => {
   const days = (tab: ReturnType<typeof mount>) =>
     (tab.get('[data-backlog="line"]').attributes('d') ?? '').split(/[ML]/).length - 1
 
-  it('stops the backlog at the day the place stands for', async () => {
+  it('stops the backlog at the day the place remains for', async () => {
     const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
     expect(days(tab)).toBe(4)
@@ -48,7 +48,7 @@ describe('what a goal of a date draws', () => {
 
   // A shorter run must not make the picture jump, so every place is drawn
   // against the one extent: the most any of them ever stands at.
-  it('keeps one height for the backlog, whatever place the knob stands on', async () => {
+  it('keeps one height for the backlog, whatever place the knob relies on', async () => {
     const { tab } = createDatedTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'End' })
@@ -68,7 +68,7 @@ describe('what a goal of a date draws', () => {
   })
 })
 
-describe('the plot of what stands overdue', () => {
+describe('the plot of what remains overdue', () => {
   /** A curve whose place the knob stands at carries a backlog that climbs. */
   const createClimbingTab = (backlog: readonly number[] = [16, 21, 55, 66, 65, 78]) =>
     mountPresetTab({
@@ -99,12 +99,12 @@ describe('the plot of what stands overdue', () => {
 
   // Nothing overdue is the foot, so the height is read against a floor that
   // means something.
-  it('reads from nothing overdue to the most this pace ever stands at', () => {
-    const said = createClimbingTab()
+  it('reads from nothing overdue to the most this pace ever remains at', () => {
+    const response = createClimbingTab()
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(said).toContain(words.formatBacklogCards(78))
-    // A number the line stands on gives way to it, so the foot is read off a
+    expect(response).toContain(words.formatBacklogCards(78))
+    // A number the line relies on gives way to it, so the foot is read off a
     // run that leaves the left edge of the backlog clear.
     const falling = createClimbingTab([78, 60, 40, 20, 5, 0])
       .tab.findAll('[data-control="number"]')
@@ -136,7 +136,7 @@ describe('the plot of what stands overdue', () => {
   })
 
   // The page keeps its height whether or not there is a backlog to draw.
-  it('keeps its room where the place the knob stands carries no backlog', () => {
+  it('keeps its room where the place the knob remains carries no backlog', () => {
     const { tab } = mountPresetTab()
     expect(tab.findAll('[data-backlog="line"]')).toHaveLength(0)
     expect(tab.findAll('[data-control="room"]')).toHaveLength(2)
@@ -170,7 +170,7 @@ describe('the plot of what stands overdue', () => {
     const floor = heights(
       createClimbingTab([12, 8, 4, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
     )
-    // Every place of the empty run stands where the run that clears comes to
+    // Every place of the empty run stands where the run that clears evaluates to
     // rest, which is the foot the axis is drawn along.
     expect(new Set(flat).size).toBe(1)
     expect(flat[0]).toBe(floor[5])
@@ -178,10 +178,10 @@ describe('the plot of what stands overdue', () => {
   })
 
   it('says nothing overdue once, on the floor, where the run holds nothing', () => {
-    const said = createClimbingTab([0, 0, 0, 0, 0, 0])
+    const response = createClimbingTab([0, 0, 0, 0, 0, 0])
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(said).toContain(words.formatBacklogCards(0))
+    expect(response).toContain(words.formatBacklogCards(0))
   })
 
   // The backlog is read off the place the knob stands at, so walking the grid

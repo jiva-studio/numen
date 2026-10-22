@@ -8,50 +8,50 @@ import { ref } from 'vue'
 import { useBookTab, type BookHandle } from './useBookTab'
 import type { BookReaderState } from './useBookReader'
 
-const read = (path: string, title = '', close = vi.fn()) =>
+const readItem = (path: string, title = '', close = vi.fn()) =>
   ({ path, title: ref(title), close }) as unknown as BookReaderState
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
-    const drawn: BookHandle = { measure: vi.fn(), handleKey: vi.fn(() => false) }
-    const held = useBookTab(read('library/Mahabharata.epub'))
+    const handle: BookHandle = { measure: vi.fn(), handleKey: vi.fn(() => false) }
+    const tab = useBookTab(readItem('library/Mahabharata.epub'))
 
-    held.measure()
-    expect(drawn.measure).not.toHaveBeenCalled()
+    tab.measure()
+    expect(handle.measure).not.toHaveBeenCalled()
 
-    held.setBookHandle(drawn)
-    held.measure()
-    expect(drawn.measure).toHaveBeenCalledTimes(1)
+    tab.setBookHandle(handle)
+    tab.measure()
+    expect(handle.measure).toHaveBeenCalledTimes(1)
   })
 
-  it('stands at the path the book is filed at', () => {
-    expect(useBookTab(read('library/Mahabharata.epub')).path).toBe('library/Mahabharata.epub')
+  it('remains at the path the book is filed at', () => {
+    expect(useBookTab(readItem('library/Mahabharata.epub')).path).toBe('library/Mahabharata.epub')
   })
 
-  it('delegates focus and keypresses to the held elements', () => {
+  it('delegates focus and keypresses to the retained elements', () => {
     const focus = vi.fn()
     const element = { focus } as unknown as HTMLElement
     const handleKey = vi.fn(() => true)
-    const drawn: BookHandle = { measure: vi.fn(), handleKey }
-    const held = useBookTab(read('library/Mahabharata.epub'))
+    const handle: BookHandle = { measure: vi.fn(), handleKey }
+    const tab = useBookTab(readItem('library/Mahabharata.epub'))
 
-    held.setTabElement(element)
-    held.focusTab()
+    tab.setTabElement(element)
+    tab.focusTab()
     expect(focus).toHaveBeenCalledTimes(1)
 
     const event = new KeyboardEvent('keydown', { key: 'ArrowRight' })
-    expect(held.handleKeyPress(event)).toBe(false)
+    expect(tab.handleKeyPress(event)).toBe(false)
 
-    held.setBookHandle(drawn)
-    expect(held.handleKeyPress(event)).toBe(true)
+    tab.setBookHandle(handle)
+    expect(tab.handleKeyPress(event)).toBe(true)
     expect(handleKey).toHaveBeenCalledWith(event)
   })
 })
 
 describe('a book tab with no element to focus', () => {
   it('focuses nothing and does not fail', () => {
-    const held = useBookTab(read('library/Mahabharata.epub'))
+    const tab = useBookTab(readItem('library/Mahabharata.epub'))
 
-    expect(() => held.focusTab()).not.toThrow()
+    expect(() => tab.focusTab()).not.toThrow()
   })
 })

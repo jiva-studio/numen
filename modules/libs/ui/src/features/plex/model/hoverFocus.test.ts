@@ -6,14 +6,14 @@ import { useHoverFocus } from './hoverFocus'
 function createFocusTarget(matches: (selector: string) => boolean) {
   const hoverFocus = useHoverFocus()
   const element = document.createElement('button')
-  const asked: string[] = []
+  const request: string[] = []
   vi.spyOn(element, 'matches').mockImplementation((selector: string) => {
-    asked.push(selector)
+    request.push(selector)
     return matches(selector)
   })
   element.addEventListener('focusin', hoverFocus.onFocusIn)
   const focus = () => element.dispatchEvent(new FocusEvent('focusin'))
-  return { hoverFocus, element, focus, asked }
+  return { hoverFocus, element, focus, request: request }
 }
 
 describe('hover', () => {
@@ -31,12 +31,12 @@ describe('hover', () => {
 
 describe('keyboard focus', () => {
   it('is on where the focused element matches :focus-visible', () => {
-    const { hoverFocus, focus, asked } = createFocusTarget(
+    const { hoverFocus, focus, request } = createFocusTarget(
       (selector) => selector === ':focus-visible',
     )
     focus()
 
-    expect(asked).toStrictEqual([':focus-visible'])
+    expect(request).toStrictEqual([':focus-visible'])
     expect(hoverFocus.isOn.value).toBe(true)
   })
 

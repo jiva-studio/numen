@@ -173,7 +173,7 @@ func openDocument(ctx context.Context, reader port.VaultReader, path string) (io
 //
 // The coordinates and the parts go first, so a run that dies among the writes
 // leaves them ahead of the count and the next run trims them back to it. Cutting
-// writes which text the source stands on together with its chunks, in one
+// writes which text the source relies on together with its chunks, in one
 // statement, and the two are one fact.
 type pageWriter struct {
 	u       Recognise
@@ -188,7 +188,7 @@ type pageWriter struct {
 
 // write appends pages and, after them, the count of pages read.
 func (w *pageWriter) write(ctx context.Context, pages []ocr.Page, read int) error {
-	written, found, named := ocr.Write(pages)
+	content, found, named := ocr.Write(pages)
 	for i := range found {
 		found[i].From += w.prose
 		found[i].To += w.prose
@@ -204,11 +204,11 @@ func (w *pageWriter) write(ctx context.Context, pages []ocr.Page, read int) erro
 			return err
 		}
 	}
-	if err := w.store.AppendArtifact(ctx, w.partial, appendCount(written, read)); err != nil {
+	if err := w.store.AppendArtifact(ctx, w.partial, appendCount(content, read)); err != nil {
 		return err
 	}
-	said, _ := ocr.Read(written)
-	w.prose += len(said)
+	response, _ := ocr.Read(content)
+	w.prose += len(response)
 	return run.Cut(ctx, w.u.Cut, w.v, w.path)
 }
 
@@ -220,25 +220,25 @@ func (u Recognise) readPages(
 	out *pageWriter,
 	res *RecogniseResult,
 ) error {
-	done, prose, err := readResumePoint(ctx, out.store, out.partial)
+	isDone, prose, err := readResumePoint(ctx, out.store, out.partial)
 	if err != nil {
 		return err
 	}
 	out.prose = prose
 	// The files are written one after the other, so a run that died between them
 	// left coordinates and parts the count does not claim.
-	if err := dropBoxes(ctx, out.store, out.boxes, done); err != nil {
+	if err := dropBoxes(ctx, out.store, out.boxes, isDone); err != nil {
 		return err
 	}
 	if err := dropParts(ctx, out.store, out.parts, prose); err != nil {
 		return err
 	}
-	res.Resumed, res.Read = done, done
+	res.Resumed, res.Read = isDone, isDone
 	run.Report(u.OnProgress, *res)
 
 	batch := run.GetSize(u.Batch, DefaultBatch)
 	pages := make([]ocr.Page, 0, batch)
-	for index := done; index < scan.GetPageCount(); index++ {
+	for index := isDone; index < scan.GetPageCount(); index++ {
 		if err := ctx.Err(); err != nil {
 			// What has been read is on disk already, and the next run begins
 			// where this one stopped.
@@ -267,15 +267,15 @@ func (u Recognise) readPages(
 
 // recognisePage draws one page and reads its blocks.
 func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, path string, index int) (ocr.Page, error) {
-	drawn, err := scan.RenderPage(index, u.by.GetRecognitionModel().DPI)
+	rendered, err := scan.RenderPage(index, u.by.GetRecognitionModel().DPI)
 	if err != nil {
 		return ocr.Page{}, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 	}
-	blocks, err := u.by.Recognise(ctx, drawn)
+	blocks, err := u.by.Recognise(ctx, rendered)
 	if err != nil {
 		return ocr.Page{}, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 	}
-	return ocr.Page{Index: index, Size: drawn.Bounds().Size(), Blocks: blocks}, nil
+	return ocr.Page{Index: index, Size: rendered.Bounds().Size(), Blocks: blocks}, nil
 }
 
 // saveRecognition stands the source on the artifact made from the partial, or forgets a
@@ -299,7 +299,7 @@ func (u Recognise) saveRecognition(
 	if err != nil {
 		return err
 	}
-	if said, _ := ocr.Read(whole); strings.TrimSpace(said) == "" {
+	if response, _ := ocr.Read(whole); strings.TrimSpace(response) == "" {
 		// A document that says nothing writes nothing: an empty artifact would
 		// stand in for a text layer that worked.
 		res.IsEmpty = true
@@ -312,7 +312,7 @@ func (u Recognise) saveRecognition(
 	if err := u.record(ctx, store, area, hash); err != nil {
 		return err
 	}
-	// The source stands on the artifact before the partial goes.
+	// The source relies on the artifact before the partial goes.
 	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
@@ -346,17 +346,17 @@ func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.Artifac
 	if err != nil {
 		return err
 	}
-	held := highlight.Unpack(raw)
-	kept := make([]domain.HighlightBox, 0, len(held))
-	for _, box := range held {
+	target := highlight.Unpack(raw)
+	keptBoxes := make([]domain.HighlightBox, 0, len(target))
+	for _, box := range target {
 		if box.Page < done {
-			kept = append(kept, box)
+			keptBoxes = append(keptBoxes, box)
 		}
 	}
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
-	return store.WriteArtifact(ctx, name, highlight.Pack(kept))
+	return store.WriteArtifact(ctx, name, highlight.Pack(keptBoxes))
 }
 
 // dropParts drops the parts no count claims: those opening past the prose the
@@ -369,17 +369,17 @@ func dropParts(ctx context.Context, store port.DerivedStore, name domain.Artifac
 	if err != nil {
 		return err
 	}
-	held := ocr.Unpack(raw)
-	kept := make([]domain.OCRPart, 0, len(held))
-	for _, part := range held {
+	target := ocr.Unpack(raw)
+	keptParts := make([]domain.OCRPart, 0, len(target))
+	for _, part := range target {
 		if part.Start+part.Length <= prose {
-			kept = append(kept, part)
+			keptParts = append(keptParts, part)
 		}
 	}
-	return store.WriteArtifact(ctx, name, ocr.Pack(kept))
+	return store.WriteArtifact(ctx, name, ocr.Pack(keptParts))
 }
 
-// record keeps what read the document beside what it read. Nothing on any path
+// record keeps what read the document along with what it read. Nothing on any path
 // that answers a question reads it: it is there so that a person can ask what
 // produced a text, and so that everything a recogniser now known to be bad
 // produced can be found again.
@@ -436,8 +436,8 @@ func readResumePoint(ctx context.Context, store port.DerivedStore, partial domai
 			return 0, 0, err
 		}
 	}
-	said, _ := ocr.Read(raw[:end])
-	return read, len(said), nil
+	response, _ := ocr.Read(raw[:end])
+	return read, len(response), nil
 }
 
 // lastCount is the last count a partial carries and where the line holding it

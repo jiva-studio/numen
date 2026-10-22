@@ -51,7 +51,7 @@ func TestTheProgramListNamesAntigravityWithoutModels(t *testing.T) {
 }
 
 // A command line the installation set counts as the program being installed.
-func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
+func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	client := agenttest.Serve(t, &agentServer{})
 
@@ -103,14 +103,14 @@ func TestAskAgentReportsAHomeThatCannotBeSetUp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var stopped string
+	var stopReason string
 	for stream.Receive() {
 		if reason := stream.Msg().GetStopped(); reason != "" {
-			stopped = reason
+			stopReason = reason
 		}
 	}
-	if !strings.Contains(stopped, "set up the Antigravity home") {
-		t.Errorf("the run stopped with %q", stopped)
+	if !strings.Contains(stopReason, "set up the Antigravity home") {
+		t.Errorf("the run stopped with %q", stopReason)
 	}
 }
 

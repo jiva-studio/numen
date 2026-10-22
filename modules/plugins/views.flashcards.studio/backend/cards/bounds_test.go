@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/internal/vaulttest"
 )
 
-func TestRenamingAFieldIsRefusedWhereTheVaultHoldsMoreDecksThanTheBound(t *testing.T) {
+func TestRenamingAFieldIsRefusedWhereTheVaultContainsMoreDecksThanTheBound(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "Animal.md")
 
@@ -27,7 +27,7 @@ func TestRenamingAFieldIsRefusedWhereTheVaultHoldsMoreDecksThanTheBound(t *testi
 	if _, err := newBoundedRenameField(t, vs, 2).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	}); err != nil {
-		t.Errorf("a vault at the bound was refused: %v", err)
+		t.Errorf("a vault at the bound failed: %v", err)
 	}
 }
 

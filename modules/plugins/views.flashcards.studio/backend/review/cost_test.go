@@ -67,7 +67,7 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 
 // A history too short to say what a kind of answer costs leaves that kind at
 // the default, and says it did.
-func TestAHistoryTooShortToSayStandsAtTheDefault(t *testing.T) {
+func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 	by := review.NewFSRS()
 	at := time.Now().Add(-400 * 24 * time.Hour)
 
@@ -85,7 +85,7 @@ func TestAHistoryTooShortToSayStandsAtTheDefault(t *testing.T) {
 
 // The two kinds of answer are counted apart: a history of one kind leaves the
 // other at the default and says which of the two it is.
-func TestACostOfOneKindLeavesTheOtherAtTheDefault(t *testing.T) {
+func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 	by := review.NewFSRS()
 	at := time.Now().Add(-400 * 24 * time.Hour)
 
@@ -135,7 +135,7 @@ func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
 
 // A vault holding no answer times is projected at the default, and not at
 // nothing a minute.
-func TestAVaultHoldingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
+func TestAVaultContainingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 	if got := getCost(review.NewFSRS(), nil); got != review.DefaultCost {
 		t.Errorf("cost = %+v, want the default %+v", got, review.DefaultCost)
 	}
@@ -143,7 +143,7 @@ func TestAVaultHoldingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 
 // An answer carrying no time at all says nothing about how long its kind takes,
 // so the answers that do carry one are the whole of what a cost is read from.
-func TestAnAnswerCarryingNoTimeSaysNothingAboutItsKind(t *testing.T) {
+func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 	by := review.NewFSRS()
 	at := time.Now().Add(-400 * 24 * time.Hour)
 
@@ -165,11 +165,11 @@ func TestAnAnswerCarryingNoTimeSaysNothingAboutItsKind(t *testing.T) {
 // getCost is the cost of the answers taken as one group.
 func getCost(by review.Scheduler, answers []review.Answer) review.AnswerCost {
 	const group = "all"
-	under := make(map[review.CardFaceID]string)
+	underMap := make(map[review.CardFaceID]string)
 	for _, a := range answers {
-		under[a.CardFace] = group
+		underMap[a.CardFace] = group
 	}
-	costs := review.GetCostUnder(by, answers, under)
+	costs := review.GetCostUnder(by, answers, underMap)
 	if cost, ok := costs[group]; ok {
 		return cost
 	}

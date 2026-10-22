@@ -172,7 +172,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
 
   /**
    * Path is the file it holds, by the path the vault files it under, and empty
-   * for a tab holding no file. A plex holds the note it stands on.
+   * for a tab holding no file. A plex holds the note it relies on.
    *
    * @generated from field: string path = 3;
    */
@@ -328,7 +328,7 @@ export const WorkspaceService: GenService<{
     output: typeof WatchFocusResponseSchema;
   },
   /**
-   * WriteOpenTabs says what the person has open — every tab of the window, and
+   * WriteOpenTabs says what currently open — every tab of the window, and
    * which of them is in front. The client says so again whenever any of it
    * changes, and an agent working the vault beside them reads what it last
    * said.

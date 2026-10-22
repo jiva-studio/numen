@@ -15,7 +15,7 @@ import {
   type Placement,
   type PlexOptionsInput,
 } from '../lib/arrange'
-import { optionsForType, useTypeSize } from '../model/sizing'
+import { optionsForType, useTypeSize } from '../model/plexScale'
 import { EXPANSION_DELAY } from '../model/expansion'
 import { type PlexHeading } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
@@ -27,7 +27,7 @@ import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlexNode, Position } from '../lib/node'
 import type { PlexRelation } from '../lib/relation'
-import type { PlexDestination } from '../model/showing'
+import type { PlexDestination } from '../model/destination'
 import type { Clock } from '../model/transition'
 import type { MenuTrigger } from '@/shared/ui/menu'
 
@@ -77,7 +77,7 @@ interface Knobs {
   title: string
 
   /**
-   * What a node made by a gesture is called. Handed in rather than settled
+   * What a node made by a gesture is called. Handed in and not settled
    * here, because naming is the application's business and the plex never
    * learns that a title is a name.
    */
@@ -154,7 +154,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     const cameFrom = ref<TitledNode | null>(null)
 
     /** What the application would keep: what has been made, and what is new. */
-    const made = ref<PlexNode[]>([])
+    const createdItem = ref<PlexNode[]>([])
     const links = ref<PlexEdge[]>([])
 
     const neighbourhood = computed<PlexNeighbourhood>(() => {
@@ -162,7 +162,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
         ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
       const here = focus.value?.id ?? base.nodes.find((n) => n.relation === 'focus')?.id
-      const mine = made.value.filter((node) =>
+      const mine = createdItem.value.filter((node) =>
         links.value.some(
           (edge) =>
             (edge.from === node.id && edge.to === here) ||
@@ -176,17 +176,17 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     })
 
     const onActivate = (id: string) => {
-      const chosen = neighbourhood.value.nodes.find((node) => node.id === id)
-      if (!chosen) return
+      const selected = neighbourhood.value.nodes.find((node) => node.id === id)
+      if (!selected) return
       const was = neighbourhood.value.nodes.find((node) => node.relation === 'focus')
       cameFrom.value = was ? { id: was.id, title: was.title } : null
-      focus.value = { id: chosen.id, title: chosen.title }
+      focus.value = { id: selected.id, title: selected.title }
     }
 
     /** A node related beside another one, linked the way that relation is written. */
     const createRelated = (from: string, title: string, relation: PlexRelation) => {
-      const id = `made/${made.value.length}`
-      made.value = [...made.value, { id, title, relation }]
+      const id = `made/${createdItem.value.length}`
+      createdItem.value = [...createdItem.value, { id, title, relation }]
       links.value = [
         ...links.value,
         relation === 'parent' || relation === 'jump'
@@ -442,7 +442,7 @@ export const Playground: Story = invented
 /**
  * Reaching out of a node, and what comes back.
  *
- * Its own story rather than a check on the playground: a play function runs
+ * Its own story and not a check on the playground: a play function runs
  * the moment a story is opened, and a plex that has already made a node is
  * not the one anyone meant to look at.
  *
@@ -646,9 +646,9 @@ export const AskingForAMenu: Story = {
     const focus = canvas.getByLabelText(/, focus$/)
 
     // Read after the node has had it: a listener above sees what the node did.
-    let refused: boolean | null = null
+    let isPrevented: boolean | null = null
     const watch = (event: Event) => {
-      refused = event.defaultPrevented
+      isPrevented = event.defaultPrevented
     }
     canvasElement.addEventListener('contextmenu', watch)
     await userEvent.pointer({ keys: '[MouseRight]', target: focus })
@@ -660,7 +660,7 @@ export const AskingForAMenu: Story = {
       expect.any(Object),
       'pointer',
     )
-    await expect(refused).toBe(true)
+    await expect(isPrevented).toBe(true)
 
     // The handle sits on the trailing edge, which is where a person aims. The
     // right button over it reaches the node, and makes nothing.
@@ -674,7 +674,7 @@ export const AskingForAMenu: Story = {
 }
 
 /**
- * Asking for a node itself, rather than travelling to it.
+ * Asking for a node itself, and not travelling to it.
  *
  * Asked on the focus, which is the one node a click moves nothing on, so what
  * a double click leaves behind is the asking on its own.
@@ -792,9 +792,9 @@ export const TitledLines: Story = {
 
     // Words longer than their curve are cut to it and end in an ellipsis.
     await expect(title('the minutes of the meeting')).toHaveLength(0)
-    const cut = titles.filter((text) => text.textContent!.endsWith('…'))
-    await expect(cut).toHaveLength(2)
-    await expect('the minutes of the meeting'.startsWith(cut[0]!.textContent!.slice(0, -1))).toBe(
+    const truncatedTitles = titles.filter((text) => text.textContent!.endsWith('…'))
+    await expect(truncatedTitles).toHaveLength(2)
+    await expect('the minutes of the meeting'.startsWith(truncatedTitles[0]!.textContent!.slice(0, -1))).toBe(
       true,
     )
 
@@ -808,12 +808,12 @@ export const TitledLines: Story = {
 
     // The hand on that line lifts it, and the lifted title is painted the same
     // way on a heavier halo.
-    const along = halo!.querySelector('textPath')!.getAttribute('href')!
-    const drawn = canvasElement
-      .querySelector(`defs path[id="${along.slice(1)}"]`)!
+    const alongHref = halo!.querySelector('textPath')!.getAttribute('href')!
+    const viewElement = canvasElement
+      .querySelector(`defs path[id="${alongHref.slice(1)}"]`)!
       .getAttribute('d')
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
-      (line) => line.getAttribute('d') === drawn,
+      (line) => line.getAttribute('d') === viewElement,
     )
     await userEvent.hover(band!)
 
@@ -900,7 +900,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     await expect(Math.abs(drawnFor - svg.getBoundingClientRect().width)).toBeLessThan(1)
   })
 
-  const drawn = titles().map((text) => ({
+  const renderedTitles = titles().map((text) => ({
     words: text.textContent,
     letters: getLetters(text),
   }))
@@ -909,8 +909,8 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
   )
 
   const piled: string[] = []
-  for (const [at, title] of drawn.entries()) {
-    for (const other of drawn.slice(at + 1)) {
+  for (const [at, title] of renderedTitles.entries()) {
+    for (const other of renderedTitles.slice(at + 1)) {
       const touching = title.letters.some((letter) =>
         other.letters.some((mine) => isOverlapping(letter, mine)),
       )
@@ -918,13 +918,13 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     }
   }
 
-  const overBoxes = drawn
+  const overBoxes = renderedTitles
     .filter((title) =>
       title.letters.some((letter) => boxes.some((box) => isOverlapping(letter, box))),
     )
     .map((title) => title.words)
 
-  await expect(drawn.length).toBeGreaterThan(0)
+  await expect(renderedTitles.length).toBeGreaterThan(0)
   await expect(piled).toHaveLength(0)
   await expect(overBoxes).toHaveLength(0)
 }
@@ -939,7 +939,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
  * are in the type they are set in, and where the glyphs land once they are
  * bent along their curves.
  *
- * It stands on its own, since the playground is a plex to turn knobs on.
+ * It relies on its own, since the playground is a plex to turn knobs on.
  */
 export const TitlesFindRoom: Story = {
   args: { ...invented.args, duration: 0 },
@@ -1031,7 +1031,7 @@ export const ArrowedLines: Story = {
       heads().some((head) => hasPoint(head.getBoundingClientRect(), end))
 
     /** Where every head and every end of every line stands, as one reading. */
-    const reading = () =>
+    const readView = () =>
       JSON.stringify([
         heads().map((head) => {
           const box = head.getBoundingClientRect()
@@ -1041,15 +1041,15 @@ export const ArrowedLines: Story = {
       ])
 
     /** A frame, after which what was arranged on the last one can be read. */
-    const frame = () => new Promise((done) => requestAnimationFrame(() => done(null)))
+    const frame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
     // The window is measured after the first drawing, so the plex settles on
     // its second, and the picture stands still once it has.
     await waitFor(async () => {
       await expect(heads()).toHaveLength(2)
-      const was = reading()
+      const was = readView()
       await frame()
-      await expect(reading()).toBe(was)
+      await expect(readView()).toBe(was)
     })
 
     // A head is really drawn, and is not an empty path.
@@ -1072,14 +1072,14 @@ export const ArrowedLines: Story = {
     const jump = getLine('Bram Doyle, jump')
     const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
     const head = heads().find((one) => hasPoint(one.getBoundingClientRect(), jump.end))!
-    const drawn = head.getBoundingClientRect()
+    const bounds = head.getBoundingClientRect()
     await expect(
-      hasPoint(box, new DOMPoint(drawn.x + drawn.width / 2, drawn.y + drawn.height / 2)),
+      hasPoint(box, new DOMPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)),
     ).toBe(false)
 
     // The title on that line is cut short of the head, at either end of the
     // words: neither the letters nor the halo under them reach it.
-    const clear = Math.max(drawn.width, drawn.height)
+    const clear = Math.max(bounds.width, bounds.height)
     const title = [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].find(
       (text) => text.textContent!.startsWith('the oldest'),
     )!
@@ -1094,7 +1094,7 @@ export const ArrowedLines: Story = {
     }
 
     // The hand on that line lifts it, and the head is brightened with it.
-    const resting = getComputedStyle(head).fill
+    const restingLightness = getComputedStyle(head).fill
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === jump.line.getAttribute('d'),
     )!
@@ -1102,14 +1102,14 @@ export const ArrowedLines: Story = {
 
     const lifted = canvasElement.querySelector<SVGPathElement>('.plex__lift .plex__edge-arrow')!
     await expect(lifted).not.toBeNull()
-    await expect(getComputedStyle(lifted).fill).not.toBe(resting)
+    await expect(getComputedStyle(lifted).fill).not.toBe(restingLightness)
   },
 }
 
 /**
  * Not Latin, far too long, nothing to break at, and nothing at all — the whole
  * arrangement made of them, to see that text nothing fits into still leaves a
- * plex rather than a pile.
+ * plex and not a pile.
  *
  * Whether a title stays inside its own box is the node's affair and is checked
  * on the node, against the same corpus.
@@ -1122,7 +1122,7 @@ export const AwkwardLabels: Story = {
  * A title too long for its box, read by leaving a hand on the box.
  *
  * Only a browser can answer it: how wide a title runs is what the type it is
- * set in comes to, whether the box holds the whole of it is the browser's own
+ * set in evaluates to, whether the box holds the whole of it is the browser's own
  * reckoning, and a box drawn over its neighbours is a matter of what was
  * painted last.
  */
@@ -1131,12 +1131,12 @@ export const RestingOnATitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
-    const beside = canvas.getByLabelText('日本語のノート, child')
+    const besideNode = canvas.getByLabelText('日本語のノート, child')
 
     const getWidth = (box: Element) =>
       box.querySelector('.plex__box')!.getBoundingClientRect().width
-    const placed = getWidth(node)
-    const nextDoor = beside.getBoundingClientRect().x
+    const nodeWidth = getWidth(node)
+    const nextDoor = besideNode.getBoundingClientRect().x
 
     // Cut short in the box the arrangement drew, and the whole of it under a
     // hand that stays.
@@ -1144,7 +1144,7 @@ export const RestingOnATitle: Story = {
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
     await userEvent.hover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(placed), {
+    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(nodeWidth), {
       timeout: 3000,
     })
     await waitFor(
@@ -1152,19 +1152,19 @@ export const RestingOnATitle: Story = {
     )
 
     // Nothing else moved for it, and it stands over what it now covers.
-    await expect(beside.getBoundingClientRect().x).toBe(nextDoor)
+    await expect(besideNode.getBoundingClientRect().x).toBe(nextDoor)
     const boxes = canvasElement.querySelectorAll('.plex__node')
     await expect(boxes[boxes.length - 1]).toBe(node)
 
     // The hand leaves, and the picture is the one it was.
     await userEvent.unhover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBe(placed))
+    await waitFor(async () => await expect(getWidth(node)).toBe(nodeWidth))
   },
 }
 
 /**
  * Walk the graph. Go back the way you came: nodes in both pictures travel
- * rather than blinking out and in, because they are matched by identifier.
+ * and not blinking out and in, because they are matched by identifier.
  */
 export const Walk: Story = {
   render: renderWalk,
@@ -1179,7 +1179,7 @@ export const Walk: Story = {
     /**
      * The plex has arrived when the node named stands in the middle of it.
      *
-     * Measured on the box rather than the group around it: a node that has
+     * Measured on the box and not the group around it: a node that has
      * just been clicked holds the focus, and so wears a handle that hangs off
      * its trailing edge and would count towards the group's width.
      */
@@ -1357,7 +1357,7 @@ export const HeadingsInside: Story = {
   },
 }
 
-/** Too small a window: the plex is clipped rather than shrunk. */
+/** Too small a window: the plex is clipped and not shrunk. */
 export const SmallWindow: Story = {
   args: { neighbourhood: neighbourhoods.crowded },
   render: (args) => ({

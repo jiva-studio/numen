@@ -13,7 +13,7 @@ import { dragLabel, type DragLabel } from '../lib/drag'
 import { findHolder, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
 import type { Row, RowId, ShownRow } from '../lib/row'
 
-/** The tree as it stands on screen, which only the drawing knows. */
+/** The tree as it relies on screen, which only the drawing knows. */
 export interface TreeMetrics {
   /** What the tree takes up: a drop lands only over it. */
   readonly over: {
@@ -32,7 +32,7 @@ export interface RowDragOptions {
   /** What is drawn, nested, and the rows of it that are drawn now. */
   readonly getRows: () => readonly Row[]
   readonly getShownRows: () => readonly ShownRow[]
-  /** The tree as it stands on screen, and nothing until it is drawn. */
+  /** The tree as it relies on screen, and nothing until it is drawn. */
   readonly measure: () => TreeMetrics | null
   /** How far the pointer travels before a press becomes a drag. */
   readonly getThreshold: () => number
@@ -97,23 +97,23 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
 
   /** Where the pointer is, read off the drawing: the rows are one height each. */
   function getDropTargetAt(rows: readonly RowId[], where: Position): RowDropTarget | null {
-    const drawn = options.measure()
-    if (!drawn) return null
+    const measurements = options.measure()
+    if (!measurements) return null
 
     // A pointer that has left the tree is taking what it holds somewhere else.
-    const { over } = drawn
+    const { over } = measurements
     const inside =
       where.x >= over.left && where.x <= over.right && where.y >= over.top && where.y <= over.bottom
     if (!inside) return null
 
-    const shown = options.getShownRows()
-    const found = getRowDropTarget(shown, rows, {
-      y: where.y - drawn.top,
-      height: drawn.height,
+    const shownRows = options.getShownRows()
+    const found = getRowDropTarget(shownRows, rows, {
+      y: where.y - measurements.top,
+      height: measurements.height,
     })
     if (!found) return null
 
-    return isRefused(options.getRows(), rows, findHolder(shown, found)) ? null : found
+    return isRefused(options.getRows(), rows, findHolder(shownRows, found)) ? null : found
   }
 
   return { into, before, lifted, label, hasMoved, at, lift }

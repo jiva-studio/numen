@@ -42,37 +42,37 @@ func TestEditingANoteChangesOnlyTheSpanNamed(t *testing.T) {
 	}
 }
 
-// A span standing twice is refused, and the refusal says how many places
-// there are rather than picking one.
-func TestEditingRefusesASpanThatStandsTwice(t *testing.T) {
+// A span standing twice fails, and the rejection says how many places
+// there are and not picking one.
+func TestEditingRefusesASpanThatExistsTwice(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "A foe advances.\n\nAnother foe advances.\n",
 	})
 	s := newSessionOver(t, core)
 
-	said := getRefusal(t, s, "note_edit", map[string]any{
+	response := getToolError(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "foe advances", "text": "foe retreats",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
-	if !strings.Contains(said, "2 places") {
-		t.Errorf("the refusal reads: %s", said)
+	if !strings.Contains(response, "2 places") {
+		t.Errorf("the rejection reads: %s", response)
 	}
 }
 
-// A span that is not there is refused with what the note holds in its place,
+// A span that is not there fails with what the note holds in its place,
 // so the next attempt is not the same guess again.
-func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
+func TestEditingReturnsWhatTheNoteContainsInstead(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "the wrath of the advancing foe\n",
 	})
 	s := newSessionOver(t, core)
 
-	said := getRefusal(t, s, "note_edit", map[string]any{
+	response := getToolError(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "the wrath of the retreating foe", "text": "nothing",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
-	if !strings.Contains(said, "advancing") {
-		t.Errorf("the refusal does not say what stands there: %s", said)
+	if !strings.Contains(response, "advancing") {
+		t.Errorf("the rejection does not say what stands there: %s", response)
 	}
 }
 
@@ -105,7 +105,7 @@ func TestEditingFindsASpanWhosePunctuationDiffers(t *testing.T) {
 
 // An empty replacement takes the text out, which is one operation and not a
 // second tool.
-func TestEditingWithNothingTakesTheSpanOut(t *testing.T) {
+func TestEditingWithNothingConsumesTheSpanOut(t *testing.T) {
 	v, core := newCoreWithNotes(t, map[string]string{"Aggressor.md": "one two three\n"})
 	s := newSessionOver(t, core)
 
@@ -163,21 +163,21 @@ func TestEditingTellsTheWindowWhereItIsChangingTheNote(t *testing.T) {
 	}
 }
 
-// A change that was refused is over, and a drawing that is never ended stays
+// A change that failed is over, and a drawing that is never ended stays
 // on the screen.
 func TestARefusedEditIsStillEnded(t *testing.T) {
 	s, looking := newSessionWithWindow(t, map[string]string{
 		"Aggressor.md": "A foe.\n\nAnother foe.\n",
 	})
 
-	getRefusal(t, s, "note_edit", map[string]any{
+	getToolError(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "foe", "text": "friend",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	for _, said := range looking.drawn {
-		if !said.IsDone {
-			t.Fatalf("a change was begun and not ended: %+v", said)
+	for _, response := range looking.drawn {
+		if !response.IsDone {
+			t.Fatalf("a change was begun and not ended: %+v", response)
 		}
 	}
 }
@@ -232,7 +232,7 @@ func TestTheSpanIsCountedTheWayAClientCountsText(t *testing.T) {
 }
 
 // Every tool that writes takes the fingerprint of what it read, and one
-// presenting none is refused with the read that gives it named.
+// presenting none fails with the read that gives it named.
 func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
 		"Aggressor.md": "A hedgehog is named.\n",
@@ -250,9 +250,9 @@ func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
 	for _, w := range writes {
 		t.Run(w.tool, func(t *testing.T) {
 			w.args["fingerprint"] = ""
-			said := getRefusal(t, session, w.tool, w.args)
-			if !strings.Contains(said, "note_read") {
-				t.Errorf("the refusal does not say where a fingerprint comes from: %s", said)
+			response := getToolError(t, session, w.tool, w.args)
+			if !strings.Contains(response, "note_read") {
+				t.Errorf("the rejection does not say where a fingerprint comes from: %s", response)
 			}
 		})
 	}

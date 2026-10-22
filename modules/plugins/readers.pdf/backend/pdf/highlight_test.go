@@ -39,7 +39,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			defer doc.close()
 
 			for i := 0; i < doc.pages; i++ {
-				said := doc.text(i)
+				response := doc.text(i)
 				read, err := doc.worker.GetPageTextStructured(&requests.GetPageTextStructured{
 					Page: requests.Page{ByIndex: &requests.PageByIndex{Document: doc.ref, Index: i}},
 					Mode: requests.GetPageTextStructuredModeChars,
@@ -51,9 +51,9 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 				for _, one := range read.Chars {
 					joined.WriteString(one.Text)
 				}
-				if joined.String() != said {
+				if joined.String() != response {
 					t.Errorf("page %d: the characters say %q and the page says %q",
-						i, joined.String(), said)
+						i, joined.String(), response)
 				}
 			}
 		})
@@ -210,7 +210,7 @@ func TestPagesTheDocumentDoesNotHaveAreLitNowhere(t *testing.T) {
 
 // A page is drawn turned by however much it asks to be, and a box is a fraction
 // of the page as it is drawn. A line of a turned page runs down it.
-func TestATurnedPageIsLitTheWayItIsDrawn(t *testing.T) {
+func TestATurnedPageIsLitTheWayItIsGenerated(t *testing.T) {
 	book, boxes := where(t, "turned.pdf", 0)
 
 	if len(boxes) != 3 {

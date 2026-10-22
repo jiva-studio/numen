@@ -50,7 +50,7 @@ export interface FileCreatorsOptions {
 /**
  * A deck, a stencil, a preset or a note pointing at an address made in a
  * folder under the name it is given. The vault names the file after it and
- * answers where it stands. A vault that answers nothing at all is said here,
+ * answers at its current position. A vault that answers nothing at all is said here,
  * because the roads that ask for one carry no word of their own.
  */
 export function createFileCreators(

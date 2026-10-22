@@ -67,7 +67,7 @@ export const ReadOcrResponseSchema: GenMessage<ReadOcrResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_ocr, 1);
 
 /**
- * A Run is one run of the text: what it says, and where it stands on the pages
+ * A Run is one run of the text: what it says, and where it relies on the pages
  * it was read from. A run standing nowhere carries no boxes.
  *
  * @generated from message numen.v1.Run

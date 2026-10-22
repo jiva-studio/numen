@@ -24,22 +24,22 @@ export interface VaultsDeps {
 
 export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: VaultsDeps) {
   const reload = () => globalThis.location.reload()
-  const listed = ref<VaultList>({ vaults: [], showing: '' })
+  const items = ref<VaultList>({ vaults: [], showing: '' })
 
   /**
    * The vault in front, which is the one the list says it is showing. It is read
    * off the list so that the two cannot disagree about which vault is open.
    */
-  const shown = computed<VaultRef>(() => {
-    const one = listed.value.vaults.find((v) => v.id === listed.value.showing)
+  const displayedItems = computed<VaultRef>(() => {
+    const one = items.value.vaults.find((v) => v.id === items.value.showing)
     return one ? { id: one.id, name: one.name } : { id: '', name: '' }
   })
 
   /** One vault of the list under the name it was just given. */
   const setVaultName = (vault: VaultRef) => {
-    listed.value = {
-      ...listed.value,
-      vaults: listed.value.vaults.map((one) =>
+    items.value = {
+      ...items.value,
+      vaults: items.value.vaults.map((one) =>
         one.id === vault.id ? { ...one, name: vault.name } : one,
       ),
     }
@@ -48,7 +48,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
 
   const loadVaults = async () => {
     try {
-      listed.value = await core.vaults()
+      items.value = await core.vaults()
     } catch {
       // The layout the window opens with is the one the list's answer decides.
       unlisted(words.unlistedVaults, 'error')
@@ -66,8 +66,8 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
   const loadArtifactStates = async (path: string) => {
     if (!path) return
     try {
-      const held = await running.getArtifactStates(path)
-      makes.value = new Map(makes.value).set(path, held)
+      const target = await running.getArtifactStates(path)
+      makes.value = new Map(makes.value).set(path, target)
     } catch {
       // A file that cannot be asked about is one nothing is known of, and every
       // command over it is offered as it was before anything could be listed.
@@ -77,9 +77,9 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
 
   return {
     reload,
-    shown,
+    shown: displayedItems,
     setVaultName,
-    listed,
+    listed: items,
     loadVaults,
     coverage,
     makes,

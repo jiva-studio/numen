@@ -11,15 +11,15 @@ import { asFailure } from '@numen/wire'
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
 /** What the window asked for, as the transport wrote it out. */
-let asked: Record<string, unknown>[] = []
+let request: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
 const replyWith = (answer: unknown) => {
-  asked = []
+  request = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_url: string, init: { body: Uint8Array }) => {
-      asked.push(JSON.parse(new TextDecoder().decode(init.body)))
+      request.push(JSON.parse(new TextDecoder().decode(init.body)))
       return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
@@ -56,7 +56,7 @@ describe('the settings of a preset', () => {
 
     const answer = await presets.read('Daily.md')
 
-    if (!answer.ok) throw new Error('the preset was refused')
+    if (!answer.ok) throw new Error('the preset failed')
     expect(answer.value.preset?.settings).toMatchObject({
       goal: 'retention',
       minutesADay: 30,
@@ -76,7 +76,7 @@ describe('the settings of a preset', () => {
     expect(answer.ok ? answer.value.preset?.settings.learned : null).toBe(DEFAULTS.learned)
   })
 
-  it('are no preset at all where the read was refused', async () => {
+  it('are no preset at all where the read failed', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
 
     const answer = await presets.read('Notes.md')
@@ -99,7 +99,7 @@ describe('how far each setting goes', () => {
     })
   })
 
-  it('is nothing at all until the application has said', async () => {
+  it('is nothing at all until the application has returned', async () => {
     replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
 
     const answer = await presets.read('Daily.md')
@@ -108,7 +108,7 @@ describe('how far each setting goes', () => {
 })
 
 describe('the presets of a vault', () => {
-  it('come back as what each is called and where it stands', async () => {
+  it('come back as what each is called and at its current position', async () => {
     replyWith({ presets: [{ path: 'Daily.md', title: 'Daily' }] })
 
     expect(await presets.list()).toEqual([{ path: 'Daily.md', title: 'Daily' }])
@@ -132,7 +132,7 @@ describe('putting a deck on a preset', () => {
 
     const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
-    expect(asked[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
+    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
     expect(answer.ok && answer.value.at).toBe('12 34 Deck.md')
   })
 
@@ -141,7 +141,7 @@ describe('putting a deck on a preset', () => {
 
     await presets.scheduleDeck('Deck.md', '', '')
 
-    expect(asked[0]?.baseline).toBeUndefined()
+    expect(request[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {
@@ -159,7 +159,7 @@ describe('the preset a deck is scheduled by', () => {
 
     const answer = await presets.getDeckPreset('Deck.md')
     expect(answer.ok ? answer.value.preset?.path : null).toBe('')
-    expect(asked[0]).toEqual({ deck: 'Deck.md' })
+    expect(request[0]).toEqual({ deck: 'Deck.md' })
   })
 })
 
@@ -173,7 +173,7 @@ describe('writing settings into a preset', () => {
       '',
     )
 
-    expect(asked[0]?.settings).toMatchObject({
+    expect(request[0]?.settings).toMatchObject({
       goal: 'GOAL_MINUTES_A_DAY',
       counts: 'BUDGET_UNIT_SHOWS',
       learned: 'RULE_RETENTION',
@@ -182,7 +182,7 @@ describe('writing settings into a preset', () => {
   })
 })
 
-describe('what a preset comes to over the range of its goal', () => {
+describe('what a preset evaluates to over the range of its goal', () => {
   it('carries every place, and the day one is learned on where the rule has one', async () => {
     replyWith({
       curve: {
@@ -213,7 +213,7 @@ describe('what a preset comes to over the range of its goal', () => {
     })
   })
 
-  it('stands nowhere where the answer suggests no place', async () => {
+  it('remains nowhere where the answer suggests no place', async () => {
     replyWith({ curve: { goal: 'GOAL_MINUTES_A_DAY', grid: [], days: [], at: [] } })
 
     const curve = await presets.curve('Daily.md', DEFAULTS)
@@ -240,7 +240,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.read('Daily.md')
 
-    expect(asked[0]).toEqual({ path: 'Daily.md' })
+    expect(request[0]).toEqual({ path: 'Daily.md' })
   })
 
   it('files a new preset by its title in the folder', async () => {
@@ -248,7 +248,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.createPreset('Daily', 'Presets')
 
-    expect(asked[0]).toEqual({ title: 'Daily', path: 'Presets' })
+    expect(request[0]).toEqual({ title: 'Daily', path: 'Presets' })
   })
 
   it('names the deck, the preset and the file the window read when scheduling', async () => {
@@ -256,7 +256,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
-    expect(asked[0]).toMatchObject({ deck: 'Deck.md', preset: 'Daily.md' })
+    expect(request[0]).toMatchObject({ deck: 'Deck.md', preset: 'Daily.md' })
   })
 
   it('sends the path and the settings of a curve it asks for', async () => {
@@ -264,7 +264,7 @@ describe('what the requests of a preset name', () => {
 
     await presets.curve('Daily.md', { ...DEFAULTS, minutesADay: 45 })
 
-    expect(asked[0]).toMatchObject({ path: 'Daily.md', settings: { minutesADay: 45 } })
+    expect(request[0]).toMatchObject({ path: 'Daily.md', settings: { minutesADay: 45 } })
   })
 })
 
@@ -308,7 +308,7 @@ describe('writing into a preset the window read', () => {
 
     await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')
 
-    expect(asked[0]).toMatchObject({
+    expect(request[0]).toMatchObject({
       path: 'Daily.md',
       baseline: { path: 'Daily.md', size: '12', mtime: '34' },
     })
@@ -319,7 +319,7 @@ describe('writing into a preset the window read', () => {
 
     await presets.write('Daily.md', DEFAULTS, '')
 
-    expect(asked[0]?.baseline).toBeUndefined()
+    expect(request[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {
@@ -330,13 +330,13 @@ describe('writing into a preset the window read', () => {
     )
   })
 
-  it('names the refusal in the words the window uses', async () => {
+  it('names the rejection in the words the window uses', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
 
     expect(await presets.write('Notes.md', DEFAULTS, '')).toEqual(asFailure('notAPreset'))
   })
 
-  it('names the refusal of a scheduling in the words the window uses', async () => {
+  it('names the rejection of a scheduling in the words the window uses', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
 
     expect(await presets.scheduleDeck('Deck.md', 'Notes.md', '')).toEqual(asFailure('notAPreset'))

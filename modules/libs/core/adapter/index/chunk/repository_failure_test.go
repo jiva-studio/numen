@@ -37,14 +37,14 @@ func replaceWith(chunks ...chunk.Chunk) func(s *store) error {
 	}
 }
 
-func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReason(t *testing.T) {
+func TestAWriteThatTheDatabaseRefusesReturnsWhichStatementAndKeepsTheDatabasesReason(t *testing.T) {
 	unchanged := []chunk.Chunk{{
 		Start: 0, Length: 20, Text: "whole", Opens: []string{"Beginnings"}, Small: []chunk.Chunk{
 			{Start: 0, Length: 10, Text: "left"}, {Start: 10, Length: 10, Text: "right"},
 		},
 	}}
 	opening := []chunk.Chunk{{Start: 0, Length: 20, Text: "whole", Opens: []string{"Beginnings"}}}
-	fresh := []chunk.Chunk{{Start: 0, Length: 5, Text: "brand new words", Opens: []string{"Fresh"}}}
+	newChunks := []chunk.Chunk{{Start: 0, Length: 5, Text: "brand new words", Opens: []string{"Fresh"}}}
 	keptLeaf := []chunk.Chunk{{Start: 0, Length: 5, Text: "whole", Opens: []string{"Beginnings"}}}
 	move := func(from, to string) func(s *store) error {
 		return func(s *store) error { return s.db.Chunks().MoveSources(s.t.Context(), repoVaultA, from, to) }
@@ -63,10 +63,10 @@ func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReaso
 		{"extraction source", func(*store) {}, func(s *store) { s.failOn("sources", "INSERT") },
 			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, nil) }, "record the source b.epub: "},
 		{"extraction chunk", func(*store) {}, func(s *store) { s.failOn("chunks", "INSERT") },
-			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, fresh) }, "store a chunk of this source: "},
-		{"new chunk", holdsBook, func(s *store) { s.failOn("chunks", "INSERT") }, replaceWith(fresh...), "store a chunk of this source: "},
-		{"new words", holdsBook, func(s *store) { s.failOn("chunks_fts", "INSERT") }, replaceWith(fresh...), "index a chunk for the words in it: "},
-		{"new section names", holdsBook, func(s *store) { s.failOn("sections_fts", "INSERT") }, replaceWith(fresh...),
+			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, newChunks) }, "store a chunk of this source: "},
+		{"new chunk", holdsBook, func(s *store) { s.failOn("chunks", "INSERT") }, replaceWith(newChunks...), "store a chunk of this source: "},
+		{"new words", holdsBook, func(s *store) { s.failOn("chunks_fts", "INSERT") }, replaceWith(newChunks...), "index a chunk for the words in it: "},
+		{"new section names", holdsBook, func(s *store) { s.failOn("sections_fts", "INSERT") }, replaceWith(newChunks...),
 			"index the names of the sections a chunk opens: "},
 		{"kept section names", holdsBook, func(s *store) { s.failOn("sections_fts", "INSERT") }, replaceWith(unchanged...),
 			"index the names of the sections a chunk opens: "},
@@ -151,7 +151,7 @@ func TestASourceThatCannotBeLookedUpIsAnErrorAndNotAMissingOne(t *testing.T) {
 	}
 }
 
-func TestASmallChunkTheDatabaseRefusesFailsTheCut(t *testing.T) {
+func TestASmallChunkTheDatabaseRefusesFailsTheSplit(t *testing.T) {
 	s := newStore(t)
 	s.cut(repoVaultA, "book", "a.epub", nil)
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON chunks WHEN NEW.parent_id IS NOT NULL BEGIN SELECT RAISE(ABORT, 'boom'); END`)
@@ -163,7 +163,7 @@ func TestASmallChunkTheDatabaseRefusesFailsTheCut(t *testing.T) {
 	wantSQLiteError(t, err, "store a chunk of this source: ")
 }
 
-func TestALargeChunkThatKeepsItsRowStillEnclosesTheSmallOnesCutAgain(t *testing.T) {
+func TestALargeChunkThatKeepsItsRowStillEnclosesTheSmallOnesSplitAgain(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{

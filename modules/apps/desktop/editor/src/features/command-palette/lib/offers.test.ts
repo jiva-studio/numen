@@ -32,10 +32,10 @@ describe('a search that turned up nothing', () => {
   ]
 
   it('offers to make the note that was looked for', () => {
-    const offered = appendCreateOffer(createGroups(0), { text: 'Entropy', words, at: front() })
+    const proposed = appendCreateOffer(createGroups(0), { text: 'Entropy', words, at: front() })
 
-    expect(offered.at(-1)?.id).toBe(CREATE_NOTE_ID)
-    expect(offered.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
+    expect(proposed.at(-1)?.id).toBe(CREATE_NOTE_ID)
+    expect(proposed.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
   })
 
   it('offers nothing while a group is still waiting on the vault', () => {
@@ -105,7 +105,7 @@ describe('a search that turned up nothing', () => {
     })
   })
 
-  it('stands the note on its own where a relation has no note to hang it off', () => {
+  it('remains the note on its own where a relation has no note to hang it off', () => {
     expect(createNoteInvocation('child', 'Entropy', front({ path: '', title: '' }))).toMatchObject({
       id: 'note',
       path: '',

@@ -21,8 +21,8 @@ const putRight = "The name and the named are not two, said Rupa."
 type shelf map[domain.ArtifactName][]byte
 
 func (b shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
-	raw, held := b[name]
-	if !held {
+	raw, target := b[name]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return raw, nil
@@ -30,8 +30,8 @@ func (b shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte
 
 // Open is one file of the store, which a copy of a video is played from.
 func (b shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
-	raw, held := b[name]
-	if !held {
+	raw, target := b[name]
+	if !target {
 		return nil, 0, fs.ErrNotExist
 	}
 	return readingBytes{bytes.NewReader(raw)}, int64(len(raw)), nil
@@ -82,7 +82,7 @@ func writeCorrections() []byte {
 
 // The words a transcript was put right to are the words it reads as, and the
 // moments they were said at stand where they were.
-func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
+func TestATranscriptInsertRightReadsAsTheWordsItWasInsertRightTo(t *testing.T) {
 	store := shelf{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): writeCorrections(),
@@ -99,7 +99,7 @@ func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 }
 
 // Taking away what a transcript was put right to gives back what was heard.
-func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
+func TestATranscriptNothingInsertRightReadsAsWhatWasHeard(t *testing.T) {
 	store := shelf{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"): writeTranscript()}
 
 	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
@@ -111,13 +111,13 @@ func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
 
 // A sweep works through the names a producer writes, and what a transcript was
 // put right to goes with the recording it belongs to.
-func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
+func TestWhatATranscriptWasInsertRightToIsSweptWithIt(t *testing.T) {
 	store := shelf{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): writeCorrections(),
 	}
-	for _, held := range domain.GetArtifactNames(domain.ASR, "abc123") {
-		if err := store.RemoveArtifact(t.Context(), held); err != nil {
+	for _, target := range domain.GetArtifactNames(domain.ASR, "abc123") {
+		if err := store.RemoveArtifact(t.Context(), target); err != nil {
 			t.Fatal(err)
 		}
 	}

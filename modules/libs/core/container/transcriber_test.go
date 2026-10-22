@@ -13,14 +13,14 @@ import (
 
 // A transcript is put right at the profile the settings name for speech. The
 // profile named for a scanned reading is another setting and is not read here.
-func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
+func TestATranscriptIsInsertRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
 	cfg.TranscriptProofreading = Proofread{Profile: "speech"}
 	cfg.ScanProofreading = Proofread{Profile: "scans", IsAutomatic: true}
 
-	held := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
-	_, err := held.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
-	held.Wait()
+	target := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
+	_, err := target.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
+	target.Wait()
 
 	if err == nil || !strings.Contains(err.Error(), `"speech"`) {
 		t.Errorf("a transcript was put right with %v, want the profile named for speech", err)
@@ -28,7 +28,7 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 }
 
 // An installation that names something to put a transcript right with offers
-// the run, and one that names nothing does not.
+// the run, and one that is empty does not.
 func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
 	if cfg.OpenTranscriptionWorker(t.Context(), nil, nil, nil).ProofreaderReady() {
@@ -69,7 +69,7 @@ func TestATranscriberIsReadyOnlyWherePluginIsAvailable(t *testing.T) {
 	}
 }
 
-func TestATranscriberThatCannotBeOpenedGivesTheReasonAndNothingElse(t *testing.T) {
+func TestATranscriberThatCannotBeOpenedProducesTheReasonAndNothingElse(t *testing.T) {
 	cfg := Config{}
 	transcriber, closer, why := cfg.Transcriber(t.Context())
 	if why == nil {

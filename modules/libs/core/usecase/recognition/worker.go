@@ -145,7 +145,7 @@ func (r *Worker) recognise(ctx context.Context, v domain.Vault, id, path string)
 	}
 	defer release()
 
-	// Getting the models is a step of its own and stands under its own name.
+	// Getting the models is a step of its own and is placed under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	r.reportTask(run.Task{ID: id, Title: "Fetching models"})
 	by, letGo, err := r.with.Runtime.Open(ctx, func(what string, done, total int64) {
@@ -249,12 +249,12 @@ func (r *Worker) proofreadRecognition(
 	onBegan func(ProofreadResult),
 ) (ProofreadResult, error) {
 	proofreading := r.with.Proofreading
-	right, held, err := CreateProofread(proofreading, r.with.Readers, r.with.Derived)
+	right, target, err := CreateProofread(proofreading, r.with.Readers, r.with.Derived)
 	if err != nil {
 		r.reportTask(run.Task{ID: run.GetProofreadID(path), Title: "Proofreading a recognition", About: path, Error: run.GetProofreadError(err)})
 		return ProofreadResult{Path: path}, err
 	}
-	if !held {
+	if !target {
 		return ProofreadResult{Path: path, IsNone: true}, nil
 	}
 

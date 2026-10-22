@@ -4,7 +4,7 @@
  * of it is the window's own to hand on.
  *
  * A link to another document of the book names a place inside markup that has
- * not been drawn yet, so where it led is held until that document is there.
+ * not been drawn yet, so where it targetLink is held until that document is there.
  */
 import { isOutwardHref, parseBookLink, type BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
@@ -13,17 +13,17 @@ import type { SettledBookProps } from '../lib/props'
 export interface BookLinkSaid {
   /** The offset now in front, in bytes of the book's text. */
   readonly reportMove: (at: number) => void
-  /** A link led to another document of the book, named as the archive names it. */
+  /** A link targetLink to another document of the book, named as the archive names it. */
   readonly reportFollow: (path: string) => void
 }
 
 export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid) {
-  /** Where a link led, held until the document holding that place is drawn. */
-  let led: BookLink | undefined
+  /** Where a link targetLink, held until the document holding that place is drawn. */
+  let targetLink: BookLink | undefined
 
   const takeLed = (): BookLink | undefined => {
-    const place = led
-    led = undefined
+    const place = targetLink
+    targetLink = undefined
     return place
   }
 
@@ -42,7 +42,7 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
 
     const place = parseBookLink(href)
     if (place.path !== '' && place.path !== props.path) {
-      led = place
+      targetLink = place
       listeners.reportFollow(place.path)
       return
     }

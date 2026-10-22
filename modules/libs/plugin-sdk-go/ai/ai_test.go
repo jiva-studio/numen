@@ -128,7 +128,7 @@ func TestCompleteFailsWithoutHostPort(t *testing.T) {
 	}
 }
 
-func TestClientCompleteReturnsRefusalOfHost(t *testing.T) {
+func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
 	cases := map[numenv1.CompletionErrorCode]error{
 		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
 		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
@@ -145,24 +145,24 @@ func TestClientCompleteReturnsRefusalOfHost(t *testing.T) {
 	}
 }
 
-func TestReadRefusalWalksEveryCode(t *testing.T) {
-	seen := map[error]numenv1.CompletionErrorCode{}
+func TestReadErrorWalksEveryCode(t *testing.T) {
+	observed := map[error]numenv1.CompletionErrorCode{}
 	for value := range numenv1.CompletionErrorCode_name {
 		code := numenv1.CompletionErrorCode(value)
 		err := readRefusal(code, "")
 		if code == numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
 			if err != nil {
-				t.Errorf("unspecified must be no refusal, got %v", err)
+				t.Errorf("unspecified must be no error, got %v", err)
 			}
 			continue
 		}
 		if err == nil || err.Error() == "" {
 			t.Fatalf("%v has no error", code)
 		}
-		if other, dup := seen[err]; dup {
+		if other, dup := observed[err]; dup {
 			t.Errorf("%v and %v share an error", code, other)
 		}
-		seen[err] = code
+		observed[err] = code
 	}
 	if err := readRefusal(numenv1.CompletionErrorCode(99), ""); err == nil {
 		t.Error("an unknown code must be an error")
@@ -199,7 +199,7 @@ func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
 	}
 }
 
-// The detail the host gives stands after the refusal, and the refusal is still the one the code names.
+// The detail the host gives stands after the rejection, and the error is still the one the code names.
 func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	srv := startHost(t, &fakeHost{
 		code:   numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,

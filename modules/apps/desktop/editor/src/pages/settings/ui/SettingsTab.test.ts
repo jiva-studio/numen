@@ -75,19 +75,19 @@ const MODELS: readonly Model[] = [
 
 /** An installation configured that way, and everything it was asked to change. */
 const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
-  const done: string[] = []
-  const written: SettingEdit[] = []
+  const isDone: string[] = []
+  const content: SettingEdit[] = []
   const isSyncing = ref(true)
   const isNesting = ref(true)
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
-    write: (said) => {
-      written.push(...said)
+    write: (response) => {
+      content.push(...response)
     },
     file: ref('/numen.json'),
     openFile: () => {
-      done.push('opens the file')
+      isDone.push('opens the file')
     },
     themes: ref([
       { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
@@ -102,26 +102,26 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
       textScale: { least: 0.8, most: 1.75 },
     }),
     choose: (item) => {
-      done.push(`choose ${item}`)
+      isDone.push(`choose ${item}`)
     },
     isSyncing: computed({
       get: () => isSyncing.value,
       set: (on) => {
         isSyncing.value = on
-        done.push(`syncing ${on}`)
+        isDone.push(`syncing ${on}`)
       },
     }),
     isNesting: computed({
       get: () => isNesting.value,
       set: (on) => {
         isNesting.value = on
-        done.push(`nesting ${on}`)
+        isDone.push(`nesting ${on}`)
       },
     }),
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
     chooseHeadings: (count) => {
-      done.push(`headings ${count}`)
+      isDone.push(`headings ${count}`)
     },
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
@@ -131,15 +131,15 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     props: { state: { installation } },
     attachTo: document.body,
   })
-  drawn.push(tab)
-  return { done, written, tab }
+  mountedWrappers.push(tab)
+  return { recorded: isDone, written: content, recordedWrites: content, tab }
 }
 
 /** Every tab this file drew, put away between one test and the next. */
-const drawn: { unmount: () => void }[] = []
+const mountedWrappers: { unmount: () => void }[] = []
 
 afterEach(() => {
-  while (drawn.length) drawn.pop()?.unmount()
+  while (mountedWrappers.length) mountedWrappers.pop()?.unmount()
 })
 
 type Tab = ReturnType<typeof createTab>['tab']
@@ -196,10 +196,10 @@ describe('the settings tab', () => {
   })
 
   it('writes a theme the way the command of that name writes it', async () => {
-    const { tab, done } = createTab()
+    const { tab, recorded } = createTab()
     await openMenu(tab, 'settings-theme')
     await chooseItem('sea')
-    expect(done).toStrictEqual(['choose mine:sea'])
+    expect(recorded).toStrictEqual(['choose mine:sea'])
   })
 
   it('says why the mode cannot be chosen while the theme worn pins it', () => {
@@ -208,18 +208,18 @@ describe('the settings tab', () => {
   })
 
   it('turns the two switches the window keeps', async () => {
-    const { tab, done } = createTab()
+    const { tab, recorded } = createTab()
     await tab.get(control('settings-nesting')).trigger('click')
     await tab.get(control('settings-syncing')).trigger('click')
-    expect(done).toStrictEqual(['nesting false', 'syncing false'])
+    expect(recorded).toStrictEqual(['nesting false', 'syncing false'])
   })
 
   it('names the file the settings stand in, and opens it whole', async () => {
-    const { tab, done } = createTab()
+    const { tab, recorded } = createTab()
     expect(tab.get('.settings__file').text()).toBe('/numen.json')
 
     await tab.get('.settings__where button').trigger('click')
-    expect(done).toStrictEqual(['opens the file'])
+    expect(recorded).toStrictEqual(['opens the file'])
   })
 
   it('carries no pencil, and no editor spliced under a row', () => {
@@ -244,15 +244,15 @@ describe('the settings tab', () => {
     expect(headings.attributes('aria-valuemax')).toBe('9')
   })
 
-  it('draws each of the two proofreadings beside the thing it puts right', () => {
+  it('draws each of the two proofreadings alongside the thing it puts right', () => {
     const { tab } = createTab()
     const ocr = tab.get('section[aria-label="' + words.ocr + '"]')
-    const heard = tab.get('section[aria-label="' + words.transcription + '"]')
+    const transcriptionSection = tab.get('section[aria-label="' + words.transcription + '"]')
 
     expect(ocr.text()).toContain(words.ocrProofread)
     expect(ocr.find(control('settings-ocr-proofread')).exists()).toBe(true)
-    expect(heard.text()).toContain(words.transcriptProofread)
-    expect(heard.find(control('settings-transcript-proofread')).exists()).toBe(true)
+    expect(transcriptionSection.text()).toContain(words.transcriptProofread)
+    expect(transcriptionSection.find(control('settings-transcript-proofread')).exists()).toBe(true)
   })
 
   it('reads each of the two proofreadings out of its own path', () => {
@@ -267,21 +267,21 @@ describe('the settings tab', () => {
   })
 
   it('writes each of the two proofreadings into its own path', async () => {
-    const { tab, written } = createTab(false, {
+    const { tab, recordedWrites } = createTab(false, {
       indexing: { proofreading: { profiles: { careful: {} } } },
     })
     await openMenu(tab, 'settings-transcript-proofread')
     await chooseItem('careful')
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['indexing', 'transcription', 'proofread', 'with'], value: '"careful"' },
     ])
   })
 
   it('turns whether each of the two is put right unasked', async () => {
-    const { tab, written } = createTab()
+    const { tab, recordedWrites } = createTab()
     await tab.get(control('settings-ocr-always')).trigger('click')
     await tab.get(control('settings-transcript-always')).trigger('click')
-    expect(written).toStrictEqual([
+    expect(recordedWrites).toStrictEqual([
       { at: ['indexing', 'recognition', 'proofread', 'automatically'], value: 'true' },
       { at: ['indexing', 'transcription', 'proofread', 'automatically'], value: 'true' },
     ])
@@ -332,28 +332,28 @@ describe('the settings tab', () => {
 
   it('leaves a value the presets do not name alone while nothing is chosen', async () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab, written } = createTab(false, {
+    const { tab, recordedWrites } = createTab(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
     await openMenu(tab, 'settings-ocr')
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
 
-    expect(written).toStrictEqual([])
+    expect(recordedWrites).toStrictEqual([])
     expect(tab.get(control('settings-ocr')).text()).toContain('Other_rec.onnx')
   })
 
   it('writes everything a model decides, not its name alone', async () => {
-    const { tab, written } = createTab()
+    const { tab, recordedWrites } = createTab()
     await openMenu(tab, 'settings-agent-model')
     await chooseItem('opus')
-    expect(written).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
+    expect(recordedWrites).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
   })
 
-  it('writes a setting it read out of the file back where it stands', async () => {
-    const { tab, written } = createTab(false, { agent: { serve_tools: false } })
+  it('writes a setting it read out of the file back at its current position', async () => {
+    const { tab, recordedWrites } = createTab(false, { agent: { serve_tools: false } })
     await tab.get(control('settings-agent-tools')).trigger('click')
-    expect(written).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
+    expect(recordedWrites).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
   })
 
   it('offers the profiles the file holds, and naming none', async () => {

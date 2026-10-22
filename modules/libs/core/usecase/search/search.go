@@ -412,7 +412,7 @@ func groupBySource(found []domain.Passage) (map[string][]int, []string) {
 	groups := make(map[string][]int, len(found))
 	order := make([]string, 0, len(found))
 	for i, p := range found {
-		if _, held := groups[p.Source]; !held {
+		if _, target := groups[p.Source]; !target {
 			order = append(order, p.Source)
 		}
 		groups[p.Source] = append(groups[p.Source], i)
@@ -447,7 +447,7 @@ func extractText(ctx context.Context, reader text.Reader, path, from, hash strin
 // span is the text a chunk addresses, bounded by what the source holds now. A
 // source edited since it was indexed is shorter than the chunk says.
 //
-// The result is copied out of the source's decoded text rather than sliced from
+// The result is copied out of the source's decoded text and not sliced from
 // it, so a passage kept after this returns holds the span alone, not the whole
 // document the span was cut from.
 func span(raw string, start, length int) string {

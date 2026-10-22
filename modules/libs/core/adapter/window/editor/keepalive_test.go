@@ -71,8 +71,8 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			mux.Handle(filed, testsupport.NewRootedHandler(notes, entered, returned))
 			agent, agents := numenv1connect.NewAgentServiceHandler(services.Agent)
 			mux.Handle(agent, testsupport.NewRootedHandler(agents, entered, returned))
-			drawn, itself := numenv1connect.NewWindowServiceHandler(state.Window)
-			mux.Handle(drawn, testsupport.NewRootedHandler(itself, entered, returned))
+			rendered, itself := numenv1connect.NewWindowServiceHandler(state.Window)
+			mux.Handle(rendered, testsupport.NewRootedHandler(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 

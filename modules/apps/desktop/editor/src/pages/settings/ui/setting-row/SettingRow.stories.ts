@@ -78,14 +78,14 @@ export const EveryControlAtTheOneEdge: Story = {
     await expect(list).toHaveAccessibleName('Put a transcript right')
 
     // A switch and a list far wider than it end at the same edge.
-    const narrow = switches[0]!.getBoundingClientRect()
-    const wide = list.getBoundingClientRect()
-    await expect(Math.round(wide.right)).toBe(Math.round(narrow.right))
-    await expect(wide.width).toBeGreaterThan(narrow.width)
+    const switchRect = switches[0]!.getBoundingClientRect()
+    const listRect = list.getBoundingClientRect()
+    await expect(Math.round(listRect.right)).toBe(Math.round(switchRect.right))
+    await expect(listRect.width).toBeGreaterThan(switchRect.width)
 
     // A name too long for its half of the row leaves the control where it was.
     const last = switches[1]!.getBoundingClientRect()
-    await expect(Math.round(last.right)).toBe(Math.round(narrow.right))
+    await expect(Math.round(last.right)).toBe(Math.round(switchRect.right))
   },
 }
 

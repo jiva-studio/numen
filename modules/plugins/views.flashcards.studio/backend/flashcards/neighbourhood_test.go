@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/note"
 )
 
-// reading opens one index and hands back the use case that reads it, together
+// reading opens one index and returns the use case that reads it, together
 // with a way to write another vault into it. One index for every vault is what
 // the application runs, so a scoping test has somewhere to leak to.
 func reading(
@@ -72,7 +72,7 @@ func paths(j flashcards.Neighbourhood) []string {
 	return out
 }
 
-func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
+func TestALinkSavedInsideACardArrivesWithItsText(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
@@ -101,7 +101,7 @@ func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
 
 // Every card names the stencil it is cut by, so a deck points at its stencils.
 // A stencil is how a card is laid out and not what it was written from.
-func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
+func TestTheStencilACardIsSplitByIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"stencils/Word.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
@@ -121,7 +121,7 @@ func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
 // preset that schedules it and may name another deck, and neither is a note
 // somebody wrote about the material. It holds on both sides: a deck pointing
 // at this one is a deck all the same.
-func TestOnlyTheNotesADeckWasWrittenFromAreRead(t *testing.T) {
+func TestOnlyTheNotesADeckWasSavedFromAreRead(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
@@ -205,7 +205,7 @@ func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
 	}
 }
 
-func TestADanglingLinkKeepsTheNameItWasWrittenBy(t *testing.T) {
+func TestADanglingLinkKeepsTheNameItWasSavedBy(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nSee [[Nowhere At All]].\n",
@@ -315,7 +315,7 @@ func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
 	// An identifier finds its note wherever it is, and where it is may be a
 	// vault this reading has no reader for. Both vaults file a note at the same
 	// path, so a reading that ignores which vault the link landed in shows the
-	// wrong note rather than nothing.
+	// wrong note and not nothing.
 	const id = "01M02DTC80PABQQW3XS3XWDVHW"
 	u, add := reading(t)
 	v := add(map[string]string{
@@ -353,9 +353,9 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 	for _, one := range j.Notes {
 		byPath[one.Path] = one
 	}
-	gone := byPath["Migration.md"]
-	if gone.Outcome != note.Missing || gone.Body != "" {
-		t.Errorf("the deleted note came back as %+v", gone)
+	removed := byPath["Migration.md"]
+	if removed.Outcome != note.Missing || removed.Body != "" {
+		t.Errorf("the deleted note came back as %+v", removed)
 	}
 	if !strings.Contains(byPath["Feathers.md"].Body, "Barbs on a shaft") {
 		t.Errorf("the note beside it came back as %+v", byPath["Feathers.md"])
@@ -405,7 +405,7 @@ func TestADeckJoinedToNothingIsAnEmptyAnswer(t *testing.T) {
 func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 	t.Parallel()
 	// Both vaults file their deck at the same path, so a query that forgets its
-	// vault answers with the other one's notes rather than with nothing.
+	// vault answers with the other one's notes and not with nothing.
 	u, add := reading(t)
 	feathers := add(map[string]string{
 		"decks/Deck.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",

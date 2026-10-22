@@ -36,16 +36,16 @@ var wiring = []string{
 func getPortFields(file *ast.File) []string {
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {
-		held, is := node.(*ast.StructType)
+		target, is := node.(*ast.StructType)
 		if !is {
 			return true
 		}
-		for _, one := range held.Fields.List {
-			typed := one.Type
-			if star, is := typed.(*ast.StarExpr); is {
-				typed = star.X
+		for _, one := range target.Fields.List {
+			callType := one.Type
+			if star, is := callType.(*ast.StarExpr); is {
+				callType = star.X
 			}
-			at, is := typed.(*ast.SelectorExpr)
+			at, is := callType.(*ast.SelectorExpr)
 			if !is {
 				continue
 			}
@@ -121,11 +121,11 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	if len(files) < 30 {
 		t.Fatalf("%d files of the driving adapters read: the walk is not reading them", len(files))
 	}
-	var held int
+	var target int
 	for _, one := range fields {
-		held += len(one)
+		target += len(one)
 	}
-	if held == 0 {
+	if target == 0 {
 		t.Fatal("no driving adapter holds a port in a field: the walk is not reading them")
 	}
 
@@ -212,8 +212,8 @@ func getUncovered(patterns []string) []string {
 			continue
 		}
 		if !slices.ContainsFunc(patterns, func(pattern string) bool {
-			held := strings.TrimSuffix(strings.TrimPrefix(pattern, "**/"), "/**")
-			return !strings.HasPrefix(pattern, "!") && (one == held || strings.HasPrefix(one, held+"/"))
+			target := strings.TrimSuffix(strings.TrimPrefix(pattern, "**/"), "/**")
+			return !strings.HasPrefix(pattern, "!") && (one == target || strings.HasPrefix(one, target+"/"))
 		}) {
 			found = append(found, one)
 		}

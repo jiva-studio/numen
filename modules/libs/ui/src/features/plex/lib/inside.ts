@@ -66,7 +66,7 @@ export interface HeadingsDeps {
 }
 
 /**
- * How far in each level present is set, by where it stands among the others: a
+ * How far in each level present is set, by at its current position among the others: a
  * note whose headings begin at the second level is set in from the edge as one
  * beginning at the first.
  */
@@ -105,10 +105,10 @@ export function getNodeHeadings(
   const rows = Math.min(maxHeadings + 1, Math.floor((depth - 2 * pad) / headingHeight))
   if (rows < 1) return null
 
-  const shown = Math.min(maxHeadings, rows, headings.length)
+  const headingCount = Math.min(maxHeadings, rows, headings.length)
   const setIn = getIndents(headings, headingIndent)
 
-  const hung: HungHeading[] = headings.map((heading, at) => ({
+  const suspended: HungHeading[] = headings.map((heading, at) => ({
     id: heading.id,
     text: heading.text,
     indent: setIn.get(heading.level) ?? 0,
@@ -119,10 +119,10 @@ export function getNodeHeadings(
     top,
     headingHeight,
     pad,
-    shown,
-    ...getHeadingsWidth(node, hung, { pad, deps }),
-    headings: hung,
-    height: shown * headingHeight + 2 * pad,
+    shown: headingCount,
+    ...getHeadingsWidth(node, suspended, { pad, deps }),
+    headings: suspended,
+    height: headingCount * headingHeight + 2 * pad,
   }
 }
 
@@ -139,13 +139,13 @@ interface HeadingsWidthContext {
  */
 function getHeadingsWidth(
   node: PlacedNode,
-  hung: readonly HungHeading[],
+  suspended: readonly HungHeading[],
   context: HeadingsWidthContext,
 ): { width: number; offset: number } {
   const { pad, deps } = context
   const measure = deps.measure
   const measuredContentWidth = measure
-    ? Math.max(...hung.map((heading) => measure(heading.text) + heading.indent))
+    ? Math.max(...suspended.map((heading) => measure(heading.text) + heading.indent))
     : 0
   const width = Math.min(
     Math.max(measuredContentWidth + 2 * pad, node.width),

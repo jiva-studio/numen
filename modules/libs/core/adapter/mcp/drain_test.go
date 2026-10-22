@@ -87,7 +87,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}
 
 	queries := db.Queries()
-	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
+	mover := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
 		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
@@ -100,8 +100,8 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 			Links:         note.NewShowLinks(db.Links()),
 			Create:        note.NewCreate(writers, queries, index, time.Now),
 			Write:         note.NewWrite(readers, writers, index, time.Now),
-			Move:          moving,
-			Rename:        note.NewRename(moving),
+			Move:          mover,
+			Rename:        note.NewRename(mover),
 			RemoveNote:    note.NewRemoveNote(note.NewRemove(writers, db.Links(), db.SourcesKnown(), index), readers),
 			Read:          note.NewRead(readers),
 			GetTitles:     note.NewGetTitles(queries),
@@ -158,9 +158,9 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	// The drain is shorter than the call, so it runs out of time with the write
 	// still going. What follows must wait for the write and not for the drain.
 	drain := 200 * time.Millisecond
-	shut := make(chan struct{})
+	closedCh := make(chan struct{})
 	go func() {
-		defer close(shut)
+		defer close(closedCh)
 		ctx, cancel := context.WithTimeout(t.Context(), drain)
 		defer cancel()
 		endpoint.Close(ctx)
@@ -169,7 +169,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}()
 
 	select {
-	case <-shut:
+	case <-closedCh:
 		t.Fatal("the database closed with an agent's write still going")
 	case <-time.After(4 * drain):
 	}
@@ -177,12 +177,12 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	release()
 
 	select {
-	case <-shut:
+	case <-closedCh:
 	case <-time.After(5 * time.Second):
 		t.Fatal("closing never finished")
 	}
 	if err := <-wrote; err != nil {
-		t.Fatalf("the agent's write was refused: %v", err)
+		t.Fatalf("the agent's write failed: %v", err)
 	}
 
 	if got := recorded.getAll(); len(got) != 2 || got[0] != "levelled" || got[1] != "closed" {

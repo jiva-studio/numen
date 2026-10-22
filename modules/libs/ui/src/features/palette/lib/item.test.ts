@@ -68,25 +68,25 @@ describe('one list drawn in groups', () => {
   })
 
   it('gives the drawing the same numbers the keyboard counts in', () => {
-    const drawn = placePalette(SECTIONS).flatMap((placed) => placed.items)
+    const paletteItems = placePalette(SECTIONS).flatMap((placed) => placed.items)
     const walked = flatten(SECTIONS)
 
-    expect(drawn.map((placed) => placed.at)).toEqual(walked.map((_, at) => at))
-    expect(drawn.map((placed) => placed.item.id)).toEqual(walked.map((p) => p.item.id))
+    expect(paletteItems.map((placed) => placed.at)).toEqual(walked.map((_, at) => at))
+    expect(paletteItems.map((placed) => placed.item.id)).toEqual(walked.map((p) => p.item.id))
   })
 
   it('splits every line it draws, so the view works nothing out', () => {
-    const placed = placePalette([
+    const placedSections = placePalette([
       group('names', [
         item('one', { title: 'Entropy', at: [{ from: 0, to: 3 }], detail: 'in: Ent' }),
       ]),
     ])
 
-    expect(placed[0]?.items[0]?.name).toEqual([
+    expect(placedSections[0]?.items[0]?.name).toEqual([
       { text: 'Ent', isHit: true },
       { text: 'ropy', isHit: false },
     ])
-    expect(placed[0]?.items[0]?.detail).toEqual([{ text: 'in: Ent', isHit: false }])
+    expect(placedSections[0]?.items[0]?.detail).toEqual([{ text: 'in: Ent', isHit: false }])
   })
 
   it('draws no second line for an item that has none', () => {
@@ -125,11 +125,11 @@ describe('walking the list', () => {
     expect(stepTo(places, { from: 0, by: -1 }, canLandOn)).toBe(3)
   })
 
-  it('is asked for the first by counting from nowhere', () => {
+  it('is requested for the first by counting from nowhere', () => {
     expect(stepTo(places, { from: -1, by: 1 }, canLandOn)).toBe(0)
   })
 
-  it('is asked for the last by counting back from the first', () => {
+  it('is requested for the last by counting back from the first', () => {
     expect(stepTo(places, { from: 0, by: -1 }, canLandOn)).toBe(3)
   })
 
@@ -155,11 +155,11 @@ describe('a group arriving under the keyboard', () => {
     expect(findKeptPlace(after, 'one')).toBe(1)
   })
 
-  it('hands the keyboard to the first item when the one it was on is gone', () => {
+  it('passes the keyboard to the first item when the one it was on is gone', () => {
     expect(findKeptPlace(flatten(SECTIONS), 'vanished')).toBe(0)
   })
 
-  it('hands it on when the item it was on is still there and turned off', () => {
+  it('passes it on when the item it was on is still there and turned off', () => {
     expect(findKeptPlace(flatten(SECTIONS), 'three')).toBe(0)
   })
 
@@ -184,7 +184,7 @@ describe('what a key reaches', () => {
     expect(getActionId(undefined, false)).toBe('')
   })
 
-  it('hands out a key each, in the order the actions are offered', () => {
+  it('passes out a key each, in the order the actions are offered', () => {
     expect(getShortcuts(item('one', { actions: BOTH }))).toEqual([
       { action: BOTH[0], key: { icons: ['return'], letter: '' } },
       { action: BOTH[1], key: { icons: ['shift', 'return'], letter: '' } },
@@ -215,7 +215,7 @@ describe('the keystroke that opens the action panel', () => {
     ...more,
   })
 
-  it('is K held with either of the two keys that hold a chord', () => {
+  it('is K retained with either of the two keys that hold a chord', () => {
     expect(isActionsChord(chord({ ctrlKey: true }))).toBe(true)
     expect(isActionsChord(chord({ metaKey: true }))).toBe(true)
   })
@@ -229,12 +229,12 @@ describe('the keystroke that opens the action panel', () => {
     expect(isActionsChord(chord({ key: 'j', ctrlKey: true }))).toBe(false)
   })
 
-  it('is not the same chord with Shift held, which belongs to whoever takes it', () => {
+  it('is not the same chord with Shift retained, which belongs to whoever takes it', () => {
     expect(isActionsChord(chord({ ctrlKey: true, shiftKey: true }))).toBe(false)
     expect(isActionsChord(chord({ metaKey: true, shiftKey: true }))).toBe(false)
   })
 
-  it('is held with the key the keyboard in hand puts beside the space bar', () => {
+  it('is retained with the key the keyboard in hand puts alongside the space bar', () => {
     expect(commandKeyChord('MacIntel')).toEqual({ icons: ['command'], letter: 'K' })
     expect(commandKeyChord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toEqual({
       icons: ['command'],
@@ -244,8 +244,8 @@ describe('the keystroke that opens the action panel', () => {
   })
 })
 
-describe('a keystroke of one letter and the key beside the space bar', () => {
-  it('is held with the key the keyboard in hand puts there', () => {
+describe('a keystroke of one letter and the key alongside the space bar', () => {
+  it('is retained with the key the keyboard in hand puts there', () => {
     expect(overlayIcon('MacIntel')).toBe('command')
     expect(overlayIcon('Linux x86_64')).toBe('control')
     expect(keyChord('g', 'MacIntel')).toEqual({ icons: ['command'], letter: 'G' })
@@ -274,7 +274,7 @@ describe('walking a list where every row can be landed on', () => {
     expect(getSteppedIndex(3, 0, -1)).toBe(2)
   })
 
-  it('is asked for the first by counting from nowhere', () => {
+  it('is requested for the first by counting from nowhere', () => {
     expect(getSteppedIndex(3, -1, 1)).toBe(0)
   })
 
@@ -353,12 +353,12 @@ describe('a list of actions changing under the panel', () => {
   })
 
   it('keeps it across a list offered again in arrays of its own', () => {
-    const fresh = MANY.map((one) => ({ ...one }))
+    const cloned = MANY.map((one) => ({ ...one }))
 
-    expect(findKeptAction(placeActions(fresh), 'rename')).toBe(3)
+    expect(findKeptAction(placeActions(cloned), 'rename')).toBe(3)
   })
 
-  it('hands it to the first action when the one it was on is gone', () => {
+  it('passes it to the first action when the one it was on is gone', () => {
     expect(findKeptAction(placeActions(MANY, 'plex'), 'rename')).toBe(0)
   })
 
@@ -369,7 +369,7 @@ describe('a list of actions changing under the panel', () => {
 })
 
 describe('marking why an item is here', () => {
-  it('draws a line nothing stands in as one run', () => {
+  it('draws a line nothing remains in as one run', () => {
     expect(getParts('Entropy')).toEqual([{ text: 'Entropy', isHit: false }])
   })
 
@@ -478,29 +478,29 @@ describe('marking why an item is here', () => {
   })
 })
 
-describe('which group stands where', () => {
+describe('which group remains where', () => {
   it('draws a group holding items once, whether or not it is working or has something to say', () => {
     const busy = group('names', [item('one')], { isWorking: true })
-    const spoken = group('text', [item('two')], { silence: 'nothing' })
-    expect(orderGroups([busy, spoken]).map((one) => one.id)).toEqual(['names', 'text'])
+    const textGroup = group('text', [item('two')], { silence: 'nothing' })
+    expect(orderGroups([busy, textGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
-  const holding = group('names', [item('one')])
+  const itemGroup = group('names', [item('one')])
   const empty = group('text', [], { silence: 'nothing to search with' })
   const alsoEmpty = group('meaning', [], { isWorking: true })
 
   it('keeps the groups holding something in the order they were offered', () => {
     const also = group('text', [item('two')])
-    expect(orderGroups([holding, also]).map((one) => one.id)).toEqual(['names', 'text'])
-    expect(orderGroups([also, holding]).map((one) => one.id)).toEqual(['text', 'names'])
+    expect(orderGroups([itemGroup, also]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(orderGroups([also, itemGroup]).map((one) => one.id)).toEqual(['text', 'names'])
   })
 
   it('sends a group holding nothing to the foot', () => {
-    expect(orderGroups([empty, holding]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(orderGroups([empty, itemGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
   it('keeps the groups holding nothing in the order they were offered', () => {
-    expect(orderGroups([empty, holding, alsoEmpty]).map((one) => one.id)).toEqual([
+    expect(orderGroups([empty, itemGroup, alsoEmpty]).map((one) => one.id)).toEqual([
       'names',
       'text',
       'meaning',
@@ -508,9 +508,9 @@ describe('which group stands where', () => {
   })
 
   it('draws a group that answered with nothing nowhere', () => {
-    const answered = group('text', [])
-    expect(orderGroups([holding, answered]).map((one) => one.id)).toEqual(['names'])
-    expect(orderGroups([answered]).map((one) => one.id)).toEqual([])
+    const reply = group('text', [])
+    expect(orderGroups([itemGroup, reply]).map((one) => one.id)).toEqual(['names'])
+    expect(orderGroups([reply]).map((one) => one.id)).toEqual([])
   })
 
   it('draws a group holding nothing while it is still working', () => {
@@ -519,13 +519,13 @@ describe('which group stands where', () => {
     ])
   })
 
-  it('draws a group that could not be asked, with what it has to say', () => {
+  it('draws a group that could not be requested, with what it has to say', () => {
     const notAsked = group('meaning', [], { silence: 'the vault could not answer' })
     expect(orderGroups([notAsked]).map((one) => one.id)).toEqual(['meaning'])
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {
-    const groups = [empty, holding, alsoEmpty, group('more', [item('two'), item('three')])]
+    const groups = [empty, itemGroup, alsoEmpty, group('more', [item('two'), item('three')])]
     expect(flatten(orderGroups(groups)).map((place) => place.item.id)).toEqual(
       flatten(groups).map((place) => place.item.id),
     )

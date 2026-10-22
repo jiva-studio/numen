@@ -63,9 +63,9 @@ const BEYOND = 1.5
 
 /**
  * A row of pages: how tall they are drawn, where each one begins, and what the
- * whole row comes to.
+ * whole row evaluates to.
  *
- * Every page is drawn to one height, so the row stands on one line however the
+ * Every page is drawn to one height, so the row relies on one line however the
  * pages are shaped, and a flick sideways is a page.
  */
 export interface Row {
@@ -75,7 +75,7 @@ export interface Row {
   readonly starts: readonly number[]
   /** How wide each page is drawn, in CSS pixels. */
   readonly widths: readonly number[]
-  /** What the whole row comes to, in CSS pixels. */
+  /** What the whole row evaluates to, in CSS pixels. */
   readonly length: number
 }
 
@@ -96,15 +96,15 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
   if (height <= 0) return { height: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []
   const widths: number[] = []
-  let along = GAP
+  let alongOffset = GAP
   for (let page = 0; page < pages.length; page++) {
     const size = getSize(pages, page)
     const width = Math.max(Math.round((height * size.width) / size.height), 1)
-    starts.push(along)
+    starts.push(alongOffset)
     widths.push(width)
-    along += width + GAP
+    alongOffset += width + GAP
   }
-  return { height, starts, widths, length: along }
+  return { height, starts, widths, length: alongOffset }
 }
 
 /** The size of one page, and the nearest thing to it that is known. */

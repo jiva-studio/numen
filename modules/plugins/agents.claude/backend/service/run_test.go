@@ -198,7 +198,7 @@ const announce = `printf '%s\n' '{"type":"stream_event","event":{"type":"content
 func awaitUp(t *testing.T, stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) {
 	t.Helper()
 	for stream.Receive() {
-		if stream.Msg().GetSaid() == "up" {
+		if stream.Msg().GetText() == "up" {
 			return
 		}
 	}
@@ -208,20 +208,20 @@ func awaitUp(t *testing.T, stream *connect.ServerStreamForClient[numenv1.AskAgen
 // endsWithin runs the function and fails the test if it has not returned in time.
 func endsWithin(t *testing.T, what string, limit time.Duration, run func()) {
 	t.Helper()
-	done := make(chan struct{})
+	isDone := make(chan struct{})
 	go func() {
 		run()
-		close(done)
+		close(isDone)
 	}()
 	select {
-	case <-done:
+	case <-isDone:
 	case <-time.After(limit):
 		t.Fatalf("%s did not end", what)
 	}
 }
 
 // Finishing one conversation ends what is answering in it and leaves another answering.
-func TestFinishingOneConversationLeavesAnotherAnswering(t *testing.T) {
+func TestFinish_ConcurrentConversations(t *testing.T) {
 	fifo := filepath.Join(t.TempDir(), "go")
 	if err := exec.Command("mkfifo", fifo).Run(); err != nil {
 		t.Skipf("no named pipe to wait on: %v", err)
@@ -297,7 +297,7 @@ func TestClosingEndsEveryRunStillAnswering(t *testing.T) {
 
 // The stream opens, and the person is told the wait has begun, before the program has written
 // anything.
-func TestTheStreamOpensBeforeTheProgramSaysAnything(t *testing.T) {
+func TestAskAgent_StreamInitialization(t *testing.T) {
 	script := writeScript(t, "silent", "sleep 120\n")
 	client := startAgent(t, &agentServer{})
 
@@ -320,7 +320,7 @@ func TestTheStreamOpensBeforeTheProgramSaysAnything(t *testing.T) {
 
 // The command the environment names comes first, then Claude Code on the path, then in a place it
 // is installed to.
-func TestFindClaudeTakesTheEnvironmentThenThePathThenThePlaces(t *testing.T) {
+func TestFindClaude_LookupPriority(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("the places are unix paths")
 	}

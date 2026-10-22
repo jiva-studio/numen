@@ -123,28 +123,28 @@ func (u Extract) discover(
 	res *ExtractResult,
 	swept *[]port.SourceText,
 ) error {
-	known, err := u.readKnown(ctx, v)
+	recognized, err := u.readKnown(ctx, v)
 	if err != nil {
 		return err
 	}
-	found, err := u.walkAndRecord(ctx, v, reader, known, res)
+	found, err := u.walkAndRecord(ctx, v, reader, recognized, res)
 	if err != nil {
 		return err
 	}
-	return u.removeGone(ctx, v, known, found, res, swept)
+	return u.removeGone(ctx, v, recognized, found, res, swept)
 }
 
 // readKnown reads the fingerprints the index holds, by kind and path.
 func (u Extract) readKnown(ctx context.Context, v domain.Vault) (map[domain.SourceKind]map[string]domain.Fingerprint, error) {
-	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
+	recognized := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.queries.GetFingerprints(ctx, v.ID, kind)
+		target, err := u.queries.GetFingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return nil, fmt.Errorf("read index: %w", err)
 		}
-		known[kind] = held
+		recognized[kind] = target
 	}
-	return known, nil
+	return recognized, nil
 }
 
 // walkAndRecord walks the vault, records each file the index does not already hold
@@ -158,13 +158,13 @@ func (u Extract) walkAndRecord(
 ) (map[string]bool, error) {
 	found := make(map[string]bool)
 	err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
-		held, ours := known[ref.Kind]
+		target, ours := known[ref.Kind]
 		if !ours {
 			return nil
 		}
 		res.Seen++
 		found[ref.Path] = true
-		if previous, ok := held[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+		if previous, ok := target[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -189,28 +189,28 @@ func (u Extract) removeGone(
 	swept *[]port.SourceText,
 ) error {
 	for _, kind := range u.kinds() {
-		gone := make([]string, 0)
+		removed := make([]string, 0)
 		for path := range known[kind] {
 			if !found[path] {
-				gone = append(gone, path)
+				removed = append(removed, path)
 			}
 		}
-		if len(gone) == 0 {
+		if len(removed) == 0 {
 			continue
 		}
-		slices.Sort(gone)
+		slices.Sort(removed)
 		// The recognitions those paths stood on are read before the rows saying so
-		// are taken out; which of them nothing stands on any more is settled once
+		// are taken out; which of them nothing relies on any more is settled once
 		// every source has been cut.
-		went, err := u.readSourceTexts(ctx, v, kind, gone)
+		went, err := u.readSourceTexts(ctx, v, kind, removed)
 		if err != nil {
 			return err
 		}
 		*swept = append(*swept, went...)
-		if err := u.sources.RemoveSources(ctx, v.ID, kind, gone); err != nil {
+		if err := u.sources.RemoveSources(ctx, v.ID, kind, removed); err != nil {
 			return fmt.Errorf("remove: %w", err)
 		}
-		res.Removed += len(gone)
+		res.Removed += len(removed)
 	}
 	return nil
 }
@@ -226,12 +226,12 @@ func (u Extract) readSourceTexts(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
+	target, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	made := make(map[string]port.SourceText, len(held))
-	for _, r := range held {
+	made := make(map[string]port.SourceText, len(target))
+	for _, r := range target {
 		made[r.Path] = r
 	}
 	out := make([]port.SourceText, 0, len(paths))
@@ -243,12 +243,12 @@ func (u Extract) readSourceTexts(
 	return out, nil
 }
 
-// sweep takes out the files of a recognition no source stands on any more.
+// sweep takes out the files of a recognition no source relies on any more.
 //
 // A recognition is named by the hash of the bytes it was made from, so a document
 // renamed is the same recognition at another path and two copies of one document
 // are one recognition. What is asked is whether any source still names it, and the
-// question is asked once every source has been cut and says what it stands on.
+// question is asked once every source has been cut and says what it relies on.
 //
 // A walk that failed returns before any of this, so a folder that could not be
 // read takes nothing with it.
@@ -256,43 +256,43 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	if u.Derived == nil || len(went) == 0 {
 		return nil
 	}
-	stood, named, err := u.readReferencedRecognitions(ctx, v)
+	status, named, err := u.readReferencedRecognitions(ctx, v)
 	if err != nil {
 		return err
 	}
 	for _, r := range went {
-		if stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
+		if status[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
 			continue
 		}
-		gone := domain.GetArtifactNames(r.Producer, r.Hash)
+		removed := domain.GetArtifactNames(r.Producer, r.Hash)
 		// A copy of a video is named by the address alone, so it goes when
 		// nothing names that address any more, whoever downloaded the words.
 		if !named[r.Hash] {
-			gone = append(gone, domain.NewCopyName(r.Hash))
+			removed = append(removed, domain.NewCopyName(r.Hash))
 		}
-		if err := u.removeNames(ctx, gone); err != nil {
+		if err := u.removeNames(ctx, removed); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// readReferencedRecognitions returns the recognitions some source stands on and the hashes some
+// readReferencedRecognitions returns the recognitions some source relies on and the hashes some
 // source names.
 func (u Extract) readReferencedRecognitions(ctx context.Context, v domain.Vault) (map[port.SourceText]bool, map[string]bool, error) {
-	stood := make(map[port.SourceText]bool)
+	status := make(map[port.SourceText]bool)
 	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
+		target, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return nil, nil, fmt.Errorf("read index: %w", err)
 		}
-		for _, r := range held {
-			stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
+		for _, r := range target {
+			status[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
 			named[r.Hash] = true
 		}
 	}
-	return stood, named, nil
+	return status, named, nil
 }
 
 // removeNames removes each named file from the store; a file already absent
@@ -379,11 +379,11 @@ func (u Extract) hasAny(ctx context.Context, names ...domain.ArtifactName) bool 
 // Which those are is asked of the data, on both keys that answer it: a source
 // with no small chunk has never been cut, and a source carrying another recipe
 // was cut by another extractor or at other sizes. Each question is asked again
-// until it names nothing that has not been tried, so a run that stopped part way
+// until it is empty that has not been tried, so a run that stopped part way
 // is continued by starting another.
 func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	sizes := u.sizes()
-	known := recipes(sizes)
+	recognized := recipes(sizes)
 	tried := map[string]bool{}
 
 	var questions []func(context.Context) ([]string, error)
@@ -393,7 +393,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 				return u.queries.GetUnchunkedSources(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.queries.GetSourcesWithOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+				return u.queries.GetSourcesWithOtherRecipe(ctx, v.ID, kind, recognized, sourcesPerQuery)
 			},
 		)
 	}
@@ -403,11 +403,11 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 			if err != nil {
 				return err
 			}
-			fresh, err := u.chunkNewPaths(ctx, v, reader, paths, tried, sizes, res)
+			freshCount, err := u.chunkNewPaths(ctx, v, reader, paths, tried, sizes, res)
 			if err != nil {
 				return err
 			}
-			if fresh == 0 {
+			if freshCount == 0 {
 				break
 			}
 		}
@@ -426,21 +426,21 @@ func (u Extract) chunkNewPaths(
 	sizes chunking.Sizes,
 	res *ExtractResult,
 ) (int, error) {
-	fresh := 0
+	freshCount := 0
 	for _, path := range paths {
 		if tried[path] {
 			continue
 		}
 		tried[path] = true
-		fresh++
+		freshCount++
 		if err := ctx.Err(); err != nil {
-			return fresh, err
+			return freshCount, err
 		}
 		if err := u.source(ctx, v, reader, path, sizes, res); err != nil {
-			return fresh, err
+			return freshCount, err
 		}
 	}
-	return fresh, nil
+	return freshCount, nil
 }
 
 // ExtractOne brings a single source's chunks up to date with its text.
@@ -519,7 +519,7 @@ func (u Extract) source(
 	// A document read by a recogniser has a text of its own, and the chunks are
 	// places in that. It is found by the hash of the bytes it was read from, so a
 	// file whose modification time moved without its content is claimed again
-	// rather than read from scratch.
+	// and not read from scratch.
 	doc, from, err := u.text(ctx, ref, raw, hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		res.Unreadable++

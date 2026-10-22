@@ -110,7 +110,7 @@ describe('a note the file moved past', () => {
     expect(one.paths()).toEqual([])
   })
 
-  it('is raised once while it stands, however often the notes change', async () => {
+  it('is raised once while active, however often the notes change', async () => {
     const one = window()
     one.setState('Note.md', 'stale')
     await nextTick()
@@ -137,8 +137,8 @@ describe('a window of real notes', () => {
   /** A core holding the files a test puts in it. */
   const createCore = (files: Map<string, string>): NotesCore => ({
     read: async (path) => asValue({ body: files.get(path) ?? '', at: `at:${files.get(path)}` }),
-    write: async (path, body, seen) => {
-      if (seen && files.get(path) !== seen.prose && `at:${files.get(path)}` !== seen.fingerprint) {
+    write: async (path, body, observed) => {
+      if (observed && files.get(path) !== observed.prose && `at:${files.get(path)}` !== observed.fingerprint) {
         return asFailure('changed' as const)
       }
       files.set(path, body)

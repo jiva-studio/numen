@@ -16,7 +16,7 @@ import { STENCIL, useStencilTabs, type StencilTabState } from '../kind'
 import { WORDS as words } from '../../cards'
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 // Each tab is drawn into the page, so the one before it goes before the next
 // stands: a mark is teleported to the row a selector finds in the whole page.
@@ -25,7 +25,7 @@ enableAutoUnmount(afterEach)
 /** A window with one stencil open, drawn. */
 const mountStencil = async (problems: readonly DeckProblem[] = []) => {
   /** Each field rename the editor asked the vault for. */
-  const renamed: string[] = []
+  const renameCalls: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let faces: readonly VaultFace[] = [
     { name: 'Recognise', preamble: '', front: '{{Life span}}', back: '{{Height}}' },
@@ -39,7 +39,7 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
     // The vault writes the name in the fields and in the braces of every face.
     renameField: async (path, field, _seen) => {
       const { from, to } = field
-      renamed.push(`${path} ${from} ${to}`)
+      renameCalls.push(`${path} ${from} ${to}`)
       fields = fields.map((one) => (one === from ? to : one))
       const rewriteBraces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
       faces = faces.map((face) => ({
@@ -72,7 +72,7 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
   // has to stand in the document for those to be found.
   const window = mount(StencilTab, { props: { state: tab }, attachTo: document.body })
   await settle()
-  return { window, tab, renamed }
+  return { window, tab, renamed: renameCalls }
 }
 
 const missing: DeckProblem = {
@@ -126,7 +126,7 @@ describe('a mark on a face', () => {
     expect(window.find(`[data-face="${first}"]`).find('[data-wrong]').exists()).toBe(false)
   })
 
-  it('follows the face when another is taken out beside it', async () => {
+  it('follows the face when another is taken out alongside it', async () => {
     const { window, tab } = await mountStencil([missing])
     const first = tab.stencil.value.faces[0]?.id ?? ''
     const second = tab.stencil.value.faces[1]?.id ?? ''
@@ -159,7 +159,7 @@ describe('a mark on a field', () => {
     expect(window.find('[data-field="Life span"]').find('[data-wrong]').exists()).toBe(false)
   })
 
-  it('is drawn nowhere above the editor, which is for what stands against neither', async () => {
+  it('is drawn nowhere above the editor, which is for what remains against neither', async () => {
     const { window } = await mountStencil([twice])
 
     expect(window.find(`[aria-label="${words.problems}"]`).exists()).toBe(false)

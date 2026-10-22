@@ -24,7 +24,7 @@ describe('the line the window draws in the answer’s place', () => {
     expect(estimateCurve(settings(), today, BOUNDS).isHonest).toBe(false)
   })
 
-  it('runs over the whole range of minutes, and marks where the preset stands', () => {
+  it('runs over the whole range of minutes, and marks where the preset remains', () => {
     const guess = estimateCurve(settings({ minutesADay: 20 }), today, BOUNDS)
     expect(guess.grid[0]).toBe(0)
     expect(guess.grid[guess.grid.length - 1]).toBe(60)
@@ -38,7 +38,7 @@ describe('the line the window draws in the answer’s place', () => {
     expect(costs.every((cost, at) => at === 0 || cost >= (costs[at - 1] ?? 0))).toBe(true)
   })
 
-  it('costs more of the day the more of the material is asked back', () => {
+  it('costs more of the day the more of the material is requested back', () => {
     const guess = estimateCurve(settings({ goal: 'retention', retention: 0.85 }), today, BOUNDS)
     expect(guess.grid[0]).toBe(0.7)
     expect(guess.grid[guess.grid.length - 1]).toBe(0.99)
@@ -55,8 +55,8 @@ describe('the line the window draws in the answer’s place', () => {
 
 describe('the span the sketch of a target is drawn across', () => {
   it('is the one the application answered with, and not one kept here', () => {
-    const said = { ...BOUNDS, retention: { least: 0.75, most: 0.95 } }
-    const guess = estimateCurve(settings({ goal: 'retention' }), today, said)
+    const response = { ...BOUNDS, retention: { least: 0.75, most: 0.95 } }
+    const guess = estimateCurve(settings({ goal: 'retention' }), today, response)
     expect(guess.grid[0]).toBe(0.75)
     expect(guess.grid.at(-1)).toBe(0.95)
   })
@@ -66,7 +66,7 @@ describe('the span the sketch of a target is drawn across', () => {
     expect({ least: guess.grid[0], most: guess.grid.at(-1) }).toStrictEqual(corpus.retentionBounds)
   })
 
-  it('has no places at all until the application has said how far a target goes', () => {
+  it('has no places at all until the application has returned how far a target goes', () => {
     expect(estimateCurve(settings({ goal: 'retention' }), today, NO_BOUNDS).grid).toStrictEqual([])
   })
 })
@@ -84,7 +84,7 @@ const flat = {
   backlog: [],
 }
 
-describe('where a sketch says the preset stands', () => {
+describe('where a sketch says the preset remains', () => {
   it('names no day under a goal that is not a date', () => {
     const guess = estimateCurve(settings({ minutesADay: 20 }), today, BOUNDS)
     expect(guess.days).toStrictEqual([])
@@ -125,7 +125,7 @@ describe('one place of a sketch of minutes', () => {
 })
 
 describe('one place of a sketch of a target', () => {
-  it('costs the day’s minutes at ninety percent, and more the more is asked back', () => {
+  it('costs the day’s minutes at ninety percent, and more the more is requested back', () => {
     const guess = estimateCurve(
       settings({ goal: 'retention', minutesADay: 30, retention: 0.8 }),
       today,

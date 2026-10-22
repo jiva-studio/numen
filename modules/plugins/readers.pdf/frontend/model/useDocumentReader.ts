@@ -59,9 +59,9 @@ export function useDocumentReader(documents: Documents, path: string) {
       if (!open) return
       pages.value = layout.pages
       fingerprint.value = layout.fingerprint
-    } catch (thrown) {
+    } catch (caughtError) {
       if (!open) return
-      error.value = formatErrorMessage(thrown)
+      error.value = formatErrorMessage(caughtError)
     } finally {
       isLoading.value = false
     }

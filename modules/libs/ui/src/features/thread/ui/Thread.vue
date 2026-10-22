@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The conversation. What was said sits in a bubble; what came back is prose on
+ * The conversation. the transcript sits in a bubble; what came back is prose on
  * the surface; what the agent reached for is a quiet line between them.
  *
  * Scrolls on its own, and follows the foot: a turn that arrives is brought
@@ -35,7 +35,7 @@ defineSlots<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const placed = computed(() => placeTurns(props.turns))
+const placedTurns = computed(() => placeTurns(props.turns))
 
 const area = useTemplateRef<HTMLElement>('area')
 
@@ -77,12 +77,12 @@ defineExpose({ toFoot })
     class="thread numen gap-turn flex min-h-0 flex-col overflow-y-auto overscroll-contain font-sans text-base"
     @scroll="onScroll"
   >
-    <p v-if="!placed.length" class="text-hushed m-auto">
+    <p v-if="!placedTurns.length" class="text-hushed m-auto">
       <slot name="silence">Nothing said yet</slot>
     </p>
 
     <ThreadTurn
-      v-for="entry in placed"
+      v-for="entry in placedTurns"
       :key="entry.turn.id"
       :entry="entry"
       @open="emit('open', $event)"

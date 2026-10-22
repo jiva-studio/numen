@@ -328,7 +328,7 @@ export const TheKeyboardComesBack: Story = {
 /**
  * The same week on the dark set of tokens, where the fill of a chip is blended.
  *
- * The blend runs from the ground a chip stands on towards the accent, so a
+ * The blend runs from the ground a chip relies on towards the accent, so a
  * heavier day sits further from a day standing at nothing — and on the dark set
  * that is towards the light.
  */

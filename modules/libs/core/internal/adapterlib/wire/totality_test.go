@@ -18,7 +18,7 @@ func TestEveryModeCrossesBothWays(t *testing.T) {
 	testsupport.RoundTrip(t, ConvertModeFromWire, ConvertModeToWire)
 }
 
-func TestEveryUnitIsWrittenFromOne(t *testing.T) {
+func TestEveryUnitIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Unit]run.Unit{
 		v1.Unit_UNIT_THINGS:  run.Things,
 		v1.Unit_UNIT_BYTES:   run.Bytes,

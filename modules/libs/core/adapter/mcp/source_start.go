@@ -40,7 +40,7 @@ func addSourceRecognise(server *sdk.Server, core Core) {
 			"it is never done on its own, because whether a document's own text is any " +
 			"good cannot be told from the text. Ask for it when a document is a scan, " +
 			"or when what a search returns from one is nonsense. A document asked for " +
-			"while another is being read waits its turn and is never refused, so this " +
+			"while another is being read waits its turn and is never rejected, so this " +
 			"is asked once and no more.",
 	}, newHandler(func(_ context.Context, in sourceStartInput) (sourceStartOutput, error) {
 		//nolint:contextcheck // a recognition runs under the application and goes on after the request that began it

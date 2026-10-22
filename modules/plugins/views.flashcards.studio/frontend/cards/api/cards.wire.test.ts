@@ -2,7 +2,7 @@
  * The vault's decks and stencils, read by the client the schema generates.
  *
  * What is proved here is the crossing: a field the answer leaves at its default
- * arrives as the default, a section a card stands under arrives as a number or
+ * arrives as the default, a section a card is placed under arrives as a number or
  * as nothing at all, and a file the caller read goes back out as the three
  * parts the schema holds it in.
  */
@@ -12,15 +12,15 @@ import { asFailure, asValue } from '@numen/wire'
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
 /** What the window asked for, as the transport wrote it out. */
-let asked: Record<string, unknown>[] = []
+let request: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
 const replyWith = (answer: unknown) => {
-  asked = []
+  request = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_url: string, init: { body: Uint8Array }) => {
-      asked.push(JSON.parse(new TextDecoder().decode(init.body)))
+      request.push(JSON.parse(new TextDecoder().decode(init.body)))
       return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
@@ -29,7 +29,7 @@ const replyWith = (answer: unknown) => {
 }
 
 /** A file the window read, in the one string it carries it as. */
-const read = '12 34 Deck.md'
+const readItem = '12 34 Deck.md'
 
 const { cards } = await import('./cards')
 
@@ -46,12 +46,12 @@ describe('the stencils of a vault', () => {
     })
   })
 
-  it('are asked for without a ceiling where none was named', async () => {
+  it('are requested for without a ceiling where none was named', async () => {
     replyWith({ stencils: [], total: 0 })
 
     await cards.stencils()
 
-    expect(asked[0]).toEqual({})
+    expect(request[0]).toEqual({})
   })
 })
 
@@ -68,8 +68,8 @@ describe('making a deck', () => {
   it('carries the error in the words the window uses', async () => {
     replyWith({ ok: false, error: 'ERROR_CODE_OCCUPIED' })
 
-    const made = await cards.createDeck('Words', 'Decks')
-    expect(made.ok ? null : made.error).toBe('occupied')
+    const createdItem = await cards.createDeck('Words', 'Decks')
+    expect(createdItem.ok ? null : createdItem.error).toBe('occupied')
   })
 })
 
@@ -81,7 +81,7 @@ describe('making a stencil', () => {
       ok: true,
       value: { path: 'Word.md' },
     })
-    expect(asked[0]).toEqual({ title: 'Word', fields: ['Front', 'Back'] })
+    expect(request[0]).toEqual({ title: 'Word', fields: ['Front', 'Back'] })
   })
 })
 
@@ -114,10 +114,10 @@ describe('reading a deck', () => {
 
     const answer = await cards.readDeck('Deck.md')
 
-    if (!answer.ok) throw new Error('the deck was refused')
+    if (!answer.ok) throw new Error('the deck failed')
     expect(answer.value.deck.cards.map((one) => one.sectionIndex)).toEqual([0, null])
     expect(answer.value.deck.cards[0]?.values).toEqual([{ field: 'Front', text: '<p>Entropy</p>' }])
-    expect(answer.value.at).toBe(read)
+    expect(answer.value.at).toBe(readItem)
   })
 
   it('is no deck where the answer carries none', async () => {
@@ -145,8 +145,8 @@ describe('reading a deck', () => {
       },
     })
 
-    const read = await cards.readDeck('Deck.md')
-    expect(read.ok ? read.value.deck.problems : null).toEqual([
+    const readItem = await cards.readDeck('Deck.md')
+    expect(readItem.ok ? readItem.value.deck.problems : null).toEqual([
       { kind: 'markCarriedTwice', card: 2, face: null, field: '', text: 'a1' },
       { kind: 'cardWithoutAStencil', card: null, face: null, field: 'Front', text: '' },
     ])
@@ -175,11 +175,11 @@ describe('writing a deck', () => {
         ],
         sections: [{ name: 'Physics', preamble: '' }],
       },
-      read,
+      readItem,
     )
 
-    expect(asked[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
-    expect(asked[0]?.cards).toEqual([{ mark: 'a1', heading: 'Entropy', stencilLink: 'Word' }])
+    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
+    expect(request[0]?.cards).toEqual([{ mark: 'a1', heading: 'Entropy', stencilLink: 'Word' }])
   })
 
   it('names no file where the window read none', async () => {
@@ -187,7 +187,7 @@ describe('writing a deck', () => {
 
     await cards.writeDeck('Deck.md', { preamble: '', tail: '', cards: [], sections: [] }, null)
 
-    expect(asked[0]?.baseline).toBeUndefined()
+    expect(request[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {
@@ -196,7 +196,7 @@ describe('writing a deck', () => {
     const answer = await cards.writeDeck(
       'Deck.md',
       { preamble: '', tail: '', cards: [], sections: [] },
-      read,
+      readItem,
     )
 
     expect(answer.ok ? null : answer.error.code).toBe('changed')
@@ -204,7 +204,7 @@ describe('writing a deck', () => {
 })
 
 describe('a stencil', () => {
-  it('comes back with every face it shows a card through', async () => {
+  it('arrives back with every face it shows a card through', async () => {
     replyWith({
       stencil: {
         path: 'Word.md',
@@ -241,10 +241,10 @@ describe('a stencil', () => {
         tail: '',
         faces: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
       },
-      read,
+      readItem,
     )
 
-    expect(asked[0]?.fields).toEqual(['Front', 'Back'])
+    expect(request[0]?.fields).toEqual(['Front', 'Back'])
     expect(answer.ok && answer.value.at).toBe('12 34 Word.md')
   })
 })
@@ -260,7 +260,7 @@ describe('renaming a field', () => {
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, read)).toEqual(
+    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, readItem)).toEqual(
       asValue({
         decks: ['Words.md', 'Roots.md'],
         cards: 12,

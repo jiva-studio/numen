@@ -21,39 +21,39 @@ describe('the settings a goal schedules by', () => {
   // it: they are not drawn, so nothing on the screen offers to cut the day
   // short by a measure the person did not name.
   it('is the minutes alone under a goal of minutes', () => {
-    const under = getGoalFields('minutes', DEFAULTS.learned)
-    expect(under).toContain('minutesADay')
-    expect(under).not.toContain('newADay')
-    expect(under).not.toContain('reviewsADay')
-    expect(under).not.toContain('retention')
-    expect(under).not.toContain('byDate')
+    const goalFields = getGoalFields('minutes', DEFAULTS.learned)
+    expect(goalFields).toContain('minutesADay')
+    expect(goalFields).not.toContain('newADay')
+    expect(goalFields).not.toContain('reviewsADay')
+    expect(goalFields).not.toContain('retention')
+    expect(goalFields).not.toContain('byDate')
   })
 
   it('is the target and the counts that close a day under a goal of retention', () => {
-    const under = getGoalFields('retention', DEFAULTS.learned)
-    expect(under).toContain('retention')
-    expect(under).toContain('newADay')
-    expect(under).toContain('reviewsADay')
-    expect(under).not.toContain('minutesADay')
-    expect(under).not.toContain('byDate')
+    const goalFields = getGoalFields('retention', DEFAULTS.learned)
+    expect(goalFields).toContain('retention')
+    expect(goalFields).toContain('newADay')
+    expect(goalFields).toContain('reviewsADay')
+    expect(goalFields).not.toContain('minutesADay')
+    expect(goalFields).not.toContain('byDate')
   })
 
   it('is the day alone under a goal of a date, which nothing else may cut short', () => {
-    const under = getGoalFields('date', DEFAULTS.learned)
-    expect(under).toContain('byDate')
-    expect(under).not.toContain('minutesADay')
-    expect(under).not.toContain('newADay')
-    expect(under).not.toContain('reviewsADay')
+    const goalFields = getGoalFields('date', DEFAULTS.learned)
+    expect(goalFields).toContain('byDate')
+    expect(goalFields).not.toContain('minutesADay')
+    expect(goalFields).not.toContain('newADay')
+    expect(goalFields).not.toContain('reviewsADay')
   })
 
-  it('draws what stands under no goal in particular under all three', () => {
+  it('draws what is placed under no goal in particular under all three', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       expect(getGoalFields(goal, DEFAULTS.learned)).toContain('load')
       expect(getGoalFields(goal, DEFAULTS.learned)).toContain('hasEvenLoad')
     }
   })
 
-  // What a day's budget is spent on is a measure in cards, so it stands under
+  // What a day's budget is spent on is a measure in cards, so it is placed under
   // the goal whose budget is cards and takes no part in the other two.
   it('draws what a budget is spent on under the goal whose budget is cards', () => {
     expect(getGoalFields('retention', DEFAULTS.learned)).toContain('counts')
@@ -72,8 +72,8 @@ describe('the settings a goal schedules by', () => {
 
   it('draws them in the order the receipt keeps them in', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
-      const under = getGoalFields(goal, DEFAULTS.learned)
-      const places = under.map((field) => FIELDS.indexOf(field))
+      const goalFields = getGoalFields(goal, DEFAULTS.learned)
+      const places = goalFields.map((field) => FIELDS.indexOf(field))
       expect(places).toStrictEqual([...places].sort((a, b) => a - b))
     }
   })
@@ -99,11 +99,11 @@ describe('the rule for what is learned', () => {
     expect(getGoalFields('minutes', 'interval')).not.toContain('retention')
   })
 
-  it('stands the rule over the value it reads', () => {
+  it('remains the rule over the value it reads', () => {
     for (const learned of ['interval', 'retention'] as const) {
-      const under = getGoalFields('minutes', learned)
+      const goalFields = getGoalFields('minutes', learned)
       const value = learned === 'interval' ? 'interval' : 'retention'
-      expect(under.indexOf(value)).toBe(under.indexOf('learned') + 1)
+      expect(goalFields.indexOf(value)).toBe(goalFields.indexOf('learned') + 1)
     }
   })
 
@@ -173,7 +173,7 @@ describe('the limits of a control', () => {
     expect(getFieldLimits('minutesADay', bounds)).toStrictEqual({ min: 5, max: 120 })
   })
 
-  it('are in percent for retention, which is held as a share', () => {
+  it('are in percent for retention, which is retained as a share', () => {
     const { min, max } = getFieldLimits('retention', bounds) as { min: number; max: number }
     expect(min).toBeCloseTo(70)
     expect(max).toBeCloseTo(99)
@@ -188,18 +188,18 @@ describe('the limits of a control', () => {
 
 describe('the number a control shows', () => {
   it('is the setting, and a percentage for retention', () => {
-    const held = settings({
+    const target = settings({
       newADay: 7,
       retention: 0.9,
       interval: 30,
       reviewsADay: 50,
       minutesADay: 25,
     })
-    expect(getFieldCount('newADay', held)).toBe(7)
-    expect(getFieldCount('interval', held)).toBe(30)
-    expect(getFieldCount('retention', held)).toBe(90)
-    expect(getFieldCount('reviewsADay', held)).toBe(50)
-    expect(getFieldCount('minutesADay', held)).toBe(25)
+    expect(getFieldCount('newADay', target)).toBe(7)
+    expect(getFieldCount('interval', target)).toBe(30)
+    expect(getFieldCount('retention', target)).toBe(90)
+    expect(getFieldCount('reviewsADay', target)).toBe(50)
+    expect(getFieldCount('minutesADay', target)).toBe(25)
   })
 
   it('is nothing for a field that is no number', () => {
@@ -208,7 +208,7 @@ describe('the number a control shows', () => {
   })
 })
 
-describe('the value a number typed comes to', () => {
+describe('the value a number typed evaluates to', () => {
   it('is the number itself, and a share of one for retention', () => {
     expect(getFieldValue('newADay', 12)).toBe(12)
     expect(getFieldValue('retention', 90)).toBe(0.9)

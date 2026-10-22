@@ -37,7 +37,7 @@ describe('when the material is learned', () => {
         one.get('[data-control="word"]').text(),
       ])
 
-  it('says the days it takes and how much of it stands learned today', () => {
+  it('says the days it takes and how much of it remains learned today', () => {
     const { tab } = mountPresetTab({
       cards: 79,
       at: [point(), point(), point({ learns: 41, learned: 0 }), point()],
@@ -102,7 +102,7 @@ describe('when the material is learned', () => {
 
   // Under a goal of a date the day is the answer and what qualifies it is said
   // in the bubble, so the tiles say what stands learned now and nothing else.
-  it('says what stands learned today under a goal of a date, and no day', () => {
+  it('says what remains learned today under a goal of a date, and no day', () => {
     const { tab } = mountPresetTab(
       {
         goal: 'date',

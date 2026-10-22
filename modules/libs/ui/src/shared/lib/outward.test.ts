@@ -26,7 +26,7 @@ const pressLink = (href: string, inside = '', kind = 'click') => {
 }
 
 describe('a press on a link', () => {
-  it('takes the window nowhere and hands the address to a browser', () => {
+  it('takes the window nowhere and passes the address to a browser', () => {
     const { openLink, prevented } = pressLink('https://evil.example/')
     expect(prevented).toBe(true)
     expect(openLink).toHaveBeenCalledWith('https://evil.example/')
@@ -67,13 +67,13 @@ describe('a press on a link', () => {
     expect(openLink).not.toHaveBeenCalled()
   })
 
-  it('hands a letter to whatever writes one', () => {
+  it('passes a letter to whatever writes one', () => {
     const { openLink, prevented } = pressLink('mailto:someone@example.com')
     expect(prevented).toBe(true)
     expect(openLink).toHaveBeenCalledWith('mailto:someone@example.com')
   })
 
-  it('takes the window nowhere and hands nobody an address it cannot open', () => {
+  it('takes the window nowhere and passes nobody an address it cannot open', () => {
     for (const href of ['note://01J8', 'javascript:alert(1)', 'data:text/html,<h1>x']) {
       const { openLink, prevented } = pressLink(href)
       expect(prevented).toBe(true)
@@ -82,7 +82,7 @@ describe('a press on a link', () => {
     }
   })
 
-  it('is left alone once the window is no longer held', () => {
+  it('is left alone once the window is no longer retained', () => {
     const openLink = vi.fn()
     interceptOutwardLinks(openLink)()
     document.body.innerHTML = '<a href="https://evil.example/">press</a>'
@@ -93,7 +93,7 @@ describe('a press on a link', () => {
   })
 })
 
-describe('a press that reaches the held window without a link', () => {
+describe('a press that reaches the retained window without a link', () => {
   /** The listener the window is held with, and the page it listens on. */
   const hold = () => {
     const root = document.implementation.createHTMLDocument('')
@@ -150,7 +150,7 @@ describe('a press that is answered before the page sees it', () => {
     expect(openLink).toHaveBeenCalledWith('https://evil.example/')
   })
 
-  it('is left alone from a middle button once the window is no longer held', () => {
+  it('is left alone from a middle button once the window is no longer retained', () => {
     const openLink = vi.fn<(href: string) => void>()
     interceptOutwardLinks(openLink)()
     document.body.innerHTML = '<a href="https://evil.example/">press</a>'

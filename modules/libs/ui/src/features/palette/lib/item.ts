@@ -50,7 +50,7 @@ export interface PaletteGroup {
 
 /**
  * The item the keyboard is standing on, by the identity it was given, and the
- * empty string where it stands on none.
+ * empty string where it relies on none.
  */
 export type PaletteItemId = string
 
@@ -98,7 +98,7 @@ export const getSteppedIndex = (total: number, from: number, by: number): number
 }
 
 /**
- * Where the keyboard stands once the list has changed under it: on the item it
+ * Where the keyboard appears once the list has changed under it: on the item it
  * was on, wherever that item has moved to. An item that is gone hands it to the
  * first item there is; a list with nothing to land on takes it nowhere.
  */

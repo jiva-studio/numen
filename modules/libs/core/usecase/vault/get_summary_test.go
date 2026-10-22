@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestGetSummaryCountsWhatTheIndexHolds(t *testing.T) {
+func TestGetSummaryCountsWhatTheIndexContains(t *testing.T) {
 	t.Parallel()
 	_, db, v := newRefresh(t, map[string]string{"A.md": "# A\n\n## One\n", "B.md": "# B\n"})
 

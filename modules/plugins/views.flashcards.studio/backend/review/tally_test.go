@@ -57,7 +57,7 @@ func TestWhatWasAnsweredOnADayIsCounted(t *testing.T) {
 	if got["2026-08-29"].Answered != 3 {
 		t.Errorf("the evening and the night after it come to %+v, want 3", got["2026-08-29"])
 	}
-	if _, held := got["2026-08-31"]; held {
+	if _, target := got["2026-08-31"]; target {
 		t.Errorf("a day whose only answer was taken back is counted: %v", got)
 	}
 	if len(got) != 1 {
@@ -67,20 +67,20 @@ func TestWhatWasAnsweredOnADayIsCounted(t *testing.T) {
 
 // A day says how each of the four was answered on it, because fifty cards a
 // person could not recall is a different day from fifty they could.
-func TestADaySaysHowEachOfTheFourWasAnswered(t *testing.T) {
+func TestADayReturnsHowEachOfTheFourWasAnswered(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	said := func(id string, r review.Rating) review.Answer {
+	response := func(id string, r review.Rating) review.Answer {
 		return review.Answer{
 			ID: id, CardFace: on, At: moment(t, "2026-08-29T09:00:00"), Rating: r,
 		}
 	}
 
 	got := review.GetDayTallies(counting, []review.Answer{
-		said("01A", review.Again),
-		said("01B", review.Good),
-		said("01C", review.Good),
-		said("01D", review.Easy),
-		said("01E", review.Hard),
+		response("01A", review.Again),
+		response("01B", review.Good),
+		response("01C", review.Good),
+		response("01D", review.Easy),
+		response("01E", review.Hard),
 	})
 
 	want := review.Tally{Answered: 5, Again: 1, Hard: 1, Good: 2, Easy: 1}
@@ -92,38 +92,38 @@ func TestADaySaysHowEachOfTheFourWasAnswered(t *testing.T) {
 // makeTallies is days a person answered on, as many as each says.
 func makeTallies(days map[string]int) map[string]review.Tally {
 	out := make(map[string]review.Tally, len(days))
-	for day, answered := range days {
-		out[day] = review.Tally{Answered: answered, Good: answered}
+	for day, reply := range days {
+		out[day] = review.Tally{Answered: reply, Good: reply}
 	}
 	return out
 }
 
 // What a day came to is counted under the preset each card face is grouped
 // under: the answers given, and the time they took.
-func TestWhatADayCameToUnderEachPreset(t *testing.T) {
+func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 	root := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	mantra := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
-	loose := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}
-	under := map[review.CardFaceID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
+	ungrouped := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}
+	underMap := map[review.CardFaceID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
 
-	said := func(id string, face review.CardFaceID, at string, took time.Duration) review.Answer {
+	response := func(id string, face review.CardFaceID, at string, took time.Duration) review.Answer {
 		return review.Answer{
 			ID: id, CardFace: face, At: moment(t, at), Rating: review.Good, Took: took,
 		}
 	}
 	answers := []review.Answer{
-		said("01A", root, "2026-08-29T09:00:00", 6*time.Second),
-		said("01B", mantra, "2026-08-29T21:00:00", 9*time.Second),
+		response("01A", root, "2026-08-29T09:00:00", 6*time.Second),
+		response("01B", mantra, "2026-08-29T21:00:00", 9*time.Second),
 		// The night belongs to the evening it began in.
-		said("01C", root, "2026-08-30T02:00:00", 5*time.Second),
+		response("01C", root, "2026-08-30T02:00:00", 5*time.Second),
 		// A card face nothing groups, an answer taken back, and another day.
-		said("01D", loose, "2026-08-29T09:30:00", 8*time.Second),
-		said("01E", root, "2026-08-29T10:00:00", 7*time.Second),
+		response("01D", ungrouped, "2026-08-29T09:30:00", 8*time.Second),
+		response("01E", root, "2026-08-29T10:00:00", 7*time.Second),
 		{ID: "01F", At: moment(t, "2026-08-29T10:01:00"), Undoes: "01E"},
-		said("01G", root, "2026-08-31T09:00:00", 4*time.Second),
+		response("01G", root, "2026-08-31T09:00:00", 4*time.Second),
 	}
 
-	got := review.GetSpentUnder(counting, "2026-08-29", answers, under, nil)
+	got := review.GetSpentUnder(counting, "2026-08-29", answers, underMap, nil)
 
 	// Each card face is new the first time it is answered, and counts once for
 	// the day however many answers it took.
@@ -141,7 +141,7 @@ func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 // spent is the same time either way.
 func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	under := map[review.CardFaceID]string{on: "Steady.md"}
+	underMap := map[review.CardFaceID]string{on: "Steady.md"}
 
 	answers := make([]review.Answer, 0, 9)
 	for i := range 9 {
@@ -154,14 +154,14 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 		})
 	}
 
-	cards := review.GetSpentUnder(counting, "2026-08-29", answers, under,
+	cards := review.GetSpentUnder(counting, "2026-08-29", answers, underMap,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitCards})
 	want := review.Spent{Answered: 1, New: 1, Took: 36 * time.Second}
 	if cards["Steady.md"] != want {
 		t.Errorf("counting in cards the day came to %+v, want %+v", cards["Steady.md"], want)
 	}
 
-	shows := review.GetSpentUnder(counting, "2026-08-29", answers, under,
+	shows := review.GetSpentUnder(counting, "2026-08-29", answers, underMap,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitShows})
 	want = review.Spent{Answered: 9, New: 1, Reviews: 8, Took: 36 * time.Second}
 	if shows["Steady.md"] != want {
@@ -175,7 +175,7 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 // another machine sorting last by name can carry the answer that came first.
 func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	under := map[review.CardFaceID]string{on: "Steady.md"}
+	underMap := map[review.CardFaceID]string{on: "Steady.md"}
 
 	answers := []review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-31T09:00:00"),
@@ -184,7 +184,7 @@ func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 			Rating: review.Good, Took: 7 * time.Second},
 	}
 
-	got := review.GetSpentUnder(counting, "2026-08-31", answers, under, nil)
+	got := review.GetSpentUnder(counting, "2026-08-31", answers, underMap, nil)
 
 	want := review.Spent{Answered: 1, Reviews: 1, Took: 5 * time.Second}
 	if got["Steady.md"] != want {
@@ -196,12 +196,12 @@ func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 // screen for.
 func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	under := map[review.CardFaceID]string{on: ""}
+	underMap := map[review.CardFaceID]string{on: ""}
 
 	got := review.GetSpentUnder(counting, "2026-08-29", []review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-29T09:00:00"),
 			Rating: review.Good, Took: time.Hour},
-	}, under, nil)
+	}, underMap, nil)
 
 	want := review.Spent{Answered: 1, New: 1, Took: review.LongestAnswer}
 	if got[""] != want {
@@ -307,22 +307,22 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	by := review.NewFSRS()
 
 	var history []review.Answer
-	said := func(id string, face review.CardFaceID, at string, r review.Rating) {
+	response := func(id string, face review.CardFaceID, at string, r review.Rating) {
 		history = append(history, review.Answer{
 			ID: id, CardFace: face, At: moment(t, at), Rating: r,
 		})
 	}
 
 	// One card learned on the first day, and asked again a week later.
-	said("01A", on, "2026-08-01T09:00:00", review.Easy)
-	said("01B", on, "2026-08-08T09:00:00", review.Good)
+	response("01A", on, "2026-08-01T09:00:00", review.Easy)
+	response("01B", on, "2026-08-08T09:00:00", review.Good)
 	// Another card met for the first time on that second day.
-	said("01C", other, "2026-08-08T09:05:00", review.Again)
+	response("01C", other, "2026-08-08T09:05:00", review.Again)
 
 	got := review.OrderAnswers(history).GetRetained(by, counting)
 
 	// The first day is a card being learned, so nothing was tested on it.
-	if _, held := got["2026-08-01"]; held {
+	if _, target := got["2026-08-01"]; target {
 		t.Errorf("a card being learned was counted: %+v", got["2026-08-01"])
 	}
 	// The second is one learned card asked and recalled, and one being met.
@@ -358,7 +358,7 @@ func TestAnAnswerTakenBackIsNotCountedAsRecall(t *testing.T) {
 		{ID: "01C", At: moment(t, "2026-08-08T09:00:30"), Undoes: "01B"},
 	}).GetRetained(by, counting)
 
-	if _, held := got["2026-08-08"]; held {
+	if _, target := got["2026-08-08"]; target {
 		t.Errorf("an answer taken back was counted: %+v", got["2026-08-08"])
 	}
 }

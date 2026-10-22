@@ -54,7 +54,7 @@ func writeFolderOfNotes(t *testing.T, root, name string, notes int) string {
 // TestAFolderNewToTheWatchIsHandedOverRatherThanWalked. The one goroutine that
 // empties the backlog walks nothing: a folder new to the watch is handed back
 // as a name, and it is walked beside the backlog that goes on emptying.
-func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
+func TestAFolderNewToTheWatchIsHandedOverInsteadOfWalked(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
 	at := writeFolderOfNotes(t, root, "library", 3)
 
@@ -69,16 +69,16 @@ func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
 		t.Fatalf("the folder was not handed over to be walked: %q", walk)
 	}
 
-	held, whole := shape.getPathsUnder(t.Context(), walk)
+	target, whole := shape.getPathsUnder(t.Context(), walk)
 	if whole {
 		t.Fatal("a folder of three notes was answered as the whole vault")
 	}
-	if len(held) != 3 {
-		t.Errorf("the walk of the folder found %v", held)
+	if len(target) != 3 {
+		t.Errorf("the walk of the folder found %v", target)
 	}
 }
 
-// TestAWalkStopsWhenTheWatchDoes. A vault being let go of is not a vault to go
+// TestAWalkStopsWhenTheWatchDoes. A vault being release is not a vault to go
 // on reading the disk for.
 func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
@@ -86,8 +86,8 @@ func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 
 	ctx, stop := context.WithCancel(t.Context())
 	stop()
-	if held, whole := shape.getPathsUnder(ctx, at); whole || len(held) != 0 {
-		t.Errorf("a walk under a context that is done found %v (whole %v)", held, whole)
+	if target, whole := shape.getPathsUnder(ctx, at); whole || len(target) != 0 {
+		t.Errorf("a walk under a context that is done found %v (whole %v)", target, whole)
 	}
 }
 
@@ -99,22 +99,22 @@ func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 
 	raw := make(chan notify.EventInfo, 4)
 	changes := make(chan []string)
-	lost := make(chan struct{}, 1)
+	missing := make(chan struct{}, 1)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	waiting := newQueue(64)
-	go forwardEvents(ctx, raw, waiting)
-	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
+	queue := newQueue(64)
+	go forwardEvents(ctx, raw, queue)
+	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
 	raw <- event{path: at}
 
 	select {
-	case told := <-changes:
-		slices.Sort(told)
-		if len(told) != 2 {
-			t.Fatalf("the folder that arrived was reported as %v", told)
+	case change := <-changes:
+		slices.Sort(change)
+		if len(change) != 2 {
+			t.Fatalf("the folder that arrived was reported as %v", change)
 		}
-	case <-lost:
+	case <-missing:
 		t.Fatal("a folder of two notes was answered as the whole vault")
 	case <-time.After(10 * time.Second):
 		t.Fatal("the folder that arrived was never reported")

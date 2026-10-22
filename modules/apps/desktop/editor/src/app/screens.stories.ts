@@ -184,7 +184,7 @@ export const Settings: Story = {
 
 /* A preset. ---------------------------------------------------------------- */
 
-/** One place on the curve: what a day there costs, and what it comes to. */
+/** One place on the curve: what a day there costs, and what it evaluates to. */
 const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
@@ -452,8 +452,8 @@ interface Cue {
 const cue = (from: number, to: number, text: string): Cue => ({ text, from, to })
 
 /**
- * What was said, line by line. Enough of it to fill the pane it is read in,
- * because a transcript is what a person scrolls through rather than glances at.
+ * the transcript, line by line. Enough of it to fill the pane it is read in,
+ * because a transcript is what a person scrolls through and not glances at.
  */
 const SAID: readonly string[] = [
   'Right — so where we left off was the counting argument, and I want to do it once ' +
@@ -543,7 +543,7 @@ export const NoTranscript: Story = {
 }
 
 /**
- * The same recording with the run going. The player stands where it stands in
+ * The same recording with the run going. The player stands at its current position in
  * every other recording, and only what is below it says a run is on.
  */
 export const Transcribing: Story = {
@@ -636,11 +636,11 @@ const files = (open: readonly string[]) => {
     importUrls: () => Promise.resolve([]),
     showError: fn(),
   })
-  const read = (async () => {
+  const readItem = (async () => {
     await list.openFolder(ROOT)
     for (const at of open) await list.openFolder(at)
   })()
-  return { state, read }
+  return { state, read: readItem }
 }
 
 /** A frame drawn, and the layout it has settled into. */
@@ -648,7 +648,7 @@ const waitForFrame = () => new Promise((then) => requestAnimationFrame(() => the
 
 /* A scanned book, for the run that reads one. --------------------------------
  *
- * The pages are drawn here rather than fetched, so the picture of a book is a
+ * The pages are drawn here and not fetched, so the picture of a book is a
  * book. They are broken into lines by hand, because what draws a page cannot
  * break one.
  */
@@ -703,7 +703,7 @@ const escapeXml = (line: string) =>
 
 const createPage = (page: number): string => {
   const lines = LINES[page - OPENS_AT] ?? []
-  const set = lines
+  const activeSet = lines
     .map((line, at) => {
       const y = FIRST + at * LEADING
       const weight = at === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
@@ -711,13 +711,13 @@ const createPage = (page: number): string => {
     })
     .join('')
   const number = `<text x="${PAGE.width / 2}" y="${PAGE.height - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#5a5a5a">${page + 1}</text>`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE.width}" height="${PAGE.height}"><rect width="100%" height="100%" fill="#fbfaf7"/>${set}${number}</svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE.width}" height="${PAGE.height}"><rect width="100%" height="100%" fill="#fbfaf7"/>${activeSet}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
 /**
  * Where one line of the drawn page stands, in fractions of it. What was read
- * off a scan is highlighted where it sits on the paper, so a passage is a
+ * off a scan is highlighted where it is located on the paper, so a passage is a
  * rectangle a line at a time and not a block.
  */
 const overLine = (at: number, ends: number) => ({
@@ -742,7 +742,7 @@ const BOOK: Documents = {
 
 /**
  * A files tab with the menu standing open on one row, as a right-click leaves
- * it. Where the row is drawn is measured, so the menu stands under the name it
+ * it. Where the row is drawn is measured, so the menu is placed under the name it
  * was asked for on however the tree happens to be laid out.
  */
 const createMenuStory = (
@@ -823,7 +823,7 @@ export const Recognised: Story = {
         pane: DocumentTab,
         state,
         // The reading a search sent a person into: the book turns to the page
-        // the passage stands on, and the passage is highlighted where it stands.
+        // the passage relies on, and the passage is highlighted at its current position.
         open: () => state.focusSpans({ from: 0, to: 1 }),
       },
     )

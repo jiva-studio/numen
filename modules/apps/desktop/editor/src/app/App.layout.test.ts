@@ -26,7 +26,7 @@ import {
 } from '@/testing/window'
 
 describe('the window as it opens', () => {
-  it('draws a plex in the room, and an agent in front of the files beside it', async () => {
+  it('draws a plex in the room, and an agent in front of the files alongside it', async () => {
     const window = await mountWindow()
 
     expect(paneKinds(window)).toStrictEqual([['plex'], ['agent', 'files']])
@@ -44,7 +44,7 @@ describe('the window as it opens', () => {
     expect(root.kind === 'branch' ? root.sizes : []).toStrictEqual([0.72, 0.28])
   })
 
-  it('hands the tree what the root of the vault holds', async () => {
+  it('passes the tree what the root of the vault holds', async () => {
     const window = await mountWindow()
 
     expect(
@@ -73,7 +73,7 @@ describe('the window holding no tab', () => {
     expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
-  it('comes to the same screen once every tab it opened with is closed', async () => {
+  it('evaluates to the same screen once every tab it opened with is closed', async () => {
     const window = await mountWindow()
 
     await closeEveryTab(window)
@@ -82,7 +82,7 @@ describe('the window holding no tab', () => {
     expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
-  it('draws the vault the list is showing on it, said to be the one in front', async () => {
+  it('draws the vault the list is showing on it, returned to be the one in front', async () => {
     const window = await mountWindow()
 
     await closeEveryTab(window)
@@ -135,7 +135,7 @@ describe('a letter pressed on the welcome screen', () => {
     expect(requests.opened).toStrictEqual(['physics'])
   })
 
-  it('shows nothing where no vault stands at the letter', async () => {
+  it('shows nothing where no vault remains at the letter', async () => {
     await two()
 
     await press('c')
@@ -172,7 +172,7 @@ describe('the vault offered below the list', () => {
     })
   })
 
-  it('is asked for by that keystroke, which is a folder chosen on this machine', async () => {
+  it('is requested for by that keystroke, which is a folder chosen on this machine', async () => {
     listed.showing = ''
     await mountWindow()
 
@@ -207,14 +207,14 @@ describe('a row activated in the files', () => {
     expect(window.findComponent(DocumentTab).exists()).toBe(false)
   })
 
-  it('opens nothing for a folder, which turns where it stands', async () => {
+  it('opens nothing for a folder, which turns at its current position', async () => {
     const window = await activateRow('physics')
 
     expect(paneKinds(window).flat()).not.toContain('note')
   })
 })
 
-describe('a tab asked to close', () => {
+describe('a tab requested to close', () => {
   it('is told to hold while a kind with something to finish is still closing it', async () => {
     said.types['Root.md'] = 'deck'
     const window = await mountWindow()
@@ -225,14 +225,14 @@ describe('a tab asked to close', () => {
     const deckId = getTabs(window).find((tab) => tab.id.startsWith('deck:'))?.id
     expect(deckId).toBeTruthy()
 
-    let held = false
+    let target = false
     window.findComponent(WorkspaceLayout).vm.$emit('close', deckId, () => {
-      held = true
+      target = true
     })
 
     // A deck tab finishes its own close asynchronously, so the layout is
-    // told to hold it open rather than drop it from the tree on the spot.
-    expect(held).toBe(true)
+    // told to hold it open and not drop it from the tree on the spot.
+    expect(target).toBe(true)
   })
 })
 
@@ -266,7 +266,7 @@ describe('a file dragged out of the tree', () => {
     expect(getDragged(window)).toStrictEqual(['physics/Entropy.md'])
   })
 
-  it('is nothing once it has been let go of, wherever that was', async () => {
+  it('is nothing once it has been release, wherever that was', async () => {
     const window = await dragRows(['physics/Entropy.md'])
 
     window.findComponent(Tree).vm.$emit('drop')

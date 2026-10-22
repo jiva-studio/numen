@@ -86,15 +86,15 @@ const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
  */
 const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition => {
   const loading = getState(tab) === 'loading'
-  const stale = generation !== tab.reading
+  const isStale = generation !== tab.reading
   if (answer.kind === 'error') {
-    return loading && !stale ? { tab: { ...tab, error: answer.error }, effects: [] } : keepTab(tab)
+    return loading && !isStale ? { tab: { ...tab, error: answer.error }, effects: [] } : keepTab(tab)
   }
   if (answer.kind === 'missing') {
-    if (stale) return keepTab(tab)
+    if (isStale) return keepTab(tab)
     return loading ? applyBody(tab, '', null) : keepTab({ ...tab, isDeleted: true })
   }
-  return applyReadBody(tab, answer, stale)
+  return applyReadBody(tab, answer, isStale)
 }
 
 /** The text the file holds, taken where the tab holds nothing unsaved of its own. */
@@ -164,7 +164,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
       effects: [],
     }
   }
-  const written: Tab = {
+  const content: Tab = {
     ...tab,
     written: tab.pendingWrite,
     filePath: answer.at,
@@ -172,7 +172,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
     since: null,
     isDeleted: false,
   }
-  return tab.hasPendingWrite ? beginWrite(written, getBaseline(written)) : keepTab(written)
+  return tab.hasPendingWrite ? beginWrite(content, getBaseline(content)) : keepTab(content)
 }
 
 const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[]): Transition => {
@@ -182,10 +182,10 @@ const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[
   const mine = paths.length === 0 || paths.includes(next.path) || went !== undefined
   const state = getState(next)
   if (!mine || (state !== 'clean' && state !== 'gone')) return keepTab(next)
-  const reading = next.reading + 1
+  const nextReading = next.reading + 1
   return {
-    tab: { ...next, reading },
-    effects: [{ kind: 'read', path: next.path, generation: reading }],
+    tab: { ...next, reading: nextReading },
+    effects: [{ kind: 'read', path: next.path, generation: nextReading }],
   }
 }
 
@@ -225,10 +225,10 @@ const applyKeep = (tab: Tab): Transition => {
 const applyTake = (tab: Tab): Transition => {
   const state = getState(tab)
   if (state !== 'stale') return keepTab(tab)
-  const reading = tab.reading + 1
+  const nextReading = tab.reading + 1
   return {
-    tab: { ...tab, reading },
-    effects: [{ kind: 'read', path: tab.path, generation: reading }],
+    tab: { ...tab, reading: nextReading },
+    effects: [{ kind: 'read', path: tab.path, generation: nextReading }],
   }
 }
 

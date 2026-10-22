@@ -32,7 +32,7 @@ var VectorBatchSize = 1000
 // and invisible to the question of what has no vector.
 //
 // A vector naming a chunk the index no longer holds is written nowhere, and
-// what is left of the group is written as it stands.
+// what is left of the group is written currently.
 func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	if len(vectors) == 0 {
 		return nil

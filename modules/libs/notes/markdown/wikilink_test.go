@@ -19,7 +19,7 @@ type wikilinkCase struct {
 	Found []string `json:"found"`
 }
 
-func TestTheWikilinksInALineAreTheOnesTheSchemaSays(t *testing.T) {
+func TestTheWikilinksInALineAreTheOnesTheSchemaReturns(t *testing.T) {
 	raw, err := os.ReadFile(wikilinkCorpus)
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +43,7 @@ func TestTheWikilinksInALineAreTheOnesTheSchemaSays(t *testing.T) {
 	}
 }
 
-func TestAWikilinkSaysWhereItStandsAndWhatIsInsideIt(t *testing.T) {
+func TestAWikilinkReturnsWhereItExistsAndWhatIsInsideIt(t *testing.T) {
 	found := markdown.WikilinksIn("Under [[Entropy|the other way]] it sits.")
 	if len(found) != 1 {
 		t.Fatalf("got %d wikilinks", len(found))

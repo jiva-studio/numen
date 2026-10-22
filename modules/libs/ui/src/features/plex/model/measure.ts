@@ -181,8 +181,8 @@ function textWidths(context: CanvasRenderingContext2D, font: string): (text: str
   const widths = new Map<string, number>()
 
   return (text) => {
-    const known = widths.get(text)
-    if (known !== undefined) return known
+    const recognized = widths.get(text)
+    if (recognized !== undefined) return recognized
 
     context.font = font
     const width = context.measureText(text).width

@@ -85,17 +85,17 @@ func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	known, listErr := shared.GetVaults()
-	bound, withErr := shared.With(v.ID)
+	recognized, listErr := shared.GetVaults()
+	linked, withErr := shared.With(v.ID)
 	_, unknown := shared.With("nobody")
 
-	if listErr != nil || len(known) != 1 || known[0].ID != v.ID {
-		t.Errorf("the vaults were %v (%v)", known, listErr)
+	if listErr != nil || len(recognized) != 1 || recognized[0].ID != v.ID {
+		t.Errorf("the vaults were %v (%v)", recognized, listErr)
 	}
 	if withErr != nil {
 		t.Fatal(withErr)
 	}
-	if got, showing := bound.GetVault(); !showing || got.ID != v.ID {
+	if got, showing := linked.GetVault(); !showing || got.ID != v.ID {
 		t.Errorf("the bound vault was %v", got)
 	}
 	if !errors.Is(unknown, fs.ErrNotExist) {
@@ -103,10 +103,10 @@ func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
 	}
 }
 
-func TestAWriteByAPluginIsToldToTheWindow(t *testing.T) {
+func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
 	_, current, assembly := openPluginVault(t, note)
-	told := 0
-	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Written: func() { told++ }})
+	notifyCount := 0
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Written: func() { notifyCount++ }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestAWriteByAPluginIsToldToTheWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if told != 1 {
-		t.Errorf("the window was told %d times", told)
+	if notifyCount != 1 {
+		t.Errorf("the window was told %d times", notifyCount)
 	}
 }

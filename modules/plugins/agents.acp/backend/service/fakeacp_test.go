@@ -42,7 +42,7 @@ func readRecord(t *testing.T, record string) map[string][]map[string]any {
 	if err != nil {
 		t.Fatal(err)
 	}
-	seen := map[string][]map[string]any{}
+	observed := map[string][]map[string]any{}
 	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
 		var message map[string]any
 		if err := json.Unmarshal([]byte(line), &message); err != nil {
@@ -52,9 +52,9 @@ func readRecord(t *testing.T, record string) map[string][]map[string]any {
 		if method == "" {
 			method = "reply"
 		}
-		seen[method] = append(seen[method], message)
+		observed[method] = append(observed[method], message)
 	}
-	return seen
+	return observed
 }
 
 func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
@@ -175,7 +175,7 @@ func (a *fakeAgent) answerPrompt(id any) {
 	}
 	stopReason := "end_turn"
 	if a.behaviour == "refuse" {
-		stopReason = "refusal"
+		stopReason = "rejected"
 	}
 	a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": stopReason}})
 }

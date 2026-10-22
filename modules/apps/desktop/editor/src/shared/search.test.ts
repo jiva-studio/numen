@@ -15,12 +15,12 @@ afterEach(() => {
 
 const deferred = <T>() => {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((done) => (resolve = done))
+  const promise = new Promise<T>((isDone) => (resolve = isDone))
   return { promise, resolve }
 }
 
 describe('a text typed', () => {
-  it('is asked once, after the pause that follows the last keystroke', async () => {
+  it('is requested once, after the pause that follows the last keystroke', async () => {
     const run = vi.fn(async (_query: string) => {})
     const { ask } = useDebouncedAsk()
 
@@ -46,7 +46,7 @@ describe('a text typed', () => {
     expect(run).not.toHaveBeenCalled()
   })
 
-  it('is let go of by a drop', async () => {
+  it('is release by a drop', async () => {
     const run = vi.fn(async (_query: string) => {})
     const { ask, drop } = useDebouncedAsk()
 

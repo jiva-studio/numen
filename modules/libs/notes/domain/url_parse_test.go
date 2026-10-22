@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-func TestAPageKeepsWhatSaysWhichPageItIs(t *testing.T) {
+func TestAPagePreservesWhatReturnsWhichPageItIs(t *testing.T) {
 	for _, one := range []struct {
 		written string
 		want    string
@@ -38,7 +38,7 @@ func TestAPageKeepsWhatSaysWhichPageItIs(t *testing.T) {
 // scheme reaching this machine is refused where it is read, so nothing later
 // has to remember to.
 func TestOnlyWhatCanBeFetchedIsAnAddress(t *testing.T) {
-	for _, written := range []string{
+	for _, content := range []string{
 		"",
 		"   ",
 		"file:///etc/passwd",
@@ -51,8 +51,8 @@ func TestOnlyWhatCanBeFetchedIsAnAddress(t *testing.T) {
 		"https:///a",
 		"http://\x00",
 	} {
-		if _, err := domain.ParseURL(written); !errors.Is(err, domain.ErrNotAURL) {
-			t.Errorf("%q was read as an address", written)
+		if _, err := domain.ParseURL(content); !errors.Is(err, domain.ErrNotAURL) {
+			t.Errorf("%q was read as an address", content)
 		}
 	}
 }
@@ -60,21 +60,21 @@ func TestOnlyWhatCanBeFetchedIsAnAddress(t *testing.T) {
 // Reading an address twice reaches what reading it once did, so a note rewritten
 // from what it holds keeps the artifacts it names.
 func TestReadingWhatWasReadReachesTheSame(t *testing.T) {
-	for _, written := range []string{
+	for _, content := range []string{
 		"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 		"https://example.com/a?b=2&a=1",
 		"https://example.com/",
 	} {
-		once, err := domain.ParseURL(written)
+		once, err := domain.ParseURL(content)
 		if err != nil {
-			t.Fatalf("%q: %v", written, err)
+			t.Fatalf("%q: %v", content, err)
 		}
 		twice, err := domain.ParseURL(string(once))
 		if err != nil {
 			t.Fatalf("%q: %v", string(once), err)
 		}
 		if once != twice {
-			t.Errorf("%q reached %v, and reading that reached %v", written, once, twice)
+			t.Errorf("%q reached %v, and reading that reached %v", content, once, twice)
 		}
 	}
 }

@@ -7,9 +7,9 @@ import type { Placement } from '../lib/arrange/placement'
 export const ring: Placement = {
   name: 'ring',
   place(nodesByRelation) {
-    const around = Object.values(nodesByRelation).flat()
-    return around.map((node, index) => {
-      const angle = (index / around.length) * Math.PI * 2 - Math.PI / 2
+    const aroundNodes = Object.values(nodesByRelation).flat()
+    return aroundNodes.map((node, index) => {
+      const angle = (index / aroundNodes.length) * Math.PI * 2 - Math.PI / 2
       return {
         ...node,
         x: Math.cos(angle) * 300,

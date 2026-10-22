@@ -103,7 +103,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 // TestAScanSeesBooksBesideNotes. A book found in a vault is reported without
 // anybody asking, and it is not counted as a note: what `Seen` means did not
 // change when a second kind of source became visible.
-func TestAScanSeesBooksBesideNotes(t *testing.T) {
+func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	root := testsupport.CopyVault(t)
@@ -138,7 +138,7 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 // TestAFormatNothingExtractsIsNotSeenAtAll. Processing is triggered by type, so
 // a file of a format no reader handles is neither a note nor a source of
 // another kind, however much of a vault it is.
-func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
+func TestAFormatNothingExtractsIsNotObservedAtAll(t *testing.T) {
 	t.Parallel()
 	root := testsupport.CopyVault(t)
 	if err := os.WriteFile(filepath.Join(root, "assets", "scan.png"), []byte("PNG"), 0o644); err != nil {
@@ -295,8 +295,8 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("new text not searchable: %v", matches)
 	}
 	// The vault is authoritative: what is not on disk is not in the index.
-	if stale := searchNotes(t, db, v, "windows"); len(stale) != 0 {
-		t.Errorf("deleted note still searchable: %v", stale)
+	if staleNotes := searchNotes(t, db, v, "windows"); len(staleNotes) != 0 {
+		t.Errorf("deleted note still searchable: %v", staleNotes)
 	}
 }
 
@@ -420,14 +420,14 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 
 	queries := db.Queries()
 
-	known, err := queries.GetFingerprints(ctx, first.ID)
+	recognized, err := queries.GetFingerprints(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 1 {
-		t.Errorf("the first vault knows %d files, want 1: %v", len(known), known)
+	if len(recognized) != 1 {
+		t.Errorf("the first vault knows %d files, want 1: %v", len(recognized), recognized)
 	}
-	if _, leaked := known["extra.md"]; leaked {
+	if _, leaked := recognized["extra.md"]; leaked {
 		t.Error("the first vault knows a file that belongs to the second")
 	}
 
@@ -492,11 +492,11 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 
 type refusingReader struct {
 	port.VaultReader
-	refused string
+	failingPath string
 }
 
 func (r refusingReader) Read(ctx context.Context, path string) ([]byte, error) {
-	if path == r.refused {
+	if path == r.failingPath {
 		return nil, fs.ErrPermission
 	}
 	return r.VaultReader.Read(ctx, path)
@@ -504,7 +504,7 @@ func (r refusingReader) Read(ctx context.Context, path string) ([]byte, error) {
 
 type refusingReaders struct {
 	port.VaultReaders
-	refused string
+	failingPath string
 }
 
 func (r refusingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
@@ -512,7 +512,7 @@ func (r refusingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return refusingReader{VaultReader: reader, refused: r.refused}, nil
+	return refusingReader{VaultReader: reader, failingPath: r.failingPath}, nil
 }
 
 // A permission bit, a broken ACL, a device that went away. A refresh counts
@@ -523,7 +523,7 @@ func TestAFileNobodyCanReadDoesNotStopAScan(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	scan := scanner(refusingReaders{VaultReaders: readers, refused: "notes/Entropy.md"}, db)
+	scan := scanner(refusingReaders{VaultReaders: readers, failingPath: "notes/Entropy.md"}, db)
 	res, err := scan.Execute(ctx, v)
 	if err != nil {
 		t.Fatalf("one unreadable file ended the scan: %v", err)
@@ -552,8 +552,8 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gone := "notes/Entropy.md"
-	res, err := scanner(vanishingReaders{VaultReaders: readers, gone: gone}, db).Execute(ctx, v)
+	removed := "notes/Entropy.md"
+	res, err := scanner(vanishingReaders{VaultReaders: readers, gone: removed}, db).Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,11 +561,11 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Errorf("removed %d notes, want 0", res.Removed)
 	}
 
-	known, err := db.Queries().GetFingerprints(ctx, v.ID)
+	recognized, err := db.Queries().GetFingerprints(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, kept := known[gone]; !kept {
+	if _, isRecognized := recognized[removed]; !isRecognized {
 		t.Error("a note that was briefly absent was dropped from the index")
 	}
 	if matches := searchNotes(t, db, v, "uncertainty"); len(matches) != 1 {
@@ -609,15 +609,15 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 
 	// Asked of the order the notes reach the index in: what the index holds
 	// part-way through is whole groups, which says nothing about order.
-	written := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Vaults(), written, db.Queries(), db.Maintenance())
+	content := &groupedWrites{}
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.Queries(), db.Maintenance())
 	scan.Walks = db.Walks()
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
 
-	if len(written.groups) == 0 || written.groups[0][0] != "edge/unicode.md" {
-		t.Errorf("first note indexed was %v, want edge/unicode.md", written.groups)
+	if len(content.groups) == 0 || content.groups[0][0] != "edge/unicode.md" {
+		t.Errorf("first note indexed was %v, want edge/unicode.md", content.groups)
 	}
 }
 
@@ -644,12 +644,12 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
-	known, err := db.Queries().GetFingerprints(t.Context(), v.ID)
+	recognized, err := db.Queries().GetFingerprints(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(known) != 500 {
-		t.Errorf("a cancelled scan left %d notes indexed, want the 500 it committed", len(known))
+	if len(recognized) != 500 {
+		t.Errorf("a cancelled scan left %d notes indexed, want the 500 it committed", len(recognized))
 	}
 }
 
@@ -657,7 +657,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 // A warm scan opens no file, so nothing refuses the cancelled context on the
 // scan's behalf and it has to notice by itself.
 //
-// Cancelled part-way rather than before it starts: cancelled up front, the
+// Cancelled part-way and not before it starts: cancelled up front, the
 // first query refuses and the loop is never reached, so the check it is written
 // for is never the thing that stopped it.
 func TestAWarmScanStopsWhenCancelled(t *testing.T) {
@@ -672,9 +672,9 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	warm := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
+	warmScanner := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
 
-	res, err := warm.Execute(ctx, v)
+	res, err := warmScanner.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled warm scan returned %v", err)
 	}

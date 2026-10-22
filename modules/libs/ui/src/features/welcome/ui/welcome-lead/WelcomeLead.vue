@@ -11,7 +11,7 @@ import type { WelcomeAction } from '../../lib/welcome'
 
 withDefaults(
   defineProps<{
-    /** What stands under the mark, telling a person which window they opened. */
+    /** What is placed under the mark, telling a person which window they opened. */
     name?: string
     /** The ways in, above the list. */
     ways?: readonly WelcomeAction[]

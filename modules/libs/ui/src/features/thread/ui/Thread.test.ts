@@ -14,7 +14,7 @@ const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn 
 const thread = (turns: readonly Turn[]) => mount(Thread, { props: { turns } })
 
 describe('what is drawn', () => {
-  it('says nothing was said yet on an empty thread', () => {
+  it('says nothing was returned yet on an empty thread', () => {
     expect(thread([]).text()).toContain('Nothing said yet')
   })
 
@@ -175,7 +175,7 @@ describe('following the foot', () => {
     expect(one.at()).toBe(3 * SCREEN)
   })
 
-  it('is asked back to the foot, wherever it was left', async () => {
+  it('is requested back to the foot, wherever it was left', async () => {
     const one = createScrollingThread([createAsked('1'), createAnswered('2'), createAsked('3')])
     await one.reads(0)
 
@@ -188,7 +188,7 @@ describe('following the foot', () => {
 /**
  * The step each part of a turn is set at.
  *
- * What was said and the line about work are set in the interface's own text,
+ * the transcript and the line about work are set in the interface's own text,
  * and an answer is marked-up text a shade above it. The quiet step is for what
  * is said about a turn beside it.
  */
@@ -199,7 +199,7 @@ describe('the step each part is set at', () => {
     expect(thread([]).classes()).toContain('text-base')
   })
 
-  it('leaves what was said at the step the thread is set in', () => {
+  it('leaves the transcript at the step the thread is set in', () => {
     expect(
       thread([createAsked('1')])
         .find('.thread__body')

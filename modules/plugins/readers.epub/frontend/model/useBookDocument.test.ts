@@ -14,7 +14,7 @@ type Pending = { resolve: (markup: string) => void; reject: (reason: Error) => v
 const create = (open = { value: true }) => {
   const pending = new Map<string, Pending>()
   const urls: string[] = []
-  const written: Array<[string, string | undefined]> = []
+  const content: Array<[string, string | undefined]> = []
   const books: Books = {
     getBook: vi.fn(),
     readMarkup: (_path, document) =>
@@ -24,42 +24,42 @@ const create = (open = { value: true }) => {
       return `/served/${name}`
     },
   }
-  const writeMessage: MessageWriter = (text, kind) => written.push([text, kind])
-  const held = useBookDocument(books, 'library/b.epub', {
+  const writeMessage: MessageWriter = (text, kind) => content.push([text, kind])
+  const target = useBookDocument(books, 'library/b.epub', {
     fingerprint: ref('print-1'),
     writeMessage,
     isOpen: () => open.value,
   })
-  return { held, pending, urls, written }
+  return { held: target, pending, urls, messages: content }
 }
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('a book with nothing drawn', () => {
   it('reads nowhere and names no document', () => {
     const { held } = create()
 
-    expect(held.reading.value).toStrictEqual({ from: 0, to: 0 })
+    expect(held.documentSpan.value).toStrictEqual({ from: 0, to: 0 })
     expect(held.drawn.value).toBe('')
     expect(held.markup.value).toBe('')
   })
 })
 
 describe('a document drawn', () => {
-  it('stands as the one being read, its pictures pointed where the book serves them', async () => {
+  it('remains as the one being read, its pictures pointed where the book serves them', async () => {
     const { held, pending, urls } = create()
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     pending.get(FIRST.path)?.resolve('<img src="pics/a.png">')
-    await drawing
+    await drawTask
 
     expect(held.drawn.value).toBe(FIRST.path)
-    expect(held.reading.value).toStrictEqual(FIRST.span)
+    expect(held.documentSpan.value).toStrictEqual(FIRST.span)
     expect(held.markup.value).toContain('src="/served/pics/a.png"')
     expect(urls).toStrictEqual(['library/b.epub|pics/a.png|print-1'])
   })
 
-  it('is dropped when a newer document was asked for meanwhile', async () => {
+  it('is dropped when a newer document was requested for meanwhile', async () => {
     const { held, pending } = create()
 
     const older = held.draw(FIRST)
@@ -77,10 +77,10 @@ describe('a document drawn', () => {
     const open = { value: true }
     const { held, pending } = create(open)
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     open.value = false
     pending.get(FIRST.path)?.resolve('<p>first</p>')
-    await drawing
+    await drawTask
 
     expect(held.drawn.value).toBe('')
     expect(held.markup.value).toBe('')
@@ -88,19 +88,19 @@ describe('a document drawn', () => {
 })
 
 describe('a document that will not be read', () => {
-  it('is said as an error', async () => {
-    const { held, pending, written } = create()
+  it('is returned as an error', async () => {
+    const { held, pending, messages } = create()
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     pending.get(FIRST.path)?.reject(new Error('gone'))
-    await drawing
+    await drawTask
 
-    expect(written).toHaveLength(1)
-    expect(written[0]?.[1]).toBe('error')
+    expect(messages).toHaveLength(1)
+    expect(messages[0]?.[1]).toBe('error')
   })
 
-  it('is not said when a newer document was asked for meanwhile', async () => {
-    const { held, pending, written } = create()
+  it('is not returned when a newer document was requested for meanwhile', async () => {
+    const { held, pending, messages } = create()
 
     const older = held.draw(FIRST)
     void held.draw(SECOND)
@@ -108,18 +108,18 @@ describe('a document that will not be read', () => {
     await older
     await settle()
 
-    expect(written).toStrictEqual([])
+    expect(messages).toStrictEqual([])
   })
 
-  it('is not said once the tab is closed', async () => {
+  it('is not returned once the tab is closed', async () => {
     const open = { value: true }
-    const { held, pending, written } = create(open)
+    const { held, pending, messages } = create(open)
 
-    const drawing = held.draw(FIRST)
+    const drawTask = held.draw(FIRST)
     open.value = false
     pending.get(FIRST.path)?.reject(new Error('gone'))
-    await drawing
+    await drawTask
 
-    expect(written).toStrictEqual([])
+    expect(messages).toStrictEqual([])
   })
 })

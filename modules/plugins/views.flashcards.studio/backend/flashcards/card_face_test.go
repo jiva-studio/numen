@@ -26,7 +26,7 @@ func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 
 // One deck that cannot be read is not a reason to refuse a person the rest of
 // their cards. What was wrong with it is settled in the editor.
-func TestADeckThatCannotBeReadLeavesTheOthersStanding(t *testing.T) {
+func TestADeckThatCannotBeReadPreservesTheOthersActive(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
@@ -44,17 +44,17 @@ func TestADeckThatCannotBeReadLeavesTheOthersStanding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	left, err := s.standings.Execute(t.Context(), s.vault)
+	remaining, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
-		t.Fatalf("one deck gone refused the whole vault: %v", err)
+		t.Fatalf("one deck gone failed the whole vault: %v", err)
 	}
-	if len(left) == 0 {
+	if len(remaining) == 0 {
 		t.Error("one deck gone left the vault standing for nothing")
 	}
-	if len(left) >= len(whole) {
-		t.Errorf("the gone deck still stands: %d faces of %d", len(left), len(whole))
+	if len(remaining) >= len(whole) {
+		t.Errorf("the gone deck still stands: %d faces of %d", len(remaining), len(whole))
 	}
-	for _, one := range left {
+	for _, one := range remaining {
 		if one.Deck == "decks/Words.md" {
 			t.Errorf("a card of the gone deck stands: %+v", one)
 		}

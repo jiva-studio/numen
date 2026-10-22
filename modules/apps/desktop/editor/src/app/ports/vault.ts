@@ -55,7 +55,7 @@ export interface VaultPort {
     path: string
     spans: readonly { from: number; to: number }[]
   }>
-  /** What the person has open, said again whenever any of it changes. */
+  /** What currently open, said again whenever any of it changes. */
   writeOpenTabs(open: OpenTabs): Promise<void>
   /**
    * The window going, for as long as the client listens. The stream opens with

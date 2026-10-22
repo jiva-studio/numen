@@ -122,17 +122,17 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 // A write that reaches one face reaches nothing else: the prose above the first
 // face and the prose under every other face's heading come out as the bytes
 // they went in as.
-func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
+func TestWritingOneFacePreservesTheRestOfTheStencilAlone(t *testing.T) {
 	raw := "---\ntype: stencil\n---\n" +
 		"How I show these.\n\n" +
 		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
 		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
 	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
-	held := append([]format.FaceTemplate(nil), read.Faces...)
-	held[0].Back = "**{{Height}}**"
+	target := append([]format.FaceTemplate(nil), read.Faces...)
+	target[0].Back = "**{{Height}}**"
 
-	body, err := format.StencilBody(read.Preamble, held, read.Tail)
+	body, err := format.StencilBody(read.Preamble, target, read.Tail)
 	if err != nil {
 		t.Fatalf("stencil body: %v", err)
 	}

@@ -69,8 +69,8 @@ const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: str
       :axis="axis"
       :depth="depth + 1"
     >
-      <template v-for="name in passed" #[name]="bound">
-        <slot :name="name" v-bind="getSlotProps(bound)" />
+      <template v-for="name in passed" #[name]="slotProps">
+        <slot :name="name" v-bind="getSlotProps(slotProps)" />
       </template>
     </component>
 
@@ -85,8 +85,8 @@ const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: str
       @show="workspace.show"
       @claim="workspace.claim(node.id)"
     >
-      <template v-for="name in passed" #[name]="bound">
-        <slot :name="name" v-bind="getSlotProps(bound)" />
+      <template v-for="name in passed" #[name]="slotProps">
+        <slot :name="name" v-bind="getSlotProps(slotProps)" />
       </template>
     </WorkspacePane>
   </SplitterPanel>

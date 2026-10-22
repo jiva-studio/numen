@@ -13,7 +13,7 @@ type run struct {
 	Start   int    `json:"start"`
 	Length  int    `json:"length"`
 	Size    int    `json:"size"`
-	Refused string `json:"refused"`
+	Error string `json:"error"`
 }
 
 func runOf(t *testing.T, s *sdk.ClientSession, path string, start, length int) run {
@@ -27,12 +27,12 @@ func runOf(t *testing.T, s *sdk.ClientSession, path string, start, length int) r
 // read a note do not reach it.
 func TestFileReadReachesAFileTheVaultDoesNotHoldAsANote(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
-		"lectures/kinetics.txt": "The first law, as spoken.\n",
+		"lectures/kinetics.txt": "The first law, as stated.\n",
 	})
 
 	got := runOf(t, session, "lectures/kinetics.txt", 0, 0)
-	if got.Text != "The first law, as spoken.\n" {
-		t.Errorf("the file came back as %q, refused %q", got.Text, got.Refused)
+	if got.Text != "The first law, as stated.\n" {
+		t.Errorf("the file came back as %q, error %q", got.Text, got.Error)
 	}
 	if got.Size != len(got.Text) {
 		t.Errorf("the file was said to be %d bytes", got.Size)
@@ -57,11 +57,11 @@ func TestFileReadReadsALongFileARunAtATime(t *testing.T) {
 
 // A path with nothing behind it is an answer and not an error: a file may have
 // been removed since an agent last saw it.
-func TestFileReadSaysWhenThereIsNoFileAtThePath(t *testing.T) {
+func TestFileReadReturnsWhenThereIsNoFileAtThePath(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	got := runOf(t, session, "gone.txt", 0, 0)
-	if got.Refused == "" {
+	if got.Error == "" {
 		t.Errorf("a path with no file behind it answered with %q", got.Text)
 	}
 }
@@ -75,18 +75,18 @@ func TestFileReadPassesOverWhatTheVaultDoes(t *testing.T) {
 	})
 
 	got := runOf(t, session, ".env", 0, 0)
-	if got.Text != "" || got.Refused == "" {
+	if got.Text != "" || got.Error == "" {
 		t.Errorf("a name the vault passes over answered with %+v", got)
 	}
 }
 
 // The path is from the vault root, and a call naming another place is a mistake
 // worth hearing about.
-func TestFileReadRefusesAPathThatLeavesTheVault(t *testing.T) {
+func TestFileReadRefusesAPathThatPreservesTheVault(t *testing.T) {
 	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	for _, path := range []string{"../secret.txt", "notes/../../secret.txt", v.Path + "/Entropy.md"} {
-		if said := getRefusal(t, session, "file_read", map[string]any{"path": path}); said == "" {
+		if response := getToolError(t, session, "file_read", map[string]any{"path": path}); response == "" {
 			t.Errorf("read %q: nothing said about a path outside the vault", path)
 		}
 	}

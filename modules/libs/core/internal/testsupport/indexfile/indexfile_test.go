@@ -27,15 +27,15 @@ func TestACopyIsAMigratedIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if held, want := versionOf(t, copied), versionOf(t, scratch); held != want {
-		t.Errorf("a copy is at schema %d, and an index opened from nothing is at %d", held, want)
+	if target, want := versionOf(t, copied), versionOf(t, scratch); target != want {
+		t.Errorf("a copy is at schema %d, and an index opened from nothing is at %d", target, want)
 	}
-	held, want := readAppliedMigrations(t, copied), readAppliedMigrations(t, scratch)
+	targetVal, want := readAppliedMigrations(t, copied), readAppliedMigrations(t, scratch)
 	if len(want) == 0 {
 		t.Fatal("an index opened from nothing records nothing as applied")
 	}
-	if !equal(held, want) {
-		t.Errorf("a copy says %v was applied, and an index opened from nothing says %v", held, want)
+	if !equal(targetVal, want) {
+		t.Errorf("a copy says %v was applied, and an index opened from nothing says %v", targetVal, want)
 	}
 }
 
@@ -60,8 +60,8 @@ func TestCopiesAreIndependent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if held := vaultsIn(t, other); held != 0 {
-		t.Errorf("the second copy holds %d vaults, and was written to only through the first", held)
+	if target := vaultsIn(t, other); target != 0 {
+		t.Errorf("the second copy holds %d vaults, and was written to only through the first", target)
 	}
 }
 

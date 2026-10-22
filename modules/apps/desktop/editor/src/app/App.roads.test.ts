@@ -108,7 +108,7 @@ describe('every road to a file', () => {
     pressKey('k')
     await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', words)
-    await new Promise((done) => setTimeout(done, DEBOUNCE))
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
   }
 
   /** The root of the vault holds one file of each of four. */
@@ -172,7 +172,7 @@ describe('every road to a file', () => {
   }
 })
 
-describe('what the person has open, as whoever answers for them is told it', () => {
+describe('what currently open, as whoever answers for them is told it', () => {
   /** The last the window said about it, and nothing where it has said nothing. */
   const getLastReport = () => requests.openTabs.at(-1) ?? null
 
@@ -194,7 +194,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
     expect(front()?.path).toBe('Root.md')
   })
 
-  it('names the tab beside the agent, where the person is writing in one', async () => {
+  it('names the tab alongside the agent, where the person is writing in one', async () => {
     const window = await mountWindow()
     const workspace = window.findComponent(WorkspaceLayout)
 
@@ -208,7 +208,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
     expect(front()?.kind).toBe('plex')
   })
 
-  it('names the book in front, and the note the plex stands on beside it', async () => {
+  it('names the book in front, and the note the plex relies on alongside it', async () => {
     const window = await mountWindow()
 
     outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
@@ -224,7 +224,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
   })
 })
 
-describe('a note asked for in the plex', () => {
+describe('a note requested for in the plex', () => {
   it('is drawn in a tab of its own', async () => {
     const window = await mountWindow()
 
@@ -235,7 +235,7 @@ describe('a note asked for in the plex', () => {
     expect(window.findComponent(Editor).exists()).toBe(true)
   })
 
-  it('is asked for by the node, and a path opens nothing', async () => {
+  it('is requested for by the node, and a path opens nothing', async () => {
     const window = await mountWindow()
 
     window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
@@ -246,14 +246,14 @@ describe('a note asked for in the plex', () => {
 })
 
 describe('a place an answer names', () => {
-  it('is drawn in the document it stands in', async () => {
+  it('is drawn in the document it remains in', async () => {
     const window = await mountWindow()
 
     window
       .findComponent(Agent)
       .vm.$emit(
         'follow',
-        { id: 'said', voice: 'said', text: '[here](numen:Source.pdf?start=0&length=4)' },
+        { id: 'turn-1', voice: 'answered', text: '[here](numen:Source.pdf?start=0&length=4)' },
         'numen:Source.pdf?start=0&length=4',
         { preventDefault: () => {} },
       )

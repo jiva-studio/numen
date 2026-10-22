@@ -76,16 +76,16 @@ type Edit struct {
 
 // Apply makes one change to the note at path and puts it back.
 func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
-	written, err := e.splice(ctx, v, path, change)
+	content, err := e.splice(ctx, v, path, change)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	// The file is on disk, so the fingerprint stands beside whatever the levelling came to and a
+	// The file is on disk, so the fingerprint is stored alongside whatever the levelling produced and a
 	// caller can tell the two apart.
 	if e.Index == nil {
-		return written, nil
+		return content, nil
 	}
-	return written, WrapUnlevelled(e.Index(ctx, v, []string{path}), path)
+	return content, WrapUnlevelled(e.Index(ctx, v, []string{path}), path)
 }
 
 // splice is the read, the change and the write, under this vault's write lock from before the read

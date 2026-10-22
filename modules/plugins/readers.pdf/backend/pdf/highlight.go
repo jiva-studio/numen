@@ -65,13 +65,13 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]HighlightBox, error) {
 // getOrderedPages is the pages asked for, each of them once and in reading order. A
 // page the document does not have is not a page.
 func getOrderedPages(pages []int, most int) []int {
-	seen := make(map[int]bool, len(pages))
+	observed := make(map[int]bool, len(pages))
 	out := make([]int, 0, len(pages))
 	for _, page := range pages {
-		if page < 0 || page >= most || seen[page] {
+		if page < 0 || page >= most || observed[page] {
 			continue
 		}
-		seen[page] = true
+		observed[page] = true
 		out = append(out, page)
 	}
 	sort.Ints(out)
@@ -99,7 +99,7 @@ func (d *document) words(index, offset int) []HighlightBox {
 		return nil
 	}
 
-	reading := &wordReading{sheet: sheet, index: index}
+	collector := &wordReading{sheet: sheet, index: index}
 	at := offset
 	for _, char := range read.Chars {
 		text := char.Text
@@ -107,11 +107,11 @@ func (d *document) words(index, offset int) []HighlightBox {
 		if text == "" {
 			continue
 		}
-		reading.add(at, len(text), char.PointPosition, strings.TrimSpace(text) == "")
+		collector.add(at, len(text), char.PointPosition, strings.TrimSpace(text) == "")
 		at += len(text)
 	}
-	reading.finish()
-	return reading.boxes
+	collector.finish()
+	return collector.boxes
 }
 
 // wordReading is the words of a page read character by character: the boxes
@@ -153,7 +153,7 @@ func (r *wordReading) finish() {
 	r.length = 0
 }
 
-// isWordContinued says whether a character carries the word on: it stands on
+// isWordContinued says whether a character carries the word on: it relies on
 // the same line, within a space of where the word has got to.
 func isWordContinued(word, mark responses.CharPosition) bool {
 	high := min(word.Top-word.Bottom, mark.Top-mark.Bottom)

@@ -44,24 +44,24 @@ func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
-	listening := server.Listener.Addr().(*net.TCPAddr).Port
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
 	server.Close()
-	return &downEmbeddingHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: listening}}
+	return &downEmbeddingHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
 // A plugin that does not answer names no model, and a vault read without a
 // model leaves the vectors of the index where they are.
-func TestAnEmbeddingPluginThatIsDownLeavesTheVectorsOfTheIndex(t *testing.T) {
+func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
-	held := container.Config{
+	target := container.Config{
 		Embedding:          container.DefaultEmbedding(),
 		ServiceDir:         ".numen",
 		PluginHost:         host,
 		ShouldRebuildIndex: true,
 	}
 
-	indexing, asking, _, err := held.Embedders(t.Context(), nil)
+	indexing, asking, _, err := target.Embedders(t.Context(), nil)
 	if err == nil {
 		t.Fatal("an embedding plugin that is down was opened")
 	}
@@ -72,7 +72,7 @@ func TestAnEmbeddingPluginThatIsDownLeavesTheVectorsOfTheIndex(t *testing.T) {
 		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 	}
 
-	whole, err := held.ReadWholeVault(t.Context(), db, indexing, v)
+	whole, err := target.ReadWholeVault(t.Context(), db, indexing, v)
 	if err != nil {
 		t.Fatal(err)
 	}

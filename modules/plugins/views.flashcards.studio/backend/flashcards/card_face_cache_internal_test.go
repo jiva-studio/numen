@@ -23,9 +23,9 @@ func TestTheLeastRecentlyUsedDeckIsForgottenAloneWhenTheFacesPassTheBound(t *tes
 	if c.hasDeck(keyOf("b")) {
 		t.Error("the least recently used deck is still held")
 	}
-	for _, kept := range []string{"a", "c", "d"} {
-		if !c.hasDeck(keyOf(kept)) {
-			t.Errorf("deck %s was forgotten with it", kept)
+	for _, face := range []string{"a", "c", "d"} {
+		if !c.hasDeck(keyOf(face)) {
+			t.Errorf("deck %s was forgotten with it", face)
 		}
 	}
 	if c.getSize() != 6 {
@@ -44,7 +44,7 @@ func TestTheFacesHeldNeverPassTheBound(t *testing.T) {
 	}
 }
 
-func TestADeckHoldingMoreFacesThanTheBoundIsNotStored(t *testing.T) {
+func TestADeckContainingMoreFacesThanTheBoundIsNotStored(t *testing.T) {
 	t.Parallel()
 	c := newFaceCache()
 	c.put(0, keyOf("small"), deckOf(1), 3)

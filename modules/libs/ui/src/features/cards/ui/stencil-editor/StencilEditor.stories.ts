@@ -2,7 +2,7 @@
  * Every situation the stencil editor has to survive. Also the test corpus:
  * each story is run in a browser by `@storybook/addon-vitest`.
  *
- * What the editor hands back is applied here, which is the application's part.
+ * What the editor returns is applied here, which is the application's part.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
@@ -138,16 +138,16 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { Stencil },
     setup() {
-      const held = getCorpus(args.corpus)
-      const fields = ref<readonly string[]>(held.fields)
-      const faces = ref<readonly StencilFace[]>(held.faces)
+      const target = getCorpus(args.corpus)
+      const fields = ref<readonly string[]>(target.fields)
+      const faces = ref<readonly StencilFace[]>(target.faces)
 
       watch(
         () => args.corpus,
         (next) => {
-          const held = getCorpus(next)
-          fields.value = held.fields
-          faces.value = held.faces
+          const target = getCorpus(next)
+          fields.value = target.fields
+          faces.value = target.faces
         },
       )
 
@@ -233,17 +233,17 @@ const getBox = (canvas: HTMLElement, id: string, half: Half) => {
 }
 
 const found = (canvas: HTMLElement, selector: string): HTMLElement => {
-  const held = canvas.querySelector<HTMLElement>(selector)
-  if (!held) throw new Error(`nothing matching ${selector}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(selector)
+  if (!element) throw new Error(`nothing matching ${selector}`)
+  return element
 }
 
 const buttonSaying = (canvas: HTMLElement, text: string) => {
-  const held = [...canvas.querySelectorAll<HTMLElement>('button')].find(
+  const element = [...canvas.querySelectorAll<HTMLElement>('button')].find(
     (each) => each.textContent?.trim() === text,
   )
-  if (!held) throw new Error(`no button saying ${text}`)
-  return held
+  if (!element) throw new Error(`no button saying ${text}`)
+  return element
 }
 
 const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
@@ -269,9 +269,9 @@ export const AStencil: Story = {
 
     // The row carries the line and the ground, and what stands inside carries
     // neither.
-    const drawn = getComputedStyle(row)
-    expect(Number.parseFloat(drawn.borderTopWidth)).toBeGreaterThan(0)
-    expect(drawn.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    const renderedStyle = getComputedStyle(row)
+    expect(Number.parseFloat(renderedStyle.borderTopWidth)).toBeGreaterThan(0)
+    expect(renderedStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
     const inside = getComputedStyle(box)
     expect(Number.parseFloat(inside.borderTopWidth)).toBe(0)
     expect(inside.backgroundColor).toBe('rgba(0, 0, 0, 0)')
@@ -302,8 +302,8 @@ export const AStencil: Story = {
       ?.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
     first.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
     first.dispatchEvent(new DragEvent('drop', { bubbles: true }))
-    await new Promise((settled) => {
-      setTimeout(settled, 0)
+    await new Promise((resolved) => {
+      setTimeout(resolved, 0)
     })
     expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 
@@ -312,10 +312,10 @@ export const AStencil: Story = {
     const divider = found(canvasElement, '.stencil__part .divider')
     const list = found(canvasElement, '.stencil__fields')
     const adding = found(canvasElement, '.stencil__part .divider button')
-    const along = divider.getBoundingClientRect()
-    expect(Math.round(along.width)).toBe(Math.round(list.getBoundingClientRect().width))
+    const alongRect = divider.getBoundingClientRect()
+    expect(Math.round(alongRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
     const at = adding.getBoundingClientRect()
-    expect(at.left + at.width / 2).toBeCloseTo(along.left + along.width / 2, 0)
+    expect(at.left + at.width / 2).toBeCloseTo(alongRect.left + alongRect.width / 2, 0)
     for (const side of ['::before', '::after']) {
       expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
     }
@@ -340,7 +340,7 @@ export const WhatAPersonDoesToIt: Story = {
     expect(getBox(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
     expect(getBox(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
-    // A field asked for stands under a name nothing had taken, below the last.
+    // A field asked for is placed under a name nothing had taken, below the last.
     await userEvent.click(buttonSaying(canvasElement, 'Add a field'))
     expect(getDrawnFields(canvasElement)).toEqual([
       'Name',
@@ -412,7 +412,7 @@ export const WhatIsWrong: Story = {
     const chips = [...canvasElement.querySelectorAll('[data-face="stray"] [data-insert]')]
     expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])
 
-    // What the caller found wrong with one face stands under that face's name,
+    // What the caller found wrong with one face is placed under that face's name,
     // and under no other's.
     expect(
       found(canvasElement, '[data-face="stray"] [data-pane="front-written"]').textContent?.trim(),

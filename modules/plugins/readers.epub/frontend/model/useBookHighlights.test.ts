@@ -20,7 +20,7 @@ describe('a book before anything is lit', () => {
 })
 
 describe('a passage reached', () => {
-  it('lights the first run, names the rest, and stands at the first', async () => {
+  it('lights the first run, names the rest, and remains at the first', async () => {
     const { lit, goToOffset } = create()
 
     await lit.focusSpans({ from: 10, to: 20 }, { from: 50, to: 60 })
@@ -30,7 +30,7 @@ describe('a passage reached', () => {
     expect(goToOffset).toHaveBeenCalledWith(10)
   })
 
-  it('leaves what is lit as it was when nothing was asked about', async () => {
+  it('leaves what is lit as it was when nothing was requested about', async () => {
     const { lit, goToOffset } = create()
     await lit.focusSpans({ from: 10, to: 20 })
     goToOffset.mockClear()

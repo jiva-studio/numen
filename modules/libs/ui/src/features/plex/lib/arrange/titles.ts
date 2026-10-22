@@ -57,7 +57,7 @@ export function separateTitles(
   const apart = APART * routing.labelDepth
   const boxes = nodes.map((node) => getBox(node, apart))
   const titles: Box[] = []
-  const settled = [...edges]
+  const resolved = [...edges]
 
   for (const { edge, at, metrics } of sortTightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
@@ -66,7 +66,7 @@ export function separateTitles(
 
     const found = settle(clear, edge.words!, { metrics, width })
     if (!found) {
-      settled[at] = { ...edge, words: undefined, wordsAt: MIDDLE }
+      resolved[at] = { ...edge, words: undefined, wordsAt: MIDDLE }
       continue
     }
 
@@ -78,7 +78,7 @@ export function separateTitles(
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.
     const heading = getHeading(edge, found.at)
-    settled[at] = {
+    resolved[at] = {
       ...edge,
       words: found.words,
       heading,
@@ -86,7 +86,7 @@ export function separateTitles(
     }
   }
 
-  return settled
+  return resolved
 }
 
 /**
@@ -144,8 +144,8 @@ function settle(
   const availableArcLength = getSpanLength(longest) * metrics.arc
   if (availableArcLength < LEAST * metrics.extent) return null
 
-  const cut = cutToFit(words, availableArcLength, width)
-  return { words: cut, at: (longest.from + longest.to) / 2, extent: width(cut) }
+  const truncatedWords = cutToFit(words, availableArcLength, width)
+  return { words: truncatedWords, at: (longest.from + longest.to) / 2, extent: width(truncatedWords) }
 }
 
 interface ClearSpanOptions {

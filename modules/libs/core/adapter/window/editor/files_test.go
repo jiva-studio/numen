@@ -62,25 +62,25 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 	if got := getEntryNames(root); !slices.Equal(got, want) {
 		t.Fatalf("the root is drawn as %v", got)
 	}
-	held := map[string]*v1.Entry{}
+	target := map[string]*v1.Entry{}
 	for _, entry := range root {
-		held[entry.GetName()] = entry
+		target[entry.GetName()] = entry
 	}
-	if entry := held["physics"]; !entry.GetIsFolder() || entry.GetPath() != "physics" {
+	if entry := target["physics"]; !entry.GetIsFolder() || entry.GetPath() != "physics" {
 		t.Errorf("the folder came back as %+v", entry)
 	}
-	if kind := held["alpha.md"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_NOTE {
+	if kind := target["alpha.md"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_NOTE {
 		t.Errorf("a note is held as %v", kind)
 	}
-	if kind := held["Notes.txt"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_UNSPECIFIED {
+	if kind := target["Notes.txt"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_UNSPECIFIED {
 		t.Errorf("a file the vault holds no source for is held as %v", kind)
 	}
 
-	under := getEntries(t, f, "physics")
-	if got := getEntryNames(under); !slices.Equal(got, []string{"Entropy.md", "Heat.md"}) {
+	entries := getEntries(t, f, "physics")
+	if got := getEntryNames(entries); !slices.Equal(got, []string{"Entropy.md", "Heat.md"}) {
 		t.Fatalf("the folder is drawn as %v", got)
 	}
-	if path := under[0].GetPath(); path != "physics/Entropy.md" {
+	if path := entries[0].GetPath(); path != "physics/Entropy.md" {
 		t.Errorf("the note under a folder is called %q", path)
 	}
 
@@ -93,7 +93,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 // TestAListingLeavesOutWhatTheVaultLeavesAlone. A name beginning with a dot
 // belongs to a tool, and the folder this application keeps for itself is its
 // own.
-func TestAListingLeavesOutWhatTheVaultLeavesAlone(t *testing.T) {
+func TestAListingPreservesOutWhatTheVaultPreservesAlone(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":      "# Entropy\n",
 		".secret.md":      "# Secret\n",
@@ -127,7 +127,7 @@ func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 
 // TestEverythingTheVaultHoldsMoves. A file of any kind travels, whether
 // anything reads it or not.
-func TestEverythingTheVaultHoldsMoves(t *testing.T) {
+func TestEverythingTheVaultContainsMoves(t *testing.T) {
 	const picture = "\x89PNG\r\n\x1a\n"
 	f := openWindow(t, nil, map[string]string{"Diagram.png": picture})
 	testsupport.WriteBook(t, f.root, "A Book.epub")
@@ -144,7 +144,7 @@ func TestEverythingTheVaultHoldsMoves(t *testing.T) {
 			t.Fatal(err)
 		}
 		if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-			t.Fatalf("moving %s was refused: %v", one.from, code)
+			t.Fatalf("moving %s failed: %v", one.from, code)
 		}
 		moved := answer.Msg.GetMoved()
 		if moved.GetFrom() != one.from || moved.GetTo() != one.to {
@@ -179,7 +179,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", code)
+		t.Fatalf("the folder failed: %v", code)
 	}
 	if repaired := answer.Msg.GetMoved().GetRepaired(); len(repaired) != 0 {
 		t.Errorf("a link written by name was repaired: %v", repaired)
@@ -208,11 +208,11 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 
 // TestAMoveOntoATakenNameLeavesBothWhereTheyAre. Two files arriving at one path
 // is a question only the person can answer.
-func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
-	const held = "# Entropy in physics\n"
+func TestAMoveOntoATakenNamePreservesBothWhereTheyAre(t *testing.T) {
+	const target = "# Entropy in physics\n"
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":         "# Entropy\n",
-		"physics/Entropy.md": held,
+		"physics/Entropy.md": target,
 	})
 	waitForScan(t, f)
 
@@ -226,19 +226,19 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if moved := answer.Msg.GetMoved(); moved != nil {
-		t.Errorf("a refused move said the file did %+v", moved)
+		t.Errorf("a rejected move said the file did %+v", moved)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
 		t.Errorf("the note that was to move holds:\n%s", now)
 	}
-	if now := fileAt(t, f.root, "physics/Entropy.md"); now != held {
+	if now := fileAt(t, f.root, "physics/Entropy.md"); now != target {
 		t.Errorf("the note already there was written:\n%s", now)
 	}
 }
 
 // TestAMoveOfAPathWithNothingAtItLeavesNothingBehind, and says so as a
 // an error: the core is what names a path as missing.
-func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
+func TestAMoveOfAPathWithNothingAtItPreservesNothingPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
@@ -260,7 +260,7 @@ func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
 
 // TestARemovedFolderGoesToTheTrashWithEverythingUnderIt, and what pointed into
 // it is reported and not repaired.
-func TestARemovedFolderGoesToTheTrashWithEverythingUnderIt(t *testing.T) {
+func TestARemovedFolderGoesToTheTrashWithEverythingBelowIt(t *testing.T) {
 	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
 	f := openWindow(t, nil, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
@@ -275,7 +275,7 @@ func TestARemovedFolderGoesToTheTrashWithEverythingUnderIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", code)
+		t.Fatalf("the folder failed: %v", code)
 	}
 	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/physics" {
 		t.Errorf("the folder sits at %q", trashed)
@@ -307,7 +307,7 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", code)
+		t.Fatalf("the folder failed: %v", code)
 	}
 	if !folder(t, f.root, "science/physics") {
 		t.Fatal("the folder is not on the disk")
@@ -333,8 +333,8 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 
 // TestAFolderIsNotMadeWhereAFileIsFiled. Nothing is written over the file.
 func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
-	const held = "# Entropy\n"
-	f := openWindow(t, nil, map[string]string{"Entropy.md": held})
+	const target = "# Entropy\n"
+	f := openWindow(t, nil, map[string]string{"Entropy.md": target})
 
 	answer, err := f.client.CreateFolder(t.Context(), connect.NewRequest(&v1.CreateFolderRequest{
 		Path: "Entropy.md",
@@ -345,7 +345,7 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("a path a file already holds was answered with %v", code)
 	}
-	if now := fileAt(t, f.root, "Entropy.md"); now != held {
+	if now := fileAt(t, f.root, "Entropy.md"); now != target {
 		t.Errorf("the file was written:\n%s", now)
 	}
 }
@@ -353,7 +353,7 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 // TestAListingSaysWhichOfFourEachNoteIs. The folder says which of its entries
 // are notes and the index says what each of those notes is, so a tree draws a
 // deck as a deck without opening it.
-func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
+func TestAListingReturnsWhichOfFourEachNoteIs(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":  "# Entropy\n",
 		"Animal.md":   "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
@@ -363,9 +363,9 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 	})
 	f.read(t)
 
-	held := map[string]*v1.Entry{}
+	target := map[string]*v1.Entry{}
 	for _, entry := range getEntries(t, f, "") {
-		held[entry.GetName()] = entry
+		target[entry.GetName()] = entry
 	}
 
 	want := map[string]string{
@@ -376,7 +376,7 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 		"Notes.txt":   "",
 	}
 	for name, one := range want {
-		if got := held[name].GetType(); got != one {
+		if got := target[name].GetType(); got != one {
 			t.Errorf("%s is drawn as %v, want %v", name, got, one)
 		}
 	}
@@ -385,7 +385,7 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 // TestMorePathsThanStandingAnswersAtOnceAreRefused. A path with nothing at it
 // is absent from the answer, so an answer cut to fit the ceiling would be one a
 // caller cannot tell from a path holding nothing.
-func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
+func TestMorePathsThanActiveAnswersAtOnceAreRefused(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 	f.read(t)
 
@@ -396,7 +396,7 @@ func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
 
 	_, err := f.client.ListFileKinds(t.Context(), connect.NewRequest(&v1.ListFileKindsRequest{Paths: paths}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("err = %v, want the paths named to be refused", err)
+		t.Fatalf("err = %v, want the paths named to be rejected", err)
 	}
 }
 
@@ -419,7 +419,7 @@ func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.File
 // TestAPathSaysWhatStandsThere. A window holding a path and nothing else opens
 // what stands there in the editor made for it, and this is the one question
 // that says which that is.
-func TestAPathSaysWhatStandsThere(t *testing.T) {
+func TestAPathReturnsWhatExistsThere(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":   "# Entropy\n",
 		"Animal.md":    "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
@@ -431,7 +431,7 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 	})
 	f.read(t)
 
-	held := getKindsByPath(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
+	target := getKindsByPath(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
 		"Entropy.md", "Physics.epub", "Scan.pdf", "Notes.txt", "Gone.md")
 
 	// One book reflows and the other is drawn as pictures, and a window opens
@@ -450,21 +450,21 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, "", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
 	}
 	for path, one := range want {
-		stood, answered := held[path]
-		if !answered {
+		status, reply := target[path]
+		if !reply {
 			t.Errorf("%s was not answered about at all", path)
 			continue
 		}
-		if stood.GetKind() != one.kind || stood.GetType() != one.is || stood.GetFormat() != one.format {
+		if status.GetKind() != one.kind || status.GetType() != one.is || status.GetFormat() != one.format {
 			t.Errorf("%s stands as %v %v %v, want %v %v %v",
-				path, stood.GetKind(), stood.GetType(), stood.GetFormat(),
+				path, status.GetKind(), status.GetType(), status.GetFormat(),
 				one.kind, one.is, one.format)
 		}
 	}
 
 	// A path with nothing at it is not a file the vault leaves alone, and the
 	// two are told apart by one being answered about and the other not.
-	if _, answered := held["Gone.md"]; answered {
+	if _, replyVal := target["Gone.md"]; replyVal {
 		t.Error("a path with nothing at it was answered about anyway")
 	}
 }
@@ -472,7 +472,7 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 // TestABookStandsThereBeforeAnythingHasReadIt. The index holds no note for a
 // book and never will, so an answer drawn from it alone leaves every book out
 // and a window reads that absence as an ordinary note.
-func TestABookStandsThereBeforeAnythingHasReadIt(t *testing.T) {
+func TestABookExistsThereBeforeAnythingHasReadIt(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	// Written after the vault was opened and asked about at once, so nothing
@@ -481,8 +481,8 @@ func TestABookStandsThereBeforeAnythingHasReadIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stood := getKindsByPath(t, f, "Physics.epub")["Physics.epub"]
-	if stood.GetKind() != v1.SourceKind_SOURCE_KIND_BOOK {
-		t.Errorf("a book nothing has read stands as %v", stood.GetKind())
+	status := getKindsByPath(t, f, "Physics.epub")["Physics.epub"]
+	if status.GetKind() != v1.SourceKind_SOURCE_KIND_BOOK {
+		t.Errorf("a book nothing has read stands as %v", status.GetKind())
 	}
 }

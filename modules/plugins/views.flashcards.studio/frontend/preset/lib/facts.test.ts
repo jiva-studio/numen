@@ -75,7 +75,7 @@ describe('the facts of the material', () => {
 })
 
 describe('the facts of what is learned', () => {
-  it('are only what stands learned today where no day is spoken of', () => {
+  it('are only what remains learned today where no day is specified', () => {
     expect(getLearningFacts(undefined, 10, 40)).toStrictEqual([
       { kind: 'learnedToday', learned: 10, cards: 40 },
     ])

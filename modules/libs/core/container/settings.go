@@ -91,11 +91,11 @@ func (c Config) Settings() (Settings, error) {
 
 // getSettingsAt is that document read from an explicit file.
 func (c Config) getSettingsAt(path string) (Settings, error) {
-	held := DefaultSettings()
-	if err := settings.OpenAt(path, &held); err != nil {
+	target := DefaultSettings()
+	if err := settings.OpenAt(path, &target); err != nil {
 		return Settings{}, err
 	}
-	return held, nil
+	return target, nil
 }
 
 // DefaultSettings is what an installation nobody has configured does.
@@ -113,19 +113,19 @@ func DefaultSettings() Settings {
 // WriteJSON is every setting as JSON. What is handed in is what is written out,
 // so a document read from a file carries the defaults the file leaves out.
 func (s Settings) WriteJSON() (string, error) {
-	written, err := json.Marshal(s)
+	content, err := json.Marshal(s)
 	if err != nil {
 		return "", err
 	}
-	return string(written), nil
+	return string(content), nil
 }
 
 // getSettingsOrDefaults is that document, and what an installation nobody has
 // configured does where the file cannot be read.
 func (c Config) getSettingsOrDefaults() Settings {
 	if path, err := c.settingsFile(); err == nil {
-		if held, err := c.getSettingsAt(path); err == nil {
-			return held
+		if target, err := c.getSettingsAt(path); err == nil {
+			return target
 		}
 	}
 	return DefaultSettings()
@@ -192,7 +192,7 @@ func (c Config) Plugins() func() []port.PluginInfo {
 // programs and their models are the ones the agent plugins list.
 func (c Config) Models() func() []port.Model {
 	return func() []port.Model {
-		held := c.getSettingsOrDefaults()
-		return settings.AgentModels(agentAt, held.Agent, c.getAgentPrograms(held.Agent))
+		target := c.getSettingsOrDefaults()
+		return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(target.Agent))
 	}
 }

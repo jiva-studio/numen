@@ -27,7 +27,7 @@ func getFailure(t *testing.T, host *Host, id string) *port.PluginFailure {
 	return nil
 }
 
-func TestAPluginTheHostHoldsOffIsListedWithItsReason(t *testing.T) {
+func TestAPluginTheHostContainsOffIsListedWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.SetLauncher(launchAnsweringPing(t, port.PluginProtocolVersion+1, &procs))
@@ -78,11 +78,11 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	}
 }
 
-func TestARetryThatFailsAgainHoldsThePluginOffAtOnce(t *testing.T) {
+func TestARetryThatFailsAgainContainsThePluginOffAtOnce(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.SetLauncher(failLaunching)
-	var told []port.PluginFailure
-	host.SetOnPluginFailed(func(failure port.PluginFailure) { told = append(told, failure) })
+	var notified []port.PluginFailure
+	host.SetOnPluginFailed(func(failure port.PluginFailure) { notified = append(notified, failure) })
 
 	failure, err := host.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil {
@@ -94,8 +94,8 @@ func TestARetryThatFailsAgainHoldsThePluginOffAtOnce(t *testing.T) {
 	if got := getFailure(t, host, failingPluginID); got == nil || got.Reason != failure.Reason {
 		t.Fatalf("listed failure = %+v, want %+v", got, failure)
 	}
-	if len(told) != 1 || told[0].PluginID != failingPluginID {
-		t.Fatalf("failure callbacks = %+v, want one for %s", told, failingPluginID)
+	if len(notified) != 1 || notified[0].PluginID != failingPluginID {
+		t.Fatalf("failure callbacks = %+v, want one for %s", notified, failingPluginID)
 	}
 }
 

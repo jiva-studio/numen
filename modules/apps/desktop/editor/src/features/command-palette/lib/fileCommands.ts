@@ -1,20 +1,20 @@
 /**
  * The commands offered over the file in front, on what has been made from it.
  */
-import { createArtifactOffer, isArtifactMissing } from './offered'
+import { createArtifactOffer, isArtifactMissing } from './availability'
 import type { Command, CommandTarget, RunSupport } from '../types'
 import type { Words } from '../words'
 
 const isRecordingProofreadOffered = createArtifactOffer(
   'proofread',
   'recording',
-  (made) => made.transcript === 'done' && isArtifactMissing(made['transcript.corrected']),
+  (createdItem) => createdItem.transcript === 'done' && isArtifactMissing(createdItem['transcript.corrected']),
 )
 
 const isBookProofreadOffered = createArtifactOffer(
   'proofread',
   'book',
-  (made) => made.ocr === 'done' && isArtifactMissing(made['ocr.corrected']),
+  (createdItem) => createdItem.ocr === 'done' && isArtifactMissing(createdItem['ocr.corrected']),
 )
 
 const isProofreadOffered = (at: CommandTarget, runs: RunSupport): boolean =>
@@ -23,13 +23,13 @@ const isProofreadOffered = (at: CommandTarget, runs: RunSupport): boolean =>
 const isRecordingDeleteTextOffered = createArtifactOffer(
   'deleteText',
   'recording',
-  (made) => made.transcript !== 'none',
+  (createdItem) => createdItem.transcript !== 'none',
 )
 
 const isUrlDeleteTextOffered = createArtifactOffer(
   'deleteText',
   'url',
-  (made) => made.transcript !== 'none',
+  (createdItem) => createdItem.transcript !== 'none',
 )
 
 const isDeleteTextOffered = (at: CommandTarget, runs: RunSupport): boolean =>
@@ -40,15 +40,15 @@ export const createArtifactCommands = (words: Words): readonly Command[] => [
     id: 'transcribe',
     text: words.transcribe,
     group: 'file',
-    isOffered: createArtifactOffer('transcribe', 'recording', (made) =>
-      isArtifactMissing(made.transcript),
+    isOffered: createArtifactOffer('transcribe', 'recording', (createdItem) =>
+      isArtifactMissing(createdItem.transcript),
     ),
   },
   {
     id: 'recognise',
     text: words.recognise,
     group: 'file',
-    isOffered: createArtifactOffer('recognise', 'book', (made) => isArtifactMissing(made.ocr)),
+    isOffered: createArtifactOffer('recognise', 'book', (createdItem) => isArtifactMissing(createdItem.ocr)),
   },
   {
     id: 'downloadText',
@@ -57,7 +57,7 @@ export const createArtifactCommands = (words: Words): readonly Command[] => [
     isOffered: createArtifactOffer(
       'downloadText',
       'url',
-      (made) => made.transcript !== undefined || made.article !== undefined,
+      (createdItem) => createdItem.transcript !== undefined || createdItem.article !== undefined,
     ),
   },
   {
@@ -97,7 +97,7 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
     text: words.deleteCopy,
     group: 'file',
     needs: 'asking',
-    isOffered: createArtifactOffer('deleteCopy', 'url', (made) => made.copy === 'done'),
+    isOffered: createArtifactOffer('deleteCopy', 'url', (createdItem) => createdItem.copy === 'done'),
     answers: {
       keeps: words.keepsCopy,
       kept: words.kept,

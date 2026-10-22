@@ -56,15 +56,15 @@ func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the save is answered as findable and search does not hold it")
 	}
-	if held := onDisk(t, f.root, "Note.md"); !strings.Contains(held, "what the person typed") {
-		t.Errorf("the note on disk is %q", held)
+	if target := onDisk(t, f.root, "Note.md"); !strings.Contains(target, "what the person typed") {
+		t.Errorf("the note on disk is %q", target)
 	}
 }
 
 // TestASaveTheIndexCameLevelWithSaysNothingIsBehind is the control. A flag
 // every save carries says nothing, and a client shown a warning after every
 // save learns to ignore it.
-func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
+func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	waitForScan(t, f)
 
@@ -86,7 +86,7 @@ func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
 // TestASaveTheIndexWouldNotComeLevelWithStandsInTheList. A person saving a
 // second note has no reason to look at what the first one answered, and the
 // list of what is being done is where they are.
-func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
+func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
 	save := func() {
@@ -116,12 +116,12 @@ func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
 
 // findLevellingTask is what the list of what is being done says about the index, asked
 // for the way the window asks for it. The first message of the stream is the
-// list as it stands, so nothing here waits on anything.
+// list currently, so nothing here waits on anything.
 func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	t.Helper()
 
-	listening, over := context.WithCancel(t.Context())
-	defer over()
+	listening, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	tasks, err := f.drawn.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
 		Window: wire.Editor,
 	}))

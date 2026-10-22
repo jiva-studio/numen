@@ -39,18 +39,18 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		chosen, err := d.choose(d.encoder(at, frame), upto)
+		selected, err := d.choose(d.encoder(at, frame), upto)
 		if err != nil {
 			return nil, err
 		}
-		if chosen.token != d.blank {
-			tokens = append(tokens, chosen.token)
-			if upto, err = d.predictor(chosen.token); err != nil {
+		if selected.token != d.blank {
+			tokens = append(tokens, selected.token)
+			if upto, err = d.predictor(selected.token); err != nil {
 				return nil, err
 			}
 			tokensInFrame++
 		}
-		step := d.getStep(chosen, tokensInFrame)
+		step := d.getStep(selected, tokensInFrame)
 		if step > 0 {
 			tokensInFrame = 0
 		}

@@ -51,24 +51,24 @@ func (u List) Execute(
 	if err != nil {
 		return nil, 0, err
 	}
-	held := all
+	target := all
 	if limit > 0 {
-		held = all[:min(limit, len(all))]
+		target = all[:min(limit, len(all))]
 	}
 
 	// A stencil holds no cards, so nothing here asks where a wikilink lands.
 	read := NewRead(u.readers, nil)
-	out := make([]StencilSummary, 0, len(held))
-	for _, s := range held {
-		listed := StencilSummary{Path: s.Path, Title: s.Title}
+	out := make([]StencilSummary, 0, len(target))
+	for _, s := range target {
+		items := StencilSummary{Path: s.Path, Title: s.Title}
 		stencil, err := read.Stencil(ctx, v, s.Path)
 		if err != nil {
 			return nil, 0, err
 		}
 		if stencil.Outcome == note.Ok {
-			listed.Fields = stencil.Body.Fields
+			items.Fields = stencil.Body.Fields
 		}
-		out = append(out, listed)
+		out = append(out, items)
 	}
 	return out, len(all), nil
 }

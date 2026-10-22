@@ -26,7 +26,7 @@ func TestInstructionsPointAtTheTabListWhenTheWindowShowsANote(t *testing.T) {
 	if strings.Contains(with, "secret path") {
 		t.Errorf("instructions %q carry the focus", with)
 	}
-	if without := agent.GetInstructions(port.Task{}); strings.Contains(without, "window_tab_list") {
-		t.Errorf("instructions %q point at a tab list with no focus", without)
+	if instructions := agent.GetInstructions(port.Task{}); strings.Contains(instructions, "window_tab_list") {
+		t.Errorf("instructions %q point at a tab list with no focus", instructions)
 	}
 }

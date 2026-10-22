@@ -28,7 +28,7 @@ describe('what the menu offers', () => {
     }
   })
 
-  it('stands the items in groups, each group whole and unbroken', () => {
+  it('remains the items in groups, each group whole and unbroken', () => {
     const groups = ITEMS.map((item) => item.group)
     for (const item of ITEMS) expect(item.group).not.toBeUndefined()
     expect([...new Set(groups)]).toStrictEqual(['open', 'file', 'plex', 'agent', 'remove'])

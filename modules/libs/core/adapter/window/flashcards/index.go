@@ -43,7 +43,7 @@ func (r *indexRuns) clear(id domain.VaultID) {
 	delete(r.indexed, id)
 }
 
-// tryStart claims a vault for indexing. It hands back the indexer and the life to
+// tryStart claims a vault for indexing. It returns the indexer and the life to
 // run it under where this call is the one that begins it, and no indexer where
 // the vault has been indexed, is being indexed, could not be indexed, or where this
 // window indexes nothing.
@@ -55,7 +55,7 @@ func (r *indexRuns) tryStart(
 	if r.indexed[v.ID] {
 		return nil, nil, false, ""
 	}
-	if why, told := r.failures[v.ID]; told {
+	if why, hasFailure := r.failures[v.ID]; hasFailure {
 		return nil, nil, false, why
 	}
 	if r.running[v.ID] {

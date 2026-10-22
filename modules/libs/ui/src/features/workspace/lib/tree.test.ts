@@ -33,7 +33,7 @@ describe('pathTo', () => {
     expect(pathTo(root, 'b')).toStrictEqual([1, 0])
   })
 
-  it('names nothing for a node that is not there', () => {
+  it('is empty for a node that is not there', () => {
     expect(pathTo(root, 'missing')).toBeNull()
     expect(pathTo(stack('a', 'one'), 'b')).toBeNull()
   })

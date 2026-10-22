@@ -27,11 +27,11 @@ func (c Config) OpenPluginCache() (port.PluginCache, error) {
 	if c.PluginCachePath != "" {
 		return appstate.PluginCachesAt(filepath.Join(c.PluginCachePath, "plugins")), nil
 	}
-	kept, err := appstate.OpenPluginCaches()
+	retained, err := appstate.OpenPluginCaches()
 	if err != nil {
 		return nil, err
 	}
-	return kept, nil
+	return retained, nil
 }
 
 // PluginVaultHooks is what a window adds to the vault it lets the plugins work.

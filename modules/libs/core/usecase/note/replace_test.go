@@ -22,7 +22,7 @@ func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
@@ -35,26 +35,26 @@ func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 	if !strings.Contains(body, "# The aggressor\n") || !strings.Contains(body, "And nothing else.\n") {
 		t.Errorf("what was not asked for changed:\n%s", body)
 	}
-	if done.Matched != "A hedgehog" {
-		t.Errorf("what stood there is reported as %q", done.Matched)
+	if isDone.Matched != "A hedgehog" {
+		t.Errorf("what stood there is reported as %q", isDone.Matched)
 	}
-	if done.IsPlain {
+	if isDone.IsPlain {
 		t.Error("a stretch that stood exactly is reported as read plainly")
 	}
 }
 
 // The offsets answer where the new text now stands, so a window can draw it
 // without being told anything else.
-func TestAReplacementSaysWhereItLanded(t *testing.T) {
+func TestAReplacementReturnsWhereItLanded(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.Fingerprint{})
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if done.Span.From != 4 || done.Span.To != 8 {
-		t.Errorf("landed at %d..%d, wanted 4..8", done.Span.From, done.Span.To)
+	if isDone.Span.From != 4 || isDone.Span.To != 8 {
+		t.Errorf("landed at %d..%d, wanted 4..8", isDone.Span.From, isDone.Span.To)
 	}
 }
 
@@ -76,7 +76,7 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 
 // A span standing twice does not say which was meant, and guessing at one
 // is how the wrong half of a note is rewritten.
-func TestASpanStandingTwiceIsRefused(t *testing.T) {
+func TestASpanActiveTwiceIsRefused(t *testing.T) {
 	t.Parallel()
 	was := "A foe advances.\n\nAnother foe advances.\n"
 	c := openChanging(t, map[string]string{"Aggressor.md": was})
@@ -91,13 +91,13 @@ func TestASpanStandingTwiceIsRefused(t *testing.T) {
 		t.Errorf("counted %d places", ambiguous.Places)
 	}
 	if body := c.read(t, "Aggressor.md"); body != was {
-		t.Errorf("the refused replacement landed anyway:\n%s", body)
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
 	}
 }
 
 // A span that is not there is answered with where a copy of it stopped
 // agreeing, which is what tells a caller its copy is one character out.
-func TestASpanThatIsNotThereSaysWhereItDiverged(t *testing.T) {
+func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
@@ -136,16 +136,16 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 		"Aggressor.md": "Он сказал «да» — и ушёл.\n",
 	})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"сказал \"да\" - и ушёл", "промолчал", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !done.IsPlain {
+	if !isDone.IsPlain {
 		t.Error("the reading was not reported")
 	}
-	if done.Matched != "сказал «да» — и ушёл" {
-		t.Errorf("what stood there is reported as %q", done.Matched)
+	if isDone.Matched != "сказал «да» — и ушёл" {
+		t.Errorf("what stood there is reported as %q", isDone.Matched)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasSuffix(body, "Он промолчал.\n") {
 		t.Errorf("the note reads:\n%q", body)
@@ -174,7 +174,7 @@ func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 
 // A replacement is the application changing what is in a note, so the note
 // takes an identifier if it has none.
-func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
+func TestAReplacedNoteConsumesAnIdentifier(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
 
@@ -200,7 +200,7 @@ func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
 	}
 	if _, err := replacing.Execute(
 		t.Context(), c.vault, "Aggressor.md", "three", "THREE", first.Fingerprint); err != nil {
-		t.Fatalf("the second replacement was refused: %v", err)
+		t.Fatalf("the second replacement failed: %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.Contains(body, "ONE two THREE") {
 		t.Errorf("the note reads:\n%s", body)

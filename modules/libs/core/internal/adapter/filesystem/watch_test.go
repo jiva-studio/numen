@@ -83,7 +83,7 @@ func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 		"projects/Plan.md":   "# Plan\n",
 		"projects/deep/A.md": "# A\n",
 	}, nil)
-	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 	}
 
 	select {
-	case <-lost:
+	case <-missing:
 	case paths := <-changes:
 		t.Fatalf("reported %v — the notes under a moved folder cannot be named from disk", paths)
 	case <-time.After(5 * time.Second):
@@ -134,7 +134,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 		"Note.md":              "# Note\n",
 		"2026.archive/Kept.md": "# Kept\n",
 	}, nil)
-	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 	deadline := time.After(5 * time.Second)
 	for {
 		select {
-		case <-lost:
+		case <-missing:
 			return
 		case paths := <-changes:
 			// Removing the folder removes its notes first, and those it can
@@ -337,11 +337,11 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	}
 	waits("the journal was written and nothing was reported")
 
-	beside := filepath.Join(dir, "index.db.new")
-	if err := os.WriteFile(beside, []byte("second"), 0o644); err != nil {
+	siblingPath := filepath.Join(dir, "index.db.new")
+	if err := os.WriteFile(siblingPath, []byte("second"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(beside, at); err != nil {
+	if err := os.Rename(siblingPath, at); err != nil {
 		t.Fatal(err)
 	}
 	waits("the file was replaced and nothing was reported")
@@ -377,13 +377,13 @@ func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
 		"node_modules/left/A.md": "# A\n",
 		"archive/deep/Buried.md": "# Buried\n",
 	}, []string{"node_modules/", "archive/"})
-	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, gone := range []string{".git", "node_modules", "archive"} {
-		if err := os.RemoveAll(filepath.Join(root, gone)); err != nil {
+	for _, removed := range []string{".git", "node_modules", "archive"} {
+		if err := os.RemoveAll(filepath.Join(root, removed)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -392,7 +392,7 @@ func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
 	deadline := time.After(5 * time.Second)
 	for {
 		select {
-		case <-lost:
+		case <-missing:
 			t.Fatal("a folder the vault ignores went away and the whole vault was read again")
 		case paths := <-changes:
 			if !slices.Equal(paths, []string{"Note.md"}) {
@@ -410,7 +410,7 @@ func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
 // folder the walk stops at, so neither half of that is the vault's.
 func TestAFolderTheVaultIgnoresArrivingIsNotRemembered(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -421,7 +421,7 @@ func TestAFolderTheVaultIgnoresArrivingIsNotRemembered(t *testing.T) {
 	write(t, root, "Note.md", "# Note\n\nedited\n")
 	select {
 	case <-changes:
-	case <-lost:
+	case <-missing:
 		t.Fatal("a folder the vault ignores arrived and the whole vault was read again")
 	case <-time.After(5 * time.Second):
 		t.Fatal("the note was written and nothing was said")
@@ -435,7 +435,7 @@ func TestAFolderTheVaultIgnoresArrivingIsNotRemembered(t *testing.T) {
 	deadline := time.After(5 * time.Second)
 	for {
 		select {
-		case <-lost:
+		case <-missing:
 			t.Fatal("a folder the vault ignores came and went, and the whole vault was read again")
 		case paths := <-changes:
 			if !slices.Equal(paths, []string{"Note.md"}) {
@@ -458,7 +458,7 @@ func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: link})
+	changes, missing, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: link})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -469,7 +469,7 @@ func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
 		if !slices.Equal(paths, []string{"Note.md"}) {
 			t.Errorf("reported %v, want the note it named", paths)
 		}
-	case <-lost:
+	case <-missing:
 		t.Fatal("the whole vault was read again — the path the system named was taken for one outside it")
 	case <-time.After(5 * time.Second):
 		t.Fatal("the note was written and nothing was said")

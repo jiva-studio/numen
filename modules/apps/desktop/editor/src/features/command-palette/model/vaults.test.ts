@@ -128,7 +128,7 @@ describe('adding a vault', () => {
     expect(one.calls.open).toHaveBeenCalledWith('heat')
   })
 
-  it('says why the list refused, as an error', async () => {
+  it('says why the list rejected, as an error', async () => {
     const one = createWindow({ added: asFailure('overlaps' as const) })
 
     await addVault(one.on, words)
@@ -156,7 +156,7 @@ describe('adding a vault', () => {
 })
 
 describe('renaming a vault', () => {
-  it('names it what was typed and tells the window', async () => {
+  it('names it what was typed and notifies the window', async () => {
     const one = createWindow()
 
     await renameVault(createRenameInvocation('Heat'), one.on, words)
@@ -165,7 +165,7 @@ describe('renaming a vault', () => {
     expect(one.calls.setVaultName).toHaveBeenCalledWith({ id: 'physics', name: 'Heat' })
   })
 
-  it('tells the window nothing where the list is as it was', async () => {
+  it('notifies the window nothing where the list is as it was', async () => {
     const one = createWindow({ renamed: asValue(null) })
 
     await renameVault(createRenameInvocation('Heat'), one.on, words)
@@ -174,7 +174,7 @@ describe('renaming a vault', () => {
     expect(one.messages).toStrictEqual([])
   })
 
-  it('says why the list refused, as an error', async () => {
+  it('says why the list rejected, as an error', async () => {
     const one = createWindow({ renamed: asFailure('nameTaken' as const) })
 
     await renameVault(createRenameInvocation('Heat'), one.on, words)
@@ -213,7 +213,7 @@ describe('taking a vault off the list', () => {
     expect(one.messages).toStrictEqual([])
   })
 
-  it('says why the list refused, as an error', async () => {
+  it('says why the list rejected, as an error', async () => {
     const one = createWindow({ removed: 'lastVault' })
 
     await removeVault(createRenameInvocation(), one.on, { shouldErase: false, words })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The controls a sound is played by: start it, stop it, see where it stands
+ * The controls a sound is played by: start it, stop it, see at its current position
  * and put it somewhere else.
  *
  * It plays nothing of its own. What plays lives where being drawn cannot

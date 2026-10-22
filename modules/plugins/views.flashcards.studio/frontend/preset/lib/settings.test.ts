@@ -72,14 +72,14 @@ describe('holding the shares of a load to bounds', () => {
 
 describe('reconciling a read with the edits not yet written', () => {
   it('is the read itself where nothing is unwritten', () => {
-    const read = settings({ newADay: 3 })
-    expect(reconcileSettings(read, settings(), new Set())).toBe(read)
+    const readItem = settings({ newADay: 3 })
+    expect(reconcileSettings(readItem, settings(), new Set())).toBe(readItem)
   })
 
   it('keeps each unwritten field and takes the rest from the read', () => {
-    const read = settings({ newADay: 3, interval: 40 })
+    const readItem = settings({ newADay: 3, interval: 40 })
     const was = settings({ newADay: 8 })
-    expect(reconcileSettings(read, was, new Set(['newADay']))).toStrictEqual(
+    expect(reconcileSettings(readItem, was, new Set(['newADay']))).toStrictEqual(
       settings({ newADay: 8, interval: 40 }),
     )
   })

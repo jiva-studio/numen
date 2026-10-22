@@ -23,7 +23,7 @@ func buildElementHead(is string) string { return `<style ` + appearance.Marker +
 // Each of the three elements the head ends with says which of them it is. A
 // theme's file is a person's own CSS and says nothing about itself, so the mark
 // is the whole of what a window has to tell them apart by.
-func TestEachStyleElementSaysWhichItIs(t *testing.T) {
+func TestEachStyleElementReturnsWhichItIs(t *testing.T) {
 	head := buildSettings().Styles()
 
 	for _, is := range []string{appearance.IsMode, appearance.IsTheme, appearance.IsSizes} {

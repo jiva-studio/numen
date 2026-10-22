@@ -25,7 +25,7 @@ func TestShapeAndAlphabet(t *testing.T) {
 
 func TestOrderMatchesTime(t *testing.T) {
 	// Lexicographic order equalling chronological order is why ULID was chosen
-	// over UUID, so it is worth a test rather than a comment.
+	// over UUID, so it is worth a test and not a comment.
 	base := time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
 	earlier := ulid.New(base)
 	later := ulid.New(base.Add(time.Second))
@@ -36,13 +36,13 @@ func TestOrderMatchesTime(t *testing.T) {
 
 func TestDistinctWithinTheSameMillisecond(t *testing.T) {
 	at := time.Now()
-	seen := map[string]bool{}
+	observed := map[string]bool{}
 	for range 1000 {
 		id := ulid.New(at)
-		if seen[id] {
+		if observed[id] {
 			t.Fatalf("duplicate within one millisecond: %s", id)
 		}
-		seen[id] = true
+		observed[id] = true
 	}
 }
 

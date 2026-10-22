@@ -6,7 +6,7 @@ import { BudgetUnit as BudgetUnits, Goal as Goals, Rule as Rules } from '@numen/
 
 import { goalNames, goalOf } from './goal'
 import type { Goal } from './goal'
-import { getNames } from './naming'
+import { getNames } from './enumNames'
 
 /** The unit a day's budget is spent in. */
 export type BudgetUnit = 'cards' | 'shows'

@@ -44,18 +44,18 @@ function usePlexPicture(
   map: ReturnType<typeof createNodeIdMap>,
 ) {
   const picture = computed<PlexNeighbourhood | null>(() => {
-    const around = view.neighbourhood.value
-    if (!deps.isReady.value || !around) return null
-    return convertNeighbourhood(around, map.getNodeId)
+    const neighbourhood = view.neighbourhood.value
+    if (!deps.isReady.value || !neighbourhood) return null
+    return convertNeighbourhood(neighbourhood, map.getNodeId)
   })
 
   // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
   let lastDrawnIds: readonly string[] = []
   watch(
     picture,
-    (drawn) => {
+    (rendered) => {
       // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
-      const drawnIds = drawn?.nodes.map((node) => node.id) ?? []
+      const drawnIds = rendered?.nodes.map((node) => node.id) ?? []
       map.retainNodeIds([...drawnIds, ...lastDrawnIds])
       lastDrawnIds = drawnIds
     },
@@ -77,21 +77,21 @@ function usePlexPicture(
   })
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
-    const around = view.neighbourhood.value
-    return around ? getNoteTypes(around) : new Map()
+    const neighbourhood = view.neighbourhood.value
+    return neighbourhood ? getNoteTypes(neighbourhood) : new Map()
   })
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
 
-  const drawn = computed<readonly string[]>(() => {
-    const around = view.neighbourhood.value
-    if (!around) return []
-    const paths = [around.focus.path]
-    for (const related of around.related) paths.push(related.path)
+  const activePaths = computed<readonly string[]>(() => {
+    const neighbourhood = view.neighbourhood.value
+    if (!neighbourhood) return []
+    const paths = [neighbourhood.focus.path]
+    for (const related of neighbourhood.related) paths.push(related.path)
     return paths.filter(Boolean)
   })
 
-  return { picture, empty, dragged, types, getType, drawn }
+  return { picture, empty, dragged, types, getType, drawn: activePaths }
 }
 
 function usePlexNodeActions(options: {
@@ -196,17 +196,17 @@ function usePlexMenu(options: {
 
 function getPlexNodeName(around: PlexView['neighbourhood']['value'], path: string): string {
   if (around?.focus.path === path && around.focus.title) return around.focus.title
-  const near = around?.related.find((one) => one.path === path)
-  return near?.title || getFileName(path).replace(/\.md$/, '')
+  const foundNode = around?.related.find((one) => one.path === path)
+  return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }
 
 export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
-  const { picture, empty, dragged, types, getType, drawn } = usePlexPicture(view, deps, map)
+  const { picture, empty, dragged, types, getType, drawn: drawnNodes } = usePlexPicture(view, deps, map)
 
   const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
   const quickLinkModel = useQuickLink(view, deps, map)
-  const { readHeadings, getHeadings } = usePlexHeadings(drawn, types, deps, map)
+  const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
   const linkInspectorModel = useLinkInspector(view, deps.editor, map, getName)
 
   const nodeActions = usePlexNodeActions({

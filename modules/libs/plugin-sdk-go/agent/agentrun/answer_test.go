@@ -15,7 +15,7 @@ func TestARequestNamingNoToolHasNone(t *testing.T) {
 	}
 }
 
-func TestThePromptStandsAfterTheInstructions(t *testing.T) {
+func TestThePromptExistsAfterTheInstructions(t *testing.T) {
 	if got := WritePrompt("be brief", "why?"); got != "be brief\n\nwhy?" {
 		t.Errorf("got %q", got)
 	}

@@ -82,7 +82,7 @@ func (x *ReadArticleRequest) GetSpan() *Span {
 
 type ReadArticleResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The prose, as it reads. A client draws it as it stands, with no gutter and
+	// The prose, as it reads. A client draws it currently, with no gutter and
 	// nothing to seek. A file nothing has been fetched for carries none.
 	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields

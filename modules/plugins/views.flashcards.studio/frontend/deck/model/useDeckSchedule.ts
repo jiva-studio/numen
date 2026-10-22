@@ -36,11 +36,11 @@ export interface ScheduledStore {
 
 /** The preset a deck names, as the line at the top of it draws it. */
 const readDeckPreset = (answer: PresetReadResult): DeckPreset => {
-  const read = answer.ok ? answer.value.preset : null
-  if (read === null) return BY_DEFAULT
-  const errorMessage = read.problems[0] ?? ''
-  if (read.path === '') return { ...BY_DEFAULT, errorMessage }
-  return { path: read.path, name: read.title || words.unnamed(read.path), errorMessage }
+  const readItem = answer.ok ? answer.value.preset : null
+  if (readItem === null) return BY_DEFAULT
+  const errorMessage = readItem.problems[0] ?? ''
+  if (readItem.path === '') return { ...BY_DEFAULT, errorMessage }
+  return { path: readItem.path, name: readItem.title || words.unnamed(readItem.path), errorMessage }
 }
 
 function usePresetListing(presets: Presets) {
@@ -78,13 +78,13 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   const chose = ref(new Map<string, string>())
 
   const refreshDeckPreset = async (path: string): Promise<void> => {
-    let read: PresetReadResult
+    let readItem: PresetReadResult
     try {
-      read = await presets.getDeckPreset(path)
+      readItem = await presets.getDeckPreset(path)
     } catch {
       return
     }
-    scheduled.value.set(path, readDeckPreset(read))
+    scheduled.value.set(path, readDeckPreset(readItem))
   }
 
   const setChoiceMessage = (id: string, text: string): void => {
@@ -111,9 +111,9 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
    * The preset one tab is scheduled by.
    */
   const getDeckPreset = (id: string): DeckPreset => {
-    const held = scheduled.value.get(store.getPath(id)) ?? BY_DEFAULT
+    const target = scheduled.value.get(store.getPath(id)) ?? BY_DEFAULT
     const error = chose.value.get(id) ?? ''
-    return error === '' ? held : { ...held, errorMessage: error }
+    return error === '' ? target : { ...target, errorMessage: error }
   }
 
   /** What was known about a file no tab of this window stands at any longer. */

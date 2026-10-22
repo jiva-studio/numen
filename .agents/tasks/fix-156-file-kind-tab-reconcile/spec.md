@@ -31,7 +31,7 @@ export interface WindowTabReconciler {
 - `pages/preset-editor/kind.ts`: implements `getOpenTab` and `getTarget` returning the preset file path.
 
 ### Wiring in `app/useWindow.ts`
-- Connects `held.reconcileTab` into `fileOpeners({ ...core, reconcileTab: held.reconcileTab })`.
+- Connects `windowTabs.reconcileTab` into `fileOpeners({ ...core, reconcileTab: windowTabs.reconcileTab })`.
 
 ## 2. Blast Radius Matrix
 | Package / Path | File | Action | Downstream Consumers |

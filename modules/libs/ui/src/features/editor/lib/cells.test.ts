@@ -150,7 +150,7 @@ describe('the buttons that grow the table', () => {
     expect(errors).toEqual([])
   })
 
-  it('does nothing where the frame does not say where the table stands', () => {
+  it('does nothing where the frame does not say where the table remains', () => {
     const { view, frame } = draw()
     const dispatch = vi.spyOn(view, 'dispatch')
     delete frame.dataset['to']

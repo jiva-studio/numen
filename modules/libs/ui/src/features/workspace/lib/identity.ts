@@ -22,6 +22,6 @@ export const browserRandomness: Randomness = {
  * count belongs to the factory, so two of them never meet.
  */
 export function createNodeIdFactory(random: Randomness = browserRandomness): NodeIdFactory {
-  let made = 0
-  return () => (random.uuid() ?? `node-${++made}`) as NodeId
+  let createdItem = 0
+  return () => (random.uuid() ?? `node-${++createdItem}`) as NodeId
 }

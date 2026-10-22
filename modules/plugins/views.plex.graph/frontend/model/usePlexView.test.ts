@@ -1,5 +1,5 @@
 /**
- * What one plex is showing, and what travelling comes to.
+ * What one plex is showing, and what travelling evaluates to.
  *
  * Every one of these has a failure that looks like nothing at all: a plex
  * showing something stale, with no error and no way back.
@@ -35,7 +35,7 @@ describe('a plex still being read', () => {
     expect(plex.isLoading.value).toBe(false)
   })
 
-  it('goes on saying so while an older answer is let go of', async () => {
+  it('goes on saying so while an older answer is release', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
     const plex = usePlexView(
       fake(async (path) => {
@@ -77,7 +77,7 @@ describe('a plex whose first answer is stale', () => {
 })
 
 describe('two questions in flight', () => {
-  it('keeps the answer to the last one asked, however they come back', async () => {
+  it('keeps the answer to the last one requested, however they come back', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
     const plex = usePlexView(
       fake(async (path) => {
@@ -98,20 +98,20 @@ describe('two questions in flight', () => {
 describe('a note that moved while a question was in flight', () => {
   it('lets go of the answer about where it was', async () => {
     let release = () => {}
-    let holding: Promise<void> | null = null
+    let pendingGate: Promise<void> | null = null
     const plex = usePlexView(
       fake(async (path) => {
-        if (holding) await holding
+        if (pendingGate) await pendingGate
         return answer(path)
       }),
     )
     await plex.go('Note.md')
 
-    holding = new Promise<void>((wake) => (release = wake))
-    const asking = plex.go('Note.md')
+    pendingGate = new Promise<void>((wake) => (release = wake))
+    const goPromise = plex.go('Note.md')
     plex.followMoves([{ from: 'Note.md', to: 'moved/Note.md' }])
     release()
-    await asking
+    await goPromise
 
     expect(plex.here.value).toBe('moved/Note.md')
     expect(plex.neighbourhood.value?.focus.path).toBe('Note.md')
@@ -119,19 +119,19 @@ describe('a note that moved while a question was in flight', () => {
 
   it('holds on to an answer about a note nothing moved', async () => {
     let release = () => {}
-    let holding: Promise<void> | null = null
+    let pendingGate: Promise<void> | null = null
     const plex = usePlexView(
       fake(async (path) => {
-        if (holding) await holding
+        if (pendingGate) await pendingGate
         return answer(path)
       }),
     )
 
-    holding = new Promise<void>((wake) => (release = wake))
-    const asking = plex.go('Note.md')
+    pendingGate = new Promise<void>((wake) => (release = wake))
+    const goPromise = plex.go('Note.md')
     plex.followMoves([{ from: 'Elsewhere.md', to: 'moved/Elsewhere.md' }])
     release()
-    await asking
+    await goPromise
 
     expect(plex.here.value).toBe('Note.md')
   })
@@ -177,10 +177,10 @@ describe('a plex whose tab has closed', () => {
   })
 
   it('travels nowhere else', async () => {
-    const asked: string[] = []
+    const request: string[] = []
     const plex = usePlexView(
       fake(async (path) => {
-        asked.push(path)
+        request.push(path)
         return answer(path)
       }),
     )
@@ -188,7 +188,7 @@ describe('a plex whose tab has closed', () => {
     plex.close()
     await plex.go('Note.md')
 
-    expect(asked).toStrictEqual([])
+    expect(request).toStrictEqual([])
     expect(plex.here.value).toBe('')
   })
 })
@@ -213,11 +213,11 @@ describe('a vault that changed somewhere else', () => {
   it('leaves the picture on screen standing, answer for answer', async () => {
     const plex = usePlexView(fake(async (path) => answer(path)))
     await plex.go('Entropy.md')
-    const drawn = plex.neighbourhood.value
+    const previous = plex.neighbourhood.value
 
     await plex.go('Entropy.md')
 
-    expect(plex.neighbourhood.value).toBe(drawn)
+    expect(plex.neighbourhood.value).toBe(previous)
   })
 
   it('draws again where what is around the note is different', async () => {
@@ -238,12 +238,12 @@ describe('a vault that changed somewhere else', () => {
       })),
     )
     await plex.go('Entropy.md')
-    const drawn = plex.neighbourhood.value
+    const initial = plex.neighbourhood.value
 
     related = ['Heat.md']
     await plex.go('Entropy.md')
 
-    expect(plex.neighbourhood.value).not.toBe(drawn)
+    expect(plex.neighbourhood.value).not.toBe(initial)
     expect(plex.neighbourhood.value?.related).toHaveLength(1)
   })
 })

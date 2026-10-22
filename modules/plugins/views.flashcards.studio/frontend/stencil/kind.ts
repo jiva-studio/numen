@@ -47,8 +47,8 @@ function createStencilTabItem(
   const { store, fields, wire, closeTab } = deps
   const close = (tab: string) => {
     const path = store.getPath(id)
-    void store.close(id).then((gone) => {
-      if (!gone) return
+    void store.close(id).then((removed) => {
+      if (!removed) return
       fields.forget(id)
       wire.forget(
         path,

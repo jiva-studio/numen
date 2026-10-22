@@ -58,10 +58,10 @@ func TestABookWithoutAReaderOfBooksIsUnreadable(t *testing.T) {
 }
 
 func TestABookTheReaderRefusesIsUnreadable(t *testing.T) {
-	for _, refusal := range []error{port.ErrNotADocument, port.ErrEncrypted, errors.New("the plugin is gone")} {
-		doc, err := text.Read(t.Context(), failing{err: refusal}, atlas, []byte("PK"))
+	for _, readErr := range []error{port.ErrNotADocument, port.ErrEncrypted, errors.New("the plugin is gone")} {
+		doc, err := text.Read(t.Context(), failing{err: readErr}, atlas, []byte("PK"))
 		if doc != nil || !errors.Is(err, text.ErrUnreadable) {
-			t.Errorf("%v: answered %+v, %v, want nothing and %v", refusal, doc, err, text.ErrUnreadable)
+			t.Errorf("%v: answered %+v, %v, want nothing and %v", readErr, doc, err, text.ErrUnreadable)
 		}
 	}
 }

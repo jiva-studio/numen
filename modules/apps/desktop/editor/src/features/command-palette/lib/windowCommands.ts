@@ -2,7 +2,7 @@
  * The commands offered over the window: what it opens, and how it is drawn.
  */
 import { createRowKeys } from './chords'
-import { isAlwaysOffered } from './offered'
+import { isAlwaysOffered } from './availability'
 import type { Command } from '../types'
 import type { Words } from '../words'
 

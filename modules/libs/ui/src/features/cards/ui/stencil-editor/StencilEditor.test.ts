@@ -6,8 +6,8 @@
  * the two orders, the two drags, and what each face is handed.
  *
  * The negatives are here: the first field has no handle and no way to go, a
- * name that objects renames nothing, a name abandoned renames nothing, and a
- * field let go where it was moves nothing.
+ * name that objects does not rename, a name abandoned does not rename, and a
+ * field let go where it was does not move.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -80,107 +80,107 @@ describe('Stencil, the fields', () => {
   })
 
   it('draws the silence, and no rows, for a stencil naming nothing', () => {
-    const held = mountStencil({ fields: [] })
-    expect(held.findAll('[data-field]')).toHaveLength(0)
-    expect(held.get('.stencil__silence').text()).toBe('No fields yet')
+    const target = mountStencil({ fields: [] })
+    expect(target.findAll('[data-field]')).toHaveLength(0)
+    expect(target.get('.stencil__silence').text()).toBe('No fields yet')
   })
 
   it('marks the first field as the one naming the cards', () => {
-    const held = mountStencil()
-    expect(getRow(held, 'Name').attributes('data-names')).toBe('true')
-    expect(getRow(held, 'Height').attributes('data-names')).toBeUndefined()
+    const target = mountStencil()
+    expect(getRow(target, 'Name').attributes('data-names')).toBe('true')
+    expect(getRow(target, 'Height').attributes('data-names')).toBeUndefined()
   })
 
   it('gives every row the same handle and the same way to remove it', () => {
-    const held = mountStencil()
+    const target = mountStencil()
     for (const field of FIELDS) {
-      expect(getRow(held, field).findAll('[data-grip]')).toHaveLength(1)
-      expect(getRow(held, field).findAll('button')).toHaveLength(1)
+      expect(getRow(target, field).findAll('[data-grip]')).toHaveLength(1)
+      expect(getRow(target, field).findAll('button')).toHaveLength(1)
     }
   })
 
   it('turns off the first field’s handle, and leaves every other one on', () => {
-    const held = mountStencil()
-    const first = getRow(held, 'Name').get('[data-grip]')
+    const target = mountStencil()
+    const first = getRow(target, 'Name').get('[data-grip]')
     expect(first.attributes('draggable')).toBe('false')
     expect(first.attributes('data-disabled')).toBe('true')
 
-    const other = getRow(held, 'Height').get('[data-grip]')
+    const other = getRow(target, 'Height').get('[data-grip]')
     expect(other.attributes('draggable')).toBe('true')
     expect(other.attributes('data-disabled')).toBeUndefined()
   })
 
   it('turns off the first field’s way to be removed, and leaves every other one on', () => {
-    const held = mountStencil()
-    expect(getRow(held, 'Name').get('button').attributes('disabled')).toBeDefined()
-    expect(getRow(held, 'Height').get('button').attributes('disabled')).toBeUndefined()
+    const target = mountStencil()
+    expect(getRow(target, 'Name').get('button').attributes('disabled')).toBeDefined()
+    expect(getRow(target, 'Height').get('button').attributes('disabled')).toBeUndefined()
   })
 
-  it('removes nothing when the first field’s button is pressed', async () => {
-    const held = mountStencil()
-    await getRow(held, 'Name').get('button').trigger('click')
-    expect(held.emitted('remove-field')).toBeUndefined()
+  it('redoes not move when the first field’s button is pressed', async () => {
+    const target = mountStencil()
+    await getRow(target, 'Name').get('button').trigger('click')
+    expect(target.emitted('remove-field')).toBeUndefined()
   })
 
-  it('moves nothing where a field is let go above the first', async () => {
-    const held = mountStencil()
-    await dragTo(held, 'Weight', 'Name')
-    expect(held.emitted('move-field')).toBeUndefined()
+  it('does not move where a field is let go above the first', async () => {
+    const target = mountStencil()
+    await dragTo(target, 'Weight', 'Name')
+    expect(target.emitted('move-field')).toBeUndefined()
   })
 
   it('renames the first field like any other', async () => {
-    const held = mountStencil()
-    await type(held, 'Name', 'Question')
-    await getBox(held, 'Name').trigger('change')
-    expect(held.emitted('rename-field')).toEqual([['Name', 'Question']])
+    const target = mountStencil()
+    await type(target, 'Name', 'Question')
+    await getBox(target, 'Name').trigger('change')
+    expect(target.emitted('rename-field')).toEqual([['Name', 'Question']])
   })
 
-  it('stands the way to add a field on a divider that is announced as nothing', () => {
-    const held = mountStencil()
-    const divider = held.get('.stencil__part .divider')
+  it('remains the way to add a field on a divider that is announced as nothing', () => {
+    const target = mountStencil()
+    const divider = target.get('.stencil__part .divider')
     expect(divider.attributes('role')).toBe('presentation')
     expect(divider.get('button').text()).toBe('Add a field')
-    expect(held.findAll('hr')).toHaveLength(0)
+    expect(target.findAll('hr')).toHaveLength(0)
   })
 
   it('asks for a field under a name nothing has taken', async () => {
-    const held = mountStencil({ fields: ['Field', 'Field 2'] })
-    await held
+    const target = mountStencil({ fields: ['Field', 'Field 2'] })
+    await target
       .findAll('button')
       .filter((each) => each.text() === 'Add a field')[0]
       ?.trigger('click')
-    expect(held.emitted('add-field')).toEqual([['Field 1']])
+    expect(target.emitted('add-field')).toEqual([['Field 1']])
   })
 
   it('emits a name typed and committed', async () => {
-    const held = mountStencil()
-    await type(held, 'Height', 'Tallness')
-    await getBox(held, 'Height').trigger('change')
-    expect(held.emitted('rename-field')).toEqual([['Height', 'Tallness']])
+    const target = mountStencil()
+    await type(target, 'Height', 'Tallness')
+    await getBox(target, 'Height').trigger('change')
+    expect(target.emitted('rename-field')).toEqual([['Height', 'Tallness']])
   })
 
-  it('renames nothing where the name typed is another field’s', async () => {
-    const held = mountStencil()
-    await type(held, 'Height', 'Weight')
-    await getBox(held, 'Height').trigger('change')
-    expect(held.emitted('rename-field')).toBeUndefined()
+  it('does not rename where the name typed is another field’s', async () => {
+    const target = mountStencil()
+    await type(target, 'Height', 'Weight')
+    await getBox(target, 'Height').trigger('change')
+    expect(target.emitted('rename-field')).toBeUndefined()
   })
 
   it('says why a name typed cannot be used, while it is being typed', async () => {
-    const held = mountStencil()
-    await type(held, 'Height', 'Weight')
-    expect(getRow(held, 'Height').get('.stencil__objections').text()).toBe('That name is taken')
+    const target = mountStencil()
+    await type(target, 'Height', 'Weight')
+    expect(getRow(target, 'Height').get('.stencil__objections').text()).toBe('That name is taken')
 
     // The line belongs to the row, and the box says what is wrong with it to a
     // reader.
-    expect(getRow(held, 'Height').get('.stencil__row').attributes('data-objections')).toBe('taken')
-    expect(getBox(held, 'Height').attributes('aria-invalid')).toBe('true')
+    expect(getRow(target, 'Height').get('.stencil__row').attributes('data-objections')).toBe('taken')
+    expect(getBox(target, 'Height').attributes('aria-invalid')).toBe('true')
   })
 
   it('draws a row as one block: the handle, the box and the way to remove it stand inside it', () => {
-    const held = mountStencil()
+    const target = mountStencil()
     for (const field of FIELDS) {
-      const row = getRow(held, field).get('.stencil__row')
+      const row = getRow(target, field).get('.stencil__row')
       expect(row.find('[data-grip]').exists()).toBe(true)
       expect(row.find('input').exists()).toBe(true)
       expect(row.find('button').exists()).toBe(true)
@@ -188,9 +188,9 @@ describe('Stencil, the fields', () => {
   })
 
   it('gives the turned-off row the same block, with nothing missing from it', () => {
-    const held = mountStencil()
-    const first = getRow(held, 'Name').get('.stencil__row')
-    const other = getRow(held, 'Height').get('.stencil__row')
+    const target = mountStencil()
+    const first = getRow(target, 'Name').get('.stencil__row')
+    const other = getRow(target, 'Height').get('.stencil__row')
 
     const shape = (row: typeof first): readonly string[] =>
       [...row.element.children].map((each) => each.tagName)
@@ -198,101 +198,101 @@ describe('Stencil, the fields', () => {
   })
 
   it('says nothing about a name nothing is being typed over', () => {
-    const held = mountStencil()
-    expect(held.find('.stencil__field .stencil__objections').exists()).toBe(false)
+    const target = mountStencil()
+    expect(target.find('.stencil__field .stencil__objections').exists()).toBe(false)
   })
 
-  it('renames nothing where the name typed is the one it already carries', async () => {
-    const held = mountStencil()
-    await type(held, 'Height', 'Height')
-    await getBox(held, 'Height').trigger('change')
-    expect(held.emitted('rename-field')).toBeUndefined()
+  it('does not rename where the name typed is the one it already carries', async () => {
+    const target = mountStencil()
+    await type(target, 'Height', 'Height')
+    await getBox(target, 'Height').trigger('change')
+    expect(target.emitted('rename-field')).toBeUndefined()
   })
 
-  it('renames nothing where a name is abandoned', async () => {
-    const held = mountStencil()
-    await type(held, 'Height', 'Tallness')
-    await getBox(held, 'Height').trigger('keydown', { key: 'Escape' })
-    await getBox(held, 'Height').trigger('change')
-    expect(held.emitted('rename-field')).toBeUndefined()
-    expect(getBox(held, 'Height').element.value).toBe('Height')
+  it('does not rename where a name is abandoned', async () => {
+    const target = mountStencil()
+    await type(target, 'Height', 'Tallness')
+    await getBox(target, 'Height').trigger('keydown', { key: 'Escape' })
+    await getBox(target, 'Height').trigger('change')
+    expect(target.emitted('rename-field')).toBeUndefined()
+    expect(getBox(target, 'Height').element.value).toBe('Height')
   })
 
-  it('emits the field asked to go', async () => {
-    const held = mountStencil()
-    await getRow(held, 'Weight').findAll('button')[0]?.trigger('click')
-    expect(held.emitted('remove-field')).toEqual([['Weight']])
+  it('emits the field requested to go', async () => {
+    const target = mountStencil()
+    await getRow(target, 'Weight').findAll('button')[0]?.trigger('click')
+    expect(target.emitted('remove-field')).toEqual([['Weight']])
   })
 
   it('emits a field let go before another below the first', async () => {
-    const held = mountStencil()
-    await dragTo(held, 'Weight', 'Height')
-    expect(held.emitted('move-field')).toEqual([['Weight', 'Height']])
+    const target = mountStencil()
+    await dragTo(target, 'Weight', 'Height')
+    expect(target.emitted('move-field')).toEqual([['Weight', 'Height']])
   })
 
   it('emits a field let go past the last of them', async () => {
-    const held = mountStencil()
-    await dragTo(held, 'Height', null)
-    expect(held.emitted('move-field')).toEqual([['Height', null]])
+    const target = mountStencil()
+    await dragTo(target, 'Height', null)
+    expect(target.emitted('move-field')).toEqual([['Height', null]])
   })
 
   it('emits a field let go on the rule the list is added by', async () => {
-    const held = mountStencil()
-    await getRow(held, 'Height').get('[data-grip]').trigger('dragstart')
-    const rule = held.findAll('section')[0]?.get('.divider')
+    const target = mountStencil()
+    await getRow(target, 'Height').get('[data-grip]').trigger('dragstart')
+    const rule = target.findAll('section')[0]?.get('.divider')
     await rule?.trigger('dragover')
     await rule?.trigger('drop')
-    expect(held.emitted('move-field')).toEqual([['Height', null]])
+    expect(target.emitted('move-field')).toEqual([['Height', null]])
   })
 
   it('emits a field let go anywhere else in the part the fields stand in', async () => {
-    const held = mountStencil()
-    await getRow(held, 'Height').get('[data-grip]').trigger('dragstart')
-    const heading = held.get('.stencil__heading')
+    const target = mountStencil()
+    await getRow(target, 'Height').get('[data-grip]').trigger('dragstart')
+    const heading = target.get('.stencil__heading')
     await heading.trigger('dragover')
     await heading.trigger('drop')
-    expect(held.emitted('move-field')).toEqual([['Height', null]])
+    expect(target.emitted('move-field')).toEqual([['Height', null]])
   })
 
-  it('moves nothing where a field is let go where it stands', async () => {
-    const held = mountStencil()
-    await dragTo(held, 'Height', 'Height')
-    expect(held.emitted('move-field')).toBeUndefined()
+  it('does not move where a field is let go at its current position', async () => {
+    const target = mountStencil()
+    await dragTo(target, 'Height', 'Height')
+    expect(target.emitted('move-field')).toBeUndefined()
   })
 
-  it('moves nothing where a drag ends with the field let go nowhere', async () => {
-    const held = mountStencil()
-    await dragOff(held, 'Weight', null)
-    expect(held.emitted('move-field')).toBeUndefined()
-    expect(getRow(held, 'Weight').attributes('data-dragged')).toBeUndefined()
+  it('does not move where a drag ends with the field let go nowhere', async () => {
+    const target = mountStencil()
+    await dragOff(target, 'Weight', null)
+    expect(target.emitted('move-field')).toBeUndefined()
+    expect(getRow(target, 'Weight').attributes('data-dragged')).toBeUndefined()
   })
 
-  it('moves nothing where a drag over another field ends with it let go nowhere', async () => {
-    const held = mountStencil()
-    await dragOff(held, 'Weight', 'Height')
-    expect(held.emitted('move-field')).toBeUndefined()
+  it('does not move where a drag over another field ends with it let go nowhere', async () => {
+    const target = mountStencil()
+    await dragOff(target, 'Weight', 'Height')
+    expect(target.emitted('move-field')).toBeUndefined()
   })
 
   it('marks the field on its way, and no other', async () => {
-    const held = mountStencil()
-    await getRow(held, 'Weight').get('[data-grip]').trigger('dragstart')
-    expect(getRow(held, 'Weight').attributes('data-dragged')).toBe('true')
-    expect(getRow(held, 'Height').attributes('data-dragged')).toBeUndefined()
+    const target = mountStencil()
+    await getRow(target, 'Weight').get('[data-grip]').trigger('dragstart')
+    expect(getRow(target, 'Weight').attributes('data-dragged')).toBe('true')
+    expect(getRow(target, 'Height').attributes('data-dragged')).toBeUndefined()
   })
 
   it('draws one row for a name the stencil declares twice', () => {
-    const held = mountStencil({ fields: ['Name', 'Height', 'Height'] })
-    expect(getDrawnFields(held)).toEqual(['Name', 'Height'])
-    expect(held.findAll('.stencil__field input')).toHaveLength(2)
+    const target = mountStencil({ fields: ['Name', 'Height', 'Height'] })
+    expect(getDrawnFields(target)).toEqual(['Name', 'Height'])
+    expect(target.findAll('.stencil__field input')).toHaveLength(2)
   })
 
   it('says what is wrong with a name to the box it is wrong about', async () => {
-    const held = mountStencil()
-    await type(held, 'Height', 'Weight')
+    const target = mountStencil()
+    await type(target, 'Height', 'Weight')
 
-    const said = getRow(held, 'Height').get('.stencil__objections')
-    expect(getBox(held, 'Height').attributes('aria-describedby')).toBe(said.attributes('id'))
-    expect(said.attributes('id')).toBeTruthy()
+    const response = getRow(target, 'Height').get('.stencil__objections')
+    expect(getBox(target, 'Height').attributes('aria-describedby')).toBe(response.attributes('id'))
+    expect(response.attributes('id')).toBeTruthy()
   })
 
   it('describes a box by nothing while what is in it can be used', () => {
@@ -303,8 +303,8 @@ describe('Stencil, the fields', () => {
     const getGrip = (wrapper: Editor, field: string) => getRow(wrapper, field).get('[data-grip]')
 
     it('names the handle, and gives it a place in the order', () => {
-      const held = mountStencil()
-      const grip = getGrip(held, 'Height')
+      const target = mountStencil()
+      const grip = getGrip(target, 'Height')
       expect(grip.attributes('aria-label')).toBe('Reorder: Height')
       expect(grip.attributes('tabindex')).toBe('0')
       expect(grip.attributes('role')).toBe('button')
@@ -323,28 +323,28 @@ describe('Stencil, the fields', () => {
     })
 
     it('emits a field dragged one place down the order', () => {
-      const held = mountStencil()
-      const press = pressKey(getGrip(held, 'Height').element, 'ArrowDown')
+      const target = mountStencil()
+      const press = pressKey(getGrip(target, 'Height').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
-      expect(held.emitted('move-field')).toEqual([['Height', null]])
+      expect(target.emitted('move-field')).toEqual([['Height', null]])
     })
 
     it('emits a field dragged one place up the order', () => {
-      const held = mountStencil()
-      pressKey(getGrip(held, 'Weight').element, 'ArrowUp')
-      expect(held.emitted('move-field')).toEqual([['Weight', 'Height']])
+      const target = mountStencil()
+      pressKey(getGrip(target, 'Weight').element, 'ArrowUp')
+      expect(target.emitted('move-field')).toEqual([['Weight', 'Height']])
     })
 
     it('drags nothing above the first field, which names every card', () => {
-      const held = mountStencil()
-      pressKey(getGrip(held, 'Height').element, 'ArrowUp')
-      expect(held.emitted('move-field')).toBeUndefined()
+      const target = mountStencil()
+      pressKey(getGrip(target, 'Height').element, 'ArrowUp')
+      expect(target.emitted('move-field')).toBeUndefined()
     })
 
     it('drags the first field nowhere', () => {
-      const held = mountStencil()
-      pressKey(getGrip(held, 'Name').element, 'ArrowDown')
-      expect(held.emitted('move-field')).toBeUndefined()
+      const target = mountStencil()
+      pressKey(getGrip(target, 'Name').element, 'ArrowDown')
+      expect(target.emitted('move-field')).toBeUndefined()
     })
   })
 })
@@ -356,20 +356,20 @@ describe('Stencil, what the caller found wrong', () => {
   }
 
   it('says what is wrong with a field under that field’s row', () => {
-    const held = mountStencil({ wrong: WRONG })
-    const said = getRow(held, 'Height').get('[data-wrong]')
-    expect(said.text()).toBe('declared twice')
+    const target = mountStencil({ wrong: WRONG })
+    const response = getRow(target, 'Height').get('[data-wrong]')
+    expect(response.text()).toBe('declared twice')
   })
 
   it('says it on no other row', () => {
-    const held = mountStencil({ wrong: WRONG })
-    expect(getRow(held, 'Weight').find('[data-wrong]').exists()).toBe(false)
+    const target = mountStencil({ wrong: WRONG })
+    expect(getRow(target, 'Weight').find('[data-wrong]').exists()).toBe(false)
   })
 
   it('says what is wrong with a face under that face’s name', () => {
-    const held = mountStencil({ wrong: WRONG })
-    const said = held.get('[data-face="recognise"] header [data-wrong]')
-    expect(said.text()).toBe('this face has no back')
+    const target = mountStencil({ wrong: WRONG })
+    const response = target.get('[data-face="recognise"] header [data-wrong]')
+    expect(response.text()).toBe('this face has no back')
   })
 
   it('says a line for each of them', () => {
@@ -377,8 +377,8 @@ describe('Stencil, what the caller found wrong', () => {
       at: new Map(),
       fields: new Map([['Height', ['declared twice', 'and nothing fills it']]]),
     }
-    const held = mountStencil({ wrong })
-    expect(getRow(held, 'Height').get('[data-wrong]').findAll('li')).toHaveLength(2)
+    const target = mountStencil({ wrong })
+    expect(getRow(target, 'Height').get('[data-wrong]').findAll('li')).toHaveLength(2)
   })
 
   it('says nothing where the caller found nothing wrong', () => {
@@ -397,64 +397,64 @@ describe('Stencil, the faces', () => {
   })
 
   it('draws the silence, and no faces, for a stencil showing nothing', () => {
-    const held = mountStencil({ faces: [] })
-    expect(held.findAll('[data-face]')).toHaveLength(0)
-    expect(held.text()).toContain('No faces yet')
+    const target = mountStencil({ faces: [] })
+    expect(target.findAll('[data-face]')).toHaveLength(0)
+    expect(target.text()).toContain('No faces yet')
   })
 
-  it('hands every face the fields the stencil declares', () => {
-    const held = mountStencil({ faces: TWO })
+  it('passes every face the fields the stencil declares', () => {
+    const target = mountStencil({ faces: TWO })
     for (const id of ['one', 'two']) {
-      const said = held
+      const response = target
         .findAll(`[data-face="${id}"] [data-insert]`)
         .map((each) => each.attributes('data-insert'))
-      expect(said).toEqual(FIELDS)
+      expect(response).toEqual(FIELDS)
     }
   })
 
-  it('hands a face the names the other faces carry', async () => {
-    const held = mountStencil({ faces: TWO })
-    const box = held.get<HTMLInputElement>('[data-face="one"] header input')
+  it('passes a face the names the other faces carry', async () => {
+    const target = mountStencil({ faces: TWO })
+    const box = target.get<HTMLInputElement>('[data-face="one"] header input')
     box.element.value = 'Two'
     await box.trigger('input')
-    expect(held.get('[data-face="one"] header [role="alert"]').text()).toBe('That name is taken')
+    expect(target.get('[data-face="one"] header [role="alert"]').text()).toBe('That name is taken')
   })
 
   it('emits the face and the half a box was typed into', async () => {
-    const held = mountStencil()
-    await held.get('[data-face="recognise"] [data-half="back"]').setValue('nothing but words')
-    expect(held.emitted('write')).toEqual([['recognise', 'back', 'nothing but words']])
+    const target = mountStencil()
+    await target.get('[data-face="recognise"] [data-half="back"]').setValue('nothing but words')
+    expect(target.emitted('write')).toEqual([['recognise', 'back', 'nothing but words']])
   })
 
-  it('stands the way to add a face on a rule of the same make', () => {
-    const held = mountStencil()
-    const rules = held.findAll('.divider')
+  it('remains the way to add a face on a rule of the same make', () => {
+    const target = mountStencil()
+    const rules = target.findAll('.divider')
     expect(rules.map((rule) => rule.get('button').text())).toEqual(['Add a field', 'Add a face'])
     for (const rule of rules) expect(rule.attributes('role')).toBe('presentation')
   })
 
   it('asks for a face under a name nothing has taken', async () => {
-    const held = mountStencil({ faces: [{ id: 'a', name: 'Face', front: '', back: '' }] })
-    await held
+    const target = mountStencil({ faces: [{ id: 'a', name: 'Face', front: '', back: '' }] })
+    await target
       .findAll('button')
       .filter((each) => each.text() === 'Add a face')[0]
       ?.trigger('click')
-    expect(held.emitted('add-face')).toEqual([['Face 1']])
+    expect(target.emitted('add-face')).toEqual([['Face 1']])
   })
 
-  it('emits the face asked to go', async () => {
-    const held = mountStencil()
-    await held.get('[data-face="recognise"] .card-header__actions button').trigger('click')
-    expect(held.emitted('remove-face')).toEqual([['recognise']])
+  it('emits the face requested to go', async () => {
+    const target = mountStencil()
+    await target.get('[data-face="recognise"] .card-header__actions button').trigger('click')
+    expect(target.emitted('remove-face')).toEqual([['recognise']])
   })
 
   it('emits a face renamed', async () => {
-    const held = mountStencil()
-    const box = held.get<HTMLInputElement>('[data-face="recognise"] header input')
+    const target = mountStencil()
+    const box = target.get<HTMLInputElement>('[data-face="recognise"] header input')
     box.element.value = 'Name it'
     await box.trigger('input')
     await box.trigger('change')
-    expect(held.emitted('rename-face')).toEqual([['recognise', 'Name it']])
+    expect(target.emitted('rename-face')).toEqual([['recognise', 'Name it']])
   })
 
   describe('dragging a face by the keyboard', () => {
@@ -475,22 +475,22 @@ describe('Stencil, the faces', () => {
     })
 
     it('emits a face dragged one place down the order', () => {
-      const held = mountStencil({ faces: THREE })
-      const press = pressKey(getStrip(held, 'one').element, 'ArrowDown')
+      const target = mountStencil({ faces: THREE })
+      const press = pressKey(getStrip(target, 'one').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
-      expect(held.emitted('move-face')).toEqual([['one', 'three']])
+      expect(target.emitted('move-face')).toEqual([['one', 'three']])
     })
 
     it('emits a face dragged one place up the order: nothing among them is fixed', () => {
-      const held = mountStencil({ faces: THREE })
-      pressKey(getStrip(held, 'two').element, 'ArrowUp')
-      expect(held.emitted('move-face')).toEqual([['two', 'one']])
+      const target = mountStencil({ faces: THREE })
+      pressKey(getStrip(target, 'two').element, 'ArrowUp')
+      expect(target.emitted('move-face')).toEqual([['two', 'one']])
     })
 
-    it('moves nothing where there is no place that way', () => {
-      const held = mountStencil({ faces: THREE })
-      pressKey(getStrip(held, 'one').element, 'ArrowUp')
-      expect(held.emitted('move-face')).toBeUndefined()
+    it('does not move where there is no place that way', () => {
+      const target = mountStencil({ faces: THREE })
+      pressKey(getStrip(target, 'one').element, 'ArrowUp')
+      expect(target.emitted('move-face')).toBeUndefined()
     })
   })
 
@@ -506,9 +506,9 @@ describe('Stencil, the faces', () => {
     /** A face picked up by its strip and let go over another, or over the tail. */
     const drag = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
       await getFace(editor, id).get('.card-header').trigger('dragstart')
-      const over = onto === null ? editor.findAll('section')[1] : getFace(editor, onto)
-      await over?.trigger('dragover')
-      await over?.trigger('drop')
+      const overElement = onto === null ? editor.findAll('section')[1] : getFace(editor, onto)
+      await overElement?.trigger('dragover')
+      await overElement?.trigger('drop')
     }
 
     it('emits a face let go before another', async () => {
@@ -535,7 +535,7 @@ describe('Stencil, the faces', () => {
       expect(editor.emitted('move-face')).toEqual([['two', 'one']])
     })
 
-    it('moves nothing where a face is let go where it stands', async () => {
+    it('does not move where a face is let go at its current position', async () => {
       const editor = mountStencil({ faces: THREE })
       await drag(editor, 'two', 'two')
       expect(editor.emitted('move-face')).toBeUndefined()
@@ -549,14 +549,14 @@ describe('Stencil, the faces', () => {
       await header.trigger('dragend')
     }
 
-    it('moves nothing where a drag ends with the face let go nowhere', async () => {
+    it('does not move where a drag ends with the face let go nowhere', async () => {
       const editor = mountStencil({ faces: THREE })
       await dragOff(editor, 'two', null)
       expect(editor.emitted('move-face')).toBeUndefined()
       expect(getFace(editor, 'two').attributes('data-dragged')).toBeUndefined()
     })
 
-    it('moves nothing where a drag over another face ends with it let go nowhere', async () => {
+    it('does not move where a drag over another face ends with it let go nowhere', async () => {
       const editor = mountStencil({ faces: THREE })
       await dragOff(editor, 'two', 'one')
       expect(editor.emitted('move-face')).toBeUndefined()

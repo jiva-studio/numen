@@ -25,7 +25,7 @@ func TestAHashRunWithNoSpaceIsNotAHeading(t *testing.T) {
 
 // A wikilink standing on the first line under its card's heading is replaced
 // in place, and the heading above it stays.
-func TestSetStencilReplacesALinkOnTheLineUnderTheHeading(t *testing.T) {
+func TestSetStencilReplacesALinkOnTheLineBelowTheHeading(t *testing.T) {
 	raw := "# Furry\n\n## Llama ^k7m2xq9fzp\n[[Animal]]\n\n### Name\n\nLlama\n"
 	f := format.OpenDeckBody(raw)
 	if err := f.SetStencil("k7m2xq9fzp", "Beast"); err != nil {

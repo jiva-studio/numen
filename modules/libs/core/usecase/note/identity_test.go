@@ -50,7 +50,7 @@ func writeNote(rt *rapid.T, c changing, folder, raw string) string {
 	return path
 }
 
-// getIdentifier is the identifier the note at this path stands under, and
+// getIdentifier is the identifier the note at this path is placed under, and
 // whether it carries one at all.
 func getIdentifier(t *rapid.T, root, path string) (string, bool) {
 	t.Helper()

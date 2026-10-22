@@ -14,8 +14,8 @@ import (
 
 // A vault is walked once however many counts ask for it at the same moment.
 func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
-	vaults, held := makeOpenVaults(t)
-	v := held[0]
+	vaults, target := makeOpenVaults(t)
+	v := target[0]
 
 	var walks sync.WaitGroup
 	for range 8 {
@@ -38,11 +38,11 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 // A walk asked for once the window has begun closing is refused, so none begins
 // after the index has been waited for.
 func TestClosingWindowReadsNothing(t *testing.T) {
-	vaults, held := makeOpenVaults(t)
+	vaults, target := makeOpenVaults(t)
 
 	vaults.CloseAndWait()
 
-	if err := vaults.IndexVault(t.Context(), held[0]); !errors.Is(err, ErrClosing) {
+	if err := vaults.IndexVault(t.Context(), target[0]); !errors.Is(err, ErrClosing) {
 		t.Errorf("a walk asked for while closing came back with %v", err)
 	}
 }
@@ -51,11 +51,11 @@ func TestClosingWindowReadsNothing(t *testing.T) {
 // begins writing to the index after it has been waited for. The prose is on
 // disk either way, and the window says the note is written and unlevelled.
 func TestClosingWindowUpdatesNothing(t *testing.T) {
-	vaults, held := makeOpenVaults(t)
+	vaults, target := makeOpenVaults(t)
 
 	vaults.CloseAndWait()
 
-	err := vaults.UpdateIndex(t.Context(), held[0], []string{"decks/Words.md"})
+	err := vaults.UpdateIndex(t.Context(), target[0], []string{"decks/Words.md"})
 	if !errors.Is(err, ErrClosing) {
 		t.Errorf("a levelling asked for while closing came back with %v", err)
 	}
@@ -64,8 +64,8 @@ func TestClosingWindowUpdatesNothing(t *testing.T) {
 // A vault is levelled through the opening it was walked with, and neither opens
 // the vault a second time.
 func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
-	vaults, held := makeOpenVaults(t)
-	v := held[0]
+	vaults, target := makeOpenVaults(t)
+	v := target[0]
 
 	if err := vaults.IndexVault(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -103,7 +103,7 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	held := []domain.Vault{
+	target := []domain.Vault{
 		{ID: "one", Name: "One", Path: makeDeckVault(t, cfg)},
 		{ID: "two", Name: "Two", Path: makeDeckVault(t, cfg)},
 	}
@@ -112,7 +112,7 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
-	return vaults, held
+	return vaults, target
 }
 
 // makeDeckVault is a folder holding one stencil and one deck, as a vault.

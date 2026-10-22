@@ -9,52 +9,52 @@ describe('putBeside', () => {
   const two = split('root', [stack('a', 'one'), stack('b', 'two')])
 
   it('leaves the tree alone for the middle, which is not a side', () => {
-    const split = putBeside(
+    const divided = putBeside(
       two,
       { onto: 'a', tab: 't', side: 'center', axis: 'horizontal' },
       createIdFactory(),
     )
-    expect(split).toStrictEqual({ root: two, axis: 'horizontal', focus: 'a' })
+    expect(divided).toStrictEqual({ root: two, axis: 'horizontal', focus: 'a' })
   })
 
   it('leaves the tree alone for a node that is not there', () => {
-    const split = putBeside(
+    const divided = putBeside(
       two,
       { onto: 'missing', tab: 't', side: 'left', axis: 'horizontal' },
       createIdFactory(),
     )
-    expect(split).toStrictEqual({ root: two, axis: 'horizontal', focus: 'missing' })
+    expect(divided).toStrictEqual({ root: two, axis: 'horizontal', focus: 'missing' })
   })
 
   it('divides a root that is one pane into two halves, turning the axis', () => {
-    const split = putBeside(
+    const divided = putBeside(
       stack('a', 'one'),
       { onto: 'a', tab: 't', side: 'bottom', axis: 'horizontal' },
       createIdFactory(),
     )
 
-    expect(split.axis).toBe('vertical')
-    expect(split.focus).toBe('made-1')
-    expect(isBranch(split.root) && split.root.sizes).toStrictEqual([0.5, 0.5])
-    expect(isBranch(split.root) && split.root.children.map((child) => child.id)).toStrictEqual([
+    expect(divided.axis).toBe('vertical')
+    expect(divided.focus).toBe('made-1')
+    expect(isBranch(divided.root) && divided.root.sizes).toStrictEqual([0.5, 0.5])
+    expect(isBranch(divided.root) && divided.root.children.map((child) => child.id)).toStrictEqual([
       'a',
       'made-1',
     ])
   })
 
   it('wraps a pane in two halves when the parent divides the other way', () => {
-    const split = putBeside(
+    const divided = putBeside(
       two,
       { onto: 'a', tab: 't', side: 'top', axis: 'horizontal' },
       createIdFactory(),
     )
-    const wrapper = findNode(split.root, [0])
+    const wrapper = findNode(divided.root, [0])
 
     expect(wrapper && isBranch(wrapper) && wrapper.sizes).toStrictEqual([0.5, 0.5])
     expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual(
       ['made-1', 'a'],
     )
-    expect(split.focus).toBe('made-1')
+    expect(divided.focus).toBe('made-1')
   })
 })
 
@@ -93,11 +93,11 @@ describe('commit', () => {
     'c',
   )
 
-  it('focuses the pane asked for', () => {
+  it('focuses the pane requested for', () => {
     expect(commit(three, 'b').focus).toBe('b')
   })
 
-  it('keeps the focus it had when the pane asked for is gone', () => {
+  it('keeps the focus it had when the pane requested for is gone', () => {
     expect(commit(three, 'missing').focus).toBe('c')
   })
 
@@ -110,19 +110,19 @@ describe('mapPane', () => {
   const root = split('root', [stack('a', 'one'), stack('b', 'two')])
 
   it('changes the pane with that id', () => {
-    const after = mapPane(root, 'b', (held: Pane) => ({ ...held, tabs: [...held.tabs, 'new'] }))
+    const after = mapPane(root, 'b', (tab: Pane) => ({ ...tab, tabs: [...tab.tabs, 'new'] }))
     expect(paneById(after, 'b')?.tabs).toStrictEqual(['two', 'new'])
     expect(paneById(after, 'a')?.tabs).toStrictEqual(['one'])
   })
 
   it('leaves the tree alone for an id that is not there', () => {
-    const change = vi.fn<(held: Pane) => Pane>((held) => held)
+    const change = vi.fn<(target: Pane) => Pane>((target) => target)
     expect(mapPane(root, 'missing', change)).toBe(root)
     expect(change).not.toHaveBeenCalled()
   })
 
   it('leaves the tree alone for a node that is not a pane', () => {
-    const change = vi.fn<(held: Pane) => Pane>((held) => held)
+    const change = vi.fn<(target: Pane) => Pane>((target) => target)
     const after = mapPane(root, 'root', change)
     expect(isPane(after)).toBe(false)
     expect(after).toBe(root)

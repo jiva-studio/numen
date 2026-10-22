@@ -158,5 +158,6 @@ Git carries no sign of it either. A commit message ends with its last paragraph:
 - [ ] Every remaining comment says *why*, not *what*.
 - [ ] Every function is named with an imperative verb phrase.
 - [ ] No type carries a comment on some of its fields and not the rest.
+- [ ] No narrative slop, Anglish idioms (e.g. "stands on", "hands back"), irregular past participles, or bare prepositions as identifiers (Rule 13 of `AGENTS.md`).
 - [ ] Everything is in English: code, comments, test names, sample content.
 - [ ] Nothing in the code or commit messages names an agent, a model, a tool, or a session.

@@ -58,10 +58,10 @@ func (w watched) StartVault(
 	refresh vaults.Refresh,
 	unwatched error,
 ) {
-	asked := w.cfg
-	asked.ShouldRebuildIndex = rebuild
+	request := w.cfg
+	request.ShouldRebuildIndex = rebuild
 
-	opening := asked.VaultOpenerWith(w.db, w.readers, w.watcher)
+	opening := request.VaultOpenerWith(w.db, w.readers, w.watcher)
 	opening.ShouldRebuild = rebuild
 	opening.ErrorHandler = handleError
 	if told != nil {

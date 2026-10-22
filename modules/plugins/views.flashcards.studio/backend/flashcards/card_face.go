@@ -18,7 +18,7 @@ import (
 // face of the stencil that cuts it, and where both of them are written.
 type CardFace struct {
 	// Deck is the path of the file the card stands in, and Section the name of
-	// the section it stands under. A card standing before the first section has
+	// the section it is placed under. A card standing before the first section has
 	// none.
 	Deck    string
 	Section string
@@ -103,11 +103,11 @@ func (u ListCardFaces) GetDeckPaths(ctx context.Context, v domain.Vault) ([]stri
 	if u.notes == nil {
 		return nil, ErrNotCarried
 	}
-	held, err := u.notes.Has(ctx, v.ID)
+	target, err := u.notes.Has(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}
-	if !held {
+	if !target {
 		return nil, ErrNotCarried
 	}
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
@@ -131,7 +131,7 @@ func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []str
 	var misses []int
 	for at, path := range paths {
 		if err == nil {
-			if faces, held := u.getCached(ctx, reader, v, path); held {
+			if faces, target := u.getCached(ctx, reader, v, path); target {
 				found[at] = faces
 				continue
 			}
@@ -180,8 +180,8 @@ func (u ListCardFaces) getCached(
 	ctx context.Context, reader ports.VaultReader, v domain.Vault, path string,
 ) ([]CardFace, bool) {
 	key := deckKey{vault: v.ID, path: path}
-	e, held := u.cache.get(key)
-	if !held {
+	e, target := u.cache.get(key)
+	if !target {
 		return nil, false
 	}
 	deck, err := reader.GetFingerprint(ctx, path)
@@ -242,8 +242,8 @@ type stencilRead struct {
 func (m *stencilMemo) get(ctx context.Context, v domain.Vault, path string) stencilRead {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if held, seen := m.by[path]; seen {
-		return held
+	if target, observed := m.by[path]; observed {
+		return target
 	}
 	// A card whose stencil is not one is a card no face shows. It is a problem
 	// against the deck, and it is settled in a window.
@@ -268,8 +268,8 @@ func (u ListCardFaces) getDeckFaces(
 		if card.Mark == "" {
 			continue
 		}
-		path, held := deck.Stencils[card.StencilLink]
-		if !held {
+		path, target := deck.Stencils[card.StencilLink]
+		if !target {
 			continue
 		}
 		one := stencils.get(ctx, v, path)
@@ -299,7 +299,7 @@ func (u ListCardFaces) getDeckFaces(
 	return out, used, isWhole
 }
 
-// getSectionName returns the name of the section a card stands under, and is empty for a
+// getSectionName returns the name of the section a card is placed under, and is empty for a
 // card standing before the first.
 func getSectionName(d format.Deck, c format.Card) string {
 	if c.Section == format.NoSection || c.Section >= len(d.Sections) {

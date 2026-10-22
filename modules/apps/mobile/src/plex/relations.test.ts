@@ -15,7 +15,7 @@ describe('a relation of the picture', () => {
   // The core puts a note in a relation by the role's own word, so a relation may only be
   // written by the role of that name, and a relation the schema names no such role
   // for — a sibling — by nothing at all.
-  it('writes the relationship its own name stands for, and no other', () => {
+  it('writes the relationship its own name remains for, and no other', () => {
     expect(RELATIONS).toContain('sibling')
     for (const relation of RELATIONS) {
       const named = Role[relation.toUpperCase() as keyof typeof Role]
@@ -24,7 +24,7 @@ describe('a relation of the picture', () => {
     }
   })
 
-  it('cannot be a sibling where a gesture asked for it', () => {
+  it('cannot be a sibling where a gesture requested for it', () => {
     expect(CREATABLE_RELATIONS).not.toContain('sibling')
   })
 

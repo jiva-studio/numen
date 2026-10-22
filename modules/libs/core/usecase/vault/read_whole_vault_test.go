@@ -63,23 +63,23 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	if _, err := making.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	seen := map[string]int{}
+	observed := map[string]int{}
 	for i, what := range order {
-		if _, held := seen[what]; !held {
-			seen[what] = i
+		if _, target := observed[what]; !target {
+			observed[what] = i
 		}
 	}
 	for _, what := range []string{"notes", "books", "vectors"} {
-		if _, held := seen[what]; !held {
+		if _, targetVal := observed[what]; !targetVal {
 			t.Fatalf("the %s pass did not run: %v", what, order)
 		}
 	}
-	if seen["notes"] > seen["books"] || seen["books"] > seen["vectors"] {
+	if observed["notes"] > observed["books"] || observed["books"] > observed["vectors"] {
 		t.Errorf("the passes ran in the order %v", order)
 	}
 }
 
-// Reading the notes is what the whole pass stands on.
+// Reading the notes is what the whole pass relies on.
 func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
@@ -141,15 +141,15 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	over := limit(t.Context())
+	limitCtx := limit(t.Context())
 	notes := scanner(readers, db)
-	books := source.NewExtract(timedOut{limit: over}, db.Sources(), db.SourcesKnown())
+	books := source.NewExtract(timedOut{limit: limitCtx}, db.Sources(), db.SourcesKnown())
 	counted := &counting{VaultReaders: readers}
 	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = unwilling{}
 	making := vaults.NewReadWholeVault(notes, books, vectors)
 
-	_, err := making.Execute(over, v)
+	_, err := making.Execute(limitCtx, v)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("got %v", err)
 	}

@@ -22,7 +22,7 @@ export interface BufferCard {
    */
   readonly mark: string
   /**
-   * The section it stands under, by the identity this window knows that section
+   * The section it is placed under, by the identity this window knows that section
    * at. Nothing for a card standing before the first.
    */
   readonly section: string | null

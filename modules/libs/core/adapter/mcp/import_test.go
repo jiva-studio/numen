@@ -78,8 +78,8 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 
 	out := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
 
-	if out.Refused != "" {
-		t.Fatalf("the address was refused: %s", out.Refused)
+	if out.Error != "" {
+		t.Fatalf("the address failed: %s", out.Error)
 	}
 	if out.Producer != domain.Captions {
 		t.Errorf("the words were fetched by %q", out.Producer)
@@ -99,16 +99,16 @@ func TestAnAgentAsksForACopy(t *testing.T) {
 	_, core := newCoreWithImport(t, from)
 	session := sessionOf(t, mcp.New(core))
 
-	without := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
-	if without.CopiedBytes != 0 {
-		t.Errorf("a copy of %d bytes was fetched unasked", without.CopiedBytes)
+	withoutOutcome := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
+	if withoutOutcome.CopiedBytes != 0 {
+		t.Errorf("a copy of %d bytes was fetched unasked", withoutOutcome.CopiedBytes)
 	}
 
 	with := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{
 		"url": "https://youtu.be/oHg5SJYRHA0", "copy": true,
 	})
-	if with.CopyRefused != "" {
-		t.Fatalf("the copy was refused: %s", with.CopyRefused)
+	if with.CopyError != "" {
+		t.Fatalf("the copy failed: %s", with.CopyError)
 	}
 	if with.CopiedBytes != int64(len(from.bytes)) {
 		t.Errorf("the copy is %d bytes", with.CopiedBytes)
@@ -150,8 +150,8 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	_ = v
 
 	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
-	if made.Refused != "" {
-		t.Fatalf("the address was refused: %s", made.Refused)
+	if made.Error != "" {
+		t.Fatalf("the address failed: %s", made.Error)
 	}
 	// The index is what says which producer stands for a path, and a scan is
 	// what writes it. This is that row.
@@ -161,16 +161,16 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 		Hash:        derived.Fingerprint([]byte(aVideo)),
 	}
 
-	listed := call[struct {
+	items := call[struct {
 		Artifacts []mcp.Artifact `json:"artifacts"`
 	}](t, session, "artifact_list", map[string]any{"path": made.Path})
-	if len(listed.Artifacts) == 0 {
+	if len(items.Artifacts) == 0 {
 		t.Fatal("the note carries nothing an agent can reach")
 	}
 	// Words with the times they were said at are a transcript, whoever made
 	// them: a site publishing them is another producer and not another kind.
-	if listed.Artifacts[0].Kind != "transcript" {
-		t.Errorf("it carries %q", listed.Artifacts[0].Kind)
+	if items.Artifacts[0].Kind != "transcript" {
+		t.Errorf("it carries %q", items.Artifacts[0].Kind)
 	}
 
 	read := call[struct {
@@ -190,21 +190,21 @@ type sourced struct {
 func (s *sourced) GetSourceText(
 	_ context.Context, _ domain.VaultID, path string,
 ) (port.SourceText, bool, error) {
-	one, held := s.known[path]
-	return one, held, nil
+	one, target := s.known[path]
+	return one, target, nil
 }
 
 // A copy that cannot be made is said beside the file it followed, which stands.
-func TestACopyThatFailsLeavesTheImportStanding(t *testing.T) {
+func TestACopyThatFailsPreservesTheImportActive(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "what was said", From: 1500, To: 4200}}}
 	_, core := newCoreWithImport(t, from)
 	session := sessionOf(t, mcp.New(core))
 
 	out := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo, "copy": true})
-	if out.Refused != "" || out.Producer == "" {
+	if out.Error != "" || out.Producer == "" {
 		t.Fatalf("the import did not stand: %+v", out)
 	}
-	if out.CopyRefused == "" || out.CopiedBytes != 0 {
+	if out.CopyError == "" || out.CopiedBytes != 0 {
 		t.Errorf("a copy of nothing came back as %+v", out)
 	}
 }

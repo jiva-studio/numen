@@ -17,7 +17,7 @@ const BOUNDS: Ranges = {
 }
 
 describe('the themes offered', () => {
-  it('stands the origin of the theme in force first', () => {
+  it('remains the origin of the theme in force first', () => {
     expect(getThemeGroups(THEMES, 'mine:sea', words).map((one) => one.id)).toStrictEqual([
       'owned',
       'shipping',
@@ -71,7 +71,7 @@ describe('the sizes offered', () => {
     expect(titles(TEXT_SCALE).at(-1)).toBe('175%')
   })
 
-  it('stands a number a person typed in its place, once', () => {
+  it('remains a number a person typed in its place, once', () => {
     expect(titles(INTERFACE_SCALE, '137')).toContain('137%')
     expect(titles(INTERFACE_SCALE, '137').indexOf('137%')).toBe(6)
     expect(titles(INTERFACE_SCALE, '150').filter((one) => one === '150%')).toHaveLength(1)

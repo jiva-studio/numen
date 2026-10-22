@@ -17,7 +17,7 @@ const importingFiles = "importing files"
 // the rest are counted.
 const namedInAnError = 3
 
-// Imports copies files a person let go of over the window into a folder of the
+// Imports copies files a person release over the window into a folder of the
 // vault, the root being the empty path.
 //
 // It runs where the drop reached the application, which is off the thread the
@@ -62,13 +62,13 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 
 // getDirectChildren returns items in the target folder.
 func getDirectChildren(into string, landed []string) []string {
-	shown := make([]string, 0, len(landed))
+	children := make([]string, 0, len(landed))
 	for _, path := range landed {
 		if pathpkg.Dir(path) == into || (into == "" && !strings.Contains(path, "/")) {
-			shown = append(shown, path)
+			children = append(children, path)
 		}
 	}
-	return shown
+	return children
 }
 
 // describeImportFailures formats import failures into a single descriptive message.

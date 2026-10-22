@@ -17,20 +17,20 @@ export const even = (count: number): readonly number[] =>
  * ones that are, so a child brought in without a size is given room.
  */
 export function fit(sizes: readonly number[], count: number): readonly number[] {
-  const given: number[] = []
+  const provided: number[] = []
   for (let i = 0; i < count; i++) {
     const size = sizes[i]
-    given.push(typeof size === 'number' && Number.isFinite(size) && size > 0 ? size : 0)
+    provided.push(typeof size === 'number' && Number.isFinite(size) && size > 0 ? size : 0)
   }
 
-  const total = given.reduce((sum, size) => sum + size, 0)
+  const total = provided.reduce((sum, size) => sum + size, 0)
   if (total <= 0) return even(count)
 
-  const missing = given.filter((size) => size === 0).length
-  if (missing === 0) return given.map((size) => size / total)
+  const missing = provided.filter((size) => size === 0).length
+  if (missing === 0) return provided.map((size) => size / total)
 
   const average = total / (count - missing)
-  const filled = given.map((size) => (size > 0 ? size : average))
+  const filled = provided.map((size) => (size > 0 ? size : average))
   const whole = filled.reduce((sum, size) => sum + size, 0)
   return filled.map((size) => size / whole)
 }

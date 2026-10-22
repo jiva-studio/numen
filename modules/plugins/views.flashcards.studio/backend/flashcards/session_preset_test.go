@@ -95,7 +95,7 @@ func TestASessionOverAPresetIsHeldToItsBudget(t *testing.T) {
 
 // A second session over the same preset takes up where the first left off: what
 // the day has spent is off the allowance the tile was drawn from.
-func TestASecondSessionOverAPresetTakesUpWhereTheFirstLeftOff(t *testing.T) {
+func TestASecondSessionOverAPresetConsumesUpWhereTheFirstLeftOff(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":       term,

@@ -16,7 +16,7 @@ const getMenuPosition = (
 ) => placeMenu({ at: { x, y }, size: SIZE, viewport: VIEWPORT, margin: 8, ...over })
 
 describe('where a menu goes', () => {
-  it('runs on from the point it was asked for', () => {
+  it('runs on from the point it was requested for', () => {
     expect(getMenuPosition(100, 120)).toStrictEqual({ x: 100, y: 120 })
   })
 
@@ -29,30 +29,30 @@ describe('where a menu goes', () => {
     expect(getMenuPosition(100, 700)).toStrictEqual({ x: 100, y: 400 })
   })
 
-  it('is brought in off an edge it was asked for right against', () => {
+  it('is brought in off an edge it was requested for right against', () => {
     expect(getMenuPosition(2, 1)).toStrictEqual({ x: 8, y: 8 })
   })
 
   it('is brought in where folding back would take it off the near edge', () => {
     // Nothing fits either side of the point, so it is shifted rather than
     // folded, and the whole of it is on screen.
-    const placed = placeMenu({
+    const menuPlacement = placeMenu({
       at: { x: 120, y: 120 },
       size: SIZE,
       viewport: { width: 260, height: 340 },
       margin: 8,
     })
-    expect(placed).toStrictEqual({ x: 52, y: 32 })
+    expect(menuPlacement).toStrictEqual({ x: 52, y: 32 })
   })
 
   it('sits at the near edge when it is larger than the area it is placed in', () => {
-    const placed = placeMenu({
+    const menuPlacement = placeMenu({
       at: { x: 40, y: 40 },
       size: SIZE,
       viewport: { width: 160, height: 200 },
       margin: 8,
     })
-    expect(placed).toStrictEqual({ x: 8, y: 8 })
+    expect(menuPlacement).toStrictEqual({ x: 8, y: 8 })
   })
 
   it('keeps whatever clearance it was given', () => {
@@ -99,7 +99,7 @@ describe('where the keyboard lands as a menu opens', () => {
 describe('the rules a menu draws between its groups', () => {
   const getRules = (items: readonly MenuItem[]) => groupItems(items).map((one) => one.isRule)
 
-  it('stands where one group gives way to the next', () => {
+  it('remains where one group gives way to the next', () => {
     expect(
       getRules([
         { id: 'open', text: 'Open', group: 'open' },
@@ -110,7 +110,7 @@ describe('the rules a menu draws between its groups', () => {
     ).toStrictEqual([false, true, false, true])
   })
 
-  it('stands nowhere in a menu whose items name no group', () => {
+  it('remains nowhere in a menu whose items name no group', () => {
     expect(
       getRules([
         { id: 'open', text: 'Open' },
@@ -119,11 +119,11 @@ describe('the rules a menu draws between its groups', () => {
     ).toStrictEqual([false, false])
   })
 
-  it('never stands above the first item, whatever group it names', () => {
+  it('never remains above the first item, whatever group it names', () => {
     expect(getRules([{ id: 'remove', text: 'Remove', group: 'gone' }])).toStrictEqual([false])
   })
 
-  it('stands again where a group comes back after another', () => {
+  it('remains again where a group arrives back after another', () => {
     expect(
       getRules([
         { id: 'one', text: 'One', group: 'file' },

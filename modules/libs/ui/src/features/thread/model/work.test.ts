@@ -6,24 +6,24 @@ import type { SourceLocation } from '../lib/agent'
 const PLACE: SourceLocation = { path: 'notes/a.md', span: { from: 2, to: 9 } }
 
 const create = () => {
-  const put = vi.fn<(turn: Turn) => void>()
+  const sendTurn = vi.fn<(turn: Turn) => void>()
   const drop = vi.fn<(id: string) => void>()
   const locations = new Map<string, SourceLocation>()
-  const line = createWorkLine({ put, drop, locations, waitWords: 'Working' }, 'work', 'wait')
-  return { line, put, drop, locations }
+  const line = createWorkLine({ put: sendTurn, drop, locations, waitWords: 'Working' }, 'work', 'wait')
+  return { line, put: sendTurn, drop, locations }
 }
 
 describe('the line that says what the agent has in hand', () => {
   it('says nothing on settling before anything was reached for', () => {
-    const { line, put } = create()
+    const { line, put: sendTurn } = create()
     line.settle()
-    expect(put).not.toHaveBeenCalled()
+    expect(sendTurn).not.toHaveBeenCalled()
   })
 
   it('names the tool as a program is not named, and how much was written', () => {
-    const { line, put } = create()
+    const { line, put: sendTurn } = create()
     line.reach({ tool: 'read_note', subject: 'Plans', written: 12 })
-    expect(put).toHaveBeenCalledExactlyOnceWith({
+    expect(sendTurn).toHaveBeenCalledExactlyOnceWith({
       id: 'work',
       voice: 'doing',
       text: 'read note',
@@ -34,10 +34,10 @@ describe('the line that says what the agent has in hand', () => {
   })
 
   it('settles in place once reached for', () => {
-    const { line, put } = create()
+    const { line, put: sendTurn } = create()
     line.reach({ tool: 'read_note', subject: 'Plans', written: 0 })
     line.settle()
-    expect(put).toHaveBeenLastCalledWith(
+    expect(sendTurn).toHaveBeenLastCalledWith(
       expect.objectContaining({
         id: 'work',
         text: 'read note',
@@ -48,24 +48,24 @@ describe('the line that says what the agent has in hand', () => {
   })
 
   it('does not put the line back by settling after it came down', () => {
-    const { line, put, drop } = create()
+    const { line, put: sendTurn, drop } = create()
     line.reach({ tool: 't', subject: 's', written: 0 })
     line.takeDown()
-    put.mockClear()
+    sendTurn.mockClear()
     line.settle()
     expect(drop).toHaveBeenCalledWith('work')
-    expect(put).not.toHaveBeenCalled()
+    expect(sendTurn).not.toHaveBeenCalled()
   })
 
   it('can be opened while the call names a run of a source', () => {
-    const { line, put, locations } = create()
+    const { line, put: sendTurn, locations } = create()
     line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     expect(locations.get('work')).toBe(PLACE)
-    expect(put).toHaveBeenLastCalledWith(expect.objectContaining({ canOpen: true }))
+    expect(sendTurn).toHaveBeenLastCalledWith(expect.objectContaining({ canOpen: true }))
   })
 
   it('cannot be opened once a later call names no run', () => {
-    const { line, put, locations } = create()
+    const { line, put: sendTurn, locations } = create()
     line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     line.reach({
       tool: 't',
@@ -74,13 +74,13 @@ describe('the line that says what the agent has in hand', () => {
       written: 0,
     })
     expect(locations.has('work')).toBe(false)
-    expect(put.mock.lastCall?.[0]).not.toHaveProperty('canOpen')
+    expect(sendTurn.mock.lastCall?.[0]).not.toHaveProperty('canOpen')
     line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     line.reach({ tool: 't', subject: 's', location: null, written: 0 })
     expect(locations.has('work')).toBe(false)
   })
 
-  it('forgets the source when the line comes down', () => {
+  it('forgets the source when the line arrives down', () => {
     const { line, drop, locations } = create()
     line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     line.takeDown()
@@ -89,9 +89,9 @@ describe('the line that says what the agent has in hand', () => {
   })
 
   it('puts the wait up and takes it down', () => {
-    const { line, put, drop } = create()
+    const { line, put: sendTurn, drop } = create()
     line.setWaiting(true)
-    expect(put).toHaveBeenCalledExactlyOnceWith({
+    expect(sendTurn).toHaveBeenCalledExactlyOnceWith({
       id: 'wait',
       voice: 'doing',
       text: 'Working',

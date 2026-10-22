@@ -25,7 +25,7 @@ type CardMark struct {
 // Stencils is the stencil each card is cut by, keyed by what stands in the
 // card's brackets. A card whose stencil is not among them, or whose stencil
 // declares no field, is not reprojected: nothing can say which of its fields is
-// first, so its heading is left exactly as it stands. Neither is a card that
+// first, so its heading is left exactly currently. Neither is a card that
 // writes no heading at all for the field that is first. A card is given its
 // mark all the same.
 //
@@ -37,7 +37,7 @@ func Whole(
 	raw := []byte(body)
 	deck, spans := readDeck(domain.Fingerprint{}, raw)
 
-	var given []CardMark
+	var provided []CardMark
 	// Backwards, because a splice moves every byte after it.
 	for i := len(spans) - 1; i >= 0; i-- {
 		card, span := deck.Cards[i], spans[i]
@@ -45,11 +45,11 @@ func Whole(
 		carried := card.Mark
 		if carried == "" {
 			carried = createID()
-			given = append(given, CardMark{Card: i, Mark: carried})
+			provided = append(provided, CardMark{Card: i, Mark: carried})
 		}
 		text := card.Heading
 		if first := stencils[card.StencilLink].First(); first != "" {
-			if value, written := card.Value(first); written {
+			if value, content := card.Value(first); content {
 				text = Project(value)
 			}
 		}
@@ -67,6 +67,6 @@ func Whole(
 		out = append(out, line...)
 		raw = append(out, raw[span.from:]...)
 	}
-	slices.Reverse(given)
-	return string(raw), given
+	slices.Reverse(provided)
+	return string(raw), provided
 }

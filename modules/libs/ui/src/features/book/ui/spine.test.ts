@@ -4,7 +4,7 @@
  * The corpus is one spine document as the application writes it, and a test
  * beside the writer holds it to what that writer emits. So the attribute a run
  * carries, the elements a book is drawn from, the escaping and the offsets are
- * agreed on here rather than in a fixture each side writes for itself.
+ * agreed on here and not in a fixture each side writes for itself.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
@@ -23,8 +23,8 @@ interface Run {
 
 /** The runs the corpus carries, in the order it writes them. */
 const getRuns = (): readonly Run[] => {
-  const held = new DOMParser().parseFromString(spine, 'text/html')
-  return [...held.body.querySelectorAll('[data-offset]')].map((one) => ({
+  const target = new DOMParser().parseFromString(spine, 'text/html')
+  return [...target.body.querySelectorAll('[data-offset]')].map((one) => ({
     at: Number(one.getAttribute('data-offset')),
     said: one.textContent ?? '',
   }))
@@ -39,25 +39,25 @@ const span = () => {
 }
 
 /** A reader drawing the corpus, in a room jsdom has laid nothing out in. */
-const reading = async () => {
-  const held = mount(Book, {
+const readSpine = async () => {
+  const wrapper = mount(Book, {
     props: { markup: spine, path: MIDDLE, span: span(), book: span(), at: span().from },
     attachTo: document.body,
   })
-  ;(held.find('.book__area').element as HTMLElement).scrollTo = () => {}
-  await held.vm.$nextTick()
-  return held
+  ;(wrapper.find('.book__area').element as HTMLElement).scrollTo = () => {}
+  await wrapper.vm.$nextTick()
+  return wrapper
 }
 
 /** One link of the document pressed, and the press as the page left it. */
-const press = async (wrapper: Awaited<ReturnType<typeof reading>>, label: string) => {
+const press = async (wrapper: Awaited<ReturnType<typeof readSpine>>, label: string) => {
   const link = wrapper.findAll('a').find((one) => one.text() === label)!
   link.element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
   await wrapper.vm.$nextTick()
 }
 
 /** The offsets the reader has asked to be sent to, in the order it asked. */
-const getMoves = (wrapper: Awaited<ReturnType<typeof reading>>) =>
+const getMoves = (wrapper: Awaited<ReturnType<typeof readSpine>>) =>
   (wrapper.emitted('move') ?? []).map((one) => (one as [number])[0])
 
 describe('the markup a spine document arrives as', () => {
@@ -84,29 +84,29 @@ describe('the markup a spine document arrives as', () => {
 
 describe('a reader handed that markup', () => {
   it('reads the offsets off the runs, and asks for the one a place inside names', async () => {
-    const held = await reading()
-    const note = held.find('#note').find('[data-offset]').attributes('data-offset')
+    const target = await readSpine()
+    const note = target.find('#note').find('[data-offset]').attributes('data-offset')
 
-    await press(held, 'the note')
+    await press(target, 'the note')
 
-    expect(getMoves(held)).toEqual([Number(note)])
-    expect(getMoves(held)).not.toEqual([span().from])
+    expect(getMoves(target)).toEqual([Number(note)])
+    expect(getMoves(target)).not.toEqual([span().from])
   })
 
   it('asks for the document a link names, as the archive names it', async () => {
-    const held = await reading()
+    const target = await readSpine()
 
-    await press(held, 'the opening')
+    await press(target, 'the opening')
 
-    expect(held.emitted('follow')).toEqual([['OEBPS/opening.xhtml']])
+    expect(target.emitted('follow')).toEqual([['OEBPS/opening.xhtml']])
   })
 
   it('asks for nothing of the book where the link leads out of it', async () => {
-    const held = await reading()
+    const target = await readSpine()
 
-    await press(held, 'somewhere else entirely')
+    await press(target, 'somewhere else entirely')
 
-    expect(getMoves(held)).toHaveLength(0)
-    expect(held.emitted('follow')).toBeUndefined()
+    expect(getMoves(target)).toHaveLength(0)
+    expect(target.emitted('follow')).toBeUndefined()
   })
 })

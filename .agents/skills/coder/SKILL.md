@@ -36,6 +36,7 @@ flowchart TD
    - Frontend (Vue/TS): [`.agents/rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md)
    - Architecture & Layers: [`.agents/rules/architecture.md`](../../rules/architecture.md)
    - Comments & Docblocks: [`.agents/rules/comments.md`](../../rules/comments.md)
+   - Rule 13 of `AGENTS.md`: Absolute ban on narrative slop, irregular past participles (`held`, `said`, `written`, `asked`) and bare prepositions (`beside`, `under`) as identifiers.
 
 ---
 

@@ -161,10 +161,10 @@ func (fixedLinkQueries) ResolveLinks(
 // that possible: what stands behind one is the caller's to choose.
 func TestACommandRunsOnValuesAlone(t *testing.T) {
 	t.Parallel()
-	held := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
-	given := cli.Deps{
+	target := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
+	provided := cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
-			return cli.Vaults{Registry: singleVaultList{held}}, nil
+			return cli.Vaults{Registry: singleVaultList{target}}, nil
 		},
 		Links: func(context.Context) (cli.Links, error) {
 			return cli.Links{Show: note.NewShowLinks(fixedLinkQueries{
@@ -190,7 +190,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 
 	var out bytes.Buffer
 	err := cli.Run(t.Context(), &out, io.Discard,
-		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Deps { return given })
+		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Deps { return provided })
 	if err != nil {
 		t.Fatalf("links: %v\n%s", err, out.String())
 	}

@@ -46,7 +46,7 @@ const arranged = `{
 // The one test that would have caught a file being rewritten from a map: what
 // comes back is the file, with the bytes of one value replaced and nothing else
 // touched.
-func TestAHandArrangedFileComesBackWithOneValueChanged(t *testing.T) {
+func TestAHandArrangedFileReachesBackWithOneValueChanged(t *testing.T) {
 	path := write(t, arranged)
 	if err := settings.Save(path, newDocument(), theme("mine:dracula")); err != nil {
 		t.Fatal(err)
@@ -63,7 +63,7 @@ func TestAHandArrangedFileComesBackWithOneValueChanged(t *testing.T) {
 }
 
 // Two settings at once, and the file is still the person's arrangement.
-func TestTheThemeAndTheModeAreWrittenWithoutMovingAnythingElse(t *testing.T) {
+func TestTheThemeAndTheModeAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	path := write(t, arranged)
 	if err := settings.Save(path, newDocument(), theme("preset:nord"),
 		settings.Setting{At: []string{"appearance", "mode"}, Written: settings.ModeDark}); err != nil {
@@ -83,7 +83,7 @@ func TestTheThemeAndTheModeAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 
 // The two sizes are written where they sit, and a number a person wrote to two
 // places beside them comes back written to two places.
-func TestTheTwoSizesAreWrittenWithoutMovingAnythingElse(t *testing.T) {
+func TestTheTwoSizesAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	const sized = `{
     "appearance": {
         "interface_scale": 1.00,
@@ -112,7 +112,7 @@ func TestTheTwoSizesAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 
 // The size a file names under the name it had is left where the person wrote
 // it, and the setting that replaced it is written beside it.
-func TestASizeIsWrittenBesideTheZoomAFileStillNames(t *testing.T) {
+func TestASizeIsSavedAdjacentTheZoomAFileStillNames(t *testing.T) {
 	path := write(t, `{
   "appearance": {
     "zoom": 1.5
@@ -224,7 +224,7 @@ func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
 	}
 }
 
-func TestAFieldThisBuildKnowsNothingAboutComesThroughAsItWas(t *testing.T) {
+func TestAFieldThisBuildKnowsNothingAboutReachesThroughAsItWas(t *testing.T) {
 	path := write(t, `{"v":1,"appearance":{"zoom":1.5,"tint":"warm"},"tomorrow":{"of":["a","later","build"]}}`)
 	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatal(err)
@@ -343,18 +343,18 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 		"a link to a file that is not yet": false,
 	} {
 		dir := t.TempDir()
-		kept := filepath.Join(dir, "dotfiles", "numen.json")
-		if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+		destPath := filepath.Join(dir, "dotfiles", "numen.json")
+		if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
 			t.Fatal(err)
 		}
 		if exists {
-			held := []byte(`{"appearance":{"theme":"preset:numen"}}`)
-			if err := os.WriteFile(kept, held, 0o600); err != nil {
+			target := []byte(`{"appearance":{"theme":"preset:numen"}}`)
+			if err := os.WriteFile(destPath, target, 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}
 		link := filepath.Join(dir, "numen.json")
-		if err := os.Symlink(kept, link); err != nil {
+		if err := os.Symlink(destPath, link); err != nil {
 			t.Fatal(err)
 		}
 
@@ -367,7 +367,7 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 		} else if info.Mode()&os.ModeSymlink == 0 {
 			t.Errorf("%s: the link is now a file of its own", what)
 		}
-		raw, err := os.ReadFile(kept)
+		raw, err := os.ReadFile(destPath)
 		if err != nil {
 			t.Fatalf("%s: %v", what, err)
 		}
@@ -379,14 +379,14 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 
 // The settings a launch writes down follow the same link a save does, so the
 // bytes land in the file the link leads to and the link stays a link.
-func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
+func TestAnUntouchedInstallationIsSavedThroughTheLink(t *testing.T) {
 	dir := t.TempDir()
-	kept := filepath.Join(dir, "dotfiles", "numen.json")
-	if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+	destPath := filepath.Join(dir, "dotfiles", "numen.json")
+	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	link := filepath.Join(dir, "numen.json")
-	if err := os.Symlink(kept, link); err != nil {
+	if err := os.Symlink(destPath, link); err != nil {
 		t.Fatal(err)
 	}
 
@@ -399,7 +399,7 @@ func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
 	} else if info.Mode()&os.ModeSymlink == 0 {
 		t.Error("the link is now a file of its own")
 	}
-	if _, err := os.Stat(kept); err != nil {
+	if _, err := os.Stat(destPath); err != nil {
 		t.Errorf("the file the link leads to is not there: %v", err)
 	}
 }
@@ -408,8 +408,8 @@ func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
 // file already held is the person's to put right, and every other setting stays
 // reachable while they do.
 func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
-	const held = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
-	path := write(t, held)
+	const target = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
+	path := write(t, target)
 
 	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatalf("a theme could not be saved beside a size out of its band: %v", err)
@@ -418,7 +418,7 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := strings.Replace(held, `"preset:numen"`, `"preset:nord"`, 1)
+	want := strings.Replace(target, `"preset:numen"`, `"preset:nord"`, 1)
 	if string(raw) != want {
 		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
 	}
@@ -434,7 +434,7 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 
 // A setting is handed in at whatever name it is written under, and a section
 // written whole carries the numbers inside it.
-func TestASectionHandedInIsCheckedAtTheNumbersItHolds(t *testing.T) {
+func TestASectionHandedInIsCheckedAtTheNumbersItContains(t *testing.T) {
 	path := write(t, `{"appearance":{"theme":"preset:numen"}}`)
 	err := settings.Save(path, newDocument(), settings.Setting{
 		At:      []string{"appearance"},
@@ -457,7 +457,7 @@ func TestASectionHandedInIsCheckedAtTheNumbersItHolds(t *testing.T) {
 
 // A name written twice is read from the last of the two and patched at the
 // first. One section holds one of a name, and a file holding two is refused.
-func TestASectionHoldsOneOfAName(t *testing.T) {
+func TestASectionContainsOneOfAName(t *testing.T) {
 	for what, body := range map[string]string{
 		"the field being written": `{"appearance":{"theme":"preset:numen","theme":"preset:dracula"}}`,
 		"a field beside it":       `{"appearance":{"mode":"dark","mode":"light","theme":"preset:numen"}}`,

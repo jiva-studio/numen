@@ -117,7 +117,7 @@ func write(t *testing.T, v domain.Vault, path, raw string) {
 
 // A deck opened and put back with the prose it came out of is the file it was.
 // Anything less is a diff nobody asked for, on every save, forever.
-func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
+func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
@@ -143,16 +143,16 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	}
 }
 
-// Every field stands under a heading of its own, the first included, so a card
+// Every field is placed under a heading of its own, the first included, so a card
 // writing the first field twice is the one fault a card writing any field twice
 // is, and it is reported once.
-func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
+func TestACardWritingItsFirstFieldTwiceIsOneFieldSavedTwice(t *testing.T) {
 	vs := newVaults(t)
-	written := read(t, vs.first, "decks/Mammals.md")
-	replaced := strings.Replace(written,
+	content := read(t, vs.first, "decks/Mammals.md")
+	replaced := strings.Replace(content,
 		"### Name\n\nLlama\n",
 		"### Name\n\nLlama\n\n### Name\n\nLlama, a second time\n", 1)
-	if replaced == written {
+	if replaced == content {
 		t.Fatal("the fixture is not what this test writes into")
 	}
 	if err := os.WriteFile(
@@ -181,8 +181,8 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 	}
 
 	// Both are kept, and the first stands.
-	if held, ok := got.Body.Cards[0].Value("Name"); !ok || held != "Llama" {
-		t.Errorf("Name = %q, want the first", held)
+	if target, ok := got.Body.Cards[0].Value("Name"); !ok || target != "Llama" {
+		t.Errorf("Name = %q, want the first", target)
 	}
 	if len(got.Body.Cards) != 2 {
 		t.Errorf("cards = %+v", got.Body.Cards)
@@ -223,7 +223,7 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 		t.Errorf("the note was not named: %q", filed[0].Detail)
 	}
 	// The values are read either way.
-	if held, ok := got.Body.Cards[1].Value("Height"); !ok || held == "" {
+	if target, ok := got.Body.Cards[1].Value("Height"); !ok || target == "" {
 		t.Errorf("the card was not read: %+v", got.Body.Cards[1])
 	}
 }
@@ -243,7 +243,7 @@ func prose(t *testing.T, raw string) string {
 }
 
 // The size is asked of the file before it is opened, so a deck over the bound
-// is refused with none of its bytes read.
+// fails with none of its bytes read.
 func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	vs := newVaults(t)
 	path := filepath.Join(vs.first.Path, "decks", "Mammals.md")
@@ -257,7 +257,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	if got.Outcome != note.TooLarge {
-		t.Fatalf("outcome = %q, want it refused", got.Outcome)
+		t.Fatalf("outcome = %q, want it rejected", got.Outcome)
 	}
 	if counted.reads != 0 {
 		t.Errorf("the file was opened %d times", counted.reads)
@@ -285,13 +285,13 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	if got.Outcome != note.TooLarge {
-		t.Errorf("outcome = %q, want it refused", got.Outcome)
+		t.Errorf("outcome = %q, want it rejected", got.Outcome)
 	}
 }
 
 // A deck that changed since it was read is left alone: someone editing their own
 // file outranks a caller that read it, thought about it, and arrived late.
-func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
+func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
@@ -305,23 +305,23 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	written := read(t, vs.first, "decks/Birds.md")
+	content := read(t, vs.first, "decks/Birds.md")
 
 	// The same fingerprint again is a caller holding what the file no longer is.
 	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
 		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Fingerprint)
 	if !errors.Is(err, ports.ErrStale) {
-		t.Fatalf("write = %v, want it refused", err)
+		t.Fatalf("write = %v, want it rejected", err)
 	}
-	if after := read(t, vs.first, "decks/Birds.md"); after != written {
-		t.Errorf("the file was written over\n was %q\n now %q", written, after)
+	if after := read(t, vs.first, "decks/Birds.md"); after != content {
+		t.Errorf("the file was written over\n was %q\n now %q", content, after)
 	}
 }
 
 // A deck and a stencil are made with the key that says what they are, so each is
 // what it is to everything that reads the vault before a card is written into
 // it.
-func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
+func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
 
@@ -397,7 +397,7 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 	if _, err := u.Stencil(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,
 	) {
-		t.Fatalf("make a stencil of no fields = %v, want it refused", err)
+		t.Fatalf("make a stencil of no fields = %v, want it rejected", err)
 	}
 	if _, err := os.Stat(filepath.Join(vs.first.Path, "Bird.md")); !errors.Is(err, os.ErrNotExist) {
 		t.Error("the file was written anyway")
@@ -415,7 +415,7 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewList(vs.ports.Readers, vs.queries)
 
-	got, held, err := u.Execute(t.Context(), vs.first, 0)
+	got, target, err := u.Execute(t.Context(), vs.first, 0)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -426,8 +426,8 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 	if !slices.Equal(paths, []string{"Animal.md", "Term.md"}) {
 		t.Fatalf("stencils = %v", paths)
 	}
-	if held != 2 {
-		t.Errorf("held = %d, want the two the vault holds", held)
+	if target != 2 {
+		t.Errorf("held = %d, want the two the vault holds", target)
 	}
 	if !slices.Equal(got[0].Fields, []string{"Name", "Height", "Life span"}) {
 		t.Errorf("fields = %v", got[0].Fields)
@@ -451,7 +451,7 @@ func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	vs := newVaults(t)
 	counted := &counting{VaultReaders: vs.ports.Readers}
 
-	got, held, err := (cards.NewList(counted, vs.queries)).
+	got, target, err := (cards.NewList(counted, vs.queries)).
 		Execute(t.Context(), vs.first, 1)
 	if err != nil {
 		t.Fatalf("list: %v", err)
@@ -459,8 +459,8 @@ func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	if len(got) != 1 || got[0].Path != "Animal.md" {
 		t.Fatalf("stencils = %+v, want the one asked for", got)
 	}
-	if held != 2 {
-		t.Errorf("held = %d, want the two the vault holds", held)
+	if target != 2 {
+		t.Errorf("held = %d, want the two the vault holds", target)
 	}
 	if counted.reads != 1 {
 		t.Errorf("%d files were opened, want the one that was answered with", counted.reads)
@@ -499,7 +499,7 @@ type refusing struct {
 	path string
 }
 
-var errRefused = errors.New("the filesystem refused this file")
+var errRefused = errors.New("the filesystem rejected this file")
 
 func (w refusing) Open(v domain.Vault) (ports.VaultWriter, error) {
 	writer, err := w.VaultWriters.Open(v)

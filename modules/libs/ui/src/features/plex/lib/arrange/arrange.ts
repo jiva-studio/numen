@@ -44,13 +44,13 @@ export function arrangePlex(
   neighbourhood: PlexNeighbourhood,
   { options, placement = rowsAndColumns, measure, measureLabel, labelDepth }: ArrangeInput = {},
 ): PlexFrame {
-  const asked = resolveOptions(options)
+  const request = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
   const counts = countRelations(neighbourhood.nodes)
 
   // Packed as closely as this window needs and no closer, so a box narrows
   // and a gap closes before a relation is given up.
-  const resolved = measureCrowding(asked, counts)
+  const resolved = measureCrowding(request, counts)
   const getWidth = createWidthLookup(resolved, measure)
 
   const focus: PlacedNode = {
@@ -83,8 +83,8 @@ export function arrangePlex(
   const nodes = [focus, ...lay(spacing)]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
-  const routing = createRouting(resolved, measureLabel, labelDepth)
-  const edges = separateTitles(routeEdges(neighbourhood.edges, byId, routing), nodes, routing)
+  const edgeRouting = createRouting(resolved, measureLabel, labelDepth)
+  const edges = separateTitles(routeEdges(neighbourhood.edges, byId, edgeRouting), nodes, edgeRouting)
 
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }
@@ -141,9 +141,9 @@ function canPlace(
     if (ofRelation.length === 0) continue
 
     const capacity = limits[relation].perLine * limits[relation].lines
-    const shown = ofRelation.slice(0, capacity)
-    if (ofRelation.length > shown.length) overflow[relation] = ofRelation.length - shown.length
-    nodesByRelation[relation] = shown
+    const visibleRelations = ofRelation.slice(0, capacity)
+    if (ofRelation.length > visibleRelations.length) overflow[relation] = ofRelation.length - visibleRelations.length
+    nodesByRelation[relation] = visibleRelations
   }
 
   return { nodesByRelation, overflow }

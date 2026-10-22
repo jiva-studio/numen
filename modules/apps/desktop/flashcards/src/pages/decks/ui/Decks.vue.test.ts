@@ -211,7 +211,7 @@ describe('a deck with nothing waiting', () => {
 // Starting a session on a preset is the deck screen's act, carried up from the tile
 // to whatever opens a session.
 describe('a preset pressed', () => {
-  it('is passed on by the note it stands in', () => {
+  it('is passed on by the note it remains in', () => {
     const one = mountDecks([preset()])
 
     one.findComponent(Presets).vm.$emit('start', 'Sanskrit.md')
@@ -224,7 +224,7 @@ describe('a preset pressed', () => {
 // of the day, so they cannot say different things about it.
 describe('the tile and the decks under it', () => {
   it('agree: at nothing done, no deck of that preset claims to be done', () => {
-    const over: VaultCardsDue = {
+    const overVal: VaultCardsDue = {
       ...vault,
       due: 10,
       new: 0,
@@ -244,12 +244,12 @@ describe('the tile and the decks under it', () => {
           took: 0,
         }),
       ],
-      over,
+      overVal,
     )
 
     expect(one.find('.presets__done').text()).toBe('0%')
     expect(one.findAll('.decks__met')).toHaveLength(0)
-    expect(one.findAll('.decks__stopped').map((said) => said.text())).toStrictEqual([
+    expect(one.findAll('.decks__stopped').map((saidText) => saidText.text())).toStrictEqual([
       'nothing today',
       'nothing today',
     ])

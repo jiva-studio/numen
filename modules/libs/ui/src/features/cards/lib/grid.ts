@@ -13,14 +13,14 @@ import {
 
 /** One value of a card as its tile draws it. */
 export interface PlacedFieldValue extends CardFieldValue {
-  /** Where it stands among the values, counting from one. */
+  /** at its current position among the values, counting from one. */
   readonly at: number
   /**
    * What tells it from every other value of its tile. Values standing under
    * one field are told apart by their order under it.
    */
   readonly key: string
-  /** Where it stands among the values the card writes under its own field, from one. */
+  /** at its current position among the values the card writes under its own field, from one. */
   readonly nth: number
   /**
    * It is the last box standing for its field, which is where what is wrong
@@ -33,12 +33,12 @@ export interface PlacedFieldValue extends CardFieldValue {
 export interface Tile {
   /** What tells the card from every other of the deck, as the caller named it. */
   readonly id: string
-  /** The section it stands under, and nothing for a card before the first. */
+  /** The section it is placed under, and nothing for a card before the first. */
   readonly section: string | null
   readonly stencil: string | null
   /** Its values, in the order its stencil asks for them. */
   readonly filled: readonly PlacedFieldValue[]
-  /** Where it stands among the tiles, counting from one, which is what it is announced as. */
+  /** at its current position among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
   /** How many stand in the grid with it, the plus among them. */
   readonly of: number
@@ -48,9 +48,9 @@ export interface Tile {
   readonly isDragged: boolean
 }
 
-/** One section as the grid draws it: the section, and where it stands. */
+/** One section as the grid draws it: the section, and at its current position. */
 export interface PlacedSection extends DeckSection {
-  /** Where it stands among the sections, counting from one. */
+  /** at its current position among the sections, counting from one. */
   readonly at: number
 }
 
@@ -101,14 +101,14 @@ function createTile(
   stencils: readonly Stencil[],
   placement: PlacementContext,
 ): Tile {
-  const cut = stencils.find((each) => each.name === card.stencil)
-  const fields = getDeclaredFields(cut?.fields ?? [])
+  const matchingStencil = stencils.find((each) => each.name === card.stencil)
+  const fields = getDeclaredFields(matchingStencil?.fields ?? [])
 
   /** How many values the card writes under each field, as they are counted off. */
-  const under = new Map<string, number>()
+  const underItem = new Map<string, number>()
   const countOff = (field: string): number => {
-    const nth = (under.get(field) ?? 0) + 1
-    under.set(field, nth)
+    const nth = (underItem.get(field) ?? 0) + 1
+    underItem.set(field, nth)
     return nth
   }
 
@@ -131,11 +131,11 @@ function createTile(
     stencil: card.stencil,
     filled: counted.map((each) => ({
       ...each,
-      isLast: each.nth === (under.get(each.field) ?? 0),
+      isLast: each.nth === (underItem.get(each.field) ?? 0),
     })),
     at: 0,
     of: 0,
-    isKnown: cut !== undefined,
+    isKnown: matchingStencil !== undefined,
     isDragged: card.id === placement.dragCard,
   }
 }
@@ -164,7 +164,7 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
     tiles.filter((tile) => tile.section === section)
 
   const head = tilesUnder(null)
-  const drawn = [
+  const renderedTiles = [
     {
       id: HEAD,
       section: null,
@@ -183,10 +183,10 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
   // tiles of each run and then the plus that ends it, so a reader is told
   // where each of them stands among them all.
   let seat = 0
-  const runs: readonly Run[] = drawn.map((run) => {
-    const laid = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
-    const plus = run.section !== null || laid.length > 0 || drawn.length === 1
-    return { ...run, tiles: laid, plusAt: plus ? ++seat : null }
+  const runs: readonly Run[] = renderedTiles.map((run) => {
+    const arrangedTiles = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
+    const plus = run.section !== null || arrangedTiles.length > 0 || renderedTiles.length === 1
+    return { ...run, tiles: arrangedTiles, plusAt: plus ? ++seat : null }
   })
   const of = seat
 

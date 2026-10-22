@@ -36,11 +36,11 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
   const vaultAnswers = createDeckAnswers()
   const store = createDeckNoteStore(cards, vaultAnswers)
   buffers.track(store)
-  const read = createDeckReader(store, vaultAnswers.getProblems)
+  const readItem = createDeckReader(store, vaultAnswers.getProblems)
   const wiring = useDeckScheduleSync(cards, presets, store)
   const { createDeckTabState } = createDeckTabFactory({
     store,
-    read,
+    read: readItem,
     vaultAnswers,
     wiring,
     closeTab,
@@ -95,19 +95,19 @@ function createDeckNoteStore(
         })
         return asFailure(code ?? 'notADeck')
       }
-      const read = answer.value.deck
+      const readItem = answer.value.deck
       vaultAnswers.recordRead(path, {
-        problems: read.problems,
+        problems: readItem.problems,
         error: null,
         bound: 0,
-        title: read.title,
+        title: readItem.title,
       })
       return asValue({
-        body: serializeBufferDeckToString(deserializeVaultDeck(read)),
+        body: serializeBufferDeckToString(deserializeVaultDeck(readItem)),
         at: answer.value.at,
       })
     },
-    write: async (path, body, seen) => {
+    write: async (path, body, observed) => {
       const deck = deserializeBufferDeckFromString(body)
       const answer = await cards.writeDeck(
         path,
@@ -117,7 +117,7 @@ function createDeckNoteStore(
           sections: serializeBufferSectionsToVaultSections(deck),
           tail: deck.tail,
         },
-        seen?.fingerprint ?? null,
+        observed?.fingerprint ?? null,
       )
       vaultAnswers.recordWrite(path, {
         error: answer.ok ? null : getFailureCode(answer.error.code),
@@ -182,8 +182,8 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
       takeFile: () => store.take(id),
       close: (tab) => {
         const path = store.getPath(id)
-        void store.close(id).then((gone) => {
-          if (!gone) return
+        void store.close(id).then((removed) => {
+          if (!removed) return
           read.forgetTab(id)
           scheduled.forgetTab(id)
           forgetPath(path)

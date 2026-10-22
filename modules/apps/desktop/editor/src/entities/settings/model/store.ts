@@ -1,7 +1,7 @@
 /**
  * The settings the window reads out of the file whole: what stands at a path
  * through it, the models a setting that names one can be set to, and one
- * setting written where it stands.
+ * setting written at its current position.
  *
  * What the vault answers with holds the defaults under everything the file
  * leaves out.
@@ -23,7 +23,7 @@ export interface Words {
 
 /** What this asks of the vault. */
 export interface SettingsStoreDeps {
-  /** Every setting as it stands, and the models the settings offer. */
+  /** Every setting currently, and the models the settings offer. */
   getSettings(): Promise<{
     readonly written: string
     readonly path: string
@@ -52,8 +52,8 @@ const getPluginDefault = (plugins: readonly PluginInfo[], path: readonly string[
 }
 
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
-  /** Every setting as it stands. It holds nothing until the vault has answered. */
-  const held = shallowRef<unknown>({})
+  /** Every setting currently. It holds nothing until the vault has answered. */
+  const target = shallowRef<unknown>({})
 
   /** The file the settings stand in, and the models the settings offer. */
   const path = ref('')
@@ -74,7 +74,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     }
     if (!pending.takeRead(place)) return
     try {
-      held.value = JSON.parse(answer.written)
+      target.value = JSON.parse(answer.written)
     } catch {
       // The vault answered with something no settings can be read out of. It is
       // not a vault that has gone away, and a write followed by this leaves the
@@ -89,7 +89,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
 
   /** What stands at a setting, and fallback plugin default where unset. */
   const getSetting = (path: readonly string[]): unknown => {
-    const value = pending.getPending(path)?.value ?? getSettingAt(held.value, path)
+    const value = pending.getPending(path)?.value ?? getSettingAt(target.value, path)
     return value !== undefined ? value : getPluginDefault(plugins.value, path)
   }
 
@@ -110,8 +110,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     const token = pending.add(edits)
     try {
       await core.updateSettings(edits)
-    } catch (thrown) {
-      say(`${words.unturned} ${formatErrorMessage(thrown)}`, 'error')
+    } catch (caughtError) {
+      say(`${words.unturned} ${formatErrorMessage(caughtError)}`, 'error')
     }
     try {
       await start()
@@ -125,7 +125,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     writeSettings([{ at: path, value: write(value) }])
 
   return {
-    held,
+    held: target,
     path,
     models,
     plugins,

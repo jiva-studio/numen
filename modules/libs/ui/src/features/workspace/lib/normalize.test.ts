@@ -89,7 +89,7 @@ describe('what does not draw is cleared away', () => {
 })
 
 /** Grandchildren rise two levels at once, and keep the way they divide. */
-describe('a branch that keeps one child hands its grandchildren up', () => {
+describe('a branch that keeps one child passes its grandchildren up', () => {
   const withEmpty = createWorkspace(
     split(
       'root',

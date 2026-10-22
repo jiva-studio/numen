@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Everything under `links:` but a block sequence is refused: an entry is
+// Everything under `links:` but a block sequence fails: an entry is
 // replaced on its own, and nothing else there is laid out a line at a time.
 func TestLinksThatAreNotABlockSequenceAreRefused(t *testing.T) {
 	for name, raw := range map[string]string{
@@ -29,14 +29,14 @@ func TestLinksThatAreNotABlockSequenceAreRefused(t *testing.T) {
 				t.Errorf("want ErrInline, got %v", err)
 			}
 			if got := string(d.Bytes()); got != raw {
-				t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
+				t.Errorf("a failed write changed the note\n want %q\n  got %q", raw, got)
 			}
 		})
 	}
 }
 
 // A `links:` key holding nothing is where a first entry is written.
-func TestAnEmptyLinksKeyTakesTheFirstEntry(t *testing.T) {
+func TestAnEmptyLinksKeyConsumesTheFirstEntry(t *testing.T) {
 	d, err := Open([]byte("---\nid: 01\nlinks:\ntype: deck\n---\nbody\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)

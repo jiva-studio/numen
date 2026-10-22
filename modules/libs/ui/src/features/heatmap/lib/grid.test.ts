@@ -34,21 +34,21 @@ describe('the stretch a grid asks about', () => {
   // A grid drawn wider than the room the stretch was asked for draws days
   // nobody asked about, and they come back empty. The caller passes the room
   // the page has, which is what bounds the grid.
-  it('leaves days out where the grid is drawn wider than it was asked for', () => {
-    const asked = getStretch({ width: 640, cell: 11, gap: 3 }, now)
+  it('leaves days out where the grid is drawn wider than it was requested for', () => {
+    const request = getStretch({ width: 640, cell: 11, gap: 3 }, now)
     const { columns } = measureGrid({ width: 1600, cell: 11, gap: 3 })
     const outside = getDays(columns, now, new Map()).filter(
-      (one) => one.day < asked.from || one.day > asked.to,
+      (one) => one.day < request.from || one.day > request.to,
     )
     expect(outside.length).toBeGreaterThan(0)
   })
 
   // A wider grid asks about more time, and never about less.
   it('grows with the room there is', () => {
-    const narrow = getStretch({ width: 200, cell: 11, gap: 3 }, now)
-    const wide = getStretch({ width: 1600, cell: 11, gap: 3 }, now)
-    expect(wide.from < narrow.from).toBe(true)
-    expect(wide.to >= narrow.to).toBe(true)
+    const narrowStretch = getStretch({ width: 200, cell: 11, gap: 3 }, now)
+    const wideStretch = getStretch({ width: 1600, cell: 11, gap: 3 }, now)
+    expect(wideStretch.from < narrowStretch.from).toBe(true)
+    expect(wideStretch.to >= narrowStretch.to).toBe(true)
   })
 })
 

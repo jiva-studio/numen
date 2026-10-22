@@ -11,7 +11,7 @@ import (
 
 // Where an artifact is kept on disk is what existing vaults hold, so each name
 // lands at the path it always did.
-func TestEveryArtifactIsKeptWhereExistingVaultsKeepIt(t *testing.T) {
+func TestEveryArtifactIsCachedWhereExistingVaultsKeepIt(t *testing.T) {
 	for _, one := range []struct {
 		name domain.ArtifactName
 		at   string

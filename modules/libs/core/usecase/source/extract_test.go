@@ -16,7 +16,7 @@ import (
 
 const bookPath = "library/book.epub"
 
-func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
+func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) {
 	cases := []struct {
 		name  string
 		sizes chunking.Sizes
@@ -124,8 +124,8 @@ func TestABookThatWillNotParseDoesNotStopTheOthers(t *testing.T) {
 	if got := shelf.reads["library/broken.epub"]; got != 1 {
 		t.Errorf("the unreadable book was read %d times, want one attempt in a run", got)
 	}
-	broken, known := index.sources[first.ID]["library/broken.epub"]
-	if !known {
+	broken, recognized := index.sources[first.ID]["library/broken.epub"]
+	if !recognized {
 		t.Error("the file the vault holds is not a source the index knows about")
 	}
 	if broken.Recipe != "" {
@@ -178,19 +178,19 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 // cut, so that tiling advances. A recipe naming the number configuration asked
 // for would name bytes nobody wrote, and the source would be read again on
 // every run.
-func TestTheRecipeNamesTheSizesTheCutKeptTo(t *testing.T) {
-	asked := chunking.Sizes{Large: 100, LargeOverlap: 100, Small: 20, SmallOverlap: 20}
-	kept := asked.Resolve()
+func TestTheRecipeNamesTheSizesTheSplitCachedTo(t *testing.T) {
+	request := chunking.Sizes{Large: 100, LargeOverlap: 100, Small: 20, SmallOverlap: 20}
+	resolved := request.Resolve()
 
-	if kept.LargeOverlap != 99 || kept.SmallOverlap != 19 {
-		t.Fatalf("the cut keeps to %+v", kept)
+	if resolved.LargeOverlap != 99 || resolved.SmallOverlap != 19 {
+		t.Fatalf("the cut keeps to %+v", resolved)
 	}
-	if got := (Extract{Sizes: asked}).sizes(); got != kept {
-		t.Errorf("the recipe names %+v, want %+v", got, kept)
+	if got := (Extract{Sizes: request}).sizes(); got != resolved {
+		t.Errorf("the recipe names %+v, want %+v", got, resolved)
 	}
 }
 
-func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
+func TestTheRecipeFollowsTheSplitSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 	ctx := t.Context()
 	one := chunking.Sizes{Large: 100, LargeOverlap: 20, Small: 20, SmallOverlap: 5}
 	other := one
@@ -283,12 +283,12 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 					t.Fatalf("a chunk of %s holds the other vault's words: %q", c.vault.Name, chunk.text)
 				}
 			}
-			known, err := index.GetFingerprints(ctx, c.vault.ID, domain.KindBook)
+			recognized, err := index.GetFingerprints(ctx, c.vault.ID, domain.KindBook)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(known) != 1 || known[c.path].Path != c.path {
-				t.Errorf("%s knows about %v, want its own book alone", c.vault.Name, known)
+			if len(recognized) != 1 || recognized[c.path].Path != c.path {
+				t.Errorf("%s knows about %v, want its own book alone", c.vault.Name, recognized)
 			}
 		})
 	}
@@ -297,7 +297,7 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 // Removal takes a book's source row and every chunk cut from it out of the
 // index. The text of a passage is read from its file, so a passage naming a file
 // that is gone can answer nothing.
-func TestABookTheVaultNoLongerHoldsIsTakenOut(t *testing.T) {
+func TestABookTheVaultNoLongerContainsIsTakenOut(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 
@@ -321,7 +321,7 @@ func TestABookTheVaultNoLongerHoldsIsTakenOut(t *testing.T) {
 	if res.Removed != 1 {
 		t.Errorf("removed = %d, want the one book the vault no longer holds", res.Removed)
 	}
-	if _, known := index.sources[first.ID]["library/gone.epub"]; known {
+	if _, recognized := index.sources[first.ID]["library/gone.epub"]; recognized {
 		t.Error("a book the vault does not hold is still a source the index knows about")
 	}
 	if index.cut(first.ID, "library/gone.epub") {
@@ -329,7 +329,7 @@ func TestABookTheVaultNoLongerHoldsIsTakenOut(t *testing.T) {
 	}
 
 	// The one that stayed is untouched: removal names paths.
-	if _, known := index.sources[first.ID]["library/kept.epub"]; !known {
+	if _, recognizedVal := index.sources[first.ID]["library/kept.epub"]; !recognizedVal {
 		t.Error("the book that is still there was taken out as well")
 	}
 	if !index.cut(first.ID, "library/kept.epub") {
@@ -387,7 +387,7 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 // A recognition still running is the source's text while it runs. The pages it
 // has read are what a passage is a place in, and the artifact answers under the
 // same producer name once the run finishes.
-func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
+func TestASourceSplitFromAPartialReadsBackFromThePartial(t *testing.T) {
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
 
@@ -436,16 +436,16 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 
 // A source the vault no longer holds takes the files of its recognition with it.
 // One run made them and none of them means anything without the others.
-func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
+func TestABookTakenOutConsumesTheFilesOfItsRecognition(t *testing.T) {
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
 
-	gone := bookOf(t, "Gone", words(latin, 200))
-	kept := bookOf(t, "Kept", words(sanskrit, 200))
-	shelf.hold("library/gone.epub", domain.KindBook, gone, 1)
-	shelf.hold("library/kept.epub", domain.KindBook, kept, 1)
+	removed := bookOf(t, "Gone", words(latin, 200))
+	resolved := bookOf(t, "Kept", words(sanskrit, 200))
+	shelf.hold("library/gone.epub", domain.KindBook, removed, 1)
+	shelf.hold("library/kept.epub", domain.KindBook, resolved, 1)
 
-	for _, raw := range [][]byte{gone, kept} {
+	for _, raw := range [][]byte{removed, resolved} {
 		for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
 			if err := made.WriteArtifact(ctx, name, []byte("What the pages say.")); err != nil {
 				t.Fatal(err)
@@ -471,12 +471,12 @@ func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
 		t.Fatalf("removed = %d, want the one book the vault no longer holds", res.Removed)
 	}
 
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(gone)) {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(removed)) {
 		if _, err := made.ReadArtifact(ctx, name); !errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("%s is still in the store", name)
 		}
 	}
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(kept)) {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(resolved)) {
 		if _, err := made.ReadArtifact(ctx, name); err != nil {
 			t.Errorf("%s went with the other book: %v", name, err)
 		}
@@ -486,7 +486,7 @@ func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
 func TestARenamedBookKeepsItsRecognition(t *testing.T) {
 	// A recognition is named by the hash of what was read, so a document renamed is
 	// the same recognition at another path. Renaming is a path gone and a path
-	// found, and an hour of a model's work stands on the one that went.
+	// found, and an hour of a model's work relies on the one that went.
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
 
@@ -523,7 +523,7 @@ func TestARenamedBookKeepsItsRecognition(t *testing.T) {
 	}
 }
 
-func TestOneOfTwoCopiesTakenOutLeavesTheOtherRecognition(t *testing.T) {
+func TestOneOfTwoCopiesTakenOutPreservesTheOtherRecognition(t *testing.T) {
 	// Two copies of one document are one recognition, because the name is the hash
 	// of the bytes. Taking one copy out leaves the other standing on it.
 	ctx := t.Context()
@@ -587,14 +587,14 @@ func TestARecordingNobodyHasHeardIsASourceWithNoChunks(t *testing.T) {
 	if res.Chunks != 0 || res.Extracted != 0 {
 		t.Errorf("the run cut %d chunks out of a recording nobody has heard", res.Chunks)
 	}
-	if _, held := index.sources[first.ID][talkPath]; !held {
+	if _, target := index.sources[first.ID][talkPath]; !target {
 		t.Error("the vault holds a recording the index does not")
 	}
 }
 
 // What a model heard is the text of the recording, and a chunk of it is located
 // by when it was said.
-func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
+func TestARecordingIsSplitFromWhatWasHeardInIt(t *testing.T) {
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
 
@@ -634,7 +634,7 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 
 // A transcription writes a transcript and the note of what heard it, and a
 // recording the vault no longer holds takes both with it.
-func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
+func TestARecordingTakenOutConsumesTheFilesOfItsTranscription(t *testing.T) {
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
 
@@ -662,15 +662,15 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 	if res.Removed != 1 {
 		t.Fatalf("removed = %d, want the one recording the vault no longer holds", res.Removed)
 	}
-	if left := made.names(); len(left) != 0 {
-		t.Errorf("the store still holds %v", left)
+	if remaining := made.artifactNames(); len(remaining) != 0 {
+		t.Errorf("the store still holds %v", remaining)
 	}
 }
 
 // A vault already read is not read again: what a book is cut by, and where its
 // recognition is kept, are what they were before recordings were a kind of their
 // own.
-func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
+func TestABookIsSplitTheWayItAlwaysWas(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	raw := bookOf(t, "A Book", words(sanskrit, 400))

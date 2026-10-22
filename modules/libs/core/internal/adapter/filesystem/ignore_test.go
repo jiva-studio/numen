@@ -63,7 +63,7 @@ func TestAToolsOwnFilesAreNotNotes(t *testing.T) {
 
 // TestAVaultSaysWhatToIgnore. What is noise is a property of the vault, so it
 // is written in the vault.
-func TestAVaultSaysWhatToIgnore(t *testing.T) {
+func TestAVaultReturnsWhatToIgnore(t *testing.T) {
 	files := map[string]string{
 		"Note.md":            "# Note\n",
 		"archive/Old.md":     "# Old\n",
@@ -113,7 +113,7 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 
 // A vault's own negation reaches what the same vault asked to leave out, which
 // is what a negation is for.
-func TestAVaultTakesBackItsOwnRule(t *testing.T) {
+func TestAVaultConsumesBackItsOwnRule(t *testing.T) {
 	root := vaultOf(t, map[string]string{
 		"Note.md":      "# Note\n",
 		"Old.tmp.md":   "# Old\n",
@@ -129,10 +129,10 @@ func TestAVaultTakesBackItsOwnRule(t *testing.T) {
 // they were written in.
 func TestIgnoringOneVaultDoesNotIgnoreAnother(t *testing.T) {
 	files := map[string]string{"Note.md": "# Note\n", "archive/Old.md": "# Old\n"}
-	quiet := vaultOf(t, files, []string{"archive/"})
+	quietVault := vaultOf(t, files, []string{"archive/"})
 	loud := vaultOf(t, files, nil)
 
-	if got := walkWithOptions(t, quiet, filesystem.Options{}); len(got) != 1 {
+	if got := walkWithOptions(t, quietVault, filesystem.Options{}); len(got) != 1 {
 		t.Errorf("the vault with a rule walked %v", got)
 	}
 	if got := walkWithOptions(t, loud, filesystem.Options{}); len(got) != 2 {

@@ -1,5 +1,5 @@
 /**
- * Where in a book the reader stands, and what turning a page comes to.
+ * Where in a book the reader stands, and what turning a page evaluates to.
  *
  * A spread is put in front by carrying the columns to it, so this reads the
  * columns and the marks the columns were measured into, and moves nothing else.
@@ -43,7 +43,7 @@ export interface BookTurnsOptions {
 /** `onMove` is what the reader says when the offset in front changes. */
 export function useBookTurns(options: BookTurnsOptions) {
   /** Which spread is in front, counted from the first. */
-  const standing = ref(0)
+  const activeSpread = ref(0)
 
   /** The spread in front, as a page of the book, and how many there are. */
   const front = computed(() =>
@@ -51,14 +51,14 @@ export function useBookTurns(options: BookTurnsOptions) {
       book: options.props.book,
       document: options.props.span,
       flow: options.flow.value,
-      spread: standing.value,
+      spread: activeSpread.value,
       marks: options.marks.value,
     }),
   )
 
   /** How much of the chapter in front is still to come, which is measured exactly. */
   const leftInChapter = computed(() =>
-    leftInDocument(options.flow.value, standing.value, options.marks.value),
+    leftInDocument(options.flow.value, activeSpread.value, options.marks.value),
   )
 
   /**
@@ -67,15 +67,15 @@ export function useBookTurns(options: BookTurnsOptions) {
    * every other one does.
    */
   const stand = (spread: number, how: 'smooth' | 'auto') => {
-    standing.value = Math.min(Math.max(spread, 0), Math.max(options.spreadCount.value - 1, 0))
+    activeSpread.value = Math.min(Math.max(spread, 0), Math.max(options.spreadCount.value - 1, 0))
     if (!options.paper.value) return
-    const to = `${-getSpreadStart(options.flow.value, standing.value)}px 0`
+    const to = `${-getSpreadStart(options.flow.value, activeSpread.value)}px 0`
     translatePaper(options.paper.value, to, how)
   }
 
   /** What stands in front now, said once, and nothing while nothing does. */
   const announce = () => {
-    const now = inFront(options.marks.value, options.flow.value, standing.value)
+    const now = inFront(options.marks.value, options.flow.value, activeSpread.value)
     if (now !== undefined && now !== options.props.at) options.onMove(now)
   }
 
@@ -86,7 +86,7 @@ export function useBookTurns(options: BookTurnsOptions) {
 
   /** What the person is reading now, to be kept in front while the text is set again. */
   const getKeptOffset = () =>
-    inFront(options.marks.value, options.flow.value, standing.value) ?? options.props.at
+    inFront(options.marks.value, options.flow.value, activeSpread.value) ?? options.props.at
 
   /** The spread one offset of the book's text falls on. */
   const getSpreadOf = (at: number) => findSpreadAt(options.marks.value, options.flow.value, at)
@@ -94,7 +94,7 @@ export function useBookTurns(options: BookTurnsOptions) {
   /** What a turn of the page asks for, and where it lands. */
   const turn = (way: PageTurn) => {
     const to = turnTo(way, {
-      spread: standing.value,
+      spread: activeSpread.value,
       count: options.spreadCount.value,
       span: options.props.span,
       book: options.props.book,
@@ -103,5 +103,5 @@ export function useBookTurns(options: BookTurnsOptions) {
     if (to.offset !== undefined) options.onMove(to.offset)
   }
 
-  return { standing, front, leftInChapter, stand, goTo, getKeptOffset, getSpreadOf, turn }
+  return { standing: activeSpread, front, leftInChapter, stand, goTo, getKeptOffset, getSpreadOf, turn }
 }

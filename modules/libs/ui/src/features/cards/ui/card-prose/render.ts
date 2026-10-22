@@ -56,7 +56,7 @@ const spacing = (node: Node): boolean =>
 
 /** The text with the whitespace that stands between tags taken out of it. */
 const tightenHtml = (html: string): string => {
-  const read = new DOMParser().parseFromString(html, 'text/html')
+  const readItem = new DOMParser().parseFromString(html, 'text/html')
 
   const walk = (node: Node): void => {
     for (const child of [...node.childNodes]) {
@@ -67,8 +67,8 @@ const tightenHtml = (html: string): string => {
     }
   }
 
-  walk(read.body)
-  return read.body.innerHTML
+  walk(readItem.body)
+  return readItem.body.innerHTML
 }
 
 /** Text as the HTML a card draws, with nothing in it that a card may not. */

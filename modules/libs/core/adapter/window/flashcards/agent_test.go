@@ -160,8 +160,8 @@ func TestEveryStepReachesThePageAsItself(t *testing.T) {
 			steps = append(steps, "doing "+step.ToolCall.GetTool()+" "+step.ToolCall.GetPath())
 		case *v1.AskAgentResponse_ToolFinished:
 			steps = append(steps, "answered")
-		case *v1.AskAgentResponse_Said:
-			steps = append(steps, "said "+step.Said)
+		case *v1.AskAgentResponse_Text:
+			steps = append(steps, "said "+step.Text)
 		case *v1.AskAgentResponse_Stopped:
 			steps = append(steps, "stopped "+step.Stopped)
 		}
@@ -217,8 +217,8 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "3f4g5h6j7k"})); err != nil {
 		t.Fatal(err)
 	}
-	if over := <-agent.over; over != "3f4g5h6j7k" {
-		t.Errorf("finished %q", over)
+	if overVal := <-agent.over; overVal != "3f4g5h6j7k" {
+		t.Errorf("finished %q", overVal)
 	}
 }
 
@@ -226,21 +226,21 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 	nothing := &API{}
 	nothing.Unreachable.Store("no agent is named in the settings")
-	said, err := nothing.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
+	response, err := nothing.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetUnreachable() == "" {
+	if response.Msg.GetUnreachable() == "" {
 		t.Error("a window with no agent says it can be asked")
 	}
 
 	reachable := &API{}
 	reachable.Unreachable.Store("")
-	said, err = reachable.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
+	response, err = reachable.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if why := said.Msg.GetUnreachable(); why != "" {
+	if why := response.Msg.GetUnreachable(); why != "" {
 		t.Errorf("a window with an agent says %q", why)
 	}
 }
@@ -252,11 +252,11 @@ func TestAWindowAskedBeforeASessionIsNotSaidToHaveNoAgent(t *testing.T) {
 	api := &API{}
 	api.Unreachable.Store("")
 
-	said, err := api.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
+	response, err := api.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if why := said.Msg.GetUnreachable(); why != "" {
+	if why := response.Msg.GetUnreachable(); why != "" {
 		t.Errorf("before anybody sat down the page was told %q", why)
 	}
 }
@@ -267,11 +267,11 @@ func TestWhyTheAgentCouldNotBeServedReachesThePage(t *testing.T) {
 	api := &API{}
 	api.Unreachable.Store("claude is not on this machine")
 
-	said, err := api.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
+	response, err := api.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if why := said.Msg.GetUnreachable(); why != "claude is not on this machine" {
+	if why := response.Msg.GetUnreachable(); why != "claude is not on this machine" {
 		t.Errorf("the page was told %q", why)
 	}
 }
@@ -279,9 +279,9 @@ func TestWhyTheAgentCouldNotBeServedReachesThePage(t *testing.T) {
 // The window serves the agent beside the cards. A path belonging to neither is
 // still the page's own file, so the routes stand in front of the files and not
 // over them.
-func TestTheAgentIsServedBesideTheCards(t *testing.T) {
+func TestTheAgentIsServedAdjacentTheCards(t *testing.T) {
 	handler := (&API{}).NewHandler(http.NotFoundHandler())
-	asked := func(route string) int {
+	request := func(route string) int {
 		r := httptest.NewRequest(http.MethodPost, route, strings.NewReader("{}"))
 		r.Header.Set("Content-Type", "application/json")
 		out := httptest.NewRecorder()
@@ -293,11 +293,11 @@ func TestTheAgentIsServedBesideTheCards(t *testing.T) {
 		"/numen.v1.AgentService/AskAgent",
 		"/numen.v1.AgentService/FinishConversation",
 	} {
-		if code := asked(route); code == http.StatusNotFound {
+		if code := request(route); code == http.StatusNotFound {
 			t.Errorf("%s is not served", route)
 		}
 	}
-	if code := asked("/built/index.css"); code != http.StatusNotFound {
+	if code := request("/built/index.css"); code != http.StatusNotFound {
 		t.Errorf("a file of the page answered %d", code)
 	}
 }
@@ -323,7 +323,7 @@ func TestAConversationTheAgentCannotEndIsAnInternalFailure(t *testing.T) {
 }
 
 // Naming no agent takes the window's agent away.
-func TestNamingNoAgentLeavesTheWindowWithNone(t *testing.T) {
+func TestNamingNoAgentPreservesTheWindowWithNone(t *testing.T) {
 	api := &API{}
 	api.SetAgent(&asking{})
 	if api.GetAgent() == nil {

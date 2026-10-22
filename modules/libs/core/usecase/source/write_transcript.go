@@ -14,7 +14,7 @@ type TranscriptWrite struct {
 	CutError error
 }
 
-// WriteTranscript writes a person's words beside what the model heard, which stays under its own name.
+// WriteTranscript writes a person's words along with what the model heard, which stays under its own name.
 type WriteTranscript struct {
 	texts sourceTexts
 }
@@ -46,8 +46,8 @@ func (u WriteTranscript) Execute(
 	defer release()
 
 	// The words are a person's, and a proofreader leaves them alone.
-	written := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
-	if err := stored.store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, stored.meta.Producer, stored.meta.Hash), written); err != nil {
+	content := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
+	if err := stored.store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, stored.meta.Producer, stored.meta.Hash), content); err != nil {
 		return TranscriptWrite{}, err
 	}
 	if cut == nil {

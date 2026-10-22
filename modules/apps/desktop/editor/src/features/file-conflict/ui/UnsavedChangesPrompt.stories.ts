@@ -52,8 +52,8 @@ const getAnswers = (canvas: HTMLElement) => within(canvas).getAllByRole('button'
 export const TwoNotes: Story = {
   args: { conflicts: [conflict('physics/Entropy.md'), conflict('Heat.md')] },
   play: async ({ canvasElement }) => {
-    const said = notice(canvasElement)
-    await expect(said).not.toBeNull()
+    const response = notice(canvasElement)
+    await expect(response).not.toBeNull()
     await expect(notes(canvasElement)).toHaveLength(2)
     await expect(getAnswers(canvasElement)).toHaveLength(6)
 
@@ -63,8 +63,8 @@ export const TwoNotes: Story = {
     await expect(answer.backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
     // It sits over the work, at the foot of the window and inside it.
-    const box = said!.getBoundingClientRect()
-    await expect(getComputedStyle(said!).position).toBe('fixed')
+    const box = response!.getBoundingClientRect()
+    await expect(getComputedStyle(response!).position).toBe('fixed')
     await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
     await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
   },

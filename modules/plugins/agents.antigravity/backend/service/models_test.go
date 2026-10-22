@@ -25,7 +25,7 @@ func TestTheModelsAreTheLinesThatHoldANameAndATitle(t *testing.T) {
 
 // The program list holds the models the installed program lists with "models", whatever the
 // settings once named.
-func TestTheProgramListHoldsTheModelsTheProgramListsFoldedByLevel(t *testing.T) {
+func TestGetAgentPrograms_ModelListGroupedByLevel(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	script := agenttest.WriteScript(t, "agy",
@@ -51,7 +51,7 @@ func TestTheProgramListHoldsTheModelsTheProgramListsFoldedByLevel(t *testing.T) 
 	}
 }
 
-func TestTheProgramListHoldsNoModelWhereTheProgramCannotListThem(t *testing.T) {
+func TestGetAgentPrograms_ModelListFailure(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	script := agenttest.WriteScript(t, "agy", "exit 1\n")
@@ -111,7 +111,7 @@ esac
 }
 
 // askStub runs a request with no tool against the stub and returns what the run said and why it stopped.
-func askStub(t *testing.T, script, model, level string) (said, stopped string) {
+func askStub(t *testing.T, script, model, level string) (said, stopReason string) {
 	t.Helper()
 	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
 		Command: []string{script}, Model: model, Reasoning: level, Prompt: "q",
@@ -120,10 +120,10 @@ func askStub(t *testing.T, script, model, level string) (said, stopped string) {
 		t.Fatal(err)
 	}
 	for stream.Receive() {
-		said += stream.Msg().GetSaid()
-		stopped += stream.Msg().GetStopped()
+		said += stream.Msg().GetText()
+		stopReason += stream.Msg().GetStopped()
 	}
-	return said, stopped
+	return said, stopReason
 }
 
 func TestAFamilyAskedWithoutALevelRunsTheModelOfItsDefaultLevel(t *testing.T) {
@@ -137,9 +137,9 @@ func TestAFamilyAskedWithoutALevelRunsTheModelOfItsDefaultLevel(t *testing.T) {
 	}
 	for _, one := range cases {
 		t.Run(one.name, func(t *testing.T) {
-			said, stopped := askStub(t, stubCli(t, one.listing), "m", one.level)
-			if said != one.want || stopped != "" {
-				t.Errorf("said %q and stopped %q, want %q", said, stopped, one.want)
+			response, stopReason := askStub(t, stubCli(t, one.listing), "m", one.level)
+			if response != one.want || stopReason != "" {
+				t.Errorf("said %q and stopReason %q, want %q", response, stopReason, one.want)
 			}
 		})
 	}
@@ -149,10 +149,10 @@ func TestAModelTheCliDoesNotListStopsTheRunWithTheReasonOfTheCli(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 
-	_, stopped := askStub(t, stubCli(t, "m-medium\\tModel (Medium)\\n"), "gone", "")
+	_, stopReason := askStub(t, stubCli(t, "m-medium\\tModel (Medium)\\n"), "gone", "")
 
-	if want := `invalid model selection (--model "gone"): not recognized`; stopped != want {
-		t.Errorf("stopped with %q, want %q", stopped, want)
+	if want := `invalid model selection (--model "gone"): not recognized`; stopReason != want {
+		t.Errorf("stopReason with %q, want %q", stopReason, want)
 	}
 }
 
@@ -160,9 +160,9 @@ func TestAFamilyOfOneListedModelRunsThatModel(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 
-	said, stopped := askStub(t, stubCli(t, "solo\\tSolo\\n"), "solo", "")
+	response, stopReason := askStub(t, stubCli(t, "solo\\tSolo\\n"), "solo", "")
 
-	if said != "ran solo" || stopped != "" {
-		t.Errorf("said %q and stopped %q", said, stopped)
+	if response != "ran solo" || stopReason != "" {
+		t.Errorf("said %q and stopReason %q", response, stopReason)
 	}
 }

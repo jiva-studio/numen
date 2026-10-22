@@ -66,8 +66,8 @@ vi.mock('@/shared/clients', async (original) => ({
     getAgentState: async () => ({ unreachable: '' }),
     listReviewDays: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
     getVaultDeckPreset: async () => ({ preset: undefined }),
-    startSession: async (said: { deck: string }) => {
-      started.push(said)
+    startSession: async (response: { deck: string }) => {
+      started.push(response)
       return { run: 'run', cards: [], unwritten: [], skipped: 0 }
     },
   },
@@ -86,7 +86,7 @@ const mountWindow = async () => {
   return window
 }
 
-const settle = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /**
  * Every window a test drew. A window listens for keystrokes for as long as it
@@ -129,7 +129,7 @@ describe('a letter pressed on the vaults', () => {
     expect(getOpenVault(window)).toBe('physics')
   })
 
-  it('opens nothing where no vault stands at the letter', async () => {
+  it('opens nothing where no vault remains at the letter', async () => {
     const window = await mountWindow()
 
     await press('c')
@@ -137,7 +137,7 @@ describe('a letter pressed on the vaults', () => {
     expect(getOpenVault(window)).toBe('')
   })
 
-  it('opens nothing where the letter is held with the overlay key', async () => {
+  it('opens nothing where the letter is retained with the overlay key', async () => {
     const window = await mountWindow()
 
     await press('a', { ctrlKey: true })

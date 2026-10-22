@@ -1,5 +1,5 @@
 /**
- * What pressing something in an agent tab comes to, asked without a screen.
+ * What pressing something in an agent tab evaluates to, asked without a screen.
  *
  * A question carries nothing about what is open, and a passage named in an
  * answer opens the source it is in.
@@ -15,20 +15,20 @@ type Model = AgentModel & { readonly namedAt: readonly string[] }
 
 /** A conversation that records what it was asked, and where its lines point. */
 const createConversation = (locations: Record<string, { path: string; span: Span }> = {}) => {
-  const asked: [string, string][] = []
-  const stopped: string[] = []
-  const said = ref<Turn[]>([])
+  const request: [string, string][] = []
+  const stopCalls: string[] = []
+  const turn = ref<Turn[]>([])
   const conversation: Conversation = {
-    turns: said,
+    turns: turn,
     isWorking: ref(false),
     ask: async (text, focus) => {
-      asked.push([text, focus])
+      request.push([text, focus])
     },
     getSourceLocation: (turn) => locations[turn] ?? null,
-    stop: () => stopped.push('stop'),
-    finish: () => stopped.push('finish'),
+    stop: () => stopCalls.push('stop'),
+    finish: () => stopCalls.push('finish'),
   }
-  return { conversation, said, asked, stopped }
+  return { conversation, said: turn, asked: request, stopped: stopCalls }
 }
 
 /**
@@ -40,20 +40,20 @@ const tab = (
   notes: Record<string, string> = {},
 ) => {
   const fake = createConversation(locations)
-  const opened: [string, readonly Span[]][] = []
-  const beside: string[] = []
+  const openedCalls: [string, readonly Span[]][] = []
+  const besideItems: string[] = []
   const state = useAgentConversation(fake.conversation, {
-    openFileAt: (path, ...spans) => opened.push([path, spans]),
-    openFileBeside: (path) => beside.push(path),
-    resolve: async (written) =>
-      new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
+    openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
+    openFileBeside: (path) => besideItems.push(path),
+    resolve: async (content) =>
+      new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
     unreachable: () => '',
   })
-  return { state, opened, beside, ...fake }
+  return { state, opened: openedCalls, beside: besideItems, ...fake }
 }
 
 /** A setting the window lists, found at the place given. */
-const listed = (namedAt: readonly string[], name: string, presence: Model['presence']): Model => ({
+const items = (namedAt: readonly string[], name: string, presence: Model['presence']): Model => ({
   namedAt,
   name,
   title: name,
@@ -62,10 +62,10 @@ const listed = (namedAt: readonly string[], name: string, presence: Model['prese
 })
 /** A line of an answer, as the panel hands one back. */
 const turn = (id: string, text: string): Turn =>
-  ({ id, text, voice: 'said', state: 'done' }) as unknown as Turn
+  ({ id, text, voice: 'answered', state: 'settled' })
 
 describe('a question sent', () => {
-  it('names nothing the person has open, which the window reports itself', () => {
+  it('is empty currently open, which the window reports itself', () => {
     const one = tab()
 
     one.state.send('what is this about')
@@ -142,7 +142,7 @@ describe('a link inside an answer', () => {
     expect(one.opened).toEqual([])
   })
 
-  it('opens the note it names beside what the person is looking at', async () => {
+  it('opens the note it names along with what the person is looking at', async () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
     one.said.value = [turn('said', 'It sits under [[Thermodynamics]].')]
     await nextTick()
@@ -187,14 +187,14 @@ describe('agent model selection and settings', () => {
 
   it('writes the agent and model chosen', () => {
     const fake = createConversation()
-    const written: [readonly string[], unknown][] = []
+    const content: [readonly string[], unknown][] = []
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
       openFileBeside: () => {},
       resolve: async () => new Map(),
       unreachable: () => '',
       writeSetting: async (path, value) => {
-        written.push([path, value])
+        content.push([path, value])
       },
     })
 
@@ -210,7 +210,7 @@ describe('agent model selection and settings', () => {
       'zeta',
       'zeta-small',
     ])
-    expect(written).toEqual([
+    expect(content).toEqual([
       [['agent', 'use'], 'zeta'],
       [['agent', 'zeta', 'model'], 'zeta-small'],
     ])
@@ -243,22 +243,22 @@ describe('agent model selection and settings', () => {
     expect(state.selectedAgentId.value).toBe('')
 
     models.value = [
-      { ...listed(['agent', 'use'], 'zeta', 'present'), title: 'Zeta Agent' },
-      listed(['agent', 'use'], 'omega', 'not fetched'),
+      { ...items(['agent', 'use'], 'zeta', 'present'), title: 'Zeta Agent' },
+      items(['agent', 'use'], 'omega', 'not fetched'),
       {
-        ...listed(['agent', 'zeta', 'model'], 'zeta-small', 'nothing to fetch'),
+        ...items(['agent', 'zeta', 'model'], 'zeta-small', 'nothing to fetch'),
         title: 'Zeta Small',
       },
       {
-        ...listed(['agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch'),
+        ...items(['agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch'),
         title: 'Zeta Large',
         isDefault: true,
       },
     ]
     await nextTick()
 
-    const shown = state.modelOptions.value.map((o) => [o.agentTitle, o.modelId, o.modelTitle])
-    expect(shown).toEqual([
+    const optionsList = state.modelOptions.value.map((o) => [o.agentTitle, o.modelId, o.modelTitle])
+    expect(optionsList).toEqual([
       ['Zeta Agent', 'zeta-small', 'Zeta Small'],
       ['Zeta Agent', 'zeta-large', 'Zeta Large'],
     ])

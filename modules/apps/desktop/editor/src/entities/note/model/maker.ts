@@ -42,7 +42,7 @@ const getRole = (relation: PlexRelation): CreatableRelation | undefined =>
 
 /**
  * What a new note writes about the note it was made from. The new one takes the
- * relation the gesture named, so from where it stands the other one takes the
+ * relation the gesture named, so from at its current position the other one takes the
  * opposite relation.
  */
 const opposites: Partial<Record<PlexRelation, CreatableRelation>> = {
@@ -99,9 +99,9 @@ function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
     links: readonly Link[],
   ): Promise<NoteRef | ErrorCode | null> {
     try {
-      const made = await core.create({ title, folder, links })
-      if (!made.ok) return made.error
-      return { path: made.value.path, title }
+      const createdItem = await core.create({ title, folder, links })
+      if (!createdItem.ok) return createdItem.error
+      return { path: createdItem.value.path, title }
     } catch (error) {
       writeMessage(formatErrorMessage(error), 'error')
       return null
@@ -109,10 +109,10 @@ function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
   }
 
   async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
-    for (let taken = 1; taken <= names; taken++) {
-      const made = await createNote(createNumberedName(taken), folder, links)
-      if (made === 'occupied') continue
-      return reportNoteResult(made)
+    for (let counter = 1; counter <= names; counter++) {
+      const createdItem = await createNote(createNumberedName(counter), folder, links)
+      if (createdItem === 'occupied') continue
+      return reportNoteResult(createdItem)
     }
     writeMessage(exhausted, 'error')
     return null
@@ -209,7 +209,7 @@ const createNumberedName = (count: number): string =>
 
 /** The folder a note is in, so one made from it is filed beside it. */
 const getParentFolder = (path: string): string => {
-  const cut = path.lastIndexOf('/')
+  const slashIndex = path.lastIndexOf('/')
   // Stryker disable next-line EqualityOperator: a path starting with slash produces empty string either way.
-  return cut < 0 ? '' : path.slice(0, cut)
+  return slashIndex < 0 ? '' : path.slice(0, slashIndex)
 }

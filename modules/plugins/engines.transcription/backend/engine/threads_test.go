@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
-func TestOnlyTheEncoderTakesMoreThanOneThread(t *testing.T) {
+func TestOnlyTheEncoderConsumesMoreThanOneThread(t *testing.T) {
 	got := Defaults().sessionThreads()
 	want := sessionThreads{encoder: onnx.GetDefaultThreads(), decoder: 1, joiner: 1, segmenter: 1}
 	if got != want {
@@ -14,7 +14,7 @@ func TestOnlyTheEncoderTakesMoreThanOneThread(t *testing.T) {
 	}
 }
 
-func TestTheEncoderTakesTheThreadsItIsGiven(t *testing.T) {
+func TestTheEncoderConsumesTheThreadsItIsGiven(t *testing.T) {
 	cfg := Defaults()
 	cfg.Threads = 3
 	got := cfg.sessionThreads()

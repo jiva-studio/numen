@@ -22,8 +22,8 @@ type questions struct {
 	numenv1connect.SearchServiceClient
 }
 
-// asks is that client against a server those services are mounted on.
-func asks(client connect.HTTPClient, at string) questions {
+// newQuestionsClient is that client against a server those services are mounted on.
+func newQuestionsClient(client connect.HTTPClient, at string) questions {
 	return questions{
 		VaultServiceClient:     numenv1connect.NewVaultServiceClient(client, at),
 		WorkspaceServiceClient: numenv1connect.NewWorkspaceServiceClient(client, at),
@@ -33,8 +33,8 @@ func asks(client connect.HTTPClient, at string) questions {
 	}
 }
 
-// answers puts them on a mux, which is what a window serves them from.
-func answers(mux *http.ServeMux, services *editor.Services) {
+// mountQuestionsServices puts them on a mux, which is what a window serves them from.
+func mountQuestionsServices(mux *http.ServeMux, services *editor.Services) {
 	mux.Handle(numenv1connect.NewVaultServiceHandler(services.Vault))
 	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(services.Workspace))
 	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))

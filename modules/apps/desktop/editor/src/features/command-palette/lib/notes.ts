@@ -13,8 +13,8 @@ export const createNotes = (
   return {
     getTabAt: (path) => {
       for (const one of stores) {
-        const held = one.getTabAt(path)
-        if (held !== null) return held
+        const tab = one.getTabAt(path)
+        if (tab !== null) return tab
       }
       return null
     },

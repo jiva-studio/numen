@@ -152,7 +152,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			if err := json.Unmarshal(line, &event); err == nil {
 				handle(event)
 			} else if text := strings.TrimSpace(string(line)); text != "" {
-				reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text + "\n"}})
+				reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text + "\n"}})
 			}
 			if reader.isOverLimit() {
 				reader.reportLimit()

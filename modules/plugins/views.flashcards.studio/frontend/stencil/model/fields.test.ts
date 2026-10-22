@@ -8,7 +8,7 @@ import type { DeckProblem, VaultStencil } from '../../cards'
 import { serializeStencil, createBufferStencil } from '../lib/stencil'
 import { createStencilFields } from './fields'
 
-const cut: VaultStencil = {
+const baseStencil: VaultStencil = {
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
@@ -33,20 +33,20 @@ const lacking = (face: number, text: string): DeckProblem => ({
 const create = () => {
   let at = 0
   const state = {
-    body: serializeStencil(createBufferStencil(cut, () => `f${(at += 1)}`)),
+    body: serializeStencil(createBufferStencil(baseStencil, () => `f${(at += 1)}`)),
     problems: [] as readonly DeckProblem[],
   }
-  const typed = vi.fn((_id: string, body: string) => {
+  const onType = vi.fn((_id: string, body: string) => {
     state.body = body
   })
-  const renamed = vi.fn()
+  const onRename = vi.fn()
   const fields = createStencilFields(
     () => state.body,
-    typed,
+    onType,
     () => state.problems,
-    renamed,
+    onRename,
   )
-  return { fields, state, typed, renamed }
+  return { fields, state, typed: onType, renamed: onRename }
 }
 
 describe('the stencil a body reads as', () => {
@@ -74,7 +74,7 @@ describe('the stencil a body reads as', () => {
     expect(fields.getStencil('a').fields).toStrictEqual(['Height'])
   })
 
-  it('is read afresh once it is let go of', () => {
+  it('is read afresh once it is release', () => {
     const { fields } = create()
     const was = fields.getStencil('a')
 
@@ -125,7 +125,7 @@ describe('the marks a stencil carries', () => {
     expect(fields.getMarks('a')).toBe(was)
   })
 
-  it('are drawn afresh once they are let go of', () => {
+  it('are drawn afresh once they are release', () => {
     const { fields, state } = create()
     state.problems = [lacking(0, 'no back')]
     const was = fields.getMarks('a')
@@ -138,7 +138,7 @@ describe('the marks a stencil carries', () => {
 })
 
 describe('what a gesture makes of the stencil', () => {
-  const names = (state: { body: string }) =>
+  const getFaceNames = (state: { body: string }) =>
     (JSON.parse(state.body) as { faces: { name: string }[] }).faces.map((face) => face.name)
 
   it('adds a field at the end', () => {
@@ -182,7 +182,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').addFace('Spot it')
 
-    expect(names(state)).toStrictEqual(['Recognise', 'Name it', 'Spot it'])
+    expect(getFaceNames(state)).toStrictEqual(['Recognise', 'Name it', 'Spot it'])
   })
 
   it('renames a face', () => {
@@ -191,7 +191,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').renameFace(face, 'Spot it')
 
-    expect(names(state)).toStrictEqual(['Spot it', 'Name it'])
+    expect(getFaceNames(state)).toStrictEqual(['Spot it', 'Name it'])
   })
 
   it('removes a face', () => {
@@ -200,7 +200,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').removeFace(face)
 
-    expect(names(state)).toStrictEqual(['Name it'])
+    expect(getFaceNames(state)).toStrictEqual(['Name it'])
   })
 
   it('moves a face to the end', () => {
@@ -209,7 +209,7 @@ describe('what a gesture makes of the stencil', () => {
 
     fields.createActions('a').moveFace(face, null)
 
-    expect(names(state)).toStrictEqual(['Name it', 'Recognise'])
+    expect(getFaceNames(state)).toStrictEqual(['Name it', 'Recognise'])
   })
 
   it('writes one half of a face', () => {

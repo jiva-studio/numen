@@ -41,7 +41,7 @@ func readArrived(t *testing.T, root, path string) string {
 }
 
 // Files a person lets go of over a folder are copied into it, whatever kind of
-// file they are, and what they let go of stays where it was.
+// file they are, and what they release stays where it was.
 func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
@@ -139,7 +139,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 
 // A folder the vault itself sits in would be copied into itself for as long as
 // the disk lasted.
-func TestAFolderHoldingTheVaultIsRefused(t *testing.T) {
+func TestAFolderContainingTheVaultIsRefused(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, nil)
 	bring := vaults.NewImport(filesystem.VaultWriters{}, filesystem.ImportedFiles{})

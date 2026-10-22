@@ -198,11 +198,11 @@ func (r *Router) getProgram(ctx context.Context, asked string) (string, error) {
 	}
 
 	programs, listErr := r.provider.GetPrograms(ctx, r.settings.GetCommands())
-	chosen, found := port.GetDefaultProgram(programs)
+	selected, found := port.GetDefaultProgram(programs)
 	if !found {
 		return "", errors.Join(errNoProgram, listErr)
 	}
-	return chosen.Name, nil
+	return selected.Name, nil
 }
 
 // EndConversation ends the conversation on the program it was asked of.

@@ -51,8 +51,8 @@ const meta: Meta<Knobs> = {
             text,
           })),
       )
-      const chosen = ref(args.chosen)
-      return { args, choices, chosen }
+      const selected = ref(args.chosen)
+      return { args, choices, chosen: selected }
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
@@ -212,17 +212,17 @@ export const Dark: Story = {
 
     // A quiet segment keeps no ground of its own, so both are read over the
     // ground the control itself lays down.
-    const behind = getComputedStyle(
+    const slotBg = getComputedStyle(
       canvasElement.querySelector('[data-slot="segmented"]') as HTMLElement,
     ).backgroundColor
-    const chosen = getComputedStyle(medium as HTMLElement)
-    const ground = lightness(chosen.backgroundColor, behind)
-    const ink = lightness(chosen.color, chosen.backgroundColor)
+    const selected = getComputedStyle(medium as HTMLElement)
+    const ground = lightness(selected.backgroundColor, slotBg)
+    const ink = lightness(selected.color, selected.backgroundColor)
 
-    for (const beside of [small, large]) {
-      const quiet = getComputedStyle(beside as HTMLElement)
-      expect(ground).toBeGreaterThan(lightness(quiet.backgroundColor, behind) + 24)
-      expect(ink).toBeLessThan(lightness(quiet.color, behind) - 24)
+    for (const other of [small, large]) {
+      const unchosen = getComputedStyle(other as HTMLElement)
+      expect(ground).toBeGreaterThan(lightness(unchosen.backgroundColor, slotBg) + 24)
+      expect(ink).toBeLessThan(lightness(unchosen.color, slotBg) - 24)
     }
   },
 }

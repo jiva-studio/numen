@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
 // Text put in from outside replaces what is there; text that came from here
 // is already in. The caret, the selection and the scroll offset stay where
 // they were, and the replacement is no step to undo. The string this editor
-// last emitted is the document as it stands.
+// last emitted is the document currently.
 watch(text, (fresh) => {
   if (!view || fresh === lastEmitted || view.state.doc.toString() === fresh) return
   view.dispatch(replace(view.state, fresh))
@@ -177,7 +177,7 @@ defineExpose({
    * last line there is.
    *
    * An editor holding no text holds no lines, and says so. Text can arrive
-   * after the editor is drawn, and a caret asked for a line then stands on
+   * after the editor is drawn, and a caret asked for a line then relies on
    * that line.
    */
   reveal: (line: number) => {

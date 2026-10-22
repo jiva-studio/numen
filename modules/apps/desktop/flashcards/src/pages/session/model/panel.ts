@@ -53,26 +53,26 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   /** Whether the panel is what the window is showing, which the window holds. */
   const open = computed(() => deps.open())
 
-  const written = ref('')
+  const content = ref('')
 
   /** The open conversation with the card it is about, made when a card is first asked about. */
-  const held = shallowRef<{ card: CardFace; conversation: Conversation } | null>(null)
+  const card = shallowRef<{ card: CardFace; conversation: Conversation } | null>(null)
 
   /** The card the open conversation is about, and nothing while none is. */
-  const about = computed(() => held.value?.card ?? null)
+  const about = computed(() => card.value?.card ?? null)
 
   /** How many conversations this window has opened, which names the next. */
-  let opened = 0
+  let conversationCounter = 0
 
-  const turns = computed<Turn[]>(() => held.value?.conversation.turns.value ?? [])
-  const isWorking = computed(() => held.value?.conversation.isWorking.value ?? false)
+  const turns = computed<Turn[]>(() => card.value?.conversation.turns.value ?? [])
+  const isWorking = computed(() => card.value?.conversation.isWorking.value ?? false)
 
-  /** The conversation about one card, made once and let go of with the card. */
-  const startTalk = (card: CardFace) => {
-    if (held.value?.card.mark === card.mark && held.value.card.face === card.face) return
+  /** The conversation about one card, made once and release with the card. */
+  const startTalk = (targetCard: CardFace) => {
+    if (card.value?.card.mark === targetCard.mark && card.value.card.face === targetCard.face) return
     endConversation()
-    const conversation = createCardConversation(deps.agent(card), `card-${opened++}`, deps.paint)
-    held.value = { card, conversation }
+    const conversation = createCardConversation(deps.agent(targetCard), `card-${conversationCounter++}`, deps.paint)
+    card.value = { card: targetCard, conversation }
   }
 
   /**
@@ -88,15 +88,15 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     deps.showPanel(true)
   }
 
-  /** The panel put away, with what was said in it kept. */
+  /** The panel put away, with the transcript in it kept. */
   const closePanel = () => deps.showPanel(false)
 
   const setWritten = (text: string) => {
-    written.value = text
+    content.value = text
   }
 
   /**
-   * A question sent about the card the panel stands on.
+   * A question sent about the card the panel relies on.
    *
    * What goes is what the person wrote and nothing else. Which card they are on
    * is the agent's to ask for: the deck, the mark and the face are named by a
@@ -104,25 +104,25 @@ export function useAgentPanel(deps: AgentPanelDeps) {
    * question is read as instruction.
    */
   const send = async (text: string) => {
-    const current = held.value
+    const current = card.value
     if (!current || !text) return
-    written.value = ''
+    content.value = ''
     await current.conversation.ask(text, current.card.deck)
   }
 
-  const stop = () => held.value?.conversation.stop()
+  const stop = () => card.value?.conversation.stop()
 
   /** The conversation is over: the agent is told, and the panel holds nothing. */
   const endConversation = () => {
-    held.value?.conversation.finish()
-    held.value = null
-    written.value = ''
+    card.value?.conversation.finish()
+    card.value = null
+    content.value = ''
     deps.showPanel(false)
   }
 
   return {
     open,
-    written,
+    written: content,
     about,
     turns,
     isWorking,

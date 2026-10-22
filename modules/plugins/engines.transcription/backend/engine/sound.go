@@ -194,7 +194,7 @@ const (
 // stepped over by their length. Each chunk sits on an even byte.
 func parseWav(raw []byte) (riffWave, error) {
 	var out riffWave
-	var seen bool
+	var observed bool
 	for at := 12; at+8 <= len(raw); {
 		kind := string(raw[at : at+4])
 		size := int(binary.LittleEndian.Uint32(raw[at+4 : at+8]))
@@ -213,12 +213,12 @@ func parseWav(raw []byte) (riffWave, error) {
 			if err := out.readFormat(body); err != nil {
 				return out, err
 			}
-			seen = true
+			observed = true
 		case "data":
 			out.samples = body
 		}
 	}
-	if !seen {
+	if !observed {
 		return out, fmt.Errorf("the wav recording has no header")
 	}
 	// A sample narrower than a byte is a compressed container wearing a wav
@@ -328,9 +328,9 @@ func fromMP3(raw []byte) ([]float32, int, error) {
 	for {
 		read, err := io.ReadFull(decoder, block)
 		for i := 0; i+mp3MomentBytes <= read; i += mp3MomentBytes {
-			left := float32(int16(binary.LittleEndian.Uint16(block[i:]))) / 32768
+			remaining := float32(int16(binary.LittleEndian.Uint16(block[i:]))) / 32768
 			right := float32(int16(binary.LittleEndian.Uint16(block[i+2:]))) / 32768
-			out = append(out, (left+right)/2)
+			out = append(out, (remaining+right)/2)
 		}
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			break

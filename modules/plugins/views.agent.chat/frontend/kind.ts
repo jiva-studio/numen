@@ -3,7 +3,7 @@
  *
  * A question put to the window goes to the tab the person was last in, and a
  * window with none opens one. A command asked from a talk is asked over the
- * note the window stands on, since a talk is about no note of its own.
+ * note the window relies on, since a talk is about no note of its own.
  */
 import { Bot } from '@lucide/vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'

@@ -38,7 +38,7 @@ func (a *reviewHandler) GetDeckNeighbourhood(
 			IsPointedAt: !one.IsBacklink,
 			IsAmbiguous: one.IsAmbiguous,
 		}
-		if reason, refused := convertOutcomeToErrorCode(one.Outcome); refused {
+		if reason, ok := convertOutcomeToErrorCode(one.Outcome); ok {
 			next.Error = &reason
 		}
 		out.Notes = append(out.Notes, next)

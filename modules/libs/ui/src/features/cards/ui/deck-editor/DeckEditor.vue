@@ -60,7 +60,7 @@ const emit = defineEmits<{
 /**
  * The run whose plus is showing which stencils a new card may be cut by.
  */
-const asking = shallowRef<string | null>(null)
+const activePickerRunId = shallowRef<string | null>(null)
 
 /**
  * The card under the pointer's hand, and where letting go would put it.
@@ -68,11 +68,11 @@ const asking = shallowRef<string | null>(null)
 const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
-  isMoved: (held: string, at: InsertionPoint): boolean => isMoved(shown.value.runs, held, at),
+  isMoved: (held: string, at: InsertionPoint): boolean => isMoved(grid.value.runs, held, at),
   move: (held, at) => emit('move', held, at),
 })
 
-const shown = computed(() => getGrid(props, dragged.value))
+const grid = computed(() => getGrid(props, dragged.value))
 
 provide(DECK_CONTEXT, {
   write: (card, target, text) => emit('write', card, target.field, target.nth, text),
@@ -112,11 +112,11 @@ function onStep(id: string, direction: StepDirection, press: KeyboardEvent): voi
 }
 
 function onAsk(runId: string): void {
-  asking.value = runId
+  activePickerRunId.value = runId
 }
 
 function onAddCard(stencil: Stencil, run: Run): void {
-  asking.value = null
+  activePickerRunId.value = null
   emit('add', stencil.name, run.section?.id ?? null)
 }
 
@@ -140,14 +140,14 @@ function onAddSection(): void {
     @drop="onDrop"
   >
     <DeckRun
-      v-for="run in shown.runs"
+      v-for="run in grid.runs"
       :key="run.id"
       :run="run"
       :stencils="stencils"
-      :of="shown.of"
+      :of="grid.of"
       :wrong="wrong"
       :at="at"
-      :is-asking="asking === run.id"
+      :is-asking="activePickerRunId === run.id"
       :words="words"
       @drag-over="onDragOver"
       @drop="onDrop"

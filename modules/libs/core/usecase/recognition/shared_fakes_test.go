@@ -33,8 +33,8 @@ func (p *puts) ProofreadScan(
 	var out domain.ScanProofreading
 	for _, page := range pages {
 		p.asked = append(p.asked, page.Number)
-		if said, held := p.says[page.Number]; held {
-			out.Corrections = append(out.Corrections, said)
+		if response, target := p.says[page.Number]; target {
+			out.Corrections = append(out.Corrections, response)
 		}
 	}
 	return out, nil
@@ -79,8 +79,8 @@ func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf,
 func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, 0, fs.ErrNotExist
 	}
 	s.opens++
@@ -116,8 +116,8 @@ func (c trackedCloser) Close() error {
 func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw, held := s.files[name]
-	if !held {
+	raw, target := s.files[name]
+	if !target {
 		return nil, fs.ErrNotExist
 	}
 	return raw, nil
@@ -169,7 +169,7 @@ func (s *shelf) hold(name domain.ArtifactName) {
 	s.held[name] = true
 }
 
-func (s *shelf) names() []domain.ArtifactName {
+func (s *shelf) artifactNames() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []domain.ArtifactName
@@ -222,8 +222,8 @@ func (c *corrector) ProofreadScan(
 			out.Uncorrected++
 			continue
 		}
-		if said, has := c.says[page.Number]; has {
-			out.Corrections = append(out.Corrections, said)
+		if response, has := c.says[page.Number]; has {
+			out.Corrections = append(out.Corrections, response)
 		}
 	}
 	return out, nil

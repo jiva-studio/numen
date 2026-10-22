@@ -1,6 +1,6 @@
 /**
  * Which preset schedules each deck of a vault, and what a day under each of
- * them comes to.
+ * them evaluates to.
  *
  * It is asked for when a vault is opened and again whenever that vault moves,
  * and the decks of one preset are counted together however many there are.
@@ -32,7 +32,7 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
    * over is a deck whose preset could not be read, and until it has run nothing
    * is known either way.
    */
-  const known = ref(false)
+  const recognized = ref(false)
 
   /** The preset each deck is scheduled by, by the path the deck is filed under. */
   const byDeck = computed(() => {
@@ -46,22 +46,22 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
   const forget = () => {
     presets.value = []
     of.value = ''
-    known.value = false
+    recognized.value = false
   }
 
   // Today is the review day, which the application measures and this window is
   // told: it begins at the hour the settings name.
-  const read = async (due: VaultCardsDue | null, today: string) => {
+  const readItem = async (due: VaultCardsDue | null, today: string) => {
     if (!due) {
       forget()
       return
     }
     // A vault read again keeps what is known of it while the reading runs, so
     // the screen it is read behind does not empty and fill.
-    if (of.value !== due.vault) known.value = false
+    if (of.value !== due.vault) recognized.value = false
     of.value = due.vault
 
-    const held = await Promise.all(
+    const target = await Promise.all(
       due.decks.map(async (deck) => ({
         deck,
         result: await readDeckPreset(deps.presets, due.vault, deck.deck),
@@ -69,11 +69,11 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
     )
     if (of.value !== due.vault) return
 
-    presets.value = groupDecksIntoPresets(due, held, today)
-    known.value = true
+    presets.value = groupDecksIntoPresets(due, target, today)
+    recognized.value = true
   }
 
-  return { presets, byDeck, of, known, read, forget }
+  return { presets, byDeck, of, known: recognized, read: readItem, forget }
 }
 
 /** One deck of a vault, with the preset it is scheduled by or why that could not be read. */
@@ -134,21 +134,21 @@ const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTa
   const at = new Map<string, PresetTally>()
   for (const { deck, result } of reads) {
     if (!result.ok) continue
-    const { held } = result.value
-    let into = at.get(held.path)
+    const { held: preset } = result.value
+    let into = at.get(preset.path)
     if (!into) {
-      into = createTally(held)
-      at.set(held.path, into)
+      into = createTally(preset)
+      at.set(preset.path, into)
     }
     into.decks.push(deck.deck)
-    for (const problem of held.problems) into.problems.add(problem)
+    for (const problem of preset.problems) into.problems.add(problem)
     into.due += deck.due
     into.fresh += deck.new
   }
   return at
 }
 
-/** One preset as it stands before a deck has been counted into it. */
+/** One preset currently before a deck has been counted into it. */
 const createTally = (preset: DeckPreset['held']): PresetTally => ({
   path: preset.path,
   name: preset.name || 'The defaults',

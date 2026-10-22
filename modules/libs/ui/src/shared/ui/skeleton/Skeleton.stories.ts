@@ -133,17 +133,17 @@ export const Dark: Story = {
     for (const ground of grounds) {
       const shape = ground.querySelector<HTMLElement>('.skeleton')!
       const fill = getComputedStyle(shape).backgroundColor
-      // Something is there, and it is not the colour of what it stands on.
+      // Something is there, and it is not the colour of what it relies on.
       await expect(fill).not.toBe('rgba(0, 0, 0, 0)')
       await expect(fill).not.toBe(getComputedStyle(ground).backgroundColor)
     }
 
-    // The shape is drawn from the ink of whatever it stands on. On the dark set
+    // The shape is drawn from the ink of whatever it relies on. On the dark set
     // that is a light shape on the surface and a dark one on the accent.
     const measureContrast = (ground: HTMLElement) => {
-      const behind = getComputedStyle(ground).backgroundColor
+      const behindColor = getComputedStyle(ground).backgroundColor
       const shape = ground.querySelector<HTMLElement>('.skeleton')!
-      return lightness(getComputedStyle(shape).backgroundColor, behind) - lightness(behind)
+      return lightness(getComputedStyle(shape).backgroundColor, behindColor) - lightness(behindColor)
     }
     await expect(measureContrast(grounds[0]!)).toBeGreaterThan(2)
     await expect(measureContrast(grounds[1]!)).toBeLessThan(-2)

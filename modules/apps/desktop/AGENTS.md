@@ -1,14 +1,12 @@
-# The windows — what holds here
+# Desktop Windows — Architecture and Conventions
 
-The conventions every language in this repository shares are in `AGENTS.md` at
-the root, and the frontend sections of it hold over every `.ts` and `.vue` in
-the repository. This file is the two windows' own, and it holds over
-`modules/apps/desktop/editor` and `modules/apps/desktop/flashcards`.
+The conventions shared across all languages in this repository are in `AGENTS.md` at
+the root. The frontend sections apply to every `.ts` and `.vue` file.
+This file defines rules for `modules/apps/desktop/editor` and `modules/apps/desktop/flashcards`.
 
-## Where a file stands
+## Layer hierarchy
 
-A file of a window stands on one of six layers, and reaches only what stands
-below it.
+Files in the desktop application belong to one of six architectural layers and may only import from lower layers.
 
 | Layer | Holds |
 |---|---|

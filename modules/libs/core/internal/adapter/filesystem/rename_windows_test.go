@@ -13,14 +13,14 @@ import (
 // move over a file opened without a share on deletion, and the programs that do
 // it — the search indexer, a backup reader, a virus scanner — let go within
 // moments.
-func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
+func TestASaveWaitsOutAHandleAnotherProgramContains(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")
 	if err := os.WriteFile(target, []byte("what stood there\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	beside := filepath.Join(dir, ".Entropy.md.new")
-	if err := os.WriteFile(beside, []byte("what is saved\n"), 0o644); err != nil {
+	siblingPath := filepath.Join(dir, ".Entropy.md.new")
+	if err := os.WriteFile(siblingPath, []byte("what is saved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,7 +42,7 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 
 	if err := rename(t.Context(), root, ".Entropy.md.new", "Entropy.md"); err != nil {
 		<-closed
-		t.Fatalf("the save was refused while the file was held: %v", err)
+		t.Fatalf("the save failed while the file was held: %v", err)
 	}
 	<-closed
 
@@ -79,15 +79,15 @@ func openHandle(t *testing.T, path string) windows.Handle {
 	return handle
 }
 
-// A file nothing lets go of is refused, and the save says so.
+// A file nothing lets go of fails, and the save says so.
 func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")
 	if err := os.WriteFile(target, []byte("what stood there\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	beside := filepath.Join(dir, ".Entropy.md.new")
-	if err := os.WriteFile(beside, []byte("what is saved\n"), 0o644); err != nil {
+	siblingPath := filepath.Join(dir, ".Entropy.md.new")
+	if err := os.WriteFile(siblingPath, []byte("what is saved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

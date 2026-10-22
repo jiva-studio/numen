@@ -16,7 +16,7 @@ const Points = 25
 // the range.
 const MostAhead = 5 * 365
 
-// Curve is what the one control of a preset comes to over the whole range of
+// Curve is what the one control of a preset evaluates to over the whole range of
 // its goal. The grid, what stands at each place of it, and the two places
 // pointed at are all here.
 type Curve struct {
@@ -26,7 +26,7 @@ type Curve struct {
 	Grid []float64
 	// Days names the day of each place, and is filled for a goal of a date.
 	Days []string
-	// Points are what the preset comes to at each place of the grid.
+	// Points are what the preset evaluates to at each place of the grid.
 	Points []Point
 	// Now is where the preset stands.
 	Now CurvePoint
@@ -48,12 +48,12 @@ type Curve struct {
 	// Overdue is how many of those card faces have had their day and were not
 	// answered on it, and Unbegun how many nobody has answered at all, so they
 	// have had no day. Both are one number over the whole curve: facts about the
-	// vault as it stands, and not about the setting being chosen.
+	// vault currently, and not about the setting being chosen.
 	Overdue int
 	Unbegun int
 }
 
-// Point is what a preset comes to at one place of the grid.
+// Point is what a preset evaluates to at one place of the grid.
 //
 // Reviews is counted in card faces and Minutes in the showings they take, so a
 // face the day comes back to costs its minutes and is the one card.
@@ -129,7 +129,7 @@ type curveBuilder struct {
 	places func(count int, each func(at int) error) error
 }
 
-// Curve is what the one control of a preset comes to over the whole range of
+// Curve is what the one control of a preset evaluates to over the whole range of
 // its goal, worked out by running this projection at every place of the range.
 //
 // The map is where the answers have left every card face the preset schedules,
@@ -174,11 +174,11 @@ func (s Simulation) Curve(
 // place where the load is carried stands inside it. Each place is the session a
 // person would sit down to now, which is the day the deck screen offers.
 func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
-	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unseen
 
 	free := p
 	free.MinutesADay = int(MinutesADayBounds.Most)
-	load, err := run.Run(ctx, now, free, at, unseen)
+	load, err := run.Run(ctx, now, free, at, unreviewed)
 	if err != nil {
 		return Curve{}, err
 	}
@@ -197,12 +197,12 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	if err := d.places(len(out.Grid), func(i int) error {
 		one := p
 		one.MinutesADay = int(out.Grid[i])
-		ran, err := run.Run(ctx, now, one, at, unseen)
+		ran, err := run.Run(ctx, now, one, at, unreviewed)
 		if err != nil {
 			return err
 		}
 		place := session(ran)
-		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, at, unseen); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, at, unreviewed); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -235,7 +235,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
-	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalRetention, Now: OutsideGrid, Suggested: OutsideGrid}
 	least, most := RetentionBounds.Least, RetentionBounds.Most
@@ -254,12 +254,12 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 		one, asks := p, run
 		one.Retention = out.Grid[i]
 		asks.By = d.by(out.Grid[i])
-		ran, err := asks.Run(ctx, now, one, at, unseen)
+		ran, err := asks.Run(ctx, now, one, at, unreviewed)
 		if err != nil {
 			return err
 		}
 		place := point(ran)
-		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, at, unseen); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, at, unreviewed); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -278,12 +278,12 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 // Each day of it carries what a day of review has to run to be through by then,
 // and what the budget the preset keeps gets through by then.
 //
-// The range stands on the vault and not on the day the file names, so a person
+// The range relies on the vault and not on the day the file names, so a person
 // can always give themselves longer than they have. It begins tomorrow and
 // reaches whichever is further off: twice as far as the day named, or the day
 // the material is through at one card a day, the slowest a day of review goes.
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
-	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
+	run, now, p, at, unreviewedCount := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalDate, Now: OutsideGrid, Suggested: OutsideGrid}
 	open := run.Day.GetStart(now)
@@ -304,7 +304,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	}
 
 	first := 1
-	last := min(MostAhead, max(2*named, unseen, first))
+	last := min(MostAhead, max(2*named, unreviewedCount, first))
 	if named < 0 {
 		last = MostAhead
 	}
@@ -328,7 +328,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		// A place of this range is read on the day it names, and that is the day
 		// the run works the returning share out on.
 		asks.Retains = []int{day}
-		ran, err := asks.Run(ctx, now, aiming, at, unseen)
+		ran, err := asks.Run(ctx, now, aiming, at, unreviewedCount)
 		if err != nil {
 			return err
 		}
@@ -365,7 +365,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	// The day the file names is a place of the grid, so what stands under the
+	// The day the file names is a place of the grid, so what is placed under the
 	// place is worked out for that day.
 	if named >= 0 {
 		out.Now = CurvePoint{

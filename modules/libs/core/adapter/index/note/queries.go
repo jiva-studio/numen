@@ -145,13 +145,13 @@ func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, qu
 	out := make([]domain.NameMatch, 0, limit)
 	for rows.Next() {
 		var kind, line int
-		var marked, held string
+		var marked, target string
 		var score float64
 		var m domain.NameMatch
-		if err := rows.Scan(&kind, &m.Path, &m.Title, &held, &line, &marked, &score); err != nil {
+		if err := rows.Scan(&kind, &m.Path, &m.Title, &target, &line, &marked, &score); err != nil {
 			return nil, err
 		}
-		m.Type = domain.NoteType(held)
+		m.Type = domain.NoteType(target)
 		name, at := parseMarkedName(marked)
 		m.Spans = at
 		if kind != 0 {

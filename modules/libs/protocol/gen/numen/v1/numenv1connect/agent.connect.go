@@ -66,7 +66,7 @@ type AgentServiceClient interface {
 	// does it, until it is done. Letting go of the stream stops the agent.
 	AskAgent(context.Context, *connect.Request[v1.AskAgentRequest]) (*connect.ServerStreamForClient[v1.AskAgentResponse], error)
 	// FinishConversation says a conversation is over. What the agent kept of it
-	// is let go of, and whatever is still being answered in it stops.
+	// is release, and whatever is still being answered in it stops.
 	FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error)
 	// GetAgentState is whether an agent can be reached at all. Which agent
 	// answers is the installation's, not the vault's, so every window asks the
@@ -191,7 +191,7 @@ type AgentServiceHandler interface {
 	// does it, until it is done. Letting go of the stream stops the agent.
 	AskAgent(context.Context, *connect.Request[v1.AskAgentRequest], *connect.ServerStream[v1.AskAgentResponse]) error
 	// FinishConversation says a conversation is over. What the agent kept of it
-	// is let go of, and whatever is still being answered in it stops.
+	// is release, and whatever is still being answered in it stops.
 	FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error)
 	// GetAgentState is whether an agent can be reached at all. Which agent
 	// answers is the installation's, not the vault's, so every window asks the

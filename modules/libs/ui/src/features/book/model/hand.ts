@@ -25,10 +25,10 @@ export function useBookHand(options: BookHandOptions) {
 
   /** Whether words of the text stand taken up. */
   const isSelecting = (): boolean => {
-    const taken = window.getSelection()
-    if (!taken || taken.isCollapsed || taken.toString().trim() === '') return false
+    const currentSelection = window.getSelection()
+    if (!currentSelection || currentSelection.isCollapsed || currentSelection.toString().trim() === '') return false
     const text = options.paper.value
-    return !!text && !!taken.anchorNode && text.contains(taken.anchorNode)
+    return !!text && !!currentSelection.anchorNode && text.contains(currentSelection.anchorNode)
   }
 
   const takeDown = (event: PointerEvent) => {

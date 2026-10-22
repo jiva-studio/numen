@@ -8,8 +8,8 @@ import { getFileName } from '@numen/plugin-sdk'
  * Where a name's ending begins, and nowhere for a name carrying none.
  */
 const findExtensionStart = (name: string): number => {
-  const cut = name.lastIndexOf('.')
-  return !/\s/u.test(name.slice(cut)) ? cut : -1
+  const dotIndex = name.lastIndexOf('.')
+  return !/\s/u.test(name.slice(dotIndex)) ? dotIndex : -1
 }
 
 /**
@@ -24,13 +24,13 @@ const getExtension = (name: string): string => {
  * A name typed over a row, as the path the file is filed under from now on.
  */
 export const resolveRenamePath = (path: string, name: string, isFolder = false): string => {
-  const typed = name.trim()
-  if (!typed || typed.includes('/')) return ''
+  const cleanName = name.trim()
+  if (!cleanName || cleanName.includes('/')) return ''
 
-  const hasExtension = findExtensionStart(typed) >= 0
-  const targetName = isFolder || hasExtension ? typed : `${typed}${getExtension(getFileName(path))}`
+  const hasExtension = findExtensionStart(cleanName) >= 0
+  const targetName = isFolder || hasExtension ? cleanName : `${cleanName}${getExtension(getFileName(path))}`
   if (targetName === getFileName(path)) return ''
 
-  const under = getFolderPath(path)
-  return under === ROOT ? targetName : `${under}/${targetName}`
+  const folderPath = getFolderPath(path)
+  return folderPath === ROOT ? targetName : `${folderPath}/${targetName}`
 }

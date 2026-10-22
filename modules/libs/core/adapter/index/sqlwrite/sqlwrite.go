@@ -89,8 +89,8 @@ func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ..
 // time it is asked for. One transaction is written by one goroutine, which is
 // what the pool of one write connection leaves it.
 func (t *Transaction) prepare(ctx context.Context, query string) (*sql.Stmt, error) {
-	if held, ok := t.ready[query]; ok {
-		return held, nil
+	if target, ok := t.ready[query]; ok {
+		return target, nil
 	}
 	prepared, err := t.Tx.PrepareContext(ctx, query)
 	if err != nil {
@@ -135,11 +135,11 @@ func retry(ctx context.Context, write func() error) error {
 // isLocked says the database was held by a writer this one waited out. The
 // extended result codes carry the primary one in their low byte.
 func isLocked(err error) bool {
-	var said *sqlite.Error
-	if !errors.As(err, &said) {
+	var response *sqlite.Error
+	if !errors.As(err, &response) {
 		return false
 	}
-	switch said.Code() & 0xff {
+	switch response.Code() & 0xff {
 	case sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED:
 		return true
 	}

@@ -55,7 +55,7 @@ func (u Drop) Execute(
 		return res, err
 	}
 
-	from, hash, stood, err := u.getProducer(ctx, v, reader, path)
+	from, hash, status, err := u.getProducer(ctx, v, reader, path)
 	if err != nil {
 		return res, err
 	}
@@ -76,11 +76,11 @@ func (u Drop) Execute(
 	// A store the person emptied leaves the index standing on a recognition, and
 	// those rows are this use case's to take away as well.
 	names := domain.GetArtifactNames(from, hash)
-	held, err := u.hasAnyName(ctx, store, names)
+	target, err := u.hasAnyName(ctx, store, names)
 	if err != nil {
 		return res, err
 	}
-	if !held && !stood {
+	if !target && !status {
 		res.IsNone = true
 		return res, nil
 	}
@@ -105,7 +105,7 @@ func (u Drop) Execute(
 }
 
 // getProducer is the producer and the fingerprint a recording's transcript is
-// kept under, and whether the index says the recording stands on one.
+// kept under, and whether the index says the recording relies on one.
 //
 // A recording that gave no words is recorded as standing on nothing, and what
 // the run wrote is kept under the fingerprint of the bytes.
@@ -115,12 +115,12 @@ func (u Drop) getProducer(
 	reader port.VaultReader,
 	path string,
 ) (from, hash string, stood bool, err error) {
-	said, held, err := u.Queries.GetSourceText(ctx, v.ID, path)
+	response, target, err := u.Queries.GetSourceText(ctx, v.ID, path)
 	if err != nil {
 		return "", "", false, fmt.Errorf("read index: %w", err)
 	}
-	if held && said.Producer != "" {
-		return said.Producer, said.Hash, true, nil
+	if target && response.Producer != "" {
+		return response.Producer, response.Hash, true, nil
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {

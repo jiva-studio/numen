@@ -125,16 +125,16 @@ func TestADeckTellsAnAgentWhereItsSectionsStand(t *testing.T) {
 	if len(read.Sections) != 1 || read.Sections[0] != "Camelids" {
 		t.Fatalf("the deck came back with the sections %+v", read.Sections)
 	}
-	for at, held := range read.Cards {
-		if held.Section != 0 {
-			t.Errorf("card %d stands under section %d", at, held.Section)
+	for at, target := range read.Cards {
+		if target.Section != 0 {
+			t.Errorf("card %d stands under section %d", at, target.Section)
 		}
 	}
 }
 
 // TestAFaultStandsAgainstTheCardItIsAbout. A card is addressed by where it
 // stands, so a fault says which card it is against.
-func TestAFaultStandsAgainstTheCardItIsAbout(t *testing.T) {
+func TestAFaultExistsAgainstTheCardItIsAbout(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
@@ -153,7 +153,7 @@ func TestAFaultStandsAgainstTheCardItIsAbout(t *testing.T) {
 
 // TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds. A limit that truncates
 // in silence reads as "that is all there is".
-func TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds(t *testing.T) {
+func TestADeckAnswersARunOfItsCardsAndReturnsHowManyItContains(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md", "limit": 1})
@@ -172,10 +172,10 @@ func TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds(t *testing.T) {
 		t.Errorf("the next run came back as %+v", on.Cards)
 	}
 
-	if said := getRefusal(t, session, "card_read", map[string]any{
+	if response := getToolError(t, session, "card_read", map[string]any{
 		"path": "Animals.md", "limit": 500,
-	}); !strings.Contains(said, "at most") {
-		t.Errorf("a call over the ceiling was answered %q", said)
+	}); !strings.Contains(response, "at most") {
+		t.Errorf("a call over the ceiling was answered %q", response)
 	}
 }
 
@@ -248,10 +248,10 @@ func TestADeckAnswersWithTheFieldsItWasAskedFor(t *testing.T) {
 func TestReadingACardOfAMarkTheDeckHasNotGotIsRefused(t *testing.T) {
 	session, _ := newSession(t, vault())
 
-	if said := getRefusal(t, session, "card_read", map[string]any{
+	if response := getToolError(t, session, "card_read", map[string]any{
 		"path": "Animals.md", "mark": "zzzzzzzzzz",
-	}); !strings.Contains(said, "no card") {
-		t.Errorf("reading a card the deck has not got was answered %q", said)
+	}); !strings.Contains(response, "no card") {
+		t.Errorf("reading a card the deck has not got was answered %q", response)
 	}
 }
 
@@ -269,14 +269,14 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	written := readVaultFile(t, v, "Animals.md")
-	if !strings.Contains(written, "[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n") {
-		t.Errorf("the card was written as %q", written)
+	content := readVaultFile(t, v, "Animals.md")
+	if !strings.Contains(content, "[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n") {
+		t.Errorf("the card was written as %q", content)
 	}
 	// The heading is the first field read back, and the mark is what the card
 	// is from now on.
-	if !strings.Contains(written, "## Vicuña ^") {
-		t.Errorf("the card stands under the heading %q", written)
+	if !strings.Contains(content, "## Vicuña ^") {
+		t.Errorf("the card stands under the heading %q", content)
 	}
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if read.Total != 3 || read.Cards[2].Stencil != "Animal" {
@@ -290,7 +290,7 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 // TestACardAddedComesBackUnderTheMarkItIsAddressedBy. The mark is given where
 // the deck is written, so the write is what knows it: without it in the answer,
 // an agent adding a card to a deck of many cannot reach what it just wrote.
-func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
+func TestACardAddedReachesBackBelowTheMarkItIsAddressedBy(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	made := call[struct {
@@ -323,27 +323,27 @@ func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
 // shown, so a person can open the second and ask for it; which of the two they
 // meant is a thing only they know, and a machine choosing would put what they
 // typed in the other one — or delete it, with nothing to bring it back.
-func TestACardOfAMarkTwoCardsCarryIsNotWrittenTo(t *testing.T) {
+func TestACardOfAMarkTwoCardsCarryIsNotSavedTo(t *testing.T) {
 	copied := "---\ntype: deck\n---\n\n" +
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 46\"\n"
 	session, v := newSession(t, map[string]string{"Animal.md": animalStencil, "Animals.md": copied})
 
-	if said := getRefusal(t, session, "card_edit", map[string]any{
+	if response := getToolError(t, session, "card_edit", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"values":      []map[string]string{{"field": "Height", "text": "about 47\""}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(said, "two cards") {
-		t.Errorf("editing one of two cards of a mark was answered %q", said)
+	}); !strings.Contains(response, "two cards") {
+		t.Errorf("editing one of two cards of a mark was answered %q", response)
 	}
-	if said := getRefusal(t, session, "card_remove", map[string]any{
+	if responseVal := getToolError(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(said, "two cards") {
-		t.Errorf("removing one of two cards of a mark was answered %q", said)
+	}); !strings.Contains(responseVal, "two cards") {
+		t.Errorf("removing one of two cards of a mark was answered %q", responseVal)
 	}
-	if written := readVaultFile(t, v, "Animals.md"); written != copied {
-		t.Errorf("the deck was written anyway: %q", written)
+	if content := readVaultFile(t, v, "Animals.md"); content != copied {
+		t.Errorf("the deck was written anyway: %q", content)
 	}
 }
 
@@ -363,24 +363,24 @@ func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	written := readVaultFile(t, v, "Animals.md")
-	if !strings.Contains(written, "Vicuña ^") || !strings.Contains(written, "# Others\n\n## Bison") {
-		t.Fatalf("the deck was written as %q", written)
+	content := readVaultFile(t, v, "Animals.md")
+	if !strings.Contains(content, "Vicuña ^") || !strings.Contains(content, "# Others\n\n## Bison") {
+		t.Fatalf("the deck was written as %q", content)
 	}
-	if strings.Index(written, "Vicuña") > strings.Index(written, "# Others") {
-		t.Errorf("the card asked for the first section stands under the second: %q", written)
+	if strings.Index(content, "Vicuña") > strings.Index(content, "# Others") {
+		t.Errorf("the card asked for the first section stands under the second: %q", content)
 	}
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if read.Total != 3 || read.Cards[1].Section != 0 {
 		t.Errorf("the deck now holds %+v", read.Cards)
 	}
-	if said := getRefusal(t, session, "card_add", map[string]any{
+	if response := getToolError(t, session, "card_add", map[string]any{
 		"path": "Animals.md", "stencil": "Animal", "section": 7,
 		"values":      []map[string]string{{"field": "Name", "text": "Guanaco"}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(said, "section") {
-		t.Errorf("a card asked into a section the deck has not got was answered %q", said)
+	}); !strings.Contains(response, "section") {
+		t.Errorf("a card asked into a section the deck has not got was answered %q", response)
 	}
 }
 
@@ -394,8 +394,8 @@ func TestASectionIsMadeThroughTheTools(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	if written := readVaultFile(t, v, "Animals.md"); !strings.HasSuffix(written, "\n# Others\n") {
-		t.Errorf("the section was written as %q", written)
+	if content := readVaultFile(t, v, "Animals.md"); !strings.HasSuffix(content, "\n# Others\n") {
+		t.Errorf("the section was written as %q", content)
 	}
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if len(read.Sections) != 2 || read.Sections[1] != "Others" {
@@ -408,7 +408,7 @@ func TestASectionIsMadeThroughTheTools(t *testing.T) {
 
 // TestACardIsEditedAndTheCardsBesideItAreLeftAlone. The prose somebody wrote
 // under another card's wikilink is theirs, and no write of ours moves it.
-func TestACardIsEditedAndTheCardsBesideItAreLeftAlone(t *testing.T) {
+func TestACardIsEditedAndTheCardsAdjacentItAreLeftAlone(t *testing.T) {
 	session, v := newSession(t, vault())
 
 	call[map[string]any](t, session, "card_edit", map[string]any{
@@ -420,15 +420,15 @@ func TestACardIsEditedAndTheCardsBesideItAreLeftAlone(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	written := readVaultFile(t, v, "Animals.md")
-	if !strings.Contains(written, "### Height\n\nabout 46\"\n") {
-		t.Errorf("the value was written as %q", written)
+	content := readVaultFile(t, v, "Animals.md")
+	if !strings.Contains(content, "### Height\n\nabout 46\"\n") {
+		t.Errorf("the value was written as %q", content)
 	}
-	if !strings.Contains(written, "### Life span\n\nabout 20 years\n") {
-		t.Errorf("a field the card did not carry was written as %q", written)
+	if !strings.Contains(content, "### Life span\n\nabout 20 years\n") {
+		t.Errorf("a field the card did not carry was written as %q", content)
 	}
-	if !strings.Contains(written, "## Alpaca ^"+alpaca+"\n\nsomebody's prose\n") {
-		t.Errorf("the card beside it came back as %q", written)
+	if !strings.Contains(content, "## Alpaca ^"+alpaca+"\n\nsomebody's prose\n") {
+		t.Errorf("the card beside it came back as %q", content)
 	}
 }
 
@@ -442,27 +442,27 @@ func TestAFieldIsTakenOffACardAndTheOthersStay(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	written := readVaultFile(t, v, "Animals.md")
-	if strings.Contains(written, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height") {
-		t.Errorf("the field is still on the card: %q", written)
+	content := readVaultFile(t, v, "Animals.md")
+	if strings.Contains(content, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height") {
+		t.Errorf("the field is still on the card: %q", content)
 	}
-	if !strings.Contains(written, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n") {
-		t.Errorf("the field the call did not name came back as %q", written)
+	if !strings.Contains(content, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n") {
+		t.Errorf("the field the call did not name came back as %q", content)
 	}
 	// The card cut by the same stencil goes on carrying its own value, and the
 	// stencil goes on declaring the field.
-	if !strings.Contains(written, "## Alpaca ^"+alpaca+
+	if !strings.Contains(content, "## Alpaca ^"+alpaca+
 		"\n\nsomebody's prose\n\n### Name\n\nAlpaca\n\n### Height\n\nabout 36\"\n") {
-		t.Errorf("the card beside it came back as %q", written)
+		t.Errorf("the card beside it came back as %q", content)
 	}
 	if got := readVaultFile(t, v, "Animal.md"); got != animalStencil {
 		t.Errorf("the stencil was rewritten as %q", got)
 	}
-	if said := getRefusal(t, session, "card_value_remove", map[string]any{
+	if response := getToolError(t, session, "card_value_remove", map[string]any{
 		"path": "Animals.md", "mark": llama, "field": "Height",
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(said, "no value") {
-		t.Errorf("taking a field off twice was answered %q", said)
+	}); !strings.Contains(response, "no value") {
+		t.Errorf("taking a field off twice was answered %q", response)
 	}
 }
 
@@ -475,19 +475,19 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	written := readVaultFile(t, v, "Animals.md")
-	if strings.Contains(written, "## Llama") {
-		t.Errorf("the card is still in the file: %q", written)
+	content := readVaultFile(t, v, "Animals.md")
+	if strings.Contains(content, "## Llama") {
+		t.Errorf("the card is still in the file: %q", content)
 	}
-	if !strings.Contains(written,
+	if !strings.Contains(content,
 		"## Alpaca ^3n8vr4tqch\n\nsomebody's prose\n\n### Name\n\nAlpaca\n\n### Height\n\nabout 36\"\n") {
-		t.Errorf("the card beside it came back as %q", written)
+		t.Errorf("the card beside it came back as %q", content)
 	}
-	if said := getRefusal(t, session, "card_remove", map[string]any{
+	if response := getToolError(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(said, "no card") {
-		t.Errorf("removing a card twice was answered %q", said)
+	}); !strings.Contains(response, "no card") {
+		t.Errorf("removing a card twice was answered %q", response)
 	}
 }
 
@@ -502,16 +502,16 @@ func TestAWriteIsRefusedOverAnEditNobodySaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	said := getRefusal(t, session, "card_add", map[string]any{
+	response := getToolError(t, session, "card_add", map[string]any{
 		"path": "Animals.md", "stencil": "Animal",
 		"values":      []map[string]string{{"field": "Name", "text": "Vicuña"}},
 		"fingerprint": read.Fingerprint,
 	})
-	if !strings.Contains(said, "changed") {
-		t.Errorf("a write over an edit nobody saw was answered %q", said)
+	if !strings.Contains(response, "changed") {
+		t.Errorf("a write over an edit nobody saw was answered %q", response)
 	}
-	if written := readVaultFile(t, v, "Animals.md"); written != theirs {
-		t.Errorf("the deck on disk is now %q", written)
+	if content := readVaultFile(t, v, "Animals.md"); content != theirs {
+		t.Errorf("the deck on disk is now %q", content)
 	}
 }
 
@@ -520,7 +520,7 @@ func TestAWriteIsRefusedOverAnEditNobodySaw(t *testing.T) {
 func TestTheStencilsOfAVaultAreListedWithWhatTheyAskFor(t *testing.T) {
 	session, _ := newSession(t, vault())
 
-	listed := call[struct {
+	items := call[struct {
 		Stencils []struct {
 			Path   string   `json:"path"`
 			Title  string   `json:"title"`
@@ -529,13 +529,13 @@ func TestTheStencilsOfAVaultAreListedWithWhatTheyAskFor(t *testing.T) {
 		Total int `json:"total"`
 	}](t, session, "card_stencil_list", map[string]any{})
 
-	if listed.Total != 1 || len(listed.Stencils) != 1 {
-		t.Fatalf("the vault holds one stencil and the answer is %+v", listed)
+	if items.Total != 1 || len(items.Stencils) != 1 {
+		t.Fatalf("the vault holds one stencil and the answer is %+v", items)
 	}
-	if listed.Stencils[0].Path != "Animal.md" {
-		t.Errorf("the stencil came back as %+v", listed.Stencils[0])
+	if items.Stencils[0].Path != "Animal.md" {
+		t.Errorf("the stencil came back as %+v", items.Stencils[0])
 	}
-	if got := listed.Stencils[0].Fields; len(got) != 3 || got[0] != "Name" || got[2] != "Life span" {
+	if got := items.Stencils[0].Fields; len(got) != 3 || got[0] != "Name" || got[2] != "Life span" {
 		t.Errorf("the stencil asks for %v", got)
 	}
 }
@@ -558,80 +558,80 @@ func TestAStencilIsMadeAsAStencilAndNotAsANote(t *testing.T) {
 		t.Fatalf("the stencil was filed at %q", made.Path)
 	}
 
-	written := readVaultFile(t, v, made.Path)
-	if !strings.Contains(written, "type: stencil") {
-		t.Errorf("the file says it is %q", written)
+	content := readVaultFile(t, v, made.Path)
+	if !strings.Contains(content, "type: stencil") {
+		t.Errorf("the file says it is %q", content)
 	}
-	if !strings.Contains(written, "## Recall\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n") {
-		t.Errorf("the face was written as %q", written)
+	if !strings.Contains(content, "## Recall\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n") {
+		t.Errorf("the face was written as %q", content)
 	}
 
-	listed := call[struct {
+	items := call[struct {
 		Total int `json:"total"`
 	}](t, session, "card_stencil_list", map[string]any{})
-	if listed.Total != 2 {
-		t.Errorf("a stencil made through the tools is not on the list: %d", listed.Total)
+	if items.Total != 2 {
+		t.Errorf("a stencil made through the tools is not on the list: %d", items.Total)
 	}
 }
 
 // TestRenamingAFieldReachesTheCardsCutByThatStencil. A field's name is written
 // twice over, and renaming it in one place alone leaves values under a heading
 // nothing declares.
-func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
+func TestRenamingAFieldReachesTheCardsSplitByThatStencil(t *testing.T) {
 	session, v := newSession(t, vault())
 
-	renamed := call[struct {
+	renameResult := call[struct {
 		Decks []string `json:"decks"`
 		Cards int      `json:"cards"`
 	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
-	if renamed.Cards != 1 || len(renamed.Decks) != 1 {
-		t.Fatalf("the rename reached %+v", renamed)
+	if renameResult.Cards != 1 || len(renameResult.Decks) != 1 {
+		t.Fatalf("the rename reached %+v", renameResult)
 	}
 
-	if written := readVaultFile(t, v, "Animal.md"); !strings.Contains(written, "- Shoulder height") {
-		t.Errorf("the stencil declares %q", written)
+	if content := readVaultFile(t, v, "Animal.md"); !strings.Contains(content, "- Shoulder height") {
+		t.Errorf("the stencil declares %q", content)
 	}
-	written := readVaultFile(t, v, "Animals.md")
-	if !strings.Contains(written, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n\n"+
+	contentVal := readVaultFile(t, v, "Animals.md")
+	if !strings.Contains(contentVal, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n\n"+
 		"### Shoulder height\n\nabout 45\"\n") {
-		t.Errorf("the card cut by that stencil came back as %q", written)
+		t.Errorf("the card cut by that stencil came back as %q", contentVal)
 	}
 	// The card under no wikilink is cut by no stencil, so the rename is none of
 	// its business.
-	if !strings.Contains(written, "## Alpaca ^"+alpaca+"\n\nsomebody's prose\n\n### Name\n") ||
-		!strings.Contains(written, "### Height\n\nabout 36\"") {
-		t.Errorf("a card of no stencil was rewritten: %q", written)
+	if !strings.Contains(contentVal, "## Alpaca ^"+alpaca+"\n\nsomebody's prose\n\n### Name\n") ||
+		!strings.Contains(contentVal, "### Height\n\nabout 36\"") {
+		t.Errorf("a card of no stencil was rewritten: %q", contentVal)
 	}
 }
 
 // A rename reads and writes every deck the vault holds, so what bounds it is
-// how many there are. A vault past the bound is refused before the stencil is
+// how many there are. A vault past the bound fails before the stencil is
 // touched.
-func TestRenamingAFieldIsRefusedWhereTheVaultHoldsTooManyDecks(t *testing.T) {
+func TestRenamingAFieldIsRefusedWhereTheVaultContainsTooManyDecks(t *testing.T) {
 	notes := vault()
 	for i := range 200 {
 		notes[fmt.Sprintf("Deck %d.md", i)] = "---\ntype: deck\n---\n\n# Deck\n"
 	}
 	session, v := newSession(t, notes)
 
-	got := getRefusal(t, session, "card_field_rename", map[string]any{
+	got := getToolError(t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
-	for _, said := range []string{"201", "200"} {
-		if !strings.Contains(got, said) {
-			t.Errorf("the refusal says %q, and nothing of %s", got, said)
+	for _, response := range []string{"201", "200"} {
+		if !strings.Contains(got, response) {
+			t.Errorf("the rejection says %q, and nothing of %s", got, response)
 		}
 	}
 
 	// Refused before anything was written: the stencil still declares the name
 	// it had, and so does the deck cut by it.
-	if written := readVaultFile(t, v, "Animal.md"); !strings.Contains(written, "- Height") {
-		t.Errorf("the stencil was written: %q", written)
+	if content := readVaultFile(t, v, "Animal.md"); !strings.Contains(content, "- Height") {
+		t.Errorf("the stencil was written: %q", content)
 	}
-	if written := readVaultFile(t, v, "Animals.md"); !strings.Contains(written, "### Height\n\nabout 45\"") {
-		t.Errorf("a deck was written: %q", written)
+	if contentVal := readVaultFile(t, v, "Animals.md"); !strings.Contains(contentVal, "### Height\n\nabout 45\"") {
+		t.Errorf("a deck was written: %q", contentVal)
 	}
 }
 
@@ -650,8 +650,8 @@ func TestADeckIsMadeThroughTheTools(t *testing.T) {
 	if made.Path != "decks/Terms.md" {
 		t.Fatalf("the deck was filed at %q", made.Path)
 	}
-	if written := readVaultFile(t, v, made.Path); !strings.Contains(written, "type: deck") {
-		t.Errorf("the file says it is %q", written)
+	if content := readVaultFile(t, v, made.Path); !strings.Contains(content, "type: deck") {
+		t.Errorf("the file says it is %q", content)
 	}
 
 	call[map[string]any](t, session, "card_add", map[string]any{
@@ -678,18 +678,18 @@ func TestAStencilIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 		"Deck.md":   "---\ntype: deck\n---\n",
 	})
 
-	listed := call[struct {
+	items := call[struct {
 		Stencils []struct {
 			Path string `json:"path"`
 			Name string `json:"name"`
 		} `json:"stencils"`
 	}](t, session, "card_stencil_list", map[string]any{})
-	if len(listed.Stencils) != 1 {
-		t.Fatalf("the vault holds one stencil and the answer is %+v", listed)
+	if len(items.Stencils) != 1 {
+		t.Fatalf("the vault holds one stencil and the answer is %+v", items)
 	}
-	name := listed.Stencils[0].Name
+	name := items.Stencils[0].Name
 	if name != "Animal" {
-		t.Errorf("the stencil at %s is named %q", listed.Stencils[0].Path, name)
+		t.Errorf("the stencil at %s is named %q", items.Stencils[0].Path, name)
 	}
 
 	call[map[string]any](t, session, "card_add", map[string]any{
@@ -699,37 +699,38 @@ func TestAStencilIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 	})
 	// A rename reaches the cards that stencil cuts, and a card whose wikilink
 	// lands nowhere is cut by none.
-	renamed := call[struct {
-		Cards int `json:"cards"`
+	renameResult := call[struct {
+		Decks []string `json:"decks"`
+		Cards int      `json:"cards"`
 	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
-	if renamed.Cards != 1 {
+	if renameResult.Cards != 1 {
 		t.Errorf("the card written under %q is cut by no stencil: the rename reached %d cards",
-			name, renamed.Cards)
+			name, renameResult.Cards)
 	}
 }
 
 // The list of stencils says what it answers with. A ceiling that is not said is
 // a short list read as the whole vault.
-func TestTheListOfStencilsSaysItsCeiling(t *testing.T) {
+func TestTheListOfStencilsReturnsItsCeiling(t *testing.T) {
 	session, _ := newSession(t, vault())
 
-	var said string
+	var response string
 	for _, tool := range session.list(t) {
 		if tool.GetName() != "card_stencil_list" {
 			continue
 		}
-		said = tool.GetDescription() + string(tool.GetInputSchema())
+		response = tool.GetDescription() + string(tool.GetInputSchema())
 	}
-	if said == "" {
+	if response == "" {
 		t.Fatal("card_stencil_list is not among the tools")
 	}
-	if strings.Contains(said, "all of them") || strings.Contains(said, "Every stencil in the vault") {
-		t.Errorf("the list answers with at most fifty and says it answers with every one:\n%s", said)
+	if strings.Contains(response, "all of them") || strings.Contains(response, "Every stencil in the vault") {
+		t.Errorf("the list answers with at most fifty and says it answers with every one:\n%s", response)
 	}
-	if !strings.Contains(said, "50") {
-		t.Errorf("the ceiling the list answers under is not said:\n%s", said)
+	if !strings.Contains(response, "50") {
+		t.Errorf("the ceiling the list answers under is not said:\n%s", response)
 	}
 }
 
@@ -745,12 +746,12 @@ func TestEditingTheFirstFieldWritesTheHeadingAgain(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	written := readVaultFile(t, v, "Animals.md")
-	if !strings.Contains(written, "## Llama (Lama glama) ^"+llama+"\n") {
-		t.Errorf("the heading did not follow the first field: %q", written)
+	content := readVaultFile(t, v, "Animals.md")
+	if !strings.Contains(content, "## Llama (Lama glama) ^"+llama+"\n") {
+		t.Errorf("the heading did not follow the first field: %q", content)
 	}
-	if !strings.Contains(written, "### Name\n\nLlama (Lama glama)\n") {
-		t.Errorf("the value was written as %q", written)
+	if !strings.Contains(content, "### Name\n\nLlama (Lama glama)\n") {
+		t.Errorf("the value was written as %q", content)
 	}
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if read.Cards[0].Mark != llama {
@@ -786,21 +787,22 @@ func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 	}
 }
 
-// Every field a stencil declares stands under its own heading in every card it
+// Every field a stencil declares is placed under its own heading in every card it
 // cuts, the first included, so renaming any of them reaches every deck.
 func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 	session, v := newSession(t, vault())
 
-	renamed := call[struct {
-		Cards int `json:"cards"`
+	renameResult := call[struct {
+		Decks []string `json:"decks"`
+		Cards int      `json:"cards"`
 	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Name", "to": "Species",
 	})
-	if renamed.Cards != 1 {
-		t.Fatalf("renaming the first field reached %d cards", renamed.Cards)
+	if renameResult.Cards != 1 {
+		t.Fatalf("renaming the first field reached %d cards", renameResult.Cards)
 	}
-	if written := readVaultFile(t, v, "Animals.md"); !strings.Contains(written, "### Species\n\nLlama\n") {
-		t.Errorf("the card cut by that stencil came back as %q", written)
+	if content := readVaultFile(t, v, "Animals.md"); !strings.Contains(content, "### Species\n\nLlama\n") {
+		t.Errorf("the card cut by that stencil came back as %q", content)
 	}
 }
 
@@ -844,8 +846,8 @@ func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 			call[map[string]any](t, session, name, mergeArgs(args, map[string]any{
 				"path": "Animals.md", "fingerprint": deckFingerprint(t, session, "Animals.md"),
 			}))
-			if written := readVaultFile(t, v, "Animals.md"); !strings.Contains(written, roughAlpaca) {
-				t.Errorf("the card the call did not name was rewritten:\n%q", written)
+			if content := readVaultFile(t, v, "Animals.md"); !strings.Contains(content, roughAlpaca) {
+				t.Errorf("the card the call did not name was rewritten:\n%q", content)
 			}
 		})
 	}
@@ -865,7 +867,7 @@ func mergeArgs(args, every map[string]any) map[string]any {
 
 // A person divides a deck and thinks better of the name, so a section is
 // renamed without the cards under it moving or being rewritten.
-func TestASectionIsRenamedAndTheCardsUnderItStay(t *testing.T) {
+func TestASectionIsRenamedAndTheCardsBelowItStay(t *testing.T) {
 	session, v := newSession(t, vault())
 
 	call[map[string]any](t, session, "card_section_rename", map[string]any{
@@ -873,9 +875,9 @@ func TestASectionIsRenamedAndTheCardsUnderItStay(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	written := readVaultFile(t, v, "Animals.md")
-	if !strings.Contains(written, "# The ones with fur\n") || strings.Contains(written, "# Camelids") {
-		t.Errorf("the heading was written as %q", written)
+	content := readVaultFile(t, v, "Animals.md")
+	if !strings.Contains(content, "# The ones with fur\n") || strings.Contains(content, "# Camelids") {
+		t.Errorf("the heading was written as %q", content)
 	}
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if len(read.Sections) != 1 || read.Sections[0] != "The ones with fur" {
@@ -896,8 +898,8 @@ func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
-	if written := readVaultFile(t, v, "Animals.md"); strings.Contains(written, "# Camelids") {
-		t.Errorf("the heading is still in the file: %q", written)
+	if content := readVaultFile(t, v, "Animals.md"); strings.Contains(content, "# Camelids") {
+		t.Errorf("the heading is still in the file: %q", content)
 	}
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if len(read.Sections) != 0 {
@@ -906,11 +908,11 @@ func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
 	if read.Total != 2 {
 		t.Errorf("removing a section removed cards: the deck holds %d", read.Total)
 	}
-	if said := getRefusal(t, session, "card_section_remove", map[string]any{
+	if response := getToolError(t, session, "card_section_remove", map[string]any{
 		"path": "Animals.md", "section": 0,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(said, "no section") {
-		t.Errorf("removing a section twice was answered %q", said)
+	}); !strings.Contains(response, "no section") {
+		t.Errorf("removing a section twice was answered %q", response)
 	}
 }
 
@@ -979,26 +981,26 @@ func TestAStencilIsReadAndEditedInPlace(t *testing.T) {
 		t.Fatalf("file content on disk: %s", fileContent)
 	}
 
-	said := getRefusal(t, session, "card_stencil_edit", map[string]any{
+	response := getToolError(t, session, "card_stencil_edit", map[string]any{
 		"path":        "Animal.md",
 		"fields":      []string{"Name"},
 		"faces":       []map[string]string{{"name": "Recognise", "front": "{{Name}}", "back": ""}},
 		"fingerprint": s.Fingerprint,
 	})
-	if said == "" {
-		t.Error("stale fingerprint edit was not refused")
+	if response == "" {
+		t.Error("stale fingerprint edit was not rejected")
 	}
 }
 
-// Reading a non-stencil note as a stencil is refused.
+// Reading a non-stencil note as a stencil fails.
 func TestAStencilReadRefusesNonStencil(t *testing.T) {
 	session, _ := newSession(t, vault())
 
-	said := getRefusal(t, session, "card_stencil_read", map[string]any{
+	response := getToolError(t, session, "card_stencil_read", map[string]any{
 		"path": "Entropy.md",
 	})
-	if !strings.Contains(said, "not a stencil") {
-		t.Errorf("reading non-stencil was answered %q", said)
+	if !strings.Contains(response, "not a stencil") {
+		t.Errorf("reading non-stencil was answered %q", response)
 	}
 }
 

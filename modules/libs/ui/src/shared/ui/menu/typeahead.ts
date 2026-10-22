@@ -53,7 +53,7 @@ export interface JumpStrike {
 export function jumpTo(items: readonly MenuItem[], was: Typeahead, strike: JumpStrike): Jump {
   const { letter, from, now } = strike
   const word = now - was.struck > TYPING ? letter : was.word + letter
-  const typed: Typeahead = { word, struck: now }
+  const nextTypeahead: Typeahead = { word, struck: now }
 
   const first = word[0]!
   const drumming = [...word].every((each) => each === first)
@@ -64,7 +64,7 @@ export function jumpTo(items: readonly MenuItem[], was: Typeahead, strike: JumpS
     const at = (start + step) % items.length
     const item = items[at]
     if (!item || item.disabled) continue
-    if (item.text.toLowerCase().startsWith(prefix)) return { typed, at }
+    if (item.text.toLowerCase().startsWith(prefix)) return { typed: nextTypeahead, at }
   }
-  return { typed, at: null }
+  return { typed: nextTypeahead, at: null }
 }

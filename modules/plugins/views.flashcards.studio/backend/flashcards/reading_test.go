@@ -152,11 +152,11 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	answer(t, s.run(t, saturday.AddDate(0, 0, -1)), "card000000", 6*time.Second)
 
 	reads := map[domain.ArtifactName]int{}
-	kept := flashcards.NewSchedules(
+	schedules := flashcards.NewSchedules(
 		tallied{DerivedStores: s.logs, reads: reads},
 		review.NewFSRS(), today, s.standings, s.presets,
 	)
-	owed := flashcards.NewCountCardsDue(s.standings, kept, s.presets, today, func() time.Time { return saturday })
+	owed := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, today, func() time.Time { return saturday })
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)

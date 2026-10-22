@@ -1,5 +1,5 @@
 /**
- * What a story drawn dark stands on. Storybook's furniture; it ships to
+ * What a story drawn dark relies on. Storybook's furniture; it ships to
  * nobody.
  *
  * A theme is chosen by `color-scheme` on the root, which is what `light-dark()`

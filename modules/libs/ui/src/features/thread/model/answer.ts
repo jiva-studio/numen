@@ -8,7 +8,7 @@ import type { Paint } from '@/shared/lib/clock'
 export interface Answer {
   /** More words of the answer. */
   readonly say: (text: string) => void
-  /** The answer ends where it stands, and the next words begin another. */
+  /** The answer ends at its current position, and the next words begin another. */
   readonly settle: () => void
   /** Mark the current answering turn as failed. */
   readonly fail: () => void

@@ -23,7 +23,7 @@ func reader(t *testing.T) (GetDocumentText, *shelf) {
 	return GetDocumentText{readers: readers, sources: index, derived: shelves{shelved}}, shelved
 }
 
-func TestWhatStandsAfterAChunkIsRead(t *testing.T) {
+func TestWhatExistsAfterAChunkIsRead(t *testing.T) {
 	u, _ := reader(t)
 
 	whole, err := u.Execute(t.Context(), first, documentPath, 0, MostDocumentText)
@@ -63,7 +63,7 @@ func TestARunPastTheEndOfASourceIsNoRun(t *testing.T) {
 	}
 }
 
-func TestARunIsCutOnWholeCharacters(t *testing.T) {
+func TestARunIsSplitOnWholeCharacters(t *testing.T) {
 	u, shelved := reader(t)
 	names := textNames(t, shelved)
 	if err := shelved.WriteArtifact(t.Context(), names.artifact, []byte("\x0c\x0c\nЖивёт слово\n")); err != nil {
@@ -98,7 +98,7 @@ func TestAskingForMoreThanOneQuestionCarriesIsRefused(t *testing.T) {
 // long it is asked for, including where it begins before the text, past it,
 // or asks for nothing at all.
 func TestGetRuneBounds(t *testing.T) {
-	// é is two bytes, so a run touching it from either side stands on it
+	// é is two bytes, so a run touching it from either side relies on it
 	// whole or not at all.
 	const prose = "éllo"
 

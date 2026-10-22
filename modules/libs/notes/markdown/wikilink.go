@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Wikilink is one `[[…]]` where it stands in a line.
+// Wikilink is one `[[…]]` at its current position in a line.
 type Wikilink struct {
 	// At is the byte the brackets open at, and To the byte after they close.
 	At, To int

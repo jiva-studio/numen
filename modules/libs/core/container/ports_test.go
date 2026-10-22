@@ -30,7 +30,7 @@ func getHeldAdapters(name, src string) []string {
 		return []string{name + " does not parse: " + err.Error()}
 	}
 
-	under := map[string]string{}
+	underMap := map[string]string{}
 	for _, one := range f.Imports {
 		path, err := strconv.Unquote(one.Path.Value)
 		if err != nil {
@@ -40,7 +40,7 @@ func getHeldAdapters(name, src string) []string {
 		if one.Name != nil {
 			at = one.Name.Name
 		}
-		under[at] = path
+		underMap[at] = path
 	}
 
 	var findings []string
@@ -59,7 +59,7 @@ func getHeldAdapters(name, src string) []string {
 				if !ok {
 					return true
 				}
-				path := under[at.Name]
+				path := underMap[at.Name]
 				if !strings.HasPrefix(path, compilerHolds) || driving[strings.TrimPrefix(path, module)] {
 					return true
 				}
@@ -88,13 +88,13 @@ func isReachable(fn *ast.FuncDecl) bool {
 
 // The composition root hands out ports. An adapter the compiler holds is bound
 // to one here and never comes back out under its own name.
-func TestTheRootHandsOutNoAdapterTheCompilerHolds(t *testing.T) {
-	held, err := os.ReadDir(".")
+func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
+	target, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)
 	}
 	read := 0
-	for _, one := range held {
+	for _, one := range target {
 		name := one.Name()
 		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
 			continue
@@ -122,12 +122,12 @@ import "`+module+`port"
 
 func (c Config) Trash() port.Trash { return nil }
 `)) != 0 {
-		t.Fatal("a port handed out under its own name is refused: the rule is not the rule")
+		t.Fatal("a port handed out under its own name fails: the rule is not the rule")
 	}
 }
 
 // What the rule refuses, asked directly. Each case is a shape the walk meets in
-// this package, so a refusal here is the whole of the rule and not a sample.
+// this package, so an error here is the whole of the rule and not a sample.
 func TestWhatThePortRuleRefusesTheRoot(t *testing.T) {
 	for _, one := range []struct {
 		what      string
@@ -196,10 +196,10 @@ func (c Config) Options(held filesystem.Options) error { return nil }`,
 	} {
 		findings := getHeldAdapters("probe.go", one.src)
 		if one.isRefused && len(findings) == 0 {
-			t.Errorf("%s is not refused", one.what)
+			t.Errorf("%s is not rejected", one.what)
 		}
 		if !one.isRefused && len(findings) != 0 {
-			t.Errorf("%s is refused: %s", one.what, strings.Join(findings, "; "))
+			t.Errorf("%s fails: %s", one.what, strings.Join(findings, "; "))
 		}
 	}
 }

@@ -72,7 +72,7 @@ describe('the stencils a window offers', () => {
     expect(sync.stencils.value).toStrictEqual([{ name: 'Animal', fields: ['Name'] }])
   })
 
-  it('are not asked for again before a listing failed', () => {
+  it('are not requested for again before a listing failed', () => {
     const { sync, stencils } = open()
 
     sync.listStencilsAgain()
@@ -80,7 +80,7 @@ describe('the stencils a window offers', () => {
     expect(stencils).not.toHaveBeenCalled()
   })
 
-  it('are asked for again once a listing failed', async () => {
+  it('are requested for again once a listing failed', async () => {
     const { sync, stencils, state } = open()
     state.isDown = true
     await sync.listStencils()
@@ -90,7 +90,7 @@ describe('the stencils a window offers', () => {
     expect(stencils).toHaveBeenCalledTimes(2)
   })
 
-  it('are not asked for again once a listing answered after the failure', async () => {
+  it('are not requested for again once a listing answered after the failure', async () => {
     const { sync, stencils, state } = open()
     state.isDown = true
     await sync.listStencils()
@@ -104,7 +104,7 @@ describe('the stencils a window offers', () => {
 })
 
 describe('the files changing under the window', () => {
-  it('carry the schedule of a renamed file to where it now stands', async () => {
+  it('carry the schedule of a renamed file to where it now remains', async () => {
     const { sync, store } = open()
     store.open('a', 'Animals.md')
     await sync.scheduled.refreshDeckPreset('Animals.md')

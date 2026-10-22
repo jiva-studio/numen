@@ -2,7 +2,7 @@
 /**
  * A card face is written once and drawn in two windows: here, and in the
  * editor's stencil pane. Both draw it through `CardProse`, so the markup a face
- * comes to is the same in both, and this is what holds them to it.
+ * evaluates to is the same in both, and this is what holds them to it.
  */
 import { CardProse } from '@numen/ui'
 import { mount } from '@vue/test-utils'
@@ -26,22 +26,22 @@ const FACES = [
 
 /** The prose of a face as the review window draws it. */
 const inTheReviewWindow = (text: string): string => {
-  const drawn = mount(Card, { props: { front: text, back: '', isShown: false } })
-  const said = drawn.find('.prose').element.innerHTML
-  drawn.unmount()
-  return said
+  const renderedElement = mount(Card, { props: { front: text, back: '', isShown: false } })
+  const response = renderedElement.find('.prose').element.innerHTML
+  renderedElement.unmount()
+  return response
 }
 
 /** The prose of the same face as the editor's pane draws it. */
 const inTheEditor = (text: string): string => {
-  const drawn = mount(CardProse, { props: { text } })
-  const said = drawn.find('.prose').element.innerHTML
-  drawn.unmount()
-  return said
+  const renderedElement = mount(CardProse, { props: { text } })
+  const response = renderedElement.find('.prose').element.innerHTML
+  renderedElement.unmount()
+  return response
 }
 
 describe('one face, two windows', () => {
-  it('comes to the same markup in both', () => {
+  it('evaluates to the same markup in both', () => {
     for (const face of FACES) {
       expect(inTheReviewWindow(face)).toBe(inTheEditor(face))
     }

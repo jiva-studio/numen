@@ -27,9 +27,9 @@ export function build(title: string, counts: RelationCounts): PlexNeighbourhood 
 /**
  * The same, around a chosen node, with the one it was chosen from placed as a
  * parent. Both keep their identifiers, so the plex recognises them in the new
- * picture and carries them to their relations instead of blinking out and back.
+ * picture and carries them to their relations and not blinking out and back.
  *
- * Names come from a pool rather than being numbered, because a plex of
+ * Names come from a pool and not being numbered, because a plex of
  * "Child 1, Child 2" says nothing about whether real titles wrap or collide.
  */
 export function buildAround(
@@ -64,7 +64,7 @@ export function buildAround(
 
   // A sibling hangs off a parent, not off the focus — it is another of that
   // parent's children. Which parent is a question about relationships, so it
-  // is answered here rather than by the plex.
+  // is answered here and not by the plex.
   const firstParent = related.find((node) => node.relation === 'parent')?.id
 
   const edges: PlexEdge[] = related.flatMap((node): PlexEdge[] => {
