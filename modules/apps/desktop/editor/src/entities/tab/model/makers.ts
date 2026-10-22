@@ -34,7 +34,7 @@ export type CreateTarget = string
 /** What creating each of the four asks of the vault, each entry naming its own. */
 const createByKind: Record<
   string,
-  (vault: VaultCreator, folder: string, name: string) => Promise<CreateResult | null>
+  (vault: VaultCreator, folder: string, name: string) => Promise<CreateResult | null> | null
 > = {
   deck: (vault, folder, name) => vault.createDeck?.call(vault, name, folder) ?? null,
   stencil: (vault, folder, name) => vault.createStencil?.call(vault, name, folder) ?? null,

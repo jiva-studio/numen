@@ -27,7 +27,7 @@ export interface DocumentOptions {
   readonly path?: string
   readonly filePath?: string
   readonly errorMessage?: string
-  readonly state?: DocumentState
+  readonly state?: DocumentState | undefined
 }
 
 export interface DocumentEmit {

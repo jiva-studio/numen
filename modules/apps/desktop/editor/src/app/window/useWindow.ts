@@ -186,6 +186,21 @@ interface WindowContext {
   vaults?: ReturnType<typeof useVaults>
 }
 
+function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
+  if (!ctx.commands) throw new Error('window commands are read before they are created')
+  return ctx.commands
+}
+
+function getKinds(ctx: WindowContext): NonNullable<WindowContext['kinds']> {
+  if (!ctx.kinds) throw new Error('window kinds are read before they are created')
+  return ctx.kinds
+}
+
+function getVaults(ctx: WindowContext): NonNullable<WindowContext['vaults']> {
+  if (!ctx.vaults) throw new Error('window vaults are read before they are created')
+  return ctx.vaults
+}
+
 function initWindowServices(
   base: WindowCore,
   ctx: WindowContext,
@@ -208,10 +223,10 @@ function initWindowServices(
     core,
     createDisplayOptions({
       editing,
-      getCommands: () => ctx.commands,
-      getKinds: () => ctx.kinds,
+      getCommands: () => getCommands(ctx),
+      getKinds: () => getKinds(ctx),
       tabOpeners: base.tabOpeners,
-      getVaults: () => ctx.vaults,
+      getVaults: () => getVaults(ctx),
       notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
     }),
   )
@@ -245,15 +260,15 @@ function initWindowKindsAndCommands(
   services: WindowServices,
 ) {
   const { editing, settings, window, tabSync } = services
-  const getTarget = createTargetResolver(base.windowTabs, () => ctx.vaults, window)
+  const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
 
   watch(
     () => getTarget().file,
-    (file) => void ctx.vaults.loadArtifactStates(file),
+    (file) => void getVaults(ctx).loadArtifactStates(file),
     { immediate: true },
   )
 
-  const runCommand = (id: string, target: CommandTarget) => ctx.commands.runCommand(id, target)
+  const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
 
   ctx.kinds = useWindowKinds({
     core,
@@ -263,16 +278,16 @@ function initWindowKindsAndCommands(
     runs: base.runs,
     editing,
     settings,
-    vaults: ctx.vaults,
+    vaults: getVaults(ctx),
     window,
     getTarget,
     runCommand,
-    commandDeps: () => ctx.commands.commandDeps,
+    commandDeps: () => getCommands(ctx).commandDeps,
     tabLinks: base.tabLinks,
     tabSync,
   })
 
-  Object.assign(base.pluginServices, ctx.kinds.services)
+  Object.assign(base.pluginServices, getKinds(ctx).services)
 
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
@@ -282,9 +297,9 @@ function initWindowKindsAndCommands(
     knows,
     settings,
     runs: base.runs,
-    vaultsModule: ctx.vaults,
+    vaultsModule: getVaults(ctx),
     editing,
-    kinds: ctx.kinds,
+    kinds: getKinds(ctx),
     window,
     writeMessage: base.writeMessage,
     log: base.log,
@@ -310,7 +325,7 @@ export const useWindow = () => {
   const { editing, window, settings } = services
   watchPluginSettings(settings, base.pluginLoader)
 
-  const notices = useWindowNotices({ log: base.log, window, settings, vaults: ctx.vaults! })
+  const notices = useWindowNotices({ log: base.log, window, settings, vaults: getVaults(ctx) })
   const statusBar = useWindowStatusBar({ tasks: window.tasks })
   const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs })
 
@@ -319,13 +334,13 @@ export const useWindow = () => {
     if (!base.windowTabs.releaseTab(id)) hold?.()
   }
 
-  useAppHotkeys(ctx.commands!.onKeyDown)
+  useAppHotkeys(getCommands(ctx).onKeyDown)
   const crossWindowTabs = useCrossWindowTabs({
     windowTabs: base.windowTabs,
     closeWindowIfEmpty: isSecondaryWindow() ? () => window.close() : undefined,
   })
   initAppLifecycle({
-    vaultsModule: ctx.vaults!,
+    vaultsModule: getVaults(ctx),
     windowTabs: base.windowTabs,
     settings,
     window,
@@ -336,18 +351,18 @@ export const useWindow = () => {
 
   const api = {
     runCommand,
-    commands: ctx.commands!.commands,
-    commandDeps: ctx.commands!.commandDeps,
+    commands: getCommands(ctx).commands,
+    commandDeps: getCommands(ctx).commandDeps,
     failure: window.failure,
     fileFlush: editing.fileFlush,
     windowTabs: base.windowTabs,
     layout: base.windowTabs.layout,
-    vaultList: ctx.vaults!.vaultList,
+    vaultList: getVaults(ctx).vaultList,
     log: base.log,
     notices,
     statusBar,
-    palette: ctx.commands!.palette,
-    destinations: ctx.kinds!.destinations,
+    palette: getCommands(ctx).palette,
+    destinations: getKinds(ctx).destinations,
     closeTab,
     getTabIcon: openTabs.getTabIcon,
     getTitle: editing.getTitle,

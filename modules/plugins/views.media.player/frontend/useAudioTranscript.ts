@@ -3,7 +3,7 @@ import { readState, type ExternalPlayerState } from './useAudioPlayback'
 import type { CueItem } from './AudioTranscript.vue'
 
 export function useAudioTranscript(
-  props: { readonly state?: ExternalPlayerState },
+  props: { readonly state?: ExternalPlayerState | undefined },
   currentPosition: Ref<number>,
   totalDuration: Ref<number>,
 ) {

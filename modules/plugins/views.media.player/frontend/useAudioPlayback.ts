@@ -15,7 +15,7 @@ export interface ExternalPlayerState {
 export interface PlaybackOptions {
   readonly path?: string
   readonly file?: string
-  readonly state?: ExternalPlayerState
+  readonly state?: ExternalPlayerState | undefined
 }
 
 export interface PlaybackEmit {
