@@ -23,35 +23,76 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import type { FilePort } from '@/app/ports/files'
 import { getEntryIcon } from '../tabs/entryIcon'
 
-/** What making a file asks of the window. */
-export interface FileMakersDeps {
-  readonly core: Pick<FilePort, 'createUrl'>
-  readonly tabOpeners: FileOpeners
-  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
-  readonly notes: { applyPathChanges(paths: readonly string[]): void }
-  readonly writeMessage: MessageWriter
+/** A handler that creates a file in a vault folder under the given title. */
+export type FileCreatorFn = (title: string, folder: string) => Promise<CreateResult | null>
+
+/** Dynamic registry for domain-specific file creators. */
+export interface FileCreatorRegistry {
+  registerCreator(kind: string, creator: FileCreatorFn): () => void
+  getCreator(kind: string): FileCreatorFn | undefined
 }
 
-/** The decks, stencils, presets and urls the window makes, each put in front of the person. */
+/** What making a file asks of the window. */
+export interface FileMakersDeps {
+  readonly core?: Pick<FilePort, 'createUrl'>
+  readonly tabOpeners: FileOpeners
+  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
+  readonly notes?: { applyPathChanges(paths: readonly string[]): void }
+  readonly writeMessage: MessageWriter
+  readonly fetchArtifact?: (path: string) => Promise<unknown>
+  readonly creators?: Record<string, FileCreatorFn>
+}
+
+/** The files the window makes across registered kinds, each put in front of the person. */
 export function createFileMakers({
   core,
   tabOpeners,
   windowTabs,
   notes,
   writeMessage,
+  fetchArtifact: customFetchArtifact,
+  creators,
 }: FileMakersDeps) {
+  const registeredCreators = new Map<string, FileCreatorFn>()
+
+  const registerCreator = (kind: string, creator: FileCreatorFn): (() => void) => {
+    registeredCreators.set(kind, creator)
+    return () => {
+      if (registeredCreators.get(kind) === creator) {
+        registeredCreators.delete(kind)
+      }
+    }
+  }
+
+  if (creators) {
+    for (const [kind, creator] of Object.entries(creators)) {
+      registerCreator(kind, creator)
+    }
+  }
+
   const fetchArtifact = (path: string): void => {
-    running.fetchArtifact(path).then(
-      () => notes.applyPathChanges([path]),
+    const fetcher = customFetchArtifact ?? running?.fetchArtifact
+    fetcher?.(path).then(
+      () => notes?.applyPathChanges([path]),
       (error: unknown) => writeMessage(formatErrorMessage(error), 'error'),
     )
   }
 
-  const createOfKind = async (
+  if (core?.createUrl) {
+    registerCreator('url', async (address, folder) => {
+      const createdItem = await core.createUrl!(address, folder)
+      if (createdItem.ok) fetchArtifact(createdItem.value.path)
+      return createdItem
+    })
+  }
+
+  const createGenericOfKind = async (
     kind: string,
     title: string,
     folder: string,
   ): Promise<CreateResult | null> => {
+    const registered = registeredCreators.get(kind)
+    if (registered) return registered(title, folder)
     const createdItem = await windowTabs.createFileOfKind(kind, folder, title)
     if (createdItem === undefined) {
       writeMessage(words.unavailable, 'error')
@@ -60,20 +101,19 @@ export function createFileMakers({
     return createdItem.ok ? createdItem : asFailure(getKnownErrorCode(createdItem.error))
   }
 
-  return createFileCreators(
+  const makers = createFileCreators(
     {
-      createDeck: (title, folder) => createOfKind('deck', title, folder),
-      createStencil: (title, folder) => createOfKind('stencil', title, folder),
-      createPreset: (title, folder) => createOfKind('preset', title, folder),
-      createUrl: async (address, folder) => {
-        const createdItem = await core.createUrl(address, folder)
-        if (createdItem.ok) fetchArtifact(createdItem.value.path)
-        return createdItem
-      },
+      createFile: (kind, title, folder) => createGenericOfKind(kind, title, folder),
     },
     tabOpeners,
     { words: { errors: words.errors }, write: writeMessage },
   )
+
+  return {
+    ...makers,
+    registerCreator,
+    createFileOfKind: createGenericOfKind,
+  }
 }
 
 /** What the files of the vault are listed, made and moved through. */
@@ -85,7 +125,9 @@ export interface VaultFilesDeps {
   readonly commandDeps: () => CommandDeps
 }
 
-export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
+export function createVaultFiles(deps: VaultFilesDeps): VaultFiles & {
+  createFile(kind: string, folder: string, name: string): Promise<string>
+} {
   const { core, made, making, getTarget, commandDeps } = deps
   const run = (id: string, target: CommandTarget, name: string) =>
     runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
@@ -94,6 +136,7 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     move: (from, to) => run('move', { ...getTarget(), path: from }, to),
     createFolder: (path) => run('createFolder', getTarget(), path),
     createNote: async (folder) => (await making.createUntitled(folder, []))?.path ?? '',
+    createFile: (kind, folder, name) => made.createFile(kind, folder, name),
     createDeck: (folder, name) => made.createFile('deck', folder, name),
     createStencil: (folder, name) => made.createFile('stencil', folder, name),
     createPreset: (folder, name) => made.createFile('preset', folder, name),

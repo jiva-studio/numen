@@ -13,7 +13,7 @@ import { createNotes } from '../lib/notes'
 import type { VaultRef } from '../types'
 import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../types'
-import { flushTab, runInvocation } from './handlers'
+import { commands, flushTab, registerCommand, runInvocation } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/entities/artifact'
 import { asFailure, asValue } from '@numen/wire'
 import type { Movement } from '@/entities/file'
@@ -277,6 +277,39 @@ describe('every command that is offered', () => {
     await carry(createInvocation('read', front()), onWithEmit)
 
     expect(events).toStrictEqual(['onCommand:read'])
+  })
+})
+
+describe('pluggable command registry', () => {
+  it('registers dynamic commands and carries them out', async () => {
+    const executed: string[] = []
+    const unregister = registerCommand('customAction', (invocation) => {
+      executed.push(`custom:${invocation.path}`)
+    })
+
+    const one = window()
+    await carry(createInvocation('customAction', front()), one.on)
+    expect(executed).toStrictEqual(['custom:physics/Ontology.md'])
+
+    unregister()
+    await carry(createInvocation('customAction', front()), one.on)
+    expect(executed).toHaveLength(1)
+  })
+
+  it('allows overriding existing commands via commands.registerCommand', async () => {
+    const executed: string[] = []
+    const unregister = commands.registerCommand('read', () => {
+      executed.push('custom-read')
+    })
+
+    const one = window()
+    await carry(createInvocation('read', front()), one.on)
+    expect(executed).toStrictEqual(['custom-read'])
+    expect(one.actions).toStrictEqual([])
+
+    unregister()
+    await carry(createInvocation('read', front()), one.on)
+    expect(one.actions).toContain('openFile physics/Ontology.md Ontology here')
   })
 })
 

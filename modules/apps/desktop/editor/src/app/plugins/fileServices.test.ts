@@ -200,6 +200,26 @@ describe('an address imported', () => {
   })
 })
 
+describe('dynamic creator registration', () => {
+  it('registers custom file creators and creates files of registered kinds', async () => {
+    const writeMessage = vi.fn()
+    const openNewFile = vi.fn()
+    const makers = createFileMakers({
+      tabOpeners: { openNewFile } as never,
+      windowTabs: { createFileOfKind: vi.fn() },
+      writeMessage,
+    })
+
+    makers.registerCreator('kanban', async (title, folder) => ({
+      ok: true,
+      value: { path: `${folder}/${title}.kanban` },
+    }))
+
+    const path = await makers.createFile('kanban', 'boards', 'Sprint')
+    expect(path).toBe('boards/Sprint.kanban')
+  })
+})
+
 describe('the window’s commands over a row', () => {
   const createCommands = () => {
     const runCommand = vi.fn()

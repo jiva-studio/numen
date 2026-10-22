@@ -36,34 +36,9 @@ const HANDLERS: Record<string, CommandHandler> = {
     createNoteCommand(invocation, on, { relation: 'parent', words }),
   jump: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'jump', words }),
   note: (invocation, on, words) => createNoteCommand(invocation, on, { relation: null, words }),
-  deck: async (invocation, on) => {
-    if (invocation.name) await on.makers.createDeck('', invocation.name)
-  },
-  stencil: async (invocation, on) => {
-    if (invocation.name) await on.makers.createStencil('', invocation.name)
-  },
-  newPreset: async (invocation, on) => {
-    if (invocation.name) await on.makers.createPreset('', invocation.name)
-  },
-  importUrl: async (invocation, on) => {
-    if (invocation.name) await on.makers.createUrl('', invocation.name)
-  },
   title: (invocation, on, words) => renameNoteCommand(invocation, on, words),
   remove: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: false, words }),
   destroy: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: true, words }),
-  transcribe: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'transcript'), {
-      on,
-      words,
-    }),
-  recognise: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'ocr'), { on, words }),
-  downloadText: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.fetchArtifact(invocation.file), { on, words }),
-  downloadCopy: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'copy'), { on, words }),
-  proofread: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.correctArtifact(invocation.file), { on, words }),
   deleteText: async (invocation, on, words) => {
     if (await on.runs.deleteTranscript(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
@@ -105,6 +80,100 @@ const HANDLERS: Record<string, CommandHandler> = {
   eraseVault: (invocation, on, words) => removeVault(invocation, on, { shouldErase: true, words }),
 }
 
+const commandRegistry = new Map<string, CommandHandler>()
+
+export const commands = {
+  registerCommand(id: string, handler: CommandHandler): () => void {
+    commandRegistry.set(id, handler)
+    return () => {
+      if (commandRegistry.get(id) === handler) {
+        commandRegistry.delete(id)
+      }
+    }
+  },
+  get(id: string): CommandHandler | undefined {
+    return commandRegistry.get(id)
+  },
+  clear(): void {
+    commandRegistry.clear()
+  },
+}
+
+export const registerCommand = commands.registerCommand
+
+type ArtifactAction = (runs: CommandDeps['runs'], file: string) => Promise<Outcome>
+
+const DYNAMIC_ARTIFACTS: Record<string, ArtifactAction> = {
+  transcribe: (runs, file) => runs.createArtifact(file, 'transcript'),
+  recognise: (runs, file) => runs.createArtifact(file, 'ocr'),
+  downloadText: (runs, file) => runs.fetchArtifact(file),
+  downloadCopy: (runs, file) => runs.createArtifact(file, 'copy'),
+  proofread: (runs, file) => runs.correctArtifact(file),
+}
+
+const DYNAMIC_CREATORS: Record<
+  string,
+  (makers: CommandDeps['makers'], name: string) => Promise<unknown>
+> = {
+  deck: (makers, name) =>
+    'createAndOpenFile' in makers &&
+    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
+      ? (
+          makers as {
+            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
+          }
+        ).createAndOpenFile('deck', '', name)
+      : makers.createDeck('', name),
+  stencil: (makers, name) =>
+    'createAndOpenFile' in makers &&
+    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
+      ? (
+          makers as {
+            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
+          }
+        ).createAndOpenFile('stencil', '', name)
+      : makers.createStencil('', name),
+  newPreset: (makers, name) =>
+    'createAndOpenFile' in makers &&
+    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
+      ? (
+          makers as {
+            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
+          }
+        ).createAndOpenFile('preset', '', name)
+      : makers.createPreset('', name),
+  importUrl: (makers, name) =>
+    'createAndOpenFile' in makers &&
+    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
+      ? (
+          makers as {
+            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
+          }
+        ).createAndOpenFile('url', '', name)
+      : makers.createUrl('', name),
+}
+
+function resolveDynamicHandler(id: string): CommandHandler | undefined {
+  const artifactOp = DYNAMIC_ARTIFACTS[id]
+  if (artifactOp) {
+    return async (invocation, on, words) => {
+      const outcome = await artifactOp(on.runs, invocation.file)
+      reportOutcome(invocation, outcome, { on, words })
+    }
+  }
+
+  const creatorOp = DYNAMIC_CREATORS[id]
+  if (creatorOp) {
+    return async (invocation, on) => {
+      if (invocation.name) {
+        await creatorOp(on.makers, invocation.name)
+      }
+    }
+  }
+
+  return undefined
+}
+
 async function handlePluginInvocation(
   invocation: CommandInvocation,
   on: CommandDeps,
@@ -127,7 +196,10 @@ export async function runInvocation(
 ): Promise<void> {
   if (!invocation) return
   const isPlugin = invocation.id.startsWith('plugin-setting:')
-  const handler = HANDLERS[invocation.id]
+  const handler =
+    commandRegistry.get(invocation.id) ??
+    HANDLERS[invocation.id] ??
+    resolveDynamicHandler(invocation.id)
   if (!isPlugin && !handler) return
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)
@@ -135,7 +207,7 @@ export async function runInvocation(
     if (isPlugin) {
       await handlePluginInvocation(invocation, on)
     } else {
-      await handler!(withCurrentNotePath(invocation, on), on, words)
+      await handler(withCurrentNotePath(invocation, on), on, words)
     }
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')

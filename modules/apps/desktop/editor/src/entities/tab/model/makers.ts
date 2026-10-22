@@ -9,13 +9,14 @@ import type { CreateResult } from '@/entities/file/@x/tab'
 import type { FileOpeners } from './openers'
 
 /** Which of the four a file is created as. */
-export type CreateKind = 'deck' | 'stencil' | 'preset' | 'url'
+export type CreateKind = 'deck' | 'stencil' | 'preset' | 'url' | (string & {})
 
 /**
  * What the window asks the vault to create from nothing. A creator that answers
  * nothing has already told the person why none was made.
  */
 export interface VaultCreator {
+  createFile?(kind: string, title: string, folder: string): Promise<CreateResult | null>
   createDeck?(title: string, folder: string): Promise<CreateResult | null>
   createStencil?(title: string, folder: string): Promise<CreateResult | null>
   createPreset?(title: string, folder: string): Promise<CreateResult | null>
@@ -32,13 +33,13 @@ export type CreateTarget = string
 
 /** What creating each of the four asks of the vault, each entry naming its own. */
 const createByKind: Record<
-  CreateKind,
+  string,
   (vault: VaultCreator, folder: string, name: string) => Promise<CreateResult | null>
 > = {
-  deck: (vault, folder, name) => vault.createDeck!.call(vault, name, folder),
-  stencil: (vault, folder, name) => vault.createStencil!.call(vault, name, folder),
-  preset: (vault, folder, name) => vault.createPreset!.call(vault, name, folder),
-  url: (vault, folder, name) => vault.createUrl!.call(vault, name, folder),
+  deck: (vault, folder, name) => vault.createDeck?.call(vault, name, folder) ?? null,
+  stencil: (vault, folder, name) => vault.createStencil?.call(vault, name, folder) ?? null,
+  preset: (vault, folder, name) => vault.createPreset?.call(vault, name, folder) ?? null,
+  url: (vault, folder, name) => vault.createUrl?.call(vault, name, folder) ?? null,
 }
 
 export interface FileCreatorsOptions {
@@ -64,8 +65,10 @@ export function createFileCreators(
     name: CreateTarget,
   ): Promise<string> => {
     try {
-      const answer = await createByKind[what](vault, folder, name)
-      if (answer === null) return ''
+      const answer = vault.createFile
+        ? await vault.createFile(what, name, folder)
+        : await createByKind[what]?.(vault, folder, name)
+      if (answer === null || answer === undefined) return ''
       if (!answer.ok) {
         write(words.errors[answer.error], 'error')
         return ''
@@ -91,6 +94,7 @@ export function createFileCreators(
 
   return {
     createFile,
+    createAndOpenFile,
     createDeck: (folder: string, name: string) => createAndOpenFile('deck', folder, name),
     createStencil: (folder: string, name: string) => createAndOpenFile('stencil', folder, name),
     createPreset: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
