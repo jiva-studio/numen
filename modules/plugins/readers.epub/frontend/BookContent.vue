@@ -2,22 +2,12 @@
 import { useTemplateRef } from 'vue'
 import { Book } from '@numen/ui'
 import { ListTree } from '@lucide/vue'
-import type { Span } from '@numen/plugin-sdk'
 import type { BookHandle } from './types'
+import type { BookContentProps } from './BookContent.types'
 import { WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{
-  markup: string
-  path: string
-  documentSpan: Span
-  bookSpan: Span
-  offset: number
-  highlights: readonly Span[]
-  otherHighlights: readonly Span[]
-  chapter: string
-  isListingOpen: boolean
-}>()
+const props = defineProps<BookContentProps>()
 
 const emit = defineEmits<{
   move: [offset: number]

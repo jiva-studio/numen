@@ -190,7 +190,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
     isOpen = false
   })
 
-  return {
+  const reader = {
     path,
     ...state,
     page,
@@ -206,4 +206,5 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
     focusSpans,
     close,
   }
+  return reader
 }

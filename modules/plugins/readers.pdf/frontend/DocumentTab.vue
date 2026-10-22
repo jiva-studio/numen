@@ -3,7 +3,7 @@
  * PDF document viewer tab component.
  * Renders document pages, toolbar controls, and text highlights.
  */
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
 import { Reader, Waiting } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { Span } from './types'
@@ -23,7 +23,7 @@ interface Props {
 const props = defineProps<Props>()
 
 /* --------------------------------- State ---------------------------------- */
-const rootElement = ref<HTMLElement | null>(null)
+const rootElement = useTemplateRef<HTMLElement>('rootElement')
 
 function isDocumentTabState(val: unknown): val is DocumentTabState {
   return (
@@ -114,12 +114,10 @@ function onSetPageHandle(reader: unknown) {
     >
       <template #silence>
         <Waiting v-if="activeState.isLoading.value" :label="words.loading" />
-        <div v-else-if="activeState.error.value" class="fallback-panel">
-          <p class="fallback-message">{{ activeState.error.value }}</p>
-        </div>
-        <div v-else class="fallback-panel">
-          <p class="fallback-message">PDF reader unavailable or no pages</p>
-        </div>
+        <p v-else-if="activeState.error.value" class="fallback-panel fallback-message">
+          {{ activeState.error.value }}
+        </p>
+        <p v-else class="fallback-panel fallback-message">PDF reader unavailable or no pages</p>
       </template>
     </Reader>
     <div v-else class="fallback-panel">

@@ -17,7 +17,7 @@ export { useDocumentHighlights } from './useDocumentHighlights'
 /** What one open document holds. */
 export type DocumentReaderState = ReturnType<typeof useDocumentReader>
 
-function useDocumentReaderNavigation(
+function createDocumentReaderNavigation(
   getLayoutPromise: () => Promise<void>,
   navigation: ReturnType<typeof useDocumentNavigation>,
   highlights: ReturnType<typeof useDocumentHighlights>,
@@ -77,14 +77,14 @@ export function useDocumentReader(documents: Documents, path: string) {
   })
 
   // Stryker disable next-line ArrowFunction: Navigation awaits the layout loading promise.
-  const nav = useDocumentReaderNavigation(() => layoutPromise, navigation, highlights)
+  const nav = createDocumentReaderNavigation(() => layoutPromise, navigation, highlights)
 
   const close = () => {
     open = false
     pages.value = []
   }
 
-  return {
+  const reader = {
     path,
     pages,
     pageNumber: navigation.pageNumber,
@@ -104,4 +104,5 @@ export function useDocumentReader(documents: Documents, path: string) {
     focusSpans: nav.focusSpans,
     close,
   }
+  return reader
 }

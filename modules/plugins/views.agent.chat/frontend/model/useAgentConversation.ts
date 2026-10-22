@@ -255,7 +255,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     if (location) deps.openFileAt(location.path, location.span)
   }
 
-  return {
+  const api = {
     ...conversation,
     ...selection,
     ...addresses,
@@ -265,4 +265,5 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     openTurnSource,
     unreachable: deps.unreachable,
   }
+  return api
 }
