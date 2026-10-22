@@ -448,6 +448,86 @@ func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
 }
 
 func TestPluginAssetsAreServed(t *testing.T) {
+	fixture := makePluginFixture(t)
+
+	t.Run("serves javascript module with correct mime", func(t *testing.T) {
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/index.js")
+		verifyAssetResponse(t, w, http.StatusOK, "application/javascript", string(fixture.jsContent))
+	})
+
+	t.Run("serves css stylesheet with correct mime", func(t *testing.T) {
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/styles.css")
+		verifyAssetResponse(t, w, http.StatusOK, "text/css", string(fixture.cssContent))
+	})
+
+	t.Run("rejects path traversal", func(t *testing.T) {
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/../../secret")
+		if w.Code != http.StatusForbidden && w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 403 or 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("rejects symlink escape", func(t *testing.T) {
+		fixture.createSymlinkEscape(t)
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/symlink.js")
+		verifyAssetResponse(t, w, http.StatusForbidden, "", "")
+	})
+
+	t.Run("rejects an escaping directory symlink", func(t *testing.T) {
+		fixture.createDirSymlinkEscape(t)
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/linkdir/secret.js")
+		verifyAssetResponse(t, w, http.StatusForbidden, "", "")
+	})
+
+	t.Run("does not report a contained symlink to a file as an escape", func(t *testing.T) {
+		fixture.createContainedSymlink(t)
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/alias.js/child")
+		if w.Code == http.StatusForbidden {
+			t.Fatalf("contained symlink reported as an escape: %d", w.Code)
+		}
+
+		w = fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/alias.js")
+		verifyAssetResponse(t, w, http.StatusOK, "", "")
+	})
+
+	t.Run("rejects a contained symlink that points at an escaping symlink", func(t *testing.T) {
+		fixture.createChainedSymlinkEscape(t)
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/inner/secret.js")
+		verifyAssetResponse(t, w, http.StatusForbidden, "", "")
+	})
+
+	t.Run("answers 500 for a symlink loop", func(t *testing.T) {
+		fixture.createSymlinkLoop(t)
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/loopa/x.js")
+		verifyAssetResponse(t, w, http.StatusInternalServerError, "", "")
+	})
+
+	t.Run("returns 404 for unknown plugin", func(t *testing.T) {
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/unknown.plugin/dist/index.js")
+		verifyAssetResponse(t, w, http.StatusNotFound, "", "")
+	})
+
+	t.Run("returns 404 for nonexistent asset", func(t *testing.T) {
+		w := fixture.serveRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/missing.js")
+		verifyAssetResponse(t, w, http.StatusNotFound, "", "")
+	})
+
+	t.Run("returns 405 for POST method", func(t *testing.T) {
+		w := fixture.serveRequest(http.MethodPost, "/api/plugins/sample.plugin/dist/index.js")
+		verifyAssetResponse(t, w, http.StatusMethodNotAllowed, "", "")
+	})
+}
+
+type pluginFixture struct {
+	pluginDir  string
+	distDir    string
+	handler    http.Handler
+	jsContent  []byte
+	cssContent []byte
+}
+
+func makePluginFixture(t *testing.T) *pluginFixture {
+	t.Helper()
 	pluginDir := t.TempDir()
 	distDir := filepath.Join(pluginDir, "dist")
 	if err := os.MkdirAll(distDir, 0o755); err != nil {
@@ -473,169 +553,85 @@ func TestPluginAssetsAreServed(t *testing.T) {
 	}
 	handler := services.NewHandler(http.NotFoundHandler())
 
-	t.Run("serves javascript module with correct mime", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/index.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
+	return &pluginFixture{
+		pluginDir:  pluginDir,
+		distDir:    distDir,
+		handler:    handler,
+		jsContent:  jsContent,
+		cssContent: cssContent,
+	}
+}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d", w.Code)
+func (f *pluginFixture) serveRequest(method, path string) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(method, path, nil)
+	w := httptest.NewRecorder()
+	f.handler.ServeHTTP(w, r)
+	return w
+}
+
+func (f *pluginFixture) createSymlinkEscape(t *testing.T) {
+	t.Helper()
+	outsideDir := t.TempDir()
+	secretFile := filepath.Join(outsideDir, "secret.js")
+	if err := os.WriteFile(secretFile, []byte("secret"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	symlinkTarget := filepath.Join(f.distDir, "symlink.js")
+	if err := os.Symlink(secretFile, symlinkTarget); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func (f *pluginFixture) createDirSymlinkEscape(t *testing.T) {
+	t.Helper()
+	outsideDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outsideDir, "secret.js"), []byte("secret"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outsideDir, filepath.Join(f.pluginDir, "linkdir")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func (f *pluginFixture) createContainedSymlink(t *testing.T) {
+	t.Helper()
+	if err := os.Symlink("index.js", filepath.Join(f.distDir, "alias.js")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func (f *pluginFixture) createChainedSymlinkEscape(t *testing.T) {
+	t.Helper()
+	outsideDir := t.TempDir()
+	if err := os.Symlink(outsideDir, filepath.Join(f.pluginDir, "outer")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("outer", filepath.Join(f.pluginDir, "inner")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func (f *pluginFixture) createSymlinkLoop(t *testing.T) {
+	t.Helper()
+	if err := os.Symlink("loopb", filepath.Join(f.pluginDir, "loopa")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("loopa", filepath.Join(f.pluginDir, "loopb")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func verifyAssetResponse(t *testing.T, w *httptest.ResponseRecorder, wantStatus int, wantType, wantBody string) {
+	t.Helper()
+	if w.Code != wantStatus {
+		t.Fatalf("expected %d, got %d", wantStatus, w.Code)
+	}
+	if wantType != "" {
+		if ct := w.Header().Get("Content-Type"); ct != wantType {
+			t.Errorf("expected %s, got %s", wantType, ct)
 		}
-		if ct := w.Header().Get("Content-Type"); ct != "application/javascript" {
-			t.Errorf("expected application/javascript, got %s", ct)
-		}
-		if w.Body.String() != string(jsContent) {
-			t.Errorf("unexpected content: %s", w.Body.String())
-		}
-	})
-
-	t.Run("serves css stylesheet with correct mime", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/styles.css", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d", w.Code)
-		}
-		if ct := w.Header().Get("Content-Type"); ct != "text/css" {
-			t.Errorf("expected text/css, got %s", ct)
-		}
-		if w.Body.String() != string(cssContent) {
-			t.Errorf("unexpected content: %s", w.Body.String())
-		}
-	})
-
-	t.Run("rejects path traversal", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/../../secret", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusForbidden && w.Code != http.StatusBadRequest {
-			t.Fatalf("expected 403 or 400, got %d", w.Code)
-		}
-	})
-
-	t.Run("rejects symlink escape", func(t *testing.T) {
-		outsideDir := t.TempDir()
-		secretFile := filepath.Join(outsideDir, "secret.js")
-		if err := os.WriteFile(secretFile, []byte("secret"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		symlinkTarget := filepath.Join(distDir, "symlink.js")
-		if err := os.Symlink(secretFile, symlinkTarget); err != nil {
-			t.Fatal(err)
-		}
-
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/symlink.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusForbidden {
-			t.Fatalf("expected 403, got %d", w.Code)
-		}
-	})
-
-	t.Run("rejects an escaping directory symlink", func(t *testing.T) {
-		outsideDir := t.TempDir()
-		if err := os.WriteFile(filepath.Join(outsideDir, "secret.js"), []byte("secret"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.Symlink(outsideDir, filepath.Join(pluginDir, "linkdir")); err != nil {
-			t.Fatal(err)
-		}
-
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/linkdir/secret.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusForbidden {
-			t.Fatalf("expected 403, got %d", w.Code)
-		}
-	})
-
-	t.Run("does not report a contained symlink to a file as an escape", func(t *testing.T) {
-		if err := os.Symlink("index.js", filepath.Join(distDir, "alias.js")); err != nil {
-			t.Fatal(err)
-		}
-
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/alias.js/child", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code == http.StatusForbidden {
-			t.Fatalf("contained symlink reported as an escape: %d", w.Code)
-		}
-
-		r = httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/alias.js", nil)
-		w = httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200 through contained symlink, got %d", w.Code)
-		}
-	})
-
-	t.Run("rejects a contained symlink that points at an escaping symlink", func(t *testing.T) {
-		outsideDir := t.TempDir()
-		if err := os.Symlink(outsideDir, filepath.Join(pluginDir, "outer")); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.Symlink("outer", filepath.Join(pluginDir, "inner")); err != nil {
-			t.Fatal(err)
-		}
-
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/inner/secret.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusForbidden {
-			t.Fatalf("expected 403, got %d", w.Code)
-		}
-	})
-
-	t.Run("answers 500 for a symlink loop", func(t *testing.T) {
-		if err := os.Symlink("loopb", filepath.Join(pluginDir, "loopa")); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.Symlink("loopa", filepath.Join(pluginDir, "loopb")); err != nil {
-			t.Fatal(err)
-		}
-
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/loopa/x.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusInternalServerError {
-			t.Fatalf("expected 500, got %d", w.Code)
-		}
-	})
-
-	t.Run("returns 404 for unknown plugin", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/unknown.plugin/dist/index.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusNotFound {
-			t.Fatalf("expected 404, got %d", w.Code)
-		}
-	})
-
-	t.Run("returns 404 for nonexistent asset", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/missing.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusNotFound {
-			t.Fatalf("expected 404, got %d", w.Code)
-		}
-	})
-
-	t.Run("returns 405 for POST method", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodPost, "/api/plugins/sample.plugin/dist/index.js", nil)
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
-
-		if w.Code != http.StatusMethodNotAllowed {
-			t.Fatalf("expected 405, got %d", w.Code)
-		}
-	})
+	}
+	if wantBody != "" && w.Body.String() != wantBody {
+		t.Errorf("unexpected content: %s", w.Body.String())
+	}
 }
