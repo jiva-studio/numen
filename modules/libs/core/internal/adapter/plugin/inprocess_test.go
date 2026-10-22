@@ -282,13 +282,11 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	}
 }
 
-type fixedProvisioner struct {
-	library, provider string
-	err               error
-}
-
-func (f fixedProvisioner) Provision(_ context.Context, _ string) (string, string, error) {
-	return f.library, f.provider, f.err
+func newFixedCatalog(library, provider string, err error) *fakeCatalog {
+	catalog := newONNXCatalog()
+	catalog.resolved[port.RuntimeONNX] = port.ResolvedDependency{ID: port.RuntimeONNX, EnvVars: map[string]string{EnvONNXRuntimeLib: library, EnvONNXProvider: provider}}
+	catalog.err = err
+	return catalog
 }
 
 // A built-in plugin that declares the runtime finds the same variables a launched process is
@@ -297,7 +295,7 @@ func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
 	t.Setenv(EnvONNXRuntimeLib, "")
 	t.Setenv(EnvONNXProvider, "")
 	host := newBuiltInHost(t)
-	host.SetRuntimeProvisioner(fixedProvisioner{library: "/models/libonnxruntime.so", provider: "coreml"})
+	host.SetDependencies(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first agent"))
 
@@ -320,7 +318,7 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 	t.Setenv(EnvONNXRuntimeLib, "")
 	failure := errors.New("the archive is not the pinned one")
 	host := newBuiltInHost(t)
-	host.SetRuntimeProvisioner(fixedProvisioner{err: failure})
+	host.SetDependencies(newFixedCatalog("", "", failure))
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first agent"))
 
 	_, err := host.EnsureActive(t.Context(), firstBuiltInID)

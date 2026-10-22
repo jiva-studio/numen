@@ -52,6 +52,25 @@ describe('useWindowStatusBar', () => {
     expect(task2.group).toBe('Audio & Transcription')
   })
 
+  it('groups a dependency download under Dependencies & Setup', () => {
+    const tasks = ref<readonly Task[]>([
+      {
+        id: 'provision:onnxruntime',
+        label: 'Downloading onnxruntime',
+        about: '',
+        completedCount: 10,
+        total: 100,
+        counting: 'bytes',
+        error: '',
+        isUserStarted: false,
+      },
+    ])
+
+    const statusBar = useWindowStatusBar({ tasks })
+
+    expect(pick(statusBar.tasks.value, 0).group).toBe('Dependencies & Setup')
+  })
+
   it('handles failed tasks and allows dismissing them', () => {
     const tasks = ref<readonly Task[]>([
       {

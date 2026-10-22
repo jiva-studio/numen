@@ -226,6 +226,7 @@ type PluginManifest struct {
 	ActivationEvents []string                `json:"activationEvents"`
 	Permissions      []string                `json:"permissions"`
 	Runtimes         []string                `json:"runtimes,omitempty"`
+	Dependencies     []DependencyRequirement `json:"dependencies,omitempty"`
 	Lifecycle        PluginLifecycle         `json:"lifecycle"`
 	Backend          PluginBackend           `json:"backend,omitzero"`
 	Frontend         PluginFrontend          `json:"frontend,omitzero"`
@@ -301,6 +302,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listRuntimeIssues()...)
+	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listDataIssues()...)
 	issues = append(issues, m.listServiceIssues()...)

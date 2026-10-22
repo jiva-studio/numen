@@ -12,6 +12,7 @@ export interface WindowStatusBarDeps {
 }
 
 const GROUP_PATTERNS: readonly { readonly group: string; readonly pattern: RegExp }[] = [
+  { group: 'Dependencies & Setup', pattern: /provision|download|runtime|model|dependency/i },
   { group: 'Indexing', pattern: /index|book|epub/i },
   { group: 'Audio & Transcription', pattern: /transcrib|audio|speech|hear/i },
   { group: 'Text Recognition', pattern: /ocr|recogni|pdf/i },

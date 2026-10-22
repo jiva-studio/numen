@@ -222,4 +222,6 @@ type PluginRegistryManager interface {
 type PluginManager interface {
 	PluginLifecycleManager
 	PluginRegistryManager
+	// GetDependencies is what provisions the dependencies the plugins declare, or nil when nothing does.
+	GetDependencies() DependencyCatalog
 }

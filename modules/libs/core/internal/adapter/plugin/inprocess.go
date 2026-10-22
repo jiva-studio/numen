@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -161,13 +163,13 @@ func (h *Host) startBuiltIn(ctx context.Context, p DiscoveredPlugin, builtIn bui
 	if err != nil {
 		return emptyEndpoint(), fmt.Errorf("generate token: %w", err)
 	}
-	runtimeVars, err := h.exportRuntimeVars(ctx, p.Manifest.Runtimes, p.Dir)
+	runtimeVars, err := h.exportRuntimeVars(ctx, p.Manifest.GetDependencyRequirements(p.Dir))
 	if err != nil {
 		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 	vars := make(map[string]string)
 	launchVars := h.getEnvironmentVars(ctx, p.Manifest.ID, 0, token, runtimeVars)
-	for _, entry := range sanitizeEnvironment(os.Environ(), launchVars, p.Manifest.Runtimes) {
+	for _, entry := range sanitizeEnvironment(os.Environ(), launchVars, p.Manifest.GetRuntimeIDs()) {
 		name, value, _ := strings.Cut(entry, "=")
 		vars[name] = value
 	}
@@ -212,8 +214,8 @@ func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint Endpoint) {
 
 // exportRuntimeVars provisions the runtimes an in-process plugin declares, sets their variables in
 // this process, which is the plugin's own, and returns them.
-func (h *Host) exportRuntimeVars(ctx context.Context, runtimes []string, pluginDir string) ([]string, error) {
-	vars, err := h.getRuntimeVars(ctx, runtimes, pluginDir)
+func (h *Host) exportRuntimeVars(ctx context.Context, requirements []port.DependencyRequirement) ([]string, error) {
+	vars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {
 		return nil, err
 	}

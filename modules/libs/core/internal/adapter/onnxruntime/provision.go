@@ -34,9 +34,10 @@ type Config struct {
 // Provisioner finds or fetches the library once per plugin folder and hands the
 // same answer to every later caller.
 type Provisioner struct {
-	cfg   Config
-	gate  chan struct{}
-	ready map[string]answer
+	cfg      Config
+	gate     chan struct{}
+	ready    map[string]answer
+	progress func(done, total int64)
 }
 
 // answer is the library a plugin folder was given, and the provider.
@@ -60,12 +61,20 @@ func New(cfg Config) *Provisioner {
 // for it, against its own context. A failure is returned to the caller that met
 // it and the next call tries again.
 func (p *Provisioner) Provision(ctx context.Context, pluginDir string) (string, string, error) {
+	return p.ProvisionWithProgress(ctx, pluginDir, nil)
+}
+
+// ProvisionWithProgress is Provision that tells onProgress how many bytes of the
+// archive have arrived.
+func (p *Provisioner) ProvisionWithProgress(ctx context.Context, pluginDir string, onProgress func(done, total int64)) (string, string, error) {
 	select {
 	case p.gate <- struct{}{}:
 	case <-ctx.Done():
 		return "", "", ctx.Err()
 	}
 	defer func() { <-p.gate }()
+	p.progress = onProgress
+	defer func() { p.progress = nil }()
 	if found, ok := p.ready[pluginDir]; ok {
 		return found.library, string(found.provider), nil
 	}
@@ -187,5 +196,5 @@ func (p *Provisioner) fetchArchive(ctx context.Context, release Release, dir, ar
 	if client == nil {
 		client = newClient()
 	}
-	return download(ctx, client, release, archive)
+	return download(ctx, client, release, archive, p.progress)
 }

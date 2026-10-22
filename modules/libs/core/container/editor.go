@@ -128,6 +128,7 @@ func (e EditorAssembly) OpenRetryPlugin() *settings.RetryPlugin {
 
 func (e EditorAssembly) ReportPluginFailures(tasks *run.Tasks) {
 	e.cfg.ReportPluginFailures(tasks)
+	e.cfg.ReportDependencies(tasks)
 }
 
 func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }

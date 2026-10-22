@@ -45,6 +45,8 @@ type HostCallers interface {
 	// GetPluginData is the folder, inside the store of a vault, that the plugin's manifest keeps its
 	// data in. It is empty where the manifest names none.
 	GetPluginData(pluginID string) string
+	// GetDependencies is what provisions the dependencies, or nil.
+	GetDependencies() port.DependencyCatalog
 }
 
 // HostEndpoint answers the calls plugins make to the host. It listens on the
@@ -76,6 +78,7 @@ func OpenHostEndpoint(ctx context.Context, address string, callers HostCallers) 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(numenv1connect.NewDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
 	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		// Serve returns http.ErrServerClosed after Close.
@@ -130,11 +133,21 @@ func (e *HostEndpoint) Complete(
 
 // authorize returns the id of the plugin the Authorization header names once it
 // is known to hold the permission.
-func (e *HostEndpoint) authorize(header, permission string) (string, error) {
+func (e *HostEndpoint) authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
 	pluginID, recognized := e.callers.GetPluginIDByToken(token)
 	if !found || !recognized {
 		return "", connect.NewError(connect.CodeUnauthenticated, errUnknownCaller)
+	}
+	return pluginID, nil
+}
+
+// authorize returns the id of the plugin the Authorization header names once it
+// is known to hold the permission.
+func (e *HostEndpoint) authorize(header, permission string) (string, error) {
+	pluginID, err := e.authenticate(header)
+	if err != nil {
+		return "", err
 	}
 	if err := e.callers.CheckPluginPermission(pluginID, permission); err != nil {
 		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
@@ -221,7 +234,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if h.hostEndpoint != nil {
 		return h.hostEndpoint.GetPort(), nil
 	}
-	if (h.completer == nil && h.vault == nil) || h.isClosed {
+	if (h.completer == nil && h.vault == nil && h.dependencies == nil) || h.isClosed {
 		return 0, nil
 	}
 	endpoint, err := OpenHostEndpoint(ctx, h.hostAddress, h)
@@ -249,8 +262,8 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 // endpoint that cannot start is reported and leaves the plugin without
 // NUMEN_HOST_PORT; the plugins that never call the host launch all the same. A
 // runtime the plugin declares and the host cannot provision stops the launch.
-func (h *Host) getLaunchVars(ctx context.Context, pluginID, pluginDir string, runtimes []string, processPort int, token string) ([]string, error) {
-	runtimeVars, err := h.getRuntimeVars(ctx, runtimes, pluginDir)
+func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements []port.DependencyRequirement, processPort int, token string) ([]string, error) {
+	runtimeVars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {
 		return nil, fmt.Errorf("launch plugin %s: %w", pluginID, err)
 	}

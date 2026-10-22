@@ -248,7 +248,7 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": fromSetting}})
 
 	const launchName = "launch-name"
-	vars, err := host.getLaunchVars(t.Context(), secretPluginID, t.TempDir(), nil, 4000, launchName)
+	vars, err := host.getLaunchVars(t.Context(), secretPluginID, nil, 4000, launchName)
 	if err != nil {
 		t.Fatal(err)
 	}

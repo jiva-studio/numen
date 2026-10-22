@@ -4,47 +4,48 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ErrRuntimeUnavailable indicates that a plugin declares a runtime the host cannot provision.
+// ErrRuntimeUnavailable indicates that a plugin declares a dependency the host cannot provision.
 var ErrRuntimeUnavailable = errors.New("runtime unavailable")
 
-// RuntimeProvisioner makes the ONNX Runtime library ready on this machine. It
-// returns the path of the library and the name of the execution
-// provider the plugins open their sessions on.
-type RuntimeProvisioner interface {
-	Provision(ctx context.Context, pluginDir string) (library, provider string, err error)
-}
-
-// SetRuntimeProvisioner sets what provisions the ONNX Runtime for the plugins that declare it.
-func (h *Host) SetRuntimeProvisioner(provisioner RuntimeProvisioner) {
+// SetDependencies sets what provisions the dependencies the plugins declare and
+// what the plugins ask about over the host endpoint.
+func (h *Host) SetDependencies(catalog port.DependencyCatalog) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.onnxRuntime = provisioner
+	h.dependencies = catalog
 }
 
-// getRuntimeVars provisions the runtimes a plugin declares and returns the
-// environment variables that name them. A runtime that cannot be provisioned is
-// an error: the plugin is not launched without it.
-func (h *Host) getRuntimeVars(ctx context.Context, runtimes []string, pluginDir string) ([]string, error) {
+// GetDependencies returns what provisions the dependencies, or nil when nothing does.
+func (h *Host) GetDependencies() port.DependencyCatalog {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.dependencies
+}
+
+// getRuntimeVars provisions the dependencies a plugin declares and returns the
+// environment variables that name them. A dependency that cannot be
+// provisioned is an error: the plugin is not launched without it.
+func (h *Host) getRuntimeVars(ctx context.Context, requirements []port.DependencyRequirement) ([]string, error) {
 	var vars []string
-	for _, name := range runtimes {
-		if name != port.RuntimeONNX {
-			return nil, fmt.Errorf("%w: %s", ErrRuntimeUnavailable, name)
+	for _, req := range requirements {
+		catalog := h.GetDependencies()
+		if catalog == nil || !catalog.CanProvision(req) {
+			return nil, fmt.Errorf("%w: nothing provisions %s %s", ErrRuntimeUnavailable, req.Kind, req.ID)
 		}
-		h.mu.RLock()
-		provisioner := h.onnxRuntime
-		h.mu.RUnlock()
-		if provisioner == nil {
-			return nil, fmt.Errorf("%w: nothing provisions %s", ErrRuntimeUnavailable, name)
-		}
-		library, provider, err := provisioner.Provision(ctx, pluginDir)
+		catalog.Register(req)
+		resolved, err := catalog.Provision(ctx, req, nil)
 		if err != nil {
-			return nil, fmt.Errorf("provision %s: %w", name, err)
+			return nil, fmt.Errorf("provision %s: %w", req.ID, err)
 		}
-		vars = append(vars, EnvONNXRuntimeLib+"="+library, EnvONNXProvider+"="+provider)
+		for _, name := range slices.Sorted(maps.Keys(resolved.EnvVars)) {
+			vars = append(vars, name+"="+resolved.EnvVars[name])
+		}
 	}
 	return vars, nil
 }

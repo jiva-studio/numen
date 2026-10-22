@@ -30,6 +30,8 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.FlushResult":          "internal/adapterlib/wire: read by left",
 	"numen.v1.HostIndexState":       "plugin-sdk-go/host: read by EnsureIndexed",
 	"numen.v1.HostVaultErrorCode":   "plugin-sdk-go/host: read by fail",
+	"numen.v1.DependencyKind":       "internal/adapter/plugin: walked by TestDependencyKindsRoundTripTheWire",
+	"numen.v1.DependencyState":      "internal/adapter/plugin: walked by TestDependencyStatesAreWrittenToTheWire",
 	"numen.v1.Goal":                 "internal/adapterlib/wire: round trip through GoalIn and GoalOf",
 	"numen.v1.Mode":                 "internal/adapterlib/wire: round trip through ConvertModeFromWire and ConvertModeToWire",
 	"numen.v1.NameSource":           "adapter/window/editor: written by newWireNameSource",

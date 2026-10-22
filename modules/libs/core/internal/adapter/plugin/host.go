@@ -93,7 +93,7 @@ type Host struct {
 	noKeyStoreOnce sync.Once
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
-	onnxRuntime    RuntimeProvisioner
+	dependencies   port.DependencyCatalog
 	builtIns       map[string]builtInPlugin
 }
 
@@ -130,7 +130,7 @@ func NewHost(target string, dirs ...string) *Host {
 		keyStore:         nil,
 		hostEndpoint:     nil,
 		hostAddress:      hostEndpointAddress,
-		onnxRuntime:      nil,
+		dependencies:     nil,
 		builtIns:         make(map[string]builtInPlugin),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
@@ -851,11 +851,11 @@ func (h *Host) defaultLauncher(
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
-	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, p.Dir, p.Manifest.Runtimes, port, token)
+	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, p.Manifest.GetDependencyRequirements(p.Dir), port, token)
 	if err != nil {
 		return nil, nil, err
 	}
-	cmd.Env = sanitizeEnvironment(os.Environ(), pluginVars, p.Manifest.Runtimes)
+	cmd.Env = sanitizeEnvironment(os.Environ(), pluginVars, p.Manifest.GetRuntimeIDs())
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {

@@ -494,3 +494,30 @@ func TestReadManifestKeepsTheProgramWhoseModelsASettingIsOffered(t *testing.T) {
 		t.Errorf("ModelsOf = %q, want prog", got)
 	}
 }
+
+func TestAManifestDeclaresDependencies(t *testing.T) {
+	sum := strings.Repeat("a", 64)
+	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"],"dependencies":[{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := m.GetDependencyRequirements("/p")
+	if len(got) != 2 || got[0].Kind != port.DependencyKindRuntime || got[0].ID != port.RuntimeONNX || got[1].ID != "whisper" || got[1].Metadata["fileName"] != "w.bin" || got[1].PluginDir != "/p" {
+		t.Errorf("requirements = %+v", got)
+	}
+}
+
+func TestAManifestRejectsAnInvalidDependency(t *testing.T) {
+	for name, dependency := range map[string]string{
+		"no id":              `{"kind":"model"}`,
+		"unknown kind":       `{"id":"x","kind":"plugin"}`,
+		"http address":       `{"id":"x","kind":"model","sourceUrl":"http://example.com/x","checksumSha256":"` + strings.Repeat("a", 64) + `"}`,
+		"no checksum":        `{"id":"x","kind":"model","sourceUrl":"https://example.com/x"}`,
+		"checksum no source": `{"id":"x","kind":"model","checksumSha256":"` + strings.Repeat("a", 64) + `"}`,
+	} {
+		_, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[` + dependency + `]}`))
+		if !errors.Is(err, port.ErrInvalidDependency) {
+			t.Errorf("%s: err = %v, want ErrInvalidDependency", name, err)
+		}
+	}
+}

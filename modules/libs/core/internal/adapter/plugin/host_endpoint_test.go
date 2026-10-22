@@ -61,7 +61,8 @@ func (c *callers) GetCompleter() port.Completer { return c.completer }
 
 func (c *callers) GetPluginVault() port.PluginVault { return c.vault }
 
-func (c *callers) GetPluginData(pluginID string) string { return c.data[pluginID] }
+func (c *callers) GetPluginData(pluginID string) string    { return c.data[pluginID] }
+func (c *callers) GetDependencies() port.DependencyCatalog { return nil }
 
 type completerFunc func(ctx context.Context, question port.Question) (string, error)
 
@@ -391,7 +392,7 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
 	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))
 
-	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", "", nil, 5, "t")
+	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -410,7 +411,7 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", "", nil, 5, "t")
+	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
 		t.Fatalf("the launch failed: %v", err)
 	}
