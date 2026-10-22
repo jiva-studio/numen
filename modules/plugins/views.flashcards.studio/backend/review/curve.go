@@ -282,6 +282,58 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 // can always give themselves longer than they have. It begins tomorrow and
 // reaches whichever is further off: twice as far as the day named, or the day
 // the material is through at one card a day, the slowest a day of review goes.
+// getNamedOffset counts how far off the named day is from the opening day.
+func getNamedOffset(d Day, open time.Time, by string) int {
+	named := 0
+	for day := open; d.GetName(day) < by; day = day.AddDate(0, 0, 1) {
+		named++
+		if named > MostAhead {
+			return OutsideGrid.Index
+		}
+	}
+	return named
+}
+
+// createDatePoint constructs the curve point for a simulated day.
+func createDatePoint(ran Projection, day int) Point {
+	back, _ := ran.Retained.GetShare(day)
+	opening, session := ran.Session()
+	one := Point{
+		Minutes:  ran.minutesADay(day),
+		Owed:     ran.Backlog[day],
+		Retained: back,
+		Share:    ran.Through[day],
+		IsEnough: ran.isAllLearned(day),
+		Short:    ran.Short,
+		Closed:   BudgetNames{ClosedPaused},
+		Clears:   ran.Clears,
+		Learned:  ran.Learned,
+		Learns:   ran.Learns,
+		Backlog:  ran.Backlog,
+	}
+	if session {
+		one.Reviews, one.Closed = float64(ran.Faced[opening]), ran.Closed[opening]
+	}
+	return one
+}
+
+// findSuggestedDate returns the earliest learned point within budget or the earliest learned point overall.
+func findSuggestedDate(points []Point, grid []float64, days []string, minutesADay int) CurvePoint {
+	if minutesADay > 0 {
+		for i, one := range points {
+			if isLearned(one) && one.Minutes <= float64(minutesADay) {
+				return CurvePoint{Index: i, Value: grid[i], Day: days[i]}
+			}
+		}
+	}
+	for i, one := range points {
+		if isLearned(one) {
+			return CurvePoint{Index: i, Value: grid[i], Day: days[i]}
+		}
+	}
+	return OutsideGrid
+}
+
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	run, now, p, at, unreviewedCount := d.run, d.now, d.preset, d.at, d.unseen
 
@@ -291,17 +343,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	if p.By.IsZero() || by < run.Day.GetName(open) {
 		return out, nil
 	}
-	// How far off the day the file names is, counting the day holding now as
-	// none. A day further off than the projection reaches stands nowhere on the
-	// range, and the range is drawn as far as it goes.
-	named := 0
-	for day := open; run.Day.GetName(day) < by; day = day.AddDate(0, 0, 1) {
-		named++
-		if named > MostAhead {
-			named = OutsideGrid.Index
-			break
-		}
-	}
+	named := getNamedOffset(run.Day, open, by)
 
 	first := 1
 	last := min(MostAhead, max(2*named, unreviewedCount, first))
@@ -332,34 +374,11 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		if err != nil {
 			return err
 		}
-		back, _ := ran.Retained.GetShare(day)
 		// A day at none of the load is no session at all, so what a day of
 		// review holds is read off the first day this run admits.
-		opening, session := ran.Session()
 		out.Grid[i] = float64(day)
 		out.Days[i] = run.Day.GetName(aiming.By)
-		one := Point{
-			// What it costs is what the days up to that one spend, and the days
-			// past it are no part of getting through by it.
-			Minutes: ran.minutesADay(day),
-			// A place of this range is read on the day it names. Past that day
-			// the preset schedules nothing, so a debt read off the end of the
-			// horizon is a debt nobody was asked to pay.
-			Owed:     ran.Backlog[day],
-			Retained: back,
-			Share:    ran.Through[day],
-			IsEnough: ran.isAllLearned(day),
-			Short:    ran.Short,
-			Closed:   BudgetNames{ClosedPaused},
-			Clears:   ran.Clears,
-			Learned:  ran.Learned,
-			Learns:   ran.Learns,
-			Backlog:  ran.Backlog,
-		}
-		if session {
-			one.Reviews, one.Closed = float64(ran.Faced[opening]), ran.Closed[opening]
-		}
-		out.Points[i] = one
+		out.Points[i] = createDatePoint(ran, day)
 		return nil
 	}); err != nil {
 		return Curve{}, err
@@ -374,26 +393,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 			Day:   run.Day.GetName(open.AddDate(0, 0, named)),
 		}
 	}
-	// What is suggested is the soonest day the material can be learned by:
-	// nothing out of reach on it and the pace through the whole of it. Where the
-	// preset keeps minutes, it is the soonest such day whose cost fits them.
-	if p.MinutesADay > 0 {
-		for i, one := range out.Points {
-			if isLearned(one) && one.Minutes <= float64(p.MinutesADay) {
-				out.Suggested = CurvePoint{Index: i, Value: out.Grid[i], Day: out.Days[i]}
-				return out, nil
-			}
-		}
-	}
-	// A preset keeping no minutes, and a range no day of which fits them, are
-	// suggested the soonest day that gets there at whatever it costs. A range no
-	// day of which gets there points at none.
-	for i, one := range out.Points {
-		if isLearned(one) {
-			out.Suggested = CurvePoint{Index: i, Value: out.Grid[i], Day: out.Days[i]}
-			return out, nil
-		}
-	}
+	out.Suggested = findSuggestedDate(out.Points, out.Grid, out.Days, p.MinutesADay)
 	return out, nil
 }
 
